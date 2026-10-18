@@ -29,6 +29,34 @@ ROUTING_FIELDS = {
 }
 
 
+def configured_templates(makerspace_id):
+    """Deployment-owned per-host allowlist; never accept a member's policy."""
+    from django.conf import settings
+    policy = getattr(settings, "EVENT_PAYOUT_TENANT_POLICIES", {}).get(str(makerspace_id), {})
+    enabled = set()
+    for item in policy.get("templates", ()):
+        if not isinstance(item, (tuple, list)) or len(item) != 4:
+            raise PayoutValidationError("invalid_payee_template_policy")
+        country, method, key, version = item
+        if template_key(country, method) != key or type(version) is not int or version != TEMPLATE_VERSION:
+            raise PayoutValidationError("invalid_payee_template_policy")
+        enabled.add(tuple(item))
+    documents = {tuple(item) for item in policy.get("routing_documents", ())}
+    if any(len(item) != 2 or not any(row[:2] == item for row in enabled) for item in documents):
+        raise PayoutValidationError("invalid_payee_template_policy")
+    if set(policy) - {"templates", "routing_documents"}:
+        raise PayoutValidationError("invalid_payee_template_policy")
+    return frozenset(enabled), frozenset(documents)
+
+
+def template_descriptors(makerspace_id):
+    enabled, documents = configured_templates(makerspace_id)
+    return [{"country": country, "method": method, "template_key": key, "template_version": version,
+        "fields": [{"key": field, "required": True} for field in ROUTING_FIELDS[key]],
+        "routing_document_required": (country, method) in documents}
+        for country, method, key, version in sorted(enabled)]
+
+
 def _text(value, maximum=200):
     if (not isinstance(value, str) or not value.strip() or len(value.strip()) > maximum
             or any(ord(char) < 32 or ord(char) == 127 for char in value)):

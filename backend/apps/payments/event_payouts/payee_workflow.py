@@ -1,12 +1,11 @@
 """Append routing revisions; finance inspects, owners edit, retention purges."""
 from datetime import timedelta
 import json
-from django.conf import settings
 from django.utils import timezone
 from apps.audit.services import record
 from .errors import require
 from .payee_models import EventPayeeRevision, EventPayeeReview
-from .templates import validate_details, masked_details, TEMPLATE_VERSION
+from .templates import validate_details, masked_details, TEMPLATE_VERSION, configured_templates
 from .transactions import command
 
 
@@ -28,15 +27,15 @@ def projection(row):
 
 
 def put(*, request, obligation_id, data):
-    enabled = tuple(tuple(item) for item in getattr(settings, "EVENT_PAYOUT_ENABLED_TEMPLATES", ()))
-    details = validate_details(country=data["country"], method=data["method"], template=data["template_key"],
-        version=data["template_version"], details=data["details"], enabled_templates=enabled)
     require(data["disclosure_version"] == 1, "payee_disclosure_changed", status=400)
     with command(request=request, obligation_id=obligation_id, data=data, action="payee.submit", owner=True) as ctx:
         if ctx.replay:
             return ctx.replay
         ctx.cas()
         obligation = ctx.obligation
+        enabled, _ = configured_templates(obligation.makerspace_id)
+        details = validate_details(country=data["country"], method=data["method"], template=data["template_key"],
+            version=data["template_version"], details=data["details"], enabled_templates=enabled)
         require(obligation.state == "open" and obligation.approved_minor > 0, "payee_not_requested")
         old = current(obligation, lock=True)
         require(data["expected_payee_version"] == (old.version if old else None), "stale_payee_version")
@@ -48,6 +47,11 @@ def put(*, request, obligation_id, data):
                 old.terminal_financial_at, old.closure_reason_code = timezone.now(), "superseded_unused"
                 old.purge_due_at = old.terminal_financial_at + timedelta(days=30)
             old.save()
+            if old.closure_reason_code == "superseded_unused":
+                from .attachment_workflow import close_binding_locked
+                close_binding_locked(makerspace_id=obligation.makerspace_id, binding_kind="payee", binding_uuid=old.pk,
+                    obligation=None, terminal_at=old.terminal_financial_at, reason_code="superseded_unused",
+                    operation_id=data["operation_id"], bound_obligation=obligation)
         row = EventPayeeRevision.objects.create(obligation=obligation, owner=ctx.actor,
             country=data["country"], template_key=data["template_key"], template_version=TEMPLATE_VERSION,
             method=data["method"], details=json.dumps(details, sort_keys=True, separators=(",", ":")),
@@ -56,6 +60,8 @@ def put(*, request, obligation_id, data):
         obligation.save(update_fields=["version"])
         record(ctx.actor, "finance.event_payout.payee_submitted", makerspace=obligation.makerspace, target=row,
                meta={"obligation_id": str(obligation.pk), "payee_revision_id": str(row.pk)})
+        from .notices import enqueue_locked
+        enqueue_locked(obligation, "payee_submitted")
         return ctx.finish(payee_revision_id=str(row.pk), payee_version=row.version)
 
 
@@ -65,10 +71,23 @@ def review(*, request, obligation_id, data, verified):
         if ctx.replay:
             return ctx.replay
         ctx.cas()
+        require(ctx.obligation.state == "open", "payee_not_requested")
         row = current(ctx.obligation, lock=True)
         require(row is not None and row.pk == data["payee_revision_id"]
                 and row.version == data["expected_payee_version"], "stale_payee_version")
         require(row.details and row.submitted_at, "payee_details_required")
+        latest = row.reviews.order_by("-sequence").first()
+        require(not verified or latest is None or latest.kind != "correction_requested", "new_payee_revision_required")
+        if verified:
+            _, documents = configured_templates(ctx.obligation.makerspace_id)
+            if (row.country, row.method) in documents:
+                from .attachment_models import FinanceAttachment
+                from .attachment_workflow import attach_locked
+                attachments = list(FinanceAttachment.objects.select_for_update().filter(obligation=ctx.obligation,
+                    binding_kind="payee", binding_uuid=row.pk, state__in=("ready", "attached")).order_by("pk"))
+                require(1 <= len(attachments) <= 5, "payee_document_required")
+                for attachment in attachments:
+                    attach_locked(attachment, binding_uuid=row.pk, owner_id=ctx.obligation.owner_member_id)
         require(not verified or row.method != "other" or data.get("reason_code"),
                 "other_method_reason_required", status=400)
         sequence = (row.reviews.order_by("-sequence").values_list("sequence", flat=True).first() or 0) + 1
@@ -82,6 +101,8 @@ def review(*, request, obligation_id, data, verified):
         ctx.obligation.save(update_fields=["version"])
         record(ctx.actor, "finance.event_payout.payee_verified" if verified else "finance.event_payout.payee_correction",
             makerspace=ctx.obligation.makerspace, target=row, meta={"payee_revision_id": str(row.pk)})
+        from .notices import enqueue_locked
+        enqueue_locked(ctx.obligation, "payee_verified" if verified else "payee_correction")
         return ctx.finish(payee_revision_id=str(row.pk), payee_version=row.version)
 
 
@@ -92,6 +113,7 @@ def reveal(*, request, obligation_id, data, owner=False):
         ctx.cas()
         row = current(ctx.obligation, lock=True)
         require(row is not None and row.state != "purged" and row.details, "payee_details_purged", status=410)
+        require(row.version == data["expected_payee_version"], "stale_payee_version")
         record(ctx.actor, "finance.event_payout.payee_revealed", makerspace=ctx.obligation.makerspace,
             target=row, meta={"obligation_id": str(ctx.obligation.pk), "payee_revision_id": str(row.pk),
                              "purpose": data["purpose"], "reason_code": data["reason_code"]})
@@ -106,6 +128,8 @@ def close_locked(obligation, *, terminal_at, reason_code):
             row.purge_due_at = terminal_at + timedelta(days=30)
             row.version += 1
             row.save()
+            record(None, "finance.event_payout.payee_closed", makerspace=obligation.makerspace, target=row,
+                meta={"payee_revision_id": str(row.pk), "reason_code": reason_code})
 
 
 def purge_locked(obligation, *, row, now):
@@ -121,3 +145,16 @@ def purge_locked(obligation, *, row, now):
     row.save()
     record(None, "finance.event_payout.payee_purged", makerspace=obligation.makerspace, target=row,
            meta={"payee_revision_id": str(row.pk)})
+
+
+def delete(*, request, obligation_id, data):
+    with command(request=request, obligation_id=obligation_id, data=data, action="payee.delete", owner=True) as ctx:
+        if ctx.replay:
+            return ctx.replay
+        ctx.cas()
+        row = current(ctx.obligation, lock=True)
+        if row:
+            purge_locked(ctx.obligation, row=row, now=timezone.now())
+        ctx.obligation.version += 1
+        ctx.obligation.save(update_fields=["version"])
+        return ctx.finish()

@@ -7,6 +7,7 @@ from apps.makerspaces.origin_scope import origin_scoped_makerspace_id
 from apps.accounts.claim_sessions import claim_context
 from apps.makerspaces.models import MakerspaceMembership
 from .errors import require
+from django.utils import timezone
 
 
 def authorize(request, space, *, owner_id=None, payout=False, mutation=False, owner=False):
@@ -14,6 +15,9 @@ def authorize(request, space, *, owner_id=None, payout=False, mutation=False, ow
     require(getattr(actor, "account_kind", None) in ("member", "staff", "platform"), "full_session_required", status=403)
     require(claim_context(actor) is None, "full_session_required", status=403)
     binding(request)  # Reject API clients, native/device grants and partial sessions.
+    token = getattr(request, "auth", None)
+    if token is not None and token.get("exp") is not None:
+        require(type(token["exp"]) is int and token["exp"] > timezone.now().timestamp(), "session_expired", status=403)
     require(actor.is_active and actor.access_status == "active" and not actor.must_change_password,
             "account_inactive", status=403)
     require(is_servable(space), "not_found", status=404)

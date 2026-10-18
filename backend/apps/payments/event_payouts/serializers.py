@@ -1,5 +1,6 @@
 """Core wire types remain usable with both Events and the online rail removed."""
 from rest_framework import serializers
+from datetime import datetime
 from apps.payments.currencies import normalize_supported_currency
 from .validation import MAX_MINOR, METHODS
 
@@ -26,6 +27,24 @@ class Currency(serializers.CharField):
             raise serializers.ValidationError("Unsupported currency.") from None
 
 
+class AwareDateTime(serializers.DateTimeField):
+    def to_internal_value(self, data):
+        try:
+            value = datetime.fromisoformat(data.replace("Z", "+00:00")) if isinstance(data, str) else data
+            if not isinstance(value, datetime) or value.tzinfo is None or value.utcoffset() is None:
+                raise ValueError()
+        except (ValueError, TypeError):
+            raise serializers.ValidationError("An offset-aware datetime is required.") from None
+        return super().to_internal_value(data)
+
+
+class Boolean(serializers.BooleanField):
+    def to_internal_value(self, data):
+        if type(data) is not bool:
+            self.fail("invalid")
+        return super().to_internal_value(data)
+
+
 class Command(ClosedSerializer):
     operation_id = serializers.UUIDField()
     expected_version = Integer(min_value=1)
@@ -37,7 +56,7 @@ class ErrorSerializer(serializers.Serializer):
     fields = serializers.DictField(required=False)
 
 
-ERRORS = {code: ErrorSerializer for code in (400, 401, 403, 404, 409, 410, 416, 423, 429, 503)}
+ERRORS = {code: ErrorSerializer for code in (400, 401, 403, 404, 409, 410, 413, 416, 423, 429, 503)}
 
 
 class PayoutSummarySerializer(serializers.Serializer):
@@ -54,6 +73,7 @@ class PayoutSummarySerializer(serializers.Serializer):
     eligibility_revision = Integer()
     current_revision_sequence = Integer(allow_null=True)
     coordination_state = serializers.ChoiceField(choices=("attached", "detached"))
+    allowed_actions = serializers.ListField(child=serializers.CharField())
 
 
 class PayoutResultSerializer(serializers.Serializer):
@@ -66,6 +86,7 @@ class PayoutResultSerializer(serializers.Serializer):
     cancellation_revision_id = Integer(required=False)
     sequence = Integer(required=False)
     terminal_financial_at = serializers.DateTimeField(required=False, allow_null=True)
+    hold_id = serializers.UUIDField(required=False)
 
 
 class PayeeCommand(Command):
@@ -79,6 +100,7 @@ class PayeeCommand(Command):
 
 
 class RevealCommand(Command):
+    expected_payee_version = Integer(min_value=1)
     purpose = serializers.ChoiceField(choices=("verify_routing",))
     reason_code = serializers.RegexField(r"^[a-z][a-z0-9_]{0,63}$")
 
@@ -86,3 +108,16 @@ class RevealCommand(Command):
 class RevealSerializer(serializers.Serializer):
     payee_revision_id = serializers.UUIDField()
     details = serializers.DictField()
+
+
+# Frozen G1 public serializer spellings; old imports remain compatible.
+class OwnerPayeeCommand(PayeeCommand):
+    pass
+
+
+class OwnerPayeeDeleteCommand(Command):
+    pass
+
+
+class PayeeRevealCommand(RevealCommand):
+    pass

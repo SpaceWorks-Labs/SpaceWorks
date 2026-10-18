@@ -36,6 +36,9 @@ def _append(*, request, obligation_id, data, entry_id):
         ctx.cas()
         row = ctx.obligation
         require(row.state != "cancelled", "obligation_cancelled")
+        require(data["eligibility_revision"] == row.eligibility_revision, "eligibility_changed")
+        # Payee class precedes payout-chain children, even for an amendment.
+        payees = {payee.pk: payee for payee in row.payee_revisions.select_for_update().order_by("pk")}
         parent = row.entries.select_for_update().get(pk=entry_id) if entry_id else None
         require(data["currency"] == row.currency, "payout_currency_mismatch", status=400)
         metadata = validate_record_metadata(method=data["method"], payment_reference=data["reference"],
@@ -45,20 +48,21 @@ def _append(*, request, obligation_id, data, entry_id):
             require(data.get("reason_code"), "amendment_reason_required", status=400)
             require(not parent.__class__.objects.filter(amends=parent).exists(), "payout_tip_changed")
             require(data["payee_revision"] == parent.payee_revision_id, "amendment_payee_immutable")
-            payee = parent.payee_revision
+            payee = payees.get(parent.payee_revision_id)
         else:
-            require(row.eligibility_status == "eligible" and not row.hold_reason_code, "payout_held")
-            require(data["eligibility_revision"] == row.eligibility_revision, "eligibility_changed")
+            from .preflight import require_fresh_locked
+            require_fresh_locked(row, expected_revision=data["eligibility_revision"])
             payee = current(row, lock=True)
-            require(payee is not None and payee.pk == data["payee_revision"]
-                and payee.state == "current" and payee.verified_at and payee.details
+            require(payee is not None and payee.pk == data["payee_revision"], "not_found", status=404)
+            require(payee.state == "current" and payee.verified_at and payee.details
                 and payee.method == data["method"] and payee.version == data["expected_payee_version"], "payee_not_ready")
         candidate = Entry(id=uuid4(), obligation_id=row.pk, chain_uuid=parent.chain_uuid if parent else uuid4(),
             currency=row.currency, amount_minor=data["amount_minor"], amends_id=parent.pk if parent else None,
             is_void=data.get("is_void", False))
         paid = validate_append(entries(row), candidate, approved_minor=row.approved_minor)
         entry = EventPayoutEntry.objects.create(id=candidate.id, obligation=row, payee_revision=payee,
-            eligibility_revision=row.eligibility_revision, amount_minor=candidate.amount_minor, currency=row.currency,
+            eligibility_revision=parent.eligibility_revision if parent else row.eligibility_revision,
+            amount_minor=candidate.amount_minor, currency=row.currency,
             recorded_by=ctx.actor, operation_id=data["operation_id"], command_digest=ctx.digest,
             chain_uuid=candidate.chain_uuid, amends=parent, reason_code=data.get("reason_code", ""),
             is_void=candidate.is_void, **metadata)
@@ -68,4 +72,6 @@ def _append(*, request, obligation_id, data, entry_id):
             makerspace=row.makerspace, target=entry, meta={"obligation_id": str(row.pk),
                 "entry_id": str(entry.pk), "amount_minor": entry.amount_minor, "currency": row.currency,
                 "amends_id": str(parent.pk) if parent else None})
+        from .notices import enqueue_locked
+        enqueue_locked(row, "payment_corrected" if parent else "payment_recorded")
         return ctx.finish(entry_id=str(entry.pk))

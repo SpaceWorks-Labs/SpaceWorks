@@ -10,6 +10,9 @@ from apps.events.event_permissions import EDIT_DETAILS
 from apps.events.models import Event, EventFeedbackSurvey, EventSeries, EventTicketType
 from apps.events.services import EVENT_FIELDS, INHERITABLE_FIELDS, _audit, _locked_event, _validate
 from apps.inventory import public_image_storage
+from apps.events.programme_locks import fences, lock_authority
+from apps.events.contracts.providers import LockedContext
+from apps.tenant_migration.gate_runtime import boundary_tenant_write
 from apps.makerspaces.guards import require_module_locked
 from apps.makerspaces.resource_clone import (
     OwnedImage, bounded_children, clone_transaction, copy_fields,
@@ -20,7 +23,9 @@ SURVEY_FIELDS = ("title", "thank_you_text", "questions")
 
 
 def duplicate_event(event, *, actor, attach_series=False):
-    with clone_transaction() as assets:
+    event_authority.require(actor, event, EDIT_DETAILS)
+    with boundary_tenant_write(event.makerspace_id), clone_transaction() as assets, fences(
+            tenant_ids=(event.makerspace_id,), account_ids=(actor.pk,)):
         from apps.tenant_migration.gate_runtime import assert_write_allowed
         assert_write_allowed(event.makerspace_id)
         # Series mutations lock the series before occurrences. Preserve that order
@@ -28,12 +33,16 @@ def duplicate_event(event, *, actor, attach_series=False):
         series_id = Event.objects.values_list("series_id", flat=True).get(pk=event.pk)
         series = EventSeries.objects.select_for_update().get(pk=series_id) if series_id else None
         source = _locked_event(event.pk)
+        if source.series_id != series_id:
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError("The source series changed. Retry the copy.")
+        actor = lock_authority(actor, source)
         source.makerspace = require_module_locked(source.makerspace, "events")
         event_authority.require(actor, source, EDIT_DETAILS)
         # Standalone copies inherit neither scoped grants nor organizers. Only
         # tenant managers retain authority over the resulting draft.
         event_authority.require_tenant(actor, source.makerspace)
-        values = copy_fields(source, EVENT_FIELDS | {"badge_template", "timezone_name"})
+        values = copy_fields(source, EVENT_FIELDS | {"badge_template", "timezone_name", "event_accent_preset"})
         values["title"] = source.title[:193].rstrip() + " (copy)"
         clone = Event(makerspace=source.makerspace, created_by=actor,
                       organization_admission_blocked=source.organization_admission_blocked, **values)
@@ -63,6 +72,9 @@ def duplicate_event(event, *, actor, attach_series=False):
         ), storage=public_image_storage)
         _validate(clone)
         clone.save()
+        from .contracts.clone_registration import copy_programme_locked
+        copy_programme_locked(source=source, target=clone, actor=actor,
+            locks=LockedContext(event_id=clone.pk, tenant_ids=(source.makerspace_id,), account_ids=(actor.pk,)))
         for ticket in bounded_children(source.ticket_types.all()):
             child = EventTicketType(event=clone, makerspace=clone.makerspace,
                                     **copy_fields(ticket, TICKET_FIELDS))

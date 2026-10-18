@@ -59,8 +59,10 @@ def certificate_document(certificate_id, *, makerspace_id, recipient_id, revisio
 
 
 def register_programme_runtime():
+    from .contracts.registration import install
     from .certificates.seeds import install_catalogue
     from apps.integrations.notification_certificate_media import register_certificate_resolver
     register_source("events.application", NotificationSource(application_notice_eligible))
     install_catalogue(template_catalogue)
     register_certificate_resolver(certificate_document)
+    install()

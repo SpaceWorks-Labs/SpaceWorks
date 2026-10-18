@@ -6,6 +6,7 @@ from apps.integrations.email_templates_registry_helpers import bag
 from apps.integrations.notification_sources import NotificationSource, register_source
 from apps.operations.notifications_p2 import body, direct_mail_unless_routed, fanout, revision, safe_notification, scoped, staff_link, template
 from .models import Payment, PaymentDocument, Refund
+from .notification_projections import payment_subject
 
 PAYMENT_SOURCE = "payments.ledger"
 DOCUMENT_SOURCE = "payments.document"
@@ -72,14 +73,9 @@ def eligible(envelope):
 
 
 def rendered(payment, event, audience, refund=None):
-    from apps.makerspaces.local_time import to_local
-    subject = bag(id=payment.pk, status=payment.status)
-    if audience != "staff":
-        subject = bag(id=payment.pk, status=payment.status,
-            amount=str(refund.amount if refund else payment.amount), currency=payment.currency,
-            due_date=to_local(payment.makerspace, payment.due_at).date().isoformat() if payment.due_at else "")
     return template(payment.makerspace, "payments", audience, event,
-        {"makerspace": bag(name=payment.makerspace.name), "event_name": event, "subject": subject},
+        {"makerspace": bag(name=payment.makerspace.name), "event_name": event,
+         "subject": payment_subject(payment, audience=audience, refund=refund)},
         link=payment_link(payment.makerspace) if audience != "staff" else staff_link(payment.makerspace, "payments"))
 
 
@@ -100,7 +96,7 @@ def notify_payment(payment, event, *, refund=None, requester_only=False, reminde
         context={"refund_id": refund.pk if refund else None, "reminder_id": reminder.pk if reminder else None,
                  "occurrence": str(occurrence) if occurrence is not None else None},
         staff_context={"makerspace": bag(name=payment.makerspace.name), "event_name": event,
-                       "subject": bag(id=payment.pk, status=payment.status)})
+                       "subject": payment_subject(payment, audience="staff")})
 
 
 def document_eligible(envelope):

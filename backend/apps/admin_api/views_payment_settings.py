@@ -64,7 +64,7 @@ class MakerspacePaymentSettingsView(APIView):
             200: MakerspacePaymentSettingsSerializer,
             400: OpenApiResponse(
                 OpenApiTypes.OBJECT,
-                description="Field errors, including a credential change blocked by a live session.",
+                description="Field errors, including credential changes blocked by live hosted or native collections.",
             ),
             401: PaymentSettingsErrorSerializer,
             403: OpenApiResponse(

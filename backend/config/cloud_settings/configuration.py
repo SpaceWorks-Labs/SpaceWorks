@@ -2,10 +2,38 @@
 from django.core.exceptions import ImproperlyConfigured
 
 
+def storage_proof_ttl(env, selection):
+    minimum = 60
+    default = 900
+    if selection.is_free:
+        # Each free tick refreshes at most one binding. Allow a complete cycle,
+        # one missed/cold-start tick and the final tick's execution budget.
+        bindings = 2
+        path = env("STORAGE_CAPABILITIES_FILE", default="")
+        if path:
+            from apps.storage_capabilities.configuration import read_configuration
+
+            bindings = len(read_configuration(path))
+        interval = env.int("FREE_TICK_INTERVAL_SECONDS", default=600)
+        budget = env.int("FREE_TICK_BUDGET_SECONDS", default=20)
+        # A completed cycle is due again after five minutes. Round that wait up
+        # to actual trigger slots when a custom cadence is faster than the task.
+        due_ticks = (300 + interval - 1) // interval
+        minimum = (bindings + max(1, due_ticks)) * interval + budget
+        default = max(default, minimum)
+    ttl = env.int("STORAGE_CAPABILITY_TTL_SECONDS", default=default)
+    if not minimum <= ttl <= 86400:
+        raise ImproperlyConfigured(
+            f"Storage proof TTL must be in {minimum}..86400 seconds; "
+            "free cadence must cover every binding plus one tick of headroom."
+        )
+    return ttl
+
+
 def deployment_settings(env, selection):
     values = {
         "STORAGE_CAPABILITIES_FILE": env("STORAGE_CAPABILITIES_FILE", default=""),
-        "STORAGE_CAPABILITY_TTL_SECONDS": env.int("STORAGE_CAPABILITY_TTL_SECONDS", default=900),
+        "STORAGE_CAPABILITY_TTL_SECONDS": storage_proof_ttl(env, selection),
         "AWS_SESSION_TOKEN": env("AWS_SESSION_TOKEN", default=""),
         "TRUST_FORWARDED_HOST": env.bool("TRUST_FORWARDED_HOST", default=False),
         "TRUSTED_EDGE_INGRESS_SECRET": env("TRUSTED_EDGE_INGRESS_SECRET", default=""),
@@ -14,8 +42,6 @@ def deployment_settings(env, selection):
         # Incoming programmes must be reviewed before their tasks can be selected.
         "CLOUD_PROGRAMMES": (),
     }
-    if not 60 <= values["STORAGE_CAPABILITY_TTL_SECONDS"] <= 86400:
-        raise ImproperlyConfigured("Storage proof TTL must be in 60..86400 seconds.")
     if selection.mode == "managed" and "*" in env.list("ALLOWED_HOSTS", default=[]):
         raise ImproperlyConfigured("Managed ingress requires explicit allowed hosts.")
     if selection.mode == "managed":

@@ -12,7 +12,8 @@ Heavy intents remain persisted; every job needs a real bounded checkpoint adapte
 deployment backup runs. Unsupported video/media validation must refuse before upload acceptance. Scanning is
 explicitly off with a visible notice; type/size validation does not scan malware.
 
-Owner decision 43 is approved: POST /api/v1/internal/free/tick, X-Cron-Secret, no caller-selected jobs/body/credentials.
+Owner decision 43 is approved: POST /api/v1/internal/free/tick, X-Cron-Secret, no caller-selected jobs/credentials.
+The body may be absent or an empty JSON object (`{}`, `Content-Type: application/json`, at most 1,024 bytes).
 Full has no route/schema even when the secret is set. Browsers cannot reach internal/control paths. Only the
 Cloudflare scheduled handler calls the fixed backend origin. Primary cron is */10 * * * * (600 seconds).
 Use the exact deploy/static/cloudflare/free/wrangler.toml configuration with adjusted origins and provision
@@ -31,8 +32,14 @@ There is no response-start/background-thread worker. Reminders are best effort: 
 cold starts, missed triggers, provider pauses/restarts and quota suspension. No always-awake guarantee or SLA.
 
 Alternative triggers are in deploy/cloud/free-triggers/. A Neon pause-friendly slower cadence must change both
-the real trigger and FREE_TICK_INTERVAL_SECONDS. Actions schedules can be delayed/disabled; third-party cron
-needs current secret-delivery/allowance checks. Cloud Run requires billing/signup validation. Northflank is
+the real trigger and FREE_TICK_INTERVAL_SECONDS. For intervals of at least five minutes, storage proof TTL
+defaults to `(binding count + 1) × tick interval + tick budget` (at least 900 seconds): 1,820 seconds for two
+bindings at ten minutes, 5,420 at thirty minutes. Faster custom triggers also account for the refresh task's
+five-minute due interval, rounded up to the next trigger slot.
+Explicit TTLs below that refresh cycle plus headroom refuse startup. The ceiling remains 86,400 seconds;
+reduce the cadence interval if the complete cycle cannot fit. Full-profile TTL defaults remain 900 seconds.
+Actions schedules can be delayed/disabled; third-party cron needs current secret-delivery/allowance checks.
+Cloud Run requires billing/signup validation. Northflank is
 verify-on-signup, not an entitlement. All static requests pass through the Worker guard: measure request/CPU/
 cron/subrequest allowances including asset traffic and cold-wake retries. Fail closed on edge quota exhaustion.
 

@@ -25,7 +25,7 @@ Existing databases require explicit adoption; changing one environment variable 
 | CLOUD_TASK_PROFILE / CLOUD_SCHEDULER | redis+beat or brokerless+loop/external; free requires brokerless+tick |
 | DATABASE_MAINTENANCE_URL | Finite release/adopt/qualified jobs only; never common runtime groups |
 | STORAGE_CAPABILITIES_FILE | Strict version-1 role/bucket JSON; required under managed |
-| STORAGE_CAPABILITY_TTL_SECONDS | Proof freshness, default 900 (60..86400); arrange bounded refresh |
+| STORAGE_CAPABILITY_TTL_SECONDS | Full defaults to 900 (60..86400); free derives the minimum from binding count and tick cadence with headroom, and rejects shorter overrides. See [free cadence](cloud-free.md). |
 | AWS_SESSION_TOKEN | Optional private temporary session token |
 | EMAIL_PROVIDER | Blank legacy; smtp/resend/postmark/ses/brevo/mailgun/sendgrid |
 | EMAIL_PROVIDER_CONFIG_FILE | <=16 KiB runtime-only JSON; configuration is encrypted/write-only |

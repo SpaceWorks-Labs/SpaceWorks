@@ -170,7 +170,7 @@ Cloud configuration and finite-job inputs (host/full ignores free limits):
 | `SPACEWORKS_FINITE_MAINTENANCE_JOB` | entrypoint-owned | Exact admitted export command only; erased for other invocations. |
 | `MANAGED_UPLOAD_TRANSFER_BOUND_SECONDS` | `0` | Zero refuses coordinated capture. Set only after proving the provider's enforced transfer horizon, at most 86,400 seconds. |
 | `STORAGE_CAPABILITIES_FILE` | empty | Required managed version-1 role/identity/capability descriptor, not a credential file. |
-| `STORAGE_CAPABILITY_TTL_SECONDS` | `900` | Qualified proof freshness, 60..86,400 seconds; periodic callbacks refresh it. |
+| `STORAGE_CAPABILITY_TTL_SECONDS` | Full: `900`; free: derived | Qualified proof freshness, up to 86,400 seconds. Full accepts 60..86,400; free requires a complete binding refresh cycle plus one tick and execution headroom. See [free cadence](deploy/cloud-free.md). |
 | `AWS_SESSION_TOKEN` | empty | Optional private S3 temporary credential token. |
 | `EMAIL_PROVIDER` | empty legacy selection | smtp, resend, postmark, ses, brevo, mailgun or sendgrid. |
 | `EMAIL_PROVIDER_CONFIG_FILE` | empty | Private runtime provider JSON; never embed in frontend configuration. |

@@ -22,6 +22,7 @@ from apps.evidence.storage import StorageUnavailable, evidence_object_key, presi
 from apps.makerspaces.editions import require_public_surface
 from apps.makerspaces.lookup import get_public_makerspace
 from apps.makerspaces.guards import require_feature
+from apps.makerspaces.platform import module_enabled
 from apps.makerspaces.request_access import require_current_term
 from apps.presence.guard import require_active_member_presence
 from apps.openapi import (

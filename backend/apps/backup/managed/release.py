@@ -128,6 +128,13 @@ def run_release(*, adopt=False):
                     record(None, "deployment.managed_initialized", meta={"profile": os.environ.get("SPACEWORKS_DEPLOYMENT_PROFILE", "full")})
             elif state.deployment_id != expected or state.database_uuid != identity.database_uuid:
                 raise ManagedAdmissionError("Managed binding disagrees with this deployment.")
+        # Wizard answers and its generated password are release-only environment
+        # values. Run the existing idempotent setup under the same release fence;
+        # ordinary upgrades without confirmed setup choices never create defaults.
+        if os.environ.get("SETUP_SUPERADMIN_USERNAME"):
+            with connection.execute_wrapper(fenced_query):
+                call_command("setup_instance")
+            guard.assert_valid()
         with connection.cursor() as cursor:
             tables = {model._meta.db_table for model in apps.get_models(include_auto_created=True) if model._meta.managed}
             tables.add("django_migrations")

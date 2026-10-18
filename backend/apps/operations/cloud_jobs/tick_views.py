@@ -1,4 +1,6 @@
 """Internal cron transport. Never mount this URLconf under the full profile."""
+import json
+
 from django.conf import settings
 from django.http import Http404
 from django.utils.crypto import constant_time_compare
@@ -14,6 +16,29 @@ from rest_framework.views import APIView
 from .tick_policy import TickRateExceeded, consume_rate, free_profile
 from .tick_service import run_tick
 
+MAX_TICK_BODY_BYTES = 1024
+
+
+def empty_tick_body(request):
+    """Allow no body or a small JSON object with no caller-controlled fields."""
+    if request.META.get("HTTP_TRANSFER_ENCODING"):
+        return False
+    try:
+        raw_length = request.META.get("CONTENT_LENGTH") or "0"
+        if raw_length != "0" and (not raw_length.isascii() or not raw_length.isdecimal() or raw_length.startswith("0")):
+            return False
+        length = int(raw_length)
+        if not 0 <= length <= MAX_TICK_BODY_BYTES:
+            return False
+        body = request.body
+        if len(body) != length:
+            return False
+        if not body:
+            return True
+        return request.content_type == "application/json" and json.loads(body) == {}
+    except (ValueError, UnicodeError, OSError):
+        return False
+
 
 class TickSecretAuthentication(BaseAuthentication):
     def authenticate(self, request):
@@ -21,9 +46,8 @@ class TickSecretAuthentication(BaseAuthentication):
         if (not provided.isascii() or not request.is_secure()
                 or request.headers.get("Origin") or request.headers.get("Sec-Fetch-Site")
                 or request.headers.get("Authorization") or request.query_params
-                or request.META.get("CONTENT_LENGTH", "0") not in ("", "0")
-                or request.META.get("HTTP_TRANSFER_ENCODING")
-                or not constant_time_compare(provided, settings.FREE_TICK_SECRET)):
+                or not constant_time_compare(provided, settings.FREE_TICK_SECRET)
+                or not empty_tick_body(request)):
             raise PermissionDenied("Invalid cron request.")
         consume_rate(authenticated=True)
         return None
@@ -79,7 +103,9 @@ class FreeTickView(APIView):
         return Response({"code": "tick_unavailable"}, status=503)
 
     @extend_schema(
-        tags=["Internal"], extensions={"x-internal": True}, request=None,
+        tags=["Internal"], extensions={"x-internal": True},
+        request={"application/json": {"type": "object", "additionalProperties": False, "maxProperties": 0}},
+        description="Free only. Accepts no body or an empty JSON object (maximum 1024 bytes).",
         responses={
             200: TickResponseSerializer,
             403: OpenApiResponse(TickErrorSerializer, description="Invalid cron request."),

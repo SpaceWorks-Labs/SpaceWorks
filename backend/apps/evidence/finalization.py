@@ -59,6 +59,8 @@ def finalize_upload(evidence, max_bytes):
 
 def charge_storage_once(evidence, size):
     """Charge PUT-backed evidence once, at the consuming workflow's DB boundary."""
+    from apps.evidence import storage
+
     if not storage.uses_put_uploads():
         return
 

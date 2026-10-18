@@ -489,11 +489,10 @@ EMAIL_PROVIDER_CONFIG_FILE = env("EMAIL_PROVIDER_CONFIG_FILE", default="")
 EMAIL_PROVIDER_WEBHOOKS_ENABLED = env.bool("EMAIL_PROVIDER_WEBHOOKS_ENABLED", default=False)
 if EMAIL_PROVIDER:
     from config.cloud_settings.wiring import provider_email
-    # E returns only validated Django email settings, never arbitrary globals.
+    # Provider routing is per message; preserve Django's legacy fallback backend.
     _provider_email = provider_email(env)
-    EMAIL_BACKEND = _provider_email["EMAIL_BACKEND"]
-    ANYMAIL = _provider_email.get("ANYMAIL", {})
-    INSTALLED_APPS.insert(0, "anymail")
+    EMAIL_PROVIDER_CONFIG_FILE = _provider_email["EMAIL_PROVIDER_CONFIG_FILE"]
+    EMAIL_PROVIDER_WEBHOOKS_ENABLED = _provider_email["EMAIL_PROVIDER_WEBHOOKS_ENABLED"]
 
 # Async email runs through a Celery worker ONLY when a broker is configured (the Compose
 # stack + prod set CELERY_BROKER_URL). With no broker - e.g. the documented local flow

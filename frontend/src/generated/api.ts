@@ -54,11 +54,13 @@ export const openApiTags = [
   "Event credentials",
   "Event forms",
   "Event gallery streams",
+  "Event mentoring",
   "Event presentation",
   "Event programme",
   "Event programme judging",
   "Event programme review",
   "Event programme sponsors",
+  "Event programme teams",
   "Event resumes",
   "Event series",
   "Event submissions",
@@ -228,6 +230,7 @@ export const openApiPaths = [
   "/api/v1/admin/events/{id}/applications/{application_id}/rsvp-on-behalf/",
   "/api/v1/admin/events/{id}/assets/{asset_id}/download/",
   "/api/v1/admin/events/{id}/assets/{asset_id}/preview/",
+  "/api/v1/admin/events/{id}/assigned-sponsors/",
   "/api/v1/admin/events/{id}/audience-organizations/",
   "/api/v1/admin/events/{id}/badge-template/",
   "/api/v1/admin/events/{id}/badges.pdf",
@@ -265,6 +268,9 @@ export const openApiPaths = [
   "/api/v1/admin/events/{id}/check-ins/",
   "/api/v1/admin/events/{id}/collaborators/",
   "/api/v1/admin/events/{id}/complete/",
+  "/api/v1/admin/events/{id}/design-seeds/",
+  "/api/v1/admin/events/{id}/design-seeds/install/",
+  "/api/v1/admin/events/{id}/design-seeds/preview.pdf",
   "/api/v1/admin/events/{id}/duplicate/",
   "/api/v1/admin/events/{id}/eligible-members/",
   "/api/v1/admin/events/{id}/feedback-responses/",
@@ -349,6 +355,7 @@ export const openApiPaths = [
   "/api/v1/admin/events/{id}/roles/{assignment_id}/reconfirm/",
   "/api/v1/admin/events/{id}/roles/{assignment_id}/reject/",
   "/api/v1/admin/events/{id}/roles/{assignment_id}/reopen-answers/",
+  "/api/v1/admin/events/{id}/roles/{assignment_id}/requirement-completions/",
   "/api/v1/admin/events/{id}/roles/{assignment_id}/requirement-overrides/",
   "/api/v1/admin/events/{id}/roles/{assignment_id}/revoke/",
   "/api/v1/admin/events/{id}/shift-signups/{signup_id}/adjust-hours/",
@@ -367,11 +374,15 @@ export const openApiPaths = [
   "/api/v1/admin/events/{id}/sponsors/{sponsor_id}/submissions/",
   "/api/v1/admin/events/{id}/staff-grants/",
   "/api/v1/admin/events/{id}/staff-invites/",
+  "/api/v1/admin/events/{id}/submissions/",
+  "/api/v1/admin/events/{id}/submissions/{submission_id}/",
   "/api/v1/admin/events/{id}/submissions/{submission_id}/amend/",
   "/api/v1/admin/events/{id}/submissions/{submission_id}/triage/",
   "/api/v1/admin/events/{id}/teams-export/",
   "/api/v1/admin/events/{id}/teams-import/commit/",
   "/api/v1/admin/events/{id}/teams-import/preview/",
+  "/api/v1/admin/events/{id}/teams/",
+  "/api/v1/admin/events/{id}/teams/{team_id}/",
   "/api/v1/admin/events/{id}/ticket-types/",
   "/api/v1/admin/events/{id}/tracks/",
   "/api/v1/admin/events/{id}/tracks/{track_id}/",
@@ -943,6 +954,7 @@ export const openApiPaths = [
   "/api/v1/member/makerspaces/{makerspace_id}/events/{id}/application/withdraw/",
   "/api/v1/member/makerspaces/{makerspace_id}/events/{id}/assets/{asset_id}/download/",
   "/api/v1/member/makerspaces/{makerspace_id}/events/{id}/assets/{asset_id}/preview/",
+  "/api/v1/member/makerspaces/{makerspace_id}/events/{id}/help-topics/",
   "/api/v1/member/makerspaces/{makerspace_id}/events/{id}/help/",
   "/api/v1/member/makerspaces/{makerspace_id}/events/{id}/help/{help_id}/",
   "/api/v1/member/makerspaces/{makerspace_id}/events/{id}/help/{help_id}/cancel/",
@@ -1020,6 +1032,7 @@ export const openApiPaths = [
   "/api/v1/member/makerspaces/{makerspace_id}/verification",
   "/api/v1/member/makerspaces/{makerspace_id}/waiver",
   "/api/v1/member/makerspaces/{makerspace_id}/waiver/accept",
+  "/api/v1/member/organizations/",
   "/api/v1/member/organizations/{id}/leave/",
   "/api/v1/member/saved-details/",
   "/api/v1/member/saved-details/export/",
@@ -1166,6 +1179,8 @@ export type _StationRef = {
   "name": string;
   "kind": string;
 };
+
+export type AccentPresetEnum = "maker_teal" | "workshop_orange" | "citron" | "sky_blue" | "warm_yellow";
 
 export type AcceptInput = {
   "operation_id": string;
@@ -1332,6 +1347,7 @@ export type AdminPosting = {
   "description"?: string;
   "form"?: unknown;
   "coc"?: unknown;
+  "host_waiver"?: unknown | null;
   "application"?: unknown | null;
   "briefing": string;
   "skills": Array<string>;
@@ -1444,6 +1460,17 @@ export type Admission = {
 
 export type AdmissionAnswers = {
   "application_answers"?: unknown | null;
+};
+
+export type AdmissionDecisionBatch = {
+  "id": number | null;
+  "event_id": number;
+  "version": number;
+  "state": string;
+  "allowed_actions": Array<string>;
+  "decisions": Array<{
+  [key: string]: unknown;
+}>;
 };
 
 export type AdmissionExport = {
@@ -1973,6 +2000,18 @@ export type AssignBox = {
   "box_code": string;
 };
 
+export type AssignedSponsor = {
+  "id": number;
+  "label": string;
+};
+
+export type AssignedSponsorPage = {
+  "count": number;
+  "next": string | null;
+  "previous": string | null;
+  "results": Array<AssignedSponsor>;
+};
+
 export type AssignHelp = {
   "operation_id": string;
   "expected_version": number;
@@ -2370,14 +2409,19 @@ export type BadgeTemplate = {
 };
 
 export type Batch = {
-  "id": number | null;
+  "id": number;
   "event_id": number;
   "version": number;
-  "state": string;
+  "state": BatchStateEnum;
   "allowed_actions": Array<string>;
-  "decisions": Array<{
-  [key: string]: unknown;
-}>;
+  "total": number;
+  "completed": number;
+  "failures": Array<BatchFailure>;
+};
+
+export type BatchFailure = {
+  "id": number;
+  "error_code": string;
 };
 
 export type BatchInput = {
@@ -2385,6 +2429,8 @@ export type BatchInput = {
   "expected_version": number;
   "batch_id": number;
 };
+
+export type BatchStateEnum = "queued" | "running" | "completed" | "failed";
 
 export type BillingPolicyError = HardwareRequestError | BillingPolicyValidationError;
 
@@ -3650,6 +3696,13 @@ export type CollaborativeEvent = {
 
 export type CollaborativeEventRegistrationInput = {
   "custom_answers"?: unknown | null;
+  "answers"?: unknown | null;
+  "form"?: unknown;
+  "operation_id"?: string;
+  "derivations"?: unknown;
+  "save_choices"?: unknown;
+  "saved_detail_versions"?: unknown;
+  "event_date_revision"?: number;
   "host_waiver_id"?: number | null;
   "host_waiver_version"?: string | null;
   "host_waiver_accepted"?: boolean;
@@ -4106,6 +4159,8 @@ export type ContractWhatsAppTemplate = {
 
 export type ContractWhatsAppTemplateAudienceEnum = "staff" | "requester" | "member";
 
+export type ContributorCapacityPolicyEnum = "event_capacity" | "reserved_contributor_capacity";
+
 export type CopyLibrary = {
   "operation_id": string;
   "expected_version": number;
@@ -4247,6 +4302,7 @@ export type DamagedMissingReportRow = {
 };
 
 export type Dashboard = {
+  "next_up_events"?: Array<NextUpEvent>;
   "upcoming_events"?: number;
   "pending_event_registrations"?: number;
   "pending_bookings"?: number;
@@ -4808,6 +4864,7 @@ export type EventAdmin = {
   "starts_at": string;
   "ends_at": string;
   "timezone_name": string;
+  "accent_preset": AccentPresetEnum;
   "location": string;
   "location_kind": LocationKindEnum;
   "custom_form": unknown | null;
@@ -5006,6 +5063,7 @@ export type EventCollaboratorReplace = {
 };
 
 export type EventCreate = {
+  "accent_preset"?: AccentPresetEnum | BlankEnum;
   "registration_audience"?: DefaultRegistrationAudienceEnum;
   "category_id"?: number | null;
   "tags"?: Array<string>;
@@ -5438,11 +5496,18 @@ export type EventSpeakerList = {
 export type EventSpeakerStatusEnum = "linked" | "invited" | "removed";
 
 export type EventStaffRegistration = {
+  "custom_answers"?: unknown | null;
+  "answers"?: unknown | null;
+  "form"?: unknown;
+  "operation_id"?: string;
+  "derivations"?: unknown;
+  "save_choices"?: unknown;
+  "saved_detail_versions"?: unknown;
+  "event_date_revision"?: number;
   "member_id": number;
   "invite_code"?: string;
   "ticket_type_id"?: number;
   "promo_code"?: string;
-  "custom_answers"?: unknown | null;
   "phone"?: string;
   "email"?: string;
 };
@@ -6926,11 +6991,15 @@ export type Key4d1Enum = "hardware_requests" | "printing" | "events" | "bookings
 
 export type KeyBe2Enum = "in_app" | "email" | "telegram" | "slack" | "mattermost" | "discord" | "webhook" | "native_push" | "whatsapp";
 
-export type Kind21fEnum = "intro" | "logo" | "speaker" | "track" | "room" | "sponsor" | "faq" | "resource" | "highlight";
+export type Kind274Enum = "badge" | "certificate";
 
 export type Kind3bfEnum = "dev_room" | "bench" | "meeting" | "other";
 
+export type Kind429Enum = "intro" | "logo" | "speaker" | "track" | "room" | "sponsor" | "faq" | "resource" | "highlight" | "prizes" | "judges" | "mentors" | "project_gallery" | "results";
+
 export type Kind4e1Enum = "volunteer" | "office_hours";
+
+export type KindA1dEnum = "training" | "briefing";
 
 export type KindAf4Enum = "rules" | "amenity" | "faq" | "link" | "sponsor" | "gallery";
 
@@ -7136,6 +7205,8 @@ export type LabelResult = {
 
 export type LatePolicyEnum = "reject" | "accept_flagged";
 
+export type LayoutEnum = "grid" | "list";
+
 export type Lease = {
   "id": number;
   "event_id": number;
@@ -7178,6 +7249,15 @@ export type LeaveOutput = {
 };
 
 export type LeaveOutputStateEnum = "left";
+
+export type LeaveState = {
+  "organization_id": number;
+  "membership_version": number;
+  "allowed_actions": Array<string>;
+  "reason": LeaveStateReasonEnum | NullEnum | null;
+};
+
+export type LeaveStateReasonEnum = "sole_owner";
 
 export type LedgerLine = {
   "makerspace_id"?: number;
@@ -8312,6 +8392,18 @@ export type MemberHelpPage = {
   "results": Array<Help>;
 };
 
+export type MemberHelpTopic = {
+  "key": string;
+  "label": string;
+};
+
+export type MemberHelpTopicPage = {
+  "count": number;
+  "next": string | null;
+  "previous": string | null;
+  "results": Array<MemberHelpTopic>;
+};
+
 export type MemberKitPreviewInput = {
   "payload": string;
   "phase": PhaseEnum;
@@ -9016,6 +9108,14 @@ export type NeedsFixAction = {
 
 export type NeedsFixActionActionEnum = "repair" | "scrap" | "shelve";
 
+export type NextUpEvent = {
+  "id": number;
+  "title": string;
+  "starts_at": string;
+  "ends_at": string;
+  "href": string;
+};
+
 export type Nomination = {
   "operation_id": string;
   "expected_version": number;
@@ -9470,6 +9570,48 @@ export type OrganizationSummary = {
   "granted_actions": Array<string>;
 };
 
+export type OrganizerProject = {
+  "id": number;
+  "event_id": number;
+  "team_id": number;
+  "team_name": string;
+  "version": number;
+  "state": string;
+  "title": string;
+  "snapshot_id": number | null;
+  "triage": string;
+  "allowed_actions": Array<string>;
+  "assets": Array<{
+  [key: string]: unknown;
+}>;
+};
+
+export type OrganizerProjectPage = {
+  "count": number;
+  "next": string | null;
+  "previous": string | null;
+  "results": Array<OrganizerProject>;
+};
+
+export type OrganizerTeam = {
+  "id": number;
+  "event_id": number;
+  "version": number;
+  "name": string;
+  "state": string;
+  "member_count": number;
+  "eligibility_issue": boolean;
+  "roster_hash": string;
+  "allowed_actions": Array<string>;
+};
+
+export type OrganizerTeamPage = {
+  "count": number;
+  "next": string | null;
+  "previous": string | null;
+  "results": Array<OrganizerTeam>;
+};
+
 export type OrientationEnum = "portrait" | "landscape";
 
 export type OtpResetPasswordConfirm = {
@@ -9518,6 +9660,20 @@ export type OwnMemberCard = {
   "created_at": string;
   "updated_at": string;
   "qr_image": string | null;
+};
+
+export type OwnOrganization = {
+  "id": number;
+  "name": string;
+  "slug": string;
+  "leave_state": LeaveState;
+};
+
+export type OwnOrganizationsPage = {
+  "count": number;
+  "next": string | null;
+  "previous": string | null;
+  "results": Array<OwnOrganization>;
 };
 
 export type PackBookingRules = {
@@ -10632,6 +10788,7 @@ export type PatchedEventSeriesWrite = {
 };
 
 export type PatchedEventWrite = {
+  "accent_preset"?: AccentPresetEnum | BlankEnum;
   "registration_audience"?: DefaultRegistrationAudienceEnum;
   "category_id"?: number | null;
   "tags"?: Array<string>;
@@ -11330,6 +11487,13 @@ export type PatchedPublishingInput = {
 
 export type PatchedRegistrationAnswers = {
   "custom_answers"?: unknown | null;
+  "answers"?: unknown | null;
+  "form"?: unknown;
+  "operation_id"?: string;
+  "derivations"?: unknown;
+  "save_choices"?: unknown;
+  "saved_detail_versions"?: unknown;
+  "event_date_revision"?: number;
 };
 
 export type PatchedReportSchedule = {
@@ -11403,6 +11567,9 @@ export type PatchedRoleInput = {
   "event_date_revision"?: number;
   "availability"?: Array<Window>;
   "skills"?: Array<string>;
+  "host_waiver_id"?: number | null;
+  "host_waiver_version"?: string;
+  "host_waiver_accepted"?: boolean;
 };
 
 export type PatchedRoleSetInput = {
@@ -11912,6 +12079,7 @@ export type Posting = {
   "description"?: string;
   "form"?: unknown;
   "coc"?: unknown;
+  "host_waiver"?: unknown | null;
   "application"?: unknown | null;
 };
 
@@ -12383,6 +12551,14 @@ export type ProgrammeError = {
 
 export type ProgrammeInviteResult = Invite | Aggregate;
 
+export type ProgrammeSection = {
+  "kind": string;
+  "layout": LayoutEnum;
+  "items": Array<{
+  [key: string]: unknown;
+}>;
+};
+
 export type ProgrammeTeamPage = {
   "count": number;
   "next": string | null;
@@ -12399,9 +12575,27 @@ export type ProgrammeTicket = {
   "credential_mode": CredentialModeEnum;
 };
 
+export type ProjectBudget = {
+  "limit_bytes": number | null;
+  "used_bytes": number;
+  "reserved_bytes": number;
+  "remaining_bytes": number | null;
+};
+
 export type ProjectLink = {
   "label": string;
   "url": string;
+};
+
+export type ProjectPrize = {
+  "id": number;
+  "label": string;
+  "version": number;
+  "form": unknown;
+  "criteria": {
+  [key: string]: unknown;
+};
+  "track_id": number | null;
 };
 
 export type ProjectRead = {
@@ -12415,6 +12609,19 @@ export type ProjectRead = {
   "image_url": string | null;
 };
 
+export type ProjectRequirements = {
+  "version": number;
+  "deadline": string;
+  "opens_at": string | null;
+  "grace_seconds": number;
+  "late_policy": LatePolicyEnum;
+  "upload_policy": ProjectUploadPolicy;
+  "budget": ProjectBudget;
+  "slots": Array<ProjectSlot>;
+  "tracks": Array<ProjectTrack>;
+  "prizes": Array<ProjectPrize>;
+};
+
 export type ProjectResponse = {
   "id": number | null;
   "event_id": number;
@@ -12424,7 +12631,28 @@ export type ProjectResponse = {
   "project"?: {
   [key: string]: unknown;
 };
+  "requirements"?: ProjectRequirements;
   "allowed_actions": Array<string>;
+};
+
+export type ProjectSlot = {
+  "group": string;
+  "max_bytes": number;
+};
+
+export type ProjectTrack = {
+  "id": number;
+  "label": string;
+  "version": number;
+  "form": unknown;
+  "criteria": {
+  [key: string]: unknown;
+};
+};
+
+export type ProjectUploadPolicy = {
+  "name": string;
+  "version": number;
 };
 
 export type ProjectWrite = {
@@ -12622,6 +12850,7 @@ export type PublicEvent = {
 }>;
   "promo_codes_enabled": boolean;
   "ticket_selection_required": boolean;
+  "accent_preset": string;
   "website": Website | null;
   "public_token": string;
   "title": string;
@@ -12658,6 +12887,13 @@ export type PublicEventPage = {
 
 export type PublicEventRegistrationInput = {
   "custom_answers"?: unknown | null;
+  "answers"?: unknown | null;
+  "form"?: unknown;
+  "operation_id"?: string;
+  "derivations"?: unknown;
+  "save_choices"?: unknown;
+  "saved_detail_versions"?: unknown;
+  "event_date_revision"?: number;
   "host_waiver_id"?: number | null;
   "host_waiver_version"?: string | null;
   "host_waiver_accepted"?: boolean;
@@ -12669,6 +12905,11 @@ export type PublicEventRegistrationInput = {
 };
 
 export type PublicEventRegistrationResponse = {
+  "save_intent": {
+  "operation_id"?: string;
+  "state"?: string;
+  "status_url"?: string;
+} | null;
   "status": PublicEventRegistrationResponseStatusEnum;
 };
 
@@ -12805,6 +13046,7 @@ export type PublicOrganizationEvent = {
 }>;
   "promo_codes_enabled": boolean;
   "ticket_selection_required": boolean;
+  "accent_preset": string;
   "website": Website | null;
   "public_token": string;
   "title": string;
@@ -13148,6 +13390,8 @@ export type PublishResultInput = {
 };
 
 export type Purpose0faEnum = "recruiting";
+
+export type Purpose18eEnum = "participant" | "contributor";
 
 export type PushDevice = {
   "id": number;
@@ -13850,16 +14094,21 @@ export type RequestTimelineResponse = {
   "events": Array<TimelineEvent>;
 };
 
+export type RequirementCompletion = {
+  "operation_id": string;
+  "expected_version": number;
+  "kind": KindA1dEnum;
+  "reference_id": number;
+};
+
 export type RequirementOverride = {
   "operation_id": string;
   "expected_version": number;
   "shift_id"?: number | null;
-  "kind": RequirementOverrideKindEnum;
+  "kind": KindA1dEnum;
   "reference_id": number;
   "reason": string;
 };
-
-export type RequirementOverrideKindEnum = "training" | "briefing";
 
 export type ResetPasswordConfirmError = PasswordResetFailure | PasswordValidationFailure;
 
@@ -14167,6 +14416,9 @@ export type RoleInput = {
   "event_date_revision": number;
   "availability"?: Array<Window>;
   "skills"?: Array<string>;
+  "host_waiver_id"?: number | null;
+  "host_waiver_version"?: string;
+  "host_waiver_accepted"?: boolean;
 };
 
 export type RoleLabelEnum = "speaker" | "volunteer" | "check_in";
@@ -14563,11 +14815,40 @@ export type Seed = {
   "stock": string | null;
 };
 
+export type SeedInstall = {
+  "kind": Kind274Enum;
+  "theme": ThemeEnum;
+  "seed_id": string;
+  "seed_version": number;
+  "stock"?: StockEnum | NullEnum | null;
+  "operation_id": string;
+  "expected_version": number;
+};
+
+export type SeedInstalled = {
+  "id": number;
+  "event_id": number;
+  "event_version": number;
+  "kind": string;
+  "document": {
+  [key: string]: unknown;
+};
+  "stock": string | null;
+};
+
 export type SeedPage = {
   "count": number;
   "next": string | null;
   "previous": string | null;
   "results": Array<Seed>;
+};
+
+export type SeedSelection = {
+  "kind": Kind274Enum;
+  "theme": ThemeEnum;
+  "seed_id": string;
+  "seed_version": number;
+  "stock"?: StockEnum | NullEnum | null;
 };
 
 export type SegmentChoice = {
@@ -15707,6 +15988,8 @@ export type Ticket = {
   "capacity": number;
   "sales_start_at": string | null;
   "sales_end_at": string | null;
+  "purpose": Purpose18eEnum;
+  "contributor_capacity_policy": ContributorCapacityPolicyEnum;
   "is_active": boolean;
   "registration_count": number;
 };
@@ -15738,6 +16021,8 @@ export type TicketInput = {
   "capacity"?: number;
   "sales_start_at"?: string | null;
   "sales_end_at"?: string | null;
+  "purpose"?: Purpose18eEnum;
+  "contributor_capacity_policy"?: ContributorCapacityPolicyEnum;
 };
 
 export type TicketList = {
@@ -16298,6 +16583,7 @@ export type Website = {
   "sections": Array<WebsiteSection>;
   "sessions": Array<WebsiteSession>;
   "assets"?: Array<WebsiteAsset>;
+  "programme_sections"?: Array<ProgrammeSection>;
 };
 
 export type WebsiteAsset = {
@@ -16339,7 +16625,7 @@ export type WebsiteReleaseInput = {
 };
 
 export type WebsiteSection = {
-  "kind": Kind21fEnum;
+  "kind": Kind429Enum;
   "slug": string;
   "title": string;
   "body"?: string;
@@ -16354,12 +16640,15 @@ export type WebsiteSection = {
   "asset_id"?: number | null;
   "visibility"?: Visibility68aEnum;
   "position"?: number;
+  "options"?: {
+  [key: string]: unknown;
+};
   "image_url": string | null;
   "image_alt_text": string;
 };
 
 export type WebsiteSectionInput = {
-  "kind": Kind21fEnum;
+  "kind": Kind429Enum;
   "slug": string;
   "title": string;
   "body"?: string;
@@ -16374,6 +16663,9 @@ export type WebsiteSectionInput = {
   "asset_id"?: number | null;
   "visibility"?: Visibility68aEnum;
   "position"?: number;
+  "options"?: {
+  [key: string]: unknown;
+};
 };
 
 export type WebsiteSession = {

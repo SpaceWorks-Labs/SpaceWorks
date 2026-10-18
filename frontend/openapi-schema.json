@@ -5918,6 +5918,26 @@
                             }
                         },
                         "description": "Event state or capacity conflict."
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Source or protected writes are fenced."
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Private data or programme dependency unavailable."
                     }
                 }
             }
@@ -6005,6 +6025,26 @@
                             }
                         },
                         "description": "Event state or capacity conflict."
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Source or protected writes are fenced."
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Private data or programme dependency unavailable."
                     }
                 }
             }
@@ -6092,6 +6132,26 @@
                             }
                         },
                         "description": "Event state or capacity conflict."
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Source or protected writes are fenced."
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Private data or programme dependency unavailable."
                     }
                 }
             }
@@ -6273,6 +6333,26 @@
                             }
                         },
                         "description": "Event state or capacity conflict."
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Source or protected writes are fenced."
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Private data or programme dependency unavailable."
                     }
                 }
             }
@@ -6360,6 +6440,26 @@
                             }
                         },
                         "description": "Event state or capacity conflict."
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Source or protected writes are fenced."
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Private data or programme dependency unavailable."
                     }
                 }
             }
@@ -6447,6 +6547,26 @@
                             }
                         },
                         "description": "Event state or capacity conflict."
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Source or protected writes are fenced."
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Private data or programme dependency unavailable."
                     }
                 }
             }
@@ -6534,6 +6654,26 @@
                             }
                         },
                         "description": "Event state or capacity conflict."
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Source or protected writes are fenced."
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Private data or programme dependency unavailable."
                     }
                 }
             }
@@ -6832,6 +6972,26 @@
                             }
                         },
                         "description": "Rate limit exceeded."
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Source or protected writes are fenced."
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Private data or programme dependency unavailable."
                     }
                 }
             },
@@ -6944,6 +7104,26 @@
                             }
                         },
                         "description": "Rate limit exceeded."
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Source or protected writes are fenced."
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Private data or programme dependency unavailable."
                     }
                 }
             }
@@ -7039,6 +7219,26 @@
                             }
                         },
                         "description": "Rate limit exceeded."
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Source or protected writes are fenced."
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Private data or programme dependency unavailable."
                     }
                 }
             }
@@ -7348,6 +7548,26 @@
                             }
                         },
                         "description": "Rate limit exceeded."
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Source or protected writes are fenced."
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Private data or programme dependency unavailable."
                     }
                 }
             }
@@ -7443,6 +7663,26 @@
                             }
                         },
                         "description": "Rate limit exceeded."
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Source or protected writes are fenced."
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Private data or programme dependency unavailable."
                     }
                 }
             }
@@ -7879,6 +8119,26 @@
                             }
                         },
                         "description": "Rate limit exceeded."
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Source or protected writes are fenced."
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Private data or programme dependency unavailable."
                     }
                 }
             }
@@ -7974,6 +8234,26 @@
                             }
                         },
                         "description": "Rate limit exceeded."
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Source or protected writes are fenced."
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Private data or programme dependency unavailable."
                     }
                 }
             }
@@ -10026,6 +10306,26 @@
                             }
                         },
                         "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
                     }
                 }
             },
@@ -10101,6 +10401,26 @@
                         },
                         "description": "Event state or capacity conflict."
                     },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
                     "401": {
                         "content": {
                             "application/json": {
@@ -10168,7 +10488,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/Batch"
+                                    "$ref": "#/components/schemas/AdmissionDecisionBatch"
                                 }
                             }
                         },
@@ -10323,7 +10643,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/Batch"
+                                    "$ref": "#/components/schemas/AdmissionDecisionBatch"
                                 }
                             }
                         },
@@ -10633,7 +10953,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/Batch"
+                                    "$ref": "#/components/schemas/AdmissionDecisionBatch"
                                 }
                             }
                         },
@@ -10788,7 +11108,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/Batch"
+                                    "$ref": "#/components/schemas/AdmissionDecisionBatch"
                                 }
                             }
                         },
@@ -12140,6 +12460,141 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/events/{id}/assigned-sponsors/": {
+            "get": {
+                "operationId": "api_v1_admin_events_assigned_sponsors_retrieve",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event programme sponsors"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AssignedSponsorPage"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "410": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "413": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
                                 }
                             }
                         },
@@ -14566,6 +15021,26 @@
                         "description": ""
                     },
                     "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -17389,6 +17864,26 @@
                         },
                         "description": ""
                     },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
                     "409": {
                         "content": {
                             "application/json": {
@@ -17398,6 +17893,413 @@
                             }
                         },
                         "description": "Event state or capacity conflict."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/events/{id}/design-seeds/": {
+            "get": {
+                "operationId": "api_v1_admin_events_design_seeds_retrieve",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "query",
+                        "name": "kind",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "stock",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "theme",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "tags": [
+                    "Event certificates"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SeedPage"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/events/{id}/design-seeds/install/": {
+            "post": {
+                "operationId": "api_v1_admin_events_design_seeds_install_create",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event certificates"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SeedInstall"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SeedInstall"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SeedInstall"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SeedInstalled"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/events/{id}/design-seeds/preview.pdf": {
+            "post": {
+                "operationId": "api_v1_admin_events_design_seeds_preview.pdf_create",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event certificates"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SeedSelection"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SeedSelection"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SeedSelection"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/pdf": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
                     }
                 }
             }
@@ -17604,6 +18506,26 @@
                             }
                         },
                         "description": "Event state or capacity conflict."
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Source or protected writes are fenced."
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Private data or programme dependency unavailable."
                     }
                 }
             }
@@ -30370,6 +31292,26 @@
                         },
                         "description": ""
                     },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
                     "409": {
                         "content": {
                             "application/json": {
@@ -30466,6 +31408,26 @@
                             }
                         },
                         "description": "Event state or capacity conflict."
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Source or protected writes are fenced."
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Private data or programme dependency unavailable."
                     }
                 }
             },
@@ -33509,6 +34471,169 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/Role"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "410": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "413": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/events/{id}/roles/{assignment_id}/requirement-completions/": {
+            "post": {
+                "operationId": "api_v1_admin_events_roles_requirement_completions_create",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "assignment_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "api"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RequirementCompletion"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RequirementCompletion"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RequirementCompletion"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Aggregate"
                                 }
                             }
                         },
@@ -36912,6 +38037,284 @@
                 }
             }
         },
+        "/api/v1/admin/events/{id}/submissions/": {
+            "get": {
+                "operationId": "api_v1_admin_events_submissions_retrieve",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event submissions"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OrganizerProjectPage"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "410": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "413": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/events/{id}/submissions/{submission_id}/": {
+            "get": {
+                "operationId": "api_v1_admin_events_submissions_retrieve_2",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "submission_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event submissions"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OrganizerProject"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "410": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "413": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/v1/admin/events/{id}/submissions/{submission_id}/amend/": {
             "post": {
                 "operationId": "api_v1_admin_events_submissions_amend_create",
@@ -37130,6 +38533,141 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ProjectResponse"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "410": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "413": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/events/{id}/teams/": {
+            "get": {
+                "operationId": "api_v1_admin_events_teams_retrieve",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event programme teams"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OrganizerTeamPage"
                                 }
                             }
                         },
@@ -37597,6 +39135,149 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ImportResult"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "410": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "413": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/events/{id}/teams/{team_id}/": {
+            "get": {
+                "operationId": "api_v1_admin_events_teams_retrieve_2",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "team_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event programme teams"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OrganizerTeam"
                                 }
                             }
                         },
@@ -64510,6 +66191,26 @@
                             }
                         },
                         "description": "Rate limit exceeded."
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Source or protected writes are fenced."
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Private data or programme dependency unavailable."
                     }
                 }
             },
@@ -64624,6 +66325,26 @@
                             }
                         },
                         "description": "Rate limit exceeded."
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Source or protected writes are fenced."
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Private data or programme dependency unavailable."
                     }
                 }
             }
@@ -106447,6 +108168,149 @@
                 }
             }
         },
+        "/api/v1/member/makerspaces/{makerspace_id}/events/{id}/help-topics/": {
+            "get": {
+                "operationId": "api_v1_member_makerspaces_events_help_topics_retrieve",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event mentoring"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MemberHelpTopicPage"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "410": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "413": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/v1/member/makerspaces/{makerspace_id}/events/{id}/help/{help_id}/": {
             "get": {
                 "operationId": "api_v1_member_makerspaces_events_help_retrieve_2",
@@ -119849,7 +121713,125 @@
                 }
             }
         },
+        "/api/v1/member/organizations/": {
+            "get": {
+                "operationId": "api_v1_member_organizations_retrieve",
+                "tags": [
+                    "Member organizations"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OwnOrganizationsPage"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LeaveError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LeaveError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LeaveError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/v1/member/organizations/{id}/leave/": {
+            "get": {
+                "operationId": "api_v1_member_organizations_leave_retrieve",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Member organizations"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LeaveState"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LeaveError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LeaveError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LeaveError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
             "post": {
                 "operationId": "api_v1_member_organizations_leave_create",
                 "parameters": [
@@ -132816,6 +134798,17 @@
     },
     "components": {
         "schemas": {
+            "AccentPresetEnum": {
+                "enum": [
+                    "maker_teal",
+                    "workshop_orange",
+                    "citron",
+                    "sky_blue",
+                    "warm_yellow"
+                ],
+                "type": "string",
+                "description": "* `maker_teal` - Maker Teal\n* `workshop_orange` - Workshop Orange\n* `citron` - Citron\n* `sky_blue` - Sky Blue\n* `warm_yellow` - Warm Yellow"
+            },
             "AcceptInput": {
                 "type": "object",
                 "properties": {
@@ -133462,6 +135455,9 @@
                     },
                     "form": {},
                     "coc": {},
+                    "host_waiver": {
+                        "nullable": true
+                    },
                     "application": {
                         "nullable": true
                     },
@@ -133980,6 +135976,45 @@
                         "nullable": true
                     }
                 }
+            },
+            "AdmissionDecisionBatch": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "event_id": {
+                        "type": "integer"
+                    },
+                    "version": {
+                        "type": "integer"
+                    },
+                    "state": {
+                        "type": "string"
+                    },
+                    "allowed_actions": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "decisions": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": {}
+                        }
+                    }
+                },
+                "required": [
+                    "allowed_actions",
+                    "decisions",
+                    "event_id",
+                    "id",
+                    "state",
+                    "version"
+                ]
             },
             "AdmissionExport": {
                 "type": "object",
@@ -136688,6 +138723,51 @@
                     "slug"
                 ]
             },
+            "AssignedSponsor": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "label": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "label"
+                ]
+            },
+            "AssignedSponsorPage": {
+                "type": "object",
+                "properties": {
+                    "count": {
+                        "type": "integer"
+                    },
+                    "next": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true
+                    },
+                    "previous": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AssignedSponsor"
+                        }
+                    }
+                },
+                "required": [
+                    "count",
+                    "next",
+                    "previous",
+                    "results"
+                ]
+            },
             "AssignmentDecision": {
                 "type": "object",
                 "properties": {
@@ -138244,8 +140324,7 @@
                 "type": "object",
                 "properties": {
                     "id": {
-                        "type": "integer",
-                        "nullable": true
+                        "type": "integer"
                     },
                     "event_id": {
                         "type": "integer"
@@ -138254,7 +140333,7 @@
                         "type": "integer"
                     },
                     "state": {
-                        "type": "string"
+                        "$ref": "#/components/schemas/BatchStateEnum"
                     },
                     "allowed_actions": {
                         "type": "array",
@@ -138262,21 +140341,43 @@
                             "type": "string"
                         }
                     },
-                    "decisions": {
+                    "total": {
+                        "type": "integer"
+                    },
+                    "completed": {
+                        "type": "integer"
+                    },
+                    "failures": {
                         "type": "array",
                         "items": {
-                            "type": "object",
-                            "additionalProperties": {}
+                            "$ref": "#/components/schemas/BatchFailure"
                         }
                     }
                 },
                 "required": [
                     "allowed_actions",
-                    "decisions",
+                    "completed",
                     "event_id",
+                    "failures",
                     "id",
                     "state",
+                    "total",
                     "version"
+                ]
+            },
+            "BatchFailure": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "error_code": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "error_code",
+                    "id"
                 ]
             },
             "BatchInput": {
@@ -138300,6 +140401,16 @@
                     "expected_version",
                     "operation_id"
                 ]
+            },
+            "BatchStateEnum": {
+                "enum": [
+                    "queued",
+                    "running",
+                    "completed",
+                    "failed"
+                ],
+                "type": "string",
+                "description": "* `queued` - queued\n* `running` - running\n* `completed` - completed\n* `failed` - failed"
             },
             "BillingPolicyError": {
                 "oneOf": [
@@ -144066,6 +146177,32 @@
                         "writeOnly": true,
                         "nullable": true
                     },
+                    "answers": {
+                        "writeOnly": true,
+                        "nullable": true
+                    },
+                    "form": {
+                        "writeOnly": true
+                    },
+                    "operation_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "writeOnly": true
+                    },
+                    "derivations": {
+                        "writeOnly": true
+                    },
+                    "save_choices": {
+                        "writeOnly": true
+                    },
+                    "saved_detail_versions": {
+                        "writeOnly": true
+                    },
+                    "event_date_revision": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "writeOnly": true
+                    },
                     "host_waiver_id": {
                         "type": "integer",
                         "minimum": 1,
@@ -145853,6 +147990,14 @@
                 "type": "string",
                 "description": "* `staff` - staff\n* `requester` - requester\n* `member` - member"
             },
+            "ContributorCapacityPolicyEnum": {
+                "enum": [
+                    "event_capacity",
+                    "reserved_contributor_capacity"
+                ],
+                "type": "string",
+                "description": "* `event_capacity` - Event capacity\n* `reserved_contributor_capacity` - Reserved contributor capacity"
+            },
             "CopyLibrary": {
                 "type": "object",
                 "properties": {
@@ -146430,6 +148575,12 @@
             "Dashboard": {
                 "type": "object",
                 "properties": {
+                    "next_up_events": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/NextUpEvent"
+                        }
+                    },
                     "upcoming_events": {
                         "type": "integer",
                         "default": 0
@@ -148667,6 +150818,14 @@
                         "type": "string",
                         "readOnly": true
                     },
+                    "accent_preset": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/AccentPresetEnum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
                     "location": {
                         "type": "string",
                         "readOnly": true
@@ -148804,6 +150963,7 @@
                     }
                 },
                 "required": [
+                    "accent_preset",
                     "audience_label",
                     "audience_organizations",
                     "badge_sensitive_fields_allowed",
@@ -149609,6 +151769,16 @@
                 "type": "object",
                 "description": "Create-only extras; PATCH keeps using the dedicated organizer/partner routes.",
                 "properties": {
+                    "accent_preset": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/AccentPresetEnum"
+                            },
+                            {
+                                "$ref": "#/components/schemas/BlankEnum"
+                            }
+                        ]
+                    },
                     "registration_audience": {
                         "$ref": "#/components/schemas/DefaultRegistrationAudienceEnum"
                     },
@@ -152433,6 +154603,35 @@
                 "type": "object",
                 "description": "Staff registering an identified account under the event's audience rules.\n\n`member_id` only. Contact details are copied off the account by the registration\nservice, so a staffer cannot record an attendee under a name and email that belong\nto nobody — which is what makes the attendee list usable as an accountability record\nrather than free text.",
                 "properties": {
+                    "custom_answers": {
+                        "nullable": true
+                    },
+                    "answers": {
+                        "writeOnly": true,
+                        "nullable": true
+                    },
+                    "form": {
+                        "writeOnly": true
+                    },
+                    "operation_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "writeOnly": true
+                    },
+                    "derivations": {
+                        "writeOnly": true
+                    },
+                    "save_choices": {
+                        "writeOnly": true
+                    },
+                    "saved_detail_versions": {
+                        "writeOnly": true
+                    },
+                    "event_date_revision": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "writeOnly": true
+                    },
                     "member_id": {
                         "type": "integer",
                         "minimum": 1
@@ -152450,9 +154649,6 @@
                         "type": "string",
                         "writeOnly": true,
                         "maxLength": 128
-                    },
-                    "custom_answers": {
-                        "nullable": true
                     },
                     "phone": {
                         "type": "string",
@@ -159712,20 +161908,13 @@
                 "type": "string",
                 "description": "* `in_app` - Inbox\n* `email` - Email\n* `telegram` - Telegram\n* `slack` - Slack\n* `mattermost` - Mattermost\n* `discord` - Discord\n* `webhook` - Signed webhook\n* `native_push` - Native push\n* `whatsapp` - WhatsApp"
             },
-            "Kind21fEnum": {
+            "Kind274Enum": {
                 "enum": [
-                    "intro",
-                    "logo",
-                    "speaker",
-                    "track",
-                    "room",
-                    "sponsor",
-                    "faq",
-                    "resource",
-                    "highlight"
+                    "badge",
+                    "certificate"
                 ],
                 "type": "string",
-                "description": "* `intro` - Introduction\n* `logo` - Page logo\n* `speaker` - Speaker\n* `track` - Track\n* `room` - Room\n* `sponsor` - Sponsor\n* `faq` - FAQ\n* `resource` - Resource\n* `highlight` - Highlight"
+                "description": "* `badge` - badge\n* `certificate` - certificate"
             },
             "Kind3bfEnum": {
                 "enum": [
@@ -159737,6 +161926,26 @@
                 "type": "string",
                 "description": "* `dev_room` - Development room\n* `bench` - Bench\n* `meeting` - Meeting room\n* `other` - Other"
             },
+            "Kind429Enum": {
+                "enum": [
+                    "intro",
+                    "logo",
+                    "speaker",
+                    "track",
+                    "room",
+                    "sponsor",
+                    "faq",
+                    "resource",
+                    "highlight",
+                    "prizes",
+                    "judges",
+                    "mentors",
+                    "project_gallery",
+                    "results"
+                ],
+                "type": "string",
+                "description": "* `intro` - Introduction\n* `logo` - Page logo\n* `speaker` - Speaker\n* `track` - Track\n* `room` - Room\n* `sponsor` - Sponsor\n* `faq` - FAQ\n* `resource` - Resource\n* `highlight` - Highlight\n* `prizes` - Prizes\n* `judges` - Judges\n* `mentors` - Mentors\n* `project_gallery` - Project gallery\n* `results` - Results"
+            },
             "Kind4e1Enum": {
                 "enum": [
                     "volunteer",
@@ -159744,6 +161953,14 @@
                 ],
                 "type": "string",
                 "description": "* `volunteer` - volunteer\n* `office_hours` - office_hours"
+            },
+            "KindA1dEnum": {
+                "enum": [
+                    "training",
+                    "briefing"
+                ],
+                "type": "string",
+                "description": "* `training` - training\n* `briefing` - briefing"
             },
             "KindAf4Enum": {
                 "enum": [
@@ -160541,6 +162758,14 @@
                 "type": "string",
                 "description": "* `reject` - reject\n* `accept_flagged` - accept_flagged"
             },
+            "LayoutEnum": {
+                "enum": [
+                    "grid",
+                    "list"
+                ],
+                "type": "string",
+                "description": "* `grid` - grid\n* `list` - list"
+            },
             "Lease": {
                 "type": "object",
                 "properties": {
@@ -160700,6 +162925,47 @@
                 ],
                 "type": "string",
                 "description": "* `left` - left"
+            },
+            "LeaveState": {
+                "type": "object",
+                "properties": {
+                    "organization_id": {
+                        "type": "integer"
+                    },
+                    "membership_version": {
+                        "type": "integer"
+                    },
+                    "allowed_actions": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "reason": {
+                        "nullable": true,
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/LeaveStateReasonEnum"
+                            },
+                            {
+                                "$ref": "#/components/schemas/NullEnum"
+                            }
+                        ]
+                    }
+                },
+                "required": [
+                    "allowed_actions",
+                    "membership_version",
+                    "organization_id",
+                    "reason"
+                ]
+            },
+            "LeaveStateReasonEnum": {
+                "enum": [
+                    "sole_owner"
+                ],
+                "type": "string",
+                "description": "* `sole_owner` - sole_owner"
             },
             "LedgerLine": {
                 "type": "object",
@@ -165829,6 +168095,51 @@
                     "results"
                 ]
             },
+            "MemberHelpTopic": {
+                "type": "object",
+                "properties": {
+                    "key": {
+                        "type": "string"
+                    },
+                    "label": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "key",
+                    "label"
+                ]
+            },
+            "MemberHelpTopicPage": {
+                "type": "object",
+                "properties": {
+                    "count": {
+                        "type": "integer"
+                    },
+                    "next": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true
+                    },
+                    "previous": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/MemberHelpTopic"
+                        }
+                    }
+                },
+                "required": [
+                    "count",
+                    "next",
+                    "previous",
+                    "results"
+                ]
+            },
             "MemberKitPreviewInput": {
                 "type": "object",
                 "properties": {
@@ -168432,6 +170743,35 @@
                 "type": "string",
                 "description": "* `repair` - repair\n* `scrap` - scrap\n* `shelve` - shelve"
             },
+            "NextUpEvent": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "starts_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "ends_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "href": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "ends_at",
+                    "href",
+                    "id",
+                    "starts_at",
+                    "title"
+                ]
+            },
             "Nomination": {
                 "type": "object",
                 "properties": {
@@ -170274,6 +172614,171 @@
                     "slug"
                 ]
             },
+            "OrganizerProject": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "event_id": {
+                        "type": "integer"
+                    },
+                    "team_id": {
+                        "type": "integer"
+                    },
+                    "team_name": {
+                        "type": "string"
+                    },
+                    "version": {
+                        "type": "integer"
+                    },
+                    "state": {
+                        "type": "string"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "snapshot_id": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "triage": {
+                        "type": "string"
+                    },
+                    "allowed_actions": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "assets": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": {}
+                        }
+                    }
+                },
+                "required": [
+                    "allowed_actions",
+                    "assets",
+                    "event_id",
+                    "id",
+                    "snapshot_id",
+                    "state",
+                    "team_id",
+                    "team_name",
+                    "title",
+                    "triage",
+                    "version"
+                ]
+            },
+            "OrganizerProjectPage": {
+                "type": "object",
+                "properties": {
+                    "count": {
+                        "type": "integer"
+                    },
+                    "next": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true
+                    },
+                    "previous": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/OrganizerProject"
+                        }
+                    }
+                },
+                "required": [
+                    "count",
+                    "next",
+                    "previous",
+                    "results"
+                ]
+            },
+            "OrganizerTeam": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "event_id": {
+                        "type": "integer"
+                    },
+                    "version": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "state": {
+                        "type": "string"
+                    },
+                    "member_count": {
+                        "type": "integer"
+                    },
+                    "eligibility_issue": {
+                        "type": "boolean"
+                    },
+                    "roster_hash": {
+                        "type": "string"
+                    },
+                    "allowed_actions": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "required": [
+                    "allowed_actions",
+                    "eligibility_issue",
+                    "event_id",
+                    "id",
+                    "member_count",
+                    "name",
+                    "roster_hash",
+                    "state",
+                    "version"
+                ]
+            },
+            "OrganizerTeamPage": {
+                "type": "object",
+                "properties": {
+                    "count": {
+                        "type": "integer"
+                    },
+                    "next": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true
+                    },
+                    "previous": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/OrganizerTeam"
+                        }
+                    }
+                },
+                "required": [
+                    "count",
+                    "next",
+                    "previous",
+                    "results"
+                ]
+            },
             "OrientationEnum": {
                 "enum": [
                     "portrait",
@@ -170503,6 +173008,57 @@
                     "revoked_at",
                     "revoked_reason",
                     "updated_at"
+                ]
+            },
+            "OwnOrganization": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "slug": {
+                        "type": "string"
+                    },
+                    "leave_state": {
+                        "$ref": "#/components/schemas/LeaveState"
+                    }
+                },
+                "required": [
+                    "id",
+                    "leave_state",
+                    "name",
+                    "slug"
+                ]
+            },
+            "OwnOrganizationsPage": {
+                "type": "object",
+                "properties": {
+                    "count": {
+                        "type": "integer"
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/OwnOrganization"
+                        }
+                    }
+                },
+                "required": [
+                    "count",
+                    "next",
+                    "previous",
+                    "results"
                 ]
             },
             "PackBookingRules": {
@@ -176402,6 +178958,16 @@
             "PatchedEventWrite": {
                 "type": "object",
                 "properties": {
+                    "accent_preset": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/AccentPresetEnum"
+                            },
+                            {
+                                "$ref": "#/components/schemas/BlankEnum"
+                            }
+                        ]
+                    },
                     "registration_audience": {
                         "$ref": "#/components/schemas/DefaultRegistrationAudienceEnum"
                     },
@@ -179696,6 +182262,32 @@
                 "properties": {
                     "custom_answers": {
                         "nullable": true
+                    },
+                    "answers": {
+                        "writeOnly": true,
+                        "nullable": true
+                    },
+                    "form": {
+                        "writeOnly": true
+                    },
+                    "operation_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "writeOnly": true
+                    },
+                    "derivations": {
+                        "writeOnly": true
+                    },
+                    "save_choices": {
+                        "writeOnly": true
+                    },
+                    "saved_detail_versions": {
+                        "writeOnly": true
+                    },
+                    "event_date_revision": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "writeOnly": true
                     }
                 }
             },
@@ -179940,6 +182532,18 @@
                             "pattern": "^[-a-zA-Z0-9_]+$"
                         },
                         "maxItems": 50
+                    },
+                    "host_waiver_id": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "nullable": true
+                    },
+                    "host_waiver_version": {
+                        "type": "string",
+                        "maxLength": 64
+                    },
+                    "host_waiver_accepted": {
+                        "type": "boolean"
                     }
                 }
             },
@@ -181920,6 +184524,9 @@
                     },
                     "form": {},
                     "coc": {},
+                    "host_waiver": {
+                        "nullable": true
+                    },
                     "application": {
                         "nullable": true
                     }
@@ -183730,6 +186337,29 @@
                     }
                 ]
             },
+            "ProgrammeSection": {
+                "type": "object",
+                "properties": {
+                    "kind": {
+                        "type": "string"
+                    },
+                    "layout": {
+                        "$ref": "#/components/schemas/LayoutEnum"
+                    },
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": {}
+                        }
+                    }
+                },
+                "required": [
+                    "items",
+                    "kind",
+                    "layout"
+                ]
+            },
             "ProgrammeTeamPage": {
                 "type": "object",
                 "properties": {
@@ -183805,6 +186435,31 @@
                     "ticket_png_available"
                 ]
             },
+            "ProjectBudget": {
+                "type": "object",
+                "properties": {
+                    "limit_bytes": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "used_bytes": {
+                        "type": "integer"
+                    },
+                    "reserved_bytes": {
+                        "type": "integer"
+                    },
+                    "remaining_bytes": {
+                        "type": "integer",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "limit_bytes",
+                    "remaining_bytes",
+                    "reserved_bytes",
+                    "used_bytes"
+                ]
+            },
             "ProjectLink": {
                 "type": "object",
                 "properties": {
@@ -183821,6 +186476,37 @@
                 "required": [
                     "label",
                     "url"
+                ]
+            },
+            "ProjectPrize": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "label": {
+                        "type": "string"
+                    },
+                    "version": {
+                        "type": "integer"
+                    },
+                    "form": {},
+                    "criteria": {
+                        "type": "object",
+                        "additionalProperties": {}
+                    },
+                    "track_id": {
+                        "type": "integer",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "criteria",
+                    "form",
+                    "id",
+                    "label",
+                    "track_id",
+                    "version"
                 ]
             },
             "ProjectRead": {
@@ -183859,6 +186545,65 @@
                     "title"
                 ]
             },
+            "ProjectRequirements": {
+                "type": "object",
+                "properties": {
+                    "version": {
+                        "type": "integer"
+                    },
+                    "deadline": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "opens_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "grace_seconds": {
+                        "type": "integer"
+                    },
+                    "late_policy": {
+                        "$ref": "#/components/schemas/LatePolicyEnum"
+                    },
+                    "upload_policy": {
+                        "$ref": "#/components/schemas/ProjectUploadPolicy"
+                    },
+                    "budget": {
+                        "$ref": "#/components/schemas/ProjectBudget"
+                    },
+                    "slots": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ProjectSlot"
+                        }
+                    },
+                    "tracks": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ProjectTrack"
+                        }
+                    },
+                    "prizes": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ProjectPrize"
+                        }
+                    }
+                },
+                "required": [
+                    "budget",
+                    "deadline",
+                    "grace_seconds",
+                    "late_policy",
+                    "opens_at",
+                    "prizes",
+                    "slots",
+                    "tracks",
+                    "upload_policy",
+                    "version"
+                ]
+            },
             "ProjectResponse": {
                 "type": "object",
                 "properties": {
@@ -183883,6 +186628,9 @@
                         "type": "object",
                         "additionalProperties": {}
                     },
+                    "requirements": {
+                        "$ref": "#/components/schemas/ProjectRequirements"
+                    },
                     "allowed_actions": {
                         "type": "array",
                         "items": {
@@ -183896,6 +186644,62 @@
                     "id",
                     "snapshot_id",
                     "state",
+                    "version"
+                ]
+            },
+            "ProjectSlot": {
+                "type": "object",
+                "properties": {
+                    "group": {
+                        "type": "string"
+                    },
+                    "max_bytes": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "group",
+                    "max_bytes"
+                ]
+            },
+            "ProjectTrack": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "label": {
+                        "type": "string"
+                    },
+                    "version": {
+                        "type": "integer"
+                    },
+                    "form": {},
+                    "criteria": {
+                        "type": "object",
+                        "additionalProperties": {}
+                    }
+                },
+                "required": [
+                    "criteria",
+                    "form",
+                    "id",
+                    "label",
+                    "version"
+                ]
+            },
+            "ProjectUploadPolicy": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "version": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "name",
                     "version"
                 ]
             },
@@ -184581,6 +187385,10 @@
                         "type": "boolean",
                         "readOnly": true
                     },
+                    "accent_preset": {
+                        "type": "string",
+                        "readOnly": true
+                    },
                     "website": {
                         "allOf": [
                             {
@@ -184712,6 +187520,7 @@
                     }
                 },
                 "required": [
+                    "accent_preset",
                     "audience_label",
                     "availability",
                     "capacity",
@@ -184781,6 +187590,32 @@
                         "writeOnly": true,
                         "nullable": true
                     },
+                    "answers": {
+                        "writeOnly": true,
+                        "nullable": true
+                    },
+                    "form": {
+                        "writeOnly": true
+                    },
+                    "operation_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "writeOnly": true
+                    },
+                    "derivations": {
+                        "writeOnly": true
+                    },
+                    "save_choices": {
+                        "writeOnly": true
+                    },
+                    "saved_detail_versions": {
+                        "writeOnly": true
+                    },
+                    "event_date_revision": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "writeOnly": true
+                    },
                     "host_waiver_id": {
                         "type": "integer",
                         "minimum": 1,
@@ -184836,6 +187671,23 @@
             "PublicEventRegistrationResponse": {
                 "type": "object",
                 "properties": {
+                    "save_intent": {
+                        "type": "object",
+                        "nullable": true,
+                        "properties": {
+                            "operation_id": {
+                                "type": "string",
+                                "format": "uuid"
+                            },
+                            "state": {
+                                "type": "string"
+                            },
+                            "status_url": {
+                                "type": "string"
+                            }
+                        },
+                        "readOnly": true
+                    },
                     "status": {
                         "allOf": [
                             {
@@ -184846,6 +187698,7 @@
                     }
                 },
                 "required": [
+                    "save_intent",
                     "status"
                 ]
             },
@@ -185371,6 +188224,10 @@
                         "type": "boolean",
                         "readOnly": true
                     },
+                    "accent_preset": {
+                        "type": "string",
+                        "readOnly": true
+                    },
                     "website": {
                         "allOf": [
                             {
@@ -185510,6 +188367,7 @@
                     }
                 },
                 "required": [
+                    "accent_preset",
                     "audience_label",
                     "availability",
                     "capacity",
@@ -186961,6 +189819,14 @@
                 ],
                 "type": "string",
                 "description": "* `recruiting` - recruiting"
+            },
+            "Purpose18eEnum": {
+                "enum": [
+                    "participant",
+                    "contributor"
+                ],
+                "type": "string",
+                "description": "* `participant` - Participant\n* `contributor` - Contributor"
             },
             "PushDevice": {
                 "type": "object",
@@ -189848,6 +192714,32 @@
                     "truncated"
                 ]
             },
+            "RequirementCompletion": {
+                "type": "object",
+                "properties": {
+                    "operation_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "expected_version": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "kind": {
+                        "$ref": "#/components/schemas/KindA1dEnum"
+                    },
+                    "reference_id": {
+                        "type": "integer",
+                        "minimum": 1
+                    }
+                },
+                "required": [
+                    "expected_version",
+                    "kind",
+                    "operation_id",
+                    "reference_id"
+                ]
+            },
             "RequirementOverride": {
                 "type": "object",
                 "properties": {
@@ -189865,7 +192757,7 @@
                         "nullable": true
                     },
                     "kind": {
-                        "$ref": "#/components/schemas/RequirementOverrideKindEnum"
+                        "$ref": "#/components/schemas/KindA1dEnum"
                     },
                     "reference_id": {
                         "type": "integer",
@@ -189883,14 +192775,6 @@
                     "reason",
                     "reference_id"
                 ]
-            },
-            "RequirementOverrideKindEnum": {
-                "enum": [
-                    "training",
-                    "briefing"
-                ],
-                "type": "string",
-                "description": "* `training` - training\n* `briefing` - briefing"
             },
             "ResetPasswordConfirmError": {
                 "oneOf": [
@@ -191053,6 +193937,18 @@
                             "pattern": "^[-a-zA-Z0-9_]+$"
                         },
                         "maxItems": 50
+                    },
+                    "host_waiver_id": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "nullable": true
+                    },
+                    "host_waiver_version": {
+                        "type": "string",
+                        "maxLength": 64
+                    },
+                    "host_waiver_accepted": {
+                        "type": "boolean"
                     }
                 },
                 "required": [
@@ -192516,6 +195412,85 @@
                     "theme"
                 ]
             },
+            "SeedInstall": {
+                "type": "object",
+                "properties": {
+                    "kind": {
+                        "$ref": "#/components/schemas/Kind274Enum"
+                    },
+                    "theme": {
+                        "$ref": "#/components/schemas/ThemeEnum"
+                    },
+                    "seed_id": {
+                        "type": "string",
+                        "maxLength": 100
+                    },
+                    "seed_version": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "stock": {
+                        "nullable": true,
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/StockEnum"
+                            },
+                            {
+                                "$ref": "#/components/schemas/NullEnum"
+                            }
+                        ]
+                    },
+                    "operation_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "expected_version": {
+                        "type": "integer",
+                        "minimum": 0
+                    }
+                },
+                "required": [
+                    "expected_version",
+                    "kind",
+                    "operation_id",
+                    "seed_id",
+                    "seed_version",
+                    "theme"
+                ]
+            },
+            "SeedInstalled": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "event_id": {
+                        "type": "integer"
+                    },
+                    "event_version": {
+                        "type": "integer"
+                    },
+                    "kind": {
+                        "type": "string"
+                    },
+                    "document": {
+                        "type": "object",
+                        "additionalProperties": {}
+                    },
+                    "stock": {
+                        "type": "string",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "document",
+                    "event_id",
+                    "event_version",
+                    "id",
+                    "kind",
+                    "stock"
+                ]
+            },
             "SeedPage": {
                 "type": "object",
                 "properties": {
@@ -192544,6 +195519,42 @@
                     "next",
                     "previous",
                     "results"
+                ]
+            },
+            "SeedSelection": {
+                "type": "object",
+                "properties": {
+                    "kind": {
+                        "$ref": "#/components/schemas/Kind274Enum"
+                    },
+                    "theme": {
+                        "$ref": "#/components/schemas/ThemeEnum"
+                    },
+                    "seed_id": {
+                        "type": "string",
+                        "maxLength": 100
+                    },
+                    "seed_version": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "stock": {
+                        "nullable": true,
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/StockEnum"
+                            },
+                            {
+                                "$ref": "#/components/schemas/NullEnum"
+                            }
+                        ]
+                    }
+                },
+                "required": [
+                    "kind",
+                    "seed_id",
+                    "seed_version",
+                    "theme"
                 ]
             },
             "SegmentChoice": {
@@ -197166,6 +200177,22 @@
                         "readOnly": true,
                         "nullable": true
                     },
+                    "purpose": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/Purpose18eEnum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "contributor_capacity_policy": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/ContributorCapacityPolicyEnum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
                     "is_active": {
                         "type": "boolean",
                         "readOnly": true
@@ -197179,9 +200206,11 @@
                     "amount",
                     "audience",
                     "capacity",
+                    "contributor_capacity_policy",
                     "id",
                     "is_active",
                     "name",
+                    "purpose",
                     "registration_count",
                     "sales_end_at",
                     "sales_start_at"
@@ -197301,6 +200330,12 @@
                         "type": "string",
                         "format": "date-time",
                         "nullable": true
+                    },
+                    "purpose": {
+                        "$ref": "#/components/schemas/Purpose18eEnum"
+                    },
+                    "contributor_capacity_policy": {
+                        "$ref": "#/components/schemas/ContributorCapacityPolicyEnum"
                     }
                 },
                 "required": [
@@ -199495,6 +202530,12 @@
                         "items": {
                             "$ref": "#/components/schemas/WebsiteAsset"
                         }
+                    },
+                    "programme_sections": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ProgrammeSection"
+                        }
                     }
                 },
                 "required": [
@@ -199658,7 +202699,7 @@
                 "type": "object",
                 "properties": {
                     "kind": {
-                        "$ref": "#/components/schemas/Kind21fEnum"
+                        "$ref": "#/components/schemas/Kind429Enum"
                     },
                     "slug": {
                         "type": "string",
@@ -199760,6 +202801,10 @@
                         "maximum": 1000,
                         "minimum": 0,
                         "default": 0
+                    },
+                    "options": {
+                        "type": "object",
+                        "additionalProperties": {}
                     },
                     "image_url": {
                         "type": "string",
@@ -199781,7 +202826,7 @@
                 "type": "object",
                 "properties": {
                     "kind": {
-                        "$ref": "#/components/schemas/Kind21fEnum"
+                        "$ref": "#/components/schemas/Kind429Enum"
                     },
                     "slug": {
                         "type": "string",
@@ -199883,6 +202928,10 @@
                         "maximum": 1000,
                         "minimum": 0,
                         "default": 0
+                    },
+                    "options": {
+                        "type": "object",
+                        "additionalProperties": {}
                     }
                 },
                 "required": [

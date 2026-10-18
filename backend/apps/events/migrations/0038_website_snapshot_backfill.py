@@ -2,7 +2,7 @@
 
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
-from django.db import migrations, models
+from django.db import migrations
 
 GROUPS = ["HERO", "ABOUT", "HIGHLIGHTS", "SCHEDULE", "SPEAKERS", "SPONSORS", "VENUE", "FAQ", "RESOURCES", "EDITORIAL"]
 FIELDS = "kind slug title body url visibility position headline organization website_url linkedin_url x_url sponsor_tier icon".split()
@@ -26,7 +26,7 @@ def backfill(apps, schema_editor):
         for row in sections:
             section_rows.append({**{key: getattr(row, key) for key in FIELDS}, "asset_id": row.asset_id,
                                  "body_rendering": rendering_policy(row.body)})
-        for row in page.sessions.using(alias).prefetch_related("speaker_links").all():
+        for row in page.sessions.using(alias).prefetch_related("speaker_links").order_by("starts_at", "slug"):
             identity = Identity.objects.using(alias).create(page_id=page.pk)
             Alias.objects.using(alias).create(page_id=page.pk, identity=identity, slug=row.slug)
             Session.objects.using(alias).filter(pk=row.pk).update(identity=identity)
@@ -61,6 +61,4 @@ def backfill(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [("events", "0037_website_revisions")]
-    operations = [migrations.RunPython(backfill, migrations.RunPython.noop),
-                  migrations.AlterField(model_name="eventsession", name="identity", field=models.OneToOneField(
-                      "events.eventsessionidentity", on_delete=models.RESTRICT, related_name="working_session"))]
+    operations = [migrations.RunPython(backfill, migrations.RunPython.noop)]

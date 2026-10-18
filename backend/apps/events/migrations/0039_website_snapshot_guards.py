@@ -1,6 +1,6 @@
 """Final-state pointer/identity/reference/window backstops for raw writers too."""
 
-from django.db import migrations
+from django.db import migrations, models
 
 SQL = """
 CREATE FUNCTION event_asset_immutable() RETURNS trigger LANGUAGE plpgsql AS $$
@@ -147,7 +147,12 @@ WINDOWS = ("eventpage", "event", "eventseries")
 
 class Migration(migrations.Migration):
     dependencies = [("events", "0038_website_snapshot_backfill")]
-    operations = [migrations.RunSQL(SQL + "\n".join(
+    # Commit the 0038 backfill before altering its FK: populated upgrades otherwise
+    # have deferred identity FK checks pending when PostgreSQL executes the DDL.
+    operations = [migrations.AlterField(
+        model_name="eventsession", name="identity", field=models.OneToOneField(
+            "events.eventsessionidentity", on_delete=models.RESTRICT, related_name="working_session")),
+        migrations.RunSQL(SQL + "\n".join(
         f"CREATE TRIGGER event_snapshot_immutable BEFORE UPDATE OR DELETE ON events_{table} "
         "FOR EACH ROW EXECUTE FUNCTION event_snapshot_immutable();" for table in IMMUTABLE
     ) + "\n" + "\n".join(

@@ -1,6 +1,6 @@
 """Public payloads are live projections, distinct from editor input documents."""
 
-from drf_spectacular.utils import PolymorphicProxySerializer, extend_schema_field
+from drf_spectacular.utils import PolymorphicProxySerializer, extend_schema_field, extend_schema_serializer
 from rest_framework import serializers as s
 from .public_page_sections import About, Links, Testimonials, Titled
 from .public_page_contract import PALETTES
@@ -51,6 +51,7 @@ class EventCard(s.Serializer):
 class PublicUpcoming(Titled):
     count = s.IntegerField()
     results = EventCard(many=True)
+    collection_url = s.CharField()
 
 
 class EventCollection(s.Serializer):
@@ -98,6 +99,7 @@ class PublicMetrics(s.Serializer):
     public_member_count = s.IntegerField(required=False)
 
 
+@extend_schema_serializer(component_name="PublicPageStats")
 class PublicStats(Titled):
     metrics = PublicMetrics()
 

@@ -23,7 +23,7 @@ export const sectionGroup = (kind: WebsiteSection["kind"]): WebsiteGroup => ({
   intro: "ABOUT", logo: "HERO", highlight: "HIGHLIGHTS", speaker: "SPEAKERS", sponsor: "SPONSORS",
   track: "SCHEDULE", room: "VENUE", faq: "FAQ", resource: "RESOURCES",
 })[kind] as WebsiteGroup;
-export const orderedGroups = (page: EventWebsite): WebsiteGroup[] => {
+export const orderedGroups = (page: { section_order?: string[] }): WebsiteGroup[] => {
   return [...new Set([...(page.section_order ?? []), ...websiteGroups])] as WebsiteGroup[];
 };
 
@@ -48,8 +48,7 @@ export type EventWebsite = {
   venue?: WebsiteVenue | null;
   draft_revision_id?: string | null; published_revision_id?: string | null;
   editorial_document?: import("../publicPages/pageTypes").PageDocument;
-  editorial_projection?: Pick<import("../publicPages/pageTypes").PublicPageProjection, "schema_version" | "sections">;
-  capabilities?: import("../publicPages/pageTypes").PageCapabilities;
+  capabilities?: import("../../generated/api").WebsiteCapabilities;
   delay_targets?: WebsiteDelayTarget[];
   cover?: { url: string; alt: string } | null;
   presentation?: import("../publicPages/pageTypes").PublicPageProjection["presentation"];
@@ -57,6 +56,11 @@ export type EventWebsite = {
 };
 
 export type WebsiteTarget = { kind: "events" | "event-series"; id: number; makerspaceId: number };
+
+/** Public sections contain projected URLs/identities, while editor sections contain input IDs. */
+export type PublicEventWebsiteData = Omit<EventWebsite, "editorial_document"> & {
+  editorial_document?: import("../../generated/api").PublicEventEditorialDocument | null;
+};
 
 export function contentPayload(page: EventWebsite) {
   return {

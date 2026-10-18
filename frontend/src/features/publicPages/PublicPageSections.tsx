@@ -6,6 +6,11 @@ import type { PublicPageSection } from "./pageTypes";
 import { PublicEventCards, PublicSpaceCards, safePublicLink } from "./PublicCollectionCards";
 export { PublicEventCards, PublicSpaceCards, safePublicLink } from "./PublicCollectionCards";
 import { ProjectedEventCollection } from "./ProjectedEventCollection";
+const metricLabels = {
+  public_exact_count_subset_units: "Exact-count inventory subset",
+  published_event_count: "Published events",
+  public_member_count: "Public members",
+};
 
 
 function Content({ section, image, functional, organizationCollections, token, slug }: {
@@ -14,12 +19,12 @@ function Content({ section, image, functional, organizationCollections, token, s
 }) {
   switch (section.type) {
     case "about": return <RestrictedMarkdown text={section.payload.markdown} mode={section.payload.rendering_policy} />;
-    case "gallery": return <div className="grid gap-4 sm:grid-cols-2">{section.payload.items.map((item, index) => <figure key={index} className="grid gap-2">{image(item.url, item.alt)}{item.caption ? <figcaption className="text-sm text-muted">{item.caption}</figcaption> : null}</figure>)}</div>;
+    case "gallery": return <div className="grid gap-4 sm:grid-cols-2">{section.payload.items.map((item, index) => <figure key={index} className="grid gap-2">{item.url ? image(item.url, item.alt) : null}{item.caption ? <figcaption className="text-sm text-muted">{item.caption}</figcaption> : null}</figure>)}</div>;
     case "team": return <ul className="grid gap-3 sm:grid-cols-2">{section.payload.entries.map((entry, index) => <li key={entry.id ?? index} className="rounded-xl border border-line bg-panel p-4">
       {entry.avatar_url ? <img src={entry.avatar_url} alt="" width={64} height={64} className="h-16 w-16 rounded-full object-cover" /> : null}
       <h3 className="title-section">{safePublicLink(entry.url) ? <RouteLink className="inline-flex min-h-11 items-center text-brand-ink underline" href={entry.url}>{entry.display_name}</RouteLink> : entry.display_name}</h3><p className="text-sm text-muted">{entry.role}</p>
     </li>)}</ul>;
-    case "stats": return <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3">{section.payload.metrics.map(metric => <div key={metric.label} className="rounded-xl border border-line bg-panel p-4"><dt className="text-sm text-muted">{metric.label}</dt><dd className="text-2xl font-semibold tabular-nums">{metric.value.toLocaleString()}</dd></div>)}</dl>;
+    case "stats": return <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3">{Object.entries(section.payload.metrics).map(([key, value]) => <div key={key} className="rounded-xl border border-line bg-panel p-4"><dt className="text-sm text-muted">{metricLabels[key as keyof typeof metricLabels]}</dt><dd className="text-2xl font-semibold tabular-nums">{value.toLocaleString()}</dd></div>)}</dl>;
     case "testimonials": return <div className="grid gap-4 sm:grid-cols-2">{section.payload.entries.map(entry => <figure key={entry.id} className="rounded-xl border border-line bg-panel p-4"><blockquote className="whitespace-pre-wrap">{entry.quote}</blockquote><figcaption className="mt-3 text-sm text-muted">{entry.attribution}</figcaption></figure>)}</div>;
     case "links": return <ul className="flex flex-wrap gap-2">{section.payload.entries.filter(entry => safePublicLink(entry.url)).map(entry => <li key={entry.id}><a className="desk-button" href={entry.url} rel="noopener noreferrer">{entry.label}</a></li>)}</ul>;
     case "location": return section.payload.enabled_publicly ? <div className="grid gap-3"><p className="whitespace-pre-wrap">{section.payload.address}</p><p className="whitespace-pre-wrap text-sm text-muted">{section.payload.directions}</p>{safePublicLink(section.payload.map_url) ? <a className="desk-button justify-self-start" href={section.payload.map_url} rel="noopener noreferrer">View map</a> : null}</div> : null;

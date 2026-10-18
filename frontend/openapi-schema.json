@@ -90599,6 +90599,15 @@
                 "operationId": "api_v1_public_page_retrieve",
                 "parameters": [
                     {
+                        "in": "query",
+                        "name": "events_page",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "default": 1
+                        }
+                    },
+                    {
                         "in": "path",
                         "name": "makerspace_slug",
                         "schema": {
@@ -90620,6 +90629,9 @@
                             }
                         },
                         "description": ""
+                    },
+                    "400": {
+                        "description": "Invalid events_page."
                     },
                     "404": {
                         "description": "Unknown or unavailable public page."
@@ -93097,6 +93109,15 @@
                 "operationId": "api_v1_public_organizations_page_retrieve",
                 "parameters": [
                     {
+                        "in": "query",
+                        "name": "events_page",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "default": 1
+                        }
+                    },
+                    {
                         "in": "path",
                         "name": "slug",
                         "schema": {
@@ -93118,6 +93139,9 @@
                             }
                         },
                         "description": ""
+                    },
+                    "400": {
+                        "description": "Invalid events_page."
                     },
                     "404": {
                         "description": "Unknown or unavailable public page."
@@ -131369,6 +131393,20 @@
                     "name"
                 ]
             },
+            "PublicMetrics": {
+                "type": "object",
+                "properties": {
+                    "public_exact_count_subset_units": {
+                        "type": "integer"
+                    },
+                    "published_event_count": {
+                        "type": "integer"
+                    },
+                    "public_member_count": {
+                        "type": "integer"
+                    }
+                }
+            },
             "PublicOpeningInterval": {
                 "type": "object",
                 "properties": {
@@ -132037,6 +132075,22 @@
                         "functional_content": "#/components/schemas/PublicPageFunctionalContentSectionInput"
                     }
                 }
+            },
+            "PublicPageStats": {
+                "type": "object",
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "maxLength": 200
+                    },
+                    "metrics": {
+                        "$ref": "#/components/schemas/PublicMetrics"
+                    }
+                },
+                "required": [
+                    "metrics",
+                    "title"
+                ]
             },
             "PublicPageStatsSectionInput": {
                 "type": "object",
@@ -133201,7 +133255,7 @@
                         "type": "boolean"
                     },
                     "payload": {
-                        "$ref": "#/components/schemas/PublicStats"
+                        "$ref": "#/components/schemas/PublicPageStats"
                     }
                 },
                 "required": [
@@ -133554,9 +133608,13 @@
                         "items": {
                             "$ref": "#/components/schemas/EventCard"
                         }
+                    },
+                    "collection_url": {
+                        "type": "string"
                     }
                 },
                 "required": [
+                    "collection_url",
                     "count",
                     "results",
                     "title"

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { PublicPageSections } from "../publicPages/PublicPageSections";
-import type { PublicPageProjection, PublicPageSection } from "../publicPages/pageTypes";
+import type { PublicPageSection } from "../publicPages/pageTypes";
+import type { PublicEventEditorialDocument } from "../../generated/api";
 
 export const eventSectionProviderVersion = 1;
 export const eventEditorialTypes = ["about", "gallery", "team", "testimonials", "links"] as const;
@@ -18,7 +19,7 @@ export const eventSectionProviders = {
 } satisfies { [K in EditorialType]: EventSectionProvider<K> };
 // Reserved names are documentation, never writable provider registrations.
 export const futureEventProviders = ["prizes", "judges", "mentors", "project_gallery", "results"] as const;
-export function EventEditorialSections({ projection, image }: { projection: Pick<PublicPageProjection, "schema_version" | "sections">; image: (url: string, alt: string) => ReactNode }) {
+export function EventEditorialSections({ projection, image }: { projection: Pick<PublicEventEditorialDocument, "schema_version" | "sections">; image: (url: string, alt: string) => ReactNode }) {
   if (projection.schema_version !== eventSectionProviderVersion) return null;
   return <div className="grid gap-8">{projection.sections.map(section => {
     let content: ReactNode;

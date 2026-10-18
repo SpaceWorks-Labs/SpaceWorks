@@ -1,12 +1,14 @@
 import { pageInput, pageLabel } from "./documentDefaults";
 import type { AccentChoice, PageAsset, PageDocument } from "./pageTypes";
+import type { PaletteChoices } from "../../generated/api";
 
 export const paletteSeeds: Record<Exclude<AccentChoice, "inherit">, string> = {
   maker_teal: "#006E63", workshop_orange: "#FF7447", citron: "#DFFF8F", sky_blue: "#B5CDFF", warm_yellow: "#FFD447",
 };
 const labels: Record<AccentChoice, string> = { inherit: "Inherit", maker_teal: "Maker Teal", workshop_orange: "Workshop Orange", citron: "Citron", sky_blue: "Sky Blue", warm_yellow: "Warm Yellow" };
+export const pagePaletteChoices: PaletteChoices = { inherit: null, ...paletteSeeds };
 export function PagePresentationForm({ document, assets, choices, disabled, onChange }: {
-  document: PageDocument; assets: Pick<PageAsset, "id" | "alt_text">[]; choices: AccentChoice[]; disabled: boolean; onChange: (document: PageDocument) => void;
+  document: PageDocument; assets: Pick<PageAsset, "id" | "alt_text">[]; choices: PaletteChoices; disabled: boolean; onChange: (document: PageDocument) => void;
 }) {
   return <fieldset disabled={disabled} className="grid gap-4 rounded-xl border border-line p-4">
     <legend className="px-1 font-semibold">Cover and colours</legend>
@@ -19,9 +21,9 @@ export function PagePresentationForm({ document, assets, choices, disabled, onCh
       <option value="">Choose an image</option>{assets.map(asset => <option key={asset.id} value={asset.id}>{asset.alt_text}</option>)}
     </select></label> : null}
     <fieldset className="grid gap-2"><legend className="mb-2 text-sm font-semibold">Public accent palette</legend>
-      <div className="flex flex-wrap gap-2">{choices.map(choice => <label key={choice} className="flex min-h-11 cursor-pointer items-center gap-2 rounded-control border border-line px-3 text-sm has-checked:border-brand-boundary has-checked:bg-brand-soft">
+      <div className="flex flex-wrap gap-2">{(Object.keys(choices) as AccentChoice[]).map(choice => <label key={choice} className="flex min-h-11 cursor-pointer items-center gap-2 rounded-control border border-line px-3 text-sm has-checked:border-brand-boundary has-checked:bg-brand-soft">
         <input type="radio" name="page-accent" value={choice} checked={(document.accent_choice ?? "inherit") === choice} onChange={() => onChange({ ...document, accent_choice: choice })} />
-        {choice !== "inherit" ? <span aria-hidden="true" className="h-5 w-5 rounded-full border border-line" style={{ backgroundColor: paletteSeeds[choice] }} /> : null}{labels[choice]}
+        {choice !== "inherit" ? <span aria-hidden="true" className="h-5 w-5 rounded-full border border-line" style={{ backgroundColor: choices[choice] ?? undefined }} /> : null}{labels[choice]}
       </label>)}</div>
     </fieldset>
     <p className="text-sm text-muted">Colours apply to the public preview and page. Inherit keeps existing brand colours, including custom colours.</p>

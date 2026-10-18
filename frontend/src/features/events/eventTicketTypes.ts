@@ -7,7 +7,7 @@ export type EventTicket = {
 
 export type PublicEventDetail = {
   canonical_url?: string;
-  website?: import("./websiteTypes").EventWebsite | null;
+  website?: import("./websiteTypes").PublicEventWebsiteData | null;
   audience_label?: string | null; participating_organizations?: { id: number; name: string }[];
   public_token: string; title: string; description: string;
   starts_at: string; ends_at: string; location: string;

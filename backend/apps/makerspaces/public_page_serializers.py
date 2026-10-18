@@ -28,6 +28,10 @@ class HandleAvailability(s.Serializer):
     available = s.BooleanField()
 
 
+class PageEventQuery(s.Serializer):
+    events_page = s.IntegerField(min_value=1, default=1)
+
+
 class HandleResolution(s.Serializer):
     kind = s.ChoiceField(choices=("member", "makerspace", "organization"))
     handle = s.CharField()

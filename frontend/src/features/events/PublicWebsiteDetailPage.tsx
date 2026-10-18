@@ -10,7 +10,7 @@ import { publicPageChrome } from "../inventory/PublicPageChrome";
 import { formatSlug } from "../inventory/PublicInventoryParts";
 import { useTenantBootstrap } from "../inventory/usePublicInventory";
 import { WebsiteProgramme, WebsiteSectionCard, type WebsiteLinks } from "./PublicEventWebsite";
-import type { EventWebsite } from "./websiteTypes";
+import type { PublicEventWebsiteData } from "./websiteTypes";
 import { markdownExcerpt } from "../../components/restrictedMarkdownTokens";
 
 /** Read the current gated projection rather than retaining a detached speaker/session snapshot. */
@@ -26,7 +26,7 @@ export function PublicWebsiteDetailPage({ view }: { view: "schedule" | "session"
   const bootstrap = tenant.mode === "single" ? tenant.bootstrap : bootstrapQuery.data;
   const brandStyle = useTenantBranding(bootstrap);
   const query = useQuery({ queryKey: ["public-event-website", makerspaceSlug, publicToken],
-    queryFn: () => tenantPublicRequest<EventWebsite>(makerspaceSlug, `/public/${encodeURIComponent(makerspaceSlug)}/events/${encodeURIComponent(publicToken)}/website/`),
+    queryFn: () => tenantPublicRequest<PublicEventWebsiteData>(makerspaceSlug, `/public/${encodeURIComponent(makerspaceSlug)}/events/${encodeURIComponent(publicToken)}/website/`),
     enabled: Boolean(allowed && makerspaceSlug && publicToken), staleTime: 0, gcTime: 0,
     refetchOnMount: "always", refetchInterval: 30_000, refetchOnWindowFocus: true,
     retry: (count, error) => !(error instanceof StructuredApiError && error.status < 500) && count < 2,

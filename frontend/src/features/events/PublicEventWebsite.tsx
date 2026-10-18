@@ -1,5 +1,5 @@
 import { RestrictedMarkdown } from "../../components/RestrictedMarkdown";
-import { orderedGroups, sectionGroup, sponsorTiers, type EventWebsite, type WebsiteSection, type WebsiteSession } from "./websiteTypes";
+import { orderedGroups, sectionGroup, sponsorTiers, type EventWebsite, type PublicEventWebsiteData, type WebsiteSection, type WebsiteSession } from "./websiteTypes";
 import type { ReactNode } from "react";
 import { EventEditorialSections } from "./websiteSectionRegistry";
 import { usePageBranding } from "../publicPages/usePageBranding";
@@ -27,7 +27,7 @@ export function WebsiteSectionCard({ row, image, links }: { row: WebsiteSection;
   </article>;
 }
 
-export function WebsiteProgramme({ website, links, sessions = website.sessions }: { website: EventWebsite; links?: WebsiteLinks; sessions?: WebsiteSession[] }) {
+export function WebsiteProgramme({ website, links, sessions = website.sessions }: { website: Omit<EventWebsite, "editorial_document">; links?: WebsiteLinks; sessions?: WebsiteSession[] }) {
   const rows = sessions.filter((row) => row.visibility === "published");
   const title = (slug: string | null) => website.sections.find((section) => section.slug === slug)?.title ?? slug;
   return <section aria-label="Programme" className="grid gap-3">
@@ -54,7 +54,7 @@ function Venue({ venue, cards, policies }: { venue: NonNullable<EventWebsite["ve
     </div>{cards}</section>;
 }
 
-export function PublicEventWebsite({ website, image, links }: { website: EventWebsite; image?: ImageRenderer; links?: WebsiteLinks }) {
+export function PublicEventWebsite({ website, image, links }: { website: PublicEventWebsiteData; image?: ImageRenderer; links?: WebsiteLinks }) {
   const rows = website.sections.filter((row) => row.visibility === "published");
   const style = usePageBranding(website.presentation?.resolved_theme ?? (website.accent_color ? { primary_color: website.accent_color, accent_color: website.accent_color } : undefined), website.presentation?.accent_choice ?? website.editorial_document?.accent_choice);
   const renderImage: ImageRenderer = image ?? ((url, alt) => <img src={url} alt={alt} className="max-h-96 max-w-full rounded-xl object-contain" />);
@@ -62,7 +62,7 @@ export function PublicEventWebsite({ website, image, links }: { website: EventWe
     {orderedGroups(website).filter((group) => website.section_enabled?.[group] !== false).map((group) => {
       const sections = rows.filter((row) => sectionGroup(row.kind) === group);
       const cards = sections.map((row) => <WebsiteSectionCard key={row.slug} row={row} image={image} links={links} />);
-      if (group === "EDITORIAL") return website.editorial_projection ? <EventEditorialSections key={group} projection={website.editorial_projection} image={renderImage} /> : null;
+      if (group === "EDITORIAL") return website.editorial_document ? <EventEditorialSections key={group} projection={website.editorial_document} image={renderImage} /> : null;
       if (group === "SCHEDULE") return cards.length || website.sessions.some((row) => row.visibility === "published") ? <section key={group} aria-label="Schedule" className="grid gap-6">{cards.length ? <section aria-label="Tracks" className="grid gap-3"><h2 className={groupHeading}>Tracks</h2>{cards}</section> : null}{website.sessions.some((row) => row.visibility === "published") ? <WebsiteProgramme website={website} links={links} /> : null}</section> : null;
       if (group === "SPONSORS") return sections.length ? <section key={group} aria-label="Sponsors" className="grid gap-4"><h2 className={groupHeading}>Sponsors</h2>{sponsorTiers.map((tier) => {
         const sponsors = sections.filter((row) => (row.sponsor_tier ?? "community_partner") === tier);

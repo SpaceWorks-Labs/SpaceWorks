@@ -4,7 +4,7 @@ from django.utils import timezone
 from .platform import module_enabled, feature_enabled
 
 
-def event_cards(kind, owner):
+def event_cards(kind, owner, *, page=1):
     from apps.separability.registry import runtime_active
     from .editions import public_surface_available
     if not runtime_active("events") or not public_surface_available("events"):
@@ -19,9 +19,14 @@ def event_cards(kind, owner):
         rows = public_events(owner).order_by("starts_at", "id")
     if rows is None:
         return [], 0
+    count = rows.count()
+    offset = (page - 1) * 24
+    if offset >= count:
+        return [], count
     from .public_page_access import canonical_origin
     return [{"title": row.title, "starts_at": row.starts_at, "ends_at": row.ends_at,
-             "event_url": f"{canonical_origin(row.makerspace)}/e/{row.public_token}"} for row in rows[:24]], rows.count()
+             "event_url": f"{canonical_origin(row.makerspace)}/e/{row.public_token}"}
+            for row in rows[offset:offset + 24]], count
 
 
 def derived_payload(kind, owner, key, payload, *, request=None):
@@ -54,8 +59,12 @@ def derived_payload(kind, owner, key, payload, *, request=None):
     if key == "upcoming_events":
         if not module_enabled(owner, "events"):
             return None
-        cards, count = event_cards(kind, owner)
-        return {"title": title, "count": count, "results": cards}
+        from .public_page_serializers import PageEventQuery
+        query = PageEventQuery(data=request.query_params if request else {})
+        query.is_valid(raise_exception=True)
+        cards, count = event_cards(kind, owner, page=query.validated_data["events_page"])
+        return {"title": title, "count": count, "results": cards,
+                "collection_url": f"/api/v1/public/{owner.slug}/page/"}
     if key == "stats":
         metrics = {}
         if payload["show_published_event_count"] and module_enabled(owner, "events"):

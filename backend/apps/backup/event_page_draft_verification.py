@@ -39,7 +39,7 @@ def verify_working_draft(page):
     from apps.events.website_content import PAGE_FIELDS, SECTION_FIELDS
     from apps.makerspaces.public_page_markdown import rendering_policy
     if not page.draft_revision_id:
-        if page.sections.exists() or page.sessions.exists():
+        if page.sections.filter(is_working=True).exists() or page.sessions.exists():
             refuse("nonempty working website without a draft")
         return
     revision = page.draft_revision
@@ -47,7 +47,7 @@ def verify_working_draft(page):
     actual["sections"] = [
         {**{field: getattr(row, field) for field in SECTION_FIELDS},
          "asset_id": row.asset_id, "body_rendering": rendering_policy(row.body)}
-        for row in page.sections.all()
+        for row in page.sections.filter(is_working=True)
     ]
     actual["sessions"] = [
         {"session_id": str(row.identity_id), "slug": row.slug, "title": row.title, "body": row.body,

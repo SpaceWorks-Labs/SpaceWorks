@@ -13,7 +13,8 @@ export function PageEditorAssets({ state, pending, dirty, run }: {
   const [inputKey, setInputKey] = useState(0);
   useEffect(() => { setFile(null); setAlt(""); setInputKey(key => key + 1); }, [state.version]);
   const disabled = pending || dirty || !state.capabilities.can_edit_details;
-  const maxBytes = Math.min(5_000_000, state.limits.max_upload_bytes);
+  const maxBytes = state.limits.upload_bytes;
+  const remainingBytes = state.limits.storage_bytes === null ? Infinity : Math.max(0, state.limits.storage_bytes - state.limits.storage_bytes_used);
   return <section aria-label="Page images" className="grid gap-4">
     <h3 className="title-section">Private page images</h3>
     <p className="text-sm text-muted">Retained revisions pin their images. A new cover leaves the published cover available until you publish again. Save your draft before managing images.</p>
@@ -22,11 +23,11 @@ export function PageEditorAssets({ state, pending, dirty, run }: {
       if (file.size > maxBytes) { setError(`Choose an image smaller than ${maxBytes.toLocaleString()} bytes.`); return; }
       setError(""); run({ action: "upload", version: state.version, file, alt_text: alt });
     }}>
-      <fieldset disabled={disabled || !state.capabilities.can_upload} className="grid gap-3">
+      <fieldset disabled={disabled} className="grid gap-3">
         <legend className="sr-only">Upload page image</legend>
         <label className={pageLabel}>Image description<input className={pageInput} required maxLength={200} value={alt} onChange={e => setAlt(e.target.value)} /></label>
         <label className={pageLabel}>JPEG, PNG or WebP image<input key={inputKey} className={pageInput} type="file" required accept="image/jpeg,image/png,image/webp" onChange={e => setFile(e.target.files?.[0] ?? null)} /></label>
-        <button className="desk-button justify-self-start" type="submit" disabled={!file || !alt.trim() || state.assets.length >= state.limits.max_assets || state.capabilities.storage_remaining_bytes < (file?.size ?? 0)}>Upload image</button>
+        <button className="desk-button justify-self-start" type="submit" disabled={!file || !alt.trim() || state.assets.length >= state.limits.assets || remainingBytes < (file?.size ?? 0)}>Upload image</button>
       </fieldset>
     </form>
     {error ? <p role="alert" className="text-sm text-danger">{error}</p> : null}

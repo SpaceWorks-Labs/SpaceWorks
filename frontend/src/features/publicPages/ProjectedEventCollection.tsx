@@ -4,18 +4,19 @@ import { ErrorBlock, Pagination } from "../../components/ui";
 import { publicV1Request, tenantPublicRequest } from "../../lib/api";
 import { hostScope, pageApiPath, publicPagePolicy } from "./pageApi";
 import { PublicEventCards } from "./PublicCollectionCards";
-import type { Collection, PublicEventCard, PublicSectionPayloads } from "./pageTypes";
+import type { PublicPageProjection, PublicSectionPayloads } from "./pageTypes";
 
 export function ProjectedEventCollection({ collection, token, slug }: {
   collection: PublicSectionPayloads["upcoming_events"]; token?: string; slug?: string;
 }) {
   const [page, setPage] = useState(1);
   const query = useQuery({ queryKey: ["public-page-collection", hostScope(), slug, collection.collection_url, token, page], ...publicPagePolicy,
-    enabled: page > 1, queryFn: () => {
+    enabled: page > 1, queryFn: async () => {
       const path = pageApiPath(collection.collection_url);
       const separator = path.includes("?") ? "&" : "?";
-      const url = `${path}${separator}page=${page}`;
-      return slug ? tenantPublicRequest<Collection<PublicEventCard>>(slug, url, { cache: "no-store" }) : publicV1Request<Collection<PublicEventCard>>(url, { cache: "no-store" });
+      const url = `${path}${separator}events_page=${page}`;
+      const projection = await (slug ? tenantPublicRequest<PublicPageProjection>(slug, url, { cache: "no-store" }) : publicV1Request<PublicPageProjection>(url, { cache: "no-store" }));
+      return projection.sections.find(section => section.type === "upcoming_events")?.payload ?? { results: [], count: 0 };
     },
   });
   const data = page === 1 ? collection : query.error ? undefined : query.data;

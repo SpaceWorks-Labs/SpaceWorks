@@ -19,7 +19,7 @@ export function PublicEventCards({ rows, past = false }: { rows: PublicEventCard
     {row.description ? <p className="whitespace-pre-wrap text-sm">{row.description.slice(0, 300)}</p> : null}
     {!past && row.payment_amount !== undefined && row.currency ? <dl className="text-sm"><EventPrice amount={row.payment_amount} currency={row.currency} /></dl> : null}
     {!past && row.availability ? <p className="text-sm text-muted">{row.availability}</p> : null}
-    <p className="text-sm">Hosted by <RouteLink className="inline-flex min-h-11 items-center text-brand-ink underline" href={safePublicLink(row.host.canonical_url)}>{row.host.name}</RouteLink></p>
+    {row.host ? <p className="text-sm">Hosted by <RouteLink className="inline-flex min-h-11 items-center text-brand-ink underline" href={safePublicLink(row.host.canonical_url)}>{row.host.name}</RouteLink></p> : null}
   </li>)}</ul> : <p className="text-sm text-muted">{past ? "No past events to show." : "No upcoming events. Check back soon."}</p>;
 }
 

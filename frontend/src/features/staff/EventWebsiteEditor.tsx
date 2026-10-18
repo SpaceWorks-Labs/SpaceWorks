@@ -39,7 +39,7 @@ function WebsiteDraftEditor({ target, canEdit, canPublish, status }: EditorProps
     }
   }, [query.data]);
   canEdit = canEdit && (query.data?.capabilities?.can_edit_details ?? true);
-  canPublish = canPublish && (query.data?.capabilities?.can_publish ?? true);
+  canPublish = canPublish && (query.data?.capabilities?.can_publish_schedule ?? true);
   const terminal = status === "cancelled" || status === "completed";
   const pending = save.isPending || release.isPending || asset.isPending;
   const dirty = Boolean(local && JSON.stringify(local.draft) !== JSON.stringify(local.base));

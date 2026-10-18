@@ -41,9 +41,9 @@ def collect_unattached(page_id):
     if page is None:
         return 0
     removed = 0
-    for asset in page.assets.filter(created_at__lte=timezone.now() - timedelta(hours=24)).order_by("pk")[:50]:
-        if asset.eventpagerevisionasset_set.exists() or asset.eventpagesection_set.exists():
-            continue
+    eligible = page.assets.filter(created_at__lte=timezone.now() - timedelta(hours=24),
+                                 eventpagerevisionasset__isnull=True, eventpagesection__isnull=True)
+    for asset in eligible.order_by("pk")[:50]:
         if not website_assets.owns(asset.object_key, "events", page.makerspace_id, page.pk, asset=asset):
             continue
         job_id = schedule(asset)

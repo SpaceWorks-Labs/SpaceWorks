@@ -9852,6 +9852,12 @@ export type PublicMaterial = {
   "colours": Array<string>;
 };
 
+export type PublicMetrics = {
+  "public_exact_count_subset_units"?: number;
+  "published_event_count"?: number;
+  "public_member_count"?: number;
+};
+
 export type PublicOpeningInterval = {
   "starts_at": string;
   "ends_at": string;
@@ -9999,6 +10005,11 @@ export type PublicPageProjection = {
 };
 
 export type PublicPageSectionInput = PublicPageAboutSectionInput | PublicPageGallerySectionInput | PublicPageTeamSectionInput | PublicPageTestimonialsSectionInput | PublicPageLinksSectionInput | PublicPageStatsSectionInput | PublicPageLocationSectionInput | PublicPageUpcomingEventsSectionInput | PublicPageLinkedMakerspacesSectionInput | PublicPageOrganizationEventsSectionInput | PublicPageFunctionalContentSectionInput;
+
+export type PublicPageStats = {
+  "title": string;
+  "metrics": PublicMetrics;
+};
 
 export type PublicPageStatsSectionInput = {
   "id": string;
@@ -10271,7 +10282,7 @@ export type PublicStatsSection = {
   "id": string;
   "type": TypeB6aEnum;
   "enabled": boolean;
-  "payload": PublicStats;
+  "payload": PublicPageStats;
 };
 
 export type PublicStatsStatusCounts = {
@@ -10364,6 +10375,7 @@ export type PublicUpcoming = {
   "title": string;
   "count": number;
   "results": Array<EventCard>;
+  "collection_url": string;
 };
 
 export type PublicUpcomingEventsSection = {

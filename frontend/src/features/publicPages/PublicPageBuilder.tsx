@@ -63,7 +63,7 @@ function Builder({ owner }: { owner: PageOwner }) {
     <PageHandleForm key={state.handle ?? "unclaimed"} state={state} owner={owner} disabled={disabled || dirty || conflict} run={run} />
     <form className="grid gap-6" onSubmit={e => { e.preventDefault(); if (!disabled && !conflict) run({ action: "save", version: local.base.version, document }); }}>
       <PagePresentationForm document={document} assets={state.assets} choices={caps.palette_choices} disabled={disabled} onChange={change} />
-      <PageSectionsEditor document={document} assets={state.assets} allowed={caps.allowed_section_types} required={caps.required_groups} maxSections={state.limits.max_sections} kind={owner.kind} disabled={disabled} onChange={change} />
+      <PageSectionsEditor document={document} assets={state.assets} allowed={caps.allowed_section_types} required={caps.required_groups} maxSections={state.limits.sections} kind={owner.kind} disabled={disabled} onChange={change} />
       <div className="flex flex-wrap gap-2 border-t border-line pt-4">
         <button type="submit" className="desk-button-primary" disabled={disabled || conflict}>{operation.isPending && operation.variables?.action === "save" ? "Saving draft…" : "Save draft"}</button>
         <button type="button" className="desk-button" disabled={pending || conflict || !caps.can_edit_details} onClick={() => run({ action: "preview", version: local.base.version, document })}>Validate and preview draft</button>

@@ -5,13 +5,12 @@ import os
 from pathlib import Path
 import sys
 
-import psycopg2
-
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from apps.backup.host_marker import MarkerError, read_marker
 from apps.backup.process_roles import ProcessRole, admission_for
 from apps.backup.entrypoint_capability import consume_entrypoint_capability
+from apps.backup.managed.profile import deployment_profile, effective_environment, validate_process
 
 
 def refuse(detail):
@@ -35,8 +34,12 @@ def parse_invocation(argv):
 
 
 def live_database_identity(database_url):
-    with psycopg2.connect(database_url, connect_timeout=5) as database:
+    from config.cloud_database import connect_database, database_spec
+    from apps.backup.managed.mode_binding import assert_mode_binding
+
+    with connect_database(database_spec(database_url)) as database:
         with database.cursor() as cursor:
+            assert_mode_binding(cursor, "host")
             cursor.execute(
                 "SELECT current_database(), oid FROM pg_database WHERE datname = current_database()"
             )
@@ -51,6 +54,15 @@ def main(argv=None, *, capability_request=request_launch_capability):
     argv = argv or sys.argv
     try:
         role, command = parse_invocation(argv)
+        profile = deployment_profile()
+        validate_process(profile, role, command)
+        if profile.mode == "managed":
+            from apps.backup.managed.entrypoint import admit_managed_command
+
+            admit_managed_command(role, command)
+            os.environ.update(effective_environment(os.environ))
+            os.execvp(command[0], command)
+            return 0
         marker = read_marker(
             os.environ.get(
                 "SPACEWORKS_HOST_MARKER_PATH",
@@ -59,6 +71,8 @@ def main(argv=None, *, capability_request=request_launch_capability):
         )
     except (ValueError, MarkerError) as exc:
         return refuse(str(exc))
+    except Exception:
+        return refuse("managed launch configuration or database admission failed")
     admission = admission_for(marker.state, role)
     if not admission.admitted:
         return refuse(admission.reason)

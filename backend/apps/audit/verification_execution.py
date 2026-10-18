@@ -86,21 +86,24 @@ def execute_attempt(run_id):
     if run is None:
         return None
     try:
-        with scope_session_lock(run.makerspace_id):
+        with scope_session_lock(run.makerspace_id) as guard:
+            guard.assert_valid()
             result = _snapshot(run)
             if result is None:
                 return runs.finish(run, State.INCOMPLETE, attempt,
                                    failure_code="verification_bounds_exceeded")
             try:
+                guard.assert_valid()
                 anchor_phase(run.makerspace_id, result,
                              read_budget=AnchorReadBudget(runs.MAX_ANCHOR_READS),
                              genesis_row_limit=runs.MAX_EXPANDED_LEAVES)
+                guard.assert_valid()
             except (AnchorReadBudgetExceeded, GenesisMembershipLimitExceeded):
                 result.anchor_status = "unavailable"
                 return runs.finish(run, State.INCOMPLETE, attempt,
                                    failure_code="verification_bounds_exceeded", **_fields(result))
     except OperationalError:
-        logger.exception("audit_verification_database_error", extra={"run_id": run_id})
+        logger.warning("audit_verification_database_error", extra={"run_id": run_id})
         if attempt < runs.MAX_ATTEMPTS:
             runs.append_event(run, State.RETRYING, attempt)
             raise RetryAttempt() from None

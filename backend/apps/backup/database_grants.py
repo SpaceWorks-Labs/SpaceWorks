@@ -47,7 +47,7 @@ def fence_runtime_login(cursor, role_name):
 
 def _assert_narrow_runtime_role(cursor, role):
     cursor.execute(
-        "SELECT rolsuper, rolcreaterole, rolcreatedb, rolreplication, rolbypassrls "
+        "SELECT rolsuper, rolcreaterole, rolcreatedb, rolreplication, rolbypassrls, rolinherit "
         "FROM pg_roles WHERE rolname = %s",
         [role],
     )
@@ -60,9 +60,11 @@ def _assert_narrow_runtime_role(cursor, role):
         "OR EXISTS (SELECT 1 FROM pg_database database JOIN pg_roles owner "
         "ON owner.oid = database.datdba WHERE owner.rolname = %s) "
         "OR EXISTS (SELECT 1 FROM pg_namespace namespace JOIN pg_roles owner "
-        "ON owner.oid = namespace.nspowner WHERE owner.rolname = %s) "
+        "ON owner.oid = namespace.nspowner WHERE owner.rolname = %s "
+        "AND namespace.nspname !~ '^pg_(toast_)?temp_[0-9]+$') "
         "OR EXISTS (SELECT 1 FROM pg_class relation JOIN pg_roles owner "
-        "ON owner.oid = relation.relowner WHERE owner.rolname = %s) "
+        "ON owner.oid = relation.relowner JOIN pg_namespace namespace ON namespace.oid=relation.relnamespace "
+        "WHERE owner.rolname = %s AND namespace.nspname !~ '^pg_(toast_)?temp_[0-9]+$') "
         "OR EXISTS (SELECT 1 FROM pg_proc function JOIN pg_roles owner "
         "ON owner.oid = function.proowner WHERE owner.rolname = %s)",
         [role, role, role, role, role],

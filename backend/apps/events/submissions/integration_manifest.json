@@ -1,0 +1,62 @@
+{
+  "lane": "B",
+  "version": 1,
+  "schema_inventory": "model_manifest.json",
+  "scope": "Every concrete model is events-owned; tenant path is event.makerspace_id, or snapshot.submission.event.makerspace_id for reference rows, or submission.event.makerspace_id for snapshots/links, or snapshot.submission.event.makerspace_id for integrity flags. Work resolves exactly one typed asset.event.makerspace_id.",
+  "models": {
+    "HackathonSubmission": "Private tenant source; preserve historical state on portable import, close operational editing through imported config, clear public_requested and public_asset_ids. Clone copies no rows.",
+    "SubmissionSnapshot": "Immutable private historical source. Preserve sequence/hash and source_content_sha256; schema-remap IDs with portability.remap_snapshot, recompute canonical target hash only while materializing a new imported row. Never update existing history.",
+    "SubmissionLink": "Private source, retained when snapshot-referenced. Current draft version selected by submission.links_version. Reset operational public_requested on import; snapshot copies remain private historical evidence.",
+    "SubmissionIntegrityFlag": "Private historical source. Preserve informational flags/review history; disable automatic remote polling on import. No eligibility writer.",
+    "SnapshotAsset": "Immutable typed reference to exactly the same submission/team/event ready asset. Private evidence; reset operational public disclosure on import.",
+    "SnapshotLink": "Immutable typed link/value reference to same submission. Frozen normalized URL/provider are source; no unfurl, embed or recursive text rewriting.",
+    "SnapshotTrack": "Immutable typed same-event D track reference. Remap track FK explicitly.",
+    "SnapshotPrize": "Immutable typed same-event D prize reference. Remap prize FK explicitly.",
+    "SubmissionAsset": "Retained metadata/hash/expiry and ready unexpired owned canonical bytes. No incomplete upload/session state travels. All metadata stays private except a live D gallery projection.",
+    "HackathonParticipantAsset": "Private member-owned event resume, independently owned from P vault. Same byte retention; never gallery/public. D consent is sole sponsor authority and resets revoked on portable import.",
+    "EventAssetUsage": "Event-owned pool/retention anchors. Preserve first-results/fallback/cancellation absolute anchors; rebuild counters and target allowance from retained ownership. Never import managed entitlement.",
+    "SubmissionAssetWork": "Omit coordination at both tenant fidelities; DROP on portable import. Deployment resets lease token/until and reconstructs cleanup from retained asset locators; never lose deletion obligations. saved_asset_id/saved_detail_version are account-vault coordination references, excluded from all tenant closure."
+  },
+  "user_edges": [
+    {"model": "SubmissionAsset", "field": "uploaded_by", "disposition": "Historical source actor closure/pseudonymization per fidelity; imported stub cannot act."},
+    {"model": "HackathonParticipantAsset", "field": "uploaded_by", "disposition": "Historical source actor closure/pseudonymization per fidelity; not account-vault authority."},
+    {"model": "HackathonParticipantAsset", "field": "member", "disposition": "Event participant owner closure/pseudonymization; account-only and role-only eligible owners need no membership. Vault is excluded."},
+    {"model": "SubmissionSnapshot", "field": "submitted_by", "disposition": "Historical source actor closure/pseudonymization; no imported team authority."},
+    {"model": "SubmissionIntegrityFlag", "field": "reviewer", "disposition": "Nullable historical attribution; SET_NULL on deletion, never rematch by email."},
+    {"model": "SubmissionSnapshot", "field": "sealed_member_ids", "disposition": "Explicit JSON accounts.User ID vector; remap/pseudonymize by same source closure, never recursively rewrite project text."}
+  ],
+  "objects": [
+    {"models": ["SubmissionAsset", "HackathonParticipantAsset"], "field": "object_key", "bucket": "private", "ownership": "canonical", "size": "actual_bytes", "sha256": "sha256", "version": "final_version_id", "retention_query_fields": ["state", "expires_at", "expired_at", "expired_size_bytes", "actual_bytes"], "capture": "ready+future required; ready+elapsed requires retention finalization; expiring/deleting retry; expired+nonnull expired_at expected absent; impossible terminal stamp refuses. Missing ready bytes is corruption."},
+    {"models": ["SubmissionAsset", "HackathonParticipantAsset"], "field": "staging_key", "bucket": "private", "ownership": "coordination cleanup locator", "capture": "Never ready canonical fallback; omitted from portable data. Deployment retains locator/version cleanup obligation."},
+    {"models": ["SubmissionAsset", "HackathonParticipantAsset"], "field": "verification_key", "bucket": "private", "ownership": "server-only coordination cleanup locator", "capture": "Never client-writable or a ready fallback. Omitted from portable data; retained cleanup metadata in deployment."}
+  ],
+  "json_id_slots": {
+    "HackathonSubmission": {"asset_ids": "SubmissionAsset", "public_asset_ids": "SubmissionAsset", "track_ids": "HackathonTrack", "prize_ids": "HackathonPrize"},
+    "SubmissionSnapshot.project": {"asset_ids": "SubmissionAsset", "public_asset_ids": "SubmissionAsset", "assets[].id": "SubmissionAsset", "links[].id": "SubmissionLink", "track_ids": "HackathonTrack", "prize_ids": "HackathonPrize"},
+    "SubmissionSnapshot.sealed_member_ids": "accounts.User",
+    "exclusions": "form_answers, descriptions, declarations, URLs and user text are never scanned for IDs"
+  },
+  "unique_policies": {
+    "SubmissionAsset/HackathonParticipantAsset.public_id": "Preserve UUID; refuse preflight collision explicitly.",
+    "SubmissionAsset/HackathonParticipantAsset.object_key/staging_key/verification_key": "Collision-safe object journal rewrite; never raw identifier reuse. No expired resurrection.",
+    "HackathonSubmission.team": "Remap A team OneToOne; one project per team.",
+    "SubmissionSnapshot(submission,sequence)": "Remap submission, preserve sequence; collision refuses.",
+    "SnapshotAsset(snapshot,asset)": "Remap both typed FKs.",
+    "SnapshotLink(snapshot,link)": "Remap both typed FKs.",
+    "SnapshotTrack(snapshot,track)": "Remap both typed FKs.",
+    "SnapshotPrize(snapshot,prize)": "Remap both typed FKs.",
+    "SubmissionIntegrityFlag(snapshot,rule_key)": "Remap snapshot, preserve rule key.",
+    "EventAssetUsage.event": "Remap event OneToOne, rebuild accounting.",
+    "SubmissionAssetWork.asset/participant_asset": "Coordination dropped; rebuild exact-one work from retained locators."
+  },
+  "private_fields_requiring_explicit_export_policy": [
+    "HackathonSubmission.form_answers", "SubmissionSnapshot.project.form_answers", "SubmissionSnapshot.sealed_member_ids",
+    "HackathonSubmission.triage_reason", "SubmissionIntegrityFlag.evidence", "SubmissionIntegrityFlag.reason",
+    "SubmissionAsset.original_filename", "HackathonParticipantAsset.original_filename", "SubmissionAsset.manifest", "HackathonParticipantAsset.manifest"
+  ],
+  "never_export_coordination_fields": [
+    "multipart_upload_id", "claim", "upload_not_after", "source_etag", "source_version_id", "verification_version_id", "reserved_bytes",
+    "SubmissionAssetWork.lease_token", "SubmissionAssetWork.lease_until", "SubmissionAssetWork.saved_asset_id", "SubmissionAssetWork.saved_detail_version"
+  ],
+  "purge": "G collects every final/staging/verification object version and multipart locator before graph deletion. Delete D/E dependents first, clear HackathonSubmission.current_snapshot, remove immutable reference children under app.allow_immutable_delete, delete amendment snapshots newest-first (self PROTECT), then assets/links/projects/work/usage before A teams. Event-only purge cannot delete P vault or global organizations."
+}

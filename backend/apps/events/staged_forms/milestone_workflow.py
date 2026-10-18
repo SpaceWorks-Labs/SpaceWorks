@@ -27,6 +27,8 @@ def shortlist(*, event_id, actor, data):
                 marker = EventStageMilestone.objects.create(event=ctx.event, member_id=owner_id,
                     application=subject.application, registration=None if subject.application else subject.registration,
                     published_by=ctx.actor, published_at=timezone.now())
+                from .milestone_notices import enqueue_locked
+                enqueue_locked(marker)
             elif not data["published"] and marker:
                 marker.withdrawn_at, marker.version = timezone.now(), marker.version + 1
                 marker.save(update_fields=["withdrawn_at", "version"])
@@ -34,6 +36,13 @@ def shortlist(*, event_id, actor, data):
                 ids.append(marker.pk)
                 ctx.audit("event.stage_form.shortlist_published" if data["published"] else "event.stage_form.shortlist_withdrawn",
                     marker, milestone_id=marker.pk, reason_code=data["reason_code"])
+            if data["published"] and marker:
+                from .definition_models import EventStageForm
+                from .stage_workflow import activate_locked
+                for definition in EventStageForm.objects.select_for_update().filter(event=ctx.event,
+                    state="published", stage="shortlisted").order_by("pk"):
+                    activate_locked(definition=definition, subject=subject, locks=ctx.locks)
         ctx.event.version += 1
         ctx.event.save(update_fields=["version"])
+        ctx.audit("event.stage_form.shortlist_command", ctx.event, milestone_ids=ids, published=data["published"])
         return ctx.finish(ctx.event, milestone_ids=ids)

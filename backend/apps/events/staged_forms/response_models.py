@@ -29,6 +29,8 @@ class StageFormAssignment(ScopedPiiModelMixin, models.Model):
     next_stage_locked_at = models.DateTimeField(null=True)
     completed_response = models.ForeignKey("events.StageFormResponse", on_delete=models.SET_NULL, null=True, related_name="+")
     imported_paused = models.BooleanField(default=False)
+    policy_snapshot = models.JSONField(default=dict)
+    schedule_event_date_revision = models.PositiveBigIntegerField(default=1)
     cancelled_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="+")
     cancelled_at = models.DateTimeField(null=True)
     cancellation_reason_code = models.CharField(max_length=64, blank=True)

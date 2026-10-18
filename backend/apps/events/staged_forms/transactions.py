@@ -4,6 +4,7 @@ The caller prepares form/account values before entering. Replays are checked
 after live authorization and before compare-and-swap. References contain IDs only.
 """
 from contextlib import contextmanager
+from django.conf import settings
 from dataclasses import dataclass, field
 from django.db import transaction
 from django.utils import timezone
@@ -56,13 +57,13 @@ class Context:
 
 @contextmanager
 def command(*, event_id, actor, data, action, permission=None, owner=False,
-            finance=False, request=None, reimbursement=False, account_ids=()):
+            finance=False, request=None, reimbursement=False, account_ids=(), virtual=False):
     seed = Event.objects.select_related("makerspace").get(pk=event_id)
     if owner:
         require_member_account(actor)
         require_active_account(actor, seed.makerspace)
         require(claim_context(actor) is None, "full_session_required", status=403)
-        require(EventRegistration.objects.filter(event=seed, member=actor).exists() or
+        require(virtual or EventRegistration.objects.filter(event=seed, member=actor).exists() or
                 HackathonApplication.objects.filter(event=seed, member=actor).exists(),
                 "canonical_participation_required")
     if finance:
@@ -72,10 +73,9 @@ def command(*, event_id, actor, data, action, permission=None, owner=False,
     elif not owner:
         event_authority.require(actor, seed, permission)
     assert_write_allowed(seed.makerspace_id)
-    key = prepare_tenant_key(seed.makerspace_id)
     accounts = tuple(sorted(set((actor.pk, *account_ids))))
     digest = fingerprint({"action": action, "body": data})
-    with boundary_tenant_write(seed.makerspace_id), tenant_key_context(key), transaction.atomic(), fences(
+    with boundary_tenant_write(seed.makerspace_id), prepared_keys(seed.makerspace_id), transaction.atomic(), fences(
         tenant_ids=(seed.makerspace_id,), account_ids=accounts,
     ):
         if seed.series_id:
@@ -93,6 +93,12 @@ def command(*, event_id, actor, data, action, permission=None, owner=False,
             require(claim_context(actor) is None, "full_session_required", status=403)
             require(not MakerspaceMembership.objects.filter(user=actor, makerspace=event.makerspace).exclude(status="active").exists(),
                     "account_restricted", status=403)
+            if virtual:
+                if not EventRegistration.objects.filter(event=event, member=actor,
+                    status__in=("registered", "attended", "pending_approval", "waitlisted")).exists():
+                    from .trigger_service import require_virtual_context
+                    require_virtual_context(event, actor)
+            require(event.status != "cancelled", "event_cancelled")
         elif finance:
             require(rbac.can(actor, rbac.Action.VIEW_FINANCE, event.makerspace_id), "finance_required", status=403)
             request.user = actor
@@ -118,3 +124,38 @@ def require_outer(locks, event):
     from apps.events.programme_locks import assert_lock_context
     assert_lock_context(locks)
     require(locks.event_id == event.pk and event.makerspace_id in locks.tenant_ids, "invalid_subject", status=404)
+
+
+def lock_stage_parents(*, event, owner_ids):
+    """Acquire the entire known R prefix before a multi-assignment loop."""
+    from .definition_models import EventStageForm
+    from .response_models import StageFormAssignment, StageFormResponse
+    list(EventStageForm.objects.select_for_update().filter(event=event).order_by("pk").values_list("pk", flat=True))
+    rows = StageFormAssignment.objects.filter(event=event, owner_member_id__in=owner_ids)
+    ids = list(rows.select_for_update().order_by("pk").values_list("pk", flat=True))
+    list(StageFormResponse.objects.select_for_update().filter(assignment_id__in=ids).order_by("pk").values_list("pk", flat=True))
+
+
+def replay_before_prepare(*, event, actor, data, action):
+    """Authorized read hint only; mutation command rechecks under its event lock."""
+    from apps.makerspaces.guards import require_module
+    require_module(event.makerspace, "events")
+    require_member_account(actor)
+    require_active_account(actor, event.makerspace)
+    require(claim_context(actor) is None, "full_session_required", status=403)
+    require(not MakerspaceMembership.objects.filter(user=actor, makerspace=event.makerspace).exclude(status="active").exists(),
+            "account_restricted", status=403)
+    assert_write_allowed(event.makerspace_id)
+    receipt = EventCommandReceipt.objects.filter(event=event, actor=actor, operation_uuid=data["operation_id"]).first()
+    require(receipt is None or receipt.request_sha256 == fingerprint({"action": action, "body": data}), "idempotency_conflict")
+    return receipt.response_reference if receipt else None
+
+
+@contextmanager
+def prepared_keys(tenant_id):
+    # Enter AFTER the lock-only source boundary but BEFORE transaction.atomic.
+    if settings.PII_ENCRYPTION_ENABLED:
+        with tenant_key_context(prepare_tenant_key(tenant_id)):
+            yield
+    else:
+        yield

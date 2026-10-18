@@ -26,6 +26,8 @@ def require_stage_schema(schema, *, derivations=None):
         raise StagePolicyError("stage_age_question_unsupported")
     if not isinstance(schema, dict) or not isinstance(schema.get("questions"), list):
         raise StagePolicyError("invalid_form_schema")
+    if schema.get("derivations"):
+        raise StagePolicyError("stage_age_question_unsupported")
     questions = schema["questions"]
     if any(not isinstance(question, dict) or not isinstance(question.get("type"), str)
            or (question.get("profile_field_key") is not None
@@ -33,7 +35,7 @@ def require_stage_schema(schema, *, derivations=None):
         raise StagePolicyError("invalid_form_schema")
     age = tuple(question.get("id") for question in questions if (
         question.get("type") in AGE_KEYS or question.get("profile_field_key") in AGE_KEYS
-        or question.get("derivation") or question.get("derivations")))
+        or "derivation" in question or "derivations" in question or "derivation_binding" in question))
     if age:
         raise StagePolicyError("stage_age_question_unsupported", question_ids=age)
     files = tuple(question.get("id") for question in questions if question.get("type") == "file"
@@ -73,7 +75,7 @@ def validate_blocking(*, stage, activation_point, required, missed_action, block
     if (not isinstance(blocked_actions, list) or any(not isinstance(action, str) or action not in BLOCKED_ACTIONS for action in blocked_actions)
             or len(set(blocked_actions)) != len(blocked_actions)):
         raise StagePolicyError("invalid_blocked_actions")
-    if blocked_actions and (not required or missed_action != "block"):
+    if blocked_actions and (not required or missed_action not in {"warn", "block"}):
         raise StagePolicyError("invalid_blocked_actions")
     if not hackathon and "rsvp" in blocked_actions:
         raise StagePolicyError("stage_rsvp_unsupported")

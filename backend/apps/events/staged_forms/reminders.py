@@ -5,6 +5,9 @@ from apps.integrations.notify import NotificationResult
 from apps.operations.reminder_types import ReminderSource, ReminderSubject, ReminderMessage
 from .response_models import StageFormAssignment
 from .notices import enqueue_locked
+from .reminder_discovery import undiscovered, stage_prefix, HasUsableOffset
+from django.db.models import F
+from .trigger_service import participation_live
 
 
 def identity(row):
@@ -13,7 +16,10 @@ def identity(row):
 
 def discover(space, now, limit, local_tz):
     rows = StageFormAssignment.objects.filter(event__makerspace=space, state="open", imported_paused=False,
-        opens_at__lte=now, effective_due_at__gt=now).select_related("stage_form").order_by("effective_due_at", "pk")
+        event__status__in=("published", "completed"), opens_at__lte=now, effective_due_at__gt=now).select_related("stage_form")
+    rows = undiscovered(rows, space=space, source="stage_forms", prefix=stage_prefix(), due_field="effective_due_at", exact=True)
+    rows = rows.annotate(_has_offset=HasUsableOffset(F("stage_form__reminder_offsets"), F("effective_due_at"), F("triggered_at"))).filter(
+        _has_offset=True).order_by("effective_due_at", "pk")
     for row in rows[:min(limit, 100)]:
         offsets = tuple(value for value in row.stage_form.reminder_offsets
             if row.effective_due_at + timedelta(seconds=value) > row.triggered_at)
@@ -29,7 +35,7 @@ def resolve(space, schedule, now):
         pk=int(parts[1]), event__makerspace=space, state="open", imported_paused=False).first()
     if row is None or identity(row) != schedule.subject or row.effective_due_at != schedule.due_at or now >= row.effective_due_at:
         return None
-    return row if schedule.offset_seconds in row.stage_form.reminder_offsets else None
+    return row if row.event.status != "cancelled" and participation_live(row) and row.opens_at <= now and schedule.offset_seconds in row.stage_form.reminder_offsets else None
 
 
 def build(space, schedule, now, local_tz):
@@ -40,8 +46,8 @@ def dispatch(space, schedule, message, now, local_tz):
     row = resolve(space, schedule, timezone.now())
     if row is None:
         return NotificationResult(False)
-    enqueue_locked(row, "reminder", identity=str(schedule.pk))
-    return NotificationResult(True, {"envelope": 1})
+    result = enqueue_locked(row, "reminder", identity=str(schedule.pk))
+    return NotificationResult(bool(result), {"envelope": 1} if result else {})
 
 
 STAGE_REMINDER_SOURCE = ReminderSource("stage_forms", "events", discover, build, dispatch=dispatch)

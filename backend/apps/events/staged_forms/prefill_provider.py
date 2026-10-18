@@ -70,9 +70,16 @@ def require_binding(*, prepared_subject, actual_subject, operation_id, locks):
 
 
 def resolve_context(*, actor_id, selector):
-    event = Event.objects.select_related("makerspace").get(pk=selector["event_id"])
+    event = Event.objects.select_related("makerspace").get(pk=selector["event_id"], makerspace_id=selector["makerspace_id"])
     actor = User.objects.get(pk=actor_id)
     require_active_account(actor, event.makerspace)
+    from apps.accounts.account_kind_guards import require_member_account
+    from apps.accounts.claim_sessions import claim_context
+    from apps.makerspaces.models import MakerspaceMembership
+    require_member_account(actor)
+    require(claim_context(actor) is None, "full_session_required", status=403)
+    require(not MakerspaceMembership.objects.filter(user=actor, makerspace=event.makerspace).exclude(status="active").exists(),
+            "account_restricted", status=403)
     require_module(event.makerspace, "events")
     assert_write_allowed(event.makerspace_id)
     subject = StageResponseSubject(event_id=event.pk, owner_member_id=actor.pk,
@@ -80,10 +87,14 @@ def resolve_context(*, actor_id, selector):
     response = resolve_owner(subject)
     if response:
         definition, revision = response.assignment.stage_form, response.form_revision
-        locked = response.state in ("locked", "withdrawn") or response.assignment.effective_due_at <= timezone.now()
+        locked = (response.state in ("locked", "withdrawn") or response.assignment.effective_due_at <= timezone.now()
+            or response.assignment.next_stage_locked_at is not None or response.assignment.state == "cancelled")
     else:
         from .trigger_service import resolve_participant, applicable
         definition = EventStageForm.objects.get(pk=selector["stage_form_id"], event=event, state="published")
+        from .trigger_service import require_virtual_context
+        require_virtual_context(event, actor)
+        require(definition.stage == "application", "stage_not_inline")
         participant = resolve_participant(event=event, owner_id=actor.pk, creation_operation_id=subject.creation_operation_id)
         require(applicable(definition, participant) is not None, "stage_not_applicable", status=404)
         revision, locked = definition.current_revision, False

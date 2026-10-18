@@ -6,6 +6,8 @@ class PaymentsConfig(AppConfig):
     name = "apps.payments"
 
     def ready(self):
+        from apps.encryption.registry import register_retained_pii
+        register_retained_pii("payments.")
         from .notifications_p2 import register
         register()
 

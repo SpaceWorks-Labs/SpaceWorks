@@ -42,3 +42,28 @@ class SubjectResolver(Protocol):
     def require_owner(self, actor_id: int, subject: AnswerSubject) -> AnswerSubject:
         """Resolve typed FK, same event/member, standing and current authority."""
         ...
+
+
+@dataclass(frozen=True, kw_only=True)
+class StageResponseSubject:
+    """Saved-details binding only; never enters the closed age subject enum."""
+
+    event_id: int
+    owner_member_id: int
+    kind: str = "stage_response"
+    subject_id: int | None = None
+    creation_operation_id: UUID | None = None
+
+    def __post_init__(self):
+        if self.kind != "stage_response":
+            raise ValueError("Use stage_response.")
+        if any(type(value) is not int or value <= 0 for value in (
+            self.event_id, self.owner_member_id,
+        )):
+            raise ValueError("Subject bindings require positive integer IDs.")
+        if (self.subject_id is None) == (self.creation_operation_id is None):
+            raise ValueError("Bind one existing subject or one creation operation.")
+        if self.subject_id is not None and (type(self.subject_id) is not int or self.subject_id <= 0):
+            raise ValueError("Use a positive subject ID.")
+        if self.creation_operation_id is not None and not isinstance(self.creation_operation_id, UUID):
+            raise ValueError("Use a UUID creation operation.")

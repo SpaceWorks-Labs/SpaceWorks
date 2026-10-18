@@ -1,6 +1,6 @@
 {
   "lane": "P",
-  "contract_version": 3,
+  "contract_version": 4,
   "models": [
     {
       "label": "accounts.MemberSavedDetail",
@@ -95,7 +95,7 @@
         "expires_at": "models.DateTimeField()"
       },
       "constraints": [
-        "[models.UniqueConstraint(fields=['user', 'operation_uuid'], name='saved_intent_owner_operation'), models.CheckConstraint(condition=models.Q(subject_kind__in=['registration', 'application', 'role_assignment']), name='saved_intent_subject_kind')]"
+        "[models.UniqueConstraint(fields=['user', 'operation_uuid'], name='saved_intent_owner_operation'), models.CheckConstraint(condition=models.Q(subject_kind__in=['registration', 'application', 'role_assignment', 'stage_response']), name='saved_intent_subject_kind')]"
       ],
       "user_edge": null,
       "tenant_export": "exclude at both fidelities; no tenant closure",
@@ -240,6 +240,24 @@
       "object_fields": []
     }
   ],
+  "stage_addon": {
+    "migration_delta": "G replaces only accounts.saved_intent_subject_kind to also allow stage_response; no new model, field, FK, key or encrypted column",
+    "shared_subject": "G adds separate StageResponseSubject(kind='stage_response') in events/contracts/subjects.py; SubjectKind and AnswerSubject remain unchanged",
+    "prefill": "R/G return PrefillContext(subject=StageResponseSubject, stage_form_id=...) after live owner/event/host/source/module checks; stage owner is owner_member_id",
+    "selector": "stage_response: exactly one subject_id or creation_operation_id UUID; virtual selector additionally requires stage_form_id; posting_id forbidden",
+    "age": "Stage prefill excludes DOB rows, mappings, versions and defaults and always returns empty derivation_inputs; stage save rejects DOB/age mappings; no answer_derivations add-on",
+    "prepare": "G calls intents.validate_form_save_conflicts(slot -> (ValidatedSaveInput, choices, base_versions)) before domain writes; prepare each form with operation_id=child, outer_operation_id=outer, form_slot=slot",
+    "identity": "G owns child_form_operation_id: UUIDv5(namespace=outer UUID, name=events-form:v1:{event_id}:{owner_id}:{slot}); slots base or stage:{positive_id}; order/revision/answers never enter identity",
+    "binding": "G dispatcher verifies locked server-owned pending slot map and recomputed child UUID, R stage owner/assignment creation provenance and actual rows; return VerifiedIntentBinding(form_operation=VerifiedFormOperation(...)) for inline forms",
+    "binding_checks": "P preserves virtual creation UUID == prepared operation UUID and checks proof outer/slot/child/event/owner/kind/bound subject plus live hashes/date/choices/epoch; no requirement for an outer receipt before insertion",
+    "projection": "commands.form_intent_statuses(actor_id, IDs-only form_operations slot map) after all insertions; G stores map + form_save_intents in its outer EventCommandReceipt and returns stored results on identical replay",
+    "response": "SavedVaultFormIntentResponse: slot, operation_id, intent_id|null, state pending/applied/conflict/failed/not_requested, fields, status_url|null; field status adds unchanged",
+    "apply": "Equal current nondeleted value is unchanged with no write/version/consent change; stale different value or deletion is conflict; each child payload erased on completion/expiry",
+    "atomicity": "G/R insert all bound intents with base/stage/request/notice writes in the one outer transaction; no postcommit domain lookup from the account-only applier",
+    "frontend": "G/R parse canonical form_save_intents using parseFormSaveIntents and mount FormSaveIntentsNotice(actorId,intents,formLabels); hook query keys include stage_form_id and creation_operation_id",
+    "privacy": "No finance-payee context or profile keys; existing owner ZIP/erasure unchanged; no payout history export",
+    "tests": "tests/events/programme/test_stage_saved_details.py; tests/events/programme/test_inline_form_intents.py; frontend/src/features/accountSavedDetails/inlineFormIntents.test.tsx"
+  },
   "events_manifest": "apps.events.answer_derivations.manifest.MODEL_MANIFEST",
   "routes_provider": "apps.accounts.saved_details.urls.urlpatterns",
   "mount": "/api/v1/member/saved-details/",

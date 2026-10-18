@@ -7,9 +7,9 @@ from django.db import models
 class EventFormRevision(models.Model):
     event = models.ForeignKey("events.Event", on_delete=models.CASCADE, related_name="form_revisions")
     form_key = models.CharField(max_length=16, choices=[(key, key) for key in (
-        "registration", "application", "volunteer", "mentor", "round", "track")])
+        "registration", "application", "volunteer", "mentor", "round", "track", "stage")])
     selector_kind = models.CharField(max_length=8, default="none", choices=[(key, key) for key in (
-        "none", "posting", "round", "track")])
+        "none", "posting", "round", "track", "stage")])
     selector_id = models.PositiveBigIntegerField(null=True)
     revision = models.PositiveBigIntegerField()
     schema = models.JSONField(null=True)
@@ -25,11 +25,12 @@ class EventFormRevision(models.Model):
             models.CheckConstraint(condition=(models.Q(selector_id__isnull=True) | models.Q(selector_id__gte=1)),
                                    name="event_form_selector_positive"),
             models.CheckConstraint(condition=(models.Q(selector_kind="none", selector_id__isnull=True)
-                | models.Q(selector_kind__in=("posting", "round", "track"), selector_id__isnull=False)),
+                | models.Q(selector_kind__in=("posting", "round", "track", "stage"), selector_id__isnull=False)),
                 name="event_form_selector_consistent"),
             models.CheckConstraint(condition=(models.Q(form_key__in=("registration", "application"), selector_kind="none")
                 | models.Q(form_key__in=("volunteer", "mentor"), selector_kind="posting")
-                | models.Q(form_key="round", selector_kind="round") | models.Q(form_key="track", selector_kind="track")),
+                | models.Q(form_key="round", selector_kind="round") | models.Q(form_key="track", selector_kind="track")
+                | models.Q(form_key="stage", selector_kind="stage")),
                 name="event_form_selector_matches_key"),
         ]
 

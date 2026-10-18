@@ -11,6 +11,7 @@ from apps.events.models_event import Event
 
 class EventRegistration(ScopedPiiModelMixin, models.Model):
     version = models.PositiveIntegerField(default=1)
+    attendance_revision = models.PositiveBigIntegerField(default=0)
     answer_locked_at = models.DateTimeField(null=True, blank=True)
     date_review_required = models.BooleanField(default=False)
     credential_mode = models.CharField(max_length=8, default="legacy",

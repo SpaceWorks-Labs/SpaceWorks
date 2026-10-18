@@ -22,3 +22,16 @@ __all__ = [
     "StripeConnectOAuthState",
     "currency_validator",
 ]
+
+from .event_payouts.models import (
+    EventPayoutObligation, EventPayoutObligationRevision, EventPayoutEntry,
+    EventPayeeRevision, EventPayeeReview, FinanceAttachment, PayoutEligibility,
+    PayoutHold, PayoutExportBatch, PayoutExportBatchItem, ReceiptUse,
+    ReceiptAllocationOverride, ReceiptAllocation,
+)
+__all__ += [
+    "EventPayoutObligation", "EventPayoutObligationRevision", "EventPayoutEntry",
+    "EventPayeeRevision", "EventPayeeReview", "FinanceAttachment", "PayoutEligibility",
+    "PayoutHold", "PayoutExportBatch", "PayoutExportBatchItem", "ReceiptUse",
+    "ReceiptAllocationOverride", "ReceiptAllocation",
+]

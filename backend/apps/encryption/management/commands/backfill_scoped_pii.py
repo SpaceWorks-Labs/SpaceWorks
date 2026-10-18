@@ -4,32 +4,17 @@ from django.apps import apps
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
+from contextlib import nullcontext
+from uuid import UUID
 
 from apps.encryption.crypto import PiiUnavailable, is_envelope
 from apps.encryption.registry import all_fields, fields_for_label, makerspace_id_for, registered_labels
+from apps.encryption.write_fence import fence_operation
 
 
 FILTERS = {
-    "devices.PrinterJob": {"makerspace_id": None},
-    "events.EventBroadcast": {"makerspace_id": None},
-    "events.EventAttendanceCertificate": {"event__makerspace_id": None},
-    "events.EventFeedbackResponse": {"survey__event__makerspace_id": None},
-    "makerspaces.InvitationRequest": {"makerspace_id": None},
-    "makerspaces.MemberCard": {"makerspace_id": None},
-    "makerspaces.MembershipRequest": {"makerspace_id": None},
-    "integrations.NotificationEnvelope": {"makerspace_id": None},
-    "integrations.NotificationEndpoint": {"makerspace_id": None},
-    "integrations.NotificationEndpointChallenge": {"makerspace_id": None},
-    "notifications.MemberBroadcast": {"makerspace_id": None},
-    "notifications.NotificationInboxRow": {"makerspace_id": None},
-    "hardware_requests.HardwareRequest": {"makerspace_id": None},
-    "events.EventRegistration": {"event__makerspace_id": None},
-    "bookings.Booking": {"space__makerspace_id": None},
-    "bookings.BookingBroadcast": {"makerspace_id": None},
-    "bookings.BookingDepartureEvent": {"makerspace_id": None},
-    "machines.MachineServiceRequest": {"makerspace_id": None},
-    "machines.MachineUsageEntry": {"machine__makerspace_id": None},
-    "integrations.EmailLog": {"makerspace_id": None},
+    label: {fields_for_label(label)[0].makerspace_path.replace(".", "__"): None}
+    for label in registered_labels()
 }
 
 
@@ -43,6 +28,7 @@ class Command(BaseCommand):
         parser.add_argument("--resume-after-pk", type=int, default=0)
         parser.add_argument("--dry-run", action="store_true")
         parser.add_argument("--verify-only", action="store_true")
+        parser.add_argument("--fence-operation", type=UUID)
 
     def handle(self, *args, **options):
         if options["batch_size"] < 1:
@@ -51,6 +37,8 @@ class Command(BaseCommand):
         if mutate and not settings.PII_ENCRYPTION_ENABLED:
             raise CommandError("PII_ENCRYPTION_ENABLED must be enabled before backfill.")
         label, makerspace_id = options["model"], options["makerspace"]
+        if mutate and any(field.encryption_required for field in fields_for_label(label)):
+            raise CommandError("Mandatory finance fields are encrypted on insertion. Use --verify-only; plaintext repair is forbidden.")
         model = apps.get_model(label)
         filters = FILTERS[label]
         filters = filters.copy()
@@ -62,7 +50,8 @@ class Command(BaseCommand):
             ids = list(model.objects.filter(**filters, pk__gt=checkpoint).order_by("pk").values_list("pk", flat=True)[:options["batch_size"]])
             if not ids:
                 break
-            with transaction.atomic():
+            operation = options.get("fence_operation")
+            with transaction.atomic(), (fence_operation(operation) if operation else nullcontext()):
                 rows = list(model.objects.select_for_update().filter(pk__in=ids).order_by("pk"))
                 for row in rows:
                     for field in fields_for_label(label):

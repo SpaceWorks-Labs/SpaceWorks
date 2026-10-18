@@ -5,7 +5,7 @@ import { GalleryPublishPanel } from './GalleryPublishPanel';
 import type { Round, Scope } from './types';
 
 type Award = { prize_id: number; snapshot_id: number; rank: number; public_requested: boolean; tie_reason: string };
-export function ResultsPanel({ scope, rounds }: { scope: Scope; rounds: Round[] }) {
+export function ResultsPanel({ scope, rounds, galleryEnabled = false }: { scope: Scope; rounds: Round[]; galleryEnabled?: boolean }) {
   const { result, mutate } = useJudging(scope, true, true); const { prizes } = useDefinitions(scope);
   const [selected, setSelected] = useState<number[]>([]); const [awards, setAwards] = useState<Award[]>([]);
   const [integrity, setIntegrity] = useState(false); const [reason, setReason] = useState('');
@@ -58,7 +58,7 @@ export function ResultsPanel({ scope, rounds }: { scope: Scope; rounds: Round[] 
     </div>
     <ErrorBlock error={mutate.error} /><p className="whitespace-pre-wrap break-words text-sm text-muted" role="status">{preview}</p>
     {mutate.error ? <p className="text-sm text-muted">Your selections are retained. Refresh the server revision before reapplying a stale change.</p> : null}
-    <GalleryPublishPanel scope={scope} snapshots={[...new Set(rounds.flatMap(row => row.rows.map(row => row.snapshot_id)))]} resultRevisionId={current?.id ?? null} />
+    {galleryEnabled ? <GalleryPublishPanel scope={scope} snapshots={[...new Set(rounds.flatMap(row => row.rows.map(row => row.snapshot_id)))]} resultRevisionId={current?.id ?? null} /> : null}
     <ConfirmDialog open={confirm !== null} title={confirm === 'publish' ? 'Announce these results?' : 'Freeze this result revision?'}
       message={confirm === 'publish' ? 'Participants will be notified. The first announcement starts the file-retention deadline; later corrections do not extend it.' : 'Review selected rounds, prize assignments and tie reasons. This revision becomes immutable.'}
       pending={mutate.isPending} onCancel={() => setConfirm(null)} onConfirm={() => confirm && submit(confirm)} />

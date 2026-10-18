@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useQueries } from "@tanstack/react-query";
 import { memberRequest, memberRequestBlob } from "../../../lib/api";
 import { ActionControl, Card } from "../../../components/ui";
@@ -7,8 +8,9 @@ import { AssetPreview } from "./AssetPreview";
 import { OriginalVideo } from "./OriginalVideo";
 import { TextTablePreview } from "./TextTablePreview";
 
-export function AssetList({ scope, assetIds, publicIds, onConsent, onRemove, disabled }: {
+export function AssetList({ scope, assetIds, publicIds, onConsent, onRemove, disabled, onReadinessChange }: {
   scope: SubmissionScope; assetIds: number[]; publicIds: number[]; disabled: boolean;
+  onReadinessChange?: (ready: boolean) => void;
   onConsent: (id: number, value: boolean) => void; onRemove: (id: number) => void;
 }) {
   const queries = useQueries({ queries: assetIds.map(id => ({
@@ -17,6 +19,8 @@ export function AssetList({ scope, assetIds, publicIds, onConsent, onRemove, dis
     retry: false, refetchInterval: (query: { state: { data: Asset | undefined } }) =>
       ["ready", "rejected", "quarantined", "aborted", "expired"].includes(query.state.data?.state ?? "") ? false : 2000,
   })) });
+  const ready = queries.every(query => query.data?.state === "ready" && !query.error);
+  useEffect(() => { onReadinessChange?.(ready); }, [ready, onReadinessChange]);
   async function download(id: number) {
     const blob = await memberRequestBlob(`${memberBase(scope)}assets/${id}/download/`);
     const url = URL.createObjectURL(blob), anchor = document.createElement("a");

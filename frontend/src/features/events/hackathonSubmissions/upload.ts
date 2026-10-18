@@ -3,6 +3,8 @@ import { teamBase } from "./api";
 import type { Asset, SubmissionScope, UploadDescriptor, UploadResult, UploadSpec } from "./types";
 
 type Resume = { assetId: number; generation: number; version: number; fingerprint: string; operationId: string; completeOperationId: string };
+const sessions = new Map<string, Resume>();
+export function clearUploadSessions() { sessions.clear(); }
 const key = (scope: SubmissionScope) => `sw-event-upload:${scope.accountId}:${scope.makerspaceId}:${scope.eventId}:${scope.teamId}`;
 
 export async function fingerprint(file: File) {
@@ -25,6 +27,7 @@ function allowedUploadUrl(url: string, allowedOrigins: readonly string[]) {
 async function sendFile(file: File, descriptor: UploadDescriptor, record: Resume, scope: SubmissionScope,
   allowedOrigins: readonly string[], signal: AbortSignal, progress: (bytes: number) => void) {
   if (descriptor.method === "POST") {
+    if (!descriptor.url || !descriptor.fields) throw new Error("Invalid upload configuration.");
     const body = new FormData();
     for (const [name, value] of Object.entries(descriptor.fields)) body.append(name, value);
     body.append("file", file);
@@ -34,7 +37,7 @@ async function sendFile(file: File, descriptor: UploadDescriptor, record: Resume
     progress(file.size);
     return;
   }
-  if (!Number.isSafeInteger(descriptor.part_size) || descriptor.part_size < 5 * 1024 ** 2
+  if (typeof descriptor.part_size !== "number" || !Number.isSafeInteger(descriptor.part_size) || descriptor.part_size < 5 * 1024 ** 2
     || descriptor.part_count !== Math.ceil(file.size / descriptor.part_size) || descriptor.part_count > 10000) {
     throw new Error("Invalid upload configuration.");
   }
@@ -61,8 +64,7 @@ export async function uploadProjectFile({ file, spec, scope, allowedOrigins, sig
 }): Promise<Asset> {
   if (!file.size || file.size > 2 * 1024 ** 3) throw new Error("Choose a nonempty file within the upload limit.");
   const hash = await fingerprint(file);
-  let previous: Resume | null = null;
-  try { previous = JSON.parse(localStorage.getItem(key(scope)) ?? "null") as Resume | null; } catch { /* Storage may be disabled. */ }
+  const previous = sessions.get(key(scope)) ?? null;
   if (previous && previous.fingerprint !== hash) throw new Error("Select the original file to resume this upload.");
   let record: Resume;
   let descriptor: UploadDescriptor;
@@ -71,7 +73,7 @@ export async function uploadProjectFile({ file, spec, scope, allowedOrigins, sig
     const status = await memberRequest<Asset>(`${teamBase(scope)}assets/${record.assetId}/`, { signal });
     if (status.state !== "uploading") {
       if (["ready", "uploaded", "validating", "promoting"].includes(status.state)) {
-        try { localStorage.removeItem(key(scope)); } catch { /* Storage can be disabled. */ }
+        sessions.delete(key(scope));
         return status;
       }
       throw new Error("This upload has ended. Remove it from your draft before starting a replacement.");
@@ -82,19 +84,19 @@ export async function uploadProjectFile({ file, spec, scope, allowedOrigins, sig
   } else {
     const operationId = previous?.operationId ?? crypto.randomUUID();
     record = previous ?? { assetId: 0, version: 1, generation: 1, fingerprint: hash, operationId, completeOperationId: crypto.randomUUID() };
-    try { localStorage.setItem(key(scope), JSON.stringify(record)); } catch { /* Authorized retry remains possible. */ }
+    sessions.set(key(scope), record);
     const result = await memberRequest<UploadResult>(`${teamBase(scope)}assets/`, { method: "POST", signal,
       headers: { "Idempotency-Key": operationId }, body: JSON.stringify({ filename: file.name,
         mime: file.type || "application/octet-stream", bytes: file.size, ...spec }) });
     if (!result.upload) throw new Error("The upload could not be started.");
     descriptor = result.upload;
     record = { ...record, assetId: result.asset_id, version: result.version, generation: result.generation };
-    try { localStorage.setItem(key(scope), JSON.stringify(record)); } catch { /* In-memory upload still works. */ }
+    sessions.set(key(scope), record);
   }
   await sendFile(file, descriptor, record, scope, allowedOrigins, signal, progress);
   const result = await memberRequest<Asset>(`${teamBase(scope)}assets/${record.assetId}/complete/`, {
     method: "POST", signal, body: JSON.stringify({ operation_id: record.completeOperationId,
       expected_version: record.version, generation: record.generation }) });
-  try { localStorage.removeItem(key(scope)); } catch { /* No credentials or URLs are retained. */ }
+  sessions.delete(key(scope));
   return result;
 }

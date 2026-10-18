@@ -1,3 +1,4 @@
+import { DeskBadgePanel } from "./eventCredentials/DeskBadgePanel";
 import { opsStatusLabel } from "./opsPresentation";
 import { useState } from "react";
 
@@ -66,6 +67,7 @@ export function EventRegistrationRoster({ visible = true, event, makerspaceId, o
     {event.status === "published" && event.registration_open ? <button className="desk-button mb-4" type="button" onClick={() => setAdding(value => !value)}>{adding ? "Close registration form" : "Add registration"}</button> : null}
     <EventRegisterMember visible={adding} makerspaceId={makerspaceId} eventId={event.id} customForm={event.custom_form} audience={event.registration_audience} ticketsEnabled={event.ticketing_features?.includes("events.ticket_types")} promosEnabled={event.ticketing_features?.includes("events.promo_codes")} disabled={event.status !== "published" || !event.registration_open} />
     {checkable && showCheckIn && access.checkIn ? <EventCheckInOperator makerspaceId={makerspaceId} eventId={event.id} offlineEnabled={offlineCheckInEnabled} canManageStation={access.manager} /> : null}
+    {(access.edit || access.checkIn) && rows.data?.results.length ? <DeskBadgePanel key={`desk-${event.id}`} eventId={event.id} registrationIds={selectedIds} canEdit={access.edit} canPrint={access.checkIn} /> : null}
     {(access.edit || access.checkIn) && rows.data?.results.length ? <EventDisclosure title="Badges"><EventBadgeActions event={event} makerspaceId={makerspaceId} selectedIds={selectedIds} includeAttended={includeAttended} onIncludeAttended={(value) => { setIncludeAttended(value); if (!value) setSelectedIds([]); }} canEdit={access.edit} canPrint={access.checkIn} /></EventDisclosure> : null}
     {rows.data?.results.length ? <DataTable data={rows.data.results} columns={[
       // Check-in-only staff may reprint badges for attended guests; full managers select registered guests too.

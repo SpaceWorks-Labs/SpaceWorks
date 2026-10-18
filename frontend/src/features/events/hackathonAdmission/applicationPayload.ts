@@ -1,3 +1,5 @@
+import { memberFormInput } from '../../forms/conditions'
+import { formSchema } from '../programme/formBridge'
 import type { AdmissionSelection, Application, FormValue, ProgrammeContext } from './types'
 
 export function applicationPayload(context: ProgrammeContext, application: Application, value: FormValue,
@@ -8,6 +10,6 @@ export function applicationPayload(context: ProgrammeContext, application: Appli
     && (!['invite_code', 'promo_code'].includes(key) || (!draft && typeof item === 'string' && Boolean(item.trim())))))
   return { expected_version: application.version, event_date_revision: context.event.event_date_revision,
     ...(!Array.isArray(schema) ? { form: { schema_version: schema.schema_version, form_id: schema.form_id, revision: schema.revision } } : {}),
-    ...value, ...admission, coc: { revision: context.coc?.revision, accepted: cocAccepted },
+    ...(Array.isArray(schema) ? value : memberFormInput(formSchema(schema), value)), ...admission, coc: { revision: context.coc?.revision, accepted: cocAccepted },
     optional_consents: { mlh_data_sharing: sharing } }
 }

@@ -27,7 +27,7 @@ export function ShiftEditor({ scope, initial, onSaved }: { scope: EventScope; in
   const [briefing, setBriefing] = useState(initial?.requirements.briefing_ids?.join(', ') ?? '')
   const [waiver, setWaiver] = useState(initial?.requirements.host_waiver_required ?? false)
   const [permissions, setPermissions] = useState(initial?.permission_preset.join(', ') ?? '')
-  const [state, setState] = useState(initial?.state ?? 'open')
+  const [state, setState] = useState<string>(initial?.state ?? 'open')
   const [cancel, setCancel] = useState(false)
   const [reason, setReason] = useState('')
   const [error, setError] = useState<unknown>(null)

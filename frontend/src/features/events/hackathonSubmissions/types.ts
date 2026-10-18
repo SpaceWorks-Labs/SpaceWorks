@@ -7,14 +7,11 @@ export type Project = {
   public_requested: boolean; track_ids: number[]; prize_ids: number[]; asset_ids: number[]; public_asset_ids: number[];
   form_answers: Record<string, unknown>; links: ProjectLink[];
 };
-export type Submission = { id: number | null; event_id: number; version: number; state: string;
-  snapshot_id: number | null; project: Partial<Project>; allowed_actions: string[] };
-export type Asset = { asset_id: number; event_id: number; version: number; generation: number;
-  state: string; bytes: number; mime: string; sha256: string; expires_at: string | null; allowed_actions: string[];
-  filename?: string; extension?: string; kind?: string; media_metadata?: { browser_playable?: boolean } };
+/** The server's JSON project has a domain-specific validated editor projection. */
+export type Submission = Omit<import('../../../generated/api').ProjectResponse, 'project'> & { project: Partial<Project> };
+export type Asset = import('../../../generated/api').AssetResponse;
 export type UploadSpec = { group: string; subtype: string };
-export type UploadDescriptor = { method: "POST"; url: string; fields: Record<string, string>; expires_at: string }
-  | { method: "MULTIPART"; part_size: number; part_count: number; expires_at?: string };
-export type UploadResult = Asset & { upload?: UploadDescriptor };
+export type UploadDescriptor = import('../../../generated/api').UploadDescriptor;
+export type UploadResult = import('../../../generated/api').UploadResponse;
 export type PreviewMesh = { positions: Float32Array; normals?: Float32Array };
 export type PreviewResult = { kind: "mesh"; meshes: PreviewMesh[] } | { kind: "svg"; svg: string };

@@ -1,3 +1,4 @@
+import { sessionScope } from '../../staff/eventProgramme/sessionScope'
 import { useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ListLayout } from '../../../components/layouts'
@@ -12,7 +13,7 @@ export function TeamFinderPage({ context, accountId }: { context: ProgrammeConte
   const [page, setPage] = useState(1), [skills, setSkills] = useState('')
   const [intro, setIntro] = useState(''), [profileSkills, setProfileSkills] = useState('')
   const commands = useRef(new CommandSession()), client = useQueryClient()
-  const base = context.routes.member_base, key = ['team-finder', accountId, context.event.id] as const
+  const base = context.routes.member_base, key = ['team-finder', accountId, context.makerspace.id, context.event.id, ...sessionScope()] as const
   const cards = useQuery({ queryKey: [...key, page, skills], queryFn: () => memberRequest<Page<FinderCard>>(
     base.slice('/api/v1'.length) + '/team-finder/?page=' + page + '&skills=' + encodeURIComponent(skills)),
     enabled: context.programme.finder_enabled, staleTime: 0, gcTime: 0, retry: false })

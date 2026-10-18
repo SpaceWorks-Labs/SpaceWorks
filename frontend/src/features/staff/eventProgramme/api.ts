@@ -3,12 +3,12 @@ import { staffRequest } from "../../../lib/api";
 import { sessionScope, useClearDeniedQuery } from "./sessionScope";
 export const programmePath = (event: number) => `/admin/events/${event}/programme/`;
 export const programmeKey = (event: number) => ["event-programme", event] as const;
-export type Readiness = { event_id: number; items: { code: string; status: "ready" | "missing" | "action" | "unavailable"; label: string; href: string; count: number | null }[] };
-export type Live = { event_id: number; available_from: string; doors_open_at: string; seconds_until_doors: number; active: boolean; going: number; checked_in: number; arrivals: { starts_at: string; count: number }[]; first_run: boolean };
-export type Publishing = { event_id: number; version: number; is_public: boolean; registration_audience: string; status: "draft" | "published" | "cancelled" | "completed"; website_released: boolean; website_revision: number | null };
+export type Readiness = import('../../../generated/api').Readiness;
+export type Live = import('../../../generated/api').Live;
+export type Publishing = import('../../../generated/api').Publishing;
 export function useProgrammeQuery<T>(event: number, section: string, polling = false) {
   const key = [...programmeKey(event), section, ...sessionScope()];
-  const query = useQuery({ queryKey: key, queryFn: () => staffRequest<T>(`${programmePath(event)}${section}/`), refetchInterval: polling ? 15000 : false });
+  const query = useQuery({ queryKey: key, queryFn: () => staffRequest<T>(`${programmePath(event)}${section}/`), retry: false, gcTime: 0, staleTime: 0, refetchInterval: polling ? 15000 : false });
   const denied = useClearDeniedQuery(query.error, key);
   return { ...query, data: denied ? undefined : query.data };
 }

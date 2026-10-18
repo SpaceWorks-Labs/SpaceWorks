@@ -1,3 +1,4 @@
+import { AccentPresetPicker, ACCENT_PRESETS, type AccentPreset } from "./eventProgramme/AccentPresetPicker";
 import { emptyVenue, orderedGroups, type EventWebsite, type WebsiteVenue } from "../events/websiteTypes";
 import { websiteCard, websiteCheck, websiteInput, websiteLabel, websiteLegend } from "./eventWebsiteFormStyles";
 
@@ -18,7 +19,8 @@ export function EventWebsiteLayout({ page, onChange, disabled }: {
     <legend className={websiteLegend}>Page layout and venue</legend>
     <div className="grid gap-4 sm:grid-cols-2">
       <label className={websiteLabel}>Tagline<input className={websiteInput} maxLength={300} value={page.tagline ?? ""} onChange={(e) => onChange({ ...page, tagline: e.target.value })} /></label>
-      <label className={websiteLabel}>Accent colour<input className={websiteInput} placeholder="#2563eb" pattern="#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})" maxLength={7} value={page.accent_color ?? ""} onChange={(e) => onChange({ ...page, accent_color: e.target.value })} /></label>
+      <AccentPresetPicker value={(Object.entries(ACCENT_PRESETS).find(([, preset]) => preset.background.toLowerCase() === page.accent_color?.toLowerCase())?.[0] ?? null) as AccentPreset | null}
+        onChange={preset => onChange({ ...page, accent_color: preset ? ACCENT_PRESETS[preset].background : '' })} />
     </div>
     <p className="text-sm text-muted">Choose which groups appear publicly and move them into display order. Hidden groups and their detail pages are unavailable publicly.</p>
     <ol className="grid gap-2" aria-label="Section order">{order.map((group, index) => <li key={group} className="flex min-w-0 flex-wrap items-center gap-2 rounded-xl border border-line px-3 py-1">

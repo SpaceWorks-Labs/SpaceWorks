@@ -21,6 +21,8 @@ export function SubmissionEditor({ scope, uploadOrigins, formats, tracks = [], p
   const query = useSubmission(scope), mutation = useSubmissionCommand(scope);
   const [project, setProject] = useState<Project>(blank);
   const [dirty, setDirty] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [filesReady, setFilesReady] = useState(false);
   const version = useRef<number | null>(null);
   const operation = useRef(crypto.randomUUID());
   useEffect(() => {
@@ -35,16 +37,17 @@ export function SubmissionEditor({ scope, uploadOrigins, formats, tracks = [], p
     if (version.current === null) return;
     try {
       const result = await mutation.mutateAsync({ action, version: version.current,
-        project: action === "save" ? project : undefined, operationId: operation.current });
+        project: action === "save" ? Object.fromEntries(Object.entries(project).filter(([key, value]) => JSON.stringify(value) !== JSON.stringify(query.data?.project[key as keyof Project]))) : undefined, operationId: operation.current });
       version.current = result.version; operation.current = crypto.randomUUID(); setDirty(false);
     } catch { /* Mutation error stays visible and the operation ID survives retry. */ }
   }
   if (query.isLoading) return <div role="status"><Spinner />Loading project…</div>;
   if (query.isError) return <Callout size="panel" tone="danger" lead="Could not load your project."
     action={{ label: "Retry", onClick: () => void query.refetch() }} />;
-  const locked = !["draft", "submitted"].includes(query.data?.state ?? "draft");
+  const locked = !["draft", "submitted"].includes(query.data?.state ?? "draft") || !query.data?.allowed_actions.includes("save");
   const form = <div className="grid gap-6">
     <p className="text-sm text-muted">Build your project draft, then submit a frozen version for judging. Files stay private until you choose gallery sharing and the organizer publishes it.</p>
+    {query.data?.snapshot_id ? <p role="status" className="rounded-xl border border-line bg-success-soft p-3 text-sm text-success-ink">Frozen submission receipt: {query.data.snapshot_id}. Judging uses this submitted version.</p> : null}
     {dirty ? <p role="status" className="text-sm font-semibold text-ink">You have unsaved changes.</p> : null}
     {mutation.isError ? <Callout size="panel" tone="danger" lead="Your changes were not saved."
       body={mutation.error.message} action={{ label: "Reload server version", onClick: () => { setDirty(false); void query.refetch(); } }} /> : null}
@@ -72,18 +75,18 @@ export function SubmissionEditor({ scope, uploadOrigins, formats, tracks = [], p
         onChange={e => change({ public_requested: e.target.checked })} />Allow our project description in the public gallery</label>
     </fieldset>
     <LinkEditor value={project.links} disabled={locked || mutation.isPending} onChange={links => change({ links })} />
-    <UploadEditor scope={scope} allowedOrigins={uploadOrigins} options={formats} disabled={locked || !query.data?.id}
+    <UploadEditor scope={scope} allowedOrigins={uploadOrigins} options={formats} onPendingChange={setUploading} disabled={locked || mutation.isPending || !query.data?.id}
       onUploaded={asset => change({ asset_ids: [...new Set([...project.asset_ids, asset.asset_id])] })} />
     {!query.data?.id ? <p className="text-sm text-muted">Save your project draft to start uploading files.</p> : null}
-    <AssetList scope={scope} assetIds={project.asset_ids} publicIds={project.public_asset_ids} disabled={locked}
+    <AssetList scope={scope} assetIds={project.asset_ids} publicIds={project.public_asset_ids} onReadinessChange={setFilesReady} disabled={locked || mutation.isPending || uploading}
       onRemove={id => change({ asset_ids: project.asset_ids.filter(v => v !== id), public_asset_ids: project.public_asset_ids.filter(v => v !== id) })}
       onConsent={(id, checked) => change({ public_asset_ids: checked ? [...new Set([...project.public_asset_ids, id])] : project.public_asset_ids.filter(v => v !== id) })} />
-    <div className="flex flex-wrap gap-3"><ActionControl action={{ label: "Submit project", disabled: dirty || locked || !project.title.trim() || !query.data?.allowed_actions.includes("submit"),
-      disabledReason: dirty ? "Save your draft before submitting." : undefined, pending: mutation.isPending, onClick: () => void command("submit"),
+    <div className="flex flex-wrap gap-3"><ActionControl action={{ label: "Submit project", disabled: dirty || locked || uploading || (project.asset_ids.length > 0 && !filesReady) || !project.title.trim() || !query.data?.allowed_actions.includes("submit"),
+      disabledReason: uploading ? "Wait for the upload to finish." : !filesReady && project.asset_ids.length ? "Wait for every file to pass validation." : dirty ? "Save your draft before submitting." : undefined, pending: mutation.isPending, onClick: () => void command("submit"),
       confirm: { title: "Submit this version?", message: "This captures your current project, team and ready files for judging." } }} />
-      <ActionControl action={{ label: "Withdraw submission", tone: "danger", disabled: query.data?.state === "withdrawn", pending: mutation.isPending,
+      <ActionControl action={{ label: "Withdraw submission", tone: "danger", disabled: uploading || !query.data?.allowed_actions.includes("withdraw"), pending: mutation.isPending,
         onClick: () => void command("withdraw"), confirm: { title: "Withdraw this submission?", message: "Your project will no longer be eligible for judging or public display." } }} /></div>
   </div>;
   return <FormPageLayout state={{ status: "ready" }} header={{ title: "Your maker project" }} form={form}
-    submit={{ label: "Save draft", pending: mutation.isPending, disabled: !dirty || locked, onClick: () => void command("save") }} />;
+    submit={{ label: "Save draft", pending: mutation.isPending, disabled: !dirty || locked || uploading, onClick: () => void command("save") }} />;
 }

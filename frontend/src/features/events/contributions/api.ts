@@ -1,3 +1,4 @@
+import { sessionScope, useClearDeniedQuery } from '../../staff/eventProgramme/sessionScope'
 import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { memberRequest, staffRequest, StructuredApiError } from '../../../lib/api'
@@ -6,7 +7,7 @@ import { parseAggregate, parsePage } from './types'
 
 export type Surface = 'member' | 'admin'
 export function programmeKey(scope: EventScope, surface: Surface) {
-  return ['events-programme-c', scope.accountId, scope.makerspaceId, scope.eventId, surface] as const
+  return ['events-programme-c', scope.accountId, scope.makerspaceId, scope.eventId, surface, ...sessionScope()] as const
 }
 export function basePath(scope: EventScope, surface: Surface) {
   return surface === 'member' ? `/member/makerspaces/${scope.makerspaceId}/events/${scope.eventId}` : `/admin/events/${scope.eventId}`
@@ -31,20 +32,24 @@ function useVisible() {
 
 export function useProgrammeList<T extends Aggregate>(scope: EventScope, surface: Surface, path: string, page = 1, live = false, enabled = true) {
   const visible = useVisible()
-  return useQuery({
+  const query = useQuery({
     queryKey: [...programmeKey(scope, surface), path, page], enabled, gcTime: 0,
     queryFn: async () => parsePage(await requestFor(surface)<Page<T>>(`${basePath(scope, surface)}${path}?page=${page}`)),
     refetchInterval: query => live && visible ? Math.min(120_000, 15_000 * 2 ** query.state.fetchFailureCount) : false,
     refetchIntervalInBackground: false, retry: false,
   })
+  const denied = useClearDeniedQuery(query.error, [...programmeKey(scope, surface), path, page])
+  return { ...query, data: denied ? undefined : query.data }
 }
 
 export function useProgrammeDetail<T extends Aggregate>(scope: EventScope, surface: Surface, path: string, enabled = true, live = false) {
   const visible = useVisible()
-  return useQuery({ queryKey: [...programmeKey(scope, surface), path], enabled, retry: false, gcTime: 0,
+  const query = useQuery({ queryKey: [...programmeKey(scope, surface), path], enabled, retry: false, gcTime: 0,
     refetchInterval: query => live && visible ? Math.min(120_000, 15_000 * 2 ** query.state.fetchFailureCount) : false,
     refetchIntervalInBackground: false,
     queryFn: async () => parseAggregate(await requestFor(surface)<T>(`${basePath(scope, surface)}${path}`)) })
+  const denied = useClearDeniedQuery(query.error, [...programmeKey(scope, surface), path])
+  return { ...query, data: denied ? undefined : query.data }
 }
 
 export interface CommandInput { path: string; version: number; fields?: Record<string, unknown>; method?: 'POST' | 'PATCH' }
@@ -63,11 +68,17 @@ export function useProgrammeCommand(scope: EventScope, surface: Surface) {
     },
     onSuccess: async () => {
       last.current = null
-      await cache.invalidateQueries({ queryKey: programmeKey(scope, surface) })
+      await Promise.all([cache.invalidateQueries({ queryKey: programmeKey(scope, surface) }),
+        cache.invalidateQueries({ queryKey: ['event', scope.eventId] }),
+        cache.invalidateQueries({ queryKey: ['event-programme', scope.eventId] }),
+        cache.invalidateQueries({ queryKey: ['member', scope.accountId, 'event-submission'] })])
     },
     onError: async error => {
       if (error instanceof StructuredApiError && error.status === 409) {
-        await cache.invalidateQueries({ queryKey: programmeKey(scope, surface) })
+        await Promise.all([cache.invalidateQueries({ queryKey: programmeKey(scope, surface) }),
+        cache.invalidateQueries({ queryKey: ['event', scope.eventId] }),
+        cache.invalidateQueries({ queryKey: ['event-programme', scope.eventId] }),
+        cache.invalidateQueries({ queryKey: ['member', scope.accountId, 'event-submission'] })])
       }
     },
   })

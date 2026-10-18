@@ -9,7 +9,7 @@ import { getAccessToken, refreshAccessToken, StructuredApiError, tenantPublicReq
 import { useTenant, useTenantPath } from "../../lib/tenant";
 import { useTenantBranding } from "../../lib/useTenantBranding";
 import { useTenantBootstrap } from "./usePublicInventory";
-import { CustomFormFields } from "../forms/CustomFormFields";
+import { EventFeedbackFields } from "../events/programme/EventFeedbackFields";
 import { customAnswerErrors, validateCustomAnswers, type CustomAnswers, type CustomFormQuestion } from "../forms/customFormTypes";
 
 type FeedbackForm = {
@@ -68,7 +68,7 @@ export function PublicEventFeedbackPage() {
     {data ? <>
       {data.requires_auth && !restored ? <Card><p>Sign in to get your certificate.</p><Link className="desk-button-brand mt-3" to={tenantPath("member")}>Member sign in</Link></Card> : null}
       <form className="desk-panel mt-5 grid gap-5 p-5" onSubmit={event => { event.preventDefault(); const next = validateCustomAnswers(data.survey.questions, answers); setErrors(next); if (!Object.keys(next).length) submit.mutate(); }}>
-        <CustomFormFields schema={data.survey.questions} answers={answers} onChange={setAnswers} errors={{ ...errors, ...customAnswerErrors(apiErrors) }} yesNoAsCheckbox />
+        <EventFeedbackFields schema={data.survey.questions} answers={answers} onChange={setAnswers} errors={{ ...errors, ...customAnswerErrors(apiErrors) }} yesNoAsCheckbox />
         {data.requires_auth ? <label className="grid gap-1"><span className="text-sm font-semibold text-ink">Registration email</span><input className="desk-input" type="email" required value={email} onChange={event => setEmail(event.target.value)} /></label> : null}
         <button className="desk-button-brand" type="submit" disabled={submit.isPending || (data.requires_auth && !restored)}>{submit.isPending ? "Submitting…" : "Submit feedback"}</button>
         {submit.error ? <p className="text-sm text-danger" role="alert">{submit.error.message}</p> : null}

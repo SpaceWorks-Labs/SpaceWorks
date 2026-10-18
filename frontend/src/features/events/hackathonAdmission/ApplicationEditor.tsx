@@ -10,7 +10,7 @@ import type { AdmissionSelection, Application, FormFields, FormValue, Prefill, P
 export function ApplicationEditor({ context, application, Fields, prefill, pending, error, onSave }: {
   context: ProgrammeContext; application: Application; Fields: FormFields; prefill?: Prefill
   pending: boolean; error: Error | null
-  onSave: (body: Record<string, unknown>, draft: boolean) => void
+  onSave: (body: Record<string, unknown>, draft: boolean) => Promise<Application> | void
 }) {
   const [value, setValue] = useState<FormValue>({ answers: Object.fromEntries(application.answers
     .filter(answer => typeof answer.id === 'string' && answer.type !== 'age_at_event' && 'value' in answer).map(a => [a.id as string, a.value])),
@@ -20,6 +20,9 @@ export function ApplicationEditor({ context, application, Fields, prefill, pendi
   const [coc, setCoc] = useState(false)
   const [sharing, setSharing] = useState(application.optional_consents?.mlh_data_sharing?.accepted ?? false)
   const [dirty, setDirty] = useState(false)
+  const [baseVersion, setBaseVersion] = useState(application.version)
+  const conflict = dirty && application.version !== baseVersion
+  useEffect(() => { if (!dirty) setBaseVersion(application.version) }, [application.version, dirty])
   const editingSubmitted = application.state === 'submitted'
   const waiver = application.admission_requirements.host_waiver
   useEffect(() => { setSelection(s => ({ ...s, host_waiver_accepted: false, host_waiver_id: null, host_waiver_version: null })) }, [waiver?.id, waiver?.version])
@@ -39,15 +42,22 @@ export function ApplicationEditor({ context, application, Fields, prefill, pendi
     window.addEventListener('beforeunload', warn)
     return () => window.removeEventListener('beforeunload', warn)
   }, [dirty])
-  const save = (draft: boolean) => onSave(applicationPayload(context, application, value, selection, coc, sharing, draft), draft)
+  const save = (draft: boolean) => {
+    const result = onSave(applicationPayload(context, { ...application, version: baseVersion }, value, selection, coc, sharing, draft), draft)
+    if (result) void result.then(saved => { setBaseVersion(saved.version); setDirty(false) }).catch(() => { /* The mutation's typed error stays visible. */ })
+  }
   const fields = error instanceof StructuredApiError && error.body.fields && typeof error.body.fields === 'object'
     ? error.body.fields as Record<string, unknown> : {}
   return <FormPageLayout header={{ title: 'Apply to make something together', subtitle: 'Review your own answers, ticket and agreements before submitting.' }}
-    state={{ status: 'ready' }} submit={{ label: editingSubmitted ? 'Save answers' : 'Submit application', pending, disabled: !coc, onClick: () => save(editingSubmitted) }}
-    cancel={editingSubmitted ? undefined : { label: 'Save draft', disabled: pending, onClick: () => save(true) }}
+    state={{ status: 'ready' }} submit={{ label: editingSubmitted ? 'Save answers' : 'Submit application', pending, disabled: !coc || conflict, onClick: () => save(editingSubmitted) }}
+    cancel={editingSubmitted ? undefined : { label: 'Save draft', disabled: pending || conflict, onClick: () => save(true) }}
     form={<div className="grid gap-6">
       <AdmissionArtwork kind="hackathon" />
       {dirty ? <p className="rounded-xl border border-line bg-panel p-3 text-sm text-ink" role="status">You have unsaved changes.</p> : null}
+      {conflict ? <div role="alert" className="grid gap-3 rounded-xl border border-line p-4"><p>The application changed. Your draft is preserved. Review the current questions before reapplying your answers.</p>
+        <button className="desk-button" type="button" onClick={() => { setBaseVersion(application.version); setCoc(false) }}>Keep my draft and review the new version</button>
+        <button className="desk-button" type="button" onClick={() => { setValue({ answers: Object.fromEntries(application.answers.filter(answer => typeof answer.id === 'string' && answer.type !== 'age_at_event' && 'value' in answer).map(answer => [answer.id as string, answer.value])), derivations: {}, save_choices: {}, saved_detail_versions: {} }); setBaseVersion(application.version); setDirty(false); setCoc(false) }}>Reload server answers</button>
+      </div> : null}
       {error ? <ErrorText message={error.message} /> : null}
       {context.application_form ? <Fields schema={context.application_form} value={value} prefill={prefill}
         onChange={next => { setValue(next); setDirty(true) }} errors={fields} disabled={pending}

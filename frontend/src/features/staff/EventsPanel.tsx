@@ -108,7 +108,7 @@ export function EventsPanel({ makerspaceId, enabledFeatures = [] }: { makerspace
   const shown = rows;
   const organizationAudience = enabledFeatures.includes("events.organization_audience");
   const openEvent = (id: number) => { setSelectedId(id); setParams(current => { const next = new URLSearchParams(current); next.set("event", String(id)); return next; }); };
-  if (selectedId !== null) return <EventDrawer key={selectedId} eventId={selectedId} makerspaceId={makerspaceId} onClose={closeSelection}
+  if (selectedId !== null) return <EventDrawer key={selectedId} eventId={selectedId} makerspaceId={makerspaceId} enabledFeatures={enabledFeatures} onClose={closeSelection}
     onOpenSeries={seriesId => { closeSelection(); setSelectedSeriesId(seriesId); }} />;
   if (selectedSeriesId !== null) return <EventSeriesDrawer key={selectedSeriesId} seriesId={selectedSeriesId} makerspaceId={makerspaceId} onClose={() => setSelectedSeriesId(null)} onSelectOccurrence={id => { setSelectedSeriesId(null); openEvent(id); }} />;
   if (creating) return <FormPageLayout state={{ status: "ready" }} header={{ title: creationMode === "single" ? "New event" : "New series", subtitle: "Start with a draft. Publish when every detail is ready." }}

@@ -1,16 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { memberRequest } from "../../../lib/api";
 
-type Option = { profile_id: number; membership_id: number; makerspace_name: string; has_photo: boolean;
-  public_eligible: boolean; source_revision: string };
-type Presentation = { id: number | null; version: number; profile_id?: number | null; membership_id?: number | null;
-  selected_profile?: number | null; selected_membership?: number | null; print_photo_consent: boolean;
-  public_card_consent: boolean; public_card_scopes: string[] };
+import type { ProfileOption as Option, Presentation } from '../../../generated/api';
+import { CommandSession } from '../hackathonAdmission/transport';
+import { sessionScope, useClearDeniedQuery } from '../../staff/eventProgramme/sessionScope';
 
-export function PhotoChoice({ makerspaceId, eventId, eventName }: { makerspaceId: number; eventId: number; eventName: string }) {
+export function PhotoChoice({ makerspaceId, eventId, eventName, actorId = 0 }: { makerspaceId: number; eventId: number; eventName: string; actorId?: number }) {
   const base = `/member/makerspaces/${makerspaceId}/events/${eventId}`;
-  const key = ["event-presentation", makerspaceId, eventId];
+  const key = ["event-presentation", actorId, makerspaceId, eventId, ...sessionScope()];
+  const commands = useRef(new CommandSession());
+  const [open, setOpen] = useState(false);
   const client = useQueryClient();
   const options = useQuery({ queryKey: [...key, "choices"], queryFn: () => memberRequest<{ options: Option[] }>(`${base}/profile-photo-options/`), staleTime: 0, gcTime: 0 });
   const current = useQuery({ queryKey: key, queryFn: () => memberRequest<Presentation>(`${base}/presentation/`), staleTime: 0, gcTime: 0 });
@@ -19,19 +19,20 @@ export function PhotoChoice({ makerspaceId, eventId, eventName }: { makerspaceId
   const [scopes, setScopes] = useState<string[]>([]);
   const [dirty, setDirty] = useState(false);
   useEffect(() => { if (current.data && !dirty) {
-    setProfileId(current.data.profile_id ?? current.data.selected_profile ?? null);
+    setProfileId(current.data.profile_id ?? null);
     setPrintConsent(current.data.print_photo_consent); setScopes(current.data.public_card_scopes);
   } }, [current.data, dirty]);
   const chosen = options.data?.options.find((row) => row.profile_id === profileId);
-  const save = useMutation({ mutationFn: () => memberRequest<Presentation>(`${base}/presentation/`, { method: "PATCH", body: JSON.stringify({
-    operation_id: crypto.randomUUID(), expected_version: current.data?.version ?? 0,
+  const save = useMutation({ mutationFn: () => commands.current.send<Presentation>(`/api/v1${base}/presentation/`, "PATCH", { expected_version: current.data?.version ?? 0,
     profile_id: chosen?.profile_id ?? null, membership_id: chosen?.membership_id ?? null,
     source_revision: chosen?.source_revision ?? null, print_photo_consent: Boolean(chosen && printConsent),
     public_card_consent: Boolean(chosen && scopes.length), public_card_scopes: chosen ? scopes : [],
-  }) }), onSuccess: async () => { setDirty(false); await Promise.all([client.invalidateQueries({ queryKey: key }), client.invalidateQueries({ queryKey: [...key, "choices"] })]); } });
+  }), onSuccess: async () => { setDirty(false); await Promise.all([client.invalidateQueries({ queryKey: key }), client.invalidateQueries({ queryKey: [...key, "choices"] })]); } });
   const error = current.error || options.error || save.error;
-  return <details className="rounded-control border border-line p-3"><summary className="min-h-11 cursor-pointer font-semibold text-ink">Badge photo and public cards</summary>
-    <p className="my-2 text-sm text-muted">Choose a profile for {eventName}. No profile is selected automatically. Photos come from your existing makerspace profiles.</p>
+  const denied = useClearDeniedQuery(error, key);
+  if (denied) return <p role="alert">Photo choices are no longer available for your access.</p>;
+  return <details className="rounded-control border border-line p-3" onToggle={event => setOpen(event.currentTarget.open)}><summary className="min-h-11 cursor-pointer font-semibold text-ink">Badge photo and public cards</summary>
+    {open ? <><p className="my-2 text-sm text-muted">Choose a profile for {eventName}. No profile is selected automatically. Photos come from your existing makerspace profiles.</p>
     {current.isLoading || options.isLoading ? <p role="status">Loading your choices…</p> : <fieldset disabled={save.isPending || !current.data} className="grid gap-3">
       <label className="grid gap-1 text-sm">Profile source<select className="desk-input" value={profileId ?? ""} onChange={(event) => {
         setDirty(true); setProfileId(event.target.value ? Number(event.target.value) : null); setPrintConsent(false); setScopes([]);
@@ -48,5 +49,6 @@ export function PhotoChoice({ makerspaceId, eventId, eventName }: { makerspaceId
       {save.isSuccess ? <p role="status" className="text-sm text-success-ink">Photo choices saved.</p> : null}
     </fieldset>}
     {error ? <p className="text-sm text-danger" role="alert">{error.message}</p> : null}
+    </> : null}
   </details>;
 }

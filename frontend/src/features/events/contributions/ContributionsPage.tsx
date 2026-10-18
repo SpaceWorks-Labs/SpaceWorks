@@ -5,8 +5,9 @@ import { ActionControl, Card, StatusPill } from '../../../components/ui'
 import { errorText, useProgrammeCommand, useProgrammeList } from './api'
 import type { EventScope, Posting, RoleApplication, Signup } from './types'
 
-export function ContributionsPage({ scope, onApply, onOpenApplication }: {
+export function ContributionsPage({ scope, onApply, onOpenApplication, onDesk }: {
   scope: EventScope; onApply: (posting: Posting) => void; onOpenApplication: (application: RoleApplication) => void
+  onDesk?: (application: RoleApplication) => void
 }) {
   const [tab, setTab] = useState('opportunities')
   const [page, setPage] = useState(1)
@@ -34,7 +35,8 @@ export function ContributionsPage({ scope, onApply, onOpenApplication }: {
       {tab === 'applications' ? applications.data?.results.map(row => <Card key={row.id}>
         <div className="flex flex-wrap items-center justify-between gap-4"><div><h2 className="title-section capitalize">{row.role.replace(/_/g, ' ')}</h2>
           <StatusPill label={row.state} tone={row.state === 'approved' ? 'success' : 'neutral'} /></div>
-          <ActionControl action={{ label: 'View application', onClick: () => onOpenApplication(row) }} /></div></Card>) : null}
+          <div className="flex flex-wrap gap-3"><ActionControl action={{ label: 'View application', onClick: () => onOpenApplication(row) }} />
+            {onDesk && row.state === 'approved' && row.entitlement_active && ['mentor', 'judge', 'sponsor_rep'].includes(row.role) ? <ActionControl action={{ label: 'Open assigned desk', onClick: () => onDesk(row) }} /> : null}</div></div></Card>) : null}
       {tab === 'shifts' ? shifts.data?.results.map(row => <Card key={row.id}>
         <div className="flex flex-wrap items-center justify-between gap-4"><div><h2 className="title-section flex items-center gap-2"><Clock3 aria-hidden="true" className="size-5" />Shift {row.shift_id}</h2>
           <p className="text-sm text-muted">{row.attendance?.replace(/_/g, ' ') ?? row.state}{row.verified_minutes !== null ? ` · ${row.verified_minutes} verified minutes` : ''}</p></div>

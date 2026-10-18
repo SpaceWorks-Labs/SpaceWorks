@@ -1,3 +1,5 @@
+import { AppShell } from "../../components/shell";
+import { CalendarDays } from "lucide-react";
 import { saveCalendarBlob } from "./eventCalendar";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -14,10 +16,7 @@ import { googleCalendarUrl, saveTicketBlob, type CalendarFields } from "./eventC
 import { LiveTicketState } from "./eventPresentation/LiveTicketState";
 import { PhotoChoice } from "./eventPresentation/PhotoChoice";
 
-export type MemberEventTicket = {
-  registration_id: number; status: string; ticket_png_available: boolean;
-  attended_at?: string | null;
-  credential_mode?: "legacy" | "v2";
+export type MemberEventTicket = Omit<import('../../generated/api').ProgrammeTicket, 'event'> & {
   event: CalendarFields & { id?: number; public_token: string; timezone_name: string; status: string };
 };
 
@@ -64,7 +63,10 @@ export function MemberEventTicketPage() {
     onAuthenticated={() => { void identity.refetch(); }} />;
   const canDownload = Boolean(current?.ticket_png_available && confirmed(current.status));
   const allEvents = { label: "All events", href: tenantPath("events") };
-  return <CenteredCardLayout width={480} eyebrow={spaceName} title="Your event ticket"
+  return <AppShell variant="member" compactNav="drawer" activeKey="ticket" nav={[{ key: 'events', items: [
+    { key: 'events', label: 'Events', href: tenantPath('events'), icon: CalendarDays },
+    { key: 'ticket', label: 'Tickets and certificates', href: tenantPath('member/events/history'), icon: CalendarDays },
+  ] }]} user={{ name: 'Your account', menu: [{ label: 'Account', href: tenantPath('member/account') }] }}><CenteredCardLayout standalone={false} width={480} eyebrow={spaceName} title="Your event ticket"
     state={restoring || identity.isLoading || ticket.isLoading || bootstrap.isLoading ? { status: "loading" } : { status: "ready" }}
     body={!current ? "This ticket is not available right now."
       : canDownload ? "Download your ticket and bring it to event check-in." : "A ticket download is available once your registration is confirmed."}
@@ -88,11 +90,11 @@ export function MemberEventTicketPage() {
           <button className="desk-button flex-1" type="button" disabled={calendar.isPending} onClick={() => calendar.mutate()}>Download registration calendar</button>
         </div>
         <RouteLink className="desk-button" href={tenantPath("member/events/history")}>Your event history</RouteLink>
-        {current.event.id && makerspaceId ? <PhotoChoice makerspaceId={makerspaceId} eventId={current.event.id} eventName={current.event.title} /> : null}
+        {current.event.id && makerspaceId ? <PhotoChoice actorId={identity.data?.id} makerspaceId={makerspaceId} eventId={current.event.id} eventName={current.event.title} /> : null}
         {calendar.error ? <ErrorText message="Could not download this calendar." /> : null}
         {download.error ? <ErrorText message={download.error.message} /> : null}
       </> : null}
     </div>}
     primary={canDownload ? { label: "Download ticket PNG", pending: download.isPending, pendingLabel: "Preparing ticket...", onClick: () => download.mutate() } : allEvents}
-    escape={canDownload ? allEvents : undefined} />;
+    escape={canDownload ? allEvents : undefined} /></AppShell>;
 }

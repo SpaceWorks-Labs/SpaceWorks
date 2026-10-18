@@ -1,11 +1,11 @@
-import { Fragment, useEffect, type ReactNode } from "react";
+import { Fragment, useEffect, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { getAccessToken, StructuredApiError } from "../../../lib/api";
-import { currentSessionContext } from "../../../lib/api/sessionContext";
+import { currentSessionContext, onSessionCleared } from "../../../lib/api/sessionContext";
 import { browserSessionIdentity } from "../../../lib/api/reauthentication";
 export function sessionScope() {
   const context = currentSessionContext();
-  return [context, browserSessionIdentity(getAccessToken(context))] as const;
+  return [window.location.host, context, browserSessionIdentity(getAccessToken(context))] as const;
 }
 /** G mounts this at protected route/drawer boundaries so auth changes discard drafts and object URLs. */
 export function isProtectedDenial(error: unknown) { return error instanceof StructuredApiError && [401, 403, 404].includes(error.status); }
@@ -22,6 +22,8 @@ export function useClearDeniedQuery(error: unknown, key: readonly unknown[]) {
   return denied;
 }
 export function ProgrammeSessionBoundary({ children, error }: { children: ReactNode; error?: unknown }) {
+  const [generation, setGeneration] = useState(0);
+  useEffect(() => onSessionCleared(() => setGeneration(value => value + 1)), []);
   if (isProtectedDenial(error)) return <p role="alert" className="text-sm text-danger">This content is no longer available for your access.</p>;
-  return <Fragment key={JSON.stringify(sessionScope())}>{children}</Fragment>;
+  return <Fragment key={JSON.stringify([generation, ...sessionScope()])}>{children}</Fragment>;
 }

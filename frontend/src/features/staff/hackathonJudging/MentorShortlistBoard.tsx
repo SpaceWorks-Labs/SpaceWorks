@@ -1,0 +1,29 @@
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { EmptyState, ErrorBlock, Pagination } from '../../../components/ui';
+import { staffRequest } from '../../../lib/api';
+import type { Page } from '../../events/hackathonGallery/types';
+import { judgingKey } from './api';
+import type { Scope } from './types';
+
+type Signal = { team_id: number; fresh_nominations: number; repeat_nominations: number;
+  final_rating_count: number; final_rating_mean: string | null; top_two_picks: number };
+export function MentorShortlistBoard({ scope }: { scope: Scope }) {
+  const [page, setPage] = useState(1);
+  const query = useQuery({ queryKey: [...judgingKey(scope), 'mentor-signals', page], retry: false,
+    queryFn: () => staffRequest<Page<Signal>>(`/admin/events/${scope.eventId}/judging-signals/?page=${page}`) });
+  return <section className="grid gap-4" aria-label="Private mentor shortlist signals">
+    <h3 className="title-section">Private mentor shortlist signals</h3>
+    <p className="text-sm text-muted">Use these separate Mentor Desk observations during integrity and shortlist review. Judging calculations use only submitted rubric judgments or ranking ballots.</p>
+    {query.isLoading ? <p role="status">Loading mentor signals…</p> : null}
+    <ErrorBlock error={query.error} onRetry={() => void query.refetch()} />
+    {!query.isLoading && !query.isError && !query.data?.count ? <EmptyState title="No mentor signals yet" description="Nominations and final-round observations appear here when Mentor Desk is in use." /> : null}
+    {!query.isError && query.data?.results.map(row => <article key={row.team_id} className="rounded-xl border border-line bg-panel p-4">
+      <h4 className="font-semibold">Team {row.team_id}</h4><dl className="mt-3 grid grid-cols-2 gap-2 text-sm">
+        <dt>Fresh nominations</dt><dd>{row.fresh_nominations}</dd><dt>Repeat nominations</dt><dd>{row.repeat_nominations}</dd>
+        <dt>Final-round ratings</dt><dd>{row.final_rating_count} · mean {row.final_rating_mean ?? 'No submitted ratings'}</dd>
+        <dt>Top-two picks</dt><dd>{row.top_two_picks}</dd></dl>
+    </article>)}
+    <Pagination page={page} count={query.data?.count ?? 0} pageSize={24} totalPages={Math.ceil((query.data?.count ?? 0) / 24)} onChange={setPage} />
+  </section>;
+}

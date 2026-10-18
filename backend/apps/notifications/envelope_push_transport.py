@@ -38,7 +38,8 @@ def send_child(envelope, rendered, settings_row, device, inbox, target, token, e
             "APNs configuration is unavailable.", "FCM delivery failed.", "APNs delivery failed.",
         }
         ambiguous = not invalid and not known
-        retry = known and target.filter(attempts__lt=MAX_ATTEMPTS).exists()
+        # A dead token is a terminal fact about this destination, never a transient one.
+        retry = known and not invalid and target.filter(attempts__lt=MAX_ATTEMPTS).exists()
         with transaction.atomic():
             changed = complete(target, token, status="held" if ambiguous else "failed",
                                retryable=retry, error="invalid_token" if invalid else

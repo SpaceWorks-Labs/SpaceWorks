@@ -40,6 +40,9 @@ SCHEDULED_TASKS = (
     # Compatibility recovery journals/replays receipts only; the duplicate legacy
     # send scanner is inert. Both canonical and push work honor the cutover gate.
     ("messaging-recovery", "apps.integrations.tasks_messaging.sweep_messaging_task", 5),
+    # Bounded canonical addressed-leg/receipt retention; core, so it survives a
+    # tombstoned inbox. Hourly in both schedulers.
+    ("canonical-messaging-retention", "apps.integrations.tasks_messaging.canonical_retention_task", 60),
     ("messaging-credential-wipe", "apps.integrations.tasks_messaging_settings.wipe_messaging_credentials_task", 24 * 60),
     ("inventory-stock-snapshot", "apps.inventory.tasks.snapshot_stock_task", 24 * 60),
     ("member-push-recovery", "apps.notifications.tasks.sweep_member_push", 5),

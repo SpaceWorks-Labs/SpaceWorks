@@ -87,15 +87,7 @@ JSON_REFERENCE_FIELDS = frozenset(
 
 JSON_REFERENCE_FIELDS |= frozenset({("integrations.WhatsAppTemplateBinding", "parameters"), ("integrations.MessagingConsent", "lifted_suppression_id")})
 
-# Canonical runtime payloads contain source IDs or reviewed scalar projections.
-# These models are omitted from tenant artifacts, including encrypted history.
-JSON_REFERENCE_FIELDS |= frozenset({
-    ("integrations.NotificationCutover", "snapshot"),
-    ("integrations.ChannelConfiguration", "quotas"),
-    ("integrations.ChannelConfiguration", "usage"),
-    ("integrations.NotificationEnvelope", "scope"),
-    ("integrations.NotificationEnvelope", "context"),
-    ("integrations.NotificationEnvelope", "routing_snapshot"),
-    ("integrations.WhatsAppTemplate", "variables"),
-    ("integrations.WhatsAppTemplate", "validation_schema"),
-})
+# Canonical notification runtime models (ChannelConfiguration, NotificationEnvelope,
+# NotificationCutover, WhatsAppTemplate) are omitted from tenant artifacts, so their
+# JSON payloads are never exported and need no reference declaration here; the
+# guard compares this registry against JSON fields on EXPORTED models only.

@@ -58,7 +58,8 @@ def tenant_ids(user):
         ("notifications.MemberPushDelivery", "inbox_row__user", "inbox_row__makerspace"),
         ("notifications.MemberPushDelivery", "envelope_delivery__envelope__recipient", "envelope_delivery__makerspace"),
         ("integrations.NotificationIngress", "signed_user", "makerspace_reference"),
-        ("notifications.MemberPushDelivery", "push_device__user", "inbox_row__makerspace"),
+        # The canonical parent carries the tenant; the inbox row is optional (SET_NULL).
+        ("notifications.MemberPushDelivery", "push_device__user", "envelope_delivery__makerspace"),
         ("integrations.PushDeliveryAttempt", "recipient", "delivery_log__makerspace"),
         ("integrations.PushDeliveryAttempt", "push_device__user", "delivery_log__makerspace"),
     ):

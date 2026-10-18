@@ -7,7 +7,9 @@ from ._push_conversion_v1 import verify
 class Migration(migrations.Migration):
     dependencies = [("notifications", "0009_envelope_push_conversion")]
     operations = [
-        migrations.RunPython(verify),
+        # Verification writes nothing, so un-verifying is a true no-op; the schema
+        # operations below reverse themselves. 0009 still refuses populated reversal.
+        migrations.RunPython(verify, migrations.RunPython.noop),
         migrations.RemoveConstraint(model_name="memberpushdelivery", name="uniq_member_push_delivery"),
         migrations.AlterField(model_name="memberpushdelivery", name="envelope_delivery",
             field=models.ForeignKey(to="integrations.notificationdelivery", related_name="push_children",

@@ -38,7 +38,9 @@ def trees(apps_dir):
 
 def url_names(apps_dir):
     root = Path(apps_dir)
-    paths = set(root.rglob("urls*.py"))
+    # Sibling URL lists mounted by an app's urls.py (e.g. the WhatsApp provider
+    # webhooks in integrations/notification_wa_*_urls.py) declare real route names.
+    paths = set(root.rglob("urls*.py")) | set(root.rglob("*_urls.py"))
     config_urls = root.parent / "config" / "urls.py"
     if config_urls.exists():
         paths.add(config_urls)

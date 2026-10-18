@@ -126,7 +126,9 @@ returns an error for provider retry. Missing exact correlation creates a sender-
 Replay uses original receipt time and exact sender/provider/tenant/generation/attempt identity.
 Retired credentials verify for fourteen days, then secrets are wiped while history survives.
 Both Celery beat and `run_scheduled_tasks --due-only` run receipt recovery every five minutes.
-`messaging-recovery` does not restart old addressed sends.
+`messaging-recovery` does not restart old addressed sends. Both schedulers also run
+`canonical-messaging-retention` hourly: terminal addressed legs expire after 90 days (365 when
+failed) and processed receipts after 30; held, in-flight and still-correlated rows are kept.
 
 One WhatsApp sender/phone probe may be submitted before verified BSUID/phone correlation.
 Other deliveries defer without spending attempts and skip after 72 hours without confirmation.

@@ -12,6 +12,7 @@ def validate_configuration(row, data):
         return
     provider = data.get("provider", row.provider)
     identity = data.get("integration_identity", row.integration_identity)
+    platform_conflict = False
     try:
         values = data["credentials"] if "credentials" in data else row.get_credentials()
         if (row.channel in {"sms", "whatsapp"} and "credentials" in data and not values
@@ -66,6 +67,8 @@ def validate_configuration(row, data):
             if ("integration_identity" in data or "credentials" not in data) and identity and identity != effective["phone_number_id"]:
                 raise ValueError()
             identity = effective["phone_number_id"]
+            if values:
+                platform_conflict = _platform_whatsapp_sender(effective)
         elif provider == "telegram":
             if set(values) != {"bot_token"} or not values.get("bot_token"):
                 raise ValueError()
@@ -75,7 +78,20 @@ def validate_configuration(row, data):
         # Never reflect credentials, URLs or provider error bodies in diagnostics.
         raise ValidationError({"detail": "Invalid or incomplete provider credentials.",
                                "code": "invalid_credentials"}) from None
+    if platform_conflict:
+        # The platform's physical sender stays reserved even before its registry row
+        # is materialized; a tenant cannot claim it with its own credentials.
+        from .messaging.senders import SenderInUse
+        raise SenderInUse()
     if "credentials" in data:
         data["credentials"] = values
     if identity != row.integration_identity:
         data["integration_identity"] = identity
+
+
+def _platform_whatsapp_sender(effective):
+    """True when own credentials name the platform's physical Meta phone number."""
+    from .models_messaging_settings import PlatformWhatsAppSettings
+    platform = PlatformWhatsAppSettings.objects.filter(pk=1).first()
+    return bool(platform and platform.phone_number_id
+                and platform.phone_number_id == effective["phone_number_id"])

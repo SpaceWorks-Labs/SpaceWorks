@@ -25,6 +25,15 @@ NON_OBJECT_KEY_FIELDS = frozenset({
     ("integrations.MessagingSenderIdentity", "sender_key"),
     ("integrations.MessagingSuppression", "sender_key"),
     ("integrations.MessagingWebhookEvent", "sender_key"),
+    # Canonical cutover sender bindings and receipt dedupe identities are provider
+    # correlation strings (deployment-local), never bucket locators.
+    ("integrations.ChannelConfiguration", "sender_key"),
+    ("integrations.MessagingConsent", "sender_key"),
+    ("integrations.NotificationCredentialVersion", "sender_key"),
+    ("integrations.NotificationDelivery", "sender_key"),
+    ("integrations.NotificationIngress", "dedupe_key"),
+    ("integrations.NotificationIngress", "sender_key"),
+    ("integrations.NotificationProviderReference", "sender_key"),
     # Notification intent and delivery-target identities, never bucket locators.
     ("integrations.NotificationEnvelope", "dedup_key"),
     ("integrations.NotificationDelivery", "target_key"),

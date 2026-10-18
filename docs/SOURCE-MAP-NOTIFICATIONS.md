@@ -198,6 +198,8 @@ physical provider references. `notification_cutover.py` owns the processing fenc
 checkpoints; `notification_ingress.py` commits protection before optional tenant writes.
 `notification_sender.py` and `notification_addressed.py` integrate SMS and sender safeguards;
 `notification_personal_policy.py` retains core opt-out checks without inbox installation.
+`notification_retention.py` is the bounded canonical leg/receipt retention sweep
+(`tasks_messaging.canonical_retention_task`, hourly in both schedulers).
 Integrations `0041`/`0042` expand/convert; `0043` retirement remains unsupplied.
 
 `notifications/apps.py` registers `member_push` using

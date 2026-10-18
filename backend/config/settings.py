@@ -1351,3 +1351,7 @@ WHATSAPP_GRAPH_VERSION = env("WHATSAPP_GRAPH_VERSION", default="v23.0")
 CELERY_BEAT_SCHEDULE["messaging-recovery"] = {
     "task": "apps.integrations.tasks_messaging.sweep_messaging_task", "schedule": 300.0,
 }
+# Bounded canonical addressed-leg and processed-receipt retention (docs/INVARIANTS.md).
+CELERY_BEAT_SCHEDULE["canonical-messaging-retention"] = {
+    "task": "apps.integrations.tasks_messaging.canonical_retention_task", "schedule": crontab(minute=35),
+}

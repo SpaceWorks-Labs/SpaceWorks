@@ -89,7 +89,10 @@ TASK_INTERNAL_PARTICIPANTS = {
     ),
     "apps.payments.tasks.issue_missing_bills_task": "Bill recovery gates each tenant before discovering or issuing documents.",
     "apps.integrations.tasks_messaging.deliver_messaging_task": "Worker acquires sender lock first and holds tenant_write during claims and fenced completion.",
-    "apps.integrations.tasks_messaging.sweep_messaging_task": "Recovery/retention use per-tenant skip-and-count gates; sender protections and operational webhook/credential retention are deployment-local.",
+    "apps.integrations.tasks_messaging.sweep_messaging_task": "Replays durable signed ingress receipts through notification_ingress.process, which holds the cutover/tenant boundary per receipt; sender protections and retired-verifier retention are deployment-local.",
+    "apps.integrations.tasks_messaging.canonical_retention_task": (
+        "Canonical leg retention uses per-tenant skip-and-count gates; processed receipts are deployment-local."
+    ),
     "apps.inventory.tasks.snapshot_stock_task": "Daily stock observations gate each tenant separately.",
     "apps.notifications.tasks.deliver_member_push": (
         "Resolves the canonical envelope delivery's tenant and holds its source boundary; "
@@ -164,8 +167,8 @@ FANOUT_GATE_PARTICIPANTS = {
     "apps.makerspaces.profile_github_tasks.refresh_public_calendars": (
         "Public calendars refresh under the existing per-tenant GitHub source boundary; cache only."
     ),
-    "apps.integrations.messaging.sweep.run_sweep": "Recovery and delivery retention skip frozen tenants; operational callbacks remain durable.",
     "apps.integrations.messaging.stops.append_stop_consents": "Optional consent annotations skip frozen tenants after committing sender-level STOP protection.",
+    "apps.integrations.notification_legacy_ingress.inbound": "Per-tenant endpoint effects of a signed inbound skip frozen tenants; sender-level STOP already committed and the receipt stays held for recovery.",
     "apps.inventory.stock_snapshots.snapshot_inventory_stock": "Daily stock observations gate each tenant separately.",
     "apps.notifications.tasks.sweep_member_push": "Member push recovery gates each tenant separately.",
     "apps.accounts.account_purge.purge_account": "Account erasure and durable object cleanup gate each tenant separately.",
@@ -173,6 +176,9 @@ FANOUT_GATE_PARTICIPANTS = {
     "apps.data_export.subject_tasks.sweep_subject_exports_task": "Personal export recovery gates each tenant.",
     "apps.makerspaces.membership_admission_payments.sweep_admissions": (
         "Admission expiry and settlement retries use separate skip-and-count tenant boundaries."
+    ),
+    "apps.integrations.notification_retention.run_canonical_retention": (
+        "Terminal addressed-leg cleanup gates each tenant separately."
     ),
     "apps.notifications.retention.run_notification_retention": (
         "Bounded inbox and terminal delivery cleanup gates each tenant separately."

@@ -2,12 +2,12 @@
 from django.core.exceptions import ValidationError
 
 from apps.integrations.notification_resolution import eligible, resolve
-from apps.notifications.inbox_scope import validate_notification_scope
+from apps.notifications.inbox_scope import persisted_scope
 
 
 def recipient_allowed(envelope):
     try:
-        validate_notification_scope(envelope.scope)
+        persisted_scope(envelope.scope)
     except ValidationError:
         return False
     return (envelope.audience in {"member", "requester", "staff"}

@@ -7,8 +7,9 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.accounts.reauthentication import require_recent_reauth
 from apps.audit import services as audit
-from .notification_api_errors import errors
+from .notification_api_errors import REAUTH_403, errors
 from apps.tenant_migration.gate_runtime import tenant_write
 from .models_endpoints import ChannelConfiguration, WhatsAppTemplate
 from .notification_api_access import contract_space
@@ -40,11 +41,14 @@ class ChannelSettingsView(APIView):
         return Response(ChannelSerializer(row).data)
 
     @extend_schema(tags=["Notification contract"], request=ChannelPatchSerializer,
-                   responses={200: ChannelSerializer, **errors(400, 401, 403, 404, 409, 423, 503)})
+                   responses={200: ChannelSerializer, **errors(400, 401, 403, 404, 409, 423, 503, e403=REAUTH_403)})
     def patch(self, request, makerspace_id, channel):
         space = contract_space(request.user, makerspace_id, manager=True)
         if channel not in NotificationChannel.values:
             raise ValidationError({"channel": "Unknown channel."})
+        # Writing or clearing (`{}`) secrets steps up; non-secret toggles do not.
+        if "credentials" in request.data:
+            require_recent_reauth(request)
         serializer = ChannelPatchSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data

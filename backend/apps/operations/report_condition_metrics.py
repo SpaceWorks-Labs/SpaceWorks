@@ -47,6 +47,7 @@ NUMERIC_FIELDS = frozenset({
     "accepted_count", "delivered_count", "read_count", "pending_count", "sending_count",
     "accepted_only_count", "sent_only_count", "delivered_only_count", "estimated_segments",
     "billed_segments", "segments", "abandoned_webhook_count", "consented_member_count",
+    "held_webhook_count", "held_count", "canceled_count",
     "delivery_rate", "read_rate", "delivery_rate_numerator", "delivery_rate_denominator",
     "read_rate_numerator", "read_rate_denominator",
 })

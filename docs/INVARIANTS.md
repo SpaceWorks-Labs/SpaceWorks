@@ -5496,6 +5496,10 @@ authority. Ownership and callback credential versions are separate; rotation ret
 version, callbacks accept retired secrets for fourteen days, and the scheduler then wipes secrets
 while retaining identity/version history. Conflicting imported senders remain under `activation_hold`
 until explicitly reviewed. Tenant secrets are write-only in the API and absent from `/control/`.
+Writing or clearing them (a channel-settings PATCH carrying `credentials`, including `{}`, and every
+Mattermost/Discord installation POST) requires `require_recent_reauth` (ten-minute, session-bound
+step-up, 403 `recent_reauth_required`), exactly as payment credential writes do; non-secret toggles
+(`enabled`, `personal_enabled`, quotas, templates, `use_platform_sender`, ...) need no step-up.
 Superadmin's global bypass respects `superadmin_access_enabled`; explicit local role authority
 still applies. Control-plane tenant display contains only configuration/effective-source state.
 
@@ -5606,9 +5610,27 @@ after re-consent.
 Beat and `run_scheduled_tasks` recover the canonical outbox, per-device push and durable ingress;
 `messaging-recovery` recovers receipts, never the retired send loop. Replay uses original
 receipt/provider time, never recovery time. Unresolved receipts back off and remain held; recovery
-never retries a held send to discover its outcome. Retention uses derived status: failed deliveries
-365 days, other terminal outcomes 90 days from creation; processed/abandoned webhook events 30 days
-after processing/abandonment. Communications reporting is read-only over canonical delivery facts
+never retries a held send to discover its outcome.
+
+Canonical retention is `integrations/notification_retention.py`, run hourly as
+`canonical-messaging-retention` by both beat and `run_scheduled_tasks`; it is core, so it
+runs with `notifications` tombstoned. Under the shared cutover lock it deletes, per tenant
+inside the skip-and-count source-gate fan-out, sms/whatsapp/native_push
+`NotificationDelivery` legs by derived status from `created_at`: 365 days when failed
+without delivered/read evidence (or a push leg with a failed device child), otherwise 90 days
+for accepted/sent/delivered/read/skipped. A leg is kept while retrying, held, retryable or
+leased, while its envelope is unprocessed, while any push child is pending/sending/held,
+while it is the probe of a `probing` correlation, while a media grant references it, while
+any unprocessed receipt exists for its channel/sender, and while an sms/whatsapp leg with a
+provider ID lacks its exact non-ambiguous `NotificationProviderReference` (the permanent
+reference settles late callbacks for deleted legs). Push legs are skipped entirely when the
+inbox app is not installed. `NotificationIngress` receipts are deleted deployment-wide only
+when processed, protection-applied and processed more than 30 days ago; pending/held
+receipts are never deleted. Until `NotificationCutover.reconciled_at` is set, no delivery or
+receipt that is the canonical target of a `NotificationLegacyMapping` is deleted. Envelopes,
+mappings, provider references, suppressions, aliases, correlations, consent, credential
+versions and every frozen legacy table (`MessagingDelivery`, `MessagingWebhookEvent`, ...)
+are never pruned by it. Communications reporting is read-only over canonical delivery facts
 and immutable legacy mappings; email and push are counted once from physical/device ledgers.
 Held sends, held ingress and original abandoned-receipt cohorts remain distinct. Reporting never
 replays, activates or dispatches work.

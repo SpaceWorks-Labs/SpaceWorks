@@ -12,10 +12,10 @@ ENTRIES = (
     P("staff_account.password_reset", "Staff account password issued", ("reset_mfa",)),
     P("account.credentials_revoked", "Account credentials revoked", ("scope",)),
     P("api_client.bookings_read", "Api client read bookings", ("attendance", "rows")),
-    P("auth.account_restore_intents_purged", "Expired account recovery intents removed", ("count",)),
+    # "auth." is a reviewed wrapper namespace (accounts/audit_events.py), so its metadata
+    # stays denied; recovery attempts are emitted only through that wrapper.
+    P("auth.account_restore_intents_purged", "Expired account recovery intents removed"),
     P("account.restored", "Account restored", ("method",)),
-    P("auth.account_restore_attempted", "Account recovery proof attempted"),
-    P("auth.account_restore_social_started", "Account provider recovery started"),
     P("account.purge_started", "Account identity purge started"),
     P("account.purge_object_retry", "Account image cleanup deferred", ("step", "attempts")),
     P("account.apple_revocation_retry", "Apple revocation deferred", ("attempts",)),

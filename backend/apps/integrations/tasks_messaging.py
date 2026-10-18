@@ -22,3 +22,9 @@ def deliver_messaging_task(delivery_id):
 def sweep_messaging_task():
     from .notification_ingress import recover
     return recover()
+
+
+@shared_task
+def canonical_retention_task():
+    from .notification_retention import run_canonical_retention
+    return run_canonical_retention()

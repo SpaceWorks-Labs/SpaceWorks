@@ -35,9 +35,9 @@ def safe_link(value):
 
 def write_envelope_inbox(envelope, rendered):
     """M's in-app adapter uses the same stable event identity as its push child."""
-    from apps.notifications.inbox_scope import validate_notification_scope
+    from apps.notifications.inbox_scope import persisted_scope
 
-    validate_notification_scope(envelope.scope)
+    scope = persisted_scope(envelope.scope)
     audience = "member" if envelope.audience in {"member", "requester"} else "staff"
     with transaction.atomic():
         row, created = rbac.scope_notification_policy(
@@ -45,7 +45,7 @@ def write_envelope_inbox(envelope, rendered):
         ).get_or_create(makerspace_id=envelope.makerspace_id, user_id=envelope.recipient_id,
             event_key=uuid5(NAMESPACE_URL, envelope.dedup_key), defaults={
                 "feature": envelope.feature, "event": envelope.event, "audience": audience,
-                "scope": envelope.scope, "title": rendered.get("subject", "Space Works")[:200],
+                "scope": scope, "title": rendered.get("subject", "Space Works")[:200],
                 "summary": rendered.get("text", "")[:2000], "link": safe_link(rendered.get("link", "")),
             })
         if created:

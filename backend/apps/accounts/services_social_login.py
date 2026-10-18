@@ -76,6 +76,9 @@ def issue_social_session(
 
         raise SocialResolutionError("social_invalid", 403)
     from apps.accounts.credential_locks import lock_token_issuance
+    # Refuse an inactive or non-member account with its 403 before taking the
+    # issuance lock; the post-lock recheck still catches a concurrent change.
+    assert_social_user_active(user)
     user = lock_token_issuance(user)
     assert_social_user_active(user)
     # Provider authentication is sufficient by platform policy, on web and native alike.

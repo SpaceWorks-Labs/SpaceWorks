@@ -19,7 +19,10 @@ def creation_policy(actor):
     enabled = bool(getattr(settings, "ORGANIZATION_SELF_CREATION_ENABLED", False))
     verified = bool(actor.email and actor.email_verified_at and not actor.is_tenant_dump_stub)
     from apps.accounts.native_session import is_native_session
-    eligible = governance.member_account(actor) and verified and not is_native_session(actor)
+    # A generated first-run credential must be rotated first (as active_user enforced
+    # before the account-kind split); member_account alone does not check it.
+    eligible = (governance.member_account(actor) and not actor.must_change_password
+                and verified and not is_native_session(actor))
     return {
         "enabled": enabled,
         "eligible": enabled and eligible,

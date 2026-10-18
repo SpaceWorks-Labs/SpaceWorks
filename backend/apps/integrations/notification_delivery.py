@@ -66,6 +66,12 @@ def claim(delivery_id):
     with transaction.atomic():
         row = Delivery.objects.select_for_update().get(pk=delivery_id)
         if row.historical or row.state in SUCCESS | {"skipped", "held"}:
+            if row.state in SUCCESS and row.claim_until and row.claim_until <= now:
+                # A callback proved acceptance while this attempt's lease was live.
+                # That is not an unknown outcome: progress never drops back to held,
+                # but the stale lease is cleared so recovery stops re-selecting it.
+                row.claim_until, row.next_attempt_at = None, None
+                row.save(update_fields=["claim_until", "next_attempt_at", "updated_at"])
             return None
         if row.state == "failed" and not row.retryable:
             return None

@@ -3,7 +3,7 @@ from django.db.models import Count, Max, Q, Sum
 
 from apps.integrations.reports_messaging import cohort_rows, messaging_row, messaging_rows
 from apps.makerspaces.platform import module_enabled
-from apps.operations.report_fields_hi import COMMUNICATION_FIELDS, COMMUNICATION_GROUPS
+from apps.operations.report_fields_hi import COMMUNICATION_COUNTS, COMMUNICATION_FIELDS, COMMUNICATION_GROUPS
 from apps.operations.reports_common import apply_range, report_spaces
 from apps.operations.reports_hi_common import buckets, category, percent, result
 from apps.operations.reports_j_common import calendar_range
@@ -22,7 +22,7 @@ def build_communications_health(makerspace_id, *, limit=None, date_range=None, g
                 *messaging_rows(space, grain=grain, date_range=local_range)]
         if module_enabled(space, "mobile"):
             rows.extend(_push(space, grain, local_range))
-        for row in rows:
+        for row in _merged(rows):
             row["success_rate_percent"] = percent(row["sent_count"], row["delivery_count"])
             row["read_rate_percent"] = (percent(row["read_rate_numerator"], row["read_rate_denominator"])
                 if row["channel"] in ("sms", "whatsapp") else percent(row["inbox_read_count"], row["inbox_created_count"]))
@@ -33,6 +33,27 @@ def build_communications_health(makerspace_id, *, limit=None, date_range=None, g
     return result(COMMUNICATION_FIELDS, records, makerspace_id is None, limit,
         basis="Canonical creation cohorts plus mapped inert history; email and push use provider/device ledgers once. Inbox reads use window end; consent is a current member snapshot.",
         history="Held attempts/receipts are unresolved; abandoned receipts are original legacy observations, not current state. Segments prefer billed values including zero. Private content and sender identifiers are excluded.")
+
+
+def _merged(rows):
+    """One row per chart dimension: e.g. an email cohort and its same-period
+    bounce/complaint events, or room and personal legs of one cohort, add up."""
+    merged = {}
+    for row in rows:
+        key = tuple(row.get(field) for field in COMMUNICATION_GROUPS)
+        target = merged.get(key)
+        if target is None:
+            merged[key] = row
+            continue
+        for field in COMMUNICATION_COUNTS:
+            if target.get(field) is not None or row.get(field) is not None:
+                target[field] = (target.get(field) or 0) + (row.get(field) or 0)
+        if row.get("consented_member_count") is not None:
+            target["consented_member_count"] = row["consented_member_count"]
+        last = row.get("last_activity_at")
+        if last is not None and (target.get("last_activity_at") is None or last > target["last_activity_at"]):
+            target["last_activity_at"] = last
+    return list(merged.values())
 
 
 def _push(space, grain, date_range):

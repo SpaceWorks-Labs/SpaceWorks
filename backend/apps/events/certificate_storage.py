@@ -22,6 +22,7 @@ def _client(endpoint):
         config=Config(
             signature_version=settings.AWS_S3_SIGNATURE_VERSION,
             s3={"addressing_style": settings.AWS_S3_ADDRESSING_STYLE},
+            connect_timeout=2, read_timeout=2, retries={"max_attempts": 1},
         ),
     )
 
@@ -49,13 +50,13 @@ def store_immutable_pdf(object_key, content):
             Body=content,
             ContentType="application/pdf",
         )
-        client.copy_object(
-            Bucket=settings.AWS_STORAGE_BUCKET_NAME,
-            CopySource={"Bucket": settings.AWS_STORAGE_BUCKET_NAME, "Key": staged},
-            Key=object_key,
-            ContentType="application/pdf",
-            MetadataDirective="REPLACE",
-        )
+        # A concurrent renderer must never replace the winning immutable artifact.
+        try:
+            client.put_object(Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=object_key,
+                              Body=content, ContentType="application/pdf", IfNoneMatch="*")
+        except ClientError as exc:
+            if exc.response.get("ResponseMetadata", {}).get("HTTPStatusCode") != 412:
+                raise
         if _digest_or_none(client, object_key) != (size, digest):
             raise CertificateStorageUnavailable("Certificate promotion verification failed.")
         delete_all_versions(client, bucket=settings.AWS_STORAGE_BUCKET_NAME, key=staged)
@@ -90,7 +91,12 @@ def _digest_or_none(client, key):
         raise
     digest = hashlib.sha256()
     size = 0
-    for chunk in iter(lambda: response["Body"].read(64 * 1024), b""):
-        digest.update(chunk)
-        size += len(chunk)
+    try:
+        for chunk in iter(lambda: response["Body"].read(64 * 1024), b""):
+            digest.update(chunk)
+            size += len(chunk)
+            if size > 40 * 1024 * 1024:
+                raise CertificateStorageUnavailable("Certificate exceeds the bounded read size.")
+    finally:
+        response["Body"].close()
     return size, digest.hexdigest()

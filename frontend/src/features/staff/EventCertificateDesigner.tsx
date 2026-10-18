@@ -1,66 +1,60 @@
 import { useEffect, useState } from "react";
-
-import { PositionedLayoutEditor } from "../../components/print-layout/PositionedLayoutEditor";
-import { layoutFits } from "../../components/print-layout/positionedLayout";
 import { Card, Skeleton } from "../../components/ui";
 import { eventErrorText } from "./eventUi";
-import { CertificateArtworkPreview } from "./CertificateArtworkPreview";
-import {
-  type CertificateTemplateInput, useEventCertificateTemplate, usePreviewEventCertificate,
-  useSaveEventCertificateTemplate, useUploadCertificateArtwork,
-} from "./eventsCertificateDesignerApi";
+import { useUploadCertificateArtwork } from "./eventsCertificateDesignerApi";
+import { LayerEditor } from "./eventCredentials/LayerEditor";
+import { CertificateLibrary } from "./eventCredentials/CertificateLibrary";
+import { useDesign, type DesignInput } from "./eventCredentials/api";
+import { upgradeDocument } from "./eventCredentials/layout";
+import { BulkCertificates } from "./eventCredentials/BulkCertificates";
 
 export function EventCertificateDesigner({ makerspaceId, eventId }: { makerspaceId: number; eventId: number }) {
-  const template = useEventCertificateTemplate(eventId);
-  const save = useSaveEventCertificateTemplate(makerspaceId, eventId);
-  const preview = usePreviewEventCertificate(eventId);
+  const { query, save, preview } = useDesign(eventId);
   const upload = useUploadCertificateArtwork(eventId);
-  const [draft, setDraft] = useState<CertificateTemplateInput | null>(null);
+  const [draft, setDraft] = useState<DesignInput | null>(null);
+  const [dirty, setDirty] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  useEffect(() => { if (template.data) setDraft({ parameters: template.data.parameters, artwork_id: template.data.artwork_id }); }, [template.data]);
+  useEffect(() => {
+    if (query.data && !dirty) setDraft({ parameters: upgradeDocument(query.data.parameters), artwork_id: query.data.artwork_id });
+  }, [query.data, dirty]);
   useEffect(() => () => { if (previewUrl) URL.revokeObjectURL(previewUrl); }, [previewUrl]);
-  const error = template.error || save.error || preview.error || upload.error;
   const pending = save.isPending || preview.isPending || upload.isPending;
-  const fits = draft && layoutFits([draft.parameters.name_box], draft.parameters.page_width_mm, draft.parameters.page_height_mm);
-  // The drawer frames this in a "Certificate designer" disclosure, which carries the title.
+  const error = query.error || save.error || preview.error || upload.error;
   return <section className="grid gap-4" aria-label="Certificate designer">
-    <p className="text-sm text-muted">Every save creates an immutable revision. Certificates already issued or awaiting rendering keep their original layout and artwork.</p>
-    {template.isLoading ? <div role="status"><span className="sr-only">Loading certificate template…</span><Skeleton className="h-48 w-full" /></div> : null}
-    {template.isError ? <button className="desk-button justify-self-start" type="button" onClick={() => { void template.refetch(); }}>Retry certificate template</button> : null}
+    <p className="text-sm text-muted">Each save creates an immutable revision. Existing certificates keep their original layout and artwork. Public verification reveals only the event, date and valid or revoked status.</p>
+    {query.isLoading ? <div role="status"><span className="sr-only">Loading certificate template?</span><Skeleton className="h-48 w-full" /></div> : null}
+    {query.isError ? <button className="desk-button" type="button" onClick={() => { void query.refetch(); }}>Retry certificate template</button> : null}
     {draft ? <Card><div className="grid gap-4">
-      <p className="text-sm text-muted">{template.data?.id ? `Saved revision ${template.data.id}` : "Default certificate layout"}. PDF preview uses a sample name.</p>
-      <div className="grid grid-cols-2 gap-3">
-        {([["page_width_mm", "Certificate width (mm)"], ["page_height_mm", "Certificate height (mm)"]] as const).map(([key, label]) =>
-          <label className="grid min-w-0 gap-1 text-sm font-semibold text-ink" key={key}>{label}<input className="desk-input w-full min-w-0 font-normal" type="number" min="100" max="420" disabled={pending}
-            value={draft.parameters[key]} onChange={(event) => {
-              const value = Number(event.target.value); if (value >= 100 && value <= 420) setDraft({ ...draft, parameters: { ...draft.parameters, [key]: value } });
-            }} /></label>)}
+      <p className="text-sm text-muted">{query.data?.id ? `Saved revision ${query.data.id}` : "Default certificate layout"}. Preview always uses a sample recipient.</p>
+      <div className="grid grid-cols-2 gap-3">{(["page_width_mm", "page_height_mm"] as const).map((key) => <label className="grid gap-1 text-sm" key={key}>{key === "page_width_mm" ? "Width (mm)" : "Height (mm)"}<input type="number" className="desk-input" min={100} max={420} value={draft.parameters[key]} onChange={(event) => {
+        setDirty(true); setDraft({ ...draft, parameters: { ...draft.parameters, [key]: Number(event.target.value) } });
+      }} /></label>)}</div>
+      <label className="grid gap-1 text-sm">Private logo or background (PNG/JPEG, up to 10 MB)<input className="desk-input" type="file" accept="image/png,image/jpeg" disabled={pending} onChange={(event) => {
+        const file = event.target.files?.[0]; event.target.value = "";
+        if (file) upload.mutate(file, { onSuccess: (artwork) => { setDirty(true); setDraft((current) => current ? { ...current, artwork_id: artwork.id } : current); } });
+      }} /></label>
+      <label className="grid gap-1 text-sm">Add a private image layer<input className="desk-input" type="file" accept="image/png,image/jpeg" disabled={pending || draft.parameters.layers.length >= 20} onChange={(event) => {
+        const file = event.target.files?.[0]; event.target.value = "";
+        if (file) upload.mutate(file, { onSuccess: (artwork) => {
+          const resource = artwork as { id: number; resource_id: string };
+          setDirty(true); setDraft((current) => current ? { ...current, parameters: { ...current.parameters,
+            layers: [...current.parameters.layers, { id: crypto.randomUUID(), order: current.parameters.layers.length,
+              type: "image", x_mm: 10, y_mm: 10, width_mm: 40, height_mm: 30, rotation: 0,
+              resource_id: resource.resource_id }] } } : current);
+        } });
+      }} /></label>
+      {draft.artwork_id ? <button className="desk-button" type="button" onClick={() => { setDirty(true); setDraft({ ...draft, artwork_id: null }); }}>Remove artwork from draft</button> : null}
+      <LayerEditor document={draft.parameters} disabled={pending} onChange={(parameters) => { setDirty(true); setDraft({ ...draft, parameters }); }} />
+      <div className="flex flex-wrap gap-2 border-t border-line pt-4">
+        <button className="desk-button" type="button" disabled={pending} onClick={() => preview.mutate(draft, { onSuccess: (blob) => setPreviewUrl(URL.createObjectURL(blob)) })}>Preview certificate PDF</button>
+        <button className="desk-button-primary" type="button" disabled={pending} onClick={() => save.mutate(draft, { onSuccess: () => setDirty(false) })}>Save new certificate revision</button>
       </div>
-      <label className="grid gap-1 text-sm font-semibold text-ink">Private certificate artwork (PNG or JPEG, up to 10 MB)
-        <input className="desk-input w-full min-w-0 font-normal" type="file" accept="image/png,image/jpeg" disabled={pending} onChange={(event) => {
-          const file = event.target.files?.[0]; event.target.value = "";
-          if (file) upload.mutate(file, { onSuccess: (artwork) => {
-            setDraft((current) => current ? { ...current, artwork_id: artwork.id } : current);
-            setPreviewUrl(null);
-          } });
-        }} />
-      </label>
-      {upload.isPending ? <p className="text-sm text-muted" role="status">Uploading and validating private artwork…</p> : null}
-      {draft.artwork_id ? <div className="grid gap-3 rounded-xl border border-line bg-surface p-3">
-        <CertificateArtworkPreview key={draft.artwork_id} eventId={eventId} artworkId={draft.artwork_id} />
-        <div className="flex flex-wrap items-center gap-3"><p className="min-w-0 flex-1 text-sm text-ink">Private artwork attached. Preview the full layout in the PDF.</p><button className="desk-button" type="button" disabled={pending} onClick={() => setDraft({ ...draft, artwork_id: null })}>Remove artwork from draft</button></div>
-      </div> : null}
-      <PositionedLayoutEditor widthMm={draft.parameters.page_width_mm} heightMm={draft.parameters.page_height_mm} gridMm={draft.parameters.grid_mm ?? 1}
-        onGridChange={(grid_mm) => setDraft({ ...draft, parameters: { ...draft.parameters, grid_mm } })}
-        elements={[draft.parameters.name_box]} labels={{ name: "Sample recipient name" }} disabled={pending}
-        onChange={(elements) => setDraft({ ...draft, parameters: { ...draft.parameters, name_box: elements[0] } })} />
-      <div className="flex flex-wrap justify-end gap-2 border-t border-line pt-4">
-        <button className="desk-button" type="button" disabled={pending || !fits} onClick={() => preview.mutate(draft, { onSuccess: (blob) => setPreviewUrl(URL.createObjectURL(blob)) })}>{preview.isPending ? "Rendering preview…" : "Preview certificate PDF"}</button>
-        <button className="desk-button-primary" type="button" disabled={pending || !fits} onClick={() => save.mutate(draft)}>{save.isPending ? "Saving revision…" : "Save new certificate revision"}</button>
-      </div>
-      {save.isSuccess ? <p className="text-sm text-success-ink" role="status">Certificate revision saved. Existing certificates keep their original design.</p> : null}
+      {dirty ? <p role="status" className="text-sm text-warn-ink">Unsaved layout changes. A failed or stale save keeps this draft.</p> : null}
+      {save.isSuccess ? <p role="status" className="text-sm text-success-ink">Certificate revision saved.</p> : null}
+      <CertificateLibrary makerspaceId={makerspaceId} eventId={eventId} document={draft.parameters} eventVersion={query.data?.event_version} eventRevisionId={query.data?.id} />
     </div></Card> : null}
-    {previewUrl ? <div className="grid gap-2"><iframe className="h-96 w-full rounded-xl border border-line bg-panel" src={previewUrl} title="Certificate PDF preview" /><button className="desk-button justify-self-start" type="button" onClick={() => setPreviewUrl(null)}>Close certificate preview</button></div> : null}
-    {error ? <p className="text-sm text-danger" role="alert">{eventErrorText(error)}</p> : null}
+    {previewUrl ? <div className="grid gap-2"><iframe className="h-96 w-full rounded-control border border-line" src={previewUrl} title="Certificate PDF preview" /><button type="button" className="desk-button" onClick={() => setPreviewUrl(null)}>Close certificate preview</button></div> : null}
+    {error ? <p role="alert" className="text-sm text-danger">{eventErrorText(error)}</p> : null}
+    <BulkCertificates eventId={eventId} />
   </section>;
 }

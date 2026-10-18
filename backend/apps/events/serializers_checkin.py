@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 
 class EventCheckInResolveRequestSerializer(serializers.Serializer):
-    checkin_token = serializers.CharField()
+    checkin_token = serializers.CharField(max_length=80, trim_whitespace=False)
 
 
 class EventCheckInResultSerializer(serializers.Serializer):
@@ -17,9 +17,13 @@ class EventCheckInResolveResponseSerializer(serializers.Serializer):
     registration_id = serializers.IntegerField()
     name = serializers.CharField()
     status = serializers.CharField()
-    payment_status = serializers.CharField(allow_null=True)
+    payment_status = serializers.CharField(allow_null=True, required=False)
+    member_id = serializers.IntegerField(allow_null=True, required=False)
+    attended_at = serializers.DateTimeField(allow_null=True, required=False)
+    ticket_type_name = serializers.CharField(allow_null=True, required=False)
+    credential_generation = serializers.IntegerField(required=False)
     host_waiver_state = serializers.ChoiceField(
         choices=["not_required", "on_file", "missing"]
     )
-    event_status = serializers.CharField()
+    event_status = serializers.CharField(required=False)
     confirmable = serializers.BooleanField()

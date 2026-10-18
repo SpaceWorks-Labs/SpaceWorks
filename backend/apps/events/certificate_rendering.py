@@ -11,6 +11,10 @@ def validate_certificate_layout(certificate):
     from reportlab.pdfgen.canvas import Canvas
 
     if certificate.layout_snapshot:
+        if certificate.layout_snapshot.get("version") == 2:
+            from .certificates.rendering import render_layers
+            render_layers(Canvas(BytesIO()), certificate, preflight=True)
+            return
         _draw_text(Canvas(BytesIO()), certificate)
 
 
@@ -30,6 +34,12 @@ def render_certificate_pdf(certificate):
     output = BytesIO()
     canvas = Canvas(output, pagesize=(width * mm, height * mm), pageCompression=1, invariant=1)
     canvas.setTitle(f"Attendance certificate {certificate.serial}")
+    if snapshot.get("version") == 2:
+        from .certificates.rendering import render_layers
+        render_layers(canvas, certificate)
+        canvas.showPage()
+        canvas.save()
+        return output.getvalue()
     key = snapshot.get("artwork_object_key")
     if key:
         payload = read_artwork(key, snapshot.get("artwork_version_id", ""), snapshot["artwork_sha256"])

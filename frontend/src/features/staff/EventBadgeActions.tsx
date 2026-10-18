@@ -10,6 +10,7 @@ import {
   useSaveEventBadgeTemplate,
 } from "./eventsBadgeApi";
 import { eventErrorText } from "./eventUi";
+import { DeskBadgePanel } from "./eventCredentials/DeskBadgePanel";
 
 const BASE_FIELDS = [
   ["name", "Name"], ["event_title", "Event"], ["date_time", "Date and time"],
@@ -64,6 +65,8 @@ export function EventBadgeActions({ event, makerspaceId, selectedIds, includeAtt
     || !["published", "completed"].includes(event.status);
 
   return <div className="my-4 rounded-md border border-line p-4">
+    <DeskBadgePanel key={event.id} eventId={event.id} eventVersion={(event as StaffEvent & { version?: number }).version}
+      registrationIds={selectedIds} canEdit={canEdit} canPrint={canPrint} />
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div><h4 className="font-semibold text-ink">Attendee badges</h4><p className="text-xs text-muted">Print display fields only. Badges contain no contact details or check-in credentials.</p></div>
       {canPrint ? <div className="flex flex-wrap gap-2"><button className="desk-button" type="button" disabled={generationDisabled} onClick={() => generate.mutate(payload, { onSuccess: (blob) => setPreviewUrl(URL.createObjectURL(blob)) })}>Preview</button>

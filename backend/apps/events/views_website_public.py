@@ -28,6 +28,15 @@ def projection(event, request=None):
     return project_page(event, page, public=True, image_url=lambda pk: f"{base}{pk}/", request=request)
 
 
+def released_image_response(page, asset_id):
+    """Serve only a current public reference after the caller resolves the live page."""
+    from django.shortcuts import get_object_or_404
+    from .website_revision_projection import visible_asset_ids
+    if not page.makerspace.public_site_enabled or asset_id not in visible_asset_ids(page.published_revision):
+        raise Http404
+    return image_response(get_object_or_404(page.assets, pk=asset_id))
+
+
 class PublicWebsiteBase(APIView):
     permission_classes = [AllowAny]
     authentication_classes = []
@@ -75,9 +84,4 @@ class PublicEventWebsiteImageView(PublicWebsiteBase):
         from apps.makerspaces.public_page_access import require_scope
         require_scope("makerspace", event.makerspace, request)
         page = visible_page(event)
-        from django.shortcuts import get_object_or_404
-        from .website_revision_projection import visible_asset_ids
-        if asset_id not in visible_asset_ids(page.published_revision):
-            raise Http404
-        asset = get_object_or_404(page.assets, pk=asset_id)
-        return image_response(asset)
+        return released_image_response(page, asset_id)

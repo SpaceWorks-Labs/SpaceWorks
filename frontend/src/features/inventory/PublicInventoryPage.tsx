@@ -30,7 +30,9 @@ const PAGE_SIZE = 24;
  * request panel itself; `aside` is the same request card the standalone catalogue docks beside its body. */
 export type EmbeddedCatalogue = (parts: { body: ReactNode; request: ReactNode; aside: PublicActionCardProps }) => ReactNode;
 
-export function PublicInventoryPage({ embedded, resolvedSlug }: { embedded?: EmbeddedCatalogue; resolvedSlug?: string }) {
+export function PublicInventoryPage({ embedded, resolvedSlug, inheritBranding = false }: {
+  embedded?: EmbeddedCatalogue; resolvedSlug?: string; inheritBranding?: boolean;
+}) {
   const { slug } = useParams();
   const tenant = useTenant();
   const makerspaceSlug = resolvedSlug ?? (tenant.mode === "single" ? tenant.slug : slug ?? "");
@@ -105,7 +107,8 @@ export function PublicInventoryPage({ embedded, resolvedSlug }: { embedded?: Emb
   const totalItems = selectedItems.reduce((total, item) => total + item.quantity, 0);
   const aside: PublicActionCardProps = { title: "Your request", form: request, state: "open", mobileBar: { summary: `Request · ${plural(totalItems, "item")}`, label: "Review request", onOpen: () => setRequestTab("borrow"),
     secondary: requestEnabled ? { label: "Scan a tool", onOpen: () => setRequestTab("scan") } : undefined } };
-  return <div style={brandStyle}>
+  // A composed public page owns its palette; the standalone catalogue and desk still apply tenant branding.
+  return <div style={inheritBranding ? undefined : brandStyle}>
     {!embedded ? <PageMetadata title={displayName} description={bootstrap?.branding.welcome_body || `Browse public tools and equipment at ${displayName}.`} path={tenantPath()} image={bootstrap?.makerspace.cover_image_url || bootstrap?.makerspace.logo_url} siteName={displayName} /> : null}
     {embedded ? embedded({ body, request, aside })
       : <PublicLayout {...publicPageChrome(makerspaceSlug, displayName, tenantPath, bootstrap)} width="wide" state={{ status: "ready" }}

@@ -83,7 +83,7 @@ class WebsiteShareView(WebsitePublicView):
         adapter = adapter_for(kind)
         subject = adapter.resolve(None, public_token)
         adapter.page(subject)
-        return share_response(adapter.card(subject))
+        return share_response((adapter.share_card or adapter.card)(subject))
 
 
 class WebsiteDiscoverView(WebsitePublicView):

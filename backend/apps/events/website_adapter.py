@@ -94,5 +94,19 @@ def cards(events: list[Event]) -> list[PublicCard]:
     ).get("audience_label", ""), cover_assets=cover_assets) for event in events]
 
 
+def share_card(event):
+    """Crawlers cannot send API-client headers; cover bytes still repeat live gates."""
+    from dataclasses import replace
+    from apps.makerspaces.public_page_access import canonical_origin
+    result = card(event)
+    page = published_page(event)
+    if page:
+        document = page.published_revision.document
+        if (document.get("section_enabled", {}).get("HERO", True)
+                and document.get("editorial_document", {}).get("cover_mode") == "asset"):
+            return replace(result, image_url=f"{canonical_origin(event.makerspace)}/share/e/{event.public_token}/cover/")
+    return result
+
+
 def register_website():
-    register(WebsiteAdapter(kind="events", module="events", resolve=resolve, discover=discover_events, card=card, page=visible_page, cards=cards))
+    register(WebsiteAdapter(kind="events", module="events", resolve=resolve, discover=discover_events, card=card, page=visible_page, cards=cards, share_card=share_card))

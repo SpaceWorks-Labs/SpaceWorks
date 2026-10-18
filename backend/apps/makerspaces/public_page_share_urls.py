@@ -6,5 +6,8 @@ from .public_page_share import PublicPageShareView
 
 urlpatterns = [path("share/pages/<str:handle>/", PublicPageShareView.as_view(), name="public-page-share")]
 if runtime_active("events"):
-    from apps.events.views_public_codes import PublicEventCodeShareView
-    urlpatterns += [path("share/e/<uuid:public_token>/", PublicEventCodeShareView.as_view(), name="public-event-code-share")]
+    from apps.events.views_public_codes import PublicEventCodeShareView, PublicEventCoverShareView
+    urlpatterns += [
+        path("share/e/<uuid:public_token>/", PublicEventCodeShareView.as_view(), name="public-event-code-share"),
+        path("share/e/<uuid:public_token>/cover/", PublicEventCoverShareView.as_view(), name="public-event-cover-share"),
+    ]

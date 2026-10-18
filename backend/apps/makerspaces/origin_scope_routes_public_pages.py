@@ -9,7 +9,7 @@ GLOBAL_ROUTES = ORGANIZATION_PAGE_EDITORS | frozenset({
     "public-organization-makerspaces",
 })
 HANDLE_ROUTES = frozenset({"public-page-handle", "public-page-share"})
-EVENT_ROUTES = frozenset({"public-event-code", "public-event-code-share"})
+EVENT_ROUTES = frozenset({"public-event-code", "public-event-code-share", "public-event-cover-share"})
 SLUG_ROUTES = frozenset({"public-makerspace-page", "public-makerspace-page-asset"})
 
 

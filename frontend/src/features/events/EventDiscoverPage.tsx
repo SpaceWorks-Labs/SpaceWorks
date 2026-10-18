@@ -5,6 +5,7 @@ import { ThemeToggle } from "../../components/ThemeToggle";
 import { EmptyState, ErrorText, ListRow, Skeleton, StatusPill } from "../../components/ui";
 import { publicV1Request } from "../../lib/api";
 import { LICENSE_URL } from "../inventory/PublicPageChrome";
+import { DiscoveryEventImage } from "./DiscoveryEventImage";
 
 type Results = import("../../generated/api").Discovery;
 const field = "grid min-w-0 flex-1 basis-40 gap-1 text-sm font-semibold sm:flex-none";
@@ -35,7 +36,8 @@ export function EventDiscoverPage() {
       {!query.error && query.data ? <section aria-labelledby="discover-events-results" className="grid gap-3">
         <h2 id="discover-events-results" className="title-panel">{query.data.count} events</h2>
         {query.data.results.map((row) => <ListRow key={row.url} href={row.url} title={row.title}
-          identity={row.image_url ? { kind: "image", src: row.image_url } : { kind: "date", date: row.date }}
+          identity={row.image_url ? undefined : { kind: "date", date: row.date }}
+          identityContent={row.image_url ? <DiscoveryEventImage url={row.image_url} alt={row.image_alt || row.title} /> : undefined}
           meta={<><span>{[row.makerspace_name, new Date(row.date).toLocaleString(), row.location].filter(Boolean).join(" · ")}</span>
             {row.description ? <span className="mt-1 block line-clamp-2">{row.description}</span> : null}</>}
           right={<div className="flex flex-wrap items-center gap-2">

@@ -89,10 +89,11 @@ def _validate_content(target, data, assets):
 
 
 def save_content(target, *, actor, data):
-    legacy_order = "section_order" in data and "EDITORIAL" not in data["section_order"]
-    legacy_enabled = "section_enabled" in data and "EDITORIAL" not in data["section_enabled"]
     serializer = WebsiteContentInput(data=data)
     serializer.is_valid(raise_exception=True)
+    # Inspect raw compatibility fields only after DRF has checked their types.
+    legacy_order = "section_order" in data and "EDITORIAL" not in data["section_order"]
+    legacy_enabled = "section_enabled" in data and "EDITORIAL" not in data["section_enabled"]
     data = serializer.validated_data
     from copy import deepcopy
     return event_asset_transaction(lambda copies: _save_content(

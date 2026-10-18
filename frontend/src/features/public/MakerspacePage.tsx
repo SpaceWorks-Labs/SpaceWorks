@@ -75,6 +75,6 @@ export function MakerspacePage({ profileSlug, profileOnly = false }: { profileSl
   return <div style={published ? pageStyle : brandStyle}>
     <PageMetadata title={published?.title ?? name} description={published?.description ?? (bootstrap.branding.welcome_body || `Events, tools and spaces at ${name}.`)} path={published?.canonical_url ?? path()}
       image={published?.cover?.url ?? (published ? null : bootstrap.makerspace.cover_image_url || bootstrap.makerspace.logo_url)} imageAlt={published?.cover?.alt} siteName={name} />
-    {families.has("inventory") ? <PublicInventoryPage key={makerspaceSlug} resolvedSlug={makerspaceSlug} embedded={({ body, aside }) => page({ body, aside })} /> : page()}
+    {families.has("inventory") ? <PublicInventoryPage key={makerspaceSlug} resolvedSlug={makerspaceSlug} inheritBranding embedded={({ body, aside }) => page({ body, aside })} /> : page()}
   </div>;
 }

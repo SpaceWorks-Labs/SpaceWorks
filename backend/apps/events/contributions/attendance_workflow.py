@@ -8,6 +8,7 @@ from .models_shifts import (EventShift, EventShiftSignup, EventShiftAttendance,
                             EventContributionHours, EventContributionHoursEntry)
 from .ports import ports
 from .sources import sync_shift_locked
+from .role_policy import require_requirements
 
 
 def counted_minutes(start, end, breaks=0):
@@ -55,7 +56,7 @@ def command(*, actor, event_id, signup_id, payload, action, staff=False):
             if EventShiftAttendance.objects.filter(signup__member_id=signup.member_id,
                 event=event, state="checked_in").exclude(pk=attendance.pk).exists():
                 raise ProgrammeError("shift_conflict", "Finish your other duty first.")
-            ports().require_requirements(actor_id=signup.member_id, assignment_id=signup.assignment_id, shift_id=shift.pk)
+            require_requirements(actor_id=signup.member_id, assignment_id=signup.assignment_id, shift_id=shift.pk)
             commands.changed(attendance, state="checked_in", checked_in_at=occurred, actor=actor,
                              source="staff" if staff else "self")
         elif action == "check_out":

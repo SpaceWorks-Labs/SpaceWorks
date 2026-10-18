@@ -54,13 +54,19 @@ def summary(*, actor, event, own_mentor_id=None):
                     if started is not None:
                         elapsed += max(0, int((action.created_at - started).total_seconds()))
                     started = action.created_at
-                elif action.kind in ("release", "resolve", "cancel") and started is not None:
+                elif action.kind in ("release", "resolve", "cancel", "lease_expired", "expired", "role_ended") and started is not None:
                     elapsed += max(0, int((action.created_at - started).total_seconds()))
                     started = None
             durations.append(elapsed)
     visits = [max(0, int((row.submitted_at - row.started_at).total_seconds())) for row in checks]
     from .diagnostics import project
-    return {**project(event=event, mentor_id=own_mentor_id),
+    from .models_operations import MentorAttentionPreference
+    preference = MentorAttentionPreference.objects.filter(event=event, member=actor).first()
+    diagnostics = project(event=event, mentor_id=own_mentor_id)
+    if preference and preference.muted_until and preference.muted_until > timezone.now():
+        diagnostics["nudges"] = []
+    return {**diagnostics, "attention_preference": {
+        "version": preference.version if preference else 0, "muted_until": preference.muted_until if preference else None},
         "completed_checkins": checks.count(), "open_help": help_rows.filter(state="open").count(),
         "first_response": distribution(responses), "help_duration": distribution(durations),
         "visit_duration": distribution(visits),

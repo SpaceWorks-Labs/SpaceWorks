@@ -26,6 +26,7 @@ export function MentorRoundsPanel({ scope, roundId, sessionId, renderForm }: {
   const [answers, setAnswers] = useState<Record<string, unknown>>({})
   const [reason, setReason] = useState('')
   const [away, setAway] = useState(false)
+  const [nominate, setNominate] = useState(false)
   const [draftError, setDraftError] = useState<unknown>(null)
   const row = query.data
   const draftScope = `mentor:${sessionId}:${scope.accountId}:${scope.makerspaceId}:${scope.eventId}:${roundId}`
@@ -45,7 +46,7 @@ export function MentorRoundsPanel({ scope, roundId, sessionId, renderForm }: {
     return () => window.clearInterval(timer)
   }, [lease, command.mutate, command.isPending, roundId, row?.state])
   const choose = async (team: TeamVisit) => {
-    setSelected(team); setLease(team.lease); setAnswers({}); setDraftError(null)
+    setSelected(team); setLease(team.lease); setAnswers({}); setDraftError(null); setAway(false); setNominate(false)
     try { setAnswers(await readRoundDraft(draftScope, team.team_id) ?? {}) } catch (error) { setDraftError(error) }
   }
   const liveLease = lease && Date.parse(lease.expires_at) > Date.now() && row?.state === 'live'
@@ -60,10 +61,11 @@ export function MentorRoundsPanel({ scope, roundId, sessionId, renderForm }: {
         <Field label="Reason for a fresh-eyes or conflict exception" hint="Only used when the organizer permits this exception."><textarea className="desk-input" maxLength={2000} value={reason} onChange={event => setReason(event.target.value)} /></Field>
         {renderForm({ schema: row.form_schema, answers, onChange: setAnswers, disabled: command.isPending })}
         <label className="my-4 flex min-h-11 items-center gap-3"><input type="checkbox" checked={away} onChange={event => setAway(event.target.checked)} />Team is away from its spot</label>
+        <label className="my-4 flex min-h-11 items-center gap-3"><input type="checkbox" checked={nominate} disabled={away} onChange={event => setNominate(event.target.checked)} />Nominate this team for a private follow-up shortlist</label>
         <div className="mt-4 flex flex-wrap gap-2">
           {!liveLease ? <ActionControl action={{ label: 'Claim visit', pending: command.isPending, onClick: () => command.mutate({ path: `/mentor-rounds/${roundId}/teams/${selected.team_id}/claim/`, version: row.version, fields: { override_reason: reason } }, { onSuccess: value => setLease(asLease(value)) }) }} /> : <>
             <ActionControl primary action={{ label: 'Submit visit', pending: command.isPending, onClick: () => command.mutate({ path: `/mentor-rounds/${roundId}/teams/${selected.team_id}/submit/`, version: lease.version,
-              fields: { lease_uuid: lease.lease_uuid, generation: lease.generation, answers, away } }, { onSuccess: () => { setLease(null); setSelected(null); void clearRoundDrafts(draftScope).catch(setDraftError) } }) }} />
+              fields: { lease_uuid: lease.lease_uuid, generation: lease.generation, answers, away, nominate: nominate && !away } }, { onSuccess: () => { setLease(null); setSelected(null); void clearRoundDrafts(draftScope).catch(setDraftError) } }) }} />
             <ActionControl action={{ label: 'Release visit', pending: command.isPending, onClick: () => command.mutate({ path: `/mentor-rounds/${roundId}/teams/${selected.team_id}/release/`, version: lease.version, fields: { lease_uuid: lease.lease_uuid, generation: lease.generation } }, { onSuccess: () => setLease(null) }) }} /></>}
           <ActionControl action={{ label: 'Save draft on this device', onClick: () => { void saveRoundDraft(draftScope, selected.team_id, row.closes_at, answers).catch(setDraftError) } }} />
         </div></Card> : null}

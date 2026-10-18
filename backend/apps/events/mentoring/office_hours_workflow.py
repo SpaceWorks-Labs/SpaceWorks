@@ -38,6 +38,8 @@ def cancel_locked(*, actor, event, booking_id, locks, reason_code):
 
 
 def book(*, actor, event_id, slot_id, payload):
+    initial = get_object_or_404(EventShift, pk=slot_id, event_id=event_id, kind="office_hours")
+    mentor_id = initial.mentor_assignment.member_id
     def authorize(event):
         commands.active_member(actor)
         ports().teams.require_member(actor_id=actor.pk, event_id=event.pk, team_id=payload["team_id"])
@@ -50,6 +52,8 @@ def book(*, actor, event_id, slot_id, payload):
         if slot.state != "open" or slot.starts_at <= timezone.now() or slot.signup_deadline <= timezone.now():
             raise ProgrammeError("slot_closed", "This slot is closed.")
         mentor = slot.mentor_assignment
+        if mentor.member_id not in locks.account_ids:
+            raise ProgrammeError("scope_changed", "The office-hour mentor changed; refresh this slot.")
         assignment, profile = policy.mentor_for(mentor.member, event, at=slot.starts_at, assignment_id=mentor.pk)
         from .models_queue import MentorProfile
         profile = MentorProfile.objects.select_for_update().get(pk=profile.pk, event=event)
@@ -75,7 +79,7 @@ def book(*, actor, event_id, slot_id, payload):
 
     return commands.run(actor=actor, event_id=event_id, operation_id=payload["operation_id"], payload=payload,
         action="office_hours.book", feature="events.mentoring", permission=False,
-        authorize=authorize, mutate=mutate, status=201)
+        authorize=authorize, mutate=mutate, account_ids=(mentor_id,), authority_ids=(mentor_id,), status=201)
 
 
 def cancel(*, actor, event_id, booking_id, payload):

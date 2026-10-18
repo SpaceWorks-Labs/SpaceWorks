@@ -9,6 +9,7 @@ from .models_roles import ACTIVE, EventRoleAssignment, EventRolePosting
 from .ports import ports
 from .subjects import subject_for
 from .form_storage import canonical_answers
+from . import role_policy
 
 
 def _open(posting):
@@ -79,16 +80,25 @@ def edit(*, actor, event_id, assignment_id, payload, submit=False):
         fields.update({key: payload[key] for key in ("skills", "availability") if key in payload})
         if submit:
             fields.update(state="applied", submitted_at=timezone.now())
-        return commands.changed(locked, **fields)
+        commands.changed(locked, **fields)
+        if submit and posting and not posting.approval_required:
+            role_policy.auto_approve_locked(row=locked, posting=posting, event=event, locks=locks)
+        return locked
 
     return commands.run(actor=actor, event_id=event_id, operation_id=payload["operation_id"],
         payload=payload, action="role.submit" if submit else "role.edit", feature=_feature(row.role),
-        permission=False, authorize=authorize, account_ids=(actor.pk,), mutate=mutate)
+        permission=False, authorize=authorize, account_ids=(actor.pk,), mutate=mutate,
+        authority_ids=(row.posting.permission_issuer_id,) if submit and row.posting_id
+            and row.posting.permission_issuer_id else ())
 
 
 def transition(*, actor, event_id, assignment_id, payload, action):
     row = get_object_or_404(EventRoleAssignment, pk=assignment_id, event_id=event_id)
-    own = action in ("withdraw", "date_review")
+    own = action in ("withdraw", "date_review", "decline")
+    from .shift_workflow import transition_scope
+    from .models_shifts import EventShiftSignup
+    shift_ids = EventShiftSignup.objects.filter(assignment=row).values_list("shift_id", flat=True)
+    affected_accounts, issuer_ids = transition_scope(event_id=event_id, shift_ids=shift_ids)
 
     def authorize(event):
         if own:
@@ -103,25 +113,25 @@ def transition(*, actor, event_id, assignment_id, payload, action):
             ports().forms.review_date_locked(subject=subject_for(locked),
                 revision=payload["event_date_revision"], as_of_date=str(payload["reviewed_as_of_date"]), locks=locks)
             return commands.changed(locked, date_review_required=False)
+        if action in ("reopen_answers", "reconfirm"):
+            if action == "reconfirm" and not locked.imported_inert:
+                raise ProgrammeError("invalid_transition", "Only imported roles need reconfirmation.")
+            require_state(locked, "applied", "approved", "proposed", "declined", "completed")
+            return role_policy.reopen_locked(row=locked, actor=actor, event=event, locks=locks,
+                                             reason=payload.get("reason", ""))
         if action == "approve":
             require_state(locked, "applied", "proposed")
-            if locked.role == "co_organizer":
-                event_authority.require(actor, event, None)
-            if locked.imported_inert:
-                raise ProgrammeError("imported_inert", "Reconfirm this imported role before granting authority.")
-            ports().forms.require_approval_locked(subject=subject_for(locked), locks=locks)
-            ports().require_requirements(actor_id=locked.member_id, assignment_id=locked.pk, shift_id=None)
-            commands.changed(locked, state="approved", approved_by=actor, approved_at=timezone.now(),
-                             answer_locked_at=timezone.now())
-            if locked.role == "mentor":
-                from apps.events.mentoring.models_queue import MentorProfile
-                if not MentorProfile.objects.filter(assignment=locked).exists():
-                    commands.new_row(MentorProfile, event, assignment=locked,
-                        skills=locked.skills, availability=locked.availability)
+            role_policy.approve_locked(row=locked, issuer=actor, event=event, locks=locks)
         else:
             require_state(locked, "draft", "proposed", "applied", "approved")
-            if action not in ("withdraw", "revoke"):
+            if action not in ("withdraw", "revoke", "decline", "complete", "reject"):
                 raise ProgrammeError("invalid_transition", "Unknown role command.", status=400)
+            if action == "complete":
+                require_state(locked, "approved")
+                if not payload.get("reason", "").strip():
+                    raise ProgrammeError("reason_required", "Explain the completion.", status=400)
+            if action in ("decline", "reject"):
+                require_state(locked, "proposed", "applied")
             # Attendance already started is a work lock. Do not discard its evidence.
             from .models_shifts import EventShiftAttendance
             if own and EventShiftAttendance.objects.filter(signup__assignment=locked,
@@ -129,14 +139,20 @@ def transition(*, actor, event_id, assignment_id, payload, action):
                 raise ProgrammeError("work_locked", "Work has started; ask an organizer to close this role.")
             from .shift_workflow import withdraw_assignment_locked
             withdraw_assignment_locked(assignment=locked, actor=actor, event=event, locks=locks, allow_active=not own)
-            commands.changed(locked, state="withdrawn" if own else "revoked")
+            commands.changed(locked, state={"withdraw": "withdrawn", "revoke": "revoked",
+                "complete": "completed", "decline": "declined", "reject": "declined"}[action])
+            if payload.get("reason"):
+                commands.changed(locked, application_notes=payload["reason"])
+            if locked.role == "mentor":
+                from apps.events.mentoring.assignment_workflow import end_role_locked
+                end_role_locked(assignment=locked, actor=actor, event=event)
         sync_entitlement_locked(assignment_id=locked.pk, actor_id=actor.pk, locks=locks)
         return locked
 
     return commands.run(actor=actor, event_id=event_id, operation_id=payload["operation_id"],
         payload=payload, action=f"role.{action}", feature=_feature(row.role),
-        permission=False if own else "manage_team", authorize=authorize,
-        account_ids=(row.member_id,), mutate=mutate)
+        permission=False if own else "manage_volunteers" if row.role == "volunteer" else "manage_team", authorize=authorize,
+        account_ids=(row.member_id, *affected_accounts), authority_ids=issuer_ids, mutate=mutate)
 
 
 def sync_entitlement_locked(*, assignment_id, locks, actor_id=None):

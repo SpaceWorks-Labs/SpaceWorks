@@ -28,7 +28,8 @@ def fire_locked(*, actor, event, round, team_id, answers, locks):
         row = commands.new_row(EventHelpRequest, event, team_id=team_id, type=help_type,
             raised_by=actor, origin="round", priority=help_type.priority,
             summary="Follow-up requested during a mentor round.", exclusive_until=now + timedelta(minutes=5),
-            dedup_key=key, practice_run_id=round.practice_run_id)
+            dedup_key=key, practice_run_id=round.practice_run_id,
+            expires_at=min(event.ends_at, now + timedelta(minutes=help_type.expiry_minutes)))
         notice_locked(row, event, "created")
         record(actor, "event.help.round_triggered", makerspace=event.makerspace, target=row,
                meta={"round_id": round.pk, "event_id": event.pk})

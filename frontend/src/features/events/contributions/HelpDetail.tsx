@@ -9,7 +9,7 @@ export function HelpDetail({ scope, helpId, surface = 'member', onClose }: {
   scope: EventScope; helpId: number; surface?: Surface; onClose: () => void
 }) {
   const path = `/help/${helpId}/`
-  const query = useProgrammeDetail<HelpRequest>(scope, surface, path)
+  const query = useProgrammeDetail<HelpRequest>(scope, surface, path, true, true)
   const [page, setPage] = useState(1)
   const comments = useQuery({ queryKey: [...programmeKey(scope, surface), path, 'comments', page],
     queryFn: () => requestFor(surface)<Page<HelpComment>>(`${basePath(scope, surface)}${path}comments/?page=${page}`),
@@ -20,7 +20,8 @@ export function HelpDetail({ scope, helpId, surface = 'member', onClose }: {
   const row = query.data
   const perform = (action: string) => {
     if (!row) return
-    const fields = action === 'resolve' ? { resolution_note: note } : action === 'reopen' ? { reason: note } : {}
+    const fields = action === 'resolve' ? { resolution_note: note } : action === 'reopen' ? { reason: note }
+      : action === 'renew' ? { claim_uuid: row.claim_uuid, claim_generation: row.claim_generation } : {}
     command.mutate({ path: `${path}${action}/`, version: row.version, fields },
       { onSuccess: () => { if (['release', 'resolve'].includes(action) && surface === 'admin') onClose() } })
   }
@@ -28,11 +29,13 @@ export function HelpDetail({ scope, helpId, surface = 'member', onClose }: {
     status={row ? <StatusPill label={row.state} tone={row.state === 'resolved' ? 'success' : 'neutral'} /> : undefined}
     state={query.isPending ? { status: 'loading' } : query.isError ? { status: 'error', error: errorText(query.error), onRetry: () => { void query.refetch() } } : { status: 'ready' }}
     main={<div className="grid gap-4"><Card><p className="whitespace-pre-wrap break-words">{row?.summary}</p>
-      <p className="mt-3 text-sm text-muted">{row?.team_alias}{row?.zone?.table ? ` · Table ${row.zone.table}` : ''}</p></Card>
+      <p className="mt-3 text-sm text-muted">{row?.team_alias}{row?.zone?.table ? ` · Table ${row.zone.table}` : ''}</p>
+      {row?.claim_expires_at ? <p role="status" className="mt-3 text-sm text-muted">Claim expires {new Date(row.claim_expires_at).toLocaleTimeString()}</p> : null}
+      {row?.organizer_contact_action ? <p className="mt-3 whitespace-pre-wrap text-sm">{row.organizer_contact_action}</p> : null}</Card>
       {command.error ? <p role="alert" className="text-danger">{errorText(command.error)}</p> : null}
       {row?.allowed_actions.some(x => ['resolve', 'reopen'].includes(x)) ? <Field label="Resolution or follow-up note">
         <textarea className="desk-input min-h-24" maxLength={2000} value={note} onChange={event => setNote(event.target.value)} /></Field> : null}
-      <div className="flex flex-wrap gap-2">{['release', 'resolve', 'reopen', 'cancel'].filter(action => row?.allowed_actions.includes(action)).map(action =>
+      <div className="flex flex-wrap gap-2">{['release', 'resolve', 'reopen', 'cancel', 'renew'].filter(action => row?.allowed_actions.includes(action)).map(action =>
         <ActionControl key={action} action={{ label: action === 'cancel' ? 'Cancel help request' : action.replace(/^./, x => x.toUpperCase()),
           pending: command.isPending, disabled: ['resolve', 'reopen'].includes(action) && !note.trim(),
           disabledReason: ['resolve', 'reopen'].includes(action) && !note.trim() ? 'Add a short note first.' : undefined,

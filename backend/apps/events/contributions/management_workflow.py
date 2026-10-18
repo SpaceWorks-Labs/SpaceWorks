@@ -165,4 +165,5 @@ def save_role(*, actor, event_id, payload, assignment_id=None):
 
     return commands.run(actor=actor, event_id=event_id, operation_id=payload["operation_id"], payload=payload,
         action="role.save", feature=None, permission="manage_team", mutate=mutate,
-        status=200 if assignment_id else 201)
+        account_ids=(get_object_or_404(EventRoleAssignment, event_id=event_id, pk=assignment_id).member_id,)
+            if assignment_id else (payload["member_id"],), status=200 if assignment_id else 201)

@@ -4,6 +4,7 @@ import { ActionControl, Card } from '../../../components/ui'
 import { StructuredApiError } from '../../../lib/api'
 import { errorText, useProgrammeCommand } from './api'
 import type { EventScope, Posting, RoleApplication, RoleFormValue } from './types'
+import { RoleOwnerActions } from './RoleOwnerActions'
 
 /** F renders/validates form v2; P owns prefill, derivation and save-choice defaults. */
 export interface RoleFormBridge {
@@ -14,7 +15,7 @@ export interface RoleFormBridge {
 
 type Props = {
   scope: EventScope; posting: Posting; application: RoleApplication | null; bridge: RoleFormBridge
-  onSaved: (id: number) => void; sponsorConsent?: ReactNode
+  onSaved: (id: number) => void; sponsorConsent?: ReactNode; completionReady?: boolean
 }
 
 export function RoleApplicationForm(props: Props) {
@@ -22,7 +23,7 @@ export function RoleApplicationForm(props: Props) {
   return <FormContent key={`${scope.accountId}:${scope.makerspaceId}:${scope.eventId}:${posting.id}:${application?.id ?? 'new'}`} {...props} />
 }
 
-function FormContent({ scope, posting, application, bridge, onSaved, sponsorConsent }: Props) {
+function FormContent({ scope, posting, application, bridge, onSaved, sponsorConsent, completionReady = false }: Props) {
   const [value, setValue] = useState<RoleFormValue | null>(null)
   const [prefillError, setPrefillError] = useState<unknown>(null)
   const command = useProgrammeCommand(scope, 'member')
@@ -77,5 +78,6 @@ function FormContent({ scope, posting, application, bridge, onSaved, sponsorCons
         </div> : <p className="mt-4 text-sm text-muted">Your submitted answers are locked.</p>}
       </form> : null}
       {application?.save_intent ? <div className="mt-4" role="status">{bridge.savedDetailsStatus(application.save_intent)}</div> : null}
+      {application ? <RoleOwnerActions scope={scope} row={application} completionReady={completionReady} onSaved={onSaved} /> : null}
     </Card>{sponsorConsent}</div>} />
 }

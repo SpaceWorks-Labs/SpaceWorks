@@ -10,10 +10,14 @@ def role(row, *, detail=False, owner=False):
     actions = ["withdraw"] if owner and row.state in ("draft", "proposed", "applied", "approved") else []
     if owner and row.state in ("draft", "proposed", "applied") and row.answer_locked_at is None:
         actions.extend(["edit", "submit"])
+    if owner and row.state == "proposed":
+        actions.append("decline")
     data = {**envelope(row, actions), "role": row.role, "posting_id": row.posting_id,
         "submitted_at": row.submitted_at, "decision": row.state if row.state in (
             "approved", "declined", "revoked", "completed") else None, "grant": None, "save_intent": None,
         "entitlement_active": row.state == "approved" and not row.imported_inert}
+    if not owner:
+        data["imported_inert"] = row.imported_inert
     if detail:
         data.update(ports().forms.project(subject=subject_for(row), audience="owner" if owner else "organizer"))
     return data
@@ -66,4 +70,12 @@ def admin_shift(row, actor):
         if item.state == "approved" and data["attendance"] == "checked_out" and item.member_id != actor.pk:
             data["allowed_actions"].append("verify-hours" if data["verified_minutes"] is None else "adjust-hours")
         items.append(data)
-    return {**shift(row), "signups": items}
+    return {**shift(row), "signups": items, **{key: getattr(row, key) for key in (
+        "signup_deadline", "mentor_assignment_id", "grace_minutes", "waitlist_enabled", "approval_required",
+        "requirements", "permission_preset")}}
+
+
+def admin_posting(row):
+    return {**posting(row), **{key: getattr(row, key) for key in (
+        "briefing", "skills", "visibility", "approval_required", "opens_at", "closes_at",
+        "requirements", "permission_preset", "form_schema")}}

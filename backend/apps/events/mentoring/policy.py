@@ -21,6 +21,11 @@ def in_windows(windows, at):
     return False
 
 
+def covers_interval(windows, start, end):
+    return any(datetime.fromisoformat(row["starts_at"].replace("Z", "+00:00")) <= start
+        and end <= datetime.fromisoformat(row["ends_at"].replace("Z", "+00:00")) for row in windows)
+
+
 def mentor_for(actor, event, *, at=None, assignment_id=None, on_shift=True):
     active_member(actor)
     rows = EventRoleAssignment.objects.filter(event=event, member=actor,

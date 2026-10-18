@@ -31,6 +31,14 @@ class RoleForms(Protocol):
     def review_date_locked(self, *, subject: AnswerSubject, revision: int,
                            as_of_date: str, locks: LockedContext) -> None: ...
     def validate_round(self, *, schema: dict, answers: dict) -> dict: ...
+    def reopen_locked(self, *, subject: AnswerSubject, previous_version: int,
+                      locks: LockedContext) -> None:
+        """P archives frozen DOB/date sources and starts a fresh unconfirmed revision.
+
+        No DOB, computed age, key provisioning or external I/O crosses this port.
+        """
+        ...
+    def export_owner(self, *, subject: AnswerSubject, actor_id: int) -> dict: ...
 
 
 class GrantSources(Protocol):
@@ -73,7 +81,13 @@ class ProgrammePorts(Protocol):
     def require_event_feature(self, *, event_id: int, feature: str) -> None: ...
     def require_role_audience(self, *, actor_id: int, event_id: int, posting_id: int) -> None: ...
     def visible_posting_ids(self, *, actor_id: int, event_id: int) -> tuple[int, ...]: ...
-    def require_requirements(self, *, actor_id: int, assignment_id: int, shift_id: int | None) -> None: ...
+    def require_requirements(self, *, actor_id: int, assignment_id: int, shift_id: int | None,
+                             override_ids: tuple[int, ...] = ()) -> None:
+        """Validate live requirements; overrides cover only their exact training/briefing IDs.
+
+        Always require real waiver and CoC evidence regardless of override records.
+        """
+        ...
     def delegation_scope(self, *, actor_id: int, target_id: int, permissions: tuple[str, ...],
                          operation: str, row_id: int | None) -> bool: ...
     def deliver_help(self, *, intent_id: int, recipient_ids: tuple[int, ...], payload: dict,
@@ -95,3 +109,10 @@ def ports() -> ProgrammePorts:
     if _adapter is None:
         raise ProgrammeError("programme_not_ready", "The programme is not ready.", status=503)
     return _adapter
+
+
+def required_hook(adapter, name):
+    hook = getattr(adapter, name, None)
+    if not callable(hook):
+        raise ProgrammeError("programme_not_ready", "The programme adapter is not ready.", status=503)
+    return hook

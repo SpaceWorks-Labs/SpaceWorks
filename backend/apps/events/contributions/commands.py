@@ -35,7 +35,7 @@ def active_member(actor):
 
 
 def run(*, actor, event_id, operation_id, payload, action, feature, permission,
-        mutate, authorize=None, account_ids=(), status=200):
+        mutate, authorize=None, account_ids=(), authority_ids=(), status=200):
     """authorize runs again on replay; mutate must contain no external I/O.
 
     G owns EventCommandReceipt and the combined fence adapter. This package never
@@ -55,7 +55,7 @@ def run(*, actor, event_id, operation_id, payload, action, feature, permission,
         adapter.require_event_feature(event_id=event.pk, feature=feature)
     adapter.prepare_private_write(makerspace_id=event.makerspace_id)
     request_hash = digest({"action": action, "payload": payload})
-    accounts = tuple(sorted({actor.pk, *account_ids}))
+    accounts = tuple(sorted({actor.pk, *account_ids, *authority_ids}))
     tenants = (event.makerspace_id,)
     with boundary_tenant_write(event.makerspace_id), transaction.atomic():
         with adapter.fences(tenant_ids=tenants, account_ids=accounts):
@@ -65,7 +65,11 @@ def run(*, actor, event_id, operation_id, payload, action, feature, permission,
             # The shipped grant helper locks User under the event, which conflicts
             # with the programme/account-key lock order. G supplies the opt-in
             # membership/grant-only authority lock under the declared fences.
-            adapter.lock_authority_locked(actor_id=actor.pk, event_id=event.pk, locks=locks)
+            # All declared subjects may become a live issuer during scope
+            # discovery. Lock every account's authority before domain rows so
+            # membership in account_ids is also proof of this authority fence.
+            for authority_id in accounts:
+                adapter.lock_authority_locked(actor_id=authority_id, event_id=event.pk, locks=locks)
             actor = User.objects.filter(pk=actor.pk).first()
             if not event_authority._active(actor):
                 raise ProgrammeError("account_inactive", "An active account is required.", status=403)

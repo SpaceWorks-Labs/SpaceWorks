@@ -1,200 +1,175 @@
-# Events programme — Lane C implementation handoff
+# Events programme - Lane C2 implementation handoff
 
-Worktree: `ev-c`; branch: `lane/events-c`. Built against G1 `72bf7be7` and the
-approved plan's frozen fixtures. **This is a partial lane delivery, not integration
-acceptance.** The completion work below must land before programme enablement.
-No staging, commit, merge, push, migration, shared-file edit, generated schema edit,
-Docker execution or Django test execution was performed. The pre-existing untracked
-`frontend/src/test/staffActor.ts` was left untouched.
+Worktree `ev-c`, branch `lane/events-c`, on top of owner-committed C1 `27b89c6e`.
+C2 implements the remaining C-owned domain work. This is **not integration acceptance**:
+the exact shared hooks and required runtime verification are listed under UNFINISHED.
+No staging, commit, merge, push, app migration, shared-file edit, generated schema/client
+edit, Docker execution or Django test execution was performed.
 
-## Built per plan section
+## Built per approved plan section
 
-| Plan | Implemented |
+| Plan | C2 completion |
 | --- | --- |
-| §4 / §12 | A common command boundary: source boundary, declared tenant/account fences before event locks, live authorization before and after locks, digest-bound receipts, safe audit metadata, integer-preserving typed errors, no-store reads and strict command input. No nullable joined `select_for_update`. |
-| §6 contributions / §12B | Role-only draft/edit/submit, approval, owner date-review, withdrawal/revocation, posting/shift configuration, owner subject resolution without registration, canonical answer storage that rejects persisted numeric age in derived slots. F/P preparation happens before the command transaction; prepared application/derivation/save insertion happens under declared locks. |
-| §6 grants | C-owned role/shift entitlement synchronization, live time/source/track queries, source-only revocation, manual-source preservation, future source container preservation, imported-role refusal and subset/scope adapter. G retains the existing grant-container lifecycle and manual-grant hooks. |
-| §6 volunteering | Locked capacity, approval/waitlist/FIFO promotion, requirement hooks, overlap checks, separate shift attendance, server timestamps and bounded desk corrections, elapsed minutes/breaks, verification/adjustment history and self-verification refusal. Safe reference reminders at one week/two days/event-local day-of. |
-| §6 assignments | Deterministic manual, balanced round-robin and weighted skill-match preview/allocation with capacity, availability and conflict exclusions. Persisted mappings carry the run UUID. Preview does not grant access. |
-| §6 help / §12D | Team and mentor origins; raising never claims; parent-locked comments; claim/release/resolve/reopen; team cancellation releases the mentor; assigned priority window, skill/shift/conflict checks, duplicate limits, safe queue versus private detail projections. Fifteen-minute attention uses the latest open period, not the original creation time. |
-| §6 rounds | Dynamic bounded configuration, one live round per production/practice scope, generation/UUID/expiry checks, ten-minute leases and 30-second client heartbeat, fresh-eyes/conflict reason policy, notes without prior ratings, away/nominations and deduplicated conditional help triggers. Encrypted session-scoped device drafts are cleared on scope exit and round close. |
-| §6 office hours | Independent team-place allocation, eligible team ownership, future availability/mentor duty conflicts, redacted caller-owned conflicts, idempotent cancellation. Explicit `PATCH /shifts/{id}/` with `cancel_bookings:true`, a reason and schedule/state changes cancels and notifies booked teams before rescheduling; ordinary occupied-slot edits refuse. |
-| §6 analytics/import/practice | Private response/handling/visit distributions, per-round coverage, expired leases, active mentors, away attention, quiet/long-visit nudges and low-n/zero-variance-safe generosity diagnostics. CSV/XLSX explicit-ID parser, formula/expansion/size bounds, encrypted expiring preview and digest-checked commit through A's team adapter. Practice help creates no outbox; production reads exclude practice. |
-| §11 | Persisted safe-reference outboxes, after-commit enqueue, periodic recovery, bounded claims/retries and provider idempotency. Delivery adapters must revalidate current recipients and authority. No private help text or attachments are copied to room messages. |
-| §13 / decisions 28–33 | Exported participant contribution, application, shifts, help and office-hour components; mentor queue/detail, rounds, assignment preview, analytics, volunteer hours and import/practice components. Existing layouts/primitives, CSS tokens and lucide icons; no artwork, font or palette imports. Required F/P form bridge and D consent slot preserve sole ownership. |
+| section 4 / section 12 | Commands fence declared accounts before event locks and lock each declared account's live authority before domain rows. Auto-approval and FIFO promotion refuse changed, unfenced issuers. Target mentor fences cover bulk allocation, activation, explicit help assignment and office-hour booking. Existing 62 frozen route names/paths/methods are unchanged. |
+| section 6 roles / section 12B / decisions 28-30 | Posting auto-approval runs the same live issuer, F/P approval/CoC, requirement, frozen-source and source-entitlement policy as manual approval. Explicit owner decline, manager rejection/completion, imported-role reconfirmation and staff answer reopening are implemented. Reconfirmation returns to a fresh owner draft; it grants nothing. Reopening archives canonical answers/reason/old lock, calls P's new-revision hook, clears approval/consent and closes mentor mappings/claims and future bookings. Active-sibling collisions return a typed error. No computed age is persisted. Owner-only date-source export delegates to P. Draft volunteer/mentor applications qualify for B's own resume workflow, without attendee registration or sponsor consent. |
+| section 6 requirements / volunteering | Exact training/briefing exception records keep private reasons; waiver/CoC are never override kinds. The requirement port receives only the applicable exception IDs and must still enforce real evidence. FIFO safely skips withdrawn requirements, uses the current fenced issuer and preserves manual entitlements. Existing attendance/correction/verified-hours services retain immutable evidence; correction/audit tests added. |
+| section 6 assignments | Persisted run records contain every mapping and every uncovered team, including zero-coverage outcomes; replay uses the original run. Collection POST proposes; `/assign/` activates the bulk result. Proposed -> active -> ended commands recheck live eligibility, capacity and conflicts. Mapping reads now include typed team/mentor/run/interval fields. |
+| section 6 help / section 12D | Configurable category priority/skills/open limit, bounded claim TTL and request expiry. Generation/UUID-bound renewal, command-time expiry checks, source-fenced bounded expiry worker, terminal expiry and stale-claim release. Comments cannot bypass deadlines. Attention deduplicates by open period; stale-period/expired notices do not dispatch. Existing claim/office-hour/round races are retained; expiry-versus-renewal race added. |
+| section 6 configuration / rounds / analytics | Own or authorized-manager mentor skills/private affiliation/capacity/availability editing, booking-safe schedule changes and explicit off-duty empty schedules. Own declared conflicts and manager affiliation configuration with private scoped reads. Explicit nominations require a completed non-away visit. Personal bounded nudge mute, round coverage/attention and private low-n/zero-variance diagnostics. Round UI configures shared forms, fresh-eyes/conflict policy and conditional help triggers. |
+| section 6 import/export/admission / section 9 | Bounded CSV/XLSX explicit-ID exports require full manager plus tenant VIEW_AUDIT; formula/control-like cells are inert and no contacts/DOB sources enter mapping exports. A/G admission port requires an explicit real contributor ticket/capacity policy and returns a same-event/member/ticket admitted registration. C creates no attendee row. E's certificate subject resolver requires independently verified/adjusted positive work minutes and returns versioned evidence under subject fences; display roles and imported roles do not establish eligibility. |
+| section 11 / section 13 / decisions 31-33 | Space Works primitives/layouts, existing theme classes/tokens, lucide, shared F form-builder/renderer slots. Posting/shift/office-hour setup, mentor settings/conflicts, help categories, assignment lifecycle, role lifecycle/overrides/admission, owner decline/withdraw/export, help renewal/contact, round nomination/setup/triggers, attention/mute and CSV/XLSX controls. PATCH editors send edited fields. G retains AppShell/route mounting, E photo/card selection and ARTWORK ownership. No borrowed assets/fonts/palette or automatic photo choice. |
 
 ## Files
 
-The exact file lists, all model declarations, FK/User edges, constraints and all 62
-named route definitions are in [integration-manifest.json](integration-manifest.json).
-This manifest is inert; it installs nothing. Registry inputs and exclusions are in
-[manifest.py](manifest.py). The two domain model barrels are `contributions/models.py`
-and `mentoring/models.py`; G must explicitly import them through its own barrel.
+[integration-manifest.json](integration-manifest.json) contains the complete production,
+frontend, test/helper, field/FK/User-edge, constraint and route inventories.
+[manifest.py](manifest.py) supplies registry, task and adapter inputs; it installs nothing.
+All changes stay inside `contributions/**`, `mentoring/**`, their section 15 frontend/test
+counterparts, plus the two expressly requested scratchpad rerun lists.
 
-Main service files: `commands.py`, `sources.py`, `authority.py`, `role_workflow.py`,
-`management_workflow.py`, `shift_workflow.py`, `attendance_workflow.py`,
-`mentoring/{assignment_workflow,help_workflow,office_hours_workflow,round_workflow,
-round_management,round_triggers,analytics,diagnostics,round_board,import_workflow}.py`.
-Each domain owns its serializers, views, URL lists and notification workers.
+Main additions:
 
-Frontend: `frontend/src/features/events/contributions/**` and
-`frontend/src/features/staff/mentorDesk/**`. These are exported components for G to
-mount inside AppShell; this lane did not modify AppRoutes or EventDrawer tabs.
+- Contributions: `role_policy.py`, `models_policy.py`, `requirements_workflow.py`,
+  `models_admission.py`, `admission_adapter.py`, `certificate_subjects.py`,
+  `views_completion.py`, `urls_completion.py`.
+- Mentoring: `models_operations.py`, `help_expiry.py`, `configuration_workflow.py`,
+  `serializers_configuration.py`, `import_export.py`, `views_configuration.py`,
+  `views_completion.py`, `urls_completion.py`.
+- Frontend: `ContributorSetupPanel`, `PostingEditor`, `ShiftEditor`, `MentorSettingsPanel`,
+  `MentorConflictForm`, `MentorAttentionPanel`, `MentorAssignmentLifecycle`, `RoleLifecycleActions`,
+  `MentorRoundSetup`, `RoundHelpTriggers`, `setupFields`, member `RoleOwnerActions`,
+  and `completion.test.tsx`; existing lane components supply integration slots.
 
-## Model manifest
+## Model manifest - G authors all migrations
 
-27 concrete models, no migrations:
+**32 concrete models: C1's 27 plus five new models.** Domain barrels explicitly import them.
 
-- Contributions: `EventRolePosting`, `EventRoleAssignment`, `EventGrantEntitlement`,
-  `EventSponsor`, `EventSponsorTrack`, `EventShift`, `EventShiftSignup`,
-  `EventShiftAttendance`, `EventContributionHours`, `EventContributionHoursEntry`,
-  `EventShiftAttendanceCorrection`, `EventContributorNotice`.
-- Mentoring: `MentorProfile`, `MentorTeamAssignment`, `EventHelpType`,
-  `EventHelpRequest`, `EventHelpAction`, `EventHelpComment`, `OfficeHoursBooking`,
-  `OfficeHoursChange`, `MentorRound`, `MentorRoundLock`, `MentorRoundCheckin`,
-  `MentorConflict`, `MentorNomination`, `MentorImportPreview`, `MentorNotificationIntent`.
+| New model | Ownership/history and important fields |
+| --- | --- |
+| `EventRoleAnswerRevision` | Event/host; assignment FK, nullable actor User edge, encrypted canonical answers/reason, schema version, previous lock timestamp; append-only. P owns the corresponding frozen-source revision. |
+| `EventRequirementOverride` | Event/host; assignment FK, optional shift FK, nullable actor User edge, exact training/briefing reference and encrypted reason; append-only. No waiver/CoC override vocabulary. |
+| `EventContributorAdmission` | Event/host; assignment OneToOne, real registration PROTECT FK, explicit capacity policy and nullable actor User edge; append-only. Not a replacement registration. |
+| `MentorAssignmentRun` | Event/host; run UUID, mode, typed mapping/team/mentor IDs, unsatisfied team IDs, nullable creator User edge; append-only and unique(event, creator, run). |
+| `MentorAttentionPreference` | Event/host, member User edge, mute deadline; unique(event, member), portable omission. |
 
-Every model inherits host/event/version; entitlement overrides the event FK to
-nullable and adds series for existing manual series grants. Roles/shifts remain
-event-only. Null/non-null sponsor active-role uniqueness is split correctly.
-Source alternatives, live uniqueness, capacity parents, attendance ordering and
-the help claimed-by shape have explicit constraints in the manifest.
-
-All scoped PII fields use `ScopedPiiModelMixin`; exact fields are in `PII_FIELDS`.
-G must register them before runtime use. C owns no object bytes. The presentation FK
-points to E's `EventMemberPresentation`; sponsor organization is a global reference,
-not tenant ownership. Track IDs are typed-in-purpose JSON references requiring G's
-portable remapper and same-event validation. There is **no C sponsor-consent model,
-consent writer, `allow_resume` flag or cached positive consent projection**.
-
-G must install append-only/frozen/cross-row guards and lifecycle classifications.
-Portable archives exclude entitlements, leases, import preview credentials and both
-outboxes. Imported roles must be explicitly marked inert; credential omission must
-never turn an imported approved role back into live authority. Deployment recovery
-must invalidate transient leases/claims rather than revive them.
+Changed declarations: help-type claim/expiry policy and bounds; mentor profile capacity bounds;
+mentor mapping ended-state shape; help request UUID/generation/lease expiry/terminal deadline/
+open-period generation and claim metadata shape. G must reset transient claims on portable
+import/deployment recovery and leave imported roles inert. Add all new append-only, source,
+field/User-edge, cross-event, encryption, uniqueness, lifecycle and purge guards. Typed JSON
+remaps for run decisions/uncovered teams and canonical revision derivation IDs are listed in
+the manifest. No C model owns object bytes or sponsor-consent authority.
 
 ## Routes
 
-62 frozen C route names and paths match G1 by stdlib inspection. URL lists:
+The original **62** frozen routes are retained. Their OpenAPI annotations now include the
+expanded admin posting/shift configuration, assignment run/mapping, help lease, round policy
+and attention response fields. G alone regenerates schema/client snapshots.
 
-- `contributions/urls_member.py`: 15; mount under `/api/v1/member/`.
-- `contributions/urls_admin.py`: 14; mount under `/api/v1/admin/`.
-- `contributions/urls_public.py`: 1; mount under `/api/v1/public/`.
-- `mentoring/urls_member.py`: 9; mount under `/api/v1/member/`.
-- `mentoring/urls_admin.py`: 23; mount under `/api/v1/admin/`.
+**18 C2 proposals remain deliberately unmounted** pending G contract ratification:
 
-Views have drf-spectacular input/output/error annotations. G owns actual mounting,
-all origin/claim/delegated/API-client/source policies and final OpenAPI generation.
-The backend contract test checks the exact HTTP method sets as well as names/paths.
-No owner approve/verify-hours aliases or contribution consent routes were added.
+- `contributions.urls_completion.ADMIN`: role complete, reject, reopen-answers,
+  reconfirm, requirement-overrides, admit (POST).
+- `contributions.urls_completion.MEMBER`: owner role decline (POST), export (GET/HEAD).
+- `mentoring.urls_completion.urlpatterns`: mentor profile GET/PATCH; help-type
+  collection GET/POST and detail GET/PATCH; conflict GET/POST; mute POST;
+  nominations POST; help renew POST; mapping activate/end POST; team export GET/HEAD.
+
+Exact names, paths, methods and view classes are in `completion_route_proposals` in the JSON
+manifest. Every view includes input/response/error annotations and the existing auth/throttle/
+no-store boundary. No general arbitrary-action route or sponsor-consent alias was introduced.
 
 ## Tests and evidence
 
-- `py_compile` of all new production/test/helper Python files: passed after fixing
-  a nullable-field edit that also touched `Q(...__isnull=True)` expressions.
-- Source file ceilings: every new Python/TS/TSX source is at most 300 lines.
-- Stdlib inspection: 27 models, 62 unique frozen C names/paths, explicit User/FK
-  fields and LF-only rerun list. This is not a Django model/schema check.
-- `frontend: npx tsc -b`: passed.
-- `npx vitest run --config vitest.local-junction.config.ts --configLoader runner
-  src/features/events/contributions/contributions.test.tsx
-  src/features/staff/mentorDesk/mentorDesk.test.tsx`: 2 files / 10 tests passed.
-  Includes axe checks for the queue and assignment controls, canonical fixture
-  consumers, complete API paths, account cache isolation, retry UUIDs, retained
-  text on error and practice import defaults.
-- Eleven backend test files are written, **not executed**. They include real
-  PostgreSQL races for last shift place, one help claim, last office-hour place
-  and round lease generation, plus fences, replay, privacy and role-only forms.
-  Test ports isolate A/P/G dependencies; they do not certify production account
-  fences, key preparation or grant-container integration.
-- The exact LF list is `scratchpad/ev/C-rerun-files.txt` at the user-specified
-  scratchpad root, relative to `backend/`. Backend tests are ignored by this
-  checkout's existing gitignore; they exist on disk and must be collected by G.
-- `git diff --check`: passed; staging index remains empty.
-- `codex doctor`: config/home resolution and provider reachability failed.
-  An independent CLI review was unavailable and is not claimed as passed.
+- `py_compile`: **95 production/test/helper Python files passed**. This is syntax validation,
+  not Django model loading, migrations or PostgreSQL execution.
+- Every lane production Python/TS/TSX file remains at most 300 lines.
+- `npx tsc -b`: passed.
+- Focused Vitest: **3 files / 19 tests passed**, including original frozen consumers,
+  shared-builder use, retained input, rescheduling, mentor capacity, private diagnostics,
+  import defaults, invitation decline, mapping activation, triggers and axe checks.
+- Backend: **21 actual `test_*.py` files written, not executed**. The ten new files are
+  `contributions/test_{role_lifecycle_completion,role_date_reopen,contributor_admission_certificates,requirement_fifo_hours}.py`
+  and `mentoring/test_{assignment_lifecycle,help_expiry,conflict_configuration,import_export,office_changes,notifications_triggers_diagnostics}.py`.
+  Existing role forms/subject tests were extended/corrected. Test ports substitute A/P/F/G
+  and do not certify their production crypto, capacity or authority adapters.
+- Independent read-only backend review completed; identified issuer/fence, mentor cleanup,
+  uniqueness, expiry, schema and direct-service exception-test findings were corrected.
+  The reviewer did not execute Django tests. `codex doctor` still reports unavailable
+  config/home/provider connectivity, so no independent CLI runtime review is claimed.
+- `git diff --check` passed; index remains empty.
+- Both LF-only rerun lists at the requested scratchpad `ev/` root contain all 21 backend
+  test paths relative to `backend/`: `C2-rerun-files.txt` and appended/deduplicated
+  `C-rerun-files.txt`. Tests are ignored by this checkout's existing gitignore; G must collect
+  the actual files on disk. No pytest configuration was changed.
 
-## CROSS-LANE needs — before enabling or accepting integration
+## CROSS-LANE needs
 
-1. **G:** register/import the manifest, centrally author/apply migrations, install
-   encryption/field/User-edge/portability/uniqueness/source/authority guards, wire
-   routes and regenerated schema/client. Implement `ports.ProgrammePorts` and call
-   `ports.install()` only with the complete adapter. Uninstalled runtime refuses 503.
-2. **G/P:** combined fences must cover declared actor and subject accounts before
-   event locks. `lock_authority_locked` must lock memberships/grants/organizations
-   without locking `User` or `AccountPiiKey`. The shipped
-   `makerspaces/resource_grant_locks.lock_tenant_authority` locks `User` under the
-   event and cannot be used unchanged. Add opt-in already-locked grant-container
-   create/reuse/display-union operations; preserve Bookings' existing behavior.
-3. **G:** wire every event-authority discovery/query path to live entitlements,
-   not cached grant.permissions. Use discovery mode only for event discovery;
-   operations must pass the exact track scope. Backfill and maintain manual
-   entitlements through existing grant lifecycle hooks without recursive union writes.
-4. **A/F/P:** implement the ID-only team/audience/requirements and role form ports.
-   F alone validates schema/answers; P alone prepares keys/derivations/intents and
-   checks their bindings/epoch/deadline under locks. C's required `RoleFormBridge`
-   must use F rendering and P prefill/defaults/status, including top-level role
-   skills/availability and explicit CoC. No admission/contact fields enter role bodies.
-5. **G/F:** install after-commit enqueue plus periodic sweep/escalation. Provider
-   delivery must reauthorize each recipient/source/feature and deduplicate accepted
-   deliveries by supplied key. Prepare tenant private-write key material outside
-   event locks; prove no broker/KMS I/O occurs in the locked mapper phase.
-6. **D/B/E:** D calls `subjects.require_resume_eligible` for contributor eligibility
-   and remains the sole consent writer/read policy. B/D must replay old sponsor
-   URL denial after revocation/replacement. E supplies selected-public-profile card
-   projections and verified-hours certificate integration; C never selects an avatar
-   automatically or manufactures a capacity-free attendee registration.
-7. **G:** mount the exported consoles in AppShell with actor-derived scope and
-   authority-filtered tools; supply A team context, F/P form bridges, D consent
-   UI, E photo/card renderer and ARTWORK assets. Run integrated light/dark/mobile,
-   keyboard, reduced-motion, contrast and Impeccable/browser acceptance.
+C2 supplies concrete adapters and unmounted URL lists. The integration work below is assigned
+to **G before integration acceptance**, with A/P/E/F/B/D/ARTWORK as indicated. The previous
+C1 shared authority, F/P forms, canonical D sponsor consent, provider reauthorization,
+E photo/card and AppShell requirements remain binding.
 
-## UNFINISHED — required C completion work before integration acceptance
+## UNFINISHED - exact integration hooks and required verification
 
-These are real remaining implementation items, not completed work or merely tests
-waiting to run. They are ready to assign to a C completion lane; that follow-up
-has not been launched by this turn.
+1. **G model/registry wiring and migrations.** Import both domain model barrels from
+   `apps/events/models.py`; author migrations for the 32-model manifest and changed fields;
+   install `manifest.py` encryption/append-only/User-edge/source/authority/portability/purge
+   entries. `EventRoleAnswerRevision.answers` retains P derivation references and must be
+   remapped with its frozen sources; never materialize computed age. Preserve independently
+   owned evidence; omit transient claims/outboxes/import credentials/preferences. Run all
+   21 files in `C2-rerun-files.txt` plus section 14 registry, portable round-trip/purge/restore and
+   source/fence race tests. C cannot execute these without the central registration/migrations.
+2. **G HTTP contract ratification/mounting.** Add the 18 `completion_route_proposals` to G's
+   `tests/events/programme/contracts/fixtures/routes-v3.json` (or its ratified successor),
+   origin target lookups, claim/delegated policy, API-client exclusions and source boundaries;
+   mount `urls_completion.ADMIN`, `.MEMBER` and mentoring `.urlpatterns` in the corresponding
+   shared barrels. Update the central contract tests and regenerate OpenAPI/client. Extend
+   `test_contracts.py` against the ratified new fixture; its current 62-route guard intentionally
+   remains unchanged. No C2 URL list is included by the original frozen modules.
+3. **G/P/F role forms and requirements.** Install `ports.RoleForms.reopen_locked(subject,
+   previous_version, locks)` to archive the current frozen DOB/as-of sources and begin a new
+   owner-confirmed revision without KMS/account-row locking under event locks. Install
+   `export_owner(subject, actor_id)` for owner-only DOB/date-source export. Implement the
+   extended `require_requirements(..., override_ids=())` with exact live training/briefing
+   exceptions and non-bypassable waiver/CoC evidence. Preserve F-only schema validation and
+   P-only preparation/epoch/date checks. Run `test_role_forms.py`, `test_role_date_reopen.py`,
+   `test_role_lifecycle_completion.py`, `test_requirement_fifo_hours.py` plus joint A/F/P
+   date/fence/key/vault-delete/account-erase tests from section 16.
+4. **G/A real contributor admission.** Install `ports().admissions.admit_locked` implementing
+   `admission_adapter.ContributorAdmissions`. A/G must mark/configure the distinct contributor
+   ticket, serialize both declared capacity policies using normal ticket/event counters,
+   require real audience/waiver/CoC/money prerequisites and return an admitted registration
+   of the requested event/member/ticket. Missing adapter returns 503. Run
+   `test_contributor_admission_certificates.py` and real A last-place/retry/payment/waiver
+   tests. C has no authority to add ticket-purpose/configuration fields in A/G-owned models.
+5. **G/E thank-you issuance and selected-profile cards.** Register
+   `certificate_subjects.resolve(event_id, assignment_id, locks)` as E's contribution source;
+   E issues through its normal certificate service, freezes the returned evidence versions,
+   revalidates them and handles hours/role changes via its revocation rules. Run
+   `test_contributor_admission_certificates.py` and E issuance/retry/correction tests. Mount
+   E's selected public profile/photo projection and print/card renderer; C never chooses a
+   profile/photo or creates a staff profile. Joint E/B/D photo/consent URL-revocation tests
+   and canonical D-only sponsor consent tests remain required.
+6. **G/F tasks/provider boundary.** Schedule `mentoring.help_expiry.expire(event_id, limit=100)`
+   every minute per live event via the shared task/scheduler inventory, alongside existing
+   notification sweeps and escalation. Install after-commit enqueue, broker-loss recovery,
+   tenant private-write preparation outside locks and provider idempotency/live recipient
+   checks. Run `test_help_expiry.py`, `test_notifications_triggers_diagnostics.py`, existing
+   race files, and real provider/source-freeze tests. Imported/restored claims must never
+   revive leases or dispatch stale production notices.
+7. **G frontend/ARTWORK mounting and browser acceptance.** Mount in AppShell:
+   `VolunteerManager.setupTools=<ContributorSetupPanel renderFormBuilder={F bridge}>`,
+   `renderRoleTools={RoleLifecycleActions}` for authorized managers;
+   `MentorDeskPage.settingsTools` with `MentorSettingsPanel`, `HelpCategoryEditor` and
+   `MentorConflictForm`; `attentionTools=<MentorAttentionPanel>`; `rounds` with
+   `MentorRoundSetup`/`MentorRoundsPanel`; assignment `completionReady=true`, owner
+   `RoleApplicationForm.completionReady=true` and `TeamImportPanel.canExport=true` only
+   after the new contracts and live report authority are wired. Supply E card/photo and
+   ARTWORK consumers rather than substitute assets. Run the three recorded frontend files
+   plus integrated mobile/light/dark/keyboard/reduced-motion/contrast/browser journeys and
+   the required Impeccable audit. No browser acceptance is claimed in this lane.
 
-1. **Role lifecycle/policy closure:** posting `approval_required=False` automatic
-   role approval with the issuer's authority locked in the proper order; explicit
-   decline/completion; imported-role reconfirmation; staff reopening answers as a
-   new revision with P's frozen DOB/date sources. Files:
-   `contributions/{role_workflow,management_workflow,ports,serializers_management,
-   views_admin}.py`; P's resolver/derivation adapter jointly. Extend
-   `test_role_forms.py`; add `contributions/test_role_lifecycle_completion.py` and
-   `contributions/test_role_date_reopen.py` covering CoC/no override, live issuer
-   revocation, frozen/reopened dates, owner-only export and no persisted age.
-2. **Assignment/queue completion:** proposed→active→ended assignment commands and
-   complete bulk-run response/unsatisfied coverage persistence; help claim lease
-   expiry/renewal and terminal expiry; authorized conflict declaration/configuration
-   and mentor profile capacity/availability editing. Files:
-   `mentoring/{assignment_workflow,help_workflow,policy,models_queue,serializers,
-   views_operations}.py`, with coordinated frozen contract additions through G
-   wherever a new named command is needed. Extend existing mentoring race tests;
-   add `mentoring/test_assignment_lifecycle.py`, `test_help_expiry.py` and
-   `test_conflict_configuration.py`. Never add direct state writers in views/tasks.
-3. **Contributor configuration and remaining console controls:** posting/shift
-   create/edit forms, training/briefing override reasons (never waiver/CoC bypass),
-   mentor profile/help-category configuration, manager office-hour reschedule UI,
-   explicit nominations, attention/mute controls and private diagnostic details.
-   Files: new `frontend/src/features/staff/mentorDesk/{ContributorSetupPanel,
-   MentorSettingsPanel,MentorAttentionPanel}.tsx`, existing `VolunteerManager.tsx`,
-   `MentorRoundsPanel.tsx` and their backend serializers/views/workflows. Add focused
-   component tests and backend override/office-change tests; use F's form builder
-   and E/ARTWORK consumers, not a duplicate form system or replacement artwork.
-4. **Import/export and contributor admission:** implement scoped CSV/XLSX export
-   with formula-safe cells and the corresponding coordinated download route/UI;
-   finish explicit contributor-ticket/capacity-policy admission and verified-hours
-   certificate subject adapter with A/E/G. Files: new
-   `mentoring/import_export.py`, `contributions/admission_adapter.py`,
-   `contributions/certificate_subjects.py`, existing `TeamImportPanel.tsx` and
-   relevant domain views. Add `mentoring/test_import_export.py` and
-   `contributions/test_contributor_admission_certificates.py`. No synthetic attendee
-   rows or certificate eligibility inferred merely from a display role.
-5. **Verification gate:** G must execute all eleven actual rerun files after
-   registration/migrations, plus joint A/F/P age/save/fence races, C/D/B canonical
-   consent/read revocation, outbox/provider failures, portability/purge/restore and
-   browser journeys. Add missing coverage for requirement withdrawal, FIFO skips,
-   hours correction/audit, occupied-slot changes, round triggers, notification
-   reauthorization and diagnostics. Perform independent review; fix findings and
-   complete the intrinsic work above before accepting this lane as finished.
+There is no remaining intentionally deferred C-owned domain implementation from the C1
+UNFINISHED list. Integration remains blocked on the named shared hooks and unexecuted runtime
+verification above; completion is not a claim that those hooks/tests have already landed.

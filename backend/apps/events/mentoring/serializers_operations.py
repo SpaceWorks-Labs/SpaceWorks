@@ -47,6 +47,7 @@ class AnalyticsSerializer(serializers.Serializer):
     attention = AttentionSerializer(many=True)
     nudges = NudgeSerializer(many=True)
     generosity = GenerositySerializer(many=True)
+    attention_preference = serializers.DictField()
 
 
 class ImportRowSerializer(StrictSerializer):

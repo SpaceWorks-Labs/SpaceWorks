@@ -6,7 +6,7 @@ from apps.events.contributions.serializers import AggregateSerializer, CommandSe
 from . import analytics, assignment_workflow, import_workflow, round_workflow, round_management, projections
 from .models_queue import MentorTeamAssignment
 from .models_rounds import MentorRound
-from .serializers import (AssignmentInputSerializer, AssignmentPreviewSerializer, RoundSerializer,
+from .serializers import (AssignmentInputSerializer, AssignmentPreviewSerializer, AssignmentRunSerializer, AssignmentMappingSerializer, RoundSerializer,
     RoundWriteSerializer, LeaseSerializer, ClaimInputSerializer, LeaseInputSerializer, RoundSubmitSerializer)
 from .serializers_operations import (AnalyticsSerializer, ImportPreviewSerializer,
                                     ImportCommitSerializer, ImportResultSerializer, ImportUploadSerializer)
@@ -14,18 +14,19 @@ from .serializers_operations import (AnalyticsSerializer, ImportPreviewSerialize
 
 class AssignmentsView(AdminView):
     permission = "manage_team"
+    proposed = True
 
-    @extend_schema(responses={200: page_schema("MentorTeamAssignmentPage", AggregateSerializer), **ERRORS})
+    @extend_schema(responses={200: page_schema("MentorTeamAssignmentPage", AssignmentMappingSerializer), **ERRORS})
     def get(self, request, pk):
         self.event(request, pk)
-        return paginated(request, MentorTeamAssignment.objects.filter(event_id=pk).order_by("pk"), envelope)
+        return paginated(request, MentorTeamAssignment.objects.filter(event_id=pk).order_by("pk"), assignment_workflow.mapping_projection)
 
-    @extend_schema(request=AssignmentInputSerializer, responses={201: AggregateSerializer, **ERRORS})
+    @extend_schema(request=AssignmentInputSerializer, responses={201: AssignmentRunSerializer, **ERRORS})
     def post(self, request, pk):
         self.event(request, pk)
         result = assignment_workflow.assign(actor=request.user, event_id=pk,
-            payload=self.input(request, AssignmentInputSerializer))
-        return Response(envelope(result.row), status=result.status)
+            payload=self.input(request, AssignmentInputSerializer), proposed=self.proposed)
+        return Response(assignment_workflow.run_projection(result.row), status=result.status)
 
 
 class AssignmentPreviewView(AdminView):
@@ -41,6 +42,7 @@ class AssignmentPreviewView(AdminView):
 
 class AssignmentRunView(AssignmentsView):
     http_method_names = ["post", "options"]
+    proposed = False
 
 
 class RoundsView(AdminView):

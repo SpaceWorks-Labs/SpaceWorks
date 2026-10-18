@@ -8,6 +8,7 @@ from apps.events.contributions.ports import ports
 from . import policy
 from .models_queue import EventHelpRequest, EventHelpType, EventHelpAction, EventHelpComment
 from .models_rounds import MentorNotificationIntent
+from . import help_expiry
 
 
 def notice_locked(request, event, kind):
@@ -60,7 +61,8 @@ def create(*, actor, event_id, payload, mentor_origin=False):
             raised_by=actor, raised_by_role_assignment=assignment,
             origin="mentor" if mentor_origin else "team", structured_zone=payload.get("zone", {}),
             summary=payload["summary"], priority=help_type.priority,
-            exclusive_until=timezone.now() + timedelta(minutes=5), practice_run_id=practice)
+            exclusive_until=timezone.now() + timedelta(minutes=5), practice_run_id=practice,
+            expires_at=min(event.ends_at, timezone.now() + timedelta(minutes=help_type.expiry_minutes)))
         notice_locked(row, event, "created")
         return row
 
@@ -76,10 +78,15 @@ def _detail_access(actor, event, row, *, member_surface=False):
         assignment, _ = policy.mentor_for(actor, event)
         if row.claimed_by_id != assignment.pk:
             raise ProgrammeError("not_found", "Not found.", status=404)
+        if not help_expiry.live_claim(row):
+            raise ProgrammeError("lease_lost", "This help claim expired. Refresh the queue.")
 
 
 def command(*, actor, event_id, help_id, payload, action, member_surface=False):
     initial = get_object_or_404(EventHelpRequest, pk=help_id, event_id=event_id)
+    from apps.events.contributions.models_roles import EventRoleAssignment
+    target = get_object_or_404(EventRoleAssignment, pk=payload["mentor_assignment_id"],
+        event_id=event_id, role="mentor") if action == "assign" else None
 
     def authorize(event):
         current = get_object_or_404(EventHelpRequest, pk=help_id, event=event)
@@ -98,6 +105,7 @@ def command(*, actor, event_id, help_id, payload, action, member_surface=False):
         if not member_surface and action in ("release", "resolve"):
             _detail_access(actor, event, row)
         check_version(row, payload["expected_version"])
+        help_expiry.require_live(row, event)
         now = timezone.now()
         old_assignee = row.claimed_by_id
         note = payload.get("resolution_note", payload.get("reason", ""))
@@ -112,24 +120,45 @@ def command(*, actor, event_id, help_id, payload, action, member_surface=False):
             if not policy.visit_eligible(assignment=assignment, profile=profile, team_id=row.team_id,
                     skill_tags=row.type.skill_tags, priority_until=row.exclusive_until):
                 raise ProgrammeError("mentor_not_eligible", "This request needs another mentor.", status=403)
-            if EventHelpRequest.objects.filter(state="claimed", claimed_by=assignment).exclude(pk=row.pk).exists():
+            if EventHelpRequest.objects.filter(state="claimed", claimed_by=assignment,
+                    claim_expires_at__gt=now).exclude(pk=row.pk).exists():
                 raise ProgrammeError("mentor_busy", "Finish or release the current request first.")
+            # Clean expired claims under the same parent lock before the DB's
+            # one-claimed-ticket constraint is consulted.
+            for stale in EventHelpRequest.objects.select_for_update().filter(state="claimed",
+                    event=event, claimed_by=assignment).exclude(pk=row.pk):
+                help_expiry.release_locked(row=stale, event=event, kind="lease_expired")
             commands.changed(row, state="claimed", claimed_by=assignment,
-                first_claimed_at=row.first_claimed_at or now, last_claimed_at=now)
+                first_claimed_at=row.first_claimed_at or now, last_claimed_at=now,
+                **help_expiry.claim_values(row, event, now))
+        elif action == "renew":
+            require_state(row, "claimed")
+            assignment, profile = policy.mentor_for(actor, event)
+            if row.claimed_by_id != assignment.pk or str(row.claim_uuid) != str(payload["claim_uuid"]) or row.claim_generation != payload["claim_generation"]:
+                raise ProgrammeError("lease_lost", "This claim belongs to another visit.")
+            if not policy.visit_eligible(assignment=assignment, profile=profile, team_id=row.team_id,
+                    skill_tags=row.type.skill_tags):
+                raise ProgrammeError("mentor_not_eligible", "This claim is no longer eligible.", status=403)
+            commands.changed(row, claim_expires_at=min(help_expiry.deadline(row, event),
+                now + timedelta(minutes=row.type.claim_minutes)))
         elif action == "release":
             require_state(row, "claimed")
-            commands.changed(row, state="open", claimed_by=None, last_opened_at=now)
+            commands.changed(row, state="open", claimed_by=None, last_opened_at=now,
+                             claim_uuid=None, claim_expires_at=None, open_generation=row.open_generation + 1)
         elif action == "resolve":
             require_state(row, "claimed")
-            commands.changed(row, state="resolved", claimed_by=None, resolved_at=now)
+            commands.changed(row, state="resolved", claimed_by=None, resolved_at=now,
+                             claim_uuid=None, claim_expires_at=None)
         elif action == "reopen":
             require_state(row, "resolved")
             if not note.strip():
                 raise ProgrammeError("reason_required", "Explain why the request is reopening.", status=400)
-            commands.changed(row, state="open", resolved_at=None, exclusive_until=now + timedelta(minutes=5), last_opened_at=now)
+            commands.changed(row, state="open", resolved_at=None, exclusive_until=now + timedelta(minutes=5),
+                             last_opened_at=now, open_generation=row.open_generation + 1)
         elif action == "cancel" and member_surface:
             require_state(row, "open", "claimed")
-            commands.changed(row, state="cancelled", claimed_by=None, cancelled_at=now)
+            commands.changed(row, state="cancelled", claimed_by=None, cancelled_at=now,
+                             claim_uuid=None, claim_expires_at=None)
         else:
             raise ProgrammeError("invalid_transition", "Unknown help command.", status=400)
         commands.new_row(EventHelpAction, event, request=row, actor=actor, kind=action, note=note)
@@ -138,7 +167,8 @@ def command(*, actor, event_id, help_id, payload, action, member_surface=False):
 
     return commands.run(actor=actor, event_id=event_id, operation_id=payload["operation_id"], payload=payload,
         action=f"help.{action}", feature="events.mentoring", permission=False if member_surface else "mentor_queue",
-        authorize=authorize, mutate=mutate)
+        authorize=authorize, mutate=mutate, account_ids=(target.member_id,) if target else (),
+        authority_ids=(target.member_id,) if target else ())
 
 
 def comment(*, actor, event_id, help_id, payload, member_surface=False):
@@ -153,6 +183,7 @@ def comment(*, actor, event_id, help_id, payload, member_surface=False):
         check_version(row, payload["expected_version"])
         if row.state not in ("open", "claimed"):
             raise ProgrammeError("request_closed", "This request is closed.")
+        help_expiry.require_live(row, event)
         if not payload["body"].strip() or len(payload["body"]) > 2000:
             raise ProgrammeError("comment_too_long", "Use 1–2000 characters.", status=400)
         commands.changed(row)

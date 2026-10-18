@@ -5,7 +5,7 @@ from .api_common import AdminView, paginated, page_schema
 from .models_roles import EventRoleAssignment, EventRolePosting
 from .models_shifts import EventShift, EventShiftSignup
 from . import projections, management_workflow, role_workflow, shift_workflow, attendance_workflow
-from .serializers import (RoleSerializer, PostingSerializer, ShiftSerializer, SignupSerializer, AdminShiftSerializer,
+from .serializers import (RoleSerializer, AdminPostingSerializer, ShiftSerializer, SignupSerializer, AdminShiftSerializer,
                           CommandSerializer, HoursAdjustSerializer, ERRORS)
 from .serializers_management import (AdminRoleSerializer, PostingWriteSerializer, ShiftWriteSerializer,
                                      AdminAttendanceSerializer)
@@ -65,7 +65,7 @@ class PostingsView(AdminView):
     permission = "view"
     feature = None
 
-    @extend_schema(responses={200: page_schema("AdminEventPostingPage", PostingSerializer), **ERRORS})
+    @extend_schema(responses={200: page_schema("AdminEventPostingPage", AdminPostingSerializer), **ERRORS})
     def get(self, request, pk):
         event = self.event(request, pk)
         from apps.events import event_authority
@@ -74,33 +74,33 @@ class PostingsView(AdminView):
             roles.append("volunteer")
         if event_authority.can(request.user, event, "manage_team"):
             roles.append("mentor")
-        return paginated(request, EventRolePosting.objects.filter(event_id=pk, role__in=roles).order_by("pk"), projections.posting)
+        return paginated(request, EventRolePosting.objects.filter(event_id=pk, role__in=roles).order_by("pk"), projections.admin_posting)
 
-    @extend_schema(request=PostingWriteSerializer, responses={201: PostingSerializer, **ERRORS})
+    @extend_schema(request=PostingWriteSerializer, responses={201: AdminPostingSerializer, **ERRORS})
     def post(self, request, pk):
         self.event(request, pk)
         result = management_workflow.save_posting(actor=request.user, event_id=pk,
             payload=self.input(request, PostingWriteSerializer))
-        return Response(projections.posting(result.row), status=result.status)
+        return Response(projections.admin_posting(result.row), status=result.status)
 
 
 class PostingDetailView(PostingsView):
     http_method_names = ["get", "patch", "head", "options"]
 
-    @extend_schema(responses={200: PostingSerializer, **ERRORS})
+    @extend_schema(responses={200: AdminPostingSerializer, **ERRORS})
     def get(self, request, pk, posting_id):
         event = self.event(request, pk)
         row = get_object_or_404(EventRolePosting, pk=posting_id, event_id=pk)
         from apps.events import event_authority
         event_authority.require(request.user, event, "manage_team" if row.role == "mentor" else "manage_volunteers")
-        return Response(projections.posting(row))
+        return Response(projections.admin_posting(row))
 
-    @extend_schema(request=PostingWriteSerializer, responses={200: PostingSerializer, **ERRORS})
+    @extend_schema(request=PostingWriteSerializer, responses={200: AdminPostingSerializer, **ERRORS})
     def patch(self, request, pk, posting_id):
         self.event(request, pk)
         result = management_workflow.save_posting(actor=request.user, event_id=pk, posting_id=posting_id,
             payload=self.input(request, PostingWriteSerializer))
-        return Response(projections.posting(result.row))
+        return Response(projections.admin_posting(result.row))
 
 
 class ShiftsView(AdminView):

@@ -61,6 +61,11 @@ def deliver_one(intent_id):
             require_feature(event.makerspace, "events.mentoring")
             adapter.require_event_feature(event_id=event.pk, feature="events.mentoring")
             stale_alert = row.kind in ("created", "attention") and request.state != "open"
+            if row.kind in ("created", "attention"):
+                from .help_expiry import deadline
+                stale_alert = stale_alert or deadline(request, event) <= timezone.now()
+            if row.kind == "attention" and row.generation != request.open_generation:
+                stale_alert = True
             if request.practice_run_id is not None or stale_alert:
                 recipient_ids = ()
             else:
@@ -108,11 +113,12 @@ def escalate(*, event_id):
             require_feature(event.makerspace, "events.mentoring")
             adapter.require_event_feature(event_id=event.pk, feature="events.mentoring")
             rows = EventHelpRequest.objects.filter(event=event, state="open", practice_run_id__isnull=True,
-                last_opened_at__lte=timezone.now() - timedelta(minutes=15))
+                last_opened_at__lte=timezone.now() - timedelta(minutes=15),
+                event__ends_at__gt=timezone.now()).exclude(expires_at__lte=timezone.now())
             count = 0
             for request in rows:
                 intent, created = MentorNotificationIntent.objects.get_or_create(request=request,
-                    kind="attention", generation=0, defaults={"event": event,
+                    kind="attention", generation=request.open_generation, defaults={"event": event,
                         "makerspace_id": event.makerspace_id, "available_at": timezone.now()})
                 if created:
                     from apps.events.contributions.notifications import enqueue_on_commit

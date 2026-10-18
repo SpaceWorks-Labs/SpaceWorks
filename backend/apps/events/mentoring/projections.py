@@ -4,6 +4,7 @@ from apps.events.contributions.api_common import envelope
 from apps.events.contributions.ports import ports
 from .models_queue import EventHelpRequest
 from . import policy
+from .help_expiry import live_claim, deadline
 
 
 def help_request(row, *, actor, event, detail=False, member=False):
@@ -16,11 +17,17 @@ def help_request(row, *, actor, event, detail=False, member=False):
             allowed.extend(["release", "resolve", "comment"])
     else:
         mentor, _ = policy.mentor_for(actor, event)
-        own_claim = row.claimed_by_id == mentor.pk
-        allowed = ["release", "resolve", "comment"] if own_claim else ["claim"] if row.state == "open" else []
+        own_claim = row.claimed_by_id == mentor.pk and live_claim(row)
+        allowed = ["release", "resolve", "comment", "renew"] if own_claim else ["claim"] if row.state == "open" else []
     data = {**envelope(row, allowed), "origin": row.origin,
         "team_alias": ports().teams.alias(event_id=event.pk, team_id=row.team_id),
         "category": row.type.label, "priority": row.priority, "zone": row.structured_zone}
+    if deadline(row, event) <= timezone.now():
+        data["allowed_actions"] = []
+    if detail or own_claim:
+        data.update(claim_uuid=row.claim_uuid if own_claim else None,
+            claim_generation=row.claim_generation, claim_expires_at=row.claim_expires_at,
+            expires_at=deadline(row, event), organizer_contact_action=row.type.organizer_contact_action)
     if member or detail:
         data.update(team_id=row.team_id, origin=row.origin, raised_by_role_assignment_id=row.raised_by_role_assignment_id)
     if detail:
@@ -54,4 +61,5 @@ def lease(row):
 
 def round_row(row):
     return {**envelope(row), **{key: getattr(row, key) for key in (
-        "index", "key", "label", "opens_at", "closes_at", "form_schema", "note_keys")}}
+        "index", "key", "label", "opens_at", "closes_at", "form_schema", "note_keys", "rating_keys",
+        "allow_fresh_eyes_override", "allow_conflict_override", "practice_run_id", "help_trigger_rules")}}

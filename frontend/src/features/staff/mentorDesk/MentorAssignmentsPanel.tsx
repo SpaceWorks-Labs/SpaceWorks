@@ -4,10 +4,11 @@ import { DetailLayout } from '../../../components/layouts'
 import { ActionControl, Card, Field } from '../../../components/ui'
 import { basePath, errorText, requestFor, useProgrammeCommand } from '../../events/contributions/api'
 import type { EventScope } from '../../events/contributions/types'
+import { MentorAssignmentLifecycle } from './MentorAssignmentLifecycle'
 
 interface Preview { assignments: Array<{ team_id: number; mentor_assignment_id: number }>; unsatisfied_team_ids: number[] }
-export function MentorAssignmentsPanel({ scope, eventVersion, teams, mentors }: {
-  scope: EventScope; eventVersion: number; teams: Array<{ id: number; label: string }>; mentors: Array<{ id: number; label: string }>
+export function MentorAssignmentsPanel({ scope, eventVersion, teams, mentors, completionReady = false }: {
+  scope: EventScope; eventVersion: number; teams: Array<{ id: number; label: string }>; mentors: Array<{ id: number; label: string }>; completionReady?: boolean
 }) {
   const [mode, setMode] = useState('round_robin')
   const [selected, setSelected] = useState<number[]>([])
@@ -21,7 +22,7 @@ export function MentorAssignmentsPanel({ scope, eventVersion, teams, mentors }: 
       headers: { 'Idempotency-Key': operation }, body: JSON.stringify({ ...fields, operation_id: operation, expected_version: eventVersion }) })
   }, onSuccess: () => setPreviewIdentity(identity) })
   const assign = useProgrammeCommand(scope, 'admin')
-  return <DetailLayout title="Mentor assignments" state={{ status: 'ready' }} main={<Card>
+  return <DetailLayout title="Mentor assignments" state={{ status: 'ready' }} main={<><Card>
     <p className="mb-4 text-sm text-muted">Preview excludes unavailable mentors, conflicts, and full workloads. Committing rechecks the current roster.</p>
     <Field label="Assignment mode"><select className="desk-input" value={mode} onChange={event => setMode(event.target.value)}>
       <option value="round_robin">Balanced round-robin</option><option value="skill_match">Match skills, then balance load</option><option value="manual">Choose mentors manually</option></select></Field>
@@ -38,5 +39,5 @@ export function MentorAssignmentsPanel({ scope, eventVersion, teams, mentors }: 
       {preview.data && previewIdentity === identity ? <ActionControl primary action={{ label: 'Assign mentors', pending: assign.isPending,
         confirm: { title: 'Assign these mentors?', message: 'Current availability and conflicts will be checked again.' },
         onClick: () => assign.mutate({ path: '/mentor-assignments/assign/', version: eventVersion, fields }, { onSuccess: () => { preview.reset(); setSelected([]) } }) }} /> : null}</div>
-  </Card>} />
+  </Card>{completionReady ? <MentorAssignmentLifecycle scope={scope} /> : null}</>} />
 }

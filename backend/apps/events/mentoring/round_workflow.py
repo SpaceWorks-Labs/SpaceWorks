@@ -101,6 +101,8 @@ def visit(*, actor, event_id, round_id, team_id, payload, action):
             return commands.changed(lease, expires_at=now)
         if action != "submit":
             raise ProgrammeError("invalid_transition", "Unknown visit command.", status=400)
+        if payload.get("nominate") and payload.get("away"):
+            raise ProgrammeError("visit_required", "An away visit cannot nominate a team.", status=400)
         if initial.version != row.version or initial.form_schema_version != row.form_schema_version:
             raise ProgrammeError("form_revision_changed", "The round form changed; review it again.")
         result = commands.new_row(MentorRoundCheckin, event, team_id=team_id, round=row, mentor=mentor,

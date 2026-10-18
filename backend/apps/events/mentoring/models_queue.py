@@ -13,6 +13,10 @@ class MentorProfile(ScopedPiiModelMixin, EventBound):
     availability = models.JSONField(default=list, blank=True)
     max_active_teams = models.PositiveSmallIntegerField(default=4)
 
+    class Meta(EventBound.Meta):
+        constraints = [models.CheckConstraint(condition=Q(max_active_teams__gte=1, max_active_teams__lte=100),
+                                               name="mentor_profile_capacity_bounds")]
+
 
 class MentorTeamAssignment(EventBound):
     mentor_assignment = models.ForeignKey("events.EventRoleAssignment", on_delete=models.PROTECT)
@@ -28,7 +32,9 @@ class MentorTeamAssignment(EventBound):
 
     class Meta(EventBound.Meta):
         constraints = [models.UniqueConstraint(fields=["mentor_assignment", "team"],
-            condition=Q(ended_at__isnull=True), name="mentor_team_live_unique")]
+            condition=Q(ended_at__isnull=True), name="mentor_team_live_unique"),
+            models.CheckConstraint(condition=(Q(state__in=["proposed", "active"], ended_at__isnull=True)
+                | Q(state="ended", ended_at__isnull=False)), name="mentor_assignment_end_shape")]
 
 
 class EventHelpType(EventBound):
@@ -38,9 +44,14 @@ class EventHelpType(EventBound):
     priority = models.PositiveSmallIntegerField(default=0)
     open_limit = models.PositiveSmallIntegerField(default=1)
     organizer_contact_action = models.CharField(max_length=300, blank=True)
+    claim_minutes = models.PositiveSmallIntegerField(default=10)
+    expiry_minutes = models.PositiveSmallIntegerField(default=240)
 
     class Meta(EventBound.Meta):
-        constraints = [models.UniqueConstraint(fields=["event", "key"], name="event_help_type_key")]
+        constraints = [models.UniqueConstraint(fields=["event", "key"], name="event_help_type_key"),
+            models.CheckConstraint(condition=Q(claim_minutes__gte=1, claim_minutes__lte=60,
+                expiry_minutes__gte=15, expiry_minutes__lte=10080, open_limit__gte=1, open_limit__lte=10),
+                name="help_type_policy_bounds")]
 
 
 class EventHelpRequest(ScopedPiiModelMixin, EventBound):
@@ -60,6 +71,7 @@ class EventHelpRequest(ScopedPiiModelMixin, EventBound):
     priority = models.PositiveSmallIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     last_opened_at = models.DateTimeField(default=timezone.now)
+    open_generation = models.PositiveIntegerField(default=1)
     first_claimed_at = models.DateTimeField(null=True, blank=True)
     last_claimed_at = models.DateTimeField(null=True, blank=True)
     resolved_at = models.DateTimeField(null=True, blank=True)
@@ -67,12 +79,20 @@ class EventHelpRequest(ScopedPiiModelMixin, EventBound):
     exclusive_until = models.DateTimeField()
     dedup_key = models.CharField(max_length=64, blank=True)
     practice_run_id = models.UUIDField(null=True, blank=True)
+    claim_uuid = models.UUIDField(null=True, blank=True)
+    claim_generation = models.PositiveIntegerField(default=0)
+    claim_expires_at = models.DateTimeField(null=True, blank=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
 
     class Meta(EventBound.Meta):
         constraints = [
             models.UniqueConstraint(fields=["claimed_by"], condition=Q(state="claimed"), name="mentor_one_claimed_help"),
             models.CheckConstraint(condition=(Q(state="claimed", claimed_by__isnull=False)
                 | (~Q(state="claimed") & Q(claimed_by__isnull=True))), name="event_help_claim_shape"),
+            models.CheckConstraint(condition=(Q(state="claimed", claim_uuid__isnull=False,
+                claim_expires_at__isnull=False, claim_generation__gte=1)
+                | (~Q(state="claimed") & Q(claim_uuid__isnull=True, claim_expires_at__isnull=True))),
+                name="event_help_lease_shape"),
         ]
         indexes = [models.Index(fields=["event", "state", "priority", "created_at"], name="event_help_queue_idx")]
 

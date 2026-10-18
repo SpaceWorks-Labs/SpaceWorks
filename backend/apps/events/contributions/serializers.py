@@ -76,6 +76,7 @@ class RoleSerializer(AggregateSerializer):
     grant = serializers.IntegerField(allow_null=True)
     save_intent = serializers.JSONField(allow_null=True)
     entitlement_active = serializers.BooleanField(required=False)
+    imported_inert = serializers.BooleanField(required=False)
 
 
 class PostingSerializer(AggregateSerializer):
@@ -86,6 +87,18 @@ class PostingSerializer(AggregateSerializer):
     form = serializers.JSONField(required=False)
     coc = serializers.JSONField(required=False)
     application = serializers.JSONField(allow_null=True, required=False)
+
+
+class AdminPostingSerializer(PostingSerializer):
+    briefing = serializers.CharField()
+    skills = serializers.ListField(child=serializers.CharField())
+    visibility = serializers.CharField()
+    approval_required = serializers.BooleanField()
+    opens_at = serializers.DateTimeField()
+    closes_at = serializers.DateTimeField()
+    requirements = serializers.JSONField()
+    permission_preset = serializers.ListField(child=serializers.CharField())
+    form_schema = serializers.JSONField()
 
 
 class ShiftSerializer(AggregateSerializer):
@@ -113,6 +126,13 @@ class SignupSerializer(AggregateSerializer):
 
 class AdminShiftSerializer(ShiftSerializer):
     signups = SignupSerializer(many=True)
+    signup_deadline = serializers.DateTimeField()
+    mentor_assignment_id = serializers.IntegerField(allow_null=True)
+    grace_minutes = serializers.IntegerField()
+    waitlist_enabled = serializers.BooleanField()
+    approval_required = serializers.BooleanField()
+    requirements = serializers.JSONField()
+    permission_preset = serializers.ListField(child=serializers.CharField())
 
 
 class ErrorSerializer(serializers.Serializer):

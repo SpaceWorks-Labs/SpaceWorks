@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { ListLayout } from '../../../components/layouts'
 import { ActionControl, Card, Field, StatusPill } from '../../../components/ui'
 import type { EventScope, RoleApplication, Shift, Signup } from '../../events/contributions/types'
@@ -28,7 +28,9 @@ function ShiftSignups({ scope, shiftId }: { scope: EventScope; shiftId: number }
   </section>
 }
 
-export function VolunteerManager({ scope }: { scope: EventScope }) {
+export function VolunteerManager({ scope, setupTools, renderRoleTools }: {
+  scope: EventScope; setupTools?: ReactNode; renderRoleTools?: (row: RoleApplication) => ReactNode
+}) {
   const [tab, setTab] = useState('roles')
   const [page, setPage] = useState(1)
   const [selectedShift, setSelectedShift] = useState<number | null>(null)
@@ -37,20 +39,20 @@ export function VolunteerManager({ scope }: { scope: EventScope }) {
   const command = useProgrammeCommand(scope, 'admin')
   const query = tab === 'roles' ? roles : shifts
   return <ListLayout header={{ title: 'Event contributors', subtitle: 'Approve applications, manage shifts, and verify completed work.' }}
-    tabs={[{ key: 'roles', label: 'Applications and roles' }, { key: 'shifts', label: 'Shifts and hours' }]} activeTab={tab}
+    tabs={[{ key: 'roles', label: 'Applications and roles' }, { key: 'shifts', label: 'Shifts and hours' }, ...(setupTools ? [{ key: 'setup', label: 'Setup' }] : [])]} activeTab={tab}
     onTabChange={key => { setTab(key); setPage(1); setSelectedShift(null) }}
-    state={query.isPending ? { status: 'loading' } : query.isError ? { status: 'error', error: errorText(query.error), onRetry: () => { void query.refetch() } } : { status: 'ready' }}
-    isEmpty={!query.data?.results.length} empty={{ message: 'No contributor records yet.' }}
+    state={tab === 'setup' ? { status: 'ready' } : query.isPending ? { status: 'loading' } : query.isError ? { status: 'error', error: errorText(query.error), onRetry: () => { void query.refetch() } } : { status: 'ready' }}
+    isEmpty={tab !== 'setup' && !query.data?.results.length} empty={{ message: 'No contributor records yet.' }}
     pagination={{ page, pageSize: 24, count: query.data?.count ?? 0, onChange: setPage }}
     body={{ kind: 'rows', rows: <>{command.error ? <p role="alert" className="text-danger">{errorText(command.error)}</p> : null}
-      {tab === 'roles' ? roles.data?.results.map(row => <Card key={row.id}><div className="flex flex-wrap items-center justify-between gap-3">
+      {tab === 'setup' ? setupTools : tab === 'roles' ? roles.data?.results.map(row => <Card key={row.id}><div className="flex flex-wrap items-center justify-between gap-3">
         <div><h2 className="title-section">Application {row.id} · {row.role.replace(/_/g, ' ')}</h2><StatusPill label={row.state} tone="neutral" /></div>
         <div className="flex gap-2">{['applied', 'proposed'].includes(row.state) ? <ActionControl action={{ label: 'Approve', pending: command.isPending,
           onClick: () => command.mutate({ path: `/roles/${row.id}/approve/`, version: row.version }) }} /> : null}
           {['approved', 'applied', 'proposed'].includes(row.state) ? <ActionControl action={{ label: 'Revoke role', pending: command.isPending,
             confirm: { title: 'Revoke this role?', message: 'Its role and future shift permissions will end. Contribution history stays on record.' },
             onClick: () => command.mutate({ path: `/roles/${row.id}/revoke/`, version: row.version }) }} /> : null}</div>
-      </div></Card>) : shifts.data?.results.map(row => <Card key={row.id}><div className="flex flex-wrap items-center justify-between gap-3"><div>
+      </div>{renderRoleTools?.(row)}</Card>) : shifts.data?.results.map(row => <Card key={row.id}><div className="flex flex-wrap items-center justify-between gap-3"><div>
         <h2 className="title-section">{row.task}</h2><p className="text-sm text-muted">{new Date(row.starts_at).toLocaleString()} · {row.kind === 'office_hours' ? 'Office hours' : 'Volunteer shift'}</p></div>
         <ActionControl action={{ label: 'View signups and hours', onClick: () => setSelectedShift(selectedShift === row.id ? null : row.id) }} /></div>
         {selectedShift === row.id ? <ShiftSignups scope={scope} shiftId={row.id} /> : null}</Card>)}

@@ -29,6 +29,7 @@ def require_resume_eligible(*, actor_id, event_id):
     from rest_framework.exceptions import NotFound
     active_member(get_object_or_404(User, pk=actor_id))
     if not EventRoleAssignment.objects.filter(event_id=event_id, member_id=actor_id,
-        state__in=["applied", "approved", "completed"], imported_inert=False).exists():
+        role__in=["volunteer", "mentor"],
+        state__in=["draft", "proposed", "applied", "approved", "completed"], imported_inert=False).exists():
         raise NotFound()
     return True

@@ -20,6 +20,8 @@ export interface HelpRequest extends Aggregate {
   origin: 'team' | 'mentor' | 'round'; team_id?: number; team_alias?: string; category?: string
   priority?: number; zone?: { table?: string; zone?: string }; summary?: string
   position?: number | null; wait_estimate?: string
+  claim_uuid?: string | null; claim_generation?: number; claim_expires_at?: string | null
+  organizer_contact_action?: string; expires_at?: string
 }
 export interface HelpComment { id: number; help_id: number; body: string; origin: 'team' | 'mentor'; created_at: string; request_version: number }
 export interface Booking extends Aggregate { slot_id: number; team_id: number }

@@ -45,6 +45,11 @@ class HelpSerializer(AggregateSerializer):
     position = serializers.IntegerField(required=False, allow_null=True)
     available_mentors = serializers.IntegerField(required=False)
     wait_estimate = serializers.CharField(required=False)
+    claim_uuid = serializers.UUIDField(allow_null=True, required=False)
+    claim_generation = serializers.IntegerField(required=False)
+    claim_expires_at = serializers.DateTimeField(allow_null=True, required=False)
+    expires_at = serializers.DateTimeField(required=False)
+    organizer_contact_action = serializers.CharField(required=False)
 
 
 class CommentSerializer(serializers.Serializer):
@@ -92,6 +97,27 @@ class AssignmentPreviewSerializer(serializers.Serializer):
     unsatisfied_team_ids = serializers.ListField(child=serializers.IntegerField())
 
 
+class AssignmentDecisionSerializer(ManualAssignmentSerializer):
+    id = serializers.IntegerField()
+    version = serializers.IntegerField()
+    state = serializers.ChoiceField(choices=["active", "proposed"])
+
+
+class AssignmentRunSerializer(AggregateSerializer):
+    run_id = serializers.UUIDField()
+    assignments = AssignmentDecisionSerializer(many=True)
+    unsatisfied_team_ids = serializers.ListField(child=serializers.IntegerField())
+
+
+class AssignmentMappingSerializer(AggregateSerializer):
+    mentor_assignment_id = serializers.IntegerField()
+    team_id = serializers.IntegerField()
+    mode = serializers.CharField()
+    active_from = serializers.DateTimeField()
+    ended_at = serializers.DateTimeField(allow_null=True)
+    run_id = serializers.UUIDField()
+
+
 class RoundWriteSerializer(CommandSerializer):
     index = serializers.IntegerField(min_value=1, max_value=100, required=False)
     key = serializers.SlugField(max_length=40, required=False)
@@ -117,6 +143,11 @@ class RoundSerializer(AggregateSerializer):
     note_keys = serializers.ListField(child=serializers.CharField())
     teams = serializers.ListField(child=serializers.DictField(), required=False)
     next_team_ids = serializers.ListField(child=serializers.IntegerField(), required=False)
+    rating_keys = serializers.ListField(child=serializers.CharField())
+    allow_fresh_eyes_override = serializers.BooleanField()
+    allow_conflict_override = serializers.BooleanField()
+    practice_run_id = serializers.UUIDField(allow_null=True)
+    help_trigger_rules = serializers.JSONField()
 
 
 class ClaimInputSerializer(CommandSerializer):

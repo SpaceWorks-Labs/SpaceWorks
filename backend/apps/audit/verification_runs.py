@@ -172,7 +172,8 @@ def request_run(actor, makerspace_id, validated):
             if current.filter_fingerprint == digest:
                 return current, True
             raise VerificationBusy("Another verification is running for this makerspace.")
-        with scope_session_lock(makerspace_id):
+        with scope_session_lock(makerspace_id) as guard:
+            guard.assert_valid()
             rows = run_rows(makerspace_id, filters)
             check_bounds(work_bounds(makerspace_id, rows))
             snapshot = rows.aggregate(top=Max("pk"))["top"] or 0

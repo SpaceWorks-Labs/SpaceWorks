@@ -1,4 +1,4 @@
-import type { MachineQueueSummary } from "../../machine-service/types";
+import type { MachineQueueSummary } from "../../../generated/api";
 export type MachineStatus = "idle" | "running" | "reserved" | "maintenance" | "offline";
 export type MachineAccessLevel = "operate" | "manage" | "full";
 export type MachineWarrantyStatus = "unknown" | "active" | "expiring_soon" | "expired";

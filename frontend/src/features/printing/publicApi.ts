@@ -1,11 +1,9 @@
 import type { PublicPrinterPool, PublicPrinterQueue, PublicPrinterStatus, PublicPrinterSubmit, PublicPrinterUpload } from "../../generated/api";
 import { publicV1Request, tenantPublicRequest } from "../../lib/api";
-import type { ServiceRequestEta } from "../machine-service/types";
 
 export type PrintQueue = PublicPrinterQueue & { machine_type_id?: number };
 export type PublicFilamentPool = PublicPrinterPool;
-// `eta`/`cancelled_at` arrive with the shared ETA contract; the generated type catches up on regeneration.
-export type PrintStatus = PublicPrinterStatus & { eta?: ServiceRequestEta | null; cancelled_at?: string | null };
+export type PrintStatus = PublicPrinterStatus;
 export type PrintUploadBody = PublicPrinterUpload;
 export type PrintUpload = { url: string; fields: Record<string, string>; method?: string; headers?: Record<string, string> };
 export type PrintRequestPayload = PublicPrinterSubmit;

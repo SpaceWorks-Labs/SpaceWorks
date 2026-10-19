@@ -38,12 +38,39 @@ def prepare_documents(event_id):
 
 
 
-def _keys(tenant_id):
+class _OnDemandKeys(dict):
+    """Version -> DEK, unwrapped through the shared encryption services when asked."""
+
+    def __init__(self, tenant_id):
+        super().__init__()
+        self.tenant_id = tenant_id
+
+    def __missing__(self, version):
+        from apps.encryption.services import get_dek
+        return get_dek(self.tenant_id, version)
+
+
+def _keys(tenant_id, *, on_demand=False, write=True):
     prepared = _prepared.get()
     if prepared is None or prepared[0] != tenant_id:
-        from apps.encryption.preparation import prepared_keys
-        active, keys = prepared_keys(tenant_id)
-        return active.version, keys
+        from apps.encryption.preparation import (
+            active_preparation, prepared_keys, require_prepared_for_programme)
+        if active_preparation():
+            active, keys = prepared_keys(tenant_id)
+            return active.version, keys
+        if not on_demand:
+            raise SubmissionError("pii_preparation_required", 503)
+        # Legacy registration writers predate preparation. Outside a locked event
+        # domain they keep the shared mapper's on-demand key custody (it refuses
+        # under one); values are still encrypted, never stored as plaintext.
+        require_prepared_for_programme(tenant_id)
+        keys = _OnDemandKeys(tenant_id)
+        if not write:
+            return None, keys
+        from apps.encryption.services import get_or_create_active_dek
+        active = get_or_create_active_dek(tenant_id)
+        keys[active.key.version] = active.dek
+        return active.key.version, keys
     if not MakerspaceEncryptionKey.objects.filter(makerspace_id=tenant_id,
             version=prepared[1], status="active").exists():
         raise SubmissionError("pii_key_changed", 409)
@@ -53,6 +80,9 @@ def _keys(tenant_id):
 class PrivateDocumentMixin(ScopedPiiModelMixin):
     pii_document_fields = frozenset()
     pii_text_fields = frozenset()
+    # Programme rows refuse to save without preparation; a legacy model whose
+    # existing writers predate it may opt into on-demand custody outside locks.
+    pii_on_demand_keys = False
 
     class Meta:
         abstract = True
@@ -68,7 +98,7 @@ class PrivateDocumentMixin(ScopedPiiModelMixin):
             raw = self.__dict__.get(name)
             if is_envelope(raw) and connection.in_atomic_block:
                 tenant_id = makerspace_id_for(self, field_for(self, name))
-                _, keys = _keys(tenant_id)
+                _, keys = _keys(tenant_id, on_demand=type(self).pii_on_demand_keys, write=False)
                 plain = decrypt_with_key_loader(raw, makerspace_id=tenant_id, table=self._meta.db_table,
                     pk=self.pk, field=name, load_dek=lambda v: keys[v]).decode("utf-8")
                 self.__dict__.setdefault("_pii_plain_values", {})[name] = plain
@@ -100,7 +130,7 @@ class PrivateDocumentMixin(ScopedPiiModelMixin):
         names = {name for name in names if self.__dict__.get(name) not in (None, "")}
         if settings.PII_ENCRYPTION_ENABLED and names:
             tenant_id = makerspace_id_for(self, field_for(self, next(iter(names))))
-            version, keys = _keys(tenant_id)
+            version, keys = _keys(tenant_id, on_demand=type(self).pii_on_demand_keys)
             if self.pk is None:
                 self._reserve_pk()
             for name in names:

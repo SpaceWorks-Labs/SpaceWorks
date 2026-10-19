@@ -12,6 +12,7 @@ from apps.events.models_event import Event
 class EventRegistration(PrivateDocumentMixin, models.Model):
     pii_document_fields = frozenset({"custom_answers"})
     pii_text_fields = frozenset({"name", "email", "phone"})
+    pii_on_demand_keys = True
     version = models.PositiveIntegerField(default=1)
     answer_locked_at = models.DateTimeField(null=True, blank=True)
     date_review_required = models.BooleanField(default=False)

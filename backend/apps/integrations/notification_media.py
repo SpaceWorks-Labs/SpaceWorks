@@ -107,9 +107,14 @@ def issue_grant(delivery):
             recipient_id_snapshot=current.envelope.recipient_id,
             integration_generation=current.integration_generation, integration_identity=current.integration_identity,
             token_digest=digest(token), expires_at=timezone.now() + timedelta(minutes=10))
-        audit.record(None, "notification.media_grant_issued", makerspace=current.makerspace,
-            target=grant, meta={"delivery_id": current.pk,
-                ("document_id" if media_field == "document" else "certificate_id"): reference.document_id})
+        # Literal meta keys keep both subjects visible to the audit presentation and
+        # tenant-migration reference guards, which read call sites, not runtime values.
+        if media_field == "document":
+            audit.record(None, "notification.media_grant_issued", makerspace=current.makerspace,
+                target=grant, meta={"delivery_id": current.pk, "document_id": reference.document_id})
+        else:
+            audit.record(None, "notification.media_grant_issued", makerspace=current.makerspace,
+                target=grant, meta={"delivery_id": current.pk, "certificate_id": reference.document_id})
     return base + reverse("notification-media", args=[token])
 
 
@@ -148,9 +153,12 @@ def _consume_locked_sources(seed, expected_reference, scopes, space_id):
                             recipient_id=grant.delivery.envelope.recipient_id)
         grant.consumed_at = timezone.now()
         grant.save(update_fields=["consumed_at"])
-        audit.record(None, "notification.media_grant_consumed", makerspace=grant.delivery.makerspace,
-            target=grant, meta={"delivery_id": grant.delivery_id,
-                ("document_id" if media_field == "document" else "certificate_id"): reference.document_id})
+        if media_field == "document":
+            audit.record(None, "notification.media_grant_consumed", makerspace=grant.delivery.makerspace,
+                target=grant, meta={"delivery_id": grant.delivery_id, "document_id": reference.document_id})
+        else:
+            audit.record(None, "notification.media_grant_consumed", makerspace=grant.delivery.makerspace,
+                target=grant, meta={"delivery_id": grant.delivery_id, "certificate_id": reference.document_id})
     # A failed render must not roll back consumption and reopen the bearer.
     filename, pdf, _ = render_attachment(reference, makerspace_id=space_id,
         recipient_id=grant.delivery.envelope.recipient_id)

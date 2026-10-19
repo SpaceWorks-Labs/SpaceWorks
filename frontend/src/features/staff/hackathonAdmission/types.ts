@@ -1,4 +1,4 @@
-import type { Config as WireConfig, Review as WireReview, ReviewApplication as WireApplication, Batch as WireBatch } from '../../../generated/api'
+import type { Config as WireConfig, Review as WireReview, ReviewApplication as WireApplication, AdmissionDecisionBatch as WireBatch } from '../../../generated/api'
 export interface ReviewCriterion { key: string; label: string; anchors: Record<string, string> }
 export interface Rubric { revision: number; criteria: ReviewCriterion[] }
 export type ReviewApplication = Omit<WireApplication, 'answers'> & { answers: Array<{ id: string; label: string; type: string; value: unknown }> }

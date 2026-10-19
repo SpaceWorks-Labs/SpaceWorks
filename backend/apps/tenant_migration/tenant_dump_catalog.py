@@ -45,7 +45,7 @@ class TenantDumpCatalogError(AssertionError):
 # Pages programme: public page/revision/asset models, handles and event session
 # identities; re-pinned from schema_digest() over the merged graph.
 # Orchestrator re-pins the live catalog after final schema/migration verification.
-CATALOG_SCHEMA_SHA256 = "5c14b0b619a750dcc0fdf9d9e43fe68019731f62b8b9f767c88ce96eddbc2272"
+CATALOG_SCHEMA_SHA256 = "3516dc5c269e4904aa9ead52b76930241916f9a28e1279b6e570301523c82281"
 
 
 def catalog_models(apps_registry=apps):

@@ -21,7 +21,7 @@ ENTRIES = (
     P("account.apple_revocation_retry", "Apple revocation deferred", ("attempts",)),
     P("account.apple_credential_stored", "Apple revocation credential stored"),
     P("account.apple_revoked", "Apple authorization revoked"),
-    P("account.apple_revocation_unavailable", "Apple revocation unavailable", ("reason",)),
+    P("account.apple_revocation_unavailable", "Apple revocation unavailable", ("outcome",)),
     P("account.tenant_identity_scrubbed", "Tenant account identity scrubbed"),
     P("account.tenant_purged", "Tenant account purge completed"),
     P("account.purge_object_deleted", "Account image bytes deleted"),

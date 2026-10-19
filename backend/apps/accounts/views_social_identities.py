@@ -4,13 +4,13 @@ from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from apps.accounts import audit_events
 from apps.accounts.reauthentication import require_recent_reauth
 from apps.accounts.models_oidc import slug_from_provider_key
 from apps.accounts.models_social import SocialIdentity, SocialProvider
+from apps.accounts.throttles import NativeSocialLinkThrottle
 from apps.accounts.serializers_social import SocialIdentitySerializer, SocialLinkSerializer
 from apps.accounts.services_social_identity import (
     SocialResolutionError, resolve_social_identity, unlink_social_identity,
@@ -36,13 +36,10 @@ LINK_DESCRIPTION = (
 
 class SocialProviderListLinkView(APIView):
     permission_classes = [IsAuthenticated]
-
-    def get_throttles(self):
-        # Only native linking is throttled; browser linking keeps its existing behavior.
-        if self.request.method == "POST" and getattr(self.request, "device_grant", None) is not None:
-            self.throttle_scope = "social_link"
-            return [ScopedRateThrottle()]
-        return super().get_throttles()
+    # Only native linking spends the budget (the throttle skips every other request); a
+    # throttle class rather than a get_throttles() override keeps the pre-auth guard exact.
+    throttle_classes = [NativeSocialLinkThrottle]
+    throttle_scope = "social_link"
 
     @extend_schema(tags=["Social auth"], responses={200: SocialIdentitySerializer(many=True), **errors(401, 403)})
     def get(self, request):
@@ -92,10 +89,15 @@ class SocialProviderListLinkView(APIView):
             )
             return _error(exc.code, exc.status_code)
         identity = SocialIdentity.objects.get(user=request.user, provider=data["provider"])
-        meta = {"provider": data["provider"], "subject_hash": audit_events.fingerprint(claims["sub"])}
-        if grant is not None:
-            meta.update(delivery="device", grant_hash=audit_events.fingerprint(grant.pk))
-        audit.record(request.user, "auth.social_identity_linked", target=request.user, meta=meta)
+        subject_hash = audit_events.fingerprint(claims["sub"])
+        # Literal metadata per branch keeps the reviewed audit catalogue exact.
+        if grant is None:
+            audit.record(request.user, "auth.social_identity_linked", target=request.user,
+                         meta={"provider": data["provider"], "subject_hash": subject_hash})
+        else:
+            audit.record(request.user, "auth.social_identity_linked", target=request.user,
+                         meta={"provider": data["provider"], "subject_hash": subject_hash,
+                               "delivery": "device", "grant_hash": audit_events.fingerprint(grant.pk)})
         return Response(SocialIdentitySerializer(identity).data)
 
 

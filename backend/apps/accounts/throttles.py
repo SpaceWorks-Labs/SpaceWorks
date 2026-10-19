@@ -1,6 +1,6 @@
 from collections.abc import Mapping
 
-from rest_framework.throttling import SimpleRateThrottle
+from rest_framework.throttling import ScopedRateThrottle, SimpleRateThrottle
 
 
 class PasswordResetEmailThrottle(SimpleRateThrottle):
@@ -125,3 +125,16 @@ class DeviceLoginUserThrottle(SimpleRateThrottle):
         return None if not username else self.cache_format % {
             "scope": self.scope, "ident": fingerprint(username)
         }
+
+
+class NativeSocialLinkThrottle(ScopedRateThrottle):
+    """The view's ``social_link`` budget, spent only by native (device-grant) linking.
+
+    Returning no cache key exempts browser linking and every non-POST request, exactly
+    as the former view-level ``get_throttles()`` selection did.
+    """
+
+    def get_cache_key(self, request, view):
+        if request.method != "POST" or getattr(request, "device_grant", None) is None:
+            return None
+        return super().get_cache_key(request, view)

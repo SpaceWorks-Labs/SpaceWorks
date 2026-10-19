@@ -69,7 +69,7 @@ def revoke_one(pk):
             row.last_error = "retention_deadline" if expired else "credential_unavailable"
             row.save(update_fields=["done_at", "last_error", "token_ciphertext"])
             audit.record(None, "account.apple_revocation_unavailable", target=user,
-                         meta={"reason": row.last_error})
+                         meta={"outcome": row.last_error})
             return
         row.attempts += 1
         try:

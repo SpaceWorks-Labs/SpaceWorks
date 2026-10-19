@@ -42,6 +42,8 @@ POLICY_OVERRIDE_ALLOWLIST = {
     },
     "apps.accounts.throttles.DeviceLoginThrottle": {"get_cache_key"},
     "apps.accounts.throttles.DeviceLoginUserThrottle": {"get_cache_key"},
+    # Native social linking keys its budget only for device-grant POSTs.
+    "apps.accounts.throttles.NativeSocialLinkThrottle": {"get_cache_key"},
     "apps.accounts.throttles.MemberVerificationEmailThrottle": {"get_cache_key"},
     "apps.accounts.throttles.PasswordResetEmailThrottle": {"get_cache_key"},
     # Phase 8: the per-email confirm budget, kept distinct from the request budget

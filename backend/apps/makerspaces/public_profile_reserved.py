@@ -3,6 +3,7 @@
 RESERVED_SEGMENTS = frozenset({
     '.well-known',
     'about',
+    'account',
     'admin',
     'api',
     'assets',

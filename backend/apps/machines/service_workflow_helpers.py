@@ -9,24 +9,25 @@ from apps.machines.service_errors import ServiceConsumptionInvalid, ServiceInval
 from apps.machines.printer_capabilities import is_printer_type, validate_service_payload
 
 
+_CANCELLED = MachineServiceRequest.Status.CANCELLED
 _ALLOWED = {
-    MachineServiceRequest.Status.PENDING: {MachineServiceRequest.Status.ACCEPTED, MachineServiceRequest.Status.REJECTED},
-    MachineServiceRequest.Status.ACCEPTED: {MachineServiceRequest.Status.IN_PROGRESS},
-    MachineServiceRequest.Status.IN_PROGRESS: {MachineServiceRequest.Status.COMPLETED, MachineServiceRequest.Status.FAILED},
+    MachineServiceRequest.Status.PENDING: {MachineServiceRequest.Status.ACCEPTED, MachineServiceRequest.Status.REJECTED, _CANCELLED},
+    MachineServiceRequest.Status.ACCEPTED: {MachineServiceRequest.Status.IN_PROGRESS, _CANCELLED},
+    MachineServiceRequest.Status.IN_PROGRESS: {MachineServiceRequest.Status.COMPLETED, MachineServiceRequest.Status.FAILED, _CANCELLED},
     MachineServiceRequest.Status.COMPLETED: {MachineServiceRequest.Status.COLLECTED},
 }
 
 
 def _locked_submission_target(target):
     if isinstance(target, ServiceQueue):
-        queue = ServiceQueue.objects.select_for_update().select_related("makerspace", "machine_type").get(pk=target.pk)
+        queue = ServiceQueue.objects.select_for_update(no_key=True, of=("self",)).select_related("makerspace", "machine_type").get(pk=target.pk)
         if queue.machine_type.makerspace_id not in (None, queue.makerspace_id):
             raise ServiceMachineUnavailable("Service queue machine type is outside its makerspace.")
         return queue
     if isinstance(target, ServiceBucket):
         bucket = ServiceBucket.objects.select_related("machine__makerspace").get(pk=target.pk)
-        return Machine.objects.select_for_update().select_related("makerspace").get(pk=bucket.machine_id)
-    return Machine.objects.select_for_update().select_related("makerspace").get(pk=target.pk)
+        return Machine.objects.select_for_update(no_key=True, of=("self",)).select_related("makerspace").get(pk=bucket.machine_id)
+    return Machine.objects.select_for_update(no_key=True, of=("self",)).select_related("makerspace").get(pk=target.pk)
 
 
 def _locked_submission_machine(target):
@@ -51,18 +52,59 @@ def _assert_request_write_allowed(service_request):
 
 
 def _locked_request(service_request):
-    return MachineServiceRequest.objects.select_for_update(of=("self",)).select_related("bucket__machine__makerspace", "queue__makerspace", "queue__machine_type", "requester", "assigned_machine", "run_consumable_pool").get(pk=service_request.pk)
+    return MachineServiceRequest.objects.select_for_update(no_key=True, of=("self",)).select_related("bucket__machine__makerspace", "queue__makerspace", "queue__machine_type", "requester", "assigned_machine", "run_consumable_pool").get(pk=service_request.pk)
 
 
 def _lock_assigned_machine(service_request):
     if not service_request.assigned_machine_id:
         raise ServiceMachineUnavailable("No machine is assigned to this service request.")
-    return Machine.objects.select_for_update().get(pk=service_request.assigned_machine_id)
+    return Machine.objects.select_for_update(no_key=True).get(pk=service_request.assigned_machine_id)
+
+
+def _lock_scope(service_request):
+    """Lock the request's waiting-line scope: the pooled queue row, else the bucket's machine.
+
+    Lock order is request -> scope -> machine(s) -> pool everywhere (C1). The head
+    re-evaluation for the once-only ``next`` notice always runs under this lock.
+    """
+    if service_request.queue_id:
+        return ServiceQueue.objects.select_for_update(no_key=True).get(pk=service_request.queue_id)
+    return Machine.objects.select_for_update(no_key=True).get(pk=service_request.bucket.machine_id)
+
+
+def _release_hold(service_request, actor, *, reason):
+    """Return a consumable hold to its pool with ZERO consumption (cancel/reject).
+
+    Reuses the kernel's zero-consumption reconciliation: the original reserve adjustment
+    stays and a compensating ``reconcile`` adjustment is appended. Never debits
+    consumptions or creates a payment. Returns release metadata for the audit row, or
+    None when nothing is held (the ledger refuses zero-delta adjustments).
+    """
+    from decimal import Decimal
+    from apps.machines import service_consumable_pools as pools
+    grams = service_request.reserved_grams or Decimal("0")
+    quantity = service_request.reserved_quantity
+    if not service_request.run_consumable_pool_id or (grams <= 0 and not (quantity and quantity > 0)):
+        return None
+    from apps.machines.models import MachineConsumablePool
+    pool = MachineConsumablePool.objects.get(pk=service_request.run_consumable_pool_id)
+    meta = {"pool_id": pool.pk, "released_grams": str(grams),
+            "released_quantity": None if quantity is None else str(quantity),
+            "metering_unit": service_request.metering_unit}
+    if quantity is not None:
+        pools.reconcile_request(service_request, actor, actual_grams=0, actual_quantity=0, reason=reason)
+    elif pool.unit == "grams":
+        pools.reconcile_request(service_request, actor, actual_grams=0, reason=reason)
+    else:
+        # Pre-metering gram hold on a non-gram pool: the legacy branch refunds reserved_grams.
+        pools._legacy_reconcile_request(service_request, actor, actual_grams=0, reason=reason)
+    service_request.refresh_from_db()
+    return meta
 
 
 def _release_queue_machine(service_request):
     if service_request.assigned_machine_id:
-        machine = Machine.objects.select_for_update().get(pk=service_request.assigned_machine_id)
+        machine = Machine.objects.select_for_update(no_key=True).get(pk=service_request.assigned_machine_id)
         if machine.status == Machine.Status.RUNNING:
             machine.status = Machine.Status.IDLE
             machine.save(update_fields=["status", "updated_at"])
@@ -80,7 +122,7 @@ def _require_module(makerspace, *, locked=False):
     if locked:
         from apps.makerspaces.models import Makerspace
 
-        makerspace = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
+        makerspace = Makerspace.objects.select_for_update(no_key=True).get(pk=makerspace.pk)
     if not module_enabled(makerspace, "machine_service"):
         raise ValidationError("Machine service is disabled for this makerspace.")
 

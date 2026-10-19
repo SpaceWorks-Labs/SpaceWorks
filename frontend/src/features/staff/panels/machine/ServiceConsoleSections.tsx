@@ -9,7 +9,7 @@ const statuses = [
   { key: "active", label: "Active" }, { key: "pending", label: "Pending" }, { key: "accepted", label: "Accepted" },
   { key: "in_progress", label: "In progress" }, { key: "completed", label: "Ready" },
   { key: "collected", label: "Collected" }, { key: "failed", label: "Failed" }, { key: "rejected", label: "Rejected" },
-  { key: "all", label: "All jobs" },
+  { key: "cancelled", label: "Cancelled" }, { key: "all", label: "All jobs" },
 ];
 /** Status keys a `?job_status=` deep link may open (dashboard work queues link straight to one). */
 export const serviceQueueStatusKeys = statuses.map(item => item.key);

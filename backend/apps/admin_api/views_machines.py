@@ -37,6 +37,28 @@ def _resolved_machine(user, pk):
     return machine
 
 
+def _service_summaries(actor, machines, capabilities=None):
+    """Batched queue summaries, only where the actor may MANAGE that machine's service work.
+
+    Roster visibility alone never reveals workload: the per-machine edit capability is
+    machine-scope aware, and the tenant must have `machine_service` on.
+    """
+    from apps.machines.service_queue_eta import machine_queue_summaries_for
+    from apps.makerspaces.platform import module_enabled
+    machines = list(machines)
+    capabilities = capabilities if capabilities is not None else access.capabilities_for_machines(actor, machines)
+    allowed = [machine for machine in machines
+               if capabilities.get(machine.pk, {}).get('can_edit')
+               and module_enabled(machine.makerspace, 'machine_service')]
+    return machine_queue_summaries_for(allowed) if allowed else {}
+
+
+def _context(request, machines):
+    capabilities = access.capabilities_for_machines(request.user, machines)
+    return {'request': request, 'machine_capabilities': capabilities,
+            'service_queue_summaries': _service_summaries(request.user, machines, capabilities)}
+
+
 def _machine_types_for(makerspace_id):
     return (rbac.scope_verified_tenant(MachineType.objects.all(), makerspace_id) |
             MachineType.objects.filter(makerspace__isnull=True))
@@ -94,6 +116,7 @@ class MachineListCreateView(APIView):
                     context={
                         'request': request,
                         'machine_capabilities': capabilities,
+                        'service_queue_summaries': _service_summaries(request.user, page, capabilities),
                     },
                 ).data,
             }
@@ -142,7 +165,7 @@ class MachineListCreateView(APIView):
             target_type='machine',
         )
         return Response(
-            MachineSerializer(machine, context={'request': request}).data,
+            MachineSerializer(machine, context=_context(request, [machine])).data,
             status=status.HTTP_201_CREATED,
         )
 
@@ -158,7 +181,7 @@ class MachineDetailView(APIView):
     )
     def get(self, request, pk, *args, **kwargs):
         machine = _resolved_machine(request.user, pk)
-        return Response(MachineSerializer(machine, context={'request': request}).data)
+        return Response(MachineSerializer(machine, context=_context(request, [machine])).data)
 
     @extend_schema(
         tags=['Admin machines'],
@@ -188,5 +211,5 @@ class MachineDetailView(APIView):
             target_type='machine',
         )
         return Response(
-            MachineSerializer(machine, context={'request': request}).data
+            MachineSerializer(machine, context=_context(request, [machine])).data
         )

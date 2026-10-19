@@ -218,6 +218,9 @@ def _apply_contextual_dispositions(row, source, makerspace_id):
     values = project_cross_tenant_values(
         row.model, values, source, makerspace_id
     )
+    if label == "machines.MachineServiceRequest":
+        from .row_planning import mark_imported_head
+        mark_imported_head(row.model, values)
     if label == "events.EventRegistration":
         # Search generations and their blind-index rows are target-derived and empty
         # in the scratch bootstrap; ciphertext itself remains byte-identical.

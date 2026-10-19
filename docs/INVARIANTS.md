@@ -1544,6 +1544,17 @@ cannot acquire an old private message. Acceptance is not delivery; retries/callb
 monotonic delivery states. `notification-contract.md` owns the HTTP/provider details and current
 integration gaps; `notification-coverage.md` distinguishes converted producers from legacy paths.
 
+**Machine-service owner self-notices (decisions 44/45, 2026-10-18).** `next`, `started`,
+`completed` and `cancelled` go to the request OWNER only and are authorized by the owner's current
+ownership + live standing + an immutable marker, never by the initiating staff/member/device
+(documented exception in `notification-contract.md`). `started`/`completed`/`cancelled` mark the
+request's own row (`*_notice_at`, queryset update, no `updated_at` bump) in the milestone
+transaction; `next` never locks or writes another member's row — its once-only marker is the stable
+envelope key `machines.service:<id>:next:requester:<owner>`, reserved under the scope lock by
+`service_queue_notices.reevaluate_head`. The envelope insert is fail-closed; template rendering
+happens at delivery with the default copy as fallback, so a bad tenant template can never roll back
+a completion or cancellation. Never re-reserve a suppressed milestone; reads never emit.
+
 - Space Manager identity owns `ChannelConfiguration`: enabled/room/personal switches, write-only
   encrypted credentials, quotas, provider and identity. Credential/provider/identity PATCH advances
   generation; unrelated switch changes must not resend those fields. Module removal also invalidates
@@ -2658,6 +2669,47 @@ Load-bearing details that carried over unchanged:
   configuration: certifications reach the maker profile only through `MemberProfile.show_certifications`,
   a separate opt-in from `is_visible`, and reach a printed card only when the template lists the
   `certifications` field.
+
+- **Machine-service queue ETA and cancellation (decisions 44/45) cover EVERY machine type.**
+  The forecast is derived, never stored: `service_queue_eta_core.Timeline` simulates one
+  (makerspace, machine type) timeline across every bucket/queue sharing those machines, assigns
+  only ACCEPTED rows in `created_at, id` order to the earliest-free compatible machine (a forecast
+  tie-break, not a dispatch policy), honours `ServiceQueue.capacity` including slots held by running
+  jobs on excluded or unassigned machines, and withholds (`unavailable`, both timestamps null) rather
+  than guessing when a required duration or a machine's availability is unknown. Capacity is
+  `is_active` and status IDLE/RUNNING, but a coherent in-progress row governs availability whatever
+  the flag says (C8) — `start()` refuses a machine that still has an in-progress row. Counts stay
+  scope-local and agree with the legacy `queue_position` fields. The ORM adapter makes at most four
+  SELECTs per tenant snapshot, loads scalar columns only and is request-scoped; serializers read the
+  snapshot from context, never the ORM. Staff `service_queue_summary` appears only where the actor
+  may edit (manage) that machine and the tenant has `machine_service`.
+  - **`cancelled` is terminal** (pending/accepted/in_progress → cancelled). Cancel releases any
+    consumable hold with ZERO consumption through the kernel's reconcile (`actual_quantity=0`
+    when `reserved_quantity` is set; the legacy gram branch only for pre-metering holds), never
+    debits consumptions and never creates a payment; only a cancelled RUNNING job frees its
+    machine. Staff reject releases holds the same way and keeps its pending-only meaning. Owner
+    cancel is `member_id == caller` on the member surface
+    (`/api/v1/member/machine-service/requests/<pk>/cancel`, plus the `by-token/<token>/owner`
+    lookup), works with `membership` off, refuses claim/staff/platform sessions, and a bearer
+    tracking token alone never authorizes a write. Staff cancel is manage-scoped only.
+  - **Lock order is request-first everywhere (C1):** write fence → request → scope (pooled
+    `ServiceQueue` row, or the bucket's own `Machine` row) → machine(s) → pool. The scope lock is
+    taken only when the waiting head can change (accept, reject, reprint, cancelling a waiting
+    row, start); complete/fail and cancelling a running row never take it. `start()` counts the
+    queue's in-progress rows before locking the chosen machine and without a row lock (it can only
+    over-count); a bucket start locks the bucket machine and the chosen machine in id order (C15).
+    Linked typed manual usage follows request → machine → pool. Bucket submit's older
+    Machine → Makerspace order is unchanged (C14).
+  - **Never join extra rows into a workflow FOR UPDATE, and lock the makerspace row FOR NO KEY
+    UPDATE.** Django FKs are DEFERRABLE INITIALLY DEFERRED, so every commit takes FOR KEY SHARE on
+    the makerspace (and other referenced rows) at COMMIT. A FOR UPDATE on those rows — directly
+    (`require_module_locked`, `_require_module(locked=True)`, now `no_key=True`) or via a
+    `select_related` join without `of=("self",)` — deadlocked the device printer adapter and
+    `start()` against a concurrent cancel's commit. NO KEY UPDATE still serializes against module
+    install/uninstall. The machine-service workflow takes every row lock (request, queue, machine)
+    as `select_for_update(no_key=True, of=("self",))` for the same reason: a row updated twice in
+    one transaction re-runs its FK checks at COMMIT, taking KEY SHARE on its queue/machine. After a row lock that may have waited, re-read (`refresh_from_db`) before
+    trusting joined relations: Postgres re-checks only the locked row, not its joined rows.
 
 ## Community workflow additions (2026-10-17)
 

@@ -176,5 +176,8 @@ def _query_int(request, name):
 
 
 def _response(row, code=status.HTTP_200_OK):
+    from apps.machines.service_queue_eta import queue_snapshot_for
     row = _base_queryset().get(pk=row.pk)
-    return Response(MachineServiceRequestSerializer(row).data, status=code)
+    # Rebuilt after any mutation: an action response never reuses a pre-mutation snapshot.
+    context = {"queue_snapshot": queue_snapshot_for([row])}
+    return Response(MachineServiceRequestSerializer(row, context=context).data, status=code)

@@ -6,11 +6,12 @@ from .models import MachineUsageEntry
 
 from .serializers_public_machines import PublicMachineSerializer
 from .public_detail import queue_estimate, training
+from .service_queue_eta_serializers import MachineQueueSummarySerializer
 
 
-class PublicQueueEstimateSerializer(serializers.Serializer):
-    length = serializers.IntegerField(min_value=0)
-    eta_minutes = serializers.IntegerField(min_value=0, allow_null=True)
+class PublicQueueEstimateSerializer(MachineQueueSummarySerializer):
+    """Legacy ``length``/``eta_minutes`` keys kept; ``eta_minutes`` is now the machine's
+    simulated final free-at offset (never total minutes divided by machine count)."""
 
 
 class PublicMachineDetailSerializer(PublicMachineSerializer):
@@ -36,4 +37,5 @@ class PublicMachineDetailSerializer(PublicMachineSerializer):
 
     @extend_schema_field(PublicQueueEstimateSerializer(allow_null=True))
     def get_queue(self, machine):
-        return queue_estimate(machine)
+        # The view supplies one page-level summary map; detail falls back to one snapshot.
+        return queue_estimate(machine, self.context.get("queue_summaries"))

@@ -18,7 +18,7 @@ from apps.machines.models import (
 from apps.machines.print_uploads import validate_print_upload
 
 from apps.machines.printer_capabilities import resolve_global_printer_type
-from apps.machines.service_queue_position import queue_counts_for
+from apps.machines.service_queue_eta import queue_snapshot_for
 from apps.machines.service_storage import create_staged_queue_file, finalize_file
 from apps.machines.service_workflow import submit
 from apps.makerspaces import limits
@@ -153,13 +153,25 @@ def submit_request(makerspace, data, actor, *, compatibility=False):
 
 
 class _StatusProjection:
-    def __init__(self, row):
+    """PII-free facts only; ``_row`` lets the shared snapshot read the raw status."""
+
+    def __init__(self, row, *, printer=True):
+        self._row = row
         self.id = row.pk
         self.public_token = row.public_token
-        self.status = "printing" if row.status == MachineServiceRequest.Status.IN_PROGRESS else row.status
+        printing = printer and row.status == MachineServiceRequest.Status.IN_PROGRESS
+        self.status = "printing" if printing else row.status
         self.title, self.created_at = row.title, row.created_at
         self.accepted_at, self.started_at, self.completed_at = row.accepted_at, row.started_at, row.completed_at
+        self.cancelled_at = row.cancelled_at
         self.estimated_minutes = row.estimated_minutes
+
+
+def status_context(rows):
+    """One request-scoped snapshot for ETA plus the legacy count fields (they agree)."""
+    snapshot = queue_snapshot_for(rows)
+    counts = {row.pk: snapshot.counts(row) for row in rows}
+    return {"queue_snapshot": snapshot, "queue_counts": {pk: value for pk, value in counts.items() if value}}
 
 
 def public_status(public_token):
@@ -185,4 +197,4 @@ def public_status(public_token):
     require_public_surface("printing")
     if not module_enabled(kernel.makerspace, "printing"):
         raise ValidationError({"module": "printing is disabled for this makerspace."})
-    return _StatusProjection(kernel), queue_counts_for([kernel])
+    return _StatusProjection(kernel), status_context([kernel])

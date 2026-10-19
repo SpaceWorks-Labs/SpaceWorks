@@ -10,7 +10,9 @@ from apps.makerspaces.platform import module_enabled
 from .models import MachineServiceRequest
 
 KIND = "machines.service"
-EVENTS = {"submitted", "accepted", "rejected", "started", "completed", "failed", "collected", "reprinted"}
+EVENTS = {"submitted", "accepted", "rejected", "started", "completed", "failed", "collected", "reprinted", "cancelled"}
+# Requester legs of these events are durable owner self-notices (service_queue_notices).
+OWNER_MILESTONES = {"started", "completed", "cancelled"}
 
 
 def machine_type(row):
@@ -28,6 +30,9 @@ def version(row):
 
 
 def eligible(envelope):
+    from .notifications_p2_service_notices import eligible as milestone_eligible, is_milestone
+    if is_milestone(envelope):
+        return milestone_eligible(envelope)
     row = rbac.scope_notification_policy(MachineServiceRequest.objects.all(),
         makerspace_id=envelope.makerspace_id).select_related(
         "requester", "member", "queue__machine_type", "bucket__machine__machine_type",
@@ -46,9 +51,13 @@ def eligible(envelope):
     from . import access
     sender = row.requester if envelope.event == "submitted" else (
         row.accepted_by if envelope.event == "reprinted" else row.handled_by)
-    if sender is None:
+    if envelope.event == "cancelled":
+        # A terminal, immutable fact authorized at mutation time by the owner or scoped
+        # staff (C3); the recipient floor below still applies to every staff recipient.
+        permitted = True
+    elif sender is None:
         return False
-    if envelope.event == "collected":
+    elif envelope.event == "collected":
         permitted = rbac.can(sender, rbac.Action.COLLECT_SERVICE_REQUEST, row.makerspace_id)
     elif envelope.event == "submitted":
         permitted = sender.is_active and sender.access_status == "active"
@@ -90,15 +99,22 @@ def notify_service(row, event):
                "text": f"Your {label.lower()} request #{row.pk}: {event.replace('_', ' ')}.", "link": link}
         staff = {"subject": f"{label} request #{row.pk}",
                  "text": f"{label} request #{row.pk} {event.replace('_', ' ')}."}
+    owner, own_content = row.member or row.requester, own
+    if event in OWNER_MILESTONES:
+        # Exactly-once owner intent keyed on the immutable marker; repeated calls are no-ops.
+        from .service_queue_notices import initiator_for, reserve_milestone
+        reserve_milestone(row, event, initiator=initiator_for(row.handled_by))
+        owner = own_content = None
     # The fallback summary stays bounded; authored staff chat templates render separately.
     room_staff = dict(staff)
     room_staff["text"] = f"Machine service request #{row.pk} {event.replace('_', ' ')}. Review in the staff console."
     return fanout(space=row.makerspace, feature="printing", stream="printing", event=event,
         kind=KIND, source=row.pk, version=version(row), subject=row,
-        owner=row.member or row.requester, own=own, staff=staff,
+        owner=owner, own=own_content, staff=staff,
         room_body=room_staff["text"], staff_context=staff_context, scope=scope_for(row),
         context={"machine_service_request_id": row.pk})
 
 
 def register():
-    register_source(KIND, NotificationSource(eligible))
+    from .notifications_p2_service_notices import render_envelope
+    register_source(KIND, NotificationSource(eligible, render_envelope))

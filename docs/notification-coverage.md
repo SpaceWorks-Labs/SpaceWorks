@@ -35,6 +35,8 @@ payment and loan owners do not acquire a universal membership requirement.
 | Printer service `failed`, `collected` | Authorized staff and explicit domain owner | Separate staff personal + scoped room summaries and owner personal envelopes | TRUE — service terminal-edge sources [H] |
 | Printer reprint creation | Authorized staff and explicit domain owner | Separate staff personal + scoped room summaries and owner personal envelopes | TRUE — reprinted service edge [H] |
 | Non-printer machine service `submitted`, `accepted`, `rejected`, `started`, `completed`, `failed`, `collected` | Authorized staff and explicit domain owner | Separate staff personal + scoped room summaries and owner personal envelopes | PARTIAL — producer wired; shared printing-module gate still refuses printing-off installs [H] |
+| Machine service (every type) requester `next`, `started`, `completed`, `cancelled` | Request owner only (owner self-notice) | Owner personal envelope only; never rooms; optional lifecycle notices (preferences, requester mutes, opt-outs, suppression all win) | TRUE — durable once-only intents: `next` keyed by the stable envelope `machines.service:<id>:next:requester:<owner>`, the other three by immutable row markers; rendered at delivery [H] |
+| Machine service staff `cancelled` | Authorized scoped staff | Staff personal + scoped room summaries (no requester content) | TRUE — cancelled edge through the existing service fan-out [H] |
 | Maintenance `schedule_created`, `schedule_updated`, `schedule_deactivated`, `logged`, `schedule_completed` | Authorized scoped staff | Staff personal + scoped rooms; preserve machine/type/category narrowing; no default member fan-out | TRUE — compatibility barrel delegates to the source-backed adapter [H] |
 | Maintenance calendar `due_soon`, `overdue` | Authorized scoped staff | Staff personal + scoped rooms; preserve machine/type/category narrowing; no default member fan-out | TRUE — calendar reaches the adapter through the maintenance barrel [H] |
 | Usage-meter maintenance threshold | Authorized scoped staff | Staff personal + scoped rooms; preserve machine/type/category narrowing; no default member fan-out | TRUE — meter reaches the adapter through the maintenance barrel [H] |
@@ -140,3 +142,15 @@ Code ownership for the status column (all paths under `backend/apps/`):
   vouched, document_issued, subdomain/report/email-failure and stocktake events. Presence remains
   absent from the feature enum/editor. `notification_resolution.legacy_staff_email_allowed`
   narrowly preserves operational unverified staff email, never campaigns or requester/member mail.
+
+**Deliberate exception — machine-service owner self-notices.** `next`, `started`, `completed`
+and `cancelled` reach only the request's owner (`member`, else the historical `requester`,
+never a free-text contact). Their sender authority is the owner's *current* ownership plus live
+account standing plus the immutable marker/stable key — not the staff member, member or device
+that caused the transition. The initiator is recorded only in audit and envelope context
+(`user:<id>` or `device:<binding>`), so a device-applied completion (no actor) still delivers
+exactly once and a staff member losing machine scope never suppresses a requester's own notice.
+`started`/`completed`/`cancelled` survive later transitions; `next` additionally requires the
+request still be the accepted head of its bucket/queue at delivery and is never re-reserved.
+Imported tenants never replay them: markers travel as data and rows imported as accepted carry
+`imported_head_notified`. See `docs/notification-contract.md` ("Owner self-notices").

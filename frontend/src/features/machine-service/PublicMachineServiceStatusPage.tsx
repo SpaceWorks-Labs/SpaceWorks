@@ -1,0 +1,53 @@
+import { useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+
+import { PublicDetailLayout, PublicLayout } from "../../components/layouts";
+import { EmptyState, RelativeTime, StatusPill } from "../../components/ui";
+import { useTenant, useTenantPath } from "../../lib/tenant";
+import { useTenantBranding } from "../../lib/useTenantBranding";
+import { formatSlug } from "../inventory/PublicInventoryParts";
+import { publicPageChrome } from "../inventory/PublicPageChrome";
+import { useTenantBootstrap } from "../inventory/usePublicInventory";
+import { fetchServiceStatus, serviceKeys } from "./api";
+import { OwnerCancel } from "./OwnerCancel";
+import { ServiceRequestEta } from "./ServiceRequestEta";
+import { normalizeServiceStatus, serviceStatusLabel, serviceStatusTone, statusRefetchInterval } from "./types";
+
+export function PublicMachineServiceStatusPage() {
+  const { slug, publicToken = "" } = useParams();
+  const tenant = useTenant();
+  const makerspaceSlug = tenant.mode === "single" ? tenant.slug : slug ?? "";
+  const tenantPath = useTenantPath(makerspaceSlug);
+  const bootstrapQuery = useTenantBootstrap(makerspaceSlug, tenant.mode === "central");
+  const bootstrap = tenant.mode === "single" ? tenant.bootstrap : bootstrapQuery.data;
+  const brandStyle = useTenantBranding(bootstrap);
+  const statusQuery = useQuery({
+    queryKey: serviceKeys.status(publicToken), queryFn: () => fetchServiceStatus(publicToken),
+    enabled: Boolean(publicToken), refetchInterval: query => statusRefetchInterval(query.state.data?.status),
+  });
+  const displayName = bootstrap?.branding.display_name || bootstrap?.makerspace.name || formatSlug(makerspaceSlug) || "Makerspace";
+  const job = statusQuery.data;
+  const state = bootstrapQuery.isLoading || statusQuery.isPending
+    ? { status: "loading" as const }
+    : statusQuery.isError
+      ? { status: "error" as const, error: "We couldn't find that job, or it isn't trackable any more.", onRetry: () => { void statusQuery.refetch(); } }
+      : { status: "ready" as const };
+  const status = job ? normalizeServiceStatus(job.status) : "";
+  return <div style={brandStyle}><PublicLayout {...publicPageChrome(makerspaceSlug, displayName, tenantPath, bootstrap)} state={state}>
+    <PublicDetailLayout state={state} title={job ? job.title : "Machine job"}
+      chips={job ? [{ label: job.machine_type_name, tone: "accent" }, { label: serviceStatusLabel(status), tone: serviceStatusTone(status) }] : []}
+      sections={[{ id: "job-status", label: "Status", content: job ? <div className="grid gap-4">
+        <p className="text-sm text-muted">Requested <RelativeTime date={job.created_at} /></p>
+        {job.eta ? <ServiceRequestEta eta={job.eta} status={job.status} /> : <EmptyState message={
+          status === "cancelled" ? "This job was cancelled. Nothing was charged for it."
+            : status === "completed" ? "Your job finished and is ready to collect."
+              : "This job is finished; there is nothing left to estimate."} />}
+        {job.queue_position != null ? <p className="text-sm text-muted">Position {job.queue_position} in this queue.</p> : null}
+        <OwnerCancel token={publicToken} title={job.title} makerspaceSlug={makerspaceSlug} />
+      </div> : null }]}
+      actionCard={{ title: "Your job", state: "open",
+        summary: job ? <StatusPill label={serviceStatusLabel(status)} tone={serviceStatusTone(status)} /> : undefined,
+        form: job ? <p className="text-sm text-muted">Keep this link private: anyone with it can see this job's progress.</p> : undefined,
+        mobileBar: { summary: job ? serviceStatusLabel(status) : "Job status", label: "Your job" } }} />
+  </PublicLayout></div>;
+}

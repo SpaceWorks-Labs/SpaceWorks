@@ -209,57 +209,13 @@ def retire_pool(pool, actor, *, reason):
     return locked
 
 
-@transaction.atomic
-def log_typed_manual_usage(machine, actor, *, duration_minutes, outcome, percent_complete, reason="", grams=0, quantity=None, metering_unit=None, pool=None, service_request=None, note=""):
-    machine = Machine.objects.select_for_update().select_related("makerspace").get(pk=machine.pk)
-    if outcome not in {"success", "failed"}:
-        raise ValidationError({"outcome": "Outcome must be success or failed."})
-    if not isinstance(duration_minutes, int) or duration_minutes < 0:
-        raise ValidationError({"duration_minutes": "Duration must be a non-negative whole number."})
-    if not isinstance(percent_complete, int) or not 0 <= percent_complete <= 100:
-        raise ValidationError({"percent_complete": "Percent must be between 0 and 100."})
-    if outcome == "failed" and not str(reason).strip():
-        raise ValidationError({"reason": "A failure reason is required."})
-    grams = _grams(grams, "grams")
-    quantity = grams if quantity is None else _grams(quantity, "quantity")
-    if pool is not None:
-        pool = _locked_pool(pool)
-        if not pool_serves_machine(pool, machine):
-            raise ValidationError({"consumable_pool": "Consumable pool is incompatible with this machine."})
-        _validate_pool(machine, pool)
-    if service_request is not None:
-        service_request = MachineServiceRequest.objects.select_for_update().get(pk=service_request.pk)
-        if service_request.makerspace_id != machine.makerspace_id:
-            raise ValidationError({"service_request": "Service request must belong to this makerspace."})
-    usage_unit = metering_unit or (metering_unit_for_pool(pool.unit) if pool else None) or MeteringUnit.WEIGHT
-    if usage_unit not in MeteringUnit.values:
-        raise ValidationError({"metering_unit": "Unsupported metering unit."})
-    if pool is not None and metering_unit_for_pool(pool.unit) != usage_unit:
-        raise ValidationError({"metering_unit": "Consumable pool unit is incompatible with this metering unit."})
-    entry = MachineUsageEntry.objects.create(
-        machine=machine, hours=(Decimal(duration_minutes) * Decimal(percent_complete) / Decimal("6000")).quantize(Decimal("0.01")),
-        source=MachineUsageEntry.Source.TYPED_MANUAL, service_request=service_request, consumable_pool=pool,
-        duration_minutes=duration_minutes, outcome=outcome, percent_complete=percent_complete,
-        reason=str(reason).strip(), consumed_grams=grams, note=str(note).strip(), logged_by=actor,
-        metering_unit=usage_unit, consumed_quantity=quantity,
-    )
-    if quantity:
-        if pool is None:
-            raise ValidationError({"consumable_pool": "A consumable pool is required when quantity is recorded."})
-        _apply(pool, actor, kind=MachineConsumableAdjustment.Kind.MANUAL, delta=-quantity, usage_entry=entry, service_request=service_request, reason=reason, metering_unit=usage_unit)
-    audit.record(
-        actor, "machine.typed_usage_logged", makerspace=machine.makerspace, target=entry,
-        meta={"machine_id": machine.pk, "usage_entry_id": entry.pk, "duration_minutes": duration_minutes,
-              "outcome": outcome, "grams": str(grams), "quantity": str(quantity), "metering_unit": usage_unit},
-    )
-    return entry
-
 from apps.machines.metering import MeteringUnit, metering_unit_for_pool
 from apps.machines.service_metering import _apply as _metered_apply
 from apps.machines.service_metering import reconcile_request as _metered_reconcile
 from apps.machines.service_metering import reserve_for_request as _metered_reserve
 
 _legacy_reconcile_request = reconcile_request
+from apps.machines.service_manual_usage import log_typed_manual_usage  # noqa: E402,F401 - re-export
 _legacy_reserve_for_request = reserve_for_request
 
 

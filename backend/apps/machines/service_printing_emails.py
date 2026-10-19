@@ -9,7 +9,7 @@ from apps.machines.printer_capabilities import is_printer_type
 from apps.makerspaces.website_directory import public_url
 
 logger = logging.getLogger(__name__)
-REQUESTER_EVENTS = frozenset({"submitted", "accepted", "started", "rejected", "completed", "failed", "collected", "reprinted"})
+REQUESTER_EVENTS = frozenset({"submitted", "accepted", "started", "rejected", "completed", "failed", "collected", "reprinted", "next", "cancelled"})
 
 
 def _request_machine_type(request):

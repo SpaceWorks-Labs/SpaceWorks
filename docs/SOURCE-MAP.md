@@ -223,8 +223,31 @@ Stocktake policy snapshots, blind serializers and schedules live in
 `operations/models_stocktake_discipline.py`, `serializers_stocktake.py`,
 `stocktake_discipline.py` and `views_stocktake_discipline.py`.
 `machines/views_public_detail.py`, `serializers_public_detail.py` and
-`public_detail.py` own the independent public detail/collection and aggregate ETA;
+`public_detail.py` own the independent public detail/collection; its opt-in `queue`
+summary now comes from the shared queue simulator (one snapshot per page);
 the original `machines/views_public.py` remains a separate surface.
+
+Machine-service queue ETA, notices and cancellation (decisions 44/45, every machine type):
+`machines/service_queue_eta_core.py` (pure simulator: `Timeline`, `lane_summary`) and
+`service_queue_eta_records.py` (records, reason vocabulary, 5-minute boundary rounding);
+`service_queue_eta.py` is the ORM adapter (`queue_snapshot_for`, `machine_queue_summaries_for`,
+at most four SELECTs per tenant snapshot, scalar columns only) and
+`service_queue_eta_serializers.py` the shared `ServiceRequestEtaSerializer` /
+`MachineQueueSummarySerializer`. `service_queue_position.py` keeps the legacy counts on one
+batched ranking. Requester milestone intents live in `service_queue_notices.py`
+(`reserve_milestone`, `reevaluate_head`) with delivery checks/rendering in
+`notifications_p2_service_notices.py`, wired under the one `machines.service` source kind.
+`service_workflow_cancel.py` owns `cancel()` (re-exported by `service_workflow`), and
+`service_workflow_start.py` owns `start()` (re-exported by `service_workflow_actions`);
+`service_manual_usage.py` owns linked/unlinked typed manual usage (re-exported by
+`service_consumable_pools`). Public token status for any type: `public_service_status.py` +
+`views_public_service_status.py`; owner member-surface routes: `views_service_cancel.py`;
+staff cancel: `admin_api/views_machine_service_actions.MachineServiceCancelView`. Member
+dashboard rows: `makerspaces/member_activity_machine_service.py`. Frontend:
+`frontend/src/features/machine-service/` (`ServiceRequestEta`, `QueueSummary`,
+`ServiceCancelButton`, `OwnerCancel`, `MemberServiceRequestRows`,
+`PublicMachineServiceStatusPage` at `/machine-service/requests/:publicToken`), with staff
+row helpers in `features/staff/panels/machine/ServiceEtaLine.tsx`.
 Local materials use `models_materials.py`, `material_catalogue.py` and
 `views_materials.py`; custom intake uses `intake.py` and `views_intake.py`.
 Maintenance usage calculations live in `maintenance/meters.py` and `meter_jobs.py`,

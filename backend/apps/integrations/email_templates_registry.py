@@ -23,6 +23,11 @@ from .email_templates_registry_defaults import (
     PRINTING_STAFF_SUBJECTS,
     PRINTING_STAFF_TEXT,
 )
+from .email_templates_registry_service_notices import (
+    SERVICE_NOTICE_HTML,
+    SERVICE_NOTICE_SUBJECTS,
+    SERVICE_NOTICE_TEXT,
+)
 
 STREAMS = {"hardware", "printing", "events", "bookings", "maintenance", "membership",
            "devices", "payments", "stock", "certifications"}
@@ -47,7 +52,7 @@ HARDWARE_STAFF_KEYS = (
     "closed_with_issue",
     "return_reminder",
 )
-PRINTING_REQUESTER_KEYS = ("submitted", "accepted", "started", "rejected", "completed")
+PRINTING_REQUESTER_KEYS = ("submitted", "accepted", "started", "rejected", "completed", "next", "cancelled")
 PRINTING_STAFF_KEYS = (
     "submitted",
     "accepted",
@@ -145,9 +150,9 @@ def _printing_requester_entry(key):
         label=_label(key),
         description=f"Requester email for printing event '{key}'.",
         fields=PRINTING_FIELDS,
-        default_subject=PRINTING_REQUESTER_SUBJECTS[key],
-        default_text=PRINTING_REQUESTER_TEXT[key],
-        default_html=PRINTING_REQUESTER_HTML[key],
+        default_subject={**PRINTING_REQUESTER_SUBJECTS, **SERVICE_NOTICE_SUBJECTS}[key],
+        default_text={**PRINTING_REQUESTER_TEXT, **SERVICE_NOTICE_TEXT}[key],
+        default_html={**PRINTING_REQUESTER_HTML, **SERVICE_NOTICE_HTML}[key],
         sample_context=_printing_sample_context(),
     )
 

@@ -1,3 +1,4 @@
+import type { MachineQueueSummary } from "../../machine-service/types";
 export type MachineStatus = "idle" | "running" | "reserved" | "maintenance" | "offline";
 export type MachineAccessLevel = "operate" | "manage" | "full";
 export type MachineWarrantyStatus = "unknown" | "active" | "expiring_soon" | "expired";
@@ -50,6 +51,8 @@ export type Machine = {
   can_retire: boolean;
   can_unretire: boolean;
   can_manage: boolean;
+  /** Present only where the viewer may manage this machine's service work. */
+  service_queue_summary?: MachineQueueSummary | null;
   created_at: string;
   updated_at: string;
 };

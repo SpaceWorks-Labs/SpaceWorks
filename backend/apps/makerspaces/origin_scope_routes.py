@@ -8,6 +8,8 @@ from apps.makerspaces.origin_scope_model_lookups import (
 PUBLIC_SLUG_ROUTES = {"public-presence-now", "presence-start", "presence-current", "presence-end", "presence-renew", "presence-projects", "presence-preferences", "public-booking-resource", "public-booking-website", "public-booking-website-image", "member-booking-pass", "member-booking-confirmation", "member-booking-confirmation-png", "member-booking-calendar", "member-booking-rotate-checkin", "public-event-organization-eligibility"}
 
 REPLAY_TOKEN_ROUTES = {"kiosk-replay-prepare", "kiosk-replay-execute"}
+# Owner controls resolve their tenant from the job's tracking token (C16).
+SERVICE_TOKEN_ROUTES = {"member-machine-service-owner"}
 
 MAKERSPACE_KWARG_ROUTES = {
     **{name: "makerspace_id" for name in (
@@ -96,6 +98,8 @@ MACHINE_SERVICE_ACTIONS = {
     'admin-machine-service-request-collect',
     'admin-machine-service-file-presign',
     'admin-machine-service-file-finalize',
+    'admin-machine-service-request-cancel',
+    'member-machine-service-cancel',
 }
 from .origin_scope_routes_w7_events import EVENT_MODEL_LOOKUPS
 from .origin_scope_routes_p2_events import P2_EVENT_MODEL_LOOKUPS
@@ -186,7 +190,8 @@ def _authoritative_route_targets(request, view=None):
         or (url_name == 'admin-makerspace' and 'pk' in kwargs)
         or url_name in MODEL_LOOKUPS or url_name in TARGET_SET_LOOKUPS
         or url_name in QUERY_SCOPED_ROUTES or url_name in NATIVE_HEADER_GLOBAL_ROUTES
-        or url_name in REPLAY_TOKEN_ROUTES or url_name in PUBLIC_SLUG_ROUTES)
+        or url_name in REPLAY_TOKEN_ROUTES or url_name in PUBLIC_SLUG_ROUTES
+        or url_name in SERVICE_TOKEN_ROUTES)
     if url_name in PUBLIC_SLUG_ROUTES:
         from .lookup import get_public_makerspace
         from django.http import Http404
@@ -199,6 +204,15 @@ def _authoritative_route_targets(request, view=None):
         resolved = apps.get_model("makerspaces.StationCredential").objects.filter(
             public_token=token,
         ).values_list("station__makerspace_id", flat=True).first() if token else None
+        if resolved is not None:
+            targets.add(resolved)
+        else:
+            invalid = True
+    if url_name in SERVICE_TOKEN_ROUTES:
+        token = kwargs.get("public_token")
+        resolved = apps.get_model("machines.MachineServiceRequest").objects.filter(
+            public_token=token,
+        ).values_list("makerspace_id", flat=True).first() if token else None
         if resolved is not None:
             targets.add(resolved)
         else:

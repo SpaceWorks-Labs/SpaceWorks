@@ -7,6 +7,7 @@ import { ErrorBlock, ListRow, StatusBadge, OverflowMenu, Modal, EmptyState } fro
 import { ServiceConsoleSections, ServiceQueueTabs } from "./ServiceConsoleSections";
 import { staffRequest } from "../../../../lib/api";
 import { machineKeys } from "../../machinesApi";
+import { CancelNotice, ServiceEtaLine } from "./ServiceEtaLine";
 import type { Machine, MachineType } from "../../machinesApi";
 import { useStaffGet } from "../shared";
 import { clearedActionDraft } from "./serviceDrafts";
@@ -124,7 +125,7 @@ export function PrinterServiceConsole({ makerspaceId, canManage, printingEnabled
           <ServiceQueueTabs rows={requests.data} initialStatus={queueStatus}>{visible => <div className="grid gap-3">
             {visible?.map((request) => (
               <ListRow key={request.id} title={request.title} identity={{ kind: "avatar", name: request.requester_name || "Member", seed: String(request.id) }}
-                meta={<> {request.requester_name} · Planned {request.planned_grams} g · actual {request.actual_consumed_quantity ?? "0"} g</>}
+                meta={<> {request.requester_name} · Planned {request.planned_grams} g · actual {request.actual_consumed_quantity ?? "0"} g<ServiceEtaLine request={request} /></>}
                 right={<div className="flex flex-wrap items-center gap-2"><StatusBadge status={request.status} label={machineStatusLabel(request.status)} /><ServiceActions request={request} onAction={name => setDraft(current => ({ ...current, action: { id: request.id, name } }))} /></div>} />
             )) ?? <p className="text-sm text-muted">Loading printer queue…</p>}
           </div>}</ServiceQueueTabs>
@@ -145,20 +146,22 @@ function actionBody(action: ServiceActionName, values: ServiceDraft["actionValue
   if (action === "start") return { machine_id: values.machine_id ? Number(values.machine_id) : null, consumable_pool_id: values.consumable_pool_id ? Number(values.consumable_pool_id) : undefined, estimated_minutes: Number(values.estimated_minutes), planned_grams: values.planned_quantity || undefined };
   if (action === "complete") return { actual_minutes: Number(values.actual_minutes), actual_grams: values.actual_quantity || undefined };
   if (action === "fail") return { actual_minutes: Number(values.actual_minutes), actual_grams: values.actual_quantity || undefined, percent_complete: Number(values.percent_complete), reason: values.reason };
+  if (action === "cancel") return values.reason ? { reason: values.reason } : {};
   return action === "reject" ? { reason: values.reason } : {};
 }
 
 function ServiceActions({ request, onAction }: { request: MachineServiceRequest; onAction: (name: ServiceActionName) => void }) {
-  if (request.status === "pending") return <><button className="desk-button-success" onClick={() => onAction("accept")}>Accept</button><OverflowMenu actions={[{ label: "Reject", tone: "danger", onClick: () => onAction("reject") }]} /></>;
-  if (request.status === "accepted") return <button className="desk-button-primary" onClick={() => onAction("start")}>Start</button>;
-  if (request.status === "in_progress") return <><button className="desk-button-success" onClick={() => onAction("complete")}>Complete</button><OverflowMenu actions={[{ label: "Fail", tone: "danger", onClick: () => onAction("fail") }]} /></>;
+  const cancel = { label: "Cancel job", tone: "danger" as const, onClick: () => onAction("cancel") };
+  if (request.status === "pending") return <><button className="desk-button-success" onClick={() => onAction("accept")}>Accept</button><OverflowMenu actions={[{ label: "Reject", tone: "danger", onClick: () => onAction("reject") }, cancel]} /></>;
+  if (request.status === "accepted") return <><button className="desk-button-primary" onClick={() => onAction("start")}>Start</button><OverflowMenu actions={[cancel]} /></>;
+  if (request.status === "in_progress") return <><button className="desk-button-success" onClick={() => onAction("complete")}>Complete</button><OverflowMenu actions={[{ label: "Fail", tone: "danger", onClick: () => onAction("fail") }, cancel]} /></>;
   if (request.status === "completed") return <button className="desk-button-success" onClick={() => onAction("collect")}>Collect</button>;
   return request.status === "failed" ? <button className="desk-button-warn" onClick={() => onAction("reprint")}>Reprint</button> : null;
 }
 
 function ActionForm({ action, values, setValues, printers, pools, pending, onCancel, onSubmit }: { action: ServiceActionName; values: ServiceDraft["actionValues"]; setValues: (values: ServiceDraft["actionValues"]) => void; printers: Machine[]; pools: PrinterPool[]; pending: boolean; onCancel: () => void; onSubmit: () => void }) {
   const input = (key: keyof typeof values, label: string) => <label className="eyebrow grid gap-1">{label}<input className={`desk-input ${focusRing}`} inputMode={key === "reason" ? undefined : "decimal"} value={values[key]} onChange={(event) => setValues({ ...values, [key]: event.target.value })} /></label>;
-  return <div className="mt-3 rounded-md border border-accent bg-bg p-3"><h5 className="title-section capitalize">{action}</h5><div className="mt-2 grid gap-2 sm:grid-cols-2">{action === "start" ? <><select aria-label="Printer" className={`desk-input ${focusRing}`} value={values.machine_id} onChange={(event) => setValues({ ...values, machine_id: event.target.value, consumable_pool_id: "" })}><option value="">Printer</option>{printers.map((printer) => <option key={printer.id} value={printer.id}>{printer.name}</option>)}</select><select aria-label="Pool" className={`desk-input ${focusRing}`} value={values.consumable_pool_id} onChange={(event) => setValues({ ...values, consumable_pool_id: event.target.value })}><option value="">Pool</option>{pools.map((pool) => <option key={pool.id} value={pool.id}>{pool.material} {pool.color}</option>)}</select>{input("estimated_minutes", "Estimated minutes")}{input("planned_quantity", "Planned grams")}</> : null}{action === "accept" ? <>{input("estimated_minutes", "Estimated minutes")}{input("planned_quantity", "Planned grams")}</> : null}{action === "complete" || action === "fail" ? <>{input("actual_minutes", "Actual minutes")}{input("actual_quantity", "Actual grams")}{action === "fail" ? <>{input("percent_complete", "Percent complete")}{input("reason", "Reason")}</> : null}</> : null}{action === "reject" ? input("reason", "Reason") : null}</div><div className="sticky bottom-0 -mx-3 -mb-3 mt-3 flex flex-wrap justify-end gap-2 rounded-b-md border-t border-line bg-bg p-3"><button className="desk-button-success" disabled={pending} onClick={onSubmit}>Confirm</button><button className="desk-button-ghost" onClick={onCancel}>Cancel</button></div></div>;
+  return <div className="mt-3 rounded-md border border-accent bg-bg p-3"><h5 className="title-section capitalize">{action}</h5><div className="mt-2 grid gap-2 sm:grid-cols-2">{action === "start" ? <><select aria-label="Printer" className={`desk-input ${focusRing}`} value={values.machine_id} onChange={(event) => setValues({ ...values, machine_id: event.target.value, consumable_pool_id: "" })}><option value="">Printer</option>{printers.map((printer) => <option key={printer.id} value={printer.id}>{printer.name}</option>)}</select><select aria-label="Pool" className={`desk-input ${focusRing}`} value={values.consumable_pool_id} onChange={(event) => setValues({ ...values, consumable_pool_id: event.target.value })}><option value="">Pool</option>{pools.map((pool) => <option key={pool.id} value={pool.id}>{pool.material} {pool.color}</option>)}</select>{input("estimated_minutes", "Estimated minutes")}{input("planned_quantity", "Planned grams")}</> : null}{action === "accept" ? <>{input("estimated_minutes", "Estimated minutes")}{input("planned_quantity", "Planned grams")}</> : null}{action === "complete" || action === "fail" ? <>{input("actual_minutes", "Actual minutes")}{input("actual_quantity", "Actual grams")}{action === "fail" ? <>{input("percent_complete", "Percent complete")}{input("reason", "Reason")}</> : null}</> : null}{action === "reject" ? input("reason", "Reason") : null}{action === "cancel" ? <><CancelNotice />{input("reason", "Reason (optional)")}</> : null}</div><div className="sticky bottom-0 -mx-3 -mb-3 mt-3 flex flex-wrap justify-end gap-2 rounded-b-md border-t border-line bg-bg p-3"><button className="desk-button-success" disabled={pending} onClick={onSubmit}>Confirm</button><button className="desk-button-ghost" onClick={onCancel}>Cancel</button></div></div>;
 }
 
 function ManualUsageForm({ draft, setDraft, printers, pools, pending, onSubmit }: { draft: ServiceDraft; setDraft: Props["setDraft"]; printers: Machine[]; pools: PrinterPool[]; pending: boolean; onSubmit: () => void }) {

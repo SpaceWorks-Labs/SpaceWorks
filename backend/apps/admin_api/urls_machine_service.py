@@ -2,6 +2,7 @@ from django.urls import path
 
 from apps.admin_api.views_machine_service import (
     MachineServiceAcceptView,
+    MachineServiceCancelView,
     MachineServiceCollectView,
     MachineServiceCompleteView,
     MachineServiceFailView,
@@ -49,6 +50,11 @@ urlpatterns = [
         "machine-service/requests/<int:pk>/accept",
         MachineServiceAcceptView.as_view(),
         name="admin-machine-service-request-accept",
+    ),
+    path(
+        "machine-service/requests/<int:pk>/cancel",
+        MachineServiceCancelView.as_view(),
+        name="admin-machine-service-request-cancel",
     ),
     path(
         "machine-service/requests/<int:pk>/reject",

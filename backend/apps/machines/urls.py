@@ -10,6 +10,8 @@ from apps.machines.views_public_printer_service import (
 
 
 from .views_public_detail import PublicMachineDetailView, PublicMachineDetailListView
+from .views_public_service_status import PublicMachineServiceStatusView
+from .views_service_cancel import MemberMachineServiceCancelView, MemberMachineServiceOwnerView
 
 from .views_materials import MaterialListView, MaterialDetailView, PublicTypeIntakeView
 from .views_intake import MachineTypeIntakeView
@@ -37,4 +39,7 @@ urlpatterns = [
     path('public/<slug:makerspace_slug>/machine-service/3d-printer/uploads', PublicPrinterUploadView.as_view(), name='public-printer-service-upload'),
     path('public/<slug:makerspace_slug>/machine-service/3d-printer/requests', PublicPrinterRequestView.as_view(), name='public-printer-service-request'),
     path('public/machine-service/3d-printer/requests/<uuid:public_token>/status', PublicPrinterStatusView.as_view(), name='public-printer-service-status'),
+    path('public/machine-service/requests/<uuid:public_token>/status', PublicMachineServiceStatusView.as_view(), name='public-machine-service-status'),
+    path('member/machine-service/requests/<int:pk>/cancel', MemberMachineServiceCancelView.as_view(), name='member-machine-service-cancel'),
+    path('member/machine-service/requests/by-token/<uuid:public_token>/owner', MemberMachineServiceOwnerView.as_view(), name='member-machine-service-owner'),
 ]

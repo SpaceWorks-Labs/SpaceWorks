@@ -117,6 +117,7 @@ class MachineServiceRequest(ScopedPiiModelMixin, models.Model):
         COLLECTED = "collected", "Collected"
         REJECTED = "rejected", "Rejected"
         FAILED = "failed", "Failed"
+        CANCELLED = "cancelled", "Cancelled"
 
     bucket = models.ForeignKey(ServiceBucket, null=True, blank=True, on_delete=models.PROTECT, related_name="service_requests")
     queue = models.ForeignKey(ServiceQueue, null=True, blank=True, on_delete=models.PROTECT, related_name="service_requests")
@@ -154,6 +155,14 @@ class MachineServiceRequest(ScopedPiiModelMixin, models.Model):
     collected_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="collected_service_requests")
     collected_at = models.DateTimeField(null=True, blank=True)
     failed_at = models.DateTimeField(null=True, blank=True)
+    cancelled_at = models.DateTimeField(null=True, blank=True)
+    # Requester-notice markers: "intent reserved", never "delivered". Written once by
+    # `service_queue_notices` with a queryset update so they never touch updated_at.
+    started_notice_at = models.DateTimeField(null=True, blank=True, editable=False)
+    completed_notice_at = models.DateTimeField(null=True, blank=True, editable=False)
+    cancelled_notice_at = models.DateTimeField(null=True, blank=True, editable=False)
+    # Set by tenant import for rows that arrive accepted: their "next" notice is treated as sent.
+    imported_head_notified = models.BooleanField(default=False, editable=False)
     estimated_minutes = models.PositiveIntegerField(default=0, validators=[MinValueValidator(0)])
     actual_minutes = models.PositiveIntegerField(default=0, validators=[MinValueValidator(0)])
     fail_percent_complete = models.PositiveSmallIntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)])

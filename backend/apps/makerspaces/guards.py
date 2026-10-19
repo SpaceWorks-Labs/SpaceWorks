@@ -50,7 +50,12 @@ def require_module_locked(makerspace_or_id, module_key):
     share one lock and one ordering.
     """
     pk = makerspace_or_id.pk if isinstance(makerspace_or_id, Makerspace) else makerspace_or_id
-    locked = Makerspace.objects.select_for_update().get(pk=pk)
+    # NO KEY UPDATE still serializes creators against module installs/uninstalls (it
+    # conflicts with FOR UPDATE and itself) but not with the FOR KEY SHARE locks that
+    # deferred foreign-key checks take at COMMIT. A plain FOR UPDATE here deadlocked any
+    # workflow that commits rows referencing the makerspace while this holder waited on
+    # one of that workflow's request rows (device printer apply vs machine-service cancel).
+    locked = Makerspace.objects.select_for_update(no_key=True).get(pk=pk)
     if not module_enabled(locked, module_key):
         raise ValidationError({"module": f"{module_key} is disabled for this makerspace."})
     return locked

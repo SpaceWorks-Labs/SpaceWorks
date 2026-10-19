@@ -73,11 +73,12 @@ class MachineServiceRequestListCreateView(APIView):
             subject_id__in=[row.pk for row in rows],
         )
         payment_map = {payment.subject_id: payment for payment in payments}
+        from apps.machines.service_queue_eta import queue_snapshot_for
         return Response(
             MachineServiceRequestSerializer(
                 rows,
                 many=True,
-                context={"payments_by_subject_id": payment_map},
+                context={"payments_by_subject_id": payment_map, "queue_snapshot": queue_snapshot_for(rows)},
             ).data
         )
 

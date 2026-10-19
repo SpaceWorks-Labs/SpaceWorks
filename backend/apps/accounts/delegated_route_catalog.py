@@ -27,6 +27,7 @@ admin-machine-service-printer-typed-manual-usage admin-machine-service-report
 admin-machine-service-request-accept admin-machine-service-request-complete
 admin-machine-service-request-fail admin-machine-service-request-reject
 admin-machine-service-request-reprint admin-machine-service-request-start admin-machine-set-status
+admin-machine-service-request-cancel
 admin-machine-type-detail admin-machine-type-policy admin-machine-type-pricing
 admin-machine-type-pricing-detail admin-machine-types admin-machine-unretire admin-machine-usage
 admin-machine-warranty admin-machines admin-maintenance-log-document-detail

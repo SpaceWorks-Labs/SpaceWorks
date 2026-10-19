@@ -13,13 +13,15 @@ import { useTenant, useTenantPath } from "../../lib/tenant";
 import { formatSlug } from "./PublicInventoryParts";
 import { useTenantBootstrap } from "./usePublicInventory";
 import { MachineIntakeForm } from "./MachineIntakeForm";
+import { QueueSummary } from "../machine-service/QueueSummary";
+import type { MachineQueueSummary } from "../machine-service/types";
 import { Pagination } from "../../components/ui/Pagination";
 
 type PublicMachine = {
   id?: number;
   status_since?: string;
   training_required?: boolean | null;
-  queue?: { length: number; eta_minutes: number | null } | null;
+  queue?: MachineQueueSummary | null;
   name: string;
   machine_type: { id?: number; name: string; icon: string };
   image_url: string | null;
@@ -104,9 +106,9 @@ export function PublicMachinesPage() {
           <ListRow title={machine.name} identity={machine.image_url ? { kind: "image", src: machine.image_url } : { kind: "icon", icon: "Wrench", tone: "neutral" }}
             meta={<>{machine.usage_hours} h logged{machine.status_since ? <> · Status since <RelativeTime date={machine.status_since} /></> : null}
               {machine.training_required != null ? <span className="mt-1 block">{machine.training_required ? "Training required" : "No service training required"}</span> : null}
-              {machine.queue ? <span className="mt-1 block">{machine.queue.length} queued jobs · {machine.queue.eta_minutes == null ? "Estimate unavailable" : `About ${Math.ceil(machine.queue.eta_minutes / 60)} processing hours`}</span> : null}</>}
+              {machine.queue ? <span className="mt-1 block"><QueueSummary summary={machine.queue} /></span> : null}</>}
             right={<StatusPill label={MACHINE_STATUS[machine.status] ?? machine.status} tone={machine.status === "idle" ? "success" : machine.status === "maintenance" || machine.status === "offline" ? "warn" : "info"} />} />
-          {bootstrap?.features.includes("machines.structured_intake") && machine.id && machine.machine_type.id ? <MachineIntakeForm key={machine.id} slug={makerspaceSlug} machineId={machine.id} typeId={machine.machine_type.id} dialog /> : null}
+          {bootstrap?.features.includes("machines.structured_intake") && machine.id && machine.machine_type.id ? <MachineIntakeForm key={machine.id} slug={makerspaceSlug} machineId={machine.id} typeId={machine.machine_type.id} dialog trackingPath={token => tenantPath(`machine-service/requests/${token}`)} /> : null}
         </div>)}</div>
       </CollapsibleSection>)}</div>
       <Pagination page={page} onChange={setPage} totalPages={Math.max(1, Math.ceil((machines.data?.count ?? 0) / 24))} count={machines.data?.count} pageSize={24} disabled={machines.isFetching} />

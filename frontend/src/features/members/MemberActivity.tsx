@@ -9,9 +9,10 @@ import { MemberLoanRenew } from "./MemberLoanRenew";
 import { MemberEventCancel } from "./MemberEventCancel";
 import { MemberCalendarActions } from "./MemberCalendarActions";
 import { OfflineLoansControl } from "./memberCard/OfflineLoansControl";
+import { MemberServiceRequestRows, type MemberServiceRequest } from "../machine-service/MemberServiceRequestRows";
 
 type Loan = { request_id?: number; can_renew?: boolean; renewal_count?: number; renewal_refusal?: string | null; label: string; checked_out_at: string; due_at: string | null; overdue: boolean };
-type MachineServiceRequest = { machine_type?: string; title: string; status: string; queue_position: number | null };
+type MachineServiceRequest = MemberServiceRequest;
 type Booking = { space_name: string; starts_at: string; ends_at: string; status: string };
 type Registration = {
   registration_id: number;
@@ -146,8 +147,7 @@ export function MemberActivityPanel({ activity, makerspaceId, makerspaceSlug, ma
   const otherServiceRequests = (activity.machine_service_requests ?? []).filter(request => request.machine_type !== "3d_printer");
   // An event counts as past once it has ENDED, so a running event (and its check-in QR) stays under "Going".
   const registrations = (activity.event_registrations ?? []).filter(row => !eventPeriod || (eventPeriod === "past") === (new Date(row.ends_at ?? row.starts_at).getTime() < Date.now()));
-  const requestRows = (rows: MachineServiceRequest[]) => rows.length ? rows.map((item, index) => <ListRow key={`${item.title}-${index}`} title={item.title}
-    meta={item.queue_position ? `Queue ${item.queue_position}` : undefined} right={<StatusPill label={item.status.replace(/_/g, " ")} />} />) : <Empty />;
+  const requestRows = (rows: MachineServiceRequest[]) => <MemberServiceRequestRows rows={rows} makerspaceSlug={makerspaceSlug} />;
   return <div className="grid gap-6">
     {(section === "all" || section === "loans") && modules.includes("request_workflow") ? <OfflineLoansControl key={makerspaceId} space={makerspaceSlug} loans={activity.active_hardware_loans} /> : null}
     {section === "all" || section === "overview" ? <Section title="My activity"><p className="text-sm text-muted">{activity.currently_checked_in ? "You are currently checked in." : "You are not currently checked in."}</p>{activity.accountability.waiver_acceptance_required ? <p className="text-sm text-danger">Accept the current waiver before making facility requests.</p> : null}</Section> : null}

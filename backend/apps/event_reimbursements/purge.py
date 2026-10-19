@@ -78,11 +78,21 @@ def delete(makerspace, cursor):
                 operation_id=first.closure_operation_id)
             record(None, "event.reimbursement.module_purge_no_liability", makerspace=makerspace, target=claim,
                 meta={"claim_id": claim.pk, "attachment_count": unbound.count(), "reason_code": "module_purge_no_liability"})
-    from apps.payments.event_payouts.coordination import detach_locked
-    obligations = EventPayoutObligation.objects.select_for_update().filter(makerspace=makerspace,
-        source_kind="event_reimbursement", source_uuid__in=claims.values("uuid")).order_by("pk")
+    from uuid import NAMESPACE_URL, uuid5
+    from apps.payments.event_payouts.purge import detach_locked
+    from .config_models import ReimbursementProgramme as Programme
+    from .payout_facts import facts_for
+    obligations = list(EventPayoutObligation.objects.select_for_update().filter(makerspace=makerspace,
+        source_kind="event_reimbursement", source_uuid__in=claims.values("uuid")).order_by("pk"))
+    # Capture full canonical facts before the domain rows disappear; core keeps them as
+    # retained-only evidence that finance must acknowledge before the next payout.
+    facts = {}
     for obligation in obligations:
-        detach_locked(obligation)
+        claim = claims.select_related("event", "member", "award__request").get(uuid=obligation.source_uuid)
+        facts[obligation.pk] = facts_for(claim=claim, programme=Programme.objects.get(event=claim.event),
+                                         obligation=obligation)
+    detach_locked(obligations, actor=None, facts_by_obligation=facts,
+                  operation_id=uuid5(NAMESPACE_URL, f"spaceworks:reimbursement-module-purge:{makerspace.pk}"))
     # No finance object is collected/deleted. Core keeps its original retention
     # anchors and durable all-version cleanup locators after the FK graph goes.
     count, labels = ReimbursementProgramme.objects.filter(event__makerspace=makerspace).delete()

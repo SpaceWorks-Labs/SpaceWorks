@@ -11,7 +11,7 @@ from .claim_policy import validate_decisions
 from .attendance import evidence, participating
 from .eligibility import project_evidence
 from .decision_summary import build
-from .ledger_bridge import lock_obligation, preserve_locked
+from .ledger_bridge import lock_obligation, next_core_eligibility_revision, preserve_locked
 from .transactions import command, changed
 from .notices import enqueue_locked
 
@@ -80,7 +80,7 @@ def decide(*, request, event_id, claim_id, data, correction=False):
                           reason_code=data["reason_code"], decision=decision)
             if obligation_id:
                 summary = build(claim=claim, decision=decision, line_decisions=entries,
-                    attendance=attendance, eligibility_revision=max(1, (existing.eligibility_revision + 1) if existing else 1))
+                    attendance=attendance, eligibility_revision=next_core_eligibility_revision(existing))
                 preserve_locked(ctx=ctx, claim=claim, decision=decision, summary=summary, attendance=attendance, existing=existing)
             changed(award, state="closed", closed_at=timezone.now(), reason_code="claim_decided")
             appeal_due = decision.decided_at + timedelta(days=7) if data["outcome"] in ("rejected", "partially_approved") else None

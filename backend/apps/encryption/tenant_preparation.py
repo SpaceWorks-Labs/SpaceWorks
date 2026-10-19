@@ -59,7 +59,7 @@ def prepared_tenant_read_key(makerspace_id, version):
 def prepare_tenant_key(makerspace_id, *, create=True):
     """Reuse the broker/AAD protocol; publish a wrapped candidate after I/O."""
     if connection.in_atomic_block:
-        raise PiiKeyUnavailable("Prepare the tenant key before starting the command.")
+        raise PiiKeyUnavailable()  # prepare the tenant key before starting the command
     from .services import configured_broker, unwrap_dek, _audit
     from .write_fence import assert_mapped_write_allowed
     from apps.makerspaces.models import Makerspace

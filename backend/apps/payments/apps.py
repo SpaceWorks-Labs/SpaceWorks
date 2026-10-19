@@ -10,6 +10,8 @@ class PaymentsConfig(AppConfig):
         register_retained_pii("payments.")
         from .notifications_p2 import register
         register()
+        from .event_payout_bridge import install
+        install()
 
     # No `register_separable_app`: the payment ledger is permanently core. Its surfaces
     # are the record of money owed and taken, and a deployment that cannot read or settle

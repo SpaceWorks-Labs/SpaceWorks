@@ -16,7 +16,8 @@ from .wire import canonical, fingerprint
 
 
 def create_locked(*, makerspace, event, owner, actor, operation_id, decision_summary,
-                  expected_version=0, expected_revision_sequence=0):
+                  expected_version=0, expected_revision_sequence=0, obligation_id=None):
+    """``obligation_id`` lets the domain pin the liability identity it records first."""
     require(connection.in_atomic_block, "locked_transaction_required")
     assert_account_fence_held(actor.pk)
     if owner is not None:
@@ -43,11 +44,13 @@ def create_locked(*, makerspace, event, owner, actor, operation_id, decision_sum
         if row is None:
             require(expected_version == expected_revision_sequence == 0, "stale_version")
             require(snapshot["totals"]["approved_minor"] > 0, "positive_liability_required")
-            row = EventPayoutObligation.objects.create(makerspace=makerspace, owner_member=owner, event=event,
+            pinned = {"id": UUID(str(obligation_id))} if obligation_id else {}
+            row = EventPayoutObligation.objects.create(**pinned, makerspace=makerspace, owner_member=owner, event=event,
                 event_id_snapshot=event.pk, event_title_snapshot=event.title, source_uuid=source_uuid,
                 source_decision_revision=snapshot["source"]["decision_sequence"],
                 currency=snapshot["award"]["currency"], approved_minor=snapshot["totals"]["approved_minor"])
         else:
+            require(obligation_id is None or row.pk == UUID(str(obligation_id)), "decision_scope_mismatch")
             require(row.makerspace_id == makerspace.pk and row.owner_member_id == owner.pk
                 and row.event_id_snapshot == event.pk and row.currency == snapshot["award"]["currency"],
                 "decision_scope_mismatch")

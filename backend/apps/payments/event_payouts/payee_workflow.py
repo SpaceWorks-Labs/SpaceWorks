@@ -46,7 +46,8 @@ def put(*, request, obligation_id, data):
             if not old.entries.exists():
                 old.terminal_financial_at, old.closure_reason_code = timezone.now(), "superseded_unused"
                 old.purge_due_at = old.terminal_financial_at + timedelta(days=30)
-            old.save()
+            # Never rewrite the immutable envelope: a full save would re-encrypt it.
+            old.save(update_fields=["state", "version", "terminal_financial_at", "closure_reason_code", "purge_due_at"])
             if old.closure_reason_code == "superseded_unused":
                 from .attachment_workflow import close_binding_locked
                 close_binding_locked(makerspace_id=obligation.makerspace_id, binding_kind="payee", binding_uuid=old.pk,
@@ -96,7 +97,7 @@ def review(*, request, obligation_id, data, verified):
             reason_code=data.get("reason_code", "verified"), note=data.get("note", ""), operation_id=data["operation_id"])
         row.verified_by, row.verified_at = (ctx.actor, timezone.now()) if verified else (None, None)
         row.version += 1
-        row.save()
+        row.save(update_fields=["verified_by", "verified_at", "version"])
         ctx.obligation.version += 1
         ctx.obligation.save(update_fields=["version"])
         record(ctx.actor, "finance.event_payout.payee_verified" if verified else "finance.event_payout.payee_correction",
@@ -127,7 +128,7 @@ def close_locked(obligation, *, terminal_at, reason_code):
             row.paid_closed_at = terminal_at if reason_code == "fully_paid" else None
             row.purge_due_at = terminal_at + timedelta(days=30)
             row.version += 1
-            row.save()
+            row.save(update_fields=["terminal_financial_at", "closure_reason_code", "paid_closed_at", "purge_due_at", "version"])
             record(None, "finance.event_payout.payee_closed", makerspace=obligation.makerspace, target=row,
                 meta={"payee_revision_id": str(row.pk), "reason_code": reason_code})
 

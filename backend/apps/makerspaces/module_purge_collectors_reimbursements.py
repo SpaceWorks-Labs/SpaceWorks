@@ -23,6 +23,20 @@ STAGE_PII_LABELS = (
 )
 
 
+def finance_key_context(makerspace, key):
+    """Prepared outside the purge transaction: the preflight reads mandatory finance
+    envelopes, whose key is never refilled under row locks. No active key means no
+    envelope exists, and none is created here."""
+    from contextlib import nullcontext
+    if key not in ("events", "event_reimbursements"):
+        return nullcontext()
+    from apps.encryption.models import MakerspaceEncryptionKey
+    from apps.encryption.tenant_preparation import prepare_tenant_key, tenant_key_context
+    if not MakerspaceEncryptionKey.objects.filter(makerspace_id=makerspace.pk, status="active").exists():
+        return nullcontext()
+    return tenant_key_context(prepare_tenant_key(makerspace.pk, create=False))
+
+
 def purge_preflight(makerspace, key):
     """IDs/counts only; raise before any key collection or row deletion when refused."""
     if key not in ("events", "event_reimbursements"):

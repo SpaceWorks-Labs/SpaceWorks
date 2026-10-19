@@ -38,7 +38,9 @@ def delete_locked(*, makerspace, module_key):
     total, labels = 0, set()
     for model in (StageFormAsset, StageFormResponseRevision, StageFormResponse, StageFormAssignment,
                   StageActivationJob, StageReconcileCursor, EventStageMilestone, EventStageForm):
-        count, deleted = model._base_manager.filter(event__makerspace=makerspace).delete()
+        # Response revisions reach their host through the response; every other row has an event.
+        host = "response__event__makerspace" if model is StageFormResponseRevision else "event__makerspace"
+        count, deleted = model._base_manager.filter(**{host: makerspace}).delete()
         total += count
         labels.update(deleted)
     # StageFileCleanup intentionally has no FK and is never deleted here.

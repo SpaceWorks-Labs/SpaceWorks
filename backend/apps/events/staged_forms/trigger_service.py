@@ -144,12 +144,14 @@ def schedule(definition, *, subject, triggered_at):
 
 
 def applicable(definition, subject, *, now=None, include_future=False):
-    now = now or timezone.now()
     if definition.state != "published" or definition.event_id != subject.event.pk:
         return None
     triggered = trigger_at(definition, subject)
     if triggered is None:
         return None
+    # Read the clock after the trigger: an inline (virtual) child triggers "now", and a
+    # clock read taken first would place that opening in the future and refuse it.
+    now = now or timezone.now()
     # Publishing does not retroactively activate someone who passed the trigger.
     # Explicit catch-up creates an assignment with its reviewed future deadline.
     if triggered < definition.published_at:

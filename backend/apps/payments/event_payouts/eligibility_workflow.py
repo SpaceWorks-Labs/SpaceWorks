@@ -103,3 +103,28 @@ def hold(*, request, obligation_id, data, release=False):
             from .tasks import queue_retention
             queue_retention(obligation_id=row.pk)
         return ctx.finish(hold_id=str(marker.pk))
+
+
+def hold_for_domain_review_locked(obligation, *, actor, operation_id, reason_code):
+    """Domain review (appeal, cancellation, attendance or receipt change) pauses payment.
+
+    Caller holds the domain parents and then this obligation's lock. Idempotent per
+    operation; it appends an eligibility hold and bumps the obligation version so any
+    readiness or export snapshot is stale. It never records or reverses a payout.
+    """
+    require(actor is not None, "hold_actor_required")
+    prior = PayoutHold.objects.filter(operation_id=operation_id).first()
+    if prior is not None:
+        require(prior.obligation_id == obligation.pk and prior.action == "hold"
+                and prior.reason_code == reason_code, "idempotency_conflict")
+        return prior
+    marker = PayoutHold.objects.create(obligation=obligation, eligibility_revision=obligation.eligibility_revision,
+        kind="eligibility", action="hold", actor=actor, reason_code=reason_code, operation_id=operation_id)
+    obligation.eligibility_status, obligation.hold_reason_code = "held", reason_code
+    obligation.version += 1
+    obligation.save(update_fields=["eligibility_status", "hold_reason_code", "version"])
+    record(actor, "finance.event_payout.held", makerspace=obligation.makerspace, target=marker,
+           meta={"obligation_id": str(obligation.pk), "kind": "eligibility", "reason_code": reason_code})
+    from .notices import enqueue_locked
+    enqueue_locked(obligation, "held")
+    return marker

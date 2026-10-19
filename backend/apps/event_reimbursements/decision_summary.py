@@ -41,7 +41,9 @@ def build(*, claim, decision, line_decisions, attendance, eligibility_revision):
                      "reason_code": decision.reason_code, "reason": decision.reason},
         "award": {"uuid": str(award.uuid), "cap_minor": award.amount_minor, "currency": award.currency,
             "policy_revision": award.calculation_snapshot.get("policy_revision", award.rule_revision),
-            "rule_revision": award.rule_revision, "applied_rules": award.calculation_snapshot},
+            # The frozen G1 shape carries only the per-category caps the decision applied.
+            "rule_revision": award.rule_revision,
+            "applied_rules": {"category_caps": dict(award.calculation_snapshot.get("category_caps", {}))}},
         "totals": {"claimed_minor": decision.revision.total_minor, "eligible_minor": sum(l.converted_minor for l in
             decision.revision.lines.all()), "approved_minor": decision.approved_total_minor}, "lines": lines,
         "eligibility": {"registration_id": attendance["registration_id"], "attendance_revision": attendance["attendance_revision"],

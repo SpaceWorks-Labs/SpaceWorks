@@ -34,21 +34,21 @@ def owned_asset(*, event, owner_id, asset_id):
 
 def create(*, request, event, data):
     claim = require_claim(event=event, owner_id=request.user.pk, claim_uuid=data["claim_uuid"])
-    from apps.payments.event_payouts.attachment_workflow import create_claim_upload
-    # Core re-enters the installed claim binding provider under domain locks before
-    # persisting/promoting. This preflight alone never authorizes a final write.
+    from .receipt_commands import create_claim_upload
+    # receipt_commands re-checks this binding under the event and claim locks before
+    # core persists or finalizes anything. This preflight alone never authorizes a write.
     return create_claim_upload(request=request, event_id=event.pk, claim_uuid=claim.uuid, data=data)
 
 
 def complete(*, request, event, asset_id, data):
     row = owned_asset(event=event, owner_id=request.user.pk, asset_id=asset_id)
     require_claim(event=event, owner_id=request.user.pk, claim_uuid=row.binding_uuid)
-    from apps.payments.event_payouts.attachment_workflow import complete_claim_upload
+    from .receipt_commands import complete_claim_upload
     return complete_claim_upload(request=request, event_id=event.pk, asset_id=asset_id, data=data)
 
 
 def delete(*, request, event, asset_id, data):
     row = owned_asset(event=event, owner_id=request.user.pk, asset_id=asset_id)
     require_claim(event=event, owner_id=request.user.pk, claim_uuid=row.binding_uuid)
-    from apps.payments.event_payouts.attachment_workflow import delete_claim_upload
+    from .receipt_commands import delete_claim_upload
     return delete_claim_upload(request=request, event_id=event.pk, asset_id=asset_id, data=data)

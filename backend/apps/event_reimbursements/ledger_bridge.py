@@ -14,13 +14,17 @@ def lock_obligation(claim, *, expected_version):
     return row
 
 
+def next_core_eligibility_revision(existing):
+    """Core bumps the obligation's eligibility revision once per decision; match it."""
+    if existing is not None:
+        return existing.eligibility_revision + 1
+    return EventPayoutObligation._meta.get_field("eligibility_revision").get_default() + 1
+
+
 def preserve_locked(*, ctx, claim, decision, summary, attendance, existing):
-    from apps.payments.event_payouts.obligation_workflow import create_locked
-    # Model-free arguments: core must never import an Events/R service or row.
-    return create_locked(makerspace=ctx.event.makerspace, actor=ctx.actor,
-        obligation_id=decision.core_obligation_id, owner_member_id=claim.member_id,
-        event_id=ctx.event.pk, event_title=ctx.event.title, source_uuid=claim.uuid,
-        decision_uuid=decision.uuid, decision_sequence=decision.sequence,
-        approved_minor=decision.approved_total_minor, currency=decision.currency,
-        summary=summary, eligibility_evidence=attendance, operation_id=ctx.data["operation_id"],
-        command_digest=ctx.digest, expected_version=existing.version if existing else None)
+    from apps.payments.event_payouts.decision_workflow import create_locked
+    # Core receives rows and the frozen G1 summary only; it never imports an Events/R service.
+    return create_locked(makerspace=ctx.event.makerspace, event=ctx.event, owner=claim.member, actor=ctx.actor,
+        operation_id=ctx.data["operation_id"], decision_summary=summary, obligation_id=decision.core_obligation_id,
+        expected_version=existing.version if existing else 0,
+        expected_revision_sequence=existing.current_revision.sequence if existing else 0)

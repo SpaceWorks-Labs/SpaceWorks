@@ -106,7 +106,7 @@ def get_dek(makerspace_id, version, *, mandatory=False):
         return prepared
     if (mandatory or domain_locked()) and connection.in_atomic_block:
         # Mandatory envelopes and locked programme domains never refill the cache.
-        raise PiiKeyUnavailable("Prepare the tenant key before starting the command.")
+        raise PiiKeyUnavailable()  # prepare the tenant key before starting the command
     return unwrap_dek(key_row)
 
 

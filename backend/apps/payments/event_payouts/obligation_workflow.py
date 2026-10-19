@@ -28,7 +28,7 @@ def project_settlement_locked(obligation, *, effective_paid, operation_id):
                 continue
             row.terminal_financial_at = row.purge_due_at = row.paid_closed_at = None
             row.closure_reason_code, row.version = "", row.version + 1
-            row.save()
+            row.save(update_fields=["terminal_financial_at", "purge_due_at", "paid_closed_at", "closure_reason_code", "version"])
             record(None, "finance.event_payout.payee_reopened", makerspace=obligation.makerspace, target=row,
                    meta={"payee_revision_id": str(row.pk)})
         reopen_locked(obligation)

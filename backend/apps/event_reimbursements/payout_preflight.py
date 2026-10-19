@@ -27,17 +27,28 @@ def current_evidence(*, claim, programme):
     return value
 
 
+def _unchanged(stored, facts):
+    """Stored evidence is either the decision's G1 block or a published Facts dict."""
+    def strip(evidence):
+        return {key: value for key, value in evidence.items() if key != "core_eligibility_revision"}
+    if isinstance(stored, dict) and "evidence" in stored:
+        current = facts.as_dict()
+        return {**stored, "evidence": strip(stored["evidence"])} == {**current, "evidence": strip(current["evidence"])}
+    return False
+
+
 def publish_claim_locked(*, claim, programme, actor):
     """G invokes after canonical attendance/correction, while event/parents lock."""
-    value = current_evidence(claim=claim, programme=programme)
     obligation = EventPayoutObligation.objects.select_for_update().filter(source_uuid=claim.uuid,
         source_kind="event_reimbursement", makerspace_id=claim.event.makerspace_id).first()
     if obligation is None:
         return None
-    if obligation.eligibility_evidence != value:
-        publish_locked(obligation, evidence_revision=obligation.eligibility_revision + 1, evidence=value,
-            eligible=value["eligible"], reason_code="attendance_current" if value["eligible"] else "attendance_invalidated", actor=actor)
-        if not value["eligible"]:
+    from .payout_facts import facts_for
+    facts = facts_for(claim=claim, programme=programme, obligation=obligation)
+    if not _unchanged(obligation.eligibility_evidence, facts):
+        publish_locked(obligation, evidence_revision=obligation.eligibility_revision + 1, evidence=facts.as_dict(),
+            eligible=facts.eligible, reason_code="attendance_current" if facts.eligible else "attendance_invalidated", actor=actor)
+        if not facts.eligible:
             from apps.payments.event_payouts.eligibility_workflow import hold_for_domain_review_locked
             hold_for_domain_review_locked(obligation, actor=actor, operation_id=uuid4(), reason_code="attendance_invalidated")
     return {"eligibility_revision": obligation.eligibility_revision, "status": obligation.eligibility_status}

@@ -55,7 +55,9 @@ def purge_module(makerspace, key, actor):
     audit.record(actor, "makerspace.module_purge_started", makerspace=None, target=None, meta=meta)
 
     sources = presentation_purge_scope(makerspace.pk, actor=actor) if key == "membership" else nullcontext()
-    with sources, transaction.atomic():
+    from .module_purge_collectors_reimbursements import finance_key_context
+    finance_keys = finance_key_context(makerspace, key)
+    with sources, finance_keys, transaction.atomic():
         locked = makerspace.__class__.objects.select_for_update().get(pk=makerspace.pk)
         # Re-check under the lock: an install could have committed since `_resolve`.
         if plan.key in (locked.enabled_modules or []):

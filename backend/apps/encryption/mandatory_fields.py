@@ -17,4 +17,4 @@ def assert_key_unreferenced(makerspace_id, version):
         if model.objects.filter(**{
             path: makerspace_id, f"{item.field_name}__startswith": f"pii:gcm:v1:{version}:",
         }).exists():
-            raise PiiKeyUnavailable("A mandatory encrypted field still references this key.")
+            raise PiiKeyUnavailable()  # a mandatory encrypted field still references this key

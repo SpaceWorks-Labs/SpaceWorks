@@ -14,8 +14,6 @@ PUBLIC_PROFILE_FIELDS = frozenset(
 
 @transaction.atomic
 def update_profile(organization, *, actor, **changes):
-    from apps.makerspaces.public_page_authority import reject_platform
-    reject_platform(actor)
     unknown = set(changes) - PUBLIC_PROFILE_FIELDS
     if unknown:
         raise ValidationError({field: "This field cannot be edited here." for field in unknown})

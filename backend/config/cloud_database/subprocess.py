@@ -31,9 +31,11 @@ def postgres_environment(spec, *, environ=None):
             values[1] = values[1] or 5432
             stream.write(":".join(map(_escape, values)) + "\n")
         environment["PGPASSFILE"] = filename
+        # libpq environment names; two differ from "PG" + upper(parameter).
+        renamed = {"channel_binding": "PGCHANNELBINDING", "application_name": "PGAPPNAME"}
         for name in ("sslmode", "sslrootcert", "sslcert", "sslkey", "sslcrl", "sslcrldir", "channel_binding", "connect_timeout", "options", "application_name"):
             if name in parameters:
-                environment["PG" + name.upper()] = str(parameters[name])
+                environment[renamed.get(name, "PG" + name.upper())] = str(parameters[name])
         arguments = []
         for key, flag in (("host", "--host"), ("port", "--port"), ("dbname", "--dbname"), ("user", "--username")):
             if key in parameters:

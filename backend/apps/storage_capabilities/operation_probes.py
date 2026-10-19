@@ -100,7 +100,9 @@ def probe_object_lock(client, contract, *, mode, retention_seconds=60):
             checkpoint()
             client.delete_object(Bucket=bucket, Key=key, VersionId=version)
         except ClientError as exc:
-            if exc.response.get("Error", {}).get("Code") != "AccessDenied":
+            # AWS answers AccessDenied; MinIO answers InvalidRequest ("Object is WORM
+            # protected"). The head_object below still proves the version survived.
+            if exc.response.get("Error", {}).get("Code") not in {"AccessDenied", "InvalidRequest"}:
                 raise
         else:
             raise CapabilityError("storage_object_lock_delete_not_denied")

@@ -97,4 +97,9 @@ APPLICATION_FUNCTIONS = frozenset({
     "pii_fence_printer_job",
     "printing_filament_adjustment_reject_mutation",
     "service_request_consumption_reject_mutation",
+    # Search-vector triggers named by apps.inventory.search.vector_trigger_sql
+    # (f"{trigger_name}_fn") in events 0022, inventory 0010 and machines 0023.
+    "event_search_vector_trg_fn",
+    "inventoryproduct_search_vector_trg_fn",
+    "machine_search_vector_trg_fn",
 })

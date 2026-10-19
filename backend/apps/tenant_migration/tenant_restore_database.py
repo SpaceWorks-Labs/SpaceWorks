@@ -232,7 +232,8 @@ class PostgresSiblingLifecycle:
         from apps.backup.postgres_client import run_client
         try:
             run_client("pg_restore", ["--exit-on-error", "--no-owner", "--no-acl", str(Path(dump_path))],
-                       spec=database_spec(sibling.database_url), major=self.target_major, timeout=3600)
+                       spec=database_spec(sibling.database_url), major=self.target_major, timeout=3600,
+                       binary=client_binary("pg_restore", self.target_major))
         except Exception:
             raise TenantRestoreRefused("pg_restore failed for the empty sibling.") from None
 

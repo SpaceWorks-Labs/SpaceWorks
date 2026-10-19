@@ -29,7 +29,7 @@ class Migration(migrations.Migration):
             ),
         ]}),
         migrations.CreateModel(name='ManagedWriterBoundary', fields=[
-                ('id', models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)),
+                ('id', models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, serialize=False)),
                 ('generation', models.PositiveBigIntegerField(editable=False, db_index=True)),
                 ('category', models.CharField(max_length=24, editable=False)),
                 ('started_at', models.DateTimeField(auto_now_add=True)),

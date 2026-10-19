@@ -79,17 +79,29 @@ def client_binary(tool, major=None):
     )
 
 
-def run_client(tool, arguments, *, spec, major=None, timeout=3600):
+# PostgreSQL client tools inherit nothing else from the web/worker process: no
+# DATABASE_URL, SECRET_KEY, storage or provider credentials.
+_CLIENT_PARENT_ENV = frozenset({
+    "LANG", "LC_ALL", "LC_CTYPE", "PATH", "SSL_CERT_DIR", "SSL_CERT_FILE", "TZ",
+})
+
+
+def run_client(tool, arguments, *, spec, major=None, timeout=3600, binary=None):
     """Shared subprocess boundary: TLS retained, passfile removed, stderr private."""
     from config.cloud_database.subprocess import postgres_environment
 
     forbidden = {"-d", "--dbname", "-h", "--host", "-p", "--port", "-U", "--username", "--maintenance-db"}
     if any(argument.split("=", 1)[0] in forbidden for argument in arguments):
         raise PostgresClientUnavailable("Pass PostgreSQL connection facts through the validated spec only.")
-    binary = client_binary(tool, major)
+    # A caller that already resolved the version-matched binary may pass it in.
+    binary = binary or client_binary(tool, major)
     with postgres_environment(spec) as (connection_args, environment):
         if tool in {"createdb", "dropdb"}:
             connection_args = ["--maintenance-db" if value == "--dbname" else value for value in connection_args]
+        # postgres_environment already dropped inherited PG*; it sets only the
+        # validated PG* values and the private PGPASSFILE.
+        environment = {key: value for key, value in environment.items()
+                       if key.startswith("PG") or key in _CLIENT_PARENT_ENV}
         try:
             return subprocess.run(
                 [binary, *connection_args, *arguments], env=environment,

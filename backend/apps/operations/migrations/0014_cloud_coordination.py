@@ -29,7 +29,7 @@ class Migration(migrations.Migration):
             models.CheckConstraint(condition=models.Q(generation__gte=0), name="cloud_task_generation_valid"),
         ], 'indexes': [models.Index(fields=["status", "next_due_at"], name="cloud_task_due")]}),
         migrations.CreateModel(name='CloudTickRun', fields=[
-                ('id', models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)),
+                ('id', models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, serialize=False)),
                 ('started_at', models.DateTimeField(default=timezone.now, db_index=True)),
                 ('finished_at', models.DateTimeField(null=True, db_index=True)),
                 ('duration_ms', models.PositiveIntegerField(default=0)),
@@ -47,7 +47,7 @@ class Migration(migrations.Migration):
                 models.Q(finished_at__gte=models.F("started_at"))), name="cloud_tick_time_order"),
         ], 'indexes': [models.Index(fields=["status", "started_at"], name="cloud_tick_status_start")]}),
         migrations.CreateModel(name='CloudTickRateWindow', fields=[
-                ('key', models.CharField(max_length=32, primary_key=True)),
+                ('key', models.CharField(max_length=32, primary_key=True, serialize=False)),
                 ('window', models.DateTimeField()),
                 ('hits', models.PositiveIntegerField(default=0)),
             ], options={'constraints': [
@@ -116,7 +116,7 @@ class Migration(migrations.Migration):
                 ('cap_verified_on', models.DateField(null=True)),
             ], options={'indexes': [models.Index(fields=["metric", "scope", "makerspace", "-sampled_at"], name="cloud_usage_latest")]}),
         migrations.CreateModel(name='CloudObjectUsageReceipt', fields=[
-                ('id', models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)),
+                ('id', models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, serialize=False)),
                 ('operation_key', models.CharField(max_length=128, unique=True)),
                 ('makerspace', models.ForeignKey("makerspaces.Makerspace", null=True, on_delete=models.CASCADE)),
                 ('bucket_alias', models.CharField(max_length=100)),

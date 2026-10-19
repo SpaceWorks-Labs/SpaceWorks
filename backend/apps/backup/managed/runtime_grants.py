@@ -25,8 +25,8 @@ def apply_managed_grants(cursor, runtime_role, tables):
         cursor.execute(sql.SQL("REVOKE ALL ON TABLE public.{} FROM {}").format(sql.Identifier(table), role))
         cursor.execute(sql.SQL("GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.{} TO {}").format(sql.Identifier(table), role))
         cursor.execute(
-            "SELECT pg_get_serial_sequence(format('public.%I', %s), attname) "
-            "FROM pg_attribute WHERE attrelid = format('public.%I', %s)::regclass "
+            "SELECT pg_get_serial_sequence(format('public.%%I', %s), attname) "
+            "FROM pg_attribute WHERE attrelid = format('public.%%I', %s)::regclass "
             "AND attnum > 0 AND NOT attisdropped", [table, table],
         )
         for sequence, in cursor.fetchall():

@@ -101,7 +101,8 @@ def run_release(*, adopt=False):
         from django.db import connection, transaction
         from apps.audit.services import record
         from .models import ManagedCaptureState, ManagedDeploymentState
-        from apps.backup.models import DeploymentDatabaseIdentity, DeploymentRecoveryState
+        from apps.backup.models import DeploymentRecoveryState
+        from apps.backup.models_host_identity import DeploymentDatabaseIdentity
 
         guard.assert_valid()
         def fenced_query(execute, sql, params, many, context):

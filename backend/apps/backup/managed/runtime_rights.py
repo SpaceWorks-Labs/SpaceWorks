@@ -24,11 +24,11 @@ def grant_required_extensions(cursor, runtime_role):
 def prove_runtime_rights(cursor, tables):
     for table in sorted(tables):
         cursor.execute(
-            "SELECT has_table_privilege(current_user, format('public.%I', %s), 'SELECT') "
-            "AND has_table_privilege(current_user, format('public.%I', %s), 'INSERT') "
-            "AND has_table_privilege(current_user, format('public.%I', %s), 'UPDATE') "
-            "AND has_table_privilege(current_user, format('public.%I', %s), 'DELETE'), "
-            "has_table_privilege(current_user, format('public.%I', %s), 'TRUNCATE,REFERENCES,TRIGGER')",
+            "SELECT has_table_privilege(current_user, format('public.%%I', %s), 'SELECT') "
+            "AND has_table_privilege(current_user, format('public.%%I', %s), 'INSERT') "
+            "AND has_table_privilege(current_user, format('public.%%I', %s), 'UPDATE') "
+            "AND has_table_privilege(current_user, format('public.%%I', %s), 'DELETE'), "
+            "has_table_privilege(current_user, format('public.%%I', %s), 'TRUNCATE,REFERENCES,TRIGGER')",
             [table] * 5,
         )
         row = cursor.fetchone()

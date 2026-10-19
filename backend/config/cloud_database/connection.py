@@ -73,7 +73,7 @@ def validate_transport(parameters, mode, *, managed=False):
 
 def database_spec(url, *, mode=None, managed=False, environ=None, statement_timeout_ms=30000):
     source = os.environ if environ is None else environ
-    allowed_pg = {"PGSSLMODE", "PGSSLROOTCERT", "PGSSLCERT", "PGSSLKEY", "PGSSLCRL", "PGCHANNEL_BINDING", "PGCONNECT_TIMEOUT"}
+    allowed_pg = {"PGSSLMODE", "PGSSLROOTCERT", "PGSSLCERT", "PGSSLKEY", "PGSSLCRL", "PGCHANNELBINDING", "PGCONNECT_TIMEOUT"}
     if managed and any(name.upper().startswith("PG") and name.upper() not in allowed_pg for name in source):
         raise DatabaseConfigurationError("Remove inherited libpq overrides; configure the validated database URL/TLS fields.")
     mode = mode if mode is not None else source.get("DATABASE_CONNECTION_MODE", "direct" if not managed else "")
@@ -81,9 +81,12 @@ def database_spec(url, *, mode=None, managed=False, environ=None, statement_time
         parameters = parse_dsn(url)
     except Exception:
         raise DatabaseConfigurationError("PostgreSQL connection configuration is invalid.") from None
-    for name in ("sslmode", "sslrootcert", "sslcert", "sslkey", "sslcrl", "channel_binding"):
-        if name not in parameters and source.get("PG" + name.upper()):
-            parameters[name] = source["PG" + name.upper()]
+    # libpq's environment names (channel_binding is PGCHANNELBINDING, no underscore).
+    for name, variable in (("sslmode", "PGSSLMODE"), ("sslrootcert", "PGSSLROOTCERT"),
+                           ("sslcert", "PGSSLCERT"), ("sslkey", "PGSSLKEY"),
+                           ("sslcrl", "PGSSLCRL"), ("channel_binding", "PGCHANNELBINDING")):
+        if name not in parameters and source.get(variable):
+            parameters[name] = source[variable]
     if parameters.get("options"):
         raise DatabaseConfigurationError("Pass timeouts through the validated builder, not URL options.")
     try:

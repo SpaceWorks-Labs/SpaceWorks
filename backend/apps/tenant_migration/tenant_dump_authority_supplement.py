@@ -14,7 +14,8 @@ def _same(label, names, disposition, reason):
 
 
 SUPPLEMENTAL_AUTHORITY_ENTRIES = (
-    *_same("integrations.NotificationMediaGrant", "id delivery document token_digest expires_at consumed_at", D.DROP,
+    *_same("integrations.NotificationMediaGrant", "id delivery document certificate storage_makerspace source_revision "
+           "recipient_id_snapshot integration_generation integration_identity token_digest expires_at consumed_at", D.DROP,
            "Single-use source-local document disclosure authority never travels."),
     *_same("integrations.EmailLog", "source_kind source_id source_metadata", D.DROP, "Source delivery identity is omitted telemetry."),
     *_same('bookings.BookableSpace',

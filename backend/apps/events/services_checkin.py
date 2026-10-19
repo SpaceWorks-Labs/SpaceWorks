@@ -107,7 +107,8 @@ def mark_attended_locked(event, locked, *, actor, source=EventCheckInEvent.Sourc
     check_in.save()
     locked.status = EventRegistration.Status.ATTENDED
     locked.version += 1
-    locked.save(update_fields=["status", "version"])
+    from .attendance_payout_bridge import attended_locked, publish_payout_eligibility_locked
+    locked.save(update_fields=["status", "version", *attended_locked(locked)])
     from .hackathons.admission_lifecycle import attendance_changed_locked
     from .programme_locks import current_locks
     attendance_changed_locked(event=event, registration=locked, actor=actor, locks=current_locks(event.pk))
@@ -127,6 +128,7 @@ def mark_attended_locked(event, locked, *, actor, source=EventCheckInEvent.Sourc
             "station_version": station_version,
         },
     )
+    publish_payout_eligibility_locked(event=event, registration=locked, actor=actor)
     services.notify_event_lifecycle(event, "registration_attended", locked.pk)
     # Station sync always supplies a reported timestamp, even for live scans.
     # The bridge rechecks reported/recorded freshness and attendance after commit.

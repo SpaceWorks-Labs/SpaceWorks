@@ -8,6 +8,8 @@ from .audit_references_targets import AuditReference, AuditReferenceDisposition
 _INERT = AuditReference(AuditReferenceDisposition.SOURCE_LOCAL_SNAPSHOT, None, "reimbursement_source_provenance")
 
 EDGES = dict.fromkeys((
+    ('finance.event_payout.held', 'obligation_id'),
+    ('event.registration_attendance_corrected', 'correction_id'),
     ('event.form_revised', 'stage_form_id'),
     ('event.reimbursement.claim_cancelled', 'cancellation_revision_id'),
     ('event.reimbursement.module_purge_no_liability', 'claim_id'),

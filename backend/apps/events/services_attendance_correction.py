@@ -21,7 +21,11 @@ def correct_attendance(registration, *, actor):
     )
     locked.status = EventRegistration.Status.REGISTERED
     locked.version += 1
-    locked.save(update_fields=["status", "version"])
+    from .attendance_payout_bridge import attended_locked, corrected_locked, publish_payout_eligibility_locked
+    # A correction is an attendance transition too: the revision moves first, then the
+    # watermark records it, so an older scan can never qualify again.
+    locked.save(update_fields=["status", "version", *attended_locked(locked)])
+    marker = corrected_locked(event=event, registration=locked, actor=actor)
     from .hackathons.admission_lifecycle import attendance_changed_locked
     from .programme_locks import current_locks
     attendance_changed_locked(event=event, registration=locked, actor=actor, locks=current_locks(event.pk))
@@ -50,6 +54,8 @@ def correct_attendance(registration, *, actor):
         actor,
         "event.registration_attendance_corrected",
         locked,
-        {"registration_id": locked.pk, "revoked_certificates": len(certificates)},
+        {"registration_id": locked.pk, "revoked_certificates": len(certificates),
+         "correction_id": marker.pk if marker else None},
     )
+    publish_payout_eligibility_locked(event=event, registration=locked, actor=actor)
     return services._refresh(locked), certificates

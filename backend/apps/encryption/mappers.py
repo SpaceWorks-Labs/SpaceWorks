@@ -100,10 +100,20 @@ class ScopedPiiModelMixin(models.Model):
         self.__dict__.setdefault("_pii_original_plain_values", {})[name] = decrypted
         return decrypted
 
-    def refresh_from_db(self, *args, **kwargs):
-        result = super().refresh_from_db(*args, **kwargs)
+    def refresh_from_db(self, using=None, fields=None, from_queryset=None):
+        result = super().refresh_from_db(using=using, fields=fields, from_queryset=from_queryset)
         for cache_name in ("_pii_plain_values", "_pii_raw_values", "_pii_original_plain_values"):
             self.__dict__.pop(cache_name, None)
+        # Django copies each field from a freshly loaded instance through getattr, which
+        # decrypts mapped values. Put the stored envelopes back, or a later read would see
+        # persisted plaintext and (for mandatory fields) refuse it as legacy data.
+        mapped = [item.field_name for item in fields_for(self)
+                  if fields is None or item.field_name in fields]
+        if mapped and self.pk is not None:
+            rows = (from_queryset or type(self)._base_manager).using(using or self._state.db)
+            stored = rows.filter(pk=self.pk).values(*mapped).first()
+            if stored:
+                self.__dict__.update(stored)
         return result
 
     def _reserve_pk(self):

@@ -69,7 +69,32 @@ def account_asset_projection(row, capture_at):
     raise BackupBuildError("Account asset has an unknown lifecycle state.")
 
 
+def private_upload_projection(row, capture_at):
+    """Stage-form files and finance attachments share one upload state machine."""
+    state = row["state"]
+    if state == "deleting":
+        raise BackupBuildError("Private upload deletion is in progress; retry archive capture later.")
+    if state in {"expired", "deleted"}:
+        if row["expired_at"] is None:
+            raise BackupBuildError("Expired private upload lacks terminal state.")
+        return RetentionProjection("expired", row["expired_at"], int(row["actual_bytes"] or 0))
+    if state in {"ready", "attached"}:
+        if not row["actual_bytes"]:
+            raise BackupBuildError("Ready private upload lacks canonical size.")
+        if not isinstance(row["sha256"], str) or not re.fullmatch(r"[a-f0-9]{64}", row["sha256"]):
+            raise BackupBuildError("Ready private upload lacks canonical hash.")
+        return RetentionProjection(expected_size_bytes=row["actual_bytes"], expected_sha256=row["sha256"])
+    if state in {"initiated", "uploaded", "validating", "failed"}:
+        return RetentionProjection(capture=False)
+    raise BackupBuildError("Private upload has an unknown retention state.")
+
+
+_PRIVATE_UPLOAD_COLUMNS = ("state", "expired_at", "actual_bytes", "sha256")
 ADAPTERS = {
+    ("events.StageFormAsset", "object_key"): RetentionFieldAdapter(
+        _PRIVATE_UPLOAD_COLUMNS, private_upload_projection),
+    ("payments.FinanceAttachment", "object_key"): RetentionFieldAdapter(
+        _PRIVATE_UPLOAD_COLUMNS, private_upload_projection),
     ("accounts.MemberSavedAsset", "object_key"): RetentionFieldAdapter(("state",), account_asset_projection),
     ("evidence.EvidencePhoto", "object_key"): RetentionFieldAdapter((
         "object_retention_state__status", "object_retention_state__object_expired_at",

@@ -62,6 +62,9 @@ def purge_module(makerspace, key, actor):
             raise ValidationError(
                 f"{plan.key} was re-installed; uninstall it again before purging."
             )
+        # Unfinished reimbursement work refuses before any key collection or deletion.
+        from .module_purge_collectors_reimbursements import purge_preflight
+        purge_preflight(locked, plan.key)
         # Collect under the makerspace lock to narrow the attach/delete race. This does
         # not eliminate it under READ COMMITTED: a row another transaction commits
         # between this SELECT and the DELETE is invisible to the former and visible to

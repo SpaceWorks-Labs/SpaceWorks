@@ -56,6 +56,10 @@ from apps.makerspaces.module_purge_collectors_backup import (
     backup_private_keys,
 )
 from apps.makerspaces.module_purge_collectors_devices import devices_delete
+from apps.makerspaces.module_purge_collectors_reimbursements import (
+    REIMBURSEMENT_PII_LABELS,
+    STAGE_PII_LABELS,
+)
 from apps.makerspaces.module_purge_collectors_reports import (
     reports_delete,
     reports_private_keys,
@@ -116,6 +120,8 @@ PLANS = (
             "events.EventFeedbackResponse",
             "events.EventAttendanceCertificate",
             "events.EventBroadcast",
+            *REIMBURSEMENT_PII_LABELS,
+            *STAGE_PII_LABELS,
         ),
         private_keys=events_private_keys,
         private_key_sizes=events_private_key_sizes,
@@ -216,4 +222,11 @@ PLANS = (
 
 from apps.presence.purge import delete as presence_delete
 PLANS += (ModulePurgePlan("presence", "Current and historical presence sessions and display preferences.", presence_delete),)
+from .module_purge_collectors_reimbursements import reimbursement_delete
+PLANS += (ModulePurgePlan(
+    "event_reimbursements",
+    "Terminal travel-support history: programmes, requests, awards and claims. Core payout liabilities, "
+    "finance receipts and stage forms survive.",
+    reimbursement_delete, pii_labels=REIMBURSEMENT_PII_LABELS,
+),)
 BY_KEY = {plan.key: plan for plan in PLANS}

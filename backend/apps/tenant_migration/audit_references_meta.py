@@ -36,9 +36,11 @@ S = AuditReferenceDisposition.SOURCE_LOCAL_SNAPSHOT
 from .target_projection_w7_events import EVENT_AUDIT_EDGES
 
 from .audit_references_events_programme import EDGES as PROGRAMME_AUDIT_EDGES
+from .audit_references_reimbursements import EDGES as REIMBURSEMENT_AUDIT_EDGES
 
 AUDIT_META_REFERENCES = {
     **PROGRAMME_AUDIT_EDGES,
+    **REIMBURSEMENT_AUDIT_EDGES,
     **_reference(S, None,
                  ("notification.media_grant_cleaned", "grant_id"),
                  ("notification.media_grant_issued", "delivery_id"),

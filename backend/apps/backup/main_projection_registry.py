@@ -90,6 +90,8 @@ SPECIAL_TENANT_TABLES = {
 }
 from .main_projection_events_programme import extend_special_tenant_tables
 extend_special_tenant_tables(SPECIAL_TENANT_TABLES, TenantPredicate)
+from apps.tenant_migration.catalog_reimbursements import TENANT_OWNER_PATHS as _REIMBURSEMENT_OWNERS
+SPECIAL_TENANT_TABLES.update({label: TenantPredicate((path,)) for label, path in _REIMBURSEMENT_OWNERS.items()})
 
 from .staff_shells import STAFF_CREDENTIAL_PATHS
 SPECIAL_TENANT_TABLES.update({label: TenantPredicate((path,))

@@ -3,6 +3,10 @@ from .module_purge_collectors_single_model import _counts, _delete
 
 
 def events_delete(makerspace, cursor):
+    # Reimbursement and stage rows go first: the domain purge detaches core obligations
+    # while their claims still exist, and stage history points at registrations.
+    from .module_purge_collectors_reimbursements import events_reimbursement_and_stage_delete
+    addon = events_reimbursement_and_stage_delete(makerspace, cursor)
     from .purge_events_programme import delete_programme_rows
     programme_count, programme_labels = delete_programme_rows(makerspace)
     from apps.events.models_broadcasts import EventBroadcast
@@ -98,6 +102,7 @@ def events_delete(makerspace, cursor):
             | projected_collaboration_labels | series_collaboration_labels | series_labels
             | feed_labels | station_credential_labels | station_binding_labels
             | station_labels | category_labels | grant_labels | invite_labels | broadcast_labels | programme_labels
+            | addon.model_labels
         ),
         event_series_collaboration_projections=projected_collaborations,
         event_series_collaborations=series_collaborations,
@@ -122,6 +127,7 @@ def events_delete(makerspace, cursor):
         event_broadcasts=broadcasts,
         event_website_rows=pages,
         event_programme_rows=programme_count,
+        **addon,
     )
 
 

@@ -37,6 +37,9 @@ NON_OBJECT_KEY_FIELDS = frozenset({
     # position within a recurring series, and the rollup keys name which metric a row
     # holds. Nothing is stored in a bucket for any of them.
     ("events.Event", "series_occurrence_key"),
+    # Stage trigger and payee-template selectors are closed vocabulary labels.
+    ("events.StageFormAssignment", "trigger_key"),
+    ("payments.EventPayeeRevision", "template_key"),
     ("operations.ReportMetricRollup", "dimension_key"),
     ("operations.ReportMetricRollup", "metric_key"),
     ("operations.ReportMetricRollup", "report_key"),

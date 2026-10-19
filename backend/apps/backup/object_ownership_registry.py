@@ -132,6 +132,9 @@ FIELD_OBJECT_RULES = (
     FieldObjectRule("warranty.WarrantyDocument", "object_key", BucketRule.PRIVATE),
 )
 
+from .object_ownership_reimbursements import field_object_rules as _reimbursement_rules
+FIELD_OBJECT_RULES += _reimbursement_rules(FieldObjectRule, BucketRule, ReferencePolicy)
+
 AUDIT_META_OBJECT_VARIANTS = {
     "machine.document_added": "object_key",
     "machine.document_removed": "object_key",

@@ -73,6 +73,12 @@ EXPORTED_MODEL_FIELDS.update(PROGRAMME_FIELDS)
 for _label, _names in PROGRAMME_EXTRA.items():
     EXPORTED_MODEL_FIELDS[_label] += " " + _names
 OMITTED_MODELS.update(PROGRAMME_OMITTED)
+from apps.tenant_migration.catalog_reimbursements import (
+    OMITTED_MODELS as REIMBURSEMENT_OMITTED, EXTRA_FIELDS as REIMBURSEMENT_EXTRA,
+)
+OMITTED_MODELS.update(REIMBURSEMENT_OMITTED)
+for _label, _names in REIMBURSEMENT_EXTRA.items():
+    EXPORTED_MODEL_FIELDS[_label] += " " + _names
 EXPORTED_MODELS = frozenset(EXPORTED_MODEL_FIELDS)
 
 NOT_TENANT_MODELS = {

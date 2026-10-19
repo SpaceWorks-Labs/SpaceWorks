@@ -84,3 +84,8 @@ from .catalog_events_programme import FIELD_NAMES as PROGRAMME_FIELDS, EXTRA_FIE
 FIRST_PARTY_FIELD_NAMES.update(PROGRAMME_FIELDS)
 for _label, _names in PROGRAMME_EXTRA.items():
     FIRST_PARTY_FIELD_NAMES[_label] |= frozenset(_names.split())
+from .catalog_reimbursements_fields import FIELD_NAMES as REIMBURSEMENT_FIELDS
+from .catalog_reimbursements import EXTRA_FIELDS as REIMBURSEMENT_EXTRA
+FIRST_PARTY_FIELD_NAMES.update(REIMBURSEMENT_FIELDS)
+for _label, _names in REIMBURSEMENT_EXTRA.items():
+    FIRST_PARTY_FIELD_NAMES[_label] |= frozenset(_names.split())

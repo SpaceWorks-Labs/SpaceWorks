@@ -191,6 +191,8 @@ def _delete_object_graph(makerspace):
         # makerspaces happen to be linked to its deployment-global organization.
         EventOrganizer.objects.filter(event__makerspace=makerspace).delete()
         EventAudienceOrganization.objects.filter(event__makerspace=makerspace).delete()
+        from .lifecycle_purge_reimbursements import delete_reimbursement_graph
+        delete_reimbursement_graph(makerspace, cursor)
         from .purge_events_programme import delete_programme_rows
         delete_programme_rows(makerspace)
         EventAttendanceCertificate.objects.filter(

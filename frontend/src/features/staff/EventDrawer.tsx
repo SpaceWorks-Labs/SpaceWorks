@@ -24,17 +24,19 @@ import {
 import type { EventPatch } from "./eventsApi";
 import { eventErrorText } from "./eventUi";
 import { EventProgrammePanel } from "./eventProgramme/EventProgrammePanel";
+import { EventAddonPanel } from "./eventProgramme/EventAddonPanel";
 import { ProgrammeSessionBoundary } from "./eventProgramme/sessionScope";
 
 type Action = "publish" | "cancel" | "complete";
 
-export function EventDrawer({ eventId, makerspaceId, onClose, onOpenSeries, enabledFeatures = [] }: {
+export function EventDrawer({ eventId, makerspaceId, onClose, onOpenSeries, enabledFeatures = [], enabledModules = [] }: {
   eventId: number;
   makerspaceId: number;
   onClose: () => void;
   /** Opens the occurrence's recurring series (the "Recurring · <series>" badge links there when set). */
   onOpenSeries?: (seriesId: number) => void;
   enabledFeatures?: string[];
+  enabledModules?: string[];
 }) {
   const eventQuery = useEvent(eventId);
   const event = eventQuery.data;
@@ -70,7 +72,7 @@ export function EventDrawer({ eventId, makerspaceId, onClose, onOpenSeries, enab
   const recurring = series ? onOpenSeries && seriesId ? <button type="button" className="relative rounded-full border border-info px-2 py-0.5 text-xs font-semibold text-info-ink before:absolute before:-inset-x-1 before:-inset-y-3 hover:bg-info-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus" onClick={() => onOpenSeries(seriesId)}>Recurring · {series.title}</button>
     : <span className="rounded-full border border-info px-2 py-0.5 text-xs font-semibold text-info-ink">Recurring · {series.title}</span> : null;
   // Every tab and section is gated on the same event staff grant the API enforces (eventDrawerSurfaces).
-  const surfaces = eventDrawerSurfaces(event, access, enabledFeatures);
+  const surfaces = eventDrawerSurfaces(event, access, enabledFeatures, enabledModules);
   const { checkable, sections } = surfaces;
   const tabs = useEventDrawerTabs([
     { key: "overview", label: "Overview" },
@@ -108,6 +110,8 @@ export function EventDrawer({ eventId, makerspaceId, onClose, onOpenSeries, enab
             readOnly={readOnly} onWebsitePublication={setWebsitePublication}
             settings={{ values, setValues, save: () => saveOccurrence(), pending: update.isPending, invalidate: invalidateEvent, resetField: field => update.mutate({ inherit_fields: [field] }), complete: () => setConfirm("complete") }} />
           {tabs.section && sections[tabs.section] ? <EventProgrammePanel event={event} makerspaceId={makerspaceId} section={tabs.section} access={access} features={enabledFeatures} /> : null}
+          {(tabs.section === "stage-forms" || tabs.section === "reimbursements") && sections[tabs.section]
+            ? <EventAddonPanel key={`${event.id}:${tabs.section}`} event={event} makerspaceId={makerspaceId} section={tabs.section} access={access} /> : null}
           {actionError ? <p role="alert" className="text-sm text-danger">{eventErrorText(actionError)}</p> : null}
         </div> : null} />
     </div>

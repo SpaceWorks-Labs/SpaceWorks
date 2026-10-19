@@ -52,5 +52,5 @@ export function GrantedEventsPanel({ makerspaceId, grants = [], frame }: { maker
 
 function GrantedProgrammeDrawer({ slug, ...props }: { slug: string; eventId: number; makerspaceId: number; onClose: () => void }) {
   const bootstrap = useTenantBootstrap(slug, Boolean(slug));
-  return <EventDrawer {...props} enabledFeatures={bootstrap.data?.features ?? []} />;
+  return <EventDrawer {...props} enabledFeatures={bootstrap.data?.features ?? []} enabledModules={bootstrap.data?.modules ?? []} />;
 }

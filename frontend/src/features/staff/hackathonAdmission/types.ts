@@ -5,8 +5,10 @@ export type ReviewApplication = Omit<WireApplication, 'answers'> & { answers: Ar
 export type ReviewAssignment = Omit<WireReview, 'id' | 'rubric' | 'applications' | 'completed_scores'> & {
   id: number; rubric: Rubric; applications: ReviewApplication[]; completed_scores?: Array<Record<string, number>>
 }
-export type DecisionBatch = Omit<WireBatch, 'id' | 'decisions'> & {
-  id: number; decisions: Array<{ id: number; application_id: number | null; cohort_id: number | null
+// The generated `Batch` component name is shared with certificate issue batches, so its
+// `state` enum is not the decision-batch lifecycle; state it explicitly here.
+export type DecisionBatch = Omit<WireBatch, 'id' | 'decisions' | 'state'> & {
+  id: number; state: 'draft' | 'committed' | 'cancelled'; decisions: Array<{ id: number; application_id: number | null; cohort_id: number | null
     outcome: 'offer' | 'waitlist' | 'reject'; reason_code: string; expected_version: number }>
 }
 export interface DecisionSelection {

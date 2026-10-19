@@ -12,7 +12,7 @@ import { StaffPanelErrorBoundary } from "./StaffPanelErrorBoundary";
 import { PlatformProgrammeDashboard } from "./eventProgramme/PlatformProgrammeDashboard";
 import { GrantedResourcesPanel } from "./GrantedResourcesPanel";
 
-import { PaymentsPanel, DevicesPanel, DashboardPanel, NotificationInbox, DirectLoans, Inventory, Ledger, MachinesPanel, EventsPanel, OrganizedEventsPanel, OrganizationAnalyticsPanel, OrganizationsPanel, BookingsPanel, MembersPanel, MemberCardsPanel, QrTools, RequestsPanel, OperationsReports, AuditLog, BulkImport, ScannerPanel, ContainersPanel, StocktakePanel, StockTransferPanel, ProcurementPanel, WarrantyPanel, AccountabilityPanel, Categories, NeedsFixShelf, HandoverConsole } from "./StaffTabLoaders";
+import { PaymentsPanel, EventPayoutsSection, DevicesPanel, DashboardPanel, NotificationInbox, DirectLoans, Inventory, Ledger, MachinesPanel, EventsPanel, OrganizedEventsPanel, OrganizationAnalyticsPanel, OrganizationsPanel, BookingsPanel, MembersPanel, MemberCardsPanel, QrTools, RequestsPanel, OperationsReports, AuditLog, BulkImport, ScannerPanel, ContainersPanel, StocktakePanel, StockTransferPanel, ProcurementPanel, WarrantyPanel, AccountabilityPanel, Categories, NeedsFixShelf, HandoverConsole } from "./StaffTabLoaders";
 
 export function StaffTabContent({
   activeMakerspace,
@@ -148,7 +148,7 @@ export function StaffTabContent({
           }
         />
       ) : null}
-      {activeTab === "events" && canManageEvents ? <EventsPanel key={makerspaceKey} enabledFeatures={activeMakerspace.enabled_features} makerspaceId={activeMakerspace.id} /> : null}
+      {activeTab === "events" && canManageEvents ? <EventsPanel key={makerspaceKey} enabledFeatures={activeMakerspace.enabled_features} enabledModules={activeMakerspace.enabled_modules} makerspaceId={activeMakerspace.id} /> : null}
       {activeTab === "organized" && !isSuperadmin ? <OrganizedEventsPanel /> : null}
       {activeTab === "organization-analytics" && !isSuperadmin && !singleTenantLocked ? (
         <OrganizationAnalyticsPanel makerspaces={makerspaces} />
@@ -172,6 +172,7 @@ export function StaffTabContent({
         <MemberCardsPanel key={makerspaceKey} makerspaceId={activeMakerspace.id} />
       ) : null}
       {activeTab === "payments" && (has("view_finance") || has("record_payment") || has("manage_events")) ? <PaymentsPanel key={makerspaceKey} makerspaceId={activeMakerspace.id} makerspaceName={activeMakerspace.name} actorActions={actorActions} isSuperadmin={isSuperadmin} /> : null}
+      {activeTab === "payments" && has("view_finance") ? <EventPayoutsSection key={`payouts:${makerspaceKey}`} makerspaceId={activeMakerspace.id} /> : null}
       {activeTab === "tobuy" ? (
         <ProcurementPanel
           key={makerspaceKey}

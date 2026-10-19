@@ -19,6 +19,8 @@ export const MORE_SECTIONS = [
   { key: "volunteers", label: "Volunteers" },
   { key: "certificates", label: "Certificates and ID cards" },
   { key: "programme-setup", label: "Programme setup" },
+  { key: "stage-forms", label: "Stage forms" },
+  { key: "reimbursements", label: "Travel support" },
 ] as const;
 export type MoreSection = typeof MORE_SECTIONS[number]["key"];
 
@@ -26,7 +28,8 @@ export type MoreSection = typeof MORE_SECTIONS[number]["key"];
  * Which drawer surfaces this viewer may open. Every gate mirrors the event staff grant the API
  * enforces, so a grant-only staffer sees exactly the sections whose actions they hold.
  */
-export function eventDrawerSurfaces(event: StaffEvent | undefined, access: ReturnType<typeof eventAccess>, enabledFeatures: readonly string[] = []) {
+export function eventDrawerSurfaces(event: StaffEvent | undefined, access: ReturnType<typeof eventAccess>, enabledFeatures: readonly string[] = [],
+  enabledModules: readonly string[] = []) {
   const ticketing = event?.ticketing_features ?? [];
   const checkable = event?.status === "published" || event?.status === "completed";
   const invites = access.invitations && ticketing.includes("events.invites");
@@ -48,6 +51,9 @@ export function eventDrawerSurfaces(event: StaffEvent | undefined, access: Retur
     volunteers: enabledFeatures.includes("events.volunteering") && access.volunteers,
     certificates: ticketing.includes("events.certificate_designer") && (access.edit || access.manager || access.checkIn),
     "programme-setup": enabledFeatures.includes("events.hackathons") && access.hackathon,
+    // Stage forms are Events core; travel support needs its own module and the screening grant.
+    "stage-forms": access.edit || access.registrations,
+    reimbursements: enabledModules.includes("event_reimbursements") && (access.manager || access.reimbursements),
   };
   return {
     ticketing, checkable, invites, ticketTypes, promos, sections,

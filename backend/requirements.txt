@@ -26,6 +26,11 @@ requests>=2.32,<3
 httpx[http2]==0.28.1
 openpyxl>=3.1,<4
 Pillow
+# HEIC/HEIF decoding for event stage files and reimbursement receipts
+# (staged_forms/file_validation.py, event_payouts/attachment_content.py). BSD-3-Clause;
+# the manylinux wheel bundles libheif/libde265 (LGPL-3.0) and x265 (GPL-2.0+), all
+# AGPL-3.0-compatible and listed in NOTICE.
+pillow-heif==1.8.1
 reportlab[shaping]>=4.5.1,<5
 python-bidi>=0.6,<0.7
 arabic-reshaper>=3,<4

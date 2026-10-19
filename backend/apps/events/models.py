@@ -86,9 +86,10 @@ __all__ += models_programme.__all__
 
 from .staged_forms.models import (
     EventStageForm, EventStageMilestone, StageFormAssignment, StageFormResponse,
-    StageFormResponseRevision, StageFormAsset,
+    StageFormResponseRevision, StageFormAsset, StageFileCleanup, StageActivationJob, StageReconcileCursor,
 )
 __all__ += [
     "EventAttendanceCorrection", "EventStageForm", "EventStageMilestone", "StageFormAssignment",
-    "StageFormResponse", "StageFormResponseRevision", "StageFormAsset",
+    "StageFormResponse", "StageFormResponseRevision", "StageFormAsset", "StageFileCleanup",
+    "StageActivationJob", "StageReconcileCursor",
 ]

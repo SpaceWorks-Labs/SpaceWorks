@@ -39,19 +39,19 @@ CREATE TRIGGER finance_decision_mandatory BEFORE INSERT OR UPDATE ON payments_ev
   FOR EACH ROW EXECUTE FUNCTION finance_mandatory_envelope_guard('decision_summary','cancellation_note');
 
 CREATE FUNCTION finance_referenced_key_guard() RETURNS trigger LANGUAGE plpgsql AS $$
-DECLARE owner_id bigint; version_no integer; prefix text;
+DECLARE key_tenant_id bigint; version_no integer; prefix text;
 BEGIN
   IF TG_OP='UPDATE' AND NEW.status<>'disabled' THEN RETURN NEW; END IF;
-  owner_id:=OLD.makerspace_id; version_no:=OLD.version;
+  key_tenant_id:=OLD.makerspace_id; version_no:=OLD.version;
   PERFORM pg_advisory_xact_lock_shared(734201,0);
-  PERFORM pg_advisory_xact_lock(734202,owner_id::integer);
+  PERFORM pg_advisory_xact_lock(734202,key_tenant_id::integer);
   prefix:='pii:gcm:v1:' || version_no::text || ':%';
   IF EXISTS (SELECT 1 FROM payments_eventpayeerevision p
       JOIN payments_eventpayoutobligation o ON o.id=p.obligation_id
-      WHERE o.makerspace_id=owner_id AND p.details LIKE prefix)
+      WHERE o.makerspace_id=key_tenant_id AND p.details LIKE prefix)
     OR EXISTS (SELECT 1 FROM payments_eventpayoutobligationrevision r
       JOIN payments_eventpayoutobligation o ON o.id=r.obligation_id
-      WHERE o.makerspace_id=owner_id AND (r.decision_summary LIKE prefix OR r.cancellation_note LIKE prefix))
+      WHERE o.makerspace_id=key_tenant_id AND (r.decision_summary LIKE prefix OR r.cancellation_note LIKE prefix))
     THEN RAISE EXCEPTION 'mandatory finance key remains referenced'; END IF;
   IF TG_OP='DELETE' THEN RETURN OLD; END IF;
   RETURN NEW;

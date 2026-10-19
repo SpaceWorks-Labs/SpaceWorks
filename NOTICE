@@ -29,3 +29,7 @@ PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
 
 Self-hosted fonts: Gilroy (Radomir Tinkov Free Font EULA), Outfit and Unbounded
 (SIL OFL 1.1). See frontend/public/fonts/LICENSES/ for the licence texts.
+
+Backend image dependency: pillow-heif (BSD-3-Clause) decodes HEIC/HEIF uploads; its
+wheels bundle libheif and libde265 (LGPL-3.0) and x265 (GPL-2.0-or-later). Their licence
+texts ship inside the installed package (LICENSES_bundled.txt).

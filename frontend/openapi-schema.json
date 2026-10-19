@@ -93052,6 +93052,9 @@
                         },
                         "description": ""
                     },
+                    "400": {
+                        "description": "Invalid page or period query parameter."
+                    },
                     "404": {
                         "description": "Organization not found."
                     },
@@ -93094,6 +93097,9 @@
                             }
                         },
                         "description": ""
+                    },
+                    "400": {
+                        "description": "Invalid page or period query parameter."
                     },
                     "404": {
                         "description": "Organization not found."
@@ -94178,6 +94184,46 @@
                     },
                     "404": {
                         "description": "Unavailable page."
+                    }
+                }
+            }
+        },
+        "/share/pages/{handle}/cover/": {
+            "get": {
+                "operationId": "share_pages_cover_retrieve",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "handle",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Public pages"
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        },
+                        "description": "Current published cover WebP; private, no-store."
+                    },
+                    "404": {
+                        "description": "Unavailable page, redirected or member handle, or no published asset cover."
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded."
+                    },
+                    "503": {
+                        "description": "Image storage is unavailable."
                     }
                 }
             }

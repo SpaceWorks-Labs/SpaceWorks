@@ -940,6 +940,7 @@ export const openApiPaths = [
   "/share/e/{public_token}/",
   "/share/e/{public_token}/cover/",
   "/share/pages/{handle}/",
+  "/share/pages/{handle}/cover/",
   "/share/profiles/{handle}/",
   "/share/{kind}/{public_token}/",
   "/sitemap.xml"

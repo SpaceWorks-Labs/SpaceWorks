@@ -42,6 +42,8 @@ class TenantDumpCatalogError(AssertionError):
 # O native grants, account lifecycle, push, analytics and addressed messaging.
 # Literal graph reconstruction reproduced BOTH parent pins before computing this
 # merged snapshot digest. Historical repin commentary lives in git history.
+# Pages programme: public page/revision/asset models, handles and event session
+# identities; re-pinned from schema_digest() over the merged graph.
 # Orchestrator re-pins the live catalog after final schema/migration verification.
 CATALOG_SCHEMA_SHA256 = "5c14b0b619a750dcc0fdf9d9e43fe68019731f62b8b9f767c88ce96eddbc2272"
 

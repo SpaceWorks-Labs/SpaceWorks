@@ -40,6 +40,7 @@ class DiscoveryCardSerializer(serializers.Serializer):
     description = serializers.CharField()
     url = serializers.URLField()
     image_url = serializers.URLField(allow_null=True)
+    image_alt = serializers.CharField(allow_blank=True)
     date = serializers.CharField()
     location = serializers.CharField()
     availability = serializers.CharField()
@@ -82,7 +83,7 @@ class WebsiteShareView(WebsitePublicView):
         adapter = adapter_for(kind)
         subject = adapter.resolve(None, public_token)
         adapter.page(subject)
-        return share_response(adapter.card(subject))
+        return share_response((adapter.share_card or adapter.card)(subject))
 
 
 class WebsiteDiscoverView(WebsitePublicView):
@@ -112,10 +113,17 @@ class WebsiteSitemapView(WebsitePublicView):
         spaces = sitemap_spaces(request)
         for adapter in adapters():
             for row in adapter.discover(spaces, {})[:50000 - len(urls)]:
-                urls.append(public_url(row.makerspace, adapter.kind, row.public_token))
+                if adapter.kind == "events":
+                    from .public_page_access import canonical_origin
+                    urls.append(f"{canonical_origin(row.makerspace)}/e/{row.public_token}")
+                else:
+                    urls.append(public_url(row.makerspace, adapter.kind, row.public_token))
         from itertools import islice
         from .public_profile_share import sitemap_profile_urls
         urls.extend(islice(sitemap_profile_urls(request, spaces=spaces), max(0, 50000 - len(urls))))
+        from .public_page_share import sitemap_page_urls
+        urls.extend(islice(sitemap_page_urls(request, spaces=spaces), max(0, 50000 - len(urls))))
+        urls = list(dict.fromkeys(urls))
         body = '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
         body += "".join(f"<url><loc>{escape(url)}</loc></url>" for url in urls)
         response = HttpResponse(body + "</urlset>", content_type="application/xml")

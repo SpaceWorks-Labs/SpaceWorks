@@ -13,10 +13,12 @@ from .hosting import canonical_host, is_infra_host
 
 
 def profile_is_public(profile):
+    if profile is None:
+        return False
     membership = profile.membership
     user = membership.user
     return bool(profile.public_visible and profile.public_consented_at
-                and user.is_active and user.access_status == "active"
+                and user.account_kind == "member" and user.is_active and user.access_status == "active"
                 and membership.status == "active" and not user.is_tenant_dump_stub
                 and is_servable(membership.makerspace)
                 and module_enabled(membership.makerspace, "membership"))
@@ -39,7 +41,7 @@ def _request_tenant_ids(request):
         except ValueError:
             raise NotFound()
     platform_hosts = {canonical_host(urlsplit(value).netloc) for value in
-                      getattr(settings, "PLATFORM_STAFF_ORIGINS", ())}
+                      (*getattr(settings, "PLATFORM_STAFF_ORIGINS", ()), getattr(settings, "PUBLIC_APP_BASE_URL", ""))}
     for host in hosts:
         if not host:
             raise NotFound()
@@ -56,15 +58,15 @@ def _request_tenant_ids(request):
 def resolve_public_profile(handle, request=None):
     current = PublicHandle.objects.select_related(
         "profile__membership__user", "profile__membership__makerspace"
-    ).filter(handle__iexact=handle).first()
+    ).filter(handle__iexact=handle, user__isnull=False, profile__isnull=False).first()
     redirected = False
     if current is None:
         retired = PublicHandleRedirect.objects.filter(handle__iexact=handle,
-                                                      expires_at__gt=timezone.now()).first()
+                                                      expires_at__gt=timezone.now(), user__isnull=False).first()
         if retired:
             current = PublicHandle.objects.select_related(
                 "profile__membership__user", "profile__membership__makerspace"
-            ).filter(user_id=retired.profile.membership.user_id).first()
+            ).filter(user_id=retired.user_id, profile__isnull=False).first()
             redirected = current is not None
     if current is None or not profile_is_public(current.profile):
         raise NotFound()

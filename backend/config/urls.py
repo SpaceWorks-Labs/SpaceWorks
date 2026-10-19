@@ -74,6 +74,7 @@ from apps.operations.control_storage import control_storage
 urlpatterns = [
     path(".well-known/assetlinks.json", AssetLinksView.as_view(), name="mobile-assetlinks"),
     path(".well-known/apple-app-site-association", AppleAppSiteAssociationView.as_view(), name="mobile-apple-association"),
+    path("", include("apps.makerspaces.public_page_share_urls")),
     path("mfa/reauth/", control_reauthentication, name="control-reauthentication"),
     path("", include("apps.makerspaces.website_urls")),
     path("mfa/control/", control_mfa, name="control-mfa"),
@@ -149,6 +150,10 @@ urlpatterns = [
     # while /api/v1/public/... is reachable directly (and via "v1:public-inventory").
     path("api/v1/", include(("apps.inventory.urls", "inventory"), namespace="v1")),
     path("api/v1/", include("apps.makerspaces.urls")),
+    path("api/v1/", include("apps.makerspaces.public_page_urls")),
+    path("api/v1/admin/", include("apps.makerspaces.public_page_editor_urls")),
+    path("api/v1/public/organizations/", include("apps.organizations.urls_public_page_collections")),
+    *separable("events", "api/v1/", "apps.events.urls_public_codes"),
     path("api/v1/member/", include("apps.payments.urls_member")),
     *separable("payments_rail", "api/v1/member/", "apps.payments_rail.urls_member"),
     path("api/v1/", include("apps.hardware_requests.urls")),

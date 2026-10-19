@@ -200,6 +200,26 @@ from .catalog_p2_presence import FIELD_NAMES as PRESENCE_FIELDS
 AUTHORIZATION_SOURCES += tuple(APPS_DIR / "presence" / name for name in (
     "policy.py", "services.py", "privacy.py", "display.py", "event_attendance.py", "notifications.py",
 ))
+AUTHORIZATION_SOURCES += tuple(APPS_DIR / app / name for app, name in (
+    ("makerspaces", "public_page_authority.py"), ("makerspaces", "public_page_services.py"),
+    ("makerspaces", "public_page_access.py"), ("makerspaces", "public_page_projection.py"),
+    ("makerspaces", "public_page_derived.py"), ("makerspaces", "public_page_assets.py"),
+    ("makerspaces", "public_page_asset_cleanup.py"), ("makerspaces", "public_page_revisions.py"),
+    ("events", "website_revisions.py"), ("events", "website_delays.py"),
+    ("events", "website_revision_projection.py"), ("organizations", "public_catalog.py"),
+    ("apiclients", "scope_registry_public_pages.py"),
+    ("makerspaces", "origin_scope_routes_public_pages.py"),
+))
+from .catalog_public_pages import EXPORTED_FIELDS as PAGE_EXPORTED_FIELDS
+SCANNED_MODEL_LABELS |= PAGE_EXPORTED_FIELDS.keys()
+DECLARED_AUTHORITY_FIELDS.update({
+    (label, field): "Authored page history is remapped with reset publication/disclosures and locked target-side owner authority."
+    for label, fields in PAGE_EXPORTED_FIELDS.items() for field in fields.split() if field != "id"
+})
+DECLARED_AUTHORITY_FIELDS.update({
+    ("events.EventPage", field): "Selected publication and editorial content travel only with reviewed page-pointer/disclosure resets."
+    for field in ("draft_revision", "published_revision", "editorial_document")
+})
 SCANNED_MODEL_LABELS |= PRESENCE_FIELDS.keys()
 DECLARED_AUTHORITY_FIELDS.update({
     (label, field): "Source-local presence/disclosure input; the entire model is DROP on tenant import."

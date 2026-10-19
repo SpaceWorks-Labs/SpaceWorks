@@ -22,11 +22,20 @@ import {$STORAGE_CADDY_CONFIG:/etc/caddy/storage-disabled.caddy}
     }
     @profile_crawler {
         path_regexp profile_card (?i)^/([a-z0-9](?:[a-z0-9._-]{1,28}[a-z0-9]))/?$
-        not path /.well-known /.well-known/* /about /about/* /admin /admin/* /api /api/* /assets /assets/* /bookings /bookings/* /checkout /checkout/* /config.js /config.js/* /control /control/* /discover /discover/* /docs /docs/* /embed /embed/* /event-check-in /event-check-in/* /events /events/* /favicon.ico /favicon.ico/* /guest-admin /guest-admin/* /health /health/* /healthz /healthz/* /index.html /index.html/* /install /install/* /items /items/* /kiosk /kiosk/* /m /m/* /machines /machines/* /media /media/* /member /member/* /member-sw.js /member-sw.js/* /mfa /mfa/* /now /now/* /o /o/* /organization-invitations /organization-invitations/* /print /print/* /redoc /redoc/* /reset-password /reset-password/* /robots.txt /robots.txt/* /scanner /scanner/* /schema /schema/* /setup /setup/* /share /share/* /sitemap.xml /sitemap.xml/* /staff /staff/* /staff-invitations /staff-invitations/* /static /static/* /stats /stats/* /superadmin /superadmin/* /sw.js /sw.js/*
+        not path /.well-known /.well-known/* /about /about/* /admin /admin/* /api /api/* /assets /assets/* /bookings /bookings/* /checkout /checkout/* /config.js /config.js/* /control /control/* /discover /discover/* /docs /docs/* /e /e/* /embed /embed/* /event-check-in /event-check-in/* /events /events/* /favicon.ico /favicon.ico/* /guest-admin /guest-admin/* /health /health/* /healthz /healthz/* /index.html /index.html/* /install /install/* /items /items/* /kiosk /kiosk/* /m /m/* /machines /machines/* /media /media/* /member /member/* /member-sw.js /member-sw.js/* /mfa /mfa/* /now /now/* /o /o/* /organization-invitations /organization-invitations/* /print /print/* /redoc /redoc/* /reset-password /reset-password/* /robots.txt /robots.txt/* /scanner /scanner/* /schema /schema/* /setup /setup/* /share /share/* /sitemap.xml /sitemap.xml/* /staff /staff/* /staff-invitations /staff-invitations/* /static /static/* /stats /stats/* /superadmin /superadmin/* /sw.js /sw.js/*
         header_regexp User-Agent (?i)(facebookexternalhit|Facebot|Twitterbot|LinkedInBot|Slackbot|Discordbot|WhatsApp|TelegramBot)
     }
     handle @profile_crawler {
-        rewrite * /share/profiles/{re.profile_card.1}/
+        rewrite * /share/pages/{re.profile_card.1}/
+        reverse_proxy backend:8000
+    }
+
+    @event_code_crawler {
+        path_regexp event_code_card ^/e/([0-9a-fA-F-]{36})/?$
+        header_regexp User-Agent (?i)(facebookexternalhit|Facebot|Twitterbot|LinkedInBot|Slackbot|Discordbot|WhatsApp|TelegramBot)
+    }
+    handle @event_code_crawler {
+        rewrite * /share/e/{re.event_code_card.1}/
         reverse_proxy backend:8000
     }
 

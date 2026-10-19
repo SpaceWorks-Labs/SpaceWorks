@@ -12,6 +12,7 @@ import { OrganizationProfileForm } from "../OrganizationProfileForm";
 import { useOrganization, useOrganizations } from "../organizationsApi";
 import type { Makerspace } from "./shared";
 import { OrganizationCreate, OrganizationLinks } from "../OrganizationSetup";
+import { PublicPageBuilder } from "../../publicPages/PublicPageBuilder";
 
 export function OrganizationsPanel({ isSuperadmin = false, makerspaces = [] }: { isSuperadmin?: boolean; makerspaces?: Makerspace[] }) {
   const [page, setPage] = useState(1);
@@ -38,6 +39,8 @@ export function OrganizationsPanel({ isSuperadmin = false, makerspaces = [] }: {
   const canManageMembers = Boolean(detail.data?.governance_actions.includes("manage_organization_members"));
   // Deleting needs both governance actions; the server still re-checks recent identity verification.
   const canDelete = ["manage_organization_members", "manage_organization_profile"].every(action => detail.data?.governance_actions.includes(action));
+  // The page editor locks to a non-platform governor holding the profile action; nobody else gets a builder the server refuses.
+  const canEditPage = !isSuperadmin && Boolean(detail.data?.governance_actions.includes("manage_organization_profile"));
   // Superadmins create through the platform flow; everyone else gets the rate-limited self-service flow,
   // which only exists on the central origin (global organization operations are tenant-unbound) and only
   // while the platform policy allows it, so a switched-off policy never opens an empty create page.
@@ -60,12 +63,14 @@ export function OrganizationsPanel({ isSuperadmin = false, makerspaces = [] }: {
     state={{ status: detail.isLoading ? "loading" : detail.isError ? "error" : "ready", error: "Couldn't load organization. Try again.", onRetry: () => { void detail.refetch(); } }}
     tabs={[
       { key: "profile", label: "Profile", href: `?org=${selectedId}&section=profile#org-profile` },
+      ...(canEditPage ? [{ key: "public-page", label: "Public page", href: `?org=${selectedId}&section=public-page#org-public-page` }] : []),
       ...(canManageMembers ? [{ key: "people", label: "People", href: `?org=${selectedId}&section=people#org-people` },
         { key: "invitations", label: "Invitations", href: `?org=${selectedId}&section=invitations#org-invitations` }] : []),
       ...(isSuperadmin ? [{ key: "spaces", label: "Spaces", href: `?org=${selectedId}&section=spaces#org-spaces` }] : []),
     ]} activeTab={new URLSearchParams(window.location.search).get("section") ?? "profile"}
     sections={detail.data ? [
       { id: "org-profile", title: "Profile", rows: <OrganizationProfileForm organization={detail.data} /> },
+      ...(canEditPage ? [{ id: "org-public-page", title: "Public page", rows: <PublicPageBuilder owner={{ kind: "organization", id: detail.data.id }} /> }] : []),
       // Without member rights both components render nothing, so their tabs and headings go too.
       ...(canManageMembers ? [{ id: "org-people", title: "People", rows: <OrganizationMemberships organization={detail.data} /> },
         { id: "org-invitations", title: "Invitations", rows: <OrganizationInvitations organization={detail.data} /> }] : []),

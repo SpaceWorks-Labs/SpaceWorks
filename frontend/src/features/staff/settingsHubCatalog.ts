@@ -5,6 +5,7 @@ export type HubEntry = { id: string; title: string; description: string; keyword
 
 /** Sections of the Makerspace settings page, by the `id` MakerspaceSettingsPanel gives them. */
 const SECTION_ENTRIES: HubEntry[] = [
+  ["public-page", "Public page", "Arrange sections, claim a handle and publish your page.", "public page builder profile handle share qr gallery team story publish palette cover"],
   ["general", "General", "Name, address and public profile.", "name address location map profile description about"],
   ["branding", "Branding & public site", "Logo, colours, public stats and your web address.", "logo cover colour color theme brand public site stats subdomain custom domain print status lookup"],
   ["features", "Features", "Switch optional features on or off.", "feature switches toggles packs import capabilities"],

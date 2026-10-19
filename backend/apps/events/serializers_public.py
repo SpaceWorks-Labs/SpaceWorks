@@ -12,6 +12,7 @@ from .serializers_organization_audience import OrganizationAudienceFields
 from .serializers_ticketing_public import EventTicketingPublicSerializer
 from apps.forms_schema.serializers import CustomFormSubmissionMixin
 from apps.inventory import public_image_storage
+from .serializers_website import PublicWebsiteSerializer
 
 
 PUBLIC_EVENT_FIELDS = (
@@ -48,16 +49,18 @@ class EventOrganizerSummarySerializer(serializers.Serializer):
 class PublicEventSerializer(OrganizationAudienceFields, EventTicketingPublicSerializer):
     website = serializers.SerializerMethodField()
 
-    @extend_schema_field({"allOf": [{"$ref": "#/components/schemas/Website"}], "nullable": True})
+    @extend_schema_field(PublicWebsiteSerializer(allow_null=True))
     def get_website(self, obj):
         if self.context.get("omit_website"):
             return None
         from django.http import Http404
+        from rest_framework.exceptions import NotFound
         from .views_website_public import projection
-        from .serializers_website import WebsiteSerializer
+        # The optional website must never 404 the core event: a scope refusal
+        # (DRF NotFound) or a hidden page (Http404) both just omit it.
         try:
-            return WebsiteSerializer(projection(obj)).data
-        except Http404:
+            return PublicWebsiteSerializer(projection(obj, self.context.get("request"))).data
+        except (Http404, NotFound):
             return None
 
     public_token = serializers.UUIDField(read_only=True)

@@ -226,7 +226,10 @@ class Event(models.Model):
             raise ValidationError({"series_override_fields": "Expected a list of field names."})
     def save(self, *args, **kwargs):
         self.title = (self.title or "").strip()
-        if self.pk:
+        # Asset replay inserts with the PK reserved by its rolled-back first pass.
+        # A forced INSERT cannot replace an existing identity; the PK constraint
+        # still refuses collisions. Ordinary saves retain the immutable fields.
+        if self.pk and not kwargs.get("force_insert"):
             original = type(self).objects.only(
                 "public_token", "calendar_uid", "makerspace_id"
             ).get(

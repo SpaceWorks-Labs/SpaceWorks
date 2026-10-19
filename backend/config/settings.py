@@ -682,6 +682,10 @@ CELERY_BEAT_SCHEDULE = {
         "task": "apps.makerspaces.tasks.refresh_github_contributions_task",
         "schedule": crontab(hour=4, minute=15),
     },
+    "cleanup-public-page-assets": {
+        "task": "apps.makerspaces.tasks.cleanup_public_page_assets_task",
+        "schedule": crontab(minute=10),
+    },
     "membership-renewals": {
         "task": "apps.makerspaces.tasks_membership.run_membership_renewals_task",
         "schedule": crontab(minute=30),

@@ -12,10 +12,7 @@ import {
   type StaffAuthUser,
 } from "../../lib/api";
 
-type RedeemResponse = {
-  membership: { id: number; organization_id?: number };
-  user: StaffAuthUser;
-};
+type RedeemResponse = import("../../generated/api").OrganizationInvitationRedeemed;
 
 export function OrganizationInvitationRedeemPage() {
   const { token = "" } = useParams();

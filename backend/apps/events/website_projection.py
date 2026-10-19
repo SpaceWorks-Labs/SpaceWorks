@@ -2,9 +2,11 @@
 
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
+from django.db.models import Prefetch
+from apps.makerspaces.public_page_markdown import rendering_policy
 
 from .models import EventSeries
-from .models_website import EventPage
+from .models_website import EventPage, EventSessionSpeaker
 from .website_content import PAGE_FIELDS, SECTION_FIELDS, SECTION_GROUPS, group_enabled, page_defaults
 from .website_visibility import effective_page, visible_page
 
@@ -28,11 +30,14 @@ def project(target, *, public=False, image_url=None):
     return project_page(target, page, public=public, image_url=image_url)
 
 
-def project_page(target, page, *, public=False, image_url=None):
+def project_page(target, page, *, public=False, image_url=None, snapshot=True, request=None):
     empty = {**page_defaults(), "revision": 0, "released": False, "inherited": False, "sections": [], "sessions": [], "assets": []}
     if page is None:
         return empty
-    sections = list(page.sections.select_related("asset"))
+    if public:
+        from .website_revision_projection import project_revision
+        return project_revision(target, page, image_url=image_url, request=request)
+    sections = list(page.sections.filter(is_working=True).select_related("asset"))
     allowed = {row.pk: row for row in sections if not public or (
         row.visibility == "published" and group_enabled(page, SECTION_GROUPS.get(row.kind)))}
     delta = timedelta()
@@ -43,9 +48,12 @@ def project_page(target, page, *, public=False, image_url=None):
     for row in allowed.values():
         asset_url = image_url(row.asset_id) if row.asset_id and image_url else None
         section_rows.append({**{key: getattr(row, key) for key in SECTION_FIELDS}, "asset_id": row.asset_id,
+                             "body_rendering": rendering_policy(row.body),
                              "image_url": asset_url, "image_alt_text": row.asset.alt_text if row.asset_id else ""})
     session_rows, delays = [], {}
-    sessions = page.sessions.select_related("track", "room").prefetch_related("speaker_links__speaker").order_by("starts_at", "slug")
+    # Speaker links keep authored (insertion) order so draft snapshots are deterministic.
+    speakers = Prefetch("speaker_links", queryset=EventSessionSpeaker.objects.select_related("speaker").order_by("pk"))
+    sessions = page.sessions.select_related("track", "room").prefetch_related(speakers).order_by("starts_at", "slug")
     for row in sessions if not public or group_enabled(page, "SCHEDULE") else []:
         # A hidden session never shifts the released schedule or reveals hidden track data.
         if public and row.visibility != "published":
@@ -56,6 +64,8 @@ def project_page(target, page, *, public=False, image_url=None):
             delays[row.track_id] = delay
         shift = delta + timedelta(minutes=delay)
         session_rows.append({
+            "session_id": str(row.identity_id),
+            "body_rendering": rendering_policy(row.body),
             "slug": row.slug, "title": row.title, "body": row.body,
             "starts_at": row.starts_at + delta, "ends_at": row.ends_at + delta,
             "effective_starts_at": row.starts_at + shift, "effective_ends_at": row.ends_at + shift,
@@ -73,4 +83,11 @@ def project_page(target, page, *, public=False, image_url=None):
         result["tagline"] = ""
     if not public:
         result["assets"] = list(page.assets.values("id", "alt_text", "size_bytes"))
+        pinned = set(page.revisions.values_list("asset_references__asset_id", flat=True))
+        for row in result["assets"]:
+            row["pinned"] = row["id"] in pinned
+        if snapshot:
+            from .website_session_identity import delay_targets
+            result.update(draft_revision_id=page.draft_revision_id, published_revision_id=page.published_revision_id,
+                          delay_targets=delay_targets(page))
     return result

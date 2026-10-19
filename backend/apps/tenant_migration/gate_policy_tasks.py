@@ -210,3 +210,7 @@ FANOUT_GATE_PARTICIPANTS = {
 
 from .catalog_p2_presence import gate_tasks
 gate_tasks(TASK_INTERNAL_PARTICIPANTS, FANOUT_GATE_PARTICIPANTS)
+TASK_INTERNAL_PARTICIPANTS["apps.makerspaces.tasks.cleanup_public_page_assets_task"] = (
+    "Typed tenant cleanup uses per-tenant fanout and repeats the write fence under owner locks; organization cleanup is global."
+)
+FANOUT_GATE_PARTICIPANTS["apps.makerspaces.public_page_asset_cleanup.sweep"] = "Typed private-page byte cleanup."

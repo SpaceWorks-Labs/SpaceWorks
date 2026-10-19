@@ -19,7 +19,12 @@ from .unique_values_policy import (  # noqa: F401 -- re-exported
 )
 
 # One mapping over every rule set; a per-app extension module adds its own dict here.
+# Page/handle OneToOne makerspace fields are tenant ownership roots, so their
+# uniqueness is tenant-scoped; ordinary FK projection already remaps those owners.
 DEPLOYMENT_GLOBAL_UNIQUE_RULES = {
+    ("makerspaces.MakerspacePublicPageAsset", "field:object_key"): _policy(REMAP, "Verified private-object journal allocates keys."),
+    ("events.EventSession", "field:identity"): _policy(REMAP, "One working row per remapped durable session identity."),
+    ("makerspaces.PublicHandle", "field:organization"): _policy(REMAP, "Global organization claims never travel."),
     **CORE_UNIQUE_RULES,
     ("integrations.WhatsAppTemplateBinding", "messaging_platform_template"): _policy(
         UniqueValueDisposition.DROP_ROW,

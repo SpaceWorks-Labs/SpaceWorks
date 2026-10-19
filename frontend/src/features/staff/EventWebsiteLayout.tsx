@@ -1,15 +1,20 @@
 import { emptyVenue, orderedGroups, type EventWebsite, type WebsiteVenue } from "../events/websiteTypes";
 import { websiteCard, websiteCheck, websiteInput, websiteLabel, websiteLegend } from "./eventWebsiteFormStyles";
+import { useRef, useState } from "react";
 
 export function EventWebsiteLayout({ page, onChange, disabled }: {
   page: EventWebsite; onChange: (page: EventWebsite) => void; disabled: boolean;
 }) {
   const order = orderedGroups(page);
   const venue = page.venue;
+  const groupRefs = useRef(new Map<string, HTMLLIElement>());
+  const [announcement, announce] = useState("");
   function move(index: number, offset: number) {
     const next = [...order];
     [next[index], next[index + offset]] = [next[index + offset], next[index]];
     onChange({ ...page, section_order: next });
+    announce(`${order[index]} moved to position ${index + offset + 1}.`);
+    requestAnimationFrame(() => groupRefs.current.get(order[index])?.focus());
   }
   function venueChange(values: Partial<WebsiteVenue>) {
     onChange({ ...page, venue: { ...emptyVenue(), ...venue, ...values } });
@@ -18,10 +23,11 @@ export function EventWebsiteLayout({ page, onChange, disabled }: {
     <legend className={websiteLegend}>Page layout and venue</legend>
     <div className="grid gap-4 sm:grid-cols-2">
       <label className={websiteLabel}>Tagline<input className={websiteInput} maxLength={300} value={page.tagline ?? ""} onChange={(e) => onChange({ ...page, tagline: e.target.value })} /></label>
-      <label className={websiteLabel}>Accent colour<input className={websiteInput} placeholder="#2563eb" pattern="#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})" maxLength={7} value={page.accent_color ?? ""} onChange={(e) => onChange({ ...page, accent_color: e.target.value })} /></label>
+      {page.accent_color ? <p className="self-center text-sm text-muted">Existing custom accent is retained. Use the public palette picker to override it, or Inherit to reveal it.</p> : null}
     </div>
     <p className="text-sm text-muted">Choose which groups appear publicly and move them into display order. Hidden groups and their detail pages are unavailable publicly.</p>
-    <ol className="grid gap-2" aria-label="Section order">{order.map((group, index) => <li key={group} className="flex min-w-0 flex-wrap items-center gap-2 rounded-xl border border-line px-3 py-1">
+    <p role="status" aria-live="polite" className="sr-only">{announcement}</p>
+    <ol className="grid gap-2" aria-label="Section order">{order.map((group, index) => <li key={group} tabIndex={-1} ref={node => { if (node) groupRefs.current.set(group, node); else groupRefs.current.delete(group); }} className="flex min-w-0 flex-wrap items-center gap-2 rounded-xl border border-line px-3 py-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
       <label className={`${websiteCheck} mr-auto min-w-0`}><input type="checkbox" checked={page.section_enabled?.[group] !== false} onChange={(e) => onChange({ ...page, section_enabled: { ...page.section_enabled, [group]: e.target.checked } })} />{group}</label>
       <button className="desk-button" type="button" disabled={disabled || index === 0} aria-label={`Move ${group} up`} onClick={() => move(index, -1)}>Up</button>
       <button className="desk-button" type="button" disabled={disabled || index === order.length - 1} aria-label={`Move ${group} down`} onClick={() => move(index, 1)}>Down</button>

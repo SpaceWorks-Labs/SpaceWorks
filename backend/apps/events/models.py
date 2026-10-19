@@ -26,8 +26,14 @@ from .models_categories import EventCategory
 from .models_broadcasts import EventBroadcast, EventBroadcastDelivery
 from .models_website import EventPage, EventPageAsset, EventPageSection, EventSession, EventSessionSpeaker
 from .speaker_identity_models import EventSpeaker
+from .models_website_revisions import (
+    EventPageRevision, EventPageRevisionAsset, EventPageRevisionMember,
+    EventSessionIdentity, EventSessionAlias,
+)
 
 __all__ = [
+    "EventPageRevision", "EventPageRevisionAsset", "EventPageRevisionMember",
+    "EventSessionIdentity", "EventSessionAlias",
     "EventCertificateArtwork", "EventCertificateTemplateRevision",
     "EventPage", "EventPageAsset", "EventPageSection", "EventSession", "EventSessionSpeaker",
     "EventBroadcast", "EventBroadcastDelivery", "EventSpeaker",

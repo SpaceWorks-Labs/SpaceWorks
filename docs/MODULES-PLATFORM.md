@@ -159,6 +159,14 @@ Requires `member_accounts`.
 
 ## Backup & custody
 
+Public-page history participates in existing backup ownership: makerspace and event content belongs
+to its tenant, while organization pages, assets, quota and creator attribution remain in the global
+deployment component. Organization content never travels merely because a tenant is linked to it.
+Portable tenant imports keep authored drafts/history and typed assets, reset publication and public
+disclosures, and recheck handle collisions. Deployment restores preserve publication and IDs, then
+verify pointers, reference completeness, effective schedule windows and retained-byte accounting
+before traffic or a slice's verified checkpoint can advance.
+
 ### backup
 
 **On by default** (and backfilled onto every existing makerspace by `backup/0026`, because the key was

@@ -17,6 +17,8 @@ logger = logging.getLogger(__name__)
 
 
 def invalidate_profile(profile_id):
+    if profile_id is None:
+        return
     def invalidate():
         try:
             body_key = cache.get(f"public-profile:share:{profile_id}")
@@ -35,7 +37,10 @@ def invalidate_profile(profile_id):
 def remember_share_card(profile_id, card):
     """Index the shared renderer's actual body key so withdrawal deletes it too."""
     digest = hashlib.sha256(json.dumps(asdict(card), sort_keys=True).encode()).hexdigest()
-    cache.set(f"public-profile:share:{profile_id}", f"website-share:v1:{digest}", timeout=600)
+    try:
+        cache.set(f"public-profile:share:{profile_id}", f"website-share:v1:{digest}", timeout=600)
+    except Exception:
+        logger.exception("public_profile.share_cache_unavailable", extra={"profile_id": profile_id})
 
 
 def register_signals():

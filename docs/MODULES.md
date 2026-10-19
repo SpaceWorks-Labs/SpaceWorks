@@ -195,6 +195,20 @@ Requires `machines`: installing maintenance also installs its machine inventory.
 
 ## Events
 
+Public makerspace pages and global organization pages do not introduce module keys. A public,
+servable makerspace may publish an informational `/<handle>` page with no content family installed.
+Its inventory, event, booking and membership sections still obey their existing module gates.
+Only a local Space Manager edits a makerspace page; organization profile governors edit their own
+global page. Platform accounts do not edit these pages.
+
+The existing Events module owns `/e/<public_token>` and enhanced event websites. `events.website`
+controls the website builder; a basic public event may use its short URL without website release.
+Saving content changes a draft, and release selects a complete immutable snapshot. Uninstalling
+Events hides these surfaces while retaining snapshots, session identities and private bytes. An
+explicit Events data purge removes that venue's history and queues retryable private-byte deletion;
+unrelated makerspace and global organization pages remain. Past organization cards expose only the
+approved archive fields and do not reopen expired event websites.
+
 ### events
 
 [Read the events module reference](MODULES-WORKSHOPS.md#events).

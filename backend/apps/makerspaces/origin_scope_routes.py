@@ -130,6 +130,9 @@ def request_route_targets(request, view=None):
     url_name, targets, invalid, route_recognized = _authoritative_route_targets(
         request, view
     )
+    from .origin_scope_routes_public_pages import GLOBAL_ROUTES
+    if url_name in GLOBAL_ROUTES:
+        return url_name, set(), invalid, route_recognized
     hints = []
     query = getattr(request, 'query_params', None)
     if query is None:
@@ -179,6 +182,10 @@ def _authoritative_route_targets(request, view=None):
     url_name = getattr(match, 'url_name', '')
     kwargs = dict(getattr(match, 'kwargs', {}) or {})
     kwargs.update(getattr(view, 'kwargs', {}) or {})
+    from .origin_scope_routes_public_pages import page_route_targets
+    page_target = page_route_targets(url_name, kwargs, request)
+    if page_target is not None:
+        return page_target
     from .origin_scope_account_routes import account_route_targets
     account_target = account_route_targets(url_name, kwargs)
     if account_target is not None:

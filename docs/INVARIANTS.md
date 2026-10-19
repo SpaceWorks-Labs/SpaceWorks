@@ -3287,7 +3287,7 @@ create a copy-on-write page, even with an unchanged payload. Optimistic page rev
 refuse stale saves/releases. Release requires an own page and a published owner; the event
 publish action can atomically release a saved own page only with the explicit checkbox and
 current revision. Every write audits identifiers/revision/counts, not content. Clone uses
-Lane B's durable asset transaction, copies the effective website before optional series
+the reserve/work/finalize event asset transaction, copies the effective website before optional series
 attachment, and never copies release or live-delay history. This preserves valid short
 occurrence overrides when attaching their draft clones to a longer series template.
 
@@ -3295,17 +3295,56 @@ Always-present `makerspaces/website_assets.py` accepts multipart uploads, never 
 or final-key presigns. It bounds input to 5 MB, one frame and 16 megapixels before decode,
 reuses byte sniffing, strips metadata and re-encodes to WebP at most 2048 pixels per edge.
 New keys use `<domain>/website/<tenant>/<page>/...` in the private bucket. Staging is removed
-before commit; every new key is enlisted for rollback cleanup. Replacement redirects section
-references to a fresh asset, then deletes old versions after commit; only confirmed deletion
-frees quota. Copy/clone validates ownership and byte-size metadata, uses fresh keys and the
+before commit; every new key is enlisted for rollback cleanup. Replacement redirects working
+section references to a fresh asset; saved revisions pin their old assets until whole-owner
+removal. Only an unpinned upload or an authorized owner deletion can schedule byte deletion,
+which runs only after the owning transaction commits. Only confirmed deletion frees quota.
+Copy/clone validates ownership and byte-size metadata, uses fresh keys and the
 shared bounded-copy limits. Public images are streamed through a live-gated backend path,
 with no-store/nosniff and no object URL in JSON. Public React reads use tenant-aware blob
 transport (including client headers and external API origins); staff previews use staff
 transport and separate private/no-store endpoints.
 
+Event website upload/clone keys have a durable, FK-free cleanup intent committed before
+byte I/O. Its `owner_kind=event` owner ID is the venue makerspace ID. `storage_accounted`
+commits with the asset and tenant counter; rollback leaves unaccounted cleanup debt which
+still counts against the tenant allowance. Cleanup claims a retry in a short transaction,
+deletes both staging and final keys outside row locks, and releases accounted quota once.
+The reservation pass builds and validates a tentative graph in a transaction which is
+rolled back; only independently committed cleanup intents survive. Its event/page primary
+keys are reserved for final replay, so no partial clone or occurrence override is visible.
+HEAD, PUT, COPY and staging deletion run outside every domain transaction. Final replay
+reacquires the existing source/series/tenant/authority/page locks, repeats live permission,
+source-gate and current quota checks, and refuses changed owner/content/relational inputs
+with the existing `revision` field error. The random final key is the write claim token;
+only its exact ready, unexpired receipt with zero cleanup attempts can attach. Cleanup's
+attempt increment fences late writers. Repeated object work reuses verified final bytes,
+and repeated receipt finalization cannot charge twice. This costs two bounded graph builds
+for operations with new objects; operations with no object work commit in one transaction.
+Legacy event cover copies also run outside locks. Their event-prefix cleanup receipts use
+the public bucket; after attachment, the existing public-image lifecycle owns quota release,
+so the completed receipt only repairs late writes and never credits quota again. Live cover
+receipts are excluded before the bounded cleanup batch is selected. Bookings retains its
+separate existing transaction. The HTTP contract adds no retry/idempotency token: supplied
+event revision preconditions still reject stale HTTP replays, and legacy unconditioned
+uploads and explicit duplicate requests retain their existing semantics.
+Scheduling captures a checked `ownership_proven` receipt for imported keys before owner
+deletion can remove their original import-object journal.
+Completed event intents periodically repair late provider writes without a second quota
+credit. Owned-row ORM deletion queues cleanup in the deletion transaction; raw lifecycle
+adapters must capture the same journal before deleting rows. Unattached collection waits
+24 hours and refuses assets pinned by any revision or relational section.
+
+Account-linked speaker sections retain their row identity across content saves. Removing
+one from the draft sets `is_working=false`; it is absent from working projection, new
+snapshots, clones and new speaker-link choices, while `EventSpeaker.section` remains intact.
+Speaker history uses linked sessions in the selected released snapshot with its frozen
+series anchor, retaining the event-start fallback and account-only credit rules.
+
 Curated website text and image descriptions are intentional publication data, like event
-titles/descriptions, not private contact/answer fields or new scoped-PII sources. These five
-models have no User FKs or credentials. They have explicit export datasets, field/reference
+titles/descriptions, not private contact/answer fields or new scoped-PII sources. Editorial,
+asset and session rows have no User FKs or credentials; revision creators use nullable
+`SET_NULL` attribution, never authority. The models have explicit export datasets, field/reference
 and unique dispositions, retained object ownership, private-key collectors, quota
 reconciliation and module/tenant purge coverage. Portable content travels with remapped
 FKs and verified object-journal keys, but release and framing origins reset to false/empty.
@@ -5652,3 +5691,87 @@ explicit operator checkpoint. Old signed webhook URLs remain compatibility ingre
 period. Follow [the rollout guide](notification-reconciliation-rollout.md) and
 [operator setup and versioned routes](messaging-channels.md), rather than running
 expand/convert/retire unattended.
+
+## Public pages, shared handles and owner builders
+
+Member, makerspace and global organization names share `PublicHandle` and its lowercase namespace,
+owner checks, name locks and 30-day cooldown/reservation rules. Existing member detail, activity and
+share APIs remain member-only. The universal resolver returns a live typed target; an unpublished
+page or withdrawn consent is the same 404 as an unknown handle. Retired names recheck the current
+owner and return temporary no-store redirects. No migration automatically claims a slug or publishes.
+
+Makerspaces require `public_site_enabled`, canonical servability and a published revision. Direct
+availability does not require `superadmin_access_enabled`; directory/sitemap inclusion keeps its
+existing separate visibility rule. Organizations require active status and explicit profile consent,
+independently of discoverability. Their pages, history, quota, assets and creator attribution are
+deployment-global. A tenant link cannot export, purge or assign ownership of that global content.
+
+The owner edits: active local staff with the fixed Space Manager identity for a makerspace; an
+active organization profile governor for an organization; the existing exact event editorial/schedule
+permissions for an event or series. Platform accounts are excluded from page editing. Delegated
+account admission is not an authority grant. Pre-auth claim sessions never edit pages. All tenant
+writers repeat the source fence and owner authority under locks; global organization writers select
+no tenant and do not inherit a linked tenant's source freeze. Organization editors use platform
+staff origins. GET of an empty editor creates no page; versioned save appends a draft, and explicit
+publication selects the saved complete revision. Preview cannot publish.
+
+Event `/e/<public_token>` resolves the venue, never an organizer's linked tenant. Basic public-event
+gates apply even without an enhanced website. Existing event routes remain authoritative. EventPage
+working content, selected draft and released snapshot are separate. Public programme reads and
+images use the released snapshot with its frozen UTC anchor. Effective inherited occurrences must
+fit that snapshot as well as working sessions; editing/removing a draft cannot evade a retained
+publication's window. Page-owned session UUIDs and permanent slug aliases prevent reuse from
+retargeting operational delays. Delay can update publication without publishing pending editorial
+content; supplied identity/revision preconditions retain the frozen HTTP compatibility contract.
+
+Both Host and browser Origin (or Referer) constrain public reads. Unknown or ambiguous hosts fail
+closed. A verified tenant host can resolve only its tenant's maker/member handles and venue events.
+New global organization pages, collections and gated assets require a platform Host; recognized
+tenant browser origins remain allowed on the platform read host. Legacy organization read APIs
+keep explicit global compatibility admission. New API-client page reads require `public:read` or
+`public:*`, with no implicit `legacy:v1` admission. A tagged global handle success is distinct from
+an unresolved tenant. Editor identity and public visibility are still checked after client admission.
+
+Organization collections query live organizer attribution across venues, not only organization-linked
+spaces. Linked-space cards retain directory gates. Upcoming events remain published/public/not ended;
+the past archive is a minimal separate card projection with no registration CTA, website image or
+expired website link. Public team entries use typed profile slots and current consent, never stored
+member-name fallbacks. Inventory stats expose only the already-public exact-count subset. Member
+counts and location require their own explicit opt-ins; presence geofences never become public maps.
+
+Builder documents use bounded, validated sections and restricted Markdown; new links require HTTPS.
+Legacy event prose can retain only the versioned escaped-literal mode. Current-reference private
+asset streams repeat live visibility and origin checks with no-store; retained history alone grants
+no public image access. All saved revisions pin their images. Makerspace/event bytes use tenant
+quota; organizations have an independent 100,000,000-byte/50-asset allowance, including pending
+deletions. Purge enlists exact owned keys before deleting rows. Retryable cleanup deletes staging
+and final versions, then releases quota once; the module purge's legacy accounting skips those keys.
+Organization content and foreign-hosted organizers survive tenant or Events purge.
+
+Portable import omits exactly four nullable pointer edges from insertion ordering: draft/published
+on MakerspacePublicPage and EventPage. Shell insertion uses NULL pointers; checked post-insert fixups
+restore only the mapped draft. Other cycles still fail. Publication, EventPage release and member
+count/location disclosure reset; namespace conflicts drop the incoming claim, never overwrite a
+target. Global organization models and retired reservations remain deployment-only. Deployment
+backup preserves IDs and publication; organization member-reference slots survive tenant exclusion
+with a nullable profile link. Creator User references remain in the deployment component.
+
+Database restore cannot rely on deferred triggers retroactively validating copied rows.
+`backup/public_page_verification.py` independently checks pointer ownership, exact reference slots,
+private-byte ownership, working/draft agreement, released/inherited windows and quota accounting
+before normal restore validation, compound catalog verification or a slice's verified checkpoint.
+Invalid state refuses the checkpoint. Semantic checks also run on readable-main/reconstruction
+databases, use the candidate alias throughout and remain available with Events tombstoned.
+
+All state changes emit summary-only audit records; no revision body or secret URL belongs in audit
+metadata. The closed page `finish` wrapper action vocabulary is scanned; staff projection redacts its
+dynamic metadata. Deleted revision/page identifiers are inert provenance. Crawler rewrites dispatch
+handles to `/share/pages/` and short events to `/share/e/`, preserving legacy event/booking routes.
+`e` is reserved in every route snapshot. Sharing uses ordinary canonical-URL QR codes, never inventory
+QR rows. Public responses are no-store and draft previews are private/noindex.
+
+Everything uses the Space Works theme, CSS-variable light/dark tokens, existing layouts/AppShell,
+Gilroy 400–700, one Unbounded accent and lucide icons. Published cover/palette overrides precede
+legacy owner artwork/theme; inherit preserves legacy values and explicit none removes a cover.
+Brand seed choices go through accessible token derivation and never recolor fixed focus/status/staff
+tokens. No new makerspace-page, organization or hackathon module key is introduced.

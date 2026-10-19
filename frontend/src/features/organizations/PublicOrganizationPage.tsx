@@ -1,45 +1,57 @@
-import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { PublicLayout } from "../../components/layouts";
+import { PageMetadata } from "../../components/PageMetadata";
 import { ThemeToggle } from "../../components/ThemeToggle";
-import { EmptyState, ErrorBlock, ListRow, Pagination, Skeleton, StatusPill } from "../../components/ui";
-import { RouteLink } from "../../components/ui/RouteLink";
 import { StructuredApiError } from "../../lib/api";
 import { LICENSE_URL } from "../inventory/PublicPageChrome";
-import { EventPrice } from "../events/EventPrice";
-import { usePublicOrganization, usePublicOrganizationEvents, type OrganizationPublicEvent } from "./publicOrganizationsApi";
+import { NotFoundPage } from "../NotFoundPage";
+import { PageImage } from "../publicPages/PageImage";
+import { PageShare } from "../publicPages/PageShare";
+import { PublicPageHero } from "../publicPages/PublicPageHero";
+import { PublicPageSections } from "../publicPages/PublicPageSections";
+import { usePublicPage } from "../publicPages/pageApi";
+import { usePageBranding } from "../publicPages/usePageBranding";
+import { OrganizationPublicEvents, OrganizationPublicSpaces } from "./OrganizationPublicCollections";
+import { usePublicOrganization } from "./publicOrganizationsApi";
+import { useOptionalTenant } from "../../lib/tenant";
+import { CanonicalPageRedirect } from "../publicPages/CanonicalPageRedirect";
 
-function dateRange(event: OrganizationPublicEvent) {
-  const options: Intl.DateTimeFormatOptions = { dateStyle: "medium", timeStyle: "short" };
-  return `${new Date(event.starts_at).toLocaleString(undefined, options)} – ${new Date(event.ends_at).toLocaleString(undefined, options)}`;
-}
-
-export function PublicOrganizationPage() {
+export function PublicOrganizationPage({ profileSlug, profileOnly = false }: { profileSlug?: string; profileOnly?: boolean } = {}) {
   const { organizationSlug = "" } = useParams();
-  const [page, setPage] = useState(1);
-  const organization = usePublicOrganization(organizationSlug);
-  const events = usePublicOrganizationEvents(organizationSlug, page);
-  const missing = organization.error instanceof StructuredApiError && organization.error.status === 404;
-
-  return <PublicLayout makerspace={{ name: organization.data?.name ?? "Space Works", logo: organization.data?.logo_url || undefined, slug: "", homeHref: "/" }}
+  const slug = profileSlug ?? organizationSlug;
+  const organization = usePublicOrganization(slug);
+  const tenant = useOptionalTenant();
+  const projection = usePublicPage("organization", slug);
+  // A failed refetch keeps the last published page; 404s resolve to null rather than an error.
+  const page = projection.data ?? undefined;
+  const legacy = organization.error ? undefined : organization.data;
+  const style = usePageBranding(page?.presentation.resolved_theme, page?.presentation.accent_choice);
+  const pageMissing = projection.data === null || projection.error instanceof StructuredApiError && projection.error.status === 404;
+  if (profileOnly && pageMissing || pageMissing && organization.error instanceof StructuredApiError && organization.error.status === 404) return <NotFoundPage />;
+  // The legacy API owns adoption/withdrawal; cached consented prose never fills an unavailable builder.
+  const error = projection.error && projection.data === undefined && !pageMissing ? projection.error : page ? null : organization.error;
+  const ready = Boolean(page || pageMissing && legacy && !profileOnly);
+  const name = ready ? page?.title ?? legacy?.name ?? "Organization" : "Organization";
+  // Global profiles belong on the platform frontend, even when their read API admits a tenant browser origin.
+  if (tenant?.mode === "single" && ready) {
+    try {
+      const canonical = new URL(page?.canonical_url ?? legacy?.canonical_url ?? "");
+      if (!["https:", "http:"].includes(canonical.protocol) || canonical.username || canonical.password) return <NotFoundPage />;
+      if (canonical.origin !== window.location.origin) return <CanonicalPageRedirect url={canonical.href} />;
+    } catch { return <NotFoundPage />; }
+  }
+  return <div style={style}><PublicLayout makerspace={{ name, logo: legacy?.logo_url || undefined, slug: "", homeHref: "/" }}
     nav={[{ label: "Directory", href: "/" }]} headerAction={{ label: "Sign in", href: "/member" }} liveStatus={<ThemeToggle />}
-    header={{ eyebrow: "Organization", title: organization.data?.name ?? "Public organization", subtitle: organization.data?.description || "Upcoming events across community spaces.",
-      secondary: organization.data?.website ? { label: "Visit website ↗", href: organization.data.website, external: true } : undefined }}
-    // A missing page cannot be retried into existence; any other failure keeps the server's reason.
-    state={organization.isLoading ? { status: "loading" } : organization.error ? missing ? { status: "error", error: "Organization not found. This organization doesn't have a public page." }
-      : { status: "error", error: organization.error instanceof StructuredApiError && organization.error.detail ? organization.error.detail : "Couldn't load this organization. Try again.", onRetry: () => { void organization.refetch(); } } : { status: "ready" }}
+    hero={page ? <PublicPageHero page={page} /> : <header className="mb-6"><p className="eyebrow">Organization</p><h1 className="title-page">{name}</h1>{ready ? <><p className="mt-3 text-muted">{legacy?.description}</p>{legacy?.website ? <a className="desk-button mt-3" href={legacy.website} rel="noopener noreferrer">Visit website</a> : null}</> : null}</header>}
+    state={error ? { status: "error", error: error instanceof Error ? error.message : "Couldn't load organization.", onRetry: () => { void projection.refetch(); void organization.refetch(); } } : ready ? { status: "ready" } : { status: "loading" }}
     footer={{ credit: "Powered by Space Works", links: [{ label: "About", href: "/about" }, { label: "License", href: LICENSE_URL, external: true }, { label: "Staff sign-in", href: "/admin" }] }}>
-    <section aria-labelledby="organization-events-heading" className="grid gap-4">
-      <h2 className="title-panel" id="organization-events-heading">Upcoming events</h2>
-      {events.isLoading ? <div aria-label="Loading organization events" className="grid gap-4">{[0, 1, 2].map(item => <Skeleton key={item} className="h-24" />)}</div> : null}
-      {events.error ? <ErrorBlock error={new Error("Couldn't load events. Try again.")} onRetry={() => { void events.refetch(); }} /> : null}
-      {events.data && !events.data.results.length ? <EmptyState message="No upcoming events. Check back for the next gathering." /> : null}
-      {events.data?.results.map(event => <ListRow key={event.public_token} title={event.title} identity={event.image_url ? { kind: "image", src: event.image_url } : { kind: "date", date: event.starts_at }}
-        meta={<><span>Hosted by {event.host.name} · <time dateTime={event.starts_at}>{dateRange(event)}</time>{event.location ? ` · ${event.location}` : ""}</span>{event.description ? <span className="mt-1 block line-clamp-2 [overflow-wrap:anywhere]">{event.description}</span> : null}</>}
-        right={<div className="flex flex-wrap items-center gap-3"><dl className="text-sm"><EventPrice amount={event.payment_amount} currency={event.currency} /></dl>
-          <StatusPill label={event.availability} tone={event.availability === "Full" ? "warn" : "success"} />
-          <RouteLink className="desk-button-brand" href={`/m/${event.host.slug}/events`}>Register at {event.host.name}</RouteLink></div>} />)}
-      {events.data ? <Pagination page={page} pageSize={24} count={events.data.count} totalPages={Math.ceil(events.data.count / 24)} onChange={setPage} /> : null}
-    </section>
-  </PublicLayout>;
+    <div className="grid gap-8">
+      {ready ? <PageMetadata title={name} description={page?.description ?? legacy?.description ?? ""} path={page?.canonical_url ?? legacy?.canonical_url ?? `/o/${slug}`} image={page ? page.cover?.url : legacy?.logo_url} imageAlt={page?.cover?.alt} /> : null}
+      {page ? <PublicPageSections sections={page.sections} token={page.publication_token} linkedMakerspaces={<OrganizationPublicSpaces slug={slug} token={page.publication_token} />}
+        organizationCollections={<OrganizationPublicEvents slug={slug} token={page.publication_token} />}
+        image={(url, alt) => <PageImage url={url} alt={alt} token={page.publication_token} />} />
+        : ready ? <><section aria-label="Linked makerspaces" className="grid gap-4"><h2 className="title-panel">Linked makerspaces</h2><OrganizationPublicSpaces slug={slug} /></section><section aria-label="Organization events" className="grid gap-4"><h2 className="title-panel">Organization events</h2><OrganizationPublicEvents slug={slug} /></section></> : null}
+      {page ? <PageShare title={page.title} description={page.description} canonicalUrl={page.canonical_url} image={page.cover ? <PageImage url={page.cover.url} alt={page.cover.alt} token={page.publication_token} /> : undefined} /> : null}
+    </div>
+  </PublicLayout></div>;
 }

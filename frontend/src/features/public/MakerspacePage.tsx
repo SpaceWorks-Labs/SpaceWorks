@@ -15,6 +15,15 @@ import { FeaturedActivities } from "./FeaturedActivities";
 import { MakerspaceHeader } from "./MakerspaceHeader";
 import { ContactSection, MachinesSection, MembershipSection, SpacesSection } from "./MakerspaceMoreSections";
 import { MakerspaceSection } from "./MakerspaceSection";
+import { usePublicPage } from "../publicPages/pageApi";
+import { PublicPageHero } from "../publicPages/PublicPageHero";
+import { PublicPageSections } from "../publicPages/PublicPageSections";
+import { PageShare } from "../publicPages/PageShare";
+import { PageImage } from "../publicPages/PageImage";
+import { usePageBranding } from "../publicPages/usePageBranding";
+import { NotFoundPage } from "../NotFoundPage";
+import { StructuredApiError } from "../../lib/api";
+import { ErrorBlock } from "../../components/ui";
 
 /**
  * The public makerspace page at /m/<slug>: header, Featured activities, Inventory, then the other
@@ -23,14 +32,19 @@ import { MakerspaceSection } from "./MakerspaceSection";
  * The catalogue is the existing public browse, embedded unchanged, so its visibility rules
  * (no storage locations, box ids, QR codes or hidden counts) stay owned by the inventory feature.
  */
-export function MakerspacePage() {
+export function MakerspacePage({ profileSlug, profileOnly = false }: { profileSlug?: string; profileOnly?: boolean } = {}) {
   const { slug } = useParams();
   const tenant = useTenant();
-  const makerspaceSlug = tenant.mode === "single" ? tenant.slug : slug ?? "";
+  const makerspaceSlug = profileSlug ?? (tenant.mode === "single" ? tenant.slug : slug ?? "");
   const path = useTenantPath(makerspaceSlug);
   const bootstrapQuery = useTenantBootstrap(makerspaceSlug, tenant.mode === "central");
   const bootstrap = tenant.mode === "single" ? tenant.bootstrap : bootstrapQuery.data;
   const brandStyle = useTenantBranding(bootstrap);
+  const pageQuery = usePublicPage("makerspace", makerspaceSlug);
+  // A failed refetch keeps the last published page (404s resolve to null, not an error).
+  const published = pageQuery.data ?? undefined;
+  const pageStyle = usePageBranding(published?.presentation.resolved_theme ?? bootstrap?.theme, published?.presentation.accent_choice);
+  if (profileOnly && (pageQuery.data === null || pageQuery.error instanceof StructuredApiError && pageQuery.error.status === 404)) return <NotFoundPage />;
   // The route chooses this page only once bootstrap is known; nothing to compose before then.
   if (!bootstrap) return null;
   const families = new Set(publicFamilies(bootstrap));
@@ -41,22 +55,28 @@ export function MakerspacePage() {
   if (families.has("bookings")) actions.push({ label: "Book a space", href: path("bookings") });
   if (families.has("membership")) actions.push({ label: "Member area", href: path("member") });
 
+  const functional = (catalogue?: { body: ReactNode; aside: PublicActionCardProps }) => <div className="grid gap-8">
+    {families.has("events") ? <FeaturedActivities slug={makerspaceSlug} path={path} timeZone={bootstrap.makerspace.timezone} /> : null}
+    {catalogue ? <MakerspaceSection id="inventory" title="Inventory" subtitle="Tools, kits and materials you can borrow.">{catalogue.body}</MakerspaceSection> : null}
+    {families.has("machines") ? <MachinesSection path={path} /> : null}
+    {families.has("bookings") ? <SpacesSection slug={makerspaceSlug} path={path} /> : null}
+    {families.has("membership") ? <MembershipSection policy={bootstrap.makerspace.membership_policy} path={path} /> : null}
+  </div>;
   const page = (catalogue?: { body: ReactNode; aside: PublicActionCardProps }) =>
     <PublicLayout {...publicPageChrome(makerspaceSlug, name, path, bootstrap)} width="wide" state={{ status: "ready" }}
-      hero={<MakerspaceHeader name={name} bootstrap={bootstrap} actions={actions} />} aside={catalogue?.aside}>
-      {families.has("events") ? <FeaturedActivities slug={makerspaceSlug} path={path} timeZone={bootstrap.makerspace.timezone} /> : null}
-      {catalogue ? <MakerspaceSection id="inventory" title="Inventory" subtitle="Tools, kits and materials you can borrow.">
-        {catalogue.body}
-      </MakerspaceSection> : null}
-      {families.has("machines") ? <MachinesSection path={path} /> : null}
-      {families.has("bookings") ? <SpacesSection slug={makerspaceSlug} path={path} /> : null}
-      {families.has("membership") ? <MembershipSection policy={bootstrap.makerspace.membership_policy} path={path} /> : null}
-      <ContactSection bootstrap={bootstrap} />
+      hero={published ? <PublicPageHero page={published} slug={makerspaceSlug} actions={actions} /> : <MakerspaceHeader name={name} bootstrap={bootstrap} actions={actions} />} aside={catalogue?.aside}>
+      {published ? <div className="grid gap-8"><PublicPageSections sections={published.sections} functional={functional(catalogue)} token={published.publication_token} slug={makerspaceSlug}
+        image={(url, alt) => <PageImage url={url} alt={alt} slug={makerspaceSlug} token={published.publication_token} />} />
+        <PageShare title={published.title} description={published.description} canonicalUrl={published.canonical_url} image={published.cover ? <PageImage url={published.cover.url} alt={published.cover.alt} slug={makerspaceSlug} token={published.publication_token} /> : undefined} /></div> : <>{functional(catalogue)}<ContactSection bootstrap={bootstrap} /></>}
     </PublicLayout>;
 
-  return <div style={brandStyle}>
-    <PageMetadata title={name} description={bootstrap.branding.welcome_body || `Events, tools and spaces at ${name}.`} path={path()}
-      image={bootstrap.makerspace.cover_image_url || bootstrap.makerspace.logo_url} siteName={name} />
-    {families.has("inventory") ? <PublicInventoryPage embedded={({ body, aside }) => page({ body, aside })} /> : page()}
+  // Only the profile-only route depends on the page endpoint. The legacy home (and its catalogue) never
+  // gives way to a transient page-endpoint error; it simply renders as unpublished.
+  if (profileOnly && !published && pageQuery.error) return <PublicLayout {...publicPageChrome(makerspaceSlug, name, path, bootstrap)} header={{ title: "Public page" }} state={{ status: "ready" }}><ErrorBlock error={pageQuery.error} onRetry={() => { void pageQuery.refetch(); }} /></PublicLayout>;
+  if (profileOnly && !published) return <PublicLayout {...publicPageChrome(makerspaceSlug, name, path, bootstrap)} header={{ title: name }} state={{ status: "loading" }}><span /></PublicLayout>;
+  return <div style={published ? pageStyle : brandStyle}>
+    <PageMetadata title={published?.title ?? name} description={published?.description ?? (bootstrap.branding.welcome_body || `Events, tools and spaces at ${name}.`)} path={published?.canonical_url ?? path()}
+      image={published?.cover?.url ?? (published ? null : bootstrap.makerspace.cover_image_url || bootstrap.makerspace.logo_url)} imageAlt={published?.cover?.alt} siteName={name} />
+    {families.has("inventory") ? <PublicInventoryPage key={makerspaceSlug} resolvedSlug={makerspaceSlug} inheritBranding embedded={({ body, aside }) => page({ body, aside })} /> : page()}
   </div>;
 }

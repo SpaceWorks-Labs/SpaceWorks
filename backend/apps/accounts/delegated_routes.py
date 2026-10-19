@@ -6,6 +6,7 @@ from .delegated_route_catalog import (
     DELEGABLE_ROUTES, MEMBER_ROUTES, MEMBERSHIP_ROUTES, PLATFORM_ONLY_ROUTES,
     SHARED_ROUTES, SIGNED_PROTOCOL_ROUTES, TENANT_STAFF_ROUTES,
 )
+from .claim_routes_public_pages import MAKERSPACE_PAGE_EDITORS, ORGANIZATION_PAGE_EDITORS
 
 MEMBERSHIP_ONLY = "membership-only"
 DELEGABLE = "delegable"
@@ -15,6 +16,8 @@ PLATFORM_ONLY = "platform-only"
 SIGNED_PROTOCOL = "signed-protocol"
 
 ROUTE_CLASSES = MappingProxyType({
+    **dict.fromkeys(MAKERSPACE_PAGE_EDITORS, MEMBERSHIP_ONLY),
+    **dict.fromkeys(ORGANIZATION_PAGE_EDITORS, DELEGABLE),
     **dict.fromkeys((
         "admin-staff-accounts", "admin-staff-account-policy", "admin-staff-account-change",
         "admin-staff-account-deactivate", "admin-staff-account-reactivate",

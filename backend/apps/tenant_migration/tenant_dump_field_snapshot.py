@@ -123,3 +123,5 @@ FIRST_PARTY_FIELD_NAMES['machines.MachineUsageEntry'] |= frozenset('member start
 FIRST_PARTY_FIELD_NAMES['notifications.NotificationInboxRow'] |= frozenset('audience scope'.split())
 
 # Orchestrator re-pins the live catalog after final schema/migration verification.
+from .catalog_public_pages import FIELD_NAMES as PAGE_FIELD_NAMES
+FIRST_PARTY_FIELD_NAMES.update(PAGE_FIELD_NAMES)

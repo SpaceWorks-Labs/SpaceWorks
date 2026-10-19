@@ -5,7 +5,7 @@ import re
 
 
 def route_segments(root):
-    paths = {"/share/profiles/", "/sitemap.xml", "/robots.txt", "/favicon.ico", "/assets/"}
+    paths = {"/share/profiles/", "/share/pages/", "/share/e/", "/e/", "/sitemap.xml", "/robots.txt", "/favicon.ico", "/assets/"}
     frontend = (root / "frontend/src/AppRoutes.tsx").read_text(encoding="utf-8")
     paths.update(re.findall(r'\bpath=["\']([^"\']+)', frontend))
     seen = set()
@@ -45,6 +45,6 @@ def route_segments(root):
     result = set()
     for path in paths:
         segment = path.lstrip("^/").split("/")[0].lower().rstrip("*$")
-        if re.fullmatch(r"[a-z0-9][a-z0-9._-]*", segment):
+        if segment == ".well-known" or re.fullmatch(r"[a-z0-9][a-z0-9._-]*", segment):
             result.add(segment)
     return frozenset(result)

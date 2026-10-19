@@ -1,0 +1,76 @@
+{
+  "tagline": "A day of making",
+  "accent_color": "",
+  "section_order": [
+    "HERO",
+    "ABOUT",
+    "HIGHLIGHTS",
+    "SCHEDULE",
+    "SPEAKERS",
+    "SPONSORS",
+    "VENUE",
+    "FAQ",
+    "RESOURCES",
+    "EDITORIAL"
+  ],
+  "section_enabled": {
+    "HERO": true,
+    "ABOUT": true,
+    "HIGHLIGHTS": true,
+    "SCHEDULE": true,
+    "SPEAKERS": true,
+    "SPONSORS": true,
+    "VENUE": true,
+    "FAQ": true,
+    "RESOURCES": true,
+    "EDITORIAL": true
+  },
+  "venue": null,
+  "editorial_document": {
+    "schema_version": 1,
+    "cover_mode": "inherit",
+    "cover_asset_id": null,
+    "accent_choice": "inherit",
+    "sections": []
+  },
+  "revision": 3,
+  "released": true,
+  "inherited": false,
+  "sections": [],
+  "sessions": [
+    {
+      "session_id": "46582470-dbbf-4b11-a052-4b92ea877aa6",
+      "slug": "talk-renamed",
+      "title": "Pending title",
+      "body": "Welcome",
+      "body_rendering": "restricted_v1",
+      "starts_at": "2026-10-20T09:00:00Z",
+      "ends_at": "2026-10-20T09:30:00Z",
+      "effective_starts_at": "2026-10-20T09:10:00Z",
+      "effective_ends_at": "2026-10-20T09:40:00Z",
+      "delay_minutes": 10,
+      "visibility": "published",
+      "track": null,
+      "room": null,
+      "speakers": []
+    }
+  ],
+  "assets": [],
+  "draft_revision_id": "f7dafbe9-4ab3-43ba-9d5e-56a9398b589b",
+  "published_revision_id": "e02618f5-9cd3-4c7a-8450-f0e5ef12b3e9",
+  "delay_targets": [
+    {
+      "session_id": "46582470-dbbf-4b11-a052-4b92ea877aa6",
+      "working_slug": "talk-renamed",
+      "public_slug": "talk",
+      "working_present": true,
+      "public_present": true,
+      "working_delay_minutes": 10,
+      "public_delay_minutes": 10
+    }
+  ],
+  "capabilities": {
+    "can_edit_details": true,
+    "can_publish_schedule": true
+  }
+}

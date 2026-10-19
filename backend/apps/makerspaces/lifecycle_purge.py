@@ -22,6 +22,8 @@ def purge(makerspace, actor):
         # the caller's potentially stale instance. Completion retains these facts.
         meta = _audit_meta(locked)
         storage_keys = _collect_storage_keys(locked)
+        from .public_page_lifecycle import enqueue_tenant_pages
+        enqueue_tenant_pages(locked)
         public_image_keys = _collect_public_image_keys(locked)
         audit.record(actor, "makerspace.purge_started", makerspace=None, target=None, meta=meta)
         from .staff_retirement import retire_staff_accounts

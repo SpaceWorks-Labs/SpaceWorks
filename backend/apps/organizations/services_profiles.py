@@ -24,6 +24,19 @@ def update_profile(organization, *, actor, **changes):
         locked,
         governance.MANAGE_ORGANIZATION_PROFILE,
     )
+    from .models_public_pages import OrganizationPublicPage
+    page = OrganizationPublicPage.objects.select_for_update().filter(organization=locked).first()
+    if page and changes.get("public_profile_enabled") is True and not page.published_revision_id:
+        raise ValidationError({"public_profile_enabled": "Publish the current saved page draft to enable its public profile."})
+    if page and changes.get("public_profile_enabled") is True and not locked.public_profile_enabled:
+        # Making a builder revision live is page publication, which only an owner
+        # account may do. Platform takedown (disable) and profile edits stay open.
+        from apps.makerspaces.public_page_authority import reject_platform
+        reject_platform(actor)
+    if page and changes.get("public_profile_enabled") is False:
+        page.published_revision = None
+        page.version += 1
+        page.save(update_fields=["published_revision", "version"])
     changed_fields = []
     for field, value in changes.items():
         if getattr(locked, field) != value:

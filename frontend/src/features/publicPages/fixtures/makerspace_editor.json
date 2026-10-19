@@ -1,0 +1,58 @@
+{
+  "kind": "makerspace",
+  "owner_id": 17,
+  "version": 0,
+  "handle": null,
+  "draft_revision_id": null,
+  "published_revision_id": null,
+  "document": {
+    "schema_version": 1,
+    "cover_mode": "inherit",
+    "cover_asset_id": null,
+    "accent_choice": "inherit",
+    "sections": [
+      {
+        "id": "32c417ce-8dda-50d7-b563-2b09c335ffd1",
+        "type": "functional_content",
+        "enabled": true,
+        "payload": {}
+      }
+    ]
+  },
+  "assets": [],
+  "capabilities": {
+    "allowed_section_types": [
+      "about",
+      "gallery",
+      "team",
+      "testimonials",
+      "links",
+      "upcoming_events",
+      "stats",
+      "location",
+      "functional_content"
+    ],
+    "required_groups": [
+      "functional_content"
+    ],
+    "palette_choices": {
+      "inherit": null,
+      "maker_teal": "#006E63",
+      "workshop_orange": "#FF7447",
+      "citron": "#DFFF8F",
+      "sky_blue": "#B5CDFF",
+      "warm_yellow": "#FFD447"
+    },
+    "can_edit_details": true,
+    "can_publish": true,
+    "suggested_handle": "example-lab"
+  },
+  "limits": {
+    "document_bytes": 131072,
+    "sections": 20,
+    "assets": 50,
+    "upload_bytes": 5000000,
+    "storage_bytes": null,
+    "storage_bytes_used": 0
+  }
+}

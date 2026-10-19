@@ -1,23 +1,19 @@
+import type { PublicEvent } from "../../generated/api";
 import type { CustomFormSchema } from "../forms/customFormTypes";
 
+// These inline JSON schemas are coarse in OpenAPI; the form/ticket components need validated domain fields.
 export type EventTicket = {
   id: number; name: string; amount: string; audience: "member" | "public";
   spots_left: number | null;
 };
-
-export type PublicEventDetail = {
-  website?: import("./websiteTypes").EventWebsite | null;
-  audience_label?: string | null; participating_organizations?: { id: number; name: string }[];
-  public_token: string; title: string; description: string;
-  starts_at: string; ends_at: string; location: string;
-  show_registration_count?: boolean; registration_count?: number | null;
-  capacity: number | null; payment_amount: string; currency: string;
-  availability: "Available" | "Limited" | "Full";
-  registration_audience?: "members" | "accounts" | "invite" | "participating_organizations";
-  ticket_types?: EventTicket[]; ticket_selection_required?: boolean; promo_codes_enabled?: boolean;
-  category?: { id: number; name: string; slug: string } | null; tags?: string[];
-  registration_requires_approval: boolean;
-  effective_registration_cutoff_at: string | null; registration_open: boolean;
-  image_url: string | null; status: "published"; custom_form: CustomFormSchema;
-  series: { public_token: string; title: string } | null;
+type CoreFields = "public_token" | "title" | "description" | "starts_at" | "ends_at" | "location"
+  | "payment_amount" | "currency" | "availability" | "registration_requires_approval"
+  | "effective_registration_cutoff_at" | "registration_open" | "image_url" | "status" | "series";
+type OptionalFields = "website" | "audience_label" | "participating_organizations" | "show_registration_count"
+  | "registration_count" | "registration_audience" | "ticket_selection_required" | "promo_codes_enabled" | "tags";
+export type PublicEventDetail = Pick<PublicEvent, CoreFields> & Partial<Pick<PublicEvent, OptionalFields>> & {
+  capacity: number | null;
+  ticket_types?: EventTicket[];
+  category?: { id: number; name: string; slug: string } | null;
+  custom_form: CustomFormSchema;
 };

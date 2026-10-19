@@ -1,6 +1,6 @@
 """One event gate for every public website projection, including image bytes."""
 
-from django.db.models import Count, Q
+from django.db.models import Count, Q, Value
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -41,9 +41,14 @@ def effective_page(event):
 def visible_page(event):
     from apps.makerspaces.editions import require_public_surface
     require_public_surface("events")
-    if not public_events(event.makerspace).filter(pk=event.pk).exists():
+    # The public-site switch hides the event website (JSON, images, cover share)
+    # as one decision; the core event detail stays governed by its own gate.
+    if not event.makerspace.public_site_enabled or not public_events(event.makerspace).filter(pk=event.pk).exists():
         raise Http404
-    return released_page(event, "events", effective_page(event))
+    page = released_page(event, "events", effective_page(event))
+    if page.published_revision_id is None:
+        raise Http404
+    return page
 
 
 def discover_events(spaces, filters=None):
@@ -57,8 +62,13 @@ def discover_events(spaces, filters=None):
         makerspace__enabled_modules__contains=["events"],
         is_public=True, status=Event.Status.PUBLISHED, ends_at__gte=timezone.now(),
     ).select_related(
-        "makerspace", "series", "website_page", "series__website_page",
+        "makerspace", "series", "website_page__published_revision",
+        "series__website_page__published_revision",
     ).prefetch_related("organizers").annotate(
+        # This query already enforces canonical tenant servability. Card
+        # projection can inspect loaded feature configuration without a fresh
+        # opaque-restore lookup for every row. Never persist this read proof.
+        website_host_servable=Value(True),
         confirmed_count=Count("registrations", filter=Q(registrations__status__in=CONFIRMED_STATUSES)),
     ).order_by("starts_at", "id")
 

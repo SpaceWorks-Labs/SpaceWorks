@@ -20,6 +20,8 @@ TARGET_FIELD_PROJECTION = {
     ("accounts.User", "account_restored_at"): TargetField(None, reason="Target issues its own revocable sessions."),
     ("accounts.User", "deletion_username"): TargetField("", reason="Target chooses its own random erasure pseudonym."),
     ("accounts.User", "deletion_email_ciphertext"): TargetField("", reason="Source platform-encrypted erasure address never travels."),
+    ("makerspaces.MakerspacePublicPage", "published_revision"): TargetField(None, reason="Fresh target publication required."),
+    ("events.EventPage", "published_revision"): TargetField(None, reason="Fresh target release required."),
     ("bookings.BookingResourcePage", "released"): TargetField(False, reason="Target staff explicitly release resource content."),
     ("events.EventCertificateArtwork", "version_id"): TargetField(
         "", reason="Source bucket version identity is replaced; SHA-256 pins imported bytes.",

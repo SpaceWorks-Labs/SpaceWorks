@@ -23,3 +23,6 @@ from .gate_policy_objects import (
     LIFECYCLE_EXEMPTIONS,
     OBJECT_MUTATION_PARTICIPANTS,
 )
+from .gate_policy_public_pages import (
+    TENANT_PAGE_ROUTES, GLOBAL_PAGE_ROUTES, PAGE_SERVICE_PARTICIPANTS,
+)

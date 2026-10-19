@@ -17,6 +17,9 @@ def directory_spaces():
 
 
 def public_url(space, kind, token):
+    if kind == "events":
+        from .public_page_access import canonical_origin
+        return f"{canonical_origin(space)}/e/{token}"
     if space.frontend_domain and space.frontend_domain_status == Makerspace.DomainStatus.VERIFIED:
         return f"https://{space.frontend_domain}/{kind}/{token}"
     return f"{settings.PUBLIC_APP_BASE_URL.rstrip('/')}/m/{space.slug}/{kind}/{token}"

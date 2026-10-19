@@ -27,6 +27,7 @@ class PublicCard:
     revision: str
     registration_count: int | None = None
     makerspace_name: str = ""
+    image_alt: str = ""
 
 
 def private_image_response(key):
@@ -75,7 +76,10 @@ def share_response(card):
     # Always called AFTER live visibility/origin checks. A stale cache cannot revive a page.
     digest = hashlib.sha256(json.dumps(asdict(card), sort_keys=True).encode()).hexdigest()
     key = f"website-share:v1:{digest}"
-    html = cache.get(key)
+    try:
+        html = cache.get(key)
+    except Exception:
+        html = None
     if html is None:
         e = escape
         meta = {"og:type": "website", "og:title": card.title, "og:description": card.description,
@@ -83,10 +87,15 @@ def share_response(card):
                 "twitter:title": card.title, "twitter:description": card.description}
         if card.image_url:
             meta.update({"og:image": card.image_url, "twitter:image": card.image_url})
+            if card.image_alt:
+                meta.update({"og:image:alt": card.image_alt, "twitter:image:alt": card.image_alt})
         tags = "".join(f'<meta {"name" if name.startswith("twitter:") else "property"}="{e(name)}" content="{e(value)}">' for name, value in meta.items())
         html = (f'<!doctype html><html lang="en"><meta charset="utf-8"><title>{e(card.title)}</title>'
-                f'<meta name="robots" content="noindex">{tags}<a href="{e(card.url)}">{e(card.title)}</a></html>')
-        cache.set(key, html, 600)
+                f'<meta name="robots" content="noindex"><link rel="canonical" href="{e(card.url)}">{tags}<a href="{e(card.url)}">{e(card.title)}</a></html>')
+        try:
+            cache.set(key, html, 600)
+        except Exception:
+            pass  # Static-body caching is optional; live gates have already run.
     response = HttpResponse(html)
     response["Cache-Control"] = "no-cache"
     response["X-Robots-Tag"] = "noindex"

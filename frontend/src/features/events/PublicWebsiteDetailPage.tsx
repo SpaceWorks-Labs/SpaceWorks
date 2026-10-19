@@ -10,7 +10,8 @@ import { publicPageChrome } from "../inventory/PublicPageChrome";
 import { formatSlug } from "../inventory/PublicInventoryParts";
 import { useTenantBootstrap } from "../inventory/usePublicInventory";
 import { WebsiteProgramme, WebsiteSectionCard, type WebsiteLinks } from "./PublicEventWebsite";
-import type { EventWebsite } from "./websiteTypes";
+import { markdownMode, type PublicEventWebsiteData } from "./websiteTypes";
+import { markdownExcerpt } from "../../components/restrictedMarkdownTokens";
 
 /** Read the current gated projection rather than retaining a detached speaker/session snapshot. */
 export function PublicWebsiteDetailPage({ view }: { view: "schedule" | "session" | "speaker" }) {
@@ -25,7 +26,7 @@ export function PublicWebsiteDetailPage({ view }: { view: "schedule" | "session"
   const bootstrap = tenant.mode === "single" ? tenant.bootstrap : bootstrapQuery.data;
   const brandStyle = useTenantBranding(bootstrap);
   const query = useQuery({ queryKey: ["public-event-website", makerspaceSlug, publicToken],
-    queryFn: () => tenantPublicRequest<EventWebsite>(makerspaceSlug, `/public/${encodeURIComponent(makerspaceSlug)}/events/${encodeURIComponent(publicToken)}/website/`),
+    queryFn: () => tenantPublicRequest<PublicEventWebsiteData>(makerspaceSlug, `/public/${encodeURIComponent(makerspaceSlug)}/events/${encodeURIComponent(publicToken)}/website/`),
     enabled: Boolean(allowed && makerspaceSlug && publicToken), staleTime: 0, gcTime: 0,
     refetchOnMount: "always", refetchInterval: 30_000, refetchOnWindowFocus: true,
     retry: (count, error) => !(error instanceof StructuredApiError && error.status < 500) && count < 2,
@@ -44,12 +45,12 @@ export function PublicWebsiteDetailPage({ view }: { view: "schedule" | "session"
     error: query.error && !(query.error instanceof StructuredApiError && query.error.status === 404) ? "Unable to load this event website." : "Page not found.",
     onRetry: query.error ? () => { void query.refetch(); } : undefined } : { status: "ready" as const };
   return <div style={brandStyle}>
-    {visible && page ? <PageMetadata title={title} description={(speaker?.body ?? session?.body ?? "Event programme").slice(0, 200)} path={location.pathname} /> : null}
+    {visible && page ? <PageMetadata title={title} description={markdownExcerpt(speaker?.body ?? session?.body ?? "Event programme", markdownMode(speaker?.body_rendering ?? session?.body_rendering))} path={location.pathname} /> : null}
     <PublicLayout {...publicPageChrome(makerspaceSlug, name, path, bootstrap)} state={state} width="narrow"
       breadcrumb={[{ label: "All events", href: path("events") }, { label: "Back to event", href: base }, { label: visible ? title : "Event website" }]}
       header={{ eyebrow: view === "schedule" ? undefined : view === "speaker" ? "Speaker" : "Session", title: visible ? title : "Event website" }}>
       {visible && page ? <div className="grid gap-8">
-        {view === "speaker" && speaker ? <><section aria-label="Speaker profile" className="grid gap-3"><h2 className="title-panel">Speaker profile</h2><WebsiteSectionCard row={speaker} image={image} /></section>{page.section_enabled?.SCHEDULE !== false && page.sessions.some((row) => row.speakers.includes(speaker.slug)) ? <WebsiteProgramme website={page} links={links} sessions={page.sessions.filter((row) => row.speakers.includes(speaker.slug))} /> : null}</> : <WebsiteProgramme website={page} links={links} sessions={view === "session" && session ? [session] : page.sessions} />}
+        {view === "speaker" && speaker ? <><section aria-label="Speaker profile" className="grid gap-3"><h2 className="title-panel">Speaker profile</h2><WebsiteSectionCard row={speaker} image={image} /></section>{page.section_enabled?.SCHEDULE !== false && page.sessions.some((row) => (row.speakers ?? []).includes(speaker.slug)) ? <WebsiteProgramme website={page} links={links} sessions={page.sessions.filter((row) => (row.speakers ?? []).includes(speaker.slug))} /> : null}</> : <WebsiteProgramme website={page} links={links} sessions={view === "session" && session ? [session] : page.sessions} />}
       </div> : null}
     </PublicLayout>
   </div>;

@@ -186,6 +186,8 @@ def merge_slices(
                 for rows in target_deks.values():
                     verify_target_deks(rows, using=using)
                 _verify_constraints_and_reservations(operation_id, components, using=using)
+                from .public_page_verification import verify_public_pages
+                verify_public_pages(using=using)
                 _checkpoint(components, "verified", using=using)
                 cleanup_staging(staged_objects, strict=True)
                 _boundary(boundary_hook, BOUNDARY_FINAL)

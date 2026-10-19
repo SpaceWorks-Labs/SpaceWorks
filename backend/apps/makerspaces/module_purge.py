@@ -256,8 +256,15 @@ def _free_private_storage(makerspace, sizes, deleted_keys):
     """Release charged bytes for private objects that were confirmed deleted."""
     if not sizes or not deleted_keys:
         return
+    from .models_page_cleanup import PublicPageObjectCleanup
+    # The deletion callback may already have completed before this legacy path.
+    # Both pending and completed page receipts own their quota release exactly once.
+    journaled = set(PublicPageObjectCleanup.objects.filter(
+        owner_kind__in=("makerspace", "event"), owner_id=makerspace.pk, object_key__in=deleted_keys,
+    ).values_list("object_key", flat=True))
     freed = sum(
         size for key, size in sizes.items() if size and key in deleted_keys
+        and key not in journaled
         # Artwork upload reservations cover the staging object too. A failed
         # staging deletion cannot grant the tenant that reserved budget back.
         and (not key.startswith("events/certificate-artwork/")

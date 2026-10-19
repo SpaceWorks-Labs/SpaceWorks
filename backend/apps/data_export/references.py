@@ -19,6 +19,12 @@ _EXCLUDED_USER_EDGE_REASONS = {
 }
 from apps.tenant_migration import catalog_p2_events as _p2_events
 RELATIONAL_USER_FIELDS |= _p2_events.USER_FIELDS
+from apps.tenant_migration.catalog_public_pages import USER_FIELDS as PAGE_USER_FIELDS, EXCLUDED_USER_EDGES
+RELATIONAL_USER_FIELDS |= PAGE_USER_FIELDS
+_EXCLUDED_USER_EDGE_REASONS.update(EXCLUDED_USER_EDGES)
+RELATIONAL_USER_FIELDS |= EXCLUDED_USER_EDGES.keys()
+RELATIONAL_USER_FIELDS |= {("makerspaces.PublicHandleRedirect", "user")}
+_EXCLUDED_USER_EDGE_REASONS[("makerspaces.PublicHandleRedirect", "user")] = "Retired reservations are deployment-local."
 _EXCLUDED_USER_EDGE_REASONS.update(_p2_events.EXCLUDED_USER_EDGE_REASONS)
 from .types import (
     Fidelity,

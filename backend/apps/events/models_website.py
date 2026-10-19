@@ -3,7 +3,7 @@
 from django.db import models
 from django.db.models import F, Q
 
-from .website_content import SPONSOR_TIERS, default_section_enabled, default_section_order
+from .website_content import SPONSOR_TIERS, default_section_enabled, default_section_order, default_editorial_document
 
 
 class EventPage(models.Model):
@@ -19,6 +19,11 @@ class EventPage(models.Model):
     section_order = models.JSONField(default=default_section_order)
     section_enabled = models.JSONField(default=default_section_enabled)
     venue = models.JSONField(null=True, blank=True)
+    editorial_document = models.JSONField(default=default_editorial_document)
+    draft_revision = models.ForeignKey("events.EventPageRevision", null=True, blank=True,
+                                      on_delete=models.SET_NULL, related_name="+")
+    published_revision = models.ForeignKey("events.EventPageRevision", null=True, blank=True,
+                                          on_delete=models.SET_NULL, related_name="+")
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -52,6 +57,8 @@ class EventPageSection(models.Model):
         HIGHLIGHT = "highlight", "Highlight"
 
     page = models.ForeignKey(EventPage, on_delete=models.CASCADE, related_name="sections")
+    # Account-linked speaker sections survive draft removal as identity anchors.
+    is_working = models.BooleanField(default=True)
     kind = models.CharField(max_length=16, choices=Kind.choices)
     slug = models.SlugField(max_length=80)
     title = models.CharField(max_length=200)
@@ -75,6 +82,8 @@ class EventPageSection(models.Model):
 
 
 class EventSession(models.Model):
+    identity = models.OneToOneField("events.EventSessionIdentity", on_delete=models.RESTRICT,
+                                    related_name="working_session")
     page = models.ForeignKey(EventPage, on_delete=models.CASCADE, related_name="sessions")
     slug = models.SlugField(max_length=80)
     title = models.CharField(max_length=200)
@@ -101,3 +110,20 @@ class EventSessionSpeaker(models.Model):
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=("session", "speaker"), name="event_session_speaker_unique")]
+
+
+# Retention also loads this model module when the Events runtime is removed.
+from django.db.models.signals import pre_delete
+from django.dispatch import receiver
+
+
+@receiver(pre_delete, sender=EventPageAsset, dispatch_uid="events.website_asset_cleanup")
+def queue_deleted_asset(sender, instance, **kwargs):
+    from django.db import transaction
+    from apps.makerspaces import website_assets
+    from apps.makerspaces.website_asset_journal import schedule
+    from apps.makerspaces.public_page_asset_cleanup import clean_object
+    if website_assets.owns(instance.object_key, "events", instance.page.makerspace_id,
+                           instance.page_id, asset=instance):
+        job_id = schedule(instance)
+        transaction.on_commit(lambda: clean_object(job_id), robust=True)

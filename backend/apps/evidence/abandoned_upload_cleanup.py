@@ -29,7 +29,7 @@ from apps.makerspaces.servability import servable_queryset
 from apps.operations.report_rollups import REFINALIZE_LOOKBACK, satisfy_retention_fence
 from apps.tenant_migration.gate_runtime import fanout_tenant_write
 from apps.storage_capabilities.chunks import FreeSweep
-from apps.storage_capabilities.budget import checkpoint, raise_if_fenced
+from apps.storage_capabilities.budget import checkpoint, log_traceback, raise_if_fenced
 
 
 logger = logging.getLogger(__name__)
@@ -81,13 +81,15 @@ def sweep_abandoned_evidence_uploads(*, dry_run=False, now=None, batch_size=None
         if dry_run:
             _preview(makerspace, now=now, batch_size=batch_size, summary=summary)
             continue
+        # Free profile: move the cursor past this tenant first; a processed tenant's
+        # sweep then records any narrower continuation. Inert on full deployments.
+        window.skip(makerspace.pk)
         with fanout_tenant_write(
             makerspace.pk,
             operation="evidence_abandoned_upload_cleanup",
             counts=gate_counts,
         ) as should_process:
             if not should_process:
-                window.skip(makerspace.pk)
                 continue
             _sweep_makerspace(
                 makerspace, now=now, run_id=run_id, batch_size=batch_size, summary=summary,
@@ -141,6 +143,7 @@ def _sweep_makerspace(makerspace, *, now, run_id, batch_size, summary, window):
         logger.warning(
             "evidence_abandoned_upload_fence_failed",
             extra={"makerspace_id": makerspace.pk},
+            exc_info=log_traceback(),
         )
         return
     cutoff = min(age_cutoff, cursor.rolled_through - REFINALIZE_LOOKBACK)
@@ -183,6 +186,7 @@ def _sweep_makerspace(makerspace, *, now, run_id, batch_size, summary, window):
                     "makerspace_id": makerspace.pk,
                     "error_type": type(exc).__name__,
                 },
+                exc_info=log_traceback(),
             )
             continue
         if result is None:

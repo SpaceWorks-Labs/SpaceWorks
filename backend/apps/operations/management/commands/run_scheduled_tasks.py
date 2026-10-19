@@ -177,5 +177,8 @@ class Command(BaseCommand):
                 row.save(update_fields=["last_error"])
             self.stdout.write(self.style.SUCCESS(f"ran {name}"))
 
-        if failed:
+        # Host deployments keep their original contract: failures are recorded per task
+        # (last_error) and the pass exits 0. A managed one-off provider job reports them
+        # through its exit status; a resident loop must never die on one failed task.
+        if failed and getattr(settings, "SPACEWORKS_DEPLOYMENT_MODE", "host") == "managed" and not options["loop"]:
             raise CommandError(f"{len(failed)} scheduled task(s) failed: {', '.join(failed)}")

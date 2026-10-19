@@ -34,6 +34,9 @@ def validate_provider_update(attrs, instance, *, tenant=False):
                 raise DjangoValidationError("SMTP hostname is required.")
     except DjangoValidationError as exc:
         # Static validation messages only; ciphertext/provider exceptions never escape.
+        if hasattr(exc, "error_dict"):
+            # Field-keyed SMTP errors (smtp_host/smtp_port/smtp_use_tls) keep their field.
+            raise serializers.ValidationError(exc.message_dict) from None
         raise serializers.ValidationError({"email_provider_config": exc.messages}) from None
     except Exception:
         raise serializers.ValidationError({"email_provider_config": "Email credentials are unavailable."}) from None

@@ -16,11 +16,13 @@ from apps.integrations import admin_suppression  # noqa: F401
 from apps.integrations.models import PlatformEmailSettings
 from apps.integrations.smtp_validation import validate_smtp_settings
 
+# Public name kept from before the provider-aware form replaced the SMTP-only one.
+PlatformEmailSettingsAdminForm = PlatformEmailProviderForm
 
 @admin.register(PlatformEmailSettings)
 class PlatformEmailSettingsAdmin(AuditedControlChangeMixin, SuperuserOnlyModelAdmin, admin.ModelAdmin):
     audit_action = "platform.email_settings_updated"
-    form = PlatformEmailProviderForm
+    form = PlatformEmailSettingsAdminForm
     list_display = ("smtp_host", "smtp_port", "from_email", "updated_at")
     # smtp_password holds the Fernet-encrypted value; never edit it as raw ciphertext
     # in the admin. The React superadmin Platform Email panel is the write surface.

@@ -1,4 +1,3 @@
-from apps.evidence import storage
 """Per-photo state machine for abandoned-upload cleanup (claim / complete / release).
 
 Lock order everywhere: EvidencePhoto, EvidenceUploadFinalization,
@@ -17,6 +16,7 @@ from django.db import IntegrityError, connection, transaction
 from django.utils import timezone
 
 from apps.audit import services as audit
+from apps.evidence import storage
 from apps.evidence.abandoned_upload_candidates import abandoned_queryset
 from apps.evidence.models import (
     EvidenceAbandonedUploadReceipt,
@@ -25,6 +25,7 @@ from apps.evidence.models import (
     EvidenceUploadFinalization,
 )
 from apps.makerspaces import limits
+from apps.storage_capabilities.budget import error_text
 
 RECONCILE_INTERVAL = timedelta(minutes=360)
 CLEANING = EvidenceObjectRetentionState.Status.CLEANING
@@ -91,7 +92,7 @@ def release(current, exc):
             return
         state.claim_token = None
         state.claimed_at = None
-        state.last_error = getattr(exc, "code", type(exc).__name__)[:500]
+        state.last_error = error_text(exc)
         state.save(update_fields=("claim_token", "claimed_at", "last_error", "updated_at"))
 
 

@@ -182,8 +182,15 @@ def assert_object_absent(bucket, key):
         s3 = client()
         assert_exact_absent(s3, bucket=bucket, key=key,
                             never_versioned=deletion_contract(s3, bucket))
-    except (BotoCoreError, ClientError, CapabilityError) as exc:
-        raise BackupStorageError("Expired storage object absence could not be proved.") from exc
+    except CapabilityError as exc:
+        # Same operator-facing messages as before the capability-aware check.
+        if exc.code == "storage_versions_still_present":
+            raise BackupStorageError(f"Expired storage object {key} still has retained versions.") from exc
+        if exc.code == "storage_object_still_present":
+            raise BackupStorageError(f"Expired storage object {key} is still present.") from exc
+        raise BackupStorageError(f"Expired storage object {key} could not be inspected.") from exc
+    except (BotoCoreError, ClientError) as exc:
+        raise BackupStorageError(f"Expired storage object {key} could not be inspected.") from exc
 
 
 def _download_object(bucket, key, destination, *, versioned):

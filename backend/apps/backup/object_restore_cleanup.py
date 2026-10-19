@@ -1,4 +1,4 @@
-"""Terminal-only rollback expiry under the deployment operation exclusion."""
+"""Settled-restore rollback expiry under the deployment operation exclusion."""
 
 from django.db import transaction
 from django.utils import timezone
@@ -7,6 +7,10 @@ from .models import DeploymentRecoveryState, RestoreOperation, RestoreRollbackOb
 from .operation_lock import deployment_operation_lock, OperationLockUnavailable
 
 TERMINAL = (RestoreOperation.Stage.COMPLETED, RestoreOperation.Stage.RESTORED_QUARANTINED)
+# Settled restores own no in-flight work. Expired copies of failed/aborted restores
+# are removed exactly as before; only a successful restore lets the retained
+# original source version go too.
+SETTLED = (*TERMINAL, RestoreOperation.Stage.FAILED, RestoreOperation.Stage.ABORTED)
 
 
 def cleanup_expired_rollback_objects(limit=100):
@@ -29,16 +33,13 @@ def _check(guard):
 
 
 def _clean(limit, guard):
-    from . import storage
+    from . import object_restore, storage
     from .object_restore import _bucket
-    from apps.object_storage import delete_all_versions
     from apps.makerspaces import limits
 
     cleaned = 0
-    # Failure/abort is ambiguous: its retained copy/source is recovery material.
     ids = list(RestoreRollbackObject.objects.filter(
-        expires_at__lte=timezone.now(), restore__stage__in=TERMINAL,
-        restore__completed_at__isnull=False,
+        expires_at__lte=timezone.now(), restore__stage__in=SETTLED,
     ).order_by("pk").values_list("pk", flat=True)[:limit])
     for pk in ids:
         _check(guard)
@@ -49,19 +50,22 @@ def _clean(limit, guard):
                 continue
             restore = RestoreOperation.objects.select_for_update().get(pk=row.restore_id)
             recovery = DeploymentRecoveryState.objects.select_for_update().filter(pk=1).first()
-            if (restore.stage not in TERMINAL or restore.completed_at is None
+            # Never touch recovery material while any restore is still in flight.
+            if (restore.stage not in SETTLED
                     or recovery is None or recovery.active_restore_id is not None
                     or recovery.mode != DeploymentRecoveryState.Mode.NORMAL
-                    or RestoreOperation.objects.exclude(stage__in=(*TERMINAL, RestoreOperation.Stage.FAILED, RestoreOperation.Stage.ABORTED)).exists()):
+                    or RestoreOperation.objects.exclude(stage__in=SETTLED).exists()):
                 continue
             _check(guard)
             client = None
             try:
-                client = storage.client()
                 if row.copy_key:
-                    delete_all_versions(client, bucket=_bucket(row.bucket_kind), key=row.copy_key)
-                elif row.source_version_id:
-                    client.delete_object(Bucket=_bucket(row.bucket_kind), Key=row.source_key, VersionId=row.source_version_id)
+                    client = storage.client()
+                    object_restore.delete_all_versions(client, bucket=_bucket(row.bucket_kind), key=row.copy_key)
+                elif row.source_version_id and restore.stage in TERMINAL:
+                    client = storage.client()
+                    client.delete_object(Bucket=_bucket(row.bucket_kind), Key=row.source_key,
+                                         VersionId=row.source_version_id)
             except Exception:
                 continue
             finally:

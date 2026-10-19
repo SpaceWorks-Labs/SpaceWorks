@@ -26,7 +26,7 @@ from apps.makerspaces import limits
 from apps.makerspaces.servability import servable_queryset
 from apps.tenant_migration.gate_runtime import fanout_tenant_write
 from apps.storage_capabilities.chunks import FreeSweep
-from apps.storage_capabilities.budget import checkpoint, raise_if_fenced
+from apps.storage_capabilities.budget import checkpoint, error_text, log_traceback, raise_if_fenced
 
 
 logger = logging.getLogger(__name__)
@@ -76,13 +76,15 @@ def sweep_evidence_retention(*, dry_run=False, now=None, batch_size=None, cursor
             summary["photos_eligible"] += preview["object_candidates"]
             summary["continuation_required"] |= preview["has_more"]
             continue
+        # Free profile: move the cursor past this tenant first; a processed tenant's
+        # sweep then records any narrower continuation. Inert on full deployments.
+        window.skip(makerspace.pk)
         with fanout_tenant_write(
             makerspace.pk,
             operation="evidence_object_expiry",
             counts=gate_counts,
         ) as should_process:
             if not should_process:
-                window.skip(makerspace.pk)
                 continue
             _sweep_makerspace(
                 makerspace,
@@ -164,6 +166,7 @@ def _sweep_makerspace(makerspace, *, now, run_id, batch_size, summary, window):
                     "makerspace_id": claim.makerspace_id,
                     "error_type": type(exc).__name__,
                 },
+                exc_info=log_traceback(),
             )
     window.finish_page(makerspace.pk, candidate_ids[:batch_size], len(candidate_ids) > batch_size)
 
@@ -278,5 +281,5 @@ def _release(claim, exc):
             return
         state.claim_token = None
         state.claimed_at = None
-        state.last_error = getattr(exc, "code", type(exc).__name__)[:500]
+        state.last_error = error_text(exc)
         state.save(update_fields=("claim_token", "claimed_at", "last_error", "updated_at"))

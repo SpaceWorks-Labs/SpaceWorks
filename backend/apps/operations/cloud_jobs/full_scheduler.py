@@ -8,7 +8,7 @@ from contextlib import contextmanager
 from django.conf import settings
 
 from .contracts import GuardLost, admit
-from .tick_locks import LEADER_NAMESPACE, new_connection, task_lock_key
+from .advisory import LEADER_NAMESPACE, new_connection, task_lock_key
 
 
 class FullLeader:

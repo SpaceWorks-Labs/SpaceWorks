@@ -23,7 +23,7 @@ from apps.backup.models import DeploymentRecoveryState
 from apps.evidence import storage
 from apps.evidence.models import EvidenceAbandonedUploadReceipt
 from apps.storage_capabilities import CapabilityError
-from apps.storage_capabilities.budget import checkpoint, raise_if_fenced
+from apps.storage_capabilities.budget import checkpoint, error_text, raise_if_fenced
 
 
 logger = logging.getLogger(__name__)
@@ -85,13 +85,20 @@ def reconcile_receipts(*, dry_run=False, now=None, batch_size=None):
 def _reconcile_receipt(pk, object_key, *, now):
     receipts = EvidenceAbandonedUploadReceipt.objects.filter(pk=pk)
     try:
-        from apps.operations.cloud_quotas.receipt_storage import delete_receipt_keys
-        delete_receipt_keys(receipts.get())
+        from apps.operations.cloud_quotas.receipt_storage import (
+            bound_storage_deletion, delete_receipt_keys,
+        )
+        receipt = receipts.get()
+        if bound_storage_deletion(receipt):
+            delete_receipt_keys(receipt)
+        else:
+            storage.delete_object_strict(object_key)
+            storage.delete_object_strict(storage.staging_key(object_key))
     except Exception as exc:  # per-receipt isolation; retried two sweeps later
         raise_if_fenced(exc)
         receipts.reconcile_update(
             next_reconcile_at=now + FAILURE_BACKOFF,
-            last_error=getattr(exc, "code", type(exc).__name__)[:500],
+            last_error=error_text(exc),
         )
         logger.warning(
             "evidence_abandoned_receipt_reconcile_failed",

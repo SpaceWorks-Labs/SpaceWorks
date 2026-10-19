@@ -27,8 +27,13 @@ class PlatformEmailProviderForm(forms.ModelForm):
             values["email_provider_config"] = credentials
         try:
             validate_provider_update(values, self.instance)
-        except ApiValidationError:
-            raise forms.ValidationError("Check the selected email provider and required fields.") from None
+        except ApiValidationError as exc:
+            detail = exc.detail if isinstance(exc.detail, dict) else {}
+            # SMTP endpoint errors stay on their form field; provider errors stay generic.
+            fields = {key: value if isinstance(value, list) else [value]
+                      for key, value in detail.items() if key in self.fields}
+            raise forms.ValidationError(
+                fields or "Check the selected email provider and required fields.") from None
         return cleaned
 
     def save(self, commit=True):

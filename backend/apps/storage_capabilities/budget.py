@@ -61,6 +61,19 @@ def client_options():
             "retries": {"total_max_attempts": 1}}
 
 
+def error_text(exc):
+    """Persisted retry error: full deployments keep their exception text unchanged;
+    the free profile stores only the typed code."""
+    if getattr(settings, "SPACEWORKS_DEPLOYMENT_PROFILE", "full") != "free":
+        return f"{type(exc).__name__}: {exc}"[:500]
+    return str(getattr(exc, "code", None) or type(exc).__name__)[:500]
+
+
+def log_traceback():
+    """Full deployments keep their warning tracebacks; free logs stay code-only."""
+    return getattr(settings, "SPACEWORKS_DEPLOYMENT_PROFILE", "full") != "free"
+
+
 def raise_if_fenced(exc):
     """StorageUnavailable can wrap a typed fence; never continue that attempt."""
     current = exc

@@ -29,8 +29,7 @@ def install():
                 install_chunk(task.key, _callback(task))
     from apps.integrations.mail_providers.chunks import drain_chunk
     install_chunk("notification-contract-outbox", drain_chunk)
-    from apps.operations.cloud_quotas.sampling import sample_storage_chunk
-    install_chunk("cloud-storage-usage", sample_storage_chunk)
+    install_chunk("cloud-storage-usage", _sample_storage)
     from .rollups import chunk as rollup_chunk
     install_chunk("finalize-report-rollups", rollup_chunk)
     from .reminders import chunk as reminder_chunk
@@ -40,3 +39,14 @@ def install():
 def _work_chunk(key, context):
     from .work_adapters import execute
     return execute(key, limit=1, fence=context.check, context=context)
+
+
+def _sample_storage(context):
+    # Storage-usage sampling is free-profile quota accounting. A full profile never
+    # imports cloud_quotas: boot stays free of free-only modules and the task is a no-op.
+    from django.conf import settings
+    from .contracts import ChunkResult
+    if getattr(settings, "SPACEWORKS_DEPLOYMENT_PROFILE", "full") != "free":
+        return ChunkResult(True)
+    from apps.operations.cloud_quotas.sampling import sample_storage_chunk
+    return sample_storage_chunk(context)

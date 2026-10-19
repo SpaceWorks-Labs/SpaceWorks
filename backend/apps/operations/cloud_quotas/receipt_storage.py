@@ -5,7 +5,7 @@ from django.db import connection, transaction
 from apps.audit import services as audit
 from apps.operations.models import CloudStorageMigrationReceipt, StorageCapabilityState
 from apps.storage_capabilities.contracts import CapabilityError
-from apps.storage_capabilities.runtime import client_identity
+from apps.storage_capabilities.runtime import client_identity, configured_contracts
 
 
 def bind_legacy_receipts(*, actor):
@@ -35,16 +35,23 @@ def bind_legacy_receipts(*, actor):
     return count
 
 
+def bound_storage_deletion(receipt):
+    """Whether late deletion follows the receipt's recorded bucket binding.
+
+    A full server without a storage capability contract keeps its original strict
+    deletes against the configured bucket, even for receipts that recorded an
+    identity. Managed deployments always use the binding (and refuse unbound
+    legacy receipts until the explicit backfill has run).
+    """
+    if getattr(settings, "SPACEWORKS_DEPLOYMENT_MODE", "host") == "managed":
+        return True
+    return bool(receipt.storage_identity) and bool(configured_contracts())
+
+
 def delete_receipt_keys(receipt):
     from apps.evidence import storage
     from apps.object_storage import delete_all_versions
     if not receipt.storage_identity:
-        # Full legacy deployments keep existing behavior until a binding has ever
-        # been persisted; managed rebinds require the explicit backfill first.
-        if getattr(settings, "SPACEWORKS_DEPLOYMENT_MODE", "host") != "managed":
-            storage.delete_object_strict(receipt.object_key)
-            storage.delete_object_strict(storage.staging_key(receipt.object_key))
-            return
         raise CapabilityError("storage_legacy_receipt_binding_required")
     state = StorageCapabilityState.objects.get(identity_fingerprint=receipt.storage_identity)
     if state.logical_role == "private":

@@ -1,7 +1,7 @@
 """Free dispatch/drain hooks. I wires the shared enqueue/claim/retry seams."""
 
 import time
-from contextlib import contextmanager, nullcontext
+from contextlib import contextmanager
 from datetime import timedelta
 
 from django.db.models import Q
@@ -76,9 +76,6 @@ def drain(*, monotonic_deadline, limit=20, guard=None, cursor=0):
     if type(cursor) is not int or cursor < 0:
         raise ValueError("Invalid mail drain cursor.")
     from apps.integrations.models import EmailLog
-    from apps.integrations.delivery_sources import has_retry_content
-    from apps.integrations.tasks import _claim_log
-    from apps.integrations.dispatch_delivery import _deliver
     from apps.integrations.smtp_validation import email_task_hard_limit, SENDING_CLAIM_STALE_BUFFER_SECONDS
     now = timezone.now()
     stale = now - timedelta(seconds=email_task_hard_limit() + SENDING_CLAIM_STALE_BUFFER_SECONDS)
@@ -101,23 +98,33 @@ def drain(*, monotonic_deadline, limit=20, guard=None, cursor=0):
             from apps.tenant_migration.gate_runtime import fanout_tenant_write
             custody = candidate.stream == "backup" and candidate.event in {
                 "archive_custody_alarm", "tenant_exit_custody_alarm"}
-            boundary = (fanout_tenant_write(candidate.makerspace_id,
-                        operation="free_mail_drain", counts={})
-                        if candidate.makerspace_id and not custody else nullcontext(True))
-            with boundary as allowed:
-                if not allowed:
-                    continue
-                if not has_retry_content(candidate):
-                    _expire_redacted(candidate)
-                    continue
-                log = _claim_log(pk)
-                if log is not None:
-                    if guard:
-                        guard()
-                    _deliver(log)
-                    count += 1
+            if candidate.makerspace_id and not custody:
+                with fanout_tenant_write(candidate.makerspace_id,
+                                         operation="free_mail_drain", counts={}) as allowed:
+                    if not allowed:
+                        continue
+                    count += _deliver_candidate(candidate, guard)
+            else:
+                # Platform mail and the custody-alarm exemptions are never tenant-gated.
+                count += _deliver_candidate(candidate, guard)
     remaining = bool(ids) and (visited < ids[-1] or len(ids) > limit)
     return {"processed": count, "remaining": remaining, "cursor": visited if remaining else 0}
+
+
+def _deliver_candidate(candidate, guard):
+    from apps.integrations.delivery_sources import has_retry_content
+    from apps.integrations.tasks import _claim_log
+    from apps.integrations.dispatch_delivery import _deliver
+    if not has_retry_content(candidate):
+        _expire_redacted(candidate)
+        return 0
+    log = _claim_log(candidate.pk)
+    if log is None:
+        return 0
+    if guard:
+        guard()
+    _deliver(log)
+    return 1
 
 
 def _expire_redacted(candidate):

@@ -16,16 +16,17 @@ def drain_channels(context, cursor):
             updated_at__lte=now - timedelta(seconds=60)))
     seeds = list(due.filter(pk__gt=cursor).order_by("pk").values_list("pk", "makerspace_id")[:2])
     processed = 0
-    if seeds:
-        pk, makerspace_id = seeds[0]
+    for pk, makerspace_id in seeds[:1]:  # one row per chunk
         context.check()
         with fanout_tenant_write(makerspace_id, operation="free_channel_drain", counts={}) as allowed:
-            if allowed:
+            if not allowed:
+                continue
+            context.check()
+            log = _claim_notification_log(pk)
+            if log is not None:
                 context.check()
-                log = _claim_notification_log(pk)
-                if log is not None:
-                    context.check()
-                    _deliver_notification(log)
-                    processed = 1
+                _deliver_notification(log)
+                processed = 1
+    if seeds:
         context.check()
     return {"processed": processed, "remaining": len(seeds) > 1, "cursor": seeds[0][0] if len(seeds) > 1 else 0}

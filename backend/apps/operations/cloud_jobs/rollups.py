@@ -26,17 +26,20 @@ def chunk(context):
             cursor, _ = ReportRollupCursor.objects.get_or_create(makerspace=space, source_module=SOURCE_MODULE)
             day = (datetime.fromisoformat(checkpoint["day"]) if checkpoint.get("space") == space.pk
                    and checkpoint.get("day") else _rollup_start(space, cursor, target, None))
+            # A frozen tenant is skipped with the cursor already past it.
+            checkpoint = {"space": space.pk + 1, "target": target.isoformat()}
             with fanout_tenant_write(space.pk, operation="report_rollup", counts=counts) as allowed:
-                if allowed:
-                    while day < target:
-                        checkpoint = {"space": space.pk, "day": day.isoformat(), "target": target.isoformat()}
-                        context.check()
-                        if processed >= context.limit:
-                            return ChunkResult(False, checkpoint, processed)
-                        end = min(day + timedelta(days=1), target)
-                        finalize_evidence_rollups(space, through=end, start_at=day)
-                        day, processed = end, processed + 1
-                        checkpoint["day"] = day.isoformat()
+                if not allowed:
+                    continue
+                while day < target:
+                    checkpoint = {"space": space.pk, "day": day.isoformat(), "target": target.isoformat()}
+                    context.check()
+                    if processed >= context.limit:
+                        return ChunkResult(False, checkpoint, processed)
+                    end = min(day + timedelta(days=1), target)
+                    finalize_evidence_rollups(space, through=end, start_at=day)
+                    day, processed = end, processed + 1
+                    checkpoint["day"] = day.isoformat()
             checkpoint = {"space": space.pk + 1, "target": target.isoformat()}
         remains = spaces.filter(pk__gte=checkpoint.get("space", 0)).exists()
         return ChunkResult(not remains, checkpoint if remains else {}, processed)

@@ -46,6 +46,18 @@ TASK_EXEMPTIONS = {
     "apps.tenant_migration.tasks.resume_expired_finalizing_import_jobs_task": "Target-side import finalization recovery does not mutate the frozen source.",
     "apps.tenant_migration.tasks.run_import_job_task": "Target-side tenant materialization does not mutate the frozen source.",
     "apps.tenant_migration.tasks.stage_import_job_task": "Target-side import staging does not mutate the frozen source.",
+    "apps.operations.cloud_jobs.diagnostics.installer_roundtrip": (
+        "Installer scheduler diagnostics: writes one short-lived cache nonce, never tenant data."
+    ),
+    "apps.operations.cloud_jobs.maintenance.refresh_storage": (
+        "Deployment storage-capability qualification: probes configured buckets only."
+    ),
+    "apps.operations.cloud_jobs.maintenance.sample_storage": (
+        "Deployment storage-usage sampling: writes only deployment accounting rows."
+    ),
+    "apps.operations.cloud_jobs.maintenance.cleanup_staging": (
+        "Managed private-staging cleanup is deployment coordination state, not tenant data."
+    ),
 }
 
 
@@ -136,6 +148,24 @@ TASK_INTERNAL_PARTICIPANTS = {
     "apps.makerspaces.tasks_station.purge_expired_operator_leases_task": (
         "Each tenant's expired kiosk leases use the skip-and-count tenant boundary."
     ),
+    "apps.events.tasks_cloud.process_asset_work_task": (
+        "Each submission asset job runs inside its event tenant's skip-and-count boundary."
+    ),
+    "apps.events.tasks_cloud.resume_certificates_task": (
+        "Each certificate batch chunk and render uses its event tenant's skip-and-count boundary."
+    ),
+    "apps.events.tasks_cloud.sweep_asset_lifecycle_task": (
+        "Delegates to the installed Events runtime callback, which owns its per-tenant source fences."
+    ),
+    "apps.events.tasks_cloud.cleanup_print_jobs_task": (
+        "Delegates to the Events certificate print cleanup, which owns its per-tenant source fences."
+    ),
+    "apps.events.tasks_cloud.cleanup_programme_receipts_task": (
+        "Delegates to the installed Events runtime callback, which owns its per-tenant source fences."
+    ),
+    "apps.events.tasks_cloud.sweep_stage_file_retention_task": (
+        "Delegates to the installed Events runtime callback, which owns its per-tenant source fences."
+    ),
 }
 
 
@@ -178,6 +208,17 @@ FANOUT_GATE_PARTICIPANTS = {
     "apps.makerspaces.station_lease_cleanup.purge_expired_operator_leases": (
         "Expired kiosk operator lease cleanup."
     ),
+    "apps.events.tasks_cloud.process_asset_work_task": "Bounded submission asset work.",
+    "apps.events.tasks_cloud.resume_certificates_task": "Bounded certificate batch and render recovery.",
+    "apps.admin_api.cloud_work.chunk": "Free-profile bulk-import page (one job per chunk).",
+    "apps.integrations.mail_providers.channel_chunks.drain_channels": (
+        "Free-profile legacy channel delivery (one row per chunk)."
+    ),
+    "apps.integrations.mail_providers.chunks._phase": "Free-profile contract envelope delivery (one per chunk).",
+    "apps.integrations.mail_providers.outbox.drain": (
+        "Free-profile mail drain; platform and custody-alarm mail stay ungated."
+    ),
+    "apps.operations.cloud_jobs.rollups.chunk": "Free-profile report rollup finalisation.",
 }
 
 from .catalog_p2_presence import gate_tasks

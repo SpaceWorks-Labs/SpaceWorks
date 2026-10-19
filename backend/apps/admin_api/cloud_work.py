@@ -36,40 +36,44 @@ def chunk(context):
                                         allow_nan=False).encode()).hexdigest()
     context.check()
     counts = {"skipped": 0}
-    with fanout_tenant_write(job.makerspace_id, operation="bulk_import", counts=counts) as allowed:
-        if not allowed:
-            return ChunkResult(False)
-        with transaction.atomic(), bounded.scope(context):
-            job = candidates().select_for_update().get(pk=job.pk)
-            previous = dict(job.result or {})
-            checkpoint = previous.pop("cloud_checkpoint", {})
-            if checkpoint.get("sha256", digest) != digest:
-                raise GuardLost("bulk_import_source_changed")
-            start = job.processed_rows
-            page = rows[start:start + min(context.limit, 25)]
-            context.check()
-            result = (bulk_import.apply_import(job.actor, job.makerspace, page, job.mapping,
-                                              allow_partial=True)
-                      if job.mode == "apply" else bulk_import.preview_import(job.makerspace, page, job.mapping))
-            context.check()
-            for key in ("rows", "errors", "warnings"):
-                for item in result.get(key, []):
-                    item["row"] += start
-                result[key] = previous.get(key, []) + result.get(key, [])
-            summary = result["summary"]
-            for key in summary:
-                summary[key] += previous.get("summary", {}).get(key, 0)
-            for key in ("created", "updated"):
-                result[key] = previous.get(key, 0) + result.get(key, 0)
-            job.processed_rows = start + len(page)
-            complete = job.processed_rows >= len(rows)
-            result["cloud_checkpoint"] = {"state": "complete" if complete else "ready", "sha256": digest}
-            result["valid"] = not result["errors"]
-            job.result, job.total_rows = result, len(rows)
-            job.status = "completed" if complete else "running"
-            job.created_count, job.updated_count = result["created"], result["updated"]
-            job.error_count, job.warning_count = len(result["errors"]), len(result["warnings"])
-            job.completed_at = timezone.now() if complete else None
-            job.save(update_fields=["result", "total_rows", "processed_rows", "status", "created_count",
-                "updated_count", "error_count", "warning_count", "completed_at", "updated_at"])
+    page = None
+    for makerspace_id in (job.makerspace_id,):  # exactly one tenant boundary per chunk
+        with fanout_tenant_write(makerspace_id, operation="bulk_import", counts=counts) as allowed:
+            if not allowed:
+                continue
+            with transaction.atomic(), bounded.scope(context):
+                job = candidates().select_for_update().get(pk=job.pk)
+                previous = dict(job.result or {})
+                checkpoint = previous.pop("cloud_checkpoint", {})
+                if checkpoint.get("sha256", digest) != digest:
+                    raise GuardLost("bulk_import_source_changed")
+                start = job.processed_rows
+                page = rows[start:start + min(context.limit, 25)]
+                context.check()
+                result = (bulk_import.apply_import(job.actor, job.makerspace, page, job.mapping,
+                                                  allow_partial=True)
+                          if job.mode == "apply" else bulk_import.preview_import(job.makerspace, page, job.mapping))
+                context.check()
+                for key in ("rows", "errors", "warnings"):
+                    for item in result.get(key, []):
+                        item["row"] += start
+                    result[key] = previous.get(key, []) + result.get(key, [])
+                summary = result["summary"]
+                for key in summary:
+                    summary[key] += previous.get("summary", {}).get(key, 0)
+                for key in ("created", "updated"):
+                    result[key] = previous.get(key, 0) + result.get(key, 0)
+                job.processed_rows = start + len(page)
+                complete = job.processed_rows >= len(rows)
+                result["cloud_checkpoint"] = {"state": "complete" if complete else "ready", "sha256": digest}
+                result["valid"] = not result["errors"]
+                job.result, job.total_rows = result, len(rows)
+                job.status = "completed" if complete else "running"
+                job.created_count, job.updated_count = result["created"], result["updated"]
+                job.error_count, job.warning_count = len(result["errors"]), len(result["warnings"])
+                job.completed_at = timezone.now() if complete else None
+                job.save(update_fields=["result", "total_rows", "processed_rows", "status", "created_count",
+                    "updated_count", "error_count", "warning_count", "completed_at", "updated_at"])
+    if page is None:  # frozen tenant: no progress this chunk
+        return ChunkResult(False)
     return ChunkResult(False, processed=len(page))

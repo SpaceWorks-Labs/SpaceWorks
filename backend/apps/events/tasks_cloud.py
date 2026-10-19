@@ -82,23 +82,25 @@ def resume_certificates_task(limit=25):
     batches = CertificateIssueBatch.objects.filter(state__in=("queued", "running")).order_by("pk")[:limit]
     for batch in batches:
         with fanout_tenant_write(batch.event.makerspace_id, operation="event_certificate_resume", counts=counts) as allowed:
-            if allowed:
-                try:
-                    run_chunk(batch.pk)
-                except Exception:
-                    counts["failed"] += 1
+            if not allowed:
+                continue
+            try:
+                run_chunk(batch.pk)
+            except Exception:
+                counts["failed"] += 1
     pending = Q(status__in=("pending", "failed")) | Q(
         status="rendering", render_started_at__lte=timezone.now()-timedelta(minutes=5),
     ) | Q(status="rendering", render_started_at__isnull=True)
     rows = EventAttendanceCertificate.objects.filter(pending).order_by("render_attempts", "issued_at", "pk")[:limit]
     for certificate in rows:
         with fanout_tenant_write(certificate.event.makerspace_id, operation="event_certificate_resume", counts=counts) as allowed:
-            if allowed:
-                try:
-                    render_certificate(certificate)
-                    counts["processed"] += 1
-                except Exception:
-                    counts["failed"] += 1
+            if not allowed:
+                continue
+            try:
+                render_certificate(certificate)
+                counts["processed"] += 1
+            except Exception:
+                counts["failed"] += 1
     return _failed("event-certificate-resume", counts)
 
 

@@ -59,13 +59,15 @@ def _phase(phase, context, cursor):
         | Q(deliveries__claim_until__lte=now)).exclude(source_kind="legacy.lifecycle", message_body="").exclude(
         source_kind="legacy.lifecycle", context__free_fanout_state="operator_cancelled")
     ids = list(rows.filter(pk__gt=cursor).order_by("pk").distinct().values_list("pk", flat=True)[:2])
-    if ids:
+    from apps.tenant_migration.gate_runtime import fanout_tenant_write
+    for envelope_id in ids[:1]:  # one envelope per chunk
         context.check()
-        from apps.tenant_migration.gate_runtime import fanout_tenant_write
-        envelope = NotificationEnvelope.objects.get(pk=ids[0])
+        envelope = NotificationEnvelope.objects.get(pk=envelope_id)
         with fanout_tenant_write(envelope.makerspace_id, operation="notification_contract_outbox", counts={}) as allowed:
-            if allowed:
-                deliver_envelope(ids[0])
+            if not allowed:
+                continue
+            deliver_envelope(envelope_id)
+    if ids:
         context.check()
     remaining = len(ids) > 1
     return {"remaining": remaining, "cursor": ids[0] if remaining else 0, "processed": int(bool(ids))}

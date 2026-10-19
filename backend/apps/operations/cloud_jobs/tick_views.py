@@ -4,10 +4,8 @@ import json
 from django.conf import settings
 from django.http import Http404
 from django.utils.crypto import constant_time_compare
-from drf_spectacular.extensions import OpenApiAuthenticationExtension
 from drf_spectacular.utils import OpenApiResponse, PolymorphicProxySerializer, extend_schema
 from rest_framework import serializers
-from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -40,25 +38,21 @@ def empty_tick_body(request):
         return False
 
 
-class TickSecretAuthentication(BaseAuthentication):
-    def authenticate(self, request):
-        provided = request.headers.get("X-Cron-Secret", "")
-        if (not provided.isascii() or not request.is_secure()
-                or request.headers.get("Origin") or request.headers.get("Sec-Fetch-Site")
-                or request.headers.get("Authorization") or request.query_params
-                or not constant_time_compare(provided, settings.FREE_TICK_SECRET)
-                or not empty_tick_body(request)):
-            raise PermissionDenied("Invalid cron request.")
-        consume_rate(authenticated=True)
-        return None
+def require_tick_secret(request):
+    """The X-Cron-Secret check, like hardware_requests/cron_views.py.
 
-
-class TickSecretScheme(OpenApiAuthenticationExtension):
-    target_class = TickSecretAuthentication
-    name = "freeTickSecret"
-
-    def get_security_definition(self, auto_schema):
-        return {"type": "apiKey", "in": "header", "name": "X-Cron-Secret"}
+    Done in the view, not as a DRF authenticator: the view is a declared anonymous
+    source-gate exemption, and a custom authenticator on a mutating view would
+    bypass the gate authenticator guard.
+    """
+    provided = request.headers.get("X-Cron-Secret", "")
+    if (not provided.isascii() or not request.is_secure()
+            or request.headers.get("Origin") or request.headers.get("Sec-Fetch-Site")
+            or request.headers.get("Authorization") or request.query_params
+            or not constant_time_compare(provided, settings.FREE_TICK_SECRET)
+            or not empty_tick_body(request)):
+        raise PermissionDenied("Invalid cron request.")
+    consume_rate(authenticated=True)
 
 
 class TickResponseSerializer(serializers.Serializer):
@@ -75,7 +69,7 @@ class TickErrorSerializer(serializers.Serializer):
 
 
 class FreeTickView(APIView):
-    authentication_classes = (TickSecretAuthentication,)
+    authentication_classes = ()
     permission_classes = (AllowAny,)
     # The PostgreSQL counters below are the authoritative rate limits. No DRF
     # cache throttle is used as either the task lock or a permissive fallback.
@@ -86,7 +80,8 @@ class FreeTickView(APIView):
             raise Http404()
         consume_rate(authenticated=False)
         if request.method != "POST":
-            self.method_not_allowed(request)
+            self.http_method_not_allowed(request)
+        require_tick_secret(request)
         super().initial(request, *args, **kwargs)
 
     def handle_exception(self, exc):
@@ -105,7 +100,8 @@ class FreeTickView(APIView):
     @extend_schema(
         tags=["Internal"], extensions={"x-internal": True},
         request={"application/json": {"type": "object", "additionalProperties": False, "maxProperties": 0}},
-        description="Free only. Accepts no body or an empty JSON object (maximum 1024 bytes).",
+        description=("Free only. Requires the X-Cron-Secret header over HTTPS. Accepts no body "
+                     "or an empty JSON object (maximum 1024 bytes)."),
         responses={
             200: TickResponseSerializer,
             403: OpenApiResponse(TickErrorSerializer, description="Invalid cron request."),

@@ -5,7 +5,6 @@ from .gate_policy_p2_wa_twilio import HTTP_ANONYMOUS_PARTICIPANTS as WA_TWILIO_P
 
 
 HTTP_EXEMPTIONS = {
-    "free_tick:tick": "Authenticated deployment coordination; each chunk retains its domain source gates.",
     "notification-media": (
         "Single-use GET resolves its tenant from the hashed media grant, then takes "
         "tenant_write for atomic consumption and audit; closed source gates refuse disclosure."

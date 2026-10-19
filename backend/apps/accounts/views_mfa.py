@@ -39,20 +39,29 @@ class MFAStatusView(APIView):
     @extend_schema(tags=["MFA"], request=MFAEnrollmentStartSerializer,
                    responses={200: MFAChallengeResponseSerializer, **errors(400, 401, 403, 429, 503)})
     def post(self, request):
-        from rest_framework.exceptions import AuthenticationFailed
+        from rest_framework.exceptions import AuthenticationFailed, PermissionDenied
         mfa_policy.assert_available()
+        grant = getattr(request, "device_grant", None)
+        if grant is not None and request.user.account_kind != "member":
+            # Native staff grants already require enrolled MFA at sign-in.
+            raise PermissionDenied({"detail": "Staff enroll an authenticator during device sign-in.",
+                                    "code": "native_staff_mfa_managed"})
+        if grant is not None:
+            # Starting invalidates this device's tokens; never strand it where confirm cannot re-issue.
+            from apps.accounts.services_device_tokens import assert_mobile_grant_creation_enabled
+            assert_mobile_grant_creation_enabled()
         data = _validated(MFAEnrollmentStartSerializer, request)
         if not request.user.has_usable_password():
             from apps.accounts.reauthentication import require_enrollment_proof
             require_enrollment_proof(request)
         elif not request.user.check_password(data["password"]):
             raise AuthenticationFailed("Password verification failed.")
-        from rest_framework.exceptions import PermissionDenied
-        if getattr(request, "device_grant", None):
-            raise PermissionDenied("Enroll through browser sign-in, then sign in on this device again.")
         token = request.auth
+        # A device enrollment re-issues tokens on this grant, never a new one.
+        device = {"grant_id": str(grant.pk), "login_method": grant.login_method,
+                  "purpose": mfa_challenges.SETTINGS_ENROLL} if grant else None
         response = Response(mfa_challenges.start(request.user, context=context(
-            request, surface=token.get("surface"), staff_scope=token.get("staff_scope"))))
+            request, surface=token.get("surface"), staff_scope=token.get("staff_scope"), device=device)))
         response["Cache-Control"] = "no-store"
         return response
 

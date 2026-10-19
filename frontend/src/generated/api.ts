@@ -3438,6 +3438,13 @@ export type DeviceGrant = {
   "created_at": string;
 };
 
+export type DeviceGrantPage = {
+  "count": number;
+  "next": string | null;
+  "previous": string | null;
+  "results": Array<DeviceGrant>;
+};
+
 export type DeviceIdentity = {
   "platform": DevicePlatformEnum;
   "app_id": string;

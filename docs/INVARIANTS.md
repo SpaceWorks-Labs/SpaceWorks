@@ -1345,6 +1345,15 @@ supply native authority, and both forms of superadmin are refused at device gran
   push devices), and blacklists outstanding refresh tokens. It audits `auth.logout_all` with counts
   per kind and clears the refresh cookie and selected account context. The response counts browser sessions (including legacy)
   and devices; audit metadata separates modern and legacy browser sessions.
+- **Settings-time authenticator enrollment on a device keeps that grant, never mints one.**
+  `POST /auth/mfa` from a member device session records the grant in the challenge. Starting
+  invalidates the caller's tokens (new MFA version), so `/auth/mfa/enroll` and `/confirm` use the
+  challenge as the credential, as on the web; another authenticated grant and browser headers are
+  refused, and the result is issued only on the recorded, still-active grant. Enabling revokes
+  every other grant, browser session and outstanding token, rotates only the kept grant's families,
+  and re-issues a pair on it. No grant is created without attestation. Staff device sessions are
+  refused (`native_staff_mfa_managed`); recovery regeneration and disable still sign the device out,
+  because re-issuing there would mint an MFA-verified session from a password-only proof.
 - **Membership revocation and self-leave invalidate push only in that makerspace.** The shared
   `_revoke_locked` cleanup deactivates the user's active `PushDevice` rows there and stamps
   `invalidated_at`; their grants and push subscriptions in other makerspaces remain usable.
@@ -1409,6 +1418,8 @@ they differ only in configuration. Load-bearing details:
 Google/Apple to the global `User`; it never grants a role. Provider JWTs are server-verified against bounded,
 cached static JWKS endpoints and one-time origin/device-bound nonces. Auto-linking is allowed only when both
 provider and local email are verified. All social/OIDC sign-in and linking is member-only;
+native linking uses a nonce bound to the current device grant plus recent reauthentication
+(checked before the nonce burns) and the `social_link` throttle; browser linking keeps the origin nonce;
 staff/platform accounts use password plus local MFA. Social
 tokens carry `surface=member|staff`: member tokens are rejected by staff APIs, while staff tokens require
 the exact trusted staff origin and matching tenant scope on access and refresh. Provider secrets remain

@@ -65505,6 +65505,16 @@
         "/api/v1/auth/device/grants": {
             "get": {
                 "operationId": "api_v1_auth_device_grants_list",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "page",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "Page number (24 rows per page)."
+                    }
+                ],
                 "tags": [
                     "Device auth"
                 ],
@@ -65518,10 +65528,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "$ref": "#/components/schemas/DeviceGrant"
-                                    }
+                                    "$ref": "#/components/schemas/DeviceGrantPage"
                                 }
                             }
                         },
@@ -68327,6 +68334,7 @@
             },
             "post": {
                 "operationId": "api_v1_auth_social_providers_create",
+                "description": "Link a provider to the signed-in member. Browser sessions send client_platform web with a web nonce. Device sessions send android or ios with a nonce from POST /auth/social/nonce (delivery device, no challenge), which binds it to the current device grant; they also need recent reauthentication (403 recent_reauth_required) and are throttled. Staff accounts are refused.",
                 "tags": [
                     "Social auth"
                 ],
@@ -68380,6 +68388,9 @@
                     },
                     "409": {
                         "description": "Conflicts with the current state."
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
                     },
                     "503": {
                         "description": "A required dependency is unavailable."
@@ -79632,6 +79643,14 @@
                             "type": "integer"
                         },
                         "required": true
+                    },
+                    {
+                        "in": "query",
+                        "name": "page",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "Page number (24 rows per page)."
                     }
                 ],
                 "tags": [
@@ -80642,6 +80661,14 @@
                             "type": "integer"
                         },
                         "required": true
+                    },
+                    {
+                        "in": "query",
+                        "name": "page",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "Page number (24 rows per page)."
                     }
                 ],
                 "tags": [
@@ -105686,6 +105713,36 @@
                     "platform",
                     "staff_makerspace_id",
                     "status"
+                ]
+            },
+            "DeviceGrantPage": {
+                "type": "object",
+                "properties": {
+                    "count": {
+                        "type": "integer"
+                    },
+                    "next": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true
+                    },
+                    "previous": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/DeviceGrant"
+                        }
+                    }
+                },
+                "required": [
+                    "count",
+                    "next",
+                    "previous",
+                    "results"
                 ]
             },
             "DeviceIdentity": {

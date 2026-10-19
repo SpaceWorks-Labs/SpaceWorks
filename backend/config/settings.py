@@ -931,6 +931,7 @@ REST_FRAMEWORK = {
         "push_device_registration": env("THROTTLE_PUSH_DEVICE_REGISTRATION", default="10/min"),
         "social_nonce": env("THROTTLE_SOCIAL_NONCE", default="10/min"),
         "social_login": env("THROTTLE_SOCIAL_LOGIN", default="10/min"),
+        "social_link": env("THROTTLE_SOCIAL_LINK", default="10/hour"),
         # Issuance and redemption deliberately have independent budgets. A member who
         # mistypes a physically handed code must not consume the staff issue budget (or
         # vice versa), repeating the phone-OTP shared-bucket failure.

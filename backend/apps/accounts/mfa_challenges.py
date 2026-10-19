@@ -22,6 +22,9 @@ from apps.accounts.session_issuance import lock_session_user
 from apps.makerspaces.secrets import decrypt_value, encrypt_value
 
 
+SETTINGS_ENROLL = "settings_enroll"
+
+
 def digest(raw):
     return hashlib.sha256(str(raw).encode()).hexdigest()
 
@@ -47,6 +50,40 @@ def start(user, *, context):
     audit_events.record_auth_event(user, "auth.mfa_challenge_created", target=user)
     return {"mfa_required": True, "enrollment_required": not bool(row.enabled_at),
             "challenge": raw, "expires_in": settings.MFA_CHALLENGE_TTL_SECONDS}
+
+
+def _settings_device(challenge):
+    device = challenge.context.get("device") or {}
+    return device if device.get("purpose") == SETTINGS_ENROLL else None
+
+
+def _same_settings_device(challenge, request):
+    """A settings enrollment started on a device never finishes on another session.
+
+    Starting enrollment invalidates the caller's tokens (the new MFA row changes the
+    version they were minted against), so, as on the web, the challenge itself is the
+    credential for enroll/confirm. A presented session must still be that same grant;
+    issue_session refuses browser headers and re-issues only on the recorded grant.
+    """
+    device = _settings_device(challenge)
+    if device is None:
+        return True
+    grant = getattr(request, "device_grant", None)
+    if grant is not None and str(grant.pk) != device["grant_id"]:
+        return False
+    return getattr(request, "auth", None) is None or grant is not None
+
+
+def _kept_grant(challenge, user):
+    from apps.accounts.models_devices import DeviceGrant
+    device = _settings_device(challenge)
+    if device is None:
+        return None
+    grant = DeviceGrant.objects.filter(pk=device["grant_id"], user=user,
+                                       status=DeviceGrant.Status.ACTIVE).first()
+    if grant is None:
+        raise AuthenticationFailed("Device authorization is no longer active.")
+    return grant
 
 
 def _locked(raw, request):
@@ -76,7 +113,8 @@ def _locked(raw, request):
              and challenge.context.get("credential_generation") == user.credential_generation
              and challenge.credential_fingerprint == credential_fingerprint(user, user.email)
              and challenge.mfa_version == row.version
-             and challenge.context.get("origin", "") == origin)
+             and challenge.context.get("origin", "") == origin
+             and _same_settings_device(challenge, request))
     if not valid:
         raise AuthenticationFailed("Invalid or expired MFA challenge.")
     return challenge, user, row
@@ -120,8 +158,13 @@ def _finish(raw, code, request, *, enrolling):
         challenge, user, row = _locked(raw, request)
         codes = None
         if enrolling and not row.enabled_at and challenge.pending_secret:
-            codes = enable(user, row, decrypt_value(challenge.pending_secret), code)
+            # Settings enrollment on a device keeps that grant and re-issues its tokens.
+            keep = _kept_grant(challenge, user)
+            codes = enable(user, row, decrypt_value(challenge.pending_secret), code, keep_grant=keep)
             valid = codes is not None
+        elif _settings_device(challenge):
+            # A settings challenge only enrolls; it is never a second sign-in on its grant.
+            valid = False
         else:
             valid = bool(not enrolling and row.enabled_at and consume_code(row, code))
         if not valid:

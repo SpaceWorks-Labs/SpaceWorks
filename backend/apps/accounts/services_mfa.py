@@ -42,7 +42,7 @@ def consume_code(row, code):
     return False
 
 
-def enable(user, row, secret, code):
+def enable(user, row, secret, code, *, keep_grant=None):
     step = matching_step(secret, code, timezone.now().timestamp())
     if step is None:
         return None
@@ -53,8 +53,9 @@ def enable(user, row, secret, code):
     row.recovery_digests = digests
     row.version = uuid.uuid4()
     row.save()
-    blacklist_outstanding_tokens(user)
-    audit_events.record_auth_event(user, "auth.mfa_enabled", target=user)
+    blacklist_outstanding_tokens(user, keep_grant=keep_grant)
+    meta = {"delivery": "device", "grant_hash": audit_events.fingerprint(keep_grant.pk)} if keep_grant else None
+    audit_events.record_auth_event(user, "auth.mfa_enabled", target=user, meta=meta)
     stamp(user, row)
     return codes
 

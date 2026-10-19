@@ -176,7 +176,9 @@ is authoritative. These are the rules the schema cannot express:
    the challenge and attestation. Nonce request: `{provider,surface:"member",delivery:"device",
    client_platform,challenge}` -> `{nonce,expires_in}`. Login request:
    `{id_token,nonce,surface:"member",delivery:"device",client_platform,challenge,attestation,
-   authorization_code?,apple_name?}` -> device tokens or an MFA challenge.
+   authorization_code?,apple_name?}` -> device tokens `{access,refresh,user,device_grant,outcome}`.
+   Social sign-in never returns an MFA challenge: the provider's own authentication is the
+   proof (social sign-in is member-only, and staff use password + MFA + attestation).
    OIDC provider keys use `oidc:{slug}` in the nonce request.
    Apple must use the configured native bundle audience. Supply the authorization code when
    available so the server can revoke Apple credentials on account deletion.
@@ -232,11 +234,40 @@ staff_makerspace_id:number|null,login_method,attested_at,last_used_at,created_at
 MFA returns `{mfa_required,enrollment_required,challenge,expires_in}`; complete
 `POST /auth/mfa/verify` with `{challenge,code}` (or enroll/confirm using the schema when
 `enrollment_required`). `POST /auth/device/refresh` takes `{refresh}` and returns
-`{access,refresh,device_grant}`. Logout takes no body and returns `{detail}`. Grant lists
-are a bare array; individual revocation returns 204. All paths in §7 are relative to
+`{access,refresh,device_grant}`. Logout takes no body and returns `{detail}`. `GET /auth/device/grants`
+is paged like every other list (`{count,next,previous,results}`, 24 per page, `?page=N`);
+individual revocation returns 204. All paths in §7 are relative to
 `/api/v1` unless written in full. The schema's attestation operation description specifies
 the supported proof shapes above. Generate against the reconciled schema; never change Apple
 `type:app_attest` or development `type:development` to Android proof to fit an older client.
+`DeviceAttestationPayload` is an `anyOf` with one branch per proof (`PlayIntegrityAttestationTypeEnum`,
+`AppAttestAttestationTypeEnum`, `DevelopmentAttestationTypeEnum`) plus an open object for
+deployment-specific verifiers. Generators that collapse `anyOf` to its first branch make it look
+Android-only; model it as a sealed type by hand rather than sending App Attest through the open branch.
+
+**Account settings lists.** `GET /member/makerspaces/{id}/account/sessions` (browser and device
+sessions) and `GET /member/makerspaces/{id}/account/exports` (personal data exports) are paged:
+pass `?page=N` or follow `next` until it is null.
+
+**Authenticator setup from account settings (members).** `POST /auth/mfa` with `{password}` (or,
+for passwordless members, after a fresh linked-social proof or, phone-only, a fresh phone reauth OTP
+on this device) returns `{challenge,...}`. Then `POST /auth/mfa/enroll {challenge}` (secret, QR) and
+`POST /auth/mfa/confirm {challenge,code}`. Send those two **without** the Authorization header:
+starting enrollment invalidates the current tokens, and the challenge is the credential, as on the
+web. The result is issued only on the grant that started it, and only to a native caller. Success returns
+`{access,refresh,device_grant,user,recovery_codes}` on the **same** grant id; replace the stored
+token pair at once. Every other browser session and device is signed out, as on the web. Staff
+get 403 `native_staff_mfa_managed` (they enroll during device sign-in). Regenerating recovery codes
+or turning MFA off still signs this device out; sign in again afterwards.
+
+**Linking a sign-in provider (members).** Get recent reauth first (`/auth/reauth*`, ten minutes).
+Then `POST /auth/social/nonce` with `{provider,surface:"member",delivery:"device",client_platform}`
+and **no** challenge (the nonce binds to this grant), sign in with the native provider SDK, and
+`POST /auth/social/providers` with `{provider,id_token,nonce,client_platform:"android"|"ios",
+apple_name?}`. 403 `recent_reauth_required` means reauthenticate and retry (the nonce is not spent);
+401 `social_invalid` means get a new nonce; 409 means the identity belongs to another account; 429
+after 10 attempts an hour. One reauth allows one link. GitHub linking stays browser-only. Staff
+accounts cannot link providers. Unlinking is `DELETE /auth/social/providers/{provider}`.
 
 **Sign out everywhere — available**
 `POST /auth/logout-all` takes no body and returns 200 `{web_sessions:number,devices:number}`.

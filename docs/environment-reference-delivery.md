@@ -122,6 +122,7 @@ Every `THROTTLE_*` value is a DRF rate string (`<n>/<second|minute|hour|day>`). 
 | `THROTTLE_PUSH_DEVICE_REGISTRATION` | `'10/min'` |  |
 | `THROTTLE_REQUEST_STATUS` | `'60/min'` |  |
 | `THROTTLE_REQUEST_SUBMIT` | `'10/min'` |  |
+| `THROTTLE_SOCIAL_LINK` | `'10/hour'` | Native provider linking only. |
 | `THROTTLE_SOCIAL_LOGIN` | `'10/min'` |  |
 | `THROTTLE_SOCIAL_NONCE` | `'10/min'` |  |
 | `THROTTLE_TELEGRAM_WEBHOOK` | `'60/min'` |  |

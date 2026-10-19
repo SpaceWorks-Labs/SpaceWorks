@@ -113,7 +113,11 @@ class SocialLinkSerializer(serializers.Serializer):
     )
 
     def validate_client_platform(self, value):
-        if value != SocialClientPlatform.WEB:
+        # A device session links with its own platform; a browser session links as web.
+        native = getattr(self.context.get("request"), "device_grant", None) is not None
+        if native and value == SocialClientPlatform.WEB:
+            raise serializers.ValidationError("Device linking requires the android or ios client.")
+        if not native and value != SocialClientPlatform.WEB:
             raise serializers.ValidationError("Browser linking requires the web client.")
         return value
 

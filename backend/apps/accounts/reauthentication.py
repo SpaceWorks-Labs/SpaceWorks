@@ -167,6 +167,12 @@ def require_enrollment_proof(request):
     now = timezone.now()
     valid_social = row and row.social_verified_at and now - timedelta(minutes=5) <= row.social_verified_at <= now
     valid_email = row and row.enrollment_confirmed_at and now - timedelta(minutes=15) <= row.enrollment_confirmed_at <= now
-    if not (valid_social or valid_email):
+    # A phone-only member has no email link to confirm from a native app, so a fresh phone
+    # OTP proof on the same device session stands in for it (device sessions only).
+    valid_phone = False
+    if row and row.session_id.startswith("device:") and row.auth_time and now - timedelta(minutes=5) <= row.auth_time <= now:
+        from apps.accounts.reauthentication_phone import available
+        valid_phone = available(request.user)
+    if not (valid_social or valid_email or valid_phone):
         raise PermissionDenied("Verify a fresh linked social identity or confirm the session-bound email link before enrolling.",
                                code="reauth_enrollment_required")

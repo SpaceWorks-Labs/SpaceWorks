@@ -88,6 +88,18 @@ POLICY_OVERRIDE_ALLOWLIST = {
     "apps.makerspaces.throttles.MemberImagePresignThrottle": {"get_cache_key"},
 }
 
+# Reviewed lifecycle overrides on claim-reachable views, keyed by the class that defines
+# them. Each listed hook only narrows access or shapes the response after DRF's own
+# authentication: ``initial`` calls ``super().initial()`` first and then refuses claim and
+# API-client sessions; ``handle_exception`` maps domain errors to typed API errors; and
+# ``finalize_response`` adds no-store/nosniff headers. A hook on any other class, or a new
+# hook on a listed class, stays a build failure.
+LIFECYCLE_OVERRIDE_ALLOWLIST = {
+    "apps.payments.event_payouts.http.PrivateView": {"handle_exception", "finalize_response"},
+    "apps.events.staged_forms.http.PrivateView": {"initial", "handle_exception", "finalize_response"},
+    "apps.event_reimbursements.http.PrivateView": {"handle_exception"},
+}
+
 POLICY_ATTRIBUTES = (
     "authentication_classes",
     "permission_classes",
@@ -113,6 +125,8 @@ def validate_pre_auth_route(route):
     errors = []
     for method_name in framework_lifecycle_methods():
         implementation = _implementation(view_class, method_name)
+        if _allowlisted_override(view_class, method_name):
+            continue
         if implementation is not None and not _is_framework_callable(implementation):
             errors.append(
                 f"{route.view_name} overrides pre-auth lifecycle hook {method_name}"
@@ -222,6 +236,17 @@ def _implementation(view_class, name):
         None,
     )
     return None if owner is None else _function(owner.__dict__[name])
+
+
+def _allowlisted_override(view_class, name):
+    owner = next(
+        (candidate for candidate in view_class.__mro__ if name in candidate.__dict__),
+        None,
+    )
+    if owner is None:
+        return False
+    key = f"{owner.__module__}.{owner.__qualname__}"
+    return name in LIFECYCLE_OVERRIDE_ALLOWLIST.get(key, ())
 
 
 def _function(value):

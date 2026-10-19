@@ -149,6 +149,11 @@ urlpatterns = [
     path("api/v1/", include(("apps.inventory.urls", "inventory"), namespace="v1")),
     path("api/v1/", include("apps.makerspaces.urls")),
     path("api/v1/member/", include("apps.payments.urls_member")),
+    # Core event-payout ledger: never module/rail/Events gated, so retained obligations
+    # stay readable and settleable after the reimbursement add-on or Events is removed.
+    path("api/v1/member/event-payouts/", include("apps.payments.event_payouts.urls_member")),
+    path("api/v1/admin/makerspaces/<int:makerspace_id>/event-payouts/",
+         include("apps.payments.event_payouts.urls_finance")),
     *separable("payments_rail", "api/v1/member/", "apps.payments_rail.urls_member"),
     path("api/v1/", include("apps.hardware_requests.urls")),
     path("api/v1/auth/", include("apps.accounts.urls")),   # staff auth surface
@@ -163,6 +168,10 @@ urlpatterns = [
     *separable("presence", "api/v1/admin/", "apps.presence.urls_admin"),
     *separable("events", "api/v1/admin/", "apps.events.urls_admin"),
     *separable("events", "api/v1/member/", "apps.events.urls_member"),
+    # Reimbursement add-on: removable with its module, and withdrawn with Events.
+    *separable("event_reimbursements", "api/v1/member/makerspaces/<int:makerspace_id>/events/<int:pk>/",
+               "apps.event_reimbursements.urls_member"),
+    *separable("event_reimbursements", "api/v1/admin/events/<int:pk>/", "apps.event_reimbursements.urls_admin"),
     *separable("events", "api/v1/", "apps.events.urls_station"),
     *separable("bookings", "api/v1/admin/", "apps.bookings.urls_admin"),
     # Staff device admin under api/v1/admin/ plus the signed device protocol under

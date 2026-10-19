@@ -167,6 +167,10 @@ def _authoritative_route_targets(request, view=None):
     programme = programme_route_targets(url_name, kwargs)
     if programme is not None:
         return programme
+    from .origin_scope_routes_reimbursements import reimbursement_route_targets
+    reimbursement = reimbursement_route_targets(url_name, kwargs)
+    if reimbursement is not None:
+        return reimbursement
     from .origin_scope_account_routes import account_route_targets
     account_target = account_route_targets(url_name, kwargs)
     if account_target is not None:

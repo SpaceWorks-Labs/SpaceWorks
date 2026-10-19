@@ -673,6 +673,14 @@ CELERY_BEAT_SCHEDULE = {
     "event-certificate-renders": {"task": "apps.events.certificates.tasks.resume_certificates", "schedule": crontab(minute="*/5")},
     "event-print-cleanup": {"task": "apps.events.tasks_recovery.sweep_print_cleanup_task", "schedule": crontab(minute="*/5")},
     "event-judging-notices": {"task": "apps.events.tasks_recovery.sweep_judging_notices_task", "schedule": crontab(minute="*")},
+    # Stage forms (Events core), travel-support deadlines (event_reimbursements) and the core
+    # payout ledger's upload recovery and retention. Each per-subject step gates its host.
+    "event-stage-reconcile": {"task": "apps.events.staged_forms.tasks.reconcile_stage_forms_task", "schedule": crontab(minute="*/5")},
+    "event-stage-file-recovery": {"task": "apps.events.staged_forms.tasks.recover_stage_files_task", "schedule": crontab(minute="*/5")},
+    "event-stage-file-retention": {"task": "apps.events.staged_forms.tasks.sweep_stage_file_retention_task", "schedule": crontab(hour=3, minute=50)},
+    "event-reimbursement-deadlines": {"task": "apps.event_reimbursements.tasks.sweep_deadlines_task", "schedule": crontab(minute="*/5")},
+    "finance-event-payout-recovery": {"task": "apps.payments.event_payouts.tasks.recover_finance_work_task", "schedule": crontab(minute="*/5")},
+    "finance-event-payout-retention": {"task": "apps.payments.event_payouts.tasks.sweep_retention_task", "schedule": crontab(hour=3, minute=55)},
     "account-saved-details": {
         "task": "apps.accounts.saved_details.tasks.process_saved_details",
         "schedule": crontab(minute="*/5"),
@@ -772,7 +780,13 @@ if "events" in TOMBSTONED_APPS:
         for name, entry in CELERY_BEAT_SCHEDULE.items()
         if ".events." not in entry["task"] or name in {
             "event-asset-work", "event-asset-retention", "event-asset-obligations", "event-print-cleanup",
+            "event-stage-file-retention",
         }
+    }
+if "event_reimbursements" in TOMBSTONED_APPS:
+    CELERY_BEAT_SCHEDULE = {
+        name: entry for name, entry in CELERY_BEAT_SCHEDULE.items()
+        if ".event_reimbursements." not in entry["task"]
     }
 
 if "devices" in TOMBSTONED_APPS:

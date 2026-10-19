@@ -69,6 +69,10 @@ STAFF_ACCOUNT_EXCLUSIONS = frozenset({
 })
 from .scope_registry_programme import SESSION_ONLY
 STAFF_ACCOUNT_EXCLUSIONS |= SESSION_ONLY
+# Reimbursement, stage-form and payout routes are full-session only: no API-key scope may
+# reach owner money, payee data, finance files or staff review (views refuse api_client too).
+from apps.accounts.reimbursement_route_catalog import BY_NAME as _REIMBURSEMENT_ROUTES
+STAFF_ACCOUNT_EXCLUSIONS |= frozenset(_REIMBURSEMENT_ROUTES)
 
 
 def _request_match(request):

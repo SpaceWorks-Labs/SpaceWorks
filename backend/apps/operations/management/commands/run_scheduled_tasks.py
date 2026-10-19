@@ -81,6 +81,12 @@ SCHEDULED_TASKS = (
     ("event-certificate-renders", "apps.events.certificates.tasks.resume_certificates", 5),
     ("event-print-cleanup", "apps.events.tasks_recovery.sweep_print_cleanup_task", 5),
     ("event-judging-notices", "apps.events.tasks_recovery.sweep_judging_notices_task", 1),
+    ("event-stage-reconcile", "apps.events.staged_forms.tasks.reconcile_stage_forms_task", 5),
+    ("event-stage-file-recovery", "apps.events.staged_forms.tasks.recover_stage_files_task", 5),
+    ("event-stage-file-retention", "apps.events.staged_forms.tasks.sweep_stage_file_retention_task", 24 * 60),
+    ("event-reimbursement-deadlines", "apps.event_reimbursements.tasks.sweep_deadlines_task", 5),
+    ("finance-event-payout-recovery", "apps.payments.event_payouts.tasks.recover_finance_work_task", 5),
+    ("finance-event-payout-retention", "apps.payments.event_payouts.tasks.sweep_retention_task", 24 * 60),
     ("account-saved-details", "apps.accounts.saved_details.tasks.process_saved_details", 5),
     ("purge-auth-challenges", "apps.accounts.tasks.purge_auth_challenges_task", 24 * 60),
     # Beat runs this at a fixed hour; the beat-less runner has no wall-clock schedule, so
@@ -188,7 +194,10 @@ if "tenant_migration" in settings.TOMBSTONED_APPS:
 if "events" in settings.TOMBSTONED_APPS:
     SCHEDULED_TASKS = tuple(task for task in SCHEDULED_TASKS if ".events." not in task[1] or task[0] in {
         "event-asset-work", "event-asset-retention", "event-asset-obligations", "event-print-cleanup",
+        "event-stage-file-retention",
     })
+if "event_reimbursements" in settings.TOMBSTONED_APPS:
+    SCHEDULED_TASKS = tuple(task for task in SCHEDULED_TASKS if ".event_reimbursements." not in task[1])
 
 
 if "devices" in settings.TOMBSTONED_APPS:

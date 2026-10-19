@@ -204,3 +204,5 @@ FANOUT_GATE_PARTICIPANTS = {
 
 from .catalog_p2_presence import gate_tasks
 gate_tasks(TASK_INTERNAL_PARTICIPANTS, FANOUT_GATE_PARTICIPANTS)
+from .source_gate_reimbursements import gate_tasks as gate_reimbursement_tasks
+gate_reimbursement_tasks(TASK_INTERNAL_PARTICIPANTS)

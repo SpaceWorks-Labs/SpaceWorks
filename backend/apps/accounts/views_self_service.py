@@ -2,7 +2,7 @@
 
 from django.db import transaction
 from django.utils import timezone
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework.exceptions import NotFound
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
@@ -54,7 +54,7 @@ class AccountProfileView(APIView):
 class AccountSessionListView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(tags=["Member account"], request=None,
+    @extend_schema(tags=["Member account"], request=None, parameters=[OpenApiParameter("page", int, OpenApiParameter.QUERY, description="Page number (24 rows per page).")],
                    responses={200: AccountSessionPageSerializer, **ERRORS})
     def get(self, request, makerspace_id):
         own_membership(request.user, makerspace_id)

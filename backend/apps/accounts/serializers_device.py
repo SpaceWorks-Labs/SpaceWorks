@@ -49,6 +49,13 @@ class DeviceGrantSerializer(serializers.Serializer):
     created_at = serializers.DateTimeField()
 
 
+class DeviceGrantPageSerializer(serializers.Serializer):
+    count = serializers.IntegerField()
+    next = serializers.URLField(allow_null=True)
+    previous = serializers.URLField(allow_null=True)
+    results = DeviceGrantSerializer(many=True)
+
+
 class DeviceTokenResponseSerializer(serializers.Serializer):
     access = serializers.CharField()
     refresh = serializers.CharField()

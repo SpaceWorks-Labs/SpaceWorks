@@ -1,8 +1,9 @@
 from django.conf import settings
-from drf_spectacular.utils import OpenApiResponse, extend_schema, PolymorphicProxySerializer
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema, PolymorphicProxySerializer
 from apps.accounts.serializers_mfa import MFAChallengeResponseSerializer
 from rest_framework import status
 from rest_framework.exceptions import AuthenticationFailed, PermissionDenied
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, BasePermission, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
@@ -16,7 +17,7 @@ from apps.accounts.attestation import (
 from apps.accounts.models_devices import DeviceGrant
 from apps.accounts.serializers_attestation import ATTESTATION_DESCRIPTION
 from apps.accounts.serializers_device import (
-    DeviceChallengeResponseSerializer, DeviceGrantSerializer,
+    DeviceChallengeResponseSerializer, DeviceGrantPageSerializer, DeviceGrantSerializer,
     DeviceIdentitySerializer, DeviceLoginSerializer,
     DeviceLogoutResponseSerializer, DeviceRefreshResponseSerializer,
     DeviceRefreshSerializer, DeviceTokenResponseSerializer,
@@ -170,12 +171,20 @@ class DeviceLogoutView(APIView):
 class DeviceGrantListView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(tags=["Device auth"], request=None, responses={200: DeviceGrantSerializer(many=True), 401: OpenApiResponse(ErrorSerializer)})
+    # The operation id stays "_list" now that the response is a page object, so generated
+    # client method names do not change.
+    @extend_schema(tags=["Device auth"], operation_id="api_v1_auth_device_grants_list", request=None,
+                   parameters=[OpenApiParameter("page", int, OpenApiParameter.QUERY,
+                                                description="Page number (24 rows per page).")],
+                   responses={200: DeviceGrantPageSerializer, 401: OpenApiResponse(ErrorSerializer)})
     def get(self, request):
         from apps.accounts.surface_policy import assert_surface
         assert_surface(request.user, "staff_api" if request.user.account_kind == "staff" else "member")
-        grants = DeviceGrant.objects.filter(user=request.user).order_by("-last_used_at")
-        return Response(DeviceGrantSerializer(grants, many=True).data)
+        # The tiebreakers keep page boundaries stable when grants share a last-used time.
+        grants = DeviceGrant.objects.filter(user=request.user).order_by("-last_used_at", "-created_at", "pk")
+        paginator = PageNumberPagination()
+        page = paginator.paginate_queryset(grants, request, view=self)
+        return paginator.get_paginated_response(DeviceGrantSerializer(page, many=True).data)
 
 
 class DeviceGrantDetailView(APIView):

@@ -3,7 +3,7 @@
 import logging
 
 from django.shortcuts import get_object_or_404
-from drf_spectacular.utils import OpenApiResponse, extend_schema
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import serializers
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
@@ -82,7 +82,8 @@ class SubjectExportBaseView(APIView):
 
 class SubjectExportListView(SubjectExportBaseView):
     @extend_schema(tags=["Member account"], summary="List the caller's personal exports",
-                   request=None, responses={200: SubjectExportListSerializer, **ERRORS})
+                   request=None, parameters=[OpenApiParameter("page", int, OpenApiParameter.QUERY, description="Page number (24 rows per page).")],
+                   responses={200: SubjectExportListSerializer, **ERRORS})
     def get(self, request, makerspace_id):
         self.makerspace(request, makerspace_id)
         paginator = PageNumberPagination()

@@ -64,8 +64,8 @@ models/history/import helpers remain pending destructive retirement; never use t
 Set `MESSAGING_WEBHOOK_BASE_URL` to the exact publicly reachable origin (optional deployment
 prefix, no `/api/v1`, query or fragment). Twilio signature validation uses this configured URL,
 including query parameters, never forwarded host headers. Canonical Meta HTTP uses
-`WHATSAPP_META_GRAPH_VERSION` (default `v25.0`); legacy compatibility/template helpers retain
-`WHATSAPP_GRAPH_VERSION` (default `v23.0`). Neither version setting enables a sender.
+`WHATSAPP_META_GRAPH_VERSION` (default `v25.0`), and the legacy compatibility/template helpers
+read the same setting. The version setting does not enable a sender.
 Preserve `API_CLIENT_ENC_KEY` for encrypted sender credentials and retired verifiers.
 
 For Twilio SMS:

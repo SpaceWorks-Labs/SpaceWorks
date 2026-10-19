@@ -126,7 +126,8 @@ admin-machine-service-request-detail admin-machine-service-request-list-create
 admin-machine-type-email-template-detail admin-machine-type-email-template-reset admin-makerspace
 admin-makerspace-archive-request-withdraw admin-makerspace-archive-requests
 admin-makerspace-backup-custody admin-makerspace-backups admin-makerspace-booking-queue
-admin-makerspace-cover admin-makerspace-domain-settings admin-makerspace-logo
+admin-makerspace-cover admin-makerspace-domain-settings
+admin-makerspace-hosting-invitation-cancel admin-makerspace-hosting-invitations admin-makerspace-logo
 admin-makerspace-payment-connect-onboard admin-makerspace-payment-settings admin-makerspace-profile
 admin-makerspace-setup-state admin-makerspace-subdomain-request admin-makerspace-usage
 admin-makerspace-waiver admin-makerspace-warranties admin-makerspaces admin-member-card-issue
@@ -142,6 +143,7 @@ admin-membership-verify admin-membership-waiver-witness admin-memberships-roster
 admin-needs-fix-action admin-needs-fix-shelf admin-notification-destination-detail
 admin-notification-destinations admin-notification-recipient-rules admin-notification-recipients
 admin-notification-rules admin-organization-detail admin-organization-directory
+admin-organization-hosting-invitation-cancel admin-organization-hosting-invitations
 admin-organization-invitation-revoke admin-organization-invitations admin-organization-link-delete
 admin-organization-links admin-organization-list admin-organization-membership-detail
 admin-organization-memberships admin-organized-event-list admin-presence-end admin-presence-privacy

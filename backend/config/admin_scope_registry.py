@@ -96,4 +96,7 @@ GLOBAL_ADMIN_MODELS = {
     "backup.b1reservationentry", "backup.b1fencecontinuity",
     "backup.backupdestination", "backup.backupdestinationupload",
     "encryption.piiglobalwritefence",
+    # Platform-level hosting requests have no tenant (a nullable inviter makerspace is
+    # provenance, not ownership); the review admin is superadmin-only.
+    "hosting_requests.hostingrequest",
 }

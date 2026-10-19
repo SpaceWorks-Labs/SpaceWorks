@@ -123,6 +123,15 @@ PUBLIC_CLAIM_ROUTES = {
         "walk-ins already hold a membership; invitation requests are for outsiders"
     ),
     ("public-invitation-request", "OPTIONS"): AnonymousRead(),
+    # Hosting a makerspace is platform-level and anonymous; a walk-in's claim session
+    # has no business applying on anyone's behalf.
+    **{(name, method): policy
+       for name in ("public-hosting-request-submit", "public-hosting-request-open",
+                    "public-hosting-invitation-resolve", "public-hosting-invitation-submit")
+       for method, policy in (
+           ("POST", Refused("claim sessions cannot apply to host a makerspace")),
+           ("OPTIONS", AnonymousRead()),
+       )},
     ("hardware_requests:request-submit", "POST"): Allowed(
         tenant=SLUG, audited=True
     ),

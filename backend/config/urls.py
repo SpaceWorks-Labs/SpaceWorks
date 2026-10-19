@@ -123,6 +123,7 @@ urlpatterns = [
         "api/v1/public/organizations/",
         include("apps.organizations.urls_public"),
     ),
+    path("api/v1/public/hosting/", include("apps.hosting_requests.urls_public")),
     *separable("events", "api/v1/public/", "apps.events.urls_public"),
     *separable("events", "api/v1/events/", "apps.events.urls_integration"),
     *separable("bookings", "api/v1/public/", "apps.bookings.urls_public"),
@@ -155,6 +156,7 @@ urlpatterns = [
     path("api/v1/auth/", include("apps.accounts.urls")),   # staff auth surface
     path("api/v1/admin/", include("apps.admin_api.urls")),
     path("api/v1/admin/", include("apps.organizations.urls_admin")),
+    path("api/v1/admin/", include("apps.hosting_requests.urls_staff")),
     # Mounted at admin_api's own prefix so the paths and route names are unchanged by
     # the relocation, and *after* it so a relocated route can never shadow one that
     # stayed behind. Every warranty pattern is a distinct literal, so ordering is

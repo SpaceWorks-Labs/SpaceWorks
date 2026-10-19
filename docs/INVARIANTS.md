@@ -298,6 +298,63 @@ vector). Managed mode adds `<slug>.space-works.tech` provisioning + tenant self-
 shared instance (no per-tenant DB). **VERIFIED is the trust gate** — a `frontend_domain` grants CORS/
 staff-origin/bootstrap/Host/TLS trust only when `frontend_domain_status=VERIFIED` and non-archived.
 
+**Managed hosting requests (platform-level, dormant on self-host).** `apps/hosting_requests/` lets anyone
+ask to host a makerspace (`/hosting`) and lets an existing makerspace or organization send an invitation
+that pre-fills the request. Availability: `admin_available()` = not `is_self_host()`; `public_available()`
+additionally needs `email_enabled()` and `PUBLIC_APP_BASE_URL`. Every public and staff view calls
+`require_public_available()` first (404 otherwise); `/config` carries `hosting_requests` only when public
+availability holds; the `/control/` admin and its `_managed_item` sidebar entry are hidden on self-host; the
+add form's hidden `hosting_request` field is rendered and honoured only when `admin_available()`.
+- **One writer.** `hosting_requests/workflow.py` is the only code that assigns `HostingRequest.status`
+  (literal `ALLOWED` pairs; anything else is `HostingRequestConflict`, 409 `invalid_transition`; field
+  problems are 400; unknown/expired tokens 404). Approval only **marks** a request accepted and emails the
+  applicant; nothing is provisioned. Rejection needs a 10–2000 character reason that is emailed and kept
+  after redaction (the reject form warns not to include personal details).
+- **Authority, no new action.** A makerspace invitation needs `MANAGE_MAKERSPACE` in that (servable)
+  makerspace; an organization invitation needs a member account holding `MANAGE_ORGANIZATION_MEMBERS`
+  (`lock_governance_membership`). **"Join <organization>" is offered only when the inviter governs that
+  organization**: always for an organization invitation; for a makerspace invitation only when the inviter
+  is a member account governing the space's active owner organization. A staff Space Manager's invitation
+  therefore never offers Join (`join_offered=false`, the organization is not even locked). Governance is
+  checked at creation only; cancel re-runs the authority for the route's scope.
+- **Owner by default, superadmin override (#49).** For Join, the pre-filled add form names the inviting
+  organization as owner; for Own, a new organization name. A Join whose organization is gone or inactive
+  fills **neither** owner field and the request shows a warning, so the add form's exactly-one rule forces a
+  choice — never a silent switch to Own. `link_created_makerspace` runs inside the add view's atomic block
+  after owner assignment, requires an accepted, unlinked request, and never compares the chosen owner with
+  the applicant's choice; a refusal rolls the whole creation back and the redirect keeps the query string.
+  "Create makerspace" is a custom admin URL (registered before the defaults) that re-authenticates first,
+  so the superadmin starts the add form inside a fresh 10-minute window.
+- **Bearer tokens.** Invitation and status tokens are 32-byte random values sent only in a URL fragment
+  (`/hosting/invite#token=`, `/hosting/request#token=`) and stored as SHA-256 digests. The only HTTP
+  response that ever carries one is the inviter's one-time `invite_url`. The status link also verifies the
+  address on first open; the request reaches review only after that.
+- **Enumeration-safe intake.** Submit always answers the same 202 — honeypot, per-address overflow
+  (`HostingRequestEmailThrottle`, called manually, never in `throttle_classes`) and a real submission are
+  indistinguishable — and the verification mail is generic (no applicant-supplied text to an unconfirmed
+  address). No route takes an email as a lookup key; the inviter's list never shows applicant details.
+- **Lock order:** makerspace → organization → organization membership → hosting row.
+- **Data classification.** `hosting_requests.HostingRequest` is OMITTED from tenant export and dumps; its
+  `invited_by`/`decided_by` edges are declared and never expand a portable closure; makerspace, organization
+  and user links are `SET_NULL`, so a tenant purge leaves the platform row with null links.
+- **Retention.** A daily beat task (`hosting-request-retention`, also in `run_scheduled_tasks`) deletes
+  unconfirmed public submissions 48 hours after submit and wipes applicant details (name, email, phone,
+  description, website, invite note, new organization name, both token digests) 90 days after a request
+  died — rejected from `decided_at`, withdrawn from `withdrawn_at`, never-completed invitations from
+  `invite_expires_at`. Status, space name, location, slug, owner choice, inviter links, decision fields and
+  the rejection reason are kept as the decision record. Accepted requests are retained. **Hosting-request
+  email logs follow the request's retention:** applicant mail carries `source_kind="hosting_request"` and
+  `source_id`, and those `EmailLog` rows are deleted with the 48-hour deletion and the 90-day redaction. The
+  sweep runs on self-host too, so a deployment that left managed mode still honours the wipe.
+- **Reserved `/hosting`.** `hosting` is a reserved top-level segment. On the central origin `/hosting`
+  shadows any pre-existing public handle named `hosting` (accepted; such a profile stays reachable only
+  through `/m/…` or a redirect).
+- **Named exceptions.** *Console parity:* review is `/control/`-only by owner decision #47; there is no
+  React superadmin review surface. *Audit:* unverified public submissions and the retention sweep's
+  deletions/redactions are deliberately unaudited (the sweep logs counts only); verification, every later
+  transition, invitation creation/cancellation and the makerspace link are audited with literal actions
+  and no free text.
+
 
 **Installer-managed subdomain TLS is explicit opt-in.** `PLATFORM_SUBDOMAIN_AUTO_TLS` defaults off,
 retaining the origin-certificate SaaS edge's refusal to issue platform-subdomain certificates on demand.

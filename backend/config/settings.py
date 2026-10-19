@@ -179,6 +179,8 @@ INSTALLED_APPS = [
     "apps.tenant_migration",
     # Enrolled printers/label printers (phase 7a); separable.
     "apps.devices",
+    # Managed-platform hosting requests; inert on self-host.
+    "apps.hosting_requests",
     # Must stay LAST. Django calls ready() in this order, so being last is what
     # guarantees every other app has registered before finalize() freezes the
     # separability registries.
@@ -675,6 +677,12 @@ CELERY_BEAT_SCHEDULE = {
         "task": "apps.accounts.tasks.purge_auth_challenges_task",
         "schedule": crontab(hour=3, minute=30),
     },
+    # Hosting requests: delete unconfirmed public submissions after 48 h and wipe the
+    # applicant's details from dead requests after 90 days. Runs on self-host too.
+    "hosting-request-retention": {
+        "task": "apps.hosting_requests.tasks.sweep_hosting_requests_task",
+        "schedule": crontab(hour=3, minute=45),
+    },
     # Maker-profile GitHub counts. Daily and off-peak: the cache interval is 24h, the
     # data is a vanity number, and nothing is waiting on it. A deployment with no
     # GITHUB_API_TOKEN makes no outbound call at all -- the task returns immediately.
@@ -990,6 +998,10 @@ REST_FRAMEWORK = {
         "public_invitation_request": env(
             "THROTTLE_PUBLIC_INVITATION_REQUEST", default="10/hour"
         ),
+        "hosting_request_submit": env("THROTTLE_HOSTING_REQUEST_SUBMIT", default="5/hour"),
+        "hosting_request_email": env("THROTTLE_HOSTING_REQUEST_EMAIL", default="3/day"),
+        "hosting_request_token": env("THROTTLE_HOSTING_REQUEST_TOKEN", default="30/hour"),
+        "hosting_invitation_create": env("THROTTLE_HOSTING_INVITATION_CREATE", default="20/hour"),
         "print_request_submit": env("THROTTLE_PRINT_REQUEST_SUBMIT", default="10/min"),
         "public_tool_checkout": env("THROTTLE_PUBLIC_TOOL_CHECKOUT", default="10/min"),
         "public_tool_return": env("THROTTLE_PUBLIC_TOOL_RETURN", default="10/min"),

@@ -146,6 +146,9 @@ OMITTED_MODELS = {
     "organizations.OrganizationInvitation": (
         "Deployment-local bearer authorization state for a global organization."
     ),
+    "hosting_requests.HostingRequest": (
+        "Deployment-local platform hosting-request coordination; never tenant data."
+    ),
     "tenant_migration.TenantImportJob": "Target-side tenant import coordination state.",
     "tenant_migration.TenantImportObject": (
         "Deployment-scoped import promotion journal; it names a target makerspace "

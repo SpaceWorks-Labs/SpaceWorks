@@ -81,6 +81,7 @@ SCHEDULED_TASKS = (
     ),
     ("extend-event-series", "apps.events.tasks.extend_event_series_task", 60),
     ("purge-auth-challenges", "apps.accounts.tasks.purge_auth_challenges_task", 24 * 60),
+    ("hosting-request-retention", "apps.hosting_requests.tasks.sweep_hosting_requests_task", 24 * 60),
     # Beat runs this at a fixed hour; the beat-less runner has no wall-clock schedule, so
     # the cadence is expressed as the interval instead. Daily either way.
     (

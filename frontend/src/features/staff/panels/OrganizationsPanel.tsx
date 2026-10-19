@@ -7,6 +7,8 @@ import { useTenant } from "../../../lib/tenant";
 import { OrganizationSelfCreation, useOrganizationSelfCreationVisible } from "../../organizations/OrganizationSelfCreation";
 import { useDeleteOrganization } from "../../organizations/organizationSelfServiceApi";
 import { OrganizationInvitations } from "../OrganizationInvitations";
+import { HostingInvitations } from "../HostingInvitations";
+import { useHostingAvailability } from "../../hosting/hostingApi";
 import { OrganizationMemberships } from "../OrganizationMemberships";
 import { OrganizationProfileForm } from "../OrganizationProfileForm";
 import { useOrganization, useOrganizations } from "../organizationsApi";
@@ -36,6 +38,9 @@ export function OrganizationsPanel({ isSuperadmin = false, makerspaces = [] }: {
   // Hooks cannot be conditional; the mutation only fires from the danger zone, which renders with a loaded detail.
   const remove = useDeleteOrganization(selectedId ?? 0);
   const canManageMembers = Boolean(detail.data?.governance_actions.includes("manage_organization_members"));
+  // Hosting invitations are a central-origin flow; the section only appears while the platform takes requests.
+  const hostingScope = canManageMembers && tenant.mode === "central";
+  const canInviteHosting = useHostingAvailability(hostingScope) && hostingScope;
   // Deleting needs both governance actions; the server still re-checks recent identity verification.
   const canDelete = ["manage_organization_members", "manage_organization_profile"].every(action => detail.data?.governance_actions.includes(action));
   // Superadmins create through the platform flow; everyone else gets the rate-limited self-service flow,
@@ -69,6 +74,7 @@ export function OrganizationsPanel({ isSuperadmin = false, makerspaces = [] }: {
       // Without member rights both components render nothing, so their tabs and headings go too.
       ...(canManageMembers ? [{ id: "org-people", title: "People", rows: <OrganizationMemberships organization={detail.data} /> },
         { id: "org-invitations", title: "Invitations", rows: <OrganizationInvitations organization={detail.data} /> }] : []),
+      ...(canInviteHosting ? [{ id: "org-hosting", title: "Invite a makerspace", rows: <HostingInvitations key={detail.data.id} scope={{ organizationId: detail.data.id }} /> }] : []),
       ...(isSuperadmin ? [{ id: "org-spaces", title: "Spaces", rows: <OrganizationLinks key={detail.data.id} id={detail.data.id} makerspaces={makerspaces} /> }] : []),
       ...(canDelete && remove.error ? [{ id: "org-delete-error", title: "Couldn't delete organization", rows: <ErrorBlock error={remove.error} /> }] : []),
     ] : []}

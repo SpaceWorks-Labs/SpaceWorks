@@ -90,6 +90,10 @@ Every `THROTTLE_*` value is a DRF rate string (`<n>/<second|minute|hour|day>`). 
 | `THROTTLE_EVENT_STATION_PIN_TOKEN` | `'10/hour'` |  |
 | `THROTTLE_EVENT_STATION_REVEAL` | `'5/hour'` |  |
 | `THROTTLE_EVENT_STATION_SESSION` | `'120/hour'` |  |
+| `THROTTLE_HOSTING_INVITATION_CREATE` | `'20/hour'` | Per staff user: hosting invitations created (managed platform only). |
+| `THROTTLE_HOSTING_REQUEST_EMAIL` | `'3/day'` | Per applicant address: hosting-request submissions; overflow is silently dropped with the usual 202. |
+| `THROTTLE_HOSTING_REQUEST_SUBMIT` | `'5/hour'` | Per client: public hosting-request and invitation-answer submissions. |
+| `THROTTLE_HOSTING_REQUEST_TOKEN` | `'30/hour'` | Per client: hosting-request status and invitation-preview links. |
 | `THROTTLE_KIOSK_OPERATOR_LEASE` | `'30/hour'` |  |
 | `THROTTLE_KIOSK_REPLAY_EXECUTE` | `'240/hour'` |  |
 | `THROTTLE_KIOSK_REPLAY_PREPARE` | `'60/hour'` |  |

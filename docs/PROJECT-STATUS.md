@@ -29,6 +29,10 @@ Django admin **actions that route through the existing services** (never mutatin
 issue/return remain React-only. Superadmin monitoring surfaces (QR ZIP, inline QR/photo previews, print file
 downloads) are read-only and guard storage failures. Design spec:
 `docs/superpowers/specs/2026-06-13-superadmin-admin-control-plane-design.md`.
+On a managed platform the **Hosting requests** model admin (sidebar entry beside Subdomain requests, hidden
+on self-host) reviews requests to host a makerspace: read-only rows, Accept/Reject actions (reject needs a
+reason that is emailed), and a "Create makerspace" link that re-authenticates and opens the existing Add
+makerspace form pre-filled. Nothing is provisioned automatically.
 
 **U-SEC:** django-axes admin-login lockout, scoped `login`/`public_request_submit` throttles + write-only
 `website` honeypot on public submit, production-gated security headers, always-on CSP via django-csp 4, and

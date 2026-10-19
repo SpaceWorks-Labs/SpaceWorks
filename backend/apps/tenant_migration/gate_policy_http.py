@@ -113,6 +113,15 @@ HTTP_ANONYMOUS_EXEMPTIONS = {
     "apps.accounts.views_social_login.SocialNonceView.post": "Global social-login nonce state.",
     "apps.accounts.views_social_login.SocialLoginView.post": "Global social identity and session state.",
     "apps.payments_rail.views_connect.StripeConnectWebhookView.post": "Platform Connect routing state.",
+    **{
+        f"apps.hosting_requests.views_public.{view}.post": (
+            "Global platform hosting-request state; no tenant row or authority."
+        )
+        for view in (
+            "HostingRequestSubmitView", "HostingRequestOpenView",
+            "HostingInvitationResolveView", "HostingInvitationSubmitView",
+        )
+    },
 }
 
 

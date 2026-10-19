@@ -6,6 +6,10 @@
 
 ## Condensed changelog (newest first — full detail in `git log`)
 
+- **2026-10-19 -- managed hosting requests (#46-#49).** Public `/hosting` form plus invitations from
+  makerspaces and organizations ("Join" only when the inviter governs the organization); email
+  confirmation before review; `/control/` accept/reject and a pre-filled, re-auth-safe "Create makerspace";
+  daily 48-hour delete / 90-day redaction. Platform-level, no module key, inert on self-host.
 - **2026-10-18 -- mobile/integration reconciliation.** Member/staff/platform account kinds retained;
   native staff require password/MFA/attestation and fixed tenant; deletion/restore stay member-only.
   Personal envelopes incorporate SMS, Twilio/Meta WhatsApp and mobile sender/consent/STOP/BSUID

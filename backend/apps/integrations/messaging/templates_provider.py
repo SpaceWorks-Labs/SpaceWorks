@@ -16,10 +16,10 @@ class TemplateCheckUnavailable(APIException):
 def validate_provider_template(*, business_account_id, access_token, template_name, language, parameters):
     if not access_token:
         raise ValidationError({"template_name": "Configure an access token with template-management permission first."})
-    if not re.fullmatch(r"v\d+\.\d+", settings.WHATSAPP_GRAPH_VERSION):
+    if not re.fullmatch(r"v\d+\.\d+", settings.WHATSAPP_META_GRAPH_VERSION):
         raise TemplateCheckUnavailable()
     query = urlencode({"name": template_name, "fields": "name,language,status,components,parameter_format", "limit": 100})
-    req = Request(f"https://graph.facebook.com/{settings.WHATSAPP_GRAPH_VERSION}/{quote(business_account_id, safe='')}/message_templates?{query}",
+    req = Request(f"https://graph.facebook.com/{settings.WHATSAPP_META_GRAPH_VERSION}/{quote(business_account_id, safe='')}/message_templates?{query}",
                   headers={"Authorization": f"Bearer {access_token}"})
     try:
         with urlopen(req, timeout=10) as response:

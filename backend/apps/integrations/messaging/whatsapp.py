@@ -10,7 +10,7 @@ from .transport import SendResult, send_request
 
 
 def send_message(sender, *, to, template_name, language, parameters, delivery_id):
-    version = settings.WHATSAPP_GRAPH_VERSION
+    version = settings.WHATSAPP_META_GRAPH_VERSION
     if not re.fullmatch(r"v\d+\.\d+", version):
         return SendResult(error_code="invalid_graph_version", permanent=True)
     if not isinstance(parameters, (list, tuple)) or any(not isinstance(value, str) for value in parameters):

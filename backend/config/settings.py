@@ -1347,7 +1347,6 @@ SPECTACULAR_SETTINGS.setdefault("APPEND_COMPONENTS", {}).setdefault("securitySch
 
 # Addressed notifications require an operator-owned absolute callback origin.
 MESSAGING_WEBHOOK_BASE_URL = env("MESSAGING_WEBHOOK_BASE_URL", default="").rstrip("/")
-WHATSAPP_GRAPH_VERSION = env("WHATSAPP_GRAPH_VERSION", default="v23.0")
 
 CELERY_BEAT_SCHEDULE["messaging-recovery"] = {
     "task": "apps.integrations.tasks_messaging.sweep_messaging_task", "schedule": 300.0,

@@ -1,7 +1,10 @@
 """Literal deployment-global uniqueness decisions, excluding tenant-rooted constraints."""
 from .unique_values_policy import FRESH, PRESERVE, REMAP, _policy
 from .insertion_errors import ArchiveFormatError
+from .unique_value_generators import _refuses_collision
 
+
+@_refuses_collision
 def refuse_identity_collision(row, target, value):
     raise ArchiveFormatError("An opaque programme identity already exists; import refused.")
 

@@ -79,7 +79,7 @@ ROUTES = (
     ('events-programme-member-shift-signup-check-in', ('POST',), 'event'),
     ('events-programme-member-shift-signup-check-out', ('POST',), 'event'),
     ('events-programme-admin-roles-list', ('GET', 'HEAD', 'POST'), 'event'),
-    ('events-programme-admin-roles', ('GET', 'HEAD', 'PATCH', 'POST'), 'event'),
+    ('events-programme-admin-roles', ('GET', 'HEAD', 'PATCH'), 'event'),
     ('events-programme-admin-roles-approve', ('GET', 'HEAD', 'POST'), 'event'),
     ('events-programme-admin-roles-revoke', ('GET', 'HEAD', 'POST'), 'event'),
     ('events-programme-admin-volunteer-postings-list', ('GET', 'HEAD', 'POST'), 'event'),

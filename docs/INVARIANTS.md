@@ -3211,7 +3211,9 @@ Load-bearing details that carried over unchanged:
     consumable hold with ZERO consumption through the kernel's reconcile (`actual_quantity=0`
     when `reserved_quantity` is set; the legacy gram branch only for pre-metering holds), never
     debits consumptions and never creates a payment; only a cancelled RUNNING job frees its
-    machine. Staff reject releases holds the same way and keeps its pending-only meaning. Owner
+    machine. A cancelled RUNNING job still records its consumable cost through
+    `consumable_costs.record_service_cost`, in the cancel transaction and the complete/fail lock
+    order (decision 58) — a cost record only, never a charge. Staff reject releases holds the same way and keeps its pending-only meaning. Owner
     cancel is `member_id == caller` on the member surface
     (`/api/v1/member/machine-service/requests/<pk>/cancel`, plus the `by-token/<token>/owner`
     lookup), works with `membership` off, refuses claim/staff/platform sessions, and a bearer

@@ -3,7 +3,8 @@
 One atomic transaction, in the shared lock order (C1): write fence -> request ->
 scope (queue row / bucket machine, only for a waiting row) -> assigned machine (only for
 a running row) -> consumable pool. Any hold is released with ZERO consumption before
-the terminal transition is saved; no consumption debit, no charge. The owner's
+the terminal transition is saved; no consumption debit, no charge. A running job still
+records its consumable cost (decision 58) through ``record_service_cost``. The owner's
 ``cancelled`` intent is reserved under its immutable marker and, for a waiting row, the
 scope's new accepted head is re-evaluated for its once-only ``next`` notice. A device
 report arriving afterwards is refused by ``printer_access.live_target`` (not running).
@@ -102,6 +103,12 @@ def cancel(service_request, actor, *, reason="", by_owner=False):
             fields.append("handled_by")
         locked.save(update_fields=fields)
         if running:
+            # Decision 58: a cancelled RUNNING job records its consumable cost exactly as
+            # complete/fail do (same transaction, request -> machine -> pool), from the
+            # consumption the release settled. It is a cost record only: no charge, no Payment.
+            if locked.actual_consumed_quantity is not None:
+                from apps.machines.consumable_costs import record_service_cost
+                record_service_cost(locked, actor)
             # Only the cancelled RUNNING job frees its machine; maintenance/offline stay put.
             _release_queue_machine(locked, actor)
         _audit_transition(actor, locked, "cancelled", extra={

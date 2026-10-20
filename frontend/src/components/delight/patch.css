@@ -11,6 +11,15 @@
 /* The walk is Patch's own motion: no bob, and no drift backwards while facing right. */
 .sw-delight-loader[data-patch], .sw-delight-walk:has([data-patch]) { animation: none; }
 
+/* The 404 pet (NotFoundPatch). */
+.sw-patch-pet { position: fixed; inset-inline: 0; bottom: 0; height: 112px; pointer-events: none; overflow: hidden; z-index: 30; }
+.sw-patch-pet-body { position: absolute; left: 0; bottom: 8px; will-change: transform; }
+:root.dark .sw-patch-pet .sw-patch-plate, .sw-island-dark .sw-patch-pet .sw-patch-plate { padding: 6px; }
+.sw-patch-pet-sprite { display: block; width: 128px; height: 88px; background-repeat: no-repeat; background-size: 1024px 88px; }
+.sw-patch-print { position: absolute; bottom: 6px; color: rgb(var(--color-muted)); animation: sw-patch-print 1600ms ease-out forwards; }
+@keyframes sw-patch-print { from { opacity: 0.7; } to { opacity: 0; } }
+.sw-patch-z { position: absolute; top: -10px; right: 22px; color: rgb(var(--color-muted)); font-weight: 600; animation: sw-patch-z 2400ms ease-in-out infinite; }
+@keyframes sw-patch-z { from { opacity: 0; transform: translateY(6px); } 50% { opacity: 1; } to { opacity: 0; transform: translateY(-10px); } }
 @media (prefers-reduced-motion: reduce) {
-  .sw-patch-stride { animation: none; }
+  .sw-patch-stride, .sw-patch-print, .sw-patch-z { animation: none; }
 }

@@ -31,7 +31,9 @@ Self-hosted fonts: Gilroy (Radomir Tinkov Free Font EULA), Outfit and Unbounded
 (SIL OFL 1.1). See frontend/public/fonts/LICENSES/ for the licence texts.
 
 Adapted code: the light/dark theme transition (frontend/src/lib/themeTransition.*) is adapted
-from yuyu by twilighty-abhi (https://github.com/twilighty-abhi/yuyu), AGPL-3.0.
+from yuyu by twilighty-abhi (https://github.com/twilighty-abhi/yuyu), AGPL-3.0. The 404 pet
+behaviour (frontend/src/components/delight/NotFoundPatch.tsx: trot, follow, wander, nap) is also
+adapted from yuyu by twilighty-abhi (https://github.com/twilighty-abhi/yuyu), AGPL-3.0.
 
 Mascot: Patch, the painted wolf (frontend/public/brand/patch/), is Space Works' own artwork, taken
 unaltered from the SpaceWorks-Design repository (mascot/); the walk sprite sheets are its walk/ and

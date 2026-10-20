@@ -14,8 +14,9 @@ export function DoorSoundControl() {
   }}>Door sounds: {on ? "on" : "off"}</button>;
 }
 
-export function SuccessCard({ kind, name, message, resultId, accent = true }: {
-  kind: "success" | "already" | "blocked"; name: string; message: string; resultId: string; accent?: boolean;
+/** `celebrate` marks a "community acted together" success (a tool back on the shelf, a request approved): only those get the sneeze. */
+export function SuccessCard({ kind, name, message, resultId, accent = true, celebrate = false }: {
+  kind: "success" | "already" | "blocked"; name: string; message: string; resultId: string; accent?: boolean; celebrate?: boolean;
 }) {
   const { enabled } = useDelight();
   const reduced = useReducedMotion();
@@ -23,7 +24,7 @@ export function SuccessCard({ kind, name, message, resultId, accent = true }: {
   const Icon = kind === "success" ? CheckCircle : kind === "already" ? CircleMinus : ShieldAlert;
   return <section key={resultId} className={`grid gap-3 rounded-2xl border border-line bg-panel p-5 text-ink ${enabled && !reduced ? "sw-delight-result" : ""}`}>
     <div className="flex items-center gap-3"><Icon size={24} aria-hidden="true" className={kind === "success" ? "text-success-ink" : kind === "blocked" ? "text-danger" : "text-muted"} />
-      <h2 className={accent ? "font-accent text-lg font-medium" : "title-section"}>{name}</h2><MoodGlyph mood={kind === "success" ? "success" : kind === "blocked" ? "error" : "waiting"} /></div>
+      <h2 className={accent ? "font-accent text-lg font-medium" : "title-section"}>{name}</h2><MoodGlyph mood={kind === "success" ? (celebrate ? "success" : "welcome") : kind === "blocked" ? "error" : "waiting"} /></div>
     <p role="status">{message}</p>
     {enabled ? <div className="flex flex-wrap gap-3"><DoorSoundControl /><button type="button" className="desk-button" disabled={!soundOn}
       onClick={() => { void playDoorSound(kind); }}>Play result sound</button></div> : null}

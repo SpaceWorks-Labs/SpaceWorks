@@ -10,7 +10,7 @@
 .sw-delight-logbook { animation: sw-logbook-open 360ms ease-out; }
 .sw-blueprint-decoration { background-image: linear-gradient(rgb(var(--line)) 1px, transparent 1px), linear-gradient(90deg, rgb(var(--line)) 1px, transparent 1px); background-size: 32px 32px; }
 @media (hover: hover) and (prefers-reduced-motion: no-preference) {
-  .sw-delight-glyph:hover { transform: rotate(-3deg); transition: transform 120ms; }
+  .sw-delight-glyph:not([data-patch]):hover { transform: rotate(-3deg); transition: transform 120ms; }
 }
 @media (prefers-reduced-motion: reduce) {
   .sw-delight-pass, .sw-delight-result, .sw-delight-loader, .sw-delight-walk, .sw-delight-logbook { animation: none; }

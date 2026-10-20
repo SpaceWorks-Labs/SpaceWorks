@@ -33,5 +33,9 @@ Self-hosted fonts: Gilroy (Radomir Tinkov Free Font EULA), Outfit and Unbounded
 Adapted code: the light/dark theme transition (frontend/src/lib/themeTransition.*) is adapted
 from yuyu by twilighty-abhi (https://github.com/twilighty-abhi/yuyu), AGPL-3.0.
 
+Mascot: Patch, the painted wolf (frontend/public/brand/patch/), is Space Works' own artwork, taken
+unaltered from the SpaceWorks-Design repository (mascot/); the walk sprite sheets are its walk/ and
+walk-left/ frames laid side by side.
+
 Third-party frontend packages for maker-file previews: three, fflate (MIT), linkedom (ISC),
 @tracespace/core (MIT) and occt-import-js (LGPL-2.1, OpenCascade; loaded as a separate WebAssembly module).

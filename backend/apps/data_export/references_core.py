@@ -189,6 +189,8 @@ RELATIONAL_USER_FIELDS = frozenset(
         ("organizations.OrganizationMembership", "created_by"),
         ("organizations.OrganizationInvitation", "created_by"),
         ("organizations.OrganizationInvitation", "redeemed_by"),
+        ("hosting_requests.HostingRequest", "invited_by"),
+        ("hosting_requests.HostingRequest", "decided_by"),
         ("payments.Payment", "member"),
         ("payments.PaymentDocument", "issued_by"),
         ("payments.Payment", "created_by"),

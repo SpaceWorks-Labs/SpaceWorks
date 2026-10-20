@@ -19,6 +19,7 @@ class PublicConfigSerializer(serializers.Serializer):
     password_login = serializers.DictField(required=False)
     self_registration = serializers.DictField(required=False)
     member_accounts = serializers.DictField(required=False)
+    hosting_requests = serializers.DictField(required=False)
     native = NativeConfigSerializer(required=False)
 
 
@@ -114,6 +115,12 @@ class PublicConfigView(APIView):
             # built-in providers because the STAFF login screen reads the same endpoint;
             # what stops a member-surface login is the check in `SocialLoginView`.
             payload["member_accounts"] = {"enabled": False}
+        # Present only on a managed platform that can mail a confirmation link, so
+        # every other deployment's payload stays byte-for-byte unchanged.
+        from apps.hosting_requests.availability import public_available
+
+        if public_available():
+            payload["hosting_requests"] = {"enabled": True}
         if mobile_grant_creation_enabled():
             payload["native"] = native_config()
         return Response(payload)

@@ -87,3 +87,16 @@ SNAPSHOT_AUDIT_EDGES.update(
 SNAPSHOT_AUDIT_EDGES.update(
     _reference(S, "boxes.QrScanEvent", ("qr.scanned", "scan_id"))
 )
+SNAPSHOT_AUDIT_EDGES.update(
+    _reference(
+        S, "makerspaces.Makerspace",
+        ("hosting_request.invitation_created", "inviter_makerspace_id"),
+        ("hosting_request.makerspace_linked", "makerspace_id"),
+    )
+)
+SNAPSHOT_AUDIT_EDGES.update(
+    _reference(
+        S, "organizations.Organization",
+        ("hosting_request.invitation_created", "inviter_organization_id"),
+    )
+)

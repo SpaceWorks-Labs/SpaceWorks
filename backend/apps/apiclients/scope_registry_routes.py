@@ -107,6 +107,10 @@ _ROUTE_DEFINITIONS = (
     ("public-membership-request", _WRITE, PUBLIC_WRITE_SCOPES, TARGET_TENANT_SLUG, False, True),
     ("public-membership-admission", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False),
     ("public-invitation-request", _WRITE, PUBLIC_WRITE_SCOPES, TARGET_TENANT_SLUG, False, True),
+    *tuple((name, _WRITE, PUBLIC_WRITE_SCOPES, TARGET_GLOBAL, False, False) for name in (
+        "public-hosting-request-submit", "public-hosting-request-open",
+        "public-hosting-invitation-resolve", "public-hosting-invitation-submit",
+    )),
     (
         "hardware_requests:request-submit", _WRITE, PUBLIC_WRITE_SCOPES,
         TARGET_TENANT_SLUG, False, True,

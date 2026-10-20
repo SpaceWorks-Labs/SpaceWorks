@@ -20,6 +20,9 @@ class MakerspaceAddForm(MakerspaceAdminForm):
         max_length=200, required=False,
         help_text="Creates a new owner organization instead of selecting an existing one.",
     )
+    # Set only by a hosting request's pre-filled link; rendered (hidden) on managed
+    # deployments and ignored everywhere else.
+    hosting_request = forms.IntegerField(required=False, min_value=1, widget=forms.HiddenInput)
 
     def clean(self):
         cleaned = super().clean()
@@ -52,9 +55,12 @@ class MakerspaceOwnerAdminMixin:
     def get_fieldsets(self, request, obj=None):
         fieldsets = super().get_fieldsets(request, obj)
         if obj is None:
-            return (("Owner organization", {
-                "fields": ("owner_organization", "new_organization_name"),
-            }), *fieldsets)
+            from apps.hosting_requests.availability import admin_available
+
+            fields = ("owner_organization", "new_organization_name")
+            if admin_available():
+                fields += ("hosting_request",)
+            return (("Owner organization", {"fields": fields}), *fieldsets)
         return fieldsets
 
     def assign_owner(self, request, obj, form):
@@ -66,6 +72,13 @@ class MakerspaceOwnerAdminMixin:
             organization_id=organization.pk if organization is not None else None,
             new_name=form.cleaned_data.get("new_organization_name") or None,
         )
+        from apps.hosting_requests.availability import admin_available
+
+        hosting_request = form.cleaned_data.get("hosting_request")
+        if hosting_request and admin_available():
+            from apps.hosting_requests.workflow import link_created_makerspace
+
+            link_created_makerspace(request.user, hosting_request, obj)
 
     def add_view(self, request, form_url="", extra_context=None):
         try:

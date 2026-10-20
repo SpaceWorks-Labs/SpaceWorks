@@ -14,6 +14,10 @@ TASK_EXEMPTIONS = {
         "Read-only platform monitoring; writes only a disposable deployment cache marker."
     ),
     "apps.accounts.tasks.purge_auth_challenges_task": "Platform-global auth retention.",
+    "apps.hosting_requests.tasks.sweep_hosting_requests_task": (
+        "Platform-global hosting-request retention; deletes/redacts OMITTED platform rows, "
+        "no tenant writes."
+    ),
     "apps.accounts.tasks.drain_password_reset_envelopes_task": "Platform-global account recovery.",
     "apps.audit.tasks.run_audit_attestation_task": (
         "Deployment-local audit attestation: batches and leaves are deployment "

@@ -8,6 +8,7 @@ import { usePublicMakerspaces } from "./inventory/usePublicInventory";
 import { LICENSE_URL } from "./inventory/PublicPageChrome";
 import { LandingHero } from "./landing/LandingHero";
 import { SpaceCard, SpaceCardSkeletons } from "./landing/SpaceCard";
+import { useHostingConfig } from "./hosting/hostingApi";
 
 function normalizeSearch(value: string) { return value.trim().toLowerCase().replace(/\s+/g, " "); }
 function makerspaceSearchText(space: Makerspace) {
@@ -22,18 +23,23 @@ export function LandingPage() {
   const searchTokens = useMemo(() => searchQuery.split(" ").filter(Boolean), [searchQuery]);
   const indexed = useMemo(() => (makerspacesQuery.data ?? []).map(makerspace => ({ makerspace, searchText: makerspaceSearchText(makerspace) })), [makerspacesQuery.data]);
   const filtered = useMemo(() => indexed.filter(({ searchText }) => searchTokens.every(token => searchText.includes(token))).map(({ makerspace }) => makerspace), [indexed, searchTokens]);
+  const hostingConfig = useHostingConfig();
+  const hosting = hostingConfig.data === true;
   const total = makerspacesQuery.data?.length ?? 0;
-  if (total === 1) return <Navigate replace to={`/m/${makerspacesQuery.data![0].slug}`} />;
+  // With hosting open the directory is also the way in for new spaces, so it never auto-skips to the only one.
+  // The skip waits for the config to settle; a failed config read counts as hosting off.
+  if (total === 1 && !hosting && !hostingConfig.isPending) return <Navigate replace to={`/m/${makerspacesQuery.data![0].slug}`} />;
+  const hostLink = hosting ? [{ label: "Host your makerspace", href: "/hosting" }] : [];
 
   const clear = () => setSearchInput("");
   const emptyMessage = searchQuery ? `No spaces match '${searchQuery}'. Try another name or place.` : "No public spaces yet. They appear here once a space turns on its catalogue.";
   const loading = makerspacesQuery.isLoading;
   return <div className="sw-landing"><PublicLayout makerspace={{ name: "Space Works", slug: "", homeHref: "/" }} chrome="canvas"
-    nav={[{ label: "About", href: "/about" }]} headerAction={{ label: "Sign in", href: "/member" }} liveStatus={<ThemeToggle variant="icon" />}
+    nav={[{ label: "About", href: "/about" }, ...hostLink]} headerAction={{ label: "Sign in", href: "/member" }} liveStatus={<ThemeToggle variant="icon" />}
     state={makerspacesQuery.isError ? { status: "error", error: "Couldn't load spaces. Try again.", onRetry: () => { void makerspacesQuery.refetch(); } } : { status: "ready" }}
     hero={<LandingHero search={searchInput} onSearch={setSearchInput} shown={filtered.length} total={total} />}
     isEmpty={!loading && !filtered.length} empty={{ message: emptyMessage, action: searchQuery ? { label: "Clear search", onClick: clear } : undefined }}
-    footer={{ credit: "Space Works · Made for shared workshops", links: [{ label: "About", href: "/about" }, { label: "License", href: LICENSE_URL, external: true }, { label: "Platform sign-in", href: "/admin" }] }}>
+    footer={{ credit: "Space Works · Made for shared workshops", links: [{ label: "About", href: "/about" }, ...hostLink, { label: "License", href: LICENSE_URL, external: true }, { label: "Platform sign-in", href: "/admin" }] }}>
     <h2 className="title-panel mb-4 md:mb-6 min-[1680px]:text-2xl">All spaces</h2>
     {loading ? <SpaceCardSkeletons /> : filtered.length
       ? <div className="sw-space-grid">{filtered.map(space => <SpaceCard key={space.slug} space={space} />)}</div>

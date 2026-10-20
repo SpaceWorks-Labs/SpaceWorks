@@ -45,6 +45,9 @@ const PublicHandlePage = lazy(() => import("./features/publicPages/PublicHandleP
 const PublicEventCodePage = lazy(() => import("./features/events/PublicEventCodePage").then((m) => ({ default: m.PublicEventCodePage })));
 const PresenceNowPage = lazy(() => import("./features/presence/PresenceNowPage").then((m) => ({ default: m.PresenceNowPage })));
 const PublicWebsiteDetailPage = lazy(() => import("./features/events/PublicWebsiteDetailPage").then((m) => ({ default: m.PublicWebsiteDetailPage })));
+const HostingRequestPage = lazy(() => import("./features/hosting/HostingRequestPage").then((m) => ({ default: m.HostingRequestPage })));
+const HostingInvitePage = lazy(() => import("./features/hosting/HostingInvitePage").then((m) => ({ default: m.HostingInvitePage })));
+const HostingRequestStatusPage = lazy(() => import("./features/hosting/HostingRequestStatusPage").then((m) => ({ default: m.HostingRequestStatusPage })));
 
 // Tenant capabilities choose the home independently of the deployment edition.
 
@@ -211,6 +214,10 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
       <Route path="/guest-admin/*" element={<StaffApp guestOnly />} />
       <Route path="/scanner" element={<ScannerPage />} />
       <Route path="/superadmin" element={<SuperadminPage />} />
+      {/* Managed hosting requests exist only on the central origin. */}
+      <Route path="/hosting" element={<HostingRequestPage />} />
+      <Route path="/hosting/invite" element={<HostingInvitePage />} />
+      <Route path="/hosting/request" element={<HostingRequestStatusPage />} />
       {/* Public profiles: after every explicit route, before the catch-all. */}
       <Route path="/:handle" element={<PublicHandlePage />} />
       <Route path="*" element={<NotFoundPage />} />

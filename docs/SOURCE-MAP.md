@@ -329,6 +329,15 @@ setup alongside `views_admin.py`; `features/staff/OrganizationSetup.tsx` renders
 `organizations/services_owner.py` owns atomic owner assignment shared by the installer, makerspace API
 and `/control/`; `makerspaces/admin_owner.py` defines the add-only owner organization form and the
 `MakerspaceAdmin` mixin that assigns the owner and turns a post-validation owner failure into a message.
+`hosting_requests/` owns managed-platform hosting requests: `workflow.py` is the only writer of
+`HostingRequest.status`, `authority.py` decides who may invite and when "Join <organization>" is offered,
+`retention.py`/`tasks.py` run the daily 48-hour delete and 90-day redaction, `notifications.py` sends the
+platform mail, `prefill.py` builds the pre-filled `/control/` add link, and `admin.py` is the `/control/`
+review (accept/reject actions and the re-auth-safe "Create makerspace" view). `makerspaces/admin_owner.py`
+records the link through the add form's hidden `hosting_request` field. Frontend: `features/hosting/`
+(`/hosting`, `/hosting/invite`, `/hosting/request`, `hostingApi.ts`) and
+`features/staff/HostingInvitations.tsx` (the makerspace-settings and organization "Invite a makerspace"
+section).
 `features/staff/panels/usersModals/OrganizationPicker.tsx` supplies the creation wizard's searchable,
 paginated active-organization picker and new-organization option.
 Organization-link audit IDs are inert source provenance in

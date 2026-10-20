@@ -21,6 +21,7 @@ RESERVED_SEGMENTS = frozenset({
     'guest-admin',
     'health',
     'healthz',
+    'hosting',
     'index.html',
     'install',
     'items',

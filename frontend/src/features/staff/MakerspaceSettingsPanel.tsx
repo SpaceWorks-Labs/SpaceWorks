@@ -45,6 +45,8 @@ import { ChannelSetupPanel } from "../notifications/ChannelSetupPanel";
 import { ChannelDeliveryLog } from "../notifications/ChannelDeliveryLog";
 import { PresencePrivacySettings } from "../presence/PresencePrivacySettings";
 import { PublicPageBuilder } from "../publicPages/PublicPageBuilder";
+import { useHostingAvailability } from "../hosting/hostingApi";
+import { HostingInvitations } from "./HostingInvitations";
 
 type Props = {
   makerspace: Makerspace;
@@ -75,6 +77,7 @@ export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMak
     settings.data?.public_print_status_lookup_policy ?? makerspace.public_print_status_lookup_policy ?? "email_unverified";
   const enabledModules = settings.data?.enabled_modules ?? makerspace.enabled_modules ?? [];
   const reEnableBlocked = isSuperadmin && !superadminAccessEnabled;
+  const hostingAvailable = useHostingAvailability(canManageMakerspace);
 
   const updateAccess = useMutation({
     mutationFn: (next: boolean) =>
@@ -213,6 +216,8 @@ export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMak
       description: "Choose the mediums this space uses and set up their credentials. Staff and members can only pick channels you turn on here.",
       rows: <><ChannelSetupPanel key={makerspace.id} makerspaceId={makerspace.id} enabledModules={enabledModules} />
         <div className="py-4"><ChannelDeliveryLog key={makerspace.id} makerspaceId={makerspace.id} /></div></> }] : []),
+    ...(canManageMakerspace && hostingAvailable ? [{ id: "hosting", title: "Invite a makerspace",
+      rows: <div className="py-4"><HostingInvitations key={makerspace.id} scope={{ makerspaceId: makerspace.id }} /></div> }] : []),
     { id: "integrations", title: "Email & integrations", rows: <>
       <MakerspaceEmailSettings makerspace={makerspace} /><MakerspaceWebhookSettings makerspace={makerspace} />
       {isSuperadmin ? <ApiClientsTelegramSettings makerspace={makerspace} /> : null}

@@ -130,6 +130,8 @@ _ROUTE_DEFINITIONS = (
     ("hardware_requests:public-tool-checklist", _WRITE, PUBLIC_READ_SCOPES,
      TARGET_TENANT_SLUG, False, False),
     ("public-printer-service-status", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_TOKEN, False, True),
+    # Generic token status: same public-read/tenant-token rule, NOT admitted to legacy:v1.
+    ("public-machine-service-status", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_TOKEN, False, False),
     (
         "hardware_requests:request-status", _READ, PUBLIC_READ_SCOPES,
         TARGET_TENANT_TOKEN, False, True,

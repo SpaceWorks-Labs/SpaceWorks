@@ -63,8 +63,10 @@ def live_target(job, device, *, require_running=True):
     require_adapter(device.makerspace_id)
     if device.kind != Device.Kind.PRINTER or job.device_id != device.pk or job.makerspace_id != device.makerspace_id:
         raise ValidationError("Invalid printer job ownership.")
-    request = MachineServiceRequest.objects.select_for_update().filter(pk=job.service_request_id, makerspace_id=device.makerspace_id).first()
-    machine = Machine.objects.select_for_update().filter(pk=job.machine_id, makerspace_id=device.makerspace_id, is_active=True).first()
+    # NO KEY UPDATE, like the machine-service workflow: these rows are referenced by rows
+    # other transactions commit (FOR KEY SHARE at COMMIT), which must not wait on us.
+    request = MachineServiceRequest.objects.select_for_update(no_key=True).filter(pk=job.service_request_id, makerspace_id=device.makerspace_id).first()
+    machine = Machine.objects.select_for_update(no_key=True).filter(pk=job.machine_id, makerspace_id=device.makerspace_id, is_active=True).first()
     binding = PrinterDeviceBinding.objects.select_for_update().filter(device=device, machine=machine, makerspace_id=device.makerspace_id, enabled=True).first() if machine else None
     if request is None or machine is None or binding is None or request.assigned_machine_id != machine.pk:
         raise ValidationError("Printer target is no longer available.")

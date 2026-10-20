@@ -208,16 +208,13 @@ def retire_pool(pool, actor, *, reason):
     return locked
 
 
-def log_typed_manual_usage(*args, **kwargs):
-    from .service_manual_usage import log_typed_manual_usage as log
-    return log(*args, **kwargs)
-
-
+from apps.machines.metering import MeteringUnit, metering_unit_for_pool
 from apps.machines.service_metering import _apply as _metered_apply
 from apps.machines.service_metering import reconcile_request as _metered_reconcile
 from apps.machines.service_metering import reserve_for_request as _metered_reserve
 
 _legacy_reconcile_request = reconcile_request
+from apps.machines.service_manual_usage import log_typed_manual_usage  # noqa: E402,F401 - re-export
 _legacy_reserve_for_request = reserve_for_request
 
 

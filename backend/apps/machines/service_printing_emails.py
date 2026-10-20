@@ -9,7 +9,7 @@ from apps.makerspaces.website_directory import public_url
 from apps.machines.service_printing_projection import printing_projection as _projection
 
 logger = logging.getLogger(__name__)
-REQUESTER_EVENTS = frozenset({"submitted", "accepted", "started", "rejected", "completed", "failed", "collected", "reprinted"})
+REQUESTER_EVENTS = frozenset({"submitted", "accepted", "started", "rejected", "completed", "failed", "collected", "reprinted", "next", "cancelled"})
 
 
 def _request_machine_type(request):

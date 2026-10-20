@@ -6,6 +6,7 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from apps.machines.models import MachineServiceRequest
+from apps.machines.service_queue_eta_serializers import ServiceRequestEtaSerializer, eta_for
 from apps.payments.models import Payment
 from apps.payments.serializers import StaffPaymentSerializer
 
@@ -65,6 +66,7 @@ class MachineServiceRequestSerializer(serializers.ModelSerializer):
     run_machine_model = serializers.CharField(read_only=True)
     files = ServiceFileSerializer(many=True, read_only=True)
     consumptions = ServiceConsumptionSerializer(many=True, read_only=True)
+    eta = serializers.SerializerMethodField()
 
     class Meta:
         model = MachineServiceRequest
@@ -73,10 +75,15 @@ class MachineServiceRequestSerializer(serializers.ModelSerializer):
             "requester_name", "contact_email", "contact_phone", "title",
             "description", "source_link", "status", "reason", "estimated_minutes",
             "actual_minutes", "fail_percent_complete", "accepted_at", "started_at",
-            "completed_at", "failed_at", "collected_at", "created_at", "updated_at",
-            "capability_payload", "metering_unit", "planned_quantity", "reserved_quantity", "actual_consumed_quantity", "planned_grams", "reserved_grams", "actual_consumed_grams", "payment", "run_machine_model", "files", "consumptions",
+            "completed_at", "failed_at", "collected_at", "cancelled_at", "created_at", "updated_at",
+            "capability_payload", "metering_unit", "planned_quantity", "reserved_quantity", "actual_consumed_quantity", "planned_grams", "reserved_grams", "actual_consumed_grams", "payment", "run_machine_model", "files", "consumptions", "eta",
         )
         read_only_fields = fields
+
+    @extend_schema_field(ServiceRequestEtaSerializer(allow_null=True))
+    def get_eta(self, obj):
+        # Context-only: list/detail/action responses pass one batched snapshot.
+        return eta_for(self, obj)
 
     def get_machine_type(self, obj) -> str:
         if obj.queue_id:
@@ -132,6 +139,10 @@ class ServiceAcceptSerializer(serializers.Serializer):
 
 class ServiceRejectSerializer(serializers.Serializer):
     reason = serializers.CharField(allow_blank=False, trim_whitespace=True)
+
+
+class ServiceCancelSerializer(serializers.Serializer):
+    reason = serializers.CharField(required=False, allow_blank=True, max_length=500, trim_whitespace=True)
 
 
 class ServiceStartSerializer(serializers.Serializer):

@@ -1,5 +1,6 @@
 from .service_workflow_actions import (
     accept,
+    cancel,
     collect,
     complete,
     create_reprint,
@@ -15,12 +16,14 @@ from .service_workflow_helpers import (
     _audit_transition,
     _decimal,
     _lock_assigned_machine,
+    _lock_scope,
     _locked_request,
     _locked_submission_machine,
     _locked_submission_target,
     _minutes,
     _notify_after_commit,
     _percent,
+    _release_hold,
     _release_queue_machine,
     _require_available,
     _require_edge,
@@ -31,6 +34,7 @@ from .service_workflow_helpers import (
 
 __all__ = [
     "accept",
+    "cancel",
     "collect",
     "complete",
     "create_reprint",

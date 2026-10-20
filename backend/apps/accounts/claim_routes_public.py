@@ -66,6 +66,7 @@ PUBLIC_CLAIM_ROUTES = {
     ("public-printer-service-request", "POST"): Allowed(tenant=SLUG, audited=True),
     ("public-printer-service-request", "OPTIONS"): AnonymousRead(),
     **_anonymous("public-printer-service-status"),
+    **_anonymous("public-machine-service-status"),
     **_anonymous("public-event-list"),
     **_anonymous("public-event-detail"),
     **_anonymous("public-event-website"),

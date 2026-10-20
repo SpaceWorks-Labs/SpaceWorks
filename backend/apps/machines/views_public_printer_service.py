@@ -14,6 +14,7 @@ from apps.machines.public_printer_service_serializers import PublicPrinterPoolSe
 from apps.makerspaces.lookup import get_public_makerspace
 from apps.makerspaces.platform import module_enabled
 from apps.machines.views_public_service import require_public_machine_requester
+from apps.machines.views_public_service_status import STATUS_ERRORS
 from apps.machines.permissions import IsActiveRequester
 
 
@@ -99,7 +100,8 @@ class PublicPrinterStatusView(APIView):
     throttle_classes = [ClientTierRateThrottle]
     throttle_scope = "request_status"
 
-    @extend_schema(tags=["Public machine service"], auth=[], responses={200: PublicPrinterStatusSerializer})
+    @extend_schema(tags=["Public machine service"], auth=[], responses={200: PublicPrinterStatusSerializer, **STATUS_ERRORS},
+                   description="PII-free printer job status plus the shared derived `eta` (null once terminal).")
     def get(self, request, public_token):
-        row, counts = public_status(public_token)
-        return Response(PublicPrinterStatusSerializer(row, context={"queue_counts": counts}).data)
+        row, context = public_status(public_token)
+        return Response(PublicPrinterStatusSerializer(row, context=context).data)

@@ -9,6 +9,7 @@ from apps.admin_api.serializers_machine_service import (
     EmptyServiceActionSerializer,
     MachineServiceRequestSerializer,
     ServiceAcceptSerializer,
+    ServiceCancelSerializer,
     ServiceCompleteSerializer,
     ServiceFailSerializer,
     ServiceRejectSerializer,
@@ -56,6 +57,8 @@ class _MachineServiceActionView(APIView):
             row = service_workflow.collect(row, request.user)
         elif self.operation == "reprint":
             row = service_workflow.create_reprint(row, request.user)
+        elif self.operation == "cancel":
+            row = service_workflow.cancel(row, request.user, reason=data.get("reason", ""))
         else:
             raise AssertionError("Unknown service action")
         return _response(row)
@@ -114,5 +117,18 @@ class MachineServiceReprintView(_MachineServiceActionView):
     operation = "reprint"
 
     @extend_schema(tags=["Admin machine service"], summary="Create a printer reprint", request=EmptyServiceActionSerializer, responses={200: MachineServiceRequestSerializer, **SERVICE_ERRORS})
+    def post(self, request, pk, *args, **kwargs):
+        return super().post(request, pk, *args, **kwargs)
+
+
+class MachineServiceCancelView(_MachineServiceActionView):
+    input_serializer, operation = ServiceCancelSerializer, "cancel"
+
+    @extend_schema(
+        tags=["Admin machine service"], summary="Cancel a waiting or running machine service request",
+        description=("Manage-scoped staff only (never collect-only reach). Releases any consumable hold with "
+                     "zero consumption and no charge; a running job's machine is freed. Idempotent."),
+        request=ServiceCancelSerializer, responses={200: MachineServiceRequestSerializer, **SERVICE_ERRORS},
+    )
     def post(self, request, pk, *args, **kwargs):
         return super().post(request, pk, *args, **kwargs)

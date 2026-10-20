@@ -1,17 +1,51 @@
-"""Typed manual usage, including optional member attribution."""
+"""Typed manual usage logging, split out of service_consumable_pools (file ceiling).
+
+When a ``service_request`` is linked, this joins the shared machine-service lock order
+(C1): write fence -> request -> machine -> pool, the same order cancel/start/complete
+and the device printer adapter use, and re-validates request/machine compatibility
+under those locks. Unlinked usage keeps machine -> pool. Ledger arithmetic is unchanged.
+"""
+
 from decimal import Decimal
+
 from django.db import transaction
 from rest_framework.exceptions import ValidationError
+
 from apps.audit import services as audit
-from .models import Machine, MachineUsageEntry, MachineServiceRequest, MachineConsumableAdjustment
-from .metering import MeteringUnit, metering_unit_for_pool
-from .consumable_scope import pool_serves_machine
+from apps.machines.consumable_scope import pool_serves_machine
+from apps.machines.metering import MeteringUnit, metering_unit_for_pool
+from apps.machines.models import Machine, MachineConsumableAdjustment, MachineServiceRequest, MachineUsageEntry
+
+
+def _locked_link(service_request, machine):
+    from apps.encryption.write_fence import assert_mapped_write_allowed
+    makerspace_id = MachineServiceRequest.objects.filter(pk=service_request.pk).values_list("makerspace_id", flat=True).first()
+    if makerspace_id is None:
+        raise ValidationError({"service_request": "Service request was not found."})
+    assert_mapped_write_allowed(makerspace_id)
+    request = MachineServiceRequest.objects.select_for_update(no_key=True, of=("self",)).select_related(
+        "queue", "bucket").get(pk=service_request.pk)
+    locked = Machine.objects.select_for_update(no_key=True, of=("self",)).select_related("makerspace").get(pk=machine.pk)
+    if request.makerspace_id != locked.makerspace_id:
+        raise ValidationError({"service_request": "Service request must belong to this makerspace."})
+    compatible = (
+        request.assigned_machine_id == locked.pk
+        or (request.assigned_machine_id is None and request.bucket_id and request.bucket.machine_id == locked.pk)
+        or (request.assigned_machine_id is None and request.queue_id
+            and request.queue.machine_type_id == locked.machine_type_id)
+    )
+    if not compatible:
+        raise ValidationError({"service_request": "Service request is not compatible with this machine."})
+    return request, locked
 
 
 @transaction.atomic
 def log_typed_manual_usage(machine, actor, *, duration_minutes, outcome, percent_complete, reason="", grams=0, quantity=None, metering_unit=None, pool=None, service_request=None, note="", member=None, started_at=None):
-    from .service_consumable_pools import _locked_pool, _validate_pool, _grams, _apply
-    machine = Machine.objects.select_for_update().select_related("makerspace").get(pk=machine.pk)
+    from apps.machines.service_consumable_pools import _apply, _grams, _locked_pool, _validate_pool
+    if service_request is not None:
+        service_request, machine = _locked_link(service_request, machine)
+    else:
+        machine = Machine.objects.select_for_update(no_key=True, of=("self",)).select_related("makerspace").get(pk=machine.pk)
     if outcome not in {"success", "failed"}:
         raise ValidationError({"outcome": "Outcome must be success or failed."})
     if not isinstance(duration_minutes, int) or duration_minutes < 0:
@@ -27,16 +61,12 @@ def log_typed_manual_usage(machine, actor, *, duration_minutes, outcome, percent
         if not pool_serves_machine(pool, machine):
             raise ValidationError({"consumable_pool": "Consumable pool is incompatible with this machine."})
         _validate_pool(machine, pool)
-    if service_request is not None:
-        service_request = MachineServiceRequest.objects.select_for_update().get(pk=service_request.pk)
-        if service_request.makerspace_id != machine.makerspace_id:
-            raise ValidationError({"service_request": "Service request must belong to this makerspace."})
     usage_unit = metering_unit or (metering_unit_for_pool(pool.unit) if pool else None) or MeteringUnit.WEIGHT
     if usage_unit not in MeteringUnit.values:
         raise ValidationError({"metering_unit": "Unsupported metering unit."})
     if pool is not None and metering_unit_for_pool(pool.unit) != usage_unit:
         raise ValidationError({"metering_unit": "Consumable pool unit is incompatible with this metering unit."})
-    from .usage_attribution import validate_attribution
+    from apps.machines.usage_attribution import validate_attribution
     member = validate_attribution(machine, member, started_at)
     entry = MachineUsageEntry.objects.create(
         member=member, started_at=started_at,
@@ -56,4 +86,3 @@ def log_typed_manual_usage(machine, actor, *, duration_minutes, outcome, percent
               "outcome": outcome, "grams": str(grams), "quantity": str(quantity), "metering_unit": usage_unit},
     )
     return entry
-

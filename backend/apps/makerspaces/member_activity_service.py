@@ -64,8 +64,12 @@ def member_activity(membership):
         ).exists(),
         "accountability": _accountability(membership),
     }
-    if module_enabled(makerspace, "machine_service"):
-        payload["print_requests"] = _printer_requests(makerspace, member)
+    machine_service = module_enabled(makerspace, "machine_service")
+    if machine_service:
+        # One batched read + one queue snapshot for BOTH machine-service projections.
+        from apps.makerspaces.member_activity_machine_service import machine_service_activity
+        printer_rows, service_rows = machine_service_activity(makerspace, member)
+        payload["print_requests"] = printer_rows
     if module_enabled(makerspace, "bookings"):
         payload["bookings"] = _bookings(makerspace.id, member, now)
     if module_enabled(makerspace, "events"):
@@ -73,8 +77,8 @@ def member_activity(membership):
     # runtime_active, not apps.is_installed: a tombstoned app stays in
     # INSTALLED_APPS (its migrations must remain applied), so is_installed answers
     # "are the tables there?" when this asks "are the surfaces live?".
-    if module_enabled(makerspace, "machine_service") and runtime_active("machines"):
-        payload["machine_service_requests"] = _machine_service_requests(makerspace.id, member)
+    if machine_service and runtime_active("machines"):
+        payload["machine_service_requests"] = service_rows
     # The dashboard half (D8): history, money and notices. Only reachable through the
     # `membership`-gated endpoint, so a space without memberships is unchanged. Notices
     # are derived LAST because they read the sections above.
@@ -225,36 +229,6 @@ def _event_registrations(makerspace, member):
     return result
 
 
-def _machine_service_requests(makerspace_id, member):
-    from apps.machines.models import MachineServiceRequest
-    from apps.machines.service_queue_position import queue_positions_for
-
-    rows = MachineServiceRequest.objects.filter(
-        makerspace_id=makerspace_id, member=member,
-    ).select_related("queue__machine_type").order_by("-created_at", "-id")[:ACTIVITY_LIMIT]
-    rows = list(rows)
-    positions = queue_positions_for(rows)
-    result = []
-    for row in rows:
-        item = {"title": row.title, "status": row.status, "created_at": row.created_at, "queue_position": positions.get(row.pk)}
-        if row.queue_id and row.queue.machine_type.slug == "3d_printer":
-            item["machine_type"] = "3d_printer"
-        result.append(item)
-    return result
-
-
-
-def _printer_requests(makerspace, member):
-    from apps.machines.models import MachineServiceRequest
-    from apps.machines.public_printer_service_serializers import PublicPrinterStatusSerializer
-    from apps.machines.service_queue_position import queue_counts_for
-
-    rows = list(MachineServiceRequest.objects.filter(
-        makerspace=makerspace, member=member, queue__machine_type__slug="3d_printer",
-    ).select_related("queue__machine_type").order_by("-created_at", "-id")[:ACTIVITY_LIMIT])
-    return PublicPrinterStatusSerializer(
-        rows, many=True, context={"queue_counts": queue_counts_for(rows)},
-    ).data
 def _presence(makerspace_id, member, now):
     rows = PresenceSession.objects.filter(
         makerspace_id=makerspace_id, member=member,

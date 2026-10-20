@@ -3,9 +3,12 @@ import { Link } from "react-router-dom";
 import { Card } from "../../components/ui/Card";
 import { StatusResult } from "./PublicPrintRequestParts";
 import type { PrintStatus } from "./publicApi";
+import { OwnerCancel } from "../machine-service/OwnerCancel";
 
-type StatusProps = { submitted: boolean; tokenStatus?: PrintStatus; tokenStatusPending: boolean; tokenStatusError: Error | null; trackingHref?: string; onRetry?: () => void };
-export function PrintStatusPanel({ submitted, tokenStatus, tokenStatusPending, tokenStatusError, trackingHref, onRetry }: StatusProps) {
+type StatusProps = { submitted: boolean; tokenStatus?: PrintStatus; tokenStatusPending: boolean; tokenStatusError: Error | null; trackingHref?: string; onRetry?: () => void;
+  /** With a token, the signed-in owner (only) gets a Cancel control for a live job. */
+  publicToken?: string; makerspaceSlug?: string };
+export function PrintStatusPanel({ submitted, tokenStatus, tokenStatusPending, tokenStatusError, trackingHref, onRetry, publicToken, makerspaceSlug = "" }: StatusProps) {
   const [copyState, setCopyState] = useState("");
   async function copyLink() {
     try { await navigator.clipboard.writeText(trackingHref!); setCopyState("Tracking link copied. Keep it private."); }
@@ -14,6 +17,8 @@ export function PrintStatusPanel({ submitted, tokenStatus, tokenStatusPending, t
   return <div className="grid gap-4">
     {submitted ? <p className="text-sm" role="status">Request submitted. This browser keeps its private token; do not share the link.</p> : null}
     <StatusResult error={tokenStatusError} isPending={tokenStatusPending} status={tokenStatus} onRetry={onRetry} />
+    {publicToken && tokenStatus ? <OwnerCancel token={publicToken} title={tokenStatus.title} makerspaceSlug={makerspaceSlug}
+      extraKeys={[["public-printer-status", publicToken]]} /> : null}
     {trackingHref ? <button className="desk-button w-full" type="button" onClick={() => { void copyLink(); }}>Copy tracking link</button> : null}
     {copyState ? <p role="status" className="text-sm text-muted">{copyState}</p> : null}
   </div>;

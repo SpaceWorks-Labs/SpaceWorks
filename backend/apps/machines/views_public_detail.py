@@ -39,6 +39,16 @@ class PublicMachineDetailMixin:
         ).filter(is_public=True, is_active=True).order_by("name", "pk")
 
 
+    def get_serializer(self, *args, **kwargs):
+        from .public_detail import queue_summaries
+        instance = args[0] if args else None
+        if instance is not None:
+            rows = list(instance) if kwargs.get("many") else [instance]
+            kwargs.setdefault("context", self.get_serializer_context())
+            kwargs["context"]["queue_summaries"] = queue_summaries(rows)
+        return super().get_serializer(*args, **kwargs)
+
+
 class PublicMachineDetailView(PublicMachineDetailMixin, generics.RetrieveAPIView):
     @extend_schema(request=None, auth=[], parameters=PUBLIC_API_AUTH_PARAMETERS, responses={200: PublicMachineDetailSerializer, **ERRORS})
     def get(self, request, *args, **kwargs):

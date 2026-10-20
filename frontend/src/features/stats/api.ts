@@ -38,6 +38,7 @@ export type PublicStatsPrinting = {
       collected: number;
       failed: number;
       rejected: number;
+      cancelled?: number;
     };
     queue: {
       pending: number;

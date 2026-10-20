@@ -298,6 +298,22 @@ explicit rejections may retry within four parent attempts, while unknown outcome
 are held. Payload v2 uses `uuid5(NAMESPACE_URL, envelope.dedup_key)` and optional inbox ID/local
 link, with rendered personal content. See [inbox/push contract](notification-inbox.md).
 
+## Owner self-notices (deliberate exception)
+
+The contract's "original sender authority" re-check has one documented exception: the four
+machine-service requester milestones `next`, `started`, `completed` and `cancelled`
+(`machines/service_queue_notices.py`, checks in `machines/notifications_p2_service_notices.py`).
+They are notices to the request OWNER about the owner's own job, so `eligible()` revalidates the
+owner instead of an initiator: the recipient is still `member` (else historical `requester`),
+the account is live and active, the machine-service (and, for built-in printers, printing)
+modules are on, and the immutable marker (`started_notice_at`/`completed_notice_at`/
+`cancelled_notice_at`) or — for `next` — the stable dedup key plus "still the accepted head"
+holds. Staff, member or device initiators (`user:<id>`, `device:<binding>`) are audit/context
+only and are never re-checked. Exactly-once means one durable intent per request, milestone and
+owner; the envelope insert is the only fail-closed step inside the domain transaction, and
+tenant-authored templates render at delivery with the default copy as fallback. Preferences,
+requester mutes, opt-outs, suppression and verified-endpoint checks still apply unchanged.
+
 ## Integration limits in this tree
 
 The reconciliation removes Meta's former missing-module blocker and the duplicate addressed

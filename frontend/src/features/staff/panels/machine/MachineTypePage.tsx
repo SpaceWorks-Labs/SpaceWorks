@@ -1,4 +1,5 @@
 import { plural } from "../../../../lib/plural";
+import { QueueSummary } from "../../../machine-service/QueueSummary";
 import { machineStatusLabel } from "./machineStatusLabel";
 import { MaterialCataloguePanel } from "./MaterialCataloguePanel";
 import { CertificationsPanel } from "./CertificationsPanel";
@@ -81,6 +82,8 @@ export function MachineTypePage({ enabledFeatures = [], makerspaceId, canManage,
           </span></button> },
           { key: "status", header: "Status", render: machine => <StatusBadge status={machine.status} label={machineStatusLabel(machine.status)} /> },
           { key: "usage_hours", header: "Usage", render: machine => <span className="tabular-nums">{machine.usage_hours} h</span> },
+          ...(visibleMachines.some(machine => machine.service_queue_summary) ? [{ key: "service_queue", header: "Service queue",
+            render: (machine: Machine) => <QueueSummary summary={machine.service_queue_summary} /> }] : []),
         ]} />}
       </Tabs>
     </section> : null}

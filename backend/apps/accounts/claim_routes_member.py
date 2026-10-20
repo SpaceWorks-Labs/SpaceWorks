@@ -74,6 +74,20 @@ MEMBER_CLAIM_ROUTES = {
     ("member-certifications", "GET"): ReadOnly(tenant=ID),
     ("member-certifications", "HEAD"): ReadOnly(tenant=ID),
     **_options("member-certifications"),
+    # Owner self-service on a machine-service job (C4/C16): one explicit entry per route
+    # and method, no fallback. Row ownership is `member_id == caller`; a claim session
+    # is never the job's owner account, so both are refused outright.
+    ("member-machine-service-cancel", "POST"): Refused(
+        "claim sessions cannot cancel machine-service jobs", ownership=RowOwnership.SINGLE_OWNER,
+    ),
+    **_options("member-machine-service-cancel"),
+    ("member-machine-service-owner", "GET"): Refused(
+        "claim sessions cannot read machine-service owner controls", ownership=RowOwnership.SINGLE_OWNER,
+    ),
+    ("member-machine-service-owner", "HEAD"): Refused(
+        "claim sessions cannot read machine-service owner controls", ownership=RowOwnership.SINGLE_OWNER,
+    ),
+    **_options("member-machine-service-owner"),
     ("member-activity", "GET"): LocallyFiltered(tenant=ID),
     ("member-activity", "HEAD"): LocallyFiltered(tenant=ID),
     **_options("member-activity"),

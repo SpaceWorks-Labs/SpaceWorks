@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from apps.machines.service_queue_eta_serializers import ServiceRequestEtaSerializer
+
 class MemberLoanActivitySerializer(serializers.Serializer):
     request_id = serializers.IntegerField()
     renewal_count = serializers.IntegerField()
@@ -12,6 +14,9 @@ class MemberLoanActivitySerializer(serializers.Serializer):
 
 
 class MemberPrintActivitySerializer(serializers.Serializer):
+    # Private to the owner: the id and can_cancel drive the dashboard's Cancel control.
+    request_id = serializers.IntegerField()
+    can_cancel = serializers.BooleanField()
     public_token = serializers.UUIDField()
     status = serializers.CharField()
     title = serializers.CharField()
@@ -19,10 +24,12 @@ class MemberPrintActivitySerializer(serializers.Serializer):
     accepted_at = serializers.DateTimeField(allow_null=True)
     started_at = serializers.DateTimeField(allow_null=True)
     completed_at = serializers.DateTimeField(allow_null=True)
+    cancelled_at = serializers.DateTimeField(allow_null=True)
     estimated_minutes = serializers.IntegerField()
     queue_position = serializers.IntegerField(allow_null=True)
     queue_approved_ahead = serializers.IntegerField(allow_null=True)
     queue_awaiting_review_ahead = serializers.IntegerField(allow_null=True)
+    eta = ServiceRequestEtaSerializer(allow_null=True)
 
 
 class MemberEventRegistrationActivitySerializer(serializers.Serializer):
@@ -41,11 +48,19 @@ class MemberEventRegistrationActivitySerializer(serializers.Serializer):
 
 
 class MemberMachineServiceActivitySerializer(serializers.Serializer):
+    request_id = serializers.IntegerField()
+    can_cancel = serializers.BooleanField()
+    public_token = serializers.UUIDField()
     machine_type = serializers.CharField(required=False)
+    machine_type_name = serializers.CharField()
     title = serializers.CharField()
     status = serializers.CharField()
     created_at = serializers.DateTimeField()
+    cancelled_at = serializers.DateTimeField(allow_null=True)
     queue_position = serializers.IntegerField(allow_null=True)
+    queue_approved_ahead = serializers.IntegerField(allow_null=True)
+    queue_awaiting_review_ahead = serializers.IntegerField(allow_null=True)
+    eta = ServiceRequestEtaSerializer(allow_null=True)
 
 
 class MemberPresenceActivitySerializer(serializers.Serializer):

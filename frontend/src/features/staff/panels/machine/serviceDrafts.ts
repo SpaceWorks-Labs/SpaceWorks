@@ -7,7 +7,8 @@ export type ServiceActionName =
   | "complete"
   | "fail"
   | "collect"
-  | "reprint";
+  | "reprint"
+  | "cancel";
 
 export type ServiceDraft = {
   action: { id: number; name: ServiceActionName } | null;

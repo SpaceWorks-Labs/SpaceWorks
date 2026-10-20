@@ -13,6 +13,7 @@ class MachineServiceStatusTotalsSerializer(_ScopedSerializer):
     collected = serializers.IntegerField()
     rejected = serializers.IntegerField()
     failed = serializers.IntegerField()
+    cancelled = serializers.IntegerField()
 
 
 class MachineServiceMachineSerializer(_ScopedSerializer):

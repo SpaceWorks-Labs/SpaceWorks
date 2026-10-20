@@ -1,6 +1,7 @@
 from decimal import Decimal
 
 from django.utils import timezone
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from apps.inventory import public_image_storage
@@ -17,6 +18,7 @@ from apps.machines.printer_capabilities import validate_machine_payload
 from apps.warranty.models import Warranty
 from apps.warranty.status import STATUS_UNKNOWN, warranty_status
 from apps.machines.serializers_machine_types import MachineTypeSerializer
+from apps.machines.service_queue_eta_serializers import MachineQueueSummarySerializer
 
 
 class MachineOperatorSerializer(serializers.ModelSerializer):
@@ -113,6 +115,7 @@ class MachineSerializer(serializers.ModelSerializer):
     can_unretire = serializers.SerializerMethodField()
     # Retained through Phase 0A because the current frontend still reads it.
     can_manage = serializers.SerializerMethodField()
+    service_queue_summary = serializers.SerializerMethodField()
 
     class Meta:
         model = Machine
@@ -141,6 +144,7 @@ class MachineSerializer(serializers.ModelSerializer):
             'can_retire',
             'can_unretire',
             'can_manage',
+            'service_queue_summary',
             'created_at',
             'updated_at',
         ]
@@ -225,3 +229,8 @@ class MachineSerializer(serializers.ModelSerializer):
 
     def get_can_manage(self, obj) -> bool:
         return self._capabilities(obj)['can_edit']
+
+    @extend_schema_field(MachineQueueSummarySerializer(allow_null=True))
+    def get_service_queue_summary(self, obj):
+        # Context-only and permission-filtered by the view; absent means not authorized.
+        return (self.context.get('service_queue_summaries') or {}).get(obj.pk)

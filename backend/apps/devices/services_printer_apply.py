@@ -55,7 +55,10 @@ def _apply(principal, job_id, *, actor=None):
         # Workflow, applied marker and provenance share one rollback boundary. Admission failures remain refusals.
         try:
             if job.outcome == "completed":
-                workflow.complete(request, actor, **kwargs)
+                # The requester's completed notice is an owner self-notice (C3): the device
+                # binding is recorded as initiator only, so actor=None still delivers once.
+                initiator = f"user:{actor.pk}" if actor is not None else f"device:{binding.pk}"
+                workflow.complete(request, actor, initiator=initiator, **kwargs)
             else:
                 workflow.fail(request, actor, reason=job.failure_reason, percent_complete=job.percent_complete, **kwargs)
             job.state = "applied"

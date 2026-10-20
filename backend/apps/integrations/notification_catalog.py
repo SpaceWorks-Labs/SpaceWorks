@@ -28,7 +28,7 @@ FEATURE_EVENTS = {
     ),
     F.PRINTING: (
         "submitted", "accepted", "started", "rejected", "completed", "failed",
-        "collected", "reprinted",
+        "collected", "reprinted", "next", "cancelled",
     ),
     F.EVENTS: (
         "published", "cancelled", "completed", "registration_created",

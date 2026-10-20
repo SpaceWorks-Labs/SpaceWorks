@@ -54,7 +54,7 @@ def lookup(view_name, method):
     # outside protected prefixes; public scopes must never substitute for its token.
     if view_name == "notification-media":
         return None
-    if view_name in STAFF_ACCOUNT_EXCLUSIONS:
+    if view_name in STAFF_ACCOUNT_EXCLUSIONS or view_name in OWNER_SESSION_EXCLUSIONS:
         return None
     if not view_name or not method:
         return None
@@ -69,6 +69,11 @@ STAFF_ACCOUNT_EXCLUSIONS = frozenset({
     "admin-staff-account-deactivate", "admin-staff-account-reactivate",
     "admin-staff-account-set-password", "admin-staff-account-resend-invite",
 })
+
+
+# Owner self-service on the member surface acts on the caller's own job; an API client
+# (public scopes or legacy:v1) never acquires it, even if a deployment widens prefixes.
+OWNER_SESSION_EXCLUSIONS = frozenset({"member-machine-service-cancel", "member-machine-service-owner"})
 
 
 def _request_match(request):
@@ -134,7 +139,7 @@ def resolve_target(request, entry):
             row = HardwareRequest.objects.select_related("makerspace").filter(
                 public_token=token
             ).first()
-        elif view_name == "public-printer-service-status":
+        elif view_name in {"public-printer-service-status", "public-machine-service-status"}:
             from apps.machines.models import MachineServiceRequest
 
             row = MachineServiceRequest.objects.select_related("makerspace").filter(

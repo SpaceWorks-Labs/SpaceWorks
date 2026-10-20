@@ -17,7 +17,7 @@ from apps.operations.report_scope import scoped_ids
 CENT = Decimal("0.01")
 COMPLETED = (MachineServiceRequest.Status.COMPLETED, MachineServiceRequest.Status.COLLECTED)
 FIELDS = (
-    "row_kind", "submitted", "accepted", "in_progress", "completed", "collected", "rejected", "failed",
+    "row_kind", "submitted", "accepted", "in_progress", "completed", "collected", "rejected", "failed", "cancelled",
     "machine_id", "machine_name", "machine_type", "request_count", "completed_count", "failed_count",
     "completed_hours", "failed_partial_hours", "total_recorded_service_hours", "failure_rate",
     "measurement", "product_id", "product_label", "completed_amount", "failed_partial_amount", "total_used",
@@ -168,6 +168,7 @@ def _status_rows(ids, aggregate, date_range, machine_scope=None):
         collected=Count("id", filter=created & Q(status=MachineServiceRequest.Status.COLLECTED)),
         rejected=Count("id", filter=created & Q(status=MachineServiceRequest.Status.REJECTED)),
         failed=Count("id", filter=created & Q(status=MachineServiceRequest.Status.FAILED)),
+        cancelled=Count("id", filter=created & Q(status=MachineServiceRequest.Status.CANCELLED)),
     )
     return [_record("status", row, aggregate) for row in rows]
 
@@ -254,7 +255,7 @@ def _failed_usage(rows):
 def _record(kind, row, aggregate):
     makerspace_id = row.get("makerspace_id", row.get("service_request__makerspace_id"))
     if kind == "status":
-        record = {"row_kind": kind, **{key: row[key] for key in FIELDS[1:8]}}
+        record = {"row_kind": kind, **{key: row[key] for key in FIELDS[1:9]}}
     elif kind == "machine":
         completed_hours, failed_hours = _hours(row["completed_minutes"]), _hours(row["failed_minutes"])
         denominator = row["completed_count"] + row["failed_count"]

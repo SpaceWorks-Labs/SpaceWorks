@@ -1,8 +1,9 @@
 import type { ChangeEvent, Dispatch, SetStateAction } from "react";
-import { useEffect, useState } from "react";
 
 import { EmptyState, ErrorBlock, Field, ListRow, ProgressBar, RelativeTime, Skeleton, StatusPill } from "../../components/ui";
 import type { PrintStatus } from "./publicApi";
+import { ServiceRequestEta } from "../machine-service/ServiceRequestEta";
+import { normalizeServiceStatus } from "../machine-service/types";
 
 export type TextInputProps = {
   label: string;
@@ -66,31 +67,13 @@ export function FilePicker({
   </div>;
 }
 
-function printTimeLeftLabel(status: PrintStatus, now: number): string | null {
-  if (
-    status.status !== "in_progress" ||
-    !status.started_at ||
-    status.estimated_minutes == null
-  ) {
-    return null;
-  }
-  const finish = new Date(status.started_at).getTime() + status.estimated_minutes * 60_000;
-  const remainingMs = finish - now;
-  if (remainingMs <= 0) {
-    return "Finishing up - past the estimate";
-  }
-  const totalMinutes = Math.ceil(remainingMs / 60_000);
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-  return hours > 0 ? `~${hours}h ${minutes}m left` : `~${minutes}m left`;
-}
-
 function queuePositionDetail(status: PrintStatus): string {
   const approvedAhead = status.queue_approved_ahead ?? 0;
   const awaitingReviewAhead = status.queue_awaiting_review_ahead ?? 0;
-  if (approvedAhead === 0 && awaitingReviewAhead === 0) {
-    return "You're next in line";
-  }
+  const current = normalizeServiceStatus(status.status);
+  // Only an approved job can be "next"; a pending one is still waiting for review.
+  if (current === "accepted" && approvedAhead === 0) return "You're next among approved jobs";
+  if (current === "pending" && approvedAhead === 0 && awaitingReviewAhead === 0) return "Awaiting review";
   return [
     `${approvedAhead} approved job${approvedAhead === 1 ? "" : "s"} ahead`,
     `${awaitingReviewAhead} awaiting review`,
@@ -98,24 +81,18 @@ function queuePositionDetail(status: PrintStatus): string {
 }
 
 export function StatusStepper({ status }: { status: PrintStatus }) {
-  const currentIndex = steps.findIndex(step => step.key === status.status);
-  const terminalError = status.status === "rejected" || status.status === "failed";
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    if (status.status !== "in_progress") return;
-    const id = window.setInterval(() => setNow(Date.now()), 30_000);
-    return () => window.clearInterval(id);
-  }, [status.status]);
-  const timeLeft = printTimeLeftLabel(status, now);
-  if (terminalError) return <StatusPill tone="danger" label={`${status.title} is ${status.status}.`} />;
+  const current = normalizeServiceStatus(status.status);
+  const currentIndex = steps.findIndex(step => step.key === current);
+  if (current === "cancelled") return <StatusPill tone="neutral" label={`${status.title} was cancelled. Nothing was charged.`} />;
+  if (current === "rejected" || current === "failed") return <StatusPill tone="danger" label={`${status.title} is ${current}.`} />;
   return <div className="grid gap-4">
     <ProgressBar value={Math.max(0, currentIndex) / (steps.length - 1)} label="Print progress" />
     <ol className="grid gap-2">{steps.map((step, index) => <li key={step.key} aria-current={index === currentIndex ? "step" : undefined}>
       <StatusPill label={step.label} tone={index < currentIndex ? "success" : index === currentIndex ? "accent" : "neutral"} />
     </li>)}</ol>
     {status.queue_position != null ? <ListRow title={`#${status.queue_position} in the queue`} meta={queuePositionDetail(status)} /> : null}
-    {timeLeft ? <StatusPill label={timeLeft} tone="info" /> : null}
-    <p className="text-sm text-muted">Current status: <span className="font-semibold text-ink">{status.status.replace(/_/g, " ")}</span></p>
+    <ServiceRequestEta eta={status.eta} status={current} showLine={false} />
+    <p className="text-sm text-muted">Current status: <span className="font-semibold text-ink">{current.replace(/_/g, " ")}</span></p>
   </div>;
 }
 

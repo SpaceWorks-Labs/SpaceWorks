@@ -1,18 +1,23 @@
 import { Modal } from "../../components/ui";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { tenantPublicRequest } from "../../lib/api";
 
 type IntakeField = { key: string; label: string; type: "text" | "number" | "integer" | "choice" | "boolean"; required?: boolean; choices?: string[]; min?: number; max?: number };
 export type TypeIntake = { materials: { id: number | null; name: string; colours: string[] }[]; intake_schema: { version?: number; fields?: IntakeField[] } };
 
-export function MachineIntakeForm({ slug, machineId, typeId, dialog = false }: { slug: string; machineId: number; typeId: number; dialog?: boolean }) {
+export function MachineIntakeForm({ slug, machineId, typeId, dialog = false, trackingPath }: {
+  slug: string; machineId: number; typeId: number; dialog?: boolean;
+  /** Tenant-aware status page path for the returned tracking token. */
+  trackingPath?: (publicToken: string) => string;
+}) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [values, setValues] = useState<Record<string, string | number | boolean>>({});
   const schema = useQuery({ queryKey: ["machine-intake", slug, typeId],
     queryFn: () => tenantPublicRequest<TypeIntake>(slug, `/public/${encodeURIComponent(slug)}/machine-types/${typeId}/intake`) });
-  const submit = useMutation({ mutationFn: () => tenantPublicRequest<{ status: string }>(slug,
+  const submit = useMutation({ mutationFn: () => tenantPublicRequest<{ status: string; public_token: string }>(slug,
     `/public/${encodeURIComponent(slug)}/machine-service-requests`, { method: "POST", body: JSON.stringify({
       machine_id: machineId, title, capability_payload: schema.data?.intake_schema.version ? {
         schema_version: schema.data.intake_schema.version, values: {
@@ -38,7 +43,9 @@ export function MachineIntakeForm({ slug, machineId, typeId, dialog = false }: {
     </label>)}
     {schema.isPending ? <p role="status">Loading job requirements…</p> : null}
     {schema.error || submit.error ? <p role="alert" className="text-sm text-danger">{(schema.error || submit.error)?.message}</p> : null}
-    {submit.isSuccess ? <p role="status">Request submitted for review.</p> : <button className="desk-button-brand" disabled={submit.isPending || !schema.data}>Request work</button>}
+    {submit.isSuccess ? <div role="status" className="grid gap-2"><p>Request submitted for review.</p>
+      {submit.data?.public_token && trackingPath ? <Link className="desk-button" to={trackingPath(submit.data.public_token)}>Track your job</Link> : null}
+      <p className="text-xs text-muted">Keep the tracking link private.</p></div> : <button className="desk-button-brand" disabled={submit.isPending || !schema.data}>Request work</button>}
   </form>;
   return dialog ? <><button className="desk-button mt-3" type="button" onClick={() => setOpen(true)}>Request a job</button>
     <Modal open={open} onClose={() => setOpen(false)} title="Request a job">{form}</Modal></> : form;

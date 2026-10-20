@@ -15,6 +15,7 @@ import { PrintDetailsForm, initialForm, optional, type FormState } from "./Publi
 import { fetchPrintQueues, fetchPublicConsumablePools, fetchPrintStatus, presignPrintUpload, submitPrintRequest, uploadToStorage } from "./publicApi";
 import { PrintStatusPanel } from "./PublicPrintRequestPanels";
 import { uploadPrintFilesBounded } from "./PublicPrintUploads";
+import { statusRefetchInterval } from "../machine-service/types";
 
 export function PublicPrintRequestPage() {
   const queryClient = useQueryClient();
@@ -42,10 +43,7 @@ export function PublicPrintRequestPage() {
   const catalogueQuery = useQuery({ queryKey: ["print-materials", makerspaceSlug, queuesQuery.data?.[0]?.machine_type_id], queryFn: () => tenantPublicRequest<TypeIntake>(makerspaceSlug, `/public/${encodeURIComponent(makerspaceSlug)}/machine-types/${queuesQuery.data?.[0]?.machine_type_id}/intake`), enabled: Boolean(queuesQuery.data?.[0]?.machine_type_id) && Boolean(bootstrap?.features.includes("machines.material_catalogue")) });
   const printerAvailable = Boolean(queuesQuery.data?.length);
   const enabled = moduleEnabled && printerAvailable;
-  const statusQuery = useQuery({ queryKey: ["public-printer-status", activeStatusToken], queryFn: () => fetchPrintStatus(activeStatusToken), enabled: Boolean(activeStatusToken), refetchInterval: (query) => {
-    const status = query.state.data?.status;
-    return status === "in_progress" ? 30_000 : status === "pending" || status === "accepted" ? 90_000 : false;
-  }});
+  const statusQuery = useQuery({ queryKey: ["public-printer-status", activeStatusToken], queryFn: () => fetchPrintStatus(activeStatusToken), enabled: Boolean(activeStatusToken), refetchInterval: (query) => statusRefetchInterval(query.state.data?.status) });
   const statusStorageKey = makerspaceSlug ? `tinkerspace.printStatus.${makerspaceSlug}` : "";
   useEffect(() => { if (statusLinkHandledRef.current) return; statusLinkHandledRef.current = true; const token = new URLSearchParams(window.location.search).get("token")?.trim(); const stored = statusStorageKey ? window.localStorage.getItem(statusStorageKey)?.trim() : ""; if (token || stored) setActiveStatusToken(token || stored || ""); }, [statusStorageKey]);
   useEffect(() => { if (statusStorageKey && activeStatusToken) window.localStorage.setItem(statusStorageKey, activeStatusToken); }, [activeStatusToken, statusStorageKey]);
@@ -72,7 +70,7 @@ export function PublicPrintRequestPage() {
             onSubmit={(event: FormEvent<HTMLFormElement>) => { event.preventDefault(); if (form.title.trim()) submitMutation.mutate(); }} />
           : <EmptyState message="3D printing isn't open for requests right now." action={{ label: "Back to catalogue", href: tenantPath() }} /> } ]}
       actionCard={{ title: "Track your job", state: "open", summary: !activeStatusToken ? "After you send it, you'll get a private link to follow progress here." : undefined,
-        form: <div ref={trackerRef} id="print-tracker"><PrintStatusPanel submitted={submitted} tokenStatus={statusQuery.data} tokenStatusPending={Boolean(activeStatusToken) && statusQuery.isPending} tokenStatusError={statusQuery.error} trackingHref={activeStatusToken ? trackingUrl.href : undefined} onRetry={() => { void statusQuery.refetch(); }} /></div>,
+        form: <div ref={trackerRef} id="print-tracker"><PrintStatusPanel submitted={submitted} tokenStatus={statusQuery.data} tokenStatusPending={Boolean(activeStatusToken) && statusQuery.isPending} tokenStatusError={statusQuery.error} trackingHref={activeStatusToken ? trackingUrl.href : undefined} onRetry={() => { void statusQuery.refetch(); }} publicToken={activeStatusToken || undefined} makerspaceSlug={makerspaceSlug} /></div>,
         mobileBar: { summary: submitted ? "Request sent" : "Follow your print", label: "Track your job" } }} />
   </PublicLayout></div>;
 }

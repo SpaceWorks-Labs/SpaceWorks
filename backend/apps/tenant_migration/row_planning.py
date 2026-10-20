@@ -104,6 +104,8 @@ def final_row(
             if isinstance(raw_plaintext, bytes)
             else raw_plaintext
         )
+    if label == "machines.MachineServiceRequest":
+        mark_imported_head(model, row)
     if label == "events.EventRegistration":
         row.update(
             event_registration_hash_columns(
@@ -120,6 +122,15 @@ def final_row(
             references.public_page_warnings.append({"code": "handle_dropped", "source_id": source["id"]})
             return None
     return row
+
+
+def mark_imported_head(model, row):
+    """C11: notification envelopes never travel and imported jobs get new ids, so a job
+    that arrives ACCEPTED is treated as already told it is next (no ``next`` on import).
+    Started/completed/cancelled markers travel as data and suppress their replays."""
+    flag = model._meta.get_field("imported_head_notified").column
+    status = model._meta.get_field("status").column
+    row[flag] = bool(row.get(flag)) or row.get(status) == "accepted"
 
 
 def update_resolved_row(model, source, target):

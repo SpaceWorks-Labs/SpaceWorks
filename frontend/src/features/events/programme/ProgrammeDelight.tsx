@@ -1,6 +1,8 @@
-import { useEffect, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
 import { DelightProvider, MakerModeHost, MakerModeToggle, useShellMakerMode, type DelightArtwork } from '../../../components/delight'
+import { LogoDelight } from '../../../components/delight/LogoDelight'
+import { SudoMake } from '../../../components/delight/SneakyLines'
 import { getIllustration, type IllustrationId } from '../../../assets/illustrations'
 
 const ids: Partial<Record<keyof DelightArtwork, IllustrationId>> = {
@@ -19,13 +21,8 @@ export function ProgrammeDelight({ children }: { children: ReactNode }) {
 }
 function LogoActivation() {
   const mode = useShellMakerMode()
-  useEffect(() => {
-    if (!mode?.allowed) return
-    const clicked = (event: MouseEvent) => { if (event.target instanceof Element && event.target.closest('[data-logo]')) mode.activateLogo() }
-    document.addEventListener('click', clicked)
-    return () => document.removeEventListener('click', clicked)
-  }, [mode?.allowed, mode?.activateLogo])
-  return null
+  const { pathname } = useLocation()
+  return <><LogoDelight pathname={pathname} onLogoClick={mode?.activateLogo} /><SudoMake allowed={Boolean(mode?.allowed)} /></>
 }
 export function ProgrammeMakerToggle() {
   const mode = useShellMakerMode()

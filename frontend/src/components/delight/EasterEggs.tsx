@@ -21,9 +21,8 @@ export function useMakerMode(pathname: string, sensitiveSurface = false) {
   const { enabled, eggsEnabled } = useDelight();
   const allowed = enabled && eggsEnabled && !sensitiveSurface && eggsAllowed(pathname);
   const [active, setActive] = useState(false);
-  const [card, setCard] = useState(false);
   const index = useRef(0), clicks = useRef(0), lastClick = useRef(0), lastKey = useRef(0);
-  const dismiss = useCallback(() => { setActive(false); setCard(false); }, []);
+  const dismiss = useCallback(() => setActive(false), []);
   useEffect(() => { dismiss(); index.current = 0; clicks.current = 0; }, [pathname, allowed, dismiss]);
   useEffect(() => {
     if (!allowed) return;
@@ -55,9 +54,10 @@ export function useMakerMode(pathname: string, sensitiveSurface = false) {
     if (!allowed) return;
     if (Date.now() - lastClick.current > 2500) clicks.current = 0;
     lastClick.current = Date.now(); clicks.current += 1;
-    if (clicks.current >= 7) { setCard(true); clicks.current = 0; }
+    // Seven logo clicks in a row open Maker mode (the workshop grid and the "Built by makers" card).
+    if (clicks.current >= 7) { setActive(true); clicks.current = 0; }
   }, [allowed]);
-  return { allowed, active: allowed && active, card: allowed && card, dismiss, activateLogo,
+  return { allowed, active: allowed && active, dismiss, activateLogo,
     toggle: () => { if (allowed) setActive(value => !value); } };
 }
 
@@ -65,11 +65,10 @@ export function MakerModePanel({ mode, version }: { mode: ReturnType<typeof useM
   if (!mode.allowed) return null;
   return <>
     {mode.active ? <div aria-hidden="true" className="sw-blueprint-decoration pointer-events-none fixed inset-0 -z-10" /> : null}
-    <div className="sr-only" role="status">{mode.card ? `Built by makers. Space Works ${version}.`
-      : mode.active ? "Maker mode on. Workshop grid enabled for 12 seconds." : "Maker mode off."}</div>
-    {mode.active || mode.card ? <aside aria-label="Built by makers" className="fixed bottom-4 right-4 z-40 max-w-xs rounded-2xl border border-line bg-panel p-5 text-ink shadow-overlay">
+    <div className="sr-only" role="status">{mode.active ? "Maker mode on. Workshop grid enabled for 12 seconds." : "Maker mode off."}</div>
+    {mode.active ? <aside aria-label="Built by makers" className="fixed bottom-4 right-4 z-40 max-w-xs rounded-2xl border border-line bg-panel p-5 text-ink shadow-overlay">
       <p className="font-medium">Built by makers</p><p className="text-sm text-muted">Space Works {version}</p>
-      {mode.active ? <p className="text-sm text-muted">Workshop grid enabled for 12 seconds.</p> : null}
+      <p className="text-sm text-muted">Workshop grid enabled for 12 seconds.</p>
       <button type="button" className="desk-button mt-3" onClick={mode.dismiss}>Dismiss maker mode</button>
     </aside> : null}
   </>;

@@ -6,6 +6,7 @@ import { dashboardDestination, dashboardHref } from "./dashboardLinks";
 import { filterTabsByEnabledModules } from "../staffTabs";
 import { DashboardActivity, DashboardDueBack } from "./DashboardWidgets";
 import { DashboardQuickAdd } from "./DashboardQuickAdd";
+import { LateShiftLine } from "../../../components/delight/SneakyLines";
 import { MACHINE_TILE_KEYS, TILES, type DashboardCounts } from "./DashboardStats";
 
 type Props = {
@@ -51,7 +52,7 @@ export function DashboardPanel({ makerspace, allowedTabs, actions,
           subtitle: `What's happening at ${makerspace.name}.`, primary }}
         state={{ status: dashboard.isLoading ? "loading" : dashboard.error ? "error" : "ready",
           error: "Couldn't load dashboard. Try again.", onRetry: () => { void dashboard.refetch(); } }}
-        progress={<>{progress}{dashboard.data?.next_up_events ? <NextUpEvents events={dashboard.data.next_up_events} /> : null}</>}
+        progress={<><LateShiftLine />{progress}{dashboard.data?.next_up_events ? <NextUpEvents events={dashboard.data.next_up_events} /> : null}</>}
         stats={ranked.map(tile => ({ label: tile.label, value: dashboard.data?.[tile.key] ?? 0,
           // Overdue, problems, out of stock, failed email and overdue maintenance keep their danger signal.
           tone: tile.actionNeeded && (dashboard.data?.[tile.key] ?? 0) > 0 ? tile.tone === "danger" ? "danger" : "attention" : "neutral",

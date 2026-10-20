@@ -57,7 +57,7 @@ class PublicEventSerializer(OrganizationAudienceFields, EventTicketingPublicSeri
         from .views_website_public import projection
         from .serializers_website import WebsiteSerializer
         try:
-            return WebsiteSerializer(projection(obj)).data
+            return WebsiteSerializer(projection(obj, self.context.get("request"))).data
         except Http404:
             return None
 

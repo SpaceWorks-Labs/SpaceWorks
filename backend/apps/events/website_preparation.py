@@ -15,6 +15,7 @@ from .models_website import EventPage
 from .website_copy import owner
 from .website_visibility import effective_page
 from .clone_preparation import page_identity
+from apps.transaction_guards import in_domain_transaction
 
 _prepared = ContextVar("prepared_website_assets", default=None)
 
@@ -60,7 +61,7 @@ def _prepare(target, actor, copies, file):
 def prepared_page_write(callback):
     @wraps(callback)
     def wrapped(target, *, actor, **kwargs):
-        if connection.in_atomic_block:
+        if in_domain_transaction():
             raise RuntimeError("Prepare website assets before domain transactions.")
         copies = AssetCopies()
         try:

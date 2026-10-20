@@ -5,11 +5,11 @@ import secrets
 import struct
 
 from django.conf import settings
-from django.db import connection
 
 from apps.encryption.brokers.base import WrappedDek, require_dek
 from apps.encryption.brokers.local import BinaryFernet
 from apps.encryption.crypto import PiiUnavailable
+from apps.transaction_guards import in_domain_transaction
 
 
 class SavedDetailsUnavailable(PiiUnavailable):
@@ -18,7 +18,7 @@ class SavedDetailsUnavailable(PiiUnavailable):
 
 
 def require_outside_transaction():
-    if connection.in_atomic_block:
+    if in_domain_transaction():
         raise RuntimeError("Account broker preparation must run outside database transactions.")
 
 

@@ -1,7 +1,6 @@
 """Clone only current person-free designs with independently owned artwork."""
 from copy import deepcopy
 from uuid import uuid4
-from django.db import connection
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 from apps.audit.services import record
@@ -9,6 +8,7 @@ from apps.events.models_certificate_templates import EventCertificateArtwork, Ev
 from apps.makerspaces import limits
 from .print_models import EventBadgeTemplateRevision
 from . import print_storage
+from apps.transaction_guards import in_domain_transaction
 
 
 class CleanupStorage:
@@ -25,7 +25,7 @@ def identities(event):
 
 
 def prepare_designs(event, copies):
-    if connection.in_atomic_block:
+    if in_domain_transaction():
         raise RuntimeError("Prepare clone artwork before domain locks.")
     certificate, badge = identities(event)
     selected = set()

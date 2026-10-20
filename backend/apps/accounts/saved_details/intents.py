@@ -19,6 +19,7 @@ from .errors import SavedDetailsError
 from .fields import normalize
 from .models import MemberSavedDetail, SavedDetailUpdateIntent
 from .workflow import put_locked
+from apps.transaction_guards import in_domain_transaction
 
 _SEAL = object()
 
@@ -55,7 +56,7 @@ def digest(value):
 
 
 def prepare_saved_detail_intent(*, actor_id, subject, validated_form, choices, base_versions, operation_id):
-    if connection.in_atomic_block:
+    if in_domain_transaction():
         raise RuntimeError("Prepare saved details before entering domain transactions.")
     require_owner(actor_id)
     if not isinstance(validated_form, ValidatedSaveInput) or validated_form.subject != subject or subject.owner_member_id != actor_id:

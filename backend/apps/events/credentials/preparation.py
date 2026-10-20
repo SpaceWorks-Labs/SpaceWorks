@@ -2,9 +2,8 @@
 from contextlib import contextmanager
 from contextvars import ContextVar
 
-from django.db import connection
-
 from .errors import CredentialKeyUnavailable, ProgrammeConflict
+from apps.transaction_guards import in_domain_transaction
 
 _held = ContextVar("prepared_event_credentials", default=None)
 
@@ -20,7 +19,7 @@ def prepare_event_credentials(event_ids):
             raise ProgrammeConflict("Credential preparation scope changed.")
         yield
         return
-    if connection.in_atomic_block:
+    if in_domain_transaction():
         raise RuntimeError("Prepare credential material before domain locks.")
     values = {}
     for event_id in event_ids:

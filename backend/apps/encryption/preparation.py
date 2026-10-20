@@ -8,6 +8,7 @@ from django.db import connection, transaction
 
 from .crypto import PiiKeyUnavailable
 from .models import MakerspaceEncryptionKey
+from apps.transaction_guards import in_domain_transaction
 
 _prepared = ContextVar("prepared_tenant_pii_keys", default=None)
 _domain_locked = ContextVar("prepared_tenant_domain_locked", default=False)
@@ -29,7 +30,7 @@ def prepare_tenants(tenant_ids):
             raise PiiKeyUnavailable()
         yield
         return
-    if connection.in_atomic_block:
+    if in_domain_transaction():
         raise RuntimeError("Prepare tenant keys before domain transactions.")
     from .services import get_or_create_active_dek, unwrap_dek
     prepared = {}

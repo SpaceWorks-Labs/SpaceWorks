@@ -11,10 +11,11 @@ from apps.encryption.services import get_dek, unwrap_dek
 
 from .errors import pii_unavailable
 from .models import EventAnswerDerivation
+from apps.transaction_guards import in_domain_transaction
 
 
 def require_preparation_boundary():
-    if connection.in_atomic_block:
+    if in_domain_transaction():
         raise RuntimeError("Prepare private DOB sources outside domain transactions.")
 
 

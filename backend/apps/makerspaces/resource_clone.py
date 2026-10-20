@@ -8,6 +8,7 @@ from pathlib import PurePosixPath
 from uuid import uuid4
 
 from django.db import transaction
+from apps.transaction_guards import in_domain_transaction
 from rest_framework.exceptions import ValidationError
 
 from apps.evidence.storage import StorageUnavailable
@@ -83,7 +84,7 @@ class AssetCopies:
         return key
 
     def prepare_image(self, makerspace, image, *, storage):
-        if transaction.get_connection().in_atomic_block:
+        if in_domain_transaction():
             raise RuntimeError("Prepare copied images before domain locks.")
         self.preparing = True
         try:

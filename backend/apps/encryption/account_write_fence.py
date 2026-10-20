@@ -11,6 +11,7 @@ from apps.encryption.models import PiiGlobalWriteFence, PiiMakerspaceWriteFence
 from apps.encryption.write_fence import (
     GLOBAL_LOCK_NAMESPACE, TENANT_LOCK_NAMESPACE, PiiWriteFenced,
 )
+from apps.transaction_guards import in_domain_transaction
 
 ACCOUNT_LOCK_NAMESPACE = 734_203
 _held = ContextVar("account_pii_fences", default=None)
@@ -110,7 +111,7 @@ def account_write(user_id, *, exclusive=False):
         with account_fences([user_id], exclusive=exclusive):
             yield PiiAccountWriteFence.objects.get(user_id=user_id)
         return
-    if connection.in_atomic_block:
+    if in_domain_transaction():
         raise RuntimeError("Account writes must acquire the source boundary before atomic().")
     with shared_boundary(0), transaction.atomic(), account_fences([user_id], exclusive=exclusive):
         yield PiiAccountWriteFence.objects.filter(user_id=user_id).first()

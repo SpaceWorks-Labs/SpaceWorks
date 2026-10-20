@@ -34,6 +34,14 @@ for (const asset of await readdir(resolve(output, "assets"))) {
 }
 assert.equal(lazyPreview.length, 3, "Expected the three, occt WASM and preview worker vendor files.");
 assert(worker.includes("spaceworks-preview-runtime-v1"), "Preview vendors need the bounded runtime cache.");
+// Patch, the mascot, is banned on kiosk surfaces: none of its files may enter the kiosk precache.
+const patchFiles = await readdir(resolve(output, "brand", "patch"));
+assert(patchFiles.length > 0, "Patch artwork missing from the build.");
+for (const file of patchFiles) {
+  assert(!manifest.some(({ url }) => url === `/brand/patch/${file}`) && !worker.includes(`/brand/patch/${file}`),
+    `Patch artwork must not be precached: ${file}`);
+}
+assert(!manifest.some(({ url }) => url.startsWith("/brand/patch/")), "Patch artwork must not be precached.");
 for (const size of [192, 512]) {
   const prepared = await readFile(resolve("public", "brand", `icon-${size}.png`));
   assert.equal(prepared.readUInt32BE(16), size);

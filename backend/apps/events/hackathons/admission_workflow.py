@@ -19,6 +19,10 @@ def require_application_open(event, config, now):
 
 def save_application(*, event, actor, payload, submit=False):
     data, selection = typed_admission_input(payload, draft=not submit)
+    from apps.events import inline_forms
+    inline = inline_forms.split_inline(data)
+    if inline and not submit:
+        fail("inline_forms_submit_only", "Answer event forms when submitting.", status=400)
     from .admission_transactions import member_event
     event, config = member_event(actor, event.pk, event.makerspace_id)
     existing = HackathonApplication.objects.filter(event=event, member=actor).first()
@@ -37,15 +41,21 @@ def save_application(*, event, actor, payload, submit=False):
                                      subject=subject, payload=data, draft=not submit and (existing is None or existing.state != "submitted"))
     if prepared is not None and prepared.subject != subject:
         raise RuntimeError("Prepared answers have the wrong owner/subject.")
+    # The outer digest covers the complete inline payload; preparation follows the replay check.
+    prepared_inline = inline_forms.prepare(event=event, actor=actor, operation_id=data["operation_id"],
+        inline=inline) if prepared is not None else inline_forms.EMPTY
     with command(event_id=event.pk, actor=actor, data=data, owner=True,
                  action="application.submit" if submit else "application.edit",
-                 normalized_body=prepared.normalized_input if prepared is not None else None) as ctx:
+                 normalized_body={**prepared.normalized_input, **inline} if prepared is not None else None) as ctx:
         actor = ctx.actor
         if ctx.reference:
             return get_object_or_404(HackathonApplication, pk=ctx.reference["id"], event=ctx.event, member=actor), ctx.reference["status"]
         application = HackathonApplication.objects.select_for_update().filter(event=ctx.event, member=actor).first()
         check_version(application, data["expected_version"])
         answer_edit = bool(application and application.state == "submitted" and not application.answer_locked_at)
+        if inline and answer_edit:
+            fail("inline_forms_submit_only", "Answer event forms when first submitting.", status=400)
+        inline_result = {}
         if application and application.state != "draft":
             from .admission_editing import require_unchanged_admission
             require_unchanged_admission(application, selection)
@@ -127,6 +137,8 @@ def save_application(*, event, actor, payload, submit=False):
                 "accepted": data.get("optional_consents", {}).get("mlh_data_sharing", False),
                 "version": ctx.config.optional_mlh_schema.get("revision", 1), "at": now.isoformat()}}
             application.save()
+            inline_result = inline_forms.bind_locked(event=ctx.event, actor=actor, registration=registration,
+                application=application, prepared=prepared_inline, locks=ctx.locks)
             record(ctx, "application_submitted", application, version=application.version)
             notice(ctx, application, "application_submitted")
             if ctx.config.review_mode == "auto" and ctx.config.team_mode != "team_together":
@@ -139,7 +151,7 @@ def save_application(*, event, actor, payload, submit=False):
                     registration_id=application.registration_id, prepared=prepared, locks=ctx.locks)
             record(ctx, "application_saved", application, version=application.version)
         status = 201 if created else 200
-        ctx.finish("application", application.pk, status=status)
+        ctx.finish("application", application.pk, status=status, **({"inline": inline_result} if inline_result else {}))
         return application, status
 
 

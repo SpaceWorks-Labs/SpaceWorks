@@ -1,6 +1,8 @@
 import { useEffect, type ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
-import { DelightProvider, MakerModeHost, MakerModeToggle, useShellMakerMode, type DelightArtwork } from '../../../components/delight'
+import { DelightProvider, MakerModeHost, MakerModeToggle, useDelightSpaceFeatures, useShellMakerMode, type DelightArtwork } from '../../../components/delight'
+import { useOptionalTenant } from '../../../lib/tenant'
+import { useTenantBootstrap } from '../../inventory/usePublicInventory'
 import { getIllustration, type IllustrationId } from '../../../assets/illustrations'
 
 const ids: Partial<Record<keyof DelightArtwork, IllustrationId>> = {
@@ -13,9 +15,20 @@ const artwork = Object.fromEntries(Object.entries(ids).map(([key, id]) => [key, 
 
 export function ProgrammeDelight({ children }: { children: ReactNode }) {
   const location = useLocation()
-  return <DelightProvider artwork={artwork}><MakerModeHost pathname={`${location.pathname}${location.search}`} version={String(import.meta.env.VITE_APP_VERSION ?? '')}>
+  const spaceFeatures = useShowingSpaceFeatures(location.pathname)
+  return <DelightProvider artwork={artwork} spaceFeatures={spaceFeatures}><MakerModeHost pathname={`${location.pathname}${location.search}`} version={String(import.meta.env.VITE_APP_VERSION ?? '')}>
     <LogoActivation />{children}
   </MakerModeHost></DelightProvider>
+}
+/** Single-tenant bootstrap, the central /m/:slug bootstrap (shared cache), or the staff shell's space. */
+function useShowingSpaceFeatures(pathname: string) {
+  const tenant = useOptionalTenant()
+  const slug = tenant?.mode === 'single' ? '' : /^\/m\/([^/]+)/.exec(pathname)?.[1] ?? ''
+  const central = useTenantBootstrap(slug, Boolean(slug))
+  const staff = useDelightSpaceFeatures()
+  if (tenant?.mode === 'single') return tenant.bootstrap?.features ?? null
+  if (slug) return central.data?.features ?? null
+  return staff
 }
 function LogoActivation() {
   const mode = useShellMakerMode()

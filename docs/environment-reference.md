@@ -212,8 +212,23 @@ anchor, including migration/worker/beat processes, without generating or rotatin
 | `EVENT_ASSET_SCAN_BACKEND` | `'none'` | `none` or `clamav`; optional event-asset scanner; configured failures refuse publication. |
 | `EVENT_ASSET_CLAMAV_HOST` | `''` | Explicit external ClamAV endpoint; no silent host inference. |
 | `EVENT_ASSET_CLAMAV_PORT` | `3310` | Scanner TCP port. |
-| `UI_DELIGHT_ENABLED` | `False` | Runtime frontend artwork/motion opt-in; reduced-motion preference still applies. |
-| `UI_EASTER_EGGS_ENABLED` | `False` | Additional runtime opt-in; sensitive scanner/payment routes still suppress eggs. |
+| `UI_DELIGHT_ENABLED` | `True` | Deployment kill switch for frontend artwork/motion. On by default; each space can still turn `ui.delight` off, and a reduced-motion preference always applies. |
+| `UI_EASTER_EGGS_ENABLED` | `True` | Deployment kill switch for easter eggs. On by default; each space can turn `ui.easter_eggs` off; scanner, kiosk and payment routes always suppress eggs. |
+
+Travel support (`event_reimbursements`) and staged event forms. Each value is bounded;
+an out-of-range value refuses to start. Retention counts from the record's terminal
+financial anchor (receipts, payee data) or the event end (stage uploads), never from upload time.
+
+| Setting | Default | Purpose |
+| --- | --- | --- |
+| `EVENT_REIMBURSEMENT_RECEIPT_RETENTION_DAYS` | `2555` | Days a private reimbursement receipt is kept after its claim's financial closure (1–36500). A space's own finance retention policy must exist before a non-default value is used. |
+| `EVENT_REIMBURSEMENT_PAYEE_PURGE_DAYS` | `30` | Days after full payment or finance cancellation before payee bank/routing details and routing documents are purged (1–36500). Shown to members in the payee disclosure. |
+| `EVENT_REIMBURSEMENT_FILE_MAX_BYTES` | `10485760` | Per-file cap for receipts and payee documents; can only be lowered (max 10 MiB). |
+| `EVENT_REIMBURSEMENT_MEMBER_STORAGE_BYTES` | `104857600` | Per-member finance attachment budget within one event. |
+| `EVENT_REIMBURSEMENT_EVENT_STORAGE_BYTES` | `1073741824` | Per-event finance attachment budget. |
+| `EVENT_STAGE_FILE_RETENTION_DAYS` | `365` | Days a submitted stage-form upload is kept after the event ends (1–36500); the value is snapshotted onto each upload. |
+| `EVENT_STAGE_MEMBER_QUOTA_BYTES` | `104857600` | Per-member stage-form upload budget within one event. |
+| `EVENT_STAGE_EVENT_QUOTA_BYTES` | `1073741824` | Per-event stage-form upload budget. |
 
 The installed video provider invokes the bounded non-root ffprobe launcher; the backend
 image includes ffmpeg. [Scanner/probe setup](events/operations.md#optional-malware-scanner)

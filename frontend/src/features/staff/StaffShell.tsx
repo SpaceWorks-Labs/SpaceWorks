@@ -1,5 +1,6 @@
 import { consoleSessionHref, currentSessionContext } from "../../lib/api/sessionContext";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { setDelightSpaceFeatures } from "../../components/delight/spaceDelight";
 import { skipToken, useQuery } from "@tanstack/react-query";
 import { Navigate, useLocation } from "react-router-dom";
 import { Cog } from "lucide-react";
@@ -23,6 +24,12 @@ export function StaffShell(props: Props) {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const location = useLocation();
   const unread = useUnreadNotifications(space?.id, !!space && allowedTabs.includes("notifications"));
+  // The console has no tenant bootstrap: publish the active space's delight switches.
+  const spaceFeatures = space?.enabled_features ?? null;
+  useEffect(() => {
+    setDelightSpaceFeatures(spaceFeatures);
+    return () => setDelightSpaceFeatures(null);
+  }, [spaceFeatures]);
   // Subscribe to existing server-state caches; shell rendering must never issue dashboard/type requests.
   const dashboard = useQuery<{ pending_requests?: number; awaiting_issue?: number }>({
     queryKey: ["dashboard", space?.id], queryFn: skipToken, enabled: false,

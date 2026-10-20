@@ -103,3 +103,11 @@ SOURCES = {
 def register_event_sources():
     for kind, source in SOURCES.items():
         register_source(kind, source)
+    # Staged forms: assignment notices, incomplete-form warnings, milestones and RSVP deadlines.
+    from .staged_forms.milestone_notices import MILESTONE_NOTICE_SOURCE
+    from .staged_forms.notices import NOTICE_SOURCE, WARNING_NOTICE_SOURCE
+    from .staged_forms.rsvp_reminders import RSVP_NOTICE_SOURCE
+    register_source("event.stage_form", NOTICE_SOURCE)
+    register_source("event.stage_warning", WARNING_NOTICE_SOURCE)
+    register_source("event.stage_milestone", MILESTONE_NOTICE_SOURCE)
+    register_source("events.rsvp_deadline", RSVP_NOTICE_SOURCE)

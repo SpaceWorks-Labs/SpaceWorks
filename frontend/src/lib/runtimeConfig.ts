@@ -26,8 +26,8 @@ export function runtimeTenantConfig(): RuntimeTenantConfig {
     apiUrl: clean(config?.apiUrl) || undefined,
     tenantToken: clean(config?.tenantToken) || undefined,
     originBootstrap: config?.originBootstrap === true,
-    uiDelightEnabled: typeof config?.uiDelightEnabled === "boolean" ? config.uiDelightEnabled : import.meta.env.VITE_UI_DELIGHT_ENABLED === "true",
-    uiEasterEggsEnabled: typeof config?.uiEasterEggsEnabled === "boolean" ? config.uiEasterEggsEnabled : import.meta.env.VITE_UI_EASTER_EGGS_ENABLED === "true",
+    uiDelightEnabled: typeof config?.uiDelightEnabled === "boolean" ? config.uiDelightEnabled : import.meta.env.VITE_UI_DELIGHT_ENABLED !== "false",
+    uiEasterEggsEnabled: typeof config?.uiEasterEggsEnabled === "boolean" ? config.uiEasterEggsEnabled : import.meta.env.VITE_UI_EASTER_EGGS_ENABLED !== "false",
   };
 }
 

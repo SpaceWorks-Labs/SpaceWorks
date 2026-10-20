@@ -8,7 +8,20 @@ from apps.events.hackathons.admission_models import HackathonApplication
 from apps.events.programme.admission_forms import AdmissionForms
 from apps.events.programme.prepared_forms import EventIntentBinding
 
-_intent_binding = EventIntentBinding()
+_event_binding = EventIntentBinding()
+
+
+class _IntentBindings:
+    """One installed binding: stage responses resolve through R, never the DOB resolver."""
+
+    def require_binding(self, **kwargs):
+        if str(getattr(kwargs["actual_subject"], "kind", "")) == "stage_response":
+            from apps.events.staged_forms.prefill_provider import require_binding
+            return require_binding(**kwargs)
+        return _event_binding.require_binding(**kwargs)
+
+
+_intent_binding = _IntentBindings()
 
 
 def context_gate(*, event, actor, request=None):

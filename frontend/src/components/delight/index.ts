@@ -1,4 +1,5 @@
 export { DelightProvider, useDelight, useReducedMotion, eggsAllowed } from "./DelightProvider";
+export { setDelightSpaceFeatures, useDelightSpaceFeatures, spaceAllows } from "./spaceDelight";
 export type { DelightArtwork, DelightPolicy } from "./DelightProvider";
 export { PassState, safeHaptic } from "./PassState";
 export type { PersistedPassState } from "./PassState";

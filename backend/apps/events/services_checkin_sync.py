@@ -15,6 +15,7 @@ from apps.events.exceptions import (
 )
 from apps.events.models import Event, EventCheckInEvent, EventRegistration
 from apps.events.services_checkin import mark_attended_with_event
+from apps.payments.event_payouts.errors import PayoutError
 
 
 def validated_lease(
@@ -124,6 +125,10 @@ def _process(event, item, *, lease, actor, source, session_id, station_version):
         )
     except DuplicateCheckInOperation:
         return {**base, "outcome": "duplicate_operation"}
+    except PayoutError as exc:
+        if exc.detail.get("code") != "stage_incomplete":
+            raise
+        return {**base, "outcome": "stage_incomplete"}
     except IntegrityError:
         # With the event and registration locked, the remaining expected race is the
         # globally unique operation UUID. Do not query another tenant to prove that

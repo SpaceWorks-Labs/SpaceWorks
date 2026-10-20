@@ -68,6 +68,8 @@ def rsvp(*, event_id, actor, data, application_id=None):
                 cohort.state, cohort.version = state, cohort.version + 1
                 cohort.save()
         else:
+            from apps.events.staged_forms.admission_hooks import require_action_locked
+            require_action_locked(event=ctx.event, member_id=app.member_id, action="rsvp")
             app.rsvp_accepted_at, app.response_at = now, now
             app.version += 1
             app.save()

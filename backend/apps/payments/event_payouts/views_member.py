@@ -9,6 +9,7 @@ from . import serializers_responses as r
 from . import payee_workflow
 from .obligation_models import EventPayoutObligation
 from .queries import summary
+from .retention_policy import payee_purge_days
 
 
 class MemberPayoutListView(PrivateView):
@@ -39,7 +40,7 @@ class MemberPayeeView(PrivateView):
             "routing_document_methods": sorted(configured_templates(row.makerspace_id)[1]),
             "template_definitions": template_descriptors(row.makerspace_id) if row.state == "open" else [],
             "disclosure_version": 1, "disclosure": "Routing details are used for this obligation and are visible to finance. "
-                "Details and routing documents are purged 30 days after full payment or finance cancellation, unless a finance hold applies. "
+                f"Details and routing documents are purged {payee_purge_days()} days after full payment or finance cancellation, unless a finance hold applies. "
                 "They are not saved to Saved details."})
 
     @extend_schema(tags=["Event payouts"], request=s.OwnerPayeeCommand, responses={200: s.PayoutResultSerializer, **s.ERRORS})

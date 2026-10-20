@@ -2823,8 +2823,52 @@ The rules here are binding; a rule's presence does not claim every adapter is in
 UI acceptance includes Space Works tokens in both themes, approved Gilroy/one Unbounded
 accent, lucide controls, AppShell layouts, original artwork, keyboard/44px/reduced motion/
 real contrast checks. Account and retention mechanisms survive optional Events removal;
-runtime providers/pages/reports do not. Reimbursement (decision 34 superseding earlier
-exclusion) and full staged forms (35) remain required pending work in the separate R lane.
+runtime providers/pages/reports do not. Reimbursement (decision 34) and full staged forms
+(35) are integrated on `lane/events-final`; their rules follow.
+
+### Staged forms and travel support (integration, 2026-10-20)
+
+- **Inline blocks prepare outside, bind inside, roll back together.** `events/inline_forms.py`
+  validates `stage_forms` and `reimbursement_request` before the outer transaction and binds
+  them after the canonical registration/application rows exist, before the outer receipt.
+  Any bind, intent, notice or receipt failure rolls back the whole signup. The outer digest
+  includes both blocks; replay resolves before preparation. No HTTP field is accepted as
+  binding proof. Drafts and answer edits refuse inline blocks (`inline_forms_submit_only`).
+  Only a self-signup carries them; staff on a member's behalf get `owner_consent_required`.
+- **An omitted required application form refuses the signup.** When an event has a published
+  required application-stage form, every self-signup binds, so a missing applicable form
+  raises `stage_incomplete` and leaves no registration, application or assignment.
+- **A present request block with the module off is refused, never dropped** (409
+  `reimbursement_unavailable`). An omitted block is harmless with the module off.
+- **Stage readiness is read under the lock, never inferred.** RSVP accept and every
+  attendance source call `staged_forms.guards.require_complete_locked`; offline sync reports
+  `stage_incomplete` for that item. An empty assignment list or a cached roster is not proof
+  of completion. Claim submit uses the same guard.
+- **One installed Saved-details binding.** `contracts/admission_registration.py` installs a
+  single `IntentSubjectBinding` that routes `stage_response` subjects to
+  `staged_forms/prefill_provider.py`; stage subjects never enter the DOB derivation resolver.
+- **Attendance feeds payout eligibility in the attendance transaction.** Check-in bumps
+  `attendance_revision`; a correction appends `EventAttendanceCorrection` with the latest
+  check-in watermark; both republish claim eligibility while the add-on is live.
+- **Archive pauses settlement; hidden spaces show no counts.** `archive_impact` adds
+  `unpaid_event_payouts`; both archive routes omit every money count when superadmin access
+  is off. Payout authority requires a servable space, so nothing settles while archived.
+- **Purge preflight is always shown.** `purge_module_data` prints the read-only
+  `preflight_report` before any prompt and refuses on a blocker; `--preflight` exits after
+  printing; `--yes` skips only the confirmation prompt.
+- **Payee purge timing is a deployment setting.** `EVENT_REIMBURSEMENT_PAYEE_PURGE_DAYS`
+  feeds both the purge anchor and the member disclosure; the eight `EVENT_REIMBURSEMENT_*` /
+  `EVENT_STAGE_*` settings are bounded and refuse to start when out of range.
+- **Portable dumps refuse reimbursement rows** (`reimbursement_portability_unavailable`) until
+  the custodial transforms land with a passing export → import round trip.
+
+**Delight is on by default and per space (2026-10-20).** `ui.delight` and `ui.easter_eggs`
+are standalone default-on features (also in `setup_areas.ALWAYS_FEATURES`); migration
+`makerspaces/0098` added both to every existing space because no earlier per-space choice
+existed. `UI_DELIGHT_ENABLED` / `UI_EASTER_EGGS_ENABLED` now default `True` and act only as a
+deployment kill switch: the browser shows effects when the deployment flag AND the showing
+space's feature are on. A reduced-motion preference always wins, and scanner, kiosk,
+check-in and payment routes never show easter eggs.
 
 ### Event printable credentials (Lane E)
 

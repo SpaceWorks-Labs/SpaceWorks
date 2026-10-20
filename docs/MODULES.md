@@ -33,7 +33,7 @@ govern sign-in availability. Membership adds plans, vouching, renewals and the m
 | Online payments | `payments` | `payments.enabled` plus the online-payment feature of each selected domain |
 | Reports | `reports` | `reports.saved_views`; `reports.event_pdf`, `reports.event_exports` with Events |
 | Chat alerts | `telegram`, `slack`, `mattermost`, `discord`, `webhook` | Idle until URLs/tokens are configured |
-| Always on | Six core modules, `backup`, `notifications`, `email`, `member_accounts` | Every satisfiable child of `backup`, `notifications`, `email` and `member_accounts`, `billing.reminders`, `charges.enabled`, `billing.documents`, `staff.invitations`, `presence.geofence` |
+| Always on | Six core modules, `backup`, `notifications`, `email`, `member_accounts` | Every satisfiable child of `backup`, `notifications`, `email` and `member_accounts`, `billing.reminders`, `charges.enabled`, `billing.documents`, `staff.invitations`, `presence.geofence`, `ui.delight`, `ui.easter_eggs` |
 
 The source is `makerspaces/setup_areas.py`; registry module keys/defaults are unchanged. Inventory
 off clears `loans.enabled` while keeping core. Optional-module uninstall retains all data. Charges,
@@ -207,7 +207,17 @@ three team modes plus opt-in finder, contributor shifts/hours, Mentor Desk, immu
 upload/link submissions, weighted or top-three judging, results/gallery, v2 badge
 credentials, certificate verification/library/bulk/print, forms v2 and operations tools.
 Account-owned Saved details is independent of Events and host membership; its vault is
-not organizer-readable. Reimbursement and full staged forms remain pending in this tree.
+not organizer-readable.
+
+Staged forms are part of Events (no module key). Organisers publish forms tied to a
+stage: application, shortlisted, accepted/RSVP, pre-event or post-event. Application-stage
+forms are answered with the signup itself and are saved in the same transaction, so a
+required form left out refuses the whole registration or application. A required form
+set to "block" stops RSVP, check-in (including offline-synced check-ins) or a travel
+claim until it is complete; "warn" lets the member continue and sends a reminder. Stage
+uploads count against per-member and per-event quotas and expire a set number of days
+after the event (`EVENT_STAGE_*` settings). An Events purge deletes stage rows after
+keeping their file-cleanup locators; a travel-support-only purge keeps them.
 
 Feature disablement removes its gated live actions/reads and retains definitions, history
 and private objects. Events uninstall retains those rows; deployment tombstoning removes
@@ -550,6 +560,8 @@ in the console rather than a superadmin. A feature is inert while its parent mod
 | Feature | Inside | Default | What it does | Without it |
 |---|---|:--:|---|---|
 | `billing.documents` | standalone core ledger (mail needs `email`) | ● | Issue numbered [receipt and credit-note PDFs](payment-documents.md), with issuer settings and accounting account mappings | New collections have no document; existing documents stay readable and documented charges still receive refund/correction documents |
+| `ui.delight` | standalone (deployment flag `UI_DELIGHT_ENABLED`) | ● | Artwork, gentle motion and celebration moments across the app; reduced-motion preferences always apply | Plain screens with no decorative motion or artwork |
+| `ui.easter_eggs` | standalone (deployment flag `UI_EASTER_EGGS_ENABLED`) | ● | Hidden playful moments; never on scanner, kiosk, check-in or payment screens | No easter eggs |
 | `billing.reminders` | `notifications` (needs `email`) | | Email the payer about due and overdue charges using [core billing policy](payment-billing.md), including cash-only charges | No automatic payment reminders; debt and receipts stay visible |
 | `charges.enabled` | — | ● | Master switch for recording money owed | The space charges for nothing: no debt is recorded in any area |
 | `charges.machines` | `machines` (needs `machine_service`) | ● | Record a charge when a priced machine job completes | Machine jobs are free |
@@ -646,5 +658,13 @@ evidence/attachment closure, then preserve the core ledger. Whole-tenant purge
 keeps its existing explicit full-graph behavior. Payee and decision-summary fields
 require the tenant key broker even with optional PII encryption disabled.
 
-G1 installs the additive schema/contracts only; workflows and routes are not yet
-enabled. The incomplete lane manifests must be completed before runtime acceptance.
+A support request can be sent with the registration or hackathon application (it is
+saved in the same transaction), or later from the member's event page. Sending one
+while this module is off is refused rather than silently dropped. Award-acceptance and
+claim-deadline reminders, and the core payee-details reminder, run through the shared
+reminder sweeper. Check-in and attendance corrections feed claim eligibility. Receipt
+retention, payee purge timing and attachment budgets are deployment settings
+(`EVENT_REIMBURSEMENT_*`). Archiving shows the count of unpaid event payouts and warns
+that settlement stops until the makerspace is restored. `purge_module_data --preflight`
+prints the blockers and preserved ledger counts without deleting anything; the same
+preflight always runs before a real purge, and `--yes` skips only the prompt.

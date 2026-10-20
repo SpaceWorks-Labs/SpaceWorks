@@ -53,6 +53,8 @@ class ApplicationInput(CommandInput):
     host_waiver_id = serializers.IntegerField(min_value=1, allow_null=True, required=False)
     host_waiver_version = serializers.CharField(max_length=64, allow_blank=False, allow_null=True, required=False)
     host_waiver_accepted = LiteralBoolean(required=False)
+    stage_forms = serializers.ListField(child=serializers.DictField(), max_length=50, required=False)
+    reimbursement_request = serializers.DictField(required=False)
 
     def to_internal_value(self, data):
         if isinstance(data, dict) and "custom_answers" in data:

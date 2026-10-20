@@ -1,4 +1,5 @@
 import { runtimeTenantConfig } from "../../lib/runtimeConfig";
+import { spaceAllows } from "./spaceDelight";
 import { createContext, useContext, useSyncExternalStore, type ReactNode } from "react";
 
 export type DelightArtwork = Partial<Record<"loader" | "welcome" | "success" | "waiting" | "empty" | "error" | "tag" | "companionWalk" | "companionFollow" | "companionNap" | "companionPrint" | "demo", { light: string; dark: string }>>;
@@ -9,10 +10,16 @@ function runtimePolicy() {
   return { enabled: runtime.uiDelightEnabled === true, eggsEnabled: runtime.uiEasterEggsEnabled === true };
 }
 
-/** G passes runtime flags and ARTWORK's manifest here when mounting the shell. */
-export function DelightProvider({ children, enabled, eggsEnabled, artwork = {} }: Partial<DelightPolicy> & { children: ReactNode }) {
+/** G passes runtime flags and ARTWORK's manifest here when mounting the shell.
+ *  `spaceFeatures` is the showing makerspace's feature list: a space that turned
+ *  `ui.delight` / `ui.easter_eggs` off overrides the deployment default. */
+export function DelightProvider({ children, enabled, eggsEnabled, artwork = {}, spaceFeatures }: Partial<DelightPolicy> & { children: ReactNode; spaceFeatures?: readonly string[] | null }) {
   const runtime = runtimePolicy();
-  return <Policy.Provider value={{ enabled: enabled ?? runtime.enabled, eggsEnabled: eggsEnabled ?? runtime.eggsEnabled, artwork }}>{children}</Policy.Provider>;
+  return <Policy.Provider value={{
+    enabled: enabled ?? (runtime.enabled && spaceAllows(spaceFeatures, "ui.delight")),
+    eggsEnabled: eggsEnabled ?? (runtime.eggsEnabled && spaceAllows(spaceFeatures, "ui.easter_eggs")),
+    artwork,
+  }}>{children}</Policy.Provider>;
 }
 
 export function useDelight(): DelightPolicy {

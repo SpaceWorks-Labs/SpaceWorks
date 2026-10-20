@@ -44,6 +44,20 @@ must close before enabling the off-default programme features.
 | Broadcast composer/recovery | `events/programme/broadcast_*`, `events/broadcast_channels.py`; `integrations/broadcasts_worker.py` owns shared batch mechanics |
 | Extra account/platform surfaces | `accounts/security_activity.py`, `organizations/member_leave.py`, `operations/platform_insights.py`; mounted independently of Events |
 
+## Staged forms, travel support and core payouts
+
+| Responsibility | Sole writer / adapter source |
+| --- | --- |
+| Stage definitions, assignments, responses | `events/staged_forms/stage_workflow.py`, `response_workflow.py`, `lifecycle.py`, `trigger_service.py`; mounted by `events/urls_member.py`/`urls_admin.py` |
+| Inline signup blocks (stage forms + request) | `events/inline_forms.py` prepares outside and binds inside the outer registration (`services_registration.py`) or application (`hackathons/admission_workflow.py`) transaction; R halves are `staged_forms/inline_submission.py` and `event_reimbursements/request_form_adapter.py` + `request_workflow.submit_application_locked` |
+| Stage readiness guard | `events/staged_forms/guards.py` via `admission_hooks.require_action_locked`; called by `services_checkin.mark_attended_locked` (every source, offline sync reports `stage_incomplete`) and `hackathons/admission_rsvp.rsvp` |
+| Saved-details binding/prefill for stage responses | `events/contracts/admission_registration.py` (one installed binding dispatching `stage_response` to `staged_forms/prefill_provider.py`) and `contracts/prefill_registration.py` |
+| Attendance → payout eligibility | `events/attendance_payout_bridge.py` (attendance revision, `EventAttendanceCorrection` marker, claim republish) |
+| Travel support domain | `event_reimbursements/` (programme, pools, requests, awards, claims, decisions); mounted separably in `config/urls.py` |
+| Core payout ledger | `payments/event_payouts/` (obligations, encrypted payee revisions, payouts, attachments, retention); ports installed by `payments/event_payout_bridge.py` |
+| Notices and reminders | stage/payout notification sources in `events/notification_sources.py` and `payments/event_payout_bridge.py`; reminder sources in `operations/reminder_registry.py` |
+| Archive impact and purge preflight | `makerspaces/lifecycle_archive.archive_impact` (unpaid event payouts); `makerspaces/module_purge_collectors_reimbursements.preflight_report` behind `purge_module_data --preflight` |
+
 ## Retention and runtime have different lifetimes
 
 Retention declarations survive Events tombstoning: `encryption/registry_events_programme.py`,

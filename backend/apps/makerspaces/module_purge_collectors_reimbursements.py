@@ -80,3 +80,20 @@ def events_reimbursement_and_stage_delete(makerspace, cursor):
     stages, stage_labels = delete_locked(makerspace=makerspace, module_key="events")
     return _counts(model_labels=labels | stage_labels, reimbursement_rows=reimbursements,
                    event_stage_rows=stages)
+
+
+def preflight_report(makerspace, key):
+    """Read-only summary shown before a purge is confirmed. Blockers are reported, not raised."""
+    report = {"module": key, "allowed": True, "blockers": []}
+    if key not in ("events", "event_reimbursements"):
+        return report
+    from apps.event_reimbursements.purge import preflight
+    report.update(preflight(makerspace.pk))
+    if key == "events":
+        from apps.events.staged_forms.purge import preflight as stage_preflight
+        try:
+            report.update(stage_preflight(makerspace=makerspace, module_key="events"))
+        except ValueError:
+            report["allowed"] = False
+            report["blockers"] = [*report["blockers"], {"code": "missing_stage_cleanup_locator", "count": 1}]
+    return report

@@ -29,7 +29,7 @@ export type QueuedCheckIn = {
 export type SyncOutcome = {
   operation_id: string;
   outcome: "applied" | "duplicate_operation" | "already_attended" |
-    "registration_changed" | "event_unavailable" | "invalid_token" | "outside_window";
+    "registration_changed" | "event_unavailable" | "invalid_token" | "outside_window" | "stage_incomplete";
   registration_id?: number;
   attended_at?: string;
 };

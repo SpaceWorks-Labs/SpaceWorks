@@ -23,3 +23,7 @@ def install():
     scan_policy.install(shared_scan_policy)
     preflight.install(ReimbursementPayoutFacts)
     coordination.install(RetainedCancellationProvider)
+    from apps.integrations.notification_sources import register_source
+    from .event_payouts.notices import NOTICE_SOURCE
+    # Core personal payout notices stay deliverable when Events or the add-on is removed.
+    register_source("finance.event_payout", NOTICE_SOURCE)

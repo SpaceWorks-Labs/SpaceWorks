@@ -58,6 +58,14 @@ FEATURE_DEFINITIONS = (
                       "Count kit components at issue and return; retain missing-component accountability."),
     FeatureDefinition("staff.invitations", None, "Staff invitations",
                       "Invite staff with a single-use email link.", default_enabled=True),
+    # Delight is on for every space unless it turns it off. The deployment flags
+    # (UI_DELIGHT_ENABLED / UI_EASTER_EGGS_ENABLED) remain a global kill switch, and
+    # reduced-motion preferences always win in the browser.
+    FeatureDefinition("ui.delight", None, "Interface effects",
+                      "Artwork, gentle motion and celebration moments.", default_enabled=True),
+    FeatureDefinition("ui.easter_eggs", None, "Easter eggs",
+                      "Hidden playful moments; never on scanner, kiosk or payment screens.",
+                      default_enabled=True),
     FeatureDefinition("security.staff_mfa_required", None, "Require MFA for staff",
                       "Require staff with actions in this space to enroll in TOTP MFA."),
     FeatureDefinition("membership.vouching", "membership", "Membership vouching",

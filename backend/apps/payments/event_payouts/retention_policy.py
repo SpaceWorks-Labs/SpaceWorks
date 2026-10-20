@@ -50,3 +50,9 @@ def retain_closure(previous, proposed):
     if previous != proposed:
         raise PayoutValidationError("financial_closure_conflict")
     return previous
+
+
+def payee_purge_days():
+    """Deployment window between a payee's terminal anchor and its purge."""
+    from django.conf import settings
+    return getattr(settings, "EVENT_REIMBURSEMENT_PAYEE_PURGE_DAYS", PAYEE_DAYS)

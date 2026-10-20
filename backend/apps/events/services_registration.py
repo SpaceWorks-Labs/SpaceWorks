@@ -25,9 +25,11 @@ from apps.events.services_calendar import calendar_registration_changed
 from .services_write_boundary import event_write
 from .services_registration_preparation import ordinary_form
 from .services_registration_preparation import canonical_answers, attach_answers
+from .inline_forms import bind_registration_locked, registration_inline
 
 
 @ordinary_form
+@registration_inline
 @event_write
 def register(
     event, *, member=None, name=None, email=None, phone=None,
@@ -35,6 +37,7 @@ def register(
     via_makerspace=None, collaborative=False,
     invite_code=None, ticket_type_id=None, promo_code=None,
     host_waiver_id=None, host_waiver_version=None, host_waiver_accepted=False, repair_duplicate=False, form_payload=None,
+    inline_forms=None,
 ):
     """Register someone for an event.
 
@@ -191,6 +194,7 @@ def register(
         stamp_host_waiver(existing, waiver, actor=actor, via=via_makerspace or locked.makerspace, event=locked)
         attach_answers(locked, existing)
         calendar_registration_changed(existing)
+        bind_registration_locked(locked, existing)
         return _record_registration(locked, actor, existing, status)
     quote = _quote(locked, member, ticket, invite_code, promo_code, actor=actor)
     from .credentials.preparation import new_registration_id
@@ -205,6 +209,7 @@ def register(
     registration.save()
     attach_answers(locked, registration)
     stamp_host_waiver(registration, waiver, actor=actor, via=via_makerspace or locked.makerspace, event=locked)
+    bind_registration_locked(locked, registration)
     return _record_registration(locked, actor, registration, status)
 
 

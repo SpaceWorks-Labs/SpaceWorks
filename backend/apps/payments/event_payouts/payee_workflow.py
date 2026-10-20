@@ -4,6 +4,7 @@ import json
 from django.utils import timezone
 from apps.audit.services import record
 from .errors import require
+from .retention_policy import payee_purge_days
 from .payee_models import EventPayeeRevision, EventPayeeReview
 from .templates import validate_details, masked_details, TEMPLATE_VERSION, configured_templates
 from .transactions import command
@@ -45,7 +46,7 @@ def put(*, request, obligation_id, data):
             # stay with the liability until the owning obligation closes.
             if not old.entries.exists():
                 old.terminal_financial_at, old.closure_reason_code = timezone.now(), "superseded_unused"
-                old.purge_due_at = old.terminal_financial_at + timedelta(days=30)
+                old.purge_due_at = old.terminal_financial_at + timedelta(days=payee_purge_days())
             # Never rewrite the immutable envelope: a full save would re-encrypt it.
             old.save(update_fields=["state", "version", "terminal_financial_at", "closure_reason_code", "purge_due_at"])
             if old.closure_reason_code == "superseded_unused":
@@ -126,7 +127,7 @@ def close_locked(obligation, *, terminal_at, reason_code):
         if row.terminal_financial_at is None:
             row.terminal_financial_at, row.closure_reason_code = terminal_at, reason_code
             row.paid_closed_at = terminal_at if reason_code == "fully_paid" else None
-            row.purge_due_at = terminal_at + timedelta(days=30)
+            row.purge_due_at = terminal_at + timedelta(days=payee_purge_days())
             row.version += 1
             row.save(update_fields=["terminal_financial_at", "closure_reason_code", "paid_closed_at", "purge_due_at", "version"])
             record(None, "finance.event_payout.payee_closed", makerspace=obligation.makerspace, target=row,

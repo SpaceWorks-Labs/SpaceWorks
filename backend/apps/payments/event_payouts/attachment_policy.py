@@ -4,7 +4,7 @@ from django.conf import settings
 from django.db.models import Sum
 from .attachment_models import FinanceAttachment
 from .errors import require
-from .retention_policy import RECEIPT_DAYS, PAYEE_DAYS
+from .retention_policy import RECEIPT_DAYS, payee_purge_days
 from .validation import closed
 
 
@@ -56,4 +56,4 @@ def policy_snapshot(makerspace_id, purpose):
     require(type(configured_days) is int and 1 <= configured_days <= 36500, "invalid_retention_policy", status=503)
     require(row is not None or configured_days == RECEIPT_DAYS, "finance_retention_policy_not_initialized", status=503)
     return (row.version if row else 1, (row.receipt_days if row else RECEIPT_DAYS)
-            if purpose == "reimbursement_receipt" else PAYEE_DAYS)
+            if purpose == "reimbursement_receipt" else payee_purge_days())

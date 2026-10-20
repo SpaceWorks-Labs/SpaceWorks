@@ -16,6 +16,9 @@ from apps.events.contributions.audience_adapter import require_role_audience
 
 class EventPrefillContexts:
     def resolve(self, *, actor_id, selector):
+        if selector.get("subject_kind") == "stage_response":
+            from apps.events.staged_forms.prefill_provider import resolve_context
+            return resolve_context(actor_id=actor_id, selector=selector)
         actor = require_member(actor_id)
         event = Event.objects.select_related("makerspace").filter(pk=selector["event_id"],
             makerspace_id=selector["makerspace_id"]).first()

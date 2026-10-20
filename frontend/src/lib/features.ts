@@ -34,6 +34,8 @@ export const FEATURE_DEFINITIONS: readonly FeatureDefinition[] = [
   { key: "loans.limits", parent_module: "request_workflow", label: "Borrow limits" },
   { key: "loans.kit_checklist", parent_module: "containers", label: "Kit checklists" },
   { key: "staff.invitations", parent_module: null, label: "Staff invitations" },
+  { key: "ui.delight", parent_module: null, label: "Interface effects" },
+  { key: "ui.easter_eggs", parent_module: null, label: "Easter eggs" },
   { key: "security.staff_mfa_required", parent_module: null, label: "Require MFA for staff" },
   { key: "membership.vouching", parent_module: "membership", label: "Membership vouching" },
   { key: "membership.application_form", parent_module: "membership", label: "Membership application form" },

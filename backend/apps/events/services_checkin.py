@@ -87,6 +87,11 @@ def mark_attended_locked(event, locked, *, actor, source=EventCheckInEvent.Sourc
         or event.status not in (Event.Status.PUBLISHED, Event.Status.COMPLETED)
     ):
         raise EventInvalidTransition("This registration cannot be marked attended.")
+    if locked.member_id:
+        # A required stage form blocks attendance on every source, offline sync included;
+        # a cached roster is never proof that the form was completed.
+        from .staged_forms.admission_hooks import require_action_locked
+        require_action_locked(event=event, member_id=locked.member_id, action="check_in")
 
     occurred_at = attended_at or timezone.now()
     check_in = EventCheckInEvent(

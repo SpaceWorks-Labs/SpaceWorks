@@ -160,9 +160,21 @@ class PublicEventRegistrationInputSerializer(
     invite_code = serializers.CharField(max_length=128, required=False, write_only=True)
     ticket_type_id = serializers.IntegerField(min_value=1, required=False, write_only=True)
     promo_code = serializers.CharField(max_length=128, required=False, write_only=True)
+    # Application-stage forms and the travel-support request answered with the signup.
+    # Both are validated by their owners before the registration transaction.
+    stage_forms = serializers.ListField(child=serializers.DictField(), max_length=50, required=False, write_only=True)
+    reimbursement_request = serializers.DictField(required=False, write_only=True)
 
     def validate(self, attrs):
-        return super().validate(attrs)
+        inline = {key: attrs.pop(key) for key in ("stage_forms", "reimbursement_request") if key in attrs}
+        if inline:
+            if "operation_id" not in attrs:
+                raise serializers.ValidationError({"code": "operation_required"})
+            inline["operation_id"] = attrs["operation_id"]
+        attrs = super().validate(attrs)
+        if inline:
+            attrs["inline_forms"] = inline
+        return attrs
 
     def custom_form_schema(self):
         return self.context['event'].custom_form

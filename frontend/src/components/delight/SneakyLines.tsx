@@ -36,15 +36,15 @@ export function SudoMake({ allowed }: { allowed: boolean }) {
   return null;
 }
 
-/** A quiet line on the staff dashboard between midnight and 4 am, local time. Decorative: hidden from
- * assistive tech, and its dismiss control is pointer-only so nothing hidden can take focus. */
+/** A quiet, visible line on the staff dashboard between midnight and 4 am, local time, with a
+ * keyboard-reachable dismiss that holds for the session. */
 export function LateShiftLine({ now = new Date() }: { now?: Date }) {
   const { enabled, eggsEnabled } = useDelight();
   const [hidden, setHidden] = useState(() => !once(LATE_KEY));
   if (!enabled || !eggsEnabled || hidden || now.getHours() >= 4 || !eggsAllowed(window.location.pathname)) return null;
-  return <p aria-hidden="true" className="flex items-center gap-2 text-sm text-muted">
+  return <p className="flex items-center gap-2 text-sm text-muted">
     <span>Late shift? The solder's still warm.</span>
-    <button type="button" tabIndex={-1} className="inline-flex h-6 w-6 items-center justify-center rounded-full text-muted hover:bg-hover hover:text-ink"
-      onClick={() => { remember(LATE_KEY); setHidden(true); }}><X size={14} /></button>
+    <button type="button" aria-label="Dismiss" className="inline-flex h-8 w-8 items-center justify-center rounded-full text-muted hover:bg-hover hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+      onClick={() => { remember(LATE_KEY); setHidden(true); }}><X size={14} aria-hidden="true" /></button>
   </p>;
 }

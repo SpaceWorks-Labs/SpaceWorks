@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { eggsAllowed, useDelight } from "./DelightProvider";
+import { clearMakerModePending, countLogoClick, makerModePending } from "./logoClicks";
 import "./delight.css";
 
 const sequence = ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight", "b", "a"];
@@ -21,9 +22,10 @@ export function useMakerMode(pathname: string, sensitiveSurface = false) {
   const { enabled, eggsEnabled } = useDelight();
   const allowed = enabled && eggsEnabled && !sensitiveSurface && eggsAllowed(pathname);
   const [active, setActive] = useState(false);
-  const index = useRef(0), clicks = useRef(0), lastClick = useRef(0), lastKey = useRef(0);
+  const index = useRef(0), lastKey = useRef(0);
   const dismiss = useCallback(() => setActive(false), []);
-  useEffect(() => { dismiss(); index.current = 0; clicks.current = 0; }, [pathname, allowed, dismiss]);
+  // A route change closes Maker mode, unless a seventh logo click just led here (logoClicks.ts).
+  useEffect(() => { dismiss(); index.current = 0; if (allowed && makerModePending()) setActive(true); }, [pathname, allowed, dismiss]);
   useEffect(() => {
     if (!allowed) return;
     const keydown = (event: KeyboardEvent) => {
@@ -34,7 +36,7 @@ export function useMakerMode(pathname: string, sensitiveSurface = false) {
       if (key === sequence[index.current]) index.current += 1;
       else index.current = key === sequence[0] ? 1 : 0;
       if (index.current === sequence.length) { setActive(value => !value); index.current = 0; }
-      if (event.key === "Escape") dismiss();
+      if (event.key === "Escape") { clearMakerModePending(); dismiss(); }
     };
     window.addEventListener("keydown", keydown);
     return () => window.removeEventListener("keydown", keydown);
@@ -50,14 +52,9 @@ export function useMakerMode(pathname: string, sensitiveSurface = false) {
       greeted = true;
     }
   }, [allowed]);
-  const activateLogo = useCallback(() => {
-    if (!allowed) return;
-    if (Date.now() - lastClick.current > 2500) clicks.current = 0;
-    lastClick.current = Date.now(); clicks.current += 1;
-    // Seven logo clicks in a row open Maker mode (the workshop grid and the "Built by makers" card).
-    if (clicks.current >= 7) { setActive(true); clicks.current = 0; }
-  }, [allowed]);
-  return { allowed, active: allowed && active, dismiss, activateLogo,
+  // Seven logo clicks in a rolling 4 s window open Maker mode, here or on the page the logo leads to.
+  const activateLogo = useCallback(() => { if (allowed && countLogoClick()) setActive(true); }, [allowed]);
+  return { allowed, active: allowed && active, dismiss: () => { clearMakerModePending(); dismiss(); }, activateLogo,
     toggle: () => { if (allowed) setActive(value => !value); } };
 }
 

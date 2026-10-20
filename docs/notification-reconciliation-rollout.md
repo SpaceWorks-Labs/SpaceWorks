@@ -57,9 +57,18 @@ must be prepared and tested only after replay and cross-lane reconciliation sign
 Retain `MakerspaceMessagingSettings`, `WhatsAppTemplateBinding`, `MessagingDelivery`, historical
 migrations/import helpers and compatibility verifiers until then; they provide no send authority.
 
-Sending additionally requires `python manage.py notification_cutover activate`. The singleton
-cutover defaults closed, including on fresh databases. Neither schema migration nor canonical
-routing activates it. Platform SMS/WhatsApp sending also needs explicit operator enablement
+Sending additionally requires `python manage.py notification_cutover activate` on every
+upgraded deployment. The singleton cutover defaults closed and canonical routing never
+activates it. The one exception is a **fresh install**: integrations
+`0046_fresh_install_sending` activates the gate (canonical route, sending enabled, reconciled
+and activated now) only when the database holds no makerspace, no account other than a single
+bootstrap superuser, and no integrations notification history (envelopes, deliveries, ingress,
+legacy mappings, delivery/push/SMS/email logs or provider events), and the gate is still the
+untouched receipt-only state. Anything else is recorded as `upgrade_held` and stays in
+receipt-only mode with sending disabled until you run `activate`. The branch taken is logged as
+`notification_cutover_install_branch` and stored in the cutover snapshot as `_install_branch`;
+`notification_cutover status` shows the resulting state. No installer step is involved, so the
+VPS installer, docker compose and the cloud recipes all behave the same way. Platform SMS/WhatsApp sending also needs explicit operator enablement
 and each tenant's `use_platform_sender`; both remain off until enabled. Existing operational
 WhatsApp installations use explicit conversion preserving enablement and personal opt-outs.
 

@@ -5744,7 +5744,12 @@ replays, activates or dispatches work.
 
 Destructive integrations `0043` remains unsupplied until original mappings, push dispositions,
 suppression/STOP replay and cross-lane sign-offs are verified; sending activation is an independent
-explicit operator checkpoint. Old signed webhook URLs remain compatibility ingress throughout that
+explicit operator checkpoint on every upgraded deployment. Only integrations
+`0046_fresh_install_sending` may activate without it, and only on a fresh install: no
+`Makerspace`, at most one account and that one a superuser, no integrations notification history,
+and an untouched receipt-only gate. It records `_install_branch` (`fresh_install_active` or
+`upgrade_held`) in the cutover snapshot and logs it; a gate already reconciled or activated is never
+touched. Do not widen that freshness test, and never let a populated database take the fresh branch. Old signed webhook URLs remain compatibility ingress throughout that
 period. Follow [the rollout guide](notification-reconciliation-rollout.md) and
 [operator setup and versioned routes](messaging-channels.md), rather than running
 expand/convert/retire unattended.

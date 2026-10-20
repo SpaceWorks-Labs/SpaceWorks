@@ -249,6 +249,11 @@ scripts/spaceworks-compose.sh bundled run --rm --no-deps backend --role manageme
 
 The command is idempotent. It creates missing records and upgrades the named user to a superadmin if needed.
 
+A fresh install sends notifications from the start: the first `migrate` runs against an empty database, so
+integrations migration `0046_fresh_install_sending` opens the notification cutover gate. The install has to
+be empty for this: no makerspace, no account other than a single bootstrap superuser, and no notification
+history. Anything else stays held (see [Updating](#updating)).
+
 ## Health Checks
 
 Backend:
@@ -289,6 +294,10 @@ bash scripts/update.sh --force --version 0.9.1-main.42.a1b2c3d4e5f6
 Without `--version`, the updater selects the newest published main release of `SPACEWORKS_REPOSITORY`.
 A pinned version must match `X.Y.Z-main.<run>.<12-hex sha>` and exist as a published, non-draft,
 non-prerelease release in that repository; unavailable or invalid versions refuse deployment.
+
+An existing deployment that upgrades into the notification cutover stays in receipt-only mode, with sending
+disabled, until you finish the [reconciliation rollout](notification-reconciliation-rollout.md) and run
+`python manage.py notification_cutover activate`. `notification_cutover status` shows the current state.
 
 ### Install the runner and enable deploys
 

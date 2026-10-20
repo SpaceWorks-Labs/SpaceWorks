@@ -74,6 +74,7 @@ class MachineServiceV2Row(MachinePeriodRow):
     collected = serializers.IntegerField(allow_null=True)
     rejected = serializers.IntegerField(allow_null=True)
     failed = serializers.IntegerField(allow_null=True)
+    cancelled = serializers.IntegerField(allow_null=True)
     request_count = serializers.IntegerField(allow_null=True)
     completed_count = serializers.IntegerField(allow_null=True)
     failed_count = serializers.IntegerField(allow_null=True)

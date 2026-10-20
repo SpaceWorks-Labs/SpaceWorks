@@ -6189,6 +6189,7 @@ export type MachineServiceV2Row = {
   "collected": number | null;
   "rejected": number | null;
   "failed": number | null;
+  "cancelled": number | null;
   "request_count": number | null;
   "completed_count": number | null;
   "failed_count": number | null;

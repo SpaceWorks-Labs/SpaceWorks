@@ -120424,6 +120424,10 @@
                         "type": "integer",
                         "nullable": true
                     },
+                    "cancelled": {
+                        "type": "integer",
+                        "nullable": true
+                    },
                     "request_count": {
                         "type": "integer",
                         "nullable": true
@@ -120509,6 +120513,7 @@
                 },
                 "required": [
                     "accepted",
+                    "cancelled",
                     "collected",
                     "completed",
                     "completed_amount",

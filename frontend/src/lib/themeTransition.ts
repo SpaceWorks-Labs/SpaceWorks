@@ -2,7 +2,7 @@ import type { Theme } from "./theme";
 import { chooseTheme } from "./theme";
 import "./themeTransition.css";
 
-// Light/dark switch, adapted from the SpaceWorks Events app (yuyu lineage, AGPL-3.0; see NOTICE).
+// Light/dark switch, adapted from yuyu by twilighty-abhi (https://github.com/twilighty-abhi/yuyu), AGPL-3.0; see NOTICE.
 // Where View Transitions exist, the new theme grows from the toggle as a circle (soft-edged when
 // the browser can animate a registered custom property inside a mask); elsewhere every colour
 // cross-fades. Reduced-motion users get an instant switch. The theme is always applied, even when

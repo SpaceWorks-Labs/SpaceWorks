@@ -19077,6 +19077,91 @@
                 }
             }
         },
+        "/api/v1/admin/machine-service/requests/{id}/cancel": {
+            "post": {
+                "operationId": "api_v1_admin_machine_service_requests_cancel_create",
+                "description": "Manage-scoped staff only (never collect-only reach). Releases any consumable hold with zero consumption and no charge; a running job's machine is freed. Idempotent.",
+                "summary": "Cancel a waiting or running machine service request",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Admin machine service"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ServiceCancel"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ServiceCancel"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ServiceCancel"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MachineServiceRequest"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Invalid service request input."
+                    },
+                    "401": {
+                        "description": "Authentication required."
+                    },
+                    "403": {
+                        "description": "Machine management permission required."
+                    },
+                    "404": {
+                        "description": "Service request was not found."
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Service workflow conflict."
+                    }
+                }
+            }
+        },
         "/api/v1/admin/machine-service/requests/{id}/collect": {
             "post": {
                 "operationId": "api_v1_admin_machine_service_requests_collect_create",
@@ -81541,6 +81626,192 @@
                 }
             }
         },
+        "/api/v1/member/machine-service/requests/{id}/cancel": {
+            "post": {
+                "operationId": "api_v1_member_machine_service_requests_cancel_create",
+                "description": "Owner-only. Pending, accepted and in-progress jobs can be cancelled; any held consumables are released with no charge. Repeating a successful cancel returns the same result.",
+                "summary": "Cancel your own machine-service job",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Member machine service"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/MemberServiceCancel"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/MemberServiceCancel"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/MemberServiceCancel"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PublicMachineServiceStatus"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Machine service is disabled for this makerspace, or invalid input."
+                    },
+                    "401": {
+                        "description": "Authentication required."
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "A live member account is required; claim, staff and platform sessions are refused."
+                    },
+                    "404": {
+                        "description": "No job owned by the caller matches."
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "The job is already terminal and cannot be cancelled."
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Rate limit exceeded."
+                    }
+                }
+            }
+        },
+        "/api/v1/member/machine-service/requests/by-token/{public_token}/owner": {
+            "get": {
+                "operationId": "api_v1_member_machine_service_requests_by_token_owner_retrieve",
+                "description": "Resolves a tracking token for its OWNER only and returns the private request id and whether it can still be cancelled. Non-owners and unknown tokens get 404. Not cached.",
+                "summary": "Owner controls for a tracked machine-service job",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "public_token",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Member machine service"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MemberServiceOwner"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Machine service is disabled for this makerspace, or invalid input."
+                    },
+                    "401": {
+                        "description": "Authentication required."
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "A live member account is required; claim, staff and platform sessions are refused."
+                    },
+                    "404": {
+                        "description": "No job owned by the caller matches."
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "The job is already terminal and cannot be cancelled."
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Rate limit exceeded."
+                    }
+                }
+            }
+        },
         "/api/v1/member/makerspaces/{makerspace_id}/account/cancel": {
             "post": {
                 "operationId": "api_v1_member_makerspaces_account_cancel_create",
@@ -96406,6 +96677,7 @@
         "/api/v1/public/machine-service/3d-printer/requests/{public_token}/status": {
             "get": {
                 "operationId": "api_v1_public_machine_service_3d_printer_requests_status_retrieve",
+                "description": "PII-free printer job status plus the shared derived `eta` (null once terminal).",
                 "parameters": [
                     {
                         "in": "path",
@@ -96430,6 +96702,85 @@
                             }
                         },
                         "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "The job's makerspace has machine service (or printing) disabled."
+                    },
+                    "404": {
+                        "description": "Unknown, unservable or edition-hidden tracking token."
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Status lookup rate limit exceeded."
+                    }
+                }
+            }
+        },
+        "/api/v1/public/machine-service/requests/{public_token}/status": {
+            "get": {
+                "operationId": "api_v1_public_machine_service_requests_status_retrieve",
+                "description": "PII-free allowlist plus a derived `eta` (null for terminal jobs). The token is a read capability only and never authorizes a write.",
+                "summary": "Read a machine-service job's status and estimated start/finish by tracking token",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "public_token",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Public machine service"
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PublicMachineServiceStatus"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "The job's makerspace has machine service (or printing) disabled."
+                    },
+                    "404": {
+                        "description": "Unknown, unservable or edition-hidden tracking token."
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Status lookup rate limit exceeded."
                     }
                 }
             }
@@ -106445,6 +106796,15 @@
                 ],
                 "type": "string",
                 "description": "* `available` - Available\n* `damaged` - Damaged\n* `lost` - Lost\n* `unknown` - Unknown"
+            },
+            "ConfidenceEnum": {
+                "enum": [
+                    "estimated",
+                    "rough",
+                    "unavailable"
+                ],
+                "type": "string",
+                "description": "* `estimated` - estimated\n* `rough` - rough\n* `unavailable` - unavailable"
             },
             "ConfirmEnum": {
                 "enum": [
@@ -118853,6 +119213,15 @@
                         "type": "boolean",
                         "readOnly": true
                     },
+                    "service_queue_summary": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/MachineQueueSummary"
+                            }
+                        ],
+                        "nullable": true,
+                        "readOnly": true
+                    },
                     "created_at": {
                         "type": "string",
                         "format": "date-time",
@@ -118880,6 +119249,7 @@
                     "machine_type_id",
                     "makerspace",
                     "name",
+                    "service_queue_summary",
                     "status",
                     "status_since",
                     "updated_at",
@@ -119349,6 +119719,47 @@
                     "username"
                 ]
             },
+            "MachineQueueSummary": {
+                "type": "object",
+                "description": "Per-machine workload: approved/running jobs and the machine's final free-at offset.",
+                "properties": {
+                    "length": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "eta_minutes": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "nullable": true
+                    },
+                    "estimated_clear_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "calculated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "confidence": {
+                        "$ref": "#/components/schemas/ConfidenceEnum"
+                    },
+                    "reasons": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ReasonsEnum"
+                        }
+                    }
+                },
+                "required": [
+                    "calculated_at",
+                    "confidence",
+                    "estimated_clear_at",
+                    "eta_minutes",
+                    "length",
+                    "reasons"
+                ]
+            },
             "MachineServiceConsumption": {
                 "type": "object",
                 "properties": {
@@ -119682,6 +120093,12 @@
                         "readOnly": true,
                         "nullable": true
                     },
+                    "cancelled_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
                     "created_at": {
                         "type": "string",
                         "format": "date-time",
@@ -119765,6 +120182,15 @@
                             "$ref": "#/components/schemas/ServiceConsumption"
                         },
                         "readOnly": true
+                    },
+                    "eta": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/ServiceRequestEta"
+                            }
+                        ],
+                        "nullable": true,
+                        "readOnly": true
                     }
                 },
                 "required": [
@@ -119774,6 +120200,7 @@
                     "actual_minutes",
                     "assigned_machine",
                     "bucket_id",
+                    "cancelled_at",
                     "capability_payload",
                     "collected_at",
                     "completed_at",
@@ -119783,6 +120210,7 @@
                     "created_at",
                     "description",
                     "estimated_minutes",
+                    "eta",
                     "fail_percent_complete",
                     "failed_at",
                     "files",
@@ -119815,10 +120243,11 @@
                     "completed",
                     "collected",
                     "rejected",
-                    "failed"
+                    "failed",
+                    "cancelled"
                 ],
                 "type": "string",
-                "description": "* `pending` - Pending\n* `accepted` - Accepted\n* `in_progress` - In progress\n* `completed` - Completed\n* `collected` - Collected\n* `rejected` - Rejected\n* `failed` - Failed"
+                "description": "* `pending` - Pending\n* `accepted` - Accepted\n* `in_progress` - In progress\n* `completed` - Completed\n* `collected` - Collected\n* `rejected` - Rejected\n* `failed` - Failed\n* `cancelled` - Cancelled"
             },
             "MachineServiceStatusTotals": {
                 "type": "object",
@@ -119846,10 +120275,14 @@
                     },
                     "failed": {
                         "type": "integer"
+                    },
+                    "cancelled": {
+                        "type": "integer"
                     }
                 },
                 "required": [
                     "accepted",
+                    "cancelled",
                     "collected",
                     "completed",
                     "failed",
@@ -123698,7 +124131,20 @@
             "MemberMachineServiceActivity": {
                 "type": "object",
                 "properties": {
+                    "request_id": {
+                        "type": "integer"
+                    },
+                    "can_cancel": {
+                        "type": "boolean"
+                    },
+                    "public_token": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
                     "machine_type": {
+                        "type": "string"
+                    },
+                    "machine_type_name": {
                         "type": "string"
                     },
                     "title": {
@@ -123711,14 +124157,43 @@
                         "type": "string",
                         "format": "date-time"
                     },
+                    "cancelled_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
                     "queue_position": {
                         "type": "integer",
+                        "nullable": true
+                    },
+                    "queue_approved_ahead": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "queue_awaiting_review_ahead": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "eta": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/ServiceRequestEta"
+                            }
+                        ],
                         "nullable": true
                     }
                 },
                 "required": [
+                    "can_cancel",
+                    "cancelled_at",
                     "created_at",
+                    "eta",
+                    "machine_type_name",
+                    "public_token",
+                    "queue_approved_ahead",
+                    "queue_awaiting_review_ahead",
                     "queue_position",
+                    "request_id",
                     "status",
                     "title"
                 ]
@@ -123933,6 +124408,12 @@
             "MemberPrintActivity": {
                 "type": "object",
                 "properties": {
+                    "request_id": {
+                        "type": "integer"
+                    },
+                    "can_cancel": {
+                        "type": "boolean"
+                    },
                     "public_token": {
                         "type": "string",
                         "format": "uuid"
@@ -123962,6 +124443,11 @@
                         "format": "date-time",
                         "nullable": true
                     },
+                    "cancelled_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
                     "estimated_minutes": {
                         "type": "integer"
                     },
@@ -123976,17 +124462,29 @@
                     "queue_awaiting_review_ahead": {
                         "type": "integer",
                         "nullable": true
+                    },
+                    "eta": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/ServiceRequestEta"
+                            }
+                        ],
+                        "nullable": true
                     }
                 },
                 "required": [
                     "accepted_at",
+                    "can_cancel",
+                    "cancelled_at",
                     "completed_at",
                     "created_at",
                     "estimated_minutes",
+                    "eta",
                     "public_token",
                     "queue_approved_ahead",
                     "queue_awaiting_review_ahead",
                     "queue_position",
+                    "request_id",
                     "started_at",
                     "status",
                     "title"
@@ -124167,6 +124665,30 @@
                     "reactivated_members",
                     "retained_members",
                     "retention_percent"
+                ]
+            },
+            "MemberServiceCancel": {
+                "type": "object",
+                "properties": {
+                    "reason": {
+                        "type": "string",
+                        "maxLength": 500
+                    }
+                }
+            },
+            "MemberServiceOwner": {
+                "type": "object",
+                "properties": {
+                    "request_id": {
+                        "type": "integer"
+                    },
+                    "can_cancel": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "can_cancel",
+                    "request_id"
                 ]
             },
             "MemberSettlement": {
@@ -132200,6 +132722,15 @@
                         "type": "boolean",
                         "readOnly": true
                     },
+                    "service_queue_summary": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/MachineQueueSummary"
+                            }
+                        ],
+                        "nullable": true,
+                        "readOnly": true
+                    },
                     "created_at": {
                         "type": "string",
                         "format": "date-time",
@@ -139257,6 +139788,92 @@
                     "usage_hours"
                 ]
             },
+            "PublicMachineServiceStatus": {
+                "type": "object",
+                "description": "The generic token endpoint's complete allowlist. Never add contact, owner,\nmachine or other-job identifiers; ``status`` uses the canonical ``in_progress``.",
+                "properties": {
+                    "public_token": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "accepted_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "started_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "completed_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "cancelled_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "estimated_minutes": {
+                        "type": "integer"
+                    },
+                    "queue_position": {
+                        "type": "integer",
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "queue_approved_ahead": {
+                        "type": "integer",
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "queue_awaiting_review_ahead": {
+                        "type": "integer",
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "eta": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/ServiceRequestEta"
+                            }
+                        ],
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "machine_type_name": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "accepted_at",
+                    "cancelled_at",
+                    "completed_at",
+                    "created_at",
+                    "estimated_minutes",
+                    "eta",
+                    "machine_type_name",
+                    "public_token",
+                    "queue_approved_ahead",
+                    "queue_awaiting_review_ahead",
+                    "queue_position",
+                    "started_at",
+                    "status",
+                    "title"
+                ]
+            },
             "PublicMachineServiceSubmit": {
                 "type": "object",
                 "properties": {
@@ -140286,6 +140903,11 @@
                         "format": "date-time",
                         "nullable": true
                     },
+                    "cancelled_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
                     "estimated_minutes": {
                         "type": "integer"
                     },
@@ -140303,13 +140925,24 @@
                         "type": "integer",
                         "nullable": true,
                         "readOnly": true
+                    },
+                    "eta": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/ServiceRequestEta"
+                            }
+                        ],
+                        "nullable": true,
+                        "readOnly": true
                     }
                 },
                 "required": [
                     "accepted_at",
+                    "cancelled_at",
                     "completed_at",
                     "created_at",
                     "estimated_minutes",
+                    "eta",
                     "public_token",
                     "queue_approved_ahead",
                     "queue_awaiting_review_ahead",
@@ -140705,6 +141338,7 @@
             },
             "PublicQueueEstimate": {
                 "type": "object",
+                "description": "Legacy ``length``/``eta_minutes`` keys kept; ``eta_minutes`` is now the machine's\nsimulated final free-at offset (never total minutes divided by machine count).",
                 "properties": {
                     "length": {
                         "type": "integer",
@@ -140714,11 +141348,33 @@
                         "type": "integer",
                         "minimum": 0,
                         "nullable": true
+                    },
+                    "estimated_clear_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "calculated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "confidence": {
+                        "$ref": "#/components/schemas/ConfidenceEnum"
+                    },
+                    "reasons": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ReasonsEnum"
+                        }
                     }
                 },
                 "required": [
+                    "calculated_at",
+                    "confidence",
+                    "estimated_clear_at",
                     "eta_minutes",
-                    "length"
+                    "length",
+                    "reasons"
                 ]
             },
             "PublicRequestItemStatus": {
@@ -141310,10 +141966,15 @@
                     "rejected": {
                         "type": "integer",
                         "readOnly": true
+                    },
+                    "cancelled": {
+                        "type": "integer",
+                        "readOnly": true
                     }
                 },
                 "required": [
                     "accepted",
+                    "cancelled",
                     "collected",
                     "completed",
                     "failed",
@@ -142466,6 +143127,19 @@
                 ],
                 "type": "string",
                 "description": "* `bounce` - Hard bounce\n* `complaint` - Spam complaint"
+            },
+            "ReasonsEnum": {
+                "enum": [
+                    "awaiting_approval",
+                    "missing_estimate",
+                    "no_active_machine",
+                    "overdue_running_job",
+                    "unknown_running_job",
+                    "inactive_scope",
+                    "competing_scopes"
+                ],
+                "type": "string",
+                "description": "* `awaiting_approval` - awaiting_approval\n* `missing_estimate` - missing_estimate\n* `no_active_machine` - no_active_machine\n* `overdue_running_job` - overdue_running_job\n* `unknown_running_job` - unknown_running_job\n* `inactive_scope` - inactive_scope\n* `competing_scopes` - competing_scopes"
             },
             "Reauthentication": {
                 "type": "object",
@@ -146173,6 +146847,15 @@
                     }
                 }
             },
+            "ServiceCancel": {
+                "type": "object",
+                "properties": {
+                    "reason": {
+                        "type": "string",
+                        "maxLength": 500
+                    }
+                }
+            },
             "ServiceComplete": {
                 "type": "object",
                 "properties": {
@@ -146553,6 +147236,74 @@
                 },
                 "required": [
                     "reason"
+                ]
+            },
+            "ServiceRequestEta": {
+                "type": "object",
+                "description": "A derived forecast, never a promise: continuous processing time, staff permitting.\n\n``unavailable`` always carries null timestamps and minutes; counts and reasons stay.",
+                "properties": {
+                    "calculated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "estimated_start_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "estimated_finish_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "start_in_minutes": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "nullable": true
+                    },
+                    "finish_in_minutes": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "nullable": true
+                    },
+                    "confidence": {
+                        "$ref": "#/components/schemas/ConfidenceEnum"
+                    },
+                    "reasons": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ReasonsEnum"
+                        }
+                    },
+                    "approved_ahead": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "awaiting_review_ahead": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "active_machine_count": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "missing_estimate_count": {
+                        "type": "integer",
+                        "minimum": 0
+                    }
+                },
+                "required": [
+                    "active_machine_count",
+                    "approved_ahead",
+                    "awaiting_review_ahead",
+                    "calculated_at",
+                    "confidence",
+                    "estimated_finish_at",
+                    "estimated_start_at",
+                    "finish_in_minutes",
+                    "missing_estimate_count",
+                    "reasons",
+                    "start_in_minutes"
                 ]
             },
             "ServiceRequester": {

@@ -67,6 +67,7 @@ export const openApiTags = [
   "Member certifications",
   "Member communication",
   "Member events",
+  "Member machine service",
   "Member profile",
   "Memberships",
   "Messaging",
@@ -280,6 +281,7 @@ export const openApiPaths = [
   "/api/v1/admin/machine-service/payments/{id}/waive",
   "/api/v1/admin/machine-service/requests/{id}",
   "/api/v1/admin/machine-service/requests/{id}/accept",
+  "/api/v1/admin/machine-service/requests/{id}/cancel",
   "/api/v1/admin/machine-service/requests/{id}/collect",
   "/api/v1/admin/machine-service/requests/{id}/complete",
   "/api/v1/admin/machine-service/requests/{id}/fail",
@@ -820,6 +822,8 @@ export const openApiPaths = [
   "/api/v1/me/messaging/consent",
   "/api/v1/member/archived-payments",
   "/api/v1/member/event-speaker-claims/",
+  "/api/v1/member/machine-service/requests/by-token/{public_token}/owner",
+  "/api/v1/member/machine-service/requests/{id}/cancel",
   "/api/v1/member/makerspaces/{makerspace_id}/account/cancel",
   "/api/v1/member/makerspaces/{makerspace_id}/account/exports",
   "/api/v1/member/makerspaces/{makerspace_id}/account/exports/{job_id}",
@@ -903,6 +907,7 @@ export const openApiPaths = [
   "/api/v1/public/hosting/requests",
   "/api/v1/public/hosting/requests/open",
   "/api/v1/public/machine-service/3d-printer/requests/{public_token}/status",
+  "/api/v1/public/machine-service/requests/{public_token}/status",
   "/api/v1/public/makerspaces/",
   "/api/v1/public/makerspaces/{makerspace_slug}/presence/now/",
   "/api/v1/public/organizations/{slug}/",
@@ -2975,6 +2980,8 @@ export type CompleteRequest = {
 };
 
 export type ConditionEnum = "available" | "damaged" | "lost" | "unknown";
+
+export type ConfidenceEnum = "estimated" | "rough" | "unavailable";
 
 export type ConfirmEnum = "DELETE";
 
@@ -5930,6 +5937,7 @@ export type Machine = {
   "can_retire": boolean;
   "can_unretire": boolean;
   "can_manage": boolean;
+  "service_queue_summary": MachineQueueSummary | null;
   "created_at": string;
   "updated_at": string;
 };
@@ -6035,6 +6043,15 @@ export type MachineOperator = {
   "assigned_at": string;
 };
 
+export type MachineQueueSummary = {
+  "length": number;
+  "eta_minutes": number | null;
+  "estimated_clear_at": string | null;
+  "calculated_at": string;
+  "confidence": ConfidenceEnum;
+  "reasons": Array<ReasonsEnum>;
+};
+
 export type MachineServiceConsumption = {
   "makerspace_id"?: number;
   "machine_id": number;
@@ -6109,6 +6126,7 @@ export type MachineServiceRequest = {
   "completed_at": string | null;
   "failed_at": string | null;
   "collected_at": string | null;
+  "cancelled_at": string | null;
   "created_at": string;
   "updated_at": string;
   "capability_payload": unknown;
@@ -6123,9 +6141,10 @@ export type MachineServiceRequest = {
   "run_machine_model": string;
   "files": Array<ServiceFile>;
   "consumptions": Array<ServiceConsumption>;
+  "eta": ServiceRequestEta | null;
 };
 
-export type MachineServiceRequestStatusEnum = "pending" | "accepted" | "in_progress" | "completed" | "collected" | "rejected" | "failed";
+export type MachineServiceRequestStatusEnum = "pending" | "accepted" | "in_progress" | "completed" | "collected" | "rejected" | "failed" | "cancelled";
 
 export type MachineServiceStatusTotals = {
   "makerspace_id"?: number;
@@ -6136,6 +6155,7 @@ export type MachineServiceStatusTotals = {
   "collected": number;
   "rejected": number;
   "failed": number;
+  "cancelled": number;
 };
 
 export type MachineServiceSubmit = {
@@ -7012,11 +7032,19 @@ export type MemberMachineScopeWrite = {
 };
 
 export type MemberMachineServiceActivity = {
+  "request_id": number;
+  "can_cancel": boolean;
+  "public_token": string;
   "machine_type"?: string;
+  "machine_type_name": string;
   "title": string;
   "status": string;
   "created_at": string;
+  "cancelled_at": string | null;
   "queue_position": number | null;
+  "queue_approved_ahead": number | null;
+  "queue_awaiting_review_ahead": number | null;
+  "eta": ServiceRequestEta | null;
 };
 
 export type MemberMachineUsage = {
@@ -7074,6 +7102,8 @@ export type MemberPresenceActivity = {
 };
 
 export type MemberPrintActivity = {
+  "request_id": number;
+  "can_cancel": boolean;
   "public_token": string;
   "status": string;
   "title": string;
@@ -7081,10 +7111,12 @@ export type MemberPrintActivity = {
   "accepted_at": string | null;
   "started_at": string | null;
   "completed_at": string | null;
+  "cancelled_at": string | null;
   "estimated_minutes": number;
   "queue_position": number | null;
   "queue_approved_ahead": number | null;
   "queue_awaiting_review_ahead": number | null;
+  "eta": ServiceRequestEta | null;
 };
 
 export type MemberRefund = {
@@ -7132,6 +7164,15 @@ export type MemberRetentionRow = {
   "retention_percent": string | null;
   "churned_members": number;
   "reactivated_members": number;
+};
+
+export type MemberServiceCancel = {
+  "reason"?: string;
+};
+
+export type MemberServiceOwner = {
+  "request_id": number;
+  "can_cancel": boolean;
 };
 
 export type MemberSettlement = {
@@ -9145,6 +9186,7 @@ export type PatchedMachine = {
   "can_retire"?: boolean;
   "can_unretire"?: boolean;
   "can_manage"?: boolean;
+  "service_queue_summary"?: MachineQueueSummary | null;
   "created_at"?: string;
   "updated_at"?: string;
 };
@@ -10857,6 +10899,23 @@ export type PublicMachineDetail = {
   "queue": PublicQueueEstimate | null;
 };
 
+export type PublicMachineServiceStatus = {
+  "public_token": string;
+  "status": string;
+  "title": string;
+  "created_at": string;
+  "accepted_at": string | null;
+  "started_at": string | null;
+  "completed_at": string | null;
+  "cancelled_at": string | null;
+  "estimated_minutes": number;
+  "queue_position": number | null;
+  "queue_approved_ahead": number | null;
+  "queue_awaiting_review_ahead": number | null;
+  "eta": ServiceRequestEta | null;
+  "machine_type_name": string;
+};
+
 export type PublicMachineServiceSubmit = {
   "certification_override_reason"?: string;
   "website"?: string;
@@ -11102,10 +11161,12 @@ export type PublicPrinterStatus = {
   "accepted_at": string | null;
   "started_at": string | null;
   "completed_at": string | null;
+  "cancelled_at": string | null;
   "estimated_minutes": number;
   "queue_position": number | null;
   "queue_approved_ahead": number | null;
   "queue_awaiting_review_ahead": number | null;
+  "eta": ServiceRequestEta | null;
 };
 
 export type PublicPrinterSubmit = {
@@ -11200,6 +11261,10 @@ export type PublicProjectPage = {
 export type PublicQueueEstimate = {
   "length": number;
   "eta_minutes": number | null;
+  "estimated_clear_at": string | null;
+  "calculated_at": string;
+  "confidence": ConfidenceEnum;
+  "reasons": Array<ReasonsEnum>;
 };
 
 export type PublicRequestItemStatus = {
@@ -11335,6 +11400,7 @@ export type PublicStatsStatusCounts = {
   "collected": number;
   "failed": number;
   "rejected": number;
+  "cancelled": number;
 };
 
 export type PublicStatsToolsOut = {
@@ -11642,6 +11708,8 @@ export type ReadinessItem = {
 };
 
 export type Reason870Enum = "bounce" | "complaint";
+
+export type ReasonsEnum = "awaiting_approval" | "missing_estimate" | "no_active_machine" | "overdue_running_job" | "unknown_running_job" | "inactive_scope" | "competing_scopes";
 
 export type Reauthentication = {
   "password"?: string;
@@ -12506,6 +12574,10 @@ export type ServiceAccept = {
   "note"?: string;
 };
 
+export type ServiceCancel = {
+  "reason"?: string;
+};
+
 export type ServiceComplete = {
   "actual_minutes": number;
   "actual_grams"?: string;
@@ -12613,6 +12685,20 @@ export type ServiceRequester = {
   "id": number;
   "username": string;
   "display": string;
+};
+
+export type ServiceRequestEta = {
+  "calculated_at": string;
+  "estimated_start_at": string | null;
+  "estimated_finish_at": string | null;
+  "start_in_minutes": number | null;
+  "finish_in_minutes": number | null;
+  "confidence": ConfidenceEnum;
+  "reasons": Array<ReasonsEnum>;
+  "approved_ahead": number;
+  "awaiting_review_ahead": number;
+  "active_machine_count": number;
+  "missing_estimate_count": number;
 };
 
 export type ServiceStart = {

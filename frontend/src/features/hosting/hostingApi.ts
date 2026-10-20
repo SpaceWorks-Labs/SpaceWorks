@@ -2,56 +2,18 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { publicV1Request, staffRequest } from "../../lib/api";
 
-// Hand-written until the OpenAPI snapshot carries the hosting routes.
+import type * as Api from "../../generated/api";
 
-export type HostingAck = { detail: string };
-export type HostingRequestStatus = "invited" | "pending_verification" | "submitted" | "accepted" | "rejected" | "withdrawn";
-
-export type HostingRequestBody = {
-  applicant_name: string;
-  applicant_email: string;
-  applicant_phone?: string;
-  space_name: string;
-  location: string;
-  space_website_url?: string;
-  description: string;
-  proposed_slug?: string;
-  new_organization_name?: string;
-  /** Honeypot: always sent, normally empty. */
-  website: string;
-};
-export type HostingInvitationSubmitBody = HostingRequestBody & { token: string; organization_choice: "own" | "join" };
-
-export type HostingRequestView = {
-  status: HostingRequestStatus;
-  space_name: string;
-  created_at: string;
-  verified_at: string | null;
-  decided_at: string | null;
-  rejection_reason: string | null;
-};
-
-export type HostingInvitationPreview = {
-  inviter_name: string;
-  join_organization_name: string | null;
-  space_name: string;
-  applicant_email: string;
-  invite_note: string;
-  expires_at: string;
-};
-
-export type HostingInvitation = {
-  id: number;
-  space_name: string;
-  status: HostingRequestStatus;
-  display_status: HostingRequestStatus | "expired";
-  join_offered: boolean;
-  created_at: string;
-  invite_expires_at: string;
-};
-export type HostingInvitationCreated = HostingInvitation & { invite_url: string; delivery_status: string };
-export type HostingInvitationCreateBody = { invitee_email: string; space_name?: string; note?: string };
-export type Paginated<T> = { count: number; next: string | null; previous: string | null; results: T[] };
+// Wire types come from the generated OpenAPI client; these aliases keep the feature's names.
+export type HostingAck = Api.HostingAck;
+export type HostingRequestStatus = Api.StatusAc9Enum;
+export type HostingRequestBody = Api.HostingRequestSubmit;
+export type HostingInvitationSubmitBody = Api.HostingInvitationSubmit;
+export type HostingRequestView = Api.HostingRequestStatus;
+export type HostingInvitationPreview = Api.HostingInvitationPreview;
+export type HostingInvitation = Api.HostingInvitation;
+export type HostingInvitationCreated = Api.HostingInvitationCreated;
+export type HostingInvitationCreateBody = Api.HostingInvitationCreate;
 
 /** `hosting_requests` is present in the public config only while the feature is available. */
 export function useHostingConfig(enabled = true) {
@@ -114,7 +76,7 @@ function scopeKey(scope: HostingScope) {
 export function useHostingInvitations(scope: HostingScope, page: number, enabled = true) {
   return useQuery({
     queryKey: ["hosting-invitations", scopeKey(scope), page],
-    queryFn: () => staffRequest<Paginated<HostingInvitation>>(`${hostingInvitationsPath(scope)}?page=${page}`),
+    queryFn: () => staffRequest<Api.HostingInvitationPage>(`${hostingInvitationsPath(scope)}?page=${page}`),
     enabled,
   });
 }

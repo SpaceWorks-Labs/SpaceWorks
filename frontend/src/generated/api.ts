@@ -53,6 +53,7 @@ export const openApiTags = [
   "Events",
   "Evidence retention",
   "Health",
+  "Hosting requests",
   "Integration health",
   "Internal",
   "Kiosk stations",
@@ -481,6 +482,8 @@ export const openApiPaths = [
   "/api/v1/admin/makerspaces/{makerspace_id}/events/",
   "/api/v1/admin/makerspaces/{makerspace_id}/evidence-retention",
   "/api/v1/admin/makerspaces/{makerspace_id}/evidence-retention/preview",
+  "/api/v1/admin/makerspaces/{makerspace_id}/hosting-invitations",
+  "/api/v1/admin/makerspaces/{makerspace_id}/hosting-invitations/{id}/cancel",
   "/api/v1/admin/makerspaces/{makerspace_id}/invitation-requests",
   "/api/v1/admin/makerspaces/{makerspace_id}/machine-materials",
   "/api/v1/admin/makerspaces/{makerspace_id}/machine-materials/{id}",
@@ -547,6 +550,8 @@ export const openApiPaths = [
   "/api/v1/admin/organizations/",
   "/api/v1/admin/organizations/directory/",
   "/api/v1/admin/organizations/{id}/",
+  "/api/v1/admin/organizations/{id}/hosting-invitations/",
+  "/api/v1/admin/organizations/{id}/hosting-invitations/{invitation_id}/cancel",
   "/api/v1/admin/organizations/{id}/invitations/",
   "/api/v1/admin/organizations/{id}/makerspaces/",
   "/api/v1/admin/organizations/{id}/makerspaces/{makerspace_id}/",
@@ -893,6 +898,10 @@ export const openApiPaths = [
   "/api/v1/procurement/to-buy/{id}/receipts",
   "/api/v1/procurement/to-buy/{id}/receipts/presign",
   "/api/v1/public/event-codes/{public_token}/",
+  "/api/v1/public/hosting/invitations/resolve",
+  "/api/v1/public/hosting/invitations/submit",
+  "/api/v1/public/hosting/requests",
+  "/api/v1/public/hosting/requests/open",
   "/api/v1/public/machine-service/3d-printer/requests/{public_token}/status",
   "/api/v1/public/makerspaces/",
   "/api/v1/public/makerspaces/{makerspace_slug}/presence/now/",
@@ -4854,8 +4863,97 @@ export type HistorySpeaking = {
 
 export type HistorySpeakingRoleEnum = "speaker";
 
+export type HostingAck = {
+  "detail": string;
+};
+
 export type HostingError = {
   "detail": string;
+};
+
+export type HostingInvitation = {
+  "id": number;
+  "space_name": string;
+  "status": StatusAc9Enum;
+  "display_status": string;
+  "join_offered": boolean;
+  "created_at": string;
+  "invite_expires_at": string | null;
+};
+
+export type HostingInvitationCreate = {
+  "invitee_email": string;
+  "space_name"?: string;
+  "note"?: string;
+};
+
+export type HostingInvitationCreated = {
+  "id": number;
+  "space_name": string;
+  "status": StatusAc9Enum;
+  "display_status": string;
+  "join_offered": boolean;
+  "created_at": string;
+  "invite_expires_at": string | null;
+  "invite_url": string;
+  "delivery_status": string;
+};
+
+export type HostingInvitationPage = {
+  "count": number;
+  "next": string | null;
+  "previous": string | null;
+  "results": Array<HostingInvitation>;
+};
+
+export type HostingInvitationPreview = {
+  "inviter_name": string;
+  "join_organization_name": string | null;
+  "space_name": string;
+  "applicant_email": string;
+  "invite_note": string;
+  "expires_at": string;
+};
+
+export type HostingInvitationSubmit = {
+  "applicant_name": string;
+  "applicant_email": string;
+  "applicant_phone"?: string;
+  "space_name": string;
+  "location": string;
+  "space_website_url"?: string;
+  "description": string;
+  "proposed_slug"?: string;
+  "new_organization_name"?: string;
+  "website"?: string;
+  "token": string;
+  "organization_choice"?: OrganizationChoiceEnum;
+};
+
+export type HostingRequestStatus = {
+  "status": StatusAc9Enum;
+  "space_name": string;
+  "created_at": string;
+  "verified_at": string | null;
+  "decided_at": string | null;
+  "rejection_reason": string | null;
+};
+
+export type HostingRequestSubmit = {
+  "applicant_name": string;
+  "applicant_email": string;
+  "applicant_phone"?: string;
+  "space_name": string;
+  "location": string;
+  "space_website_url"?: string;
+  "description": string;
+  "proposed_slug"?: string;
+  "new_organization_name"?: string;
+  "website"?: string;
+};
+
+export type HostingToken = {
+  "token": string;
 };
 
 export type HostWaiver = {
@@ -7912,6 +8010,8 @@ export type OrganizationArchiveList = {
   "results": Array<OrganizationArchiveEvent>;
 };
 
+export type OrganizationChoiceEnum = "own" | "join";
+
 export type OrganizationCreate = {
   "name": string;
   "slug": string;
@@ -10494,6 +10594,9 @@ export type PublicConfig = {
   "member_accounts"?: {
   [key: string]: unknown;
 };
+  "hosting_requests"?: {
+  [key: string]: unknown;
+};
   "native"?: NativeConfig;
 };
 
@@ -13012,6 +13115,8 @@ export type Status66aEnum = "pending" | "paid_online" | "paid_offline" | "waived
 export type Status83eEnum = "ok" | "warn" | "error" | "unknown";
 
 export type StatusA39Enum = "pending" | "verified" | "failed";
+
+export type StatusAc9Enum = "invited" | "pending_verification" | "submitted" | "accepted" | "rejected" | "withdrawn";
 
 export type StatusAdeEnum = "draft" | "queued" | "sending" | "sent" | "cancelled" | "failed";
 

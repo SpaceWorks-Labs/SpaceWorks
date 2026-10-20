@@ -90,7 +90,7 @@ export function HostingInvitations({ scope }: { scope: HostingScope }) {
         const status = STATUS[invitation.display_status] ?? { label: invitation.display_status, tone: "neutral" as const };
         return <ListRow key={invitation.id} title={invitation.space_name || "Makerspace invitation"}
           identity={{ kind: "icon", icon: "Building2", tone: "accent" }}
-          meta={<>Sent <RelativeTime date={invitation.created_at} /> · Link expires <RelativeTime date={invitation.invite_expires_at} /></>}
+          meta={<>Sent <RelativeTime date={invitation.created_at} />{invitation.invite_expires_at ? <> · Link expires <RelativeTime date={invitation.invite_expires_at} /></> : null}</>}
           right={<div className="flex flex-wrap items-center gap-3"><StatusPill label={status.label} tone={status.tone} />
             {cancellable(invitation) ? <ActionControl action={{ label: "Cancel invitation", tone: "danger", disabled: cancel.isPending, disabledReason: "Wait for the current cancellation.",
               confirm: { title: "Cancel this invitation?", message: "The link stops working. Send a new invitation if they still want to host here.", confirmLabel: "Cancel invitation" },

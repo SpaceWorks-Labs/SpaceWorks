@@ -44,8 +44,9 @@ class TenantDumpCatalogError(AssertionError):
 # merged snapshot digest. Historical repin commentary lives in git history.
 # Pages programme: public page/revision/asset models, handles and event session
 # identities; re-pinned from schema_digest() over the merged graph.
+# Hosting requests (lane/hosting-requests): HostingRequest; re-pinned after that merge.
 # Orchestrator re-pins the live catalog after final schema/migration verification.
-CATALOG_SCHEMA_SHA256 = "3516dc5c269e4904aa9ead52b76930241916f9a28e1279b6e570301523c82281"
+CATALOG_SCHEMA_SHA256 = "c0f07f6a2feea10e09817237cd12d3235772a266bc4a2faa42a871112795096c"
 
 
 def catalog_models(apps_registry=apps):

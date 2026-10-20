@@ -41236,6 +41236,186 @@
                 }
             }
         },
+        "/api/v1/admin/makerspaces/{makerspace_id}/hosting-invitations": {
+            "get": {
+                "operationId": "api_v1_admin_makerspaces_hosting_invitations_retrieve",
+                "summary": "List this makerspace's hosting invitations",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Hosting requests"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HostingInvitationPage"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    }
+                }
+            },
+            "post": {
+                "operationId": "api_v1_admin_makerspaces_hosting_invitations_create",
+                "description": "The invitation link is returned once and never again.",
+                "summary": "Invite someone to host a makerspace on this platform",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Hosting requests"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/HostingInvitationCreate"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/HostingInvitationCreate"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/HostingInvitationCreate"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HostingInvitationCreated"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    },
+                    "409": {
+                        "description": "Conflicts with the current state."
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/makerspaces/{makerspace_id}/hosting-invitations/{id}/cancel": {
+            "post": {
+                "operationId": "api_v1_admin_makerspaces_hosting_invitations_cancel_create",
+                "summary": "Cancel a makerspace's hosting invitation",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Hosting requests"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HostingInvitation"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    },
+                    "409": {
+                        "description": "Conflicts with the current state."
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
+                    }
+                }
+            }
+        },
         "/api/v1/admin/makerspaces/{makerspace_id}/invitation-requests": {
             "get": {
                 "operationId": "api_v1_admin_makerspaces_invitation_requests_list",
@@ -52332,6 +52512,186 @@
                             }
                         },
                         "description": "Organization state conflict."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/organizations/{id}/hosting-invitations/": {
+            "get": {
+                "operationId": "api_v1_admin_organizations_hosting_invitations_retrieve",
+                "summary": "List this organization's hosting invitations",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Hosting requests"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HostingInvitationPage"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    }
+                }
+            },
+            "post": {
+                "operationId": "api_v1_admin_organizations_hosting_invitations_create",
+                "description": "The invitation link is returned once and never again.",
+                "summary": "Invite someone to host a makerspace with this organization",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Hosting requests"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/HostingInvitationCreate"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/HostingInvitationCreate"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/HostingInvitationCreate"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HostingInvitationCreated"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    },
+                    "409": {
+                        "description": "Conflicts with the current state."
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/organizations/{id}/hosting-invitations/{invitation_id}/cancel": {
+            "post": {
+                "operationId": "api_v1_admin_organizations_hosting_invitations_cancel_create",
+                "summary": "Cancel an organization's hosting invitation",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "invitation_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Hosting requests"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HostingInvitation"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    },
+                    "409": {
+                        "description": "Conflicts with the current state."
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
                     }
                 }
             }
@@ -95828,6 +96188,221 @@
                 }
             }
         },
+        "/api/v1/public/hosting/invitations/resolve": {
+            "post": {
+                "operationId": "api_v1_public_hosting_invitations_resolve_create",
+                "summary": "Preview a hosting invitation",
+                "tags": [
+                    "Hosting requests"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/HostingToken"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/HostingToken"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/HostingToken"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HostingInvitationPreview"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "404": {
+                        "description": "Unknown, expired or no longer available link."
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
+                    },
+                    "503": {
+                        "description": "A required dependency is unavailable."
+                    }
+                }
+            }
+        },
+        "/api/v1/public/hosting/invitations/submit": {
+            "post": {
+                "operationId": "api_v1_public_hosting_invitations_submit_create",
+                "description": "Replaces any earlier answer and emails a fresh confirmation link.",
+                "summary": "Answer a hosting invitation",
+                "tags": [
+                    "Hosting requests"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/HostingInvitationSubmit"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/HostingInvitationSubmit"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/HostingInvitationSubmit"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "202": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HostingAck"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "404": {
+                        "description": "Hosting requests are not available here."
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
+                    },
+                    "503": {
+                        "description": "A required dependency is unavailable."
+                    }
+                }
+            }
+        },
+        "/api/v1/public/hosting/requests": {
+            "post": {
+                "operationId": "api_v1_public_hosting_requests_create",
+                "description": "Always answers 202 with the same body. A confirmation link is emailed; the request reaches review only after the address is confirmed.",
+                "summary": "Ask to host a makerspace on this platform",
+                "tags": [
+                    "Hosting requests"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/HostingRequestSubmit"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/HostingRequestSubmit"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/HostingRequestSubmit"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "202": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HostingAck"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "404": {
+                        "description": "Hosting requests are not available here."
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
+                    },
+                    "503": {
+                        "description": "A required dependency is unavailable."
+                    }
+                }
+            }
+        },
+        "/api/v1/public/hosting/requests/open": {
+            "post": {
+                "operationId": "api_v1_public_hosting_requests_open_create",
+                "description": "The first call with a fresh link confirms the email address and sends the request to review; later calls only read its status.",
+                "summary": "Confirm a hosting request and read its status",
+                "tags": [
+                    "Hosting requests"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/HostingToken"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/HostingToken"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/HostingToken"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HostingRequestStatus"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "404": {
+                        "description": "Unknown, expired or no longer available link."
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
+                    },
+                    "503": {
+                        "description": "A required dependency is unavailable."
+                    }
+                }
+            }
+        },
         "/api/v1/public/machine-service/3d-printer/requests/{public_token}/status": {
             "get": {
                 "operationId": "api_v1_public_machine_service_3d_printer_requests_status_retrieve",
@@ -113752,6 +114327,17 @@
                 "type": "string",
                 "description": "* `not_required` - not_required\n* `on_file` - on_file\n* `missing` - missing"
             },
+            "HostingAck": {
+                "type": "object",
+                "properties": {
+                    "detail": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "detail"
+                ]
+            },
             "HostingError": {
                 "type": "object",
                 "properties": {
@@ -113761,6 +114347,440 @@
                 },
                 "required": [
                     "detail"
+                ]
+            },
+            "HostingInvitation": {
+                "type": "object",
+                "description": "What an inviter may see: never the applicant's address, name, phone or reason.",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "space_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "status": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/StatusAc9Enum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "display_status": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "join_offered": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "invite_expires_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "created_at",
+                    "display_status",
+                    "id",
+                    "invite_expires_at",
+                    "join_offered",
+                    "space_name",
+                    "status"
+                ]
+            },
+            "HostingInvitationCreate": {
+                "type": "object",
+                "properties": {
+                    "invitee_email": {
+                        "type": "string",
+                        "format": "email",
+                        "maxLength": 254
+                    },
+                    "space_name": {
+                        "type": "string",
+                        "default": "",
+                        "maxLength": 200
+                    },
+                    "note": {
+                        "type": "string",
+                        "default": "",
+                        "maxLength": 500
+                    }
+                },
+                "required": [
+                    "invitee_email"
+                ]
+            },
+            "HostingInvitationCreated": {
+                "type": "object",
+                "description": "What an inviter may see: never the applicant's address, name, phone or reason.",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "space_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "status": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/StatusAc9Enum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "display_status": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "join_offered": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "invite_expires_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "invite_url": {
+                        "type": "string"
+                    },
+                    "delivery_status": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "created_at",
+                    "delivery_status",
+                    "display_status",
+                    "id",
+                    "invite_expires_at",
+                    "invite_url",
+                    "join_offered",
+                    "space_name",
+                    "status"
+                ]
+            },
+            "HostingInvitationPage": {
+                "type": "object",
+                "properties": {
+                    "count": {
+                        "type": "integer"
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/HostingInvitation"
+                        }
+                    }
+                },
+                "required": [
+                    "count",
+                    "next",
+                    "previous",
+                    "results"
+                ]
+            },
+            "HostingInvitationPreview": {
+                "type": "object",
+                "properties": {
+                    "inviter_name": {
+                        "type": "string"
+                    },
+                    "join_organization_name": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "space_name": {
+                        "type": "string"
+                    },
+                    "applicant_email": {
+                        "oneOf": [
+                            {
+                                "type": "string",
+                                "format": "email"
+                            },
+                            {
+                                "type": "string",
+                                "maxLength": 0
+                            }
+                        ]
+                    },
+                    "invite_note": {
+                        "type": "string"
+                    },
+                    "expires_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "applicant_email",
+                    "expires_at",
+                    "invite_note",
+                    "inviter_name",
+                    "join_organization_name",
+                    "space_name"
+                ]
+            },
+            "HostingInvitationSubmit": {
+                "type": "object",
+                "properties": {
+                    "applicant_name": {
+                        "type": "string",
+                        "maxLength": 200,
+                        "minLength": 2
+                    },
+                    "applicant_email": {
+                        "type": "string",
+                        "format": "email",
+                        "maxLength": 254
+                    },
+                    "applicant_phone": {
+                        "type": "string",
+                        "default": "",
+                        "maxLength": 32
+                    },
+                    "space_name": {
+                        "type": "string",
+                        "maxLength": 200,
+                        "minLength": 2
+                    },
+                    "location": {
+                        "type": "string",
+                        "maxLength": 200,
+                        "minLength": 2
+                    },
+                    "space_website_url": {
+                        "oneOf": [
+                            {
+                                "type": "string",
+                                "format": "uri",
+                                "default": "",
+                                "maxLength": 200
+                            },
+                            {
+                                "type": "string",
+                                "maxLength": 0
+                            }
+                        ]
+                    },
+                    "description": {
+                        "type": "string",
+                        "maxLength": 2000,
+                        "minLength": 20
+                    },
+                    "proposed_slug": {
+                        "oneOf": [
+                            {
+                                "type": "string",
+                                "default": "",
+                                "maxLength": 50,
+                                "pattern": "^[-a-zA-Z0-9_]+$"
+                            },
+                            {
+                                "type": "string",
+                                "maxLength": 0
+                            }
+                        ]
+                    },
+                    "new_organization_name": {
+                        "type": "string",
+                        "default": "",
+                        "maxLength": 200
+                    },
+                    "website": {
+                        "type": "string",
+                        "writeOnly": true,
+                        "description": "Leave empty. Anti-spam field that real browsers never fill."
+                    },
+                    "token": {
+                        "type": "string",
+                        "writeOnly": true,
+                        "maxLength": 200
+                    },
+                    "organization_choice": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/OrganizationChoiceEnum"
+                            }
+                        ],
+                        "default": "own"
+                    }
+                },
+                "required": [
+                    "applicant_email",
+                    "applicant_name",
+                    "description",
+                    "location",
+                    "space_name",
+                    "token"
+                ]
+            },
+            "HostingRequestStatus": {
+                "type": "object",
+                "properties": {
+                    "status": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/StatusAc9Enum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "space_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "verified_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "decided_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "rejection_reason": {
+                        "type": "string",
+                        "nullable": true,
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "created_at",
+                    "decided_at",
+                    "rejection_reason",
+                    "space_name",
+                    "status",
+                    "verified_at"
+                ]
+            },
+            "HostingRequestSubmit": {
+                "type": "object",
+                "properties": {
+                    "applicant_name": {
+                        "type": "string",
+                        "maxLength": 200,
+                        "minLength": 2
+                    },
+                    "applicant_email": {
+                        "type": "string",
+                        "format": "email",
+                        "maxLength": 254
+                    },
+                    "applicant_phone": {
+                        "type": "string",
+                        "default": "",
+                        "maxLength": 32
+                    },
+                    "space_name": {
+                        "type": "string",
+                        "maxLength": 200,
+                        "minLength": 2
+                    },
+                    "location": {
+                        "type": "string",
+                        "maxLength": 200,
+                        "minLength": 2
+                    },
+                    "space_website_url": {
+                        "oneOf": [
+                            {
+                                "type": "string",
+                                "format": "uri",
+                                "default": "",
+                                "maxLength": 200
+                            },
+                            {
+                                "type": "string",
+                                "maxLength": 0
+                            }
+                        ]
+                    },
+                    "description": {
+                        "type": "string",
+                        "maxLength": 2000,
+                        "minLength": 20
+                    },
+                    "proposed_slug": {
+                        "oneOf": [
+                            {
+                                "type": "string",
+                                "default": "",
+                                "maxLength": 50,
+                                "pattern": "^[-a-zA-Z0-9_]+$"
+                            },
+                            {
+                                "type": "string",
+                                "maxLength": 0
+                            }
+                        ]
+                    },
+                    "new_organization_name": {
+                        "type": "string",
+                        "default": "",
+                        "maxLength": 200
+                    },
+                    "website": {
+                        "type": "string",
+                        "writeOnly": true,
+                        "description": "Leave empty. Anti-spam field that real browsers never fill."
+                    }
+                },
+                "required": [
+                    "applicant_email",
+                    "applicant_name",
+                    "description",
+                    "location",
+                    "space_name"
+                ]
+            },
+            "HostingToken": {
+                "type": "object",
+                "properties": {
+                    "token": {
+                        "type": "string",
+                        "maxLength": 200
+                    }
+                },
+                "required": [
+                    "token"
                 ]
             },
             "HttpsLink": {
@@ -126392,6 +127412,14 @@
                     "results"
                 ]
             },
+            "OrganizationChoiceEnum": {
+                "enum": [
+                    "own",
+                    "join"
+                ],
+                "type": "string",
+                "description": "* `own` - Create my own organization\n* `join` - Join the inviting organization"
+            },
             "OrganizationCreate": {
                 "type": "object",
                 "properties": {
@@ -137076,6 +138104,10 @@
                         "type": "object",
                         "additionalProperties": {}
                     },
+                    "hosting_requests": {
+                        "type": "object",
+                        "additionalProperties": {}
+                    },
                     "native": {
                         "$ref": "#/components/schemas/NativeConfig"
                     }
@@ -147577,6 +148609,18 @@
                 ],
                 "type": "string",
                 "description": "* `pending` - Pending\n* `verified` - Verified\n* `failed` - Failed"
+            },
+            "StatusAc9Enum": {
+                "enum": [
+                    "invited",
+                    "pending_verification",
+                    "submitted",
+                    "accepted",
+                    "rejected",
+                    "withdrawn"
+                ],
+                "type": "string",
+                "description": "* `invited` - Invited\n* `pending_verification` - Awaiting email confirmation\n* `submitted` - Submitted\n* `accepted` - Accepted\n* `rejected` - Rejected\n* `withdrawn` - Withdrawn"
             },
             "StatusAdeEnum": {
                 "enum": [

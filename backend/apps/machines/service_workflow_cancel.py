@@ -15,6 +15,7 @@ from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied
 
 from apps.accounts import rbac
+from apps.machines import role_scope
 from apps.machines.models import MachineServiceRequest
 from apps.machines.service_queue_notices import initiator_for, reevaluate_head, reserve_milestone
 from apps.machines.service_workflow_helpers import (
@@ -63,6 +64,10 @@ def _assert_authority(locked, actor, by_owner):
         return
     if not rbac.can(actor, rbac.Action.MANAGE_MACHINES, locked.makerspace_id):
         raise CancelRefused("Machine management permission is required.")
+    # The view resolved the row through the actor's machine partition before the lock;
+    # re-check it here so a scope narrowed in that window refuses the cancel.
+    if not role_scope.covers_service_request(actor, locked):
+        raise CancelRefused("This job is outside your machine scope.")
 
 
 def cancel(service_request, actor, *, reason="", by_owner=False):

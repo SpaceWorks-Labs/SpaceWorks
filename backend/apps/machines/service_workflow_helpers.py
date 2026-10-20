@@ -35,14 +35,16 @@ def _locked_submission_machine(target):
     return _locked_submission_target(target)
 
 
+def _submission_makerspace_id(target):
+    if isinstance(target, ServiceQueue):
+        return ServiceQueue.objects.only("makerspace_id").get(pk=target.pk).makerspace_id
+    machine_id = target.machine_id if isinstance(target, ServiceBucket) else target.pk
+    return Machine.objects.only("makerspace_id").get(pk=machine_id).makerspace_id
+
+
 def _assert_submission_write_allowed(target):
     from apps.encryption.write_fence import assert_mapped_write_allowed
-    if isinstance(target, ServiceQueue):
-        makerspace_id = ServiceQueue.objects.only("makerspace_id").get(pk=target.pk).makerspace_id
-    else:
-        machine_id = target.machine_id if isinstance(target, ServiceBucket) else target.pk
-        makerspace_id = Machine.objects.only("makerspace_id").get(pk=machine_id).makerspace_id
-    assert_mapped_write_allowed(makerspace_id)
+    assert_mapped_write_allowed(_submission_makerspace_id(target))
 
 
 def _assert_request_write_allowed(service_request):
@@ -122,7 +124,7 @@ def _require_module(makerspace, *, locked=False):
     if locked:
         from apps.makerspaces.models import Makerspace
 
-        makerspace = Makerspace.objects.select_for_update(no_key=True).get(pk=makerspace.pk)
+        makerspace = Makerspace.objects.select_for_update(no_key=True).get(pk=getattr(makerspace, "pk", makerspace))
     if not module_enabled(makerspace, "machine_service"):
         raise ValidationError("Machine service is disabled for this makerspace.")
 

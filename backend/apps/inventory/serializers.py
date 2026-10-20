@@ -117,6 +117,7 @@ class PublicStatsStatusCountsSerializer(serializers.Serializer):
     collected = serializers.IntegerField(read_only=True)
     failed = serializers.IntegerField(read_only=True)
     rejected = serializers.IntegerField(read_only=True)
+    cancelled = serializers.IntegerField(read_only=True)
 
 
 class PublicStatsQueueSerializer(serializers.Serializer):

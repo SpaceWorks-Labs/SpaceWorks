@@ -13,6 +13,16 @@ import { OwnerCancel } from "./OwnerCancel";
 import { ServiceRequestEta } from "./ServiceRequestEta";
 import { normalizeServiceStatus, serviceStatusLabel, serviceStatusTone, statusRefetchInterval } from "./types";
 
+/** Accurate copy for a job that no longer has an estimate. */
+function terminalMessage(status: string): string {
+  if (status === "cancelled") return "This job was cancelled. Nothing was charged for it.";
+  if (status === "completed") return "Your job finished and is ready to collect.";
+  if (status === "collected") return "This job is finished and has been collected.";
+  if (status === "rejected") return "This request wasn't approved, so it won't be run. Contact the makerspace if you have questions.";
+  if (status === "failed") return "This job couldn't be completed. Contact the makerspace about next steps.";
+  return "There is no estimate for this job right now.";
+}
+
 export function PublicMachineServiceStatusPage() {
   const { slug, publicToken = "" } = useParams();
   const tenant = useTenant();
@@ -38,10 +48,7 @@ export function PublicMachineServiceStatusPage() {
       chips={job ? [{ label: job.machine_type_name, tone: "accent" }, { label: serviceStatusLabel(status), tone: serviceStatusTone(status) }] : []}
       sections={[{ id: "job-status", label: "Status", content: job ? <div className="grid gap-4">
         <p className="text-sm text-muted">Requested <RelativeTime date={job.created_at} /></p>
-        {job.eta ? <ServiceRequestEta eta={job.eta} status={job.status} /> : <EmptyState message={
-          status === "cancelled" ? "This job was cancelled. Nothing was charged for it."
-            : status === "completed" ? "Your job finished and is ready to collect."
-              : "This job is finished; there is nothing left to estimate."} />}
+        {job.eta ? <ServiceRequestEta eta={job.eta} status={job.status} /> : <EmptyState message={terminalMessage(status)} />}
         {job.queue_position != null ? <p className="text-sm text-muted">Position {job.queue_position} in this queue.</p> : null}
         <OwnerCancel token={publicToken} title={job.title} makerspaceSlug={makerspaceSlug} />
       </div> : null }]}

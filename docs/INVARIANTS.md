@@ -2698,16 +2698,22 @@ Load-bearing details that carried over unchanged:
     row, start); complete/fail and cancelling a running row never take it. `start()` counts the
     queue's in-progress rows before locking the chosen machine and without a row lock (it can only
     over-count); a bucket start locks the bucket machine and the chosen machine in id order (C15).
-    Linked typed manual usage follows request → machine → pool. Bucket submit's older
-    Machine → Makerspace order is unchanged (C14).
+    Linked typed manual usage follows request → machine → pool. `submit()` (pooled and bucket)
+    takes the makerspace fence FIRST, then the queue / bucket machine — the device adapter's
+    makerspace → … → request → machine order — so submit, the device adapter and the
+    request → queue writers cannot form a three-way cycle. Staff cancel re-checks the actor's
+    machine-type scope (`role_scope.covers_service_request`) under the row lock.
   - **Never join extra rows into a workflow FOR UPDATE, and lock the makerspace row FOR NO KEY
     UPDATE.** Django FKs are DEFERRABLE INITIALLY DEFERRED, so every commit takes FOR KEY SHARE on
     the makerspace (and other referenced rows) at COMMIT. A FOR UPDATE on those rows — directly
-    (`require_module_locked`, `_require_module(locked=True)`, now `no_key=True`) or via a
+    (`require_module_locked`, `require_feature_locked`, `limits.check_quota`,
+    `_require_module(locked=True)`, all now `no_key=True`, so a caller taking several of them
+    never upgrades to FOR UPDATE) or via a
     `select_related` join without `of=("self",)` — deadlocked the device printer adapter and
     `start()` against a concurrent cancel's commit. NO KEY UPDATE still serializes against module
-    install/uninstall. The machine-service workflow takes every row lock (request, queue, machine)
-    as `select_for_update(no_key=True, of=("self",))` for the same reason: a row updated twice in
+    install/uninstall. The machine-service workflow — including typed manual usage and the device
+    adapter's `printer_access.live_target` — takes every request, queue and machine row lock FOR
+    NO KEY UPDATE (`of=("self",)` wherever relations are joined) for the same reason: a row updated twice in
     one transaction re-runs its FK checks at COMMIT, taking KEY SHARE on its queue/machine. After a row lock that may have waited, re-read (`refresh_from_db`) before
     trusting joined relations: Postgres re-checks only the locked row, not its joined rows.
 

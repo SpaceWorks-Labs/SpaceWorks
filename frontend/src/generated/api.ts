@@ -9783,6 +9783,7 @@ export type PublicStatsStatusCounts = {
   "collected": number;
   "failed": number;
   "rejected": number;
+  "cancelled": number;
 };
 
 export type PublicStatsToolsOut = {

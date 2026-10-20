@@ -251,7 +251,10 @@ def check_quota(makerspace, key, *, adding=1) -> None:
 
     from apps.makerspaces.models import Makerspace
 
-    locked = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
+    # NO KEY UPDATE, like require_module_locked: creators still serialize with each other
+    # and with module install/uninstall, and a caller already holding the fence never has
+    # to upgrade to FOR UPDATE (which would wait on commit-time FOR KEY SHARE holders).
+    locked = Makerspace.objects.select_for_update(no_key=True).get(pk=makerspace.pk)
     current = counter(locked)
     if current + adding > limit:
         resource = RESOURCE_LABELS.get(key, key.replace("_", " "))

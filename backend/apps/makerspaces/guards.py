@@ -43,11 +43,12 @@ def require_module_locked(makerspace_or_id, module_key):
     behind a row belonging to a module that is now off. Validating on the disable
     side instead does not help: it loses the same race from the other end.
 
-    Every `module_install` mutation takes `select_for_update` on the makerspace, so
-    taking the same lock here serializes creators against disablers, exactly the way
-    `check_quota` serializes creators against each other. Call this **inside** the
-    creation service's `transaction.atomic()`, next to the quota check, so both
-    share one lock and one ordering.
+    Every `module_install` mutation takes `select_for_update` (FOR UPDATE) on the
+    makerspace. The FOR NO KEY UPDATE taken here conflicts with that lock, with itself
+    and with any UPDATE of the row, so it serializes creators against disablers, exactly
+    the way `check_quota` (also NO KEY UPDATE) serializes creators against each other.
+    Call this **inside** the creation service's `transaction.atomic()`, next to the quota
+    check, so both share one lock mode and one ordering.
     """
     pk = makerspace_or_id.pk if isinstance(makerspace_or_id, Makerspace) else makerspace_or_id
     # NO KEY UPDATE still serializes creators against module installs/uninstalls (it
@@ -73,9 +74,13 @@ def require_feature(makerspace_or_id, feature_key):
 
 
 def require_feature_locked(makerspace_or_id, feature_key):
-    """Re-check a feature gate while holding the makerspace row lock."""
+    """Re-check a feature gate while holding the makerspace row lock.
+
+    NO KEY UPDATE for the same reason as `require_module_locked`: feature toggles still
+    serialize against it, and callers that take both never upgrade the lock.
+    """
     pk = makerspace_or_id.pk if isinstance(makerspace_or_id, Makerspace) else makerspace_or_id
-    locked = Makerspace.objects.select_for_update().get(pk=pk)
+    locked = Makerspace.objects.select_for_update(no_key=True).get(pk=pk)
     if not feature_enabled(locked, feature_key):
         raise ValidationError({"feature": f"{feature_key} is disabled for this makerspace."})
     return locked

@@ -129558,10 +129558,15 @@
                     "rejected": {
                         "type": "integer",
                         "readOnly": true
+                    },
+                    "cancelled": {
+                        "type": "integer",
+                        "readOnly": true
                     }
                 },
                 "required": [
                     "accepted",
+                    "cancelled",
                     "collected",
                     "completed",
                     "failed",

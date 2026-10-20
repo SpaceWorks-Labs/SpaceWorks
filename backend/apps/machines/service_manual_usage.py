@@ -23,9 +23,9 @@ def _locked_link(service_request, machine):
     if makerspace_id is None:
         raise ValidationError({"service_request": "Service request was not found."})
     assert_mapped_write_allowed(makerspace_id)
-    request = MachineServiceRequest.objects.select_for_update(of=("self",)).select_related(
+    request = MachineServiceRequest.objects.select_for_update(no_key=True, of=("self",)).select_related(
         "queue", "bucket").get(pk=service_request.pk)
-    locked = Machine.objects.select_for_update().select_related("makerspace").get(pk=machine.pk)
+    locked = Machine.objects.select_for_update(no_key=True, of=("self",)).select_related("makerspace").get(pk=machine.pk)
     if request.makerspace_id != locked.makerspace_id:
         raise ValidationError({"service_request": "Service request must belong to this makerspace."})
     compatible = (
@@ -45,7 +45,7 @@ def log_typed_manual_usage(machine, actor, *, duration_minutes, outcome, percent
     if service_request is not None:
         service_request, machine = _locked_link(service_request, machine)
     else:
-        machine = Machine.objects.select_for_update().select_related("makerspace").get(pk=machine.pk)
+        machine = Machine.objects.select_for_update(no_key=True, of=("self",)).select_related("makerspace").get(pk=machine.pk)
     if outcome not in {"success", "failed"}:
         raise ValidationError({"outcome": "Outcome must be success or failed."})
     if not isinstance(duration_minutes, int) or duration_minutes < 0:

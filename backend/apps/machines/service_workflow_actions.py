@@ -31,6 +31,7 @@ from apps.machines.service_workflow_helpers import (
     _require_edge,
     _require_module,
     _require_printer_start_inputs,
+    _submission_makerspace_id,
     _validate_capability_payload,
 )
 
@@ -42,6 +43,10 @@ def submit(bucket_or_machine, requester, *, requester_name, contact_email, conta
         require_member_account(member)
     with transaction.atomic():
         _assert_submission_write_allowed(bucket_or_machine)
+        # Makerspace fence FIRST, then the queue / bucket machine: the same order as the
+        # device printer adapter (makerspace -> ... -> request -> machine), so submit can
+        # never close a submit/device/request->queue lock cycle.
+        _require_module(_submission_makerspace_id(bucket_or_machine), locked=True)
         target = _locked_submission_target(bucket_or_machine) if isinstance(bucket_or_machine, ServiceQueue) else _locked_submission_machine(bucket_or_machine)
         makerspace = target.makerspace
         machine_type = target.machine_type if isinstance(target, ServiceQueue) else target.machine_type
@@ -53,7 +58,6 @@ def submit(bucket_or_machine, requester, *, requester_name, contact_email, conta
             makerspace, member, machine_type, purpose="service", actor=actor,
             override_reason=certification_override_reason,
         )
-        _require_module(makerspace, locked=True)
         limits.check_quota(makerspace, "machine_service_open", adding=1)
         limits.check_quota(makerspace, "machine_service_submit", adding=1)
         if isinstance(target, ServiceQueue):

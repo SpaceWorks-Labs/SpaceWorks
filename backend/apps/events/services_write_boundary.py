@@ -11,6 +11,7 @@ from .models import Event, EventSeries
 from .programme_locks import event_scopes, fences, lock_authority
 
 _held = ContextVar("event_service_write_boundary", default=None)
+SCOPE_RETRIES = 3
 
 
 @contextmanager
@@ -86,6 +87,19 @@ def event_write(function=None, *, permission=False):
 
     @wraps(function)
     def wrapped(*args, **kwargs):
+        # A concurrent command (another member registering) can grow the event's
+        # discovered scope between discovery and the lock. Nothing was written yet, so
+        # an outermost command re-discovers and retries instead of failing with 409.
+        from .programme.commands import ProgrammeConflict
+        attempts = 1 if _held.get() is not None else SCOPE_RETRIES
+        for attempt in range(attempts):
+            try:
+                return run(*args, **kwargs)
+            except ProgrammeConflict as exc:
+                if attempt + 1 == attempts or str(exc.detail.get("code")) != "scope_changed":
+                    raise
+
+    def run(*args, **kwargs):
         bound = parameters.bind(*args, **kwargs)
         values = bound.arguments
         target = next((values[key] for key in ("event", "registration", "series", "target") if key in values), None)

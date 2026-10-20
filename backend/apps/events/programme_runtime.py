@@ -46,8 +46,17 @@ def certificate_document(certificate_id, *, makerspace_id, recipient_id, revisio
               or row.event.makerspace_id)
     if origin != makerspace_id:
         return None
+    from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
+    from django.http import Http404
+    from rest_framework.exceptions import APIException
+    from apps.presence.guard import MemberPresenceRequired
     from .certificates.owner_queries import owner_certificate
-    owner_certificate(row.recipient_member, origin, row.pk)
+    try:
+        owner_certificate(row.recipient_member, origin, row.pk)
+    except (Http404, ObjectDoesNotExist, PermissionDenied, APIException, MemberPresenceRequired):
+        # A refused owner read (restricted, revoked or absent membership) fails closed
+        # as "no document", never as an unhandled error inside notification delivery.
+        return None
     result = document_for_recipient(certificate_id=certificate_id, recipient_id=recipient_id, revision=revision)
     if (result is None or type(result.get("size_bytes")) is not int
             or result["size_bytes"] <= 0 or len(result.get("sha256", "")) != 64):

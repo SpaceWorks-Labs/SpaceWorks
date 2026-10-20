@@ -60,16 +60,16 @@ The views still enforce tenant/account standing and ownership.
 
 | Method | Suffix | Request | Response |
 |---|---|---|---|
-| GET | `/channels?page=` | â€” | Page<Channel> |
-| GET | `/channels/{channel}` | â€” | Channel |
+| GET | `/channels?page=` | — | Page<Channel> |
+| GET | `/channels/{channel}` | — | Channel |
 | PATCH | `/channels/{channel}` | Any ChannelWrite fields | Channel |
-| GET | `/personal/endpoints?page=` | â€” | Page<Endpoint> |
+| GET | `/personal/endpoints?page=` | — | Page<Endpoint> |
 | POST | `/personal/endpoints/start` | channel, consent=true, consent_version, optional phone_number (WhatsApp candidate only) | challenge_id, expires_at, optional connect_url/instructions/oauth_state |
 | POST | `/personal/challenges/{challenge_id}/verify` | Optional opaque provider code/state; provider verifies independently | Endpoint |
-| DELETE | `/personal/endpoints/{id}` | â€” | revoked=true |
-| GET | `/personal/preferences` | â€” | preferences: Selection[] |
+| DELETE | `/personal/endpoints/{id}` | — | revoked=true |
+| GET | `/personal/preferences` | — | preferences: Selection[] |
 | PUT | `/personal/preferences` | preferences: Selection[] (replace supplied categories) | preferences: Selection[] |
-| GET | `/personal/deliveries?page=` | â€” | count, next, previous, results: Delivery[] |
+| GET | `/personal/deliveries?page=` | — | count, next, previous, results: Delivery[] |
 | POST | `/channels-test` | channel; SMS omits target IDs, WhatsApp needs own endpoint_id; other channels choose endpoint_id or room_id; optional feature/event | accepted, provider_id, retryable, error_code, sanitized_error |
 
 ChannelWrite = enabled, room_enabled, personal_enabled, email_fallback, provider,

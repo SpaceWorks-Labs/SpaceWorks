@@ -134,7 +134,7 @@ export function MachineServiceConsole({ makerspaceId, canManage, machineType, ma
           /><ErrorBlock error={runAction.error} /></Modal>
         ) : null}
       </Subsection>} manualForm={<ManualUsageForm draft={draft} setDraft={setDraft} machines={machines} pools={manualPools} unitLabel={unitLabel} hasPool={!!poolUnit} pending={submitManual.isPending} onSubmit={() => submitManual.mutate()} />} manualRows={<div className="mt-3 grid gap-2">
-          {manualUsage.data?.length === 0 ? <EmptyState message="No manual usage logged yet. Log the first entry." /> : null}{manualUsage.data?.map(entry => <ListRow key={entry.id} title={`${entry.duration_minutes} min`} meta={<>{entry.consumed_quantity} {unitLabel}{entry.outcome === "failed" ? ` Â· ${entry.percent_complete}%` : ""}</>} right={<StatusBadge status={entry.outcome} label={machineStatusLabel(entry.outcome)} />} />)}</div>} reports={undefined} logging={logging} onLogging={setLogging} />
+          {manualUsage.data?.length === 0 ? <EmptyState message="No manual usage logged yet. Log the first entry." /> : null}{manualUsage.data?.map(entry => <ListRow key={entry.id} title={`${entry.duration_minutes} min`} meta={<>{entry.consumed_quantity} {unitLabel}{entry.outcome === "failed" ? ` · ${entry.percent_complete}%` : ""}</>} right={<StatusBadge status={entry.outcome} label={machineStatusLabel(entry.outcome)} />} />)}</div>} reports={undefined} logging={logging} onLogging={setLogging} />
       <ErrorBlock error={[requests.error, manualUsage.error, submitManual.error, runAction.error].find((item) => item instanceof Error)} />
     </div>
   );

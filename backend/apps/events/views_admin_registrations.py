@@ -81,7 +81,7 @@ class EventRegistrationListView(APIView):
     #
     # Takes a `member_id` rather than free-text contact fields. Registering someone
     # means naming a real person, and a person with no account is given one at the
-    # counter (`walk_in_services`) first â€” so there is one identity path, instead of the
+    # counter (`walk_in_services`) first — so there is one identity path, instead of the
     # events surface minting half-identified attendees of its own.
 
     @extend_schema(

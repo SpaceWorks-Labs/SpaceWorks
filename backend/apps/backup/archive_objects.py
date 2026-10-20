@@ -61,6 +61,12 @@ NON_OBJECT_KEY_FIELDS = frozenset({
     ("tenant_migration.TenantDumpCapture", "unpublished_object_key"),
     ("tenant_migration.TenantImportObject", "source_key"),
     ("tenant_migration.TenantImportObject", "target_key"),
+    # Events programme logical identifiers: a saved-detail field name, a form identity,
+    # a help-request dedup token and an integrity-rule name. None names a bucket object.
+    ("accounts.MemberSavedDetail", "field_key"),
+    ("events.EventFormRevision", "form_key"),
+    ("events.EventHelpRequest", "dedup_key"),
+    ("events.SubmissionIntegrityFlag", "rule_key"),
 })
 
 

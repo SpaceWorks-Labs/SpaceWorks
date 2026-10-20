@@ -25,7 +25,7 @@ def combine(rows_by_space, *, limit, groups, additive, rates=()):
 USAGE_GROUPS = ("period", "measure", "machine_id", "machine_type_id")
 SERVICE_GROUPS = ("period", "row_kind", "machine_id", "measurement", "product_id", "product_label", "outcome")
 SERVICE_ADDITIVE = (
-    "submitted", "accepted", "in_progress", "completed", "collected", "rejected", "failed",
+    "submitted", "accepted", "in_progress", "completed", "collected", "rejected", "failed", "cancelled",
     "request_count", "completed_count", "failed_count", "completed_hours", "failed_partial_hours",
     "total_recorded_service_hours", "completed_amount", "failed_partial_amount", "total_used",
     "failed_count_amount", "failed_grams_amount",

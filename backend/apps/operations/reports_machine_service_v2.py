@@ -11,7 +11,7 @@ from .reports_machine_common import measured_service_hours, requests, result, sp
 from .reports_machine_facts import service_facts
 
 FIELDS = (
-    "period", "row_kind", "submitted", "accepted", "in_progress", "completed", "collected", "rejected", "failed",
+    "period", "row_kind", "submitted", "accepted", "in_progress", "completed", "collected", "rejected", "failed", "cancelled",
     "machine_id", "machine_name", "machine_type", "request_count", "completed_count", "failed_count",
     "completed_hours", "failed_partial_hours", "total_recorded_service_hours", "failure_rate",
     "measurement", "product_id", "product_label", "completed_amount", "failed_partial_amount", "total_used",
@@ -66,7 +66,7 @@ def build_machine_service(makerspace_id, *, limit=None, date_range=None, grain="
 
 
 def _status(period):
-    return {"period": period, "row_kind": "status", **dict.fromkeys(("submitted", "accepted", "in_progress", "completed", "collected", "rejected", "failed"), 0)}
+    return {"period": period, "row_kind": "status", **dict.fromkeys(("submitted", "accepted", "in_progress", "completed", "collected", "rejected", "failed", "cancelled"), 0)}
 
 
 def _machine(groups, space_id, period, machine_id, name, machine_type):

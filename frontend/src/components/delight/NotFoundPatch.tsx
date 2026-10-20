@@ -1,8 +1,15 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { PawPrint } from "lucide-react";
+import { currentTheme, subscribeTheme } from "../../lib/theme";
 import { useReducedMotion } from "./DelightProvider";
-import { PATCH, PATCH_WALK, usePageTheme } from "./patchArtwork";
 import "./patch.css";
+
+// Patch, the mascot, appears only here. Walk sheets: eight 256x176 frames side by side, built from
+// SpaceWorks-Design mascot/walk*/ (light) and mascot/dark/walk*/ (the dark theme's sticker border).
+// Frame 6 (index 5) has the eyes closed, so it doubles as the nap. Never recolour or flip them.
+const sheet = (name: string) => ({ light: `/brand/patch/${name}.webp`, dark: `/brand/patch/${name}-dark.webp` });
+export const PATCH = { walkRight: sheet("patch-walk-right"), walkLeft: sheet("patch-walk-left") } as const;
+const PATCH_WALK = { frames: 8, frameMs: 120, napFrame: 5 } as const;
 
 type Facing = "left" | "right";
 type Print = { id: number; x: number; facing: Facing };
@@ -21,7 +28,8 @@ const MAX_PRINTS = 6;
  */
 export function NotFoundPatch() {
   const reduced = useReducedMotion();
-  const theme = usePageTheme();
+  // Only the current theme's sheet is set, so only it downloads.
+  const theme = useSyncExternalStore(subscribeTheme, currentTheme, () => "light" as const);
   const body = useRef<HTMLDivElement>(null);
   const [facing, setFacing] = useState<Facing>("right");
   const [napping, setNapping] = useState(false);
@@ -81,13 +89,13 @@ export function NotFoundPatch() {
     };
   }, [reduced]);
 
-  const sheet = (facing === "left" ? PATCH.walkLeft : PATCH.walkRight)[theme];
+  const walkSheet = (facing === "left" ? PATCH.walkLeft : PATCH.walkRight)[theme];
   return <div aria-hidden="true" className="sw-patch-pet" data-patch-pet="">
     {prints.map(print => <PawPrint key={print.id} size={14} className="sw-patch-print"
       style={{ left: print.x - 7, rotate: print.facing === "left" ? "-90deg" : "90deg" }} />)}
     <div ref={body} className="sw-patch-pet-body" data-facing={facing} data-napping={napping ? "" : undefined}
       style={reduced ? { left: "50%", transform: "translateX(-50%)" } : undefined}>
-      <span className="sw-patch-pet-sprite" style={{ backgroundImage: `url(${sheet})` }} />
+      <span className="sw-patch-pet-sprite" style={{ backgroundImage: `url(${walkSheet})` }} />
       {napping ? <span className="sw-patch-z">z</span> : null}
     </div>
   </div>;

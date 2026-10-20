@@ -1,7 +1,6 @@
 import { useEffect, type ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
-import { DelightProvider, MakerModeHost, MakerModeToggle, eggsAllowed, useShellMakerMode, type DelightArtwork } from '../../../components/delight'
-import { patchArtwork } from '../../../components/delight/patchArtwork'
+import { DelightProvider, MakerModeHost, MakerModeToggle, useShellMakerMode, type DelightArtwork } from '../../../components/delight'
 import { getIllustration, type IllustrationId } from '../../../assets/illustrations'
 
 const ids: Partial<Record<keyof DelightArtwork, IllustrationId>> = {
@@ -11,12 +10,10 @@ const ids: Partial<Record<keyof DelightArtwork, IllustrationId>> = {
 const artwork = Object.fromEntries(Object.entries(ids).map(([key, id]) => [key, {
   light: getIllustration(id, 'light').src, dark: getIllustration(id, 'dark').src,
 }])) as DelightArtwork
-// Patch (bitmaps under /brand/patch/) overrides the SVG moods, except where eggs never run: kiosk, scanner, checkout, payment.
-const withPatch: DelightArtwork = { ...artwork, ...patchArtwork }
 
 export function ProgrammeDelight({ children }: { children: ReactNode }) {
   const location = useLocation()
-  return <DelightProvider artwork={eggsAllowed(location.pathname) ? withPatch : artwork}><MakerModeHost pathname={`${location.pathname}${location.search}`} version={String(import.meta.env.VITE_APP_VERSION ?? '')}>
+  return <DelightProvider artwork={artwork}><MakerModeHost pathname={`${location.pathname}${location.search}`} version={String(import.meta.env.VITE_APP_VERSION ?? '')}>
     <LogoActivation />{children}
   </MakerModeHost></DelightProvider>
 }

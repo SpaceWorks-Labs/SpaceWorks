@@ -9,6 +9,7 @@ source checks do not certify a deployment. Review the release acceptance report 
 | Paid managed Redis | managed + full | Web, worker, one elected beat; optional separate live | Provider recovery and independently qualified portable dumps |
 | Paid managed brokerless | managed + full | Web, durable-work worker and scheduler <=60 seconds | Same managed limits |
 | Additional free stack | managed + free | One web container and authenticated external tick | Best effort, caps/cold starts and independent recovery points |
+| Free on your own server | managed + free, prepared by `install.sh --profile free` (opt-in) | Same single web container; the installer writes the private env and starts nothing | Same as the free stack |
 | Oracle Always Free VM | host + full | Same supervised installer as a paid VPS | Full host contract; capacity/reclaim risks remain |
 
 Read [environment/setup](cloud-environment.md) and [recovery](cloud-recovery.md).

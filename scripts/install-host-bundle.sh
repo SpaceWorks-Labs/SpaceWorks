@@ -62,7 +62,7 @@ host_bundle_files() {
     scripts/installer/uninstall-admission.py
     scripts/installer/uninstall-files.py
     scripts/installer/update-backup.sh
-    docker-compose.prod.yml docker-compose.cloud.yml
+    docker-compose.prod.yml docker-compose.cloud.yml docker-compose.free.yml deploy/cloud/free.env.example
     docker/compose.build.yml docker/compose.tls.yml docker/compose.saas.yml
     docker/compose.api-only.yml docker/compose.api-only-edge.yml docker/compose.external-storage.yml
     docker/compose.control-tunnel.yml

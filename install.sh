@@ -5,7 +5,7 @@ set -euo pipefail
 (( BASH_VERSINFO[0] > 4 || (BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] >= 4) )) || {
   echo 'SpaceWorks requires Bash 4.4+; macOS needs modern Bash and Docker Desktop.' >&2; exit 64;
 }
-REPO_ARG=''; ANSWERS_ARG=''; INSTALL_RESUME=0; SETUP_NON_INTERACTIVE=0
+REPO_ARG=''; ANSWERS_ARG=''; INSTALL_RESUME=0; SETUP_NON_INTERACTIVE=0; PROFILE_ARG=''
 ALLOW_PYTHON_BOOTSTRAP=0
 while (($#)); do
   case "$1" in
@@ -14,6 +14,8 @@ while (($#)); do
       if [[ "$1" == --repo ]]; then REPO_ARG="$2"; else ANSWERS_ARG="$2"; fi
       shift ;;
     --repo=*) REPO_ARG="${1#*=}" ;;
+    --profile) (($# > 1)) || { echo "Missing value for $1." >&2; exit 64; }; PROFILE_ARG="$2"; shift ;;
+    --profile=*) PROFILE_ARG="${1#*=}" ;;
     --non-interactive) SETUP_NON_INTERACTIVE=1 ;;
     --resume) INSTALL_RESUME=1 ;;
     --bootstrap-python) ALLOW_PYTHON_BOOTSTRAP=1 ;;
@@ -24,15 +26,19 @@ while (($#)); do
       echo 'Optional answers use questionnaire variable names; AREA_ENABLE_inventory etc. select areas. Keep the file mode 0600.'
       echo 'Requires CA certificates and Python 3.10+. Missing Python on Linux is installed only after separate confirmation.'
       echo '--bootstrap-python explicitly permits Python package installation before answers are validated (for minimal noninteractive Linux hosts).'
+      echo '--profile free (or SPACEWORKS_DEPLOYMENT_PROFILE=free) opts in to the free single-process profile; full is the default.'
       exit 0 ;;
     *) echo 'Unknown installer option; see install.sh --help.' >&2; exit 64 ;;
   esac
   shift
 done
-[[ "${SPACEWORKS_DEPLOYMENT_PROFILE:-full}" == full ]] || {
-  echo 'This installer deploys the full-server profile; use the managed setup wizard for other profiles.' >&2; exit 64;
-}
-if [[ "$SETUP_NON_INTERACTIVE" == 1 && -z "$ANSWERS_ARG" && "$INSTALL_RESUME" != 1 ]]; then
+[[ -z "$PROFILE_ARG" ]] || SPACEWORKS_DEPLOYMENT_PROFILE="$PROFILE_ARG"
+case "${SPACEWORKS_DEPLOYMENT_PROFILE:-full}" in
+  full) ;;
+  free) export SPACEWORKS_DEPLOYMENT_PROFILE ;;
+  *) echo 'Use --profile full (default) or --profile free.' >&2; exit 64 ;;
+esac
+if [[ "$SETUP_NON_INTERACTIVE" == 1 && -z "$ANSWERS_ARG" && "$INSTALL_RESUME" != 1       && "${SPACEWORKS_DEPLOYMENT_PROFILE:-full}" != free ]]; then
   echo '--non-interactive requires --answers-file.' >&2; exit 64
 fi
 [[ -z "$ANSWERS_ARG" || "$SETUP_NON_INTERACTIVE" == 1 ]] || { echo '--answers-file requires --non-interactive.' >&2; exit 64; }

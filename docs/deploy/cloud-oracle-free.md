@@ -1,6 +1,7 @@
 # Oracle Always Free VM: host/full
 
-Price never selects a weaker recovery contract. An Oracle VM uses host/full and the same reviewed VPS installer
+Price never selects a weaker recovery contract. The installer's opt-in `--profile free` is a separate
+choice for the single-process managed stack ([cloud-free.md](cloud-free.md)); this page keeps the full profile. An Oracle VM uses host/full and the same reviewed VPS installer
 and H1 stack as paid hosts. It does not use the reduced free image or HTTP tick. Lane V and actual amd64/arm64
 install/upgrade acceptance must land before qualification. Release metadata declares both architectures;
 a cross-build declaration alone is not native runtime proof.

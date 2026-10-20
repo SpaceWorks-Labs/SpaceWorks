@@ -65,6 +65,13 @@ if [[ "$copy_phase" == copying ]]; then
   fi
   run_installed "python3 '$STAGE_DIR/scripts/installer/state.py' phase --root '$INSTALL_DIR' --repository '$REPOSITORY' --release '$VERSION' --phase copied"
 fi
+if [[ "${SPACEWORKS_DEPLOYMENT_PROFILE:-full}" == free ]]; then
+  # The opt-in free profile was confirmed above; setup writes its environment and
+  # notice only. No host stack, version marker or managed-file record is created.
+  run_installed "SPACEWORKS_DEPLOYMENT_PROFILE=free SPACEWORKS_REPOSITORY='$REPOSITORY' bash setup.sh --non-interactive"
+  say "Prepared the free profile in $INSTALL_DIR; follow docs/deploy/cloud-free.md to launch it."
+  exit 0
+fi
 run_installed "SPACEWORKS_INSTALL_REPOSITORY_PINNED=1 SPACEWORKS_REPOSITORY='$REPOSITORY' MAKERSPACE_IMAGE_TAG='$VERSION' bash setup.sh"
 ${RUN_ROOT[@]+"${RUN_ROOT[@]}"} rm -f -- "$INSTALL_DIR/.spaceworks-answers"
 run_installed "printf '%s\\n' '$VERSION' > .spaceworks-version"

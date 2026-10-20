@@ -6,7 +6,14 @@ Free web + Supabase session PostgreSQL 17 + R2 + Resend/Brevo + Cloudflare stati
 actual caps, card/domain prerequisites, overage controls and deployed measurements are recorded.
 
 Use deploy/cloud/free.answers.example.json, free.env.example and free-provider-limits.json, plus the separate
-deploy/render.free.yaml. The dedicated free image omits PostgreSQL tools/ffprobe, bakes static files and runs
+deploy/render.free.yaml. On your own server, the VPS installer can prepare the same environment as an opt-in:
+`install.sh --profile free` (or choose Hosting model option 4 interactively, or set
+`SPACEWORKS_DEPLOYMENT_PROFILE=free`). It writes a private `.env` from free.env.example with every secret
+generated, including `FREE_TICK_SECRET`, prints the free-tier notice and starts nothing; full stays the
+default. Then supply the external database, storage and email values and run the release job and
+docker-compose.free.yml. The managed wizard (`scripts/init-cloud-environment.py`) also generates the
+continuity keys (`ACCOUNT_PII_MASTER_KEY`, `EVENT_REGISTRATION_CREDENTIAL_*`, `PUSH_TOKEN_HMAC_KEY` with the
+PII/audit/integration keys) once and never replaces them; keep its private secrets file in escrow. The dedicated free image omits PostgreSQL tools/ffprobe, bakes static files and runs
 uid 10001. Steady state is one sync web worker/thread, DatabaseCache and no Redis/worker/beat/loop/live process.
 Heavy intents remain persisted; every job needs a real bounded checkpoint adapter. No scheduled pg_dump or
 deployment backup runs. Unsupported video/media validation must refuse before upload acceptance. Scanning is

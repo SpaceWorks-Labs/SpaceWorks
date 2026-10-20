@@ -130,11 +130,17 @@ say "Using verified release $VERSION ($REPOSITORY)."
 if [[ "$ACTION" == fresh ]]; then
   source "$STAGE_DIR/scripts/setup-questions.sh"
   SETUP_HOST_PLAN="install/ensure ${missing[*]:-no missing packages}; enable Docker/access if needed; install $RELEASE_TAG in $INSTALL_DIR; write private settings; pull images; initialize database; create your admin/makerspace; apply selected modules; start selected services; install the optional GitHub Actions runner"
-  if [[ "${SETUP_NON_INTERACTIVE:-0}" == 1 ]]; then
+  if [[ "${SETUP_NON_INTERACTIVE:-0}" == 1 && "${SPACEWORKS_DEPLOYMENT_PROFILE:-full}" != free ]]; then
     ROOT="$STAGE_DIR"
     load_noninteractive_answers "$ANSWERS_ARG" || exit $?
   fi
   ask_setup_questions || exit $?
+fi
+if [[ "$ACTION" == fresh && "${SPACEWORKS_DEPLOYMENT_PROFILE:-full}" == free ]]; then
+  # Opt-in free profile: setup writes its private environment only and claims no
+  # host ports or services on this server.
+  say "Free profile selected; setup will write its private environment and start nothing."
+elif [[ "$ACTION" == fresh ]]; then
   persist_setup_answers "$STAGE_DIR/.spaceworks-answers"
   ports=()
   if [[ "$HTTPS_MODE" == 2 ]]; then ports+=(80 443)
@@ -203,7 +209,7 @@ if [[ "$HOST_KIND" == linux && "$ACTION" == fresh ]]; then
   require_capacity "$MIN_FREE_KB" "$INSTALL_DIR" "$docker_root" "${SPACEWORKS_OPS_HOST_DIR:-/var/lib/spaceworks/ops}" || die 'Insufficient host capacity.'
 fi
 # Only now is Docker installed, running and reachable; read the engine as setup will use it.
-if [[ "$ACTION" == fresh && "$HTTPS_MODE" == 2 && -n "${CONTROL_PLANE_TUNNEL_PORT:-}" ]]; then
+if [[ "$ACTION" == fresh && "${HTTPS_MODE:-}" == 2 && -n "${CONTROL_PLANE_TUNNEL_PORT:-}" ]]; then
   if [[ "$RUN_INSTALLED_AS_ROOT" == 1 ]]; then
     engine="$(${RUN_ROOT[@]+"${RUN_ROOT[@]}"} docker version --format '{{.Server.Version}}' 2>/dev/null || true)"
   elif [[ "$USE_DOCKER_GROUP" == 1 ]]; then

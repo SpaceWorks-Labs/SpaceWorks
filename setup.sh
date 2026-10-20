@@ -6,9 +6,10 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 ROOT="$PWD"
-[[ "${SPACEWORKS_DEPLOYMENT_PROFILE:-full}" == full ]] || {
-  echo 'VPS setup requires the full-server profile.' >&2; exit 64;
-}
+case "${SPACEWORKS_DEPLOYMENT_PROFILE:-full}" in
+  full|free) ;;
+  *) echo 'Use the full (default) or free deployment profile.' >&2; exit 64 ;;
+esac
 source "$ROOT/scripts/compose-deployment.sh"
 if [[ -f "$ROOT/.spaceworks-layer" ]]; then
   refuse_single_box_layer "$(tr -d '[:space:]' < "$ROOT/.spaceworks-layer")" || exit $?
@@ -25,10 +26,17 @@ while (($#)); do
     --non-interactive) SETUP_NON_INTERACTIVE=1 ;;
     --answers-file) (($# > 1)) || exit 64; ANSWERS_ARG="$2"; shift ;;
     --resume) [[ -f .spaceworks-install.json ]] || { echo 'No private incomplete-install journal.' >&2; exit 64; } ;;
-    *) printf 'Usage: bash setup.sh [--build] [--resume] [--non-interactive --answers-file private.json]\n' >&2; exit 64 ;;
+    --profile) (($# > 1)) || exit 64; SPACEWORKS_DEPLOYMENT_PROFILE="$2"; shift ;;
+    --profile=*) SPACEWORKS_DEPLOYMENT_PROFILE="${1#*=}" ;;
+    *) printf 'Usage: bash setup.sh [--build] [--resume] [--profile full|free] [--non-interactive --answers-file private.json]\n' >&2; exit 64 ;;
   esac
   shift
 done
+case "${SPACEWORKS_DEPLOYMENT_PROFILE:-full}" in
+  full) ;;
+  free) export SPACEWORKS_DEPLOYMENT_PROFILE ;;
+  *) echo 'Use --profile full (default) or --profile free.' >&2; exit 64 ;;
+esac
 if [[ "$BUILD_FROM_SOURCE" == 1 ]]; then
   export SPACEWORKS_COMPOSE_BUILD_LAYER=1
   export SPACEWORKS_HOST_CONFIG_BUILD=1
@@ -52,6 +60,29 @@ source "$ROOT/scripts/setup-proxy-config.sh"
 
 # Questionnaire precedes Docker checks, image pulls and writes to the checkout.
 source "$ROOT/scripts/setup-questions.sh"
+# Opt-in free profile: write its private environment and stop before any Docker step.
+# Nothing here runs unless the free profile was explicitly selected.
+prepare_free_profile() {
+  source "$ROOT/scripts/setup-write-environment.sh"
+  if [[ -f .env ]]; then
+    grep -qx "SPACEWORKS_DEPLOYMENT_PROFILE='free'" .env \
+      || die 'This directory already holds a full-server installation; prepare the free profile in a new directory.'
+    say 'Found an existing free-profile .env - keeping your settings and secrets.'
+  else
+    write_free_profile_environment
+    say 'Wrote the private free-profile .env with generated secrets.'
+  fi
+  free_profile_notice
+  echo '  Next: replace the placeholder hosts and buckets, add DATABASE_URL, the maintenance database'
+  echo '  URL, storage credentials/capabilities and the email provider in .env, then follow'
+  echo '  docs/deploy/cloud-free.md (release job, docker-compose.free.yml and the external tick).'
+  print_key_backup_notice
+  exit 0
+}
+if [[ "${SPACEWORKS_DEPLOYMENT_PROFILE:-full}" == free ]] \
+    && [[ "$SETUP_NON_INTERACTIVE" == 1 || -f .env ]]; then
+  prepare_free_profile
+fi
 if [[ "$SETUP_NON_INTERACTIVE" == 1 ]]; then
   [[ -n "$ANSWERS_ARG" ]] || die '--non-interactive requires --answers-file.'
   load_noninteractive_answers "$ANSWERS_ARG" || exit $?
@@ -62,6 +93,7 @@ elif [[ -f .spaceworks-answers ]]; then
   load_setup_answers "$ROOT/.spaceworks-answers" || die 'Invalid private answers file.'
 elif [[ ! -f .env ]]; then
   ask_setup_questions || exit $?
+  [[ "${SPACEWORKS_DEPLOYMENT_PROFILE:-full}" != free ]] || prepare_free_profile
   persist_setup_answers "$ROOT/.spaceworks-answers"
 fi
 
@@ -88,6 +120,7 @@ source "$ROOT/scripts/setup-write-environment.sh"
 source "$ROOT/scripts/installer/key-backfill.sh"
 plan_key_backfill
 apply_key_backfill
+backfill_absent_continuity_keys || die 'Could not add the missing encryption keys.'
 source "$ROOT/scripts/retire-update-tombstone.sh"
 retire_update_tombstone
 source "$ROOT/scripts/retire-update-polling.sh"
@@ -216,6 +249,7 @@ if [ "$FIRST_RUN" = 1 ]; then
     echo "  SSH tunnel: ssh -L 8443:127.0.0.1:$tunnel_port <you>@<this server>, then https://localhost:8443/control/"
   fi
   [ "$GEN_PASS" != 1 ] || echo "  Generated credential: $ROOT/.spaceworks-bootstrap-credential.json (private; change it at first sign-in)."
+  print_key_backup_notice
   echo
   if [[ "$(deployment_value SPACEWORKS_RUN_FRONTEND)" == no ]]; then
     echo "Next: log into the React staff console at $(deployment_value PUBLIC_APP_BASE_URL)/admin, add inventory, and turn on 'public inventory' for your makerspace."

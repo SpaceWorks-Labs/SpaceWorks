@@ -36,6 +36,21 @@ installation. After the database backup it replaces the closed host runtime bund
 layers and edge configuration), keeps replaced files in `backups/host-config-*`, and
 refreshes the Compose trust records. `.env`, database/object volumes and backups stay in place.
 
+### Optional free profile (opt-in)
+
+The installer deploys the **full-server** profile by default, and an unanswered or noninteractive run never
+changes that. An interactive run lists `4) Free profile (opt-in)` under the existing Hosting model question; Enter
+still selects option 1 and no other question changes. Noninteractive runs opt in only with `--profile free`
+(on `install.sh` or `setup.sh`) or `SPACEWORKS_DEPLOYMENT_PROFILE=free`; no answers file is needed for it.
+
+Choosing free writes a private `.env` from `deploy/cloud/free.env.example` with every secret generated the
+same way as the full profile (`SECRET_KEY`, `FREE_TICK_SECRET`, the Fernet keys, `SPACEWORKS_DEPLOYMENT_ID`
+and the continuity keys below), prints the free-tier notice and stops. It starts no service and claims no
+host port. Malware scanning is off in this profile, and scheduled work runs only when an external cron calls
+`POST /api/v1/internal/free/tick` with the `X-Cron-Secret` header. Fill in the external database, storage
+and email values, then follow [docs/deploy/cloud-free.md](deploy/cloud-free.md). Rerunning keeps an existing
+free `.env`; a directory that already holds a full installation is refused.
+
 ## Deployment questionnaire and confirmation
 
 The pinned archive is first unpacked in temporary storage. Its shared questionnaire asks hosting model
@@ -667,8 +682,17 @@ scripts/spaceworks-compose.sh bundled run --rm --entrypoint sh \
   -c 'tar -czf /backup/minio-$(date +%F).tgz -C /data .'
 ```
 
-Also keep a copy of your `.env` (it holds `API_CLIENT_ENC_KEY`, without which encrypted integration
-secrets are unrecoverable, and the MinIO credentials needed to read object backups).
+Also keep a copy of your `.env` off the server (it holds `API_CLIENT_ENC_KEY`, without which encrypted
+integration secrets are unrecoverable, and the MinIO credentials needed to read object backups).
+
+The installer generates the encryption and fingerprint keys on a fresh install: `SECRET_KEY`,
+`API_CLIENT_ENC_KEY`, `AUDIT_MAC_MASTER_KEY`, `PII_MASTER_KEY`, `PII_SEARCH_HASH_KEY` (scoped PII and finance
+encryption), `ACCOUNT_PII_MASTER_KEY` (Saved details), `EVENT_REGISTRATION_CREDENTIAL_DIGEST_KEY`,
+`EVENT_REGISTRATION_CREDENTIAL_KEYS`/`_KEY_VERSION` and `PUSH_TOKEN_HMAC_KEY`. A value you supply in the
+environment (for example one recovered from escrow) is used instead. Updates and reruns never regenerate or
+replace an existing key; a key that was never declared is added once, because nothing could have used it.
+Losing or changing any of them makes the data it protects unreadable, so back the `.env` up with the
+database and object backups and keep it in separate custody.
 
 Restore order is database first, then object files. Stop the stack, restore the Postgres dump into the
 `db` service, unpack the MinIO archive into the `minio_data` volume, then start the stack and check

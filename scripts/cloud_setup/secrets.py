@@ -1,6 +1,7 @@
 """Persistent continuity generation, with recovery identity kept out of runtime env."""
 
 import base64
+import json
 import os
 from pathlib import Path
 import re
@@ -16,6 +17,54 @@ GENERATED = {
     "CRON_SECRET": 32, "FREE_TICK_SECRET": 48,
     "TRUSTED_EDGE_INGRESS_SECRET": 48,
 }
+# Keys whose format is not the 32-byte URL-safe Fernet form above. Generated once when
+# absent; an existing value is validated and never replaced (that would make the
+# protected data unreadable).
+CONTINUITY_EXTRA = ("PUSH_TOKEN_HMAC_KEY", "ACCOUNT_PII_MASTER_KEY",
+                    "EVENT_REGISTRATION_CREDENTIAL_DIGEST_KEY", "EVENT_REGISTRATION_CREDENTIAL_KEYS")
+
+
+def _standard_key():
+    return base64.b64encode(os.urandom(32)).decode("ascii")
+
+
+def generate_extra(name):
+    if name == "PUSH_TOKEN_HMAC_KEY":
+        return base64.urlsafe_b64encode(os.urandom(48)).decode("ascii")
+    if name == "ACCOUNT_PII_MASTER_KEY":
+        return base64.urlsafe_b64encode(os.urandom(32)).decode("ascii")
+    if name == "EVENT_REGISTRATION_CREDENTIAL_DIGEST_KEY":
+        return _standard_key()
+    return json.dumps({"1": _standard_key()}, separators=(",", ":"))
+
+
+def _valid_standard_key(value):
+    try:
+        return len(base64.b64decode(value, validate=True)) == 32
+    except (ValueError, TypeError):
+        return False
+
+
+def validate_extra(values):
+    checks = {
+        "PUSH_TOKEN_HMAC_KEY": lambda v: len(v) >= 32 and v.isascii(),
+        "ACCOUNT_PII_MASTER_KEY": lambda v: len(base64.urlsafe_b64decode(v.encode("ascii"))) == 32,
+        "EVENT_REGISTRATION_CREDENTIAL_DIGEST_KEY": _valid_standard_key,
+        "EVENT_REGISTRATION_CREDENTIAL_KEYS": lambda v: (
+            isinstance(json.loads(v), dict) and bool(json.loads(v))
+            and all(isinstance(k, str) and _valid_standard_key(key) for k, key in json.loads(v).items())),
+    }
+    for name, check in checks.items():
+        if name not in values:
+            continue
+        try:
+            valid = check(values[name])
+        except (ValueError, TypeError, UnicodeError):
+            valid = False
+        if not valid:
+            raise SetupError("invalid_continuity_key", f"Preserve or deliberately recover the valid {name}; do not silently rotate it.")
+
+
 RELEASE_ONLY = {"DATABASE_MAINTENANCE_URL", "SPACEWORKS_MAINTENANCE_DATABASE_URL", "DATABASE_MAINTENANCE_CONNECTION_MODE", "CLOUD_SCRATCH_DATABASES_FILE", "SETUP_SUPERADMIN_PASSWORD"}
 
 
@@ -45,9 +94,11 @@ def validate_secrets(values, *, free=False):
                     raise ValueError
             except (ValueError, UnicodeError):
                 raise SetupError("invalid_continuity_key", f"Preserve or deliberately recover the valid {name}; do not silently rotate it.") from None
+    validate_extra(values)
     if "PII_MASTER_KEY" in values and values.get("PII_MASTER_KEY") == values.get("PII_SEARCH_HASH_KEY"):
         raise SetupError("key_reuse", "PII master and search keys must be independent.")
-    wrapping = [values[k] for k in ("API_CLIENT_ENC_KEY", "AUDIT_MAC_MASTER_KEY", "PII_MASTER_KEY", "PII_SEARCH_HASH_KEY") if values.get(k)]
+    wrapping = [values[k] for k in ("API_CLIENT_ENC_KEY", "AUDIT_MAC_MASTER_KEY", "PII_MASTER_KEY",
+                                    "PII_SEARCH_HASH_KEY", "ACCOUNT_PII_MASTER_KEY") if values.get(k)]
     if len(set(wrapping)) != len(wrapping):
         raise SetupError("key_reuse", "Integration, audit, PII master and PII search keys must be independent.")
     return values
@@ -81,6 +132,11 @@ def ensure_secrets(directory, supplied, *, free):
     for name, size in GENERATED.items():
         if name != "FREE_TICK_SECRET" or free:
             values.setdefault(name, base64.urlsafe_b64encode(os.urandom(size)).decode("ascii"))
+    for name in CONTINUITY_EXTRA:
+        if name not in values:
+            values[name] = generate_extra(name)
+            if name == "EVENT_REGISTRATION_CREDENTIAL_KEYS":
+                values.setdefault("EVENT_REGISTRATION_CREDENTIAL_KEY_VERSION", "1")
     values.setdefault("SPACEWORKS_DEPLOYMENT_ID", str(uuid.uuid4()))
     if not values.get("SETUP_SUPERADMIN_PASSWORD"):
         values["SETUP_SUPERADMIN_PASSWORD"] = base64.urlsafe_b64encode(os.urandom(48)).decode("ascii")

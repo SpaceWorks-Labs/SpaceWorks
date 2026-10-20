@@ -75,6 +75,7 @@ PY
   source "$UPDATE_SCRIPT_DIR/setup-question-input.sh"
   source "$UPDATE_SCRIPT_DIR/setup-write-environment.sh"
   apply_key_backfill
+  backfill_absent_continuity_keys || die 'Could not add the missing encryption keys.'
   grep -q '^POSTGRES_APP_PASSWORD=' "$ROOT/.env" || printf '\nPOSTGRES_APP_PASSWORD=%s\n' "$(rand_key 32)" >> "$ROOT/.env"
   grep -q '^SPACEWORKS_SCHEDULER_MODE=' "$ROOT/.env" || printf '\nSPACEWORKS_SCHEDULER_MODE=image\n' >> "$ROOT/.env"
   grep -q '^EVENT_STATION_PIN_PEPPER=' "$ROOT/.env" || printf '\nEVENT_STATION_PIN_PEPPER=%s\n' "$(rand_key 50)" >> "$ROOT/.env"

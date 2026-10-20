@@ -43,7 +43,7 @@ def save_application(*, event, actor, payload, submit=False):
         raise RuntimeError("Prepared answers have the wrong owner/subject.")
     # The outer digest covers the complete inline payload; preparation follows the replay check.
     prepared_inline = inline_forms.prepare(event=event, actor=actor, operation_id=data["operation_id"],
-        inline=inline) if prepared is not None else inline_forms.EMPTY
+        inline=inline, base_forms=inline_forms.base_save_forms(prepared.derivations)) if prepared is not None else inline_forms.EMPTY
     with command(event_id=event.pk, actor=actor, data=data, owner=True,
                  action="application.submit" if submit else "application.edit",
                  normalized_body={**prepared.normalized_input, **inline} if prepared is not None else None) as ctx:

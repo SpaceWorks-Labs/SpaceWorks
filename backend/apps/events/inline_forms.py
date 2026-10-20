@@ -48,6 +48,12 @@ def _reimbursements_live(event):
     return runtime_active("event_reimbursements") and module_enabled(event.makerspace, "event_reimbursements")
 
 
+def base_save_forms(prepared_form):
+    """The base form's explicit saves, in the shape the cross-form conflict check takes."""
+    check = getattr(prepared_form, "save_check", None)
+    return {"base": check} if check else None
+
+
 def prepare(*, event, actor, operation_id, inline, base_forms=None):
     """Validate both blocks outside any transaction; returns an in-process value only."""
     if not inline:
@@ -114,7 +120,9 @@ def registration_inline(function):
         if not self_signup:
             return function(*args, **kwargs)
         blocks = {key: inline[key] for key in INLINE_KEYS if key in inline}
-        prepared = prepare(event=values["event"], actor=member, operation_id=inline.get("operation_id"), inline=blocks)
+        from .services_registration_preparation import _prepared
+        prepared = prepare(event=values["event"], actor=member, operation_id=inline.get("operation_id"), inline=blocks,
+                           base_forms=base_save_forms(_prepared.get()))
         token = _registration_inline.set(prepared)
         try:
             return function(*args, **kwargs)

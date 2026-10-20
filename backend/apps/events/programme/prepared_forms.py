@@ -33,6 +33,8 @@ class PreparedForm:
     derivations: object = field(default=None, repr=False)
     omitted_question_ids: tuple = ()
     consent_revision: int | None = None
+    # (validated input, choices, versions) of an explicit save, for cross-form conflict checks.
+    save_check: tuple | None = field(default=None, repr=False)
 
 
 def saved_dob(*, actor_id, version):
@@ -119,18 +121,19 @@ def prepare(*, actor_id, subject, schema, payload, submit=True, previous_answers
     if isinstance(mapped.get("date_of_birth"), dict):
         mapped["date_of_birth"] = source_dob({"kind": "saved_detail", **mapped["date_of_birth"]},
             actor_id=actor_id, saved_dob_loader=saved_dob).isoformat()
-    saved = None
+    saved = save_check = None
     choices = {key: bool(payload.get("save_choices", {}).get(key, False)) for key in mapped}
     if submit and any(choices.values()):
-        saved = prepare_saved_detail_intent(actor_id=actor_id, subject=subject,
-            validated_form=ValidatedSaveInput(subject=subject, mapped_values=mapped,
-                canonical_answers=snapshot, form_descriptor=original, event_date_revision=event.event_date_revision),
+        save_input = ValidatedSaveInput(subject=subject, mapped_values=mapped,
+            canonical_answers=snapshot, form_descriptor=original, event_date_revision=event.event_date_revision)
+        save_check = (save_input, choices, validated.saved_detail_versions)
+        saved = prepare_saved_detail_intent(actor_id=actor_id, subject=subject, validated_form=save_input,
             choices=choices, base_versions=validated.saved_detail_versions,
             operation_id=UUID(str(payload["operation_id"])))
     coc = payload.get("coc") or {}
     consent = coc.get("revision") if coc.get("accepted") is True else None
     return PreparedForm(subject, original, snapshot, form_hash, digest(snapshot), event.event_date_revision,
-        saved, sources, validated.omitted_question_ids, consent)
+        saved, sources, validated.omitted_question_ids, consent, save_check)
 
 
 def require_current(prepared, event, schema):

@@ -1,3 +1,5 @@
+import { useSyncExternalStore } from "react";
+import { currentTheme, subscribeTheme } from "../../lib/theme";
 import type { DelightArtwork, DelightSource } from "./DelightProvider";
 
 /**
@@ -6,21 +8,29 @@ import type { DelightArtwork, DelightSource } from "./DelightProvider";
  * (scripts/kiosk-pwa.ts), because kiosk surfaces never show Patch.
  */
 const base = "/brand/patch/";
+// Every file has a dark twin from SpaceWorks-Design `mascot/dark/`: the same art with a thin Warm
+// Cream sticker border, because Patch's dark outline measures only 1.0-2.3:1 on Deep Ink.
+const pair = (name: string): ThemedFile => ({ light: `${base}${name}.webp`, dark: `${base}${name}-dark.webp` });
+export type ThemedFile = { light: string; dark: string };
 export const PATCH = {
-  hero: `${base}patch.webp`,
-  idle: `${base}patch-idle.webp`,
-  sneeze: `${base}patch-animated.webp`,
-  walk: `${base}patch-walk-animated.webp`,
-  walkStill: `${base}patch-walk-01.webp`,
-  nap: `${base}patch-walk-06.webp`,
-  walkRight: `${base}patch-walk-right.webp`,
-  walkLeft: `${base}patch-walk-left.webp`,
+  hero: pair("patch"),
+  idle: pair("patch-idle"),
+  sneeze: pair("patch-animated"),
+  walk: pair("patch-walk-animated"),
+  walkStill: pair("patch-walk-01"),
+  nap: pair("patch-walk-06"),
+  walkRight: pair("patch-walk-right"),
+  walkLeft: pair("patch-walk-left"),
 } as const;
 /** Each walk sheet is eight 256x176 frames side by side; frame 6 (index 5) has the eyes closed. */
 export const PATCH_WALK = { width: 256, height: 176, frames: 8, frameMs: 120, napFrame: 5 } as const;
 
-// Patch is never recoloured, so light and dark share one file; dark mode adds a light plate.
-const art = (src: string, extra: Partial<DelightSource> = {}): DelightSource => ({ light: src, dark: src, patch: true, ...extra });
+/** The page theme (the `dark` class on <html>), so only the matching file is ever downloaded. */
+export function usePageTheme(): keyof ThemedFile {
+  return useSyncExternalStore(subscribeTheme, currentTheme, () => "light");
+}
+
+const art = (file: ThemedFile, extra: Partial<DelightSource> = {}): DelightSource => ({ ...file, patch: true, ...extra });
 
 export const patchArtwork: DelightArtwork = {
   loader: art(PATCH.walk, { still: PATCH.walkStill }),

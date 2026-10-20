@@ -2,7 +2,7 @@ import { runtimeTenantConfig } from "../../lib/runtimeConfig";
 import { createContext, useContext, useSyncExternalStore, type ReactNode } from "react";
 
 /** `patch` marks mascot art; `still` replaces an animated file under reduced motion; `frames` marks a horizontal sprite sheet. */
-export type DelightSource = { light: string; dark: string; patch?: boolean; still?: string; frames?: number };
+export type DelightSource = { light: string; dark: string; patch?: boolean; still?: { light: string; dark: string }; frames?: number };
 export type DelightArtwork = Partial<Record<"loader" | "welcome" | "success" | "waiting" | "empty" | "error" | "tag" | "companionWalk" | "companionFollow" | "companionNap" | "companionPrint" | "demo", DelightSource>>;
 export type DelightPolicy = { enabled: boolean; eggsEnabled: boolean; artwork: DelightArtwork };
 const Policy = createContext<DelightPolicy | null>(null);

@@ -1,10 +1,5 @@
 /* Patch, the mascot (SpaceWorks-Design mascot/README.md): never recolour, mirror, stretch or add effects.
-   Measured contrast of Patch's outer outline (WCAG ratio, median edge pixel): 1.0-1.1:1 (walk) and
-   1.9-2.3:1 (badge poses) on Deep Ink #142C2A, 1.4-1.7:1 on the dark panel, 6.0-14.5:1 on Warm Cream.
-   So dark surfaces get a flat Warm Cream plate behind Patch: no glow, no shadow, light mode unchanged. */
-:root.dark .sw-patch-plate, .sw-island-dark .sw-patch-plate {
-  background-color: rgb(var(--color-on-brand)); border-radius: 0.75rem; padding: 12.5%;
-}
+   Dark mode uses the design repo's dark/ files (a thin Warm Cream sticker border), never a CSS outline. */
 .sw-patch-sprite { display: block; width: 100%; aspect-ratio: 256 / 176; background-repeat: no-repeat; background-size: 800% 100%; background-position: 0 0; }
 .sw-patch-stride { animation: sw-patch-stride 960ms steps(8, jump-none) infinite; }
 @keyframes sw-patch-stride { to { background-position-x: 100%; } }
@@ -14,8 +9,7 @@
 /* The 404 pet (NotFoundPatch). */
 .sw-patch-pet { position: fixed; inset-inline: 0; bottom: 0; height: 112px; pointer-events: none; overflow: hidden; z-index: 30; }
 .sw-patch-pet-body { position: absolute; left: 0; bottom: 8px; will-change: transform; }
-:root.dark .sw-patch-pet .sw-patch-plate, .sw-island-dark .sw-patch-pet .sw-patch-plate { padding: 6px; }
-.sw-patch-pet-sprite { display: block; width: 128px; height: 88px; background-repeat: no-repeat; background-size: 1024px 88px; }
+.sw-patch-pet-sprite { display: block; width: 128px; height: 88px; background-repeat: no-repeat; background-size: 1024px 88px; background-position: var(--sw-patch-frame, 0px) 0; }
 .sw-patch-print { position: absolute; bottom: 6px; color: rgb(var(--color-muted)); animation: sw-patch-print 1600ms ease-out forwards; }
 @keyframes sw-patch-print { from { opacity: 0.7; } to { opacity: 0; } }
 .sw-patch-z { position: absolute; top: -10px; right: 22px; color: rgb(var(--color-muted)); font-weight: 600; animation: sw-patch-z 2400ms ease-in-out infinite; }

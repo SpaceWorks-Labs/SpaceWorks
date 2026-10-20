@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { PawPrint } from "lucide-react";
 import { useReducedMotion } from "./DelightProvider";
-import { PATCH, PATCH_WALK } from "./patchArtwork";
+import { PATCH, PATCH_WALK, usePageTheme } from "./patchArtwork";
 import "./patch.css";
 
 type Facing = "left" | "right";
@@ -21,8 +21,8 @@ const MAX_PRINTS = 6;
  */
 export function NotFoundPatch() {
   const reduced = useReducedMotion();
+  const theme = usePageTheme();
   const body = useRef<HTMLDivElement>(null);
-  const sprite = useRef<HTMLSpanElement>(null);
   const [facing, setFacing] = useState<Facing>("right");
   const [napping, setNapping] = useState(false);
   const [prints, setPrints] = useState<Print[]>([]);
@@ -65,8 +65,10 @@ export function NotFoundPatch() {
           setPrints(list => [...list.slice(1 - MAX_PRINTS), print]);
         }
       }
-      if (body.current) body.current.style.transform = `translateX(${x}px)`;
-      if (sprite.current) sprite.current.style.backgroundPosition = `${-frame * WIDTH}px 0`;
+      if (body.current) {
+        body.current.style.transform = `translateX(${x}px)`;
+        body.current.style.setProperty("--sw-patch-frame", `${-frame * WIDTH}px`);
+      }
       raf = requestAnimationFrame(tick);
     };
     window.addEventListener("pointermove", follow, { passive: true });
@@ -79,15 +81,13 @@ export function NotFoundPatch() {
     };
   }, [reduced]);
 
-  const sheet = facing === "left" ? PATCH.walkLeft : PATCH.walkRight;
+  const sheet = (facing === "left" ? PATCH.walkLeft : PATCH.walkRight)[theme];
   return <div aria-hidden="true" className="sw-patch-pet" data-patch-pet="">
     {prints.map(print => <PawPrint key={print.id} size={14} className="sw-patch-print"
       style={{ left: print.x - 7, rotate: print.facing === "left" ? "-90deg" : "90deg" }} />)}
     <div ref={body} className="sw-patch-pet-body" data-facing={facing} data-napping={napping ? "" : undefined}
       style={reduced ? { left: "50%", transform: "translateX(-50%)" } : undefined}>
-      <span className="sw-patch-plate block">
-        <span ref={sprite} className="sw-patch-pet-sprite" style={{ backgroundImage: `url(${sheet})` }} />
-      </span>
+      <span className="sw-patch-pet-sprite" style={{ backgroundImage: `url(${sheet})` }} />
       {napping ? <span className="sw-patch-z">z</span> : null}
     </div>
   </div>;

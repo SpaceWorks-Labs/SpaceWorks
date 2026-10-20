@@ -1,4 +1,5 @@
-import { useDelight, useReducedMotion, type DelightArtwork } from "./DelightProvider";
+import { useDelight, useReducedMotion, type DelightArtwork, type DelightSource } from "./DelightProvider";
+import { usePageTheme } from "./patchArtwork";
 import "./delight.css";
 import "./patch.css";
 
@@ -8,14 +9,20 @@ export function DelightArt({ name, className = "" }: { name: keyof DelightArtwor
   const reduced = useReducedMotion();
   const source = artwork[name];
   if (!enabled || !source) return null;
-  // Patch uses one file in both themes (never recoloured); patch.css adds the dark-mode plate.
-  if (source.patch) return <span aria-hidden="true" data-patch="" className={`sw-patch-plate pointer-events-none inline-flex items-center ${className}`}>
-    {source.frames ? <span className={`sw-patch-sprite ${reduced ? "" : "sw-patch-stride"}`} style={{ backgroundImage: `url(${source.light})` }} />
-      : <img alt="" src={reduced && source.still ? source.still : source.light} className="h-full w-full object-contain" draggable={false} />}
-  </span>;
+  if (source.patch) return <PatchArt source={source} reduced={reduced} className={className} />;
   return <span aria-hidden="true" className={`pointer-events-none inline-block ${className}`}>
     <img alt="" src={source.light} className="h-full w-full object-contain dark:hidden" draggable={false} />
     <img alt="" src={source.dark} className="hidden h-full w-full object-contain dark:block" draggable={false} />
+  </span>;
+}
+
+// Patch picks the light or dark file from the page theme, so only one of them downloads.
+function PatchArt({ source, reduced, className }: { source: DelightSource; reduced: boolean; className: string }) {
+  const theme = usePageTheme();
+  const file = (reduced && source.still ? source.still : source)[theme];
+  return <span aria-hidden="true" data-patch="" className={`pointer-events-none inline-flex items-center ${className}`}>
+    {source.frames ? <span className={`sw-patch-sprite ${reduced ? "" : "sw-patch-stride"}`} style={{ backgroundImage: `url(${file})` }} />
+      : <img alt="" src={file} className="h-full w-full object-contain" draggable={false} />}
   </span>;
 }
 

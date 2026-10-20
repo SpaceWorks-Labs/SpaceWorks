@@ -195,6 +195,8 @@ DATASET_SPECS.update({label: (path, P(paths)) for label, (path, paths) in P2_BOO
 
 from apps.tenant_migration.catalog_events_programme_references import DATASETS as PROGRAMME_DATASETS
 DATASET_SPECS.update({label: (path, P((owner,))) for label, (path, owner) in PROGRAMME_DATASETS.items()})
+from apps.tenant_migration.catalog_reimbursements import DATASETS as REIMBURSEMENT_DATASETS
+DATASET_SPECS.update({label: (path, P((owner,))) for label, (path, owner) in REIMBURSEMENT_DATASETS.items()})
 DATASETS = {}
 from .datasets_wp3 import wp3_dataset_specs
 DATASET_SPECS.update(wp3_dataset_specs(P))

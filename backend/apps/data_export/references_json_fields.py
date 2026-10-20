@@ -2,7 +2,9 @@
 
 from apps.tenant_migration.catalog_events_programme_json import JSON_FIELDS as PROGRAMME_JSON_FIELDS
 
-JSON_REFERENCE_FIELDS = PROGRAMME_JSON_FIELDS | frozenset(
+from apps.tenant_migration.catalog_reimbursements import JSON_FIELDS as REIMBURSEMENT_JSON_FIELDS
+
+JSON_REFERENCE_FIELDS = PROGRAMME_JSON_FIELDS | REIMBURSEMENT_JSON_FIELDS | frozenset(
     {
         # Channel enum names carry no destination, endpoint or account identifiers.
         ("notifications.NotificationPreference", "channels"),

@@ -89,7 +89,8 @@ def remap_programme(label, source, row, map_id):
         from apps.events.answer_derivations.portability import remap_canonical_answers
         row["custom_answers"] = remap_canonical_answers(row["custom_answers"], map_id)
     if label == "events.EventFormRevision" and row["selector_id"] is not None:
-        target = {"posting": "EventRolePosting", "round": "MentorRound", "track": "HackathonTrack"}.get(row["selector_kind"])
+        target = {"posting": "EventRolePosting", "round": "MentorRound", "track": "HackathonTrack",
+                  "stage": "EventStageForm"}.get(row["selector_kind"])
         if target is None:
             raise ValueError("Invalid typed event form selector.")
         row["selector_id"] = map_id("events." + target, row["selector_id"])

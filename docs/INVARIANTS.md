@@ -2859,8 +2859,22 @@ runtime providers/pages/reports do not. Reimbursement (decision 34) and full sta
 - **Payee purge timing is a deployment setting.** `EVENT_REIMBURSEMENT_PAYEE_PURGE_DAYS`
   feeds both the purge anchor and the member disclosure; the eight `EVENT_REIMBURSEMENT_*` /
   `EVENT_STAGE_*` settings are bounded and refuse to start when out of range.
-- **Portable dumps refuse reimbursement rows** (`reimbursement_portability_unavailable`) until
-  the custodial transforms land with a passing export → import round trip.
+- **Stage forms, travel support and the payout ledger migrate custodially.** All domain and
+  ledger rows are portable (`tenant_migration/catalog_reimbursements.py`); work rows and
+  FK-free cleanup locators never travel. Mapped finance fields (payee details, decision
+  summaries) stay ciphertext in the archive and are rebound to the target tenant key in
+  memory (`pii_reimbursements.py`, which also remaps typed IDs inside encrypted
+  documents). Domain `uuid` columns and every `operation_id` are preserved and a target
+  collision refuses the import; UUID primary keys follow the PK map
+  (`semantic_reimbursements.py`). Imported programmes are disabled and `imported_paused`
+  with the request window closed; imported stage assignments are inert. Only
+  `ready`/`attached` bytes travel; in-flight uploads become inert `failed` rows. The target
+  creates its own cleanup locators (`reimbursement_assets_import.py`, also after a Lane D
+  restore). Rows whose insert guards check a not-yet-inserted pointer are inserted NULL and
+  updated once every row exists; self-pointer chains insert parents first
+  (`import_pointers.py`, which also sets the transaction-local `app.tenant_import` flag so
+  the attendance-correction guard admits historical revisions). Readable exports never
+  carry these rows.
 
 **Delight is on by default and per space (2026-10-20).** `ui.delight` and `ui.easter_eggs`
 are standalone default-on features (also in `setup_areas.ALWAYS_FEATURES`); migration

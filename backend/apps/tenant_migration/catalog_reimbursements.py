@@ -1,24 +1,26 @@
 """Export/Lane D dispositions for stage forms, reimbursements and the core payout ledger.
 
-None of these rows travel in a tenant export yet. Their faithful transfer needs the
-custodial transforms in each package's ``portable.py`` (mandatory payee/decision
-envelopes, typed UUID/JSON remaps, paused imports), which are not wired into the tenant
-migration pipeline. Until they are, a tenant that holds any of the money- or
-response-bearing rows below is refused at migration preflight/capture rather than
-silently migrated without them; readable exports omit them (finance and answers are
-never generic export material).
+Every domain and ledger row travels in a portable tenant migration. The custodial
+transforms in each package's ``portable.py`` run inside the importer: mandatory finance
+envelopes (payee details, decision summaries) stay ciphertext in the archive and are
+rebound to the target tenant key in memory only; typed IDs inside encrypted JSON are
+remapped between decrypt and re-encrypt (``pii_reimbursements``); plaintext JSON and
+UUID-valued references are remapped by ``semantic_reimbursements``. Imported
+programmes arrive paused and stage assignments inert, so no money or deadline moves
+on the target until staff reconcile. Readable exports never carry these rows.
 """
 
-_PENDING = ("Not yet portable: travels only through its package's custodial transform; a tenant holding "
-            "these rows is refused by the tenant-migration preflight instead of losing them.")
-_LEDGER = ("Core payout ledger: debt, payee envelopes and finance evidence are not yet portable; a tenant "
-           "holding them is refused at migration preflight. Readable exports never carry finance history.")
+from .catalog_reimbursements_fields import FIELD_NAMES
+
 _WORK = "Source-local work/coordination row; the target rebuilds it from imported domain rows."
 _LOCATOR = "Permanent FK-free deletion locator: deployment custody that survives tenant purge; never tenant data."
 
-PENDING_MODELS = (
+STAGE_MODELS = (
     "events.EventStageForm", "events.EventStageMilestone", "events.StageFormAssignment",
     "events.StageFormResponse", "events.StageFormResponseRevision", "events.StageFormAsset",
+    "events.EventAttendanceCorrection",
+)
+DOMAIN_MODELS = (
     "event_reimbursements.ReimbursementProgramme", "event_reimbursements.ReimbursementBudgetPool",
     "event_reimbursements.BudgetReservation", "event_reimbursements.BudgetEntry",
     "event_reimbursements.GrantRequest", "event_reimbursements.GrantAward",
@@ -35,29 +37,20 @@ LEDGER_MODELS = (
     "payments.ReceiptAllocationOverride", "payments.ReceiptAllocation",
     "payments.FinanceRetentionPolicy", "payments.FinanceRetentionPolicyRevision",
 )
+PORTABLE_MODELS = STAGE_MODELS + DOMAIN_MODELS + LEDGER_MODELS
 WORK_MODELS = (
     "events.StageActivationJob", "events.StageReconcileCursor", "event_reimbursements.ReimbursementWorkItem",
     "payments.EventPayoutCommandReceipt", "payments.PayoutExportBatch", "payments.PayoutExportBatchItem",
 )
 LOCATOR_MODELS = ("events.StageFileCleanup", "payments.FinanceObjectCleanup", "payments.FinanceSweepCursor")
 
-OMITTED_MODELS = {
-    **dict.fromkeys(PENDING_MODELS, _PENDING),
-    **dict.fromkeys(LEDGER_MODELS, _LEDGER),
-    **dict.fromkeys(WORK_MODELS, _WORK),
-    **dict.fromkeys(LOCATOR_MODELS, _LOCATOR),
-    "events.EventAttendanceCorrection": (
-        "Correction watermarks only gate reimbursement eligibility, which never travels while "
-        "reimbursement portability is refused."
-    ),
-}
+OMITTED_MODELS = {**dict.fromkeys(WORK_MODELS, _WORK), **dict.fromkeys(LOCATOR_MODELS, _LOCATOR)}
+EXPORTED_FIELDS = {label: " ".join(sorted(FIELD_NAMES[label])) for label in PORTABLE_MODELS}
 
-# Columns this programme added to models that already travel. A registration's attendance
-# counter is plain history; correction watermarks and claims that read it stay behind.
+# Columns this programme added to models that already travel.
 EXTRA_FIELDS = {"events.EventRegistration": "attendance_revision"}
 
-# Tenant ownership path for the deployment backup's readable-main slicing. FK-free
-# locators/cursors have none and stay deployment custody.
+# Tenant ownership path: deployment backup slicing and the portable dataset owner.
 TENANT_OWNER_PATHS = {
     "events.EventStageForm": "event__makerspace",
     "events.EventStageMilestone": "event__makerspace",
@@ -102,14 +95,24 @@ TENANT_OWNER_PATHS = {
     "payments.PayoutExportBatchItem": "batch__makerspace",
 }
 
-_USER_REASON = "The owning row does not travel yet, so this person edge never joins the portable user closure."
+
+def _dataset_path(label):
+    app, name = label.split(".")
+    folder = "events/stages" if app == "events" else "finance/" + app
+    return f"{folder}/{name}.csv"
+
+
+DATASETS = {label: (_dataset_path(label), TENANT_OWNER_PATHS[label]) for label in PORTABLE_MODELS}
+
+# Person edges of portable rows join the portable user closure; edges of work rows
+# that never travel are excluded with a reason.
 USER_FIELDS = frozenset({
     ("events.EventAttendanceCorrection", "actor"), ("events.EventStageForm", "created_by"),
     ("events.EventStageMilestone", "member"), ("events.EventStageMilestone", "published_by"),
     ("events.StageFormAssignment", "owner_member"), ("events.StageFormAssignment", "extended_by"),
     ("events.StageFormAssignment", "cancelled_by"), ("events.StageFormAssignment", "reassigned_by"),
     ("events.StageFormResponse", "owner_member"), ("events.StageFormResponseRevision", "submitted_by"),
-    ("events.StageFormAsset", "owner_member"), ("events.StageActivationJob", "actor"),
+    ("events.StageFormAsset", "owner_member"),
     ("event_reimbursements.ReimbursementProgramme", "created_by"),
     ("event_reimbursements.ReimbursementProgramme", "approved_by"),
     ("event_reimbursements.BudgetEntry", "actor"), ("event_reimbursements.GrantRequest", "member"),
@@ -125,23 +128,31 @@ USER_FIELDS = frozenset({
     ("payments.EventPayeeRevision", "verified_by"), ("payments.EventPayeeReview", "actor"),
     ("payments.PayoutEligibility", "acknowledged_by"), ("payments.PayoutHold", "actor"),
     ("payments.FinanceAttachment", "owner_member"), ("payments.ReceiptAllocationOverride", "actor"),
-    ("payments.PayoutExportBatch", "created_by"), ("payments.EventPayoutCommandReceipt", "actor"),
     ("payments.FinanceRetentionPolicyRevision", "actor"),
+    ("events.StageActivationJob", "actor"), ("payments.PayoutExportBatch", "created_by"),
+    ("payments.EventPayoutCommandReceipt", "actor"),
 })
-EXCLUDED_USER_EDGE_REASONS = dict.fromkeys(USER_FIELDS, _USER_REASON)
+_WORK_EDGE = "Source-local work row; it never travels, so this person edge never joins the portable closure."
+EXCLUDED_USER_EDGE_REASONS = {edge: _WORK_EDGE for edge in USER_FIELDS if edge[0] in WORK_MODELS}
 
-# Rows whose presence makes a faithful tenant migration impossible today, by host path.
-REFUSING_ROWS = {
-    "events.EventStageForm": "event__makerspace_id",
-    "event_reimbursements.ReimbursementProgramme": "event__makerspace_id",
-    "payments.EventPayoutObligation": "makerspace_id",
-    "payments.FinanceAttachment": "makerspace_id",
-    "payments.FinanceRetentionPolicyRevision": "makerspace_id",
-}
-
-
-def unportable_row_labels(makerspace_id):
-    """Model labels (sorted) whose rows would be lost by migrating this tenant now."""
-    from django.apps import apps
-    return sorted(label for label, path in REFUSING_ROWS.items()
-                  if apps.get_model(label)._base_manager.filter(**{path: makerspace_id}).exists())
+# Every JSON column of a portable row, named so the reference registry reviews it.
+# Typed ID slots inside them are remapped by semantic_reimbursements.
+JSON_FIELDS = frozenset({
+    ("events.EventStageForm", "reminder_offsets"), ("events.EventStageForm", "blocked_actions"),
+    ("events.EventStageForm", "audience"), ("events.StageFormAssignment", "policy_snapshot"),
+    ("events.StageFormAsset", "deletion_receipt"),
+    ("event_reimbursements.ReimbursementProgramme", "tier_rules"),
+    ("event_reimbursements.ReimbursementProgramme", "allowed_categories"),
+    ("event_reimbursements.ReimbursementProgramme", "exclusions"),
+    ("event_reimbursements.ReimbursementProgramme", "eligible_countries"),
+    ("event_reimbursements.ReimbursementProgramme", "eligible_cohorts"),
+    ("event_reimbursements.ReimbursementProgramme", "permitted_venue_sources"),
+    ("event_reimbursements.ReimbursementProgramme", "category_limits"),
+    ("event_reimbursements.GrantRequest", "category_estimates"),
+    ("event_reimbursements.GrantAward", "calculation_snapshot"),
+    ("event_reimbursements.GrantAwardRevision", "rule_snapshot"),
+    ("event_reimbursements.ClaimAttendanceAttestation", "venue_evidence_refs"),
+    ("payments.EventPayoutObligation", "eligibility_evidence"), ("payments.PayoutEligibility", "evidence"),
+    ("payments.PayoutHold", "evidence_refs"), ("payments.FinanceAttachment", "deletion_receipt"),
+    ("payments.ReceiptAllocationOverride", "allocation_snapshot"),
+})

@@ -46,7 +46,6 @@ def run_source_preflight(makerspace):
     carried = [key for key in keys if key.status != key.Status.DISABLED]
     _check_brokers(carried)
     _check_live_checkouts(makerspace)
-    _check_portable_reimbursement_rows(makerspace)
     try:
         storage_mode = {
             "private": storage.ensure_versioning_or_quiescence(
@@ -139,14 +138,6 @@ def _check_live_checkouts(makerspace):
     # collect the same debt the source is still able to collect.
     if live.exists():
         _fail("unresolved_live_checkout", "A pending payment has a live payment rail.")
-
-
-def _check_portable_reimbursement_rows(makerspace):
-    from .catalog_reimbursements import unportable_row_labels
-    labels = unportable_row_labels(makerspace.pk)
-    if labels:
-        _fail("reimbursement_portability_unavailable",
-              "Stage-form, reimbursement or payout-ledger rows cannot migrate yet: " + ", ".join(labels))
 
 
 def _fail(check, detail):

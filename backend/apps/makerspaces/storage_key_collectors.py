@@ -45,6 +45,10 @@ def collect_private_object_keys(makerspace, *, include_coordination=True):
             add(f"staging/{key}")
     if include_coordination:
         _collect_private_coordination_keys(makerspace, add)
+    else:
+        # Migration capture/verification only; purge keeps its locator-driven deletion.
+        from .storage_keys_reimbursements import collect_portable_keys
+        collect_portable_keys(makerspace, add)
     return keys
 
 

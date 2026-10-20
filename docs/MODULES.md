@@ -668,3 +668,6 @@ retention, payee purge timing and attachment budgets are deployment settings
 that settlement stops until the makerspace is restored. `purge_module_data --preflight`
 prints the blockers and preserved ledger counts without deleting anything; the same
 preflight always runs before a real purge, and `--yes` skips only the prompt.
+Moving a space to another deployment carries every request, award, claim, decision,
+payout, payee record and receipt (payee bank details stay encrypted throughout); the
+imported programme arrives paused until finance reconciles it on the new deployment.

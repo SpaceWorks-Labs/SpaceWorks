@@ -56,6 +56,7 @@ must close before enabling the off-default programme features.
 | Travel support domain | `event_reimbursements/` (programme, pools, requests, awards, claims, decisions); mounted separably in `config/urls.py` |
 | Core payout ledger | `payments/event_payouts/` (obligations, encrypted payee revisions, payouts, attachments, retention); ports installed by `payments/event_payout_bridge.py` |
 | Notices and reminders | stage/payout notification sources in `events/notification_sources.py` and `payments/event_payout_bridge.py`; reminder sources in `operations/reminder_registry.py` |
+| Tenant migration of these rows | `tenant_migration/catalog_reimbursements.py` (dispositions), `semantic_reimbursements.py`, `pii_reimbursements.py`, `import_pointers.py`, `reimbursement_assets_import.py`, `target_projection_reimbursements.py`, `unique_values_reimbursements.py`; byte closure in `makerspaces/storage_keys_reimbursements.py` |
 | Archive impact and purge preflight | `makerspaces/lifecycle_archive.archive_impact` (unpaid event payouts); `makerspaces/module_purge_collectors_reimbursements.preflight_report` behind `purge_module_data --preflight` |
 
 ## Retention and runtime have different lifetimes

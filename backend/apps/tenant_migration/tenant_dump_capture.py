@@ -150,14 +150,6 @@ def capture_tenant_dump_source(capture_id, *, sleep=None, storage_modes=None):
             # Taken INSIDE the gate, against the same quiesced state as the image, so
             # the digest describes exactly what the artifact will carry.
             money_sha256 = money_fingerprint(capture.makerspace_id)
-            # Checked under the same quiesced gate, so no writer can add a row after it.
-            from .catalog_reimbursements import unportable_row_labels
-            unportable = unportable_row_labels(capture.makerspace_id)
-            if unportable:
-                raise TenantDumpBuildError(
-                    "Stage-form, reimbursement or payout-ledger rows cannot migrate yet: "
-                    + ", ".join(unportable)
-                )
 
         ledger = object_ledger(objects)
         database_sha256 = sha256_file(database_image)

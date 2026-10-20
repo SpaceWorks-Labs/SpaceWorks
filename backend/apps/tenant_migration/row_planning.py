@@ -71,6 +71,9 @@ def final_row(
             # a fresh target locator, never a source multipart/final key.
             from uuid import uuid4
             object_key_map = {**object_key_map, source["object_key"]: f"import-coordination/{uuid4()}/final"}
+    if label in {"events.StageFormAsset", "payments.FinanceAttachment"}:
+        from .reimbursement_assets_import import asset_import_row
+        row, object_key_map = asset_import_row(label, source, row, object_key_map)
     rewrite_object_fields(model, row, object_key_map)
     if not _remap_foreign_keys(model, source, row, job, pk_map, target, references):
         return None
@@ -90,6 +93,11 @@ def final_row(
         transformed = rebind_programme_document(model, mapped.field_name, row[column], source=source, row=row,
             source_id=int(job.source_makerspace_id), target_id=target.pk, deks=deks,
             map_id=lambda label, value: pk_map.lookup(apps.get_model(label), value))
+        if transformed is None:
+            from .pii_reimbursements import rebind_reimbursement_document
+            transformed = rebind_reimbursement_document(model, mapped.field_name, row[column], source=source,
+                row=row, source_id=int(job.source_makerspace_id), target_id=target.pk, deks=deks,
+                map_id=lambda label, value: pk_map.lookup(apps.get_model(label), value))
         row[column], raw_plaintext = transformed if transformed is not None else reencrypt_mapped_value_with_plaintext(
             row[column],
             source_aad=source_aad,
@@ -184,6 +192,9 @@ def protect_carried_unique_values(model, row, target, fresh_values):
         if policy is None:
             continue
         value = row[field.column]
+        if value is None:
+            # NULL never violates a unique constraint; there is no identity to preserve.
+            continue
         key = (label, field.name)
         current_batch = fresh_values.setdefault(key, set())
         collision = value in current_batch or model._base_manager.filter(

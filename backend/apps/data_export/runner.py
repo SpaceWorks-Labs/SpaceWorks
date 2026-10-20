@@ -188,6 +188,11 @@ def build_archive(
 
 
 def _read_dataset(dataset, tenant_id, closure, page_size, deadline, monotonic):
+    # Stage answers, travel support and the payout ledger travel only in a custodial
+    # portable migration; a readable export carries their headers and no rows.
+    from apps.tenant_migration.catalog_reimbursements import PORTABLE_MODELS
+    if dataset.fidelity is Fidelity.REDACTED and dataset.model in PORTABLE_MODELS:
+        return [], 0
     model = apps.get_model(dataset.model)
     queryset = model.objects.filter(dataset.predicate.as_q(tenant_id))
     queryset = select_declared_relations(queryset, dataset)

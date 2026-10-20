@@ -59,12 +59,24 @@ def resolve_locked(obligation):
     return facts
 
 
+def same_facts(stored, facts):
+    """Published facts match the current read, ignoring the revision each read is stamped for.
+
+    A provider stamps fresh evidence with the revision it would become; the stored copy
+    carries the revision it became. Only the facts themselves must agree.
+    """
+    def unstamped(value):
+        return {**value, "evidence": {key: item for key, item in value["evidence"].items()
+                                      if key != "core_eligibility_revision"}}
+    return isinstance(stored, dict) and "evidence" in stored and unstamped(stored) == unstamped(facts.as_dict())
+
+
 def require_fresh_locked(obligation, *, expected_revision):
     from .eligibility_workflow import active_holds
     from .errors import require
     facts = resolve_locked(obligation)
     require(expected_revision == obligation.eligibility_revision, "eligibility_changed")
-    require(facts.as_dict() == obligation.eligibility_evidence, "eligibility_changed")
+    require(same_facts(obligation.eligibility_evidence, facts), "eligibility_changed")
     if facts.retained_only:
         require(obligation.eligibility_history.filter(evidence_revision=obligation.eligibility_revision,
             acknowledged_at__isnull=False).exists(), "eligibility_acknowledgement_required")

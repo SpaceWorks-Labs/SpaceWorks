@@ -137,18 +137,25 @@ def materialize_tenant(
                     for record in carried
                     if record.get("insert_at_target", True) is not False
                 }
-                regenerated = _insert_models(
-                    ordered,
-                    archive,
-                    locked_job,
-                    pk_map,
-                    references,
-                    target,
-                    deks,
-                    accounting,
-                    batch_size,
-                    object_plan.target_keys,
-                )
+                from .semantic_reimbursements import prepare_project_refs, reset_project_refs
+                project_refs = prepare_project_refs(archive, pk_map)
+                try:
+                    regenerated = _insert_models(
+                        ordered,
+                        archive,
+                        locked_job,
+                        pk_map,
+                        references,
+                        target,
+                        deks,
+                        accounting,
+                        batch_size,
+                        object_plan.target_keys,
+                    )
+                finally:
+                    reset_project_refs(project_refs)
+                from .reimbursement_assets_import import register_imported_assets
+                register_imported_assets(target)
                 # Imported audit rows have no target MAC (see
                 # advance_attestation_cutover). Move this tenant's attestation cutover
                 # past them so verification reports them as unattested history rather
@@ -228,13 +235,15 @@ def _insert_models(
 ):
     repository = RawImportRepository()
     regenerated = set()
+    from .import_pointers import PointerDeferral
+    pointers = PointerDeferral.begin(ordered)
     for model in ordered:
         label = model._meta.label
         if label == "makerspaces.Makerspace":
             continue
         pending = []
         fresh_values = {}
-        for source in archive.rows(label):
+        for source in pointers.source_rows(model, archive.rows(label)):
             if update_resolved_row(model, source, target):
                 continue
             row = final_row(
@@ -253,6 +262,7 @@ def _insert_models(
                     pk_map.discard_unmaterialized(model, source[model._meta.pk.attname])
                     accounting.increment("dropped", label)
                 continue
+            pointers.defer(model, row)
             for field_name, outcome in protect_carried_unique_values(
                 model, row, target, fresh_values
             ):
@@ -270,6 +280,7 @@ def _insert_models(
                 "imported", label, repository.insert_rows(model, pending)
             )
             regenerated.update((model, name) for _label, name in fresh_values)
+    pointers.apply()
     return regenerated
 
 

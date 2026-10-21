@@ -13,6 +13,16 @@ def execute(argv, callback):
         return callback(argv)
     import django
     django.setup()
+    from django.db import connections
     from apps.operations.cloud_runtime import writer
-    with writer("job"):
-        return callback(argv)
+    # run_from_argv closes every connection when the command returns, but the writer
+    # still proves its fence on the retained session as it exits; reconnecting there
+    # is forbidden. Close once the writer has finished instead.
+    close_all = connections.close_all
+    connections.close_all = lambda: None
+    try:
+        with writer("job"):
+            return callback(argv)
+    finally:
+        del connections.close_all
+        close_all()

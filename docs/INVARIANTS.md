@@ -2835,6 +2835,8 @@ runtime providers/pages/reports do not. Reimbursement (decision 34) and full sta
   includes both blocks; replay resolves before preparation. No HTTP field is accepted as
   binding proof. Drafts and answer edits refuse inline blocks (`inline_forms_submit_only`).
   Only a self-signup carries them; staff on a member's behalf get `owner_consent_required`.
+  Explicit Saved-details choices are cross-checked across the base form and every inline stage
+  form; a conflicting value refuses the signup with `saved_detail_form_conflict`.
 - **An omitted required application form refuses the signup.** When an event has a published
   required application-stage form, every self-signup binds, so a missing applicable form
   raises `stage_incomplete` and leaves no registration, application or assignment.

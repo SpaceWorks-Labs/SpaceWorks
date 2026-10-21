@@ -16,7 +16,9 @@ HELPER_PERMISSIONS = {
 
 def _candidates(*, at=None, discovery=False):
     at = at or timezone.now()
-    return EventGrantEntitlement.objects.filter(
+    from apps.makerspaces.servability import servable_q
+    return EventGrantEntitlement.objects.filter(servable_q("makerspace"),
+        makerspace__enabled_modules__contains=["events"]).filter(
         revoked_at__isnull=True, grant__revoked_at__isnull=True,
         makerspace_id=F("grant__makerspace_id"),
         grant__user__account_kind="member", grant__user__is_active=True,
@@ -55,12 +57,12 @@ def active_entitlements(*, at=None, scope_grants=None, event_id=None, series_id=
     if not discovery:
         rows = rows.filter(grant__user__must_change_password=False)
     if scope_grants is not None:
+        # Subqueries, not materialized ID lists: one round trip however many grants.
         from apps.events.models import Event
-        targets = list(scope_grants.values_list("event_id", "series_id"))
-        events = {eid for eid, _ in targets if eid is not None}
-        series = {sid for _, sid in targets if sid is not None}
-        series.update(Event.objects.filter(pk__in=events).exclude(series_id=None).values_list("series_id", flat=True))
-        rows = rows.filter(Q(event_id__in=events) | Q(series_id__in=series))
+        events = scope_grants.exclude(event_id=None).values("event_id")
+        rows = rows.filter(Q(event_id__in=events) | Q(series_id__in=scope_grants.exclude(
+            series_id=None).values("series_id")) | Q(series_id__in=Event.objects.filter(
+            pk__in=events).exclude(series_id=None).values("series_id")))
     elif event_id is not None:
         from apps.events.models import Event
         parent = Event.objects.values_list("series_id", flat=True).get(pk=event_id)
@@ -69,7 +71,21 @@ def active_entitlements(*, at=None, scope_grants=None, event_id=None, series_id=
         rows = rows.filter(series_id=series_id)
     candidates = list(rows.select_related("created_by", "grant", "role_assignment", "shift_signup__shift",
         "event__makerspace", "series__makerspace"))
-    by_user_target, checked = {}, {}
+    by_user_target, checked, tenant_issuers = {}, {}, {}
+
+    def issuer_manages(source, target):
+        # A tenant Event Manager issuer manages every event and series in the tenant,
+        # so that branch of can_manage_grants is decided once per (issuer, tenant);
+        # only organizer/series-organizer issuers need the per-target check.
+        key = (source.created_by_id, target.makerspace_id)
+        if key not in tenant_issuers:
+            # Candidates are already restricted in SQL to servable tenants with Events
+            # enabled (this code only runs while the deployment ships Events).
+            from apps.accounts import rbac
+            issuer, space = source.created_by, target.makerspace
+            tenant_issuers[key] = bool(event_authority._active(issuer)
+                and rbac.can(issuer, rbac.Action.MANAGE_EVENTS, space.pk))
+        return tenant_issuers[key] or event_authority.can_manage_grants(source.created_by, target)
     for source in candidates:
         by_user_target.setdefault((source.grant.user_id, source.event_id, source.series_id), []).append(source)
 
@@ -103,7 +119,7 @@ def active_entitlements(*, at=None, scope_grants=None, event_id=None, series_id=
             if not set(source.permissions) <= set(shift.permission_preset):
                 return False
         target = source.event if source.event_id else source.series
-        if event_authority.can_manage_grants(source.created_by, target):
+        if issuer_manages(source, target):
             checked[source.pk] = True
             return True
         # Full co-organizer authority must itself have a live coherent issuer.

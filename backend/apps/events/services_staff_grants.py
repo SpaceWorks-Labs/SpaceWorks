@@ -92,8 +92,20 @@ def redeem_invite(token, *, actor, makerspace_id=None):
     invite = EventStaffGrantInvite.objects.filter(token_digest=digest).first()
     if invite is None or (makerspace_id is not None and invite.makerspace_id != makerspace_id):
         raise NotFound()
-    with write_boundary(_target(invite), actor=actor, account_ids=tuple(x for x in (invite.created_by_id,) if x)):
-        return lifecycle.redeem_invite(ADAPTER, token, actor=actor, makerspace_id=makerspace_id)
+    from .programme.commands import ProgrammeConflict
+    from .services_write_boundary import SCOPE_RETRIES, _held
+    # A concurrent redeemer's new grant grows the event's account scope between
+    # discovery and the lock; nothing is written yet, so re-discover and retry (the
+    # loser then meets the consumed invite as NotFound) instead of failing with 409.
+    attempts = 1 if _held.get() is not None else SCOPE_RETRIES
+    for attempt in range(attempts):
+        try:
+            with write_boundary(_target(invite), actor=actor,
+                                account_ids=tuple(x for x in (invite.created_by_id,) if x)):
+                return lifecycle.redeem_invite(ADAPTER, token, actor=actor, makerspace_id=makerspace_id)
+        except ProgrammeConflict as exc:
+            if attempt + 1 == attempts or str(exc.detail.get("code")) != "scope_changed":
+                raise
 
 
 def _send_invite(row, email, token):

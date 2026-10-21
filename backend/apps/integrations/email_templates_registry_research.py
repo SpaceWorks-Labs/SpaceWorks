@@ -9,7 +9,9 @@ from .email_templates_registry_helpers import EmailTemplateRegistryEntry, bag
 
 FAMILY_EVENTS = {
     "payments": ("charge_raised", "payment_due_soon", "payment_due_today", "payment_overdue",
-                 "payment_received", "refund_issued", "payment_failed"),
+                 "payment_received", "refund_issued", "payment_failed",
+                 "refund_due_opened", "refund_request_received", "refund_request_approved",
+                 "refund_request_declined"),
     "membership": ("approved", "declined", "renewal_due", "lapsed", "renewal_failed", "awaiting_payment", "payment_due",
                    "renewed", "grace_started", "cancelled"),
     "stock": ("low_stock", "procurement_received"),
@@ -20,7 +22,8 @@ FAMILY_EVENTS = {
 # Stock and maintenance are staff operational alerts. The research names financial,
 # membership lifecycle and certification expiry communication to the affected member.
 REQUESTER_EVENTS = {
-    "payments": frozenset(FAMILY_EVENTS["payments"]),
+    # Refund-case arrivals are staff work items; only the decision reaches the payer.
+    "payments": frozenset(FAMILY_EVENTS["payments"]) - {"refund_due_opened", "refund_request_received"},
     "membership": frozenset(FAMILY_EVENTS["membership"]),
     "certifications": frozenset({"expiring", "expired"}),
 }

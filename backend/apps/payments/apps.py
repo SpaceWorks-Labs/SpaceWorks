@@ -8,6 +8,8 @@ class PaymentsConfig(AppConfig):
     def ready(self):
         from .notifications_p2 import register
         register()
+        from .notifications_refund_cases import register as register_refund_cases
+        register_refund_cases()
 
     # No `register_separable_app`: the payment ledger is permanently core. Its surfaces
     # are the record of money owed and taken, and a deployment that cannot read or settle

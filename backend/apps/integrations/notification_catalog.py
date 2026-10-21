@@ -55,7 +55,9 @@ FEATURE_EVENTS = {
     F.API_ACCESS: ("api_key_request_resolved", "subdomain_request_resolved", "email.failed", "scheduled_report"),
     F.DEVICES: ("offline", "recovered"),
     F.PAYMENTS: ("charge_raised", "payment_due_soon", "payment_due_today", "payment_overdue",
-                 "payment_received", "refund_issued", "payment_failed", "document_issued"),
+                 "payment_received", "refund_issued", "payment_failed", "document_issued",
+                 "refund_due_opened", "refund_request_received", "refund_request_approved",
+                 "refund_request_declined"),
     F.STOCK: ("low_stock", "procurement_received", "scheduled", "completed"),
     F.CERTIFICATIONS: ("granted", "revoked", "expiring", "expired"),
 }

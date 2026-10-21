@@ -6,7 +6,7 @@ from django.db import IntegrityError, transaction
 
 from apps.payments.availability import charge_tracking_enabled, online_payments_enabled
 from apps.payments.models import MakerspacePaymentSettings, Payment
-from apps.payments.reconciliation import cancel_pending
+from apps.payments.refund_cancellation import cancel_or_hold
 from apps.payments.services import create_checkout, create_payment
 
 logger = logging.getLogger(__name__)
@@ -74,10 +74,13 @@ def _schedule_checkout(payment):
 
 def cancel_for_booking(booking, actor):
     # Reconciliation already isolates provider failures. Local update/audit failures
-    # must reach cancel_booking's atomic boundary and roll back the booking too.
-    return cancel_pending(
+    # must reach cancel_booking's atomic boundary and roll back the booking too (BK-0):
+    # a paid booking's refund case commits or rolls back with the cancellation itself.
+    return cancel_or_hold(
         makerspace=booking.space.makerspace,
         subject_type=Payment.SubjectType.BOOKING,
         subject_id=booking.pk,
         actor=actor,
+        reason_code="booking_cancelled",
+        cancelled_at=booking.cancelled_at,
     )

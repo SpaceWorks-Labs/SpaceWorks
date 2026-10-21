@@ -36,6 +36,7 @@ from apps.presence.schedule import SCHEDULED_ENTRY as PRESENCE_SCHEDULED_ENTRY
 SCHEDULED_TASKS = (
     ("cleanup-public-page-assets", "apps.makerspaces.tasks.cleanup_public_page_assets_task", 60),
     ("missing-payment-bills", "apps.payments.tasks.issue_missing_bills_task", 5),
+    ("rebuild-refund-cases", "apps.payments.tasks.rebuild_refund_cases_task", 60),
     PRESENCE_SCHEDULED_ENTRY,
     ("notification-contract-outbox", "apps.integrations.notification_tasks.sweep_notification_outbox", 1),
     # Compatibility recovery journals/replays receipts only; the duplicate legacy

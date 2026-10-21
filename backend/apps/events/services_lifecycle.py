@@ -131,11 +131,13 @@ def cancel(event, *, actor, notify=True):
 def _cancel_open_charges_after_commit(event, actor):
     """An event that will not happen must not keep billing its attendees.
 
-    Only PENDING charges are cancelled -- a settled one is money that really arrived and
-    stays on the ledger for a staff refund. Post-commit and one at a time, because
+    PENDING charges are cancelled. A settled one is money that really arrived: it stays
+    on the ledger and gets a refund case for the FULL amount (reason `event_cancelled`,
+    owner decision 60) for staff to approve. Post-commit and one at a time, because
     cancelling expires any live provider checkout, and provider I/O must never run while
     the event row lock is held. `cancel_for_registration` swallows its own failures, so
-    a provider outage never undoes the cancellation.
+    a provider outage never undoes the cancellation; the refund sweep rebuilds a case
+    a failure left behind.
     """
     from apps.events.models import EventRegistration
     from apps.events.service_payments import cancel_for_registration
@@ -152,15 +154,27 @@ def _cancel_open_charges_after_commit(event, actor):
             status=Payment.Status.PENDING,
         ).values_list("subject_id", flat=True)
     )
+    # A member who had already cancelled was assessed under the policy at the time;
+    # only registrations still standing when the space cancels are owed in full.
+    paid = set(
+        Payment.objects.filter(
+            makerspace=event.makerspace,
+            subject_type=Payment.SubjectType.EVENT_REGISTRATION,
+            subject_id__in=EventRegistration.objects.filter(event=event).exclude(
+                status__in=(EventRegistration.Status.CANCELLED, EventRegistration.Status.REJECTED),
+            ).values("pk"),
+            status__in=(Payment.Status.PAID_ONLINE, Payment.Status.PAID_OFFLINE),
+        ).values_list("subject_id", flat=True)
+    )
 
     def cancel_all():
-        for registration in EventRegistration.objects.filter(pk__in=pending).select_related(
+        for registration in EventRegistration.objects.filter(pk__in=pending | paid).select_related(
             "event__makerspace"
         ):
             with transaction.atomic():
-                cancel_for_registration(registration, actor)
+                cancel_for_registration(registration, actor, reason_code="event_cancelled")
 
-    if pending:
+    if pending or paid:
         transaction.on_commit(cancel_all)
 
 

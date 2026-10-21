@@ -606,6 +606,11 @@ CELERY_BEAT_SCHEDULE = {
         "task": "apps.payments.tasks.issue_missing_bills_task",
         "schedule": crontab(minute="*/5"),
     },
+    # Rebuilds refund cases an events cancellation hook failed to open; idempotent.
+    "rebuild-refund-cases": {
+        "task": "apps.payments.tasks.rebuild_refund_cases_task",
+        "schedule": crontab(minute="17"),
+    },
     "notification-contract-outbox": {
         "task": "apps.integrations.notification_tasks.sweep_notification_outbox",
         "schedule": crontab(minute="*"),
@@ -1244,6 +1249,16 @@ SPECTACULAR_SETTINGS = {
             ("draft", "Draft"),
             ("printed", "Printed"),
             ("archived", "Archived"),
+        ],
+        # Refund cases: stable names instead of hash-suffixed collision names.
+        "RefundCaseKindEnum": [("due", "Due under policy"), ("request", "Requested by member")],
+        "RefundCaseStatusEnum": [
+            ("open", "Open"), ("approved", "Approved"), ("approval_failed", "Approval failed"),
+            ("declined", "Declined"), ("withdrawn", "Withdrawn"), ("void", "Void"),
+        ],
+        "RefundCaseReasonCodeEnum": [
+            ("event_cancelled", "Event cancelled by the space"), ("registration_cancelled", "Registration cancelled"),
+            ("booking_cancelled", "Booking cancelled"), ("member_request", "Member request"),
         ],
         "InventoryAssetStatusEnum": [
             ("available", "Available"),

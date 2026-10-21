@@ -12,7 +12,7 @@ def registration_amount(registration):
 
 from apps.payments.availability import charge_tracking_enabled, online_payments_enabled
 from apps.payments.models import MakerspacePaymentSettings, Payment
-from apps.payments.reconciliation import cancel_pending
+from apps.payments.refund_cancellation import cancel_or_hold
 from apps.payments.services import create_checkout, create_payment
 
 
@@ -81,13 +81,20 @@ def _schedule_checkout(payment):
     transaction.on_commit(create_safely)
 
 
-def cancel_for_registration(registration, actor):
+def cancel_for_registration(registration, actor, reason_code="registration_cancelled"):
+    """Void a pending charge, or open a refund case for a paid one (R6).
+
+    `cancel_or_hold` is its own atomic block, so a failure rolls back only that savepoint
+    and the registration change survives; the refund sweep rebuilds a missed case.
+    """
     try:
-        return cancel_pending(
+        return cancel_or_hold(
             makerspace=registration.event.makerspace,
             subject_type=Payment.SubjectType.EVENT_REGISTRATION,
             subject_id=registration.pk,
             actor=actor,
+            reason_code=reason_code,
+            cancelled_at=registration.cancelled_at,
         )
     except Exception:
         logger.error("Event charge operation failed", extra={"registration_id": registration.pk})

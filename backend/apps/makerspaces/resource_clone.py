@@ -99,7 +99,10 @@ class AssetCopies:
         return storage.object_size(key)
 
     def cleanup(self):
-        for storage, key in reversed(self.created):
+        # Idempotent: prepared copies are enlisted once but both the preparation and
+        # the clone transaction own a rollback path; each object is deleted once.
+        created, self.created = self.created, []
+        for storage, key in reversed(created):
             try:
                 if storage.delete_object(key) is not True:
                     logger.error("clone_asset_cleanup_failed", extra={"object_key": key})

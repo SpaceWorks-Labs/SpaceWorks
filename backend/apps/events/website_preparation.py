@@ -24,6 +24,17 @@ def current_page(target):
     return EventPage.objects.filter(series=target).first() if isinstance(target, EventSeries) else effective_page(target)
 
 
+def _fresh_actor(actor):
+    """Authority is decided on the current account row, never the request's cached
+    instance: a deactivated or suspended actor must not reach upload bytes."""
+    from rest_framework.exceptions import PermissionDenied
+    from apps.accounts.models import User
+    fresh = User.objects.filter(pk=actor.pk).first() if actor is not None else None
+    if not event_authority._active(fresh):
+        raise PermissionDenied()
+    return fresh
+
+
 def _prepare(target, actor, copies, file):
     event_authority.require(actor, target, VIEW)
     if not (event_authority.can(actor, target, EDIT_DETAILS) or event_authority.can(actor, target, PUBLISH_SCHEDULE)):
@@ -64,6 +75,7 @@ def prepared_page_write(callback):
         if in_domain_transaction():
             raise RuntimeError("Prepare website assets before domain transactions.")
         copies = AssetCopies()
+        actor = _fresh_actor(actor)
         try:
             with boundary_tenant_write(target.makerspace_id):
                 _prepare(target, actor, copies, kwargs.get("file"))

@@ -124,9 +124,6 @@ def prepare_badges(event, registration_ids, *, actor, template_override=None,
     # the roster. Tenant VIEW_AUDIT is no longer required; the render stays audited below.
     if set(normalized["fields"]) - SAFE_FIELDS:
         event_authority.require(actor, locked, MANAGE_REGISTRATIONS)
-        from apps.accounts import rbac
-        if not rbac.can(actor, rbac.Action.VIEW_AUDIT, locked.makerspace_id):
-            raise PermissionDenied()
     _width, _height, columns, rows = page_layout(normalized)
     pages = (len(registration_ids) + columns * rows - 1) // (columns * rows)
     if pages > MAX_PAGES:

@@ -91,6 +91,15 @@ def money_fingerprint(makerspace_id, *, using="default"):
                                            "provider", "method", "reference", "refunded_at", "settled_at", "amends_id"))
     if refunds:
         payload["refunds"] = [{key: str(value) for key, value in row.items()} for row in refunds]
+    # An undecided or approved refund entitlement is money the source may still send
+    # back. Approving, declining or opening one after capture is drift. Omitted when
+    # empty so captures with no cases keep their fingerprint.
+    Case = apps.get_model("payments.RefundCase")
+    cases = list(Case.objects.using(using).filter(
+        payment__makerspace_id=makerspace_id, status__in=("open", "approved", "approval_failed"),
+    ).order_by("pk").values("id", "payment_id", "kind", "status", "due_amount", "approved_amount", "refund_id"))
+    if cases:
+        payload["refund_cases"] = [{key: str(value) for key, value in row.items()} for row in cases]
     documents = list(Document.objects.using(using).filter(makerspace_id=makerspace_id)
                      .order_by("pk").values("id", "payment_id", "sequence", "number", "kind", "amount", "currency"))
     if documents:

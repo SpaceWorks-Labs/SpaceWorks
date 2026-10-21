@@ -207,6 +207,19 @@ SUPPLEMENTAL_AUTHORITY_ENTRIES = (
         "Provider refund handles cannot authorize target operations.",
     ),
     *_same(
+        "payments.RefundCase",
+        "kind area reason_code due_amount policy_snapshot status refund approved_amount decision_note decided_at",
+        D.PRESERVE,
+        "A refund entitlement travels with the ledger it explains; approving one still needs live "
+        "target authority, and an online refund cannot reach a provider whose handles were reset.",
+    ),
+    *_same(
+        "payments.RefundPolicy",
+        "area full_before_minutes partial_before_minutes partial_percent cancellation_fee",
+        D.PRESERVE,
+        "Cancellation policy is inert configuration: it only computes an entitlement staff decide.",
+    ),
+    *_same(
         "makerspaces.MemberCard",
         "printed_name photo_object_key photo_content_type photo_size_bytes photo_consent_at "
         "photo_consent_version",

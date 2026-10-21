@@ -86,6 +86,8 @@ JSON_REFERENCE_FIELDS = frozenset(
         ("payments.PaymentDocument", "lines"),
         ("payments.PaymentDocument", "tax_breakdown"),
         ("payments.MakerspaceBillingSettings", "reminder_days_after"),
+        # Policy windows, percent, fee and currency figures; no account or object references.
+        ("payments.RefundCase", "policy_snapshot"),
         ("tenant_migration.ExternalTenantReference", "snapshot"),
     }
 )

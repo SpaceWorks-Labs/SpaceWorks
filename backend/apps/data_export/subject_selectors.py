@@ -64,6 +64,7 @@ SUBJECT_PATHS = {
     "payments.Payment": ("member",),
     "payments.ManualSettlement": ("payment__member",),
     "payments.Refund": ("payment__member",),
+    "payments.RefundCase": ("payment__member",),
     "presence.PresenceSession": ("member",),
 }
 from apps.tenant_migration.catalog_p2_bookings import SUBJECT_PATHS as _P2_BOOKING_SUBJECTS

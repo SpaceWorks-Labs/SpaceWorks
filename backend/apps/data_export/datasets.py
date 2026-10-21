@@ -145,6 +145,8 @@ DATASET_SPECS = {
     "payments.MakerspaceBillingSettings": ("makerspace/billing_settings.csv", P(("makerspace",))),
     "payments.ManualSettlement": ("payments/manual_settlements.csv", P(("payment__makerspace",))),
     "payments.Refund": ("payments/refunds.csv", P(("payment__makerspace",))),
+    "payments.RefundCase": ("payments/refund_cases.csv", P(("payment__makerspace",))),
+    "payments.RefundPolicy": ("makerspace/refund_policies.csv", P(("makerspace",))),
     "presence.PresenceSession": ("presence/sessions.csv", P(("makerspace",))),
     "procurement.ToBuyItem": ("procurement/to_buy_items.csv", P(("makerspace",))),
     "procurement.ToBuyReceipt": ("procurement/receipts.csv", P(("to_buy_item__makerspace",))),

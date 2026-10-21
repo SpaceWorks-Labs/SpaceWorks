@@ -138,7 +138,9 @@ def run_release(*, adopt=False):
             guard.assert_valid()
         with connection.cursor() as cursor:
             tables = {model._meta.db_table for model in apps.get_models(include_auto_created=True) if model._meta.managed}
-            tables.add("django_migrations")
+            # The model-less tables migrations create: bookkeeping and the DatabaseCache
+            # table (operations 0007), which the brokerless runtime reads and writes.
+            tables.update(("django_migrations", "spaceworks_cache"))
             application_tables(cursor, tables)
             probe_extensions(cursor)
         guard.assert_valid()

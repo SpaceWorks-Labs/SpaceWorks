@@ -215,7 +215,8 @@ SUPPLEMENTAL_AUTHORITY_ENTRIES = (
     ),
     *_same(
         "payments.RefundPolicy",
-        "area full_before_minutes partial_before_minutes partial_percent cancellation_fee",
+        "area plan full_before_minutes partial_before_minutes partial_percent full_within_days partial_mode "
+        "cancellation_fee",
         D.PRESERVE,
         "Cancellation policy is inert configuration: it only computes an entitlement staff decide.",
     ),

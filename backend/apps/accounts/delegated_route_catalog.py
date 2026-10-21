@@ -228,4 +228,4 @@ messaging-twilio-status messaging-twilio-inbound messaging-meta-platform messagi
 SHARED_ROUTES |= {"auth-logout-all", "member-messaging", "member-messaging-consent"}
 # Refund cases follow each charge's subject authority, like the reconciliation routes.
 MEMBERSHIP_ROUTES |= {"refund-case-list", "refund-case-detail", "refund-case-approve", "refund-case-decline",
-                      "refund-policy-list", "refund-policy-detail"}
+                      "refund-policy-list", "refund-policy-detail", "refund-policy-plan"}

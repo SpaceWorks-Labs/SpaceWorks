@@ -66,7 +66,7 @@ FIRST_PARTY_FIELD_NAMES = {
     'payments.ManualSettlement': frozenset('amends amount created_at currency id method payment received_at recorded_by reference'.split()),
     'payments.Refund': frozenset('amount created_at created_by currency external_refund_id id method payment provider reason reference refunded_at settled_at status amends'.split()),
     'payments.RefundCase': frozenset('id payment kind area reason_code member_reason due_amount policy_snapshot status refund approved_amount decision_note requested_by decided_by created_at updated_at decided_at'.split()),
-    'payments.RefundPolicy': frozenset('id makerspace area full_before_minutes partial_before_minutes partial_percent cancellation_fee updated_by updated_at'.split()),
+    'payments.RefundPolicy': frozenset('id makerspace area plan full_before_minutes partial_before_minutes partial_percent full_within_days partial_mode cancellation_fee updated_by updated_at'.split()),
     'payments.MakerspaceBillingSettings': frozenset('id makerspace payment_terms_days reminder_days_before reminder_days_after max_reminders number_prefix legal_name address tax_id footer account_codes next_document_number bill_prefix next_bill_number payment_instructions'.split()),
     'payments.PaymentDocument': frozenset('id makerspace payment settlement refund reverses sequence number kind issuer payer_label payer_type lines amount currency settlement_method settlement_reference money_at issued_at issued_by tax_breakdown branding_logo_key branding_logo_sha256'.split()),
     'payments.PlatformStripeConnectSettings': frozenset('application_fee_bps id stripe_connect_client_id stripe_publishable_key stripe_secret_key stripe_webhook_secret updated_at'.split()),

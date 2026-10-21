@@ -5,7 +5,7 @@ from decimal import Decimal
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from apps.payments.models import RefundCase, RefundPolicy
+from apps.payments.models import RefundCase
 from apps.payments.serializers_reconciliation import RefundSerializer
 from apps.payments.serializers_refunds_offline import ManualRefundReceiptSerializer
 from apps.payments.subjects import subject_label
@@ -79,41 +79,6 @@ class RefundCaseApproveSerializer(serializers.Serializer):
 
 class RefundCaseDeclineSerializer(serializers.Serializer):
     note = serializers.CharField(max_length=500)
-
-
-class RefundPolicySerializer(serializers.ModelSerializer):
-    configured = serializers.SerializerMethodField()
-    currency = serializers.SerializerMethodField()
-
-    class Meta:
-        model = RefundPolicy
-        fields = ("area", "configured", "full_before_minutes", "partial_before_minutes", "partial_percent",
-                  "cancellation_fee", "currency", "updated_at")
-        read_only_fields = ("area", "configured", "currency", "updated_at")
-        extra_kwargs = {"cancellation_fee": {"min_value": Decimal("0.00")},
-                        "partial_percent": {"min_value": 0, "max_value": 100},
-                        "full_before_minutes": {"max_value": 525600},
-                        "partial_before_minutes": {"max_value": 525600}}
-
-    def get_configured(self, policy) -> bool:
-        return policy.pk is not None
-
-    def get_currency(self, policy) -> str:
-        return self.context.get("currency", "")
-
-    def validate(self, attrs):
-        full = attrs.get("full_before_minutes", getattr(self.instance, "full_before_minutes", 0))
-        partial = attrs.get("partial_before_minutes", getattr(self.instance, "partial_before_minutes", 0))
-        if partial > full:
-            raise serializers.ValidationError(
-                {"partial_before_minutes": "The partial window cannot start before the full-refund window."})
-        fee = attrs.get("cancellation_fee")
-        currency = self.context.get("currency", "")
-        if fee is not None:
-            from apps.payments.refund_policy import precision_ok
-            if not precision_ok(fee, currency):
-                raise serializers.ValidationError({"cancellation_fee": "Too many decimal places for this currency."})
-        return attrs
 
 
 class MemberRefundCaseSerializer(serializers.ModelSerializer):

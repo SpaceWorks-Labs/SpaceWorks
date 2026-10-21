@@ -51,6 +51,7 @@ class RefundCase(models.Model):
         EVENT_CANCELLED = "event_cancelled", "Event cancelled by the space"
         REGISTRATION_CANCELLED = "registration_cancelled", "Registration cancelled"
         BOOKING_CANCELLED = "booking_cancelled", "Booking cancelled"
+        MEMBERSHIP_CANCELLED = "membership_cancelled", "Membership term cancelled"
         MEMBER_REQUEST = "member_request", "Member request"
 
     payment = models.ForeignKey(Payment, on_delete=models.PROTECT, related_name="refund_cases")
@@ -108,19 +109,34 @@ class RefundCase(models.Model):
 
 class RefundPolicy(models.Model):
     class Area(models.TextChoices):
-        # Owner decision 60: memberships have no automatic due and no policy area.
         EVENTS = "events", "Events"
         BOOKINGS = "bookings", "Bookings"
+        # Owner decision 68: a paid membership TERM has a policy too, optionally per plan.
+        MEMBERSHIP = "membership", "Memberships"
+
+    class PartialMode(models.TextChoices):
+        PERCENT = "percent", "A fixed percentage"
+        #: Memberships only: the unused share of the term, by time.
+        PRO_RATA = "pro_rata", "Pro rata of unused term time"
 
     makerspace = models.ForeignKey(
         "makerspaces.Makerspace", on_delete=models.CASCADE, related_name="refund_policies",
     )
     area = models.CharField(max_length=16, choices=Area.choices)
+    #: Memberships only: a rule for one plan. Null is the area default every plan falls back to.
+    plan = models.ForeignKey(
+        "makerspaces.MembershipPlan", null=True, blank=True, on_delete=models.CASCADE,
+        related_name="refund_policies",
+    )
     #: Cancelling at least this many minutes before the start refunds the full amount.
     full_before_minutes = models.PositiveIntegerField(default=0)
     #: At least this many minutes before (but under the full window) refunds a percentage.
     partial_before_minutes = models.PositiveIntegerField(default=0)
     partial_percent = models.PositiveSmallIntegerField(default=0, validators=[MaxValueValidator(100)])
+    #: Memberships only: cancelling within this many days of the term start refunds in full.
+    full_within_days = models.PositiveIntegerField(default=0)
+    #: Memberships choose pro rata or a percentage after the full window; others use a percentage.
+    partial_mode = models.CharField(max_length=16, choices=PartialMode.choices, default=PartialMode.PERCENT)
     #: Kept by the space on every refund, in the space's default currency.
     cancellation_fee = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     updated_by = models.ForeignKey(
@@ -131,7 +147,14 @@ class RefundPolicy(models.Model):
     class Meta:
         ordering = ["makerspace_id", "area"]
         constraints = [
-            models.UniqueConstraint(fields=["makerspace", "area"], name="refund_policy_one_per_area"),
+            models.UniqueConstraint(fields=["makerspace", "area"], condition=models.Q(plan__isnull=True),
+                                    name="refund_policy_one_per_area"),
+            models.UniqueConstraint(fields=["makerspace", "area", "plan"], condition=models.Q(plan__isnull=False),
+                                    name="refund_policy_one_per_plan"),
+            models.CheckConstraint(condition=models.Q(plan__isnull=True) | models.Q(area="membership"),
+                                   name="refund_policy_plan_is_membership"),
+            models.CheckConstraint(condition=models.Q(partial_mode="percent") | models.Q(area="membership"),
+                                   name="refund_policy_pro_rata_is_membership"),
             models.CheckConstraint(
                 condition=models.Q(full_before_minutes__gte=models.F("partial_before_minutes")),
                 name="refund_policy_windows_ordered",
@@ -141,4 +164,4 @@ class RefundPolicy(models.Model):
         ]
 
     def __str__(self):
-        return f"Refund policy {self.area} for makerspace {self.makerspace_id}"
+        return f"Refund policy {self.area} (plan {self.plan_id}) for makerspace {self.makerspace_id}"

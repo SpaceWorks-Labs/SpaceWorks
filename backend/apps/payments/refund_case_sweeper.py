@@ -6,9 +6,10 @@ no case recording what the member is owed. This sweep finds those, through one d
 selector, and hands each to `open_due_case`, which dedupes under the Payment lock, so a
 case is never opened twice however often the sweep runs.
 
-Bookings need no sweep: their case commits in the cancellation's own transaction (BK-0).
-Memberships have no automatic due (owner decision 60). A tombstoned events app has no
-registrations to read, so the sweep skips it.
+Membership term cancellation also swallows payment errors (decision 68), so cancelled
+terms are swept too, timed by their `membership.term_cancelled` audit entry. Bookings
+need no sweep: their case commits in the cancellation's own transaction (BK-0). A
+tombstoned events app has no registrations to read, so only that half is skipped.
 """
 
 import logging
@@ -49,13 +50,38 @@ def missed_registration_cases(space, *, now, limit):
     return found
 
 
+def missed_membership_cases(space, *, now, limit):
+    """Paid term charges of recently cancelled terms -- the term's own renewal and the one
+    that bought it -- that have no due case yet."""
+    from apps.audit.models import AuditLog
+    from apps.makerspaces.models import MembershipTerm
+
+    cancelled = {}
+    for target_id, at in AuditLog.objects.filter(
+        makerspace=space, action="membership.term_cancelled", target_type="makerspaces.membershipterm",
+        created_at__gte=now - LOOKBACK,
+    ).values_list("target_id", "created_at"):
+        cancelled.setdefault(int(target_id), at)
+    subjects = {}
+    for term_id, renewed_from in MembershipTerm.objects.filter(
+        pk__in=list(cancelled), status=MembershipTerm.Status.CANCELLED,
+    ).values_list("pk", "renewed_from_id"):
+        subjects.setdefault(term_id, cancelled[term_id])
+        if renewed_from:
+            subjects.setdefault(renewed_from, cancelled[term_id])
+    payments = (Payment.objects.filter(
+        makerspace=space, subject_type=Payment.SubjectType.MEMBERSHIP_TERM, subject_id__in=list(subjects),
+        status__in=PAID,
+    ).exclude(refund_cases__kind=RefundCase.Kind.DUE).order_by("pk")[:limit])
+    return [(payment, RefundCase.ReasonCode.MEMBERSHIP_CANCELLED, subjects[payment.subject_id]) for payment in payments]
+
+
 def rebuild_missed_refund_cases(*, makerspace_id=None, limit=200, now=None):
     from apps.separability.tombstones import app_is_tombstoned
     from apps.payments.services_refund_cases import open_due_case
 
     counts = {"opened": 0, "skipped": 0, "failed": 0}
-    if app_is_tombstoned("events"):
-        return counts
+    events_live = not app_is_tombstoned("events")
     now = now or timezone.now()
     spaces = rbac.scope_for_scheduled_work(Makerspace.objects.all(), field="pk").order_by("pk")
     if makerspace_id is not None:
@@ -65,7 +91,8 @@ def rebuild_missed_refund_cases(*, makerspace_id=None, limit=200, now=None):
             with fanout_tenant_write(space.pk, operation="rebuild_refund_cases", counts=counts) as allowed:
                 if not allowed:
                     continue
-                for payment, reason, cancelled_at in missed_registration_cases(space, now=now, limit=limit):
+                found = missed_registration_cases(space, now=now, limit=limit) if events_live else []
+                for payment, reason, cancelled_at in [*found, *missed_membership_cases(space, now=now, limit=limit)]:
                     try:
                         case = open_due_case(payment, reason_code=reason, actor=None,
                                              cancelled_at=None if reason == RefundCase.ReasonCode.EVENT_CANCELLED

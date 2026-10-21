@@ -36139,8 +36139,8 @@
         "/api/v1/admin/makerspace/{makerspace_id}/refund-policies": {
             "get": {
                 "operationId": "api_v1_admin_makerspace_refund_policies_list",
-                "description": "Requires manage_makerspace, view_finance, manage_events or manage_bookings. One row per area (events, bookings); `configured=false` means no policy -- a cancellation owes nothing automatically and staff decide each request. A space-cancelled event is always owed in full.",
-                "summary": "Read the refund policy for every area",
+                "description": "Requires manage_makerspace, view_finance, manage_events, manage_bookings or manage_members. One default row per area (events, bookings, membership), then any per-plan membership rules. `configured=false` means no policy: a cancellation owes nothing automatically and staff decide each request. A space-cancelled event is always owed in full. Events and bookings: cancelling at least `full_before_minutes` before the start refunds in full; at least `partial_before_minutes` refunds `partial_percent`; later refunds nothing. Memberships: cancelling within `full_within_days` of the term start refunds in full; then `partial_mode` pro_rata (unused term time) or percent until the term ends; then nothing. `cancellation_fee` (space currency) is kept from any refund. Applies to future cancellations only. Audited.",
+                "summary": "Read the refund policy for every area and membership plan",
                 "parameters": [
                     {
                         "in": "path",
@@ -36219,8 +36219,8 @@
         "/api/v1/admin/makerspace/{makerspace_id}/refund-policies/{area}": {
             "put": {
                 "operationId": "api_v1_admin_makerspace_refund_policies_update",
-                "description": "Requires manage_makerspace. Cancelling at least `full_before_minutes` before the start refunds in full; at least `partial_before_minutes` refunds `partial_percent`; later refunds nothing. `cancellation_fee` (space currency) is kept from any refund. Applies to future cancellations only. Audited.",
-                "summary": "Set the refund policy for one area",
+                "description": "Requires manage_makerspace. Events and bookings: cancelling at least `full_before_minutes` before the start refunds in full; at least `partial_before_minutes` refunds `partial_percent`; later refunds nothing. Memberships: cancelling within `full_within_days` of the term start refunds in full; then `partial_mode` pro_rata (unused term time) or percent until the term ends; then nothing. `cancellation_fee` (space currency) is kept from any refund. Applies to future cancellations only. Audited.",
+                "summary": "Set the default refund policy for one area",
                 "parameters": [
                     {
                         "in": "path",
@@ -36321,8 +36321,8 @@
             },
             "delete": {
                 "operationId": "api_v1_admin_makerspace_refund_policies_destroy",
-                "description": "Requires manage_makerspace. Afterwards a cancellation owes nothing automatically and staff decide each request. Open cases keep the figure they were assessed with. Audited.",
-                "summary": "Remove the refund policy for one area",
+                "description": "Requires manage_makerspace. Afterwards a cancellation owes nothing automatically and staff decide each request. Open cases keep their assessed figure. Audited.",
+                "summary": "Remove the default refund policy for one area",
                 "parameters": [
                     {
                         "in": "path",
@@ -36335,6 +36335,186 @@
                     {
                         "in": "path",
                         "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Payments"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No response body"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/makerspace/{makerspace_id}/refund-policies/membership/plans/{plan_id}": {
+            "put": {
+                "operationId": "api_v1_admin_makerspace_refund_policies_membership_plans_update",
+                "description": "Requires manage_makerspace. Overrides the membership default for terms of this plan. Events and bookings: cancelling at least `full_before_minutes` before the start refunds in full; at least `partial_before_minutes` refunds `partial_percent`; later refunds nothing. Memberships: cancelling within `full_within_days` of the term start refunds in full; then `partial_mode` pro_rata (unused term time) or percent until the term ends; then nothing. `cancellation_fee` (space currency) is kept from any refund. Applies to future cancellations only. Audited.",
+                "summary": "Set the refund policy for one membership plan",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "plan_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Payments"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RefundPolicy"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RefundPolicy"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RefundPolicy"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RefundPolicy"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "api_v1_admin_makerspace_refund_policies_membership_plans_destroy",
+                "description": "Requires manage_makerspace. The plan falls back to the membership default. Audited.",
+                "summary": "Remove one membership plan's refund policy",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "plan_id",
                         "schema": {
                             "type": "integer"
                         },
@@ -132255,6 +132435,14 @@
                 "type": "string",
                 "description": "* `A4` - A4\n* `LETTER` - LETTER\n* `custom` - custom"
             },
+            "PartialModeEnum": {
+                "enum": [
+                    "percent",
+                    "pro_rata"
+                ],
+                "type": "string",
+                "description": "* `percent` - A fixed percentage\n* `pro_rata` - Pro rata of unused term time"
+            },
             "ParticipatingOrganization": {
                 "type": "object",
                 "properties": {
@@ -145280,10 +145468,11 @@
                     "event_cancelled",
                     "registration_cancelled",
                     "booking_cancelled",
+                    "membership_cancelled",
                     "member_request"
                 ],
                 "type": "string",
-                "description": "* `event_cancelled` - Event cancelled by the space\n* `registration_cancelled` - Registration cancelled\n* `booking_cancelled` - Booking cancelled\n* `member_request` - Member request"
+                "description": "* `event_cancelled` - Event cancelled by the space\n* `registration_cancelled` - Registration cancelled\n* `booking_cancelled` - Booking cancelled\n* `membership_cancelled` - Membership term cancelled\n* `member_request` - Member request"
             },
             "RefundCaseStatusEnum": {
                 "enum": [
@@ -145308,6 +145497,15 @@
                         ],
                         "readOnly": true
                     },
+                    "plan": {
+                        "type": "integer",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "plan_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
                     "configured": {
                         "type": "boolean",
                         "readOnly": true
@@ -145321,6 +145519,14 @@
                         "type": "integer",
                         "maximum": 525600,
                         "minimum": 0
+                    },
+                    "full_within_days": {
+                        "type": "integer",
+                        "maximum": 3660,
+                        "minimum": 0
+                    },
+                    "partial_mode": {
+                        "$ref": "#/components/schemas/PartialModeEnum"
                     },
                     "partial_percent": {
                         "type": "integer",
@@ -145346,16 +145552,19 @@
                     "area",
                     "configured",
                     "currency",
+                    "plan",
+                    "plan_name",
                     "updated_at"
                 ]
             },
             "RefundPolicyAreaEnum": {
                 "enum": [
                     "events",
-                    "bookings"
+                    "bookings",
+                    "membership"
                 ],
                 "type": "string",
-                "description": "* `events` - Events\n* `bookings` - Bookings"
+                "description": "* `events` - Events\n* `bookings` - Bookings\n* `membership` - Memberships"
             },
             "RefundProviderEnum": {
                 "enum": [

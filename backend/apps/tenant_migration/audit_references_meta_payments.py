@@ -47,6 +47,7 @@ PAYMENT_AUDIT_EDGES = {
     ),
     **_edges("payments.Refund", [(action, "refund_id") for action in _REFUND_ACTIONS]),
     **_edges("payments.RefundCase", [(action, "case_id") for action in _CASE_ACTIONS]),
+    **_edges("makerspaces.MembershipPlan", [("payment.refund_policy_updated", "plan_id")]),
     **_edges("payments.Payment", [(action, "payment_id") for action in _CASE_ACTIONS]),
     **_edges("payments.Refund", [(action, "refund_id") for action in
                                  ("payment.refund_case_approved", "payment.refund_case_approval_failed")]),

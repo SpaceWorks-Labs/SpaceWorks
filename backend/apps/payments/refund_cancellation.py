@@ -20,3 +20,15 @@ def cancel_or_hold(*, makerspace, subject_type, subject_id, actor, reason_code, 
     from apps.payments.services_refund_cases import open_due_case
     open_due_case(payment, reason_code=reason_code, actor=actor, cancelled_at=cancelled_at)
     return payment
+
+
+@transaction.atomic
+def hold_settled(*, makerspace, subject_type, subject_id, actor, reason_code, cancelled_at=None):
+    """Assess a SETTLED charge only; never void anything. For the payment that bought a
+    membership term, whose own subject (the previous term) is not what was cancelled."""
+    payment = Payment.objects.filter(makerspace=makerspace, subject_type=subject_type,
+                                     subject_id=subject_id).first()
+    if payment is None or payment.status not in (Payment.Status.PAID_ONLINE, Payment.Status.PAID_OFFLINE):
+        return None
+    from apps.payments.services_refund_cases import open_due_case
+    return open_due_case(payment, reason_code=reason_code, actor=actor, cancelled_at=cancelled_at)

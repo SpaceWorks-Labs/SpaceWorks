@@ -440,6 +440,7 @@ export const openApiPaths = [
   "/api/v1/admin/makerspace/{makerspace_id}/refund-cases/{case_id}/approve",
   "/api/v1/admin/makerspace/{makerspace_id}/refund-cases/{case_id}/decline",
   "/api/v1/admin/makerspace/{makerspace_id}/refund-policies",
+  "/api/v1/admin/makerspace/{makerspace_id}/refund-policies/membership/plans/{plan_id}",
   "/api/v1/admin/makerspace/{makerspace_id}/refund-policies/{area}",
   "/api/v1/admin/makerspace/{makerspace_id}/reports/catalog",
   "/api/v1/admin/makerspace/{makerspace_id}/reports/{report_key}/export",
@@ -8830,6 +8831,8 @@ export type PaletteChoices = {
 
 export type PaperSizeEnum = "A4" | "LETTER" | "custom";
 
+export type PartialModeEnum = "percent" | "pro_rata";
+
 export type ParticipatingOrganization = {
   "id": number;
   "name": string;
@@ -12008,22 +12011,26 @@ export type RefundCasePayment = {
   "member_name": string;
 };
 
-export type RefundCaseReasonCodeEnum = "event_cancelled" | "registration_cancelled" | "booking_cancelled" | "member_request";
+export type RefundCaseReasonCodeEnum = "event_cancelled" | "registration_cancelled" | "booking_cancelled" | "membership_cancelled" | "member_request";
 
 export type RefundCaseStatusEnum = "open" | "approved" | "approval_failed" | "declined" | "withdrawn" | "void";
 
 export type RefundPolicy = {
   "area": RefundPolicyAreaEnum;
+  "plan": number | null;
+  "plan_name": string;
   "configured": boolean;
   "full_before_minutes"?: number;
   "partial_before_minutes"?: number;
+  "full_within_days"?: number;
+  "partial_mode"?: PartialModeEnum;
   "partial_percent"?: number;
   "cancellation_fee"?: string;
   "currency": string;
   "updated_at": string;
 };
 
-export type RefundPolicyAreaEnum = "events" | "bookings";
+export type RefundPolicyAreaEnum = "events" | "bookings" | "membership";
 
 export type RefundProviderEnum = "stripe" | "razorpay" | "manual";
 

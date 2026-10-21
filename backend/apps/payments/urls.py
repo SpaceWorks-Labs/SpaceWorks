@@ -15,7 +15,7 @@ from apps.payments.views_refunds_offline import PaymentOfflineRefundView, Paymen
 from apps.payments.views_refund_cases import (
     RefundCaseApproveView, RefundCaseDeclineView, RefundCaseDetailView, RefundCaseListView,
 )
-from apps.payments.views_refund_policies import RefundPolicyDetailView, RefundPolicyListView
+from apps.payments.views_refund_policies import RefundPlanPolicyView, RefundPolicyDetailView, RefundPolicyListView
 from apps.payments.views_reconciliation import (
     PaymentBulkMarkOfflineView,
     PaymentBulkWaiveView,
@@ -33,6 +33,7 @@ REFUND_CASE_PATTERNS = [
     path("admin/makerspace/<int:makerspace_id>/refund-cases/<int:case_id>/approve", RefundCaseApproveView.as_view(), name="refund-case-approve"),
     path("admin/makerspace/<int:makerspace_id>/refund-cases/<int:case_id>/decline", RefundCaseDeclineView.as_view(), name="refund-case-decline"),
     path("admin/makerspace/<int:makerspace_id>/refund-policies", RefundPolicyListView.as_view(), name="refund-policy-list"),
+    path("admin/makerspace/<int:makerspace_id>/refund-policies/membership/plans/<int:plan_id>", RefundPlanPolicyView.as_view(), name="refund-policy-plan"),
     path("admin/makerspace/<int:makerspace_id>/refund-policies/<str:area>", RefundPolicyDetailView.as_view(), name="refund-policy-detail"),
 ]
 

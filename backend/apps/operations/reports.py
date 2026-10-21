@@ -38,7 +38,7 @@ def report_data(
         kwargs["actor"] = actor
     if report_key == "booking-top-members":
         kwargs["actor"] = actor
-    if report_key in {"member-retention", "membership-revenue", "membership-growth", "payments-ageing", "revenue-over-time", "cash-book", "payment-reconciliation"}:
+    if report_key in {"member-retention", "membership-revenue", "membership-growth", "payments-ageing", "revenue-over-time", "cash-book", "payment-reconciliation", "refunds"}:
         kwargs["actor"] = actor
     from .report_definitions_machines import MACHINE_REPORT_KEYS
     if report_key in MACHINE_REPORT_KEYS or report_key in {"consumable-usage", "consumable-pools", "procurement-performance", "overdue-loans", "longest-loans", "qr-scan-actors"}:
@@ -91,7 +91,7 @@ def report_rows(
         kwargs["actor"] = actor
     if report_key == "booking-top-members":
         kwargs["actor"] = actor
-    if report_key in {"member-retention", "membership-revenue", "membership-growth", "payments-ageing", "revenue-over-time", "cash-book", "payment-reconciliation"}:
+    if report_key in {"member-retention", "membership-revenue", "membership-growth", "payments-ageing", "revenue-over-time", "cash-book", "payment-reconciliation", "refunds"}:
         kwargs["actor"] = actor
     from .report_definitions_machines import MACHINE_REPORT_KEYS
     if report_key in MACHINE_REPORT_KEYS or report_key in {"consumable-usage", "consumable-pools", "procurement-performance", "overdue-loans", "longest-loans", "qr-scan-actors"}:

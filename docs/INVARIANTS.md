@@ -2861,6 +2861,14 @@ runtime providers/pages/reports do not. Reimbursement (decision 34) and full sta
 - **Payee purge timing is a deployment setting.** `EVENT_REIMBURSEMENT_PAYEE_PURGE_DAYS`
   feeds both the purge anchor and the member disclosure; the eight `EVENT_REIMBURSEMENT_*` /
   `EVENT_STAGE_*` settings are bounded and refuse to start when out of range.
+- **Mandatory finance envelopes, and their one tenant-import exception.** Payee `details` and
+  obligation-revision `decision_summary`/`cancellation_note` must always be `pii:gcm:v1:` envelopes
+  whose key row (`active` or `rotated`) exists for the tenant (`finance_mandatory_envelope_guard`, even
+  with optional PII encryption off). `encryption/0011` waives ONLY the key-row lookup, and only while
+  that tenant's write fence is closed for `tenant_import` under the session's own
+  `app.pii_fence_operation` (a Lane D build, whose DEKs travel sealed and install at activation). The
+  envelope format check, the host check and the write-fence check stay on in every case; another
+  tenant's fence never waives it. Owner decision #61b.
 - **Stage forms, travel support and the payout ledger migrate custodially.** All domain and
   ledger rows are portable (`tenant_migration/catalog_reimbursements.py`); work rows and
   FK-free cleanup locators never travel. Mapped finance fields (payee details, decision

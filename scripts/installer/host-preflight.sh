@@ -13,9 +13,12 @@ case "$kernel" in
     [[ -r /etc/os-release ]] || die "Linux distribution metadata /etc/os-release is missing."
     # /etc/os-release is the distribution's canonical data source. Do not infer
     # the family from whichever package-manager binary happens to be present.
-    ID=""; ID_LIKE=""
+    # Read it in subshells: it also defines VERSION, NAME and more, and the pinned
+    # release VERSION is already set when this runs.
     # shellcheck disable=SC1091
-    source /etc/os-release
+    ID="$(ID=''; source /etc/os-release; printf '%s' "${ID:-}")"
+    # shellcheck disable=SC1091
+    ID_LIKE="$(ID_LIKE=''; source /etc/os-release; printf '%s' "${ID_LIKE:-}")"
     distro_words=" ${ID:-} ${ID_LIKE:-} "
     case "$distro_words" in
       *" debian "*|*" ubuntu "*|*" linuxmint "*) PACKAGE_FAMILY=apt ;;

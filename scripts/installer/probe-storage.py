@@ -5,11 +5,31 @@ from urllib.parse import urlsplit, urlunsplit
 from probe_common import ProbeError, request
 
 PAYLOAD = b"Space Works installer storage diagnostic\n"
+LOOPBACK = {"localhost", "127.0.0.1", "::1"}
+
+
+def browser_request(url, *, headers=None, **options):
+    """Send a browser-facing request from inside the backend network.
+
+    A loopback public endpoint names the host's published port, which this container
+    cannot reach. Connect to the backend-facing endpoint instead and keep the browser
+    Host header, which the presigned signature covers.
+    """
+    from django.conf import settings
+    public = urlsplit(getattr(settings, "AWS_S3_PUBLIC_ENDPOINT_URL", "") or "")
+    internal = urlsplit(getattr(settings, "AWS_S3_ENDPOINT_URL", "") or "")
+    target = urlsplit(url)
+    headers = dict(headers or {})
+    if (internal.netloc and public.hostname in LOOPBACK and internal.netloc != public.netloc
+            and (target.scheme, target.netloc) == (public.scheme, public.netloc)):
+        headers["Host"] = target.netloc
+        url = urlunsplit(target._replace(scheme=internal.scheme, netloc=internal.netloc))
+    return request(url, headers=headers, **options)
 
 
 def upload(form):
     if form.get("method") == "PUT":
-        status, _ = request(form["url"], data=PAYLOAD, headers=form["headers"], method="PUT")
+        status, _ = browser_request(form["url"], data=PAYLOAD, headers=form["headers"], method="PUT")
     else:
         boundary = "sw" + uuid.uuid4().hex
         parts = []
@@ -19,8 +39,8 @@ def upload(form):
             parts.append(f'--{boundary}\r\nContent-Disposition: form-data; name="{key}"\r\n\r\n{value}\r\n'.encode())
         parts.append(f'--{boundary}\r\nContent-Disposition: form-data; name="file"; filename="probe.png"\r\nContent-Type: image/png\r\n\r\n'.encode())
         parts.extend([PAYLOAD, f"\r\n--{boundary}--\r\n".encode()])
-        status, _ = request(form["url"], data=b"".join(parts),
-                            headers={"Content-Type": "multipart/form-data; boundary=" + boundary})
+        status, _ = browser_request(form["url"], data=b"".join(parts),
+                                    headers={"Content-Type": "multipart/form-data; boundary=" + boundary})
     if status not in {200, 201, 204}:
         raise ProbeError("storage_presign_upload_failed")
 
@@ -45,12 +65,12 @@ def storage():
         signed = evidence._public_client().generate_presigned_url(
             "get_object", Params={"Bucket": private, "Key": staging}, ExpiresIn=60)
         parsed = urlsplit(signed)
-        status, _ = request(urlunsplit(parsed._replace(query="", fragment="")))
+        status, _ = browser_request(urlunsplit(parsed._replace(query="", fragment="")))
         if status not in {401, 403, 404}:
             raise ProbeError("storage_private_anonymous_access")
         client.put_object(Bucket=public, Key=key, Body=PAYLOAD,
                           ContentType="text/plain", CacheControl="no-store")
-        status, body = request(settings.PUBLIC_IMAGE_BASE_URL.rstrip("/") + "/" + key)
+        status, body = browser_request(settings.PUBLIC_IMAGE_BASE_URL.rstrip("/") + "/" + key)
         if status != 200 or body != PAYLOAD:
             raise ProbeError("storage_public_bytes_mismatch")
     finally:

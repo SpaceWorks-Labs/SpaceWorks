@@ -52,7 +52,8 @@ def scheduler(snapshot, now=None):
 
 def live():
     from apps.operations import live as transport
-    json_get("http://live:8000/api/v1/health/")
+    # ALLOWED_HOSTS names the backend service, not every internal process.
+    json_get("http://live:8000/api/v1/health/", host="backend")
     client = transport.redis_client()
     if client is None:
         # This is only an admitted brokerless full deployment, never a Redis outage.

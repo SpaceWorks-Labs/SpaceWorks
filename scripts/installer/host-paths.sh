@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 # Resolve non-secret selectors from committed dotenv, never execute dotenv as shell.
 installer_env_value() {
-  local key="$1" value
-  value="$(sed -n "s/^$key=//p" "${STATIC_ENV:-$ROOT/.env}" | tr -d '\r')" || return
+  local key="$1" value file="${STATIC_ENV:-$ROOT/.env}"
+  # No saved environment yet (a first setup) means no saved selector, not an error.
+  [[ -e "$file" || -L "$file" ]] || return 0
+  value="$(sed -n "s/^$key=//p" "$file" | tr -d '\r')" || return
   [[ "$value" != *$'\n'* ]] || { echo "Duplicate host selector: $key" >&2; return 64; }
   value="${value#\'}"; value="${value%\'}"
   value="${value#\"}"; value="${value%\"}"

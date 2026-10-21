@@ -87,10 +87,15 @@ def main():
     if not extra <= {"scanner", "email"}:
         sys.exit("Full-host diagnostics refused unknown required probe selection.")
     failed = False
+    # Each check runs as a script, whose path entry is the capsule directory, not the
+    # application. The full image sets no PYTHONPATH, so pass the working directory on.
+    environment = {**os.environ, "PYTHONPATH": os.pathsep.join(
+        filter(None, (os.getcwd(), os.environ.get("PYTHONPATH", ""))))}
     for name, allowed in ALLOWED.items():
         try:
             result = subprocess.run([sys.executable, str(Path(__file__).resolve()), "--check", name],
-                                    capture_output=True, timeout=210 if name == "scheduler" else 90)
+                                    capture_output=True, timeout=210 if name == "scheduler" else 90,
+                                    env=environment)
             value = result.stdout.decode("ascii").strip()
             ok = result.returncode == 0 and value in allowed
             if name in extra and value in {"explicitly_disabled", "not_selected_configure_and_test_in_control"}:

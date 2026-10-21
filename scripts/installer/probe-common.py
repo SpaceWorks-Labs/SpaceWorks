@@ -24,8 +24,8 @@ def request(url, *, data=None, headers=None, method=None):
         return error.code, b""
 
 
-def json_get(url):
-    status, body = request(url)
+def json_get(url, host=None):
+    status, body = request(url, headers={"Host": host} if host else None)
     if status != 200 or len(body) > 65536:
         raise ProbeError("http_health_failed")
     return json.loads(body)

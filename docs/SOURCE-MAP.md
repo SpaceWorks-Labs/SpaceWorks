@@ -494,15 +494,16 @@ Core due dates and billing policy live in `payments/due_dates.py`, `models_billi
 and `views_billing.py`; manual receipt corrections/release reuse
 `services_refunds_offline.py` and `views_refunds_offline.py`.
 Refund cases: `payments/models_refund_cases.py` (RefundCase, RefundPolicy),
-`refund_policy.py` (the due arithmetic), `refund_cancellation.cancel_or_hold` (the
-cancel seam events/bookings call), `services_refund_cases.py` (open/upgrade/request/
+`refund_policy.py` (the due arithmetic) with `refund_policy_membership.py` (term bands, the
+covered-term rule), `refund_cancellation.cancel_or_hold`/`hold_settled` (the cancel seams
+events, bookings and `membership_plan_services.cancel_term` call), `services_refund_cases.py` (open/upgrade/request/
 withdraw/void), `services_refund_decisions.py` (approve/decline, the only path to a
 Refund), `refund_case_access.py` (queue scoping), `refund_case_sweeper.py` (hourly
 rebuild), `notifications_refund_cases.py`, and the views `views_refund_cases.py`,
-`views_refund_policies.py`, `views_refund_member.py`. `services_refunds.open_refund_locked`
+`views_refund_policies.py` (with `serializers_refund_policies.py`), `views_refund_member.py`. `services_refunds.open_refund_locked`
 is the shared step-1 for a caller already holding the Payment lock. The report is
 `operations/reports_refunds.py`. Frontend: `features/staff/refunds/` (queue, decision
-dialog, policy panel), `staff/RefundReceiptFields.tsx` (shared receipt inputs) and
+dialog, policy panel with `RefundPolicyCard` and per-plan `RefundMembershipPolicies`), `staff/RefundReceiptFields.tsx` (shared receipt inputs) and
 `members/MemberRefundRequest.tsx`.
 `operations/reports_cash_book.py` owns effective manual money-in/out totals.
 `payments/schemas_billing.py` documents typed business errors and DRF field-validation

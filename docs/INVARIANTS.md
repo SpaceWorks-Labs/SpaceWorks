@@ -1351,8 +1351,16 @@ domain row -> Payment -> RefundCase -> Refund (the same Payment-first order as `
 - **Due arithmetic** (`refund_policy.assess`): balance cap first; a space-cancelled event owes the full
   balance; otherwise the area policy band (full / percent / nothing) minus the fee (space currency only)
   minus refunds already made, floored at zero, rounded DOWN to min(ISO exponent, 2). Policy areas are
-  `events` and `bookings` only -- memberships have no automatic due (owner decision 60). No per-event
-  override in v1.
+  `events`, `bookings` and `membership` (owner decision 68, superseding the membership half of #60). No
+  per-event override in v1.
+- **Membership terms** (`refund_policy_membership`): a renewal charge raised against term T pays for the
+  term opened with `renewed_from = T`, so that successor is the covered term. One default rule per space
+  plus optional per-plan rules (`RefundPolicy.plan`; a plan rule wins). Full refund before the term starts
+  or within `full_within_days` of its start; then `partial_mode` `pro_rata` (amount x unused / total, multiplied
+  before dividing) or `percent` until the term ends; then nothing; minus the fee. A paid renewal whose term
+  never opened is owed in full. `cancel_term` (and so membership revocation) opens the due in its own
+  savepoint for both the term's own renewal and the charge that bought it; "do not renew" only voids a
+  pending renewal and opens nothing. Dues and admission charges have no term: request-only.
 - **Approval re-clamps** to the live balance, refuses more with 409 `refund_exceeds_balance`, and voids the
   case (then 409) when nothing is left. A refund raised outside a case voids every active case once the
   balance reaches zero (`void_exhausted_cases`, called inside the Payment lock by `open_refund_locked` and
@@ -1361,8 +1369,9 @@ domain row -> Payment -> RefundCase -> Refund (the same Payment-first order as `
   whole queue but cannot decide; an offline approval also needs RECORD_PAYMENT and a receipt. Online approval
   calls the provider after commit; a refusal moves the case to `approval_failed`. With `payments_rail`
   tombstoned an online case answers 409 `refund_rail_unavailable` -- decline is its only exit.
-- **Events cancellation swallows payment errors**, so `refund_case_sweeper` rebuilds missed due cases hourly
-  in both schedulers (bounded 7-day lookback, skipped when `events` is tombstoned). Bookings open their case
+- **Events and membership-term cancellation swallow payment errors**, so `refund_case_sweeper` rebuilds
+  missed due cases hourly in both schedulers (bounded 7-day lookback; terms are timed by their
+  `membership.term_cancelled` audit entry; the events half is skipped when `events` is tombstoned). Bookings open their case
   in the cancellation transaction and roll back with it.
 - Open, approved and approval-failed cases join `money_fingerprint`; purges delete cases before refunds
   (both PROTECT); an undecided case is the `refund_under_review` deletion blocker.

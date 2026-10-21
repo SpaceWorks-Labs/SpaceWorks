@@ -64,7 +64,12 @@ money. Only a staff approval creates a `Refund`, under the Payment then case row
   min(currency exponent, 2) places, minus anything already refunded). Bookings open the
   case in the cancellation's own transaction; the events path is post-commit and a
   missed case is rebuilt by the hourly `rebuild-refund-cases` sweep (beat and beat-less).
-  Memberships have no automatic due and no policy area (owner decision 60).
+- **Memberships** (owner decision 68): cancelling a paid membership term opens a due under
+  the membership policy -- a space default plus optional per-plan rules: a full refund
+  within N days of the term start, then pro rata of the unused term time or a percentage
+  (the policy chooses), then nothing after the term ends, minus an optional fee. Dues and
+  admission charges have no term, so they stay request-only. "Do not renew" only voids a
+  pending renewal. Per-plan rules: `refund-policies/membership/plans/<plan>`.
 - **Requests**: a member may ask on any own settled charge except a loan deposit. One
   active (open or approval-failed) case per payment; asking on an open due case adds the
   member's reason to it. Only an open request can be withdrawn.

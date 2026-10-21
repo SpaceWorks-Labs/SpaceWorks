@@ -77,32 +77,42 @@ def _lock_scope(service_request):
     return Machine.objects.select_for_update(no_key=True).get(pk=service_request.bucket.machine_id)
 
 
-def _release_hold(service_request, actor, *, reason):
-    """Return a consumable hold to its pool with ZERO consumption (cancel/reject).
+def _release_hold(service_request, actor, *, reason, consumed=None):
+    """Settle a consumable hold for cancel/reject: ZERO consumption unless ``consumed``.
 
-    Reuses the kernel's zero-consumption reconciliation: the original reserve adjustment
-    stays and a compensating ``reconcile`` adjustment is appended. Never debits
+    Reuses the kernel's reconciliation: the original reserve adjustment stays and a
+    compensating ``reconcile`` adjustment returns the unused part. A cancelled RUNNING
+    job may confirm material used so far (decision 61a, ``0 <= consumed <= hold``); that
+    amount stays taken from stock and becomes the consumed quantity. Never debits
     consumptions or creates a payment. Returns release metadata for the audit row, or
     None when nothing is held (the ledger refuses zero-delta adjustments).
     """
     from decimal import Decimal
+    from rest_framework.exceptions import ValidationError
     from apps.machines import service_consumable_pools as pools
+    from apps.machines.service_metering import _quantity
     grams = service_request.reserved_grams or Decimal("0")
     quantity = service_request.reserved_quantity
-    if not service_request.run_consumable_pool_id or (grams <= 0 and not (quantity and quantity > 0)):
+    consumed = _quantity(consumed or 0, "consumed_quantity")
+    held = service_request.run_consumable_pool_id and (grams > 0 or (quantity and quantity > 0))
+    hold = (quantity if quantity is not None else grams) if held else Decimal("0")
+    if consumed > hold:
+        raise ValidationError({"consumed_quantity": "Material used cannot exceed the material held for this job."})
+    if not held:
         return None
     from apps.machines.models import MachineConsumablePool
     pool = MachineConsumablePool.objects.get(pk=service_request.run_consumable_pool_id)
     meta = {"pool_id": pool.pk, "released_grams": str(grams),
             "released_quantity": None if quantity is None else str(quantity),
+            "consumed_quantity": str(consumed),
             "metering_unit": service_request.metering_unit}
     if quantity is not None:
-        pools.reconcile_request(service_request, actor, actual_grams=0, actual_quantity=0, reason=reason)
+        pools.reconcile_request(service_request, actor, actual_grams=consumed, actual_quantity=consumed, reason=reason)
     elif pool.unit == "grams":
-        pools.reconcile_request(service_request, actor, actual_grams=0, reason=reason)
+        pools.reconcile_request(service_request, actor, actual_grams=consumed, reason=reason)
     else:
-        # Pre-metering gram hold on a non-gram pool: the legacy branch refunds reserved_grams.
-        pools._legacy_reconcile_request(service_request, actor, actual_grams=0, reason=reason)
+        # Pre-metering gram hold on a non-gram pool: the legacy branch refunds the unused grams.
+        pools._legacy_reconcile_request(service_request, actor, actual_grams=consumed, reason=reason)
     service_request.refresh_from_db()
     return meta
 

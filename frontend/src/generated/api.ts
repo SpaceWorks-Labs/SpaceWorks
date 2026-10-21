@@ -7169,6 +7169,7 @@ export type MemberRetentionRow = {
 
 export type MemberServiceCancel = {
   "reason"?: string;
+  "consumed_quantity"?: string | null;
 };
 
 export type MemberServiceOwner = {
@@ -12577,6 +12578,7 @@ export type ServiceAccept = {
 
 export type ServiceCancel = {
   "reason"?: string;
+  "consumed_quantity"?: string | null;
 };
 
 export type ServiceComplete = {

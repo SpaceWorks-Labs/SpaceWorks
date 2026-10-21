@@ -71,8 +71,12 @@ def _assert_authority(locked, actor, by_owner):
         raise CancelRefused("This job is outside your machine scope.")
 
 
-def cancel(service_request, actor, *, reason="", by_owner=False):
-    """Cancel a pending, accepted or in-progress job; repeat calls return the result."""
+def cancel(service_request, actor, *, reason="", by_owner=False, consumed_quantity=None):
+    """Cancel a pending, accepted or in-progress job; repeat calls return the result.
+
+    ``consumed_quantity`` (decision 61a) is the confirmed material used so far by a RUNNING
+    job, in the hold's own unit; empty or zero keeps the zero-consumption release.
+    """
     reason = str(reason or "").strip()
     with transaction.atomic():
         _assert_request_write_allowed(service_request)
@@ -88,11 +92,14 @@ def cancel(service_request, actor, *, reason="", by_owner=False):
         _require_edge(locked, Status.CANCELLED)
         previous = locked.status
         running = previous == Status.IN_PROGRESS
+        if consumed_quantity and not running:
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError({"consumed_quantity": "Only a running job can record material used."})
         if running:
             _lock_assigned_machine(locked)
         else:
             _lock_scope(locked)
-        released = _release_hold(locked, actor, reason=reason or "cancelled")
+        released = _release_hold(locked, actor, reason=reason or "cancelled", consumed=consumed_quantity)
         locked.status, locked.cancelled_at = Status.CANCELLED, timezone.now()
         fields = ["status", "cancelled_at", "updated_at"]
         if reason:

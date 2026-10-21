@@ -143,6 +143,12 @@ class ServiceRejectSerializer(serializers.Serializer):
 
 class ServiceCancelSerializer(serializers.Serializer):
     reason = serializers.CharField(required=False, allow_blank=True, max_length=500, trim_whitespace=True)
+    consumed_quantity = serializers.DecimalField(
+        required=False, allow_null=True, max_digits=12, decimal_places=2, min_value=Decimal("0"),
+        help_text=("Material used so far by a RUNNING job, in its consumable hold's unit (0 to the held "
+                   "amount). It stays taken from stock and is costed; nothing is charged. Empty or 0 "
+                   "releases the whole hold."),
+    )
 
 
 class ServiceStartSerializer(serializers.Serializer):

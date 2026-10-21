@@ -8,6 +8,8 @@ token AND proves ownership before returning the private ``request_id``. Claim se
 staff and platform accounts are refused. Staff cancellation stays on the admin route.
 """
 
+from decimal import Decimal
+
 from django.db.models import Q
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import serializers
@@ -38,6 +40,12 @@ OWNER_ERRORS = {
 
 class MemberServiceCancelSerializer(serializers.Serializer):
     reason = serializers.CharField(required=False, allow_blank=True, max_length=500, trim_whitespace=True)
+    consumed_quantity = serializers.DecimalField(
+        required=False, allow_null=True, max_digits=12, decimal_places=2, min_value=Decimal("0"),
+        help_text=("Material used so far by a RUNNING job, in its consumable hold's unit (0 to the held "
+                   "amount). It stays taken from stock and is costed; nothing is charged. Empty or 0 "
+                   "releases the whole hold."),
+    )
 
 
 class MemberServiceOwnerSerializer(serializers.Serializer):
@@ -73,8 +81,9 @@ class MemberMachineServiceCancelView(APIView):
     @extend_schema(
         tags=["Member machine service"], summary="Cancel your own machine-service job",
         description=("Owner-only. Pending, accepted and in-progress jobs can be cancelled; any held "
-                     "consumables are released with no charge. Repeating a successful cancel returns the "
-                     "same result."),
+                     "consumables are released with no charge (a running job may confirm "
+                     "`consumed_quantity`, which is costed but never charged). Repeating a successful "
+                     "cancel returns the same result."),
         request=MemberServiceCancelSerializer,
         responses={200: PublicMachineServiceStatusSerializer, **OWNER_ERRORS},
     )
@@ -83,7 +92,9 @@ class MemberMachineServiceCancelView(APIView):
         row = _owned(user, Q(pk=pk))
         serializer = MemberServiceCancelSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        row = service_workflow.cancel(row, user, reason=serializer.validated_data.get("reason", ""), by_owner=True)
+        data = serializer.validated_data
+        row = service_workflow.cancel(row, user, reason=data.get("reason", ""), by_owner=True,
+                                      consumed_quantity=data.get("consumed_quantity"))
         row = _owned(user, Q(pk=row.pk))
         projection = _StatusProjection(row, printer=False)
         projection.machine_type_name = (row.queue.machine_type if row.queue_id else row.bucket.machine.machine_type).name

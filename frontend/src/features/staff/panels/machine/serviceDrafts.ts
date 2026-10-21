@@ -21,6 +21,9 @@ export type ServiceDraft = {
     actual_quantity: string;
     percent_complete: string;
     reason: string;
+    /** Cancel of a RUNNING job: confirmed material used so far, and the held amount it may not exceed. */
+    consumed_quantity: string;
+    cancel_hold: string;
   };
   manual: {
     member?: string;
@@ -48,6 +51,8 @@ export function blankServiceDraft(): ServiceDraft {
       actual_quantity: "",
       percent_complete: "0",
       reason: "",
+      consumed_quantity: "",
+      cancel_hold: "",
     },
     manual: {
       machine_id: "",

@@ -19080,7 +19080,7 @@
         "/api/v1/admin/machine-service/requests/{id}/cancel": {
             "post": {
                 "operationId": "api_v1_admin_machine_service_requests_cancel_create",
-                "description": "Manage-scoped staff only (never collect-only reach). Releases any consumable hold with zero consumption and no charge; a running job's machine is freed. Idempotent.",
+                "description": "Manage-scoped staff only (never collect-only reach). Releases any consumable hold with zero consumption and no charge, unless a running job confirms `consumed_quantity` (0 to the held amount), which stays taken from stock and is costed but never charged. A running job's machine is freed. Idempotent.",
                 "summary": "Cancel a waiting or running machine service request",
                 "parameters": [
                     {
@@ -81629,7 +81629,7 @@
         "/api/v1/member/machine-service/requests/{id}/cancel": {
             "post": {
                 "operationId": "api_v1_member_machine_service_requests_cancel_create",
-                "description": "Owner-only. Pending, accepted and in-progress jobs can be cancelled; any held consumables are released with no charge. Repeating a successful cancel returns the same result.",
+                "description": "Owner-only. Pending, accepted and in-progress jobs can be cancelled; any held consumables are released with no charge (a running job may confirm `consumed_quantity`, which is costed but never charged). Repeating a successful cancel returns the same result.",
                 "summary": "Cancel your own machine-service job",
                 "parameters": [
                     {
@@ -124678,6 +124678,13 @@
                     "reason": {
                         "type": "string",
                         "maxLength": 500
+                    },
+                    "consumed_quantity": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
+                        "nullable": true,
+                        "description": "Material used so far by a RUNNING job, in its consumable hold's unit (0 to the held amount). It stays taken from stock and is costed; nothing is charged. Empty or 0 releases the whole hold."
                     }
                 }
             },
@@ -146858,6 +146865,13 @@
                     "reason": {
                         "type": "string",
                         "maxLength": 500
+                    },
+                    "consumed_quantity": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
+                        "nullable": true,
+                        "description": "Material used so far by a RUNNING job, in its consumable hold's unit (0 to the held amount). It stays taken from stock and is costed; nothing is charged. Empty or 0 releases the whole hold."
                     }
                 }
             },

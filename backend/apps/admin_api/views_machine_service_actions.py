@@ -58,7 +58,8 @@ class _MachineServiceActionView(APIView):
         elif self.operation == "reprint":
             row = service_workflow.create_reprint(row, request.user)
         elif self.operation == "cancel":
-            row = service_workflow.cancel(row, request.user, reason=data.get("reason", ""))
+            row = service_workflow.cancel(row, request.user, reason=data.get("reason", ""),
+                                         consumed_quantity=data.get("consumed_quantity"))
         else:
             raise AssertionError("Unknown service action")
         return _response(row)
@@ -127,7 +128,9 @@ class MachineServiceCancelView(_MachineServiceActionView):
     @extend_schema(
         tags=["Admin machine service"], summary="Cancel a waiting or running machine service request",
         description=("Manage-scoped staff only (never collect-only reach). Releases any consumable hold with "
-                     "zero consumption and no charge; a running job's machine is freed. Idempotent."),
+                     "zero consumption and no charge, unless a running job confirms `consumed_quantity` "
+                     "(0 to the held amount), which stays taken from stock and is costed but never "
+                     "charged. A running job's machine is freed. Idempotent."),
         request=ServiceCancelSerializer, responses={200: MachineServiceRequestSerializer, **SERVICE_ERRORS},
     )
     def post(self, request, pk, *args, **kwargs):

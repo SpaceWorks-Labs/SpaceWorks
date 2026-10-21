@@ -11,6 +11,7 @@ export function ServiceEtaLine({ request }: { request: MachineServiceRequest }) 
 export function CancelNotice() {
   return <p className="text-sm text-muted sm:col-span-2">
     Cancelling returns any reserved material to its pool, charges nothing, frees the machine if the job is running,
-    and tells the requester. Jobs behind it move up.
+    and tells the requester. Jobs behind it move up. For a running job, the material used so far stays taken from
+    stock and is costed, never charged.
   </p>;
 }

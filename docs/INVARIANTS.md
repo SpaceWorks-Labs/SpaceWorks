@@ -3213,7 +3213,13 @@ Load-bearing details that carried over unchanged:
     debits consumptions and never creates a payment; only a cancelled RUNNING job frees its
     machine. A cancelled RUNNING job still records its consumable cost through
     `consumable_costs.record_service_cost`, in the cancel transaction and the complete/fail lock
-    order (decision 58) — a cost record only, never a charge. Staff reject releases holds the same way and keeps its pending-only meaning. Owner
+    order (decision 58) — a cost record only, never a charge. Staff (and, through the API, the
+    owner) may confirm `consumed_quantity` for a RUNNING job (decision 61a): validated
+    `0 ≤ amount ≤ hold` in the hold's own unit, it settles the hold with that consumed quantity
+    (it stays taken from stock) and is what the cost record prices. Empty or 0 is the
+    zero-consumption release; a waiting job refuses a non-zero amount. The staff form pre-fills
+    elapsed ÷ estimated duration × planned quantity (capped at the hold); the member form hides
+    the field and sends nothing. Staff reject releases holds the same way and keeps its pending-only meaning. Owner
     cancel is `member_id == caller` on the member surface
     (`/api/v1/member/machine-service/requests/<pk>/cancel`, plus the `by-token/<token>/owner`
     lookup), works with `membership` off, refuses claim/staff/platform sessions, and a bearer

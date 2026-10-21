@@ -1336,6 +1336,39 @@ deposit is cancelled at close, a collected one is released only by a staff refun
 additive AND behind `payments.enabled`, the `payments` module and resolvable credentials; off means nothing
 is raised and lateness is only recorded.
 
+**Refund cases are entitlements, never money (decision #59/#60, 2026-10-21).** `payments.RefundCase`
+records what a member may be owed; it never counts against the refundable balance, is never settled by a
+webhook and never blocks deletion as a pending refund does. The ONLY path from a case to money is
+`services_refund_decisions.approve_case`, a staff action, which creates the `Refund` under the lock order
+domain row -> Payment -> RefundCase -> Refund (the same Payment-first order as `settle_refund`). Rules:
+- **One active case per payment** (`open`/`approval_failed`, DB-conditional unique) and at most one
+  policy assessment (`kind=due`) per payment. Every writer locks the Payment first and decides both rules
+  under that lock, so a booking cancellation never raises an IntegrityError: a cancel UPGRADES an active
+  member request in place, and a member asking on an open due case adds their reason to it.
+- **A case opens only when something is owed** (R5): a cancellation whose due is zero opens nothing; a
+  member request opens with due zero and staff decide the amount. Loan deposits are never requested (their
+  release path is `release-deposit`).
+- **Due arithmetic** (`refund_policy.assess`): balance cap first; a space-cancelled event owes the full
+  balance; otherwise the area policy band (full / percent / nothing) minus the fee (space currency only)
+  minus refunds already made, floored at zero, rounded DOWN to min(ISO exponent, 2). Policy areas are
+  `events` and `bookings` only -- memberships have no automatic due (owner decision 60). No per-event
+  override in v1.
+- **Approval re-clamps** to the live balance, refuses more with 409 `refund_exceeds_balance`, and voids the
+  case (then 409) when nothing is left. A refund raised outside a case voids every active case once the
+  balance reaches zero (`void_exhausted_cases`, called inside the Payment lock by `open_refund_locked` and
+  `record_offline_refund`); approval marks its own case approved BEFORE creating the refund for that reason.
+- **Authority**: deciding is `_require_subject_authority` per case (+ machine scope); VIEW_FINANCE reads the
+  whole queue but cannot decide; an offline approval also needs RECORD_PAYMENT and a receipt. Online approval
+  calls the provider after commit; a refusal moves the case to `approval_failed`. With `payments_rail`
+  tombstoned an online case answers 409 `refund_rail_unavailable` -- decline is its only exit.
+- **Events cancellation swallows payment errors**, so `refund_case_sweeper` rebuilds missed due cases hourly
+  in both schedulers (bounded 7-day lookback, skipped when `events` is tombstoned). Bookings open their case
+  in the cancellation transaction and roll back with it.
+- Open, approved and approval-failed cases join `money_fingerprint`; purges delete cases before refunds
+  (both PROTECT); an undecided case is the `refund_under_review` deletion blocker.
+- Stripe Connect refunds send `refund_application_fee` when the charge carried a platform fee and never
+  `reverse_transfer` (direct charges have no transfer).
+
 **Payments completeness pass (2026-10-09, lane `payments`).** Five rules the audit found broken or
 unpinned; each now has a test under `tests/payments/`:
 - **A closed hosted checkout is forgotten in BOTH column pairs.** A checkout is recorded in the

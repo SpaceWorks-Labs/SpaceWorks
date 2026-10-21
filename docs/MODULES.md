@@ -534,6 +534,9 @@ state/sharing and drop schedules, so neither restores source disclosure rules.
 Native Stripe/Razorpay flows and both providers' settings/webhook provisioning:
 [mobile integration operator guide](mobile-integration.md#payments-stripe-and-razorpay).
 The module gates the online rail; core charge history, receipts and desk settlement remain available.
+Refund cases and per-area refund policies are core ledger too (no module or feature key): staff decide
+every refund in the **Refunds** queue, and without the rail an online-paid case can only be declined.
+See [refund cases in payment billing](payment-billing.md#refund-cases-and-policies).
 
 ## Mobile apps
 

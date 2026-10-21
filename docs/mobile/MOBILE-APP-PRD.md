@@ -422,7 +422,7 @@ Each Blocker contains `{code,makerspace_id:number|null,makerspace_slug:string|nu
 makerspace_member_url:string|null,organization_id:number|null,organization_url:string|null,
 count:number,detail:string}`. Display every blocker and its server message; use tenant IDs/slugs
 for in-app fix navigation and offer the trusted deployment web console for organization fixes.
-Codes currently include `unpaid_charges`, `refund_in_progress`, `deposit_held`, `active_loans`,
+Codes currently include `unpaid_charges`, `refund_in_progress`, `refund_under_review`, `deposit_held`, `active_loans`,
 `open_requests`, `problem_report_open`, `access_restricted`, `open_service_jobs`,
 `upcoming_bookings`, `upcoming_registrations`, `last_manager`, `last_org_governor`,
 `makerspace_gated`, `superadmin`. Unknown codes still display `detail`.

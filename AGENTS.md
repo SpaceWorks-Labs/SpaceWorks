@@ -176,6 +176,10 @@ the Auth module** — forgetting this is a cross-tenant data leak, not just a bu
   stamped `provider=unclaimed` and claimed exactly once by the first checkout that reaches a provider
   (DB-enforced). Marking one paid offline requires a `ManualSettlement` receipt — method, reference,
   received date — written in the same transaction and append-only, with corrections as `amends` rows.
+- **Refund cases never move money; only a staff approval does.** A `RefundCase` is an entitlement
+  (policy due or member request). `services_refund_decisions.approve_case` is the only path from a
+  case to a `Refund`, under Payment -> RefundCase -> Refund locks, with subject authority (cash also
+  needs `record_payment` and a receipt). Rules: **Refund cases** in `docs/INVARIANTS.md`.
 - **The payment LEDGER is permanently core; only the RAIL is separable.** `apps.payments`
   (Payment, ManualSettlement, reconciliation, member history, receipts, reports) can never be
   tombstoned — a deployment that cannot read or settle money it is holding has lost data.

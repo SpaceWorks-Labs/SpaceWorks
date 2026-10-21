@@ -184,6 +184,7 @@ if ! grep -q '^BACKUP_AGE_RECIPIENT=' .env; then
   checkpoint_install services
   refresh_compose_config
   ${COMPOSE[@]+"${COMPOSE[@]}"} up -d
+  BACKEND_RECREATED=1
 fi
 if ! grep -q '^BACKUP_ARCHIVE_SIGNING_PRIVATE_KEY=' .env; then
   SIGNING_PAIR="$(${COMPOSE[@]+"${COMPOSE[@]}"} exec -T "$APP_SERVICE" python -c 'from apps.ed25519 import encode_key,generate_keypair; p,q=generate_keypair(); print(encode_key(p)); print(encode_key(q))' | tr -d '\r')"
@@ -191,6 +192,13 @@ if ! grep -q '^BACKUP_ARCHIVE_SIGNING_PRIVATE_KEY=' .env; then
   checkpoint_install services
   refresh_compose_config
   ${COMPOSE[@]+"${COMPOSE[@]}"} up -d
+  BACKEND_RECREATED=1
+fi
+if [[ "${BACKEND_RECREATED:-0}" == 1 ]]; then
+  # The website edge resolved the backend address when it started; the key steps
+  # above recreated the backend, so recreate the edge as the updater does.
+  source "$ROOT/scripts/update-proxy-edges.sh"
+  refresh_update_proxy_edges
 fi
 install_producer_capability
 

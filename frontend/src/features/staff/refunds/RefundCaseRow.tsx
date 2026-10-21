@@ -12,9 +12,13 @@ export function policySentence(snapshot: unknown): string | null {
     case "no_policy_area": return "Refunds here have no automatic policy. Decide the amount yourself.";
     case "nothing_left": return "Nothing is left to refund on this charge.";
     case "policy": {
-      const band = value.band === "full" ? "the full amount" : value.band === "partial"
-        ? `${value.partial_percent}%` : "nothing";
+      const band = value.band === "full" || value.band === "never_started" ? "the full amount" : value.band === "partial"
+        ? `${value.partial_percent}%` : value.band === "pro_rata" ? "the unused part of the term" : "nothing";
       const fee = Number(value.fee_applied ?? 0) > 0 ? `, minus a ${value.fee_applied} cancellation fee` : "";
+      if (value.area === "membership") {
+        if (value.band === "never_started") return `The renewal paid for a term that never started: the policy refunds the full amount${fee}.`;
+        return `Membership term cancelled: the policy refunds ${band}${fee}.`;
+      }
       const minutes = Number(value.minutes_before_start ?? 0);
       const when = minutes > 0 ? `${formatDuration(minutes)} before the start` : "after the start";
       return `Cancelled ${when}: the policy refunds ${band}${fee}.`;

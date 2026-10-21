@@ -22,7 +22,8 @@ export const CASE_STATUS_LABELS: Record<RefundCaseStatusEnum, string> = {
 
 export const REASON_LABELS: Record<RefundCase["reason_code"], string> = {
   event_cancelled: "Event cancelled by the space", registration_cancelled: "Registration cancelled",
-  booking_cancelled: "Booking cancelled", member_request: "Member asked",
+  booking_cancelled: "Booking cancelled", membership_cancelled: "Membership term cancelled",
+  member_request: "Member asked",
 };
 
 export function caseTone(status: RefundCaseStatusEnum): "success" | "warn" | "danger" | "neutral" {
@@ -64,7 +65,8 @@ export function listRefundPolicies(makerspaceId: number) {
   return staffRequest<RefundPolicy[]>(`/admin/makerspace/${makerspaceId}/refund-policies`);
 }
 
-export type PolicyBody = Pick<RefundPolicy, "full_before_minutes" | "partial_before_minutes" | "partial_percent" | "cancellation_fee">;
+export type PolicyBody = Pick<RefundPolicy, "full_before_minutes" | "partial_before_minutes" | "partial_percent"
+  | "cancellation_fee" | "full_within_days" | "partial_mode">;
 
 export function saveRefundPolicy(makerspaceId: number, area: RefundPolicy["area"], body: PolicyBody) {
   return staffRequest<RefundPolicy>(`/admin/makerspace/${makerspaceId}/refund-policies/${area}`, {
@@ -74,6 +76,17 @@ export function saveRefundPolicy(makerspaceId: number, area: RefundPolicy["area"
 
 export function removeRefundPolicy(makerspaceId: number, area: RefundPolicy["area"]) {
   return staffRequest<void>(`/admin/makerspace/${makerspaceId}/refund-policies/${area}`, { method: "DELETE" });
+}
+
+/** A membership plan's own rule; without one the plan follows the membership default. */
+export function savePlanPolicy(makerspaceId: number, planId: number, body: PolicyBody) {
+  return staffRequest<RefundPolicy>(`/admin/makerspace/${makerspaceId}/refund-policies/membership/plans/${planId}`, {
+    method: "PUT", body: JSON.stringify(body),
+  });
+}
+
+export function removePlanPolicy(makerspaceId: number, planId: number) {
+  return staffRequest<void>(`/admin/makerspace/${makerspaceId}/refund-policies/membership/plans/${planId}`, { method: "DELETE" });
 }
 
 /** A decision changes the case list AND the payment ledger (a refund line appears). */

@@ -10,9 +10,9 @@ import {
   refundPayment,
   remainingRefundable,
   recordOfflineRefund,
-  SETTLEMENT_METHODS,
   type PaymentRow,
 } from "./paymentsApi";
+import { RefundReceiptFields, useRefundReceipt } from "./RefundReceiptFields";
 
 // Client-side mirror of `PaymentRefundRequestSerializer` (positive, two decimals) plus the
 // balance rule the service enforces under the row lock. The server is still the authority:
@@ -43,19 +43,12 @@ export function PaymentRefundDialog({
   const offline = payment.status === "paid_offline";
   const [amount, setAmount] = useState(remaining.toFixed(2));
   const [reason, setReason] = useState("");
-  const [method, setMethod] = useState<string>("cash");
-  const [reference, setReference] = useState("");
-  const [refundedAt, setRefundedAt] = useState(() => {
-    const now = new Date();
-    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-    return now.toISOString().slice(0, 16);
-  });
+  const receiptState = useRefundReceipt();
   const [validationError, setValidationError] = useState<string | null>(null);
   const mutation = useMutation({
     mutationFn: () => offline
       ? recordOfflineRefund(makerspaceId, payment.id, {
-        amount: amount.trim(), reason: reason.trim(),
-        receipt: { method, reference: reference.trim(), refunded_at: new Date(refundedAt).toISOString() },
+        amount: amount.trim(), reason: reason.trim(), receipt: receiptState.receipt(),
       }, releaseDeposit)
       : refundPayment(makerspaceId, payment.id, { amount: amount.trim(), reason: reason.trim() }),
     onSuccess: () => {
@@ -64,10 +57,7 @@ export function PaymentRefundDialog({
     },
   });
   const submit = () => {
-    const date = new Date(refundedAt).getTime();
-    const problem = validateRefundAmount(amount, remaining) ?? (offline &&
-      (!Number.isFinite(date) || date > Date.now() + 5 * 60_000)
-      ? "Enter the date and time the money was returned, without a future date." : null);
+    const problem = validateRefundAmount(amount, remaining) ?? (offline ? receiptState.dateProblem() : null);
     setValidationError(problem);
     if (!problem) mutation.mutate();
   };
@@ -96,17 +86,7 @@ export function PaymentRefundDialog({
         {offline ? (
           <>
             <p className="text-sm text-muted">{releaseDeposit ? "After closing the loan, record the deposit money handed back to the borrower." : "Record money already returned."} This creates a permanent receipt.</p>
-            <Field label="Refund method">
-              <select className="desk-input" value={method} onChange={(event) => setMethod(event.target.value)}>
-                {SETTLEMENT_METHODS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-              </select>
-            </Field>
-            <Field label="Refund reference (optional)">
-              <input className="desk-input" maxLength={64} value={reference} onChange={(event) => setReference(event.target.value)} />
-            </Field>
-            <Field label="Returned at">
-              <input className="desk-input" type="datetime-local" required value={refundedAt} onChange={(event) => { setRefundedAt(event.target.value); setValidationError(null); }} />
-            </Field>
+            <RefundReceiptFields state={receiptState} onEdit={() => setValidationError(null)} />
           </>
         ) : null}
         <Field label="Refund amount" error={validationError ?? undefined}>

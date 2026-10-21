@@ -2,6 +2,7 @@ import type { DeletionBlocker } from "./accountDeletionApi";
 
 const destinations: Record<string, [string, string]> = {
   unpaid_charges: ["payments", "View charges"], refund_in_progress: ["payments", "View refunds"],
+  refund_under_review: ["payments", "View refunds"],
   deposit_held: ["payments", "View deposits"], active_loans: ["loans", "View borrowed hardware"],
   open_requests: ["loans", "View hardware requests"], problem_report_open: ["loans", "View problem reports"],
   upcoming_bookings: ["bookings", "Manage bookings"], upcoming_registrations: ["events", "Manage registrations"],

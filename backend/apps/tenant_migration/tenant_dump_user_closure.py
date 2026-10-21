@@ -199,7 +199,8 @@ def _entry(capture_id, pk, reason, edges, *, emitted):
         "reason_code": reason,
         "stub_schema_version": STUB_SCHEMA_VERSION if reason == "not_tenant_exclusive" else None,
         "referencing_edges": [
-            {"model_label": label, "source_row_pk": row_pk, "field_name": field}
+            {"model_label": label, "source_row_pk": row_pk if type(row_pk) is int else str(row_pk),
+             "field_name": field}
             for label, row_pk, field in sorted(edges, key=_edge_key)
         ],
     }

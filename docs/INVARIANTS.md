@@ -4309,8 +4309,10 @@ reverse dependency order, and inserts raw rows in actual FK order while every da
 active. Migrations run in a child process whose Django `default` connection is the scratch database; this
 is required because historical `RunPython` functions with unqualified managers would otherwise route their
 data writes back to the live in-process `default` connection. It never sets `session_replication_role`;
-only an actual strongly connected component whose cycle
-edges are all nullable may use the two-pass NULL-then-update path. Global `MachineType` built-ins resolve by
+only nullable edges inside an actual strongly connected component may use the two-pass NULL-then-update
+path, and the component must become acyclic without them (a cycle of required edges still refuses; a
+claim's required `revision`/`claim` edges with its nullable `current_*` pointers qualify). A stage form's
+revision rows depend on the stage form row they name by `selector_id`. Global `MachineType` built-ins resolve by
 `(makerspace IS NULL, slug)` only when the canonical `name`/`icon`/`is_builtin`/`managing_action`/
 `capability_config` fingerprint equals the migrated target definition; tenant custom rows retain their PKs.
 The tenant PII fence is explicitly closed under the matching `tenant_import` GUC for mapped raw insertion

@@ -24,6 +24,21 @@ class RowLoadPlan:
         return bool(self.deferred_foreign_keys)
 
 
+class _RequiredEdge:
+    """A non-FK reference an insert trigger checks immediately; never deferred."""
+    null = False
+    column = None
+
+
+_REQUIRED = _RequiredEdge()
+
+
+def _semantic_targets(label, values):
+    # A stage form's revision names it by selector_id; the selector guard needs it present.
+    if label == "events.EventFormRevision" and values.get("form_key") == "stage" and values.get("selector_id"):
+        yield ("events.EventStageForm", values["selector_id"])
+
+
 def plan_row_load(rows, *, resolved_pks=None):
     """Order actual incoming rows; defer only edges inside actual nullable SCCs."""
     resolved_pks = resolved_pks or {}
@@ -49,6 +64,10 @@ def plan_row_load(rows, *, resolved_pks=None):
             if target in row_by_identity:
                 dependencies[row.identity].add(target)
                 edge_fields[(row.identity, target)].append(field)
+        for target in _semantic_targets(row.model._meta.label, values):
+            if target in row_by_identity:
+                dependencies[row.identity].add(target)
+                edge_fields[(row.identity, target)].append(_REQUIRED)
         rewritten.append(SanitizedRow(row.model, row.source_pk, values))
     row_by_identity = {row.identity: row for row in rewritten}
 
@@ -60,10 +79,8 @@ def plan_row_load(rows, *, resolved_pks=None):
             for target in dependencies[source] & component:
                 fields = edge_fields[(source, target)]
                 if any(not field.null for field in fields):
-                    raise TenantDumpDependencyError(
-                        "Lane D incoming rows contain a non-nullable FK cycle: "
-                        + ", ".join(sorted(label for label, _pk in component))
-                    )
+                    # A required edge stays; the cycle must close through nullable ones.
+                    continue
                 ignored_edges.add((source, target))
                 row = row_by_identity[source]
                 values = dict(row.values)
@@ -76,7 +93,13 @@ def plan_row_load(rows, *, resolved_pks=None):
                     row.model, row.source_pk, values
                 )
 
-    order = _topological_order(dependencies, ignored_edges)
+    try:
+        order = _topological_order(dependencies, ignored_edges)
+    except TenantDumpDependencyError:
+        raise TenantDumpDependencyError(
+            "Lane D incoming rows contain a non-nullable FK cycle: "
+            + ", ".join(sorted({label for component in cyclic_components for label, _pk in component}))
+        ) from None
     return RowLoadPlan(
         rows=tuple(row_by_identity[identity] for identity in order),
         deferred_foreign_keys=tuple(deferred),

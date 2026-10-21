@@ -169,6 +169,7 @@ FANOUT_GATE_PARTICIPANTS = {
         "Expired and consumed disclosure grants are deleted and audited inside each tenant gate."
     ),
     "apps.payments.bill_sweeper.issue_missing_bills": "Core bill recovery uses per-tenant skip-and-count source gates.",
+    "apps.payments.refund_case_sweeper.rebuild_missed_refund_cases": "Refund-case rebuild uses per-tenant skip-and-count source gates.",
     "apps.makerspaces.profile_github_tasks.refresh_public_calendars": (
         "Public calendars refresh under the existing per-tenant GitHub source boundary; cache only."
     ),

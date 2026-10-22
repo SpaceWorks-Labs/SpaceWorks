@@ -6,8 +6,8 @@ from pathlib import Path
 from .environment import command, role_environment
 from .private_files import write_private
 
-IMAGE_PLACEHOLDER = "ghcr.io/spaceworks-hq/spaceworks-backend-managed@sha256:" + "0" * 64
-FREE_IMAGE_PLACEHOLDER = "ghcr.io/spaceworks-hq/spaceworks-backend-free@sha256:" + "0" * 64
+# The one published backend image runs every profile (owner decision #75a).
+IMAGE_PLACEHOLDER = "ghcr.io/spaceworks-hq/spaceworks-backend@sha256:" + "0" * 64
 
 
 def render_blueprint(values, answers, *, saas=False):

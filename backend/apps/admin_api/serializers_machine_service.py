@@ -129,6 +129,11 @@ class MachineServiceSubmitSerializer(serializers.Serializer):
     contact_email = serializers.EmailField(required=False, allow_blank=True)
     contact_phone = serializers.CharField(required=False, allow_blank=True, max_length=32)
     capability_payload = serializers.JSONField(required=False)
+    certification_override_reason = serializers.CharField(
+        required=False, allow_blank=True, max_length=1000, write_only=True,
+        help_text="Submits the job for a member who lacks a required certification. Honoured only "
+        "for staff with authority over the machine type; every override is audited.",
+    )
 
 
 class ServiceAcceptSerializer(serializers.Serializer):

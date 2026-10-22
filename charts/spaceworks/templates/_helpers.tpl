@@ -3,9 +3,6 @@
 {{- end -}}
 {{- define "spaceworks.backendImage" -}}
 {{- $repository := .Values.backendImage -}}
-{{- if and (eq .Values.deploymentMode "managed") (eq $repository "ghcr.io/spaceworks-hq/spaceworks-backend") -}}
-{{- $repository = "ghcr.io/spaceworks-hq/spaceworks-backend-managed" -}}
-{{- end -}}
 {{- if and (eq .Values.deploymentMode "host") (empty .Values.backendDigest) -}}
 {{- printf "%s:%s" $repository (required "imageTag is required for existing host releases" .Values.imageTag) -}}
 {{- else -}}

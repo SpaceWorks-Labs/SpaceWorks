@@ -2,7 +2,6 @@
 
 import logging
 import os
-from datetime import timedelta
 import uuid
 
 from django.db import transaction
@@ -19,6 +18,7 @@ from apps.backup.models import (
     PlatformBackupSettings,
 )
 from apps.backup.operation_lock import deployment_operation_lock
+from apps.backup.retention import archive_expires_at
 from apps.backup.runs import BackupRunHolderMismatchError
 from apps.backup.services_archive_failures import (
     _fail_archive,
@@ -250,8 +250,8 @@ def _commit_archive_available(archive_id, holder, manifest, size, archive_sha256
     archive.age_encrypted = True
     archive.completed_at = completed_at
     if archive.expires_at is None:
-        archive.expires_at = completed_at + timedelta(
-            days=PlatformBackupSettings.load().retention_days
+        archive.expires_at = archive_expires_at(
+            archive, completed_at, PlatformBackupSettings.load().retention_days
         )
     archive.save()
     if archive.backup_run_id is None:

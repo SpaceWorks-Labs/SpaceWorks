@@ -1,11 +1,14 @@
 """Superadmin-only structured capability controls for Makerspace admin."""
 
 from django import forms
+from django.contrib import messages
 
 from apps.audit import services as audit
 from apps.makerspaces.capabilities import FEATURE_DEFINITIONS, validate_capabilities
 from apps.makerspaces.admin_images import MakerspaceAdminForm as ImageMakerspaceAdminForm
-from apps.makerspaces.module_registry import MODULES
+from apps.makerspaces.module_registry import (
+    BY_KEY, MODULES, core_module_keys, module_available, with_dependencies,
+)
 from apps.makerspaces.request_access import effective_policy
 
 
@@ -92,8 +95,21 @@ class MakerspaceAdminForm(ImageMakerspaceAdminForm):
         values = self.cleaned_data["capabilities"]
         modules = [value.removeprefix("module:") for value in values if value.startswith("module:")]
         features = [value.removeprefix("feature:") for value in values if value.startswith("feature:")]
+        # MP-28: a module ticked without what it requires is completed, not rejected --
+        # the same cascade as install_module and creation setup. Core is always added
+        # back by canonicalization, so it is not reported as an addition.
+        ticked = set(modules)
+        completed = with_dependencies(ticked)
+        added = sorted(completed - ticked - core_module_keys())
+        unavailable = [key for key in added if not module_available(key)]
+        if unavailable:
+            raise forms.ValidationError(
+                f"The ticked modules require {', '.join(unavailable)}, which this deployment "
+                "does not ship (TOMBSTONED_APPS)."
+            )
+        self.capability_dependencies_added = added
         try:
-            modules, features = validate_capabilities(modules, features)
+            modules, features = validate_capabilities(sorted(completed), features)
         except Exception as exc:
             raise forms.ValidationError(exc.messages) from exc
         self.instance.enabled_modules = modules
@@ -115,8 +131,18 @@ class MakerspaceCapabilityAdminMixin:
             request_access_before is not None
             and request_access_before != request_access_after
         )
+        dependencies_added = getattr(form, "capability_dependencies_added", [])
+        if dependencies_added:
+            labels = ", ".join(BY_KEY[key].label for key in dependencies_added)
+            self.message_user(
+                request,
+                f"Also enabled {labels}: the modules you ticked require them.",
+                messages.WARNING,
+            )
         if change and (before != after or request_access_changed):
             meta = {"before": before, "after": after}
+            if dependencies_added:
+                meta["dependencies_added"] = dependencies_added
             if request_access_changed:
                 meta["request_access"] = {
                     "before": request_access_before,

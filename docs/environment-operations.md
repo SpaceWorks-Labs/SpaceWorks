@@ -168,6 +168,7 @@ Cloud configuration and finite-job inputs (host/full ignores free limits):
 | `CLOUD_SCHEDULER` | legacy host selection | Managed beat, loop or external; free permits tick only. |
 | `SPACEWORKS_ADMITTED_GENERATION` | entrypoint-owned | Original launch generation; active boundaries retain their own generation. Do not set manually. |
 | `SPACEWORKS_FINITE_MAINTENANCE_JOB` | entrypoint-owned | Exact admitted export command only; erased for other invocations. |
+| `PYTHONPATH` | entrypoint-owned | Set only in managed mode, so processes started by the one image can import its cloud setup tooling. Host mode leaves it untouched. |
 | `MANAGED_UPLOAD_TRANSFER_BOUND_SECONDS` | `0` | Zero refuses coordinated capture. Set only after proving the provider's enforced transfer horizon, at most 86,400 seconds. |
 | `STORAGE_CAPABILITIES_FILE` | empty | Required managed version-1 role/identity/capability descriptor, not a credential file. |
 | `STORAGE_CAPABILITY_TTL_SECONDS` | Full: `900`; free: derived | Qualified proof freshness, up to 86,400 seconds. Full accepts 60..86,400; free requires a complete binding refresh cycle plus one tick and execution headroom. See [free cadence](deploy/cloud-free.md). |
@@ -210,7 +211,7 @@ Cloud configuration and finite-job inputs (host/full ignores free limits):
 | `SPACEWORKS_GRANT_DATABASE_UUID` | unset | Separately supervised sibling grant-only target UUID. |
 | `SPACEWORKS_INITIALIZE_DATABASE_NAME` | unset | Ephemeral pre-H1 name proof for a populated legacy database without a marker. |
 | `SPACEWORKS_INITIALIZE_DATABASE_OID` | unset | Matching pre-H1 OID proof; empty fresh initialization retains its explicit path. |
-| `BUILD_IMAGE_PROFILE` | image build metadata | Build-owned full/free identity; cannot promote a reduced image through runtime env. |
+| `BUILD_IMAGE_PROFILE` | image build metadata | Build-owned image identity, always `full`: the one published image runs every profile. |
 | `GUNICORN_CMD_ARGS` | empty | Free rejects arbitrary command arguments; use its fixed one-worker topology. |
 | `PGCONNECT_TIMEOUT` | validated transport | Connection timeout only; passfiles and validated URLs own credentials. |
 | `PGSSLMODE` | validated URL/provider choice | Remote managed connections require explicit TLS; prefer verify-full. |

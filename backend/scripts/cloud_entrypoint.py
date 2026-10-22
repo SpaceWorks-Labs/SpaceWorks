@@ -39,12 +39,21 @@ def main():
                 if row is None or (row[1] is not None and not recovery):
                     raise ValueError("Writer generation is unavailable.")
                 os.environ["SPACEWORKS_ADMITTED_GENERATION"] = str(row[0])
-    runpy.run_path(str(Path(__file__).with_name("spaceworks_entrypoint.py")), run_name="__main__")
+    if selection.mode == "managed":
+        # Processes exec'd from here import the image's cloud_setup tooling.
+        scripts = str(Path(__file__).resolve().parent)
+        os.environ["PYTHONPATH"] = os.pathsep.join([scripts, str(Path(scripts).parent)])
+    entrypoint = runpy.run_path(str(Path(__file__).with_name("spaceworks_entrypoint.py")), run_name="spaceworks_entrypoint")
+    raise SystemExit(entrypoint["main"]())
 
 
-if __name__ == "__main__":
+def run():
     try:
         main()
     except Exception:
         print("SpaceWorks startup refused: deployment configuration or secret files invalid.", file=sys.stderr)
         raise SystemExit(78)
+
+
+if __name__ == "__main__":
+    run()

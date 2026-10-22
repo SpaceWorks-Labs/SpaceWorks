@@ -36,7 +36,7 @@ local-only under `backend/tests/cloud/profile_integration/`.
 Missing selectors mean `host` + `full`. Empty/unknown values and `host+free` refuse.
 `MANAGED_POSTGRES` controls database privileges; `PLATFORM_DOMAIN_SUFFIX` controls
 product tenancy. Neither selects launch mode/profile. M still rejects changed-mode
-recovery bypasses and free resident roles; free image/full launch must refuse.
+recovery bypasses and free resident roles. One image runs every profile; the selectors pick it.
 
 Legacy host/full with no `CLOUD_TASK_PROFILE`/`CLOUD_SCHEDULER` keeps its exact
 broker fallback, cache selection, eager setting, schedules and imports. Managed or
@@ -209,11 +209,12 @@ deploy/contracts/cloud-model-fields.json. No parallel provisional tables are reg
 hook is config.cloud_database.django.managed_database_configuration; discovery consumes J's periodic_catalog.
 Source-local fields keep explicit export/portable-dump dispositions.
 
-Image targets are default full (legacy backend context), plus managed and free. Additional targets need
-BuildKit named context cloud_tooling pointing at the repository root, preserving scripts/cloud_setup under
-/app/scripts. Managed targets enter secret materialization/generation capture before M's role/admission
-entrypoint. Extra images are spaceworks-backend-managed and spaceworks-backend-free. Recipes must select
-matching verified immutable digests; no publication occurred here.
+Exactly two images are published (owner decision #75a): spaceworks-backend and spaceworks-frontend. The
+backend `release` target adds scripts/cloud_setup under /app/scripts from the BuildKit named context
+cloud_tooling (the repository root); the default `full` target is the plain source build. The one image runs
+host/full, managed/full and managed/free: in managed mode the common entrypoint hands over to
+cloud_entrypoint for secret materialization and generation capture before M's role/admission checks.
+Recipes select one verified immutable spaceworks-backend digest.
 
 Cross-owner blockers include M's SQL-function catalogue entry for operations_storage_capability_guard and
 finite diagnostic allowlist, J's launcher and domain/free adapters, and R's exact bootstrap argv/descriptor

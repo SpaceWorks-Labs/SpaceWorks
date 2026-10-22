@@ -13,7 +13,7 @@ generated, including `FREE_TICK_SECRET`, prints the free-tier notice and starts 
 default. Then supply the external database, storage and email values and run the release job and
 docker-compose.free.yml. The managed wizard (`scripts/init-cloud-environment.py`) also generates the
 continuity keys (`ACCOUNT_PII_MASTER_KEY`, `EVENT_REGISTRATION_CREDENTIAL_*`, `PUSH_TOKEN_HMAC_KEY` with the
-PII/audit/integration keys) once and never replaces them; keep its private secrets file in escrow. The dedicated free image omits PostgreSQL tools/ffprobe, bakes static files and runs
+PII/audit/integration keys) once and never replaces them; keep its private secrets file in escrow. Free runs the same spaceworks-backend image as every other profile (static files baked in) and runs
 uid 10001. Steady state is one sync web worker/thread, DatabaseCache and no Redis/worker/beat/loop/live process.
 Heavy intents remain persisted; every job needs a real bounded checkpoint adapter. No scheduled pg_dump or
 deployment backup runs. Unsupported video/media validation must refuse before upload acceptance. Scanning is

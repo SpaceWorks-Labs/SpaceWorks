@@ -7,7 +7,7 @@ from .answers import FORBIDDEN_ENV
 from .environment import command, role_environment
 from .errors import SetupError
 from .private_files import write_private
-from .recipes import IMAGE_PLACEHOLDER, FREE_IMAGE_PLACEHOLDER
+from .recipes import IMAGE_PLACEHOLDER
 
 
 def secret_name(name):
@@ -144,5 +144,5 @@ def render_provider(root, source, values, answers):
                 document = digitalocean(document, values, answers)
             elif provider == "koyeb":
                 document = koyeb(document, values, answers)
-            text = json.dumps(document, indent=2).replace(IMAGE_PLACEHOLDER, answers["backend_image"]).replace(FREE_IMAGE_PLACEHOLDER, answers["backend_image"]) + "\n"
+            text = json.dumps(document, indent=2).replace(IMAGE_PLACEHOLDER, answers["backend_image"]) +"\n"
         write_private(root / path.name, text)

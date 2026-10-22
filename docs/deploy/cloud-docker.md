@@ -5,8 +5,9 @@ Read [hosting contracts](cloud-overview.md), [environment/setup](cloud-environme
 
 1. Provision PostgreSQL 16/17 direct/session transport, required extensions and a narrow runtime login.
    Provision independent private/public-final object buckets, actual capability facts and a verified email sender.
-2. Render protected configuration with the wizard. All full roles use the same immutable managed image digest;
-   the dedicated free image requires managed/free. Replace example zero digests only with qualified builds.
+2. Render protected configuration with the wizard. Every role, full or free, uses the same immutable
+   spaceworks-backend digest; the profile is chosen at start-up by SPACEWORKS_DEPLOYMENT_MODE/PROFILE.
+   Replace example zero digests only with qualified builds.
 3. Run the fixed release role with finite maintenance credentials before traffic. Verify DB identity, app-only
    grants, recovery state, migrations, encryption and real native storage proofs. Residents get runtime credentials only.
 4. Full Redis needs web/worker/one elected beat. Full brokerless needs web/worker/scheduler <=60 seconds.
@@ -26,7 +27,8 @@ Signup, provider schema/CLI validation and live acceptance remain required; this
 
 
 Build from the repository root:
-`docker buildx build --target managed --build-context cloud_tooling=. -f backend/Dockerfile backend`
-(or select `--target free`). Plain `docker build backend` retains the full default target without the named context.
-Default full builds install versioned clients 16/17 and ffprobe; free omits them. Runtime/arm64/static checks must
+`docker buildx build --target release --build-context cloud_tooling=. -f backend/Dockerfile backend`.
+That is the published spaceworks-backend image; it runs host/full, managed/full and managed/free.
+Plain `docker build backend` builds the default full target for host installs, without the cloud tooling.
+Both install versioned clients 16/17 and ffprobe. Runtime/arm64/static checks must
 pass before publication; source metadata alone is not evidence. Client-major build arguments stay explicit.

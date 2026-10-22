@@ -10,26 +10,10 @@ class RequestItemInputSerializer(serializers.Serializer):
 
 
 class RequestSubmitSerializer(serializers.Serializer):
-    CONTACT_FIELDS = ("contact_name", "contact_email", "contact_phone")
+    """A signed-in borrow request. Identity is always account-derived, so any stray
+    contact fields an old client still sends are ignored as unknown keys."""
 
     website = serializers.CharField(required=False, allow_blank=True, write_only=True)
-    contact_name = serializers.CharField(
-        required=False,
-        allow_blank=True,
-        max_length=200,
-        help_text="Required for an account-less submission.",
-    )
-    contact_email = serializers.EmailField(
-        required=False,
-        allow_blank=True,
-        max_length=254,
-        help_text="Required for an account-less submission; normalized to lowercase.",
-    )
-    contact_phone = serializers.CharField(
-        required=False,
-        allow_blank=True,
-        max_length=32,
-    )
     requested_for = serializers.CharField(
         required=False,
         allow_blank=True,
@@ -42,29 +26,8 @@ class RequestSubmitSerializer(serializers.Serializer):
         max_length=20,
     )
 
-    def to_internal_value(self, data):
-        if not self.context.get("anonymous_submission", False):
-            # Authenticated identity remains account-derived. Removing these fields
-            # before child validation makes them genuinely ignored, including an
-            # oversized spoof value that must not turn into a validation side channel.
-            data = data.copy()
-            for field_name in self.CONTACT_FIELDS:
-                data.pop(field_name, None)
-        return super().to_internal_value(data)
-
-    def validate_contact_email(self, value):
-        return value.strip().lower()
-
     def validate(self, attrs):
         attrs["website"] = attrs.get("website", "")
-        if self.context.get("anonymous_submission", False):
-            errors = {}
-            if not attrs.get("contact_name", "").strip():
-                errors["contact_name"] = "This field is required."
-            if not attrs.get("contact_email", "").strip():
-                errors["contact_email"] = "This field is required."
-            if errors:
-                raise serializers.ValidationError(errors)
         product_ids = [item["product_id"] for item in attrs["items"]]
         if len(product_ids) != len(set(product_ids)):
             raise serializers.ValidationError(

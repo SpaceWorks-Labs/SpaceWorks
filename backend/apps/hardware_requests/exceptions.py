@@ -17,8 +17,6 @@ from apps.events.exceptions import (
     RegistrationRejected,
 )
 from apps.hardware_requests.workflow import (
-    AnonymousRequestIdempotencyConflict,
-    AnonymousRequestOutstandingLimit,
     BoxUnavailable,
     BoxValidationError,
     DepositRequired,
@@ -60,17 +58,6 @@ _EXCEPTION_MAP = {
     MemberMachineScopeConflict: (
         status.HTTP_409_CONFLICT, "member_machine_scope_conflict",
         "Machine scope requires a non-exempt Machine Manager membership.",
-    ),
-    AnonymousRequestIdempotencyConflict: (
-        status.HTTP_409_CONFLICT,
-        "anonymous_request_idempotency_conflict",
-        "This idempotency key was already used for a different request.",
-    ),
-    AnonymousRequestOutstandingLimit: (
-        status.HTTP_429_TOO_MANY_REQUESTS,
-        "anonymous_request_outstanding_limit",
-        "This makerspace is not accepting more anonymous requests until pending "
-        "requests are reviewed.",
     ),
     ClaimCodeError: (
         status.HTTP_400_BAD_REQUEST,

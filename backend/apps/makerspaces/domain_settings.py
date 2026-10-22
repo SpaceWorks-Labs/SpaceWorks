@@ -51,8 +51,7 @@ DOMAINS = {
         ("filament_low_stock_threshold_grams",),
     ),
     "inventory": Domain(
-        Action.EDIT_INVENTORY, ("loans.", "inventory.", "stocktake."),
-        ("anonymous_requests_enabled",),
+        Action.EDIT_INVENTORY, ("loans.", "inventory.", "stocktake."), (),
     ),
 }
 SETTING_FIELDS = tuple(dict.fromkeys(

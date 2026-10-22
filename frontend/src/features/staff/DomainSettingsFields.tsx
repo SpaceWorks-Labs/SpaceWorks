@@ -28,10 +28,6 @@ const COPY: Record<Field, { label: string; helper: string }> = {
     label: "Filament low-stock threshold (grams)",
     helper: "Spools at or below this weight can suggest a reorder. 0 turns it off.",
   },
-  anonymous_requests_enabled: {
-    label: "Accept borrow requests without an account",
-    helper: "Only possible while the Membership module is off.",
-  },
 };
 
 const AUDIENCES = [

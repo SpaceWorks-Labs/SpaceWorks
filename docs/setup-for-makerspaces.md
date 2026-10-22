@@ -283,8 +283,8 @@ After the area questions:
 8. The summary lists areas, all settings and deployment actions, followed by Proceed? [Y/n].
 
 The Membership module currently enforces members-only borrow requests. Enabling it explicitly
-confirms the earlier request-access answer as members. Disable Membership to admit other accounts
-or account-less requests; personal accounts remain on. Inventory off skips borrowing questions, keeps
+confirms the earlier request-access answer as members. Disable Membership to admit any signed-in
+account; every borrow request needs an account, and personal accounts remain on. Inventory off skips borrowing questions, keeps
 the six core modules and hides lending without touching loan/evidence data. Enabling self-checkout or kiosk never bypasses
 authentication, eligible-tool checks or evidence requirements.
 

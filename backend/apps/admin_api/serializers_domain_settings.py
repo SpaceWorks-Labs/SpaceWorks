@@ -47,9 +47,6 @@ class DomainSettingValuesSerializer(serializers.Serializer):
     filament_low_stock_threshold_grams = serializers.DecimalField(
         max_digits=10, decimal_places=2, required=False, help_text="machines domain.",
     )
-    anonymous_requests_enabled = serializers.BooleanField(
-        required=False, help_text="inventory domain.",
-    )
 
 
 class DomainSettingsSerializer(serializers.Serializer):

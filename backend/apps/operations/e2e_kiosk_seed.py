@@ -34,7 +34,7 @@ def seed_kiosk(makerspace, manager, member, token):
             makerspace, [{"product": product, "quantity": 1}], f"E2E {name}",
             requester_principal=member, audit_actor=member,
             contact_snapshot=SimpleNamespace(username=member.username, name="E2E Member", email=member.email,
-                                             phone="", contact_verified=True),
+                                             phone=""),
         )
         workflow.accept_request(manager, row)
         if individual:

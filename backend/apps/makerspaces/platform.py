@@ -10,7 +10,6 @@ from apps.makerspaces.servability import is_servable, servable_queryset
 from apps.makerspaces.capabilities import FEATURES
 from apps.makerspaces.capability_eligibility import configuration_feature_enabled
 from apps.makerspaces.module_registry import is_frontend_exposed, module_available, module_workflows
-from apps.makerspaces.request_access import ANYONE, effective_policy
 from apps.separability.registry import runtime_active
 from apps.makerspaces.loan_visibility import LOAN_MODULES
 
@@ -194,17 +193,6 @@ def bootstrap_payload(makerspace):
         "public_landing_page": makerspace.public_landing_page,
         "membership_policy": makerspace.membership_policy,
     }
-    # Emitted ONLY for the opt-in `anyone` policy, following the `/api/v1/config`
-    # `member_accounts` precedent: every deployment that has not opted in keeps a
-    # byte-for-byte identical payload. Absent therefore means "an account is required",
-    # which is exactly what every client assumed before this policy existed.
-    #
-    # The public borrow form needs this: an account-less submission must collect contact
-    # details and send an Idempotency-Key, and without knowing the policy the client
-    # cannot tell whether to ask for them -- it would post a members-shaped body and take
-    # a 400.
-    if effective_policy(makerspace) == ANYONE:
-        makerspace_payload["request_access"] = ANYONE
     # Advisory geofence: expose the flag ONLY when configured AND the feature is on, so
     # dormant/self-host bootstrap payloads stay byte-for-byte unchanged (self-host
     # invariant) and a disabled feature cannot leave the client asking for coordinates

@@ -21,7 +21,6 @@ export type DomainSettingValues = Partial<{
   booking_requester_notifications_enabled: boolean;
   booking_reminder_lead_hours: number[];
   filament_low_stock_threshold_grams: string;
-  anonymous_requests_enabled: boolean;
 }>;
 
 export type DomainSettings = {

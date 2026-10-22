@@ -32,8 +32,8 @@ thirteen modules under it are optional.
   allowed to change.
 - **Who may submit is set by `membership`, not by this module.** Being core, this module is present in every
   makerspace and therefore must work with `membership` uninstalled: members only when `membership` is on,
-  any signed-in account when it is off, and account-less strangers only when an operator has explicitly
-  opted in (`manage.py set_request_access --mode anyone`, which is refused while `membership` is installed).
+  any signed-in account when it is off. Every request needs an account — the account-less opt-in was
+  removed by owner decision, and requests filed through it earlier stay readable.
   See the `membership` module below, and **Who may submit a borrow request** in `docs/INVARIANTS.md`.
 - **Accept and reject are one request at a time.** There is no bulk accept or bulk reject anywhere —
   `/control/` serves a per-request review page, and Telegram alerts carry no buttons.

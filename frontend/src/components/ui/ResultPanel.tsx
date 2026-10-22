@@ -16,7 +16,7 @@ const colours = { success: "border-transparent bg-success text-on-success", warn
 const icons = { success: "CheckCircle", warn: "TriangleAlert", danger: "CircleAlert" } as const;
 export function ResultPanel({ tone, title, summary, children, next, undo }: ResultPanelProps) {
   const id = useId();
-  return <section aria-labelledby={id} className={`grid min-w-0 gap-6 rounded-xl border p-6 md:p-8 ${colours[tone]}`}>
+  return <section aria-labelledby={id} data-tone={tone} className={`grid min-w-0 gap-6 rounded-xl border p-6 md:p-8 ${colours[tone]}`}>
     <div role={tone === "danger" ? "alert" : "status"} aria-atomic="true" className="grid gap-4">
       <Icon name={icons[tone]} className="h-16 w-16" /><h2 id={id} className="break-words font-display text-3xl md:text-4xl">{title}</h2>
       {summary ? <div className="text-lg">{summary}</div> : null}

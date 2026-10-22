@@ -7,6 +7,9 @@ import { build, type Plugin, type ResolvedConfig } from "vite";
 // Same pattern as src/swPolicy.ts PREVIEW_ASSET (the worker's runtime cache); the build
 // verifier fails if these files are precached or the worker lacks that cache.
 const PREVIEW_ASSET = /^\/assets\/(?:three\.module-[\w-]+\.js|occt-import-js-[\w-]+\.wasm|preview\.worker-[\w-]+\.js)$/;
+// Same pattern as src/swPolicy.ts PATCH_ARTWORK: the mascot is banned on kiosk surfaces, so its
+// bitmaps are neither precached nor runtime-cached by the kiosk worker.
+const PATCH_ARTWORK = /^\/brand\/patch\//;
 
 export function kioskPwa(): Plugin {
   let config: ResolvedConfig;
@@ -26,6 +29,7 @@ export function kioskPwa(): Plugin {
               if (url === "config.js" || url === "sw.js" || url === "member-sw.js") continue;
               // Lazy maker-preview vendors are runtime-cached on first use, not precached.
               if (PREVIEW_ASSET.test(`/${url}`)) continue;
+              if (PATCH_ARTWORK.test(`/${url}`)) continue;
               entries.push({ url: `/${url}`, revision: createHash("sha256").update(await readFile(path)).digest("hex") });
             }
           }

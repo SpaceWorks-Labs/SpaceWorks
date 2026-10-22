@@ -107,3 +107,16 @@
   .sw-space-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .sw-landing main.sw-layout { max-width: 1440px; }
 }
+
+/* First-load stagger (StaggerGroup): the first eight children fade and rise, 30 ms apart. */
+@media (prefers-reduced-motion: no-preference) {
+  .sw-stagger > :nth-child(-n+8) { animation: sw-stagger-rise 200ms ease-out both; }
+  .sw-stagger > :nth-child(2) { animation-delay: 30ms; }
+  .sw-stagger > :nth-child(3) { animation-delay: 60ms; }
+  .sw-stagger > :nth-child(4) { animation-delay: 90ms; }
+  .sw-stagger > :nth-child(5) { animation-delay: 120ms; }
+  .sw-stagger > :nth-child(6) { animation-delay: 150ms; }
+  .sw-stagger > :nth-child(7) { animation-delay: 180ms; }
+  .sw-stagger > :nth-child(8) { animation-delay: 210ms; }
+}
+@keyframes sw-stagger-rise { from { opacity: 0; transform: translateY(6px); } }

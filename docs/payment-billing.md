@@ -59,11 +59,14 @@ money. Only a staff approval creates a `Refund`, under the Payment then case row
 
 - **Due cases** open when a paid charge's subject is cancelled and the policy owes more
   than zero: a space-cancelled event owes the full balance (`event_cancelled`); a
-  member/staff cancelled registration or booking follows that area's `RefundPolicy`
+  member cancelled registration or booking follows that area's `RefundPolicy` (a booking
+  staff cancel on a member's behalf is owed in full, `staff_cancelled`, decision 72)
   (full window, partial window and percent, fee in the space currency, rounded down to
   min(currency exponent, 2) places, minus anything already refunded). Bookings open the
   case in the cancellation's own transaction; the events path is post-commit and a
-  missed case is rebuilt by the hourly `rebuild-refund-cases` sweep (beat and beat-less).
+  missed case is rebuilt by the hourly `rebuild-refund-cases` sweep (beat and beat-less),
+  which looks back 7 days but never before the deploy watermark (the apply time of the
+  `payments.0023_refund_cases` migration), so deploying back-fills nothing.
 - **Memberships** (owner decision 68): cancelling a paid membership term opens a due under
   the membership policy -- a space default plus optional per-plan rules: a full refund
   within N days of the term start, then pro rata of the unused term time or a percentage

@@ -104,6 +104,7 @@ TASK_INTERNAL_PARTICIPANTS = {
         "Enqueues tenant-resolved delivery tasks; media cleanup uses per-tenant skip-and-count gates."
     ),
     "apps.payments.tasks.issue_missing_bills_task": "Bill recovery gates each tenant before discovering or issuing documents.",
+    "apps.payments.tasks.rebuild_refund_cases_task": "Refund-case rebuild gates each tenant before discovering or opening cases.",
     "apps.integrations.tasks_messaging.deliver_messaging_task": "Worker acquires sender lock first and holds tenant_write during claims and fenced completion.",
     "apps.integrations.tasks_messaging.sweep_messaging_task": "Replays durable signed ingress receipts through notification_ingress.process, which holds the cutover/tenant boundary per receipt; sender protections and retired-verifier retention are deployment-local.",
     "apps.integrations.tasks_messaging.canonical_retention_task": (
@@ -198,6 +199,7 @@ FANOUT_GATE_PARTICIPANTS = {
         "Expired and consumed disclosure grants are deleted and audited inside each tenant gate."
     ),
     "apps.payments.bill_sweeper.issue_missing_bills": "Core bill recovery uses per-tenant skip-and-count source gates.",
+    "apps.payments.refund_case_sweeper.rebuild_missed_refund_cases": "Refund-case rebuild uses per-tenant skip-and-count source gates.",
     "apps.makerspaces.profile_github_tasks.refresh_public_calendars": (
         "Public calendars refresh under the existing per-tenant GitHub source boundary; cache only."
     ),

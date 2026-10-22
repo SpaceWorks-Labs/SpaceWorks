@@ -52,6 +52,42 @@ model methods. No correction emits another refund event. Reconciliation and the
 method/currency and filters on actual receipt/refund dates, without mixing currencies
 or inferring online settlement dates.
 
+## Refund cases and policies
+
+A `RefundCase` records what a member MAY be owed on a settled charge; it never moves
+money. Only a staff approval creates a `Refund`, under the Payment then case row locks.
+
+- **Due cases** open when a paid charge's subject is cancelled and the policy owes more
+  than zero: a space-cancelled event owes the full balance (`event_cancelled`); a
+  member/staff cancelled registration or booking follows that area's `RefundPolicy`
+  (full window, partial window and percent, fee in the space currency, rounded down to
+  min(currency exponent, 2) places, minus anything already refunded). Bookings open the
+  case in the cancellation's own transaction; the events path is post-commit and a
+  missed case is rebuilt by the hourly `rebuild-refund-cases` sweep (beat and beat-less).
+- **Memberships** (owner decision 68): cancelling a paid membership term opens a due under
+  the membership policy -- a space default plus optional per-plan rules: a full refund
+  within N days of the term start, then pro rata of the unused term time or a percentage
+  (the policy chooses), then nothing after the term ends, minus an optional fee. Dues and
+  admission charges have no term, so they stay request-only. "Do not renew" only voids a
+  pending renewal. Per-plan rules: `refund-policies/membership/plans/<plan>`.
+- **Requests**: a member may ask on any own settled charge except a loan deposit. One
+  active (open or approval-failed) case per payment; asking on an open due case adds the
+  member's reason to it. Only an open request can be withdrawn.
+- **Decisions**: approve/decline need the charge's subject authority (VIEW_FINANCE is
+  read-only). Online approval raises a provider refund after commit; a refusal moves the
+  case to `approval_failed` for retry or decline. Offline approval needs RECORD_PAYMENT and
+  a receipt, recorded as a manual refund. With the rail removed an online case returns
+  409 `refund_rail_unavailable` and can only be declined.
+- A refund raised outside a case voids every active case once nothing is left to refund.
+- Stripe Connect refunds send `refund_application_fee=true` when the charge carried a
+  platform fee (direct charges: no transfer to reverse). Razorpay is unchanged.
+- The `refunds` report (VIEW_FINANCE) groups cases and case-less refunds (`manual`) by
+  local month, area, reason and currency.
+- Notifications: `refund_due_opened` and `refund_request_received` reach staff;
+  `refund_request_approved` and `refund_request_declined` reach the payer.
+- Open and approved cases join the money fingerprint; an undecided case blocks account
+  deletion (`refund_under_review`); purges delete cases before refunds.
+
 Portable dumps preserve due dates and refund correction chains, remapping identities.
 They reset automatic-mail policy and drop F1 claims; the target must opt in afresh.
 The money fingerprint includes due dates and every refund amendment. The coordinator

@@ -47,6 +47,8 @@ def collect(user, *, now=None, gated=(), organizations=None):
          "Settle all outstanding charges."),
         ("refund_in_progress", "payments.Refund", {"status": "pending"}, "payment__makerspace_id", "payment__member",
          "Wait for pending refunds to finish."),
+        ("refund_under_review", "payments.RefundCase", {"status__in": ("open", "approval_failed")},
+         "payment__makerspace_id", "payment__member", "Wait for staff to decide your refund."),
         ("active_loans", "hardware_requests.HardwareRequest", {"status__in": ("issued", "partially_returned")},
          "makerspace_id", "requester", "Return all borrowed hardware."),
         ("active_loans", "hardware_requests.PublicToolLoan", {"status": "checked_out"},

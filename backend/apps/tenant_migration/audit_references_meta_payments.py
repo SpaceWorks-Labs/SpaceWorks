@@ -23,6 +23,11 @@ def _edges(model, pairs):
 #: number on the target.
 _SETTLEMENT_ACTIONS = ("payment.paid_offline", "payment.settlement_amended")
 
+#: Refund-case decisions name the case, its payment and (on approval) the refund raised.
+_CASE_ACTIONS = ("payment.refund_case_opened", "payment.refund_case_updated", "payment.refund_case_approved",
+                 "payment.refund_case_approval_failed", "payment.refund_case_declined",
+                 "payment.refund_case_withdrawn", "payment.refund_case_voided")
+
 
 PAYMENT_AUDIT_EDGES = {
     **_edges("hardware_requests.HardwareRequest", [("account.obligation_after_deletion", "request_id")]),
@@ -41,6 +46,11 @@ PAYMENT_AUDIT_EDGES = {
         [(action, "payment_id") for action in (*_REFUND_ACTIONS, *_LOAN_ACTIONS)],
     ),
     **_edges("payments.Refund", [(action, "refund_id") for action in _REFUND_ACTIONS]),
+    **_edges("payments.RefundCase", [(action, "case_id") for action in _CASE_ACTIONS]),
+    **_edges("makerspaces.MembershipPlan", [("payment.refund_policy_updated", "plan_id")]),
+    **_edges("payments.Payment", [(action, "payment_id") for action in _CASE_ACTIONS]),
+    **_edges("payments.Refund", [(action, "refund_id") for action in
+                                 ("payment.refund_case_approved", "payment.refund_case_approval_failed")]),
     **_edges(
         "hardware_requests.HardwareRequest",
         [(action, "request_id") for action in _LOAN_ACTIONS],

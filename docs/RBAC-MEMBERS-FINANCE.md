@@ -41,6 +41,13 @@ Existing charge-domain staff retain their scoped cash recording paths. Debt waiv
 online refunds retain their existing subject authority and machine scoping. Finance
 authority never implies machine lifecycle authority.
 
+Refund cases follow the same split. The queue shows every case to `view_finance` holders,
+read-only, and otherwise only cases whose charge subject the actor manages (events,
+bookings, machine jobs within role scope, membership money, loan charges). Approving or
+declining re-checks that subject authority per case; recording a cash refund additionally
+requires `record_payment`. Editing a refund policy requires `manage_makerspace`. No new
+action was added.
+
 Historically `makerspaces.0078_member_finance_actions` backfilled the three actions onto roles and
 organization memberships holding `manage_makerspace`. Fixed-role migration 0089 replaces editable
 local grants with the canonical catalogue; organization reach, hidden-space fences and the legacy

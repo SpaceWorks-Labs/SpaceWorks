@@ -124,6 +124,7 @@ class MemberPaymentHistoryView(APIView):
         filters = PaymentListFilterSerializer(data=request.query_params)
         filters.is_valid(raise_exception=True)
         queryset = with_refunds(member_payment_queryset(request.user, makerspace_id).select_related("makerspace"))
+        queryset = queryset.prefetch_related("refund_cases")
         # Collaborative charges use their OWNING space's local day, not this page's zone.
         state = filters.validated_data.get("due_state")
         rows = list(order_by_due(queryset))

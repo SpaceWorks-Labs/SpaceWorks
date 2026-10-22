@@ -3,6 +3,7 @@ from apps.operations.report_types import ReportDefinition
 from apps.operations.reports_finance import LEDGER_FIELDS, REVENUE_FIELDS, CASH_FIELDS
 from apps.operations.reports_accounting import FIELDS as ACCOUNTING_FIELDS
 from apps.operations.reports_payments_ageing import FIELDS as AGEING_FIELDS
+from apps.operations.reports_refunds import FIELDS as REFUND_FIELDS
 from apps.operations.report_charts_fg import REVENUE_CHART, CASH_CHART, AGEING_CHART
 from apps.operations.report_charts_remaining import LEDGER_CHART, JOURNAL_CHART
 from apps.operations.org_report_aggregate import register_combine
@@ -24,6 +25,10 @@ FINANCE_REPORT_DEFINITIONS = (
     ReportDefinition("accounting-journal", "apps.operations.reports_accounting.build_accounting_journal", ACCOUNTING_FIELDS,
                      required_action=rbac.Action.VIEW_FINANCE, title="Accounting journal CSV", allowed_formats=("csv",),
                      deployment_aggregate=False, chart_hint="grouped_bar", chart_spec=JOURNAL_CHART),
+    # Refund cases and refunds raised outside them, by local month, area and reason.
+    ReportDefinition("refunds", "apps.operations.reports_refunds.build_refunds", REFUND_FIELDS,
+                     required_action=rbac.Action.VIEW_FINANCE, title="Refunds by area and reason",
+                     deployment_aggregate=False),
 )
 
 # Money tracking is core: none of these requires the removable online rail.

@@ -105,7 +105,7 @@ def cancel_term(actor, term):
             target=term,
             meta={"membership_id": term.membership_id, "term_id": term.pk},
         )
-        _cancel_pending_renewal(makerspace, term, actor)
+        _cancel_term_charges(makerspace, term, actor)
     return term
 
 
@@ -123,17 +123,38 @@ def cancel_terms_for_membership(actor, membership):
 
 
 def _cancel_pending_renewal(makerspace, term, actor):
+    """Void a pending renewal only: "do not renew" keeps the current term and its money."""
     from apps.payments.models import Payment
     from apps.payments.reconciliation import cancel_pending
 
     try:
         with transaction.atomic():
-            cancel_pending(
-                makerspace=makerspace,
-                subject_type=Payment.SubjectType.MEMBERSHIP_TERM,
-                subject_id=term.pk,
-                actor=actor,
-            )
+            cancel_pending(makerspace=makerspace, subject_type=Payment.SubjectType.MEMBERSHIP_TERM,
+                           subject_id=term.pk, actor=actor)
+    except Exception:  # noqa: BLE001 - money must never block the membership workflow
+        logger.exception("membership_renewal_cancel_failed", extra={"term_id": term.pk})
+
+
+def _cancel_term_charges(makerspace, term, actor):
+    """A cancelled term: void its pending renewal; a PAID one, and the payment that bought this term,
+    get a refund case under the membership policy instead (owner decision 68).
+
+    The term's own renewal charge pays for its successor, and `renewed_from`'s renewal
+    paid for this term; both are assessed against the term they cover. Each runs in its
+    own savepoint so a payment failure never undoes the cancellation; the refund sweep
+    rebuilds a case it missed.
+    """
+    from apps.payments.models import Payment, RefundCase
+    from apps.payments.refund_cancellation import cancel_or_hold, hold_settled
+
+    reason = RefundCase.ReasonCode.MEMBERSHIP_CANCELLED
+    try:
+        with transaction.atomic():
+            cancel_or_hold(makerspace=makerspace, subject_type=Payment.SubjectType.MEMBERSHIP_TERM,
+                           subject_id=term.pk, actor=actor, reason_code=reason)
+            if term.renewed_from_id:
+                hold_settled(makerspace=makerspace, subject_type=Payment.SubjectType.MEMBERSHIP_TERM,
+                             subject_id=term.renewed_from_id, actor=actor, reason_code=reason)
     except Exception:  # noqa: BLE001 - money must never block the membership workflow
         logger.exception("membership_renewal_cancel_failed", extra={"term_id": term.pk})
 

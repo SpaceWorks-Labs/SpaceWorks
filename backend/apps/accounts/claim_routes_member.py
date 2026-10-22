@@ -120,6 +120,12 @@ MEMBER_CLAIM_ROUTES = {
         "native payment intent requires an attested device grant"
     ),
     **_options("member-payment-mobile-intent"),
+    # A refund request is a money decision on the account's own ledger; a walk-in
+    # claim session at a kiosk must not open or withdraw one.
+    ("member-refund-request", "POST"): Refused("refund requests require an account session"),
+    **_options("member-refund-request"),
+    ("member-refund-withdraw", "POST"): Refused("refund requests require an account session"),
+    **_options("member-refund-withdraw"),
     ("member-referrals", "POST"): Refused("walk-ins cannot delegate membership eligibility"),
     **_options("member-referrals"),
     ("member-verification", "POST"): Refused("claim sessions cannot verify other members"),

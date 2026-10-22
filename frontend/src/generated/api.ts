@@ -435,6 +435,13 @@ export const openApiPaths = [
   "/api/v1/admin/makerspace/{makerspace_id}/profile",
   "/api/v1/admin/makerspace/{makerspace_id}/provision-subdomain",
   "/api/v1/admin/makerspace/{makerspace_id}/qr-print-batches",
+  "/api/v1/admin/makerspace/{makerspace_id}/refund-cases",
+  "/api/v1/admin/makerspace/{makerspace_id}/refund-cases/{case_id}",
+  "/api/v1/admin/makerspace/{makerspace_id}/refund-cases/{case_id}/approve",
+  "/api/v1/admin/makerspace/{makerspace_id}/refund-cases/{case_id}/decline",
+  "/api/v1/admin/makerspace/{makerspace_id}/refund-policies",
+  "/api/v1/admin/makerspace/{makerspace_id}/refund-policies/membership/plans/{plan_id}",
+  "/api/v1/admin/makerspace/{makerspace_id}/refund-policies/{area}",
   "/api/v1/admin/makerspace/{makerspace_id}/reports/catalog",
   "/api/v1/admin/makerspace/{makerspace_id}/reports/{report_key}/export",
   "/api/v1/admin/makerspace/{makerspace_id}/request-history",
@@ -863,12 +870,14 @@ export const openApiPaths = [
   "/api/v1/member/makerspaces/{makerspace_id}/payments",
   "/api/v1/member/makerspaces/{makerspace_id}/payments/{payment_id}/checkout",
   "/api/v1/member/makerspaces/{makerspace_id}/payments/{payment_id}/mobile-intent",
+  "/api/v1/member/makerspaces/{makerspace_id}/payments/{payment_id}/refund-request",
   "/api/v1/member/makerspaces/{makerspace_id}/profile",
   "/api/v1/member/makerspaces/{makerspace_id}/profile/handle",
   "/api/v1/member/makerspaces/{makerspace_id}/profile/image",
   "/api/v1/member/makerspaces/{makerspace_id}/profile/timeline",
   "/api/v1/member/makerspaces/{makerspace_id}/profile/timeline/{id}",
   "/api/v1/member/makerspaces/{makerspace_id}/referrals",
+  "/api/v1/member/makerspaces/{makerspace_id}/refund-requests/{case_id}/withdraw",
   "/api/v1/member/makerspaces/{makerspace_id}/verification",
   "/api/v1/member/makerspaces/{makerspace_id}/waiver",
   "/api/v1/member/makerspaces/{makerspace_id}/waiver/accept",
@@ -7081,6 +7090,8 @@ export type MemberPayment = {
   "settlement": MemberSettlement | null;
   "refunded_amount": number;
   "refunds": Array<MemberRefund>;
+  "refund_case": MemberRefundCase | null;
+  "refund_requestable": boolean;
   "created_at": string;
 };
 
@@ -7129,6 +7140,20 @@ export type MemberRefund = {
   "method": string;
   "reference": string;
   "refunded_at": string | null;
+};
+
+export type MemberRefundCase = {
+  "id": number;
+  "kind": RefundCaseKindEnum;
+  "status": RefundCaseStatusEnum;
+  "decision_note": string;
+  "withdrawable": boolean;
+  "created_at": string;
+  "decided_at": string | null;
+};
+
+export type MemberRefundRequest = {
+  "reason": string;
 };
 
 export type MemberRegistrationCancelResponse = {
@@ -8806,6 +8831,8 @@ export type PaletteChoices = {
 };
 
 export type PaperSizeEnum = "A4" | "LETTER" | "custom";
+
+export type PartialModeEnum = "percent" | "pro_rata";
 
 export type ParticipatingOrganization = {
   "id": number;
@@ -11935,6 +11962,77 @@ export type Refund = {
   "corrected": boolean;
 };
 
+export type RefundCase = {
+  "id": number;
+  "payment": RefundCasePayment;
+  "kind": RefundCaseKindEnum;
+  "area": RefundCaseAreaEnum;
+  "reason_code": RefundCaseReasonCodeEnum;
+  "member_reason": string;
+  "due_amount": string;
+  "policy_snapshot": unknown;
+  "status": RefundCaseStatusEnum;
+  "approved_amount": string | null;
+  "decision_note": string;
+  "refund": Refund | null;
+  "refundable_balance": string;
+  "created_at": string;
+  "decided_at": string | null;
+};
+
+export type RefundCaseApprove = {
+  "amount"?: string;
+  "reason"?: string;
+  "note"?: string;
+  "receipt"?: ManualRefundReceipt;
+};
+
+export type RefundCaseAreaEnum = "machines" | "bookings" | "events" | "membership" | "loans";
+
+export type RefundCaseDecline = {
+  "note": string;
+};
+
+export type RefundCaseKindEnum = "due" | "request";
+
+export type RefundCaseListResponse = {
+  "count": number;
+  "next": string | null;
+  "previous": string | null;
+  "results": Array<RefundCase>;
+};
+
+export type RefundCasePayment = {
+  "id": number;
+  "subject_type": string;
+  "subject_label": string;
+  "status": string;
+  "amount": string;
+  "currency": string;
+  "member_name": string;
+};
+
+export type RefundCaseReasonCodeEnum = "event_cancelled" | "registration_cancelled" | "booking_cancelled" | "membership_cancelled" | "member_request";
+
+export type RefundCaseStatusEnum = "open" | "approved" | "approval_failed" | "declined" | "withdrawn" | "void";
+
+export type RefundPolicy = {
+  "area": RefundPolicyAreaEnum;
+  "plan": number | null;
+  "plan_name": string;
+  "configured": boolean;
+  "full_before_minutes"?: number;
+  "partial_before_minutes"?: number;
+  "full_within_days"?: number;
+  "partial_mode"?: PartialModeEnum;
+  "partial_percent"?: number;
+  "cancellation_fee"?: string;
+  "currency": string;
+  "updated_at": string;
+};
+
+export type RefundPolicyAreaEnum = "events" | "bookings" | "membership";
+
 export type RefundProviderEnum = "stripe" | "razorpay" | "manual";
 
 export type RefundStatusEnum = "pending" | "succeeded" | "failed";
@@ -12170,7 +12268,7 @@ export type ReportError = {
   "code"?: string;
 };
 
-export type ReportKeyEnum = "payment-cash-book" | "taken-items" | "active-loans" | "returns" | "damaged-missing" | "top-borrowers" | "recently-added" | "event-attendance" | "booking-utilization" | "member-activity" | "printer-service" | "fablab-health" | "payment-reconciliation" | "evidence-compliance" | "import-quality" | "communications-health" | "community-engagement" | "certification-coverage" | "audit-trail" | "membership-growth" | "member-retention" | "membership-revenue" | "payments-ledger" | "revenue-over-time" | "cash-book" | "payments-ageing" | "accounting-journal" | "event-registrations" | "event-feedback" | "event-attendance-pdf" | "booking-resource-utilization" | "booking-resource-utilization-pdf" | "booking-reservations" | "booking-answers" | "mobile-devices" | "mobile-auth" | "booking-occupancy" | "booking-lead-time" | "booking-top-members" | "event-signups" | "event-revenue" | "event-funnel" | "event-checkin-times" | "event-feedback-scores" | "most-lent" | "asset-usage" | "loan-throughput" | "inventory-utilisation" | "overdue-loans" | "damaged-lost" | "longest-loans" | "stock-health" | "request-funnel" | "problem-reports" | "inventory-watch-demand" | "summary" | "qr-scans" | "qr-scan-actors" | "inventory-control" | "consumable-usage" | "consumable-pools" | "procurement-performance" | "stock-transfers" | "stocktake-variance" | "machine-usage" | "machine-usage-members" | "machine-usage-heatmap" | "machine-downtime" | "maintenance-activity" | "machine-service" | "service-queue-times" | "printer-jobs" | "machine-errors" | "warranty-expiry" | "device-health" | "presence-activity" | "presence-top-visitors" | "presence-activity-hours" | "audit-activity" | "audit-top-actors" | "audit-activity-hours" | "organization-membership" | "module-operational-health" | "platform-services" | "platform-usage";
+export type ReportKeyEnum = "payment-cash-book" | "taken-items" | "active-loans" | "returns" | "damaged-missing" | "top-borrowers" | "recently-added" | "event-attendance" | "booking-utilization" | "member-activity" | "printer-service" | "fablab-health" | "payment-reconciliation" | "evidence-compliance" | "import-quality" | "communications-health" | "community-engagement" | "certification-coverage" | "audit-trail" | "membership-growth" | "member-retention" | "membership-revenue" | "payments-ledger" | "revenue-over-time" | "cash-book" | "payments-ageing" | "accounting-journal" | "refunds" | "event-registrations" | "event-feedback" | "event-attendance-pdf" | "booking-resource-utilization" | "booking-resource-utilization-pdf" | "booking-reservations" | "booking-answers" | "mobile-devices" | "mobile-auth" | "booking-occupancy" | "booking-lead-time" | "booking-top-members" | "event-signups" | "event-revenue" | "event-funnel" | "event-checkin-times" | "event-feedback-scores" | "most-lent" | "asset-usage" | "loan-throughput" | "inventory-utilisation" | "overdue-loans" | "damaged-lost" | "longest-loans" | "stock-health" | "request-funnel" | "problem-reports" | "inventory-watch-demand" | "summary" | "qr-scans" | "qr-scan-actors" | "inventory-control" | "consumable-usage" | "consumable-pools" | "procurement-performance" | "stock-transfers" | "stocktake-variance" | "machine-usage" | "machine-usage-members" | "machine-usage-heatmap" | "machine-downtime" | "maintenance-activity" | "machine-service" | "service-queue-times" | "printer-jobs" | "machine-errors" | "warranty-expiry" | "device-health" | "presence-activity" | "presence-top-visitors" | "presence-activity-hours" | "audit-activity" | "audit-top-actors" | "audit-activity-hours" | "organization-membership" | "module-operational-health" | "platform-services" | "platform-usage";
 
 export type ReportSchedule = {
   "id": number;

@@ -1,0 +1,72 @@
+import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+
+import { Field, Modal, StatusPill } from "../../components/ui";
+import type { MemberRefundCase } from "../../generated/api";
+import { StructuredApiError, memberRequest } from "../../lib/api";
+
+type Payment = { id: number; refund_case?: MemberRefundCase | null; refund_requestable?: boolean };
+
+const CHIP: Record<MemberRefundCase["status"], [string, "warn" | "success" | "danger" | "neutral"]> = {
+  open: ["Refund under review", "warn"], approval_failed: ["Refund under review", "warn"],
+  approved: ["Refund approved", "success"], declined: ["Refund declined", "danger"],
+  withdrawn: ["Request withdrawn", "neutral"], void: ["Refund closed", "neutral"],
+};
+
+function errorText(error: unknown) {
+  if (error instanceof StructuredApiError && error.code === "refund_request_exists") {
+    return "You already asked for a refund on this charge. Staff will reply here.";
+  }
+  return error instanceof Error ? error.message : "That did not work. Try again.";
+}
+
+/** Where a refund stands, plus the one action the member can take on it. */
+export function MemberRefundControl({ makerspaceId, payment }: { makerspaceId: number; payment: Payment }) {
+  const queryClient = useQueryClient();
+  const [asking, setAsking] = useState(false);
+  const [reason, setReason] = useState("");
+  const refresh = () => queryClient.invalidateQueries({ queryKey: ["member"] });
+  const request = useMutation({
+    mutationFn: () => memberRequest<MemberRefundCase>(`/member/makerspaces/${makerspaceId}/payments/${payment.id}/refund-request`, {
+      method: "POST", body: JSON.stringify({ reason: reason.trim() }),
+    }),
+    onSuccess: () => { setAsking(false); setReason(""); void refresh(); },
+  });
+  const withdraw = useMutation({
+    mutationFn: (caseId: number) => memberRequest<MemberRefundCase>(`/member/makerspaces/${makerspaceId}/refund-requests/${caseId}/withdraw`, {
+      method: "POST", body: "{}",
+    }),
+    onSuccess: () => { void refresh(); },
+  });
+  const current = payment.refund_case;
+  const [label, tone] = current ? CHIP[current.status] : ["", "neutral" as const];
+  if (!current && !payment.refund_requestable) return null;
+  return <span className="mt-3 grid gap-2">
+    {current ? <span className="flex flex-wrap items-center gap-2">
+      <StatusPill label={label} tone={tone} />
+      {current.decision_note ? <span className="text-ink">“{current.decision_note}”</span> : null}
+      {current.withdrawable ? <button className="desk-button" type="button" disabled={withdraw.isPending}
+        onClick={() => withdraw.mutate(current.id)}>Withdraw request</button> : null}
+    </span> : null}
+    {payment.refund_requestable ? <span className="flex">
+      <button className="desk-button w-full sm:w-auto" type="button" onClick={() => setAsking(true)}>Request refund</button>
+    </span> : null}
+    {withdraw.error ? <span className="text-danger" role="alert">{errorText(withdraw.error)}</span> : null}
+    <Modal open={asking} onClose={() => { if (!request.isPending) setAsking(false); }} title="Request a refund"
+      footer={<div className="flex flex-wrap justify-end gap-2">
+        <button className="desk-button" type="button" onClick={() => setAsking(false)} disabled={request.isPending}>Cancel</button>
+        <button className="desk-button-brand" type="button" disabled={request.isPending || !reason.trim()}
+          onClick={() => request.mutate()}>{request.isPending ? "Sending…" : "Send request"}</button>
+      </div>}>
+      <div className="grid gap-3">
+        <p className="text-sm text-muted">Staff review every request. Nothing is refunded until they approve it,
+          and you will see their answer here.</p>
+        <Field label="Why are you asking?">
+          <textarea className="desk-input min-h-24" maxLength={500} value={reason}
+            onChange={(event) => setReason(event.target.value)} />
+        </Field>
+        {request.error ? <p className="text-sm text-danger" role="alert">{errorText(request.error)}</p> : null}
+      </div>
+    </Modal>
+  </span>;
+}

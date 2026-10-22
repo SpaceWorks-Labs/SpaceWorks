@@ -18,3 +18,12 @@ class RefundProviderFailure(APIException):
             "detail": "The payment provider rejected the refund.",
             "code": "refund_provider_failed", "refund_id": refund.pk,
         }
+
+
+class RefundCaseConflict(APIException):
+    """A refund case cannot take this decision in its current state (409)."""
+
+    status_code = 409
+
+    def __init__(self, detail, code, **extra):
+        self.detail = {"detail": detail, "code": code, **extra}

@@ -27,6 +27,7 @@ class PeriodicTask:
 # Legacy entries retain their exact names, intervals and first-run warm-up.
 LEGACY_ENTRIES = (
     ("missing-payment-bills", "apps.payments.tasks.issue_missing_bills_task", 5),
+    ("rebuild-refund-cases", "apps.payments.tasks.rebuild_refund_cases_task", 60),
     ("presence-expiry", "apps.presence.tasks.expire_presence_sessions_task", 1),
     ("notification-contract-outbox", "apps.integrations.notification_tasks.sweep_notification_outbox", 1),
     ("subject-access-exports", "apps.data_export.subject_tasks.sweep_subject_exports_task", 60),

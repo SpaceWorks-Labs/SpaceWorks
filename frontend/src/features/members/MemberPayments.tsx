@@ -3,10 +3,13 @@ import type { MemberPayment as GeneratedMemberPayment } from "../../generated/ap
 import { useState } from "react";
 import { DUE_OPTIONS, PaymentDueBadge } from "../staff/PaymentDueBadge";
 import { PaymentDocuments } from "../payments/PaymentDocuments";
+import { MemberRefundControl } from "./MemberRefundRequest";
 
 // Additive API field until the coordinator regenerates the OpenAPI client.
-export type MemberPayment = Omit<GeneratedMemberPayment, "refunded_amount" | "refunds" | "subject_type"> & {
+export type MemberPayment = Omit<GeneratedMemberPayment, "refunded_amount" | "refunds" | "subject_type" | "refund_case" | "refund_requestable"> & {
   subject_type: GeneratedMemberPayment["subject_type"] | "membership_request";
+  // Optional so older fixtures and the archived read-only list need not carry them.
+  refund_case?: GeneratedMemberPayment["refund_case"]; refund_requestable?: boolean;
   refunded_amount?: string | number; due_at?: string | null; due_date?: string | null; due_state?: string;
   refunds: Array<GeneratedMemberPayment["refunds"][number] & {
     method?: string; reference?: string; refunded_at?: string | null;
@@ -18,11 +21,14 @@ export function MemberPaymentRows({
   checkoutPaymentId,
   onCheckout,
   makerspaceId,
+  refunds = false,
 }: {
   payments: MemberPayment[];
   checkoutPaymentId?: number;
   onCheckout: (paymentId: number) => void;
   makerspaceId?: number;
+  /** Offer "Request refund" on paid charges. Off for archived spaces' read-only history. */
+  refunds?: boolean;
 }) {
   const [dueFilter, setDueFilter] = useState("");
   return (
@@ -77,6 +83,7 @@ export function MemberPaymentRows({
               </button>
             </span>
           ) : null}
+          {refunds && makerspaceId !== undefined ? <MemberRefundControl makerspaceId={makerspaceId} payment={payment} /> : null}
         </>} /></li>
       ))}
     </ul>

@@ -2,7 +2,7 @@ const ALL_TABS = [
   "platform-dashboard", "usage",
   "dashboard", "notifications", "channels", "requests", "direct", "handover", "inventory", "needsfix", "categories", "machines", "events", "organized", "granted", "bookings", "members", "cards", "tobuy", "transfers",
   "stocktake", "containers", "ledger", "reports", "accountability", "warranty", "bulk", "qr", "scanner", "api", "settings", "emailtemplates", "users", "platform", "audit",
-  "devices", "email-logs", "payments", "organizations", "organization-analytics", "modules", "exports", "backups", "migration",
+  "devices", "email-logs", "payments", "refunds", "organizations", "organization-analytics", "modules", "exports", "backups", "migration",
 ] as const;
 
 export const STAFF_TAB_KEYS: readonly string[] = ALL_TABS;
@@ -51,6 +51,7 @@ export const TAB_LABELS: Record<string, string> = {
   api: "API access",
   platform: "Platform settings",
   payments: "Payments",
+  refunds: "Refunds",
   modules: "Modules",
   exports: "Data export",
   backups: "Backup & restore",
@@ -58,7 +59,7 @@ export const TAB_LABELS: Record<string, string> = {
 };
 
 export const TAB_GROUPS: { label: string; tabs: string[] }[] = [
-  { label: "Operate", tabs: ["dashboard", "notifications", "channels", "requests", "direct", "handover", "payments", "ledger", "transfers", "stocktake", "tobuy"] },
+  { label: "Operate", tabs: ["dashboard", "notifications", "channels", "requests", "direct", "handover", "payments", "refunds", "ledger", "transfers", "stocktake", "tobuy"] },
   { label: "Inventory", tabs: ["inventory", "categories", "needsfix", "containers", "bulk", "qr", "scanner"] },
   { label: "Machines", tabs: ["machines", "devices"] },
   { label: "Events", tabs: ["events", "organized", "granted"] },
@@ -184,6 +185,10 @@ export function getStaffAccess(
     // Event Managers settle registration fees by hand when the online rail is off; the
     // panel narrows them to event-registration charges (PaymentsPanel `eventOnly`).
     if (tabName === "payments") return canViewFinance || canRecordPayment || canManageEvents;
+    // Mirrors `refund_case_access.may_read_queue`: finance reads every case, each domain's
+    // staff read the cases for the charges they own. Cash-recording alone is not enough.
+    if (tabName === "refunds") return canViewFinance || canManageEvents || canManageBookings || canManageMachines
+      || canManageMembers || canManageMakerspace;
     if (tabName === "exports") return canManageMakerspace;
     if (tabName === "backups") return canManageMakerspace;
     if (tabName === "migration") return isSuperadmin;

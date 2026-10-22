@@ -12,6 +12,10 @@ from apps.payments.views_member import ArchivedPaymentDiscoveryView
 from apps.payments.views_documents import StaffDocumentListView, StaffDocumentGrantView, DocumentDownloadView
 from apps.payments.views_billing import BillingSettingsView
 from apps.payments.views_refunds_offline import PaymentOfflineRefundView, PaymentDepositReleaseView, PaymentRefundAmendView
+from apps.payments.views_refund_cases import (
+    RefundCaseApproveView, RefundCaseDeclineView, RefundCaseDetailView, RefundCaseListView,
+)
+from apps.payments.views_refund_policies import RefundPlanPolicyView, RefundPolicyDetailView, RefundPolicyListView
 from apps.payments.views_reconciliation import (
     PaymentBulkMarkOfflineView,
     PaymentBulkWaiveView,
@@ -21,7 +25,20 @@ from apps.payments.views_reconciliation import (
     PaymentWaiveView,
 )
 
+# Refund cases and policies are ledger core: the queue survives a rail tombstone, where
+# an online case can still be declined (R4) and an offline one approved with a receipt.
+REFUND_CASE_PATTERNS = [
+    path("admin/makerspace/<int:makerspace_id>/refund-cases", RefundCaseListView.as_view(), name="refund-case-list"),
+    path("admin/makerspace/<int:makerspace_id>/refund-cases/<int:case_id>", RefundCaseDetailView.as_view(), name="refund-case-detail"),
+    path("admin/makerspace/<int:makerspace_id>/refund-cases/<int:case_id>/approve", RefundCaseApproveView.as_view(), name="refund-case-approve"),
+    path("admin/makerspace/<int:makerspace_id>/refund-cases/<int:case_id>/decline", RefundCaseDeclineView.as_view(), name="refund-case-decline"),
+    path("admin/makerspace/<int:makerspace_id>/refund-policies", RefundPolicyListView.as_view(), name="refund-policy-list"),
+    path("admin/makerspace/<int:makerspace_id>/refund-policies/membership/plans/<int:plan_id>", RefundPlanPolicyView.as_view(), name="refund-policy-plan"),
+    path("admin/makerspace/<int:makerspace_id>/refund-policies/<str:area>", RefundPolicyDetailView.as_view(), name="refund-policy-detail"),
+]
+
 urlpatterns = [
+    *REFUND_CASE_PATTERNS,
     path("admin/makerspace/<int:makerspace_id>/payment-documents", StaffDocumentListView.as_view(), name="staff-payment-documents"),
     path("admin/makerspace/<int:makerspace_id>/payment-documents/<int:document_id>/download-url", StaffDocumentGrantView.as_view(), name="staff-payment-document-url"),
     path("payment-documents/<int:document_id>/download", DocumentDownloadView.as_view(), name="payment-document-download"),

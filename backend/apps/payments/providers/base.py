@@ -80,6 +80,10 @@ class RefundRequest:
     reference: str
     idempotency_key: str
     metadata: dict
+    #: Stripe Connect direct charges: return the platform fee pro rata with the refund.
+    refund_application_fee: bool = False
+    #: Destination charges only. Always false here: Connect uses direct charges.
+    reverse_transfer: bool = False
 
 
 @dataclass(frozen=True)

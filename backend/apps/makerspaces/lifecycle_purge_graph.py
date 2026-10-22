@@ -55,7 +55,7 @@ def _delete_object_graph(makerspace):
     from apps.organizations.models import OrganizationMakerspace
     from apps.machines.models import Machine, MachineType, MakerspaceMachineTypePricing, MakerspaceMachineTypePolicy
     from apps.machines.service_lifecycle import delete_for_makerspace
-    from apps.payments.models import Payment, ProcessedStripeEvent, Refund
+    from apps.payments.models import Payment, ProcessedStripeEvent, Refund, RefundCase
     from apps.tenant_migration.models import ExternalTenantReference, TenantImportJob
 
     with connection.cursor() as cursor:
@@ -193,6 +193,8 @@ def _delete_object_graph(makerspace):
         # this transaction), so the cash book needs no separate pass. Refunds do NOT:
         # `Refund.payment` is PROTECT, so they go first or any space that ever refunded
         # a charge raises ProtectedError here and can never be purged.
+        # Refund cases PROTECT both their payment and their refund, so they go first.
+        RefundCase.objects.filter(payment__makerspace=makerspace).delete()
         Refund.objects.filter(payment__makerspace=makerspace).delete()
         Payment.objects.filter(makerspace=makerspace).delete()
         ProcessedStripeEvent.objects.filter(makerspace=makerspace).delete()

@@ -47,7 +47,7 @@ def interactive():
         print("Northflank Sandbox: verify on signup. This recipe is not certified one-click or guaranteed $0.")
     answer = {
         "version": 1, "provider": provider, "profile": profile,
-        "backend_image": ask("Verified same-build backend OCI image@sha256:digest (free target if selected)"),
+        "backend_image": ask("Verified same-build spaceworks-backend OCI image@sha256:digest"),
         "database_provider": choose("Database provider", ("generic", "supabase", "neon", "rds", "digitalocean", "aiven"), "supabase" if profile == "free" else "generic"),
     }
     default_mode = "session" if answer["database_provider"] == "supabase" else "direct"

@@ -210,7 +210,7 @@ Cloud configuration and finite-job inputs (host/full ignores free limits):
 | `SPACEWORKS_GRANT_DATABASE_UUID` | unset | Separately supervised sibling grant-only target UUID. |
 | `SPACEWORKS_INITIALIZE_DATABASE_NAME` | unset | Ephemeral pre-H1 name proof for a populated legacy database without a marker. |
 | `SPACEWORKS_INITIALIZE_DATABASE_OID` | unset | Matching pre-H1 OID proof; empty fresh initialization retains its explicit path. |
-| `BUILD_IMAGE_PROFILE` | image build metadata | Build-owned full/free identity; cannot promote a reduced image through runtime env. |
+| `BUILD_IMAGE_PROFILE` | image build metadata | Build-owned image identity, always `full`: the one published image runs every profile. |
 | `GUNICORN_CMD_ARGS` | empty | Free rejects arbitrary command arguments; use its fixed one-worker topology. |
 | `PGCONNECT_TIMEOUT` | validated transport | Connection timeout only; passfiles and validated URLs own credentials. |
 | `PGSSLMODE` | validated URL/provider choice | Remote managed connections require explicit TLS; prefer verify-full. |

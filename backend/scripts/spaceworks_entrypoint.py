@@ -7,6 +7,15 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+if __name__ == "__main__" and os.environ.get("SPACEWORKS_DEPLOYMENT_MODE") == "managed":
+    # One published image runs every profile. Managed mode must materialize secrets
+    # and admit the writer generation BEFORE the imports below load config, so it
+    # hands over to cloud_entrypoint, which re-runs this file as a module and calls
+    # main(); it always exits. Host mode (the default) never takes this branch.
+    import runpy
+
+    runpy.run_path(str(Path(__file__).with_name("cloud_entrypoint.py")), run_name="cloud_entrypoint")["run"]()
+
 from apps.backup.host_marker import MarkerError, read_marker
 from apps.backup.process_roles import ProcessRole, admission_for
 from apps.backup.entrypoint_capability import consume_entrypoint_capability

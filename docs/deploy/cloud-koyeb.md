@@ -5,8 +5,9 @@ Read [hosting contracts](cloud-overview.md), [environment/setup](cloud-environme
 
 1. Provision PostgreSQL 16/17 direct/session transport, required extensions and a narrow runtime login.
    Provision independent private/public-final object buckets, actual capability facts and a verified email sender.
-2. Render protected configuration with the wizard. All full roles use the same immutable managed image digest;
-   the dedicated free image requires managed/free. Replace example zero digests only with qualified builds.
+2. Render protected configuration with the wizard. Every role, full or free, uses the same immutable
+   spaceworks-backend digest; the profile is chosen at start-up by SPACEWORKS_DEPLOYMENT_MODE/PROFILE.
+   Replace example zero digests only with qualified builds.
 3. Run the fixed release role with finite maintenance credentials before traffic. Verify DB identity, app-only
    grants, recovery state, migrations, encryption and real native storage proofs. Residents get runtime credentials only.
 4. Full Redis needs web/worker/one elected beat. Full brokerless needs web/worker/scheduler <=60 seconds.

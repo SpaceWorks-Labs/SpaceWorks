@@ -2,7 +2,7 @@
   "version": 1,
   "provider": "render",
   "profile": "free",
-  "backend_image": "ghcr.io/spaceworks-hq/spaceworks-backend-free@sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "backend_image": "ghcr.io/spaceworks-hq/spaceworks-backend@sha256:0000000000000000000000000000000000000000000000000000000000000000",
   "database_provider": "supabase",
   "database_connection_mode": "session",
   "maintenance_connection_mode": "session",

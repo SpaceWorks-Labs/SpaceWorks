@@ -387,7 +387,11 @@ Staff management has no hidden-space platform exception: only local Space Manage
 admin-reset staff there (D7). Platform superadmins may archive, unarchive, purge and review archive
 requests through the slim `/control/` lifecycle list, with recent session reauthentication on selection
 and confirmation POSTs. That exception grants no data, staff, settings, support or migration HTTP access.
-Server-side operator recovery remains outside application authority.
+Server-side operator recovery remains outside application authority. **No command-line bypass either
+(BK-66):** `manage.py export_tenant_migration_archive` encrypts to the PLATFORM key
+(`BACKUP_AGE_RECIPIENT`), so `archive_envelope.build_tenant_migration_archive` refuses any platform-keyed
+build for a space with access off — read from the database at the start and again just before
+encryption — with a clear `CommandError`. A target-keyed build (the gated HTTP job) is not affected.
 
 **Makerspace archive → purge (superadmin, `/control/` only).** `Makerspace.archived_at` is the
 single soft-delete flag; archive scoping is threaded through central rbac + all aggregates + public +

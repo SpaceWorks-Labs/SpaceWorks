@@ -12,6 +12,11 @@ logger = logging.getLogger(__name__)
 def schedule_import_archive_unlink(path, job_id):
     if not path:
         return
+    if str(path).startswith(("cloud-stage:", "cloud-upload:")):
+        from apps.backup.managed.staging import retire_owner
+        # Durable retirement is in the same transaction as clearing the locator.
+        retire_owner(job_id)
+        return
 
     def unlink():
         for candidate in (path, f"{path}.rows.age", f"{path}.rows.age.part"):

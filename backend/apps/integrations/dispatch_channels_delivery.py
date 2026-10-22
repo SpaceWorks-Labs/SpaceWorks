@@ -12,6 +12,8 @@ logger = logging.getLogger(__name__)
 def _deliver_notification(log) -> NotificationDeliveryLog:
     if not sending_allowed():
         return log
+    from apps.operations.cloud_jobs.bounded import check
+    check()
     if log.status in {NotificationDeliveryStatus.SENT, NotificationDeliveryStatus.SKIPPED}:
         return log
     if log.channel in {"sms", "whatsapp"} or log.channel not in NonEmailNotificationChannel.values:
@@ -58,6 +60,7 @@ def _deliver_notification(log) -> NotificationDeliveryLog:
         return log
 
     try:
+        check()
         if log.channel == NonEmailNotificationChannel.NATIVE_PUSH:
             from apps.integrations.push import deliver_native_push
 
@@ -100,6 +103,7 @@ def _deliver_notification(log) -> NotificationDeliveryLog:
             log.status = NotificationDeliveryStatus.FAILED
             log.error = "notification_channel_not_configured"
     finally:
+        check()
         log.attempts += 1
         log.save(
             update_fields=["status", "error", "attempts", "sent_at", "updated_at"]

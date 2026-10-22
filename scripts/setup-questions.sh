@@ -2,16 +2,38 @@
 # No filesystem or Docker effects: gather every deployment choice, then confirm once.
 source "$(dirname "${BASH_SOURCE[0]}")/setup-question-input.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/setup-area-questions.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/installer/answers.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/installer/setup-scan.sh"
 
 ask_setup_questions() {
   CONTROL_PLANE_PROXY=false; CONTROL_PLANE_ALLOW_CIDRS=''; CONTROL_PLANE_TUNNEL_PORT=''
-  exec 3</dev/tty
+  if [[ "${SETUP_NON_INTERACTIVE:-0}" == 1 ]]; then exec 3</dev/null; else exec 3</dev/tty; fi
   echo 'SpaceWorks deployment questions. Enter accepts the [default].'
+  # The free profile is opt-in: --profile free / SPACEWORKS_DEPLOYMENT_PROFILE=free, or
+  # option 4 below in an interactive run. It adds no question to the full path.
+  local free_status=0 hosting_choices=1,2,3
+  if [[ "${SPACEWORKS_DEPLOYMENT_PROFILE:-full}" == free ]]; then
+    confirm_free_profile || free_status=$?
+    exec 3<&-
+    return "$free_status"
+  fi
   echo 'Hosting model:'
   echo '  1) One makerspace on this server - one community, at /m/<slug>.'
   echo '  2) Several makerspaces - shared server, each at /m/<slug>; the superadmin adds more later.'
   echo '  3) Hosted platform - each makerspace has a subdomain of your platform domain.'
-  question HOSTING_MODEL 'Hosting model' 1 choices:1,2,3 || return 1
+  if [[ "${SETUP_NON_INTERACTIVE:-0}" != 1 && -z "${SPACEWORKS_DEPLOYMENT_PROFILE:-}" ]]; then
+    echo '  4) Free profile (opt-in) - one web process, no worker or scheduler; external services and an HTTP tick.'
+    hosting_choices=1,2,3,4
+  fi
+  question HOSTING_MODEL 'Hosting model' 1 "choices:$hosting_choices" || return 1
+  if [[ "$HOSTING_MODEL" == 4 ]]; then
+    SPACEWORKS_DEPLOYMENT_PROFILE=free
+    export SPACEWORKS_DEPLOYMENT_PROFILE
+    HOSTING_MODEL=''
+    confirm_free_profile || free_status=$?
+    exec 3<&-
+    return "$free_status"
+  fi
   PLATFORM_DOMAIN=''; PUBLIC_DOMAIN=''; TLS_EMAIL=''; SITE_ORIGINS=''
   if [[ "$HOSTING_MODEL" == 3 ]]; then
     question PLATFORM_DOMAIN 'Platform domain' '' domain || return 1
@@ -102,6 +124,7 @@ ask_setup_questions() {
   question SETUP_MFA_ENABLED 'Turn on two-step sign-in (authenticator app)?' Y choices:Y,y,yes,YES,N,n,no,NO || return 1
   question SETUP_SOCIAL_PROVIDERS 'Which sign-in options besides email + password? Google, Apple, GitHub — comma list, or none' google providers || return 1
   ask_setup_areas || return 1
+  ask_setup_scanner || return $?
   question ADMINUSER 'Admin login username' admin username || return 1
   question ADMINEMAIL 'Admin email' '' email || return 1
   question ADMINPASS 'Admin password (blank generates one)' '' secret || return 1
@@ -133,8 +156,29 @@ ask_setup_questions() {
   local proceed
   question proceed 'Proceed?' Y choices:Y,y,yes,YES,N,n,no,NO || return 1
   exec 3<&-
-  [[ "$proceed" =~ ^[Yy] ]] || { echo 'Cancelled; nothing was installed or configured.'; return 1; }
+  [[ "$proceed" =~ ^[Yy] ]] || { echo 'Cancelled; nothing was installed or configured.'; return 130; }
+  check_unused_answers || return $?
   ANSWERS_CONFIRMED=yes
+}
+
+confirm_free_profile() {
+  free_profile_notice
+  echo '  Will perform: write a private free-profile .env with generated secrets. No services start.'
+  [[ "${SETUP_NON_INTERACTIVE:-0}" != 1 ]] || return 0
+  local proceed
+  question proceed 'Prepare the free profile?' Y choices:Y,y,yes,YES,N,n,no,NO || return 1
+  [[ "$proceed" =~ ^[Yy] ]] || { echo 'Cancelled; nothing was installed or configured.'; return 130; }
+}
+
+free_profile_notice() {
+  echo
+  echo 'Free profile (opt-in, best effort)'
+  echo '  One 512 MB web container and one process: no worker, scheduler, Redis or live-events process.'
+  echo '  Malware scanning is off: uploads are validated by type and size but not scanned.'
+  echo '  Scheduled work runs only when an external cron calls POST /api/v1/internal/free/tick'
+  echo '  over HTTPS with the X-Cron-Secret header (FREE_TICK_SECRET in the private .env).'
+  echo '  It needs an external PostgreSQL, S3-compatible storage and an email provider, and has no'
+  echo '  scheduled pg_dump; see docs/deploy/cloud-free.md before relying on it.'
 }
 
 setup_summary() {
@@ -158,6 +202,7 @@ setup_summary() {
     "$MSNAME" "${MS_SUBDOMAIN:-none}" "$SPACEWORKS_EDITION" "$([[ ",${SETUP_SELECTED_AREAS}," == *,inventory,* ]] && echo "$REQUEST_ACCESS" || echo 'lending disabled')"
   printf '  Organization: %s (owner of %s)\n' "$ORG_NAME" "$MSNAME"
   setup_areas_summary
+  printf '  File scanning: %s\n' "${SETUP_SCAN_MODE:-none}"
   printf '  Admin: %s <%s>; password: %s (hidden)\n' "$ADMINUSER" "$ADMINEMAIL" "$([[ "$GEN_PASS" == 1 ]] && echo generated || echo entered)"
   printf '  Two-step sign-in: %s; sign-in providers: %s (keys configured later in the console)\n' \
     "$SETUP_MFA_ENABLED" "$SETUP_SOCIAL_PROVIDERS"

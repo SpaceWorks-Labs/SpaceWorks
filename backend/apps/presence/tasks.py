@@ -1,4 +1,6 @@
 """Bounded, per-tenant expiry and recoverable reminder sweeps."""
+from apps.operations.cloud_jobs import bounded
+
 import logging
 from datetime import timedelta
 
@@ -19,12 +21,13 @@ logger = logging.getLogger(__name__)
 
 
 def sweep_presence(*, now=None, batch_size=200):
+    batch_size = bounded.limit(batch_size)
     now = now or timezone.now()
     counts = {"expired": 0, "reminded": 0, "skipped": 0, "failed": 0}
     due = PresenceSession.objects.filter(expires_at__lte=now).filter(
         Q(ended_at=None) | Q(end_reason="expired", expiry_reminded_at=None))
     spaces = servable_queryset(Makerspace.objects.filter(pk__in=due.values("makerspace_id"))).order_by("pk")
-    for space in spaces.iterator():
+    for space in bounded.page(spaces, "presence-spaces"):
         try:
             require_enabled(space)
         except Exception:
@@ -39,7 +42,7 @@ def sweep_presence(*, now=None, batch_size=200):
                     Makerspace.objects.select_for_update(no_key=True).get(pk=space.pk)
                     rows = list(due.filter(makerspace=space).select_for_update(skip_locked=True)
                                 .order_by("expires_at", "pk")[:batch_size])
-                    for row in rows:
+                    for row in bounded.items(rows):
                         if row.ended_at is None:
                             row.ended_at, row.end_reason = row.expires_at, "expired"
                             row.save(update_fields=["ended_at", "end_reason"])

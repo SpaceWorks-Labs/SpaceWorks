@@ -16,6 +16,22 @@ env = environ.Env(
     DEBUG=(bool, False),
 )
 environ.Env.read_env(BASE_DIR / ".env")
+from cloud_contracts.deployment import parse_selection
+
+try:
+    _deployment = parse_selection({
+        "SPACEWORKS_DEPLOYMENT_MODE": env("SPACEWORKS_DEPLOYMENT_MODE", default="host"),
+        "SPACEWORKS_DEPLOYMENT_PROFILE": env("SPACEWORKS_DEPLOYMENT_PROFILE", default="full"),
+    })
+except ValueError as exc:
+    raise ImproperlyConfigured(str(exc)) from exc
+SPACEWORKS_DEPLOYMENT_MODE = _deployment.mode
+SPACEWORKS_DEPLOYMENT_PROFILE = _deployment.profile
+if _deployment.mode == "managed":
+    from config.cloud_settings.secrets import materialize
+    materialize()
+CLOUD_TASK_PROFILE = env("CLOUD_TASK_PROFILE", default="")
+CLOUD_SCHEDULER = env("CLOUD_SCHEDULER", default="")
 # Imported after read_env: both read TOMBSTONED_APPS straight from the environment,
 # and the sidebar in config.unfold is built at import time.
 from apps.separability.tombstones import tombstoned_app_labels
@@ -70,10 +86,12 @@ BEHIND_TRUSTED_PROXY = env.bool("BEHIND_TRUSTED_PROXY", default=False)
 PLATFORM_ORIGIN_HOST = env("PLATFORM_ORIGIN_HOST", default="")  # e.g. origin.space-works.tech; blank => resolution gate dormant
 DOMAIN_CHANGE_COOLDOWN_SECONDS = env.int("DOMAIN_CHANGE_COOLDOWN_SECONDS", default=0)  # 0 => no cooldown
 if BEHIND_TRUSTED_PROXY:
-    ALLOWED_HOSTS = ["*"]
+    if SPACEWORKS_DEPLOYMENT_MODE == "host":
+        ALLOWED_HOSTS = ["*"]  # Existing host domain middleware remains authoritative.
 PUBLIC_APP_BASE_URL = env("PUBLIC_APP_BASE_URL", default="").rstrip("/")
 STRIPE_CONNECT_REDIRECT_URI = env("STRIPE_CONNECT_REDIRECT_URI", default="")
 MANAGED_POSTGRES = env.bool("MANAGED_POSTGRES", default=False)
+DATABASE_CONNECTION_MODE = env("DATABASE_CONNECTION_MODE", default="direct")
 MANAGED_RESOURCE_LIMITS = {
     "products": 500,
     "assets": 2000,
@@ -208,6 +226,7 @@ MIDDLEWARE = [
     "apps.accounts.native_session.NativeSessionContextMiddleware",
     "apps.tenant_migration.middleware.SourceMigrationGateMiddleware",
     "apps.makerspaces.middleware.TenantHostValidationMiddleware",
+    "config.cloud_settings.forwarded_host.TrustedForwardedHostMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "apps.accounts.social_csp.SocialCspMiddleware",
     "csp.middleware.CSPMiddleware",
@@ -254,6 +273,9 @@ DATABASES["default"]["CONN_HEALTH_CHECKS"] = env.bool("CONN_HEALTH_CHECKS", defa
 DATABASES["default"]["DISABLE_SERVER_SIDE_CURSORS"] = env.bool(
     "DISABLE_SERVER_SIDE_CURSORS", default=False
 )
+if SPACEWORKS_DEPLOYMENT_MODE == "managed":
+    from config.cloud_settings.wiring import managed_database
+    DATABASES["default"] = managed_database(DATABASES["default"], env)
 SPACEWORKS_HOST_MARKER_PATH = env(
     "SPACEWORKS_HOST_MARKER_PATH",
     default="/run/spaceworks-host/restore-marker.json",
@@ -469,6 +491,15 @@ EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
 EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
 EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="Makerspace <noreply@makerspace.local>")
+EMAIL_PROVIDER = env("EMAIL_PROVIDER", default="")
+EMAIL_PROVIDER_CONFIG_FILE = env("EMAIL_PROVIDER_CONFIG_FILE", default="")
+EMAIL_PROVIDER_WEBHOOKS_ENABLED = env.bool("EMAIL_PROVIDER_WEBHOOKS_ENABLED", default=False)
+if EMAIL_PROVIDER:
+    from config.cloud_settings.wiring import provider_email
+    # Provider routing is per message; preserve Django's legacy fallback backend.
+    _provider_email = provider_email(env)
+    EMAIL_PROVIDER_CONFIG_FILE = _provider_email["EMAIL_PROVIDER_CONFIG_FILE"]
+    EMAIL_PROVIDER_WEBHOOKS_ENABLED = _provider_email["EMAIL_PROVIDER_WEBHOOKS_ENABLED"]
 
 # Async email runs through a Celery worker ONLY when a broker is configured (the Compose
 # stack + prod set CELERY_BROKER_URL). With no broker - e.g. the documented local flow
@@ -1371,3 +1402,51 @@ CELERY_BEAT_SCHEDULE["messaging-recovery"] = {
 CELERY_BEAT_SCHEDULE["canonical-messaging-retention"] = {
     "task": "apps.integrations.tasks_messaging.canonical_retention_task", "schedule": crontab(minute=35),
 }
+# Applied after legacy settings so host/full with no explicit task selector is
+# byte-for-byte equivalent in effective values. No free knobs are read under full.
+from config.cloud_settings.tasks import task_settings
+try:
+    _cloud_tasks = task_settings(
+        env, _deployment, profile=CLOUD_TASK_PROFILE, scheduler=CLOUD_SCHEDULER,
+    )
+    CLOUD_TASK_PROFILE = _cloud_tasks.get("CLOUD_TASK_PROFILE", "")
+    CLOUD_SCHEDULER = _cloud_tasks.get("CLOUD_SCHEDULER", "")
+    if _cloud_tasks:
+        CELERY_BROKER_URL = _cloud_tasks["CELERY_BROKER_URL"]
+        CELERY_TASK_ALWAYS_EAGER = _cloud_tasks["CELERY_TASK_ALWAYS_EAGER"]
+        CELERY_RESULT_BACKEND = _cloud_tasks["CELERY_RESULT_BACKEND"]
+        LIVE_REDIS_URL = _cloud_tasks["LIVE_REDIS_URL"]
+        CACHES = {"default": cache_config(_cloud_tasks["CACHE_URL"])}
+    if _deployment.is_free:
+        from config.cloud_settings.free import free_settings
+        globals().update(free_settings({
+            "FREE_TICK_SECRET": env("FREE_TICK_SECRET", default=""),
+            "FREE_TICK_INTERVAL_SECONDS": env.int("FREE_TICK_INTERVAL_SECONDS", default=600),
+            "FREE_TICK_BUDGET_SECONDS": env.int("FREE_TICK_BUDGET_SECONDS", default=20),
+            "FREE_TICK_RATE_LIMIT_PER_MINUTE": env.int("FREE_TICK_RATE_LIMIT_PER_MINUTE", default=6),
+            "FREE_DB_CAP_BYTES": env.int("FREE_DB_CAP_BYTES", default=None),
+            "FREE_OBJECT_CAP_BYTES": env.int("FREE_OBJECT_CAP_BYTES", default=None),
+            "FREE_EMAIL_DAILY_CAP": env.int("FREE_EMAIL_DAILY_CAP", default=None),
+        }))
+        # Free ticks use J's typed catalog, never Celery beat or its whole sweeps.
+        CELERY_BEAT_SCHEDULE = {}
+except ValueError as exc:
+    raise ImproperlyConfigured(str(exc)) from exc
+
+if SPACEWORKS_DEPLOYMENT_MODE == "managed" or CLOUD_TASK_PROFILE:
+    from config.cloud_settings.wiring import cloud_task_modules
+    CELERY_IMPORTS = cloud_task_modules(tombstones=TOMBSTONED_APPS)
+
+from config.cloud_settings.configuration import deployment_settings
+globals().update(deployment_settings(env, _deployment))
+if SPACEWORKS_DEPLOYMENT_MODE == "managed" and not _deployment.is_free:
+    from apps.operations.cloud_jobs.catalog import beat_entries
+    # Preserve legacy calendar slots; new reviewed tasks alone acquire intervals.
+    for _name, _entry in beat_entries().items():
+        CELERY_BEAT_SCHEDULE.setdefault(_name, _entry)
+    if CLOUD_SCHEDULER == "beat":
+        CELERY_BEAT_SCHEDULER = "apps.operations.cloud_jobs.beat.DatabaseScheduler"
+if SPACEWORKS_DEPLOYMENT_MODE == "host":
+    # Preserve PersistentScheduler's file/calendar behavior, while exposing real
+    # dispatcher contact to the existing installer completion probe (C17).
+    CELERY_BEAT_SCHEDULER = "apps.operations.cloud_jobs.host_beat.ObservedPersistentScheduler"

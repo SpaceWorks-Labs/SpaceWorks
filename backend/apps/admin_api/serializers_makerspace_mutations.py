@@ -41,7 +41,12 @@ class MakerspaceMutationMixin:
             branding = default_branding_config()
             branding["display_name"] = public_display_name
             validated_data["branding_config"] = branding
+        provider_values = {key: validated_data.pop(key) for key in ("email_provider", "email_provider_config") if key in validated_data}
         instance = super().create(validated_data)
+        from apps.integrations.email_provider_serializers import apply_provider_update
+        apply_provider_update(instance, provider_values)
+        if provider_values:
+            instance.save(update_fields=["email_provider", "email_provider_config"])
         self._validate_event_default(instance, validated_data)
         if domain_verification.is_self_host() and instance.frontend_domain:
             instance.frontend_domain_status = Makerspace.DomainStatus.VERIFIED
@@ -99,6 +104,8 @@ class MakerspaceMutationMixin:
             )
             if access_changes:
                 self._validate_access_change(locked, new_flag, is_superadmin)
+            from apps.integrations.email_provider_serializers import apply_provider_update
+            apply_provider_update(locked, validated_data)
             for field, value in validated_data.items():
                 setattr(locked, field, value)
             self._validate_event_default(locked, validated_data)

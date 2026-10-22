@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "kind": "spaceworks-template-registration-input",
+  "status": "draft; create services/project and register via Railway, not a native Railway import payload",
+  "registered_template_url": null,
+  "image": "ghcr.io/spaceworks-hq/spaceworks-backend-managed@sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "services": [
+    {
+      "name": "web",
+      "config_file": "deploy/railway/railway.web.json",
+      "environment_file": "runtime.environment.json"
+    },
+    {
+      "name": "worker",
+      "config_file": "deploy/railway/railway.worker.json",
+      "environment_file": "runtime.environment.json"
+    },
+    {
+      "name": "beat",
+      "config_file": "deploy/railway/railway.beat.json",
+      "environment_file": "runtime.environment.json"
+    },
+    {
+      "name": "release",
+      "config_file": "deploy/railway/railway.release.json",
+      "environment_file": "release.environment.json"
+    }
+  ],
+  "alternatives": {
+    "brokerless": "replace beat with scheduler; keep worker",
+    "database": "external direct/session PG16/17 or explicit PG16 container with persistent volume and snapshots"
+  },
+  "registration": [
+    "Import immutable Docker image per service; preserve ENTRYPOINT.",
+    "Upload role-specific secrets independently. Gate all residents on finite release success.",
+    "After live acceptance, railway templates create --project PROJECT --environment production --json.",
+    "Only after owner-authorized publication record the actual registered template URL/deploy button."
+  ],
+  "source": "https://docs.railway.com/templates/create"
+}

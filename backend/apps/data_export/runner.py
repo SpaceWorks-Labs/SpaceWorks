@@ -78,6 +78,8 @@ def build_archive(
                 snapshot_at = cursor.fetchone()[0]
 
             from apps.accounts.models import User
+            from apps.operations.cloud_jobs.admission import assert_export
+            assert_export(job)
             closure.update(User.objects.filter(account_kind="staff", staff_makerspace_id=job.makerspace_id,
                                                retired_at__isnull=True).values_list("pk", flat=True))
             datasets = [

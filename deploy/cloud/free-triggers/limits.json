@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "cron_job_org": {
+    "timeout_seconds": 30,
+    "output_limit_bytes": 65536,
+    "warning": "Render cold wake-up may exceed timeout; next tick retries due work. Check failure-disable behavior and notifications; third party holds tick secret.",
+    "source": "https://cron-job.org/en/faq/"
+  },
+  "github_actions": {
+    "minimum_schedule_minutes": 5,
+    "example_schedule_minutes": 10,
+    "runs_per_31_day_month": 4464,
+    "warning": "Schedules can be delayed/dropped; public schedules disable after 60 inactive days. Private included minutes depend on plan; ten-minute scheduling may exceed them. Prefer daily external backup/export.",
+    "source": "https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule"
+  },
+  "all": "Examples are disabled/not installed in application workflows. Verify account quotas, billing and permitted use before enabling."
+}

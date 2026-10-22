@@ -46,6 +46,8 @@ class TenantDumpCatalogError(AssertionError):
 # identities; re-pinned from schema_digest() over the merged graph.
 # Hosting requests (lane/hosting-requests): HostingRequest; re-pinned after that merge.
 # Machine-service ETA (lane/machine-eta): cancellation and notice markers; re-pinned.
+# Cloud programme (cloud/integration): managed coordination, email providers, cloud
+# accounting and storage history; re-pinned after that merge.
 # Orchestrator re-pins the live catalog after final schema/migration verification.
 CATALOG_SCHEMA_SHA256 = "d988f146e82c722e1f5d8d9177f8751d0555e33ed880ee452473907718282232"
 

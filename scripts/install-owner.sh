@@ -1,6 +1,15 @@
 #!/usr/bin/env bash
 # Sourced by host entry points. The directory owner also owns setup and cron.
 require_install_owner() {
+  (( BASH_VERSINFO[0] > 4 || (BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] >= 4) )) || {
+    echo 'SpaceWorks requires Bash 4.4+ (install modern Bash on macOS).' >&2; exit 64;
+  }
+  if ! python3 -c 'import sys; raise SystemExit(sys.version_info < (3, 10))' >/dev/null 2>&1 \
+    && python -c 'import sys; raise SystemExit(sys.version_info < (3, 10))' >/dev/null 2>&1; then
+    SPACEWORKS_INSTALL_PYTHON="$(command -v python)"; export SPACEWORKS_INSTALL_PYTHON
+    python3() { "$SPACEWORKS_INSTALL_PYTHON" "$@"; }
+    export -f python3
+  fi
   local entrypoint="$1"; shift
   local owner current name key
   local forwarded=()
@@ -23,7 +32,11 @@ require_install_owner() {
       if [[ -n "${!key:-}" ]]; then forwarded+=("$key=${!key}"); fi
     done
     printf 'Root-owned install: continuing as root using sudo.\n'
-    exec sudo env ${forwarded[@]+"${forwarded[@]}"} bash "$entrypoint" "$@"
+    source "$(dirname "${BASH_SOURCE[0]}")/installer/environment-continuity.sh"
+    preserve_installer_environment
+    local preserve_args=()
+    [[ -z "$INSTALLER_PRESERVED_NAMES" ]] || preserve_args+=("--preserve-env=$INSTALLER_PRESERVED_NAMES")
+    exec sudo "${preserve_args[@]}" env ${forwarded[@]+"${forwarded[@]}"} bash "$entrypoint" "$@"
   fi
   name="$(stat -c %U "$ROOT")"
   printf 'ERROR: %s belongs to %s (UID %s). Sign in as that user and run bash %q' \

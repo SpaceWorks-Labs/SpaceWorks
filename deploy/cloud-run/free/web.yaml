@@ -1,0 +1,168 @@
+{
+  "apiVersion": "serving.knative.dev/v1",
+  "kind": "Service",
+  "metadata": {
+    "name": "spaceworks-free-web",
+    "annotations": {
+      "run.googleapis.com/ingress": "all"
+    }
+  },
+  "spec": {
+    "template": {
+      "metadata": {
+        "annotations": {
+          "autoscaling.knative.dev/minScale": "0",
+          "autoscaling.knative.dev/maxScale": "1",
+          "run.googleapis.com/cpu-throttling": "true",
+          "run.googleapis.com/startup-cpu-boost": "true"
+        }
+      },
+      "spec": {
+        "serviceAccountName": "spaceworks-web@PROJECT.iam.gserviceaccount.com",
+        "containerConcurrency": 1,
+        "timeoutSeconds": 60,
+        "containers": [
+          {
+            "image": "ghcr.io/spaceworks-hq/spaceworks-backend-free@sha256:0000000000000000000000000000000000000000000000000000000000000000",
+            "args": [
+              "--role",
+              "backend",
+              "python",
+              "-m",
+              "scripts.run_cloud_role",
+              "web"
+            ],
+            "env": [
+              {
+                "name": "SPACEWORKS_DEPLOYMENT_MODE",
+                "value": "managed"
+              },
+              {
+                "name": "SPACEWORKS_DEPLOYMENT_PROFILE",
+                "value": "free"
+              },
+              {
+                "name": "CLOUD_TASK_PROFILE",
+                "value": "brokerless"
+              },
+              {
+                "name": "CLOUD_SCHEDULER",
+                "value": "tick"
+              },
+              {
+                "name": "DATABASE_CONNECTION_MODE",
+                "value": "session"
+              },
+              {
+                "name": "DATABASE_MAINTENANCE_CONNECTION_MODE",
+                "value": "session"
+              },
+              {
+                "name": "DATABASE_URL",
+                "valueFrom": {
+                  "secretKeyRef": {
+                    "name": "spaceworks-runtime-db",
+                    "key": "latest"
+                  }
+                }
+              },
+              {
+                "name": "FREE_DB_CAP_BYTES",
+                "value": "500000000"
+              },
+              {
+                "name": "FREE_OBJECT_CAP_BYTES",
+                "value": "10000000000"
+              },
+              {
+                "name": "FREE_EMAIL_DAILY_CAP",
+                "value": "100"
+              },
+              {
+                "name": "FREE_EMAIL_MONTHLY_CAP",
+                "value": "3000"
+              },
+              {
+                "name": "FREE_EMAIL_ACCOUNT_KEY",
+                "value": "shared-resend-account"
+              },
+              {
+                "name": "FREE_EMAIL_RESET_TIMEZONE",
+                "value": "UTC"
+              },
+              {
+                "name": "FREE_TICK_INTERVAL_SECONDS",
+                "value": "600"
+              },
+              {
+                "name": "FREE_TICK_BUDGET_SECONDS",
+                "value": "20"
+              },
+              {
+                "name": "FREE_TICK_RATE_LIMIT_PER_MINUTE",
+                "value": "6"
+              },
+              {
+                "name": "GUNICORN_WORKERS",
+                "value": "1"
+              },
+              {
+                "name": "GUNICORN_THREADS",
+                "value": "1"
+              },
+              {
+                "name": "CELERY_BROKER_URL",
+                "value": ""
+              },
+              {
+                "name": "CACHE_URL",
+                "value": ""
+              },
+              {
+                "name": "LIVE_REDIS_URL",
+                "value": ""
+              },
+              {
+                "name": "CELERY_TASK_ALWAYS_EAGER",
+                "value": "True"
+              },
+              {
+                "name": "UPLOAD_SCAN_POLICY",
+                "value": "none"
+              },
+              {
+                "name": "FREE_TICK_SECRET",
+                "valueFrom": {
+                  "secretKeyRef": {
+                    "name": "spaceworks-free-tick",
+                    "key": "latest"
+                  }
+                }
+              }
+            ],
+            "resources": {
+              "limits": {
+                "cpu": "1",
+                "memory": "512Mi"
+              }
+            },
+            "ports": [
+              {
+                "containerPort": 8000
+              }
+            ],
+            "startupProbe": {
+              "httpGet": {
+                "path": "/api/v1/health/readiness/",
+                "port": 8000
+              },
+              "periodSeconds": 10,
+              "timeoutSeconds": 5,
+              "failureThreshold": 12
+            }
+          }
+        ]
+      }
+    }
+  }
+}

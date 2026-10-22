@@ -19,6 +19,9 @@ from apps.integrations.models import (
     NotificationFeature,
 )
 from apps.integrations.notification_catalog import FEATURE_EVENTS, is_notification_enabled, receipt_email_default
+from .notification_cloud_fanout import check as check_cloud_fanout, preflight as preflight_cloud_fanout
+from .notification_cloud_fanout import UnsupportedFanout
+from apps.operations.cloud_jobs.contracts import BudgetExpired, GuardLost
 
 logger = logging.getLogger(__name__)
 
@@ -95,6 +98,7 @@ def _dispatch_email_delivery(makerspace, feature, feature_event, delivery, sync,
     if not mandatory and _email_muted(makerspace, delivery):
         return
     try:
+        check_cloud_fanout()
         log = dispatch_email(
             source_kind=delivery.source_kind, source_id=delivery.source_id,
             source_metadata=delivery.source_metadata,
@@ -111,6 +115,8 @@ def _dispatch_email_delivery(makerspace, feature, feature_event, delivery, sync,
             recipient_id=delivery.user_id or staff_ids.get(delivery.to_email.strip().casefold()),
             feature=feature,
         )
+    except (BudgetExpired, GuardLost, UnsupportedFanout):
+        raise
     except Exception:
         _increment(failed, NotificationChannel.EMAIL)
         logger.warning(
@@ -135,6 +141,7 @@ def _run_guarded(makerspace, feature, event, build, sync, occurred_at=None, even
             from .notification_lifecycle_source import eligible_source
             if not eligible_source(makerspace, feature, event, payload.source):
                 return NotificationResult(False)
+        preflight_cloud_fanout(makerspace, payload)
         data = lifecycle_data(payload.data)
         if payload.source:
             data["lifecycle_source"] = payload.source
@@ -164,6 +171,7 @@ def _run_guarded(makerspace, feature, event, build, sync, occurred_at=None, even
                 pk__in=ids,
             ).values_list("pk", "email") if email}
             for delivery in payload.emails:
+                check_cloud_fanout()
                 if not (enabled[NotificationChannel.EMAIL] or mandatory_hardware
                         or (payer_receipt and delivery.audience == "requester")):
                     continue
@@ -181,6 +189,7 @@ def _run_guarded(makerspace, feature, event, build, sync, occurred_at=None, even
             NotificationChannel.WEBHOOK,
             NotificationChannel.NATIVE_PUSH,
         ):
+            check_cloud_fanout()
             if not enabled[channel] or not payload.staff_channels_enabled:
                 continue
             try:
@@ -202,6 +211,7 @@ def _run_guarded(makerspace, feature, event, build, sync, occurred_at=None, even
                     scope=payload.scope,
                 )
             except Exception:
+                check_cloud_fanout()
                 _increment(failed, channel)
                 logger.warning(
                     "lifecycle_channel_dispatch_failed",
@@ -226,7 +236,12 @@ def _run_guarded(makerspace, feature, event, build, sync, occurred_at=None, even
                 # Counted per room, so three rooms is three deliveries: the counts back
                 # `bool(delivered_counts)`, and a partial fan-out must show both sides.
                 _increment(target, channel)
+    except (BudgetExpired, GuardLost, UnsupportedFanout):
+        raise
     except Exception:
+        from .notification_cloud_fanout import free
+        if free():
+            raise GuardLost("legacy_fanout_requires_reconciliation") from None
         logger.warning(
             "lifecycle_notification_failed",
             extra={

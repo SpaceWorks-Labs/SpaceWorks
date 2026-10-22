@@ -15,7 +15,8 @@ import /etc/caddy/control-tunnel-{$CONTROL_PLANE_TUNNEL:off}.caddy
         reverse_proxy backend:8000
     }
 
-    handle /api/v1/internal/* {
+    @internal path /api/v1/internal /api/v1/internal/* /api/v1/metrics /api/v1/metrics/*
+    handle @internal {
         respond 403
     }
     handle /api/v1/live/* {
@@ -40,6 +41,14 @@ import /etc/caddy/control-tunnel-{$CONTROL_PLANE_TUNNEL:off}.caddy
     }
     handle @event_crawler {
         rewrite * /share/events/{re.event_card.2}/
+        reverse_proxy backend:8000
+    }
+    @event_short_crawler {
+        path_regexp event_short_card ^/e/([0-9a-fA-F-]{36})/?$
+        header_regexp User-Agent (?i)(facebookexternalhit|Facebot|Twitterbot|LinkedInBot|Slackbot|Discordbot|WhatsApp|TelegramBot)
+    }
+    handle @event_short_crawler {
+        rewrite * /share/events/{re.event_short_card.1}/
         reverse_proxy backend:8000
     }
     @booking_crawler {

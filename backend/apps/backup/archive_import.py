@@ -17,6 +17,8 @@ from apps.backup.models import BackupArchive, PlatformBackupSettings, RestoreOpe
 
 
 def import_disaster_archive(actor, encrypted_path, manifest, *, expected_sha256=None):
+    from .cloud_operations import require_host
+    require_host("deployment_restore_requires_host_supervisor")
     if not isinstance(expected_sha256, str) or re.fullmatch(
         r"[0-9a-f]{64}", expected_sha256
     ) is None:

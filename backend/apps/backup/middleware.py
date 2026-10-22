@@ -30,6 +30,24 @@ class DeploymentRecoveryGateMiddleware:
         except (OperationalError, ProgrammingError):
             return self._refused("unavailable")
         if mode == DeploymentRecoveryState.Mode.NORMAL:
+            from apps.operations.cloud_runtime import managed, writer
+            if managed() and request.path_info.rstrip("/") not in {"/api/v1/health", "/api/v1/health/readiness"}:
+                from apps.backup.managed.admission import ManagedAdmissionError
+                try:
+                    with writer("web"):
+                        response = self.get_response(request)
+                        if getattr(response, "streaming", False):
+                            response.streaming_content = _managed_stream(response.streaming_content)
+                        return response
+                except ManagedAdmissionError:
+                    return self._refused("managed_admission_refused")
+            if not managed() and request.path_info.rstrip("/") not in {"/api/v1/health", "/api/v1/health/readiness"}:
+                from apps.operations.cloud_runtime import check
+                from apps.backup.managed.admission import ManagedAdmissionError
+                try:
+                    check()
+                except (ManagedAdmissionError, OperationalError, ProgrammingError):
+                    return self._refused("mode_binding_unavailable")
             return self.get_response(request)
         try:
             view_name = resolve(request.path_info).view_name or ""
@@ -61,3 +79,11 @@ class DeploymentRecoveryGateMiddleware:
         return JsonResponse(
             {"detail": detail, "code": f"deployment_{mode}"}, status=503
         )
+
+
+def _managed_stream(content):
+    from apps.operations.cloud_runtime import writer
+    with writer("web") as check:
+        for chunk in content:
+            check()
+            yield chunk

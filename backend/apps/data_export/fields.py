@@ -25,6 +25,8 @@ USER_PROJECTIONS = {
 }
 
 ALWAYS_OMITTED = {
+    ("makerspaces.Makerspace", "email_provider"): "Reconfigure transport on target.",
+    ("makerspaces.Makerspace", "email_provider_config"): "Encrypted transport credentials.",
     ("bookings.Booking", "checkin_token"): "Source arrival bearer credential; target issues a fresh one.",
     ("bookings.BookingBroadcastDelivery", "outbox"): "Source-local send authority never travels.",
     ("events.EventBroadcastDelivery", "outbox"): "Source-local send authority never travels.",

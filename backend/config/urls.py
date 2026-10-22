@@ -17,6 +17,8 @@ from apps.payments_rail.views_connect import (
     StripeConnectWebhookView,
 )
 from apps.separability.registry import runtime_active
+from django.conf import settings
+from config.cloud_settings.urls import free_tick_paths
 
 
 def separable_paths(app_label, *routes):
@@ -75,6 +77,7 @@ urlpatterns = [
     path(".well-known/assetlinks.json", AssetLinksView.as_view(), name="mobile-assetlinks"),
     path(".well-known/apple-app-site-association", AppleAppSiteAssociationView.as_view(), name="mobile-apple-association"),
     path("", include("apps.makerspaces.public_page_share_urls")),
+    *free_tick_paths(settings.SPACEWORKS_DEPLOYMENT_PROFILE),
     path("mfa/reauth/", control_reauthentication, name="control-reauthentication"),
     path("", include("apps.makerspaces.website_urls")),
     path("mfa/control/", control_mfa, name="control-mfa"),

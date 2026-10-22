@@ -126,7 +126,6 @@ class TenantExitCustodyAlarmDeliveryAdmin(ReadOnlyBackupAdmin):
 
 
 for model in (
-    PlatformBackupSettings,
     DeploymentRecoveryState,
     BackupLease,
     BackupRun,
@@ -150,3 +149,5 @@ for model in (
 
 
 from apps.backup import admin_offsite  # noqa: E402,F401  (registers the offsite admins)
+
+from . import admin_deployment  # noqa: E402,F401

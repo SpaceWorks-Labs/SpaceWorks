@@ -1,11 +1,14 @@
 import { useState } from "react";
 import { ErrorText, RelativeTime, SettingsActions, SettingsRow } from "../../components/ui";
 import type { BackupSettings } from "./backupApi";
+import { DeploymentNotices } from "../deployment/DeploymentNotices";
+import type { DeploymentNoticeData } from "../deployment/types";
 
-export function BackupScheduleSettings({ data, pending, onSave }: { data: BackupSettings; pending: boolean; onSave: (payload: Partial<BackupSettings>, onSaved?: () => void) => void }) {
+export function BackupScheduleSettings({ data, pending, onSave, deployment }: { data: BackupSettings; pending: boolean; onSave: (payload: Partial<BackupSettings>, onSaved?: () => void) => void; deployment?: DeploymentNoticeData }) {
   const [draft, setDraft] = useState<number | null>(null);
   const days = draft ?? data.retention_days;
   const dirty = days !== data.retention_days;
+  if (deployment?.mode === "managed" || deployment?.profile === "free") return <DeploymentNotices data={deployment} />;
   return <>
     <SettingsRow label="Daily full backup" helper="Create a full deployment archive each day.">
       <label className="flex min-h-11 items-center gap-3 text-sm"><input className="h-5 w-5 accent-accent" role="switch" aria-label="Create a full deployment archive each day" type="checkbox" checked={data.automatic_backups_enabled} disabled={pending} onChange={event => onSave({ automatic_backups_enabled: event.target.checked })} />{data.automatic_backups_enabled ? "On" : "Off"}</label>

@@ -86,7 +86,8 @@ def verify_projection_database(
 ):
     validate_catalog()
     validate_raw_column_allowlists()
-    validate_unowned_tables(connections[using].introspection.table_names())
+    from .cloud_portable import application_table_names
+    validate_unowned_tables(application_table_names(using))
     verify_foreign_key_closure(using)
     verify_open_tenant_fence(using, makerspace_id)
     verify_tables_empty(using, {"spaceworks_cache"})

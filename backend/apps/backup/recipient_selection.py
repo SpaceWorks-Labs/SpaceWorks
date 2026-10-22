@@ -2,14 +2,11 @@
 
 from django.conf import settings
 
+from .build_errors import BackupBuildError  # noqa: F401 - re-exported for existing importers
 from .models import BackupArchive, MakerspaceArchiveRecipient
 
 
 PLATFORM_RECIPIENT_LABEL = "Platform backup recipient"
-
-
-class BackupBuildError(RuntimeError):
-    pass
 
 
 def selection_for(archive) -> list[dict]:

@@ -7,6 +7,8 @@ from django.utils import timezone
 
 from .models_contract import NotificationDelivery, NotificationEnvelope
 from .notification_cutover import guarded
+from apps.operations.cloud_jobs import bounded
+from apps.operations.cloud_jobs.contracts import BudgetExpired, GuardLost
 
 logger = logging.getLogger(__name__)
 
@@ -14,6 +16,7 @@ logger = logging.getLogger(__name__)
 @shared_task
 @guarded(sending=True)
 def deliver_envelope(envelope_id):
+    bounded.check()
     from .notification_delivery import ensure_deliveries, fallback_if_exhausted, send
     from .notification_outbox import ready
     envelope = NotificationEnvelope.objects.filter(pk=envelope_id).first()
@@ -34,13 +37,16 @@ def deliver_envelope(envelope_id):
             collect_digest(envelope)
             return
         ensure_deliveries(envelope)
-        for row in envelope.deliveries.all():
+        for row in bounded.items(envelope.deliveries.all()):
             send(row.pk)
         fallback_if_exhausted(envelope)
         # A newly created email fallback can be sent in this run.
-        for row in envelope.deliveries.filter(channel="email", attempt_count=0):
+        for row in bounded.items(envelope.deliveries.filter(channel="email", attempt_count=0)):
             send(row.pk)
+        bounded.check()
         NotificationEnvelope.objects.filter(pk=envelope.pk).update(processed_at=timezone.now())
+    except (BudgetExpired, GuardLost):
+        raise
     except Exception:
         logger.warning("notification_contract_delivery_failed", extra={"envelope_id": envelope_id})
 

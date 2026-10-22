@@ -100,4 +100,5 @@ class _ImportRunLock:
 
 def _new_lock_connection():
     # Never hold the application's connection in a transaction during archive I/O.
-    return psycopg2.connect(**connections["default"].get_connection_params())
+    from config.cloud_database import django_database_spec
+    return psycopg2.connect(**django_database_spec().kwargs())

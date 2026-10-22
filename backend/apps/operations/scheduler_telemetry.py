@@ -36,6 +36,12 @@ def record_periodic_completion(task_name, state):
         name = _task_names().get(task_name)
         if name is None:
             return
+        from django.conf import settings
+        if settings.SPACEWORKS_DEPLOYMENT_MODE == "managed" and settings.SPACEWORKS_DEPLOYMENT_PROFILE == "full" and state == "SUCCESS":
+            from apps.operations.models import CloudTaskState
+            CloudTaskState.objects.get_or_create(key=name)
+            CloudTaskState.objects.filter(key=name).exclude(status__in=["running", "uncertain"]).update(
+                last_completed_at=timezone.now(), status="completed", failure_code="")
         PeriodicTaskRun.objects.update_or_create(name=name, defaults={
             "last_run_at": timezone.now(),
             # Never persist task exception text: provider strings can contain secrets.

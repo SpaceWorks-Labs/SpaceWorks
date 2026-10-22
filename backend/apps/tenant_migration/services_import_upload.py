@@ -1,3 +1,4 @@
+from apps.operations.durable_dispatch import dispatch
 """Receive resumable ciphertext; decryption belongs to asynchronous staging."""
 
 from datetime import timedelta
@@ -33,6 +34,9 @@ def start_import_upload(*, actor, source_archive_digest, archive_bytes):
         or not re.fullmatch(r"[0-9a-f]{64}", source_archive_digest)
     ):
         raise ValueError("A valid archive size and SHA-256 digest are required.")
+    if settings.SPACEWORKS_DEPLOYMENT_MODE == "managed":
+        from .cloud_import_upload import start
+        return start(actor, source_archive_digest, archive_bytes)
     root = Path(settings.BACKUP_OPS_DIR, "tenant-imports")
     root.mkdir(parents=True, exist_ok=True, mode=0o700)
     path = root / f"{uuid4()}.tar.age"
@@ -75,11 +79,18 @@ def _locked_job(job_id):
     return job
 
 
-@transaction.atomic
 def receive_import_chunk(*, actor, job_id, offset, chunk):
     _require_superadmin(actor)
     if type(offset) is not int or offset < 0 or not 1 <= len(chunk) <= CHUNK_MAX_BYTES:
         raise ValueError("A nonnegative offset and a nonempty chunk of at most 8 MiB are required.")
+    if settings.SPACEWORKS_DEPLOYMENT_MODE == "managed":
+        from .cloud_import_upload import receive
+        return receive(actor, job_id, offset, chunk)
+    with transaction.atomic():
+        return _receive_local_chunk(actor, job_id, offset, chunk)
+
+
+def _receive_local_chunk(actor, job_id, offset, chunk):
     job = _locked_job(job_id)
     if job.status != TenantImportJob.Status.UPLOADING:
         raise ImportStateError("This import is no longer accepting archive chunks.")
@@ -112,16 +123,28 @@ def _dispatch_staging(job_id, actor_id):
 
     if not settings.CELERY_TASK_ALWAYS_EAGER:
         try:
-            stage_import_job_task.delay(str(job_id), actor_id)
+            dispatch(stage_import_job_task, str(job_id), actor_id)
         except Exception:
             logger.exception(
                 "tenant_import_staging_dispatch_failed", extra={"job_id": str(job_id)},
             )
 
 
-@transaction.atomic
 def complete_import_upload(*, actor, job_id):
     _require_superadmin(actor)
+    locator = None
+    if settings.SPACEWORKS_DEPLOYMENT_MODE == "managed":
+        from .cloud_import_upload import assemble
+        candidate = TenantImportJob.objects.get(pk=job_id)
+        if candidate.status == TenantImportJob.Status.UPLOADING:
+            if candidate.upload_received_bytes != candidate.upload_total_bytes:
+                raise UploadIncompleteError("The encrypted archive has not been fully uploaded.")
+            locator = assemble(candidate)
+    with transaction.atomic():
+        return _complete_locked(actor, job_id, locator)
+
+
+def _complete_locked(actor, job_id, locator):
     job = _locked_job(job_id)
     complete = (
         job.upload_total_bytes is not None
@@ -134,8 +157,12 @@ def complete_import_upload(*, actor, job_id):
     if not complete:
         raise UploadIncompleteError("The encrypted archive has not been fully uploaded.")
     job.status = TenantImportJob.Status.PENDING
+    if locator:
+        from apps.backup.managed.staging import select
+        select(locator)
+        job.archive_path = locator
     job.expires_at = timezone.now() + timedelta(seconds=settings.DATA_EXPORT_RETENTION_SECONDS)
-    job.save(update_fields=("status", "expires_at", "updated_at"))
+    job.save(update_fields=("status", "archive_path", "expires_at", "updated_at"))
     audit.record(
         actor, "tenant_migration.import_upload_received", target=job,
         meta={

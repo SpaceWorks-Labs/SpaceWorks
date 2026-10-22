@@ -38,42 +38,14 @@ def scratch_database_name(makerspace_id, run_id):
     return name
 
 
-def _environment(database):
-    env = os.environ.copy()
-    values = {
-        "PGDATABASE": database.get("NAME"),
-        "PGUSER": database.get("USER"),
-        "PGPASSWORD": database.get("PASSWORD"),
-        "PGHOST": database.get("HOST"),
-        "PGPORT": database.get("PORT"),
-    }
-    env.update({key: str(value) for key, value in values.items() if value not in (None, "")})
-    return env
 
 
 def _run(command, *, database, extra_env=None, cwd=None):
-    environment = _environment(database)
-    environment.update(extra_env or {})
+    from apps.backup.cloud_database_tools import fixed_command
     try:
-        subprocess.run(
-            command,
-            env=environment,
-            cwd=cwd,
-            check=True,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.PIPE,
-        )
-    except (OSError, subprocess.CalledProcessError) as exc:
-        stderr = getattr(exc, "stderr", b"") or b""
-        logger.error(
-            "tenant_dump.postgres_command_failed",
-            extra={
-                "command": Path(command[0]).name,
-                "returncode": getattr(exc, "returncode", None),
-                "stderr": stderr.decode("utf-8", "replace")[-4000:],
-            },
-        )
-        raise TenantDumpBuildError("A Lane D scratch database operation failed.") from exc
+        return fixed_command(command, database=database, extra_env=extra_env, cwd=cwd)
+    except Exception:
+        raise TenantDumpBuildError("A Lane D database operation failed; verify TLS, privileges and client major.") from None
 
 
 def _register_alias(alias, name, database):
@@ -93,6 +65,11 @@ def _remove_alias(alias):
 
 @contextmanager
 def _owned_database(name, alias, *, database=None, migrate=False):
+    if settings.SPACEWORKS_DEPLOYMENT_MODE == "managed":
+        from .cloud_portable import allocate
+        with allocate(alias, migrate=migrate) as value:
+            yield value
+        return
     database = database or getattr(
         settings, "TENANT_DUMP_SCRATCH_DATABASE", settings.DATABASES["default"]
     )
@@ -136,9 +113,15 @@ def _migrate_scratch(name, database):
         extra_env={
             "DATABASE_URL": _database_url(scratch),
             "CONN_MAX_AGE": "0",
+            "SPACEWORKS_DEPLOYMENT_MODE": "host",
+            "SPACEWORKS_DEPLOYMENT_PROFILE": "full",
         },
         cwd=settings.BASE_DIR,
     )
+    if settings.SPACEWORKS_DEPLOYMENT_MODE == "managed":
+        _run([sys.executable, "manage.py", "createcachetable", "spaceworks_cache", "--verbosity", "0"],
+             database=scratch, extra_env={"DATABASE_URL": _database_url(scratch),
+             "SPACEWORKS_DEPLOYMENT_MODE": "host", "SPACEWORKS_DEPLOYMENT_PROFILE": "full"}, cwd=settings.BASE_DIR)
 
 
 def _database_url(database):
@@ -177,17 +160,23 @@ def migrated_scratch_database(makerspace_id, run_id, *, database=None):
 
 
 @contextmanager
-def empty_verification_database(makerspace_id, run_id, *, database=None):
+def empty_verification_database(makerspace_id, run_id, *, database=None, migrate=False):
     """Allocate an unmigrated database into which the candidate dump is restored."""
     component = re.sub(r"[^a-z0-9]", "", str(run_id).lower())
     suffix = "verification"
     name = scratch_database_name(makerspace_id, f"{component}{suffix}")
     alias = f"tenant_dump_verify_{component}"
-    with _owned_database(name, alias, database=database) as value:
+    with _owned_database(name, alias, database=database, migrate=migrate) as value:
         yield value
 
 
 def dump_scratch_database(database_name, destination, *, database=None):
+    from .cloud_portable import allocated_database, check_allocations
+    if settings.SPACEWORKS_DEPLOYMENT_MODE == "managed":
+        check_allocations()
+        database = allocated_database(database_name)
+        if database is None:
+            raise TenantDumpBuildError("The scratch database has no retained allocation.")
     database = database or getattr(
         settings, "TENANT_DUMP_SCRATCH_DATABASE", settings.DATABASES["default"]
     )
@@ -197,6 +186,7 @@ def dump_scratch_database(database_name, destination, *, database=None):
             "--format=custom",
             "--no-owner",
             "--no-acl",
+            *(["--exclude-table=public.spaceworks_scratch_identity"] if settings.SPACEWORKS_DEPLOYMENT_MODE == "managed" else []),
             f"--dbname={database_name}",
             f"--file={Path(destination)}",
         ],
@@ -204,7 +194,13 @@ def dump_scratch_database(database_name, destination, *, database=None):
     )
 
 
-def restore_scratch_dump(path, database_name, *, database=None):
+def restore_scratch_dump(path, database_name, *, database=None, source_data=False):
+    if settings.SPACEWORKS_DEPLOYMENT_MODE == "managed":
+        from .cloud_portable import allocated_database, check_allocations
+        check_allocations()
+        database = allocated_database(database_name)
+        if database is None:
+            raise TenantDumpBuildError("The scratch database has no retained allocation.")
     database = database or getattr(
         settings, "TENANT_DUMP_SCRATCH_DATABASE", settings.DATABASES["default"]
     )
@@ -212,6 +208,7 @@ def restore_scratch_dump(path, database_name, *, database=None):
         [
             client_binary("pg_restore"),
             "--exit-on-error",
+            *(["--single-transaction"] if source_data else []),
             "--no-owner",
             "--no-acl",
             f"--dbname={database_name}",

@@ -43,6 +43,8 @@ def _discover(makerspace, now, limit, local_tz, *, kind, source):
     # Completed older subjects must not crowd out later eligible borrowers.
     iterator = rows.iterator(chunk_size=200)
     while page := list(islice(iterator, 200)):
+        from apps.operations.cloud_jobs import bounded
+        bounded.check()
         completed = {}
         for subject, offset in _rows(ReminderSchedule, makerspace).filter(
             source=source, subject__in=[_subject(loan) for loan in page], kind=kind,

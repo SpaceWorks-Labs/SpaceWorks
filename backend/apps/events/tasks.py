@@ -1,3 +1,4 @@
+from apps.operations.cloud_jobs import bounded
 import logging
 
 from celery import shared_task
@@ -24,7 +25,7 @@ def extend_published_series():
         ),
         relation="makerspace",
     ).order_by("pk").values_list("pk", flat=True)
-    for series_id in series_ids.iterator(chunk_size=100):
+    for series_id in bounded.page(series_ids, "event-series"):
         try:
             with transaction.atomic():
                 series = EventSeries.objects.select_for_update().get(pk=series_id)

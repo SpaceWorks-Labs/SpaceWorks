@@ -5905,3 +5905,36 @@ Gilroy 400–700, one Unbounded accent and lucide icons. Published cover/palette
 legacy owner artwork/theme; inherit preserves legacy values and explicit none removes a cover.
 Brand seed choices go through accessible token derivation and never recolor fixed focus/status/staff
 tokens. No new makerspace-page, organization or hackathon module key is introduced.
+
+## Explicit managed and free deployment boundaries (cloud integration)
+
+Missing selectors remain host/full. Managed privilege mode and product classification are separate inputs.
+Free requires managed and never applies its resource restrictions under full. Full has no tick route/schema.
+A managed binding is immutable and omitted from restored/portable tenant state; source identity cannot admit
+another deployment as normal. Recovery admission is uncached. An active boundary retains its original
+generation/physical session; only a new boundary acknowledges a successfully resumed generation.
+Direct/session transport retains advisory locks; transaction pooling is unsupported. Maintenance secrets belong
+only to finite qualified jobs. Shared libpq subprocesses use private temporary passfiles, never PGPASSWORD.
+
+Managed deployment/compound backup, restore/cutover/slice-merge controls refuse before effects. Ordinary tenant
+archives remain archive-and-purge custody records with no restore reader. Provider PITR/object durability,
+portable recovery and H1 recovery are separate guarantees. Unversioned managed capture needs complete durable
+writer/presign drain and reconciliation. Unknown writers/lost lock connections abort; age is not proof.
+
+Storage identity/history floors survive credential rotation and cannot be reset/deleted to bypass migration.
+POST can enforce upload-time byte ranges; PUT validates at finalization. New public-image staging is private;
+legacy locators remain until drained. Promotion is create-only; accepted evidence rows remain immutable.
+Provider configuration uses API_CLIENT_ENC_KEY and is write-only in API/admin. Free account-wide mail receipts
+survive log/tenant deletion; uncertain acceptance remains charged until independent reconciliation proves otherwise.
+
+Forwarded host requires independent ingress restriction, exact upstream Host and proxy-chain validation.
+Tenant projections omit infrastructure identities and global/provider totals. Unknown usage is never zero.
+Current implementation/acceptance limitations are explicit in the cloud guides and integration report.
+
+Managed staging identity/owner/attempt/digest/expiry fields and selected slots are SQL-guarded; late-delete
+receipts remain permanent and continue reconciling old storage identities after an audited empty-bucket
+handoff. A writer holds its physical session lock before its boundary commits. Capture recovery proves
+the global owner is gone, every writer lock is free and the provider-qualified transfer horizon has
+drained; age alone proves none of those facts. Presigns are journalled before signature generation.
+Unknown provider acceptance remains charged across new mail attempt keys. Only evidence-backed supervised
+reconciliation may release it. Full never consults free accounting caps or free input limits.

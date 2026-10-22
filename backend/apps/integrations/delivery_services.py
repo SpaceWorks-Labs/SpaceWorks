@@ -46,6 +46,10 @@ def retry_delivery(actor, log, *, expected_generation=None):
         if isinstance(log, EmailLog) and not has_retry_content(locked):
             raise ValidationError({"detail": "This email has no stored content to retry."})
         if isinstance(log, EmailLog):
+            from .mail_providers.outbox import claim_due
+            from .mail_retry_policy import unresolved_acceptance, rearm_rejected_configuration
+            if unresolved_acceptance(locked) or (not claim_due(locked) and not rearm_rejected_configuration(locked)):
+                raise ValidationError({"detail": "Delivery is deferred or requires acceptance reconciliation."})
             retry(locked, actor)
         locked.status = "pending"
         locked.error = ""

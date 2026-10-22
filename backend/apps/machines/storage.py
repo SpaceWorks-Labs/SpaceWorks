@@ -1,3 +1,4 @@
+from apps.storage_clients import s3_client
 """Private-bucket storage for machine manuals/SOP documents.
 
 Mirrors apps/warranty/storage.py: same PRIVATE evidence bucket, presign POST/PUT per
@@ -36,7 +37,7 @@ class MachineObjectValidationResult:
 
 
 def _s3_client(endpoint_url):
-    return boto3.client(
+    return s3_client(
         "s3",
         endpoint_url=endpoint_url,
         aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
@@ -87,6 +88,10 @@ def ext_for(content_type, filename):
 
 def presigned_upload(object_key, content_type):
     try:
+        if getattr(settings, "STORAGE_CAPABILITIES_FILE", ""):
+            import sys
+            from apps.private_uploads import presign
+            return presign(sys.modules[__name__], object_key, content_type, settings.MACHINE_DOC_MAX_BYTES)
         if settings.STORAGE_PRESIGN_METHOD == "put":
             url = _public_client().generate_presigned_url(
                 "put_object",
@@ -150,6 +155,10 @@ def object_size(object_key):
 
 
 def finalize_upload(object_key, max_bytes):
+    if getattr(settings, "STORAGE_CAPABILITIES_FILE", ""):
+        import sys
+        from apps.private_uploads import finalize
+        return finalize(sys.modules[__name__], object_key, max_bytes)
     if settings.STORAGE_PRESIGN_METHOD != "put":
         return object_size(object_key)
 

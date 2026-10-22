@@ -21,7 +21,6 @@ from apps.backup.archive_payload import (
     _module_for_model,
     _object_closure,
     _pg_dump,
-    _postgres_environment,
     _settings_manifest,
     _snapshot_payload,
     _storage_modes,
@@ -60,6 +59,10 @@ class ArchiveBuildResult:
 
 
 def build_archive(archive):
+    from .cloud_operations import require_deployment_archive
+    require_deployment_archive(archive.scope)
+    from .cloud_operations import require_managed_tenant_capture
+    require_managed_tenant_capture()
     if archive.scope == BackupArchive.Scope.DEPLOYMENT:
         assert_deployment_fully_restored()
         assert_producer_capability()
@@ -86,16 +89,19 @@ def build_archive(archive):
                     platform_recipients=selected_recipients,
                 )
             quiesced = "quiesced" in modes.values()
-            if quiesced:
+            managed_capture = settings.SPACEWORKS_DEPLOYMENT_MODE == "managed"
+            if quiesced and not managed_capture:
                 _set_backup_quiescence(True)
                 quiescence_enabled = True
                 workers_paused = quiescence.pause_worker_consumers()
                 drain_presigned_uploads()
                 quiescence.assert_workers_drained()
             if compound_capture is None:
-                manifest = _snapshot_payload(
-                    archive, root, modes, selected_recipients
-                )
+                from contextlib import nullcontext
+                from .managed.capture import capture_pause
+                pause = capture_pause(archive.pk) if quiesced and managed_capture else nullcontext()
+                with pause:
+                    manifest = _snapshot_payload(archive, root, modes, selected_recipients)
             else:
                 manifest = _snapshot_payload(
                     archive,

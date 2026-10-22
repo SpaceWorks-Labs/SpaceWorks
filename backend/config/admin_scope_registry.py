@@ -51,7 +51,7 @@ GLOBAL_ADMIN_MODELS = {
     "accounts.platformsocialauthsettings",
     "accounts.platformattestationsettings",
     # The login-method switches govern credentials, and credentials resolve before a
-    # makerspace is selected — the same reason social auth is platform-scoped.
+    # makerspace is selected â€” the same reason social auth is platform-scoped.
     "accounts.platformloginmethods",
     "accounts.passwordresetenvelope",
     "accounts.socialidentity",
@@ -100,3 +100,19 @@ GLOBAL_ADMIN_MODELS = {
     # provenance, not ownership); the review admin is superadmin-only.
     "hosting_requests.hostingrequest",
 }
+
+# No tenant can inspect deployment claims, account totals, or bucket identities.
+GLOBAL_ADMIN_MODELS |= frozenset({
+    'backup.manageddeploymentstate',
+    'backup.managedcapturestate',
+    'backup.managedwriterboundary',
+    'operations.cloudtaskstate',
+    'operations.cloudtickrun',
+    'operations.cloudtickratewindow',
+    'operations.cloudemailbudgetaccount',
+    'operations.cloudemailreservation',
+    'operations.storagecapabilitystate',
+    'operations.cloudusagesample',
+    'operations.cloudobjectusagereceipt',
+    'integrations.emailproviderwebhookreceipt',
+})

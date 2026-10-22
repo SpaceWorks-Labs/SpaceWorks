@@ -169,6 +169,9 @@ def public_image_key_in_use(makerspace_id, object_key):
 
 def presigned_upload(object_key, content_type):
     try:
+        if getattr(settings, "STORAGE_CAPABILITIES_FILE", ""):
+            from apps.inventory.public_image_cloud import presign
+            return presign(sys.modules[__name__], object_key, content_type)
         if settings.STORAGE_PRESIGN_METHOD == 'put':
             url = _public_client().generate_presigned_url(
                 'put_object',
@@ -208,6 +211,9 @@ def _object_size_after_upload(object_key, attempts=10, delay_seconds=0.2):
 
 
 def finalize_upload(object_key):
+    if getattr(settings, "STORAGE_CAPABILITIES_FILE", ""):
+        from apps.inventory.public_image_cloud import finalize
+        return finalize(sys.modules[__name__], object_key)
     from apps.inventory.public_image_promotion import finalize
 
     return finalize(sys.modules[__name__], object_key)

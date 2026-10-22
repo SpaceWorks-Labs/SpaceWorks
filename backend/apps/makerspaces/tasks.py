@@ -1,4 +1,6 @@
 """Periodic makerspace tasks."""
+from apps.operations.cloud_jobs import bounded
+
 
 from celery import shared_task
 
@@ -28,7 +30,7 @@ def refresh_github_contributions_task():
     profiles = MemberProfile.objects.select_related("membership").exclude(
         github_username=""
     )
-    for profile in profiles:
+    for profile in bounded.page(profiles, "github-profiles"):
         if not github_contributions.due_for_sync(profile):
             continue
         # `refresh` swallows every failure and keeps the last known count, so one bad

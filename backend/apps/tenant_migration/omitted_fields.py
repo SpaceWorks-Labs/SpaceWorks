@@ -32,6 +32,8 @@ def _rules(disposition, *fields):
 
 
 OMITTED_FIELD_RECONSTRUCTIONS = {
+    ("makerspaces.Makerspace", "email_provider"): EMPTY_STRING,
+    ("makerspaces.Makerspace", "email_provider_config"): EMPTY_STRING,
     ("bookings.BookingBroadcastDelivery", "outbox"): NULL,
     ("events.EventBroadcastDelivery", "outbox"): NULL,
     **_rules(

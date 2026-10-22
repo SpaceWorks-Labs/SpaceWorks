@@ -149,6 +149,13 @@ from .scope_registry_messaging import definitions as messaging_denied_routes
 _ROUTE_DEFINITIONS += messaging_denied_routes()
 
 
+from django.conf import settings
+if getattr(settings, "SPACEWORKS_DEPLOYMENT_PROFILE", "full") == "free":
+    _ROUTE_DEFINITIONS += (("free_tick:tick", _WRITE, frozenset(), TARGET_GLOBAL, False, False),)
+if getattr(settings, "EMAIL_PROVIDER_WEBHOOKS_ENABLED", False):
+    _ROUTE_DEFINITIONS += (("email-provider-webhook", _WRITE, frozenset(), TARGET_GLOBAL, False, False),)
+
+
 def _build_registry():
     registry = {}
     for definition in _ROUTE_DEFINITIONS:

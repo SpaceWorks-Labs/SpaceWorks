@@ -5,7 +5,10 @@ from apps.integrations.webhook_validation import validate_webhook_url
 from apps.makerspaces.models import Makerspace
 
 
-class ApiIntegrationSettingsSerializer(serializers.ModelSerializer):
+from apps.integrations.email_provider_serializers import EmailProviderFields, validate_provider_update, apply_provider_update
+
+
+class ApiIntegrationSettingsSerializer(EmailProviderFields, serializers.ModelSerializer):
     public_api_key = serializers.CharField(read_only=True)
     cors_allowed_origins = serializers.ListField(
         child=serializers.CharField(),
@@ -37,6 +40,7 @@ class ApiIntegrationSettingsSerializer(serializers.ModelSerializer):
         fields = [
             "public_code", "public_api_key", "cors_allowed_origins",
             "telegram_group_chat_id", "telegram_bot_token",
+            "email_provider", "email_provider_config", "email_provider_configured",
             "telegram_bot_token_set", "smtp_host", "smtp_port", "smtp_username",
             "smtp_password", "smtp_password_set", "smtp_use_tls", "smtp_use_ssl",
             "smtp_from_email", "slack_webhook_url", "slack_webhook_url_set",
@@ -51,6 +55,9 @@ class ApiIntegrationSettingsSerializer(serializers.ModelSerializer):
 
     def get_telegram_bot_token_set(self, obj) -> bool:
         return bool(obj.telegram_bot_token)
+
+    def get_email_provider_configured(self, obj) -> bool:
+        return super().get_email_provider_configured(obj)
 
     def get_smtp_password_set(self, obj) -> bool:
         return bool(obj.smtp_password)
@@ -79,10 +86,11 @@ class ApiIntegrationSettingsSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, attrs):
-        validate_smtp_settings(attrs, self.instance)
+        validate_provider_update(attrs, self.instance, tenant=True)
         return attrs
 
     def update(self, instance, validated_data):
+        apply_provider_update(instance, validated_data)
         missing = object()
         telegram_bot_token = validated_data.pop("telegram_bot_token", missing)
         smtp_password = validated_data.pop("smtp_password", missing)

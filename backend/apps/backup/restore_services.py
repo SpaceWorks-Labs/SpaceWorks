@@ -42,6 +42,8 @@ ALLOWED_STAGE_TRANSITIONS = {
 
 @transaction.atomic
 def request_restore(actor, archive, kind):
+    from .cloud_operations import require_host
+    require_host("deployment_restore_requires_host_supervisor")
     if archive.scope != BackupArchive.Scope.DEPLOYMENT:
         raise ValidationError("Only full-deployment archives can be restored by Phase 5A.")
     manifest = archive.manifest

@@ -43,7 +43,7 @@ class BounceWebhookView(APIView):
     @extend_schema(tags=['Notifications'], auth=[], request=BounceSerializer,
                    parameters=[OpenApiParameter('X-SpaceWorks-Timestamp', str, location='header', required=True),
                                OpenApiParameter('X-SpaceWorks-Signature', str, location='header', required=True)],
-                   responses={200: BounceResultSerializer, **errors(400, 403, 404, 423, 503)},
+                   responses={200: BounceResultSerializer, **errors(400, 403, 404, 423, 429, 503)},
                    description='HMAC-SHA256 hex of ASCII timestamp + dot + raw JSON body. Five-minute replay window. Hard bounces/complaints only.')
     def post(self, request, makerspace_id):
         space = get_object_or_404(rbac.scope_notification_policy(servable_queryset(), makerspace_id=makerspace_id, field='pk'))
@@ -90,4 +90,44 @@ class BounceWebhookView(APIView):
             if created or changed:
                 audit.record(None, 'email.suppressed_provider', makerspace=space, target=row,
                              meta={'reason': row.reason})
+        return Response({'accepted': True})
+
+
+class ProviderBounceWebhookView(APIView):
+    """Optional native callbacks. I mounts the route and regenerates schema/client."""
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    @extend_schema(tags=['Notifications'], auth=[], request={'application/json': {'type': 'object', 'additionalProperties': True}},
+                   parameters=[OpenApiParameter('svix-id', str, location='header'),
+                               OpenApiParameter('svix-timestamp', str, location='header'),
+                               OpenApiParameter('svix-signature', str, location='header')],
+                   responses={200: BounceResultSerializer, **errors(400, 403, 404, 423, 429, 503)},
+                   description='Opt-in native Resend (Svix headers) / Mailgun (signed JSON) callbacks. '
+                   'Five-minute signature window, durable replay receipts and scoped opaque message mapping. '
+                   'API acceptance and observed delivery are separate. Disabled by default.')
+    def post(self, request, makerspace_id, provider):
+        from django.conf import settings
+        from rest_framework.exceptions import NotFound
+        from .mail_providers.selection import stored_config
+        from .mail_providers.webhook_signatures import verify
+        from .mail_providers.webhooks import observe
+        if not getattr(settings, 'EMAIL_PROVIDER_WEBHOOKS_ENABLED', False) or provider not in {'resend', 'mailgun'}:
+            raise NotFound()
+        space = get_object_or_404(rbac.scope_notification_policy(servable_queryset(), makerspace_id=makerspace_id, field='pk'))
+        try:
+            config = stored_config(space, tenant=True)
+            if config is None or config.provider != provider:
+                raise ValueError()
+            # Header signatures authenticate exact raw bytes; no raw body enters logs.
+            event = verify(provider, request.body, request.headers, config.credentials)
+        except Exception:
+            raise PermissionDenied('Invalid webhook signature.') from None
+        from django.db import DatabaseError
+        try:
+            observed = observe(space, provider, event)
+        except DatabaseError:
+            observed = False
+        if not observed:
+            return Response({'detail': 'Email observation is not ready.', 'code': 'email_observation_not_ready'}, status=503)
         return Response({'accepted': True})

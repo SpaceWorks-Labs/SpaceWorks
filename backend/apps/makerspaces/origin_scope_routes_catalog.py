@@ -29,6 +29,7 @@ MAKERSPACE_KWARG_ROUTES = {
         "admin-staff-account-set-password", "admin-staff-account-resend-invite",
     )},
     "whatsapp-meta-webhook": "makerspace_id",
+    "email-provider-webhook": "makerspace_id",
     "website-origins": "makerspace_id",
     'admin-booking-machine-types': 'makerspace_id',
     'admin-makerspace-setup-state': 'makerspace_id',

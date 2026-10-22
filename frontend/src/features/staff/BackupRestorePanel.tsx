@@ -26,16 +26,22 @@ import { BackupRestoreDialog } from "./BackupRestoreDialog";
 import { RestoreDecision } from "./RestoreDecision";
 export { RestoreDecision } from "./RestoreDecision";
 
+import { getPlatformDashboard } from "./platformMonitoringApi";
+import { DeploymentNotices } from "../deployment/DeploymentNotices";
+
 export function BackupRestorePanel({ makerspaceId, isSuperadmin, tenantBackupsEnabled = true }: { makerspaceId: number; isSuperadmin: boolean; tenantBackupsEnabled?: boolean }) {
+  const runtime = useQuery({ queryKey: ["platform-dashboard"], queryFn: getPlatformDashboard, enabled: isSuperadmin });
+  const deploymentInfo = runtime.data?.deployment;
+  const hostControls = isSuperadmin && deploymentInfo?.mode === "host";
   const showTenantBackups = tenantBackupsEnabled && !isSuperadmin;
   const client = useQueryClient();
   const [restoreOpen, setRestoreOpen] = useState(false);
   const tenantKey = ["tenant-backups", makerspaceId];
   const deploymentKey = ["deployment-backups"];
   const tenant = useQuery({ queryKey: tenantKey, queryFn: () => listTenantBackups(makerspaceId), enabled: showTenantBackups, refetchInterval: pollArchives });
-  const deployment = useQuery({ queryKey: deploymentKey, queryFn: listDeploymentBackups, enabled: isSuperadmin, refetchInterval: pollArchives });
-  const settings = useQuery({ queryKey: ["backup-settings"], queryFn: getBackupSettings, enabled: isSuperadmin });
-  const restores = useQuery({ queryKey: ["restore-operations"], queryFn: listRestores, enabled: isSuperadmin, refetchInterval: 3000 });
+  const deployment = useQuery({ queryKey: deploymentKey, queryFn: listDeploymentBackups, enabled: hostControls, refetchInterval: pollArchives });
+  const settings = useQuery({ queryKey: ["backup-settings"], queryFn: getBackupSettings, enabled: hostControls });
+  const restores = useQuery({ queryKey: ["restore-operations"], queryFn: listRestores, enabled: hostControls, refetchInterval: 3000 });
   const activeRestore = restores.data?.find((row) => !["completed", "failed", "aborted", "restored_quarantined"].includes(row.stage));
   const restoreDetail = useQuery({ queryKey: ["restore-operation", activeRestore?.id], queryFn: () => getRestore(activeRestore!.id), enabled: Boolean(activeRestore), refetchInterval: 1000 });
   const createTenant = useMutation({ onMutate: getJobSession, mutationFn: () => requestTenantBackup(makerspaceId), onSuccess: (job, _variables, session) => { trackJob({ key: `backup:${job.id}`, label: "Makerspace backup", makerspaceId, status: job.status, endpoint: `/admin/makerspace/${makerspaceId}/backups`, collectionId: job.id }, session); return client.invalidateQueries({ queryKey: tenantKey }); } });
@@ -47,19 +53,21 @@ export function BackupRestorePanel({ makerspaceId, isSuperadmin, tenantBackupsEn
 
   const available = (deployment.data ?? []).filter(row => row.status === "available");
   const primary = showTenantBackups
-    ? { label: "Create makerspace archive", onClick: () => createTenant.mutate(), pending: createTenant.isPending, pendingLabel: "Requesting…" }
-    : isSuperadmin ? { label: "Create full deployment archive", onClick: () => createDeployment.mutate(), pending: createDeployment.isPending, pendingLabel: "Requesting…" } : undefined;
+    ? { label: "Create makerspace archive", onClick: () => createTenant.mutate(), pending: createTenant.isPending, pendingLabel: "Requestingâ€¦" }
+    : hostControls ? { label: "Create full deployment archive", onClick: () => createDeployment.mutate(), pending: createDeployment.isPending, pendingLabel: "Requestingâ€¦" } : undefined;
   return <>
     <SettingsLayout header={{ title: "Backup & restore", subtitle: "Keep encrypted copies of your space and review every restore before it changes live data.", primary }}
       state={{ status: "ready" }} sections={[
+        ...(isSuperadmin && runtime.isError ? [{ id: "deployment-status", title: "Deployment information", rows: <ErrorText resource="deployment information" onRetry={() => { void runtime.refetch(); }} /> }] : []),
         ...(!isSuperadmin ? [{ id: "this-space", title: "This space", rows: showTenantBackups ? <div className="grid gap-4">
           <ArchiveDisclosure deployment={false} />
           <BackupQuery query={tenant} resource="makerspace backups"><BackupArchiveRows rows={tenant.data ?? []} onDownload={id => download.mutate(id)} downloading={download.isPending ? download.variables : undefined} /></BackupQuery>
           {createTenant.error ? <ErrorText message={createTenant.error.message} /> : null}
         </div> : <p className="text-sm text-muted">The backup module is not installed for this makerspace; the deployment's own backups still cover it.</p> }] : []),
-        ...(isSuperadmin ? [{ id: "deployment", title: "Deployment", rows: <div className="grid gap-4">
+        ...(deploymentInfo?.mode === "managed" ? [{ id: "managed-deployment", title: "Deployment recovery", rows: <DeploymentNotices data={deploymentInfo} /> }] : []),
+        ...(hostControls ? [{ id: "deployment", title: "Deployment", rows: <div className="grid gap-4">
           <ArchiveDisclosure deployment />
-          <BackupQuery query={settings} resource="backup settings">{settings.data ? <BackupScheduleSettings key={makerspaceId} data={settings.data} pending={saveSettings.isPending} onSave={(value, onSaved) => saveSettings.mutate(value, { onSuccess: onSaved })} /> : null}</BackupQuery>
+          <BackupQuery query={settings} resource="backup settings">{settings.data ? <BackupScheduleSettings deployment={deploymentInfo} key={makerspaceId} data={settings.data} pending={saveSettings.isPending} onSave={(value, onSaved) => saveSettings.mutate(value, { onSuccess: onSaved })} /> : null}</BackupQuery>
           {saveSettings.error ? <ErrorText message={saveSettings.error.message} /> : null}
           <BackupQuery query={deployment} resource="deployment backups"><BackupArchiveRows rows={deployment.data ?? []} onDownload={id => download.mutate(id)} downloading={download.isPending ? download.variables : undefined} /></BackupQuery>
           {createDeployment.error ? <ErrorText message={createDeployment.error.message} /> : null}
@@ -69,9 +77,9 @@ export function BackupRestorePanel({ makerspaceId, isSuperadmin, tenantBackupsEn
           {decision.error ? <ErrorText message={decision.error.message} /> : null}
         </div> }] : []),
         ...(download.error ? [{ id: "download-error", title: "Download", rows: <ErrorText message={download.error.message} /> }] : []),
-      ]} danger={isSuperadmin ? [{ title: "Restore from a backup", consequence: "A restore replaces live deployment data. Review the archive and recovery kind before starting.",
-        action: { label: "Restore from a backup…", onClick: () => setRestoreOpen(true), disabled: !available.length, disabledReason: "Create a full deployment archive before restoring." } }] : []} />
-    {restoreOpen ? <BackupRestoreDialog archives={available} pending={startRestore.isPending} error={startRestore.error} onCancel={() => setRestoreOpen(false)} onRestore={(archive, kind) => startRestore.mutate({ archive, kind })} /> : null}
+      ]} danger={hostControls ? [{ title: "Restore from a backup", consequence: "A restore replaces live deployment data. Review the archive and recovery kind before starting.",
+        action: { label: "Restore from a backupâ€¦", onClick: () => setRestoreOpen(true), disabled: !available.length, disabledReason: "Create a full deployment archive before restoring." } }] : []} />
+    {hostControls && restoreOpen ? <BackupRestoreDialog archives={available} pending={startRestore.isPending} error={startRestore.error} onCancel={() => setRestoreOpen(false)} onRestore={(archive, kind) => startRestore.mutate({ archive, kind })} /> : null}
   </>;
 }
 

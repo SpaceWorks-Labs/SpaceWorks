@@ -41,13 +41,24 @@ def rows_archive_path(job):
         raise ImportStagingError("The encrypted archive is still being uploaded.")
     if job.status == TenantImportJob.Status.PENDING:
         raise ImportStagingError("The encrypted archive is still being staged.")
+    from apps.backup.managed.staging import is_locator, latest
+    if is_locator(job.archive_path):
+        return latest(job.pk, "rows") or job.archive_path
     sidecar = Path(f"{job.archive_path}.rows.age")
     return sidecar if sidecar.exists() else Path(job.archive_path)
 
 
-@transaction.atomic
 def accept_import_upload(*, actor, archive_path, size, source_archive_digest, expires_at):
     _require_superadmin(actor)
+    from django.conf import settings
+    if settings.SPACEWORKS_DEPLOYMENT_MODE == "managed":
+        from .cloud_import_upload import accept_file
+        return accept_file(actor, archive_path, size, source_archive_digest, expires_at)
+    return _accept_local_upload(actor, archive_path, size, source_archive_digest, expires_at)
+
+
+@transaction.atomic
+def _accept_local_upload(actor, archive_path, size, source_archive_digest, expires_at):
     job = TenantImportJob.objects.create(
         actor=actor, archive_path=str(archive_path),
         source_archive_digest=source_archive_digest, expires_at=expires_at,
@@ -121,15 +132,19 @@ def _create_sidecar_part(job_id, token):
         raise
 
 
-def _publish_staging(job_id, token, output, manifest, source, source_identity, users, actor):
+def _publish_staging(job_id, token, output, manifest, source, source_identity, users, actor, *, locator=None):
     with _staging_fence(job_id, token) as owned:
         if owned is None:
             return
         lease, job = owned
-        output.flush()
-        os.fsync(output.fileno())
-        output.close()
-        os.replace(f"{job.archive_path}.rows.age.part", f"{job.archive_path}.rows.age")
+        if locator:
+            from apps.backup.managed.staging import select
+            select(locator)
+        else:
+            output.flush()
+            os.fsync(output.fileno())
+            output.close()
+            os.replace(f"{job.archive_path}.rows.age.part", f"{job.archive_path}.rows.age")
         job.source_makerspace_id = str(source.get("id", ""))
         job.source_makerspace_slug = str(source.get("slug", ""))
         job.source_makerspace_name = str(source.get("name", ""))
@@ -164,7 +179,7 @@ def _persist_staging_failure(job_id, token, actor, exc, failure_code):
             failure_code = "invalid_archive"
         else:
             failure_code = "staging_failed"
-            logger.exception("tenant_import_staging_failed", extra={"job_id": str(job_id)})
+            logger.warning("tenant_import_staging_failed", extra={"job_id": str(job_id), "error_type": type(exc).__name__})
     detail = (
         "The encrypted archive could not be staged."
         if failure_code == "staging_failed" else str(exc).strip()[:500]
@@ -195,6 +210,14 @@ def _persist_staging_failure(job_id, token, actor, exc, failure_code):
 
 
 def stage_import_job(job_id, *, actor_id):
+    from apps.backup.managed.staging import is_locator
+    candidate = TenantImportJob.objects.filter(pk=job_id).first()
+    from apps.operations.cloud_jobs.admission import admit_import
+    if not admit_import(candidate):
+        return TenantImportJob.objects.get(pk=job_id)
+    if candidate is not None and is_locator(candidate.archive_path):
+        from .cloud_import_staging import stage
+        return stage(job_id, actor_id)
     claim = _claim_staging_lease(job_id)
     if claim is None:
         return TenantImportJob.objects.filter(pk=job_id).first()

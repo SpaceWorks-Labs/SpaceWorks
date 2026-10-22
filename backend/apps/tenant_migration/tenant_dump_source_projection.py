@@ -45,7 +45,8 @@ class TenantDumpSourceProjection:
 def project_makerspace_source(makerspace_id, *, using="default", capture_id=None):
     """Read one tenant with the shared raw producer, then prove live-grant closure."""
     validate_catalog()
-    validate_unowned_tables(connections[using].introspection.table_names())
+    from .cloud_portable import application_table_names
+    validate_unowned_tables(application_table_names(using))
     projected = {}
     with no_decrypt_guard():
         cross_tenant = inspect_cross_tenant_source(makerspace_id, using=using)

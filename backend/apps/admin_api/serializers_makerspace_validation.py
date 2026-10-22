@@ -243,7 +243,8 @@ class MakerspaceValidationMixin:
                     )
                 }
             )
-        validate_smtp_settings(attrs, self.instance)
+        from apps.integrations.email_provider_serializers import validate_provider_update
+        validate_provider_update(attrs, self.instance, tenant=True)
         return attrs
 
     def _validate_frontend_domain(self, attrs):

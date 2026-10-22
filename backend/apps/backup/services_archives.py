@@ -46,6 +46,10 @@ def create_archive(
     backup_run=None,
     superadmin_access_at_decision=None,
 ):
+    from .cloud_operations import require_deployment_archive
+    require_deployment_archive(scope)
+    from .cloud_operations import require_managed_tenant_capture
+    require_managed_tenant_capture()
     if scope == BackupArchive.Scope.DEPLOYMENT and makerspace is not None:
         raise ValidationError("A deployment archive cannot be scoped to a makerspace.")
     if scope == BackupArchive.Scope.MAKERSPACE and makerspace is None:
@@ -98,14 +102,21 @@ def _lock_archive_run(run):
 
 def run_archive(archive_id):
     try:
-        with deployment_operation_lock():
-            sweep_stale_promotions()
-            return _run_archive_locked(archive_id)
+        from .cloud_operations import require_deployment_archive
+        scope = BackupArchive.objects.filter(pk=archive_id).values_list("scope", flat=True).first()
+        require_deployment_archive(scope)
+        with deployment_operation_lock() as guard:
+            from .cloud_continuity import operation_guard
+            with operation_guard(guard):
+                return _run_guarded_archive(archive_id)
     except Exception:
-        # A duplicate that loses the host lock owns no archive claim and therefore
-        # must not fail the process that does own it.
         logger.exception("backup_archive_failed", extra={"archive_id": str(archive_id)})
         return BackupArchive.objects.filter(pk=archive_id).first()
+
+
+def _run_guarded_archive(archive_id):
+    sweep_stale_promotions()
+    return _run_archive_locked(archive_id)
 
 
 def _run_archive_locked(archive_id, *, manage_lease=True, lease_holder=None):
@@ -123,7 +134,8 @@ def _run_archive_locked(archive_id, *, manage_lease=True, lease_holder=None):
         archive = _claim_archive(archive_id, build_holder)
         if archive is None:
             return BackupArchive.objects.filter(pk=archive_id).first()
-        build = build_archive(archive)
+        from .cloud_continuity import guarded_effect
+        build = guarded_effect(build_archive, archive)
         encrypted, manifest, tempdir, archive_sha256 = build
         size = os.path.getsize(encrypted)
         if archive.scope == BackupArchive.Scope.DEPLOYMENT:
@@ -132,8 +144,8 @@ def _run_archive_locked(archive_id, *, manage_lease=True, lease_holder=None):
             expected_status = BackupArchive.Status.PROMOTING
             upload_verify_and_promote(archive, build, size)
         else:
-            storage.upload_staging(archive.staging_object_key, encrypted)
-            storage.stream_verify(
+            guarded_effect(storage.upload_staging, archive.staging_object_key, encrypted)
+            guarded_effect(storage.stream_verify,
                 archive.staging_object_key,
                 expected_size=size,
                 expected_sha256=archive_sha256,
@@ -141,10 +153,10 @@ def _run_archive_locked(archive_id, *, manage_lease=True, lease_holder=None):
             if not _claim_promotion(archive.pk, build_holder):
                 return BackupArchive.objects.get(pk=archive_id)
             expected_status = BackupArchive.Status.PROMOTING
-            storage.create_final_from_staging(
+            guarded_effect(storage.create_final_from_staging,
                 archive.staging_object_key, archive.object_key
             )
-            storage.stream_verify(
+            guarded_effect(storage.stream_verify,
                 archive.object_key,
                 expected_size=size,
                 expected_sha256=archive_sha256,

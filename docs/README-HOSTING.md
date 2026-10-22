@@ -166,3 +166,5 @@ chat endpoints and invitations are omitted: a target administrator issues passwo
 connection proves ownership again. Platform audit actors remain inert provenance. See the permanent
 [account-split portability contract](account-split-portability.md) for PORTABLE, sovereign Lane D,
 purge retirement and the separate sealed-slice deployment-backup rules.
+
+Cloud integration: [hosting choices and operational contracts](deploy/cloud-overview.md). Full host defaults remain unchanged; managed/free is explicit and subject to release acceptance gates.

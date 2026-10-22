@@ -73,7 +73,8 @@ class Command(BaseCommand):
             raise CommandError(f"Cannot set up {username!r}: the existing user is a walk-in.")
         if created:
             user.set_password(password)
-            user.must_change_password = not explicit_password
+            generated = os.getenv("SETUP_SUPERADMIN_PASSWORD_GENERATED", "false").lower() in {"1", "true", "yes"}
+            user.must_change_password = generated or not explicit_password
             user.save()
         else:
             changed = False

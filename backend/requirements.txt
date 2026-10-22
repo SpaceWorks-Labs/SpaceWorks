@@ -1,6 +1,8 @@
 Django>=6.0,<6.1
 djangorestframework>=3.17
 django-environ>=0.14
+# HTTP transports; SES uses the existing boto3 dependency. Selection stays explicit.
+django-anymail[amazon-ses]==15.2
 django-unfold>=0.100,<0.101
 psycopg2-binary>=2.9
 django-cors-headers>=4.9
@@ -23,7 +25,7 @@ cryptography>=44
 # App Attest's CBOR attestation object and COSE credential key.
 cbor2==6.1.5
 django-storages[s3]>=1.14,<2
-boto3>=1.36,<2
+boto3>=1.43.6,<2
 requests>=2.32,<3
 httpx[http2]==0.28.1
 openpyxl>=3.1,<4

@@ -1,4 +1,6 @@
 """Bounded coordination expiry; immutable evidence and domain rows survive."""
+from apps.operations.cloud_jobs import bounded
+
 
 from datetime import timedelta
 
@@ -23,7 +25,7 @@ def cleanup_replay_commands(*, now=None, tenant_limit=500):
     tenants = ReplayCommand.objects.filter(expires_at__lte=now).order_by("makerspace_id").values_list(
         "makerspace_id", flat=True,
     ).distinct()[:tenant_limit]
-    for makerspace_id in tenants:
+    for makerspace_id in bounded.page(tenants, "replay-tenants", key="makerspace_id"):
         with fanout_tenant_write(makerspace_id, operation="kiosk_replay_cleanup", counts=counts) as allowed:
             if not allowed:
                 continue
@@ -31,7 +33,7 @@ def cleanup_replay_commands(*, now=None, tenant_limit=500):
                 pending = ReplayCommand.objects.select_for_update().filter(
                     makerspace_id=makerspace_id, expires_at__lte=now,
                 ).filter(Q(state="prepared") | Q(state="claimed", claimed_at__lte=stale)).order_by("pk")
-                for command in pending[:settings.KIOSK_REPLAY_CLEANUP_BATCH_SIZE]:
+                for command in bounded.page(pending[:settings.KIOSK_REPLAY_CLEANUP_BATCH_SIZE], f"replay-pending:{makerspace_id}"):
                     fail_locked(command, ReplayFailure("command_expired"), lease_snapshot(command))
                     counts["expired"] += 1
                 ids = list(ReplayCommand.objects.filter(

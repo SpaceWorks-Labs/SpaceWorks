@@ -48,6 +48,11 @@ def collect_private_object_keys(makerspace, *, include_coordination=True):
             add(f"staging/{key}")
     if include_coordination:
         _collect_private_coordination_keys(makerspace, add)
+        from django.conf import settings
+        if settings.SPACEWORKS_DEPLOYMENT_MODE == "managed" or getattr(settings, "STORAGE_CAPABILITIES_FILE", ""):
+            from apps.storage_capabilities.presigning import public_image_staging
+            for key in collect_public_image_keys(makerspace, include_coordination=False):
+                add(public_image_staging(key, private_bucket=settings.AWS_STORAGE_BUCKET_NAME).key)
     return keys
 
 

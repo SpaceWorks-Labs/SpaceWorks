@@ -32,3 +32,9 @@ urlpatterns += [path("", include("apps.integrations.notification_wa_twilio_urls"
 urlpatterns += [path("", include("apps.integrations.notification_slack_urls"))]
 urlpatterns += [path("", include("apps.integrations.notification_mattermost_urls"))]
 urlpatterns += [path("", include("apps.integrations.notification_discord_urls"))]
+
+from django.conf import settings
+if settings.EMAIL_PROVIDER_WEBHOOKS_ENABLED:
+    from .views_bounce import ProviderBounceWebhookView
+    urlpatterns += [path("makerspace/<int:makerspace_id>/email-provider-webhook/<str:provider>",
+                         ProviderBounceWebhookView.as_view(), name="email-provider-webhook")]

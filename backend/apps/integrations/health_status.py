@@ -34,7 +34,7 @@ def build_integration_health(makerspace):
         "smtp": _safe_section(lambda: _smtp_section(makerspace)),
         "telegram": _safe_section(lambda: _telegram_section(makerspace)),
         # Every chat channel, not just Telegram. Once credentials live on destinations,
-        # a health centre that only knows the makerspace columns goes blind — and this is
+        # a health centre that only knows the makerspace columns goes blind â€” and this is
         # the only surface where an operator learns a room's webhook was revoked.
         "chat_destinations": _safe_section(lambda: _destinations_section(makerspace)),
         "sms": _safe_section(_sms_section),
@@ -100,14 +100,13 @@ def _deliveries_by_stream_section(makerspace):
 
 def _smtp_section(makerspace):
     from apps.integrations.email import platform_email_configured
-
-    if (makerspace.smtp_host or "").strip():
-        try:
-            makerspace.get_smtp_password()
-        except Exception:
-            return {"status": "warn", "configured": False}
-        return {"status": "ok", "configured": True}
-    return {"status": "ok", "configured": platform_email_configured()}
+    from .mail_providers.selection import stored_config
+    try:
+        selected = stored_config(makerspace, tenant=True)
+        return {"status": "ok", "configured": selected is not None or platform_email_configured(),
+                "provider": selected.provider if selected else "platform"}
+    except Exception:
+        return {"status": "warn", "configured": False}
 
 
 def _sms_section():

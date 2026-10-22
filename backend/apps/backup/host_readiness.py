@@ -74,6 +74,15 @@ def _verify_fences(cursor, declarations):
 
 
 def assert_host_ready(marker_path):
+    from .managed.profile import deployment_profile
+
+    if deployment_profile().mode == "managed":
+        from .managed.admission import assert_managed_ready
+
+        try:
+            return assert_managed_ready()
+        except Exception:
+            raise HostReadinessError("Managed deployment readiness could not be verified.") from None
     try:
         marker = read_marker(marker_path)
     except MarkerError as exc:
@@ -86,6 +95,9 @@ def assert_host_ready(marker_path):
         raise HostReadinessError(str(exc)) from exc
     try:
         with connection.cursor() as cursor:
+            from .managed.mode_binding import assert_mode_binding
+
+            assert_mode_binding(cursor, "host")
             database_name, database_oid = _identity(cursor)
             if (database_name, database_oid) != (
                 bound_database.name,

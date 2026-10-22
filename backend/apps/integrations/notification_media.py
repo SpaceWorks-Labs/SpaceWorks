@@ -100,13 +100,15 @@ def consume_grant(token):
         return None
 
 
-def cleanup_grants(limit=500):
+def cleanup_grants(limit=500, *, after_id=0):
     now = timezone.now()
     spent = Q(expires_at__lte=now) | Q(consumed_at__isnull=False)
-    seeds = list(NotificationMediaGrant.objects.filter(spent).order_by("pk").values_list(
+    seeds = list(NotificationMediaGrant.objects.filter(spent, pk__gt=after_id).order_by("pk").values_list(
         "pk", "delivery__makerspace_id")[:limit])
     counts = {"deleted": 0, "skipped": 0, "failed": 0}
     for pk, space_id in seeds:
+        from apps.operations.cloud_jobs.bounded import check
+        check()
         try:
             with fanout_tenant_write(space_id, operation="notification_media_cleanup", counts=counts) as allowed:
                 if not allowed:
@@ -129,4 +131,7 @@ def cleanup_grants(limit=500):
             logger.warning("notification_media_cleanup_failed", extra={
                 "grant_id": pk, "failure_type": type(exc).__name__,
             })
+    from .mail_providers.budget_config import free_profile
+    if free_profile():
+        return {**counts, "cursor": seeds[-1][0] if seeds else 0, "remaining": len(seeds) == limit}
     return counts

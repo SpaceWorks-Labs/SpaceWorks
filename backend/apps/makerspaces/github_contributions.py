@@ -12,6 +12,8 @@ Three rules, all of which exist because a profile must never depend on GitHub be
   GitHub's GraphQL API, which requires a token. With `GITHUB_API_TOKEN` unset nothing is
   fetched, the count stays None and the surface omits the section entirely.
 """
+from apps.operations.cloud_jobs import bounded
+
 
 import json
 import logging
@@ -57,7 +59,9 @@ def refresh(profile):
     from apps.makerspaces.models import MemberProfile
 
     login = profile.github_username
+    bounded.check()
     total = fetch_total(login)
+    bounded.check()
     fields = {"github_synced_at": timezone.now()}
     if total is not None:
         fields["github_contributions"] = total

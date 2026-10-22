@@ -162,7 +162,7 @@ ENTRIES = (
       (
           "custody_alarm_revision",
           "custody_state",
-          "recipient_fingerprints",
+          "recipient_fingerprints", "staging_backend",
           "superadmin_access_at_decision",
       )),
     P("tenant_migration.verification_read", "Tenant migration verification read",

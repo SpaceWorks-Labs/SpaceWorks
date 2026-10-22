@@ -14,6 +14,9 @@ import { type ChatDestinationsHealth, IntegrationHealthRooms } from "./Integrati
 import type { Makerspace } from "./StaffPanels";
 import { staffTabPath } from "./staffTabs";
 
+import { DeploymentPanel } from "../deployment/DeploymentPanel";
+import type { TenantDeploymentSummary } from "../deployment/types";
+
 type HealthStatus = "ok" | "warn" | "error" | "unknown";
 
 type SectionHealth = {
@@ -22,6 +25,7 @@ type SectionHealth = {
 };
 
 type IntegrationHealth = {
+  deployment?: TenantDeploymentSummary;
   status: Exclude<HealthStatus, "unknown">;
   email: SectionHealth & {
     total?: number;
@@ -77,6 +81,7 @@ export function IntegrationHealthPanel({ makerspace, isSuperadmin = false }: { m
   return (
     // A failed background refresh keeps the last known readings; only a first load blanks the row.
     <SettingsQueryState query={{ isLoading: health.isLoading, error: health.data ? null : health.error, refetch: health.refetch }} resource="integration health"><SettingsRow label="Integration health" helper="Check connected services and delivery before sending alerts."><div className="@container grid min-w-0 gap-4">
+      {data?.deployment ? <DeploymentPanel data={data.deployment} /> : null}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">

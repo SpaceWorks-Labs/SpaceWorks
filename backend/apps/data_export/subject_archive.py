@@ -70,6 +70,8 @@ def build_subject_archive(job, *, monotonic=time.monotonic):
                 cursor.execute("SET LOCAL statement_timeout = %s", [max(1, int(remaining * 1000))])
                 cursor.execute("SET LOCAL lock_timeout = %s", [max(1, int(remaining * 1000))])
             snapshot = timezone.now()
+            from apps.operations.cloud_jobs.admission import assert_export
+            assert_export(job)
             for dataset in DATASETS.values():
                 if dataset.fidelity is not Fidelity.PORTABLE:
                     continue

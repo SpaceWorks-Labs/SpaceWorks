@@ -16,6 +16,7 @@ from django.db import IntegrityError, connection, transaction
 from django.utils import timezone
 
 from apps.audit import services as audit
+from apps.evidence import storage
 from apps.evidence.abandoned_upload_candidates import abandoned_queryset
 from apps.evidence.models import (
     EvidenceAbandonedUploadReceipt,
@@ -24,6 +25,7 @@ from apps.evidence.models import (
     EvidenceUploadFinalization,
 )
 from apps.makerspaces import limits
+from apps.storage_capabilities.budget import error_text
 
 RECONCILE_INTERVAL = timedelta(minutes=360)
 CLEANING = EvidenceObjectRetentionState.Status.CLEANING
@@ -90,7 +92,7 @@ def release(current, exc):
             return
         state.claim_token = None
         state.claimed_at = None
-        state.last_error = f"{type(exc).__name__}: {exc}"[:500]
+        state.last_error = error_text(exc)
         state.save(update_fields=("claim_token", "claimed_at", "last_error", "updated_at"))
 
 
@@ -106,7 +108,7 @@ def _reserve(photo, now):
         try:
             with transaction.atomic():
                 return EvidenceAbandonedUploadReceipt.objects.create(
-                    **values, next_reconcile_at=now + RECONCILE_INTERVAL
+                    **values, storage_identity=_storage_identity(), next_reconcile_at=now + RECONCILE_INTERVAL
                 )
         except IntegrityError:
             existing = EvidenceAbandonedUploadReceipt.objects.filter(
@@ -116,6 +118,15 @@ def _reserve(photo, now):
     if existing is None or any(getattr(existing, k) != v for k, v in values.items()):
         raise RuntimeError("Abandoned-upload receipt conflicts with its cleanup candidate.")
     return existing
+
+
+def _storage_identity():
+    from apps.storage_capabilities.runtime import client_identity
+    client = storage._client()
+    try:
+        return client_identity(client, settings.AWS_STORAGE_BUCKET_NAME).fingerprint
+    finally:
+        client.close()
 
 
 def complete(current, *, cutoff, policy_days, sizes, outcomes, run_id):
@@ -134,7 +145,7 @@ def complete(current, *, cutoff, policy_days, sizes, outcomes, run_id):
         released = 0
         if state.object_expired_at is None:  # Mechanism A has not already credited it
             charged = (
-                settings.STORAGE_PRESIGN_METHOD != "put"
+                not storage.uses_put_uploads()
                 or finalization is None
                 or finalization.quota_charged
             )

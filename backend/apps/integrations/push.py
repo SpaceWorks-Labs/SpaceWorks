@@ -54,6 +54,15 @@ def deliver_native_push(log):
     # Additive master switch (plan A6): the platform credential check below still runs,
     # so enabling the feature on an unconfigured platform delivers nothing.
     from apps.makerspaces.platform import feature_enabled
+    from .notification_cloud_fanout import free, check, UnsupportedFanout
+    if free():
+        from apps.makerspaces.models import MakerspaceMembership
+        if MakerspaceMembership.objects.filter(makerspace=log.makerspace, status="active",
+                user__account_kind="staff").count() > 25:
+            raise UnsupportedFanout("Legacy push staff resolution exceeds the free profile limit.")
+        if PushDevice.objects.filter(makerspace=log.makerspace, active=True,
+                device_grant__status="active").count() > 2:
+            raise UnsupportedFanout("Legacy push exceeds the free two-device limit.")
 
     if log.makerspace_id and not feature_enabled(log.makerspace, "mobile.push"):
         return False
@@ -80,6 +89,7 @@ def deliver_native_push(log):
     ).select_related("device_grant__registration")
     transient_failure = False
     for device in devices:
+        check()
         attempt, _ = PushDeliveryAttempt.objects.get_or_create(
             delivery_log=log, push_device=device,
             defaults={"recipient_id": device.user_id, "platform": device.device_grant.registration.platform, "provider_source": "platform"},
@@ -97,6 +107,7 @@ def deliver_native_push(log):
                 link=(log.payload or {}).get("link", ""),
             )
             sent = send_device_push(settings_row, device, log.makerspace.name[:64], log.text_body, data)
+            check()
             complete(target, lease, status="sent" if sent else "skipped",
                      error="" if sent else "provider_not_configured")
         except PushProviderError as exc:

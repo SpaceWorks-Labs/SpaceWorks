@@ -1,6 +1,6 @@
 """Container-side live identity query and consume-only launch exchange."""
 
-import psycopg2
+from config.cloud_database import connect_database, database_spec
 
 from .database_identity import DatabaseIdentityError, query_live_database_identity
 from .host_capability_socket import request_signed_launch_grant
@@ -16,7 +16,7 @@ def consume_entrypoint_capability(marker, database_url):
     if marker.operation is None or bound_database.server_identity is None:
         raise CapabilityError("Host marker lacks H1b capability facts.")
     try:
-        with psycopg2.connect(database_url, connect_timeout=5) as database:
+        with connect_database(database_spec(database_url)) as database:
             live = query_live_database_identity(database)
     except DatabaseIdentityError:
         raise

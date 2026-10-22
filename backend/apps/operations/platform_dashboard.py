@@ -43,7 +43,9 @@ def build_platform_dashboard(actor=None):
                         "usage": usage})
     # Scoping is resolved once at the tenant boundary; all related summaries use
     # exactly those IDs. No raw errors or recipient/subject text enters the API.
+    from .deployment_projection import deployment_projection
     return {
+        "deployment": deployment_projection(),
         "checked_at": now, "tenants_by_state": dict(states),
         "usage_totals": dict(totals), "tenants": tenants,
         "backup": backup_snapshot(), "offsite": offsite_snapshot(ids),

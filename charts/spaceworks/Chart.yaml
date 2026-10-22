@@ -1,6 +1,6 @@
 apiVersion: v2
 name: spaceworks
-description: SpaceWorks with externally provisioned PostgreSQL, Redis, S3 and H1 host gate
+description: SpaceWorks managed full deployment with optional prepared host supervision
 type: application
-version: 0.1.0
+version: 0.2.0
 appVersion: "2026.10"

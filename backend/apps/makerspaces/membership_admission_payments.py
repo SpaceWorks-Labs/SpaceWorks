@@ -1,4 +1,6 @@
 """First-term debt and settlement-driven admission; the payment rail stays optional."""
+from apps.operations.cloud_jobs import bounded
+
 import logging
 
 from django.db import transaction
@@ -117,7 +119,7 @@ def cancel_for_admitted_member(actor, membership):
         makerspace=membership.makerspace, user=membership.user, state="active",
         admission_managed=True, admission_payment__status=Payment.Status.PENDING,
     ).order_by("pk")
-    for row in rows:
+    for row in bounded.page(rows, "admission-expiry"):
         cancel_pending(makerspace=membership.makerspace,
                        subject_type=Payment.SubjectType.MEMBERSHIP_REQUEST,
                        subject_id=row.pk, actor=actor)
@@ -134,7 +136,7 @@ def sweep_admissions(*, now=None, limit=200):
     rows = scoped.filter(state__in=OPEN_STATES).filter(
         expires_at__lte=now,
     ).order_by("expires_at", "pk")[:limit]
-    for row in rows:
+    for row in bounded.page(rows, "admission-expiry"):
         with fanout_tenant_write(row.makerspace_id, operation="membership_admission_expiry", counts=counts) as allowed:
             if not allowed:
                 continue
@@ -156,7 +158,7 @@ def sweep_admissions(*, now=None, limit=200):
         state="awaiting_payment", admission_payment__status__in=SETTLED,
         expires_at__gt=now,
     ).order_by("pk")[:limit]
-    for row in settled:
+    for row in bounded.page(settled, "admission-settled"):
         with fanout_tenant_write(row.makerspace_id, operation="membership_admission_settlement", counts=counts) as allowed:
             if not allowed:
                 continue

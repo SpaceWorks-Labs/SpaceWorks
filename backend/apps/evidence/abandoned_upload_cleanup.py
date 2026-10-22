@@ -28,6 +28,8 @@ from apps.evidence.models import EvidenceRetentionPolicy
 from apps.makerspaces.servability import servable_queryset
 from apps.operations.report_rollups import REFINALIZE_LOOKBACK, satisfy_retention_fence
 from apps.tenant_migration.gate_runtime import fanout_tenant_write
+from apps.storage_capabilities.chunks import FreeSweep
+from apps.storage_capabilities.budget import checkpoint, log_traceback, raise_if_fenced
 
 
 logger = logging.getLogger(__name__)
@@ -59,7 +61,7 @@ def opted_in_makerspaces():
     return servable_queryset().filter(pk__in=ids).order_by("pk")
 
 
-def sweep_abandoned_evidence_uploads(*, dry_run=False, now=None, batch_size=None):
+def sweep_abandoned_evidence_uploads(*, dry_run=False, now=None, batch_size=None, cursor=None):
     now = now or timezone.now()
     summary = _summary()
     if not settings.EVIDENCE_ABANDONED_UPLOAD_CLEANUP_ENABLED and not dry_run:
@@ -70,13 +72,18 @@ def sweep_abandoned_evidence_uploads(*, dry_run=False, now=None, batch_size=None
         summary["makerspaces_skipped"] = opted_in_makerspaces().count()
         return _logged(summary, dry_run=dry_run, recovery_blocked=True)
     batch_size = _batch(batch_size)
+    window = FreeSweep(summary, cursor)
+    batch_size = window.batch_size(batch_size)
     run_id = uuid.uuid4()
     gate_counts = {"skipped": 0}
-    for makerspace in opted_in_makerspaces().iterator(chunk_size=100):
+    for makerspace in window.makerspaces(opted_in_makerspaces()):
         summary["makerspaces_scanned"] += 1
         if dry_run:
             _preview(makerspace, now=now, batch_size=batch_size, summary=summary)
             continue
+        # Free profile: move the cursor past this tenant first; a processed tenant's
+        # sweep then records any narrower continuation. Inert on full deployments.
+        window.skip(makerspace.pk)
         with fanout_tenant_write(
             makerspace.pk,
             operation="evidence_abandoned_upload_cleanup",
@@ -85,7 +92,8 @@ def sweep_abandoned_evidence_uploads(*, dry_run=False, now=None, batch_size=None
             if not should_process:
                 continue
             _sweep_makerspace(
-                makerspace, now=now, run_id=run_id, batch_size=batch_size, summary=summary
+                makerspace, now=now, run_id=run_id, batch_size=batch_size, summary=summary,
+                window=window,
             )
     summary["makerspaces_skipped"] += gate_counts["skipped"]
     return _logged(summary, dry_run=dry_run, batch_size=batch_size)
@@ -115,10 +123,11 @@ def _preview(makerspace, *, now, batch_size, summary):
     summary["continuation_required"] |= len(ids) > batch_size
 
 
-def _sweep_makerspace(makerspace, *, now, run_id, batch_size, summary):
+def _sweep_makerspace(makerspace, *, now, run_id, batch_size, summary, window):
     try:
         days, age_cutoff = _age_cutoff(makerspace, now)
     except InvalidAbandonedPolicy:
+        window.skip(makerspace.pk)
         logger.warning(
             "evidence_abandoned_upload_policy_invalid",
             extra={"makerspace_id": makerspace.pk},
@@ -129,18 +138,22 @@ def _sweep_makerspace(makerspace, *, now, run_id, batch_size, summary):
     try:
         cursor = satisfy_retention_fence(makerspace, now, actor=None)
     except Exception:  # an unfenced tenant is skipped; nothing durable happened yet
+        window.skip(makerspace.pk)
         summary["makerspaces_skipped"] += 1
         logger.warning(
             "evidence_abandoned_upload_fence_failed",
             extra={"makerspace_id": makerspace.pk},
-            exc_info=True,
+            exc_info=log_traceback(),
         )
         return
     cutoff = min(age_cutoff, cursor.rolled_through - REFINALIZE_LOOKBACK)
-    ids = list(abandoned_queryset(makerspace.pk, cutoff).values_list("pk", flat=True)[: batch_size + 1])
+    queryset = window.candidates(abandoned_queryset(makerspace.pk, cutoff), makerspace.pk)
+    ids = list(queryset.values_list("pk", flat=True)[: batch_size + 1])
     summary["photos_eligible"] += min(len(ids), batch_size)
     summary["continuation_required"] |= len(ids) > batch_size
     for evidence_id in ids[:batch_size]:
+        if not window.before_item(makerspace.pk, evidence_id):
+            return
         current = claim(evidence_id, makerspace_id=makerspace.pk, cutoff=cutoff, now=now)
         if current is None:
             continue
@@ -152,15 +165,19 @@ def _sweep_makerspace(makerspace, *, now, run_id, batch_size, summary):
                 "staging": storage.object_size(staged_key),
             }
             outcomes = {
-                "final": storage.delete_object_strict(current.object_key),
-                "staging": storage.delete_object_strict(staged_key),
+                "final": storage.delete_object_strict(current.object_key,
+                    **_accounting_receipt(current.evidence_id, "final")),
+                "staging": storage.delete_object_strict(staged_key,
+                    **_accounting_receipt(current.evidence_id, "staging")),
             }
+            checkpoint()
             result = complete(
                 current, cutoff=cutoff, policy_days=days, sizes=sizes,
                 outcomes=outcomes, run_id=run_id,
             )
         except Exception as exc:  # per-photo isolation keeps the bounded sweep moving
             release(current, exc)
+            raise_if_fenced(exc)
             summary["photos_failed"] += 1
             logger.warning(
                 "evidence_abandoned_upload_cleanup_failed",
@@ -169,7 +186,7 @@ def _sweep_makerspace(makerspace, *, now, run_id, batch_size, summary):
                     "makerspace_id": makerspace.pk,
                     "error_type": type(exc).__name__,
                 },
-                exc_info=True,
+                exc_info=log_traceback(),
             )
             continue
         if result is None:
@@ -177,3 +194,10 @@ def _sweep_makerspace(makerspace, *, now, run_id, batch_size, summary):
         summary["photos_deleted"] += 1
         summary["bytes_removed"] += result["removed_size_bytes"]
         summary["quota_released_bytes"] += result["quota_released_bytes"]
+    window.finish_page(makerspace.pk, ids[:batch_size], len(ids) > batch_size)
+
+
+def _accounting_receipt(evidence_id, part):
+    if getattr(settings, "SPACEWORKS_DEPLOYMENT_PROFILE", "full") != "free":
+        return {}
+    return {"operation_key": f"evidence-abandoned:{evidence_id}:{part}"}

@@ -164,6 +164,10 @@ class Makerspace(MakerspaceSecretsMixin, PublicSiteSettings):
     branding_config = models.JSONField(default=default_branding_config, blank=True)
     telegram_group_chat_id = models.CharField(max_length=64, blank=True)
     telegram_bot_token = models.CharField(max_length=200, blank=True)
+    email_provider = models.CharField(max_length=16, blank=True, choices=[
+        (v, v) for v in ("", "inherit", "smtp", "resend", "postmark", "ses", "brevo", "mailgun", "sendgrid")
+    ])
+    email_provider_config = models.TextField(blank=True)
     smtp_host = models.CharField(max_length=200, blank=True)
     smtp_port = models.PositiveIntegerField(default=587)
     smtp_username = models.CharField(max_length=200, blank=True)

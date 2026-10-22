@@ -1,0 +1,85 @@
+{
+  "apiVersion": "run.googleapis.com/v1",
+  "kind": "Job",
+  "metadata": {
+    "name": "spaceworks-release"
+  },
+  "spec": {
+    "template": {
+      "spec": {
+        "parallelism": 1,
+        "taskCount": 1,
+        "template": {
+          "spec": {
+            "serviceAccountName": "spaceworks-release@PROJECT.iam.gserviceaccount.com",
+            "maxRetries": 0,
+            "timeoutSeconds": "1800",
+            "containers": [
+              {
+                "image": "ghcr.io/spaceworks-hq/spaceworks-backend-managed@sha256:0000000000000000000000000000000000000000000000000000000000000000",
+                "args": [
+                  "--role",
+                  "migrate",
+                  "python",
+                  "-m",
+                  "scripts.run_cloud_role",
+                  "release"
+                ],
+                "env": [
+                  {
+                    "name": "SPACEWORKS_DEPLOYMENT_MODE",
+                    "value": "managed"
+                  },
+                  {
+                    "name": "SPACEWORKS_DEPLOYMENT_PROFILE",
+                    "value": "full"
+                  },
+                  {
+                    "name": "CLOUD_TASK_PROFILE",
+                    "value": "brokerless"
+                  },
+                  {
+                    "name": "CLOUD_SCHEDULER",
+                    "value": "external"
+                  },
+                  {
+                    "name": "DATABASE_CONNECTION_MODE",
+                    "value": "direct"
+                  },
+                  {
+                    "name": "DATABASE_MAINTENANCE_CONNECTION_MODE",
+                    "value": "direct"
+                  },
+                  {
+                    "name": "DATABASE_URL",
+                    "valueFrom": {
+                      "secretKeyRef": {
+                        "name": "spaceworks-runtime-db",
+                        "key": "latest"
+                      }
+                    }
+                  },
+                  {
+                    "name": "DATABASE_MAINTENANCE_URL",
+                    "valueFrom": {
+                      "secretKeyRef": {
+                        "name": "spaceworks-maintenance-db",
+                        "key": "latest"
+                      }
+                    }
+                  }
+                ],
+                "resources": {
+                  "limits": {
+                    "cpu": "1",
+                    "memory": "1Gi"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

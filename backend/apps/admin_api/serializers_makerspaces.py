@@ -1,3 +1,4 @@
+from apps.integrations.email_provider_serializers import EmailProviderFields
 from apps.admin_api.serializers_theme import ThemeConfigField
 from rest_framework import serializers
 
@@ -21,8 +22,12 @@ from apps.admin_api.serializers_creation_setup import MakerspaceCreationSetupSer
 class MakerspaceSerializer(
     MakerspaceValidationMixin,
     MakerspaceMutationMixin,
+    EmailProviderFields,
     serializers.ModelSerializer,
 ):
+    def get_email_provider_configured(self, obj) -> bool:
+        return super().get_email_provider_configured(obj)
+
     def validate_creation_setup(self, value):
         if self.instance is not None:
             raise serializers.ValidationError("Use setup only when creating a makerspace.")
@@ -181,6 +186,7 @@ class MakerspaceSerializer(
             "telegram_group_chat_id",
             "telegram_bot_token",
             "telegram_bot_token_set",
+            "email_provider", "email_provider_config", "email_provider_configured",
             "smtp_host",
             "smtp_port",
             "smtp_username",

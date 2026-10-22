@@ -176,6 +176,8 @@ def _reset_value(model, field, source):
         ("makerspaces.Makerspace", "archived_by"): None,
         ("makerspaces.Makerspace", "cors_allowed_origins"): [],
         ("makerspaces.Makerspace", "smtp_password"): "",
+        ("makerspaces.Makerspace", "email_provider"): "inherit",
+        ("makerspaces.Makerspace", "email_provider_config"): "",
         ("makerspaces.Makerspace", "telegram_bot_token"): "",
         ("makerspaces.Makerspace", "slack_webhook_url"): "",
         ("makerspaces.Makerspace", "mattermost_webhook_url"): "",

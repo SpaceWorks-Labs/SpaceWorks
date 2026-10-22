@@ -81,6 +81,15 @@ jobs:
           - context: backend
             dockerfile: backend/Dockerfile
             image: spaceworks-backend
+            target: full
+          - context: backend
+            dockerfile: backend/Dockerfile
+            image: spaceworks-backend-managed
+            target: managed
+          - context: backend
+            dockerfile: backend/Dockerfile
+            image: spaceworks-backend-free
+            target: free
           - context: frontend
             dockerfile: frontend/Dockerfile
             image: spaceworks-frontend
@@ -110,12 +119,53 @@ jobs:
         with:
           context: ./${{ matrix.context }}
           file: ./${{ matrix.dockerfile }}
+          target: ${{ matrix.target }}
+          build-contexts: cloud_tooling=.
+          build-args: |
+            POSTGRESQL_CLIENT_MAJOR=17
+            POSTGRESQL_LOCAL_SERVER_MAJOR=16
+            BUILD_GIT_SHA=${{ github.sha }}
+            BUILD_GIT_DESCRIBE=${{ needs.prepare.outputs.version }}
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=${{ matrix.image }}
           cache-to: type=gha,mode=max,scope=${{ matrix.image }}
+
+      - name: Verify published backend variant and architecture metadata
+        if: matrix.context == 'backend'
+        shell: bash
+        env:
+          IMAGE: ghcr.io/${{ needs.prepare.outputs.registry_owner }}/${{ matrix.image }}:${{ needs.prepare.outputs.version }}
+          VARIANT: ${{ matrix.target }}
+        run: |
+          set -euo pipefail
+          docker buildx imagetools inspect "$IMAGE" --raw > image-index.json
+          python3 - <<'PY'
+          import json
+          index = json.load(open('image-index.json'))
+          platforms = {(item['platform']['os'], item['platform']['architecture'])
+                       for item in index.get('manifests', []) if 'platform' in item}
+          assert {('linux', 'amd64'), ('linux', 'arm64')} <= platforms
+          PY
+          for platform in linux/amd64 linux/arm64; do
+          docker pull --platform "$platform" "$IMAGE"
+          docker run --rm --platform "$platform" --entrypoint python -e EXPECTED_VARIANT="$VARIANT" "$IMAGE" -c '
+          import json, os, shutil
+          from pathlib import Path
+          import django, rest_framework, anymail, psycopg2, celery, reportlab, PIL
+          expected = "free" if os.environ["EXPECTED_VARIANT"] == "free" else "full"
+          assert Path("/app/SPACEWORKS_IMAGE_PROFILE").read_text().strip() == expected
+          assert json.loads(Path("/app/BUILD_INFO.json").read_text())["image_profile"] == expected
+          assert Path("/app/staticfiles/staticfiles.json").is_file()
+          assert os.getuid() == 10001
+          assert bool(shutil.which("ffprobe")) == (expected == "full")
+          assert bool(shutil.which("pg_dump")) == (expected == "full")
+          for major in (16, 17):
+              assert Path(f"/usr/lib/postgresql/{major}/bin/pg_dump").is_file() == (expected == "full")
+          '
+          done
 
   github-release:
     needs:
@@ -140,6 +190,8 @@ jobs:
 
             Docker images:
             - `ghcr.io/${{ needs.prepare.outputs.registry_owner }}/spaceworks-backend:${{ needs.prepare.outputs.version }}`
+            - `ghcr.io/${{ needs.prepare.outputs.registry_owner }}/spaceworks-backend-managed:${{ needs.prepare.outputs.version }}`
+            - `ghcr.io/${{ needs.prepare.outputs.registry_owner }}/spaceworks-backend-free:${{ needs.prepare.outputs.version }}`
             - `ghcr.io/${{ needs.prepare.outputs.registry_owner }}/spaceworks-frontend:${{ needs.prepare.outputs.version }}`
 
   promote-latest:
@@ -190,7 +242,7 @@ jobs:
           SERIES: ${{ needs.prepare.outputs.series }}
         run: |
           set -euo pipefail
-          for package in spaceworks-backend spaceworks-frontend; do
+          for package in spaceworks-backend spaceworks-backend-managed spaceworks-backend-free spaceworks-frontend; do
             image="ghcr.io/${OWNER}/${package}"
             docker buildx imagetools create \
               --tag "${image}:${SERIES}" \
@@ -260,6 +312,8 @@ jobs:
           python3 scripts/ghcr-retention.py \
             --owner "$OWNER" \
             --package spaceworks-backend \
+            --package spaceworks-backend-managed \
+            --package spaceworks-backend-free \
             --package spaceworks-frontend \
             --version "$VERSION" \
             --sha-tag "sha-${SHORT_SHA}" \

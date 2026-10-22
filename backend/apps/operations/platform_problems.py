@@ -1,4 +1,6 @@
 """Run each declared check independently; failed reads remain visible warnings."""
+from apps.operations.cloud_jobs import bounded
+
 
 import logging
 
@@ -16,15 +18,17 @@ logger = logging.getLogger(__name__)
 
 def run_problem_checks(actor=None):
     now = timezone.now()
-    spaces = list(servable_queryset(platform_spaces(actor)).order_by("id"))
+    spaces = servable_queryset(platform_spaces(actor)).order_by("id")
+    if not bounded.active():
+        spaces = list(spaces)
     readers = {
         "backup": backup_snapshot,
-        "offsite": lambda: offsite_snapshot([space.pk for space in spaces]),
+        "offsite": lambda: offsite_snapshot([space.pk for space in (spaces[:bounded.limit(100)] if bounded.active() else spaces)]),
         "scheduler": lambda: scheduler_snapshot(now),
     }
     results = []
     for check in PROBLEM_CHECKS:
-        targets = spaces if check.scope == "tenant" else [None]
+        targets = bounded.page(spaces, "platform:" + check.key) if check.scope == "tenant" else bounded.items([None])
         for space in targets:
             try:
                 data = tenant_check_context(space, check.key) if space else readers[check.key]()

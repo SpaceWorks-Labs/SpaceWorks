@@ -1,0 +1,155 @@
+{
+  "schema_version": 1,
+  "status": "implemented_pending_database_verification",
+  "owner": "I",
+  "classification": "deployment-local; omitted from tenant exports/dumps; storage history and mail charges retained in deployment custody",
+  "models": {
+    "backup.ManagedDeploymentState": {
+      "fields": [
+        "id",
+        "deployment_id",
+        "database_uuid",
+        "created_at"
+      ]
+    },
+    "backup.ManagedCaptureState": {
+      "fields": [
+        "id",
+        "generation",
+        "paused_by",
+        "paused_at",
+        "drain_until"
+      ]
+    },
+    "backup.ManagedWriterBoundary": {
+      "fields": [
+        "id",
+        "generation",
+        "category",
+        "started_at",
+        "finished_at",
+        "uncertain"
+      ]
+    },
+    "operations.CloudTaskState": {
+      "fields": [
+        "id",
+        "key",
+        "token",
+        "generation",
+        "status",
+        "checkpoint",
+        "last_attempt_at",
+        "heartbeat_at",
+        "last_completed_at",
+        "next_due_at",
+        "failure_code"
+      ]
+    },
+    "operations.CloudTickRun": {
+      "fields": [
+        "id",
+        "started_at",
+        "finished_at",
+        "duration_ms",
+        "status",
+        "completed",
+        "deferred",
+        "failed"
+      ]
+    },
+    "operations.CloudTickRateWindow": {
+      "fields": [
+        "key",
+        "window",
+        "hits"
+      ]
+    },
+    "operations.CloudEmailBudgetAccount": {
+      "fields": [
+        "id",
+        "key",
+        "provider",
+        "reset_timezone"
+      ]
+    },
+    "operations.CloudEmailReservation": {
+      "fields": [
+        "id",
+        "account",
+        "log",
+        "attempt_key",
+        "provider",
+        "day",
+        "month",
+        "accepted_day",
+        "accepted_month",
+        "recipients",
+        "state",
+        "provider_message_id",
+        "created_at",
+        "updated_at"
+      ]
+    },
+    "operations.StorageCapabilityState": {
+      "fields": [
+        "id",
+        "identity_fingerprint",
+        "identity",
+        "logical_role",
+        "generation",
+        "configuration_fingerprint",
+        "history_possible",
+        "facts",
+        "verified_at"
+      ]
+    },
+    "operations.CloudUsageSample": {
+      "fields": [
+        "id",
+        "metric",
+        "makerspace",
+        "scope",
+        "used",
+        "uncertain",
+        "sampled_at",
+        "source",
+        "reason_code",
+        "checkpoint",
+        "configured_cap",
+        "cap_source",
+        "cap_verified_on"
+      ]
+    },
+    "operations.CloudObjectUsageReceipt": {
+      "fields": [
+        "id",
+        "operation_key",
+        "makerspace",
+        "bucket_alias",
+        "object_key_digest",
+        "generation",
+        "bytes",
+        "operation",
+        "created_at"
+      ]
+    },
+    "integrations.EmailProviderWebhookReceipt": {
+      "fields": [
+        "id",
+        "makerspace",
+        "log",
+        "event_key",
+        "created_at"
+      ]
+    }
+  },
+  "replaces_step1_provisional_names": true,
+  "migration_heads": {
+    "backup": "0028_extension_digest_namespace",
+    "operations": "0015_storage_history_guards",
+    "integrations": "0047_email_providers",
+    "makerspaces": "0104_email_providers"
+  },
+  "activation": "no managed identity seeded; no free profile selected; no jobs enqueued by migration"
+}

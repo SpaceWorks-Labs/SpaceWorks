@@ -235,3 +235,25 @@ FIRST_PARTY_FIELD_NAMES = {
     'tenant_migration.TenantDumpCapture': frozenset('artifact_sha256 artifact_size_bytes capture_completed_at catalog_digest content_ledger created_at database_image_sha256 database_snapshot_at derivation_policy_sha256 download_token_consumed_at download_token_digest download_token_expires_at frozen_tenant_recipients gate_fencing_token gate_owner_id id makerspace manifest money_fingerprint_sha256 object_key object_ledger object_ledger_sha256 parent_database_sha256 parent_object_ledger_sha256 published_at refusal_code refusal_detail requested_by source_deployment_identity source_encryption_mode source_makerspace_id source_makerspace_slug source_postgres_major status superadmin_access_at_decision unpublished_object_key updated_at'.split()),
     'tenant_migration.ExternalTenantReference': frozenset('created_at field_name id makerspace snapshot source_archive_digest source_model_label source_object_id target_model_label target_object_id'.split()),
 }
+FIRST_PARTY_FIELD_NAMES['backup.ManagedDeploymentState'] = frozenset('id deployment_id database_uuid created_at'.split())
+FIRST_PARTY_FIELD_NAMES['backup.ManagedCaptureState'] = frozenset('id generation paused_by paused_at drain_until'.split())
+FIRST_PARTY_FIELD_NAMES['backup.ManagedWriterBoundary'] = frozenset('id generation category started_at finished_at uncertain'.split())
+FIRST_PARTY_FIELD_NAMES['operations.CloudTaskState'] = frozenset('id key token generation status checkpoint last_attempt_at heartbeat_at last_completed_at next_due_at failure_code'.split())
+FIRST_PARTY_FIELD_NAMES['operations.CloudTickRun'] = frozenset('id started_at finished_at duration_ms status completed deferred failed'.split())
+FIRST_PARTY_FIELD_NAMES['operations.CloudTickRateWindow'] = frozenset('key window hits'.split())
+FIRST_PARTY_FIELD_NAMES['operations.CloudEmailBudgetAccount'] = frozenset('id key provider reset_timezone'.split())
+FIRST_PARTY_FIELD_NAMES['operations.CloudEmailReservation'] = frozenset('id account log attempt_key provider day month accepted_day accepted_month recipients state provider_message_id created_at updated_at'.split())
+FIRST_PARTY_FIELD_NAMES['operations.StorageCapabilityState'] = frozenset('id identity_fingerprint identity logical_role generation configuration_fingerprint history_possible facts verified_at'.split())
+FIRST_PARTY_FIELD_NAMES['operations.CloudUsageSample'] = frozenset('id metric makerspace scope used uncertain sampled_at source reason_code checkpoint configured_cap cap_source cap_verified_on'.split())
+FIRST_PARTY_FIELD_NAMES['operations.CloudObjectUsageReceipt'] = frozenset('id operation_key makerspace bucket_alias object_key_digest generation bytes operation created_at'.split())
+FIRST_PARTY_FIELD_NAMES['integrations.EmailProviderWebhookReceipt'] = frozenset('id makerspace log event_key created_at'.split())
+FIRST_PARTY_FIELD_NAMES['makerspaces.Makerspace'] |= frozenset('email_provider email_provider_config'.split())
+FIRST_PARTY_FIELD_NAMES['integrations.PlatformEmailSettings'] |= frozenset('email_provider email_provider_config'.split())
+FIRST_PARTY_FIELD_NAMES['integrations.EmailLog'] |= frozenset('email_retry_at email_retryable provider_name provider_message_id provider_recipient_hash provider_delivery_status'.split())
+
+FIRST_PARTY_FIELD_NAMES['backup.ManagedStagedObject'] = frozenset('id owner label attempt identity object_key size sha256 available selected expires_at delete_requested_at deleted_at retry_at created_at'.split())
+FIRST_PARTY_FIELD_NAMES['backup.ManagedPresignLease'] = frozenset('id generation expires_at created_at'.split())
+FIRST_PARTY_FIELD_NAMES['operations.CloudObjectAccount'] = frozenset('identity used sampled_at started_at cursor observed generation reason'.split())
+FIRST_PARTY_FIELD_NAMES['operations.CloudObjectReservation'] = frozenset('key account bytes expires_at state server_owned created_at'.split())
+FIRST_PARTY_FIELD_NAMES['operations.CloudStorageMigrationReceipt'] = frozenset('id role source_identity destination_identity inventory_digest source_contract pause_owner retired_destination created_at'.split())
+FIRST_PARTY_FIELD_NAMES['evidence.EvidenceAbandonedUploadReceipt'] |= frozenset({'storage_identity'})

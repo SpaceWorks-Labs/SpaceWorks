@@ -1,3 +1,4 @@
+from apps.operations.cloud_jobs import bounded
 import logging
 import uuid
 from datetime import timedelta
@@ -33,7 +34,7 @@ def deliver_claimable_rows(
     custody_label="Archive",
 ):
     delivered = 0
-    for _index in range(limit):
+    for _index in bounded.items(range(bounded.limit(limit))):
         claim = _claim_next(
             makerspace_id=makerspace_id,
             delivery_model=delivery_model,
@@ -53,6 +54,7 @@ def deliver_claimable_rows(
 
 def _claim_next(*, makerspace_id, delivery_model=ArchiveCustodyAlarmDelivery):
     while True:
+        bounded.check()
         now = timezone.now()
         expired_at = now - CLAIM_LEASE
         ready = (

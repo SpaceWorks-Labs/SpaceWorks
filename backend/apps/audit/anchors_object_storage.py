@@ -1,3 +1,4 @@
+from apps.storage_clients import s3_client
 """Object-storage collector protocol for immutable audit attestation anchors."""
 
 import hashlib
@@ -53,7 +54,7 @@ class ObjectStorageAnchorSink(ObjectStorageRotationMixin):
             raise AnchorConfigurationError("The S3 object-lock mode is invalid.")
 
     def _client(self):
-        return boto3.client(
+        return s3_client(
             "s3",
             endpoint_url=getattr(
                 settings,
@@ -167,7 +168,10 @@ class ObjectStorageAnchorSink(ObjectStorageRotationMixin):
             raise AnchorConflict("The anchor sequence leaves a gap in the external chain.")
         stored = {**envelope, "anchored_at": timezone.now().isoformat()}
         try:
-            self._client().put_object(
+            from apps.storage_capabilities.runtime import require_object_lock
+            client = self._client()
+            require_object_lock(client, self.bucket, mode=self.lock_mode, retention_days=self.retention_days)
+            client.put_object(
                 Bucket=self.bucket,
                 Key=self._key(identity),
                 Body=json.dumps(stored, sort_keys=True, separators=(",", ":")).encode(),

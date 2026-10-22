@@ -187,6 +187,16 @@ def protect_target_tables(schema, tables, *, using="default"):
 @contextmanager
 def merge_role(cursor, operation_id, component_id, schema):
     """Enter the NOLOGIN role with facts consumed by database triggers."""
+    from config.cloud_database.session import retained_session
+
+    alias = cursor.db.alias
+    with retained_session(alias) as guard:
+        with _retained_merge_role(cursor, operation_id, component_id, schema, guard):
+            yield
+
+
+@contextmanager
+def _retained_merge_role(cursor, operation_id, component_id, schema, guard):
     try:
         cursor.execute(f"SET LOCAL ROLE {MERGE_ROLE}")
         cursor.execute("SELECT set_config('app.b1_merge_operation', %s, true)", [str(operation_id)])
@@ -200,9 +210,11 @@ def merge_role(cursor, operation_id, component_id, schema):
         raise SliceMergeError("The database merge role refused a non-fill-only write.") from None
     finally:
         try:
+            guard.assert_valid()
             cursor.execute("RESET ROLE")
         except Exception:
-            pass
+            guard.discard()
+            raise SliceMergeError("The merge session was lost; no role reset was attempted on a replacement.") from None
 
 
 def advisory_key(operation_id, component_id):
@@ -213,18 +225,11 @@ def advisory_key(operation_id, component_id):
 @contextmanager
 def component_locks(operation_id, component_ids, *, using="default"):
     """Hold one ordered session lock per component across remote merge steps."""
-    connection = connections[using]
-    connection.ensure_connection()
+    from config.cloud_database.locks import session_locks
+
     keys = sorted({
         -(2**63) + 8048,
         *(advisory_key(operation_id, value) for value in component_ids),
     })
-    with connection.cursor() as cursor:
-        for key in keys:
-            cursor.execute("SELECT pg_advisory_lock(%s)", [key])
-    try:
-        yield
-    finally:
-        with connection.cursor() as cursor:
-            for key in reversed(keys):
-                cursor.execute("SELECT pg_advisory_unlock(%s)", [key])
+    with session_locks([(key,) for key in keys], using=using) as guard:
+        yield guard

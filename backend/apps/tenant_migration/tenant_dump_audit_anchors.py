@@ -31,7 +31,8 @@ def prove_no_external_anchor(makerspace_id):
             "Lane D cannot prove audit-anchor absence without the enumerable object-storage sink."
         )
     try:
-        sequence, signer, _root = ObjectStorageAnchorSink().fetch_scope_head(
+        from apps.backup.managed.audit_guard import guarded_anchor_sink
+        sequence, signer, _root = guarded_anchor_sink(ObjectStorageAnchorSink()).fetch_scope_head(
             deployment_identity(),
             scope_name(makerspace_id),
         )

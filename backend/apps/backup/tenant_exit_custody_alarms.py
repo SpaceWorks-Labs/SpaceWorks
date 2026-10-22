@@ -1,4 +1,6 @@
 """Decision-19b alarm intents and dispatch for Lane D custody."""
+from apps.operations.cloud_jobs import bounded
+
 
 import logging
 from datetime import timedelta
@@ -62,8 +64,8 @@ def deliver_tenant_exit_custody_alarms(*, makerspace_id=None):
     states = CustodyState.objects.filter(state__in=ALARM_STATES)
     if makerspace_id is not None:
         states = states.filter(makerspace_id=makerspace_id)
-    state_ids = tuple(states.order_by("makerspace_id").values_list("pk", flat=True))
-    for state_id in state_ids:
+    state_ids = states.order_by("makerspace_id").values_list("pk", flat=True)
+    for state_id in bounded.page(state_ids, "exit-custody-states"):
         try:
             ensure_delivery_intents(state_id)
         except Exception:
@@ -78,7 +80,7 @@ def deliver_tenant_exit_custody_alarms(*, makerspace_id=None):
         event="tenant_exit_custody_alarm",
         custody_label="Tenant exit",
     )
-    for state_id in state_ids:
+    for state_id in bounded.page(state_ids, "exit-custody-reconcile"):
         _reconcile_exhausted(state_id)
     remaining = max(0, MAX_ROWS_PER_SWEEP - delivered)
     if remaining:

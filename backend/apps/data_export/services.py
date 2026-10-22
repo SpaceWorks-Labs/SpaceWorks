@@ -110,6 +110,9 @@ def run_export_job(job_id):
 
 def _claim_job(job_id, *, queryset=None):
     queryset = DataExportJob.objects.all() if queryset is None else queryset
+    from apps.operations.cloud_jobs.authority import prepare_export_claim, export_allowed
+    if not prepare_export_claim(queryset, job_id):
+        return None
     now = timezone.now()
     with transaction.atomic():
         job = (
@@ -119,6 +122,8 @@ def _claim_job(job_id, *, queryset=None):
             .first()
         )
         if job is None or job.status != DataExportJob.Status.PENDING:
+            return None
+        if not export_allowed(job):
             return None
         job.status = DataExportJob.Status.RUNNING
         job.started_at = now

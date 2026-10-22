@@ -67,6 +67,8 @@ def merge_slices(
     boundary_hook=None, using="default",
 ):
     """Merge one component or one complete cross-linked component group."""
+    from .cloud_operations import require_host
+    require_host("slice_merge_requires_host_supervisor")
     requested = tuple(inputs)
     if not requested or len({item.component_id for item in requested}) != len(requested):
         raise SliceMergeError("A merge requires one private identity channel per component.")

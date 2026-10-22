@@ -47,6 +47,14 @@ def host_operation_lock(directory, *, blocking=False, require_root_owned=False):
 
 @contextmanager
 def deployment_operation_lock(*, blocking=False):
+    from .managed.profile import deployment_profile
+
+    if deployment_profile().mode == "managed":
+        from .managed.operation_lock import managed_operation_lock
+
+        with managed_operation_lock(blocking=blocking) as guard:
+            yield guard
+        return
     from django.conf import settings
 
     work_directory = Path(settings.BACKUP_OPS_DIR)

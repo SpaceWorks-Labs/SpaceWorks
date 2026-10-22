@@ -70,6 +70,8 @@ def _deliver(log):
 
     from apps.integrations.timing_dispatch import defer_log
     try:
+        from .mail_providers.delivery import delivery_timeout
+        from .mail_providers.budget_config import free_profile
         if defer_log(log, kind='email'):
             return log
     except Exception as exc:
@@ -80,6 +82,7 @@ def _deliver(log):
         logger.error('source_delivery_timing_failed', extra={'email_log_id': log.pk, 'error_class': type(exc).__name__})
         return log
 
+    deferred = False
     try:
         from apps.integrations.email import (
             makerspace_mail_connection,
@@ -91,6 +94,14 @@ def _deliver(log):
         else:
             connection, from_email = platform_mail_connection()
         log.provider_source = "platform" if connection is None else getattr(connection, "provider_source", "")
+        if free_profile():
+            # Connection creation does no remote I/O. Bound the selected transport
+            # before the provider is called; full paths retain their old timeout.
+            seconds = delivery_timeout()
+            if hasattr(connection, "mail_timeout"):
+                connection.mail_timeout = seconds
+            elif connection is not None:
+                connection.timeout = seconds / 2
         rendered = content(log)
         msg = EmailMultiAlternatives(
             subject=rendered.subject,
@@ -107,18 +118,26 @@ def _deliver(log):
             for reference in rendered.attachments:
                 msg.attach(*render_attachment(reference, makerspace_id=log.makerspace_id,
                                               recipient_id=log.recipient_id))
-        if not msg.send():
-            raise RuntimeError("Mail backend did not accept the message.")
+        from .mail_providers.delivery import send
+        send(log, msg)  # raises unless the transport accepted the message
         # Provider backends may expose an accepted-message ID; SMTP itself does not.
-        message_id = getattr(msg, "provider_message_id", "")
+        message_id = getattr(msg, "provider_message_id", "") or getattr(msg, "spaceworks_provider_message_id", "")
         if not message_id:
             message_id = getattr(getattr(msg, "anymail_status", None), "message_id", "")
         if isinstance(message_id, str) and len(message_id) <= 255:
             log.provider_message_id = message_id
     except Exception as exc:
+        from .mail_providers.budget import BudgetDeferred
+        if isinstance(exc, BudgetDeferred):
+            from .mail_providers.outbox import defer_delivery
+            deferred = True
+            return defer_delivery(log, exc)
         from apps.payments.document_delivery import DocumentDeliveryError
         log.status = EmailLog.Status.FAILED
         log.error = str(exc) if isinstance(exc, DocumentDeliveryError) else sanitize_email_error(exc)
+        if free_profile():
+            from .mail_providers.outbox import failed_delivery
+            failed_delivery(log, exc)
         logger.error(
             "email_delivery_failed",
             extra={"email_log_id": log.pk, "error_class": type(exc).__name__},
@@ -142,8 +161,20 @@ def _deliver(log):
         log.status = EmailLog.Status.SENT
         log.error = ""
         log.sent_at = timezone.now()
+        log.email_retry_at = None
+        config = getattr(connection, "spaceworks_mail_config", None)
+        log.provider_name = config.provider if config else ""
+        if not log.provider_message_id:
+            provider_id = getattr(msg, "spaceworks_provider_message_id", "")
+            if not provider_id:
+                provider_id = getattr(getattr(msg, "anymail_status", None), "message_id", "")
+            log.provider_message_id = provider_id[:200] if isinstance(provider_id, str) else ""
+        if log.makerspace_id:
+            from .email_preferences import address_hash
+            log.provider_recipient_hash = address_hash(log.makerspace_id, rendered.to_email)
     finally:
-        log.attempts += 1
+        if not deferred:
+            log.attempts += 1
         log.save(
             update_fields=[
                 "provider_source",
@@ -153,6 +184,8 @@ def _deliver(log):
                 "attempts",
                 "sent_at",
                 "updated_at",
+                "email_retry_at", "email_retryable", "provider_name",
+                "provider_recipient_hash",
             ]
         )
     finished(log)

@@ -257,10 +257,12 @@ def _record_breach(current, custody_lock, target_state, now):
 
 
 def _schedule_custody_alarm(makerspace_id):
+    from apps.operations.durable_dispatch import dispatch
+
     try:
         from .tasks import deliver_archive_custody_alarms_task
 
-        deliver_archive_custody_alarms_task.delay(makerspace_id)
+        dispatch(deliver_archive_custody_alarms_task, makerspace_id)
     except Exception:
         logger.exception(
             "archive_custody_alarm_enqueue_failed",

@@ -5,7 +5,7 @@ each protocol keeps its own authentication and account surfaces still fail close
 """
 
 PROVIDER_ONLY_ROUTES = frozenset("""
-notification-media telegram-webhook email-bounce-webhook whatsapp-meta-webhook
+free_tick:tick notification-media telegram-webhook email-provider-webhook email-bounce-webhook whatsapp-meta-webhook
 whatsapp-twilio-inbound whatsapp-twilio-status notification-slack-oauth
 notification-slack-inbound notification-mattermost-oauth notification-mattermost-inbound
 notification-discord-oauth notification-discord-inbound stripe-connect-webhook
@@ -38,6 +38,10 @@ def route_exemption(route, name):
     if not route.startswith("api/"):
         return "non-api (Django control permissions or public website)"
     if name in PROVIDER_ONLY_ROUTES:
+        return "provider-only"
+    # Mounted only under profile=free, inside the `free_tick` namespace; the URL
+    # walk sees the bare leaf name, so match `free_tick:tick` by its exact path.
+    if (route, name) == ("api/v1/internal/free/tick", "tick"):
         return "provider-only"
     if name in NON_ACCOUNT_ROUTES:
         return "independent capability or protocol"

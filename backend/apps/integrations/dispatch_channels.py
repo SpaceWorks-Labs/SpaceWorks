@@ -207,7 +207,10 @@ def dispatch_channel(
         if defer_log(log, kind='channel'):
             logs.append(log)
             continue
-        if sync:
+        from .mail_providers.outbox import enqueue_inline_allowed
+        if not enqueue_inline_allowed(sync=sync):
+            logs.append(log)
+        elif sync:
             logs.append(_deliver_notification(log))
         else:
             transaction.on_commit(
@@ -218,6 +221,9 @@ def dispatch_channel(
 
 
 def _enqueue_notification(log_id):
+    from .mail_providers.outbox import enqueue_inline_allowed
+    if not enqueue_inline_allowed():
+        return
     from apps.integrations.tasks import deliver_notification_task
 
     try:

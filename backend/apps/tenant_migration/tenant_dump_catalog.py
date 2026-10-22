@@ -47,9 +47,9 @@ class TenantDumpCatalogError(AssertionError):
 # Hosting requests (lane/hosting-requests): HostingRequest; re-pinned after that merge.
 # Machine-service ETA (lane/machine-eta): cancellation and notice markers; re-pinned.
 # Cloud programme (cloud/integration): managed coordination, email providers, cloud
-# accounting and storage history; re-pinned after that merge.
+# accounting and storage history; with lane/refunds (refund cases), re-pinned after both merges.
 # Orchestrator re-pins the live catalog after final schema/migration verification.
-CATALOG_SCHEMA_SHA256 = "f40a3402c0678218c936443e4f14114af3d8847a7cecc5e31840a80657af5c3e"
+CATALOG_SCHEMA_SHA256 = "b535bfc89c0aa44f49d1daf4dd71ce190dca1fe1f44a820bfa2d4681d7779030"
 
 
 def catalog_models(apps_registry=apps):

@@ -26883,6 +26883,9 @@
                         },
                         "description": ""
                     },
+                    "409": {
+                        "description": "Managed host operation or unqualified writer drain is unavailable."
+                    },
                     "400": {
                         "description": "The backup module is not installed for this makerspace."
                     },
@@ -56801,6 +56804,9 @@
                         },
                         "description": ""
                     },
+                    "409": {
+                        "description": "Managed deployment schedules are unavailable."
+                    },
                     "400": {
                         "description": "The request is invalid for the current lifecycle state."
                     },
@@ -56868,6 +56874,9 @@
                             }
                         },
                         "description": ""
+                    },
+                    "409": {
+                        "description": "Managed host operation or unqualified writer drain is unavailable."
                     },
                     "503": {
                         "description": "The backup worker is unavailable."
@@ -57305,6 +57314,9 @@
                             }
                         },
                         "description": ""
+                    },
+                    "409": {
+                        "description": "Deployment restore requires a supervised host."
                     },
                     "400": {
                         "description": "The request is invalid for the current lifecycle state."
@@ -74636,6 +74648,9 @@
                     },
                     "423": {
                         "description": "Makerspace writes are frozen for tenant migration."
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
                     },
                     "503": {
                         "description": "A required dependency is unavailable."
@@ -101244,6 +101259,25 @@
                         "type": "string",
                         "writeOnly": true
                     },
+                    "email_provider": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/EmailProviderEnum"
+                            },
+                            {
+                                "$ref": "#/components/schemas/BlankEnum"
+                            }
+                        ]
+                    },
+                    "email_provider_config": {
+                        "type": "object",
+                        "additionalProperties": {},
+                        "writeOnly": true
+                    },
+                    "email_provider_configured": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
                     "telegram_bot_token_set": {
                         "type": "boolean",
                         "readOnly": true
@@ -101324,6 +101358,7 @@
                 "required": [
                     "cors_allowed_origins",
                     "discord_webhook_url_set",
+                    "email_provider_configured",
                     "mattermost_webhook_url_set",
                     "public_api_key",
                     "public_code",
@@ -102455,7 +102490,7 @@
                     "scope": {
                         "allOf": [
                             {
-                                "$ref": "#/components/schemas/ScopeEnum"
+                                "$ref": "#/components/schemas/BackupArchiveScopeEnum"
                             }
                         ],
                         "readOnly": true
@@ -102531,6 +102566,14 @@
                     "started_at",
                     "status"
                 ]
+            },
+            "BackupArchiveScopeEnum": {
+                "enum": [
+                    "deployment",
+                    "makerspace"
+                ],
+                "type": "string",
+                "description": "* `deployment` - Full deployment\n* `makerspace` - Makerspace"
             },
             "BackupArchiveStatusEnum": {
                 "enum": [
@@ -109616,6 +109659,15 @@
                     "status"
                 ]
             },
+            "DatabaseStatusEnum": {
+                "enum": [
+                    "verified",
+                    "unavailable",
+                    "unknown"
+                ],
+                "type": "string",
+                "description": "* `verified` - verified\n* `unavailable` - unavailable\n* `unknown` - unknown"
+            },
             "DefaultRegistrationAudienceEnum": {
                 "enum": [
                     "members",
@@ -109805,6 +109857,84 @@
                     "fingerprint",
                     "public_key"
                 ]
+            },
+            "DeploymentSummary": {
+                "type": "object",
+                "properties": {
+                    "mode": {
+                        "$ref": "#/components/schemas/ModeE8dEnum"
+                    },
+                    "profile": {
+                        "$ref": "#/components/schemas/Profile3dfEnum"
+                    },
+                    "scanner": {
+                        "$ref": "#/components/schemas/ScannerEnum"
+                    },
+                    "media_validation_available": {
+                        "type": "boolean"
+                    },
+                    "scope": {
+                        "$ref": "#/components/schemas/DeploymentSummaryScopeEnum"
+                    },
+                    "topology": {
+                        "type": "string"
+                    },
+                    "database_transport": {
+                        "type": "string"
+                    },
+                    "database_major": {
+                        "type": "integer"
+                    },
+                    "storage": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/StorageGuarantee"
+                        }
+                    },
+                    "last_worker_success_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "last_scheduler_success_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "portable_dump_available": {
+                        "type": "boolean"
+                    },
+                    "portable_dump_reason": {
+                        "type": "string"
+                    },
+                    "provider_recovery": {
+                        "$ref": "#/components/schemas/ProviderRecovery"
+                    },
+                    "free_usage": {
+                        "$ref": "#/components/schemas/FreeUsage"
+                    }
+                },
+                "required": [
+                    "database_major",
+                    "database_transport",
+                    "last_scheduler_success_at",
+                    "last_worker_success_at",
+                    "media_validation_available",
+                    "mode",
+                    "portable_dump_available",
+                    "profile",
+                    "scanner",
+                    "scope",
+                    "storage",
+                    "topology"
+                ]
+            },
+            "DeploymentSummaryScopeEnum": {
+                "enum": [
+                    "deployment"
+                ],
+                "type": "string",
+                "description": "* `deployment` - deployment"
             },
             "DestinationDispatch": {
                 "type": "object",
@@ -111176,6 +111306,16 @@
                     "url"
                 ]
             },
+            "DrillStatusEnum": {
+                "enum": [
+                    "verified",
+                    "failed",
+                    "never",
+                    "unknown"
+                ],
+                "type": "string",
+                "description": "* `verified` - verified\n* `failed` - failed\n* `never` - never\n* `unknown` - unknown"
+            },
             "EditorCapabilities": {
                 "type": "object",
                 "properties": {
@@ -111291,6 +111431,55 @@
                     "institution"
                 ]
             },
+            "EmailAccountUsage": {
+                "type": "object",
+                "properties": {
+                    "label": {
+                        "type": "string"
+                    },
+                    "provider": {
+                        "type": "string"
+                    },
+                    "accepted": {
+                        "type": "integer"
+                    },
+                    "reserved": {
+                        "type": "integer"
+                    },
+                    "uncertain": {
+                        "type": "integer"
+                    },
+                    "daily_cap": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "monthly_cap": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "monthly_charged": {
+                        "type": "integer"
+                    },
+                    "reset_timezone": {
+                        "type": "string"
+                    },
+                    "provider_usage_known": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "accepted",
+                    "daily_cap",
+                    "label",
+                    "monthly_cap",
+                    "monthly_charged",
+                    "provider",
+                    "provider_usage_known",
+                    "reserved",
+                    "reset_timezone",
+                    "uncertain"
+                ]
+            },
             "EmailLog": {
                 "type": "object",
                 "properties": {
@@ -111370,6 +111559,20 @@
                 ],
                 "type": "string",
                 "description": "* `pending` - Pending\n* `sending` - Sending\n* `sent` - Sent\n* `failed` - Failed\n* `skipped` - Skipped"
+            },
+            "EmailProviderEnum": {
+                "enum": [
+                    "inherit",
+                    "smtp",
+                    "resend",
+                    "postmark",
+                    "ses",
+                    "brevo",
+                    "mailgun",
+                    "sendgrid"
+                ],
+                "type": "string",
+                "description": "* `` - \n* `inherit` - inherit\n* `smtp` - smtp\n* `resend` - resend\n* `postmark` - postmark\n* `ses` - ses\n* `brevo` - brevo\n* `mailgun` - mailgun\n* `sendgrid` - sendgrid"
             },
             "EmailTemplateDetail": {
                 "type": "object",
@@ -115225,6 +115428,85 @@
                     "email"
                 ]
             },
+            "FreeUsage": {
+                "type": "object",
+                "properties": {
+                    "profile": {
+                        "$ref": "#/components/schemas/FreeUsageProfileEnum"
+                    },
+                    "visibility": {
+                        "$ref": "#/components/schemas/FreeUsageVisibilityEnum"
+                    },
+                    "database": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/UsageSample"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "objects": {
+                        "$ref": "#/components/schemas/UsageSample"
+                    },
+                    "email": {
+                        "$ref": "#/components/schemas/UsageSample"
+                    },
+                    "email_pending": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "email_uncertain": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "email_accounts": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/EmailAccountUsage"
+                        }
+                    },
+                    "notification_uncertain": {
+                        "type": "integer"
+                    },
+                    "tick": {
+                        "$ref": "#/components/schemas/TickStatus"
+                    },
+                    "notices": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "required": [
+                    "database",
+                    "email",
+                    "email_accounts",
+                    "email_pending",
+                    "email_uncertain",
+                    "notices",
+                    "notification_uncertain",
+                    "objects",
+                    "profile",
+                    "tick",
+                    "visibility"
+                ]
+            },
+            "FreeUsageProfileEnum": {
+                "enum": [
+                    "free"
+                ],
+                "type": "string",
+                "description": "* `free` - free"
+            },
+            "FreeUsageVisibilityEnum": {
+                "enum": [
+                    "deployment",
+                    "tenant"
+                ],
+                "type": "string",
+                "description": "* `deployment` - deployment\n* `tenant` - tenant"
+            },
             "FrontendDomainStatusEnum": {
                 "enum": [
                     "pending",
@@ -116838,6 +117120,9 @@
                     "detail": {
                         "type": "string"
                     },
+                    "provider": {
+                        "type": "string"
+                    },
                     "configured": {
                         "type": "boolean"
                     }
@@ -116953,6 +117238,9 @@
             "IntegrationHealth": {
                 "type": "object",
                 "properties": {
+                    "deployment": {
+                        "$ref": "#/components/schemas/TenantDeployment"
+                    },
                     "status": {
                         "$ref": "#/components/schemas/Status00eEnum"
                     },
@@ -123192,6 +123480,25 @@
                         "type": "boolean",
                         "readOnly": true
                     },
+                    "email_provider": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/EmailProviderEnum"
+                            },
+                            {
+                                "$ref": "#/components/schemas/BlankEnum"
+                            }
+                        ]
+                    },
+                    "email_provider_config": {
+                        "type": "object",
+                        "additionalProperties": {},
+                        "writeOnly": true
+                    },
+                    "email_provider_configured": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
                     "smtp_host": {
                         "type": "string",
                         "maxLength": 200
@@ -123289,6 +123596,7 @@
                     "domain_verification_record",
                     "domain_verification_token",
                     "domain_verified_at",
+                    "email_provider_configured",
                     "enabled_modules",
                     "frontend_domain_status",
                     "id",
@@ -127520,6 +127828,14 @@
                 "type": "string",
                 "description": "* `preview` - Preview\n* `apply` - Apply"
             },
+            "ModeE8dEnum": {
+                "enum": [
+                    "host",
+                    "managed"
+                ],
+                "type": "string",
+                "description": "* `host` - host\n* `managed` - managed"
+            },
             "ModuleAction": {
                 "type": "object",
                 "description": "The one field either mutation takes.\n\nA real class rather than `inline_serializer`, which returns an *instance* and so\ncannot be called with `data=` at request time.",
@@ -128647,6 +128963,15 @@
                 ],
                 "type": "string",
                 "description": "* `whatsapp_business_account` - whatsapp_business_account"
+            },
+            "ObjectStatusEnum": {
+                "enum": [
+                    "verified",
+                    "unavailable",
+                    "unknown"
+                ],
+                "type": "string",
+                "description": "* `verified` - verified\n* `unavailable` - unavailable\n* `unknown` - unknown"
             },
             "OccurrenceResult": {
                 "type": "object",
@@ -132726,6 +133051,25 @@
                         "type": "string",
                         "writeOnly": true
                     },
+                    "email_provider": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/EmailProviderEnum"
+                            },
+                            {
+                                "$ref": "#/components/schemas/BlankEnum"
+                            }
+                        ]
+                    },
+                    "email_provider_config": {
+                        "type": "object",
+                        "additionalProperties": {},
+                        "writeOnly": true
+                    },
+                    "email_provider_configured": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
                     "telegram_bot_token_set": {
                         "type": "boolean",
                         "readOnly": true
@@ -134536,6 +134880,25 @@
                         "type": "boolean",
                         "readOnly": true
                     },
+                    "email_provider": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/EmailProviderEnum"
+                            },
+                            {
+                                "$ref": "#/components/schemas/BlankEnum"
+                            }
+                        ]
+                    },
+                    "email_provider_config": {
+                        "type": "object",
+                        "additionalProperties": {},
+                        "writeOnly": true
+                    },
+                    "email_provider_configured": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
                     "smtp_host": {
                         "type": "string",
                         "maxLength": 200
@@ -135367,6 +135730,25 @@
                 "properties": {
                     "id": {
                         "type": "integer",
+                        "readOnly": true
+                    },
+                    "email_provider": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/EmailProviderEnum"
+                            },
+                            {
+                                "$ref": "#/components/schemas/BlankEnum"
+                            }
+                        ]
+                    },
+                    "email_provider_config": {
+                        "type": "object",
+                        "additionalProperties": {},
+                        "writeOnly": true
+                    },
+                    "email_provider_configured": {
+                        "type": "boolean",
                         "readOnly": true
                     },
                     "smtp_host": {
@@ -137246,6 +137628,9 @@
             "PlatformDashboard": {
                 "type": "object",
                 "properties": {
+                    "deployment": {
+                        "$ref": "#/components/schemas/DeploymentSummary"
+                    },
                     "checked_at": {
                         "type": "string",
                         "format": "date-time"
@@ -137305,6 +137690,25 @@
                         "type": "integer",
                         "readOnly": true
                     },
+                    "email_provider": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/EmailProviderEnum"
+                            },
+                            {
+                                "$ref": "#/components/schemas/BlankEnum"
+                            }
+                        ]
+                    },
+                    "email_provider_config": {
+                        "type": "object",
+                        "additionalProperties": {},
+                        "writeOnly": true
+                    },
+                    "email_provider_configured": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
                     "smtp_host": {
                         "type": "string",
                         "maxLength": 200
@@ -137352,6 +137756,7 @@
                     }
                 },
                 "required": [
+                    "email_provider_configured",
                     "id",
                     "smtp_password_set",
                     "updated_at"
@@ -138776,6 +139181,14 @@
                     "scans"
                 ]
             },
+            "Profile3dfEnum": {
+                "enum": [
+                    "full",
+                    "free"
+                ],
+                "type": "string",
+                "description": "* `full` - full\n* `free` - free"
+            },
             "ProfileActivity": {
                 "type": "object",
                 "properties": {
@@ -139396,6 +139809,39 @@
                     "next",
                     "previous",
                     "results"
+                ]
+            },
+            "ProviderRecovery": {
+                "type": "object",
+                "properties": {
+                    "database_status": {
+                        "$ref": "#/components/schemas/DatabaseStatusEnum"
+                    },
+                    "object_status": {
+                        "$ref": "#/components/schemas/ObjectStatusEnum"
+                    },
+                    "drill_status": {
+                        "$ref": "#/components/schemas/DrillStatusEnum"
+                    },
+                    "last_drill_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "reason": {
+                        "type": "string"
+                    },
+                    "runbook_url": {
+                        "type": "string",
+                        "format": "uri"
+                    }
+                },
+                "required": [
+                    "database_status",
+                    "drill_status",
+                    "last_drill_at",
+                    "object_status",
+                    "reason"
                 ]
             },
             "ProvisionSubdomainRequest": {
@@ -148041,6 +148487,14 @@
                     "results"
                 ]
             },
+            "ScannerEnum": {
+                "enum": [
+                    "none",
+                    "clamav"
+                ],
+                "type": "string",
+                "description": "* `none` - none\n* `clamav` - clamav"
+            },
             "Schedule": {
                 "type": "object",
                 "properties": {
@@ -148077,14 +148531,6 @@
                     "name",
                     "next_due"
                 ]
-            },
-            "ScopeEnum": {
-                "enum": [
-                    "deployment",
-                    "makerspace"
-                ],
-                "type": "string",
-                "description": "* `deployment` - Full deployment\n* `makerspace` - Makerspace"
             },
             "ScopeModeEnum": {
                 "enum": [
@@ -151431,6 +151877,29 @@
                 "type": "string",
                 "description": "* `draft` - Draft\n* `counting` - Counting\n* `completed` - Completed\n* `approved` - Approved\n* `applied` - Applied\n* `cancelled` - Cancelled"
             },
+            "StorageGuarantee": {
+                "type": "object",
+                "properties": {
+                    "label": {
+                        "type": "string"
+                    },
+                    "upload": {
+                        "$ref": "#/components/schemas/UploadEnum"
+                    },
+                    "versioned": {
+                        "type": "boolean"
+                    },
+                    "object_lock": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "label",
+                    "object_lock",
+                    "upload",
+                    "versioned"
+                ]
+            },
             "StrategyEnum": {
                 "enum": [
                     "sum",
@@ -152347,6 +152816,47 @@
                     "publishable_key"
                 ]
             },
+            "TenantDeployment": {
+                "type": "object",
+                "properties": {
+                    "mode": {
+                        "$ref": "#/components/schemas/ModeE8dEnum"
+                    },
+                    "profile": {
+                        "$ref": "#/components/schemas/Profile3dfEnum"
+                    },
+                    "scanner": {
+                        "$ref": "#/components/schemas/ScannerEnum"
+                    },
+                    "media_validation_available": {
+                        "type": "boolean"
+                    },
+                    "scope": {
+                        "$ref": "#/components/schemas/TenantDeploymentScopeEnum"
+                    },
+                    "deployment_warning": {
+                        "type": "boolean"
+                    },
+                    "objects": {
+                        "$ref": "#/components/schemas/UsageSample"
+                    }
+                },
+                "required": [
+                    "deployment_warning",
+                    "media_validation_available",
+                    "mode",
+                    "profile",
+                    "scanner",
+                    "scope"
+                ]
+            },
+            "TenantDeploymentScopeEnum": {
+                "enum": [
+                    "tenant"
+                ],
+                "type": "string",
+                "description": "* `tenant` - tenant"
+            },
             "TenantMessagingAvailability": {
                 "type": "object",
                 "properties": {
@@ -152436,6 +152946,53 @@
                 ],
                 "type": "string",
                 "description": "* `system` - system\n* `light` - light\n* `dark` - dark"
+            },
+            "TickStatus": {
+                "type": "object",
+                "properties": {
+                    "last_completed_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "last_contact_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "age_seconds": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "interval_seconds": {
+                        "type": "integer"
+                    },
+                    "state": {
+                        "$ref": "#/components/schemas/TickStatusStateEnum"
+                    },
+                    "failed_tasks": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "age_seconds",
+                    "failed_tasks",
+                    "interval_seconds",
+                    "last_completed_at",
+                    "last_contact_at",
+                    "state"
+                ]
+            },
+            "TickStatusStateEnum": {
+                "enum": [
+                    "ok",
+                    "late",
+                    "never",
+                    "failed",
+                    "unknown"
+                ],
+                "type": "string",
+                "description": "* `ok` - ok\n* `late` - late\n* `never` - never\n* `failed` - failed\n* `unknown` - unknown"
             },
             "Ticket": {
                 "type": "object",
@@ -153542,6 +154099,14 @@
                     "detail"
                 ]
             },
+            "UploadEnum": {
+                "enum": [
+                    "put",
+                    "post"
+                ],
+                "type": "string",
+                "description": "* `put` - put\n* `post` - post"
+            },
             "UsageResource": {
                 "type": "object",
                 "properties": {
@@ -153579,6 +154144,92 @@
                 ],
                 "type": "string",
                 "description": "* `bytes` - bytes\n* `count` - count"
+            },
+            "UsageSample": {
+                "type": "object",
+                "properties": {
+                    "used": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "cap": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "unit": {
+                        "$ref": "#/components/schemas/UsageSampleUnitEnum"
+                    },
+                    "state": {
+                        "$ref": "#/components/schemas/UsageSampleStateEnum"
+                    },
+                    "source": {
+                        "type": "string"
+                    },
+                    "cap_source": {
+                        "type": "string"
+                    },
+                    "cap_verified_on": {
+                        "type": "string",
+                        "format": "date",
+                        "nullable": true
+                    },
+                    "scope": {
+                        "$ref": "#/components/schemas/UsageSampleScopeEnum"
+                    },
+                    "sampled_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "uncertain": {
+                        "type": "integer"
+                    },
+                    "reason_code": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "cap",
+                    "cap_source",
+                    "cap_verified_on",
+                    "reason_code",
+                    "sampled_at",
+                    "scope",
+                    "source",
+                    "state",
+                    "uncertain",
+                    "unit",
+                    "used"
+                ]
+            },
+            "UsageSampleScopeEnum": {
+                "enum": [
+                    "deployment",
+                    "tenant",
+                    "provider_account"
+                ],
+                "type": "string",
+                "description": "* `deployment` - deployment\n* `tenant` - tenant\n* `provider_account` - provider_account"
+            },
+            "UsageSampleStateEnum": {
+                "enum": [
+                    "ok",
+                    "warning",
+                    "critical",
+                    "reached",
+                    "unknown",
+                    "stale"
+                ],
+                "type": "string",
+                "description": "* `ok` - ok\n* `warning` - warning\n* `critical` - critical\n* `reached` - reached\n* `unknown` - unknown\n* `stale` - stale"
+            },
+            "UsageSampleUnitEnum": {
+                "enum": [
+                    "bytes",
+                    "recipients"
+                ],
+                "type": "string",
+                "description": "* `bytes` - bytes\n* `recipients` - recipients"
             },
             "User": {
                 "type": "object",

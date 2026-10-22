@@ -1289,7 +1289,8 @@ SPECTACULAR_SETTINGS = {
         ],
         "RefundCaseReasonCodeEnum": [
             ("event_cancelled", "Event cancelled by the space"), ("registration_cancelled", "Registration cancelled"),
-            ("booking_cancelled", "Booking cancelled"), ("membership_cancelled", "Membership term cancelled"),
+            ("booking_cancelled", "Booking cancelled"), ("staff_cancelled", "Cancelled by staff"),
+            ("membership_cancelled", "Membership term cancelled"),
             ("member_request", "Member request"),
         ],
         "InventoryAssetStatusEnum": [

@@ -145921,11 +145921,12 @@
                     "event_cancelled",
                     "registration_cancelled",
                     "booking_cancelled",
+                    "staff_cancelled",
                     "membership_cancelled",
                     "member_request"
                 ],
                 "type": "string",
-                "description": "* `event_cancelled` - Event cancelled by the space\n* `registration_cancelled` - Registration cancelled\n* `booking_cancelled` - Booking cancelled\n* `membership_cancelled` - Membership term cancelled\n* `member_request` - Member request"
+                "description": "* `event_cancelled` - Event cancelled by the space\n* `registration_cancelled` - Registration cancelled\n* `booking_cancelled` - Booking cancelled\n* `staff_cancelled` - Cancelled by staff\n* `membership_cancelled` - Membership term cancelled\n* `member_request` - Member request"
             },
             "RefundCaseStatusEnum": {
                 "enum": [

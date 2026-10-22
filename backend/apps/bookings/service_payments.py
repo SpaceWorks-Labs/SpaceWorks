@@ -72,7 +72,7 @@ def _schedule_checkout(payment):
     transaction.on_commit(create_safely)
 
 
-def cancel_for_booking(booking, actor):
+def cancel_for_booking(booking, actor, by_staff=False):
     # Reconciliation already isolates provider failures. Local update/audit failures
     # must reach cancel_booking's atomic boundary and roll back the booking too (BK-0):
     # a paid booking's refund case commits or rolls back with the cancellation itself.
@@ -81,6 +81,6 @@ def cancel_for_booking(booking, actor):
         subject_type=Payment.SubjectType.BOOKING,
         subject_id=booking.pk,
         actor=actor,
-        reason_code="booking_cancelled",
+        reason_code="staff_cancelled" if by_staff else "booking_cancelled",
         cancelled_at=booking.cancelled_at,
     )

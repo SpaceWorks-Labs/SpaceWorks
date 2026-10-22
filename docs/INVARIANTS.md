@@ -1348,8 +1348,8 @@ domain row -> Payment -> RefundCase -> Refund (the same Payment-first order as `
 - **A case opens only when something is owed** (R5): a cancellation whose due is zero opens nothing; a
   member request opens with due zero and staff decide the amount. Loan deposits are never requested (their
   release path is `release-deposit`).
-- **Due arithmetic** (`refund_policy.assess`): balance cap first; a space-cancelled event owes the full
-  balance; otherwise the area policy band (full / percent / nothing) minus the fee (space currency only)
+- **Due arithmetic** (`refund_policy.assess`): balance cap first; a space-cancelled event and a booking
+  staff cancelled on a member's behalf (`staff_cancelled`, decision 72) owe the full balance; otherwise the area policy band (full / percent / nothing) minus the fee (space currency only)
   minus refunds already made, floored at zero, rounded DOWN to min(ISO exponent, 2). Policy areas are
   `events`, `bookings` and `membership` (owner decision 68, superseding the membership half of #60). No
   per-event override in v1.
@@ -1370,7 +1370,9 @@ domain row -> Payment -> RefundCase -> Refund (the same Payment-first order as `
   calls the provider after commit; a refusal moves the case to `approval_failed`. With `payments_rail`
   tombstoned an online case answers 409 `refund_rail_unavailable` -- decline is its only exit.
 - **Events and membership-term cancellation swallow payment errors**, so `refund_case_sweeper` rebuilds
-  missed due cases hourly in both schedulers (bounded 7-day lookback; terms are timed by their
+  missed due cases hourly in both schedulers (bounded 7-day lookback, and NEVER before the deploy
+  watermark -- the apply time of `payments.0023_refund_cases` in `django_migrations`, so the first deploy
+  back-fills nothing; no record means the sweep does nothing (decision 72); terms are timed by their
   `membership.term_cancelled` audit entry; the events half is skipped when `events` is tombstoned). Bookings open their case
   in the cancellation transaction and roll back with it.
 - Open, approved and approval-failed cases join `money_fingerprint`; purges delete cases before refunds

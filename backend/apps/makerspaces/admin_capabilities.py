@@ -11,6 +11,8 @@ from apps.makerspaces.module_registry import (
 )
 from apps.makerspaces.request_access import effective_policy
 
+PARENTS = {item.key: item.parent_module for item in FEATURE_DEFINITIONS}
+
 
 class CapabilityMatrixWidget(forms.CheckboxSelectMultiple):
     template_name = "admin/makerspaces/capability_matrix.html"
@@ -96,16 +98,19 @@ class MakerspaceAdminForm(ImageMakerspaceAdminForm):
         modules = [value.removeprefix("module:") for value in values if value.startswith("module:")]
         features = [value.removeprefix("feature:") for value in values if value.startswith("feature:")]
         # MP-28: a module ticked without what it requires is completed, not rejected --
-        # the same cascade as install_module and creation setup. Core is always added
-        # back by canonicalization, so it is not reported as an addition.
+        # the same cascade as install_module and creation setup. Owner decision #82: a
+        # feature ticked without its parent module adds that parent too. Its other declared
+        # requirements are still validated, not inferred. Core is always added back by
+        # canonicalization, so it is not reported as an addition.
         ticked = set(modules)
-        completed = with_dependencies(ticked)
+        parents = {PARENTS[key] for key in features if PARENTS.get(key)}
+        completed = with_dependencies(ticked | parents)
         added = sorted(completed - ticked - core_module_keys())
         unavailable = [key for key in added if not module_available(key)]
         if unavailable:
             raise forms.ValidationError(
-                f"The ticked modules require {', '.join(unavailable)}, which this deployment "
-                "does not ship (TOMBSTONED_APPS)."
+                f"The ticked modules and features require {', '.join(unavailable)}, which this "
+                "deployment does not ship (TOMBSTONED_APPS)."
             )
         self.capability_dependencies_added = added
         try:
@@ -136,7 +141,7 @@ class MakerspaceCapabilityAdminMixin:
             labels = ", ".join(BY_KEY[key].label for key in dependencies_added)
             self.message_user(
                 request,
-                f"Also enabled {labels}: the modules you ticked require them.",
+                f"Also enabled {labels}: the modules and features you ticked require them.",
                 messages.WARNING,
             )
         if change and (before != after or request_access_changed):

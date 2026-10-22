@@ -85,6 +85,9 @@ LANE-PROGRESS.md
 LANE-CLOUD-HANDOFF.md
 stage1-*.md
 docs/stage1-*.md
+RECONCILIATION-*.md
+HANDOFF.md
+backend/.claude/settings.local.json
 
 # Local-only tool configs (editor lint/type-check, test runners)
 ruff.toml

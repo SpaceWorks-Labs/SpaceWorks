@@ -1,5 +1,6 @@
 """Closed owner upload commands; finance read purpose comes from the row."""
 from rest_framework import serializers
+from drf_spectacular.utils import extend_schema_serializer
 from .serializers import Command, Integer
 
 
@@ -33,6 +34,7 @@ class FileStatus(serializers.Serializer):
     error_code = serializers.CharField()
 
 
+@extend_schema_serializer(component_name="PayoutUploadDescriptor")
 class UploadDescriptor(serializers.Serializer):
     method = serializers.CharField()
     url = serializers.URLField()

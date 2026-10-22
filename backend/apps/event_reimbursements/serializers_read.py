@@ -1,5 +1,6 @@
 """Document private projections without giving metadata reviewers a finance schema."""
 from rest_framework import serializers as s
+from drf_spectacular.utils import extend_schema_serializer
 from .serializers_request import Estimate
 from .serializers_finance import PolicySettings
 
@@ -71,6 +72,7 @@ class PrivateRequestDetail(RequestDetail):
     reason = s.CharField()
 
 
+@extend_schema_serializer(component_name="ReimbursementPayoutSummary")
 class PayoutSummary(s.Serializer):
     id = s.UUIDField()
     version = s.IntegerField()

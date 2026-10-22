@@ -102,7 +102,8 @@ class TenantDumpCatalogError(AssertionError):
 # Phase 1 merge (notification + profile contracts) and feature/async-tenant-import:
 # re-pinned from schema_digest() over the merged live graph.
 # Phase 2+3 merge, then the account split (member/staff/platform kinds): re-pinned from schema_digest().
-CATALOG_SCHEMA_SHA256 = "57613c20c4e70942f105557daf2c59057f321395011817a477d567370ae3e40a"
+# events-final merge of lane/events-g2 and lane/patch (reimbursements + staged forms): re-pinned from schema_digest().
+CATALOG_SCHEMA_SHA256 = "08df92afa8ba6514d3e8ca19703d8823953d9138a9be4e646b48d227c716c8ef"
 # int-events: DROP-only EventAudienceOrganization, display-only staff-grant role_label and
 # Organization.is_discoverable; the runtime guard reproduced 7a7132b9 before these fields.
 # Phase 0 merge: re-pinned again by the catalog guard test after merging int-events.

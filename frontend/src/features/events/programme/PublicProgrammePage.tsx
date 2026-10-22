@@ -1,19 +1,28 @@
 import { useParams } from 'react-router-dom'
-import { CalendarDays } from 'lucide-react'
-import { AppShell } from '../../../components/shell'
-import { useTenant } from '../../../lib/tenant'
+import { PublicLayout } from '../../../components/layouts'
+import { useTenant, useTenantPath } from '../../../lib/tenant'
 import { tenantPublicRequestBlob } from '../../../lib/api'
+import { useTenantBranding } from '../../../lib/useTenantBranding'
+import { publicPageChrome } from '../../inventory/PublicPageChrome'
+import { formatSlug } from '../../inventory/PublicInventoryParts'
+import { useTenantBootstrap } from '../../inventory/usePublicInventory'
 import { GalleryPage } from '../hackathonGallery/GalleryPage'
 import { ResultsPage } from '../hackathonGallery/ResultsPage'
 
 export function PublicProgrammePage({ results = false }: { results?: boolean }) {
   const { publicToken = '', entryPublicId, slug } = useParams(), tenant = useTenant()
   const makerspaceSlug = slug ?? tenant.slug ?? ''
-  const base = `${makerspaceSlug ? `/m/${encodeURIComponent(makerspaceSlug)}` : ''}/events/${encodeURIComponent(publicToken)}`
-  return <AppShell variant="member" compactNav="drawer" activeKey={results ? 'results' : 'gallery'} user={{ name: 'Space Works', menu: [] }}
-    nav={[{ key: 'event', items: [{ key: 'event', label: 'Event', href: base, icon: CalendarDays },
-      { key: 'gallery', label: 'Project gallery', href: `${base}/gallery`, icon: CalendarDays },
-      { key: 'results', label: 'Results', href: `${base}/results`, icon: CalendarDays }] }]}>
+  const tenantPath = useTenantPath(makerspaceSlug)
+  // A public page: the public layout and tenant chrome, never the member shell (DY-03).
+  const bootstrapQuery = useTenantBootstrap(makerspaceSlug, tenant.mode === 'central')
+  const bootstrap = tenant.mode === 'single' ? tenant.bootstrap : bootstrapQuery.data
+  const brandStyle = useTenantBranding(bootstrap)
+  const name = bootstrap?.branding.display_name || bootstrap?.makerspace.name || formatSlug(makerspaceSlug) || 'Makerspace'
+  const base = tenantPath(`events/${encodeURIComponent(publicToken)}`)
+  const here = results ? 'Results' : 'Project gallery'
+  return <div style={brandStyle}><PublicLayout {...publicPageChrome(makerspaceSlug, name, tenantPath, bootstrap)} state={{ status: 'ready' }}
+    breadcrumb={[{ label: 'All events', href: tenantPath('events') }, { label: 'Event', href: base },
+      ...(entryPublicId && !results ? [{ label: here, href: `${base}/gallery` }, { label: 'Project' }] : [{ label: here }])]}>
     {results ? <ResultsPage makerspaceSlug={makerspaceSlug} publicToken={publicToken} eventTitle="Event" /> : <GalleryPage
       makerspaceSlug={makerspaceSlug} publicToken={publicToken} eventTitle="Event" entryPublicId={entryPublicId}
       projectHref={id => `${base}/gallery/${encodeURIComponent(id)}`}
@@ -25,5 +34,5 @@ export function PublicProgrammePage({ results = false }: { results?: boolean }) 
         const url = URL.createObjectURL(blob), link = document.createElement('a'); link.href = url; link.download = `project-file-${asset.public_id}`; link.click()
         setTimeout(() => URL.revokeObjectURL(url), 1000)
       }} />}
-  </AppShell>
+  </PublicLayout></div>
 }

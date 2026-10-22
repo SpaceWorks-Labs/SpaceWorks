@@ -1,5 +1,6 @@
 """Strict member commands and stable ID-only mutation receipts."""
 from rest_framework import serializers as s
+from drf_spectacular.utils import extend_schema_serializer
 from .serializers_request import ClosedSerializer, StrictInteger, ReimbursementRequestSubmissionSerializer
 from .claim_inputs import ClaimLineInput
 
@@ -29,6 +30,7 @@ class ClaimAppealCommand(ClaimSubmitCommand):
     statement = s.CharField(max_length=5000, allow_blank=False)
 
 
+@extend_schema_serializer(component_name="ReimbursementCommandResult")
 class CommandResult(s.Serializer):
     id = s.IntegerField()
     version = s.IntegerField()
@@ -78,6 +80,7 @@ class ReceiptMetadata(s.Serializer):
     expires_at = s.DateTimeField(allow_null=True)
 
 
+@extend_schema_serializer(component_name="ReimbursementUpload")
 class Upload(s.Serializer):
     method = s.CharField()
     url = s.URLField()

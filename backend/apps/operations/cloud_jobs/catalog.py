@@ -115,6 +115,7 @@ OPERATIONAL_ENTRIES = (
     ("cloud-storage-usage", "apps.operations.cloud_jobs.maintenance.sample_storage", 15),
     ("cloud-private-staging-cleanup", "apps.operations.cloud_jobs.maintenance.cleanup_staging", 60),
 )
+_ADMISSION_PREREQUISITES = frozenset({"cloud-storage-qualification", "cloud-storage-usage"})
 
 
 def all_declarations():
@@ -129,7 +130,11 @@ def all_declarations():
         retained=retained, heavy=key in {"event-asset-work", "event-certificate-resume", "finance-work"},
         operation=key.replace("-", "_"),
     ) for group, key, path, minutes, retained in PROGRAMME_ENTRIES)
-    tasks.extend(PeriodicTask(key, path, minutes, app="operations", retained=True)
+    # Free uploads are refused until storage is qualified and every binding has a fresh
+    # usage sample, so a new deployment must not wait one full interval before the
+    # first run of either: seed them due immediately, like the critical sweeps.
+    tasks.extend(PeriodicTask(key, path, minutes, app="operations", retained=True,
+                              critical=key in _ADMISSION_PREREQUISITES)
                  for key, path, minutes in OPERATIONAL_ENTRIES)
     from .work import WORK
     tasks.extend(PeriodicTask("persisted-" + work.key, work.task, 1, app=work.app,

@@ -148,15 +148,16 @@ the Auth module** — forgetting this is a cross-tenant data leak, not just a bu
   console narrowing, not a grant ceiling. The `guest-admin/` **URL paths** in `hardware_requests/urls.py`
   remain the handover API surface (module key `guest_handover`); renaming them would break clients.
   Full detail: **Handover roles** in `docs/INVARIANTS.md`.
-- Public borrow-request access is derived by `makerspaces/request_access.py`: with **`membership` on**,
-  an active member must pass the applicable presence, waiver and current-term checks; with it **off**,
-  an active signed-in member account may submit (no membership required). A per-makerspace **account-less request opt-in** additionally
-  admits anonymous proposals only while `membership` is off. Installing membership clears that opt-in.
-  `RequestSubmitView` uses `AllowAny` and enforces these branches itself; anonymous submissions need
-  contact details, an `Idempotency-Key` and IP/email throttles. Staff acceptance still reserves stock.
-  Identity-based borrower history remains authenticated and owner-scoped — never match free-text
-  email/phone or expose the shared anonymous principal's history. Existing public request-status
-  links remain bearer-token reads.
+- **Every borrow request needs a signed-in account** (`RequestSubmitView` → `IsAuthenticated`). Access is
+  derived by `makerspaces/request_access.py`: with **`membership` on**, an active member must pass the
+  applicable presence, waiver and current-term checks; with it **off**, an active signed-in member account
+  may submit (no membership required). The per-makerspace account-less opt-in was **removed by owner
+  decision #75f** — do not reintroduce an anonymous submit path. Requests filed through it earlier stay
+  readable: they keep their shared `Makerspace.anonymous_requester` principal and unverified-contact
+  snapshot, and that principal stays excluded from per-person aggregates and refused as a credential.
+  Staff acceptance still reserves stock. Identity-based borrower history remains authenticated and
+  owner-scoped — never match free-text email/phone. Existing public request-status links remain
+  bearer-token reads.
 - Sensitive browser changes (staff role-set assignments/grants, API-client management and organization
   governance/deletion) require recent, server-owned session reauthentication. Refresh never renews
   that proof; `/control/` keeps its separate MFA and reauthentication surface.
@@ -461,3 +462,7 @@ use `git log --oneline` / `git blame`.
 - MVP vs. later scope: §16
 - Behaviors that must be tested: §17 (test external behavior, not implementation)
 - Unresolved decisions: §18 — **resolve relevant open questions before implementing the affected area** rather than guessing.
+- **PRD notes — owner decisions that override the PRD text:** §4.4 "an admin cannot accept their own
+  personal request unless also superadmin" is **DROPPED** (#75e, no code check exists or is wanted);
+  §4.4/§9 Telegram accept/reject is reversed (outbound-only, 2026-08-31); public requests always need an
+  account (#75f). Detail in `docs/INVARIANTS.md`.

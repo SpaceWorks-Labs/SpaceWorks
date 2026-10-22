@@ -152,7 +152,6 @@ class MakerspaceSerializer(
             "membership_dues_amount",
             "referrals_enabled",
             "lapsed_members_cannot_borrow",
-            "anonymous_requests_enabled",
             "request_access",
             "filament_low_stock_threshold_grams",
             "superadmin_access_enabled",

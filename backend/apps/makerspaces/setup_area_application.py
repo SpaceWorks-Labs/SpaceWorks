@@ -9,7 +9,7 @@ from apps.makerspaces.models import Makerspace
 from apps.tenant_migration.gate_runtime import assert_write_allowed
 from .module_install import install_module, uninstall_module, ModuleInstallError
 from .module_registry import BY_KEY, core_module_keys, dependents_of, module_available
-from .request_access import effective_policy, set_anonymous_requests
+from .request_access import effective_policy
 from .setup_areas import AREAS, modules_for, features_for, INVENTORY_FEATURES
 from .capabilities import FEATURES, validate_capabilities, feature_required_modules
 from .setup_settings import apply_settings, save_space
@@ -55,10 +55,12 @@ def validate_answers(answers):
     if "event_default_registration_audience" in settings.get("space", {}) and "events" not in areas:
         raise ValidationError({"space": "Enable Events to set its default audience."})
     mode = answers.get("request_access")
-    if mode is not None and ("inventory" not in areas or mode not in ("members", "accounts", "anyone")):
-        raise ValidationError({"request_access": "Choose members, accounts or anyone with Inventory enabled."})
+    # Every borrow request needs an account (#75f); the answer only confirms which
+    # accounts, and that follows from whether Membership is among the areas.
+    if mode is not None and ("inventory" not in areas or mode not in ("members", "accounts")):
+        raise ValidationError({"request_access": "Choose members or accounts with Inventory enabled."})
     if mode and ((mode == "members") != ("membership" in areas)):
-        raise ValidationError({"request_access": "Membership enabled requires members; otherwise choose accounts or anyone."})
+        raise ValidationError({"request_access": "Membership enabled requires members; otherwise choose accounts."})
     without = answers.get("without", [])
     if not isinstance(without, list) or any(not isinstance(key, str) or key not in BY_KEY or key in core_module_keys() for key in without):
         raise ValidationError({"without": "Use optional module keys."})
@@ -166,8 +168,6 @@ def apply_areas(actor, space, answers):
     # Admission stores the chosen mode/schema, but area features remain enabled even
     # when their settings make them inert (e.g. vouching with approval admission).
     space = save_space(actor, space, {"enabled_features": canonical})
-    if mode:
-        resulting = set_anonymous_requests(space, mode == "anyone", actor=actor)
-        if resulting != mode:
-            raise ValidationError({"request_access": f"The live policy is {effective_policy(space)}."})
+    if mode and effective_policy(space) != mode:
+        raise ValidationError({"request_access": f"The live policy is {effective_policy(space)}."})
     return space

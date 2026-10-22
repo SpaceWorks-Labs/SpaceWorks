@@ -66,9 +66,6 @@ Every `THROTTLE_*` value is a DRF rate string (`<n>/<second|minute|hour|day>`). 
 
 | Variable | Default | Notes |
 |---|---|---|
-| `THROTTLE_ANONYMOUS_REQUEST_EMAIL` | `'3/day'` |  |
-| `THROTTLE_ANONYMOUS_REQUEST_IP_BURST` | `'2/min'` |  |
-| `THROTTLE_ANONYMOUS_REQUEST_IP_HOUR` | `'10/hour'` |  |
 | `THROTTLE_ARCHIVE_RECIPIENT_VERIFY` | `'10/min'` |  |
 | `THROTTLE_AUDIT_VERIFICATION` | `'6/hour'` | On-demand audit chain verification runs. |
 | `THROTTLE_BOOKING_SUBMIT` | `'10/hour'` |  |

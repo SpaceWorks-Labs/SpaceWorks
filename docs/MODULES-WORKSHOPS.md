@@ -165,14 +165,10 @@ Required by the members-only events path. Bookings can run without this module.
   and admin-issued reset remain available; email invitations additionally need Email + `staff.invitations`. `payments.membership` and `charges.membership` become inert.
 - **Deliberately does not require `member_accounts`.** Identity can come from external OIDC or a staff-created
   person record, so the two are independent switches.
-- **It decides who may submit a borrow request, and installing it closes account-less requests.** With this
-  module on, submitting requires an active member of the makerspace. With it off, any signed-in member account may
-  submit — a request is only a proposal that staff must accept, and waiver acceptance cannot be recorded
-  without a membership row anyway. Turning it ON therefore forces `anonymous_requests_enabled` OFF (audited,
-  never silent): the account-less path bypasses the membership check entirely, so leaving both on would let
-  a stranger walk past the requirement you just switched on. Turning it back off does **not** re-open
-  account-less requests — that is an explicit choice, made with
-  `manage.py set_request_access --mode anyone`.
+- **It decides who may submit a borrow request.** With this module on, submitting requires an active member
+  of the makerspace. With it off, any signed-in member account may submit — a request is only a proposal that
+  staff must accept, and waiver acceptance cannot be recorded without a membership row anyway. Every request
+  needs an account either way: there is no account-less option.
 - **Member ID cards live here.** A card is a revocable QR credential over one membership (`MemberCard`),
   issued, reissued, revoked and printed by staff holding `manage_member_cards` (Space Managers by default)
   and resolvable at a scanner only by `scan_member_cards` — never through the inventory scanner, so an

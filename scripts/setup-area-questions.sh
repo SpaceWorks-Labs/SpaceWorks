@@ -45,9 +45,8 @@ ask_inventory_settings() {
     area_bool loan_charges loan_deposit_blocks_issue 'Require deposit settlement before issuing?' N || return 1
   fi
   area_question root currency string 'Default currency for charges' "${AREA_root_currency:-usd}" currency || return 1
-  echo 'Who can submit borrow requests? Membership, when enabled below, requires active members.'
-  echo '  accounts = signed-in accounts; anyone = no account, rate-limited contact details.'
-  question REQUEST_ACCESS 'Borrow requests (Membership off)' accounts choices:accounts,anyone || return 1
+  echo 'Every borrow request needs a signed-in account. Membership, when enabled below, requires active members.'
+  question REQUEST_ACCESS 'Borrow requests (Membership off)' accounts choices:accounts || return 1
 }
 
 ask_machines_settings() {

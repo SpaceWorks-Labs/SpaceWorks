@@ -387,7 +387,11 @@ Staff management has no hidden-space platform exception: only local Space Manage
 admin-reset staff there (D7). Platform superadmins may archive, unarchive, purge and review archive
 requests through the slim `/control/` lifecycle list, with recent session reauthentication on selection
 and confirmation POSTs. That exception grants no data, staff, settings, support or migration HTTP access.
-Server-side operator recovery remains outside application authority.
+Server-side operator recovery remains outside application authority. **No command-line bypass either
+(BK-66):** `manage.py export_tenant_migration_archive` encrypts to the PLATFORM key
+(`BACKUP_AGE_RECIPIENT`), so `archive_envelope.build_tenant_migration_archive` refuses any platform-keyed
+build for a space with access off — read from the database at the start and again just before
+encryption — with a clear `CommandError`. A target-keyed build (the gated HTTP job) is not affected.
 
 **Makerspace archive → purge (superadmin, `/control/` only).** `Makerspace.archived_at` is the
 single soft-delete flag; archive scoping is threaded through central rbac + all aggregates + public +
@@ -2036,12 +2040,23 @@ never mute a makerspace. Deliberately the opposite of the *access* rules, which 
   STAFF entries — a webhook is a room, so "your booking is confirmed" would expose that member's name to
   everyone with channel access. Retained legacy staff matrix push takes `payload.text`; canonical personal push
   takes the source-rendered recipient body independently of inbox creation.
-- **Recipient object scoping composes as `role_scope AND (rule_scope OR all)` — narrowing only.** Rule
-  links reuse the destination shape (`no links ⇒ everything`); the role floor reuses `machines/role_scope`
-  via the batch `manage_scopes_for_memberships` (two queries, not an N+1), never a parallel resolver. **The
-  floor applies to `kind=role` rows ONLY** — applying it to `members`/`user` would make those kinds
-  unusable for maintenance, since a plain member holds no machine grant and resolves to the fail-closed
-  `NOTHING`.
+- **Recipient object scoping composes as `object_scope AND (rule_scope OR all)` — narrowing only — for
+  EVERY recipient kind (owner decision #75c, audit NM-71).** Rule links reuse the destination shape
+  (`no links ⇒ everything`). For `kind=role` the floor is the role's machine reach
+  (`machines/role_scope` via the batch `manage_scopes_for_memberships`, never a parallel resolver). People
+  selected as `user` or `members` get `integrations/recipients_object_scope.person_object_filter`: a person
+  receives an alert naming a machine or machine type only if they could see it in the console — role reach
+  (EXEMPT or a linked type), a direct grant of the type's `managing_action`, or an operator row on that
+  machine (for a type-only alert, on a machine of that type). A plain member therefore no longer receives a
+  machine-scoped alert through a members-wide or named selection; that is the decision, not a regression.
+  Alerts naming no machine/type (categories, events, payments) are unaffected. **Chat rooms** have no
+  principal, so their object scope is their own destination links: a scoped room receives only subjects
+  it names and nothing without a subject, and an unscoped room stays the space's general channel (D11).
+  Personal owner deliveries (the requester/booker/registrant the alert is about) are the object's owner and
+  are not filtered. A booking alert is ROOM-scoped (its scope is the room's machine type,
+  `bookings/notifications.scope_for`), so for people the floor also admits whoever can see the room:
+  `MANAGE_BOOKINGS` holders and live staff-grant holders on a room of that type. The `kind=role` floor
+  is unchanged and still machine-reach only.
 - **Staff API + console are mandatory, not optional** — `/control/` is not proxied on the public frontend
   port, so without `notification-recipient-rules` and `notification-destinations` a space manager could not
   configure any of this. Saves **replace** rather than merge (a merge makes unticking impossible), an
@@ -2160,23 +2175,35 @@ the backend contrast guard parses those blocks. Tailwind maps each colour token 
 must have a React staff-console surface — a capability with no console surface is a latent dead/broken
 feature for normal staff. New workflow actions ship their staff UI in the same batch.
 
-**Who may submit a borrow request is DERIVED, and `membership` + account-less requests is an impossible
-pair.** `apps/makerspaces/request_access.py` is the only answer to the question. Three states fall out of
-one column and one module: `membership` on → **members**; both off → **accounts** (any active signed-in
-account); `anonymous_requests_enabled` on with `membership` off → **anyone**. The fourth combination must
-not exist, because `RequestSubmitView` takes its anonymous branch *before* any membership guard runs, so a
-row carrying both would walk a stranger straight past the membership requirement the operator had just
-switched on. It is enforced at three depths and all three are load-bearing: `Makerspace.save()` reconciles
-the pair so **no writer** can persist it (module install/uninstall, `apply_profile`, the `/control/`
-capability matrix, `setup_instance`, `seed_demo`, a bare `obj.save()`) — and it appends the field to
-`update_fields` so a partial save cannot leave the row inconsistent; `set_anonymous_requests` takes the row
-lock and **refuses** an explicit request to open account-less submission while `membership` is installed
-(the module path *forces*, the operator path *refuses* — the operator was asking about this flag, so
-silently ignoring them would be the wrong answer); and `anonymous_requests_allowed` re-derives at request
-time so a row from raw SQL or an old restore still fails closed. Migration
-`makerspaces/0067` closed the pair on existing rows and is deliberately **not reversible**. Turning
-`membership` off never re-opens account-less requests — opening an unauthenticated write surface is an
-explicit act, never a side effect.
+**Who may submit a borrow request is DERIVED, and every request needs a signed-in account.**
+`apps/makerspaces/request_access.py` is the only answer to the question, and it has two states that fall out
+of one module: `membership` on → **members**; off → **accounts** (any active signed-in account).
+`RequestSubmitView` is `IsAuthenticated`, so an anonymous POST is a 401 before any makerspace work. The
+account-less opt-in (`anonymous_requests_enabled`, its throttles, `Idempotency-Key` replay, outstanding
+ceiling, contact fields and `set_request_access` command) was **removed by owner decision #75f**;
+`makerspaces/0105` dropped the column. Do not reintroduce an unauthenticated submit path. Rows filed through
+it before then are history and stay readable: they keep `requester` = the makerspace's inert
+`Makerspace.anonymous_requester`, their contact snapshot, `requester_contact_verified=False` and the
+idempotency fingerprints, and the mail suppression keyed on those still applies. Migration
+`makerspaces/0067` (which closed the old membership + opt-in pair) stays in the chain untouched.
+
+**PRD §4.4's self-accept rule is DROPPED (owner decision #75e).** The PRD line "an admin cannot accept
+their own personal request unless also superadmin" is not a requirement: `request_workflow.accept_request`
+and `AcceptRequestView` deliberately carry no requester-versus-actor check, and none is to be added. A
+reviewer may accept a request they submitted; the accept is still audited with the actor, so the
+self-acceptance is visible after the fact. (Recorded 2026-10-22; audit row RO-100.)
+
+**Authority is re-checked under row lock in the service, not only in the view.** A view authorizes with
+plain reads and the service then mutates, so a revocation committed in between would otherwise still
+land. `makerspaces/authority_lock.require_under_lock(actor, makerspace_id, predicate)` takes the tenant row
+(`FOR NO KEY UPDATE`), then the actor's membership, roles and organization rows (the `role_authority`
+order), confirms the actor is still live, and re-runs the view's own predicate on fresh reads; the object
+being mutated is locked AFTER it, and any object-level predicate (machine reach, collect partition,
+operator rows) is re-evaluated after that lock. The six races deferred in `a4fa9084` use it:
+domain-verification (`domain_verification.verify_domain(actor=...)`, re-checked inside every status
+write), machine-service collect (`service_workflow_collect`, via `service_request_partitions.may_collect`),
+the asset/machine warranty PUT and warranty-document presign, finalize and delete (`warranty/services.py`).
+A new write path that authorizes in the view must do the same.
 
 **A core module must work with every optional module uninstalled.** Two halves. The *declared* half is
 checked at import time: `module_registry._validate_registry` refuses a registry where an `is_core` module
@@ -2218,7 +2245,8 @@ entry point moved. The review URL must keep `admin_site.admin_view`, must load t
 `has_change_permission`, and must parse quantities as ints before calling the workflow.
 
 **The shared account-less requester principal is not a person, and no per-PERSON aggregate may rank it.**
-Every anonymous submission in a makerspace points at one `Makerspace.anonymous_requester`, so grouping by
+No new account-less request can be filed (#75f), but every historical one in a makerspace points at one
+`Makerspace.anonymous_requester`, so grouping by
 `requester_id` folds every unrelated stranger into a single fictional human. `_repeat_offenders`,
 `_top_borrowers`, `globally_ranked_borrowers` and `_restricted_requesters` exclude
 `anonymous_requesters.anonymous_requester_ids(...)` **before** any limit or slice, so the principal cannot
@@ -2228,8 +2256,8 @@ lost every account-less incident would be worse than one naming a fake person. P
 showing, but route their `requester_username` through `display.requester_label` so an overdue account-less
 loan shows the contact the borrower gave rather than the principal's internal `member_<uuid>`. Restricting
 the principal is refused at the write side by
-`accounts.principal_guards.refuse_anonymous_requester_access_mutation` — it would restrict every future
-account-less requester at once — and the read-side exclusion is the backstop for rows predating that guard.
+`accounts.principal_guards.refuse_anonymous_requester_access_mutation` — the principal must never become a
+usable or restrictable account — and the read-side exclusion is the backstop for rows predating that guard.
 **Observability (forward plan phase 0, 2026-09-03).** Every request carries an `X-Request-ID`: honoured
 from the caller only when it matches `^[A-Za-z0-9_.:-]{1,64}$`, minted otherwise, bound in a
 `contextvars.ContextVar` by `config.request_id.RequestIdMiddleware` (third in `MIDDLEWARE`, after the

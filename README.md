@@ -592,25 +592,20 @@ People still get named, two ways:
 
 #### Who may ask to borrow something
 
-Borrow requests are a proposal: staff acceptance reserves stock. Submission access is separate from
-sign-in policy. Membership and the account-less opt-in produce three modes:
+Borrow requests are a proposal: staff acceptance reserves stock. Every request needs a signed-in
+account; which accounts follows from **Membership**:
 
-| Membership (`membership`) | Account-less requests | Who may submit |
-| --- | --- | --- |
-| on | off | **Members** — an active member of that makerspace |
-| off | off | **Account holders** — anyone signed in (the default without the module) |
-| off | **on** | **Anyone** — no account at all |
+| Membership (`membership`) | Who may submit |
+| --- | --- |
+| on | **Members** — an active member of that makerspace |
+| off | **Account holders** — anyone signed in (the default without the module) |
 
 This policy uses **Membership**, independently of the **Member accounts** sign-in module.
 Members must pass the applicable presence, waiver and current-term checks; account holders must be
-active and unrestricted. The last row is opt-in per makerspace. Installing `membership` turns it
-back off so anonymous proposals cannot bypass membership admission. Account-less
-submissions ask for a name, email and phone, require an `Idempotency-Key`, and are rate-limited per IP
-and per email address; every one of them is recorded against a single shared requester principal, which
-is deliberately excluded from every per-person ranking so a hundred strangers never add up to one
-fictional "top borrower". `setup.sh` asks this question during first-run setup, and it can be changed
-later with `manage.py set_request_access`. Borrower history and identity-based lookup use the
-authenticated owner, never matching submitted email/phone or exposing the shared anonymous principal.
+active and unrestricted. There is no account-less option: the earlier opt-in was removed by owner
+decision, and requests filed through it before then stay readable, still recorded against their
+makerspace's single shared requester principal, which every per-person ranking excludes. Borrower
+history and identity-based lookup use the authenticated owner, never matching submitted email/phone.
 Existing request status links remain bearer-token reads.
 
 ### Choosing which ways in you offer

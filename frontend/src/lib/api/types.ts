@@ -16,10 +16,6 @@ export type TenantBootstrap = {
     public_inventory_enabled?: boolean;
     public_landing_page?: "auto" | "inventory" | "events" | "machines" | "bookings" | "membership";
     membership_policy: "request" | "open" | "invite_only";
-    // Present only when the makerspace opted into account-less borrow requests. Absent
-    // means an account is required -- the backend omits the key otherwise to keep the
-    // bootstrap payload byte-for-byte unchanged for everyone else.
-    request_access?: "anyone";
   };
   frontend: {
     type: string;

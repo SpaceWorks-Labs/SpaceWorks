@@ -109,7 +109,6 @@ class Command(BaseCommand):
         )
         snapshot = SimpleNamespace(
             username=member.username, name="E2E Member", email=member.email, phone="",
-            contact_verified=True,
         )
         pending = request_workflow.submit_request(
             makerspace, [{"product": product, "quantity": 1}], PENDING_REQUEST_FOR,

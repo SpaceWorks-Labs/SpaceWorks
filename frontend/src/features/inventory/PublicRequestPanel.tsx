@@ -1,14 +1,13 @@
 import { SegmentedControl } from "../../components/ui";
 import { useMemo, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import type { RequestCartItem } from "../../types/inventory";
 import { BorrowRequestCard } from "./BorrowRequestCard";
-import { getAccessToken, refreshAccessToken } from "../../lib/api";
 import { submitPublicRequest } from "./api";
 import { invalidatePublicInventory } from "../staff/queryInvalidation";
 import { PublicToolScanPanel } from "./PublicToolScanPanel";
-import { useRequestDraft, newIdempotencyKey, type RequestDraft } from "./useRequestDraft";
+import { useRequestDraft, type RequestDraft } from "./useRequestDraft";
 
 export type ActiveTab = "borrow" | "scan";
 
@@ -17,9 +16,6 @@ type PublicRequestPanelProps = {
   makerspaceSlug: string;
   onClear: () => void;
   disabled?: boolean;
-  // The makerspace's policy, not the caller's state. Present only when the space opted
-  // into account-less borrow requests.
-  requestAccess?: "anyone";
   /** Lets the page open the panel straight on "Scan a tool" (the phone bar does). Uncontrolled when omitted. */
   activeTab?: ActiveTab;
   onActiveTabChange?: (tab: ActiveTab) => void;
@@ -32,7 +28,6 @@ export function PublicRequestPanel({
   makerspaceSlug,
   onClear,
   disabled = false,
-  requestAccess,
   activeTab: controlledTab,
   onActiveTabChange,
   draft: draftProp,
@@ -42,31 +37,7 @@ export function PublicRequestPanel({
   const activeTab = controlledTab ?? ownTab;
   const setActiveTab = (tab: ActiveTab) => { setOwnTab(tab); onActiveTabChange?.(tab); };
   const ownDraft = useRequestDraft();
-  const {
-    requestedFor, setRequestedFor, submitted, setSubmitted, contactName, setContactName,
-    contactEmail, setContactEmail, contactPhone, setContactPhone, website, setWebsite,
-    publicToken, setPublicToken, idempotencyKey,
-  } = draftProp ?? ownDraft;
-  // A signed-in member who RELOADED this page holds no in-memory access token -- it lives
-  // behind the refresh cookie, and unlike `MemberArea` this page never hydrates. Without
-  // the probe they would be classified as anonymous and their request filed against the
-  // SHARED anonymous principal, which every per-person view excludes: it would vanish from
-  // their own activity and take the unverified-contact path instead of notifying them.
-  const sessionProbe = useQuery({
-    queryKey: ["public-request-session", makerspaceSlug],
-    queryFn: async () => (getAccessToken() ? true : refreshAccessToken()),
-    enabled: requestAccess === "anyone" && !disabled,
-    staleTime: Infinity,
-    retry: false,
-  });
-  // Policy AND caller state. `tenantPublicRequest` still attaches Authorization when a
-  // token is in memory, and the backend then takes the AUTHENTICATED branch and ignores
-  // these contact fields -- so asking for them would promise something the stored request
-  // does not honour. Until the probe settles we assume a member: claiming "no account
-  // needed" and then discovering a session would be the worse way round.
-  const authenticated = Boolean(getAccessToken());
-  const accountLess =
-    requestAccess === "anyone" && sessionProbe.isFetched && !authenticated;
+  const { requestedFor, setRequestedFor, submitted, setSubmitted, website, setWebsite } = draftProp ?? ownDraft;
   const totalItems = useMemo(
     () => items.reduce((total, item) => total + item.quantity, 0),
     [items],
@@ -83,53 +54,22 @@ export function PublicRequestPanel({
             quantity: item.quantity,
           })),
           website,
-          ...(accountLess
-            ? {
-                contact_name: contactName.trim(),
-                contact_email: contactEmail.trim(),
-                contact_phone: contactPhone.trim(),
-              }
-            : {}),
         },
-        accountLess ? idempotencyKey.current : undefined,
       ),
-    // The previous banner and token must not survive into the next attempt: if this one
-    // fails, showing the error beside a stale token invites the requester to save the
-    // wrong reference -- and it is their only route back to the request.
-    onMutate: () => {
-      setSubmitted(false);
-      setPublicToken("");
-    },
-    onSuccess: (response) => {
+    // The previous banner must not survive into the next attempt.
+    onMutate: () => setSubmitted(false),
+    onSuccess: () => {
       invalidatePublicInventory(queryClient, makerspaceSlug);
-      // Kept before the form is cleared: this token is the account-less requester's only
-      // way back to the request.
-      setPublicToken(response?.public_token ?? "");
       setSubmitted(true);
       onClear();
-      setContactName("");
-      setContactEmail("");
-      setContactPhone("");
       setRequestedFor("");
       setWebsite("");
-      // Only after the server accepted it: reusing the key for the NEXT request would
-      // return this one back instead of creating anything.
-      idempotencyKey.current = newIdempotencyKey();
     },
   });
 
-  const contactReady =
-    !accountLess ||
-    (contactName.trim().length > 0 && contactEmail.trim().length > 0);
-  // While the probe is unresolved `accountLess` is still false, so `contactReady` is
-  // vacuously true and the button would go live before the contact fields exist. On a
-  // slow refresh a visitor could submit a member-shaped body and take a 400.
-  const policyResolved = requestAccess !== "anyone" || sessionProbe.isFetched;
   const canSubmit =
     requestedFor.trim().length > 0 &&
     items.length > 0 &&
-    contactReady &&
-    policyResolved &&
     !submitMutation.isPending;
 
   // No cards inside this panel: its host already frames it (the public "Your request" card, the
@@ -151,23 +91,9 @@ export function PublicRequestPanel({
       ) : (
         <>
           <div className="shrink-0">
-            <h2 className="title-panel text-brand-ink">
-              {accountLess && activeTab === "borrow"
-                ? "Borrow something"
-                : "Member borrowing"}
-            </h2>
+            <h2 className="title-panel text-brand-ink">Member borrowing</h2>
             <p className="mt-1 text-sm leading-6 text-muted">
-              {/* Three states, because the requirements genuinely differ. Scoped to the
-                  borrow tab: scanning a tool is self-checkout, which DOES require an
-                  authenticated member with active presence, so "no account needed" would
-                  be false there until it 401s. And an `anyone` policy necessarily has the
-                  membership module off, so the membership/waiver/presence sentence cannot
-                  be true on such a space even for a signed-in visitor. */}
-              {activeTab === "borrow" && accountLess
-                ? "No account needed. Leave your name and email so staff can reach you about the request; they review it before anything is handed over."
-                : activeTab === "borrow" && requestAccess === "anyone"
-                  ? "You are signed in, so this request is filed against your account. Staff review it before anything is handed over."
-                  : "Requests use your signed-in member account. An active membership, waiver acceptance, and current presence are required."}
+              Requests use your signed-in member account. An active membership, waiver acceptance, and current presence are required.
             </p>
           </div>
 
@@ -192,16 +118,8 @@ export function PublicRequestPanel({
                   onClear={onClear}
                   onRequestedForChange={setRequestedFor}
                   onSubmit={() => submitMutation.mutate()}
-                  accountLess={accountLess}
-                  contactName={contactName}
-                  contactEmail={contactEmail}
-                  contactPhone={contactPhone}
-                  onContactNameChange={setContactName}
-                  onContactEmailChange={setContactEmail}
-                  onContactPhoneChange={setContactPhone}
                   website={website}
                   onWebsiteChange={setWebsite}
-                  publicToken={publicToken}
                 />
               </div>
             ) : null}

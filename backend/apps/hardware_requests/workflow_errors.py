@@ -10,14 +10,6 @@ class RequestValidationError(Exception):
     pass
 
 
-class AnonymousRequestIdempotencyConflict(Exception):
-    pass
-
-
-class AnonymousRequestOutstandingLimit(Exception):
-    pass
-
-
 class ReturnValidationError(Exception):
     pass
 

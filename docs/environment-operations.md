@@ -81,12 +81,10 @@ Host-orchestration paths and timing knobs; see `docs/self-hosting.md` and the re
 | `DEVICE_NONCE_TTL_SECONDS` | `86400` | Replay-nonce retention for device-signed requests. |
 | `DEVICE_SIGNATURE_MAX_SKEW_SECONDS` | `300` | Accepted clock skew on a device request signature. |
 
-## Events, bookings, kiosk stations and anonymous requests
+## Events, bookings and kiosk stations
 
 | Variable | Default | Notes |
 |---|---|---|
-| `ANONYMOUS_REQUEST_IDEMPOTENCY_KEY_MAX_LENGTH` | `128` |  |
-| `ANONYMOUS_REQUEST_OUTSTANDING_LIMIT` | `50` |  |
 | `EVENT_CHECKIN_CLOCK_SKEW_SECONDS` | `300` |  |
 | `EVENT_CHECKIN_ROSTER_LIFETIME_HOURS` | `24` |  |
 | `EVENT_CHECKIN_ROSTER_MAX` | `1000` |  |

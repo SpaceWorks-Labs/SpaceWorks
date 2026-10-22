@@ -16,6 +16,9 @@ export type TenantBootstrap = {
     public_inventory_enabled?: boolean;
     public_landing_page?: "auto" | "inventory" | "events" | "machines" | "bookings" | "membership";
     membership_policy: "request" | "open" | "invite_only";
+    // Present only for a makerspace without member accounts (#80): borrow requests then
+    // take name, phone, email and an email code instead of a signed-in account.
+    request_access?: "contact";
   };
   frontend: {
     type: string;

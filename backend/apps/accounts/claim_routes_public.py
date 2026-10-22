@@ -137,6 +137,10 @@ PUBLIC_CLAIM_ROUTES = {
         tenant=SLUG, audited=True
     ),
     ("hardware_requests:request-submit", "OPTIONS"): AnonymousRead(),
+    ("hardware_requests:request-contact-code", "POST"): Allowed(
+        tenant=SLUG, audited=True
+    ),
+    ("hardware_requests:request-contact-code", "OPTIONS"): AnonymousRead(),
     ("hardware_requests:public-tool-evidence-url", "POST"): Allowed(
         tenant=SLUG, audited=True
     ),

@@ -3,6 +3,8 @@ from django.urls import path
 from apps.hardware_requests import cron_views, timeline_views, views
 from apps.hardware_requests import replay_recovery_views as recovery
 
+from apps.hardware_requests.public_contact_views import RequestContactCodeView
+
 app_name = "hardware_requests"
 
 from apps.hardware_requests.renewal_views import MemberLoanRenewView, StaffLoanRenewView
@@ -25,6 +27,11 @@ urlpatterns = [
         "public/<slug:makerspace_slug>/requests",
         views.RequestSubmitView.as_view(),
         name="request-submit",
+    ),
+    path(
+        "public/<slug:makerspace_slug>/requests/email-code",
+        RequestContactCodeView.as_view(),
+        name="request-contact-code",
     ),
     path(
         "public/<slug:makerspace_slug>/tools/evidence-url",

@@ -102,7 +102,7 @@ export function PublicInventoryPage({ embedded, resolvedSlug, inheritBranding = 
     <Pagination page={page} totalPages={pageCount} count={inventoryQuery.data?.count} pageSize={PAGE_SIZE} onChange={setPage} disabled={inventoryQuery.isFetching} />
     </QueryContent>
   </div>;
-  const request = <PublicRequestPanel items={selectedItems} makerspaceSlug={makerspaceSlug} onClear={clearCart} disabled={!requestEnabled}
+  const request = <PublicRequestPanel items={selectedItems} makerspaceSlug={makerspaceSlug} onClear={clearCart} disabled={!requestEnabled} requestAccess={bootstrap?.makerspace.request_access}
     activeTab={requestTab} onActiveTabChange={setRequestTab} draft={requestDraft} />;
   const totalItems = selectedItems.reduce((total, item) => total + item.quantity, 0);
   const aside: PublicActionCardProps = { title: "Your request", form: request, state: "open", mobileBar: { summary: `Request · ${plural(totalItems, "item")}`, label: "Review request", onOpen: () => setRequestTab("borrow"),

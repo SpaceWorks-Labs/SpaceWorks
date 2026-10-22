@@ -36,6 +36,38 @@ class RequestSubmitSerializer(serializers.Serializer):
         return attrs
 
 
+class ContactRequestSubmitSerializer(RequestSubmitSerializer):
+    """A borrow request with no account, for a space without member accounts (#80).
+
+    All three contact fields are required; the email must carry the one-time code sent to
+    it. The name is the borrower's public name; phone and email are staff-only and stored
+    encrypted on the request.
+    """
+
+    contact_name = serializers.CharField(max_length=200, trim_whitespace=True)
+    contact_email = serializers.EmailField(max_length=254)
+    contact_phone = serializers.CharField(max_length=32, trim_whitespace=True)
+    email_code = serializers.RegexField(r"^\d{6}$", write_only=True)
+
+    def validate_contact_email(self, value):
+        return value.strip().lower()
+
+
+class PublicRequestSubmitSchemaSerializer(RequestSubmitSerializer):
+    """OpenAPI shape only: the contact fields are required where `request_access` is
+    `contact`, and ignored on the signed-in path."""
+
+    contact_name = serializers.CharField(max_length=200, required=False)
+    contact_email = serializers.EmailField(max_length=254, required=False)
+    contact_phone = serializers.CharField(max_length=32, required=False)
+    email_code = serializers.RegexField(r"^\d{6}$", required=False, write_only=True)
+
+
+class ContactCodeRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField(max_length=254)
+    website = serializers.CharField(required=False, allow_blank=True, write_only=True)
+
+
 class RequestSubmitResponseSerializer(serializers.Serializer):
     public_token = serializers.UUIDField(read_only=True)
     status = serializers.CharField(read_only=True)

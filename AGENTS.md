@@ -148,16 +148,20 @@ the Auth module** — forgetting this is a cross-tenant data leak, not just a bu
   console narrowing, not a grant ceiling. The `guest-admin/` **URL paths** in `hardware_requests/urls.py`
   remain the handover API surface (module key `guest_handover`); renaming them would break clients.
   Full detail: **Handover roles** in `docs/INVARIANTS.md`.
-- **Every borrow request needs a signed-in account** (`RequestSubmitView` → `IsAuthenticated`). Access is
-  derived by `makerspaces/request_access.py`: with **`membership` on**, an active member must pass the
-  applicable presence, waiver and current-term checks; with it **off**, an active signed-in member account
-  may submit (no membership required). The per-makerspace account-less opt-in was **removed by owner
-  decision #75f** — do not reintroduce an anonymous submit path. Requests filed through it earlier stay
-  readable: they keep their shared `Makerspace.anonymous_requester` principal and unverified-contact
-  snapshot, and that principal stays excluded from per-person aggregates and refused as a credential.
-  Staff acceptance still reserves stock. Identity-based borrower history remains authenticated and
-  owner-scoped — never match free-text email/phone. Existing public request-status links remain
-  bearer-token reads.
+- **Who may request is decided by the `member_accounts` module (owner decision #80).** A space WITH member
+  accounts requires a signed-in account (`RequestSubmitView`; an anonymous POST is a 401): with
+  **`membership` on** an active member must pass the presence, waiver and current-term checks; with it
+  **off** any active signed-in account may submit. A space WITHOUT member accounts has accounts for
+  **staff only**: a public borrower with no session requests with **name, phone and email, all
+  required** (a signed-in caller — staff, or an institution's OIDC identity — keeps the account path), and the email
+  must carry a one-time code from `requests/email-code` (the sign-up OTP machinery, throttled and audited)
+  before the request exists. That path is automatic — there is no opt-in switch (`makerspaces/0105`
+  dropped the old one). Such requests are recorded against the space's inert
+  `Makerspace.anonymous_requester` principal; phone and email live only in the request's scoped-PII
+  encrypted contact snapshot and are staff-only, and the typed name is the borrower's public name.
+  Derivation: `makerspaces/request_access.py`. Staff acceptance still reserves stock. Identity-based
+  borrower history remains authenticated and owner-scoped — never match free-text email/phone. Existing
+  public request-status links remain bearer-token reads.
 - Sensitive browser changes (staff role-set assignments/grants, API-client management and organization
   governance/deletion) require recent, server-owned session reauthentication. Refresh never renews
   that proof; `/control/` keeps its separate MFA and reauthentication surface.
@@ -464,5 +468,5 @@ use `git log --oneline` / `git blame`.
 - Unresolved decisions: §18 — **resolve relevant open questions before implementing the affected area** rather than guessing.
 - **PRD notes — owner decisions that override the PRD text:** §4.4 "an admin cannot accept their own
   personal request unless also superadmin" is **DROPPED** (#75e, no code check exists or is wanted);
-  §4.4/§9 Telegram accept/reject is reversed (outbound-only, 2026-08-31); public requests always need an
-  account (#75f). Detail in `docs/INVARIANTS.md`.
+  §4.4/§9 Telegram accept/reject is reversed (outbound-only, 2026-08-31); public requests need an
+  account only where the space has member accounts (#80, revising #75f). Detail in `docs/INVARIANTS.md`.

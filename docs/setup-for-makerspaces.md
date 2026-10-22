@@ -284,7 +284,8 @@ After the area questions:
 
 The Membership module currently enforces members-only borrow requests. Enabling it explicitly
 confirms the earlier request-access answer as members. Disable Membership to admit any signed-in
-account; every borrow request needs an account, and personal accounts remain on. Inventory off skips borrowing questions, keeps
+account; personal accounts remain on in setup. A space later run without Member accounts takes
+account-less requests confirmed by an email code. Inventory off skips borrowing questions, keeps
 the six core modules and hides lending without touching loan/evidence data. Enabling self-checkout or kiosk never bypasses
 authentication, eligible-tool checks or evidence requirements.
 

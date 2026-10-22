@@ -1,4 +1,5 @@
 import type { RequestCartItem } from "../../types/inventory";
+import { ContactFields, type ContactDetails } from "./ContactFields";
 
 type BorrowRequestCardProps = {
   canSubmit: boolean;
@@ -15,6 +16,8 @@ type BorrowRequestCardProps = {
   // autofills it gets the server's decoy response instead of a real request.
   website?: string;
   onWebsiteChange?: (value: string) => void;
+  // Present only for a makerspace without member accounts: the borrower has no account.
+  contact?: ContactDetails;
 };
 
 export function BorrowRequestCard({
@@ -30,6 +33,7 @@ export function BorrowRequestCard({
   onSubmit,
   website = "",
   onWebsiteChange,
+  contact,
 }: BorrowRequestCardProps) {
   return (
     <div className="min-w-0">
@@ -44,7 +48,9 @@ export function BorrowRequestCard({
 
       {items.length === 0 ? (
         <p className="mt-4 text-sm leading-6 text-muted">
-          Add public items from the inventory list, then submit the request with your signed-in member account.
+          {contact
+            ? "Add public items from the inventory list, then give your name, phone and email to submit the request."
+            : "Add public items from the inventory list, then submit the request with your signed-in member account."}
         </p>
       ) : (
         <div className="mt-4 space-y-2">
@@ -66,6 +72,7 @@ export function BorrowRequestCard({
       )}
 
       <div className="mt-5 space-y-3">
+        {contact ? <ContactFields contact={contact} /> : null}
         <label
           aria-hidden="true"
           className="absolute left-[-10000px] top-auto h-px w-px overflow-hidden"
@@ -103,7 +110,9 @@ export function BorrowRequestCard({
           <div className="rounded-xl border border-success bg-success px-3 py-2 text-on-success dark:bg-success-soft dark:text-success-ink">
             <h3 className="title-section text-on-success dark:text-success-ink">Request submitted</h3>
             <p className="mt-1 text-sm">
-              Check this page with your email to follow the request.
+              {contact
+                ? "Staff will contact you by email or phone about the request."
+                : "Check this page with your email to follow the request."}
             </p>
           </div>
         ) : null}

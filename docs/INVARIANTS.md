@@ -2171,17 +2171,28 @@ the backend contrast guard parses those blocks. Tailwind maps each colour token 
 must have a React staff-console surface — a capability with no console surface is a latent dead/broken
 feature for normal staff. New workflow actions ship their staff UI in the same batch.
 
-**Who may submit a borrow request is DERIVED, and every request needs a signed-in account.**
-`apps/makerspaces/request_access.py` is the only answer to the question, and it has two states that fall out
-of one module: `membership` on → **members**; off → **accounts** (any active signed-in account).
-`RequestSubmitView` is `IsAuthenticated`, so an anonymous POST is a 401 before any makerspace work. The
-account-less opt-in (`anonymous_requests_enabled`, its throttles, `Idempotency-Key` replay, outstanding
-ceiling, contact fields and `set_request_access` command) was **removed by owner decision #75f**;
-`makerspaces/0105` dropped the column. Do not reintroduce an unauthenticated submit path. Rows filed through
-it before then are history and stay readable: they keep `requester` = the makerspace's inert
-`Makerspace.anonymous_requester`, their contact snapshot, `requester_contact_verified=False` and the
-idempotency fingerprints, and the mail suppression keyed on those still applies. Migration
-`makerspaces/0067` (which closed the old membership + opt-in pair) stays in the chain untouched.
+**Who may submit a borrow request is DERIVED from the modules (owner decision #80, revising #75f).**
+`apps/makerspaces/request_access.py` is the only answer, with three states and no stored switch
+(`makerspaces/0105` dropped `anonymous_requests_enabled`): `member_accounts` on + `membership` on →
+**members**; `member_accounts` on + `membership` off → **accounts** (any active signed-in account);
+`member_accounts` off → **contact**. A space without member accounts has accounts for STAFF only, so a
+public borrower with no session takes the contact path (a signed-in caller -- staff, or an institution's
+OIDC identity -- keeps the account path): `contact_name`,
+`contact_phone` and `contact_email` are all required, and the email must carry the one-time code mailed by
+`POST public/<slug>/requests/email-code`. `hardware_requests/contact_verification.py` reuses the sign-up
+OTP machinery (the `EmailVerificationChallenge` table, generator, HMAC digest, 10-minute expiry, 60-second
+resend cooldown, 5-attempt cap, platform OTP quota and verification mail); a challenge is owned by the
+space's inert `Makerspace.anonymous_requester` principal and its `email` column holds a per-makerspace
+fingerprint, never the address. A wrong code burns an attempt in its own committed transaction and is
+audited (`request.contact_code_failed`); sends are audited (`request.contact_code_sent`) and throttled per
+IP and per address fingerprint. The request is recorded against the principal with
+`requester_contact_verified=True` and a non-empty `anonymous_idempotency_key_fingerprint` marker (one per
+consumed code), which every owner/contact-mail path already keys on. Phone and email exist only in the
+scoped-PII encrypted contact snapshot and are staff-only; the typed name is the borrower's public name
+(`inventory.public_stats_hardware.public_display_name` prefers `requester_name`). Bootstrap publishes
+`request_access: "contact"` only for such spaces. The email-code route answers 404 where the space has
+member accounts. Rows from the retired unverified opt-in keep `requester_contact_verified=False` and its
+mail suppression. Self-checkout and staff handout are unchanged by this rule.
 
 **PRD §4.4's self-accept rule is DROPPED (owner decision #75e).** The PRD line "an admin cannot accept
 their own personal request unless also superadmin" is not a requirement: `request_workflow.accept_request`
@@ -2241,8 +2252,8 @@ entry point moved. The review URL must keep `admin_site.admin_view`, must load t
 `has_change_permission`, and must parse quantities as ints before calling the workflow.
 
 **The shared account-less requester principal is not a person, and no per-PERSON aggregate may rank it.**
-No new account-less request can be filed (#75f), but every historical one in a makerspace points at one
-`Makerspace.anonymous_requester`, so grouping by
+Every account-less request in a makerspace (a space without member accounts, #80, and the retired
+opt-in's history) points at one `Makerspace.anonymous_requester`, so grouping by
 `requester_id` folds every unrelated stranger into a single fictional human. `_repeat_offenders`,
 `_top_borrowers`, `globally_ranked_borrowers` and `_restricted_requesters` exclude
 `anonymous_requesters.anonymous_requester_ids(...)` **before** any limit or slice, so the principal cannot

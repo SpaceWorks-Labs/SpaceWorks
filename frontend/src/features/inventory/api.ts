@@ -73,6 +73,11 @@ export async function submitPublicRequest(
     items: { product_id: number; quantity: number }[];
     // Honeypot. The serializer pops it and a filled value gets the decoy response.
     website?: string;
+    // Required where the makerspace has no member accounts (#80); ignored otherwise.
+    contact_name?: string;
+    contact_phone?: string;
+    contact_email?: string;
+    email_code?: string;
   },
 ): Promise<RequestSubmitResponse> {
   return tenantPublicRequest<RequestSubmitResponse>(
@@ -80,6 +85,13 @@ export async function submitPublicRequest(
     `/public/${slug}/requests`,
     { method: "POST", body: JSON.stringify(payload) },
   );
+}
+
+/** Mail the one-time code an account-less borrow request needs (202, no delivery detail). */
+export async function requestContactCode(slug: string, email: string): Promise<void> {
+  await tenantPublicRequest<void>(slug, `/public/${slug}/requests/email-code`, {
+    method: "POST", body: JSON.stringify({ email }),
+  });
 }
 
 export async function publicToolCheckout(

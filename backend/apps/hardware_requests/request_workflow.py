@@ -24,9 +24,11 @@ from apps.notifications.emit import emit_notification
 class RequesterSnapshot:
     """Identity captured on a request independently from its durable principal.
 
-    Always the signed-in account's own details since account-less requests were removed
-    (#75f), so the row's `requester_contact_verified` keeps its default of True. Rows
-    filed before the removal keep their False flag and the mail suppression it drives.
+    The signed-in account's own details, or -- for an account-less request in a space
+    without member accounts (#80) -- the name, phone and email the borrower typed, the
+    email already proven by a one-time code. Either way `requester_contact_verified`
+    keeps its default of True; rows from the retired unverified opt-in keep their False
+    flag and the mail suppression it drives.
     """
 
     username: str
@@ -43,6 +45,7 @@ def submit_request(
     requester_principal,
     contact_snapshot,
     audit_actor,
+    account_less_marker="",
 ):
     require_member_account(requester_principal)
     with transaction.atomic():
@@ -64,6 +67,8 @@ def submit_request(
             requester_name=contact_snapshot.name,
             requester_contact_email=contact_snapshot.email,
             requester_contact_phone=contact_snapshot.phone,
+            # Non-empty marks an account-less row, which every owner/contact-mail path keys on.
+            anonymous_idempotency_key_fingerprint=account_less_marker,
             status=HardwareRequest.Status.PENDING_APPROVAL,
             requested_for=requested_for,
         )
@@ -82,6 +87,7 @@ def submit_request(
             "request.submitted",
             makerspace=makerspace,
             target=request,
+            meta={"account_less": True} if account_less_marker else None,
         )
         notifications.notify_request_submitted(request)
         emit_notification(

@@ -110,15 +110,16 @@ def event_write(function=None, *, permission=False):
                             account_ids=(member.pk,) if member else (), tenant_ids=(via.pk,) if via else ()):
             from apps.accounts.models import User
             from . import event_authority
+            from apps.accounts.claim_sessions import carry_claim_context
             actor = values.get("actor")
             if actor is not None:
-                actor = User.objects.filter(pk=actor.pk).first()
+                actor = carry_claim_context(actor, User.objects.filter(pk=actor.pk).first())
                 if not event_authority._active(actor):
                     from rest_framework.exceptions import PermissionDenied
                     raise PermissionDenied()
                 bound.arguments["actor"] = actor
             if member is not None:
-                bound.arguments["member"] = User.objects.get(pk=member.pk)
+                bound.arguments["member"] = carry_claim_context(member, User.objects.get(pk=member.pk))
             fresh = type(target).objects.get(pk=target.pk)
             if permission is not False:
                 event_authority.require(actor, fresh, permission)

@@ -151,6 +151,15 @@ def insert_prepared_locked(prepared, *, subject, locks):
     return row.id
 
 
+def _holds(current, value, key):
+    """Already-saved check inside the account write, using the key prepared outside it.
+    A value sealed under another key version cannot be opened here; the version CAS decides."""
+    try:
+        return open_value(current, "value_envelope", key) == value
+    except AccountKeyChanged:
+        return False
+
+
 def apply_intent(intent_id):
     pending = SavedDetailUpdateIntent.objects.filter(pk=intent_id, state="pending").first()
     if pending is None:
@@ -200,7 +209,7 @@ def apply_intent(intent_id):
             for name in sorted(row.chosen_fields):
                 current = MemberSavedDetail.objects.filter(user=actor, field_key=name).first()
                 version = current.version if current else 0
-                if current is not None and not current.deleted_at and open_value(current, "value_envelope") == values[name]:
+                if current is not None and not current.deleted_at and _holds(current, values[name], key):
                     row.field_status[name] = {"state": "unchanged", "version": version}
                 elif version != row.base_versions[name]:
                     row.field_status[name] = {"state": "conflict", "current_version": version}

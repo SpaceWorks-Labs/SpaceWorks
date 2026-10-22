@@ -158,6 +158,8 @@ def lock_authority(actor, target):
     fresh = User.objects.filter(pk=actor.pk).first()
     if fresh is None:
         return None
+    from apps.accounts.claim_sessions import carry_claim_context
+    carry_claim_context(actor, fresh)
     links, events, series, organization_ids = authority_sources(target)
     list(Organization.objects.select_for_update().filter(pk__in=organization_ids).order_by("pk"))
     memberships = list(MakerspaceMembership.objects.select_for_update().filter(

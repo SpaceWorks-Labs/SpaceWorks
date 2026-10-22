@@ -119,15 +119,10 @@ LIFECYCLE_OVERRIDE_ALLOWLIST = {
     "apps.events.profile_photos.views_public.PublicCardPhotoView": {"finalize_response"},
     # finalize_response: no-store and nosniff headers on public certificate verification.
     "apps.events.certificates.verification.CertificateVerificationView": {"finalize_response"},
-}
-
-# Reviewed lifecycle overrides on claim-reachable views, keyed by the class that defines
-# them. Each listed hook only narrows access or shapes the response after DRF's own
-# authentication: ``initial`` calls ``super().initial()`` first and then refuses claim and
-# API-client sessions; ``handle_exception`` maps domain errors to typed API errors; and
-# ``finalize_response`` adds no-store/nosniff headers. A hook on any other class, or a new
-# hook on a listed class, stays a build failure.
-LIFECYCLE_OVERRIDE_ALLOWLIST = {
+    # Event reimbursements, finance payouts and staged forms: ``initial`` calls
+    # ``super().initial()`` first and then refuses claim and API-client sessions;
+    # ``handle_exception`` maps domain errors to typed API errors; ``finalize_response``
+    # adds no-store/nosniff headers.
     "apps.payments.event_payouts.http.PrivateView": {"handle_exception", "finalize_response"},
     "apps.events.staged_forms.http.PrivateView": {"initial", "handle_exception", "finalize_response"},
     "apps.event_reimbursements.http.PrivateView": {"handle_exception"},
@@ -295,14 +290,3 @@ def _is_framework_callable(value):
 
 def _is_framework_module(module):
     return module.startswith("django.") or module.startswith("rest_framework")
-
-
-def _allowlisted_override(view_class, name):
-    owner = next(
-        (candidate for candidate in view_class.__mro__ if name in candidate.__dict__),
-        None,
-    )
-    if owner is None:
-        return False
-    key = f"{owner.__module__}.{owner.__qualname__}"
-    return name in LIFECYCLE_OVERRIDE_ALLOWLIST.get(key, ())

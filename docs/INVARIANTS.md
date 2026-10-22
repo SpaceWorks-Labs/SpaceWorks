@@ -2036,12 +2036,23 @@ never mute a makerspace. Deliberately the opposite of the *access* rules, which 
   STAFF entries — a webhook is a room, so "your booking is confirmed" would expose that member's name to
   everyone with channel access. Retained legacy staff matrix push takes `payload.text`; canonical personal push
   takes the source-rendered recipient body independently of inbox creation.
-- **Recipient object scoping composes as `role_scope AND (rule_scope OR all)` — narrowing only.** Rule
-  links reuse the destination shape (`no links ⇒ everything`); the role floor reuses `machines/role_scope`
-  via the batch `manage_scopes_for_memberships` (two queries, not an N+1), never a parallel resolver. **The
-  floor applies to `kind=role` rows ONLY** — applying it to `members`/`user` would make those kinds
-  unusable for maintenance, since a plain member holds no machine grant and resolves to the fail-closed
-  `NOTHING`.
+- **Recipient object scoping composes as `object_scope AND (rule_scope OR all)` — narrowing only — for
+  EVERY recipient kind (owner decision #75c, audit NM-71).** Rule links reuse the destination shape
+  (`no links ⇒ everything`). For `kind=role` the floor is the role's machine reach
+  (`machines/role_scope` via the batch `manage_scopes_for_memberships`, never a parallel resolver). People
+  selected as `user` or `members` get `integrations/recipients_object_scope.person_object_filter`: a person
+  receives an alert naming a machine or machine type only if they could see it in the console — role reach
+  (EXEMPT or a linked type), a direct grant of the type's `managing_action`, or an operator row on that
+  machine (for a type-only alert, on a machine of that type). A plain member therefore no longer receives a
+  machine-scoped alert through a members-wide or named selection; that is the decision, not a regression.
+  Alerts naming no machine/type (categories, events, payments) are unaffected. **Chat rooms** have no
+  principal, so their object scope is their own destination links: a scoped room receives only subjects
+  it names and nothing without a subject, and an unscoped room stays the space's general channel (D11).
+  Personal owner deliveries (the requester/booker/registrant the alert is about) are the object's owner and
+  are not filtered. A booking alert is ROOM-scoped (its scope is the room's machine type,
+  `bookings/notifications.scope_for`), so for people the floor also admits whoever can see the room:
+  `MANAGE_BOOKINGS` holders and live staff-grant holders on a room of that type. The `kind=role` floor
+  is unchanged and still machine-reach only.
 - **Staff API + console are mandatory, not optional** — `/control/` is not proxied on the public frontend
   port, so without `notification-recipient-rules` and `notification-destinations` a space manager could not
   configure any of this. Saves **replace** rather than merge (a merge makes unticking impossible), an

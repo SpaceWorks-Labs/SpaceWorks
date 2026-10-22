@@ -2183,6 +2183,12 @@ it before then are history and stay readable: they keep `requester` = the makers
 idempotency fingerprints, and the mail suppression keyed on those still applies. Migration
 `makerspaces/0067` (which closed the old membership + opt-in pair) stays in the chain untouched.
 
+**PRD §4.4's self-accept rule is DROPPED (owner decision #75e).** The PRD line "an admin cannot accept
+their own personal request unless also superadmin" is not a requirement: `request_workflow.accept_request`
+and `AcceptRequestView` deliberately carry no requester-versus-actor check, and none is to be added. A
+reviewer may accept a request they submitted; the accept is still audited with the actor, so the
+self-acceptance is visible after the fact. (Recorded 2026-10-22; audit row RO-100.)
+
 **Authority is re-checked under row lock in the service, not only in the view.** A view authorizes with
 plain reads and the service then mutates, so a revocation committed in between would otherwise still
 land. `makerspaces/authority_lock.require_under_lock(actor, makerspace_id, predicate)` takes the tenant row

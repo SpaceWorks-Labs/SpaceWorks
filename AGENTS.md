@@ -462,3 +462,7 @@ use `git log --oneline` / `git blame`.
 - MVP vs. later scope: §16
 - Behaviors that must be tested: §17 (test external behavior, not implementation)
 - Unresolved decisions: §18 — **resolve relevant open questions before implementing the affected area** rather than guessing.
+- **PRD notes — owner decisions that override the PRD text:** §4.4 "an admin cannot accept their own
+  personal request unless also superadmin" is **DROPPED** (#75e, no code check exists or is wanted);
+  §4.4/§9 Telegram accept/reject is reversed (outbound-only, 2026-08-31); public requests always need an
+  account (#75f). Detail in `docs/INVARIANTS.md`.

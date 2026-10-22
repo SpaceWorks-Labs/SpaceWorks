@@ -3815,7 +3815,6 @@ export type DomainSettingValues = {
   "booking_requester_notifications_enabled"?: boolean;
   "booking_reminder_lead_hours"?: Array<number>;
   "filament_low_stock_threshold_grams"?: string;
-  "anonymous_requests_enabled"?: boolean;
 };
 
 export type DomainVerificationRecord = {
@@ -6592,7 +6591,6 @@ export type Makerspace = {
   "membership_dues_amount"?: string;
   "referrals_enabled"?: boolean;
   "lapsed_members_cannot_borrow"?: boolean;
-  "anonymous_requests_enabled"?: boolean;
   "request_access": string;
   "filament_low_stock_threshold_grams"?: string;
   "superadmin_access_enabled"?: boolean;
@@ -9389,7 +9387,6 @@ export type PatchedMakerspace = {
   "membership_dues_amount"?: string;
   "referrals_enabled"?: boolean;
   "lapsed_members_cannot_borrow"?: boolean;
-  "anonymous_requests_enabled"?: boolean;
   "request_access"?: string;
   "filament_low_stock_threshold_grams"?: string;
   "superadmin_access_enabled"?: boolean;
@@ -12426,8 +12423,6 @@ export type ReportViewState = {
   "columns"?: Array<string>;
 };
 
-export type RequestAccessEnum = "anyone";
-
 export type RequestItemInput = {
   "product_id": number;
   "quantity": number;
@@ -12435,9 +12430,6 @@ export type RequestItemInput = {
 
 export type RequestSubmit = {
   "website"?: string;
-  "contact_name"?: string;
-  "contact_email"?: string;
-  "contact_phone"?: string;
   "requested_for"?: string;
   "items": Array<RequestItemInput>;
 };
@@ -13756,7 +13748,6 @@ export type TenantBootstrapMakerspace = {
   "public_inventory_enabled": boolean;
   "public_landing_page": TenantBootstrapMakerspacePublicLandingPageEnum;
   "membership_policy": MembershipPolicyEnum;
-  "request_access"?: RequestAccessEnum;
 };
 
 export type TenantBootstrapMakerspacePublicLandingPageEnum = "auto" | "inventory" | "events" | "machines" | "bookings" | "membership";

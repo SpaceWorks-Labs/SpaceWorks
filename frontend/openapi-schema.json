@@ -96161,16 +96161,9 @@
         "/api/v1/public/{makerspace_slug}/requests": {
             "post": {
                 "operationId": "api_v1_public_requests_create",
+                "description": "Submit a borrow request as the signed-in account (owner decision #75f).\n\nEvery request needs an account: the account-less opt-in was removed, so the requester\nis always ``request.user`` and the contact snapshot is always account-derived. Requests\nfiled before the removal keep their principal and unverified-contact snapshot, and stay\nreadable through every staff and report surface.",
                 "summary": "Submit public borrow request",
                 "parameters": [
-                    {
-                        "in": "header",
-                        "name": "Idempotency-Key",
-                        "schema": {
-                            "type": "string"
-                        },
-                        "description": "Required for account-less submissions. Reusing a key with the same payload returns the original request; a different payload is rejected."
-                    },
                     {
                         "in": "header",
                         "name": "X-Nonce",
@@ -96208,9 +96201,6 @@
                             "examples": {
                                 "SubmitPublicEquipmentRequest": {
                                     "value": {
-                                        "contact_name": "Shaan Shoukath",
-                                        "contact_email": "shaans@example.com",
-                                        "contact_phone": "+919876543210",
                                         "requested_for": "Electronics workshop diagnostics",
                                         "items": [
                                             {
@@ -96239,8 +96229,7 @@
                 "security": [
                     {
                         "jwtAuth": []
-                    },
-                    {}
+                    }
                 ],
                 "responses": {
                     "201": {
@@ -111216,10 +111205,6 @@
                         "format": "decimal",
                         "pattern": "^-?\\d{0,8}(?:\\.\\d{0,2})?$",
                         "description": "machines domain."
-                    },
-                    "anonymous_requests_enabled": {
-                        "type": "boolean",
-                        "description": "inventory domain."
                     }
                 }
             },
@@ -123307,9 +123292,6 @@
                     "lapsed_members_cannot_borrow": {
                         "type": "boolean"
                     },
-                    "anonymous_requests_enabled": {
-                        "type": "boolean"
-                    },
                     "request_access": {
                         "type": "string",
                         "readOnly": true
@@ -134705,9 +134687,6 @@
                         "type": "boolean"
                     },
                     "lapsed_members_cannot_borrow": {
-                        "type": "boolean"
-                    },
-                    "anonymous_requests_enabled": {
                         "type": "boolean"
                     },
                     "request_access": {
@@ -147347,13 +147326,6 @@
                     "report_key"
                 ]
             },
-            "RequestAccessEnum": {
-                "enum": [
-                    "anyone"
-                ],
-                "type": "string",
-                "description": "* `anyone` - anyone"
-            },
             "RequestItemInput": {
                 "type": "object",
                 "properties": {
@@ -147373,33 +147345,11 @@
             },
             "RequestSubmit": {
                 "type": "object",
+                "description": "A signed-in borrow request. Identity is always account-derived, so any stray\ncontact fields an old client still sends are ignored as unknown keys.",
                 "properties": {
                     "website": {
                         "type": "string",
                         "writeOnly": true
-                    },
-                    "contact_name": {
-                        "type": "string",
-                        "description": "Required for an account-less submission.",
-                        "maxLength": 200
-                    },
-                    "contact_email": {
-                        "description": "Required for an account-less submission; normalized to lowercase.",
-                        "oneOf": [
-                            {
-                                "type": "string",
-                                "format": "email",
-                                "maxLength": 254
-                            },
-                            {
-                                "type": "string",
-                                "maxLength": 0
-                            }
-                        ]
-                    },
-                    "contact_phone": {
-                        "type": "string",
-                        "maxLength": 32
                     },
                     "requested_for": {
                         "type": "string",
@@ -152805,9 +152755,6 @@
                     },
                     "membership_policy": {
                         "$ref": "#/components/schemas/MembershipPolicyEnum"
-                    },
-                    "request_access": {
-                        "$ref": "#/components/schemas/RequestAccessEnum"
                     }
                 },
                 "required": [

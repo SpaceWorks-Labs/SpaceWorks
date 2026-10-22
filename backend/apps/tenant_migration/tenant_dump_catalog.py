@@ -49,7 +49,7 @@ class TenantDumpCatalogError(AssertionError):
 # Cloud programme (cloud/integration): managed coordination, email providers, cloud
 # accounting and storage history; with lane/refunds (refund cases), re-pinned after both merges.
 # Orchestrator re-pins the live catalog after final schema/migration verification.
-CATALOG_SCHEMA_SHA256 = "b535bfc89c0aa44f49d1daf4dd71ce190dca1fe1f44a820bfa2d4681d7779030"
+CATALOG_SCHEMA_SHA256 = "8b14c120f24ee4b1745035d1e591e1e1534cafcbf3b229c0023cbad2c52bb3b2"
 
 
 def catalog_models(apps_registry=apps):

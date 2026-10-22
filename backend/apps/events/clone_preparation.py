@@ -11,6 +11,7 @@ from apps.makerspaces.resource_clone import AssetCopies, OwnedImage, bounded_chi
 from apps.makerspaces import website_assets
 from apps.inventory import public_image_storage
 from django.conf import settings
+from apps.transaction_guards import in_domain_transaction
 
 
 def page_identity(page):
@@ -21,7 +22,7 @@ def page_identity(page):
 
 @contextmanager
 def prepare(event, actor):
-    if connection.in_atomic_block:
+    if in_domain_transaction():
         raise RuntimeError("Prepare clone resources before domain transactions.")
     event = Event.objects.select_related("makerspace", "series").get(pk=event.pk)
     event_authority.require(actor, event, EDIT_DETAILS)

@@ -35,6 +35,7 @@ OMITTED_FIELD_RECONSTRUCTIONS = {
     ("events.EventMemberCard", "public_id"): FRESH,
     ("events.EventBroadcast", "confirmed_preview"): NULL,
     ("events.EventFormRevision", "created_by"): NULL,
+    ("events.EventAttendanceCertificate", "render_token"): NULL,
     ("events.EventMemberPresentation", "selected_profile"): NULL,
     ("events.EventMemberPresentation", "selected_membership"): NULL,
     **{(label, name): disposition for label in (

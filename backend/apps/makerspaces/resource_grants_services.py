@@ -76,7 +76,9 @@ def _require_subset(
             actor=actor, target=target, permissions=tuple(permissions),
             operation=operation, row=row,
         )
-        if allowed is not True:
+        # The domain validator decides delegation scope; every requested permission is
+        # still revalidated through the adapter so the two can never drift apart.
+        if allowed is not True or not all(adapter.can(actor, target, p) for p in permissions):
             raise PermissionDenied("Resource staff access cannot exceed current authority.")
         return actor
     if not adapter.can_manage(actor, target) or not all(

@@ -2,6 +2,8 @@
 from .audit_references_targets import AuditReference, AuditReferenceDisposition
 
 EDGES = {
+    ('notification.media_grant_issued', 'certificate_id'): AuditReference(AuditReferenceDisposition.SOURCE_LOCAL_SNAPSHOT, None, "programme_source_provenance"),
+    ('notification.media_grant_consumed', 'certificate_id'): AuditReference(AuditReferenceDisposition.SOURCE_LOCAL_SNAPSHOT, None, "programme_source_provenance"),
     ('event.certificate_reissued', 'source_certificate_id'): AuditReference(AuditReferenceDisposition.SOURCE_LOCAL_SNAPSHOT, None, "original_certificate_provenance"),
     ('event.badge_design_previewed', 'seed_id'): AuditReference(AuditReferenceDisposition.SOURCE_LOCAL_SNAPSHOT, None, "packaged_seed_identity"),
     ('event.programme.contribution_definitions_copied', 'source_event_id'): AuditReference(AuditReferenceDisposition.SOURCE_LOCAL_SNAPSHOT, None, "clone_source_event_provenance"),

@@ -30,7 +30,7 @@ def card(event: Event, *, audience_label=None) -> PublicCard:
         url=public_url(event.makerspace, "events", event.public_token),
         image_url=public_image_storage.public_url(image_key) or None,
         date=DateTimeField().to_representation(event.starts_at), location=event.location,
-        availability=availability_label(event), audience_label=audience_label,
+        availability=availability_label(event, reservations=False), audience_label=audience_label,
         registration_count=confirmed_occupancy(event) if event.show_registration_count else None,
         makerspace_name=event.makerspace.name,
         revision=f"{event.makerspace_id}:{event.pk}:{event.updated_at.isoformat()}:{revision}:{event.makerspace.updated_at.isoformat()}",

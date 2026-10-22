@@ -4,7 +4,6 @@ from copy import deepcopy
 import json
 
 from django.conf import settings
-from django.db import connection
 from rest_framework.exceptions import NotFound
 
 from apps.accounts.models import User
@@ -20,6 +19,7 @@ from apps.events.models_registration import EventRegistration
 from apps.events.contributions.models_roles import EventRoleAssignment
 from apps.events.credentials.errors import ProgrammeConflict
 from apps.makerspaces.platform import feature_enabled
+from apps.transaction_guards import in_domain_transaction
 
 
 def role_recipient(member):
@@ -91,7 +91,7 @@ def selected_template(event):
 
 
 def prepare_issuance(event_id, subjects, *, for_issue=True):
-    if connection.in_atomic_block:
+    if in_domain_transaction():
         raise RuntimeError("Prepare certificate recipients outside domain transactions.")
     event = Event.objects.select_related("makerspace").get(pk=event_id)
     template = selected_template(event)

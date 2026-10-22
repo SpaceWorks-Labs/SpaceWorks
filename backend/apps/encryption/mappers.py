@@ -152,12 +152,14 @@ class ScopedPiiModelMixin(models.Model):
             raise UnmappedPiiModel(
                 f"{type(self)._meta.label} has no scoped-PII registration."
             )
-        if settings.PII_ENCRYPTION_ENABLED and fields_for(self):
-            from .preparation import require_prepared_for_programme
-            require_prepared_for_programme(self._mapped_write_fence_makerspace_id())
         update_fields = kwargs.get("update_fields")
         update_fields = None if update_fields is None else set(update_fields)
         is_new = self._state.adding
+        if settings.PII_ENCRYPTION_ENABLED and self._requires_mapped_write_fence(update_fields, is_new=is_new):
+            # Only a write of mapped columns needs key custody; a status-only
+            # update under event locks touches no envelope and needs no keys.
+            from .preparation import require_prepared_for_programme
+            require_prepared_for_programme(self._mapped_write_fence_makerspace_id())
         fence_required = self._requires_mapped_write_fence(
             update_fields, is_new=is_new
         )

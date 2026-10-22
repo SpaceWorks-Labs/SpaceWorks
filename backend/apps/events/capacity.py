@@ -32,10 +32,12 @@ def unused_contributor_reservations(event):
             purpose="contributor", contributor_capacity_policy="reserved_contributor_capacity", is_active=True))
 
 
-def availability_label(event):
+def availability_label(event, *, reservations=True):
+    """`reservations=False` is the discovery card's coarse label: one annotated page
+    query and no ticket reads. Admission and event detail keep the exact count."""
     if event.capacity == 0:
         return 'Available'
-    left = spots_left(event)
+    left = spots_left(event) if reservations else max(event.capacity - confirmed_occupancy(event), 0)
     if left <= 0:
         return 'Full'
     if left <= math.ceil(event.capacity * 0.2):

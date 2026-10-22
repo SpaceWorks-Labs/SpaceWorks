@@ -39,7 +39,13 @@ def rebind_programme_document(model, name, raw, *, source, row, target_id, sourc
     if snapshot:
         if isinstance(source.get("project"), dict):
             document = source["project"]
-        remapped = remap_snapshot(project=document, sealed_member_ids=source["sealed_member_ids"],
+        # Remap from the archive's SOURCE ids: the semantic pass has already rewritten
+        # ``row["sealed_member_ids"]`` to target ids, which must not be mapped twice.
+        # ``source`` is the raw CSV row, so its JSON column arrives as text.
+        members = source.get("sealed_member_ids")
+        if isinstance(members, str):
+            members = json.loads(members)
+        remapped = remap_snapshot(project=document, sealed_member_ids=members,
             source_hash=source.get("source_content_sha256") or source["content_sha256"], map_id=map_id)
         document = remapped.pop("project")
         row.update(remapped)

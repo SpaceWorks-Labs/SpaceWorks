@@ -4,6 +4,9 @@ import { createHash } from "node:crypto";
 import { readdir, readFile, writeFile } from "node:fs/promises";
 import { resolve, relative } from "node:path";
 import { build, type Plugin, type ResolvedConfig } from "vite";
+// Same pattern as src/swPolicy.ts PREVIEW_ASSET (the worker's runtime cache); the build
+// verifier fails if these files are precached or the worker lacks that cache.
+const PREVIEW_ASSET = /^\/assets\/(?:three\.module-[\w-]+\.js|occt-import-js-[\w-]+\.wasm|preview\.worker-[\w-]+\.js)$/;
 
 export function kioskPwa(): Plugin {
   let config: ResolvedConfig;
@@ -21,6 +24,8 @@ export function kioskPwa(): Plugin {
             const url = relative(output, path).replace(/\\/g, "/");
             if (url === "index.html" || /\.(?:js|css|woff2?|ttf|otf|png|jpe?g|gif|svg|webp|ico|wasm)$/.test(url)) {
               if (url === "config.js" || url === "sw.js" || url === "member-sw.js") continue;
+              // Lazy maker-preview vendors are runtime-cached on first use, not precached.
+              if (PREVIEW_ASSET.test(`/${url}`)) continue;
               entries.push({ url: `/${url}`, revision: createHash("sha256").update(await readFile(path)).digest("hex") });
             }
           }

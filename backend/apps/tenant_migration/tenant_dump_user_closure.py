@@ -23,6 +23,20 @@ USER_REF_DOMAIN = b"lane-d-user-v1\0"
 SEMANTIC_USER_REWRITE_HANDLERS = {}
 
 
+def _sealed_member_edges(row):
+    """A sealed submission roster names each member's account ID in a JSON list."""
+    members = row.get("sealed_member_ids") or []
+    if not isinstance(members, list) or any(type(value) is not int or value <= 0 for value in members):
+        raise TenantDumpClosureRefused(
+            "A sealed submission roster has an invalid member reference.",
+            reason_code="semantic_user_reference_invalid",
+        )
+    return [("sealed_member_ids", value) for value in members]
+
+
+SEMANTIC_USER_REWRITE_HANDLERS[("events.SubmissionSnapshot", "json:sealed_member_ids")] = _sealed_member_edges
+
+
 @dataclass(frozen=True)
 class UserClosure:
     included: tuple[dict, ...]

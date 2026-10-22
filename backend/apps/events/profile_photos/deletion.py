@@ -1,10 +1,11 @@
 """Ordered entry point for an already-authorized profile/membership deletion."""
 from contextlib import ExitStack
 
-from django.db import connection, transaction
+from django.db import transaction
 
 from apps.encryption.account_write_fence import account_fences
 from apps.events.credentials.errors import ProgrammeConflict
+from apps.transaction_guards import in_domain_transaction
 
 
 def _scope(kind, pk):
@@ -30,7 +31,7 @@ def delete_source(kind, pk, *, actor=None):
     The pre-delete receiver performs the paired update/audit in this transaction.
     The database trigger is the raw-SQL/concurrent-FK shape backstop.
     """
-    if connection.in_atomic_block:
+    if in_domain_transaction():
         raise RuntimeError("Discover source deletion scopes before domain transactions.")
     from apps.events.models_event import Event
     from apps.events.models_series import EventSeries

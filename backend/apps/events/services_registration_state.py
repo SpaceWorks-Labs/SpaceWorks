@@ -194,7 +194,9 @@ def cancel_registration(registration, *, actor=None, member_cancel=False):
     _fence(event)
     require_module_locked(event.makerspace_id, "events")
     locked = _lock_registration(event, registration.pk)
-    if not member_cancel:
+    if not member_cancel and actor is not None:
+        # A staff actor must still hold the permission under the lock; actor=None is
+        # a system cancellation (expiry, purge, payment lapse), as before part 4.
         from .event_authority import require
         require(actor, event, "manage_registrations")
     from .hackathons.admission_lifecycle import cancel_registration_locked

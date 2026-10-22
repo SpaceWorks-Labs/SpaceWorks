@@ -20,11 +20,20 @@ for (const entry of manifest) {
   assert.equal(entry.revision, createHash("sha256").update(bytes).digest("hex"));
   assert(worker.includes(entry.url) && worker.includes(entry.revision), `Revision absent from worker: ${entry.url}`);
 }
+// Maker-preview vendors stay out of the install-time precache (runtime-cached instead).
+const preview = /^(?:three\.module-[\w-]+\.js|occt-import-js-[\w-]+\.wasm|preview\.worker-[\w-]+\.js)$/;
+const lazyPreview = [];
 for (const asset of await readdir(resolve(output, "assets"))) {
-  if (/\.(?:js|css|woff2?|png|svg|webp|wasm)$/.test(asset)) {
+  if (preview.test(asset)) {
+    lazyPreview.push(asset);
+    assert(!manifest.some(({ url }) => url === `/assets/${asset}`) && !worker.includes(asset),
+      `Preview vendor must not be precached: ${asset}`);
+  } else if (/\.(?:js|css|woff2?|png|svg|webp|wasm)$/.test(asset)) {
     assert(manifest.some(({ url }) => url === `/assets/${asset}`), `Emitted asset absent: ${asset}`);
   }
 }
+assert.equal(lazyPreview.length, 3, "Expected the three, occt WASM and preview worker vendor files.");
+assert(worker.includes("spaceworks-preview-runtime-v1"), "Preview vendors need the bounded runtime cache.");
 for (const size of [192, 512]) {
   const prepared = await readFile(resolve("public", "brand", `icon-${size}.png`));
   assert.equal(prepared.readUInt32BE(16), size);

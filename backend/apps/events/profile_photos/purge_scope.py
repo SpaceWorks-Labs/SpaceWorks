@@ -2,8 +2,9 @@
 from contextlib import ExitStack, contextmanager
 
 from django.apps import apps
-from django.db import connection, transaction
+from django.db import transaction
 from django.db.models import Q
+from apps.transaction_guards import in_domain_transaction
 
 
 def _snapshot(tenant_id):
@@ -31,7 +32,7 @@ def presentation_purge_scope(tenant_id, *, actor=None):
     Event = apps.get_model("events", "Event")
     EventSeries = apps.get_model("events", "EventSeries")
     EventMemberPresentation = apps.get_model("events", "EventMemberPresentation")
-    if connection.in_atomic_block:
+    if in_domain_transaction():
         raise RuntimeError("Discover presentation purge scope before row transactions.")
     tenants = tuple(sorted({tenant_id, *(row[3] for row in prepared)}))
     accounts = tuple(sorted({row[1] for row in prepared}))

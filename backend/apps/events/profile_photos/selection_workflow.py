@@ -82,6 +82,12 @@ def select(event_id, *, actor, operation_id, expected_version, profile_id, membe
         from apps.accounts.models import User
         actor = User.objects.get(pk=actor.pk)
         require_owner_event(event, actor)
+        # Programme fences admit erased accounts so retained history can be read; a new
+        # owner selection is not history. Checked under the held shared account lock.
+        from apps.encryption.account_models import PiiAccountWriteFence
+        from apps.encryption.account_write_fence import AccountKeyChanged
+        if PiiAccountWriteFence.objects.filter(user_id=actor.pk, state=PiiAccountWriteFence.State.ERASED).exists():
+            raise AccountKeyChanged("Account key changed.")
         # Lock source parents before profile/selection children. Deletion takes these
         # same rows, so SET_NULL cannot interleave with a newly selected profile.
         list(MakerspaceMembership.objects.select_for_update().filter(

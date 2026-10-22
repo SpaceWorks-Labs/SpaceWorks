@@ -3,10 +3,10 @@
 from dataclasses import dataclass, field
 from hashlib import sha256
 
-from django.db import connection
 from apps.accounts.saved_details.resume_copy import prepare_saved_resume_selection
 from apps.events.submissions.errors import SubmissionError
 from apps.events.submissions.models_assets import HackathonParticipantAsset
+from apps.transaction_guards import in_domain_transaction
 
 
 @dataclass(frozen=True)
@@ -25,14 +25,14 @@ class SavedResumeProvider:
         self.storage = storage
 
     def prepare(self, *, actor_id, saved_asset_id, saved_detail_version):
-        if connection.in_atomic_block:
+        if in_domain_transaction():
             raise RuntimeError("Prepare a saved resume before event transactions.")
         source = prepare_saved_resume_selection(actor_id=actor_id, saved_asset_id=saved_asset_id,
                                                 saved_detail_version=saved_detail_version)
         return PreparedResume(actor_id, saved_asset_id, saved_detail_version, source.size_bytes, source.sha256, source)
 
     def copy_to_event(self, *, prepared, event_id, asset_id, target_key):
-        if connection.in_atomic_block:
+        if in_domain_transaction():
             raise RuntimeError("Copy saved bytes outside event transactions.")
         if not isinstance(prepared, PreparedResume):
             raise TypeError("Use an owner-prepared resume.")

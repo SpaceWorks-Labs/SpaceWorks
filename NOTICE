@@ -33,3 +33,9 @@ Self-hosted fonts: Gilroy (Radomir Tinkov Free Font EULA), Outfit and Unbounded
 Backend image dependency: pillow-heif (BSD-3-Clause) decodes HEIC/HEIF uploads; its
 wheels bundle libheif and libde265 (LGPL-3.0) and x265 (GPL-2.0-or-later). Their licence
 texts ship inside the installed package (LICENSES_bundled.txt).
+
+Adapted code: the light/dark theme transition (frontend/src/lib/themeTransition.*) is adapted
+from yuyu by twilighty-abhi (https://github.com/twilighty-abhi/yuyu), AGPL-3.0.
+
+Third-party frontend packages for maker-file previews: three, fflate (MIT), linkedom (ISC),
+@tracespace/core (MIT) and occt-import-js (LGPL-2.1, OpenCascade; loaded as a separate WebAssembly module).

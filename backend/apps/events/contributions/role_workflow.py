@@ -85,6 +85,10 @@ def edit(*, actor, event_id, assignment_id, payload, submit=False):
             from .requirements_adapter import stamp_role_waiver
             stamp_role_waiver(row=locked, payload=payload, actor=actor)
         if submit and posting and not posting.approval_required:
+            # The shared boundary re-discovers issuers, so an issuer swapped while the
+            # answers were being prepared would otherwise auto-approve unseen.
+            if posting.permission_issuer_id != row.posting.permission_issuer_id:
+                raise ProgrammeError("issuer_changed", "The posting issuer changed; retry this operation.")
             role_policy.auto_approve_locked(row=locked, posting=posting, event=event, locks=locks)
         return locked
 

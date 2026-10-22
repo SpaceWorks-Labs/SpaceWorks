@@ -20,6 +20,7 @@ from .fields import require_form_operation, require_form_slot, selected_values
 from .models import MemberSavedDetail, SavedDetailUpdateIntent
 from .workflow import put_locked
 from .subject_binding import require_subject
+from apps.transaction_guards import in_domain_transaction
 
 _SEAL = object()
 
@@ -83,7 +84,7 @@ def validate_form_save_conflicts(forms):
 
 def prepare_saved_detail_intent(*, actor_id, subject, validated_form, choices, base_versions, operation_id,
                               outer_operation_id=None, form_slot=None):
-    if connection.in_atomic_block:
+    if in_domain_transaction():
         raise RuntimeError("Prepare saved details before entering domain transactions.")
     require_owner(actor_id)
     require_subject(subject)

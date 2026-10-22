@@ -22,4 +22,5 @@ OMITTED_FIELDS = {
     ('events.EventMemberPresentation', 'selected_profile'): 'Foreign membership/profile selection requires fresh owner choice; never expands tenant closure.',
     ('events.EventMemberPresentation', 'selected_membership'): 'Foreign membership/profile selection requires fresh owner choice; never expands tenant closure.',
     ('events.EventFormRevision', 'created_by'): 'Nullable definition author attribution; never expands person closure.',
+    ('events.EventAttendanceCertificate', 'render_token'): 'Deployment-local render lease; a lease UUID never leaves its deployment.',
 }

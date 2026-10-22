@@ -31,8 +31,10 @@ def render_certificate(certificate):
     row = _claim_render(certificate.pk)
     if row.status == "active":
         return row
+    rendered = False
     try:
         payload = facade.render_certificate_pdf(row)
+        rendered = True
         size, digest = facade.store_immutable_pdf(row.object_key, payload)
         return _activate(row.pk, size, digest, render_token=row.render_token)
     except Exception as exc:
@@ -40,8 +42,13 @@ def render_certificate(certificate):
             _fail_render(row.pk, render_token=row.render_token)
         except Exception:
             logger.warning("event_certificate_failure_deferred", extra={"certificate_id": row.pk})
-        from rest_framework.exceptions import APIException
-        if isinstance(exc, (APIException, EventInvalidTransition, CertificateStorageUnavailable)):
+        from rest_framework.exceptions import APIException, ValidationError
+        if isinstance(exc, (EventInvalidTransition, CertificateStorageUnavailable)):
+            raise
+        # A layout refusal from rendering is the caller's to see. After the PDF exists,
+        # a storage-quota refusal is operational: the row is marked failed for retry
+        # and the reader gets the uniform storage-unavailable error.
+        if isinstance(exc, APIException) and not (rendered and isinstance(exc, ValidationError)):
             raise
         logger.warning("event_certificate_render_failed", extra={"certificate_id": row.pk})
         raise CertificateStorageUnavailable() from exc

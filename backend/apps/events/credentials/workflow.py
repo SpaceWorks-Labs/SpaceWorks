@@ -4,7 +4,6 @@ import hashlib
 import json
 from dataclasses import dataclass, field
 
-from django.db import connection
 from django.db.models import Max
 from django.utils import timezone
 from rest_framework.exceptions import NotFound
@@ -20,6 +19,7 @@ from .errors import ProgrammeConflict
 from .models import EventCredentialCommand, EventRegistrationCredential
 from .scopes import registrations
 from apps.encryption.account_write_fence import assert_account_fence_held
+from apps.transaction_guards import in_domain_transaction
 
 ELIGIBLE = ("registered", "attended")
 
@@ -65,7 +65,7 @@ class PreparedCredential:
 
 
 def prepare_issue(event_id, registration_id):
-    if connection.in_atomic_block:
+    if in_domain_transaction():
         raise RuntimeError("Prepare credentials before the event transaction.")
     generation = (EventRegistrationCredential.objects.filter(registration_id=registration_id)
                   .aggregate(value=Max("generation"))["value"] or 0) + 1

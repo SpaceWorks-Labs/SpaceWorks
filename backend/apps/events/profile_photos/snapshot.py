@@ -7,11 +7,11 @@ import warnings
 
 from botocore.exceptions import BotoCoreError, ClientError
 from django.conf import settings
-from django.db import connection
 from PIL import Image, UnidentifiedImageError
 from rest_framework.exceptions import APIException
 
 from .selection_workflow import source_revision
+from apps.transaction_guards import in_domain_transaction
 
 MAX_BYTES = 10 * 1024 * 1024
 MAX_PIXELS = 16_000_000
@@ -59,7 +59,7 @@ def canonical_png(content):
 
 
 def prepare_photo(profile):
-    if connection.in_atomic_block:
+    if in_domain_transaction():
         raise RuntimeError("Prepare photo bytes outside domain transactions.")
     key, revision = profile.avatar_key, source_revision(profile)
     pixels = read_public_png(key)
@@ -69,7 +69,7 @@ def prepare_photo(profile):
 
 
 def read_public_png(key):
-    if connection.in_atomic_block:
+    if in_domain_transaction():
         raise RuntimeError("Read render resources outside domain transactions.")
     from apps.events.certificate_storage import _client as bounded_client
     try:

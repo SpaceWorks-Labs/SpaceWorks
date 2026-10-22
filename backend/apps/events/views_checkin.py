@@ -54,7 +54,12 @@ class EventCheckInResolveView(APIView):
     def post(self, request, pk, *args, **kwargs):
         event = _manageable_event(request.user, pk, CHECK_IN)
         serializer = EventCheckInResolveRequestSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        if not serializer.is_valid():
+            # A malformed legacy token answers exactly like an unknown one: a distinct
+            # 400 would let a stolen code probe which tokens are well formed.
+            if set(serializer.errors) == {"checkin_token"}:
+                raise NotFound()
+            serializer.is_valid(raise_exception=True)
         value = serializer.validated_data.get("credential")
         if value is not None:
             from .credentials.resolution import resolve

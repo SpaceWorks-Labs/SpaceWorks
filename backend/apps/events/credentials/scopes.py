@@ -1,7 +1,7 @@
 """Discover subjects before fences and reject scope changes after the Event lock."""
 from dataclasses import dataclass, field
 
-from django.db import connection
+from apps.transaction_guards import in_domain_transaction
 from rest_framework.exceptions import NotFound
 
 from apps.events.models_registration import EventRegistration
@@ -36,7 +36,7 @@ class RegistrationScope:
 
 
 def registrations(event_id, ids, *, prepare_names=False):
-    if prepare_names and connection.in_atomic_block:
+    if prepare_names and in_domain_transaction():
         raise RuntimeError("Prepare recipient names outside the event transaction.")
     rows = list(EventRegistration.objects.filter(event_id=event_id, pk__in=ids).order_by("pk"))
     if len(rows) != len(set(ids)):

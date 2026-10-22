@@ -4387,6 +4387,11 @@ responsibility; local purges never delete shared global organizations or foreign
   failure only records its code. This is byte integrity, not a restore drill.
 - **Retention never removes the newest verified copy** per destination (and per tenant), whatever its
   age. Retiring a destination wipes its credentials and keeps the journal.
+- **Primary archive retention is 7 daily + 4 weekly for nightly runs** (BK-09, `backup/retention.py`).
+  Every run-produced archive expires after 7 days; the first one per scope/makerspace to complete in an
+  ISO week is the weekly copy and expires after 4 weeks. On-demand archives keep the flat
+  `PlatformBackupSettings.retention_days`. Expiry is stamped once at completion (both completion paths),
+  so `purge_expired_archives` stays the only thing that deletes archive bytes.
 - **Credentials** are Fernet under `API_CLIENT_ENC_KEY` via `makerspaces.secrets`, write-only in API and
   `/control/`, never in audit meta or logs. `fetch_offsite_archive` reads them from a mode-0600 file,
   never argv/env, and its output still goes through `import-backup.sh`'s signature preflight.

@@ -102611,10 +102611,22 @@
                             }
                         ],
                         "nullable": true
+                    },
+                    "last_backed_up_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true,
+                        "description": "Newest completed archive covering this makerspace: its own archive, or the deployment archive a nightly run covered it with. Null when none exists yet."
+                    },
+                    "nightly_backups_enabled": {
+                        "type": "boolean",
+                        "description": "Whether this deployment runs the nightly backup."
                     }
                 },
                 "required": [
                     "archive_custody",
+                    "last_backed_up_at",
+                    "nightly_backups_enabled",
                     "superadmin_access_enabled",
                     "tenant_exit_custody",
                     "verified_recipient_count"
@@ -121718,7 +121730,13 @@
                         "type": "string",
                         "maxLength": 32
                     },
-                    "capability_payload": {}
+                    "capability_payload": {},
+                    "certification_override_reason": {
+                        "type": "string",
+                        "writeOnly": true,
+                        "description": "Submits the job for a member who lacks a required certification. Honoured only for staff with authority over the machine type; every override is audited.",
+                        "maxLength": 1000
+                    }
                 },
                 "required": [
                     "machine_id",
@@ -135700,7 +135718,18 @@
                     "retention_days": {
                         "type": "integer",
                         "maximum": 3650,
-                        "minimum": 1
+                        "minimum": 1,
+                        "description": "Days an on-demand archive is kept."
+                    },
+                    "daily_keep_days": {
+                        "type": "integer",
+                        "readOnly": true,
+                        "description": "Days every nightly archive is kept."
+                    },
+                    "weekly_keep_weeks": {
+                        "type": "integer",
+                        "readOnly": true,
+                        "description": "Weeks the first nightly archive of each week is kept."
                     },
                     "last_scheduled_at": {
                         "type": "string",
@@ -137594,7 +137623,18 @@
                     "retention_days": {
                         "type": "integer",
                         "maximum": 3650,
-                        "minimum": 1
+                        "minimum": 1,
+                        "description": "Days an on-demand archive is kept."
+                    },
+                    "daily_keep_days": {
+                        "type": "integer",
+                        "readOnly": true,
+                        "description": "Days every nightly archive is kept."
+                    },
+                    "weekly_keep_weeks": {
+                        "type": "integer",
+                        "readOnly": true,
+                        "description": "Weeks the first nightly archive of each week is kept."
                     },
                     "last_scheduled_at": {
                         "type": "string",
@@ -137619,10 +137659,12 @@
                     }
                 },
                 "required": [
+                    "daily_keep_days",
                     "last_error",
                     "last_scheduled_at",
                     "last_success_at",
-                    "updated_at"
+                    "updated_at",
+                    "weekly_keep_weeks"
                 ]
             },
             "PlatformDashboard": {

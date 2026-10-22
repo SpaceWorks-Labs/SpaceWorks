@@ -1760,6 +1760,8 @@ export type BackupCustody = {
   "verified_recipient_count": number;
   "archive_custody": CustodyState | null;
   "tenant_exit_custody": CustodyState | null;
+  "last_backed_up_at": string | null;
+  "nightly_backups_enabled": boolean;
 };
 
 export type BackupDestination = {
@@ -6243,6 +6245,7 @@ export type MachineServiceSubmit = {
   "contact_email"?: string;
   "contact_phone"?: string;
   "capability_payload"?: unknown;
+  "certification_override_reason"?: string;
 };
 
 export type MachineServiceV2Report = {
@@ -9626,6 +9629,8 @@ export type PatchedOrganizationProfileUpdate = {
 export type PatchedPlatformBackupSettings = {
   "automatic_backups_enabled"?: boolean;
   "retention_days"?: number;
+  "daily_keep_days"?: number;
+  "weekly_keep_weeks"?: number;
   "last_scheduled_at"?: string | null;
   "last_success_at"?: string | null;
   "last_error"?: string;
@@ -10109,6 +10114,8 @@ export type PlatformBackupHealth = {
 export type PlatformBackupSettings = {
   "automatic_backups_enabled"?: boolean;
   "retention_days"?: number;
+  "daily_keep_days": number;
+  "weekly_keep_weeks": number;
   "last_scheduled_at": string | null;
   "last_success_at": string | null;
   "last_error": string;

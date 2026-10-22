@@ -1,13 +1,13 @@
 """The single no-I/O transaction that makes a Lane E artifact available."""
 
 import uuid
-from datetime import timedelta
 
 from django.db import transaction
 from django.utils import timezone
 
 from apps.audit import services as audit
 from apps.backup.artifact_ledger import ArtifactLedgerMismatch
+from apps.backup.retention import archive_expires_at
 from apps.backup.models import (
     B1ActivationState,
     BackupArchive,
@@ -142,7 +142,7 @@ def _promote_atomic(artifact_id, retained_ids, sovereign_ids, artifact_ids):
     archive.completed_at = now
     archive.failure_detail = ""
     if archive.expires_at is None:
-        archive.expires_at = now + timedelta(days=settings_row.retention_days)
+        archive.expires_at = archive_expires_at(archive, now, settings_row.retention_days)
     archive.save(update_fields=(
         "status", "object_key", "manifest", "size_bytes", "archive_sha256",
         "age_encrypted", "completed_at", "expires_at", "failure_detail", "updated_at",

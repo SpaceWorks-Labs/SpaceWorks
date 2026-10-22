@@ -1,5 +1,6 @@
 """Read-only makerspace custody status: Part A archive custody and Lane D tenant-exit custody."""
 
+from django.db.models import Max
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers
@@ -8,7 +9,10 @@ from rest_framework.views import APIView
 
 from apps.accounts import rbac
 from apps.admin_api.permissions import IsActiveStaff, require_action
-from apps.backup.models import MakerspaceArchiveCustodyState, MakerspaceTenantExitCustodyState
+from apps.backup.models import (
+    BackupArchive, BackupRunCoverage, MakerspaceArchiveCustodyState,
+    MakerspaceTenantExitCustodyState, PlatformBackupSettings,
+)
 from apps.backup.module_gate import BACKUP_MODULE_KEY
 from apps.backup.recipient_selection import effective_tenant_recipients
 from apps.backup.views_common import AUTH_ERRORS, MODULE_OFF, NOT_FOUND
@@ -28,6 +32,27 @@ class BackupCustodySerializer(serializers.Serializer):
     verified_recipient_count = serializers.IntegerField()
     archive_custody = CustodyStateSerializer(allow_null=True)
     tenant_exit_custody = CustodyStateSerializer(allow_null=True)
+    last_backed_up_at = serializers.DateTimeField(
+        allow_null=True,
+        help_text="Newest completed archive covering this makerspace: its own archive, or the "
+        "deployment archive a nightly run covered it with. Null when none exists yet.",
+    )
+    nightly_backups_enabled = serializers.BooleanField(
+        help_text="Whether this deployment runs the nightly backup.",
+    )
+
+
+def _last_backed_up_at(makerspace):
+    """BK-17: the Space Manager's own archive status, from rows the backup module already keeps."""
+    own = BackupArchive.objects.filter(
+        scope=BackupArchive.Scope.MAKERSPACE, makerspace=makerspace,
+        status=BackupArchive.Status.AVAILABLE,
+    ).aggregate(at=Max("completed_at"))["at"]
+    covered = BackupRunCoverage.objects.filter(
+        makerspace_id_snapshot=makerspace.pk, state=BackupRunCoverage.State.COVERED,
+        archive__status=BackupArchive.Status.AVAILABLE,
+    ).aggregate(at=Max("completed_at_snapshot"))["at"]
+    return max((moment for moment in (own, covered) if moment is not None), default=None)
 
 
 def _state(model, makerspace):
@@ -60,4 +85,7 @@ class MakerspaceBackupCustodyView(APIView):
             "verified_recipient_count": len(effective_tenant_recipients(makerspace.pk)),
             "archive_custody": _state(MakerspaceArchiveCustodyState, makerspace),
             "tenant_exit_custody": _state(MakerspaceTenantExitCustodyState, makerspace),
+            "last_backed_up_at": _last_backed_up_at(makerspace),
+            "nightly_backups_enabled": PlatformBackupSettings.objects.filter(
+                pk=1, automatic_backups_enabled=True).exists(),
         }).data)

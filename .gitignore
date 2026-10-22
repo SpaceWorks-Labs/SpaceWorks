@@ -86,6 +86,7 @@ LANE-CLOUD-HANDOFF.md
 stage1-*.md
 docs/stage1-*.md
 RECONCILIATION-*.md
+backend/apps/tenant_migration/RECONCILIATION-FIELDS.json
 HANDOFF.md
 backend/.claude/settings.local.json
 

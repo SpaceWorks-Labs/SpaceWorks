@@ -30,5 +30,6 @@ Build from the repository root:
 `docker buildx build --target release --build-context cloud_tooling=. -f backend/Dockerfile backend`.
 That is the published spaceworks-backend image; it runs host/full, managed/full and managed/free.
 Plain `docker build backend` builds the default full target for host installs, without the cloud tooling.
+Such a source-built image cannot run managed mode (owner decision #82); managed deployments use the published image.
 Both install versioned clients 16/17 and ffprobe. Runtime/arm64/static checks must
 pass before publication; source metadata alone is not evidence. Client-major build arguments stay explicit.

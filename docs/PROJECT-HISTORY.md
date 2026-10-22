@@ -6,6 +6,14 @@
 
 ## Condensed changelog (newest first — full detail in `git log`)
 
+- **2026-10-22 -- release-1 fixes.** Exactly two published images (#75a): one `spaceworks-backend`
+  (Dockerfile target `release`) runs every profile, selected at start-up; the common entrypoint hands
+  managed mode to `cloud_entrypoint`, host mode is unchanged (#42). **Release note (#75b): Machine
+  Manager scope is per machine type** -- staff who had per-machine limits now cover all machines of
+  their types. `/control/` module matrix completes missing module dependencies with a notice (MP-28);
+  staff-entered machine-service jobs take an audited certification override reason (MP-96); nightly
+  backups rotate 7 daily + 4 weekly (BK-09) and Space Managers get an archive-status tile (BK-17);
+  lane notes untracked again (IN-26); three docs corrected to match the code.
 - **2026-10-19 -- managed hosting requests (#46-#49).** Public `/hosting` form plus invitations from
   makerspaces and organizations ("Join" only when the inviter governs the organization); email
   confirmation before review; `/control/` accept/reject and a pre-filled, re-auth-safe "Create makerspace";

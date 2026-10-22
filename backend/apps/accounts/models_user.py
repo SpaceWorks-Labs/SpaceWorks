@@ -57,7 +57,6 @@ class User(AbstractUser):
     # flow must remain verification-only until they prove ownership of their email.
     # Staff-created users may legitimately start without an email verification stamp.
     self_registered_at = models.DateTimeField(null=True, blank=True)
-    external_checkin_user_id = models.CharField(max_length=128, blank=True)
     telegram_user_id = models.CharField(max_length=64, blank=True)
     must_change_password = models.BooleanField(default=False)
     # A staff-created person record, not an account. An unusable password alone is NOT

@@ -29,7 +29,7 @@ AUTHORITY_ENTRIES = (
     ),
     *_same(
         "accounts.User",
-        "telegram_user_id external_checkin_user_id",
+        "telegram_user_id",
         D.RESET,
         "Source-bound external login identities require target relinking.",
     ),

@@ -20,7 +20,6 @@ class UserSerializer(serializers.ModelSerializer):
             "access_status",
             "restriction_reason",
             "telegram_user_id",
-            "external_checkin_user_id",
             "is_active",
         ]
         read_only_fields = ["id"]

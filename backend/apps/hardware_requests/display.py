@@ -1,12 +1,12 @@
 """Readable requester display labels for STAFF-facing surfaces.
 
-Self-checkout / public shadow users carry the privacy hash username
-``checkin_<sha256>`` (see ``workflow_utils.requester_username``). Showing that raw
-hash in reports/queues is useless to staff. This module resolves a human-readable
-label — the Check-In email/phone (``external_checkin_user_id`` / the request's
-contact fields) — skipping the internal hash, with a generic ``"Member"`` fallback.
+Legacy self-checkout shadow users carry the privacy hash username ``checkin_<sha256>``
+from the retired Check-In integration. Showing that raw hash in reports/queues is useless
+to staff. This module resolves a human-readable label — the request's captured name or
+contact fields, then the account — skipping the internal hash, with a generic
+``"Member"`` fallback.
 
-This is a PII display: the returned label can be a check-in email/phone. It is only
+This is a PII display: the returned label can be a contact email/phone. It is only
 appropriate on staff/superadmin surfaces that are RBAC-action-gated and tenant-scoped
 (the same data the operations ledger already shows staff). Public surfaces must NOT
 use this — they use ``inventory.public_stats.public_display_name`` ("Member").
@@ -32,8 +32,8 @@ def requester_label(request, *, fallback="Member", allow_internal_fallback=False
     """Readable label for a HardwareRequest/PrintRequest-like row.
 
     Prefers the captured requester name, then a real email (contact email → account
-    email → username → external id), then any non-hash identifier (contact phone →
-    username → external id → account username). ``allow_internal_fallback=True``
+    email → username), then any non-hash identifier (contact phone → username →
+    account username). ``allow_internal_fallback=True``
     reproduces the ledger's last-resort behaviour of returning the raw value (even
     the hash) before the fallback.
     """
@@ -47,7 +47,6 @@ def requester_label(request, *, fallback="Member", allow_internal_fallback=False
         getattr(request, "requester_contact_email", ""),
         getattr(requester, "email", ""),
         getattr(request, "requester_username", ""),
-        getattr(requester, "external_checkin_user_id", ""),
     ]
     for value in email_candidates:
         label = clean_label(value)
@@ -57,7 +56,6 @@ def requester_label(request, *, fallback="Member", allow_internal_fallback=False
     candidates = [
         getattr(request, "requester_contact_phone", ""),
         getattr(request, "requester_username", ""),
-        getattr(requester, "external_checkin_user_id", ""),
         getattr(requester, "username", ""),
     ]
     for value in candidates:

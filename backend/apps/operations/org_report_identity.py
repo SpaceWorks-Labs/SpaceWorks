@@ -95,7 +95,6 @@ def _requester_labels(scope, requester_ids, date_range):
             request.requester_id,
             label_from_candidates(
                 request.requester_username,
-                request.requester.external_checkin_user_id,
                 request.requester.username,
             ),
         )

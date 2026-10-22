@@ -15,7 +15,7 @@ def shell_values(user_id, retired_at):
         "username": f"retired-{uuid5(NAMESPACE_URL, f'spaceworks:retired-staff:{user_id}')}",
         "first_name": "", "last_name": "", "display_name": "", "email": "",
         "phone": "", "phone_e164": "", "telegram_user_id": "",
-        "external_checkin_user_id": "", "restriction_reason": "",
+        "restriction_reason": "",
         "email_verified_at": None, "phone_verified_at": None,
         "self_registered_at": None, "last_login": None,
         "date_joined": datetime(1970, 1, 1, tzinfo=UTC), "credential_generation": 0,

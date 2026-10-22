@@ -151,8 +151,8 @@ flowchart TD
 
 Check-In is retired as a runtime integration: `apps.checkin` is not installed
 (`backend/config/settings.py:78-116`), and no Check-In routes are present in the URL configuration.
-`User.external_checkin_user_id` remains read-only legacy data to keep old staff labels
-interpretable; it is not populated by the member flows (`backend/apps/accounts/models.py:25-45`).
+The last leftover, `User.external_checkin_user_id`, was dropped (`accounts/0043`, owner decision #80);
+nothing reads or writes a Check-In identity any more.
 
 ## 5. Core domain modules
 

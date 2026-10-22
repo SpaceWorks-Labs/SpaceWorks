@@ -112,13 +112,26 @@ def _is_platform_managed(domain) -> bool:
     return canonical == suffix.lstrip(".") or canonical.endswith(suffix)
 
 
-def _commit_status(makerspace, target, status, *, set_verified_at, detail):
+def _require_manage_under_lock(actor, makerspace):
+    """The view authorized before a DNS lookup that can take seconds; re-check under the
+    row lock so a grant revoked meanwhile cannot still write the trust-gating status."""
+    from apps.accounts import rbac
+    from apps.makerspaces.authority_lock import require_under_lock
+
+    require_under_lock(
+        actor, makerspace.pk,
+        lambda: rbac.can(actor, rbac.Action.MANAGE_MAKERSPACE, makerspace.pk),
+    )
+
+
+def _commit_status(makerspace, target, status, *, set_verified_at, detail, actor):
     """Persist a verification outcome, but re-read the row under a lock first so a
     concurrent domain change can never have this (slow, DNS-based) result written
     onto a different — and unverified — hostname. The status gates host admission
     and on-demand TLS, so a stale write would trust an unchecked domain."""
     with transaction.atomic():
         locked = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
+        _require_manage_under_lock(actor, locked)
         if locked.frontend_domain != target:
             makerspace.frontend_domain_status = locked.frontend_domain_status
             makerspace.domain_verified_at = locked.domain_verified_at
@@ -138,17 +151,33 @@ def _commit_status(makerspace, target, status, *, set_verified_at, detail):
         return (locked.frontend_domain_status, locked.domain_verified_at, detail)
 
 
-def verify_domain(makerspace):
+def verify_domain(makerspace, *, actor):
+    """Run one verification attempt for ``actor``, who must hold MANAGE_MAKERSPACE.
+
+    The caller authorizes first; every write below re-checks that authority under the
+    makerspace row lock (`authority_lock`), so the check and the write cannot race apart.
+    """
     if not makerspace.frontend_domain:
+        with transaction.atomic():
+            locked = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
+            _require_manage_under_lock(actor, locked)
+            if locked.frontend_domain:
+                return (
+                    locked.frontend_domain_status,
+                    locked.domain_verified_at,
+                    "Domain changed during verification; please re-run.",
+                )
+            locked.frontend_domain_status = Makerspace.DomainStatus.PENDING
+            locked.domain_verified_at = None
+            locked.save(
+                update_fields=[
+                    "frontend_domain_status",
+                    "domain_verified_at",
+                    "updated_at",
+                ]
+            )
         makerspace.frontend_domain_status = Makerspace.DomainStatus.PENDING
         makerspace.domain_verified_at = None
-        makerspace.save(
-            update_fields=[
-                "frontend_domain_status",
-                "domain_verified_at",
-                "updated_at",
-            ]
-        )
         return (Makerspace.DomainStatus.PENDING, None, "No custom domain set.")
 
     target = makerspace.frontend_domain
@@ -160,6 +189,7 @@ def verify_domain(makerspace):
             target,
             Makerspace.DomainStatus.VERIFIED,
             set_verified_at=True,
+            actor=actor,
             detail="Self-hosted custom domain — trusted automatically.",
         )
     # Platform subdomains are provisioned+verified by staff and have no per-tenant TXT
@@ -171,6 +201,7 @@ def verify_domain(makerspace):
             target,
             Makerspace.DomainStatus.VERIFIED,
             set_verified_at=True,
+            actor=actor,
             detail="Platform-managed subdomain — verified automatically.",
         )
 
@@ -188,6 +219,7 @@ def verify_domain(makerspace):
             target,
             Makerspace.DomainStatus.FAILED,
             set_verified_at=False,
+            actor=actor,
             detail=f"DNS lookup failed: {lookup_errors[0]}",
         )
 
@@ -198,6 +230,7 @@ def verify_domain(makerspace):
                 target,
                 Makerspace.DomainStatus.FAILED,
                 set_verified_at=False,
+                actor=actor,
                 detail="Domain does not resolve to the platform origin yet.",
             )
         return _commit_status(
@@ -205,6 +238,7 @@ def verify_domain(makerspace):
             target,
             Makerspace.DomainStatus.VERIFIED,
             set_verified_at=True,
+            actor=actor,
             detail="Domain verified.",
         )
 
@@ -213,5 +247,6 @@ def verify_domain(makerspace):
         target,
         Makerspace.DomainStatus.FAILED,
         set_verified_at=False,
+        actor=actor,
         detail="Verification token was not found in DNS TXT records.",
     )

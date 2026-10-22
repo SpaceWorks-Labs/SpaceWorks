@@ -200,19 +200,6 @@ def fail(service_request, actor, *, reason, percent_complete, actual_minutes, co
         return locked
 
 
-def collect(service_request, actor):
-    with transaction.atomic():
-        _assert_request_write_allowed(service_request)
-        locked = _locked_request(service_request)
-        _require_module(locked.makerspace)
-        _require_edge(locked, MachineServiceRequest.Status.COLLECTED)
-        locked.status, locked.handled_by, locked.collected_by, locked.collected_at = MachineServiceRequest.Status.COLLECTED, actor, actor, timezone.now()
-        locked.save(update_fields=["status", "handled_by", "collected_by", "collected_at", "updated_at"])
-        _audit_transition(actor, locked, "collected")
-        _notify_after_commit(locked, "collected")
-        return locked
-
-
 def create_reprint(service_request, actor):
     """Create an accepted child request that retains the original attachment root."""
     with transaction.atomic():
@@ -245,3 +232,4 @@ def create_reprint(service_request, actor):
 # Re-exported so `service_workflow_actions.start` keeps resolving for existing callers.
 from apps.machines.service_workflow_start import start  # noqa: E402
 from apps.machines.service_workflow_cancel import cancel  # noqa: E402
+from apps.machines.service_workflow_collect import collect  # noqa: E402

@@ -2174,6 +2174,18 @@ time so a row from raw SQL or an old restore still fails closed. Migration
 `membership` off never re-opens account-less requests — opening an unauthenticated write surface is an
 explicit act, never a side effect.
 
+**Authority is re-checked under row lock in the service, not only in the view.** A view authorizes with
+plain reads and the service then mutates, so a revocation committed in between would otherwise still
+land. `makerspaces/authority_lock.require_under_lock(actor, makerspace_id, predicate)` takes the tenant row
+(`FOR NO KEY UPDATE`), then the actor's membership, roles and organization rows (the `role_authority`
+order), confirms the actor is still live, and re-runs the view's own predicate on fresh reads; the object
+being mutated is locked AFTER it, and any object-level predicate (machine reach, collect partition,
+operator rows) is re-evaluated after that lock. The six races deferred in `a4fa9084` use it:
+domain-verification (`domain_verification.verify_domain(actor=...)`, re-checked inside every status
+write), machine-service collect (`service_workflow_collect`, via `service_request_partitions.may_collect`),
+the asset/machine warranty PUT and warranty-document presign, finalize and delete (`warranty/services.py`).
+A new write path that authorizes in the view must do the same.
+
 **A core module must work with every optional module uninstalled.** Two halves. The *declared* half is
 checked at import time: `module_registry._validate_registry` refuses a registry where an `is_core` module
 names a non-core key in `requires_modules`. The *undeclared* half — core code reaching for a row an optional

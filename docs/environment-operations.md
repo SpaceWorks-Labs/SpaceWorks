@@ -168,6 +168,7 @@ Cloud configuration and finite-job inputs (host/full ignores free limits):
 | `CLOUD_SCHEDULER` | legacy host selection | Managed beat, loop or external; free permits tick only. |
 | `SPACEWORKS_ADMITTED_GENERATION` | entrypoint-owned | Original launch generation; active boundaries retain their own generation. Do not set manually. |
 | `SPACEWORKS_FINITE_MAINTENANCE_JOB` | entrypoint-owned | Exact admitted export command only; erased for other invocations. |
+| `PYTHONPATH` | entrypoint-owned | Set only in managed mode, so processes started by the one image can import its cloud setup tooling. Host mode leaves it untouched. |
 | `MANAGED_UPLOAD_TRANSFER_BOUND_SECONDS` | `0` | Zero refuses coordinated capture. Set only after proving the provider's enforced transfer horizon, at most 86,400 seconds. |
 | `STORAGE_CAPABILITIES_FILE` | empty | Required managed version-1 role/identity/capability descriptor, not a credential file. |
 | `STORAGE_CAPABILITY_TTL_SECONDS` | Full: `900`; free: derived | Qualified proof freshness, up to 86,400 seconds. Full accepts 60..86,400; free requires a complete binding refresh cycle plus one tick and execution headroom. See [free cadence](deploy/cloud-free.md). |

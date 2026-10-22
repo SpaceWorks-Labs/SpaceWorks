@@ -1683,9 +1683,11 @@ methods; staff/platform use their independent password doors and cannot obtain t
   alone, so a DRF field error arrives as the bare `"This field cannot be blank."` with the field
   name stripped. Matching the message for `/phone/i` looked right and never once fired, so the
   prompt it gates had been dead since the day it shipped.
-- **Known gap: OIDC has no browser flow.** The backend accepts an ID token only, and no frontend renders
-  configured providers, so on the web an accounts-off deployment today means staff-created walk-ins.
-  Adding the browser flow (PKCE, redirect, discovery) is its own phase.
+- **OIDC has a browser flow** (`accounts/views_oidc_browser.py`): `social/oidc/<slug>/authorize` starts
+  an attempt (discovery, `state`, `nonce`, PKCE `S256`) and `social/oidc/callback` exchanges the code;
+  the sign-in page renders every enabled `oidc:*` provider. The ID-token endpoint
+  `social/oidc/<slug>` remains for native clients. Accounts-off still hides only the built-in consumer
+  providers, never a configured OIDC provider.
 
 **Login methods are four independent platform switches (module program phase 10).**
 `accounts.PlatformLoginMethods` (`pk=1`, superadmin-only) governs member password / social / phone /
@@ -4457,9 +4459,11 @@ artifact/capture identifiers—never the identity lists.
 **Cross-tenant and payment history is fail-closed.** Foreign EventCollaborator rows and
 foreign-owned stock-transfer lines are dropped with PII-free lost-edge records;
 StockTransfer foreign makerspace/container pairs are nulled atomically. Registration
-routing is cleared. One pending tenant Payment refuses the whole dump. The four terminal
-statuses keep readable amount/currency/provider/status/subject history while clearing
-all routing, merchant/account/order/payment/session/intent handles and checkout URLs.
+routing is cleared. Pending tenant Payments travel (owner decision D5, see **A pending payment no
+longer refuses a tenant dump**): the preflight refuses one with a live rail, and publication
+revalidates the money fingerprint. Pending and the four terminal statuses keep readable
+amount/currency/provider/status/subject history while clearing all routing,
+merchant/account/order/payment/session/intent handles and checkout URLs.
 The exact external-FK registry and independent scratch/target postconditions refuse
 schema drift or a surviving live provider binding.
 

@@ -59,9 +59,12 @@ invalidate older access, refresh, device and control-panel sessions. `/mfa/contr
 finishes the Django password session of an enrolled superadmin before `/control/` becomes
 accessible. Operators can recover a lost superadmin authenticator with host-only
 `recover_superadmin --reset-mfa`; this clears the credential and sessions and returns the
-account to password sign-in until it enrolls again. A superadmin's password is likewise
-reset only on the host (`changepassword` / `recover_superadmin`): the email-OTP
-forgot-password flow discards superadmin accounts at issuance and re-checks at confirmation.
+account to password sign-in until it enrolls again (superadmin MFA is optional). A superadmin
+can also reset a forgotten password by emailed OTP through the platform context
+(`/admin/reset-password?context=platform`): it needs platform mail configured and a request
+Origin in `PLATFORM_STAFF_ORIGINS`, and is re-checked at confirmation. The member-context flow
+still discards superadmin accounts. Host-side `changepassword` / `recover_superadmin` remain
+the out-of-band path when platform mail is unavailable.
 Spent MFA challenges join the existing 30-day auth-challenge cleanup.
 
 `staff.invitations` defaults on. Staff with makerspace-management authority invite an

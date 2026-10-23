@@ -234,6 +234,15 @@ def _normalise_field_name(name, model_fields):
     return root
 
 
+from .authority_events_programme import FIELDS as PROGRAMME_AUTHORITY_FIELDS, SCANNED_LABELS, SOURCE_PATHS
+AUTHORIZATION_SOURCES += tuple(APPS_DIR / path for path in SOURCE_PATHS)
+SCANNED_MODEL_LABELS |= SCANNED_LABELS
+DECLARED_AUTHORITY_FIELDS.update(PROGRAMME_AUTHORITY_FIELDS)
+from .authority_reimbursements import FIELDS as REIMBURSEMENT_AUTHORITY_FIELDS, SOURCE_PATHS as _REIMBURSEMENT_SOURCES
+AUTHORIZATION_SOURCES += tuple(APPS_DIR / path for path in _REIMBURSEMENT_SOURCES)
+DECLARED_AUTHORITY_FIELDS.update(REIMBURSEMENT_AUTHORITY_FIELDS)
+
+
 def discover_authorization_field_names(paths=AUTHORIZATION_SOURCES):
     names = set()
     for path in paths:

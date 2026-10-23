@@ -14,6 +14,7 @@ export const emptyVenue = (): WebsiteVenue => ({ name: "", address: "", city: ""
 export const sectionGroup = (kind: WebsiteSection["kind"]): WebsiteGroup => ({
   intro: "ABOUT", logo: "HERO", highlight: "HIGHLIGHTS", speaker: "SPEAKERS", sponsor: "SPONSORS",
   track: "SCHEDULE", room: "VENUE", faq: "FAQ", resource: "RESOURCES",
+  prizes: "SPONSORS", judges: "SPEAKERS", mentors: "SPEAKERS", project_gallery: "HIGHLIGHTS", results: "HIGHLIGHTS",
 })[kind] as WebsiteGroup;
 export const orderedGroups = (page: { section_order?: string[] }): WebsiteGroup[] => {
   return [...new Set([...(page.section_order ?? []), ...websiteGroups])] as WebsiteGroup[];

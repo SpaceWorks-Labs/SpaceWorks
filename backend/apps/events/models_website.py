@@ -55,6 +55,11 @@ class EventPageSection(models.Model):
         FAQ = "faq", "FAQ"
         RESOURCE = "resource", "Resource"
         HIGHLIGHT = "highlight", "Highlight"
+        PRIZES = "prizes", "Prizes"
+        JUDGES = "judges", "Judges"
+        MENTORS = "mentors", "Mentors"
+        PROJECT_GALLERY = "project_gallery", "Project gallery"
+        RESULTS = "results", "Results"
 
     page = models.ForeignKey(EventPage, on_delete=models.CASCADE, related_name="sections")
     # Account-linked speaker sections survive draft removal as identity anchors.
@@ -75,6 +80,7 @@ class EventPageSection(models.Model):
     sponsor_tier = models.CharField(max_length=24, choices=[(tier, tier) for tier in SPONSOR_TIERS],
                                     default="community_partner")
     icon = models.CharField(max_length=40, blank=True)
+    options = models.JSONField(default=dict, blank=True)
 
     class Meta:
         ordering = ("position", "id")

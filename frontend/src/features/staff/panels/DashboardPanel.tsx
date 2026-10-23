@@ -1,3 +1,4 @@
+import { NextUpEvents, type NextUpEvent } from "../eventProgramme/NextUpEvents";
 import type { ReactNode } from "react";
 import { consoleSessionHref } from "../../../lib/api/sessionContext";
 import { DashboardLayout, type DashboardLayoutProps } from "../../../components/layouts/DashboardLayout";
@@ -7,6 +8,7 @@ import { filterTabsByEnabledModules } from "../staffTabs";
 import { DashboardActivity, DashboardDueBack } from "./DashboardWidgets";
 import { DashboardQuickAdd } from "./DashboardQuickAdd";
 import { DashboardArchiveStatus } from "./DashboardArchiveStatus";
+import { LateShiftLine } from "../../../components/delight/SneakyLines";
 import { MACHINE_TILE_KEYS, TILES, type DashboardCounts } from "./DashboardStats";
 import { DashboardAnalyticsWidgets, HandoverQueueHome } from "./DashboardAnalyticsWidgets";
 import type { DashboardAnalytics } from "./analyticsApi";
@@ -20,7 +22,7 @@ type Props = {
 
 export function DashboardPanel({ makerspace, canManageMakerspace, allowedTabs, actions,
   isSuperadmin = false, singleTenantLocked = false, guestOnly = false, progress }: Props) {
-  const dashboard = useStaffGet<DashboardCounts & DashboardAnalytics>(["dashboard", makerspace.id], `/admin/makerspace/${makerspace.id}/dashboard`);
+  const dashboard = useStaffGet<DashboardCounts & DashboardAnalytics & { next_up_events?: NextUpEvent[] }>(["dashboard", makerspace.id], `/admin/makerspace/${makerspace.id}/dashboard`);
   if (dashboard.isSuccess && dashboard.data.scope_mode === "handover") return <HandoverQueueHome queues={dashboard.data.queue_tiles}
     slug={makerspace.slug} singleTenantLocked={singleTenantLocked} guestOnly={guestOnly} />;
   const permitted = TILES.filter(tile => (
@@ -63,7 +65,7 @@ export function DashboardPanel({ makerspace, canManageMakerspace, allowedTabs, a
           subtitle: `What's happening at ${makerspace.name}.`, primary }}
         state={{ status: dashboard.isLoading ? "loading" : dashboard.error ? "error" : "ready",
           error: "Couldn't load dashboard. Try again.", onRetry: () => { void dashboard.refetch(); } }}
-        progress={progress}
+        progress={<><LateShiftLine />{progress}{dashboard.data?.next_up_events ? <NextUpEvents events={dashboard.data.next_up_events} /> : null}</>}
         stats={ranked.map(tile => ({ label: tile.label, value: dashboard.data?.[tile.key] ?? 0,
           // Overdue, problems, out of stock, failed email and overdue maintenance keep their danger signal.
           tone: tile.actionNeeded && (dashboard.data?.[tile.key] ?? 0) > 0 ? tile.tone === "danger" ? "danger" : "attention" : "neutral",

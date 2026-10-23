@@ -11,6 +11,7 @@ import type { HardwareRequest } from "../panels/Queues";
 import type { Makerspace } from "../panels/shared";
 import { ScanCardBox } from "../panels/memberCards/ScanCardBox";
 import { HandoverBoxScan } from "./HandoverBoxScan";
+import { ReturnConfetti } from "../../../components/delight/ReturnConfetti";
 import { HandoverItems, initialResolutions, validResolutions } from "./HandoverItems";
 
 const steps = ["Scan container", "Check borrower card", "Check items", "Photo and confirmation", "Receipt"];
@@ -31,6 +32,7 @@ export function HandoverWizard({ row, makerspace, mode, canScanCards = false, on
   const [scanError, setScanError] = useState("");
   const [boxAssigned, setBoxAssigned] = useState(false);
   const [receiptAt, setReceiptAt] = useState("");
+  const [onTimeReturn, setOnTimeReturn] = useState(false);
   const finalResolutions = resolutions.filter(value => value.returned + value.damaged + value.missing > 0);
   const requiredAssets = row.items.filter(item => item.requires_asset_qr).reduce((count, item) => count + item.accepted_quantity, 0);
   const itemsReady = mode === "issue" ? assets.length === requiredAssets : validResolutions(row, resolutions);
@@ -49,7 +51,13 @@ export function HandoverWizard({ row, makerspace, mode, canScanCards = false, on
         await staffRequest(`/admin/requests/${row.id}/return`, { method: "POST", body: JSON.stringify({ evidence_id: evidence, box_code: boxCode, remark: remark.trim(), resolutions: finalResolutions, kit_checklist: kits.counts }) });
       }
     },
-    onSuccess: () => { setReceiptAt(new Date().toLocaleString()); setStep(4); void client.invalidateQueries(); },
+    onSuccess: () => {
+      const now = new Date();
+      // Confetti only for a clean return on or before its due date (no due date counts as on time).
+      setOnTimeReturn(mode === "return" && (!row.return_due_at || now.getTime() <= Date.parse(row.return_due_at))
+        && finalResolutions.every(value => value.damaged + value.missing === 0));
+      setReceiptAt(now.toLocaleString()); setStep(4); void client.invalidateQueries();
+    },
     onError: () => { void client.invalidateQueries(); },
   });
   async function scanAsset(payload: string) {
@@ -80,7 +88,7 @@ export function HandoverWizard({ row, makerspace, mode, canScanCards = false, on
         disabled: step < 3 && !compact ? !nextReady : !ready, disabledReason: blockedReason,
         onClick: () => { if (step < 3 && !compact) setStep(step + 1); else mutation.mutate(); } } }}
     result={step === 4 ? { tone: "success", title: mode === "issue" ? `Issued to ${row.requester_display || row.requester_username}` : "Return recorded",
-      summary: <><p>Request #{row.id} · {receiptAt}</p><p>Evidence photo #{evidence} · Container {boxCode}</p>{row.items.map(item => {
+      summary: <>{onTimeReturn ? <ReturnConfetti /> : null}<p>Request #{row.id} · {receiptAt}</p><p>Evidence photo #{evidence} · Container {boxCode}</p>{row.items.map(item => {
         const resolution = finalResolutions.find(value => value.item_id === item.id);
         return <p key={item.id}>{item.product_name}: {mode === "issue" ? `${item.accepted_quantity} issued` : resolution ? `${resolution.returned} returned, ${resolution.damaged} damaged, ${resolution.missing} missing` : "No return recorded in this handover"}</p>;
       })}{remark ? <p>{remark}</p> : null}<button className="desk-button mt-4" type="button" onClick={() => window.print()}>Print receipt</button></>,

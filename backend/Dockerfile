@@ -25,7 +25,7 @@ FROM application AS server-tools
 ARG POSTGRESQL_CLIENT_MAJOR=17
 ARG POSTGRESQL_LOCAL_SERVER_MAJOR=16
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates curl gnupg age ffmpeg \
+    && apt-get install -y --no-install-recommends ca-certificates curl gnupg age ffmpeg fonts-noto-core fonts-noto-extra fonts-dejavu-core \
     && install -d /usr/share/postgresql-common/pgdg \
     && curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
       | gpg --dearmor -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.gpg \

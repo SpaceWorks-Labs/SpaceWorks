@@ -116,6 +116,11 @@ MODULES = (
     ModuleDefinition(
         "events", "Events", "Event scheduling and registrations.", "events", GUARD, group=GROUP_EVENTS,
     ),
+    ModuleDefinition(
+        "event_reimbursements", "Event reimbursements",
+        "Optional event support requests, finite budgets, awards and expense claims.",
+        "event_reimbursements", GUARD, group=GROUP_EVENTS, requires_modules=("events",),
+    ),
     # Self-booking accepts active accounts and preserves existing membership waivers.
     ModuleDefinition(
         "bookings", "Bookings", "Resource booking and public self-booking.", "bookings", GUARD, group=GROUP_BOOKINGS,

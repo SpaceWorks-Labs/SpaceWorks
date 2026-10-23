@@ -7,6 +7,8 @@ from .delegated_route_catalog import (
     SHARED_ROUTES, SIGNED_PROTOCOL_ROUTES, TENANT_STAFF_ROUTES,
 )
 from .claim_routes_public_pages import MAKERSPACE_PAGE_EDITORS, ORGANIZATION_PAGE_EDITORS
+from .programme_route_catalog import ROUTES as PROGRAMME_ROUTES
+from .reimbursement_route_catalog import ROUTES as REIMBURSEMENT_ROUTES
 
 MEMBERSHIP_ONLY = "membership-only"
 DELEGABLE = "delegable"
@@ -18,6 +20,13 @@ SIGNED_PROTOCOL = "signed-protocol"
 ROUTE_CLASSES = MappingProxyType({
     **dict.fromkeys(MAKERSPACE_PAGE_EDITORS, MEMBERSHIP_ONLY),
     **dict.fromkeys(ORGANIZATION_PAGE_EDITORS, DELEGABLE),
+    **{name: (MEMBERSHIP_ONLY if target == "tenant" else DELEGABLE)
+       for name, methods, target in PROGRAMME_ROUTES if name.startswith("events-programme-admin-")},
+    **{name: MEMBERSHIP_ONLY for name, methods, target in PROGRAMME_ROUTES
+       if "library" in name or "tenant-admin" in name or name == "admin-platform-insights"},
+    "events-programme-series-guests": DELEGABLE,
+    **{name: (DELEGABLE if surface == "delegable" else MEMBERSHIP_ONLY)
+       for name, methods, target, surface in REIMBURSEMENT_ROUTES if surface != "member"},
     **dict.fromkeys((
         "admin-staff-accounts", "admin-staff-account-policy", "admin-staff-account-change",
         "admin-staff-account-deactivate", "admin-staff-account-reactivate",

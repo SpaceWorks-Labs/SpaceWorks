@@ -45,6 +45,7 @@ class EventCheckInResolveView(APIView):
         request=EventCheckInResolveRequestSerializer,
         responses={
             200: EventCheckInResolveResponseSerializer,
+            400: OpenApiResponse(ErrorSerializer, description="Exactly one token field is required."),
             403: OpenApiResponse(ErrorSerializer, description="Event access denied."),
             404: OpenApiResponse(ErrorSerializer, description="Registration not found."),
             429: OpenApiResponse(ErrorSerializer, description="Request rate limit exceeded."),
@@ -52,6 +53,20 @@ class EventCheckInResolveView(APIView):
     )
     def post(self, request, pk, *args, **kwargs):
         event = _manageable_event(request.user, pk, CHECK_IN)
+        serializer = EventCheckInResolveRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            # A malformed legacy token answers exactly like an unknown one: a distinct
+            # 400 would let a stolen code probe which tokens are well formed.
+            if set(serializer.errors) == {"checkin_token"}:
+                raise NotFound()
+            serializer.is_valid(raise_exception=True)
+        value = serializer.validated_data.get("credential")
+        if value is not None:
+            from .credentials.resolution import resolve
+            response = Response(resolve(event, value, actor=request.user))
+            response["Cache-Control"] = "private, no-store"
+            response["X-Content-Type-Options"] = "nosniff"
+            return response
         try:
             token = UUID(str(request.data["checkin_token"]))
         except (KeyError, TypeError, ValueError, AttributeError):
@@ -61,6 +76,7 @@ class EventCheckInResolveView(APIView):
             EventRegistration.objects.filter(
                 event=event,
                 checkin_token=token,
+                credential_mode="legacy",
             )
             .select_related("event")
             .first()
@@ -92,6 +108,10 @@ class EventCheckInResolveView(APIView):
                 and registration.event.status in CHECKABLE_EVENT_STATUSES
             ),
         }
+        from . import event_authority
+        from .event_permissions import MANAGE_REGISTRATIONS
+        if not event_authority.can(request.user, event, MANAGE_REGISTRATIONS):
+            payload.pop("payment_status")
         response = Response(EventCheckInResolveResponseSerializer(payload).data)
         response["Cache-Control"] = "private, no-store"
         return response
@@ -129,7 +149,7 @@ class EventCheckInQrView(APIView):
             .filter(
                 pk=pk,
                 member=request.user,
-                status=EventRegistration.Status.REGISTERED,
+                status__in=(EventRegistration.Status.REGISTERED, EventRegistration.Status.ATTENDED),
                 # The EVENT's status matters too, not just the registration's.
                 # `services.cancel()` changes only `Event.status` and leaves every
                 # registration REGISTERED, so without this a member keeps a QR for a
@@ -166,8 +186,15 @@ class EventCheckInQrView(APIView):
 
         title = registration.event.title
         label = title if len(title) <= 40 else f"{title[:37].rstrip()}..."
+        if registration.credential_mode == "v2":
+            from .credentials.workflow import owner_payload
+            payload = owner_payload(registration, actor=request.user)
+        elif registration.credential_mode == "legacy" and registration.status == EventRegistration.Status.REGISTERED:
+            payload = str(registration.checkin_token)
+        else:
+            raise NotFound()
         response = HttpResponse(
-            render_qr_label_svg(str(registration.checkin_token), label=label),
+            render_qr_label_svg(payload, label=label),
             content_type="image/svg+xml",
         )
         response["Cache-Control"] = "private, no-store"

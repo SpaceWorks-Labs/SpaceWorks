@@ -29,6 +29,12 @@ class WebsiteSectionInput(serializers.Serializer):
     asset_id = serializers.IntegerField(min_value=1, allow_null=True, default=None)
     visibility = serializers.ChoiceField(choices=VISIBILITY, default="draft")
     position = serializers.IntegerField(min_value=0, max_value=1000, default=0)
+    options = serializers.DictField(required=False)
+
+    def validate(self, data):
+        from .website_section_registry import validate_options
+        data["options"] = validate_options(data["kind"], data.get("options", {}))
+        return data
 
 
 class WebsiteSessionInput(serializers.Serializer):
@@ -93,6 +99,12 @@ class WebsiteSessionSerializer(WebsiteSessionInput):
     effective_ends_at = serializers.DateTimeField()
 
 
+class ProgrammeSectionSerializer(serializers.Serializer):
+    kind = serializers.CharField()
+    layout = serializers.ChoiceField(choices=("grid", "list"))
+    items = serializers.ListField(child=serializers.DictField())
+
+
 class WebsiteSerializer(WebsitePageFields):
     cover = Cover(allow_null=True, required=False)
     presentation = Presentation(required=False)
@@ -107,6 +119,7 @@ class WebsiteSerializer(WebsitePageFields):
     sections = WebsiteSectionSerializer(many=True)
     sessions = WebsiteSessionSerializer(many=True)
     assets = WebsiteAssetSerializer(many=True, required=False)
+    programme_sections = ProgrammeSectionSerializer(many=True, required=False)
 
 
 class PublicWebsiteSerializer(WebsiteSerializer):

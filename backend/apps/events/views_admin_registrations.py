@@ -97,7 +97,7 @@ class EventRegistrationListView(APIView):
     )
     def post(self, request, pk, *args, **kwargs):
         event = _manageable_event(request.user, pk, MANAGE_REGISTRATIONS)
-        serializer = EventStaffRegistrationSerializer(data=request.data)
+        serializer = EventStaffRegistrationSerializer(data=request.data, context={"event": event})
         serializer.is_valid(raise_exception=True)
         if event.registration_audience != "members":
             account = get_object_or_404(User.objects.filter(account_kind=User.AccountKind.MEMBER,
@@ -125,6 +125,7 @@ class EventRegistrationListView(APIView):
             phone=serializer.validated_data.get('phone', ''),
             email=serializer.validated_data.get('email', ''),
             custom_answers=serializer.validated_data.get('custom_answers'),
+            form_payload=serializer.validated_data.get('form_payload'),
             actor=request.user,
             staff_registration=True,
         )

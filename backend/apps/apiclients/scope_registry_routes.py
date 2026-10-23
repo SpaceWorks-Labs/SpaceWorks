@@ -176,4 +176,8 @@ def _build_registry():
     return MappingProxyType(registry)
 
 
+from .scope_registry_programme import definitions as programme_definitions
+_ROUTE_DEFINITIONS += programme_definitions(
+    PUBLIC_READ_SCOPES, PUBLIC_WRITE_SCOPES, TARGET_GLOBAL, TARGET_TENANT_TOKEN,
+)
 SCOPE_REGISTRY = _build_registry()

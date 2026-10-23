@@ -71,6 +71,25 @@ LEGACY_ENTRIES = (
     ("member-push-recovery", "apps.notifications.tasks.sweep_member_push", 5),
     ("purge-deleted-accounts", "apps.accounts.tasks.purge_deleted_accounts_task", 1440),
     ("hosting-request-retention", "apps.hosting_requests.tasks.sweep_hosting_requests_task", 1440),
+    # Events programme (lane/events-final): the exact entries its beat-less command ran.
+    ("event-admission-deadlines", "apps.events.tasks_programme.sweep_admission_deadlines_task", 5),
+    ("event-contributor-maintenance", "apps.events.tasks_contributions.sweep_contributor_maintenance_task", 1),
+    ("event-scheduled-broadcasts", "apps.events.programme.broadcast_schedule.resume_scheduled_broadcasts", 1),
+    ("event-asset-work", "apps.events.tasks_assets.sweep_asset_work_task", 1),
+    ("event-asset-deadlines", "apps.events.tasks_assets.sweep_asset_deadlines_task", 1),
+    ("event-asset-retention", "apps.events.tasks_assets.sweep_asset_retention_task", 5),
+    ("event-asset-obligations", "apps.events.tasks_assets.reconcile_asset_obligations_task", 5),
+    ("event-certificate-batches", "apps.events.certificates.tasks.resume_batches", 1),
+    ("event-certificate-renders", "apps.events.certificates.tasks.resume_certificates", 5),
+    ("event-print-cleanup", "apps.events.tasks_recovery.sweep_print_cleanup_task", 5),
+    ("event-judging-notices", "apps.events.tasks_recovery.sweep_judging_notices_task", 1),
+    ("event-stage-reconcile", "apps.events.staged_forms.tasks.reconcile_stage_forms_task", 5),
+    ("event-stage-file-recovery", "apps.events.staged_forms.tasks.recover_stage_files_task", 5),
+    ("event-stage-file-retention", "apps.events.staged_forms.tasks.sweep_stage_file_retention_task", 1440),
+    ("event-reimbursement-deadlines", "apps.event_reimbursements.tasks.sweep_deadlines_task", 5),
+    ("finance-event-payout-recovery", "apps.payments.event_payouts.tasks.recover_finance_work_task", 5),
+    ("finance-event-payout-retention", "apps.payments.event_payouts.tasks.sweep_retention_task", 1440),
+    ("account-saved-details", "apps.accounts.saved_details.tasks.process_saved_details", 5),
 )
 _RETAINED = frozenset({
     "evidence-object-expiry", "evidence-abandoned-upload-cleanup",
@@ -81,6 +100,9 @@ _RETAINED = frozenset({
     "purge-expired-backup-archives", "cleanup-expired-restore-rollbacks",
     "cleanup-expired-tenant-import-jobs", "cleanup-abandoned-tenant-import-objects",
     "cleanup-refused-tenant-dump-artifacts", "resume-expired-tenant-import-finalizations",
+    # Events byte retention and custody must outlive a tombstoned Events app.
+    "event-asset-work", "event-asset-retention", "event-asset-obligations", "event-print-cleanup",
+    "event-stage-file-retention", "finance-event-payout-retention",
 })
 _HEAVY = frozenset({
     "subject-access-exports", "report-schedules", "scheduled-deployment-backup",
@@ -125,11 +147,16 @@ def all_declarations():
         free_policy="disabled_in_free_profile" if key == "scheduled-deployment-backup"
         else "bounded_adapter_required",
     ) for key, path, minutes in LEGACY_ENTRIES]
+    # The events programme is merged, so its own tasks are legacy entries. A programme
+    # wrapper never duplicates one by key or by task path.
+    legacy_keys = {key for key, _path, _minutes in LEGACY_ENTRIES}
+    legacy_paths = {path for _key, path, _minutes in LEGACY_ENTRIES}
     tasks.extend(PeriodicTask(
         key, path, minutes, app=path.split(".")[1],
         retained=retained, heavy=key in {"event-asset-work", "event-certificate-resume", "finance-work"},
         operation=key.replace("-", "_"),
-    ) for group, key, path, minutes, retained in PROGRAMME_ENTRIES)
+    ) for group, key, path, minutes, retained in PROGRAMME_ENTRIES
+        if key not in legacy_keys and path not in legacy_paths)
     # Free uploads are refused until storage is qualified and every binding has a fresh
     # usage sample, so a new deployment must not wait one full interval before the
     # first run of either: seed them due immediately, like the critical sweeps.

@@ -10,13 +10,13 @@ from apps.events.capacity import (
 from apps.events.models import Event, EventRegistration
 from .serializers_organization_audience import OrganizationAudienceFields
 from .serializers_ticketing_public import EventTicketingPublicSerializer
-from apps.forms_schema.serializers import CustomFormSubmissionMixin
+from .serializers_registration_form import RegistrationFormInput
 from apps.inventory import public_image_storage
 from .serializers_website import PublicWebsiteSerializer
 
 
 PUBLIC_EVENT_FIELDS = (
-    'website', 'participating_organizations', 'audience_label',
+    'accent_preset', 'website', 'participating_organizations', 'audience_label',
     'public_token',
     'title',
     'description',
@@ -47,6 +47,7 @@ class EventOrganizerSummarySerializer(serializers.Serializer):
 
 
 class PublicEventSerializer(OrganizationAudienceFields, EventTicketingPublicSerializer):
+    accent_preset = serializers.CharField(read_only=True, allow_blank=True)
     website = serializers.SerializerMethodField()
 
     @extend_schema_field(PublicWebsiteSerializer(allow_null=True))
@@ -151,7 +152,7 @@ class PublicEventSerializer(OrganizationAudienceFields, EventTicketingPublicSeri
 
 
 class PublicEventRegistrationInputSerializer(
-    CustomFormSubmissionMixin,
+    RegistrationFormInput,
     serializers.Serializer,
 ):
     host_waiver_id = serializers.IntegerField(min_value=1, required=False, allow_null=True, write_only=True)
@@ -162,25 +163,47 @@ class PublicEventRegistrationInputSerializer(
     invite_code = serializers.CharField(max_length=128, required=False, write_only=True)
     ticket_type_id = serializers.IntegerField(min_value=1, required=False, write_only=True)
     promo_code = serializers.CharField(max_length=128, required=False, write_only=True)
+    # Application-stage forms and the travel-support request answered with the signup.
+    # Both are validated by their owners before the registration transaction.
+    stage_forms = serializers.ListField(child=serializers.DictField(), max_length=50, required=False, write_only=True)
+    reimbursement_request = serializers.DictField(required=False, write_only=True)
 
     def validate(self, attrs):
-        request = self.context.get("request")
-        event = self.context["event"]
-        if request and request.user.is_authenticated and EventRegistration.objects.filter(
-            event=event, member=request.user,
-            status__in=(EventRegistration.Status.REGISTERED, EventRegistration.Status.WAITLISTED,
-                        EventRegistration.Status.PENDING_APPROVAL),
-        ).exists():
-            # An owned-row retry repairs consent only; answers stay on the saved row.
-            # The service rechecks ownership, eligibility and event state under locks.
-            return attrs
-        return super().validate(attrs)
+        inline = {key: attrs.pop(key) for key in ("stage_forms", "reimbursement_request") if key in attrs}
+        if inline:
+            if "operation_id" not in attrs:
+                raise serializers.ValidationError({"code": "operation_required"})
+            inline["operation_id"] = attrs["operation_id"]
+        attrs = super().validate(attrs)
+        if inline:
+            attrs["inline_forms"] = inline
+        return attrs
 
     def custom_form_schema(self):
         return self.context['event'].custom_form
 
 
 class PublicEventRegistrationResponseSerializer(serializers.Serializer):
+    save_intent = serializers.SerializerMethodField()
+
+    def to_representation(self, instance):
+        result = super().to_representation(instance)
+        snapshot = getattr(instance, "custom_answers", None)
+        if not isinstance(snapshot, dict) or snapshot.get("version") != 2:
+            result.pop("save_intent", None)
+        return result
+
+    @extend_schema_field({"type": "object", "nullable": True, "properties": {
+        "operation_id": {"type": "string", "format": "uuid"},
+        "state": {"type": "string"}, "status_url": {"type": "string"}}})
+    def get_save_intent(self, obj):
+        if not getattr(obj, "member_id", None):
+            return None
+        from .contracts.subjects import AnswerSubject, SubjectKind
+        from .programme.prepared_forms import intent_for
+        return intent_for(AnswerSubject(event_id=obj.event_id, owner_member_id=obj.member_id,
+            kind=SubjectKind.REGISTRATION, subject_id=obj.pk))
+
     status = serializers.ChoiceField(
         choices=(
             EventRegistration.Status.PENDING_APPROVAL,

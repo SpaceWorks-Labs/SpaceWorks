@@ -57,7 +57,10 @@ class MakerspaceArchiveRequestAdmin(RecentReauthenticationAdminMixin, SuperuserO
                 "requests": [
                     {
                         "object": archive_request,
-                        **lifecycle.archive_impact(archive_request.makerspace),
+                        # Same rule as direct archival: a hidden space shows no money counts.
+                        "hidden": not archive_request.makerspace.superadmin_access_enabled,
+                        **(lifecycle.archive_impact(archive_request.makerspace)
+                           if archive_request.makerspace.superadmin_access_enabled else {}),
                     }
                     for archive_request in rows
                 ],

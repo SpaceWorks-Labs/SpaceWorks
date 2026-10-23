@@ -68,11 +68,10 @@ def _png(content):
                     raise ValidationError({"artwork": "Use one image with at most 16 million pixels."})
                 image.load()
                 output = BytesIO()
-                with image.convert("RGBA") as rgba, Image.new("RGB", image.size, "white") as pixels:
-                    # A PDF page is white: composite alpha before dropping it so
-                    # hidden RGB values cannot become opaque artwork. The fresh
-                    # image also keeps EXIF, ICC and text metadata out of storage.
-                    pixels.paste(rgba, mask=rgba.getchannel("A"))
+                with image.convert("RGBA") as pixels:
+                    # Fresh pixels preserve transparent logo/signature layers and
+                    # strip EXIF/ICC/text metadata before immutable promotion.
+                    pixels.info.clear()
                     pixels.save(output, format="PNG")
                 result = output.getvalue()
                 if len(result) > MAX_BYTES:

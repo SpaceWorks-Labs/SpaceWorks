@@ -76,6 +76,23 @@ from apps.tenant_migration.catalog_public_pages import EXPORTED_FIELDS as PAGE_F
 EXPORTED_MODEL_FIELDS.update(PAGE_FIELDS)
 OMITTED_MODELS.update(PAGE_OMITTED)
 EXPORTED_MODELS = frozenset(EXPORTED_MODEL_FIELDS)
+from apps.tenant_migration.catalog_events_programme import (
+    EXPORTED_FIELDS as PROGRAMME_FIELDS, EXTRA_FIELDS as PROGRAMME_EXTRA,
+    OMITTED_MODELS as PROGRAMME_OMITTED,
+)
+EXPORTED_MODEL_FIELDS.update(PROGRAMME_FIELDS)
+for _label, _names in PROGRAMME_EXTRA.items():
+    EXPORTED_MODEL_FIELDS[_label] += " " + _names
+OMITTED_MODELS.update(PROGRAMME_OMITTED)
+from apps.tenant_migration.catalog_reimbursements import (
+    OMITTED_MODELS as REIMBURSEMENT_OMITTED, EXTRA_FIELDS as REIMBURSEMENT_EXTRA,
+    EXPORTED_FIELDS as REIMBURSEMENT_FIELDS,
+)
+EXPORTED_MODEL_FIELDS.update(REIMBURSEMENT_FIELDS)
+OMITTED_MODELS.update(REIMBURSEMENT_OMITTED)
+for _label, _names in REIMBURSEMENT_EXTRA.items():
+    EXPORTED_MODEL_FIELDS[_label] += " " + _names
+EXPORTED_MODELS = frozenset(EXPORTED_MODEL_FIELDS)
 
 NOT_TENANT_MODELS = {
     label: NotTenantData(reason) for label, reason in OMITTED_MODELS.items()

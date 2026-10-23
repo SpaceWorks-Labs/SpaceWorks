@@ -14,7 +14,7 @@ from apps.events.checkin_roster import host_waiver_state
 from apps.events.member_history import registrations_for_space
 from apps.events.models import EventRegistration
 from apps.events.participant_access import participant_space
-from apps.events.serializers_staff_tools import MemberEventTicketSerializer
+from apps.events.credentials.serializers_ticket import ProgrammeTicketSerializer as MemberEventTicketSerializer
 from apps.events.views_checkin import CHECKABLE_EVENT_STATUSES
 from apps.hardware_requests.exceptions import ErrorSerializer
 from apps.makerspaces.confirmation_render import render_confirmation_png
@@ -35,6 +35,12 @@ def _owned_registration(user, makerspace_id, pk):
 
 
 def _png_available(registration):
+    if registration.credential_mode == "inert":
+        return False
+    if registration.credential_mode == "v2":
+        from .credentials.workflow import current
+        if current(registration) is None:
+            return False
     if (registration.status not in (EventRegistration.Status.REGISTERED, EventRegistration.Status.ATTENDED)
             or registration.event.status not in CHECKABLE_EVENT_STATUSES):
         return False
@@ -61,10 +67,14 @@ class MemberEventTicketView(APIView):
                    responses={200: MemberEventTicketSerializer, **ERRORS})
     def get(self, request, makerspace_id, pk):
         registration = _owned_registration(request.user, makerspace_id, pk)
-        response = Response(MemberEventTicketSerializer({
+        data = MemberEventTicketSerializer({
             "registration_id": registration.pk, "status": registration.status,
             "event": registration.event, "ticket_png_available": _png_available(registration),
-        }).data)
+        }).data
+        attendance = registration.check_in_events.order_by("-recorded_at", "-pk").first() if registration.status == "attended" else None
+        data["attended_at"] = attendance.attended_at.isoformat() if attendance else None
+        data["credential_mode"] = registration.credential_mode
+        response = Response(data)
         response["Cache-Control"] = "private, no-store"
         return response
 
@@ -82,7 +92,12 @@ class MemberEventTicketPngView(APIView):
             raise NotFound()
         event = registration.event
         when = timezone.localtime(event.starts_at, ZoneInfo(event.timezone_name)).strftime("%d %b %Y %H:%M %Z")
-        png = render_confirmation_png(qr_value=str(registration.checkin_token), title=event.title,
+        if registration.credential_mode == "v2":
+            from .credentials.workflow import owner_payload
+            payload = owner_payload(registration, actor=request.user)
+        else:
+            payload = str(registration.checkin_token)
+        png = render_confirmation_png(qr_value=payload, title=event.title,
                                       lines=(registration.name, when, event.location, registration.status))
         record(request.user, "event.ticket_downloaded", makerspace=event.makerspace, target=registration)
         response = HttpResponse(png, content_type="image/png")

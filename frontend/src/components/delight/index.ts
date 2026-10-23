@@ -1,0 +1,17 @@
+export { DelightProvider, useDelight, useReducedMotion, eggsAllowed } from "./DelightProvider";
+export { setDelightSpaceFeatures, useDelightSpaceFeatures, spaceAllows } from "./spaceDelight";
+export type { DelightArtwork, DelightPolicy } from "./DelightProvider";
+export { PassState, safeHaptic } from "./PassState";
+export type { PersistedPassState } from "./PassState";
+export { SuccessCard, DoorSoundControl } from "./SuccessCard";
+export { playDoorSound } from "./doorSounds";
+export { BrandLoader, MoodGlyph, DelightArt } from "./Artwork";
+export { StaffGreeting, ConfirmationGreeting, SetupChecklist, DotMeter, EventTimeChip } from "./StatusDetails";
+export type { CountProjection, SetupStep } from "./StatusDetails";
+export { WordFeedback } from "./WordFeedback";
+export type { FeedbackWord } from "./WordFeedback";
+export { WorkshopLogbook } from "./WorkshopLogbook";
+export { useMakerMode, MakerModePanel, MakerModeToggle, MakerModeHost, useShellMakerMode } from "./EasterEggs";
+export { Companion } from "./Companion";
+export { DelightFixtures } from "./DelightFixtures";
+export { delightTone } from "./tone";

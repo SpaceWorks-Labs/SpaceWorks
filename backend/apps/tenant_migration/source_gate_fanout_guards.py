@@ -3,6 +3,7 @@
 import ast
 
 from .gate_policy import FANOUT_GATE_PARTICIPANTS
+from .gate_policy_programme import MULTI_SCOPE_BOUNDARIES
 from .source_gate_ast import APPS_DIR, all_functions, parents
 
 
@@ -11,6 +12,10 @@ def validate_fanout_gate_coverage(
 ):
     """Require tenant loops to use the skip-and-count boundary, never a raw gate."""
     functions = all_functions(apps_dir)
+    if apps_dir == APPS_DIR:
+        stale_boundaries = MULTI_SCOPE_BOUNDARIES - set(functions)
+        if stale_boundaries:
+            raise error_class(f"stale command scope boundary: {sorted(stale_boundaries)}")
     declared = set(participants)
     stale = declared - set(functions)
     if stale:
@@ -43,6 +48,8 @@ def validate_fanout_gate_coverage(
             if name not in {"boundary_tenant_write", "tenant_write"}:
                 continue
             if _has_loop_parent(call, parent_map, function):
+                if target in MULTI_SCOPE_BOUNDARIES and _scope_setup_only(call, parent_map):
+                    continue
                 unsafe.append(target)
                 break
     if unsafe:
@@ -55,6 +62,21 @@ def validate_fanout_gate_coverage(
             f"{sorted(unsafe_helper_usage)}"
         )
     return frozenset(helper_callers)
+
+
+def _scope_setup_only(call, parents):
+    """Only registering a boundary in ExitStack is admitted; no writes occur in the loop."""
+    enclosing = parents.get(call)
+    statement = parents.get(enclosing)
+    loop = parents.get(statement)
+    return (
+        isinstance(enclosing, ast.Call)
+        and isinstance(enclosing.func, ast.Attribute)
+        and enclosing.func.attr == "enter_context"
+        and enclosing.args == [call] and not enclosing.keywords
+        and isinstance(statement, ast.Expr)
+        and isinstance(loop, ast.For) and loop.body == [statement] and not loop.orelse
+    )
 
 
 def _calls_named(node, name):

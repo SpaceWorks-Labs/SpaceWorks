@@ -17,7 +17,7 @@ ROLE_CATALOG = (
         "accept_request", "assign_box", "edit_inventory", "issue_direct_loan",
         "issue_request", "manage_bookings", "manage_events", "manage_devices",
         "manage_machines", "manage_makerspace", "manage_members", "manage_member_cards",
-        "manage_printing", "manage_qr", "record_payment", "reject_request",
+        "manage_printing", "manage_qr", "record_payment", "record_reimbursement_payout", "reject_request",
         "return_request", "upload_evidence", "view_audit", "view_finance", "view_inventory",
     })),
     RoleDefinition("inventory_manager", "Inventory Manager", "inventory_manager", frozenset({

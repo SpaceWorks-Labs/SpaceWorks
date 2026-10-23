@@ -36,10 +36,16 @@ from apps.operations.cloud_jobs.outcomes import require_success
 
 SCHEDULED_TASKS = legacy_schedule()
 # A tombstoned app's tasks never run from this command, exactly as before the catalog
-# (the beat schedule drops them the same way in config/settings.py).
-for _tombstoned in ("tenant_migration", "events", "devices", "presence", "notifications"):
+# (the beat schedule drops them the same way in config/settings.py). Events keeps the
+# byte-retention and custody sweeps that must outlive the app (events programme).
+_TOMBSTONE_RETAINED = {"events": frozenset({
+    "event-asset-work", "event-asset-retention", "event-asset-obligations", "event-print-cleanup",
+    "event-stage-file-retention",
+})}
+for _tombstoned in ("tenant_migration", "events", "event_reimbursements", "devices", "presence", "notifications"):
     if _tombstoned in settings.TOMBSTONED_APPS:
-        SCHEDULED_TASKS = tuple(task for task in SCHEDULED_TASKS if f".{_tombstoned}." not in task[1])
+        SCHEDULED_TASKS = tuple(task for task in SCHEDULED_TASKS if f".{_tombstoned}." not in task[1]
+                                or task[0] in _TOMBSTONE_RETAINED.get(_tombstoned, ()))
 EVIDENCE_OPTION_TASKS = frozenset({"evidence-object-expiry", "evidence-abandoned-upload-cleanup"})
 
 

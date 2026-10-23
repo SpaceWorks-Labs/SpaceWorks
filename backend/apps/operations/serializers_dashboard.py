@@ -24,7 +24,16 @@ class DashboardQueueSerializer(serializers.Serializer):
     pickups = serializers.IntegerField(required=False)
 
 
+class NextUpEventSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    title = serializers.CharField()
+    starts_at = serializers.DateTimeField()
+    ends_at = serializers.DateTimeField()
+    href = serializers.CharField()
+
+
 class DashboardSerializer(serializers.Serializer):
+    next_up_events = NextUpEventSerializer(many=True, required=False)
     upcoming_events = serializers.IntegerField(required=False, default=0)
     pending_event_registrations = serializers.IntegerField(required=False, default=0)
     pending_bookings = serializers.IntegerField(required=False, default=0)

@@ -1,3 +1,6 @@
+import { PublicProgrammeEntry } from '../events/programme/PublicProgrammeEntry';
+import { PublicVolunteerCards } from '../events/contributions/PublicVolunteerCards';
+import { programmeHref } from '../events/programme/routeNames';
 import { CenteredCardLayout, PublicLayout, PublicDetailLayout } from "../../components/layouts";
 import { publicPageChrome } from "./PublicPageChrome";
 import { PublicEventWebsite } from "../events/PublicEventWebsite";
@@ -71,7 +74,9 @@ export function PublicEventDetailPage({ resolvedSlug, resolvedToken, canonicalUr
           ...(canonicalUrl ? [{ id: "share", label: "Share", content: <PageShare title={event.title} description={event.description} canonicalUrl={canonicalUrl} /> }] : []),
           ...(event.website ? [{ id: "website", label: "Event details", content: <PublicEventWebsite website={event.website}
             links={{ schedule: tenantPath(`events/${event.public_token}/schedule`), speaker: (value: string) => tenantPath(`events/${event.public_token}/speakers/${encodeURIComponent(value)}`), session: (value: string) => tenantPath(`events/${event.public_token}/sessions/${encodeURIComponent(value)}`) }}
-            image={(url: string, alt: string) => <PublicWebsiteImage makerspaceSlug={makerspaceSlug} url={url} alt={alt} />} /> }] : []), ...venueSection] : []}
+            image={(url: string, alt: string) => <PublicWebsiteImage makerspaceSlug={makerspaceSlug} url={url} alt={alt} />} /> }] : []),
+          ...(bootstrap?.features.includes('events.volunteering') ? [{ id: 'volunteers', label: 'Volunteers needed', content: <PublicVolunteerCards publicToken={event.public_token} onApply={id => window.location.assign(programmeHref(event.public_token, `roles/${id}`, makerspaceSlug))} /> }] : []),
+          ...(bootstrap?.features.includes('events.project_gallery') ? [{ id: 'projects', label: 'Projects and results', content: <div className="flex flex-wrap gap-3"><a className="desk-button" href={tenantPath(`events/${event.public_token}/gallery`)}>Project gallery</a><a className="desk-button" href={tenantPath(`events/${event.public_token}/results`)}>Results</a></div> }] : []), ...venueSection] : []}
         actionCard={{ title: event?.registration_requires_approval ? "Apply to join" : event?.availability === "Full" ? "Join waitlist" : "Join this event",
           state: event?.registration_open || organizationAudience ? "open" : "closed", note: event?.registration_open ? undefined : closedNote,
           summary: event ? <div className="flex flex-wrap items-end gap-6">
@@ -80,8 +85,9 @@ export function PublicEventDetailPage({ resolvedSlug, resolvedToken, canonicalUr
             {showCount ? <dl><dt className="eyebrow">Registered</dt><dd className="font-semibold tabular-nums text-ink">{event.registration_count}</dd></dl> : null}
             <StatusPill label={event.availability} tone={event.availability === "Full" ? "warn" : "success"} />
           </div> : null,
-          form: event && organizationAudience ? <OrganizationEventAdmission key={`${makerspaceSlug}:${event.public_token}`} event={event} makerspaceSlug={makerspaceSlug} organisation={name} />
-            : event?.registration_open ? <EventRegistrationEntry key={`${makerspaceSlug}:${event.public_token}`} event={event} makerspaceSlug={makerspaceSlug} organisation={name} /> : null,
+          form: event ? <PublicProgrammeEntry publicToken={event.public_token} slug={makerspaceSlug} features={bootstrap?.features} versionedForm={Boolean(event.custom_form && !Array.isArray(event.custom_form))}>
+            {event && organizationAudience ? <OrganizationEventAdmission key={`${makerspaceSlug}:${event.public_token}`} event={event} makerspaceSlug={makerspaceSlug} organisation={name} />
+            : event?.registration_open ? <EventRegistrationEntry key={`${makerspaceSlug}:${event.public_token}`} event={event} makerspaceSlug={makerspaceSlug} organisation={name} /> : null}</PublicProgrammeEntry> : null,
           secondary: event ? [{ label: "Add to calendar", pending: calendar.isPending, onClick: () => calendar.mutate(event) }, { label: "Share event", onClick: async () => {
             setShareError(""); try { if (navigator.share) await navigator.share({ title: event.title, url: canonicalUrl ?? window.location.href }); else await navigator.clipboard.writeText(canonicalUrl ?? window.location.href); } catch { setShareError("Could not share this event."); }
           } }] : [],

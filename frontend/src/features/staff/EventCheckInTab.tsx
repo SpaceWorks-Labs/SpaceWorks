@@ -13,6 +13,7 @@ export function EventCheckInTab({ event, makerspaceId, active, checkable, canMan
 }) {
   if (!checkable) return active ? <Card><h2 className="title-panel">Check-in opens once the event is published</h2>
     <p className="mt-2 text-sm text-muted">This event is still a draft. When it is published, this tab gives you the attendance scanner, the checked-in list{event.offline_checkin_enabled ? " and offline check-in" : ""}.</p></Card> : null;
+  if (!active) return null;
   const counts = event.registration_counts;
   return <>
     {active ? <StatCard label="Checked in" value={counts.attended} of={counts.registered + counts.attended || undefined} /> : null}

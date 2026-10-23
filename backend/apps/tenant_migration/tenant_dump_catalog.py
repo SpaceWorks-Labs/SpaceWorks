@@ -48,6 +48,8 @@ class TenantDumpCatalogError(AssertionError):
 # Machine-service ETA (lane/machine-eta): cancellation and notice markers; re-pinned.
 # Cloud programme (cloud/integration): managed coordination, email providers, cloud
 # accounting and storage history; with lane/refunds (refund cases), re-pinned after both merges.
+# Events programme (lane/events-final, decision #86): programme, design and fence
+# steps plus reimbursements; re-pinned from schema_digest() over the merged graph.
 # Orchestrator re-pins the live catalog after final schema/migration verification.
 CATALOG_SCHEMA_SHA256 = "8b14c120f24ee4b1745035d1e591e1e1534cafcbf3b229c0023cbad2c52bb3b2"
 

@@ -11,6 +11,26 @@ from apps.events.models_registration import EventRegistration
 
 
 class EventAttendanceCertificate(ScopedPiiModelMixin, models.Model):
+    class Kind(models.TextChoices):
+        ATTENDANCE = "attendance", "Attendance"
+        PARTICIPANT = "participant", "Participant"
+        FINALIST = "finalist", "Finalist"
+        WINNER = "winner", "Winner"
+        VOLUNTEER_THANKS = "volunteer_thanks", "Volunteer thanks"
+        MENTOR_THANKS = "mentor_thanks", "Mentor thanks"
+        JUDGE_THANKS = "judge_thanks", "Judge thanks"
+
+    event = models.ForeignKey("events.Event", on_delete=models.PROTECT, related_name="certificates")
+    recipient_member = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+                                        null=True, blank=True, related_name="event_certificates")
+    role_assignment = models.ForeignKey("events.EventRoleAssignment", on_delete=models.PROTECT,
+                                       null=True, blank=True, related_name="certificates")
+    kind = models.CharField(max_length=24, choices=Kind.choices, default=Kind.ATTENDANCE)
+    award = models.ForeignKey("events.HackathonPrize", on_delete=models.PROTECT,
+                             null=True, blank=True, related_name="certificates")
+    result_revision = models.ForeignKey("events.EventResultRevision", on_delete=models.PROTECT,
+                                       null=True, blank=True, related_name="certificates")
+    public_verification_enabled = models.BooleanField(default=False)
     class Status(models.TextChoices):
         PENDING = "pending", "Pending"
         RENDERING = "rendering", "Rendering"
@@ -27,11 +47,13 @@ class EventAttendanceCertificate(ScopedPiiModelMixin, models.Model):
         EventFeedbackResponse,
         on_delete=models.PROTECT,
         related_name="certificates",
+        null=True, blank=True,
     )
     registration = models.ForeignKey(
         EventRegistration,
         on_delete=models.PROTECT,
         related_name="attendance_certificates",
+        null=True, blank=True,
     )
     serial = models.UUIDField(default=uuid4, unique=True, editable=False)
     revision = models.PositiveIntegerField()
@@ -44,6 +66,7 @@ class EventAttendanceCertificate(ScopedPiiModelMixin, models.Model):
     event_title = models.CharField(max_length=200)
     event_starts_at = models.DateTimeField()
     event_ends_at = models.DateTimeField()
+    event_timezone_name = models.CharField(max_length=64, default="UTC")
     issuer_name = models.CharField(max_length=200)
     object_key = models.CharField(max_length=512, unique=True)
     content_type = models.CharField(max_length=64, default="application/pdf")
@@ -56,6 +79,9 @@ class EventAttendanceCertificate(ScopedPiiModelMixin, models.Model):
     )
     issued_at = models.DateTimeField(auto_now_add=True)
     rendered_at = models.DateTimeField(null=True, blank=True)
+    render_token = models.UUIDField(null=True, blank=True, editable=False)
+    render_started_at = models.DateTimeField(null=True, blank=True, editable=False)
+    render_attempts = models.PositiveIntegerField(default=0, editable=False)
     revoked_at = models.DateTimeField(null=True, blank=True)
     revoked_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -71,16 +97,31 @@ class EventAttendanceCertificate(ScopedPiiModelMixin, models.Model):
     )
 
     class Meta:
-        ordering = ["registration_id", "revision"]
+        ordering = ["event_id", "id"]
         constraints = [
+            models.CheckConstraint(condition=(
+                Q(registration__isnull=False, role_assignment__isnull=True)
+                | Q(registration__isnull=True, role_assignment__isnull=False, response__isnull=True)
+            ), name="event_certificate_exact_subject"),
             models.UniqueConstraint(
-                fields=["registration", "revision"],
-                name="uniq_event_certificate_revision",
+                fields=["registration", "kind", "award", "revision"],
+                condition=Q(registration__isnull=False), nulls_distinct=False,
+                name="event_cert_reg_revision_v2",
             ),
             models.UniqueConstraint(
-                fields=["registration"],
-                condition=~Q(status="revoked"),
-                name="uniq_live_event_certificate",
+                fields=["role_assignment", "kind", "award", "revision"],
+                condition=Q(role_assignment__isnull=False), nulls_distinct=False,
+                name="event_cert_role_revision_v2",
+            ),
+            models.UniqueConstraint(
+                fields=["registration", "kind", "award"],
+                condition=Q(registration__isnull=False) & ~Q(status="revoked"), nulls_distinct=False,
+                name="event_cert_reg_live_v2",
+            ),
+            models.UniqueConstraint(
+                fields=["role_assignment", "kind", "award"],
+                condition=Q(role_assignment__isnull=False) & ~Q(status="revoked"), nulls_distinct=False,
+                name="event_cert_role_live_v2",
             ),
         ]
 
@@ -93,10 +134,25 @@ class EventAttendanceCertificate(ScopedPiiModelMixin, models.Model):
                 )
         if self.content_type != "application/pdf":
             raise ValidationError({"content_type": "Certificates must be PDF files."})
-        if self.template_revision_id and self.template_revision.event_id != self.registration.event_id:
+        if bool(self.registration_id) == bool(self.role_assignment_id):
+            raise ValidationError("A certificate has exactly one registration or role subject.")
+        subject = self.registration if self.registration_id else self.role_assignment
+        if subject.event_id != self.event_id or subject.member_id != self.recipient_member_id:
+            raise ValidationError("Certificate event and recipient must match its subject.")
+        if self.award_id and self.award.event_id != self.event_id:
+            raise ValidationError("Award belongs to another event.")
+        if self.result_revision_id and self.result_revision.event_id != self.event_id:
+            raise ValidationError("Results belong to another event.")
+        if self.template_revision_id and self.template_revision.event_id != self.event_id:
             raise ValidationError({"template_revision": "Template belongs to another event."})
 
     def save(self, *args, **kwargs):
+        # Older internal attendance callers provide the immutable registration.
+        # Populate the new direct ownership columns from that exact subject once.
+        if self._state.adding and self.registration_id and not self.event_id:
+            self.event_id = self.registration.event_id
+            self.recipient_member_id = self.registration.member_id
+            self.event_timezone_name = self.registration.event.timezone_name
         if self.pk:
             original = type(self).objects.get(pk=self.pk)
             issuance_fields = (
@@ -104,6 +160,8 @@ class EventAttendanceCertificate(ScopedPiiModelMixin, models.Model):
                 "recipient_name", "event_title", "event_starts_at",
                 "event_ends_at", "issuer_name", "object_key", "content_type",
                 "issued_at", "template_revision_id", "layout_snapshot",
+                "event_id", "recipient_member_id", "role_assignment_id", "kind", "award_id", "result_revision_id",
+                "event_timezone_name",
             )
             if any(
                 getattr(self, field) != getattr(original, field)

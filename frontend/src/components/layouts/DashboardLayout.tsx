@@ -3,6 +3,7 @@ import { ActionControl, ActivityItem, ActivityRail, Callout, EmptyState, PageHea
 import type { Action, ActivityItemProps, CalloutProps, EmptyProps, PageHeaderProps, Stat } from "../ui";
 import { RouteLink } from "../ui/RouteLink";
 import { LayoutFrame, QueryContent } from "./LayoutFrame";
+import { StaggerGroup } from "./StaggerGroup";
 import type { LayoutProps } from "./types";
 import { useLayoutMedia } from "./useLayoutMedia";
 
@@ -42,19 +43,19 @@ export function DashboardLayout({ header, callout, progress, stats, overflowStat
       <div className="grid gap-8">
         {callout ? <Callout {...callout} /> : null}
         {progress}
-        {stats.length ? <div className="sw-stats">{stats.slice(0, 4).map(stat => <StatCard key={stat.label} {...stat} />)}</div> : null}
+        {stats.length ? <StaggerGroup className="sw-stats">{stats.slice(0, 4).map(stat => <StatCard key={stat.label} {...stat} />)}</StaggerGroup> : null}
         {overflow.length ? <section aria-label={overflowStats?.label ?? "More numbers"}>
           <h2 className="sr-only">{overflowStats?.label ?? "More numbers"}</h2>
           <ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">{overflow.map(stat => <li key={stat.label}><CompactStat {...stat} /></li>)}</ul>
         </section> : null}
         <div className={rail || railContent ? "sw-columns" : "min-w-0"}>
-          <div className="grid min-w-0 content-start gap-8">{main.map(section => <section key={section.title} aria-label={section.title}>
+          <StaggerGroup className="grid min-w-0 content-start gap-8">{main.map(section => <section key={section.title} aria-label={section.title}>
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
               <h2 className="title-panel">{section.title}</h2>
               {section.action ? <ActionControl action={section.action} /> : null}
             </div>
             {section.isEmpty || section.content == null ? <EmptyState {...section.empty} /> : section.content}
-          </section>)}</div>
+          </section>)}</StaggerGroup>
           {rail || railContent ? <div className="sw-dashboard-rail grid min-w-0 content-start gap-6">{rail ? <div><ActivityRail title={rail.title}>
             {(desktop ? rail.items : rail.items.slice(0, 3)).map(({ key, ...item }) => <ActivityItem key={key} {...item} />)}
           </ActivityRail>{rail.seeAll ? <div className="mt-3"><ActionControl action={rail.seeAll} /></div> : null}</div> : null}{railContent}</div> : null}

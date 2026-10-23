@@ -1,6 +1,7 @@
 from django.db import connection, models
 from django.db.models import Q
 from django.core.exceptions import ValidationError
+from .account_models import AccountPiiKey, PiiAccountWriteFence  # noqa: F401
 
 
 class EncryptionKeyQuerySet(models.QuerySet):

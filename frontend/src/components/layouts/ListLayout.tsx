@@ -3,6 +3,7 @@ import { ActionControl, BulkActionToolbar, Callout, PageHeader, Pagination, Stat
 import type { Action, CalloutProps, EmptyProps, PageHeaderProps, Stat, Tab } from "../ui";
 import { LayoutFrame, QueryContent } from "./LayoutFrame";
 import { ListFilters, type ListFiltersProps } from "./ListFilters";
+import { StaggerGroup } from "./StaggerGroup";
 import type { LayoutProps } from "./types";
 
 export type ListLayoutProps = LayoutProps & {
@@ -37,7 +38,7 @@ export function ListLayout({ header, callout, stats = [], tabs, activeTab, onTab
               <BulkActionToolbar selectedCount={bulkBar.count} onClear={bulkBar.onClear}
                 actions={<>{bulkBar.primary ? <ActionControl action={bulkBar.primary} primary /> : null}{bulkBar.actions.map(action => <ActionControl key={action.label} action={action} />)}</>} />
             </div> : null}
-            <div className="min-w-0">{body.kind === "rows" ? <div className="grid gap-3">{body.rows}</div> : body.table}</div>
+            <div className="min-w-0">{body.kind === "rows" ? <StaggerGroup className="grid gap-3">{body.rows}</StaggerGroup> : body.table}</div>
             {pagination ? <Pagination {...pagination} totalPages={Math.ceil(pagination.count / Math.max(1, pagination.pageSize))} /> : null}
           </div>
           {rail ? <aside aria-label="List activity" className="min-w-0">{rail}</aside> : null}
@@ -48,7 +49,7 @@ export function ListLayout({ header, callout, stats = [], tabs, activeTab, onTab
     <PageHeader {...header} stickyPrimaryOnMobile={stickyPrimaryOnMobile ?? header.stickyPrimaryOnMobile} />
     <div className="grid min-w-0 gap-6">
       {callout ? <Callout {...callout} /> : null}
-      {query.state.status === "ready" && stats.length ? <div className="sw-stats">{stats.slice(0, 4).map(stat => <StatCard key={stat.label} {...stat} />)}</div> : null}
+      {query.state.status === "ready" && stats.length ? <StaggerGroup className="sw-stats">{stats.slice(0, 4).map(stat => <StatCard key={stat.label} {...stat} />)}</StaggerGroup> : null}
       {tabs?.length ? <Tabs tabs={tabs} activeKey={activeTab ?? tabs[0].key} onChange={onTabChange}>{panel}</Tabs> : panel}
     </div>
     {detail}

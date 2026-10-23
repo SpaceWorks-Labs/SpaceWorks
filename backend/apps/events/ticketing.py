@@ -8,13 +8,14 @@ from apps.events.registration_access import has_active_event_membership
 from apps.makerspaces.platform import feature_enabled
 
 
-def available_ticket_types(event, user=None):
+def available_ticket_types(event, user=None, *, contributor=False):
     if not feature_enabled(event.makerspace, "events.ticket_types"):
         return event.ticket_types.none()
     now = timezone.now()
     from django.db.models import Q
 
-    rows = event.ticket_types.filter(makerspace_id=event.makerspace_id, is_active=True).filter(
+    rows = event.ticket_types.filter(makerspace_id=event.makerspace_id, is_active=True,
+        purpose="contributor" if contributor else "participant").filter(
         Q(sales_start_at__isnull=True) | Q(sales_start_at__lte=now),
         Q(sales_end_at__isnull=True) | Q(sales_end_at__gt=now),
     )
@@ -24,16 +25,16 @@ def available_ticket_types(event, user=None):
 
 
 def ticket_selection_required(event):
-    return feature_enabled(event.makerspace, "events.ticket_types") and event.ticket_types.filter(is_active=True).exists()
+    return feature_enabled(event.makerspace, "events.ticket_types") and event.ticket_types.filter(is_active=True, purpose="participant").exists()
 
 
-def select_ticket(event, ticket_type_id, member):
+def select_ticket(event, ticket_type_id, member, *, contributor=False):
     if ticket_type_id is None:
         if ticket_selection_required(event):
             raise ValidationError({"ticket_type_id": "Choose an available ticket type."})
         return None
     require_feature(event, "events.ticket_types")
-    ticket = available_ticket_types(event, member).select_for_update().filter(pk=ticket_type_id).first()
+    ticket = available_ticket_types(event, member, contributor=contributor).select_for_update().filter(pk=ticket_type_id).first()
     if not ticket:
         raise NotFound("Ticket type not found.")
     return ticket
@@ -75,7 +76,8 @@ def create_series_ticket_templates(series, templates, actor):
 def copy_series_tickets(series, event, *, actor):
     from .services import _audit
 
-    fields = ("name", "amount", "audience", "capacity", "sales_start_at", "sales_end_at", "is_active")
+    fields = ("name", "amount", "audience", "capacity", "sales_start_at", "sales_end_at", "is_active",
+              "purpose", "contributor_capacity_policy")
     for template in series.ticket_types.all():
         ticket = EventTicketType.objects.create(
             makerspace=event.makerspace, event=event,

@@ -60,3 +60,18 @@ def project_provider(event, key, payload):
     context = PublishedSectionContext(event.pk, event.series_id, str(page.published_revision_id),
                                       page.published_revision.source_anchor_start)
     return provider.public_projection(context, payload)
+
+
+# Closed editorial section options (events programme); programme reads keep their own live gates.
+from .programme_sections.providers import KINDS, validate_options as programme_options  # noqa: E402
+
+
+def validate_options(kind, value):
+    if kind not in KINDS:
+        if value != {}:
+            raise ValidationError({"options": "This section has no supported options."})
+        return {}
+    try:
+        return programme_options(value)
+    except ValueError as exc:
+        raise ValidationError({"options": str(exc)}) from exc

@@ -1,3 +1,4 @@
+import { AccentPresetPicker, ACCENT_PRESETS, type AccentPreset } from "./eventProgramme/AccentPresetPicker";
 import { emptyVenue, orderedGroups, type EventWebsite, type WebsiteVenue } from "../events/websiteTypes";
 import { websiteCard, websiteCheck, websiteInput, websiteLabel, websiteLegend } from "./eventWebsiteFormStyles";
 import { useRef, useState } from "react";
@@ -7,6 +8,7 @@ export function EventWebsiteLayout({ page, onChange, disabled }: {
 }) {
   const order = orderedGroups(page);
   const venue = page.venue;
+  const accentPreset = (Object.entries(ACCENT_PRESETS).find(([, preset]) => preset.background.toLowerCase() === page.accent_color?.toLowerCase())?.[0] ?? null) as AccentPreset | null;
   const groupRefs = useRef(new Map<string, HTMLLIElement>());
   const [announcement, announce] = useState("");
   function move(index: number, offset: number) {
@@ -23,7 +25,8 @@ export function EventWebsiteLayout({ page, onChange, disabled }: {
     <legend className={websiteLegend}>Page layout and venue</legend>
     <div className="grid gap-4 sm:grid-cols-2">
       <label className={websiteLabel}>Tagline<input className={websiteInput} maxLength={300} value={page.tagline ?? ""} onChange={(e) => onChange({ ...page, tagline: e.target.value })} /></label>
-      {page.accent_color ? <p className="self-center text-sm text-muted">Existing custom accent is retained. Use the public palette picker to override it, or Inherit to reveal it.</p> : null}
+      <AccentPresetPicker value={accentPreset} onChange={preset => onChange({ ...page, accent_color: preset ? ACCENT_PRESETS[preset].background : '' })} />
+      {page.accent_color && !accentPreset ? <p className="self-center text-sm text-muted">Existing custom accent is retained. Use the public palette picker to override it, or Inherit to reveal it.</p> : null}
     </div>
     <p className="text-sm text-muted">Choose which groups appear publicly and move them into display order. Hidden groups and their detail pages are unavailable publicly.</p>
     <p role="status" aria-live="polite" className="sr-only">{announcement}</p>

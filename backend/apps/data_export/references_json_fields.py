@@ -1,6 +1,10 @@
 """Reviewed JSON fields whose embedded reference semantics need declarations."""
 
-JSON_REFERENCE_FIELDS = frozenset(
+from apps.tenant_migration.catalog_events_programme_json import JSON_FIELDS as PROGRAMME_JSON_FIELDS
+
+from apps.tenant_migration.catalog_reimbursements import JSON_FIELDS as REIMBURSEMENT_JSON_FIELDS
+
+JSON_REFERENCE_FIELDS = PROGRAMME_JSON_FIELDS | REIMBURSEMENT_JSON_FIELDS | frozenset(
     {
         # Channel enum names carry no destination, endpoint or account identifiers.
         ("notifications.NotificationPreference", "channels"),
@@ -33,6 +37,7 @@ JSON_REFERENCE_FIELDS = frozenset(
         # the tenant export JSON registry; their links use typed reference rows.
         ("events.EventPage", "section_order"),
         ("events.EventPage", "section_enabled"),
+        ("events.EventPageSection", "options"),
         ("events.Event", "badge_template"),
         # Fixed layout scalars, never recipient identity. Artwork keys in issuance
         # snapshots are remapped separately by tenant_migration.object_fields.
@@ -42,7 +47,6 @@ JSON_REFERENCE_FIELDS = frozenset(
         # Registration status enum labels filter recipients; no account identifiers.
         ("events.EventBroadcast", "statuses"),
         ("events.EventSeries", "custom_form"),
-        ("events.EventRegistration", "custom_answers"),
         ("events.EventFeedbackSurvey", "questions"),
         ("events.EventFeedbackSurvey", "answered_question_ids"),
         ("hardware_requests.PublicToolLoan", "asset_ids"),

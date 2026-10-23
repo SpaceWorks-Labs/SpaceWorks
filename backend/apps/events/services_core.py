@@ -17,12 +17,15 @@ EVENT_FIELDS = frozenset(
      'location_kind', 'custom_form', 'capacity', 'is_public', 'payment_amount',
      'registration_requires_approval', 'registration_cutoff_at',
      'registration_cutoff_lead_minutes', 'cancellation_cutoff_hours', 'timezone_name',
-     'registration_audience', 'category_id', 'tags', 'show_registration_count'}
+     'registration_audience', 'category_id', 'tags', 'show_registration_count', 'accent_preset'}
 )
-INHERITABLE_FIELDS = (EVENT_FIELDS - {"category_id", "tags", "show_registration_count"}) | {"image_key"}
+INHERITABLE_FIELDS = (EVENT_FIELDS - {"category_id", "tags", "show_registration_count", "accent_preset"}) | {"image_key"}
 
 
 def _locked_event(event_id, *, lock_makerspace=True):
+    from .services_write_boundary import _held
+    if _held.get() is not None and event_id in _held.get()[0]:
+        return Event.objects.select_related("makerspace").get(pk=event_id)
     targets = ("self", "makerspace") if lock_makerspace else ("self",)
     return Event.objects.select_for_update(of=targets).select_related("makerspace").get(pk=event_id)
 

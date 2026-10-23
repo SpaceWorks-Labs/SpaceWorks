@@ -1,6 +1,5 @@
 """Series edits and projection onto locked future occurrences."""
 
-from django.db import transaction
 from django.utils import timezone
 from rest_framework import serializers
 from apps.audit import services as audit
@@ -8,11 +7,12 @@ from apps.makerspaces.guards import require_module_locked
 from . import services
 from .exceptions import EventInvalidTransition
 from .models import Event, EventSeries
+from .services_write_boundary import event_write
 from .services_calendar import CALENDAR_SERIES_FIELDS, calendar_series_changed
 from .services_series_templates import (SERIES_FIELDS, RECURRENCE_FIELDS, _validate,
                               _apply_template, _materialize_locked)
 
-@transaction.atomic
+@event_write
 def update_series(series, *, actor, effective_from=None, **changes):
     locked = EventSeries.objects.select_for_update().get(pk=series.pk)
     if locked.status not in (EventSeries.Status.DRAFT, EventSeries.Status.PUBLISHED):
@@ -20,6 +20,13 @@ def update_series(series, *, actor, effective_from=None, **changes):
     unknown = set(changes) - SERIES_FIELDS
     if unknown:
         raise serializers.ValidationError({field: "This field cannot be updated." for field in unknown})
+    from .event_authority import require
+    if set(changes) & RECURRENCE_FIELDS:
+        require(actor, locked, "publish_schedule")
+    if set(changes) - RECURRENCE_FIELDS or not changes:
+        require(actor, locked, "edit_details")
+    if "payment_amount" in changes:
+        require(actor, locked, None)
     recurrence_changed = bool(set(changes) & RECURRENCE_FIELDS)
     if recurrence_changed and locked.status == EventSeries.Status.PUBLISHED and effective_from is None:
         raise serializers.ValidationError({"effective_from": "Required for a published schedule change."})
@@ -61,16 +68,24 @@ def update_series(series, *, actor, effective_from=None, **changes):
             # Keep those old occurrences as cancelled history; never cascade-delete
             # a private artifact or break a protected template reference.
             website = getattr(event, "website_page", None)
-            has_design = (event.certificate_template_revisions.exists() or event.certificate_artworks.exists()
-                          or bool(website and website.revisions.exists()))
+            keep_history = (event.certificate_template_revisions.exists() or event.certificate_artworks.exists()
+                          or event.hackathon_applications.exists() or event.eventroleassignment_set.exists()
+                          or event.registrations.exists() or bool(website and website.revisions.exists()))
             if event.status == Event.Status.PUBLISHED:
                 services.cancel(event, actor=actor, notify=False)
-            elif has_design:
+            elif keep_history:
                 event.status = Event.Status.CANCELLED
+                event.version += 1
                 # Cancelled occurrences have public calendars. A retained draft
                 # has never been published, so retirement must also keep it private.
                 event.is_public = False
-                event.save(update_fields=("status", "is_public", "updated_at"))
+                event.save(update_fields=("status", "is_public", "version", "updated_at"))
+                from .programme_locks import current_locks
+                from .hackathons.admission_lifecycle import cancel_event_locked
+                from .contributions.admission_adapter import cancel_event_locked as cancel_roles
+                locks = current_locks(event.pk)
+                cancel_event_locked(event_id=event.pk, actor=actor, locks=locks)
+                cancel_roles(event=event, actor=actor, locks=locks)
                 services._audit(event, actor, "event.cancelled", event,
                                 {"old_status": Event.Status.DRAFT, "new_status": Event.Status.CANCELLED})
             else:

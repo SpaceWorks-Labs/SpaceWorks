@@ -95,31 +95,23 @@ def reminder_eligible(envelope):
 
 
 def broadcast_eligible(envelope):
-    from rest_framework.exceptions import APIException
-    from .broadcasts import authorize, registrations
-    from .models_broadcasts import EventBroadcast
-    campaign = EventBroadcast.objects.select_related("event__makerspace", "makerspace", "created_by").filter(
-        pk=envelope.context.get("campaign_id"), makerspace_id=envelope.makerspace_id).first()
-    if campaign is None or campaign.status not in {"queued", "sending", "sent", "failed"}:
-        return False
-    try:
-        authorize(campaign, campaign.created_by)
-    except APIException:
-        return False
-    return registrations(campaign).filter(member_id=envelope.recipient_id).exists()
+    from .broadcast_channels import personal_source_eligible
+    return personal_source_eligible(envelope)
 
 
 def certificate_eligible(envelope):
-    from .models import EventAttendanceCertificate
-    expected = {"certificate_ready": "active", "certificate_revoked": "revoked"}.get(envelope.event)
-    event = _event(envelope)
-    if not event or not expected or envelope.audience != "requester":
+    # Programme certificates carry their own subject; the account split still requires
+    # a requester audience, the certificate row named by the source, and the owner space.
+    from .certificates.notifications import eligible
+    if envelope.audience != "requester" or str(envelope.source_id) != str(envelope.context.get("certificate_id")):
         return False
-    row = EventAttendanceCertificate.objects.select_related("registration__event").filter(
-        pk=envelope.source_id, status=expected, revision=envelope.revision,
-        registration__event=event, registration__member_id=envelope.recipient_id).first()
-    return bool(row and row.pk == envelope.context.get("certificate_id")
-                and _owner_space(row.registration) == envelope.makerspace_id)
+    if not eligible(envelope):
+        return False
+    from .models import EventAttendanceCertificate
+    row = EventAttendanceCertificate.objects.select_related("event", "registration").filter(
+        pk=envelope.context.get("certificate_id")).first()
+    owner = (row.registration.registered_via_makerspace_id if row.registration_id else None) or row.event.makerspace_id
+    return owner == envelope.makerspace_id
 
 
 SOURCES = {
@@ -134,3 +126,11 @@ SOURCES = {
 def register_event_sources():
     for kind, source in SOURCES.items():
         register_source(kind, source)
+    # Staged forms: assignment notices, incomplete-form warnings, milestones and RSVP deadlines.
+    from .staged_forms.milestone_notices import MILESTONE_NOTICE_SOURCE
+    from .staged_forms.notices import NOTICE_SOURCE, WARNING_NOTICE_SOURCE
+    from .staged_forms.rsvp_reminders import RSVP_NOTICE_SOURCE
+    register_source("event.stage_form", NOTICE_SOURCE)
+    register_source("event.stage_warning", WARNING_NOTICE_SOURCE)
+    register_source("event.stage_milestone", MILESTONE_NOTICE_SOURCE)
+    register_source("events.rsvp_deadline", RSVP_NOTICE_SOURCE)

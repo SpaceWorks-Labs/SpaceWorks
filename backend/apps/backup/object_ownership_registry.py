@@ -42,6 +42,42 @@ FIELD_OBJECT_RULES = (
     FieldObjectRule("backup.ManagedStagedObject", "object_key", BucketRule.PRIVATE,
                     ReferencePolicy.COORDINATION_ONLY,
                     coordination_reason="private_ephemeral_ciphertext_lineage"),
+    FieldObjectRule("events.BadgePrintCleanupReceipt", "object_key", BucketRule.PRIVATE,
+                    ReferencePolicy.COORDINATION_ONLY, coordination_reason="permanent_event_print_custody"),
+    FieldObjectRule("events.EventAssetObligation", "object_key", BucketRule.PRIVATE,
+                    ReferencePolicy.COORDINATION_ONLY, coordination_reason="permanent_event_asset_custody"),
+    FieldObjectRule("events.EventAssetObligation", "staging_key", BucketRule.PRIVATE,
+                    ReferencePolicy.COORDINATION_ONLY, coordination_reason="permanent_event_asset_custody"),
+    FieldObjectRule("events.EventAssetObligation", "verification_key", BucketRule.PRIVATE,
+                    ReferencePolicy.COORDINATION_ONLY, coordination_reason="permanent_event_asset_custody"),
+    FieldObjectRule("tenant_migration.TenantImportObject", "staging_key", BucketRule.FROM_ROW,
+                    ReferencePolicy.COORDINATION_ONLY, coordination_reason="target_import_staging"),
+    FieldObjectRule("accounts.MemberSavedAsset", "object_key", BucketRule.PRIVATE, retention_aware=True),
+    FieldObjectRule("accounts.MemberSavedAsset", "staging_key", BucketRule.PRIVATE,
+                    ReferencePolicy.COORDINATION_ONLY, coordination_reason="account_upload_staging"),
+    FieldObjectRule("accounts.MemberSavedAsset", "verification_key", BucketRule.PRIVATE,
+                    ReferencePolicy.COORDINATION_ONLY, coordination_reason="account_upload_verification"),
+    FieldObjectRule("accounts.AccountSavedDetailsExportJob", "object_key", BucketRule.PRIVATE,
+                    ReferencePolicy.COORDINATION_ONLY, coordination_reason="account_export_coordination"),
+    FieldObjectRule("events.EventCertificateLibraryArtwork", "object_key", BucketRule.PRIVATE),
+    FieldObjectRule("events.BadgePrintJob", "object_key", BucketRule.PRIVATE,
+                    ReferencePolicy.COORDINATION_ONLY, coordination_path="event__makerspace_id",
+                    coordination_reason="event_print_coordination"),
+    FieldObjectRule("events.BadgePrintResource", "object_key", BucketRule.PRIVATE,
+                    ReferencePolicy.COORDINATION_ONLY, coordination_path="job__event__makerspace_id",
+                    coordination_reason="event_print_resource_coordination"),
+    FieldObjectRule("events.SubmissionAsset", "staging_key", BucketRule.PRIVATE,
+                    ReferencePolicy.COORDINATION_ONLY, coordination_path="event__makerspace_id",
+                    coordination_reason="event_upload_staging"),
+    FieldObjectRule("events.SubmissionAsset", "verification_key", BucketRule.PRIVATE,
+                    ReferencePolicy.COORDINATION_ONLY, coordination_path="event__makerspace_id",
+                    coordination_reason="event_upload_verification"),
+    FieldObjectRule("events.HackathonParticipantAsset", "staging_key", BucketRule.PRIVATE,
+                    ReferencePolicy.COORDINATION_ONLY, coordination_path="event__makerspace_id",
+                    coordination_reason="event_resume_staging"),
+    FieldObjectRule("events.HackathonParticipantAsset", "verification_key", BucketRule.PRIVATE,
+                    ReferencePolicy.COORDINATION_ONLY, coordination_path="event__makerspace_id",
+                    coordination_reason="event_resume_verification"),
     FieldObjectRule("payments.PaymentDocument", "branding_logo_key", BucketRule.PRIVATE),
     FieldObjectRule("bookings.BookingResourcePageAsset", "object_key", BucketRule.PRIVATE),
     FieldObjectRule("events.EventPageAsset", "object_key", BucketRule.PRIVATE),
@@ -69,6 +105,8 @@ FIELD_OBJECT_RULES = (
     FieldObjectRule("events.EventSeries", "image_key", BucketRule.PUBLIC_IMAGE),
     FieldObjectRule("events.EventAttendanceCertificate", "object_key", BucketRule.PRIVATE),
     FieldObjectRule("events.EventCertificateArtwork", "object_key", BucketRule.PRIVATE),
+    FieldObjectRule("events.SubmissionAsset", "object_key", BucketRule.PRIVATE, retention_aware=True),
+    FieldObjectRule("events.HackathonParticipantAsset", "object_key", BucketRule.PRIVATE, retention_aware=True),
     # retention_aware: phase 9 may expire these bytes while the row survives, so capture
     # must tolerate a missing object rather than treat it as corruption.
     FieldObjectRule(
@@ -105,6 +143,9 @@ FIELD_OBJECT_RULES = (
     FieldObjectRule("warranty.WarrantyDocument", "object_key", BucketRule.PRIVATE),
 )
 
+from .object_ownership_reimbursements import field_object_rules as _reimbursement_rules
+FIELD_OBJECT_RULES += _reimbursement_rules(FieldObjectRule, BucketRule, ReferencePolicy)
+
 AUDIT_META_OBJECT_VARIANTS = {
     "machine.document_added": "object_key",
     "machine.document_removed": "object_key",
@@ -112,6 +153,9 @@ AUDIT_META_OBJECT_VARIANTS = {
 
 
 def validate_object_reference_registry():
+    from .object_reference_retention import adapter_for
+    for rule in FIELD_OBJECT_RULES:
+        adapter_for(rule)
     actual = {
         (model._meta.label, field.name)
         for model in apps.get_models()

@@ -114,7 +114,24 @@ def _receipt_reserved(bucket_kind, key):
         return False
     from apps.evidence.models import EvidenceAbandonedUploadReceipt
 
-    return EvidenceAbandonedUploadReceipt.objects.filter(object_key=key).exists()
+    from django.db.models import Q
+    evidence_keys = [key]
+    if key.startswith("staging/"):
+        evidence_keys.append(key[len("staging/"):])
+    if EvidenceAbandonedUploadReceipt.objects.filter(object_key__in=evidence_keys).exists():
+        return True
+    for label, fields in (("events.EventAssetObligation", ("object_key", "staging_key", "verification_key")),
+                          ("events.BadgePrintCleanupReceipt", ("object_key",))):
+        try:
+            model = apps.get_model(label)
+        except LookupError:
+            continue
+        predicate = Q(pk__in=[])
+        for field in fields:
+            predicate |= Q(**{field: key})
+        if model.objects.filter(predicate).exists():
+            return True
+    return False
 
 
 def _occupied(bucket_kind, key):

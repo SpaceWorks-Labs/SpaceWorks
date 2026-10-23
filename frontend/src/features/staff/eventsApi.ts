@@ -15,7 +15,6 @@ import {
   staffPath,
   type EventCreatePayload,
   type EventPatch,
-  type EventRegistrationStatus,
   type Paginated,
   type StaffEvent,
 } from "./eventsApiTypes";
@@ -28,7 +27,6 @@ export {
   type EventPayload,
   type EventRegistration,
   type EventRegistrationCounts,
-  type EventRegistrationStatus,
   type EventStatus,
   type Paginated,
   type StaffEvent,
@@ -143,19 +141,11 @@ export function useCompleteEvent(makerspaceId: number, eventId: number) {
   return useLifecycle(makerspaceId, eventId, EVENT_COMPLETE_PATH);
 }
 
-export type EventCheckInResolution = {
-  registration_id: number;
-  name: string;
-  status: EventRegistrationStatus;
-  // Null when the event is free or no charge was raised. Shown to the staffer, never
-  // used to block: cash is taken at the door and reconciled later.
-  payment_status: string | null;
-  // Reported, never enforced -- someone with missing evidence is exactly who the host wants
-  // to hand a waiver to at the desk; not_required means the host has no active waiver.
-  host_waiver_state: "not_required" | "on_file" | "missing";
-  event_status: string;
-  confirmable: boolean;
-};
+export type EventCheckInResolution = import('../../generated/api').EventCheckInResolveResponse;
+export function checkInInput(value: string): import('../../generated/api').EventCheckInResolveRequest {
+  return /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(value)
+    ? { checkin_token: value } : { credential: value };
+}
 
 export function useResolveEventCheckIn(eventId: number) {
   // No invalidation: resolving is read-only by design. It turns a scanned token into a
@@ -164,7 +154,7 @@ export function useResolveEventCheckIn(eventId: number) {
   return useMutation({
     mutationFn: (checkinToken: string) => staffRequest<EventCheckInResolution>(
       staffPath(CHECK_IN_RESOLVE_PATH, { id: eventId }),
-      { method: "POST", body: JSON.stringify({ checkin_token: checkinToken }) },
+      { method: "POST", body: JSON.stringify(checkInInput(checkinToken)) },
     ),
   });
 }

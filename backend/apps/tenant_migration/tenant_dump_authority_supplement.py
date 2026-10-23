@@ -16,7 +16,8 @@ def _same(label, names, disposition, reason):
 SUPPLEMENTAL_AUTHORITY_ENTRIES = (
     *_same("makerspaces.Makerspace", "email_provider email_provider_config", D.RESET,
            "Target transport is reconfigured; source account credentials never travel."),
-    *_same("integrations.NotificationMediaGrant", "id delivery document token_digest expires_at consumed_at", D.DROP,
+    *_same("integrations.NotificationMediaGrant", "id delivery document certificate storage_makerspace source_revision "
+           "recipient_id_snapshot integration_generation integration_identity token_digest expires_at consumed_at", D.DROP,
            "Single-use source-local document disclosure authority never travels."),
     *_same("accounts.User", "account_restored_at", D.RESET,
            "Source legacy-session denial marker is irrelevant to target-issued sessions."),

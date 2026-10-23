@@ -110,7 +110,8 @@ def sanitize_record(
         )
         if disposition in {AuthorityDisposition.RESET, AuthorityDisposition.DROP}:
             value = _reset_value(model, field, source)
-        values[field.column] = deepcopy(value)
+        # psycopg returns bytea as memoryview, which cannot be copied; keep its exact bytes.
+        values[field.column] = value.tobytes() if isinstance(value, memoryview) else deepcopy(value)
     return SanitizedRow(
         model=model,
         source_pk=source[model._meta.pk.attname],

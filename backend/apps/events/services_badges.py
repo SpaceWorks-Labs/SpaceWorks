@@ -1,7 +1,7 @@
-from dataclasses import dataclass
 import hashlib
 import json
 from zoneinfo import ZoneInfo
+from datetime import timedelta
 
 from django.db import transaction
 from django.utils import timezone
@@ -22,12 +22,7 @@ from apps.events import event_authority
 from apps.events.event_permissions import MANAGE_REGISTRATIONS, CHECK_IN, EDIT_DETAILS
 from rest_framework.exceptions import PermissionDenied
 from apps.makerspaces.guards import require_module_locked
-
-
-@dataclass(frozen=True)
-class BadgeSnapshot:
-    registration_id: int
-    fields: tuple[tuple[str, str], ...]
+from apps.events.certificates.print_snapshot import BadgeSnapshot
 
 
 def _answer_values(registration):
@@ -147,7 +142,13 @@ def prepare_badges(event, registration_ids, *, actor, template_override=None,
         raise PermissionDenied()
     snapshots = tuple(BadgeSnapshot(
         registration_id=registration.pk,
-        fields=_field_values(locked, registration, normalized["fields"]),
+        event_id=locked.pk, member_id=registration.member_id,
+        authorized_fields=_field_values(locked, registration, normalized["fields"]),
+        template_revision=hashlib.sha256(json.dumps(normalized, sort_keys=True).encode()).hexdigest(),
+        stock="legacy-sheet", logo_artwork_revision=None, credential_generation=None,
+        credential_render_handle=None, presentation_id=None, presentation_version=None,
+        source_profile_id=None, source_avatar_revision=None, photo_sha256=None, photo_render_handle=None,
+        created_at=timezone.now(), expires_at=timezone.now() + timedelta(minutes=5),
     ) for registration in registrations)
     selected_digest = hashlib.sha256(json.dumps(
         sorted(registration_ids), separators=(",", ":")

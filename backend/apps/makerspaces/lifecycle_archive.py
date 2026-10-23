@@ -20,10 +20,17 @@ def archive_impact(makerspace):
         via_makerspace=makerspace,
         status=Payment.Status.PENDING,
     ).exclude(makerspace=makerspace).count()
+    # Event payout obligations are money the space owes members. Recording a payout
+    # needs a servable space, so archiving pauses settlement until it is restored.
+    from apps.payments.event_payouts.obligation_models import EventPayoutObligation
+    unpaid_event_payouts = EventPayoutObligation.objects.filter(
+        makerspace=makerspace, state="open", approved_minor__gt=0,
+    ).count()
     return {
         "owned_pending": owned_pending,
         "routed_pending": routed_pending,
         "total_pending": owned_pending + routed_pending,
+        "unpaid_event_payouts": unpaid_event_payouts,
     }
 
 

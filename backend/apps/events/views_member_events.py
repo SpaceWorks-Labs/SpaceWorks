@@ -158,73 +158,15 @@ class MemberCollaborativeEventRegistrationView(APIView):
         )
         serializer.is_valid(raise_exception=True)
         registration_data = serializer.validated_data.copy()
-        with transaction.atomic():
-            locked_event = Event.objects.select_for_update(of=("self",)).get(pk=event.pk)
-            from .organization_audience import lock_admission_sources
-            lock_admission_sources(locked_event, [request.user.pk], extra_space_ids=[membership.makerspace_id])
-            # The view's collaboration check is unlocked and can go stale. Re-read it
-            # under the event lock used by every collaboration mutation before register()
-            # takes its own nested locks, so removal cannot race registration creation.
-            collaboration = servable_queryset(
-                EventCollaborator.objects.filter(
-                    event=locked_event,
-                    makerspace=membership.makerspace,
-                    status=EventCollaborator.Status.ACCEPTED,
-                ),
-                relation="makerspace",
+        try:
+            registration = services.register(
+                event, member=request.user, actor=request.user,
+                collaborative=True, repair_duplicate=True,
+                via_makerspace=membership.makerspace, **registration_data,
             )
-            collaboration = collaboration.select_related("makerspace").first()
-            if collaboration is None and locked_event.makerspace_id != membership.makerspace_id:
-                raise NotFound()
-            # The COLLABORATOR's module gate must be re-checked under ITS row lock too.
-            # `register()` locks only the host, so an unlocked read here leaves the window
-            # every `require_module_locked` call site exists to close: the partner
-            # uninstalls `events` and purges it, and this insert then writes provenance
-            # pointing at the partner *after* an irreversible purge cleared exactly those
-            # rows. Event lock first, then makerspace, matching `publish()`.
-            via = collaboration.makerspace if collaboration else membership.makerspace
-            # Lock the host and the collaborator TOGETHER in primary-key order. Locking only
-            # `via` here and letting `register()` take the host afterwards deadlocks on
-            # reciprocal collaborations: an A-hosted event via B takes B then A, while a
-            # B-hosted event via A takes A then B, and the two event locks are different rows
-            # so Postgres has to abort one.
-            list(
-                Makerspace.objects.select_for_update()
-                .filter(pk__in={locked_event.makerspace_id, via.pk})
-                .order_by("pk")
-            )
-            require_module_locked(via.pk, "events")
-            # And the membership + waiver, re-read under the collaborator's now-held row
-            # lock. `_active_membership` ran unlocked at the top of the request, so a
-            # revocation or a new waiver version committed since then would otherwise
-            # still produce a registration -- eligibility has to be as transactional as
-            # the module gate beside it.
-            MakerspaceMembership.objects.select_for_update().filter(
-                makerspace_id=via.pk, user=request.user,
-            ).first()
-            require_active_member(request.user, via)
-            try:
-                registration = services.register(
-                    locked_event,
-                    member=request.user,
-                    actor=request.user,
-                    collaborative=True, repair_duplicate=True,
-                    via_makerspace=via,
-                    **registration_data,
-                )
-            except DuplicateRegistration:
-                # A lost response or a double-submit must not report failure for a
-                # registration that exists. Report the status of the row the caller ACTUALLY
-                # owns, not `exc.fresh_status` -- that is the status a *new* registration
-                # would receive, so once the event filled it would tell a confirmed member
-                # they are waitlisted.
-                owned_row = EventRegistration.objects.filter(
-                    event=locked_event, member=request.user,
-                ).first()
-                return Response(
-                    {"status": owned_row.status if owned_row else None},
-                    status=status.HTTP_201_CREATED,
-                )
+        except DuplicateRegistration:
+            owned_row = EventRegistration.objects.filter(event=event, member=request.user).first()
+            return Response({"status": owned_row.status if owned_row else None}, status=status.HTTP_201_CREATED)
         return Response(
             PublicEventRegistrationResponseSerializer(registration).data,
             status=status.HTTP_201_CREATED,

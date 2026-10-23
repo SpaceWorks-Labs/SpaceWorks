@@ -1,3 +1,5 @@
+import { isProgrammePath } from "./features/events/programme/routeNames";
+import { isEventAddonPath } from "./features/events/eventAddons/routeNames";
 import { lazy, Suspense, type ReactNode } from "react";
 import { Navigate, Route, Routes, useLocation, useParams, useSearchParams } from "react-router-dom";
 import { MakerspacePage } from "./features/public/MakerspacePage";
@@ -107,10 +109,17 @@ function MemberTabRoute() {
   return <MemberArea />;
 }
 
+const ProgrammeRoutes = lazy(() => import("./features/events/programme/ProgrammeRoutes").then(m => ({ default: m.ProgrammeRoutes })));
+const MemberEventAddonRoutes = lazy(() => import("./features/events/eventAddons/MemberEventAddonRoutes").then(m => ({ default: m.MemberEventAddonRoutes })));
+
 export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landing: ReactNode }) {
   const location = useLocation();
   let routes: ReactNode;
-  if (/^\/(?:m\/[^/]+\/)?admin\/reset-password\/?$/.test(location.pathname)) {
+  if (isProgrammePath(location.pathname)) {
+    routes = <ProgrammeRoutes />;
+  } else if (isEventAddonPath(location.pathname)) {
+    routes = <MemberEventAddonRoutes />;
+  } else if (/^\/(?:m\/[^/]+\/)?admin\/reset-password\/?$/.test(location.pathname)) {
     routes = <Routes>
       <Route path="/admin/reset-password" element={<ConsolePasswordResetPage />} />
       <Route path="/m/:slug/admin/reset-password" element={<ConsolePasswordResetPage />} />

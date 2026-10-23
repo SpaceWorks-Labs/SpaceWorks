@@ -177,6 +177,7 @@ INSTALLED_APPS = [
     "apps.backup",
     "apps.machines",
     "apps.events",
+    "apps.event_reimbursements",
     "apps.bookings",
     "apps.maintenance",
     "apps.roadmap",
@@ -378,6 +379,26 @@ EVIDENCE_ABANDONED_UPLOAD_CLEANUP_ENABLED = env.bool(
 EVIDENCE_ABANDONED_UPLOAD_RETENTION_DAYS = env.int(
     "EVIDENCE_ABANDONED_UPLOAD_RETENTION_DAYS", default=7
 )
+# Event travel support: private receipts and payee documents (core payouts), and
+# stage-form uploads. Retention counts from the financial/terminal anchor; quotas are
+# per member and per event. Values outside these bounds refuse to start.
+EVENT_REIMBURSEMENT_RECEIPT_RETENTION_DAYS = env.int("EVENT_REIMBURSEMENT_RECEIPT_RETENTION_DAYS", default=2555)
+EVENT_REIMBURSEMENT_PAYEE_PURGE_DAYS = env.int("EVENT_REIMBURSEMENT_PAYEE_PURGE_DAYS", default=30)
+EVENT_REIMBURSEMENT_FILE_MAX_BYTES = env.int("EVENT_REIMBURSEMENT_FILE_MAX_BYTES", default=10485760)
+EVENT_REIMBURSEMENT_MEMBER_STORAGE_BYTES = env.int("EVENT_REIMBURSEMENT_MEMBER_STORAGE_BYTES", default=104857600)
+EVENT_REIMBURSEMENT_EVENT_STORAGE_BYTES = env.int("EVENT_REIMBURSEMENT_EVENT_STORAGE_BYTES", default=1073741824)
+EVENT_STAGE_FILE_RETENTION_DAYS = env.int("EVENT_STAGE_FILE_RETENTION_DAYS", default=365)
+EVENT_STAGE_MEMBER_QUOTA_BYTES = env.int("EVENT_STAGE_MEMBER_QUOTA_BYTES", default=104857600)
+EVENT_STAGE_EVENT_QUOTA_BYTES = env.int("EVENT_STAGE_EVENT_QUOTA_BYTES", default=1073741824)
+for _name, _low, _high in (
+    ("EVENT_REIMBURSEMENT_RECEIPT_RETENTION_DAYS", 1, 36500), ("EVENT_REIMBURSEMENT_PAYEE_PURGE_DAYS", 1, 36500),
+    ("EVENT_REIMBURSEMENT_FILE_MAX_BYTES", 1, 10485760), ("EVENT_STAGE_FILE_RETENTION_DAYS", 1, 36500),
+    ("EVENT_REIMBURSEMENT_MEMBER_STORAGE_BYTES", 1, 2 ** 40), ("EVENT_REIMBURSEMENT_EVENT_STORAGE_BYTES", 1, 2 ** 40),
+    ("EVENT_STAGE_MEMBER_QUOTA_BYTES", 1, 2 ** 40), ("EVENT_STAGE_EVENT_QUOTA_BYTES", 1, 2 ** 40),
+):
+    if not _low <= globals()[_name] <= _high:
+        raise ImproperlyConfigured(f"{_name} must be between {_low} and {_high}.")
+del _name, _low, _high
 WARRANTY_DOC_MAX_BYTES = env.int("WARRANTY_DOC_MAX_BYTES", default=10485760)
 WARRANTY_DOC_ALLOWED_MIME = env.list(
     "WARRANTY_DOC_ALLOWED_MIME",
@@ -693,6 +714,38 @@ CELERY_BEAT_SCHEDULE = {
         "task": "apps.events.tasks.extend_event_series_task",
         "schedule": crontab(minute=10),
     },
+    "event-admission-deadlines": {
+        "task": "apps.events.tasks_programme.sweep_admission_deadlines_task",
+        "schedule": crontab(minute="*/5"),
+    },
+    "event-contributor-maintenance": {
+        "task": "apps.events.tasks_contributions.sweep_contributor_maintenance_task",
+        "schedule": crontab(minute="*"),
+    },
+    "event-scheduled-broadcasts": {
+        "task": "apps.events.programme.broadcast_schedule.resume_scheduled_broadcasts",
+        "schedule": crontab(minute="*"),
+    },
+    "event-asset-work": {"task": "apps.events.tasks_assets.sweep_asset_work_task", "schedule": crontab(minute="*")},
+    "event-asset-deadlines": {"task": "apps.events.tasks_assets.sweep_asset_deadlines_task", "schedule": crontab(minute="*")},
+    "event-asset-retention": {"task": "apps.events.tasks_assets.sweep_asset_retention_task", "schedule": crontab(minute="*/5")},
+    "event-asset-obligations": {"task": "apps.events.tasks_assets.reconcile_asset_obligations_task", "schedule": crontab(minute="*/5")},
+    "event-certificate-batches": {"task": "apps.events.certificates.tasks.resume_batches", "schedule": crontab(minute="*")},
+    "event-certificate-renders": {"task": "apps.events.certificates.tasks.resume_certificates", "schedule": crontab(minute="*/5")},
+    "event-print-cleanup": {"task": "apps.events.tasks_recovery.sweep_print_cleanup_task", "schedule": crontab(minute="*/5")},
+    "event-judging-notices": {"task": "apps.events.tasks_recovery.sweep_judging_notices_task", "schedule": crontab(minute="*")},
+    # Stage forms (Events core), travel-support deadlines (event_reimbursements) and the core
+    # payout ledger's upload recovery and retention. Each per-subject step gates its host.
+    "event-stage-reconcile": {"task": "apps.events.staged_forms.tasks.reconcile_stage_forms_task", "schedule": crontab(minute="*/5")},
+    "event-stage-file-recovery": {"task": "apps.events.staged_forms.tasks.recover_stage_files_task", "schedule": crontab(minute="*/5")},
+    "event-stage-file-retention": {"task": "apps.events.staged_forms.tasks.sweep_stage_file_retention_task", "schedule": crontab(hour=3, minute=50)},
+    "event-reimbursement-deadlines": {"task": "apps.event_reimbursements.tasks.sweep_deadlines_task", "schedule": crontab(minute="*/5")},
+    "finance-event-payout-recovery": {"task": "apps.payments.event_payouts.tasks.recover_finance_work_task", "schedule": crontab(minute="*/5")},
+    "finance-event-payout-retention": {"task": "apps.payments.event_payouts.tasks.sweep_retention_task", "schedule": crontab(hour=3, minute=55)},
+    "account-saved-details": {
+        "task": "apps.accounts.saved_details.tasks.process_saved_details",
+        "schedule": crontab(minute="*/5"),
+    },
     # Spent email/phone verification challenges hold an address or a number and nothing
     # deleted them. Off-peak because it is a pure delete nobody is waiting on.
     "purge-auth-challenges": {
@@ -796,7 +849,15 @@ if "events" in TOMBSTONED_APPS:
     CELERY_BEAT_SCHEDULE = {
         name: entry
         for name, entry in CELERY_BEAT_SCHEDULE.items()
-        if ".events." not in entry["task"]
+        if ".events." not in entry["task"] or name in {
+            "event-asset-work", "event-asset-retention", "event-asset-obligations", "event-print-cleanup",
+            "event-stage-file-retention",
+        }
+    }
+if "event_reimbursements" in TOMBSTONED_APPS:
+    CELERY_BEAT_SCHEDULE = {
+        name: entry for name, entry in CELERY_BEAT_SCHEDULE.items()
+        if ".event_reimbursements." not in entry["task"]
     }
 
 if "devices" in TOMBSTONED_APPS:
@@ -936,6 +997,23 @@ PII_DEK_CACHE_TTL_SECONDS = env.int("PII_DEK_CACHE_TTL_SECONDS", default=300)
 PII_AWS_KMS_KEY_ID = env("PII_AWS_KMS_KEY_ID", default="")
 PII_AWS_KMS_REGION = env("PII_AWS_KMS_REGION", default="")
 PII_AWS_KMS_ENDPOINT_URL = env("PII_AWS_KMS_ENDPOINT_URL", default="")
+# Independent account custody; Events never receives these wrapping secrets.
+ACCOUNT_SAVED_DETAILS_ENABLED = env.bool("ACCOUNT_SAVED_DETAILS_ENABLED", default=False)
+ACCOUNT_PII_KEY_BROKER = env("ACCOUNT_PII_KEY_BROKER", default="local")
+ACCOUNT_PII_MASTER_KEY = env("ACCOUNT_PII_MASTER_KEY", default="")
+ACCOUNT_PII_MASTER_KEY_PREVIOUS = env("ACCOUNT_PII_MASTER_KEY_PREVIOUS", default="")
+ACCOUNT_PII_AWS_KMS_KEY_ID = env("ACCOUNT_PII_AWS_KMS_KEY_ID", default="")
+ACCOUNT_SAVED_ASSET_BUDGET_BYTES = env.int("ACCOUNT_SAVED_ASSET_BUDGET_BYTES", default=50 * 1024**2)
+ACCOUNT_SAVED_RESUME_SCAN_REQUIRED = env.bool("ACCOUNT_SAVED_RESUME_SCAN_REQUIRED", default=False)
+ACCOUNT_SAVED_RESUME_SCANNER = env("ACCOUNT_SAVED_RESUME_SCANNER", default="")
+EVENT_REGISTRATION_CREDENTIAL_DIGEST_KEY = env("EVENT_REGISTRATION_CREDENTIAL_DIGEST_KEY", default="")
+EVENT_REGISTRATION_CREDENTIAL_KEY_VERSION = env.int("EVENT_REGISTRATION_CREDENTIAL_KEY_VERSION", default=1)
+EVENT_REGISTRATION_CREDENTIAL_KEYS = env.json("EVENT_REGISTRATION_CREDENTIAL_KEYS", default={})
+EVENT_ASSET_SCAN_BACKEND = env("EVENT_ASSET_SCAN_BACKEND", default="none")
+EVENT_ASSET_CLAMAV_HOST = env("EVENT_ASSET_CLAMAV_HOST", default="")
+EVENT_ASSET_CLAMAV_PORT = env.int("EVENT_ASSET_CLAMAV_PORT", default=3310)
+UI_DELIGHT_ENABLED = env.bool("UI_DELIGHT_ENABLED", default=True)
+UI_EASTER_EGGS_ENABLED = env.bool("UI_EASTER_EGGS_ENABLED", default=True)
 # When True, requests to HMAC_PROTECTED_PATH_PREFIXES must carry a valid signed client.
 API_CLIENT_AUTH_REQUIRED = env.bool("API_CLIENT_AUTH_REQUIRED", default=False)
 

@@ -6,6 +6,8 @@ class EventsConfig(AppConfig):
     name = "apps.events"
 
     def ready(self):
+        from apps.encryption.registry import register_retained_pii
+        register_retained_pii("events.StageForm")
         from apps.events import station_auth  # noqa: F401
         from apps.separability.tombstones import register_separable_app
 
@@ -23,6 +25,8 @@ class EventsConfig(AppConfig):
             register_broadcasts()
             from .notification_sources import register_event_sources
             register_event_sources()
+            from .programme_runtime import register_programme_runtime
+            register_programme_runtime()
             register_invitations()
             register_subject()
             from apps.makerspaces.resource_grant_sources import ResourceGrantSource, register

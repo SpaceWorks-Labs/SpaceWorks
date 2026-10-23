@@ -61,6 +61,8 @@ FEATURE_EVENTS = {
     F.STOCK: ("low_stock", "procurement_received", "scheduled", "completed"),
     F.CERTIFICATIONS: ("granted", "revoked", "expiring", "expired"),
 }
+from .notification_catalog_events_programme import PROGRAMME_EVENTS
+FEATURE_EVENTS[F.EVENTS] += PROGRAMME_EVENTS
 
 # Exact default on/off per (feature, channel). Preserves today's behavior: hardware/printing
 # email + hardware Telegram on; bookings email (Part J seam) + bookings Telegram on; Slack/

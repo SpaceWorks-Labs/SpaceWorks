@@ -3391,6 +3391,175 @@ Load-bearing details that carried over unchanged:
 
 ## Events program invariants (four phases, `f16896f`..`dab0354`)
 
+### Events programme integration contract (2026-10-18)
+
+Checkpoint `f1ef7736` adds the programme schema/mounts and generated API, not completed
+runtime acceptance. Keep `events.hackathons`, `events.mentoring`, `events.mentor_rounds`,
+`events.volunteering`, `events.project_gallery` and event hackathon config OFF until the
+[closure ledger](events/integration-status.md) and [AO evidence](events/acceptance.md) pass.
+The rules here are binding; a rule's presence does not claim every adapter is installed.
+
+- **One admission writer and real hard capacity.** A application lifecycle calls the
+  canonical registration/payment/ticket/waiver bridge, never a second status writer.
+  Draft/context GET creates no registration, charge, QR, redeemed code or vault intent.
+  Private staged decisions change no owner/public admission/count and send nothing.
+  Explicit atomic release rechecks current versions/reviews/live nonconflicted authority.
+  RSVP defaults to four days from release. Offer reservations/overbooking are separate
+  from hard confirmed event/ticket seats. Cohorts count people, require each member's own
+  RSVP and confirm all-or-none; decline/expiry releases the cohort. Zero/unlimited semantics
+  remain owned by existing capacity helpers, not duplicated by clients.
+- **Consent is specific evidence.** Each applicant accepts the current immutable CoC;
+  host waiver follows existing audience/provenance policy and cannot be inferred from
+  a draft ID/checkbox. MLH sharing, gallery metadata/items, sponsor recruiting résumé,
+  print photo, public card and public certificate verification are independent choices.
+  Role approval, upload, leader consent and publication never manufacture another choice.
+  Only D's `ParticipantSponsorResumeConsent` workflow grants/revokes sponsor access,
+  including contributor UI and B asset replacement/deletion. Own-track frozen project,
+  exact current ready asset/hash and live grant are all required; no vault access.
+- **Roles are scoped sources, not tenant roles.** Helpers/contributors use member accounts.
+  Delegation cannot exceed the issuer's current permissions/scope/window; imported roles
+  are inert. Manual and shift/contribution entitlement sources remain distinct. Expiring
+  one source must not revoke an independent manual permission. Display roles alone grant
+  nothing. Shift attendance is separate from event attendance; verified positive work
+  minutes require a second person and gate volunteer thanks. Practice stays isolated.
+- **Programme lock contract supersedes legacy order for migrated paths.** Prepare keys,
+  KMS material and immutable resources outside event row transactions. Enter declared
+  source boundary → global PII fence → sorted tenant fences → sorted affected-account
+  fences → series/event → sorted makerspaces → live authority → parents → children.
+  Declare every affected owner/reviewer/print subject before locking; never expand the
+  scope afterward or lock User/key rows beneath Event. Recheck prepared epoch/hash/date/
+  source revision inside fences. Never combine `select_for_update()` with nullable-FK
+  `select_related()`. `programme_locks.py` alone does not migrate ordinary/legacy callers;
+  GF4 routes canonical writers through the shared boundary; real PostgreSQL lock/race proof remains required.
+- **Snapshots and scores freeze their inputs.** B's submit is the sole content-snapshot
+  writer; roster, exact ready assets/links/tracks/prizes/form references and hashes freeze.
+  Later drafts/uploads cannot alter judging or a published card. Amendment requires a
+  reason/new snapshot and invalidates old judging; submitted scores/results remain history.
+  Missing/recused work is not zero. Results finalize separately from publication and
+  corrections append revisions. One initial gallery publish selects exact consented items;
+  live teammate withdrawal stops bytes immediately, regrant requires a fresh amendment.
+- **Accepted bytes have immutable ownership.** Stage-only grants, server-side size/hash/
+  signature checks, optional explicit scan policy, bounded non-root video probe and
+  conditional final promotion precede ready state. A configured scanner outage never
+  means clean. Live authorization runs before storage and between bounded chunks (at most
+  1 MiB, policy interval at most two seconds); no positive policy cache/download presign
+  bypass survives consent/role/source revocation. HEAD has the same gate. Public IDs reveal
+  no private keys. No accepted source/firmware/toolpath is executed.
+- **Quota and expiry are independent of permission switches.** Managed allowance is decimal
+  25,000,000,000 bytes per event; self-host may use a bounded or unlimited event pool.
+  Per-file/group/submission caps still apply. Used+reserved includes pending and failed
+  cleanup; release follows confirmed deletion. First results/cancellation/fallback retention
+  is 365 days and cannot extend an existing deadline. Logical expiry denies reads even
+  while deletion retries; retained records/hashes are not removed. All final/staging/
+  verification versions/multipart locators need durable cleanup, even after runtime-off,
+  migration or purge. Permanent FK-free asset obligations and print receipts retain exact locators across purge; bounded byte-only recovery must survive Events tombstoning.
+- **Backup is distinct from live file retention.** Typed capture reads direct asset state/
+  expiry/size/hash. Missing ready unexpired bytes fail; terminal expired absence is valid;
+  in-progress cleanup/promotion and overdue-ready rows require finalization before capture.
+  Existing archives have their own retention and can retain prior bytes. Portable import
+  preserves absolute expiry, typed hash provenance and evidence but resets live consent,
+  public/claim/credential authority; no in-flight upload resumes abroad. Account vault/keys
+  never enter tenant closure. GF4 installs typed encrypted answer remapping and verified target asset publication; real portable/raw-dump proof remains required.
+- **Saved details is private account data.** F's single standard-key/form validator controls
+  mappings/show-if/disclosure; P owns always-encrypted account values/intent preparation.
+  Only explicit true per-field choices on visible validated submitted answers create intents;
+  sensitive DOB/résumé/diet/accessibility/emergency choices default false. Conflicts never
+  overwrite a newer saved value. Organizer sees actual submitted answers only. Vault delete
+  does not delete independent submitted evidence. Account erasure permanently fences new
+  vault writes and removes owner drafts through explicit lifecycle hooks. Event retained-history boundaries may lock erased owners without reviving vault/key writes; nested vault writes still recheck permanent erasure.
+- **DOB is a source; age is a projection.** Registration, application and role-only assignment
+  derive age as of the event-local start date from encrypted DOB/source history. No numeric
+  age is persisted in a field, snapshot, audit or coordination cache. Prelock date changes
+  require source review/recomputation; locked revisions keep the frozen as-of date; reopening
+  archives the old source. Explicit DOB questions disclose that fact before submit; ordinary
+  age questions expose age only. No age limit, guardian/minor gate, age bounds or age/DOB
+  visibility dependencies may control admission, roles, shifts, CoC or another answer.
+- **Selected photos never default to private identity.** Choose both own active profile and
+  membership explicitly, or neither; print and public-card scopes require separate consent.
+  Public handle/profile/module eligibility is live. Source deletion must clear both FKs and
+  consent atomically, invalidating print/card readers without deleting independent evidence.
+  Foreign profile bytes and the global vault are never collected by an Events-only purge.
+- **Verification is not document access.** Explicit event policy plus per-certificate opt-in
+  exposes only snapshotted event title/local event date and valid/revoked state. No recipient,
+  reason, PDF URL, answers or bearer. Unknown/private/pending is uniform 404; no-store/throttle.
+  Ended/private website does not defeat an independently enabled policy; host servability,
+  Events module and withdrawal still gate. Historical opt-in defaults false. Private certificate
+  PDFs may use authorized personal attachment delivery; bearer badge/QR PDFs never do.
+
+UI acceptance includes Space Works tokens in both themes, approved Gilroy/one Unbounded
+accent, lucide controls, AppShell layouts, original artwork, keyboard/44px/reduced motion/
+real contrast checks. Account and retention mechanisms survive optional Events removal;
+runtime providers/pages/reports do not. Reimbursement (decision 34) and full staged forms
+(35) are integrated on `lane/events-final`; their rules follow.
+
+### Staged forms and travel support (integration, 2026-10-20)
+
+- **Inline blocks prepare outside, bind inside, roll back together.** `events/inline_forms.py`
+  validates `stage_forms` and `reimbursement_request` before the outer transaction and binds
+  them after the canonical registration/application rows exist, before the outer receipt.
+  Any bind, intent, notice or receipt failure rolls back the whole signup. The outer digest
+  includes both blocks; replay resolves before preparation. No HTTP field is accepted as
+  binding proof. Drafts and answer edits refuse inline blocks (`inline_forms_submit_only`).
+  Only a self-signup carries them; staff on a member's behalf get `owner_consent_required`.
+  Explicit Saved-details choices are cross-checked across the base form and every inline stage
+  form; a conflicting value refuses the signup with `saved_detail_form_conflict`.
+- **An omitted required application form refuses the signup.** When an event has a published
+  required application-stage form, every self-signup binds, so a missing applicable form
+  raises `stage_incomplete` and leaves no registration, application or assignment.
+- **A present request block with the module off is refused, never dropped** (409
+  `reimbursement_unavailable`). An omitted block is harmless with the module off.
+- **Stage readiness is read under the lock, never inferred.** RSVP accept and every
+  attendance source call `staged_forms.guards.require_complete_locked`; offline sync reports
+  `stage_incomplete` for that item. An empty assignment list or a cached roster is not proof
+  of completion. Claim submit uses the same guard.
+- **One installed Saved-details binding.** `contracts/admission_registration.py` installs a
+  single `IntentSubjectBinding` that routes `stage_response` subjects to
+  `staged_forms/prefill_provider.py`; stage subjects never enter the DOB derivation resolver.
+- **Attendance feeds payout eligibility in the attendance transaction.** Check-in bumps
+  `attendance_revision`; a correction appends `EventAttendanceCorrection` with the latest
+  check-in watermark; both republish claim eligibility while the add-on is live.
+- **Archive pauses settlement; hidden spaces show no counts.** `archive_impact` adds
+  `unpaid_event_payouts`; both archive routes omit every money count when superadmin access
+  is off. Payout authority requires a servable space, so nothing settles while archived.
+- **Purge preflight is always shown.** `purge_module_data` prints the read-only
+  `preflight_report` before any prompt and refuses on a blocker; `--preflight` exits after
+  printing; `--yes` skips only the confirmation prompt.
+- **Payee purge timing is a deployment setting.** `EVENT_REIMBURSEMENT_PAYEE_PURGE_DAYS`
+  feeds both the purge anchor and the member disclosure; the eight `EVENT_REIMBURSEMENT_*` /
+  `EVENT_STAGE_*` settings are bounded and refuse to start when out of range.
+- **Mandatory finance envelopes, and their one tenant-import exception.** Payee `details` and
+  obligation-revision `decision_summary`/`cancellation_note` must always be `pii:gcm:v1:` envelopes
+  whose key row (`active` or `rotated`) exists for the tenant (`finance_mandatory_envelope_guard`, even
+  with optional PII encryption off). `encryption/0011` waives ONLY the key-row lookup, and only while
+  that tenant's write fence is closed for `tenant_import` under the session's own
+  `app.pii_fence_operation` (a Lane D build, whose DEKs travel sealed and install at activation). The
+  envelope format check, the host check and the write-fence check stay on in every case; another
+  tenant's fence never waives it. Owner decision #61b.
+- **Stage forms, travel support and the payout ledger migrate custodially.** All domain and
+  ledger rows are portable (`tenant_migration/catalog_reimbursements.py`); work rows and
+  FK-free cleanup locators never travel. Mapped finance fields (payee details, decision
+  summaries) stay ciphertext in the archive and are rebound to the target tenant key in
+  memory (`pii_reimbursements.py`, which also remaps typed IDs inside encrypted
+  documents). Domain `uuid` columns and every `operation_id` are preserved and a target
+  collision refuses the import; UUID primary keys follow the PK map
+  (`semantic_reimbursements.py`). Imported programmes are disabled and `imported_paused`
+  with the request window closed; imported stage assignments are inert. Only
+  `ready`/`attached` bytes travel; in-flight uploads become inert `failed` rows. The target
+  creates its own cleanup locators (`reimbursement_assets_import.py`, also after a Lane D
+  restore). Rows whose insert guards check a not-yet-inserted pointer are inserted NULL and
+  updated once every row exists; self-pointer chains insert parents first
+  (`import_pointers.py`, which also sets the transaction-local `app.tenant_import` flag so
+  the attendance-correction guard admits historical revisions). Readable exports never
+  carry these rows.
+
+**Delight is on by default and per space (2026-10-20).** `ui.delight` and `ui.easter_eggs`
+are standalone default-on features (also in `setup_areas.ALWAYS_FEATURES`); migration
+`makerspaces/0098` added both to every existing space because no earlier per-space choice
+existed. `UI_DELIGHT_ENABLED` / `UI_EASTER_EGGS_ENABLED` now default `True` and act only as a
+deployment kill switch: the browser shows effects when the deployment flag AND the showing
+space's feature are on. A reduced-motion preference always wins, and scanner, kiosk,
+check-in and payment routes never show easter eggs.
+
 ### Event printable credentials (Lane E)
 
 - Badge templates read as version 2 with top-left millimetre boxes, grid snapping,
@@ -3402,7 +3571,14 @@ Load-bearing details that carried over unchanged:
   Shared `operations/printable_*` geometry, serializers, fonts and PDF primitives
   never import events or bookings. Noto fonts ship in the backend image; CJK uses
   the standard PDF CID fallback. RTL wraps logical lines before bidi reordering.
-- Printed badges never contain email, phone or a bearer check-in QR. Custom-answer
+- Legacy display badges never contain email, phone or a bearer check-in QR. The separate
+  v2 desk-badge workflow permits only its typed opaque event-bound registration credential
+  QR, resolved by an authorized authenticated online scanner. Confirmation rechecks live
+  authority, payload and generation through the canonical attendance writer; resolve itself
+  is read-only. Rotation/cancellation/adoption invalidate old credentials; legacy UUID,
+  offline roster/sync and station paths must refuse v2/inert mode. This exception permits
+  no contacts, arbitrary bearer URLs, public credential resolution or badge PDFs in chat.
+  GF4 confirms v2 through the canonical already-locked attendance writer; real scanner/rotation/race proof remains required. Custom-answer
   bindings retain current-form validation and require live registration-management
   authority AND tenant `VIEW_AUDIT` before reading answers. Template-edit authority
   cannot widen printing authority. Check-in-only staff may print attended rows only;
@@ -4332,11 +4508,14 @@ responsibility; local purges never delete shared global organizations or foreign
   host remove → `EventCollaborator.event__makerspace_id`, collaborator inbox → its `makerspace_id`
   kwarg, accept/decline → `EventCollaborator.makerspace_id`. Registering accept against the host would
   **403 it from the collaborator's own domain**, which is the entire feature.
-- **Lock order in `apps.events` is `event → makerspace(s)`**, matching shipped `publish()`,
+- **Legacy Events paths use `event → makerspace(s)`**, matching shipped `publish()`,
   `update_event()` and image attach. `require_module_locked` goes **after** `_locked_event` in
   `register()` (before would deadlock against `publish`), two makerspaces lock in **sorted pk order**,
   and `remove_collaborator` reads the event id **unlocked** first — a `select_for_update()
-  .select_related("event")` locks both rows in the wrong order.
+  .select_related("event")` locks both rows in the wrong order. Programme paths require the
+  source/global/tenant/account-first contract above. These legacy callers still need the
+  coordinated conversion in GF1 items 2–4; this historical rule is not permission to mix
+  incompatible orders or to claim conversion complete.
 - **The host waiver lives on the `EventRegistration`, not a membership** (a visitor membership would
   corrupt the host's member reporting, roster, quota and dues — `reports_members` counts every row).
   Three fields under an all-or-none check constraint, `PROTECT`, with acceptance an **explicit API
@@ -4852,8 +5031,10 @@ reverse dependency order, and inserts raw rows in actual FK order while every da
 active. Migrations run in a child process whose Django `default` connection is the scratch database; this
 is required because historical `RunPython` functions with unqualified managers would otherwise route their
 data writes back to the live in-process `default` connection. It never sets `session_replication_role`;
-only an actual strongly connected component whose cycle
-edges are all nullable may use the two-pass NULL-then-update path. Global `MachineType` built-ins resolve by
+only nullable edges inside an actual strongly connected component may use the two-pass NULL-then-update
+path, and the component must become acyclic without them (a cycle of required edges still refuses; a
+claim's required `revision`/`claim` edges with its nullable `current_*` pointers qualify). A stage form's
+revision rows depend on the stage form row they name by `selector_id`. Global `MachineType` built-ins resolve by
 `(makerspace IS NULL, slug)` only when the canonical `name`/`icon`/`is_builtin`/`managing_action`/
 `capability_config` fingerprint equals the migrated target definition; tenant custom rows retain their PKs.
 The tenant PII fence is explicitly closed under the matching `tenant_import` GUC for mapped raw insertion

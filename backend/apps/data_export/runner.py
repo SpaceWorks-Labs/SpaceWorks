@@ -192,6 +192,11 @@ def build_archive(
 
 
 def _read_dataset(dataset, tenant_id, closure, page_size, deadline, monotonic):
+    # Stage answers, travel support and the payout ledger travel only in a custodial
+    # portable migration; a readable export carries their headers and no rows.
+    from apps.tenant_migration.catalog_reimbursements import PORTABLE_MODELS
+    if dataset.fidelity is Fidelity.REDACTED and dataset.model in PORTABLE_MODELS:
+        return [], 0
     model = apps.get_model(dataset.model)
     queryset = model.objects.filter(dataset.predicate.as_q(tenant_id))
     queryset = select_declared_relations(queryset, dataset)
@@ -255,6 +260,12 @@ def _collect_user_ids(dataset, rows, closure):
 
 
 def _collect_semantic_user(dataset, row, candidates, row_values):
+    if dataset.fidelity is Fidelity.PORTABLE and dataset.model == "events.SubmissionSnapshot":
+        for value in row.sealed_member_ids:
+            if type(value) is not int or value <= 0:
+                raise ExportIntegrityError("Invalid sealed programme member reference.")
+            candidates.add(value)
+            row_values.append((row, "sealed_member_ids", type("Edge", (), {"raw": True})(), value))
     decisions = SEMANTIC_REFERENCES.get(
         (dataset.fidelity, dataset.model, "target_type+target_id"), ()
     )

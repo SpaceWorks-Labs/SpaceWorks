@@ -17,8 +17,12 @@ AREAS = {
 }
 ALWAYS_MODULES = {"backup", "notifications", "email", "member_accounts"}
 ALWAYS_FEATURES = {"billing.reminders", "charges.enabled", "billing.documents",
-                   "staff.invitations", "presence.geofence"}
+                   "staff.invitations", "presence.geofence", "ui.delight", "ui.easter_eggs"}
 INVENTORY_FEATURES = {"inventory.self_checkout", "inventory.kiosk"}
+EXPLICIT_OPT_IN_FEATURES = frozenset({
+    "events.hackathons", "events.mentoring", "events.mentor_rounds",
+    "events.volunteering", "events.project_gallery",
+})
 
 
 def modules_for(areas):
@@ -28,12 +32,13 @@ def modules_for(areas):
 
 
 def features_for(areas, modules=None):
-    """Enable all children, then remove unsatisfied prerequisites to a fixed point."""
+    """Bundle ordinary children; programme features require an explicit choice."""
     modules = set(modules if modules is not None else modules_for(areas))
     parents = ALWAYS_MODULES | {module for area in areas for module in AREAS[area]}
     features = ALWAYS_FEATURES | {
         key for key, definition in FEATURES.items() if definition.parent_module in parents
     }
+    features -= EXPLICIT_OPT_IN_FEATURES
     if "inventory" in areas:
         features |= INVENTORY_FEATURES
     else:

@@ -12,7 +12,8 @@
   <p>
     Approving ARCHIVES each makerspace below. The requester loses access to it and is notified
     by email. These unsettled-charge counts are ADVISORY and may change before the archive
-    runs; archiving does NOT block on unsettled charges.
+    runs; archiving does NOT block on unsettled charges. Unpaid event payouts stay owed to
+    members, but finance cannot record or settle them while the makerspace is archived.
   </p>
 
   <table>
@@ -24,6 +25,7 @@
         <th scope="col">Owned pending</th>
         <th scope="col">Routed pending</th>
         <th scope="col">Total pending</th>
+        <th scope="col">Unpaid event payouts</th>
       </tr>
     </thead>
     <tbody>
@@ -32,9 +34,14 @@
           <td>{{ row.object.makerspace.name }}</td>
           <td><code>{{ row.object.makerspace.slug }}</code></td>
           <td>{{ row.object.requested_by|default:"(removed)" }}</td>
-          <td>{{ row.owned_pending }}</td>
-          <td>{{ row.routed_pending }}</td>
-          <td>{{ row.total_pending }}</td>
+          {% if row.hidden %}
+            <td colspan="4">Hidden (superadmin access is off)</td>
+          {% else %}
+            <td>{{ row.owned_pending }}</td>
+            <td>{{ row.routed_pending }}</td>
+            <td>{{ row.total_pending }}</td>
+            <td>{{ row.unpaid_event_payouts }}</td>
+          {% endif %}
         </tr>
       {% endfor %}
     </tbody>

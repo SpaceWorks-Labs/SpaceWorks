@@ -54,8 +54,14 @@ exclusions applied in SQL rather than queried per tenant.
   `EXEMPT`/`NOTHING` sentinels), `role_scope_grants.py`, and `role_scope_queries.py`.
   `models_membership_scope.py` stores per-person machine-type links; `member_scope_services.py`
   writes them. The removed `role_scope_services.py` no longer owns role-level scope.
-- `backend/apps/events/` — the separable events module. `models.py` is the stable explicit re-export barrel
-  over `models_event.py`, `models_registration.py`, `models_attendance.py`, `models_feedback.py`,
+- `backend/apps/events/` — the separable events module. `models.py` is the stable explicit re-export barrel.
+
+  The programme's additional model barrel, workflow writers, retained registries and
+  pending runtime adapters are indexed in [SOURCE-MAP-EVENTS-PROGRAMME.md](SOURCE-MAP-EVENTS-PROGRAMME.md).
+  The ordinary-event files below remain the compatibility surface; new domain code does
+  not replace canonical registration, capacity or attendance with independent writers.
+
+  Its ordinary-event imports cover `models_event.py`, `models_registration.py`, `models_attendance.py`, `models_feedback.py`,
   `models_station.py`, `models_certificates.py`, `models_series.py`, `models_calendar.py`, `models_collaborators.py` and
   `organizer_models.py`; those focused files are the schema sources for events/occurrences, approval and
   waitlist registrations, immutable check-in history and the event-owned `EventStationBinding`, feedback,

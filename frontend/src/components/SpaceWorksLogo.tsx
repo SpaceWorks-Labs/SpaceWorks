@@ -39,6 +39,10 @@ export function SpaceWorksLogo({
   const dimension = Math.max(floor, requestedSize);
   const width = shape === "symbol" ? dimension * ratio : dimension;
   const height = shape === "symbol" ? dimension : dimension / ratio;
+  // The symbol's last four paths are its flaps (top-left, top-right, bottom-left, bottom-right) in
+  // every master; lockups end with the wordmark. Classes only: delight's logo unfold moves them on
+  // hover and click, and with no delight they render exactly as the master.
+  const symbolPaths = artwork.clip?.count ?? (shape === "symbol" ? artwork.paths.length : artwork.paths.length - 1);
 
   return (
     <span className={className} style={{ display: "inline-flex", flexShrink: 0 }}>
@@ -58,13 +62,18 @@ export function SpaceWorksLogo({
           {!decorative && <title id={titleId}>Space Works</title>}
           {artwork.clip ? <>
             <defs><clipPath id={`${titleId}-clip`}><rect width={artwork.clip.width} height={artwork.clip.height} /></clipPath></defs>
-            <g clipPath={`url(#${titleId}-clip)`}>{artwork.paths.slice(0, artwork.clip.count).map((path, index) => <path key={index} {...path} />)}</g>
-            {artwork.paths.slice(artwork.clip.count).map((path, index) => <path key={index} {...path} />)}
-          </> : artwork.paths.map((path, index) => <path key={index} {...path} />)}
+            <g clipPath={`url(#${titleId}-clip)`}>{artwork.paths.slice(0, artwork.clip.count - 4).map((path, index) => <path key={index} {...path} />)}</g>
+            {artwork.paths.slice(artwork.clip.count - 4).map((path, index) => <path key={index} {...path} className={flapClass(index)} />)}
+          </> : artwork.paths.map((path, index) => <path key={index} {...path} className={flapClass(index - symbolPaths + 4)} />)}
         </svg>
       </span>
     </span>
   );
+}
+
+const FLAPS = ["tl", "tr", "bl", "br"] as const;
+function flapClass(flap: number) {
+  return flap >= 0 && flap < 4 ? `sw-logo-flap sw-logo-flap-${FLAPS[flap]}` : undefined;
 }
 
 export function SpaceWorksHomeLink({ children, className }: { children: ReactNode; className?: string }) {

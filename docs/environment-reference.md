@@ -178,6 +178,64 @@ storage endpoint and expire no later than the archive retention boundary.
 | `WARRANTY_DOC_ALLOWED_MIME` | `['application/pdf', 'image/jpeg', 'image/png', 'image/webp']` |  |
 | `WARRANTY_DOC_MAX_BYTES` | `10485760` |  |
 
+## Events programme and account Saved details
+
+Read by `backend/config/settings.py` at checkpoint `f1ef7736`. **Keep programme features
+and Saved details off until [integration acceptance](events/integration-status.md).**
+These are independent deployment secrets/settings, not extra module keys.
+
+| Variable | Default | Notes |
+| --- | --- | --- |
+| `ACCOUNT_SAVED_DETAILS_ENABLED` | `False` | Enables configured owner vault/key readiness. No host membership required; missing/unhealthy account broker fails closed. Does not enable tenant PII or any Events feature. |
+| `ACCOUNT_PII_KEY_BROKER` | `'local'` | `local` or `aws_kms`; independent account wrapping broker, never a tenant-key or SECRET_KEY fallback. |
+| `ACCOUNT_PII_MASTER_KEY` | `''` | Local account wrapping key in Fernet format (URL-safe base64 of 32 bytes). Required for local readiness; secret, retain with deployment backup custody. |
+| `ACCOUNT_PII_MASTER_KEY_PREVIOUS` | `''` | Previous local account wrapping key for transition/read compatibility; not permission to discard keys still needed by retained ciphertext. |
+| `ACCOUNT_PII_AWS_KMS_KEY_ID` | `''` | Account KMS wrapping key identifier; AWS broker uses account/version-specific encryption context and bounded calls outside transactions. IAM credentials use the normal SDK chain. |
+| `ACCOUNT_SAVED_ASSET_BUDGET_BYTES` | `50 * 1024**2` | Default 50 MiB account résumé pool. Managed mode stays at 50 MiB; self-host may raise it, never below that floor. File cap remains 10 MiB. Separate from event storage. |
+| `ACCOUNT_SAVED_RESUME_SCAN_REQUIRED` | `False` | When true, every saved PDF must pass the configured callback; missing/error fails closed. Separate from B's event scanner runtime options. |
+| `ACCOUNT_SAVED_RESUME_SCANNER` | `''` | Dotted import path to a core callable `(bytes) -> 'clean'`. Blank/broken while required refuses. No production callback is installed here; do not point core Accounts at separable Events. |
+| `EVENT_REGISTRATION_CREDENTIAL_DIGEST_KEY` | `''` | Independent standard-base64 32-byte HMAC key for event-bound v2 lookup. Changing it requires coordinated invalidation/reissue, not an unnoticed rotation. |
+| `EVENT_REGISTRATION_CREDENTIAL_KEY_VERSION` | `1` | Current integer keyring version; its string form must exist in the JSON map below. |
+| `EVENT_REGISTRATION_CREDENTIAL_KEYS` | `{}` | JSON object mapping string versions to standard-base64 32-byte AES-GCM keys. Keep old versions needed by stored credentials. Empty configuration refuses v2; no Django/PII-key fallback. |
+
+The shared Compose application anchors forward these eleven settings to all relevant
+web/migration/worker/scheduler processes. Secrets remain operator-owned; upgrades must
+retain current/previous wrapping keys and credential digest/keyring values. Tenant dumps
+exclude the global vault and live credentials. Real install/upgrade continuity is still
+an acceptance check.
+
+Event budgets, lower file/group caps and retention anchors are domain policy.
+All eleven settings above are forwarded through each Compose application environment
+anchor, including migration/worker/beat processes, without generating or rotating keys.
+
+| Setting | Default | Purpose |
+| --- | --- | --- |
+| `EVENT_ASSET_SCAN_BACKEND` | `'none'` | `none` or `clamav`; optional event-asset scanner; configured failures refuse publication. |
+| `EVENT_ASSET_CLAMAV_HOST` | `''` | Explicit external ClamAV endpoint; no silent host inference. |
+| `EVENT_ASSET_CLAMAV_PORT` | `3310` | Scanner TCP port. |
+| `UI_DELIGHT_ENABLED` | `True` | Deployment kill switch for frontend artwork/motion. On by default; each space can still turn `ui.delight` off, and a reduced-motion preference always applies. |
+| `UI_EASTER_EGGS_ENABLED` | `True` | Deployment kill switch for easter eggs. On by default; each space can turn `ui.easter_eggs` off; scanner, kiosk and payment routes always suppress eggs. |
+
+Travel support (`event_reimbursements`) and staged event forms. Each value is bounded;
+an out-of-range value refuses to start. Retention counts from the record's terminal
+financial anchor (receipts, payee data) or the event end (stage uploads), never from upload time.
+
+| Setting | Default | Purpose |
+| --- | --- | --- |
+| `EVENT_REIMBURSEMENT_RECEIPT_RETENTION_DAYS` | `2555` | Days a private reimbursement receipt is kept after its claim's financial closure (1–36500). A space's own finance retention policy must exist before a non-default value is used. |
+| `EVENT_REIMBURSEMENT_PAYEE_PURGE_DAYS` | `30` | Days after full payment or finance cancellation before payee bank/routing details and routing documents are purged (1–36500). Shown to members in the payee disclosure. |
+| `EVENT_REIMBURSEMENT_FILE_MAX_BYTES` | `10485760` | Per-file cap for receipts and payee documents; can only be lowered (max 10 MiB). |
+| `EVENT_REIMBURSEMENT_MEMBER_STORAGE_BYTES` | `104857600` | Per-member finance attachment budget within one event. |
+| `EVENT_REIMBURSEMENT_EVENT_STORAGE_BYTES` | `1073741824` | Per-event finance attachment budget. |
+| `EVENT_STAGE_FILE_RETENTION_DAYS` | `365` | Days a submitted stage-form upload is kept after the event ends (1–36500); the value is snapshotted onto each upload. |
+| `EVENT_STAGE_MEMBER_QUOTA_BYTES` | `104857600` | Per-member stage-form upload budget within one event. |
+| `EVENT_STAGE_EVENT_QUOTA_BYTES` | `1073741824` | Per-event stage-form upload budget. |
+
+The installed video provider invokes the bounded non-root ffprobe launcher; the backend
+image includes ffmpeg. [Scanner/probe setup](events/operations.md#optional-malware-scanner)
+requires real provider/fault tests. These controls do not enable programme capabilities.
+Certificate verify uses a fixed 30/min anonymous throttle, rather than a new env setting.
+
 ## API clients (HMAC)
 
 See `docs/api-client-protocol.md`.

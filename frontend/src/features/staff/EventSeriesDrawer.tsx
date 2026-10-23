@@ -1,3 +1,4 @@
+import { SeriesGuestList } from "./eventProgramme/SeriesGuestList";
 import { useEffect, useState, type FormEvent } from "react";
 
 import { ConfirmDialog, EmptyState, ErrorText, ListRow, Pagination, Skeleton, StatusBadge } from "../../components/ui";
@@ -53,6 +54,7 @@ export function EventSeriesDrawer({ seriesId, makerspaceId, onClose, onSelectOcc
   const showWebsite = Boolean(query.data?.website_enabled) && (access.edit || access.publish);
   const showSettings = access.edit || access.publish;
   const tabs = useOpsTabs("seriesTab", [{ key: "occurrences", label: "Occurrences", count: occurrences.data?.count },
+    ...(access.registrations ? [{ key: "guests", label: "Guests" }] : []),
     ...(showWebsite ? [{ key: "website", label: "Website" }] : []),
     ...(access.manager ? [{ key: "team", label: "Team" }] : []),
     ...(showSettings ? [{ key: "settings", label: "Settings" }] : [])], "occurrences");
@@ -69,6 +71,7 @@ export function EventSeriesDrawer({ seriesId, makerspaceId, onClose, onSelectOcc
         body: "Correct the schedule in Settings, then use Extend now.", action: query.data.status === "published" && access.publish ? { label: "Extend now", onClick: () => setConfirm("extend") } : undefined } : undefined}
       danger={tabs.active === "settings" && query.data?.status === "published" && access.publish ? [{ title: "Cancel series", consequence: "Future occurrences close and registrants are notified.", action: { label: "Cancel series", onClick: () => setConfirm("cancel") } }] : []}
       main={query.data ? <div className="grid gap-5">
+        {access.registrations && tabs.active === "guests" ? <SeriesGuestList seriesId={seriesId} /> : null}
         {tabs.active === "occurrences" ? <EventOrganizationAudience event={query.data} pending={update.isPending} onReconfigure={access.edit ? () => update.mutate({ registration_audience: "participating_organizations" }) : undefined} /> : null}
         {showSettings && tabs.active === "settings" ? <div className="grid gap-5">
         {access.edit ? <ImageUploader endpoint={`/admin/event-series/${seriesId}/image`} currentUrl={query.data.image_url} label="Series photo (inherited by occurrences)" shape="wide" disabled={terminal} onChanged={() => query.refetch()} /> : null}

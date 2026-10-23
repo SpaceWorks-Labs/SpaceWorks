@@ -60,6 +60,7 @@ class OfflineCheckInResultSerializer(serializers.Serializer):
             "event_unavailable",
             "invalid_token",
             "outside_window",
+            "stage_incomplete",
         ]
     )
     registration_id = serializers.IntegerField(required=False)

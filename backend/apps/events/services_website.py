@@ -1,6 +1,5 @@
 """Locked, audited content writes; all callers recheck live event authority."""
 
-from django.db import transaction
 from rest_framework.exceptions import ValidationError
 
 from apps.audit.services import record
@@ -13,10 +12,12 @@ from .feature_gates import require_feature
 from .models import Event, EventSeries
 from .models_website import EventPage, EventSession, EventSessionSpeaker
 from .serializers_website import WebsiteContentInput
-from .staff_grant_locks import lock_authority
+from .programme_locks import lock_authority
 from .website_copy import copy_page, owner
 from .website_projection import window
 from .website_content import PAGE_FIELDS, SECTION_FIELDS, SECTION_DETAIL_DEFAULTS
+from .services_write_boundary import event_write
+from .website_preparation import prepared_page_write, prepared_copies
 
 
 def locked_target(target, actor, permission):
@@ -54,9 +55,14 @@ def own_page(target, copies, asset_map=None, identity_map=None):
     return page or copies.create("page", EventPage, makerspace=target.makerspace, **owner(target))
 
 
-def bump(page):
+def bump(page, target=None):
     page.revision += 1
     page.save(update_fields=["revision", "released", "updated_at"])
+    if page.event_id:
+        from django.db.models import F
+        Event.objects.filter(pk=page.event_id).update(version=F("version") + 1)
+        if isinstance(target, Event):
+            target.refresh_from_db(fields=("version",))
 
 
 def _validate_content(target, data, assets):
@@ -88,6 +94,7 @@ def _validate_content(target, data, assets):
                 raise ValidationError(f"Choose {kind} sections from this page.")
 
 
+@prepared_page_write
 def save_content(target, *, actor, data):
     serializer = WebsiteContentInput(data=data)
     serializer.is_valid(raise_exception=True)
@@ -96,11 +103,20 @@ def save_content(target, *, actor, data):
     legacy_enabled = "section_enabled" in data and "EDITORIAL" not in data["section_enabled"]
     data = serializer.validated_data
     from copy import deepcopy
+    from .website_preparation import prepared_page_id
     return event_asset_transaction(lambda copies: _save_content(
-        target, actor, deepcopy(data), legacy_order, legacy_enabled, copies))
+        target, actor=actor, data=deepcopy(data), legacy_order=legacy_order,
+        legacy_enabled=legacy_enabled, copies=copies), page_id=prepared_page_id())
 
 
-def _save_content(target, actor, data, legacy_order, legacy_enabled, copies):
+@event_write
+def _save_content(target, *, actor, data, legacy_order, legacy_enabled, copies):
+    """One locked pass of the Pages reserve/replay engine under the programme fences."""
+    with prepared_copies(target):
+        return _save_content_locked(target, actor, data, legacy_order, legacy_enabled, copies)
+
+
+def _save_content_locked(target, actor, data, legacy_order, legacy_enabled, copies):
     from .event_permissions import VIEW
     target, actor = locked_target(target, actor, VIEW)
     copies.watch("target", target)
@@ -187,7 +203,7 @@ def _save_content(target, actor, data, legacy_order, legacy_enabled, copies):
         page.save(update_fields=changed)
     from .website_revisions import save_draft
     save_draft(page, actor)
-    bump(page)
+    bump(page, target)
     if copies.phase == "finalize" or not copies.plans:
         audit(page, actor, "event.website_saved", revision=page.revision)
     return target
@@ -214,12 +230,12 @@ def set_release_locked(target, *, actor, released, revision):
         page.published_revision = page.draft_revision
         page.save(update_fields=["published_revision"])
     page.released = released
-    bump(page)
+    bump(page, target)
     audit(page, actor, "event.website_released" if released else "event.website_unreleased", revision=page.revision)
     return page
 
 
-@transaction.atomic
+@event_write
 def set_release(target, *, actor, released, revision):
     target, actor = locked_target(target, actor, PUBLISH_SCHEDULE)
     return set_release_locked(target, actor=actor, released=released, revision=revision)

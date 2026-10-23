@@ -6,10 +6,14 @@ class PaymentsConfig(AppConfig):
     name = "apps.payments"
 
     def ready(self):
+        from apps.encryption.registry import register_retained_pii
+        register_retained_pii("payments.")
         from .notifications_p2 import register
         register()
         from .notifications_refund_cases import register as register_refund_cases
         register_refund_cases()
+        from .event_payout_bridge import install
+        install()
 
     # No `register_separable_app`: the payment ledger is permanently core. Its surfaces
     # are the record of money owed and taken, and a deployment that cannot read or settle

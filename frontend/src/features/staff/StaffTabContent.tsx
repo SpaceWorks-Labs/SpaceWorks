@@ -11,10 +11,10 @@ import { filterTabsByEnabledModules } from "./staffTabs";
 import { StaffPlatformTabContent } from "./StaffPlatformTabContent";
 import type { Makerspace } from "./panels/shared";
 import { StaffPanelErrorBoundary } from "./StaffPanelErrorBoundary";
-import { PlatformDashboardPanel } from "./StaffTabLoaders";
+import { PlatformProgrammeDashboard } from "./eventProgramme/PlatformProgrammeDashboard";
 import { GrantedResourcesPanel } from "./GrantedResourcesPanel";
 
-import { PaymentsPanel, RefundQueue, DevicesPanel, DashboardPanel, NotificationInbox, DirectLoans, Inventory, Ledger, MachinesPanel, EventsPanel, OrganizedEventsPanel, OrganizationAnalyticsPanel, OrganizationsPanel, BookingsPanel, MembersPanel, MemberCardsPanel, QrTools, RequestsPanel, OperationsReports, AuditLog, BulkImport, ScannerPanel, ContainersPanel, StocktakePanel, StockTransferPanel, ProcurementPanel, WarrantyPanel, AccountabilityPanel, Categories, NeedsFixShelf, HandoverConsole } from "./StaffTabLoaders";
+import { PaymentsPanel, RefundQueue, EventPayoutsSection, DevicesPanel, DashboardPanel, NotificationInbox, DirectLoans, Inventory, Ledger, MachinesPanel, EventsPanel, OrganizedEventsPanel, OrganizationAnalyticsPanel, OrganizationsPanel, BookingsPanel, MembersPanel, MemberCardsPanel, QrTools, RequestsPanel, OperationsReports, AuditLog, BulkImport, ScannerPanel, ContainersPanel, StocktakePanel, StockTransferPanel, ProcurementPanel, WarrantyPanel, AccountabilityPanel, Categories, NeedsFixShelf, HandoverConsole } from "./StaffTabLoaders";
 
 export function StaffTabContent({
   activeMakerspace,
@@ -75,7 +75,7 @@ export function StaffTabContent({
   lockedMakerspaceId?: number;
 }) {
   if (activeTab === "platform-dashboard" && isSuperadmin && !singleTenantLocked) {
-    return <StaffPanelErrorBoundary resetKey="platform-dashboard"><Suspense fallback={<Skeleton className="h-40 w-full" />}><PlatformDashboardPanel /></Suspense></StaffPanelErrorBoundary>;
+    return <StaffPanelErrorBoundary resetKey="platform-dashboard"><Suspense fallback={<Skeleton className="h-40 w-full" />}><PlatformProgrammeDashboard /></Suspense></StaffPanelErrorBoundary>;
   }
   if (activeTab === "organizations") {
     return <StaffPanelErrorBoundary resetKey="organizations"><Suspense fallback={<Skeleton className="h-40 w-full" />}><OrganizationsPanel isSuperadmin={isSuperadmin} makerspaces={makerspaces} /></Suspense></StaffPanelErrorBoundary>;
@@ -154,7 +154,7 @@ export function StaffTabContent({
           }
         />
       ) : null}
-      {activeTab === "events" && canManageEvents ? <EventsPanel key={makerspaceKey} enabledFeatures={activeMakerspace.enabled_features} makerspaceId={activeMakerspace.id} /> : null}
+      {activeTab === "events" && canManageEvents ? <EventsPanel key={makerspaceKey} enabledFeatures={activeMakerspace.enabled_features} enabledModules={activeMakerspace.enabled_modules} makerspaceId={activeMakerspace.id} /> : null}
       {activeTab === "organized" && !isSuperadmin ? <OrganizedEventsPanel /> : null}
       {activeTab === "organization-analytics" && !isSuperadmin && !singleTenantLocked ? (
         <OrganizationAnalyticsPanel makerspaces={makerspaces} />
@@ -181,6 +181,7 @@ export function StaffTabContent({
       {activeTab === "refunds" && allowedTabs.includes("refunds") ? <RefundQueue key={makerspaceKey} makerspaceId={activeMakerspace.id}
         makerspaceName={activeMakerspace.name} canEditPolicy={canManageMakerspace}
         canDecide={["manage_events", "manage_bookings", "manage_machines", "manage_members", "manage_makerspace"].some(has)} /> : null}
+      {activeTab === "payments" && has("view_finance") ? <EventPayoutsSection key={`payouts:${makerspaceKey}`} makerspaceId={activeMakerspace.id} /> : null}
       {activeTab === "tobuy" ? (
         <ProcurementPanel
           key={makerspaceKey}

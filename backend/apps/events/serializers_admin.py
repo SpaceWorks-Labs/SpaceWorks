@@ -10,6 +10,7 @@ from .serializers_registration_admin import (
 
 
 class EventWriteSerializer(serializers.Serializer):
+    accent_preset = serializers.ChoiceField(choices=Event.ACCENT_CHOICES, allow_blank=True, required=False)
     registration_audience = serializers.ChoiceField(choices=Event.RegistrationAudience.choices, required=False)
     category_id = serializers.IntegerField(min_value=1, allow_null=True, required=False)
     tags = serializers.ListField(child=serializers.CharField(max_length=50), max_length=20, required=False)

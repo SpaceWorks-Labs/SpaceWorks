@@ -10,21 +10,37 @@ from apps.events.event_permissions import EDIT_DETAILS
 from apps.events.models import Event, EventFeedbackSurvey, EventSeries, EventTicketType
 from apps.events.services import EVENT_FIELDS, INHERITABLE_FIELDS, _audit, _locked_event, _validate
 from apps.inventory import public_image_storage
+from apps.events.programme_locks import fences, lock_authority
+from apps.events.contracts.providers import LockedContext
 from apps.makerspaces.guards import require_module_locked
 from apps.makerspaces.resource_clone import (
     OwnedImage, bounded_children, copy_fields,
 )
 from apps.makerspaces.event_asset_transaction import event_asset_transaction
 
-TICKET_FIELDS = ("name", "amount", "audience", "capacity", "sales_start_at", "sales_end_at", "is_active")
+TICKET_FIELDS = ("name", "amount", "audience", "capacity", "sales_start_at", "sales_end_at", "is_active",
+                 "purpose", "contributor_capacity_policy")
 SURVEY_FIELDS = ("title", "thank_you_text", "questions")
 
 
 def duplicate_event(event, *, actor, attach_series=False):
-    return event_asset_transaction(lambda assets: _duplicate_event(event, actor, attach_series, assets))
+    # Decision #86: the events programme prepares authority, scope, tenant keys and
+    # design artwork before any lock and pre-allocates the clone page key; the Pages
+    # engine then reserves/journals the cover and page images and replays the locked
+    # graph, so both programmes' guarantees hold.
+    from .clone_preparation import prepare
+    with prepare(event, actor) as prepared:
+        return event_asset_transaction(
+            lambda assets: _duplicate_event(event, actor, attach_series, assets, prepared),
+            page_id=prepared.prepared_page_id)
 
 
-def _duplicate_event(event, actor, attach_series, assets):
+def _duplicate_event(event, actor, attach_series, assets, prepared):
+    with fences(tenant_ids=prepared.tenant_ids, account_ids=prepared.account_ids):
+        return _duplicate_fenced(event, actor, attach_series, assets, prepared)
+
+
+def _duplicate_fenced(event, actor, attach_series, assets, prepared):
     from apps.tenant_migration.gate_runtime import assert_write_allowed
     assert_write_allowed(event.makerspace_id)
     # Series mutations lock the series before occurrences. Preserve that order
@@ -32,8 +48,12 @@ def _duplicate_event(event, actor, attach_series, assets):
     series_id = Event.objects.values_list("series_id", flat=True).get(pk=event.pk)
     series = EventSeries.objects.select_for_update().get(pk=series_id) if series_id else None
     source = _locked_event(event.pk)
+    if source.series_id != series_id:
+        from rest_framework.exceptions import ValidationError
+        raise ValidationError("The source series changed. Retry the copy.")
+    from .clone_preparation import revalidate
+    revalidate(source, prepared)
     source.makerspace = require_module_locked(source.makerspace, "events")
-    from .staff_grant_locks import lock_authority
     actor = lock_authority(actor, source)
     from .website_visibility import effective_page
     if effective_page(source) is not None:
@@ -79,6 +99,9 @@ def _duplicate_event(event, actor, attach_series, assets):
     clone.pk = assets.identities.get("event")
     clone.save(force_insert=True)
     assets.remember("event", clone.pk)
+    from .contracts.clone_registration import copy_programme_locked
+    copy_programme_locked(source=source, target=clone, actor=actor,
+        locks=LockedContext(event_id=clone.pk, tenant_ids=prepared.tenant_ids, account_ids=prepared.account_ids))
     for ticket in bounded_children(source.ticket_types.all()):
         child = EventTicketType(event=clone, makerspace=clone.makerspace,
                                 **copy_fields(ticket, TICKET_FIELDS))
@@ -87,6 +110,8 @@ def _duplicate_event(event, actor, attach_series, assets):
     survey = EventFeedbackSurvey.objects.select_for_update().filter(event=source).first()
     if survey is not None and not survey.is_open:
         EventFeedbackSurvey.objects.create(event=clone, **copy_fields(survey, SURVEY_FIELDS))
+    from .certificates.clone_designs import copy_designs_locked
+    copy_designs_locked(source=source, target=clone, actor=actor, prepared=prepared.designs)
     from .website_copy import copy_page
     copy_page(source, clone, copies=assets)
     # Materialize the private override before attachment: its window may be

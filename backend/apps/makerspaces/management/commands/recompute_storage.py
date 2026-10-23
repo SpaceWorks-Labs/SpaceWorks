@@ -17,6 +17,7 @@ from apps.maintenance.models import MaintenanceLogDocument
 from apps.makerspaces.models import MemberCard, Makerspace, MemberProfile, MemberProject
 from apps.makerspaces.models_public_pages import MakerspacePublicPageAsset
 from apps.makerspaces.servability import servable_queryset
+from apps.makerspaces.storage_events_programme import accounted_bytes, accounted_print_bytes
 from apps.procurement import storage as procurement_storage
 from apps.procurement.models import ToBuyReceipt
 from apps.warranty import storage as warranty_storage
@@ -64,6 +65,8 @@ class Command(BaseCommand):
             return
         try:
             values = {
+                "event_asset_obligations": accounted_bytes(makerspace),
+                "event_print_obligations": accounted_print_bytes(makerspace),
                 "evidence": self._sum(
                     EvidencePhoto.objects.filter(makerspace=makerspace)
                     .exclude(
@@ -95,7 +98,7 @@ class Command(BaseCommand):
                 "event_website_assets": self._sum(EventPageAsset.objects.filter(page__makerspace=makerspace).values_list("object_key", "size_bytes"), evidence_storage.object_size, True),
                 "makerspace_page_assets": self._sum(MakerspacePublicPageAsset.objects.filter(page__makerspace=makerspace).values_list("object_key", "size_bytes"), evidence_storage.object_size, True),
                 "pending_page_asset_cleanup": self._pending_page_assets(makerspace),
-                "event_certificates": self._sum(EventAttendanceCertificate.objects.filter(registration__event__makerspace=makerspace).values_list("object_key", "size_bytes"), evidence_storage.object_size, True),
+                "event_certificates": self._sum(EventAttendanceCertificate.objects.filter(event__makerspace=makerspace).values_list("object_key", "size_bytes"), evidence_storage.object_size, True),
                 "event_certificate_artwork": self._sum(
                     EventCertificateArtwork.objects.filter(
                         event__makerspace=makerspace, promoted_at__isnull=False,

@@ -9,7 +9,7 @@ export type EventFormValues = Omit<EventPayload, "starts_at" | "ends_at" | "regi
 };
 
 export const emptyEventForm: EventFormValues = {
-  title: "", description: "", starts_at: "", ends_at: "", location: "",
+  accent_preset: "", title: "", description: "", starts_at: "", ends_at: "", location: "",
   timezone_name: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
   capacity: 0, payment_amount: "0.00", registration_requires_approval: false,
   registration_cutoff_at: null, registration_cutoff_lead_minutes: null,
@@ -26,7 +26,7 @@ function localDate(value: string) {
 
 export function valuesFor(event: StaffEvent): EventFormValues {
   return {
-    title: event.title, description: event.description,
+    accent_preset: event.accent_preset ?? "", title: event.title, description: event.description,
     starts_at: localDate(event.starts_at), ends_at: localDate(event.ends_at),
     timezone_name: event.timezone_name,
     location: event.location, capacity: event.capacity,

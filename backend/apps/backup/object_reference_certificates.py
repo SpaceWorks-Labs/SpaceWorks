@@ -8,7 +8,7 @@ from .recipient_selection import BackupBuildError
 
 def certificate_snapshot_references(sovereign):
     model = apps.get_model("events.EventAttendanceCertificate")
-    rows = model._base_manager.values("pk", "layout_snapshot", "registration__event__makerspace_id")
+    rows = model._base_manager.values("pk", "layout_snapshot", "event__makerspace_id")
     for row in rows.iterator(chunk_size=500):
         snapshot = row["layout_snapshot"]
         if not isinstance(snapshot, dict):
@@ -18,7 +18,7 @@ def certificate_snapshot_references(sovereign):
             continue
         if not isinstance(key, str):
             raise BackupBuildError("Certificate artwork reference must be an object key.")
-        owner = row["registration__event__makerspace_id"]
+        owner = row["event__makerspace_id"]
         yield ObjectReference(
             bucket_kind="private", object_key=key,
             site=f"events.EventAttendanceCertificate:{row['pk']}:layout_snapshot.artwork_object_key",

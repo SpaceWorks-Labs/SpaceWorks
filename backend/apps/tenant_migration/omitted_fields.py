@@ -34,6 +34,19 @@ def _rules(disposition, *fields):
 OMITTED_FIELD_RECONSTRUCTIONS = {
     ("makerspaces.Makerspace", "email_provider"): EMPTY_STRING,
     ("makerspaces.Makerspace", "email_provider_config"): EMPTY_STRING,
+    ("events.EventMemberCard", "public_id"): FRESH,
+    ("events.EventBroadcast", "confirmed_preview"): NULL,
+    ("events.EventFormRevision", "created_by"): NULL,
+    ("events.EventAttendanceCertificate", "render_token"): NULL,
+    ("events.EventMemberPresentation", "selected_profile"): NULL,
+    ("events.EventMemberPresentation", "selected_membership"): NULL,
+    **{(label, name): disposition for label in (
+        "events.SubmissionAsset", "events.HackathonParticipantAsset",
+    ) for name, disposition in (
+        ("staging_key", DERIVED), ("verification_key", DERIVED), ("claim", DERIVED),
+        ("source_version_id", EMPTY_STRING), ("verification_version_id", EMPTY_STRING),
+        ("source_etag", EMPTY_STRING), ("multipart_upload_id", EMPTY_STRING), ("upload_not_after", NULL),
+    )},
     ("bookings.BookingBroadcastDelivery", "outbox"): NULL,
     ("events.EventBroadcastDelivery", "outbox"): NULL,
     **_rules(

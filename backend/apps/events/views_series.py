@@ -35,6 +35,8 @@ SERIES_ERRORS = {
     404: OpenApiResponse(ErrorSerializer, description="Event series not found."),
     409: OpenApiResponse(ErrorSerializer, description="Series state conflict."),
     429: OpenApiResponse(ErrorSerializer, description="Rate limit exceeded."),
+    423: OpenApiResponse(ErrorSerializer, description="Source or protected writes are fenced."),
+    503: OpenApiResponse(ErrorSerializer, description="Private data or programme dependency unavailable."),
 }
 
 

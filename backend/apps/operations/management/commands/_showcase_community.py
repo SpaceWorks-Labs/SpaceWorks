@@ -24,7 +24,7 @@ from apps.payments.reconciliation import reconcile_payments
 from . import _showcase_data as data
 
 ABOUT = (
-    "Patchwork is a community workshop run by its members. Borrow tools from the "
+    "Tinkerspace is a community workshop run by its members. Borrow tools from the "
     "lending library, send a print to the farm, book a bench, or drop in on a "
     "Thursday repair night.\n\nEverything here is showcase data for a demo space."
 )
@@ -45,7 +45,7 @@ def settle_some_dues(space, manager, members):
             actor=manager, makerspace_id=space.pk, payment_ids=[payment.pk],
             target_status=Payment.Status.PAID_OFFLINE,
             settlement={"method": methods[index % len(methods)],
-                        "reference": f"PW-RCPT-{index + 1:04d}", "received_at": timezone.now()},
+                        "reference": f"TS-RCPT-{index + 1:04d}", "received_at": timezone.now()},
         )
 
 
@@ -95,8 +95,8 @@ def publish_public_page(space, manager):
                                 version=state["version"], handle=handle)
     document = dict(state["document"])
     document["sections"] = [
-        _section("about", {"title": "About Patchwork", "markdown": ABOUT}),
-        _section("stats", {"title": "Patchwork in numbers", "show_public_inventory_units": True,
+        _section("about", {"title": "About Tinkerspace", "markdown": ABOUT}),
+        _section("stats", {"title": "Tinkerspace in numbers", "show_public_inventory_units": True,
                            "show_published_event_count": True, "publish_public_member_count": True}),
         _section("upcoming_events", {"title": "Coming up"}),
         _section("location", {"title": "Find us", "enabled_publicly": True,

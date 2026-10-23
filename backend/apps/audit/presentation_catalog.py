@@ -52,6 +52,7 @@ def _compose(*fragments):
 
 
 from .presentation_catalog_p2_presence import ENTRIES as _PRESENCE
+from .presentation_catalog_r2_l4 import ENTRIES as _R2_L4
 
 PRESENTATION_CATALOG = _compose(
     _PROGRAMME,
@@ -60,7 +61,7 @@ PRESENTATION_CATALOG = _compose(
     _PRESENCE,
     _ACCOUNTS, _MAKERSPACES, _HARDWARE, _MACHINES, _COMMUNITY, _MIGRATION, _PAYMENTS,
     _PLATFORM, _MEMBER_ACCOUNT, _MERGED, _PROFILES, _WA_TWILIO, _WA_META, _P2_P_CHAT, _P2_BOOKINGS, _P2_EVENTS,
-    _MESSAGING,
+    _MESSAGING, _R2_L4,
 )
 
 

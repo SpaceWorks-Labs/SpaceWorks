@@ -229,3 +229,5 @@ SHARED_ROUTES |= {"auth-logout-all", "member-messaging", "member-messaging-conse
 # Refund cases follow each charge's subject authority, like the reconciliation routes.
 MEMBERSHIP_ROUTES |= {"refund-case-list", "refund-case-detail", "refund-case-approve", "refund-case-decline",
                       "refund-policy-list", "refund-policy-detail", "refund-policy-plan"}
+# Release-2 membership lifecycle (lane L4). Each view keeps its own action check.
+DELEGABLE_ROUTES |= {"admin-financial-year"}

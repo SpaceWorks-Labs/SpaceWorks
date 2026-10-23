@@ -53,7 +53,7 @@ class RequestSeeder:
         member = self.members[username]
         snapshot = RequesterSnapshot(
             username=member.username, name=member.display_name, email=member.email,
-            phone="", contact_verified=True,
+            phone="",
         )
         items = [{"product": self.stock.products[name], "quantity": qty} for name, qty in lines]
         return workflow.submit_request(

@@ -87,7 +87,7 @@ def submit_request(
             "request.submitted",
             makerspace=makerspace,
             target=request,
-            meta={"account_less": True} if account_less_marker else None,
+            meta={"account_less": bool(account_less_marker)},
         )
         notifications.notify_request_submitted(request)
         emit_notification(

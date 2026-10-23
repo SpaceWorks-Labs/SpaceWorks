@@ -32,6 +32,7 @@ URLs or free-form audit metadata travel in v2.
 | members | membership_request_id, membership_id |
 | api_access | api_key_request_id |
 | devices | none |
+| presence | none |
 | payments | payment_id, refund_id, request_id, booking_id, registration_id, membership_id |
 | stock | to_buy_item_id, pool_id |
 | certifications | certification_grant_id, certification_type_id, membership_id |

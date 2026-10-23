@@ -248,3 +248,15 @@ from .audit_references_meta_7c import LABEL_AUDIT_EDGES
 
 AUDIT_META_REFERENCES.update(LABEL_AUDIT_EDGES)
 AUDIT_META_REFERENCES.update(DEVICE_7D_AUDIT_EDGES)
+
+# Cloud programme: tick, staging, mail-budget and storage-receipt identifiers name
+# deployment-local rows that never travel, so they are kept only as source snapshots.
+AUDIT_META_REFERENCES.update(_reference(S, None, *(
+    ("cloud.delivery_cancelled", "delivery_id"), ("cloud.tick_finished", "tick_id"),
+    ("cloud.tick_started", "tick_id"), ("deployment.staging_available", "stage_id"),
+    ("deployment.staging_created", "stage_id"), ("deployment.staging_deleted", "stage_id"),
+    ("email.acceptance_reconciled", "reservation_id"), ("email.budget_reserved", "reservation_id"),
+    ("email.budget_settled", "reservation_id"), ("notification.email_accepted", "delivery_id"),
+    ("notification.email_accepted", "email_log_id"), ("storage.bucket_binding_migrated", "receipt_id"),
+    ("storage.bucket_handoff_resumed", "receipt_id"), ("storage.legacy_receipt_bound", "receipt_id"),
+)))

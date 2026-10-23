@@ -15,6 +15,9 @@ EVENTS = {
     ("members", "vouched"): (),
     ("stock", "scheduled"): (),
     ("stock", "completed"): (),
+    # Machine-service cancellation fans out to staff and rooms (notify_service); the
+    # requester leg is an owner self-notice, so only the bounded summary is offered.
+    ("printing", "cancelled"): (),
 }
 
 # These producers explicitly disable staff/room fan-out. Their personal content
@@ -24,6 +27,9 @@ PERSONAL_ONLY_EVENTS = frozenset({
     ("members", "broadcast"), ("members", "invitation"),
     ("api_access", "email.failed"), ("api_access", "scheduled_report"),
     ("payments", "document_issued"), ("presence", "expired"),
+    # Queue-head "next" is an owner self-notice only (service_queue_notices); it never
+    # reaches staff or rooms.
+    ("printing", "next"),
 })
 
 

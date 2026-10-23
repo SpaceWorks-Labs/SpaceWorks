@@ -6,12 +6,14 @@ from django.contrib import messages
 from apps.audit import services as audit
 from apps.makerspaces.capabilities import FEATURE_DEFINITIONS, validate_capabilities
 from apps.makerspaces.admin_images import MakerspaceAdminForm as ImageMakerspaceAdminForm
-from apps.makerspaces.module_registry import (
-    BY_KEY, MODULES, core_module_keys, module_available, with_dependencies,
-)
+from apps.makerspaces.admin_capability_completion import FEATURES, complete_selection, matrix_rules
+from apps.makerspaces.module_registry import BY_KEY, MODULES, module_available
 from apps.makerspaces.request_access import effective_policy
 
-PARENTS = {item.key: item.parent_module for item in FEATURE_DEFINITIONS}
+
+def _labels(keys):
+    return ", ".join(BY_KEY[key].label if key in BY_KEY else FEATURES[key].label if key in FEATURES else key
+                     for key in keys)
 
 
 class CapabilityMatrixWidget(forms.CheckboxSelectMultiple):
@@ -19,13 +21,10 @@ class CapabilityMatrixWidget(forms.CheckboxSelectMultiple):
 
     def get_context(self, name, value, attrs):
         context = super().get_context(name, value, attrs)
-        # Authoritative parent map (feature option value -> parent module or None) so the
-        # client derives the disable rule from the real definition instead of guessing from
-        # the key. Parentless features (parent is None) must never be disabled: a disabled
-        # checkbox is omitted from POST, which would silently clear the capability on save.
-        context["feature_parents"] = {
-            f"feature:{item.key}": item.parent_module for item in FEATURE_DEFINITIONS
-        }
+        # The server's own completion rules as data, so the script ticks and unticks
+        # exactly what clean_capabilities would. No checkbox is ever disabled: a disabled
+        # checkbox is omitted from POST, which would silently clear it on save.
+        context["capability_rules"] = matrix_rules()
         return context
 
 
@@ -97,24 +96,20 @@ class MakerspaceAdminForm(ImageMakerspaceAdminForm):
         values = self.cleaned_data["capabilities"]
         modules = [value.removeprefix("module:") for value in values if value.startswith("module:")]
         features = [value.removeprefix("feature:") for value in values if value.startswith("feature:")]
-        # MP-28: a module ticked without what it requires is completed, not rejected --
-        # the same cascade as install_module and creation setup. Owner decision #82: a
-        # feature ticked without its parent module adds that parent too. Its other declared
-        # requirements are still validated, not inferred. Core is always added back by
-        # canonicalization, so it is not reported as an addition.
-        ticked = set(modules)
-        parents = {PARENTS[key] for key in features if PARENTS.get(key)}
-        completed = with_dependencies(ticked | parents)
-        added = sorted(completed - ticked - core_module_keys())
-        unavailable = [key for key in added if not module_available(key)]
+        # MP-28 / owner decisions #82 and #87: the same rules the page script applies
+        # (admin_capability_completion), so a save that bypasses the script lands in the
+        # same place and nothing is silently re-ticked.
+        result = complete_selection(self.capability_before["modules"], modules, features)
+        unavailable = [key for key in result.added if not module_available(key)]
         if unavailable:
             raise forms.ValidationError(
                 f"The ticked modules and features require {', '.join(unavailable)}, which this "
                 "deployment does not ship (TOMBSTONED_APPS)."
             )
-        self.capability_dependencies_added = added
+        self.capability_dependencies_added = result.added
+        self.capability_turned_off = result.turned_off_modules + result.turned_off_features
         try:
-            modules, features = validate_capabilities(sorted(completed), features)
+            modules, features = validate_capabilities(result.modules, result.features)
         except Exception as exc:
             raise forms.ValidationError(exc.messages) from exc
         self.instance.enabled_modules = modules
@@ -137,17 +132,19 @@ class MakerspaceCapabilityAdminMixin:
             and request_access_before != request_access_after
         )
         dependencies_added = getattr(form, "capability_dependencies_added", [])
+        turned_off = getattr(form, "capability_turned_off", [])
         if dependencies_added:
-            labels = ", ".join(BY_KEY[key].label for key in dependencies_added)
-            self.message_user(
-                request,
-                f"Also enabled {labels}: the modules and features you ticked require them.",
-                messages.WARNING,
-            )
+            self.message_user(request, f"Also enabled {_labels(dependencies_added)}: the modules "
+                              "and features you ticked require them.", messages.WARNING)
+        if turned_off:
+            self.message_user(request, f"Also turned off {_labels(turned_off)}: they need a module "
+                              "you unticked.", messages.WARNING)
         if change and (before != after or request_access_changed):
             meta = {"before": before, "after": after}
             if dependencies_added:
                 meta["dependencies_added"] = dependencies_added
+            if turned_off:
+                meta["dependents_turned_off"] = turned_off
             if request_access_changed:
                 meta["request_access"] = {
                     "before": request_access_before,

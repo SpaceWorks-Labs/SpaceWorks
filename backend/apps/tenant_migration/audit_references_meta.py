@@ -265,3 +265,5 @@ AUDIT_META_REFERENCES.update(_reference(S, None, *(
     ("notification.email_accepted", "email_log_id"), ("storage.bucket_binding_migrated", "receipt_id"),
     ("storage.bucket_handoff_resumed", "receipt_id"), ("storage.legacy_receipt_bound", "receipt_id"),
 )))
+from .audit_references_l12 import EDGES as L12_AUDIT_EDGES
+AUDIT_META_REFERENCES.update(L12_AUDIT_EDGES)

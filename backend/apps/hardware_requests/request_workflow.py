@@ -59,6 +59,8 @@ def submit_request(
 
         requester_principal = lock_obligation_owner(requester_principal)
         require_feature(makerspace, "loans.enabled")
+        if any(getattr(item["product"], "is_consumable", False) for item in items):
+            raise RequestValidationError("Consumables are logged as used, not lent.")
         availability.enforce_submission_borrow_limits(makerspace, requester_principal, items)
         request = HardwareRequest.objects.create(
             makerspace=makerspace,

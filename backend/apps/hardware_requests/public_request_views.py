@@ -185,6 +185,7 @@ def _requestable_products(product_ids, makerspace):
             makerspace=makerspace,
             is_public=True,
             is_archived=False,
+            is_consumable=False,
         )
     }
 

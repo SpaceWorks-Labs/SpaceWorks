@@ -58,7 +58,7 @@ FEATURE_EVENTS = {
                  "payment_received", "refund_issued", "payment_failed", "document_issued",
                  "refund_due_opened", "refund_request_received", "refund_request_approved",
                  "refund_request_declined"),
-    F.STOCK: ("low_stock", "procurement_received", "scheduled", "completed"),
+    F.STOCK: ("low_stock", "procurement_received", "scheduled", "completed", "to_buy_created"),
     F.CERTIFICATIONS: ("granted", "revoked", "expiring", "expired"),
 }
 from .notification_catalog_events_programme import PROGRAMME_EVENTS

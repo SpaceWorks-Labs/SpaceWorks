@@ -125,6 +125,8 @@ def provenance_machine_type_id(item):
             return item.resulting_pool.machine_type_id
         if item.resulting_pool.machine_id is not None:
             return item.resulting_pool.machine.machine_type_id
+    if getattr(item, "source_consumable_id", None) is not None:
+        return item.source_consumable.machine.machine_type_id
     return None
 
 

@@ -59,7 +59,7 @@ class InventoryProductAdminSerializer(serializers.ModelSerializer):
             "category",
             "name",
             "manufacturer", "model", "sku", "barcode", "supplier",
-            "reorder_point", "reorder_quantity", "kit_components",
+            "reorder_point", "reorder_quantity", "is_consumable", "kit_components",
             "description",
             "unit_cost", "cost_currency", "cost_unit",
             "borrowing_terms",
@@ -108,6 +108,10 @@ class InventoryProductAdminSerializer(serializers.ModelSerializer):
         values = {name: attrs.get(name, getattr(self.instance, name, default))
                   for name, default in (("unit_cost", None), ("cost_currency", ""), ("cost_unit", ""))}
         validate_price(values["unit_cost"], values["cost_currency"], values["cost_unit"], "count")
+        consumable = attrs.get("is_consumable", getattr(self.instance, "is_consumable", False))
+        mode = attrs.get("tracking_mode", getattr(self.instance, "tracking_mode", TrackingMode.QUANTITY))
+        if consumable and mode != TrackingMode.QUANTITY:
+            raise serializers.ValidationError({"is_consumable": "Only quantity-tracked items can be consumables."})
 
     def validate_tracking_mode(self, value):
         if value not in TrackingMode.values:

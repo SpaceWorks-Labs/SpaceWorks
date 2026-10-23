@@ -85,6 +85,9 @@ class InventoryProduct(models.Model):
     supplier = models.CharField(max_length=200, blank=True)
     reorder_point = models.PositiveIntegerField(default=0)
     reorder_quantity = models.PositiveIntegerField(default=0)
+    # Take-and-go stock (screws, glue): logged as used, never lent, auto-restocked at
+    # its reorder point. Quantity-tracked only (CHECK below).
+    is_consumable = models.BooleanField(default=False)
     kit_components = models.JSONField(default=list, blank=True, validators=[validate_kit_definition])
     description = models.TextField(blank=True)
     image_key = models.CharField(max_length=300, blank=True, default="")
@@ -173,6 +176,10 @@ class InventoryProduct(models.Model):
                     )
                 ),
                 name="qty_sum_within_total",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(is_consumable=False) | models.Q(tracking_mode="quantity"),
+                name="consumable_quantity_tracked",
             ),
         ]
 

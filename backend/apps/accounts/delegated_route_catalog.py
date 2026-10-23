@@ -229,3 +229,6 @@ SHARED_ROUTES |= {"auth-logout-all", "member-messaging", "member-messaging-conse
 # Refund cases follow each charge's subject authority, like the reconciliation routes.
 MEMBERSHIP_ROUTES |= {"refund-case-list", "refund-case-detail", "refund-case-approve", "refund-case-decline",
                       "refund-policy-list", "refund-policy-detail", "refund-policy-plan"}
+# Release-2 lane L12 (machines and loans depth): each route keeps its own action check.
+DELEGABLE_ROUTES |= {"admin-consumables", "admin-consumable-use"}
+MEMBERSHIP_ROUTES |= {"to-buy-refill-consumable"}

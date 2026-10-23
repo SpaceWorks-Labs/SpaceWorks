@@ -14,7 +14,7 @@ FAMILY_EVENTS = {
                  "refund_request_declined"),
     "membership": ("approved", "declined", "renewal_due", "lapsed", "renewal_failed", "awaiting_payment", "payment_due",
                    "renewed", "grace_started", "cancelled"),
-    "stock": ("low_stock", "procurement_received"),
+    "stock": ("low_stock", "procurement_received", "to_buy_created"),
     "maintenance": ("due_soon", "overdue"),
     "certifications": ("granted", "revoked", "expiring", "expired"),
 }

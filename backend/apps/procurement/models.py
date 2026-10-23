@@ -99,6 +99,12 @@ class ToBuyItem(models.Model):
         "inventory.InventoryProduct", null=True, blank=True,
         on_delete=models.SET_NULL, related_name="reorder_drafts",
     )
+    # A per-machine grams consumable whose low threshold raised this item; a received
+    # item refills that same consumable exactly once (moved_to_inventory_at).
+    source_consumable = models.ForeignKey(
+        "machines.MachineConsumable", null=True, blank=True,
+        on_delete=models.SET_NULL, related_name="low_stock_to_buy_items",
+    )
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         null=True,

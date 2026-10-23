@@ -19,6 +19,17 @@ def save_stock_change(product, *, update_fields):
     availability_rose(product, previous)
     if not product.is_archived and point > 0 and previous > point >= product.available_quantity:
         notify_low_stock(product)
+    if product.is_consumable and point > 0 and previous > product.available_quantity <= point:
+        _auto_restock(product)
+
+
+def _auto_restock(product):
+    # Lazy and runtime-gated: procurement is separable, inventory is core.
+    from apps.separability.registry import runtime_active
+    if not runtime_active("procurement"):
+        return
+    from apps.procurement.auto_drafts import schedule_product
+    schedule_product(product.pk)
 
 
 @safe_adapter

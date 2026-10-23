@@ -24,7 +24,14 @@ PERSONAL_ONLY_EVENTS = frozenset({
     ("members", "broadcast"), ("members", "invitation"),
     ("api_access", "email.failed"), ("api_access", "scheduled_report"),
     ("payments", "document_issued"), ("presence", "expired"),
+    # Machine-service owner self-notices (machines/service_queue_notices.py) go to the
+    # request owner only.
+    ("printing", "next"), ("printing", "cancelled"),
 })
+# Events programme notices are addressed to the applicant, team member or certificate
+# subject; none has a staff room body.
+from .notification_catalog_events_programme import PROGRAMME_EVENTS as _PROGRAMME_EVENTS
+PERSONAL_ONLY_EVENTS = PERSONAL_ONLY_EVENTS | frozenset(("events", event) for event in _PROGRAMME_EVENTS)
 
 
 def chat_only_entry(feature, event):

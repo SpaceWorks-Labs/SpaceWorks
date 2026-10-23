@@ -16,8 +16,8 @@ def concrete_fk_dependencies(models, *, include_nullable=True):
     dependencies = {label: set() for label in by_label}
     for label, model in by_label.items():
         for field in model._meta.local_concrete_fields:
-            from .page_pointer_fixups import deferred_pointer
-            if deferred_pointer(field):
+            from .page_pointer_fixups import PAGE_POINTERS, deferred_pointer
+            if (label, field.name) in PAGE_POINTERS and deferred_pointer(field):
                 continue
             if not field.is_relation or field.related_model is None:
                 continue

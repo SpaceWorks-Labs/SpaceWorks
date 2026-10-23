@@ -187,6 +187,12 @@ graph. `events/website_copy_snapshot.py` freezes relational copy inputs across t
 `makerspaces/website_asset_journal.py` owns the durable cleanup-intent/write-claim fence
 and exactly-once attachment charge. `resource_clone.py` retains the existing Bookings
 transaction and the shared compensation helper; event callers use its phased subclass.
+Before that engine runs, `events/website_preparation.py` (`prepared_page_write`) and
+`events/clone_preparation.py` re-read the actor, declare and prepare the tenant/event scope
+outside any domain transaction and pre-allocate the EventPage ID, which the engine reuses on
+both passes (`event_asset_transaction(page_id=...)`). Inside, `services_write_boundary.event_write`
+takes the fences and locks, `prepared_copies` refuses a page that changed since preparation,
+and duplication adds the fenced programme and design copy steps (decision #86, 2026-10-23).
 
 BK-G printable passes are mapped in [SOURCE-MAP-BOOKING-PASSES.md](SOURCE-MAP-BOOKING-PASSES.md).
 They consume the existing core positioned-layout/PDF primitives without importing Events.

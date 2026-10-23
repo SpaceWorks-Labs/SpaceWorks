@@ -1,4 +1,4 @@
-"""Seed one rich, fictional demo makerspace ("Patchwork Makerspace") for screenshots.
+"""Seed one rich, fictional demo makerspace ("Tinkerspace") for screenshots.
 
 Every row is written through the service, serializer or workflow that owns it, so the
 showcase carries the same audit trail, evidence and invariants as real use: request
@@ -30,7 +30,7 @@ from ._showcase_requests import RequestSeeder
 
 
 class Command(BaseCommand):
-    help = "Seed the fictional Patchwork Makerspace showcase through the real services."
+    help = "Seed the fictional Tinkerspace showcase through the real services."
 
     def add_arguments(self, parser):
         parser.add_argument("--password", default=None,

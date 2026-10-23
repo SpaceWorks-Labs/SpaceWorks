@@ -1,17 +1,17 @@
 """Fictional fixture data for `seed_showcase`. Every person here is invented."""
 
-SLUG = "patchwork"
-NAME = "Patchwork Makerspace"
-ORGANIZATION = "Patchwork Collective"
+SLUG = "tinkerspace"
+NAME = "Tinkerspace"
+ORGANIZATION = "Tinkerspace Collective"
 LOCATION = "Unit 4, Canal Street Works"
-SUPERADMIN = ("patchwork_root", "Patchwork Platform Admin")
+SUPERADMIN = ("tinker_root", "Tinkerspace Platform Admin")
 
 # (username, display name, built-in role slug)
 STAFF = (
-    ("patchwork_manager", "Maya Fernandes", "space_manager"),
-    ("patchwork_inventory", "Omar Siddiqui", "inventory_manager"),
-    ("patchwork_machines", "Hana Kowalski", "machine_manager"),
-    ("patchwork_desk", "Ben Okafor", "handover"),
+    ("tinker_manager", "Maya Fernandes", "space_manager"),
+    ("tinker_inventory", "Omar Siddiqui", "inventory_manager"),
+    ("tinker_machines", "Hana Kowalski", "machine_manager"),
+    ("tinker_desk", "Ben Okafor", "handover"),
 )
 
 MEMBERS = (

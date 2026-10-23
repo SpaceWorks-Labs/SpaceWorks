@@ -51,13 +51,13 @@ def seed_machines(makerspace, manager, machine_manager, members):
     pools = {
         "black": create_pool(makerspace, machine_manager, machine_type=printer_type, material="PLA",
                              color="Black", color_hex="#1f1f1f", initial_grams="2000",
-                             low_threshold_grams="300", brand="Patchwork stock"),
+                             low_threshold_grams="300", brand="Tinkerspace stock"),
         "white": create_pool(makerspace, machine_manager, machine_type=printer_type, material="PLA",
                              color="White", color_hex="#f5f5f5", initial_grams="1000",
-                             low_threshold_grams="200", brand="Patchwork stock"),
+                             low_threshold_grams="200", brand="Tinkerspace stock"),
         "petg": create_pool(makerspace, machine_manager, machine_type=printer_type, material="PETG",
                             color="Blue", color_hex="#2f6fde", initial_grams="300",
-                            low_threshold_grams="250", brand="Patchwork stock"),
+                            low_threshold_grams="250", brand="Tinkerspace stock"),
     }
     create_pool(makerspace, machine_manager, machine=machines["Resin Station"],
                 material="Standard resin", color="Grey", quantity="1000", unit="milliliters",

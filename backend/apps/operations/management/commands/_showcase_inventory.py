@@ -33,7 +33,7 @@ def seed_inventory(makerspace, manager, inventory_manager):
             "public_self_checkout_enabled": public and mode == data.EXACT,
             "reorder_point": point, "reorder_quantity": reorder,
             "storage_location": data.BOXES[box][1],
-            "description": f"{name} from the Patchwork lending library.",
+            "description": f"{name} from the Tinkerspace lending library.",
         })
         products[name] = availability.adjust_quantities(
             product, delta_available=quantity, delta_damaged=0, delta_lost=0,
@@ -48,7 +48,7 @@ def seed_inventory(makerspace, manager, inventory_manager):
             "storage_location": data.BOXES[box][1],
             "description": f"Serial-tracked {name.lower()}; scan its unit label at handover.",
         })
-        serials = [f"PW-{product.pk:03d}-{index:02d}" for index in range(1, units + 1)]
+        serials = [f"TS-{product.pk:03d}-{index:02d}" for index in range(1, units + 1)]
         created, _batch = generate_assets_with_qr(inventory_manager, product, {
             "count": units, "serial_numbers": serials, "create_print_batch": True,
             "name_prefix": name,

@@ -53,8 +53,8 @@ export function BackupRestorePanel({ makerspaceId, isSuperadmin, tenantBackupsEn
 
   const available = (deployment.data ?? []).filter(row => row.status === "available");
   const primary = showTenantBackups
-    ? { label: "Create makerspace archive", onClick: () => createTenant.mutate(), pending: createTenant.isPending, pendingLabel: "Requestingâ€¦" }
-    : hostControls ? { label: "Create full deployment archive", onClick: () => createDeployment.mutate(), pending: createDeployment.isPending, pendingLabel: "Requestingâ€¦" } : undefined;
+    ? { label: "Create makerspace archive", onClick: () => createTenant.mutate(), pending: createTenant.isPending, pendingLabel: "Requesting…" }
+    : hostControls ? { label: "Create full deployment archive", onClick: () => createDeployment.mutate(), pending: createDeployment.isPending, pendingLabel: "Requesting…" } : undefined;
   return <>
     <SettingsLayout header={{ title: "Backup & restore", subtitle: "Keep encrypted copies of your space and review every restore before it changes live data.", primary }}
       state={{ status: "ready" }} sections={[
@@ -78,7 +78,7 @@ export function BackupRestorePanel({ makerspaceId, isSuperadmin, tenantBackupsEn
         </div> }] : []),
         ...(download.error ? [{ id: "download-error", title: "Download", rows: <ErrorText message={download.error.message} /> }] : []),
       ]} danger={hostControls ? [{ title: "Restore from a backup", consequence: "A restore replaces live deployment data. Review the archive and recovery kind before starting.",
-        action: { label: "Restore from a backupâ€¦", onClick: () => setRestoreOpen(true), disabled: !available.length, disabledReason: "Create a full deployment archive before restoring." } }] : []} />
+        action: { label: "Restore from a backup…", onClick: () => setRestoreOpen(true), disabled: !available.length, disabledReason: "Create a full deployment archive before restoring." } }] : []} />
     {hostControls && restoreOpen ? <BackupRestoreDialog archives={available} pending={startRestore.isPending} error={startRestore.error} onCancel={() => setRestoreOpen(false)} onRestore={(archive, kind) => startRestore.mutate({ archive, kind })} /> : null}
   </>;
 }

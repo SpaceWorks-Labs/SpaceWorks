@@ -56,7 +56,7 @@ def save(makerspace_id, *, actor, operation_id, expected_version, name, paramete
     normalized = normalize_certificate_template(parameters)
     name = name.strip()
     if not 1 <= len(name) <= 120:
-        raise ValidationError({"name": "Use 1â€“120 characters."})
+        raise ValidationError({"name": "Use 1–120 characters."})
     digest = hashlib.sha256(json.dumps([template_id, name, normalized, artwork_id, expected_version], sort_keys=True).encode()).hexdigest()
     with tenant_command(makerspace_id, actor) as space:
         previous = Command.objects.filter(makerspace=space, operation_id=operation_id).first()

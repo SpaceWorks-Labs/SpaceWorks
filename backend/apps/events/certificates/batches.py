@@ -37,7 +37,7 @@ def enqueue(event_id, *, actor, operation_id, expected_version, subjects, publis
     event_authority.get_event(actor, event_id, None)
     if (not isinstance(subjects, list) or not (0 if all_attended else 1) <= len(subjects) <= MAX_BATCH
             or type(publish_event_details) is not bool):
-        raise ValidationError({"subjects": "Choose 1â€“10000 certificate subjects."})
+        raise ValidationError({"subjects": "Choose 1–10000 certificate subjects."})
     encoded = json.dumps(subjects, sort_keys=True, separators=(",", ":"))
     if len({json.dumps(row, sort_keys=True) for row in subjects}) != len(subjects):
         raise ValidationError({"subjects": "Subjects must be unique."})

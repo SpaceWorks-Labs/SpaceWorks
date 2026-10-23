@@ -6,6 +6,15 @@
 
 ## Condensed changelog (newest first — full detail in `git log`)
 
+- **2026-10-22 -- release-1 security (lane/r1-security).** The six authorization races deferred in
+  `a4fa9084` now re-check authority under row lock in the service (`makerspaces/authority_lock`):
+  domain verification, machine-service collect, asset/machine warranty PUT and warranty-document
+  presign/finalize/delete. BK-66: the CLI tenant-archive export refuses the platform key while superadmin
+  access is off. #80 (revising #75f): a space with member accounts requires a signed-in account; one without
+  them takes account-less requests (name, phone, email confirmed by a one-time code), automatically —
+  `makerspaces/0105` drops the old opt-in switch — and `accounts/0043` drops the last Check-In leftover,
+  `external_checkin_user_id`. #75c applies notification object scope to every recipient kind. #75e
+  records PRD §4.4's self-accept rule as dropped.
 - **2026-10-19 -- managed hosting requests (#46-#49).** Public `/hosting` form plus invitations from
   makerspaces and organizations ("Join" only when the inviter governs the organization); email
   confirmation before review; `/control/` accept/reject and a pre-filled, re-auth-safe "Create makerspace";

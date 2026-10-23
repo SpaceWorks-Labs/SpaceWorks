@@ -981,6 +981,7 @@ export const openApiPaths = [
   "/api/v1/public/{makerspace_slug}/presence-sessions/preferences",
   "/api/v1/public/{makerspace_slug}/presence-sessions/projects",
   "/api/v1/public/{makerspace_slug}/requests",
+  "/api/v1/public/{makerspace_slug}/requests/email-code",
   "/api/v1/public/{makerspace_slug}/spaces/",
   "/api/v1/public/{makerspace_slug}/spaces/{public_token}/",
   "/api/v1/public/{makerspace_slug}/spaces/{public_token}/availability/",
@@ -3030,6 +3031,11 @@ export type Consumption = {
   "quantity": string;
 };
 
+export type ContactCodeRequest = {
+  "email": string;
+  "website"?: string;
+};
+
 export type ContainerAssetSummary = {
   "id": number;
   "asset_tag": string;
@@ -3813,7 +3819,6 @@ export type DomainSettingValues = {
   "booking_requester_notifications_enabled"?: boolean;
   "booking_reminder_lead_hours"?: Array<number>;
   "filament_low_stock_threshold_grams"?: string;
-  "anonymous_requests_enabled"?: boolean;
 };
 
 export type DomainVerificationRecord = {
@@ -6589,7 +6594,6 @@ export type Makerspace = {
   "membership_dues_amount"?: string;
   "referrals_enabled"?: boolean;
   "lapsed_members_cannot_borrow"?: boolean;
-  "anonymous_requests_enabled"?: boolean;
   "request_access": string;
   "filament_low_stock_threshold_grams"?: string;
   "superadmin_access_enabled"?: boolean;
@@ -9386,7 +9390,6 @@ export type PatchedMakerspace = {
   "membership_dues_amount"?: string;
   "referrals_enabled"?: boolean;
   "lapsed_members_cannot_borrow"?: boolean;
-  "anonymous_requests_enabled"?: boolean;
   "request_access"?: string;
   "filament_low_stock_threshold_grams"?: string;
   "superadmin_access_enabled"?: boolean;
@@ -11414,6 +11417,16 @@ export type PublicRequestStatus = {
   "items": Array<PublicRequestItemStatus>;
 };
 
+export type PublicRequestSubmitSchema = {
+  "website"?: string;
+  "requested_for"?: string;
+  "items": Array<RequestItemInput>;
+  "contact_name"?: string;
+  "contact_email"?: string;
+  "contact_phone"?: string;
+  "email_code"?: string;
+};
+
 export type PublicSpaceAvailability = {
   "public_token": string;
   "starts_at": string;
@@ -12419,20 +12432,11 @@ export type ReportViewState = {
   "columns"?: Array<string>;
 };
 
-export type RequestAccessEnum = "anyone";
+export type RequestAccessEnum = "contact";
 
 export type RequestItemInput = {
   "product_id": number;
   "quantity": number;
-};
-
-export type RequestSubmit = {
-  "website"?: string;
-  "contact_name"?: string;
-  "contact_email"?: string;
-  "contact_phone"?: string;
-  "requested_for"?: string;
-  "items": Array<RequestItemInput>;
 };
 
 export type RequestSubmitResponse = {
@@ -14112,7 +14116,6 @@ export type User = {
   "access_status"?: AccessStatusEnum;
   "restriction_reason"?: string;
   "telegram_user_id"?: string;
-  "external_checkin_user_id"?: string;
   "is_active"?: boolean;
 };
 

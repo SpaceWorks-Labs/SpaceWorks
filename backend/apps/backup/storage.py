@@ -227,7 +227,10 @@ def _download_object(bucket, key, destination, *, versioned):
                 checkpoint()
                 handle.write(chunk)
                 digest.update(chunk)
-        if destination.stat().st_size != response["ContentLength"]:
+        # Verify against the provider's length when it reports one; a response without
+        # it keeps the full-server capture behaviour (the digest is still recorded).
+        expected = response.get("ContentLength")
+        if expected is not None and destination.stat().st_size != expected:
             raise BackupStorageError("Captured object size did not match storage metadata.")
         return {
             "key": key,

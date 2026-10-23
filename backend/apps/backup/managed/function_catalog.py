@@ -123,3 +123,6 @@ APPLICATION_FUNCTIONS = frozenset({
     "organizations_organizationpublicpage_immutable",
     "organizations_organizationpublicpage_final",
 })
+
+from .function_catalog_events_programme import PROGRAMME_FUNCTIONS  # noqa: E402
+APPLICATION_FUNCTIONS = APPLICATION_FUNCTIONS | PROGRAMME_FUNCTIONS

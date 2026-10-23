@@ -148,6 +148,30 @@ def periodic_catalog(*, programmes=None, tombstones=None):
                  if task.key in legacy | extra and (task.retained or task.app not in tombstones))
 
 
+# Legacy beat keys (settings CELERY_BEAT_SCHEDULE) that already schedule the same work
+# as a programme wrapper. Selecting the programme must retire them in the same review.
+PROGRAMME_LEGACY_KEYS = {
+    "event-certificate-resume": "event-certificate-renders", "stage-form-reconcile": "event-stage-reconcile",
+    "stage-file-retention": "event-stage-file-retention", "reimbursement-deadlines": "event-reimbursement-deadlines",
+    "finance-work": "finance-event-payout-recovery", "finance-retention": "finance-event-payout-retention",
+}
+
+
+def assert_no_programme_overlap(programmes, beat_schedule, mode):
+    """A wrapper and a legacy entry for the same work must never both be scheduled."""
+    if not programmes:
+        return
+    from django.core.exceptions import ImproperlyConfigured
+    if mode != "managed":
+        raise ImproperlyConfigured("Cloud programmes are managed-only; host schedules stay as shipped.")
+    rows = [(key, path) for group, key, path, *_ in PROGRAMME_ENTRIES if group in programmes]
+    keys = {key for key, _ in rows} | {PROGRAMME_LEGACY_KEYS[key] for key, _ in rows if key in PROGRAMME_LEGACY_KEYS}
+    paths = {path for _, path in rows}
+    clash = sorted(name for name, entry in beat_schedule.items() if name in keys or entry.get("task") in paths)
+    if clash:
+        raise ImproperlyConfigured("Retire the legacy schedule entries a cloud programme replaces: " + ", ".join(clash))
+
+
 def legacy_schedule():
     return tuple((task.key, task.path, task.minutes) for task in periodic_catalog())
 

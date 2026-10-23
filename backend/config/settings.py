@@ -1387,6 +1387,9 @@ if SPACEWORKS_DEPLOYMENT_MODE == "managed" or CLOUD_TASK_PROFILE:
 
 from config.cloud_settings.configuration import deployment_settings
 globals().update(deployment_settings(env, _deployment))
+if CLOUD_PROGRAMMES:
+    from apps.operations.cloud_jobs.catalog import assert_no_programme_overlap
+    assert_no_programme_overlap(CLOUD_PROGRAMMES, CELERY_BEAT_SCHEDULE, SPACEWORKS_DEPLOYMENT_MODE)
 if SPACEWORKS_DEPLOYMENT_MODE == "managed" and not _deployment.is_free:
     from apps.operations.cloud_jobs.catalog import beat_entries
     # Preserve legacy calendar slots; new reviewed tasks alone acquire intervals.

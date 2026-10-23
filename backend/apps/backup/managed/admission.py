@@ -88,6 +88,16 @@ def assert_managed_ready():
     return {**facts, "migrations": "applied"}
 
 
+def _managed_environment():
+    """Managed evidence that needs no database read: the selector or a managed image."""
+    from pathlib import Path
+    from .image import image_profile
+
+    managed_image = (Path(__file__).resolve().parents[3] / "scripts" / "cloud_setup").is_dir()
+    return (os.environ.get("SPACEWORKS_DEPLOYMENT_MODE") == "managed"
+            or managed_image or image_profile() == "free")
+
+
 def refuse_host_operation(code):
     """I places this before producer checks, artifact/workspace writes and effects."""
     from .profile import deployment_profile
@@ -100,8 +110,13 @@ def refuse_host_operation(code):
         try:
             with connection.cursor() as cursor:
                 assert_mode_binding(cursor, "host")
+        except ManagedAdmissionError:
+            managed = True  # The database positively shows a managed binding.
         except Exception:
-            managed = True  # Unknown identity never permits a destructive operation.
+            # Owner decision #89a: when the binding cannot be read, a full server keeps
+            # its pre-cloud behaviour and proceeds; a managed environment or managed
+            # image (detected without the database) still refuses an unknown identity.
+            managed = _managed_environment()
     if managed:
         error = ManagedAdmissionError("This operation requires the supervised host deployment.")
         error.code = code

@@ -66,7 +66,8 @@ them automatically. Required acceptance still includes real 512 MiB/0.1 CPU expo
 crash/resume, provider mail/storage and full-profile isolation measurements.
 
 Legacy notification fanout is also bounded before dispatch: at most two email and two inbox destinations,
-two rooms per channel (twelve total), 25 scope links, 25 active staff, two push devices and 64 KiB of text.
+two rooms per channel (twelve total), 25 scope links, 25 active staff and 64 KiB of text. Native push
+has no free-profile device or staff cap: it keeps the mobile delivery behaviour on every profile.
 Oversized intents refuse before an effect; partially dispatched fanout retains its ambiguity marker.
 The [supervised recovery commands](cloud-recovery.md) require exact attempt evidence rather than age-based
 claim takeover. These admission limits apply only to the free managed profile.

@@ -45,9 +45,6 @@ def preflight(makerspace, payload):
     from apps.makerspaces.models import MakerspaceMembership
     if MakerspaceMembership.objects.filter(makerspace=makerspace, status="active", user__account_kind="staff").count() > 25:
         raise UnsupportedFanout("Legacy staff resolution exceeds the free profile limit.")
-    from .models_push import PushDevice
-    if PushDevice.objects.filter(makerspace=makerspace, active=True, device_grant__status="active").count() > 2:
-        raise UnsupportedFanout("Legacy push exceeds the free two-device limit.")
     if len(payload.text.encode()) > 65536:
         raise UnsupportedFanout("Legacy notification content exceeds the free profile limit.")
 

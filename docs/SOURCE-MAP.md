@@ -356,8 +356,9 @@ across panel navigation and fence late callbacks after account/session cleanup.
 WP3 delivery timing lives in `integrations/models_timing.py`, `quiet_hours.py`,
 `digests.py`, `timing_dispatch.py` and `reminders_deferred.py`; the existing F1 sweeper
 owns its durable release claims. `views_timing.py` configures tenant timing and the
-encrypted inbound credential; `bounce_webhooks.py` exports `views_bounce.py`, which verifies provider HMACs and writes
-address-hash suppression. `notifications/models_broadcasts.py`, `broadcasts.py` and
+encrypted inbound credential; `bounce_webhooks.py` exports `views_bounce.py`, which verifies provider HMACs; both its
+routes write the canonical bounce/complaint record and address-hash suppression through
+`email_provider_events.record_provider_event`. `notifications/models_broadcasts.py`, `broadcasts.py` and
 `views_broadcasts.py` own scoped member segments, matrix fan-out and personal announcements.
 `notifications/models_push.py` owns canonical per-device children; `member_push.py`,
 `member_push_policy.py`, `envelope_push_leases.py` and `envelope_push_transport.py` separate

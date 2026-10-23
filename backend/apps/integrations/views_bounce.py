@@ -5,9 +5,8 @@ import hmac
 import time
 
 from django.shortcuts import get_object_or_404
-from django.utils import timezone
+from apps.integrations.email_provider_events import record_provider_event
 from apps.integrations.models_email import EmailLog
-from apps.integrations.models_tracking import EmailProviderEvent
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import serializers
 from rest_framework.exceptions import PermissionDenied
@@ -16,9 +15,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts import rbac
-from apps.audit import services as audit
 from apps.integrations.email_preferences import address_hash
-from apps.integrations.models_suppression import EmailSuppression
 from apps.integrations.models_timing import NotificationTimingPolicy
 from apps.makerspaces.servability import servable_queryset
 from apps.openapi_errors import errors
@@ -65,36 +62,17 @@ class BounceWebhookView(APIView):
         serializer.is_valid(raise_exception=True)
         values = serializer.validated_data
         with tenant_write(space.pk):
-            _, fresh = EmailProviderEvent.objects.get_or_create(
-                makerspace=space, event_id=values['event_id'], defaults={'reason': values['reason']},
-            )
-            if not fresh:
-                return Response({'accepted': True})
+            logs = None
             if values.get('message_id'):
-                field = 'complained_at' if values['reason'] == 'complaint' else 'bounced_at'
-                EmailLog.objects.filter(
-                    makerspace=space, provider_message_id=values['message_id'],
-                    **{field + '__isnull': True},
-                ).update(**{field: timezone.now()})
-            audit.record(None, "email.provider_event_received", makerspace=space,
-                         meta={"reason": values["reason"]})
-            row, created = rbac.scope_notification_policy(EmailSuppression.objects.all(), makerspace_id=space.pk).get_or_create(
-                makerspace=space, address_hash=address_hash(space.pk, values['address']),
-                defaults={'reason': values['reason']},
-            )
-            row = rbac.scope_notification_policy(EmailSuppression.objects.select_for_update(), makerspace_id=space.pk).get(pk=row.pk)
-            changed = values['reason'] == 'complaint' and row.reason != 'complaint'
-            if changed:
-                row.reason = 'complaint'
-                row.save(update_fields=['reason'])
-            if created or changed:
-                audit.record(None, 'email.suppressed_provider', makerspace=space, target=row,
-                             meta={'reason': row.reason})
+                logs = EmailLog.objects.filter(makerspace=space, provider_message_id=values['message_id'])
+            record_provider_event(space, event_id=values['event_id'], reason=values['reason'],
+                                  recipient_hash=address_hash(space.pk, values['address']), logs=logs)
         return Response({'accepted': True})
 
 
 class ProviderBounceWebhookView(APIView):
-    """Optional native callbacks. I mounts the route and regenerates schema/client."""
+    """Optional native callbacks. A verified bounce/complaint forwards into the canonical
+    ``email-bounce-webhook`` record (``record_provider_event``); delivery status stays here."""
     authentication_classes = []
     permission_classes = [AllowAny]
 

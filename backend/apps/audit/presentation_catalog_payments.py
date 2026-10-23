@@ -32,6 +32,8 @@ ENTRIES = (
     P("payment.paid_online", "Payment paid online",
       ("event_id", "provider", "stripe_event_id")),
     P("payment.refund_failed", "Payment refund failed"),
+    P("payment.refund_policy_updated", "Payment refund policy updated",
+      ("area", "fields", "plan_id", "removed")),
     P("payment.refund_requested", "Payment refund requested",
       ("amount", "payment_id", "refund_id")),
     P("payment.refunded", "Payment refunded"),

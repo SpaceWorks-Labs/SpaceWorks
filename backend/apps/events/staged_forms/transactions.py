@@ -22,7 +22,7 @@ from apps.events.programme.commands import fingerprint
 from apps.events.programme_locks import fences, lock_authority
 from apps.makerspaces.guards import require_module_locked
 from apps.payments.event_payouts.errors import require
-from apps.presence.guard import require_active_account
+from apps.presence.guard import require_active_principal
 from apps.tenant_migration.gate_runtime import boundary_tenant_write, assert_write_allowed
 
 
@@ -61,7 +61,7 @@ def command(*, event_id, actor, data, action, permission=None, owner=False,
     seed = Event.objects.select_related("makerspace").get(pk=event_id)
     if owner:
         require_member_account(actor)
-        require_active_account(actor, seed.makerspace)
+        require_active_principal(actor, seed.makerspace)
         require(claim_context(actor) is None, "full_session_required", status=403)
         require(virtual or EventRegistration.objects.filter(event=seed, member=actor).exists() or
                 HackathonApplication.objects.filter(event=seed, member=actor).exists(),
@@ -89,7 +89,7 @@ def command(*, event_id, actor, data, action, permission=None, owner=False,
         require(actor is not None, "account_inactive", status=403)
         if owner:
             require_member_account(actor)
-            require_active_account(actor, event.makerspace)
+            require_active_principal(actor, event.makerspace)
             require(claim_context(actor) is None, "full_session_required", status=403)
             require(not MakerspaceMembership.objects.filter(user=actor, makerspace=event.makerspace).exclude(status="active").exists(),
                     "account_restricted", status=403)
@@ -141,7 +141,7 @@ def replay_before_prepare(*, event, actor, data, action):
     from apps.makerspaces.guards import require_module
     require_module(event.makerspace, "events")
     require_member_account(actor)
-    require_active_account(actor, event.makerspace)
+    require_active_principal(actor, event.makerspace)
     require(claim_context(actor) is None, "full_session_required", status=403)
     require(not MakerspaceMembership.objects.filter(user=actor, makerspace=event.makerspace).exclude(status="active").exists(),
             "account_restricted", status=403)

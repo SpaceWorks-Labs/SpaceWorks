@@ -112,5 +112,5 @@ def prepared_copies(target):
     """Inside the locked operation: refuse a page that changed since preparation."""
     prepared = _prepared.get()
     if prepared is None or prepared.page_source != page_identity(current_page(target)):
-        raise ValidationError("The website changed. Retry resource preparation.")
+        raise ValidationError({"revision": "The website changed. Retry resource preparation."})
     yield prepared

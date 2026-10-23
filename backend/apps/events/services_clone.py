@@ -50,7 +50,7 @@ def _duplicate_fenced(event, actor, attach_series, assets, prepared):
     source = _locked_event(event.pk)
     if source.series_id != series_id:
         from rest_framework.exceptions import ValidationError
-        raise ValidationError("The source series changed. Retry the copy.")
+        raise ValidationError({"revision": "The source series changed. Retry the copy."})
     from .clone_preparation import revalidate
     revalidate(source, prepared)
     source.makerspace = require_module_locked(source.makerspace, "events")

@@ -2,6 +2,7 @@
 
 MULTI_SCOPE_BOUNDARIES = frozenset({
     "apps.events.clone_preparation.prepare",
+    "apps.events.website_preparation.prepared_page_write",
     "apps.events.profile_photos.purge_scope.presentation_purge_scope",
     "apps.accounts.erasure_hooks.erasure_scope",
     "apps.events.profile_photos.deletion.delete_source",

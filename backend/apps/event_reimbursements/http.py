@@ -11,7 +11,7 @@ from apps.events.models import Event
 from apps.events.staged_forms.http import PrivateView as BasePrivateView, body, paginated
 from apps.makerspaces.guards import require_module
 from apps.makerspaces.origin_scope import origin_scoped_makerspace_id
-from apps.presence.guard import require_active_account
+from apps.presence.guard import require_active_principal
 from apps.payments.event_payouts.errors import require
 from .transactions import authorize, check_origin
 
@@ -30,7 +30,7 @@ def check_read(request, event, *, owner=False):
             in ("member", "staff", "platform"), "full_session_required", status=403)
     binding(request)
     require(claim_context(request.user) is None, "full_session_required", status=403)
-    require_active_account(request.user, event.makerspace)
+    require_active_principal(request.user, event.makerspace)
     require_module(event.makerspace, "events")
     from apps.makerspaces.platform import module_enabled
     require(module_enabled(event.makerspace, "event_reimbursements"), "reimbursement_unavailable")

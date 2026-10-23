@@ -39,11 +39,11 @@ def locked_asset(seed, *, runtime=True):
             event.makerspace = require_module_locked(event.makerspace_id, "events")
             from apps.accounts.models import User
             from apps.accounts.account_kind_guards import require_member_account
-            from apps.presence.guard import require_active_account
+            from apps.presence.guard import require_active_principal
             from apps.makerspaces.models import MakerspaceMembership
             actor = lock_authority(User.objects.get(pk=seed.owner_member_id), event)
             require_member_account(actor)
-            require_active_account(actor, event.makerspace)
+            require_active_principal(actor, event.makerspace)
             require(not MakerspaceMembership.objects.filter(user=actor, makerspace=event.makerspace).exclude(status="active").exists(),
                     "account_restricted", status=403)
         assignment_seed = StageFormAssignment.objects.get(pk=seed.assignment_id)

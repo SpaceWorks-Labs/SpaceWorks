@@ -8,7 +8,7 @@ from apps.accounts.account_kind_guards import require_member_account
 from apps.events.models import Event
 from apps.makerspaces.guards import require_module
 from apps.payments.event_payouts.errors import require
-from apps.presence.guard import require_active_account
+from apps.presence.guard import require_active_principal
 from apps.tenant_migration.gate_runtime import assert_write_allowed
 from django.core.exceptions import ObjectDoesNotExist, ValidationError as ModelValidationError
 from rest_framework.exceptions import NotFound, ValidationError
@@ -61,7 +61,7 @@ def member_event(request, pk, makerspace_id):
     require_member_account(request.user)
     event = get_object_or_404(Event.objects.select_related("makerspace"), pk=pk, makerspace_id=makerspace_id)
     require_module(event.makerspace, "events")
-    require_active_account(request.user, event.makerspace)
+    require_active_principal(request.user, event.makerspace)
     require(claim_context(request.user) is None, "full_session_required", status=403)
     require(not MakerspaceMembership.objects.filter(user=request.user, makerspace=event.makerspace).exclude(status="active").exists(),
             "account_restricted", status=403)

@@ -14,7 +14,7 @@ from apps.events.models import Event
 from apps.events.programme_locks import assert_lock_context
 from apps.makerspaces.guards import require_module
 from apps.payments.event_payouts.errors import require
-from apps.presence.guard import require_active_account
+from apps.presence.guard import require_active_principal
 from apps.tenant_migration.gate_runtime import assert_write_allowed
 from .definition_models import EventStageForm
 from .policy import require_stage_schema
@@ -72,7 +72,7 @@ def require_binding(*, prepared_subject, actual_subject, operation_id, locks):
 def resolve_context(*, actor_id, selector):
     event = Event.objects.select_related("makerspace").get(pk=selector["event_id"], makerspace_id=selector["makerspace_id"])
     actor = User.objects.get(pk=actor_id)
-    require_active_account(actor, event.makerspace)
+    require_active_principal(actor, event.makerspace)
     from apps.accounts.account_kind_guards import require_member_account
     from apps.accounts.claim_sessions import claim_context
     from apps.makerspaces.models import MakerspaceMembership

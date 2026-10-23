@@ -38,11 +38,11 @@ def project_references(*, response, selected, question, references, owner=False,
 def authorize(request, *, event_id, asset_id, makerspace_id=None, stage_form_id=None, staff=False):
     from apps.makerspaces.guards import require_module
     from apps.tenant_migration.gate_runtime import assert_write_allowed
-    from apps.presence.guard import require_active_account
+    from apps.presence.guard import require_active_principal
     asset = StageFormAsset.objects.select_related("event__makerspace", "assignment__stage_form").get(pk=asset_id, event_id=event_id)
     require_module(asset.event.makerspace, "events")
     assert_write_allowed(asset.event.makerspace_id)
-    require_active_account(request.user, asset.event.makerspace)
+    require_active_principal(request.user, asset.event.makerspace)
     if staff:
         binding(request)
         try:

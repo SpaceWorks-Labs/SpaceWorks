@@ -16,7 +16,7 @@ from apps.makerspaces.guards import require_module_locked
 from apps.makerspaces.models import Makerspace, MakerspaceMembership
 from apps.makerspaces.origin_scope import origin_scoped_makerspace_id
 from apps.payments.event_payouts.errors import require
-from apps.presence.guard import require_active_account
+from apps.presence.guard import require_active_principal
 from apps.tenant_migration.gate_runtime import boundary_tenant_write, assert_write_allowed
 
 
@@ -40,7 +40,7 @@ def check_origin(request, event, *, owner=False):
 def authorize(actor, event, *, owner=False, finance=False, permission=None, request=None):
     require(getattr(actor, "account_kind", None) in ("member", "staff", "platform"), "full_session_required", status=403)
     require(claim_context(actor) is None, "full_session_required", status=403)
-    require_active_account(actor, event.makerspace)
+    require_active_principal(actor, event.makerspace)
     require(not actor.must_change_password, "full_session_required", status=403)
     if request is not None:
         require(getattr(request, "api_client", None) is None, "full_session_required", status=403)

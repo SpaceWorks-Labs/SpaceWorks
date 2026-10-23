@@ -34,11 +34,11 @@ class PreparedStage:
 def prepare_inline(*, event, actor, outer_operation_id, stage_forms):
     require(not connection.in_atomic_block, "prepare_outside_transaction")
     from apps.accounts.account_kind_guards import require_member_account
-    from apps.presence.guard import require_active_account
+    from apps.presence.guard import require_active_principal
     from apps.makerspaces.guards import require_module
     from apps.tenant_migration.gate_runtime import assert_write_allowed
     require_member_account(actor)
-    require_active_account(actor, event.makerspace)
+    require_active_principal(actor, event.makerspace)
     require_module(event.makerspace, "events")
     assert_write_allowed(event.makerspace_id)
     require(isinstance(stage_forms, list) and len(stage_forms) <= 50, "invalid_stage_forms", status=400)

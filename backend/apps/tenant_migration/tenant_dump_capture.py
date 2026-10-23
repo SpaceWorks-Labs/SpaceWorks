@@ -83,7 +83,12 @@ def request_tenant_dump_capture(actor, makerspace):
                     "superadmin_access_at_decision": (
                         capture.superadmin_access_at_decision
                     ),
-                    **origin,
+                    # Managed staging origin: literal keys (None on a host deployment)
+                    # so the audit presentation guard can project them.
+                    "staging_backend": origin.get("staging_backend"),
+                    "staging_capture_id": origin.get("staging_capture_id"),
+                    "staging_deployment_id": origin.get("staging_deployment_id"),
+                    "staging_database_uuid": origin.get("staging_database_uuid"),
                     "recipient_fingerprints": [
                         item["fingerprint"] for item in recipients
                     ],

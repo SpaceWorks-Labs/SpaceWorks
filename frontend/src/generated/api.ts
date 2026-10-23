@@ -1300,6 +1300,7 @@ export const openApiPaths = [
   "/api/v1/public/{makerspace_slug}/presence-sessions/preferences",
   "/api/v1/public/{makerspace_slug}/presence-sessions/projects",
   "/api/v1/public/{makerspace_slug}/requests",
+  "/api/v1/public/{makerspace_slug}/requests/email-code",
   "/api/v1/public/{makerspace_slug}/spaces/",
   "/api/v1/public/{makerspace_slug}/spaces/{public_token}/",
   "/api/v1/public/{makerspace_slug}/spaces/{public_token}/availability/",
@@ -4702,6 +4703,11 @@ export type Contact = {
   "name": string;
   "email": string;
   "phone": string;
+};
+
+export type ContactCodeRequest = {
+  "email": string;
+  "website"?: string;
 };
 
 export type ContactRequirement = {
@@ -16243,6 +16249,16 @@ export type PublicRequestStatus = {
   "items": Array<PublicRequestItemStatus>;
 };
 
+export type PublicRequestSubmitSchema = {
+  "website"?: string;
+  "requested_for"?: string;
+  "items": Array<RequestItemInput>;
+  "contact_name"?: string;
+  "contact_email"?: string;
+  "contact_phone"?: string;
+  "email_code"?: string;
+};
+
 export type PublicResultsRead = {
   "event_id": number;
   "version": number;
@@ -17502,6 +17518,8 @@ export type ReportViewState = {
   "columns"?: Array<string>;
 };
 
+export type RequestAccessEnum = "contact";
+
 export type RequestContext = {
   "programme_id": number;
   "programme_version": number;
@@ -17541,12 +17559,6 @@ export type RequestPage = {
 };
 
 export type RequestPhaseEnum = "application" | "after_acceptance" | "both";
-
-export type RequestSubmit = {
-  "website"?: string;
-  "requested_for"?: string;
-  "items": Array<RequestItemInput>;
-};
 
 export type RequestSubmitCommand = {
   "operation_id": string;
@@ -19947,6 +19959,7 @@ export type TenantBootstrapMakerspace = {
   "public_inventory_enabled": boolean;
   "public_landing_page": TenantBootstrapMakerspacePublicLandingPageEnum;
   "membership_policy": MembershipPolicyEnum;
+  "request_access"?: RequestAccessEnum;
 };
 
 export type TenantBootstrapMakerspacePublicLandingPageEnum = "auto" | "inventory" | "events" | "machines" | "bookings" | "membership";
@@ -20419,7 +20432,6 @@ export type User = {
   "access_status"?: AccessStatusEnum;
   "restriction_reason"?: string;
   "telegram_user_id"?: string;
-  "external_checkin_user_id"?: string;
   "is_active"?: boolean;
 };
 

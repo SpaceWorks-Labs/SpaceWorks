@@ -200,12 +200,12 @@ def _top_borrowers(makerspace_id, aggregate, limit=None, date_range=None):
         )
     )
     keys = {(row.get("request__makerspace_id"), row["request__requester_id"]) for row in qs}
-    source = _requests(makerspace_id).select_related("requester").only("id", "makerspace_id", "requester_id", "requester_username", "requester__username", "requester__external_checkin_user_id")
+    source = _requests(makerspace_id).select_related("requester").only("id", "makerspace_id", "requester_id", "requester_username", "requester__username")
     labels = {}
     for request in source.iterator(chunk_size=200):
         key = (request.makerspace_id if aggregate else None, request.requester_id)
         if key in keys and key not in labels:
-            labels[key] = label_from_candidates(request.requester_username, request.requester.external_checkin_user_id, request.requester.username)
+            labels[key] = label_from_candidates(request.requester_username, request.requester.username)
     rows = []
     for row in qs:
         holder = labels.get((row.get("request__makerspace_id") if aggregate else None, row["request__requester_id"]), "Member")

@@ -1088,6 +1088,18 @@ REST_FRAMEWORK = {
             "THROTTLE_PUBLIC_REQUEST_SUBMIT",
             default="10/min",
         ),
+        "anonymous_request_ip_burst": env(
+            "THROTTLE_ANONYMOUS_REQUEST_IP_BURST",
+            default="5/min",
+        ),
+        "anonymous_request_ip_hour": env(
+            "THROTTLE_ANONYMOUS_REQUEST_IP_HOUR",
+            default="30/hour",
+        ),
+        "anonymous_request_email": env(
+            "THROTTLE_ANONYMOUS_REQUEST_EMAIL",
+            default="5/hour",
+        ),
         "public_invitation_request": env(
             "THROTTLE_PUBLIC_INVITATION_REQUEST", default="10/hour"
         ),

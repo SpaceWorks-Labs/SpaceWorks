@@ -39,6 +39,11 @@ TenantBootstrapSerializer = inline_serializer(
                 "membership_policy": serializers.ChoiceField(
                     choices=Makerspace.MembershipPolicy.choices
                 ),
+                # Present only for a space without member accounts (#80): borrow
+                # requests then take name, phone, email and an email code, no account.
+                "request_access": serializers.ChoiceField(
+                    choices=[("contact", "contact")], required=False
+                ),
             },
         ),
         "frontend": inline_serializer(

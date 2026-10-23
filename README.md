@@ -592,18 +592,20 @@ People still get named, two ways:
 
 #### Who may ask to borrow something
 
-Borrow requests are a proposal: staff acceptance reserves stock. Every request needs a signed-in
-account; which accounts follows from **Membership**:
+Borrow requests are a proposal: staff acceptance reserves stock. Who may ask follows from the modules;
+there is no separate switch:
 
-| Membership (`membership`) | Who may submit |
-| --- | --- |
-| on | **Members** — an active member of that makerspace |
-| off | **Account holders** — anyone signed in (the default without the module) |
+| Member accounts (`member_accounts`) | Membership (`membership`) | Who may submit |
+| --- | --- | --- |
+| on | on | **Members** — an active member of that makerspace |
+| on | off | **Account holders** — anyone signed in |
+| off | either | **Anyone, no account** — name, phone and email, the email confirmed with a one-time code |
 
-This policy uses **Membership**, independently of the **Member accounts** sign-in module.
 Members must pass the applicable presence, waiver and current-term checks; account holders must be
-active and unrestricted. There is no account-less option: the earlier opt-in was removed by owner
-decision, and requests filed through it before then stay readable, still recorded against their
+active and unrestricted. Without member accounts the space's accounts are for staff only, so a borrower
+gives their name, phone and email and types the 6-digit code mailed to that address before the request is
+filed — nobody can file a request against someone else's email. Phone and email are stored encrypted and
+shown to staff only; the name is the borrower's public name. Every such request is recorded against the
 makerspace's single shared requester principal, which every per-person ranking excludes. Borrower
 history and identity-based lookup use the authenticated owner, never matching submitted email/phone.
 Existing request status links remain bearer-token reads.

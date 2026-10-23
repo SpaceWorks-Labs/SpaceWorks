@@ -42,7 +42,6 @@ def _filter_common(queryset, filters):
 def _borrower_search_q(prefix, search, makerspace_id=None):
     native = (
         Q(**{f"{prefix}__requester__email__icontains": search})
-        | Q(**{f"{prefix}__requester__external_checkin_user_id__icontains": search})
         | Q(**{f"{prefix}__requester__username__icontains": search})
     )
     from django.conf import settings

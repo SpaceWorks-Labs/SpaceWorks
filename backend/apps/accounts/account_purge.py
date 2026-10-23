@@ -101,7 +101,7 @@ def _finish_global(user_id, expected, counts):
             return
         _global_rows(user)
         values = dict.fromkeys(("email", "phone", "phone_e164", "first_name", "last_name",
-                               "telegram_user_id", "external_checkin_user_id", "deletion_email_ciphertext",
+                               "telegram_user_id", "deletion_email_ciphertext",
                                "deletion_username", "restriction_reason"), "")
         values.update(username=deleted_username(user), display_name="Deleted member", email_verified_at=None,
                       phone_verified_at=None, self_registered_at=None, last_login=None,

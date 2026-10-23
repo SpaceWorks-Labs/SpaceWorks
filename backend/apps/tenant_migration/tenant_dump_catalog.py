@@ -50,8 +50,10 @@ class TenantDumpCatalogError(AssertionError):
 # accounting and storage history; with lane/refunds (refund cases), re-pinned after both merges.
 # Events programme (lane/events-final, decision #86): programme, design and fence
 # steps plus reimbursements; re-pinned from schema_digest() over the merged graph.
+# lane/r1-security: makerspaces/0105 drops anonymous_requests_enabled and accounts/0046 drops
+# User.external_checkin_user_id (#80); re-pinned.
 # Orchestrator re-pins the live catalog after final schema/migration verification.
-CATALOG_SCHEMA_SHA256 = "435cb83e942142340b1de8717e8d1314f958e9f7e82dbcd44955dfe377d7864e"
+CATALOG_SCHEMA_SHA256 = "c6bd391787bf7f4b9b6e8e313822f0ea5a054a5a81945b5446a0eeb6aca30a69"
 
 
 def catalog_models(apps_registry=apps):

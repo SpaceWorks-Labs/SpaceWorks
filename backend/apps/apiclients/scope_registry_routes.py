@@ -116,6 +116,10 @@ _ROUTE_DEFINITIONS = (
         TARGET_TENANT_SLUG, False, True,
     ),
     (
+        "hardware_requests:request-contact-code", _WRITE, PUBLIC_WRITE_SCOPES,
+        TARGET_TENANT_SLUG, False, True,
+    ),
+    (
         "hardware_requests:public-tool-evidence-url", _WRITE, PUBLIC_WRITE_SCOPES,
         TARGET_TENANT_SLUG, False, True,
     ),

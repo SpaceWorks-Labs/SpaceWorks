@@ -193,6 +193,13 @@ def bootstrap_payload(makerspace):
         "public_landing_page": makerspace.public_landing_page,
         "membership_policy": makerspace.membership_policy,
     }
+    # Emitted ONLY for a space without member accounts (#80), so every other deployment
+    # keeps a byte-for-byte identical payload; absent means "sign in to request". The
+    # public form needs it to ask for name, phone, email and the email code instead.
+    from apps.makerspaces.request_access import CONTACT, effective_policy
+
+    if effective_policy(makerspace) == CONTACT:
+        makerspace_payload["request_access"] = CONTACT
     # Advisory geofence: expose the flag ONLY when configured AND the feature is on, so
     # dormant/self-host bootstrap payloads stay byte-for-byte unchanged (self-host
     # invariant) and a disabled feature cannot leave the client asking for coordinates

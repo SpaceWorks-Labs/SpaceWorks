@@ -172,7 +172,6 @@ def _reset_value(model, field, source):
         ("accounts.User", "is_staff"): False,
         ("accounts.User", "role"): "requester",
         ("accounts.User", "telegram_user_id"): "",
-        ("accounts.User", "external_checkin_user_id"): "",
         ("makerspaces.Makerspace", "lifecycle_state"): "importing",
         ("makerspaces.Makerspace", "archived_by"): None,
         ("makerspaces.Makerspace", "cors_allowed_origins"): [],

@@ -8,6 +8,7 @@ import { submitPublicRequest } from "./api";
 import { invalidatePublicInventory } from "../staff/queryInvalidation";
 import { PublicToolScanPanel } from "./PublicToolScanPanel";
 import { useRequestDraft, type RequestDraft } from "./useRequestDraft";
+import { useContactRequest } from "./useContactRequest";
 
 export type ActiveTab = "borrow" | "scan";
 
@@ -16,6 +17,8 @@ type PublicRequestPanelProps = {
   makerspaceSlug: string;
   onClear: () => void;
   disabled?: boolean;
+  // The makerspace's policy: "contact" only where it has no member accounts (#80).
+  requestAccess?: "contact";
   /** Lets the page open the panel straight on "Scan a tool" (the phone bar does). Uncontrolled when omitted. */
   activeTab?: ActiveTab;
   onActiveTabChange?: (tab: ActiveTab) => void;
@@ -28,6 +31,7 @@ export function PublicRequestPanel({
   makerspaceSlug,
   onClear,
   disabled = false,
+  requestAccess,
   activeTab: controlledTab,
   onActiveTabChange,
   draft: draftProp,
@@ -37,7 +41,10 @@ export function PublicRequestPanel({
   const activeTab = controlledTab ?? ownTab;
   const setActiveTab = (tab: ActiveTab) => { setOwnTab(tab); onActiveTabChange?.(tab); };
   const ownDraft = useRequestDraft();
-  const { requestedFor, setRequestedFor, submitted, setSubmitted, website, setWebsite } = draftProp ?? ownDraft;
+  const draft = draftProp ?? ownDraft;
+  const { requestedFor, setRequestedFor, submitted, setSubmitted, website, setWebsite } = draft;
+  const contactMode = requestAccess === "contact";
+  const contact = useContactRequest(makerspaceSlug, draft, contactMode);
   const totalItems = useMemo(
     () => items.reduce((total, item) => total + item.quantity, 0),
     [items],
@@ -54,6 +61,7 @@ export function PublicRequestPanel({
             quantity: item.quantity,
           })),
           website,
+          ...contact.payload,
         },
       ),
     // The previous banner must not survive into the next attempt.
@@ -64,12 +72,14 @@ export function PublicRequestPanel({
       onClear();
       setRequestedFor("");
       setWebsite("");
+      contact.clear();
     },
   });
 
   const canSubmit =
     requestedFor.trim().length > 0 &&
     items.length > 0 &&
+    contact.ready &&
     !submitMutation.isPending;
 
   // No cards inside this panel: its host already frames it (the public "Your request" card, the
@@ -91,9 +101,11 @@ export function PublicRequestPanel({
       ) : (
         <>
           <div className="shrink-0">
-            <h2 className="title-panel text-brand-ink">Member borrowing</h2>
+            <h2 className="title-panel text-brand-ink">{contactMode && activeTab === "borrow" ? "Borrow something" : "Member borrowing"}</h2>
             <p className="mt-1 text-sm leading-6 text-muted">
-              Requests use your signed-in member account. An active membership, waiver acceptance, and current presence are required.
+              {contactMode && activeTab === "borrow"
+                ? "No account needed. Give your name, phone and email and confirm the email with the code we send; staff review every request before anything is handed over."
+                : "Requests use your signed-in member account. An active membership, waiver acceptance, and current presence are required."}
             </p>
           </div>
 
@@ -120,6 +132,7 @@ export function PublicRequestPanel({
                   onSubmit={() => submitMutation.mutate()}
                   website={website}
                   onWebsiteChange={setWebsite}
+                  contact={contact.details}
                 />
               </div>
             ) : null}

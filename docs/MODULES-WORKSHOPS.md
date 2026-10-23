@@ -174,8 +174,8 @@ Required by the members-only events path. Bookings can run without this module.
   person record, so the two are independent switches.
 - **It decides who may submit a borrow request.** With this module on, submitting requires an active member
   of the makerspace. With it off, any signed-in member account may submit — a request is only a proposal that
-  staff must accept, and waiver acceptance cannot be recorded without a membership row anyway. Every request
-  needs an account either way: there is no account-less option.
+  staff must accept, and waiver acceptance cannot be recorded without a membership row anyway. Both need
+  `member_accounts`; a space without it takes account-less requests confirmed by an email code (#80).
 - **Member ID cards live here.** A card is a revocable QR credential over one membership (`MemberCard`),
   issued, reissued, revoked and printed by staff holding `manage_member_cards` (Space Managers by default)
   and resolvable at a scanner only by `scan_member_cards` — never through the inventory scanner, so an

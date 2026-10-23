@@ -40,7 +40,6 @@ def user_constraints():
             for field, name in (
                 ("phone_e164", "uniq_member_phone_e164"),
                 ("telegram_user_id", "uniq_member_telegram_id"),
-                ("external_checkin_user_id", "uniq_member_checkin_id"),
             )
         ],
     ]

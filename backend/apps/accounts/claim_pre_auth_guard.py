@@ -69,6 +69,11 @@ POLICY_OVERRIDE_ALLOWLIST = {
     "apps.events.throttles.PublicFeedbackRateThrottle": {
         "_tier", "allow_request", "get_cache_key"
     },
+    # The account-less borrow-request budgets (#80). Both override `get_cache_key` only, to
+    # return None for an authenticated caller, so a makerspace behind one NAT never
+    # rate-limits its own signed-in staff by egress IP.
+    "apps.hardware_requests.throttles.AnonymousRequestIpBurstThrottle": {"get_cache_key"},
+    "apps.hardware_requests.throttles.AnonymousRequestIpHourThrottle": {"get_cache_key"},
     # The subscribable calendar feed is fetched by a calendar client with only its
     # bearer token, so the budget keys on that token rather than the caller.
     "apps.events.throttles.EventCalendarFeedTokenThrottle": {"get_cache_key"},

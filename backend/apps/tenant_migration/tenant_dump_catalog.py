@@ -51,7 +51,7 @@ class TenantDumpCatalogError(AssertionError):
 # Events programme (lane/events-final, decision #86): programme, design and fence
 # steps plus reimbursements; re-pinned from schema_digest() over the merged graph.
 # Orchestrator re-pins the live catalog after final schema/migration verification.
-CATALOG_SCHEMA_SHA256 = "8b14c120f24ee4b1745035d1e591e1e1534cafcbf3b229c0023cbad2c52bb3b2"
+CATALOG_SCHEMA_SHA256 = "435cb83e942142340b1de8717e8d1314f958e9f7e82dbcd44955dfe377d7864e"
 
 
 def catalog_models(apps_registry=apps):

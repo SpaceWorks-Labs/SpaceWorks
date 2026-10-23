@@ -2,6 +2,7 @@
 
 import math
 from urllib.parse import urlsplit
+from drf_spectacular.utils import extend_schema_serializer
 from rest_framework import serializers as s
 from .public_page_markdown import public_url, validate_markdown
 
@@ -61,6 +62,7 @@ class TeamEntry(StrictSerializer):
         return data
 
 
+@extend_schema_serializer(component_name="PageTeam")
 class Team(Titled):
     entries = TeamEntry(many=True, max_length=40)
 
@@ -75,6 +77,7 @@ class Testimonials(Titled):
     entries = Testimonial(many=True, max_length=20)
 
 
+@extend_schema_serializer(component_name="PageLink")
 class Link(StrictSerializer):
     id = s.UUIDField()
     label = s.CharField(max_length=80)

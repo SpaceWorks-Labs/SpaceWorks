@@ -1,7 +1,10 @@
 import type * as Api from "../../generated/api";
 
 // Input-derived local rows also represent new unsaved sections/sessions without output-only fields.
-export type WebsiteSection = Api.WebsiteSectionInput & Partial<Pick<Api.WebsiteSection, "image_url" | "image_alt_text" | "body_rendering">>;
+// Programme sections (prizes, judges, mentors, gallery, results) carry typed display options.
+export type WebsiteSectionOptions = { ids?: number[]; layout?: "grid" | "list"; limit?: number };
+export type WebsiteSection = Omit<Api.WebsiteSectionInput, "options"> & { options?: WebsiteSectionOptions }
+  & Partial<Pick<Api.WebsiteSection, "image_url" | "image_alt_text" | "body_rendering">>;
 export type WebsiteSession = Api.WebsiteSessionInput & Partial<Pick<Api.WebsiteSession, "delay_minutes" | "effective_starts_at" | "effective_ends_at" | "body_rendering">>;
 export type WebsiteDelayTarget = Api.WebsiteDelayTarget;
 export type WebsiteVenue = Api.WebsiteVenue;

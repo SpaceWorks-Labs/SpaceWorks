@@ -1,5 +1,5 @@
 import type { Dashboard } from "../../../generated/api";
-export type DashboardCounts = Omit<Dashboard, "widgets" | "queue_tiles" | "outstanding_by_currency">;
+export type DashboardCounts = Omit<Dashboard, "widgets" | "queue_tiles" | "outstanding_by_currency" | "next_up_events">;
 
 // Tiles keep their semantic intent; only emphasis is a filled attention pill.
 // Numbers and labels otherwise sit on neutral panels.

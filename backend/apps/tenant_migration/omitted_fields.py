@@ -36,6 +36,12 @@ OMITTED_FIELD_RECONSTRUCTIONS = {
     ("makerspaces.Makerspace", "email_provider_config"): EMPTY_STRING,
     ("bookings.BookingBroadcastDelivery", "outbox"): NULL,
     ("events.EventBroadcastDelivery", "outbox"): NULL,
+    # Imported consent is inert (catalog_messaging): the sender/proof binding is
+    # deployment-local, so the target projects an unbound, empty consent row.
+    ("integrations.MessagingConsent", "sender_key"): EMPTY_STRING,
+    ("integrations.MessagingConsent", "endpoint"): NULL,
+    ("integrations.MessagingConsent", "configuration_generation"): DERIVED,
+    ("integrations.MessagingConsent", "lifted_suppression_id"): DERIVED,
     **_rules(
         DROP_ROW,
         ("apiclients.ApiClient", "client_id"),

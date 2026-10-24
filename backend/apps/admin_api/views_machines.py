@@ -47,9 +47,17 @@ def _service_summaries(actor, machines, capabilities=None):
     from apps.makerspaces.platform import module_enabled
     machines = list(machines)
     capabilities = capabilities if capabilities is not None else access.capabilities_for_machines(actor, machines)
-    allowed = [machine for machine in machines
-               if capabilities.get(machine.pk, {}).get('can_edit')
-               and module_enabled(machine.makerspace, 'machine_service')]
+    # One module check per makerspace, not per row: module_enabled reads tenant
+    # servability (restore state) and would make the list an N+1.
+    service_on = {}
+    allowed = []
+    for machine in machines:
+        if not capabilities.get(machine.pk, {}).get('can_edit'):
+            continue
+        if machine.makerspace_id not in service_on:
+            service_on[machine.makerspace_id] = module_enabled(machine.makerspace, 'machine_service')
+        if service_on[machine.makerspace_id]:
+            allowed.append(machine)
     return machine_queue_summaries_for(allowed) if allowed else {}
 
 

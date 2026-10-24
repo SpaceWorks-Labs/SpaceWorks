@@ -29,6 +29,9 @@ SOURCE_LOCAL_AUDIT_EDGES = frozenset(
         ("payments.connect_previous_authorization_revoked", "connect_account_id"),
         ("procurement.moved_to_printing", "result_id"),
         ("qr.rebound", "new_target_id"),
+        # Managed staging origin of a dump request: deployment-local custody identifiers.
+        ("tenant_migration.tenant_dump_requested", "staging_capture_id"),
+        ("tenant_migration.tenant_dump_requested", "staging_deployment_id"),
         ("tenant_migration.pairing_approved", "migration_id"),
         ("tenant_migration.pairing_approved", "source_deployment_id"),
         ("tenant_migration.pairing_approved", "target_deployment_id"),

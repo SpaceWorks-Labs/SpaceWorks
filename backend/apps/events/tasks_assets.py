@@ -7,7 +7,8 @@ from django.utils import timezone
 
 from apps.events.certificate_storage import _client
 from apps.events.tasks_retention import _retention_event
-from apps.events.tasks_sweeps import take_ids
+from apps.events.tasks_sweeps import batch, take_ids
+from apps.operations.cloud_jobs import bounded
 from apps.makerspaces import limits
 from apps.separability.registry import runtime_active
 
@@ -27,7 +28,7 @@ def sweep_asset_work_task():
     from .submissions.retention_jobs import TERMINAL, cleanup_asset
     from .submissions.asset_jobs import AssetJob
     counts = {"processed": 0, "failed": 0}
-    for pk in due_work_ids(limit=100):
+    for pk in bounded.items(due_work_ids(limit=batch(100, heavy=True))):
         try:
             work = SubmissionAssetWork.objects.get(pk=pk)
             participant = work.participant_asset_id is not None
@@ -59,9 +60,9 @@ def sweep_asset_deadlines_task():
     if not runtime_active("events"):
         return 0
     ids = take_ids("asset-deadlines", HackathonConfig.objects.filter(
-        enabled=True, submission_deadline__lte=timezone.now()), limit=100)
+        enabled=True, submission_deadline__lte=timezone.now()), limit=batch(100))
     done = 0
-    for config in HackathonConfig.objects.filter(pk__in=ids):
+    for config in bounded.items(HackathonConfig.objects.filter(pk__in=ids)):
         try:
             done += lock_event_submissions(event_id=config.event_id, limit=100)
         except Exception:
@@ -76,9 +77,9 @@ def sweep_asset_retention_task():
     from .submissions.cleanup_schedule import enqueue_abandoned_locked, rebuild_cleanup_work_locked
     from .submissions.ports import SubmissionContext
     from .submissions.quota import usage_locked
-    ids = take_ids("asset-retention", EventAssetUsage.objects.all(), limit=100)
+    ids = take_ids("asset-retention", EventAssetUsage.objects.all(), limit=batch(100, heavy=True))
     done = 0
-    for usage in EventAssetUsage.objects.filter(pk__in=ids):
+    for usage in bounded.items(EventAssetUsage.objects.filter(pk__in=ids)):
         try:
             with _retention_event(usage.event_id) as event:
                 ctx = SubmissionContext(event=event, team_id=None, member_ids=(), leader_id=None,
@@ -98,4 +99,4 @@ def sweep_asset_retention_task():
 @shared_task
 def reconcile_asset_obligations_task():
     from .submissions.obligations import sweep
-    return sweep(storage=retained_storage(), limit=100)
+    return sweep(storage=retained_storage(), limit=batch(100, heavy=True))

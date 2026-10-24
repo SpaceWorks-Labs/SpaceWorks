@@ -105,6 +105,9 @@ _RETAINED = frozenset({
     "event-stage-file-retention", "finance-event-payout-retention",
 })
 _HEAVY = frozenset({
+    # Events scans, renders and validation (#89b): one heavy chunk starts per tick.
+    "event-asset-work", "event-certificate-batches", "event-certificate-renders",
+    "event-stage-file-recovery", "finance-event-payout-recovery",
     "subject-access-exports", "report-schedules", "scheduled-deployment-backup",
     "reconcile-backup-artifacts", "push-offsite-backups",
     "resume-expired-tenant-import-finalizations", "finalize-report-rollups",

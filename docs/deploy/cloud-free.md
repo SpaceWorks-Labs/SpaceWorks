@@ -80,9 +80,15 @@ Mail shows accepted, reserved, uncertain and pending separately per configured a
 stays charged across retries; `reconcile_cloud_email` requires independent provider nonacceptance or
 acceptance evidence and a current platform operator. Account aliases cannot create another allowance.
 
-The later Pages, Events submission/media and reimbursement programme packages are absent from this
-checkout. Their manifest entries remain inactive; existing Events series, billing and membership tasks
-are covered by the current catalog. Provider/VM/browser/Docker acceptance remains required before launch.
+Every Events scheduled task (admission, contributors, broadcasts, assets, certificates, print and
+judging recovery, stage forms and files, reimbursement deadlines, payout recovery/retention, saved
+details) runs through the free tick under its own catalog key (#89b). Each sweep sizes its batch with
+`bounded.rows`: unchanged on a full server, the chunk's remaining limit inside a tick, and one row per
+chunk for scans, renders, validation and object I/O; unfinished work resumes on the next tick. Scans,
+renders and validation are heavy tasks, so at most one starts per tick. The older programme wrappers
+stay unselected (`CLOUD_PROGRAMMES` is empty) because these keys already cover the same work, and the
+boot guard refuses selecting them while those keys are scheduled. Provider/VM/browser/Docker
+acceptance remains required before launch.
 
 Sources checked 2026-10-18: [Render free services](https://render.com/docs/free),
 [Supabase connections](https://supabase.com/docs/guides/database/connecting-to-postgres),

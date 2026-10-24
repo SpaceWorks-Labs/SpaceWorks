@@ -7,6 +7,7 @@ from celery import shared_task
 from apps.makerspaces.platform import feature_enabled
 from apps.makerspaces.servability import servable_queryset
 from apps.separability.registry import runtime_active
+from apps.operations.cloud_jobs import bounded
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +26,7 @@ def sweep_admission_deadlines_task():
         enabled=True, event__makerspace__enabled_modules__contains=["events"],
     ), relation="event__makerspace").select_related("event__makerspace").order_by("event_id")
     processed = 0
-    for config in configs.iterator(chunk_size=100):
+    for config in bounded.page(configs, "event-admission-configs"):
         if not feature_enabled(config.event.makerspace, "events.hackathons"):
             continue
         try:

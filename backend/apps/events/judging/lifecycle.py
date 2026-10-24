@@ -1,5 +1,6 @@
 """B amendment hook and F/G recoverable notification-intent delivery seam."""
 
+from apps.operations.cloud_jobs import bounded
 import logging
 
 from django.http import Http404
@@ -52,7 +53,7 @@ def sweep_notices(*, after_id=None, limit=100):
            list(JudgingNotice.objects.filter(pk__gt=after_id).order_by("pk").values_list("pk", flat=True)[:min(limit, 500)]))
     failed = 0
     counts = {"skipped": 0}
-    for pk in ids:
+    for pk in bounded.items(ids):
         try:
             notice = JudgingNotice.objects.select_related("event").get(pk=pk)
             with fanout_tenant_write(notice.event.makerspace_id, operation="event_judging_notices", counts=counts) as allowed:

@@ -9,6 +9,8 @@ from apps.encryption.tenant_preparation import prepare_tenant_key, tenant_key_co
 from apps.events.contracts.providers import LockedContext
 from apps.events.models import Event, EventSeries
 from apps.events.programme_locks import fences
+from apps.events.tasks_sweeps import batch
+from apps.operations.cloud_jobs import bounded
 from apps.makerspaces.guards import require_module_locked
 from apps.makerspaces.servability import servable_q
 from apps.tenant_migration.gate_runtime import boundary_tenant_write
@@ -74,7 +76,7 @@ def sweep_one(*, event_id, award_id=None, request_id=None, work_id=None):
 
 @shared_task
 def sweep_deadlines_task(limit=100):
-    limit = max(1, min(int(limit), 500))
+    limit = batch(max(1, min(int(limit), 500)))
     spaces = servable_q("event__makerspace")
     from apps.tenant_migration.models_source_gate import SourceMigrationGate
     closed = SourceMigrationGate.objects.exclude(state="open").values("makerspace_id")
@@ -86,7 +88,7 @@ def sweep_deadlines_task(limit=100):
         .exclude(event__makerspace_id__in=closed)
         .order_by("due_at", "pk").values("pk", "event_id", "award_id", "claim__award_id")[:limit])
     processed = 0
-    for item in work:
+    for item in bounded.items(work):
         try:
             processed += bool(sweep_one(event_id=item["event_id"], award_id=item["award_id"] or item["claim__award_id"], work_id=item["pk"]))
         except Exception:
@@ -111,7 +113,7 @@ def sweep_deadlines_task(limit=100):
             award__claim__domain_closed_at__isnull=True, claim_pending=False) |
         (Q(award__claim__state="returned_for_info", claim_pending=False) &
             (Q(award__claim__info_due_at__gt=timezone.now()) | Q(core_held=False))))
-    for row in candidates.order_by("updated_at", "pk").distinct()[:limit]:
+    for row in bounded.items(candidates.order_by("updated_at", "pk").distinct()[:limit]):
         try:
             processed += bool(sweep_one(event_id=row.event_id, request_id=row.pk))
             # Seed missing future work through the same fenced workflow below.

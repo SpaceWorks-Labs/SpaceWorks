@@ -1,4 +1,5 @@
 """Permanent cleanup tombstones retry both keys, including after source purge."""
+from apps.operations.cloud_jobs import bounded
 from datetime import timedelta
 from uuid import uuid4
 from django.db import transaction
@@ -85,7 +86,7 @@ def sweep(*, limit=100):
     ids = StageFileCleanup.objects.filter(next_attempt_at__lte=now, not_before__lte=now).filter(
         Q(lease_until__isnull=True) | Q(lease_until__lte=now)).order_by("next_attempt_at", "pk").values_list("pk", flat=True)[:min(limit, 100)]
     count = 0
-    for pk in list(ids):
+    for pk in bounded.items(list(ids)):
         try:
             count += bool(cleanup_one(pk))
         except Exception:

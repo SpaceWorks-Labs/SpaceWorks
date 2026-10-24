@@ -10,6 +10,8 @@ from apps.events.contracts.providers import LockedContext
 from apps.events.programme_locks import fences, lock_authority
 from apps.makerspaces.guards import require_module_locked
 from apps.makerspaces.servability import servable_q
+from apps.events.tasks_sweeps import batch
+from apps.operations.cloud_jobs import bounded
 from apps.tenant_migration.gate_runtime import boundary_tenant_write
 from .work_models import StageReconcileCursor, StageActivationJob
 from .definition_models import EventStageForm
@@ -71,11 +73,12 @@ def reconcile_event(event_id, *, limit=100):
 
 @shared_task
 def reconcile_stage_forms_task(limit=50):
+    limit = batch(limit)
     events = Event.objects.filter(servable_q("makerspace"), makerspace__enabled_modules__contains=["events"],
         stage_forms__isnull=False).annotate(sweep=Coalesce("stage_reconcile_cursor__version", Value(0),
             output_field=BigIntegerField())).order_by("sweep", "pk").values_list("pk", flat=True).distinct()[:min(limit, 100)]
     processed = 0
-    for event_id in list(events):
+    for event_id in bounded.items(list(events)):
         try:
             processed += reconcile_event(event_id)
         except Exception:
@@ -88,12 +91,13 @@ def recover_stage_files_task(limit=50):
     from django.db.models import Q
     from .upload_models import StageFormAsset
     from .upload_jobs import validate_asset
+    limit = batch(limit, heavy=True)
     now = timezone.now()
     rows = StageFormAsset.objects.filter(state__in=("uploaded", "validating"), expires_at__gt=now).filter(
         Q(lease_until__isnull=True) | Q(lease_until__lte=now)).filter(servable_q("event__makerspace"),
         event__makerspace__enabled_modules__contains=["events"]).order_by("attempts", "pk").values_list("pk", flat=True)[:min(limit, 100)]
     count = 0
-    for pk in list(rows):
+    for pk in bounded.items(list(rows)):
         try:
             validate_asset(pk)
             count += 1
@@ -105,4 +109,4 @@ def recover_stage_files_task(limit=50):
 @shared_task
 def sweep_stage_file_retention_task(limit=100):
     from .retention import sweep
-    return sweep(limit=limit)
+    return sweep(limit=batch(limit, heavy=True))

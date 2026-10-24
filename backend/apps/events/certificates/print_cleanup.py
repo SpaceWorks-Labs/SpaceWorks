@@ -1,4 +1,5 @@
 """Durable cleanup adapter, including expired/revoked jobs and failed reservations."""
+from apps.operations.cloud_jobs import bounded
 from django.utils import timezone
 from django.db.models import Q
 from datetime import timedelta
@@ -52,7 +53,7 @@ def cleanup_expired(limit=100):
     eligible = BadgePrintJob.objects.filter(Q(next_cleanup_at__isnull=True) | Q(next_cleanup_at__lte=timezone.now())).filter(
         Q(expires_at__lte=timezone.now()) | Q(state="cancelled"))
     ids = take_ids("badge-print-cleanup", eligible, limit=limit)
-    for pk in ids:
+    for pk in bounded.items(ids):
         try:
             cleanup_job(pk)
         except Exception:

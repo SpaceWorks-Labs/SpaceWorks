@@ -4,6 +4,7 @@ from celery import shared_task
 from django.db import transaction
 from django.utils import timezone
 from .cleanup_models import FinanceSweepCursor
+from apps.operations.cloud_jobs import bounded
 
 logger = logging.getLogger(__name__)
 
@@ -35,9 +36,9 @@ def sweep_retention_task(limit=100):
     from .obligation_models import EventPayoutObligation
     from .retention import expire_asset, purge_payees
     now, counts = timezone.now(), {"expired": 0, "payees_purged": 0, "retry": 0}
-    limit = max(1, min(int(limit), 500))
+    limit = bounded.rows(max(1, min(int(limit), 500)), heavy=True)
     assets = FinanceAttachment.objects.exclude(state__in=("expired", "deleting", "deleted"))
-    for asset_id in page("retention-assets", assets, limit=limit):
+    for asset_id in bounded.items(page("retention-assets", assets, limit=limit)):
         try:
             counts["expired"] += bool(expire_asset(asset_id, now=now))
         except Exception:
@@ -45,7 +46,7 @@ def sweep_retention_task(limit=100):
             logger.warning("finance_retention_retry", extra={"asset_id": asset_id})
     from django.db.models import Q
     obligations = EventPayoutObligation.objects.filter(Q(state="open") | Q(payee_revisions__purge_due_at__lte=now)).distinct()
-    for obligation_id in page("retention-payees", obligations, limit=limit):
+    for obligation_id in bounded.items(page("retention-payees", obligations, limit=limit)):
         try:
             counts["payees_purged"] += purge_payees(obligation_id, now=now)
         except Exception:
@@ -61,15 +62,16 @@ def recover_finance_work_task(limit=100):
     from .attachment_models import FinanceAttachment
     from .attachment_workflow import process
     from .cleanup import due_ids, delete_one
-    limit = max(1, min(int(limit), 500))
+    limit = bounded.rows(max(1, min(int(limit), 500)), heavy=True)
     counts = {"validated": 0, "deleted": 0, "retry": 0}
-    for asset_id in page("recover-uploads", FinanceAttachment.objects.filter(state__in=("uploaded", "validating")), limit=limit):
+    for asset_id in bounded.items(page("recover-uploads", FinanceAttachment.objects.filter(
+            state__in=("uploaded", "validating")), limit=limit)):
         try:
             counts["validated"] += bool(process(asset_id))
         except Exception:
             counts["retry"] += 1
             logger.warning("finance_upload_retry", extra={"asset_id": asset_id})
-    for cleanup_id in due_ids(now=timezone.now(), limit=limit):
+    for cleanup_id in bounded.items(due_ids(now=timezone.now(), limit=limit)):
         try:
             counts["deleted"] += bool(delete_one(cleanup_id))
         except Exception:

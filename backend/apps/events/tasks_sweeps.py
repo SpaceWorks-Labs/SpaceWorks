@@ -1,6 +1,12 @@
 """Persist circular recovery progress so one unavailable page cannot starve later work."""
 from django.db import transaction
 
+from apps.operations.cloud_jobs import bounded
+
+# Free-profile tick chunks (#89b): every Events sweep sizes its batch through this, so
+# full-server batches are unchanged and a free tick runs a bounded, resumable slice.
+batch = bounded.rows
+
 
 def take_ids(namespace, queryset, *, limit=100):
     from .submissions.models_assets import EventProgrammeSweepCursor

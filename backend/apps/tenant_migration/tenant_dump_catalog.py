@@ -48,10 +48,12 @@ class TenantDumpCatalogError(AssertionError):
 # Machine-service ETA (lane/machine-eta): cancellation and notice markers; re-pinned.
 # Cloud programme (cloud/integration): managed coordination, email providers, cloud
 # accounting and storage history; with lane/refunds (refund cases), re-pinned after both merges.
-# lane/r1-security: makerspaces/0105 drops anonymous_requests_enabled and accounts/0043 drops
+# Events programme (lane/events-final, decision #86): programme, design and fence
+# steps plus reimbursements; re-pinned from schema_digest() over the merged graph.
+# lane/r1-security: makerspaces/0105 drops anonymous_requests_enabled and accounts/0046 drops
 # User.external_checkin_user_id (#80); re-pinned.
 # Orchestrator re-pins the live catalog after final schema/migration verification.
-CATALOG_SCHEMA_SHA256 = "9902e58464f3cd167a559312374cb2b13432096abcd450e60b27cea4366a8380"
+CATALOG_SCHEMA_SHA256 = "c6bd391787bf7f4b9b6e8e313822f0ea5a054a5a81945b5446a0eeb6aca30a69"
 
 
 def catalog_models(apps_registry=apps):

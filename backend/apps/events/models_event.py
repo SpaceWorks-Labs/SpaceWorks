@@ -9,9 +9,14 @@ from django.db import models
 from django.db.models import F, Q
 from django.utils import timezone
 from apps.forms_schema.validation import validate_form_schema
+from .programme.accent_presets import ACCENT_CHOICES
 
 
 class Event(models.Model):
+    ACCENT_CHOICES = ACCENT_CHOICES
+    version = models.PositiveIntegerField(default=1)
+    event_date_revision = models.PositiveIntegerField(default=1)
+    accent_preset = models.CharField(max_length=24, choices=ACCENT_CHOICES, blank=True, default="")
     class Status(models.TextChoices):
         DRAFT = "draft", "Draft"
         PUBLISHED = "published", "Published"
@@ -116,6 +121,8 @@ class Event(models.Model):
     class Meta:
         ordering = ["starts_at", "id"]
         constraints = [
+            models.CheckConstraint(condition=Q(accent_preset__in=("", *dict(ACCENT_CHOICES))),
+                                   name="event_accent_palette_only"),
             models.CheckConstraint(
                 condition=Q(ends_at__gte=F("starts_at")),
                 name="event_ends_not_before_start",

@@ -43,8 +43,21 @@ def copy_page(source, target, *, copies, preserve_delays=False, preserve_revisio
         asset_map.update({source_id: row.pk for source_id, row in assets.items()})
     sections = {}
     for row in bounded_children(original.sections.filter(is_working=True)):
+        values = copy_fields(row, SECTION_FIELDS)
+        if source.pk != target.pk and row.kind in ("prizes", "judges", "mentors", "project_gallery", "results"):
+            options = dict(values["options"])
+            if row.kind == "prizes" and options.get("ids"):
+                from .judging.models_definitions import HackathonPrize
+                originals = list(HackathonPrize.objects.filter(event=source).order_by("order", "pk").values_list("pk", flat=True))
+                copied = list(HackathonPrize.objects.filter(event=target).order_by("order", "pk").values_list("pk", flat=True))
+                mapping = dict(zip(originals, copied))
+                options["ids"] = [mapping[pk] for pk in options["ids"] if pk in mapping]
+            else:
+                # People, project entries and publication history never clone.
+                options["ids"] = []
+            values["options"] = options
         sections[row.pk] = EventPageSection.objects.create(
-            page=page, asset=assets.get(row.asset_id), **copy_fields(row, SECTION_FIELDS))
+            page=page, asset=assets.get(row.asset_id), **values)
     anchor = original.series if original.series_id else original.event
     delta = window(target)[0] - window(anchor)[0]
     from django.db.models import Prefetch

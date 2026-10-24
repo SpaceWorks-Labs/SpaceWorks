@@ -7,6 +7,7 @@ from apps.operations.cancellation_restore import restore_deadline
 
 
 class EventRegistrationAdminSerializer(PaymentSummaryMixin, serializers.ModelSerializer):
+    custom_answers = serializers.JSONField(read_only=True, allow_null=True)
     event_id = serializers.IntegerField(read_only=True)
     ticket_type_id = serializers.IntegerField(read_only=True, allow_null=True)
     no_longer_eligible = serializers.BooleanField(read_only=True, default=False)
@@ -42,7 +43,10 @@ class EventRegistrationAdminSerializer(PaymentSummaryMixin, serializers.ModelSer
         return None
 
 
-class EventStaffRegistrationSerializer(serializers.Serializer):
+from .serializers_registration_form import RegistrationFormInput
+
+
+class EventStaffRegistrationSerializer(RegistrationFormInput):
     """Staff registering an identified account under the event's audience rules.
 
     `member_id` only. Contact details are copied off the account by the registration

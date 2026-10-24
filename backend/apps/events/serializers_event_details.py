@@ -68,7 +68,7 @@ class EventAdminSerializer(OrganizationAudienceFields, EventAuthorityFields, ser
             'description',
             'starts_at',
             'ends_at',
-            'timezone_name',
+            'timezone_name', 'accent_preset',
             'location',
             'location_kind',
             'custom_form',

@@ -1,0 +1,173 @@
+{
+  "lane": "E",
+  "mount_owner": "G",
+  "routes": [
+    {
+      "path": "/api/v1/admin/events/<int:pk>/registrations/<int:registration_id>/credential/rotate/",
+      "name": "events-programme-admin-registrations-credential-rotate",
+      "view": "CredentialRotateView.as_view()",
+      "provider": "backend/apps/events/credentials/urls_admin.py"
+    },
+    {
+      "path": "/api/v1/admin/events/<int:pk>/registrations/<int:registration_id>/credential/revoke/",
+      "name": "events-programme-admin-registrations-credential-revoke",
+      "view": "CredentialRevokeView.as_view()",
+      "provider": "backend/apps/events/credentials/urls_admin.py"
+    },
+    {
+      "path": "/api/v1/admin/events/<int:pk>/badges/design-preview.pdf",
+      "name": "events-programme-admin-badge-design-preview",
+      "view": "BadgePreviewView.as_view()",
+      "provider": "backend/apps/events/certificates/urls_admin.py"
+    },
+    {
+      "path": "/api/v1/admin/events/<int:pk>/certificates/verification-policy/",
+      "name": "events-programme-admin-certificate-publication-policy",
+      "view": "CertificatePublicationView.as_view()",
+      "provider": "backend/apps/events/certificates/urls_admin.py"
+    },
+    {
+      "path": "/api/v1/admin/events/<int:pk>/certificates/eligibility/",
+      "name": "events-programme-admin-certificate-eligibility",
+      "view": "CertificateEligibilityView.as_view()",
+      "provider": "backend/apps/events/certificates/urls_admin.py"
+    },
+    {
+      "path": "/api/v1/admin/events/<int:pk>/certificates/bulk/",
+      "name": "events-programme-admin-certificates-bulk",
+      "view": "BulkIssueView.as_view()",
+      "provider": "backend/apps/events/certificates/urls_admin.py"
+    },
+    {
+      "path": "/api/v1/admin/events/<int:pk>/certificates/batches/<int:batch_id>/",
+      "name": "events-programme-admin-certificates-batches",
+      "view": "BatchView.as_view()",
+      "provider": "backend/apps/events/certificates/urls_admin.py"
+    },
+    {
+      "path": "/api/v1/admin/events/<int:pk>/certificates/<int:certificate_id>/revoke/",
+      "name": "events-programme-admin-certificates-revoke",
+      "view": "CertificateRevokeView.as_view()",
+      "provider": "backend/apps/events/certificates/urls_admin.py"
+    },
+    {
+      "path": "/api/v1/admin/events/<int:pk>/certificates/<int:certificate_id>/reissue/",
+      "name": "events-programme-admin-certificates-reissue",
+      "view": "CertificateReissueView.as_view()",
+      "provider": "backend/apps/events/certificates/urls_admin.py"
+    },
+    {
+      "path": "/api/v1/admin/events/<int:pk>/badges/designs/",
+      "name": "events-programme-admin-badge-design",
+      "view": "BadgeDesignView.as_view()",
+      "provider": "backend/apps/events/certificates/urls_admin.py"
+    },
+    {
+      "path": "/api/v1/admin/events/<int:pk>/badges/desk-design/",
+      "name": "events-programme-admin-badge-desk-design",
+      "view": "DeskDesignView.as_view()",
+      "provider": "backend/apps/events/certificates/urls_admin.py"
+    },
+    {
+      "path": "/api/v1/admin/events/<int:pk>/badges/print-jobs/",
+      "name": "events-programme-admin-badge-print-create",
+      "view": "PrintCreateView.as_view()",
+      "provider": "backend/apps/events/certificates/urls_admin.py"
+    },
+    {
+      "path": "/api/v1/admin/events/<int:pk>/badges/print-jobs/<int:job_id>/",
+      "name": "events-programme-admin-badge-print-detail",
+      "view": "PrintDetailView.as_view()",
+      "provider": "backend/apps/events/certificates/urls_admin.py"
+    },
+    {
+      "path": "/api/v1/admin/events/<int:pk>/badges/print-jobs/<int:job_id>/download/",
+      "name": "events-programme-admin-badge-print-download",
+      "view": "PrintDownloadView.as_view()",
+      "provider": "backend/apps/events/certificates/urls_admin.py"
+    },
+    {
+      "path": "/api/v1/admin/makerspaces/<int:makerspace_id>/event-certificate-library/from-event/",
+      "name": "events-programme-tenant-admin-import-event",
+      "view": "LibraryCaptureView.as_view()",
+      "provider": "backend/apps/events/certificates/urls_library.py"
+    },
+    {
+      "path": "/api/v1/admin/makerspaces/<int:makerspace_id>/event-certificate-library/<int:template_id>/artwork/",
+      "name": "events-programme-library-artwork-reserve",
+      "view": "LibraryArtworkReserveView.as_view()",
+      "provider": "backend/apps/events/certificates/urls_library.py"
+    },
+    {
+      "path": "/api/v1/admin/makerspaces/<int:makerspace_id>/event-certificate-library/<int:template_id>/artwork/<int:artwork_id>/finalize/",
+      "name": "events-programme-library-artwork-finalize",
+      "view": "LibraryArtworkFinalizeView.as_view()",
+      "provider": "backend/apps/events/certificates/urls_library.py"
+    },
+    {
+      "path": "/api/v1/admin/makerspaces/<int:makerspace_id>/event-certificate-library/",
+      "name": "events-programme-tenant-admin-list",
+      "view": "LibraryListView.as_view()",
+      "provider": "backend/apps/events/certificates/urls_library.py"
+    },
+    {
+      "path": "/api/v1/admin/makerspaces/<int:makerspace_id>/event-certificate-library/<int:template_id>/",
+      "name": "events-programme-tenant-admin-detail",
+      "view": "LibraryDetailView.as_view()",
+      "provider": "backend/apps/events/certificates/urls_library.py"
+    },
+    {
+      "path": "/api/v1/admin/makerspaces/<int:makerspace_id>/event-certificate-library/<int:template_id>/revisions/",
+      "name": "events-programme-tenant-admin-revisions-list",
+      "view": "LibraryRevisionsView.as_view()",
+      "provider": "backend/apps/events/certificates/urls_library.py"
+    },
+    {
+      "path": "/api/v1/admin/makerspaces/<int:makerspace_id>/event-certificate-library/<int:template_id>/revisions/<int:revision_id>/",
+      "name": "events-programme-tenant-admin-revisions-detail",
+      "view": "LibraryRevisionView.as_view()",
+      "provider": "backend/apps/events/certificates/urls_library.py"
+    },
+    {
+      "path": "/api/v1/admin/makerspaces/<int:makerspace_id>/event-certificate-library/<int:template_id>/copy-to-event/",
+      "name": "events-programme-tenant-admin-copy-to-event",
+      "view": "LibraryCopyView.as_view()",
+      "provider": "backend/apps/events/certificates/urls_library.py"
+    },
+    {
+      "path": "/api/v1/member/makerspaces/<int:makerspace_id>/events/<int:pk>/profile-photo-options/",
+      "name": "events-programme-member-profile-photo-options",
+      "view": "ProfileOptionsView.as_view()",
+      "provider": "backend/apps/events/profile_photos/urls_member.py"
+    },
+    {
+      "path": "/api/v1/member/makerspaces/<int:makerspace_id>/events/<int:pk>/presentation/",
+      "name": "events-programme-member-presentation-detail",
+      "view": "PresentationView.as_view()",
+      "provider": "backend/apps/events/profile_photos/urls_member.py"
+    },
+    {
+      "path": "/api/v1/public/event-programmes/<uuid:public_token>/member-cards/<uuid:card_public_id>/photo/",
+      "name": "events-programme-public-member-card-photo",
+      "view": "PublicCardPhotoView.as_view()",
+      "provider": "backend/apps/events/profile_photos/urls_public.py"
+    },
+    {
+      "path": "/api/v1/public/event-certificates/<uuid:verification_id>/verify/",
+      "name": "events-programme-public-certificate-verify",
+      "view": "CertificateVerificationView.as_view()",
+      "provider": "backend/apps/events/certificates/urls_public.py"
+    }
+  ],
+  "existing_routes_extended": [
+    "admin-event-check-in-resolve POST",
+    "member-event-checkin-qr GET/HEAD",
+    "member-event-ticket GET/HEAD",
+    "member-event-ticket-png GET/HEAD",
+    "admin-event-certificate-template GET/HEAD/POST legacy plus PUT command",
+    "admin-event-certificate-preview POST",
+    "admin-event-certificate-artwork-finalize POST",
+    "admin-event-badges-pdf POST display-only compatibility"
+  ],
+  "schema": "Inline drf-spectacular serializers/decorators; G generates global OpenAPI snapshots after installing policies/routes."
+}

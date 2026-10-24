@@ -25,7 +25,17 @@ _EXCLUDED_USER_EDGE_REASONS.update(EXCLUDED_USER_EDGES)
 RELATIONAL_USER_FIELDS |= EXCLUDED_USER_EDGES.keys()
 RELATIONAL_USER_FIELDS |= {("makerspaces.PublicHandleRedirect", "user")}
 _EXCLUDED_USER_EDGE_REASONS[("makerspaces.PublicHandleRedirect", "user")] = "Retired reservations are deployment-local."
+from apps.tenant_migration.catalog_events_programme_references import (
+    USER_FIELDS as PROGRAMME_USER_FIELDS, EXCLUDED_USER_EDGE_REASONS as PROGRAMME_EXCLUDED_EDGES,
+)
+RELATIONAL_USER_FIELDS |= PROGRAMME_USER_FIELDS
+_EXCLUDED_USER_EDGE_REASONS.update(PROGRAMME_EXCLUDED_EDGES)
 _EXCLUDED_USER_EDGE_REASONS.update(_p2_events.EXCLUDED_USER_EDGE_REASONS)
+from apps.tenant_migration.catalog_reimbursements import (
+    USER_FIELDS as REIMBURSEMENT_USER_FIELDS, EXCLUDED_USER_EDGE_REASONS as REIMBURSEMENT_EXCLUDED_EDGES,
+)
+RELATIONAL_USER_FIELDS |= REIMBURSEMENT_USER_FIELDS
+_EXCLUDED_USER_EDGE_REASONS.update(REIMBURSEMENT_EXCLUDED_EDGES)
 from .types import (
     Fidelity,
     Omitted,
@@ -111,7 +121,11 @@ for _fidelity in Fidelity:
             ),
         )
     for _model, _field in JSON_FIELDS:
-        if (_model, _field) == ("audit.AuditLog", "meta"):
+        if (_model, _field) == ("events.SubmissionSnapshot", "sealed_member_ids"):
+            decision = SemanticUserRef(_model, "sealed_member_ids[]",
+                "Frozen roster members join portable identity closure; readable exports omit this private vector.",
+                included=_fidelity is Fidelity.PORTABLE)
+        elif (_model, _field) == ("audit.AuditLog", "meta"):
             decision = SourceLocalProvenance(
                 _model,
                 "meta id-bearing paths",

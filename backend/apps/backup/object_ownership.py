@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from apps.backup.digests import sha256_file
+from .object_capture_proof import capture_proof, assert_capture_proof
 from apps.backup.object_ownership_registry import ReferencePolicy
 from apps.backup.recipient_selection import BackupBuildError
 
@@ -29,6 +30,8 @@ class ObjectReference:
     retention_state: str = "live"
     object_expired_at: str = ""
     expired_size_bytes: int | None = None
+    expected_size_bytes: int | None = None
+    expected_sha256: str | None = None
 
 
 @dataclass(frozen=True)
@@ -94,6 +97,7 @@ class ObjectOwnershipPlan:
                 "canonical_component": component,
                 "makerspace_id": makerspaces[0] if len(makerspaces) == 1 else None,
                 "module_key": modules[0] if len(modules) == 1 else "",
+                **capture_proof(references),
             }
             if references[0].retention_state == "expired":
                 result[bucket_kind][key].update(
@@ -171,6 +175,7 @@ class ObjectOwnershipPlan:
                     raise BackupBuildError(
                         "A packaged object differs from its immutable capture ledger."
                     )
+                assert_capture_proof(capture_proof(references), {"size": size, "sha256": digest})
             self._packaged_owner[identity] = component
             captured[identity] = CapturedObject(
                 size=size,

@@ -1,3 +1,4 @@
+import { ProgrammeWebsiteSections } from "./ProgrammeWebsiteSections";
 import { RestrictedMarkdown } from "../../components/RestrictedMarkdown";
 import { markdownMode, orderedGroups, sectionGroup, sponsorTiers, type EventWebsite, type PublicEventWebsiteData, type WebsiteSection, type WebsiteSession } from "./websiteTypes";
 import type { ReactNode } from "react";
@@ -75,5 +76,6 @@ export function PublicEventWebsite({ website, image, links }: { website: PublicE
         {cards.length ? <><h2 className={`${groupHeading} capitalize`}>{group.toLowerCase()}</h2>{cards}</> : null}
       </section> : null;
     })}
+    <ProgrammeWebsiteSections rows={website.programme_sections} />
   </div>;
 }

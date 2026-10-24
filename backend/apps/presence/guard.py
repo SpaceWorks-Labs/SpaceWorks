@@ -82,12 +82,23 @@ def require_active_member(user, makerspace):
     return ActiveMemberPresence(membership, waiver, None)
 
 
-def _require_active_identity(user, makerspace):
+def require_active_principal(user, makerspace):
+    """`require_active_account` for any account kind (events programme surfaces).
+
+    Staged forms, reimbursements and payouts serve staff and finance reviewers as well
+    as members, so they cannot use the member-only identity check; the account
+    lifecycle refusals are the same.
+    """
+    _require_active_identity(user, makerspace, any_kind=True)
+    return ActiveMemberPresence(None, None, None)
+
+
+def _require_active_identity(user, makerspace, *, any_kind=False):
     if not is_servable(makerspace) or not (
         user
         and user.is_authenticated
         and user.pk
-        and user.account_kind == User.AccountKind.MEMBER
+        and (any_kind or user.account_kind == User.AccountKind.MEMBER)
         and user.is_active
         and user.access_status == User.AccessStatus.ACTIVE
         and not user.is_tenant_dump_stub

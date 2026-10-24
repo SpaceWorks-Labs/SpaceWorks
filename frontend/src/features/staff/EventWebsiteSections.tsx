@@ -2,7 +2,7 @@ import type { EventWebsite, WebsiteSection, WebsiteTarget } from "../events/webs
 import { sponsorTiers } from "../events/websiteTypes";
 import { websiteCard, websiteInput, websiteLabel, websiteLegend } from "./eventWebsiteFormStyles";
 
-const kinds: WebsiteSection["kind"][] = ["intro", "logo", "highlight", "speaker", "track", "room", "sponsor", "faq", "resource"];
+const kinds: WebsiteSection["kind"][] = ["intro", "logo", "highlight", "speaker", "track", "room", "sponsor", "faq", "resource", "prizes", "judges", "mentors", "project_gallery", "results"];
 
 export function EventWebsiteSections({ page, target, onChange, disabled }: {
   page: EventWebsite; target: WebsiteTarget; onChange: (page: EventWebsite) => void; disabled: boolean;
@@ -22,7 +22,7 @@ export function EventWebsiteSections({ page, target, onChange, disabled }: {
     {page.sections.map((row, index) => <fieldset key={index} disabled={disabled} className={`${websiteCard} ${row.visibility === "draft" ? "border-dashed" : ""}`}>
       <legend className={websiteLegend}>Section {index + 1}</legend>
       <div className="grid gap-4 sm:grid-cols-2">
-        <label className={websiteLabel}>Type<select className={websiteInput} value={row.kind} onChange={(e) => update(index, { kind: e.target.value as WebsiteSection["kind"] })}>{kinds.map((kind) => <option key={kind}>{kind}</option>)}</select></label>
+        <label className={websiteLabel}>Type<select className={websiteInput} value={row.kind} onChange={(e) => update(index, { kind: e.target.value as WebsiteSection["kind"], options: {} })}>{kinds.map((kind) => <option key={kind}>{kind}</option>)}</select></label>
         <label className={websiteLabel}>Slug<input className={`${websiteInput} code-text`} required pattern="[a-zA-Z0-9_-]+" maxLength={80} value={row.slug} onChange={(e) => update(index, { slug: e.target.value })} /></label>
         <label className={websiteLabel}>Title<input className={websiteInput} required maxLength={200} value={row.title} onChange={(e) => update(index, { title: e.target.value })} /></label>
         <label className={`${websiteLabel} sm:col-span-2`}>Text<textarea className={websiteInput} maxLength={10000} rows={4} value={row.body} onChange={(e) => update(index, { body: e.target.value })} /></label>
@@ -36,6 +36,10 @@ export function EventWebsiteSections({ page, target, onChange, disabled }: {
         <label className={websiteLabel}>{row.kind === "speaker" ? "Photo" : row.kind === "sponsor" ? "Sponsor logo" : "Image"}<select className={websiteInput} value={row.asset_id ?? ""} onChange={(e) => selectAsset(index, e.target.value)}>
           <option value="">No image</option>{page.assets?.map((asset) => <option key={asset.id} value={asset.id}>{asset.alt_text}</option>)}
         </select></label>
+        {["prizes", "judges", "mentors", "project_gallery", "results"].includes(row.kind) ? <>
+          <label className={websiteLabel}>Layout<select className={websiteInput} value={row.options?.layout ?? "grid"} onChange={(e) => update(index, { options: { ...row.options, layout: e.target.value as "grid" | "list" } })}><option value="grid">Grid</option><option value="list">List</option></select></label>
+          <label className={websiteLabel}>Maximum items<input className={websiteInput} type="number" min={1} max={100} value={row.options?.limit ?? 12} onChange={(e) => update(index, { options: { ...row.options, limit: Number(e.target.value) } })} /></label>
+        </> : null}
         <label className={websiteLabel}>Visibility<select className={websiteInput} value={row.visibility} onChange={(e) => update(index, { visibility: e.target.value as WebsiteSection["visibility"] })}><option value="draft">Draft</option><option value="published">Published</option></select></label>
       </div>
       <button className="desk-button-danger-outline justify-self-start" type="button" onClick={() => onChange({ ...page, sections: page.sections.filter((_, n) => n !== index) })}>Remove section {index + 1}</button>

@@ -1,3 +1,4 @@
+import { ProgrammeDelight } from "./features/events/programme/ProgrammeDelight";
 import { ReauthenticationDialog } from "./features/auth/ReauthenticationDialog";
 import { ReauthenticationReturn } from "./features/auth/ReauthenticationReturn";
 import { AppRoutes } from "./AppRoutes";
@@ -33,14 +34,15 @@ export default function App() {
   // must get past. Read the ROUTER's location, not `window.location` -- a client-side `Link`
   // updates router context without touching `window.location`, so a non-reactive read left
   // this branch stale and sent every click on the recovery CTA to the not-found page.
-  if (tenant.mode === "single" && tenant.loading) {
+  const accountUtility = /^\/(?:m\/[^/]+\/)?member\/account\/(?:saved-details|security-activity)\/?$/.test(pathname);
+  if (!accountUtility && tenant.mode === "single" && tenant.loading) {
     return <div role="status"><CenteredCardLayout state={{ status: "loading" }} title="Loading site…" body=""
       primary={{ label: "Loading…", disabled: true, disabledReason: "The site is opening." }} /></div>;
   }
-  if (tenant.mode === "single" && tenant.error) {
+  if (!accountUtility && tenant.mode === "single" && tenant.error) {
     return <CenteredCardLayout state={{ status: "ready" }} media={{ icon: "TriangleAlert", tone: "danger" }}
       title="Site unavailable" body="The configured tenant could not be resolved."
       primary={{ label: "Retry", onClick: () => window.location.reload() }} />;
   }
-  return <><AppRoutes mode={tenant.mode} landing={<LandingPage />} /><ReauthenticationDialog /></>;
+  return <ProgrammeDelight><AppRoutes mode={tenant.mode} landing={<LandingPage />} /><ReauthenticationDialog /></ProgrammeDelight>;
 }

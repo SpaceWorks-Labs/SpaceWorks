@@ -11,16 +11,28 @@ from .event_permissions import EDIT_DETAILS
 from .models_website import EventPageAsset
 from .services_website import audit, bump, locked_target, own_page
 from .website_copy import owner
+from .services_write_boundary import event_write
+from .website_preparation import prepared_page_write, prepared_copies
 
 
+@prepared_page_write
 def upload_asset(target, *, actor, file, alt_text, replace_id=None, revision=None):
     if not isinstance(alt_text, str) or not alt_text.strip() or len(alt_text) > 200:
         raise ValidationError({"alt_text": "Provide an image description of at most 200 characters."})
+    from .website_preparation import prepared_page_id
     return event_asset_transaction(lambda copies: _upload_asset(
-        target, actor, file, alt_text, replace_id, revision, copies))
+        target, actor=actor, file=file, alt_text=alt_text, replace_id=replace_id,
+        revision=revision, copies=copies), page_id=prepared_page_id())
 
 
-def _upload_asset(target, actor, file, alt_text, replace_id, revision, copies):
+@event_write
+def _upload_asset(target, *, actor, file, alt_text, replace_id, revision, copies):
+    """One locked pass of the Pages reserve/replay engine under the programme fences."""
+    with prepared_copies(target):
+        return _upload_asset_locked(target, actor, file, alt_text, replace_id, revision, copies)
+
+
+def _upload_asset_locked(target, actor, file, alt_text, replace_id, revision, copies):
     target, actor = locked_target(target, actor, EDIT_DETAILS)
     copies.watch("target", target)
     from .website_projection import project
@@ -40,7 +52,7 @@ def _upload_asset(target, actor, file, alt_text, replace_id, revision, copies):
         _replace_editorial_asset(page, old.pk, asset.pk)
     from .website_revisions import save_draft
     save_draft(page, actor)
-    bump(page)
+    bump(page, target)
     if copies.phase == "finalize":
         audit(page, actor, "event.website_asset_saved", revision=page.revision)
     return asset
@@ -64,7 +76,7 @@ def _replace_editorial_asset(page, old_id, new_id):
         page.save(update_fields=["editorial_document"])
 
 
-@transaction.atomic
+@event_write
 def delete_asset(target, asset_id, *, actor):
     target, actor = locked_target(target, actor, EDIT_DETAILS)
     from .models_website import EventPage
@@ -77,7 +89,7 @@ def delete_asset(target, asset_id, *, actor):
     asset.delete()
     from .website_revisions import save_draft
     save_draft(page, actor)
-    bump(page)
+    bump(page, target)
     audit(page, actor, "event.website_asset_removed", revision=page.revision)
     from apps.makerspaces.public_page_asset_cleanup import clean_object
     transaction.on_commit(lambda: clean_object(job_id), robust=True)

@@ -1,6 +1,7 @@
 import { BrandFacets } from "../../components/BrandFacets";
 import { FilterBar } from "../../components/ui";
 import { plural } from "../../lib/plural";
+import { SpaceWorksDemo } from "./SpaceWorksDemo";
 
 /**
  * The landing page's one bold moment (brand p.13): a Maker Teal field holding the Unbounded accent
@@ -24,6 +25,7 @@ export function LandingHero({ search, onSearch, shown, total }: {
           </div>
         </form>
       </div>
+      <SpaceWorksDemo />
     </div>
     <BrandFacets size="sm" className="absolute -bottom-10 -right-6 h-auto w-[128px] md:-bottom-[72px] md:-right-8 md:w-[216px] xl:-bottom-[72px] xl:-right-12 xl:w-[360px] min-[1680px]:-bottom-[88px] min-[1680px]:-right-14 min-[1680px]:w-[440px]" />
   </section>;

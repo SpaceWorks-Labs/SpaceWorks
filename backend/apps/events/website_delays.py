@@ -1,6 +1,5 @@
 """Operational updates by durable identity; only selected versions change."""
 
-from django.db import transaction
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import NotFound, ValidationError
 from .event_permissions import PUBLISH_SCHEDULE
@@ -8,9 +7,10 @@ from .models_website import EventPage
 from .website_copy import owner
 from .website_revisions import operational_snapshot
 from .website_revision_projection import snapshot_sessions
+from .services_write_boundary import event_write
 
 
-@transaction.atomic
+@event_write
 def set_delay(target, slug, *, actor, minutes, revision=None, session_id=None):
     from .services_website import locked_target, bump, audit
     target, actor = locked_target(target, actor, PUBLISH_SCHEDULE)

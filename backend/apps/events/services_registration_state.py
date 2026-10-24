@@ -1,15 +1,13 @@
 """Transactional registration lifecycle transitions."""
 
-from django.db import transaction
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 
 from apps.events.capacity import registration_spots_left
 from apps.events.cancellation_policy import member_can_cancel
 from apps.events.exceptions import CapacityConflict, EventInvalidTransition
-from apps.events.models import Event, EventAttendanceCertificate, EventRegistration
+from apps.events.models import Event, EventRegistration
 from apps.events.service_payments import (
-    cancel_for_registration,
     create_for_registered_registration,
 )
 from apps.events.services_calendar import calendar_registration_changed
@@ -17,7 +15,10 @@ from apps.makerspaces.guards import require_module_locked
 from apps.operations.cancellation_restore import record_cancellation
 
 
-from .registration_locks import _boundary, _fence, _lock_registration
+from .registration_locks import _boundary, _lock_registration
+from .services_registration_fences import _fence
+from .services_write_boundary import event_write
+from .hackathons.admission_bridge import require_ordinary_transition, requires_admission
 
 
 def _decision_is_open(event):
@@ -36,6 +37,7 @@ def _promote(event, actor, waiters, count=None, *, mode):
     services = _boundary()
     selected = []
     for registration in waiters:
+        require_ordinary_transition(registration)
         if count is not None and len(selected) >= count:
             break
         from .organization_audience import OrganizationAudienceRefused, require_queued_admission
@@ -52,9 +54,12 @@ def _promote(event, actor, waiters, count=None, *, mode):
         selected.append(registration)
         registration.event = event
         registration.status = EventRegistration.Status.REGISTERED
-        registration.save(update_fields=["status"])
+        registration.version += 1
+        registration.save(update_fields=["status", "version"])
         calendar_registration_changed(registration)
         create_for_registered_registration(registration, actor)
+        from .services_registration_preparation import issue_ordinary_credential_locked
+        issue_ordinary_credential_locked(event, registration, actor=actor)
         meta = {"registration_id": registration.pk, "promotion_mode": mode}
         services._audit(
             event, actor, "event.registration_promoted", registration, meta
@@ -66,6 +71,11 @@ def _promote(event, actor, waiters, count=None, *, mode):
 
 
 def promote_automatically(event, actor, count=None):
+    if requires_admission(event.pk):
+        from .hackathons.admission_lifecycle import promote_event_locked
+        from .programme_locks import current_locks
+        promote_event_locked(event=event, actor=actor, locks=current_locks(event.pk))
+        return []
     _fence(event)
     if event.registration_requires_approval:
         return []
@@ -74,12 +84,13 @@ def promote_automatically(event, actor, count=None):
     )
 
 
-@transaction.atomic
+@event_write(permission="manage_registrations")
 def approve_registration(registration, *, actor):
     services = _boundary()
     event = services._locked_event(registration.event_id, lock_makerspace=False)
     _fence(event)
     locked = _lock_registration(event, registration.pk)
+    require_ordinary_transition(locked)
     if (
         not event.registration_requires_approval
         or locked.status != EventRegistration.Status.PENDING_APPROVAL
@@ -95,10 +106,13 @@ def approve_registration(registration, *, actor):
         else EventRegistration.Status.WAITLISTED
     )
     locked.status = new_status
-    locked.save(update_fields=["status"])
+    locked.version += 1
+    locked.save(update_fields=["status", "version"])
     calendar_registration_changed(locked)
     if new_status == EventRegistration.Status.REGISTERED:
         create_for_registered_registration(locked, actor)
+        from .services_registration_preparation import issue_ordinary_credential_locked
+        issue_ordinary_credential_locked(event, locked, actor=actor)
     services._audit(
         event,
         actor,
@@ -118,12 +132,13 @@ def approve_registration(registration, *, actor):
     return services._refresh(locked)
 
 
-@transaction.atomic
+@event_write(permission="manage_registrations")
 def reject_registration(registration, *, actor):
     services = _boundary()
     event = services._locked_event(registration.event_id, lock_makerspace=False)
     _fence(event)
     locked = _lock_registration(event, registration.pk)
+    require_ordinary_transition(locked)
     if locked.status not in (
         EventRegistration.Status.PENDING_APPROVAL,
         EventRegistration.Status.WAITLISTED,
@@ -131,7 +146,8 @@ def reject_registration(registration, *, actor):
         raise EventInvalidTransition("This registration cannot be rejected.")
     old_status = locked.status
     locked.status = EventRegistration.Status.REJECTED
-    locked.save(update_fields=["status"])
+    locked.version += 1
+    locked.save(update_fields=["status", "version"])
     calendar_registration_changed(locked)
     services._audit(
         event,
@@ -148,12 +164,13 @@ def reject_registration(registration, *, actor):
     return services._refresh(locked)
 
 
-@transaction.atomic
+@event_write(permission="manage_registrations")
 def promote_registration(registration, *, actor):
     services = _boundary()
     event = services._locked_event(registration.event_id, lock_makerspace=False)
     _fence(event)
     locked = _lock_registration(event, registration.pk)
+    require_ordinary_transition(locked)
     if (
         not event.registration_requires_approval
         or locked.status != EventRegistration.Status.WAITLISTED
@@ -170,13 +187,23 @@ def promote_registration(registration, *, actor):
     )
 
 
-@transaction.atomic
+@event_write
 def cancel_registration(registration, *, actor=None, member_cancel=False):
     services = _boundary()
     event = services._locked_event(registration.event_id, lock_makerspace=False)
     _fence(event)
     require_module_locked(event.makerspace_id, "events")
     locked = _lock_registration(event, registration.pk)
+    if not member_cancel and actor is not None:
+        # A staff actor must still hold the permission under the lock; actor=None is
+        # a system cancellation (expiry, purge, payment lapse), as before part 4.
+        from .event_authority import require
+        require(actor, event, "manage_registrations")
+    from .hackathons.admission_lifecycle import cancel_registration_locked
+    from .programme_locks import current_locks
+    if cancel_registration_locked(event=event, registration=locked, actor=actor,
+                                  member_cancel=member_cancel, locks=current_locks(event.pk)):
+        return services._refresh(locked)
     if member_cancel and (
         actor is None or locked.member_id != actor.pk or not member_can_cancel(locked)
     ):
@@ -190,7 +217,8 @@ def cancel_registration(registration, *, actor=None, member_cancel=False):
     old_status = locked.status
     provenance = record_cancellation(locked, now=timezone.now())
     locked.status = EventRegistration.Status.CANCELLED
-    locked.save(update_fields=["status", *provenance])
+    locked.version += 1
+    locked.save(update_fields=["status", "version", *provenance])
     calendar_registration_changed(locked)
     services._audit(
         event,
@@ -200,7 +228,10 @@ def cancel_registration(registration, *, actor=None, member_cancel=False):
         {"registration_id": locked.pk, "old_status": old_status},
     )
     services.notify_event_lifecycle(event, "registration_cancelled", locked.pk)
-    cancel_for_registration(locked, actor)
+    from .credentials.workflow import revoke_locked
+    revoke_locked(locked, actor=actor, reason="cancelled")
+    from .services_lifecycle import _cancel_open_charges_after_commit
+    _cancel_open_charges_after_commit(event, actor, registration_ids=(locked.pk,))
     if (
         old_status == EventRegistration.Status.REGISTERED
         and not event.registration_requires_approval

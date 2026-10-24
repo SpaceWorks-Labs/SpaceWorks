@@ -69,7 +69,10 @@ def cancel_booking(booking, *, actor, member_cancel=False, reason=""):
     )
     from apps.bookings.service_payments import cancel_for_booking
 
-    cancel_for_booking(cancelled, actor)
+    # Staff cancelling a member's booking owe the full amount (decision 72); a member's
+    # own cancellation follows the bookings policy.
+    by_staff = not member_cancel and getattr(actor, "pk", None) != cancelled.member_id
+    cancel_for_booking(cancelled, actor, by_staff=by_staff)
     return cancelled
 
 

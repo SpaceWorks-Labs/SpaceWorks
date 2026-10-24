@@ -4,7 +4,7 @@
 x-spaceworks-preparation: true
 services:
   backend:
-    image: ${MAKERSPACE_FREE_BACKEND_IMAGE:?set reviewed immutable free-variant image digest}
+    image: ${MAKERSPACE_BACKEND_IMAGE:?set the reviewed immutable same-build backend image digest}
     env_file: ${SPACEWORKS_RUNTIME_ENV_FILE:?set protected runtime-only env file, never maintenance credentials}
     environment:
       MANAGED_UPLOAD_TRANSFER_BOUND_SECONDS: ${MANAGED_UPLOAD_TRANSFER_BOUND_SECONDS:-0}

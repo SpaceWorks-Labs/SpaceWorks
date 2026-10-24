@@ -30,9 +30,13 @@ from .claim_routes_profiles import PROFILE_CLAIM_ROUTES
 from .claim_routes_public_pages import PUBLIC_PAGE_CLAIM_ROUTES
 
 from .claim_routes_p2_presence import ROUTES as PRESENCE_ROUTES
+from .claim_routes_programme import CLAIM_ROUTES as PROGRAMME_CLAIM_ROUTES
+from .claim_routes_reimbursements import CLAIM_ROUTES as REIMBURSEMENT_CLAIM_ROUTES
 
 CLAIM_ROUTES = {
     **PUBLIC_PAGE_CLAIM_ROUTES,
+    **PROGRAMME_CLAIM_ROUTES,
+    **REIMBURSEMENT_CLAIM_ROUTES,
     **PRESENCE_ROUTES,
     **PROFILE_CLAIM_ROUTES,
     **PUBLIC_CLAIM_ROUTES,

@@ -38,6 +38,10 @@ def _event_counts(makerspace, actor):
         registration_rows = rbac.scope_by_action(actor, rbac.Action.MANAGE_EVENTS, registration_rows, field="event__makerspace_id")
     return {
         "upcoming_events": event_rows.count(),
+        "next_up_events": [{"id": row.pk, "title": row.title,
+                            "starts_at": row.starts_at, "ends_at": row.ends_at,
+                            "href": f"/admin/events?event={row.pk}"}
+                           for row in event_rows.order_by("starts_at", "pk")[:3]],
         "pending_event_registrations": registration_rows.count(),
     }
 

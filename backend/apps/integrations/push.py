@@ -54,15 +54,9 @@ def deliver_native_push(log):
     # Additive master switch (plan A6): the platform credential check below still runs,
     # so enabling the feature on an unconfigured platform delivers nothing.
     from apps.makerspaces.platform import feature_enabled
-    from .notification_cloud_fanout import free, check, UnsupportedFanout
-    if free():
-        from apps.makerspaces.models import MakerspaceMembership
-        if MakerspaceMembership.objects.filter(makerspace=log.makerspace, status="active",
-                user__account_kind="staff").count() > 25:
-            raise UnsupportedFanout("Legacy push staff resolution exceeds the free profile limit.")
-        if PushDevice.objects.filter(makerspace=log.makerspace, active=True,
-                device_grant__status="active").count() > 2:
-            raise UnsupportedFanout("Legacy push exceeds the free two-device limit.")
+    # Decision #86b: push keeps the mobile behaviour on every profile -- no free-profile
+    # device or staff caps; only the shared bounded-runtime check applies per device.
+    from .notification_cloud_fanout import check
 
     if log.makerspace_id and not feature_enabled(log.makerspace, "mobile.push"):
         return False

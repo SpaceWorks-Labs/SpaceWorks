@@ -39,7 +39,7 @@ class TenantGateTask(Task):
             return super().__call__(*args, **kwargs)
         resolver = TASK_TENANT_RESOLVERS.get(self.name)
         makerspace_id = (
-            _resolve_makerspace_id(resolver, args, kwargs)
+            _resolve_makerspace_id(resolver, args, kwargs, task_name=self.name)
             if resolver is not None else _direct_makerspace_id(self.name, args, kwargs)
         )
         if makerspace_id is not None:
@@ -59,11 +59,17 @@ class TenantGateTask(Task):
             return super().__call__(*args, **kwargs)
 
 
-def _resolve_makerspace_id(resolver, args, kwargs):
+def _resolve_makerspace_id(resolver, args, kwargs, *, task_name=None):
     model_label, position, field = resolver
     object_id = args[position] if len(args) > position else kwargs.get("job_id")
     if object_id is None:
         object_id = kwargs.get("log_id")
+    if object_id is None:
+        parameter = {
+            "apps.events.certificates.tasks.process_batch": "batch_id",
+            "apps.events.certificates.tasks.render_one": "certificate_id",
+        }.get(task_name)
+        object_id = kwargs.get(parameter) if parameter else None
     if object_id is None:
         return None
     return (

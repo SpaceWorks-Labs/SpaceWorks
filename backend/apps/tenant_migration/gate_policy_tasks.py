@@ -10,6 +10,9 @@ TASK_EXEMPTIONS = {
         "Must continue after source migration and channel uninstall."
     ),
     "apps.accounts.tasks.revoke_apple_tokens_task": "Platform-global Apple credential revocation; no tenant writes.",
+    "apps.accounts.saved_details.tasks.process_saved_details": (
+        "Global account-owned vault work takes global/account fences and cannot mutate tenant event rows."
+    ),
     "apps.operations.tasks_platform.run_platform_problem_checks_task": (
         "Read-only platform monitoring; writes only a disposable deployment cache marker."
     ),
@@ -72,6 +75,8 @@ TASK_EXEMPTIONS = {
 
 
 TASK_TENANT_RESOLVERS = {
+    "apps.events.certificates.tasks.process_batch": ("events.CertificateIssueBatch", 0, "event__makerspace_id"),
+    "apps.events.certificates.tasks.render_one": ("events.EventAttendanceCertificate", 0, "event__makerspace_id"),
     "apps.events.broadcast_channels.event_broadcast_channels": (
         "events.EventBroadcast", 0, "makerspace_id"
     ),
@@ -99,6 +104,21 @@ TASK_TENANT_RESOLVERS = {
 TASK_INTERNAL_PARTICIPANTS = {
     "apps.integrations.notification_tasks.deliver_envelope": (
         "Cutover fence precedes per-leg tenant boundaries; no external call holds an application transaction."
+    ),
+    "apps.events.tasks_assets.sweep_asset_work_task": "Each live scan enters B's ordered boundary; byte cleanup enters only the retained boundary.",
+    "apps.events.tasks_assets.sweep_asset_deadlines_task": "Each due event enters the canonical B source boundary before workflow locks.",
+    "apps.events.tasks_assets.sweep_asset_retention_task": "Expiry uses the narrow retained source lock and recovery/not-restored checks; no publication authority.",
+    "apps.events.tasks_assets.reconcile_asset_obligations_task": "Permanent FK-free custody reconciliation deletes only exact reserved locators; survives tenant purge.",
+    "apps.events.tasks_recovery.sweep_judging_notices_task": "Judging notice dispatch re-enters the live source boundary for each notice.",
+    "apps.events.tasks_recovery.sweep_print_cleanup_task": "Retained print cleanup gates recovery and touches only owned expired/cancelled bytes.",
+    "apps.events.certificates.tasks.resume_batches": "Dispatches persisted batch IDs to the existing tenant-resolved worker; it grants no issuance authority.",
+    "apps.events.certificates.tasks.resume_certificates": "Dispatches persisted certificate IDs to the existing tenant-resolved renderer; it grants no issuance authority.",
+    "apps.events.tasks_contributions.sweep_contributor_maintenance_task": "Each tenant is skip-and-count gated before domain maintenance or provider delivery.",
+    "apps.events.programme.broadcast_schedule.resume_scheduled_broadcasts": (
+        "recover_for_tenants establishes a source boundary for each due campaign."
+    ),
+    "apps.events.tasks_programme.sweep_admission_deadlines_task": (
+        "Each bounded admission service establishes the event host's source boundary before fences and domain locks."
     ),
     "apps.integrations.notification_tasks.sweep_notification_outbox": (
         "Enqueues tenant-resolved delivery tasks; media cleanup uses per-tenant skip-and-count gates."
@@ -195,6 +215,8 @@ TASK_INTERNAL_PARTICIPANTS = {
 
 
 FANOUT_GATE_PARTICIPANTS = {
+    "apps.events.judging.lifecycle.sweep_notices": "Each persisted result notice re-enters skip-and-count source boundary before delivery.",
+    "apps.events.tasks_contributions.sweep_contributor_maintenance_task": "Contributor lease expiry, escalation and committed-notice recovery.",
     "apps.integrations.notification_media.cleanup_grants": (
         "Expired and consumed disclosure grants are deleted and audited inside each tenant gate."
     ),
@@ -261,3 +283,5 @@ TASK_INTERNAL_PARTICIPANTS["apps.makerspaces.tasks.cleanup_public_page_assets_ta
     "Typed tenant cleanup uses per-tenant fanout and repeats the write fence under owner locks; organization cleanup is global."
 )
 FANOUT_GATE_PARTICIPANTS["apps.makerspaces.public_page_asset_cleanup.sweep"] = "Typed private-page byte cleanup."
+from .source_gate_reimbursements import gate_tasks as gate_reimbursement_tasks
+gate_reimbursement_tasks(TASK_INTERNAL_PARTICIPANTS)

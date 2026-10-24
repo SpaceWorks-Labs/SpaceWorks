@@ -11,20 +11,79 @@
       </label>
     {% endfor %}
   {% endfor %}
+  <p class="capability-notice" role="status" aria-live="polite" data-capability-notice></p>
 </div>
-{{ feature_parents|json_script:"capability-feature-parents" }}
+{{ capability_rules|json_script:"capability-rules" }}
 <script>
+  // Owner decision #87. Mirrors apps/makerspaces/admin_capability_completion.py, which
+  // re-applies the same rules on save. No checkbox is ever disabled.
   (function () {
-    const parents = JSON.parse(document.getElementById('capability-feature-parents').textContent);
-    document.querySelectorAll('[data-feature-option]').forEach((row) => {
-      const input = row.querySelector('input');
-      const parent = parents[input.value];
-      // Parentless feature (parent === null): standalone, always selectable.
-      if (!parent) return;
-      const module = [...document.querySelectorAll('[data-module-option] input')].find((item) => item.value === `module:${parent}`);
-      const sync = () => { input.disabled = !module || !module.checked; };
-      if (module) module.addEventListener('change', sync);
-      sync();
-    });
+    const rules = JSON.parse(document.getElementById('capability-rules').textContent);
+    const notice = document.querySelector('[data-capability-notice]');
+    const inputs = new Map([...document.querySelectorAll('.capability-matrix input')].map((input) => [input.value, input]));
+    // The bare name: drop the feature arrow and the "(requires ...)"/"(core ...)" suffixes.
+    const label = (value) => inputs.get(value).parentElement.textContent.trim().replace(/^->\s*/, '').replace(/\s*\(.*$/, '');
+    const say = (text) => { notice.textContent = text; };
+    const check = (value, ticked) => {
+      const input = inputs.get(value);
+      if (!input || input.checked) return;
+      input.checked = true;
+      ticked.push(label(value));
+    };
+    const tickModule = (value, ticked) => {
+      ((rules.modules[value] || {}).requires || []).forEach((required) => check(required, ticked));
+    };
+    const untick = (removedModules, removedFeatures) => {
+      const off = [];
+      const uncheck = (value) => {
+        const input = inputs.get(value);
+        if (!input || !input.checked) return false;
+        input.checked = false;
+        off.push(label(value));
+        return true;
+      };
+      Object.entries(rules.modules).forEach(([value, rule]) => {
+        if (!rule.core && rule.requires.some((required) => removedModules.has(required)) && uncheck(value)) removedModules.add(value);
+      });
+      Object.entries(rules.features).forEach(([value, rule]) => {
+        if (rule.needs.some((module) => removedModules.has(module)) && uncheck(value)) removedFeatures.add(value);
+      });
+      let changed = true;
+      while (changed) {
+        changed = false;
+        Object.entries(rules.features).forEach(([value, rule]) => {
+          if (rule.requires_features.some((feature) => removedFeatures.has(feature)) && uncheck(value)) {
+            removedFeatures.add(value);
+            changed = true;
+          }
+        });
+      }
+      return off;
+    };
+    const turnedOff = (value, off) => say(off.length ? `Also turned off ${off.join(', ')}: they need ${label(value)}.` : '');
+    inputs.forEach((input, value) => input.addEventListener('change', () => {
+      const ticked = [];
+      const module = rules.modules[value];
+      if (module && !input.checked) {
+        if (module.core) {
+          input.checked = true;
+          say(`${label(value)} is a core module and always on.`);
+        } else {
+          turnedOff(value, untick(new Set([value]), new Set()));
+        }
+        return;
+      }
+      if (!module && !input.checked) {
+        turnedOff(value, untick(new Set(), new Set([value])));
+        return;
+      }
+      if (module) {
+        tickModule(value, ticked);
+      } else {
+        const parent = (rules.features[value] || {}).parent;
+        if (parent) { check(parent, ticked); tickModule(parent, ticked); }
+      }
+      say(ticked.length ? `Also turned on ${ticked.join(', ')}: ${label(value)} needs them.` : '');
+    }));
   })();
 </script>

@@ -5,6 +5,12 @@ from .module_purge_collectors_single_model import _counts, _delete
 def events_delete(makerspace, cursor):
     from .public_page_lifecycle import enqueue_tenant_pages
     enqueue_tenant_pages(makerspace, events_only=True)
+    # Reimbursement and stage rows go first: the domain purge detaches core obligations
+    # while their claims still exist, and stage history points at registrations.
+    from .module_purge_collectors_reimbursements import events_reimbursement_and_stage_delete
+    addon = events_reimbursement_and_stage_delete(makerspace, cursor)
+    from .purge_events_programme import delete_programme_rows
+    programme_count, programme_labels = delete_programme_rows(makerspace)
     from apps.events.models_broadcasts import EventBroadcast
     from apps.integrations.models import EmailLog
     # Remove only this domain's source outboxes, including deferred digest inputs.
@@ -66,7 +72,7 @@ def events_delete(makerspace, cursor):
     )
     certificates, certificate_labels = _delete(
         EventAttendanceCertificate.objects.filter(
-            registration__event__makerspace=makerspace
+            event__makerspace=makerspace
         )
     )
     revisions, revision_labels = _delete(
@@ -97,7 +103,8 @@ def events_delete(makerspace, cursor):
             | survey_labels | checkin_labels | registration_labels | event_labels
             | projected_collaboration_labels | series_collaboration_labels | series_labels
             | feed_labels | station_credential_labels | station_binding_labels
-            | station_labels | category_labels | grant_labels | invite_labels | broadcast_labels
+            | station_labels | category_labels | grant_labels | invite_labels | broadcast_labels | programme_labels
+            | addon.model_labels
         ),
         event_series_collaboration_projections=projected_collaborations,
         event_series_collaborations=series_collaborations,
@@ -121,6 +128,8 @@ def events_delete(makerspace, cursor):
         event_staff_grant_invites=invites,
         event_broadcasts=broadcasts,
         event_website_rows=pages,
+        event_programme_rows=programme_count,
+        **addon,
     )
 
 
@@ -134,13 +143,15 @@ def events_public_images(makerspace):
 
 
 def events_private_keys(makerspace, add):
+    from .storage_keys_events_programme import collect_programme_keys
+    collect_programme_keys(makerspace, add)
     from apps.events.models import EventAttendanceCertificate, EventCertificateArtwork
     from apps.events.models_website import EventPageAsset
     for key in EventPageAsset.objects.filter(page__makerspace=makerspace).values_list("object_key", flat=True):
         add(key)
 
     for key in EventAttendanceCertificate.objects.filter(
-        registration__event__makerspace=makerspace
+        event__makerspace=makerspace
     ).values_list("object_key", flat=True):
         add(key)
     for key in EventCertificateArtwork.objects.filter(
@@ -158,7 +169,7 @@ def events_private_key_sizes(makerspace):
     sizes = {
         key: size
         for key, size in EventAttendanceCertificate.objects.filter(
-            registration__event__makerspace=makerspace
+            event__makerspace=makerspace
         ).values_list("object_key", "size_bytes")
         if key
     }

@@ -16,6 +16,9 @@ def _default(reason, *, allow_superadmin_override=False):
 
 from .target_projection_w7_events import EVENT_FIELD_PROJECTION
 
+from .target_projection_events_programme import TARGET_FIELDS as PROGRAMME_TARGET_FIELDS
+from .target_projection_reimbursements import TARGET_FIELDS as REIMBURSEMENT_TARGET_FIELDS
+
 TARGET_FIELD_PROJECTION = {
     ("accounts.User", "account_restored_at"): TargetField(None, reason="Target issues its own revocable sessions."),
     ("accounts.User", "deletion_username"): TargetField("", reason="Target chooses its own random erasure pseudonym."),
@@ -24,6 +27,8 @@ TARGET_FIELD_PROJECTION = {
     ("events.EventPage", "published_revision"): TargetField(None, reason="Fresh target release required."),
     ("makerspaces.Makerspace", "email_provider"): TargetField("inherit", reason="Target operator configures mail transport."),
     ("makerspaces.Makerspace", "email_provider_config"): TargetField("", reason="Source encrypted transport secrets never travel."),
+    **PROGRAMME_TARGET_FIELDS,
+    **REIMBURSEMENT_TARGET_FIELDS,
     ("bookings.BookingResourcePage", "released"): TargetField(False, reason="Target staff explicitly release resource content."),
     ("events.EventCertificateArtwork", "version_id"): TargetField(
         "", reason="Source bucket version identity is replaced; SHA-256 pins imported bytes.",

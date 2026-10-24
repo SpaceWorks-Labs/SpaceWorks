@@ -51,6 +51,8 @@ class RefundCase(models.Model):
         EVENT_CANCELLED = "event_cancelled", "Event cancelled by the space"
         REGISTRATION_CANCELLED = "registration_cancelled", "Registration cancelled"
         BOOKING_CANCELLED = "booking_cancelled", "Booking cancelled"
+        #: Staff cancelled a member's booking: owed in full (decision 72).
+        STAFF_CANCELLED = "staff_cancelled", "Cancelled by staff"
         MEMBERSHIP_CANCELLED = "membership_cancelled", "Membership term cancelled"
         MEMBER_REQUEST = "member_request", "Member request"
 

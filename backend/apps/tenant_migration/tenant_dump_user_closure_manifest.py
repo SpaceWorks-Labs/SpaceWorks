@@ -7,6 +7,21 @@ from .tenant_dump_errors import TenantDumpClosureRefused
 from .tenant_dump_user_closure import _closure, _edge_key, user_ref
 
 
+def valid_row_pk(label, value):
+    """A positive integer PK, or the canonical text of a UUID primary key."""
+    if type(value) is int:
+        return value > 0
+    from uuid import UUID
+    from django.apps import apps
+    from django.db import models
+    if not isinstance(value, str) or not isinstance(apps.get_model(label)._meta.pk, models.UUIDField):
+        return False
+    try:
+        return str(UUID(value)) == value
+    except ValueError:
+        return False
+
+
 def verify_user_closure_manifest(value, capture_id):
     if not isinstance(value, dict) or set(value) != {
         "included", "stubbed", "refused", "sha256"
@@ -70,8 +85,7 @@ def verify_user_closure_manifest(value, capture_id):
                 or any(not isinstance(edge, dict) or set(edge) != edge_keys for edge in edges)
                 or any(
                     (edge["model_label"], edge["field_name"]) not in allowed_edges
-                    or type(edge["source_row_pk"]) is not int
-                    or edge["source_row_pk"] <= 0
+                    or not valid_row_pk(edge["model_label"], edge["source_row_pk"])
                     for edge in edges
                 )
                 or len(

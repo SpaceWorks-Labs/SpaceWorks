@@ -10,6 +10,7 @@ NON_LITERAL_META_ACTIONS = frozenset({
     "backup.destination_created",
     "backup.destination_probed",
     "backup.destination_updated",
+    "storage.capabilities_verified",
     "evidence.abandoned_upload_deleted",
     "kiosk.online_command_executed",
     "kiosk.operator_lease_issued",
@@ -120,6 +121,7 @@ WRAPPER_SITE_PREFIXES = {
         "public_page.asset_uploaded", "public_page.asset_deleted",
     ),
     "devices/services_events.py": ("devices.",),
+    "payments/services_refund_cases.py": ("payment.refund_case_",),
     "devices/services_label_events.py": ("devices.",),
     "devices/services_printer_events.py": ("devices.",),
     "evidence/services_upload.py": ("evidence.upload_url_issued", "kiosk.evidence_upload_issued"),
@@ -172,6 +174,11 @@ WRAPPER_SITE_PREFIXES = {
     "integrations/messaging/outcomes.py": ("messaging.delivery_", "messaging.provider_status"),
     "integrations/notification_cutover.py": ("notification.cutover_",),
 }
+
+from .presentation_programme_dynamic import EXACT, NON_LITERAL, WRAPPERS
+DYNAMIC_EXACT_ACTIONS |= EXACT
+NON_LITERAL_META_ACTIONS |= NON_LITERAL
+WRAPPER_SITE_PREFIXES.update(WRAPPERS)
 
 DENIED_ACTION_PREFIXES = tuple(
     sorted({prefix for group in WRAPPER_SITE_PREFIXES.values() for prefix in group})

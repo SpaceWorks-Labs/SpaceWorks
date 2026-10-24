@@ -31,6 +31,9 @@ export function EventMoreFields({ values, setValues, settings, details, price, a
   const cutoffMode = values.registration_cutoff_at !== null ? "absolute" : values.registration_cutoff_lead_minutes !== null ? "lead" : "none";
   return <>
     <EventField label="Event time zone" settings={settings} wide helper="Use an IANA name such as Asia/Kolkata. Review migrated events because their original zone was not recorded."><input className="desk-input w-full tabular-nums" value={values.timezone_name} onChange={(e) => set("timezone_name", e.target.value)} required disabled={details} maxLength={64} /></EventField>
+    <EventField label="Event accent" settings={settings} helper="A Space Works colour for this event's decorative accents."><select className="desk-input w-full" disabled={details} value={values.accent_preset ?? ""} onChange={event => set("accent_preset", event.target.value as EventFormValues["accent_preset"])}>
+      {[["", "Use site theme"], ["maker_teal", "Maker Teal"], ["workshop_orange", "Workshop Orange"], ["citron", "Citron"], ["sky_blue", "Sky Blue"], ["warm_yellow", "Warm Yellow"]].map(([key, label]) => <option key={key} value={key}>{label}</option>)}
+    </select></EventField>
     <EventField label="Description" settings={settings} wide><textarea className="desk-input w-full min-h-24" value={values.description} onChange={(e) => set("description", e.target.value)} disabled={details} /></EventField>
     <EventField label="Tags (comma separated)" settings={settings}><input className="desk-input w-full" value={(values.tags ?? []).join(",")} disabled={details} onChange={(e) => set("tags", e.target.value.split(","))} /></EventField>
     <EventField label="Registration price" settings={settings} helper="Charged only when a place is confirmed."><input className="desk-input w-full" type="number" min="0" step="0.01" value={values.payment_amount} onChange={(e) => set("payment_amount", e.target.value)} disabled={price} /></EventField>

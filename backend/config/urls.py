@@ -129,6 +129,8 @@ urlpatterns = [
     ),
     path("api/v1/public/hosting/", include("apps.hosting_requests.urls_public")),
     *separable("events", "api/v1/public/", "apps.events.urls_public"),
+    *separable("events", "api/v1/", "apps.events.urls_programme"),
+    path("api/v1/", include("apps.accounts.urls_programme")),
     *separable("events", "api/v1/events/", "apps.events.urls_integration"),
     *separable("bookings", "api/v1/public/", "apps.bookings.urls_public"),
     *separable("bookings", "api/v1/booking-integration/", "apps.bookings.urls_integration"),
@@ -159,6 +161,11 @@ urlpatterns = [
     path("api/v1/public/organizations/", include("apps.organizations.urls_public_page_collections")),
     *separable("events", "api/v1/", "apps.events.urls_public_codes"),
     path("api/v1/member/", include("apps.payments.urls_member")),
+    # Core event-payout ledger: never module/rail/Events gated, so retained obligations
+    # stay readable and settleable after the reimbursement add-on or Events is removed.
+    path("api/v1/member/event-payouts/", include("apps.payments.event_payouts.urls_member")),
+    path("api/v1/admin/makerspaces/<int:makerspace_id>/event-payouts/",
+         include("apps.payments.event_payouts.urls_finance")),
     *separable("payments_rail", "api/v1/member/", "apps.payments_rail.urls_member"),
     path("api/v1/", include("apps.hardware_requests.urls")),
     path("api/v1/auth/", include("apps.accounts.urls")),   # staff auth surface
@@ -174,6 +181,10 @@ urlpatterns = [
     *separable("presence", "api/v1/admin/", "apps.presence.urls_admin"),
     *separable("events", "api/v1/admin/", "apps.events.urls_admin"),
     *separable("events", "api/v1/member/", "apps.events.urls_member"),
+    # Reimbursement add-on: removable with its module, and withdrawn with Events.
+    *separable("event_reimbursements", "api/v1/member/makerspaces/<int:makerspace_id>/events/<int:pk>/",
+               "apps.event_reimbursements.urls_member"),
+    *separable("event_reimbursements", "api/v1/admin/events/<int:pk>/", "apps.event_reimbursements.urls_admin"),
     *separable("events", "api/v1/", "apps.events.urls_station"),
     *separable("bookings", "api/v1/admin/", "apps.bookings.urls_admin"),
     # Staff device admin under api/v1/admin/ plus the signed device protocol under

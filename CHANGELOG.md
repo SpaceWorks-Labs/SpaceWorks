@@ -51,6 +51,14 @@ carries the design rule each change introduced.
 - Seven fixed roles replace editable roles. Staff role sets combine except Space Manager and Member,
   which stand alone; Machine Manager reach is assigned per person by machine type. The console now
   provides role-set checkboxes, a read-only role reference and per-person type controls.
+- **Machine Manager scope is per machine type** (owner decision #75b). Staff who had per-machine
+  limits now cover **all machines of their types**, including machines added later. Review each
+  Machine Manager's types after upgrading if someone should reach fewer machines.
+- **Two published images** (owner decision #75a) — `spaceworks-backend` and `spaceworks-frontend`.
+  The one backend image runs host/full, managed/full and managed/free, chosen at start-up by
+  `SPACEWORKS_DEPLOYMENT_MODE` / `SPACEWORKS_DEPLOYMENT_PROFILE`; no `-managed`/`-free` images are published.
+- **Nightly backups keep 7 daily + 4 weekly archives**; on-demand archives keep the configured days.
+  Space Managers see their own archive status on the dashboard.
 - **Operator action required:** fixed-role migration is irreversible. Back up, stop writers, run the
   new image's `python manage.py preview_fixed_roles` before `migrate`, and fix all “must fix before
   upgrading” notification rules. Follow the [upgrade procedure](docs/update-recovery.md#fixed-role-upgrade-2026-10-16).

@@ -44,6 +44,7 @@ ENTRIES = (
     P("data_export.completed", "Data export completed",
       ("fidelity", "row_counts", "total_rows")),
     P("data_export.download_url_issued", "Data export download url issued"),
+    P("data_export.failed", "Data export failed", ("failure_code",)),
     P("data_export.downloaded", "Data export downloaded"),
     P("data_export.requested", "Data export requested"),
     P("email.notification_rules_updated", "Email notification rules updated"),

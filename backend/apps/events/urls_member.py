@@ -8,7 +8,7 @@ on a deployment that ships no events app at all. `config.urls.separable` splices
 urlconf in place instead, exactly as it does for the other two.
 """
 
-from django.urls import path
+from django.urls import include, path
 from apps.events.views_ticket import MemberEventTicketView, MemberEventTicketPngView
 
 from apps.events.views_checkin import EventCheckInQrView
@@ -77,4 +77,6 @@ urlpatterns = [
         MemberEventCertificateDownloadView.as_view(),
         name='member-event-certificate-download',
     ),
+    # Owner stage forms, responses and stage-file uploads (staged_forms/urls_member.py).
+    path("makerspaces/<int:makerspace_id>/events/<int:pk>/", include("apps.events.staged_forms.urls_member")),
 ]

@@ -15,6 +15,12 @@ Addressed enqueue/worker compatibility shims are inert; legacy schema and histor
 helpers remain for replay pending the independent
 [retirement and activation checkpoints](notification-reconciliation-rollout.md).
 
+The [Events programme map](SOURCE-MAP-EVENTS-PROGRAMME.md) covers application/team,
+upload/retention, contributor/Mentor Desk, judging/gallery, credential/certificate,
+form/Saved details and runtime/retention adapters at `f1ef7736`. It includes incomplete
+provider installation explicitly; see the [closure ledger](events/integration-status.md)
+before interpreting a mounted route as an enabled/accepted workflow.
+
 Public-image POST/PUT presigns live in `inventory/public_image_storage.py` and
 `bookings/storage.py`; both delegate bounded validation and conditional, write-once promotion
 to `inventory/public_image_promotion.py`. Membership owner mail is classified as staff/account
@@ -181,6 +187,12 @@ graph. `events/website_copy_snapshot.py` freezes relational copy inputs across t
 `makerspaces/website_asset_journal.py` owns the durable cleanup-intent/write-claim fence
 and exactly-once attachment charge. `resource_clone.py` retains the existing Bookings
 transaction and the shared compensation helper; event callers use its phased subclass.
+Before that engine runs, `events/website_preparation.py` (`prepared_page_write`) and
+`events/clone_preparation.py` re-read the actor, declare and prepare the tenant/event scope
+outside any domain transaction and pre-allocate the EventPage ID, which the engine reuses on
+both passes (`event_asset_transaction(page_id=...)`). Inside, `services_write_boundary.event_write`
+takes the fences and locks, `prepared_copies` refuses a page that changed since preparation,
+and duplication adds the fenced programme and design copy steps (decision #86, 2026-10-23).
 
 BK-G printable passes are mapped in [SOURCE-MAP-BOOKING-PASSES.md](SOURCE-MAP-BOOKING-PASSES.md).
 They consume the existing core positioned-layout/PDF primitives without importing Events.
@@ -350,8 +362,9 @@ across panel navigation and fence late callbacks after account/session cleanup.
 WP3 delivery timing lives in `integrations/models_timing.py`, `quiet_hours.py`,
 `digests.py`, `timing_dispatch.py` and `reminders_deferred.py`; the existing F1 sweeper
 owns its durable release claims. `views_timing.py` configures tenant timing and the
-encrypted inbound credential; `bounce_webhooks.py` exports `views_bounce.py`, which verifies provider HMACs and writes
-address-hash suppression. `notifications/models_broadcasts.py`, `broadcasts.py` and
+encrypted inbound credential; `bounce_webhooks.py` exports `views_bounce.py`, which verifies provider HMACs; both its
+routes write the canonical bounce/complaint record and address-hash suppression through
+`email_provider_events.record_provider_event`. `notifications/models_broadcasts.py`, `broadcasts.py` and
 `views_broadcasts.py` own scoped member segments, matrix fan-out and personal announcements.
 `notifications/models_push.py` owns canonical per-device children; `member_push.py`,
 `member_push_policy.py`, `envelope_push_leases.py` and `envelope_push_transport.py` separate

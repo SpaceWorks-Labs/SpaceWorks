@@ -92,6 +92,16 @@ def claim_context(user):
     return getattr(user, "_claim_audit_context", None)
 
 
+def carry_claim_context(source, fresh):
+    """Keep a claim session on a re-read copy of the same user. Audit attribution and the
+    claim-session narrowing (payments, member scope) read it from the user object, so a
+    service that re-fetches its actor must not silently turn a claim into a full account."""
+    context = claim_context(source)
+    if context is not None and fresh is not None and fresh.pk == source.pk:
+        fresh._claim_audit_context = context
+    return fresh
+
+
 def token_payload_for_context(context, user_id):
     return {
         "claim_session_id": context.session_id,

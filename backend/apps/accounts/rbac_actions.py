@@ -42,6 +42,7 @@ class Action:
     MANAGE_MEMBERS = "manage_members"
     VIEW_FINANCE = "view_finance"
     RECORD_PAYMENT = "record_payment"
+    RECORD_REIMBURSEMENT_PAYOUT = "record_reimbursement_payout"
     VIEW_AUDIT = "view_audit"
     TRANSFER_STOCK = "transfer_stock"        # superadmin only
     MANAGE_STAFF = "manage_staff"            # superadmin only
@@ -97,6 +98,7 @@ _SPACE_MANAGER_ACTIONS = {
     Action.MANAGE_MAKERSPACE, Action.MANAGE_MACHINES, Action.MANAGE_EVENTS,
     Action.MANAGE_BOOKINGS, Action.MANAGE_MEMBER_CARDS, Action.MANAGE_DEVICES,
     Action.MANAGE_MEMBERS, Action.VIEW_FINANCE, Action.RECORD_PAYMENT,
+    Action.RECORD_REIMBURSEMENT_PAYOUT,
 }
 _PRINT_MANAGER_ACTIONS = {
     Action.MANAGE_PRINTING,

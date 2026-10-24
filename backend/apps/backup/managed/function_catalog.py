@@ -102,4 +102,27 @@ APPLICATION_FUNCTIONS = frozenset({
     "event_search_vector_trg_fn",
     "inventoryproduct_search_vector_trg_fn",
     "machine_search_vector_trg_fn",
+    # Integrated on staging: mobile account/device guards, analytics tracking,
+    # addressed-messaging consent, and the Pages event/makerspace/organization guards.
+    "accounts_guard_device_context",
+    "accounts_guard_device_family",
+    "accounts_guard_member_credential",
+    "accounts_guard_recovery_context",
+    "inventory_tracking_reject_mutation",
+    "machines_tracking_reject_mutation",
+    "messaging_consent_immutable",
+    "messaging_consent_phone_fence",
+    "event_asset_immutable",
+    "event_snapshot_final",
+    "event_snapshot_immutable",
+    "event_snapshot_windows",
+    "makerspaces_makerspacepublicpage_owner_guard",
+    "makerspaces_makerspacepublicpage_immutable",
+    "makerspaces_makerspacepublicpage_final",
+    "organizations_organizationpublicpage_owner_guard",
+    "organizations_organizationpublicpage_immutable",
+    "organizations_organizationpublicpage_final",
 })
+
+from .function_catalog_events_programme import PROGRAMME_FUNCTIONS  # noqa: E402
+APPLICATION_FUNCTIONS = APPLICATION_FUNCTIONS | PROGRAMME_FUNCTIONS

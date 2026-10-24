@@ -87,6 +87,46 @@ POLICY_OVERRIDE_ALLOWLIST = {
     "apps.machines.permissions.IsActiveRequester": {"has_permission"},
     "apps.accounts.views_device.IsDeviceAccessToken": {"has_permission"},
     "apps.makerspaces.throttles.MemberImagePresignThrottle": {"get_cache_key"},
+    # Events programme and saved-detail budgets only declare scope/rate.
+    "apps.accounts.saved_details.views.VaultThrottle": set(),
+    "apps.events.contributions.api_common.ProgrammeThrottle": set(),
+    "apps.events.certificates.verification.VerifyThrottle": set(),
+    "apps.events.profile_photos.views_public.PublicPhotoThrottle": set(),
+    # Keys the member command budget on the principal (or IP before login); grants nothing.
+    "apps.events.hackathons.api_base.ProgrammeCommandThrottle": {"get_cache_key"},
+}
+
+# Reviewed lifecycle overrides on claim-reachable views, keyed by the class that defines
+# them. Each listed hook only narrows access or shapes the response after DRF's own
+# authentication; a hook on any other class, or a new hook on a listed class, stays a
+# build failure.
+LIFECYCLE_OVERRIDE_ALLOWLIST = {
+    # initial: super().initial() first, then refuses API-client sessions and non-owners;
+    # handle_exception: maps key-unavailable/fenced errors to typed 503/423 responses;
+    # finalize_response: private no-store headers.
+    "apps.accounts.saved_details.views.OwnerView": {"initial", "handle_exception", "finalize_response"},
+    # handle_exception: reshapes DRF errors into the programme error envelope;
+    # finalize_response: private no-store, Vary and nosniff headers.
+    "apps.events.hackathons.api_base.ProgrammeView": {"handle_exception", "finalize_response"},
+    # finalize_response: private no-store header only.
+    "apps.events.contributions.api_common.ProgrammeView": {"finalize_response"},
+    # initial: super().initial() first, then validates the command Idempotency-Key;
+    # finalize_response: no-store and nosniff headers.
+    "apps.events.judging.api_common.PrivateView": {"initial", "finalize_response"},
+    # initial: super().initial() first, then refuses a foreign tenant/event pair and a
+    # mismatched command header; finalize_response: private no-store headers.
+    "apps.events.submissions.views_base.PrivateSubmissionView": {"initial", "finalize_response"},
+    # finalize_response: private no-store headers on the public card image.
+    "apps.events.profile_photos.views_public.PublicCardPhotoView": {"finalize_response"},
+    # finalize_response: no-store and nosniff headers on public certificate verification.
+    "apps.events.certificates.verification.CertificateVerificationView": {"finalize_response"},
+    # Event reimbursements, finance payouts and staged forms: ``initial`` calls
+    # ``super().initial()`` first and then refuses claim and API-client sessions;
+    # ``handle_exception`` maps domain errors to typed API errors; ``finalize_response``
+    # adds no-store/nosniff headers.
+    "apps.payments.event_payouts.http.PrivateView": {"handle_exception", "finalize_response"},
+    "apps.events.staged_forms.http.PrivateView": {"initial", "handle_exception", "finalize_response"},
+    "apps.event_reimbursements.http.PrivateView": {"handle_exception"},
 }
 
 POLICY_ATTRIBUTES = (
@@ -114,6 +154,8 @@ def validate_pre_auth_route(route):
     errors = []
     for method_name in framework_lifecycle_methods():
         implementation = _implementation(view_class, method_name)
+        if _allowlisted_override(view_class, method_name):
+            continue
         if implementation is not None and not _is_framework_callable(implementation):
             errors.append(
                 f"{route.view_name} overrides pre-auth lifecycle hook {method_name}"
@@ -223,6 +265,17 @@ def _implementation(view_class, name):
         None,
     )
     return None if owner is None else _function(owner.__dict__[name])
+
+
+def _allowlisted_override(view_class, name):
+    owner = next(
+        (candidate for candidate in view_class.__mro__ if name in candidate.__dict__),
+        None,
+    )
+    if owner is None:
+        return False
+    key = f"{owner.__module__}.{owner.__qualname__}"
+    return name in LIFECYCLE_OVERRIDE_ALLOWLIST.get(key, ())
 
 
 def _function(value):

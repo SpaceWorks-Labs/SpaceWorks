@@ -1,3 +1,4 @@
+import { EventReadinessPanel, EventDayPanel } from "./eventProgramme";
 import { useEffect, useState } from "react";
 
 import { ConfirmDialog, StatusBadge } from "../../components/ui";
@@ -22,15 +23,20 @@ import {
 } from "./eventsApi";
 import type { EventPatch } from "./eventsApi";
 import { eventErrorText } from "./eventUi";
+import { EventProgrammePanel } from "./eventProgramme/EventProgrammePanel";
+import { EventAddonPanel } from "./eventProgramme/EventAddonPanel";
+import { ProgrammeSessionBoundary } from "./eventProgramme/sessionScope";
 
 type Action = "publish" | "cancel" | "complete";
 
-export function EventDrawer({ eventId, makerspaceId, onClose, onOpenSeries }: {
+export function EventDrawer({ eventId, makerspaceId, onClose, onOpenSeries, enabledFeatures = [], enabledModules = [] }: {
   eventId: number;
   makerspaceId: number;
   onClose: () => void;
   /** Opens the occurrence's recurring series (the "Recurring · <series>" badge links there when set). */
   onOpenSeries?: (seriesId: number) => void;
+  enabledFeatures?: string[];
+  enabledModules?: string[];
 }) {
   const eventQuery = useEvent(eventId);
   const event = eventQuery.data;
@@ -66,7 +72,7 @@ export function EventDrawer({ eventId, makerspaceId, onClose, onOpenSeries }: {
   const recurring = series ? onOpenSeries && seriesId ? <button type="button" className="relative rounded-full border border-info px-2 py-0.5 text-xs font-semibold text-info-ink before:absolute before:-inset-x-1 before:-inset-y-3 hover:bg-info-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus" onClick={() => onOpenSeries(seriesId)}>Recurring · {series.title}</button>
     : <span className="rounded-full border border-info px-2 py-0.5 text-xs font-semibold text-info-ink">Recurring · {series.title}</span> : null;
   // Every tab and section is gated on the same event staff grant the API enforces (eventDrawerSurfaces).
-  const surfaces = eventDrawerSurfaces(event, access);
+  const surfaces = eventDrawerSurfaces(event, access, enabledFeatures, enabledModules);
   const { checkable, sections } = surfaces;
   const tabs = useEventDrawerTabs([
     { key: "overview", label: "Overview" },
@@ -74,7 +80,7 @@ export function EventDrawer({ eventId, makerspaceId, onClose, onOpenSeries }: {
     ...(surfaces.checkInTab ? [{ key: "checkin", label: "Check-in" }] : []),
   ], sections);
   const canSaveEssentials = (access.edit || access.publish) && !readOnly;
-  return <>
+  return <ProgrammeSessionBoundary error={eventQuery.error}>
     <div onClickCapture={tabs.onClickCapture}>
       <DetailLayout title={event?.title ?? "Event details"} back={{ label: "All events", onClick: onClose }}
         identity={event ? { kind: "date", date: event.starts_at } : undefined}
@@ -94,6 +100,8 @@ export function EventDrawer({ eventId, makerspaceId, onClose, onOpenSeries }: {
           {tabs.active === "overview" ? <>
             {canSaveEssentials ? <EventEssentialsEditor event={event} access={access} values={values} setValues={setValues} save={saveOccurrence} pending={update.isPending} /> : null}
             <EventOrganizationAudience event={event} pending={update.isPending} onReconfigure={access.edit ? () => update.mutate({ registration_audience: "participating_organizations" }) : undefined} />
+            <EventReadinessPanel eventId={eventId} />
+            {access.checkIn ? <EventDayPanel eventId={eventId} /> : null}
             <EventOverview event={event} onRegistrations={access.registrations ? () => tabs.select("registrations") : undefined} />
           </> : null}
           {access.registrations ? <EventRegistrationRoster key={eventId} visible={tabs.active === "registrations"} event={event} makerspaceId={makerspaceId} offlineCheckInEnabled={event.offline_checkin_enabled} showCheckIn={false} /> : null}
@@ -101,9 +109,12 @@ export function EventDrawer({ eventId, makerspaceId, onClose, onOpenSeries }: {
           <EventDrawerMore event={event} makerspaceId={makerspaceId} access={access} surfaces={surfaces} section={tabs.section} sectionTabs={tabs.sectionTabs}
             readOnly={readOnly} onWebsitePublication={setWebsitePublication}
             settings={{ values, setValues, save: () => saveOccurrence(), pending: update.isPending, invalidate: invalidateEvent, resetField: field => update.mutate({ inherit_fields: [field] }), complete: () => setConfirm("complete") }} />
+          {tabs.section && sections[tabs.section] ? <EventProgrammePanel event={event} makerspaceId={makerspaceId} section={tabs.section} access={access} features={enabledFeatures} /> : null}
+          {(tabs.section === "stage-forms" || tabs.section === "reimbursements") && sections[tabs.section]
+            ? <EventAddonPanel key={`${event.id}:${tabs.section}`} event={event} makerspaceId={makerspaceId} section={tabs.section} access={access} /> : null}
           {actionError ? <p role="alert" className="text-sm text-danger">{eventErrorText(actionError)}</p> : null}
         </div> : null} />
     </div>
     <ConfirmDialog open={confirm !== null} title={`${confirm ? confirm[0].toUpperCase() + confirm.slice(1) : "Change"} event`} message={`Are you sure you want to ${confirm ?? "change"} this event?`} confirmLabel={confirm ? confirm[0].toUpperCase() + confirm.slice(1) : "Confirm"} tone={confirm === "cancel" ? "danger" : "default"} pending={lifecycle.isPending} onCancel={() => setConfirm(null)} onConfirm={() => { const options = { onSettled: () => setConfirm(null) }; if (confirm === "publish") publish.mutate(websitePublication, options); else lifecycle.mutate(undefined, options); }} />
-  </>;
+  </ProgrammeSessionBoundary>;
 }

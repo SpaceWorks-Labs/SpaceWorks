@@ -34,6 +34,8 @@ export type RestoreOperation = {
 export type BackupSettings = {
   automatic_backups_enabled: boolean;
   retention_days: number;
+  daily_keep_days: number;
+  weekly_keep_weeks: number;
   last_scheduled_at: string | null;
   last_success_at: string | null;
   last_error: string;

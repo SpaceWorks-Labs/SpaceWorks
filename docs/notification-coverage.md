@@ -55,7 +55,7 @@ payment and loan owners do not acquire a universal membership requirement.
 | Event start `reminder` | Explicit watcher/member/owner | Personal; preserve existing address eligibility and authenticated document links; no rooms | TRUE — account-only reminder source, no membership dependency [E] |
 | Event broadcast campaign | Live campaign audience only | Personal selected channels; email retains verified-email/module/unsubscribe gates; live original sender authority + resource + audience rechecked every batch; no staff-room campaign bodies | TRUE — batch cursor and envelopes commit together; saved selections use personal email/fallback, others keep legacy email; both recheck live policy on retry [E] |
 | Event bulk invitation | Explicit invitee | Verified email / manually shared invite for unknown accounts; proven accounts may receive private navigation notices; never room bearers | RETAINED — verified-email/share path; optional account-linked notice not added [E] |
-| Event certificate creation/render/reissue/revoke | Certificate registration owner | Personal navigation notice to authenticated document; no bearer or recipient details in rooms | TRUE — owner navigation notices with live certificate state [E] |
+| Event certificate creation/render/reissue/revoke | Direct certificate recipient (registration, contribution or award subject) | Personal navigation; eligible ready active PDF may use typed private attachment; no badge secret/recipient details in rooms | Existing owner source plus programme direct-subject adapter; full programme eligibility/recovery/provider acceptance remains pending below [E] |
 | Booking `created`, `confirmed`, `rejected`, `cancelled`, `restored`, `completed`, `no_show` | Authorized staff and explicit domain owner | Separate staff personal + scoped room summaries and owner personal envelopes | TRUE — staff/owner/grant envelopes, legacy rooms and same-owner contact email compatibility [B] |
 | Booking start `reminder` | Explicit watcher/member/owner | Personal; preserve existing address eligibility and authenticated document links; no rooms | TRUE — account-only personal reminder source plus same-owner contact email compatibility [B] |
 | Booking broadcast campaign | Live campaign audience only | Personal selected channels; email retains verified-email/module/unsubscribe gates; live original sender authority + resource + audience rechecked every batch; no staff-room campaign bodies | TRUE — saved selections use envelopes; others batch email [B] |
@@ -113,6 +113,41 @@ Presence adds a separate TRUE producer: `presence/notifications.py` emits `prese
 expiry, default in-app/native push, no email fallback. Revision/new-session checks and the ten-minute
 window suppress stale prompts. The catalog and feature choice union include PRESENCE; new source/standing checks retain
 member-account boundaries. It has no room delivery.
+
+## Events programme checkpoint (2026-10-18)
+
+GF4 installs the real sources below; programme features remain OFF. Authored runtime
+composition is not provider acceptance. The [contract](notification-contract.md#events-programme-contract-checkpoint-2026-10-18)
+defines recipient/privacy/retry rules. No Docker, provider or browser delivery pass is claimed.
+
+| New kinds / family | Installed source / producer | Verification still required |
+| --- | --- | --- |
+| Application submit, released decisions, RSVP/expiry/withdrawal, deadline and team eligibility changes | `events.application`; `contracts/admission_registration.py` installs A's enqueue adapter, F/P preparation and canonical registration bridge | Released revision/owner audience, registration dedup, retries and cancellation against the real adapters |
+| Date review | `events.answer_date`; A/P date-notice adapter and committed lifecycle | Current date-source revision and no computed-age disclosure |
+| Team membership/request/reopen/disband and explicitly addressed invitations | `events.team`, `events.team_invite`; `hackathons/team_notifications.py` | Live roster/invite revision, verified unique recipient and no bearer in metadata |
+| Submission submit/amend/withdraw/lock | `events.submission`; `submissions/notifications.py`, workflow and deadlines | Current sealed source/version/state and active-team audience |
+| Role submit/approve/reject/decline/withdraw/revoke/complete/reopen/reconfirm/cancel | `events.role_assignment`; `contributions/role_notices.py` | Current role/version/feature and private owner audience |
+| Shift reminders/cancellation and office-hour cancellation | `events.contributor`; persisted contributor notices and `contributions/runtime_notices.py` | Current generation, source state, live recipients and overlapping reminder dedup |
+| Help transitions and attention | `events.mentor_help`; persisted intent/sweeps and C runtime adapter | Current claim/on-shift/organizer/private audience, lease expiry and broker loss recovery |
+| `judge_assigned`, `assignment_invalidated`, released results | `events.judging`; `judging/provider_notices.py` plus periodic notice recovery | Current assignment/version/state/role/conflict or released announcement/result revision and eligible sealed snapshot recipients |
+| Certificate ready/revoked | `events.certificate`; direct-subject source and typed private PDF resolver | Current C/D immutable proof, render/recovery/revocation and real provider attachment |
+| Broadcast v2 | `programme/broadcast_*`, `broadcast_channels.py` | Preview/test/schedule/cancel, current authority/audience, provider failure and race acceptance |
+
+`contracts/registration.py`, `admission_registration.py` and the judging/certificate
+registrations compose the production adapters query-free at startup. The source manifest
+names actual sources; it is not a substitute for recipient/render/dispatch implementations.
+Reminders, committed contributor/help work, admission maintenance, broadcast release,
+judging notices, private asset validation/cleanup and certificate rendering/printing have
+bounded recovery entry points in beat and the beat-less runner. Run the source/task guards
+and broker-loss checks before enabling any feature.
+
+Typed personal PDF dispatch supports payment and certificate sources by default, never
+badge secrets or rooms. Run `tests/events/programme/attachments/`, admission notification
+contract tests, mentoring notification trigger/diagnostic tests, judging lifecycle tests,
+communications schedule/self-test files and existing `tests/billing_docs/test_r2_*.py` with
+real installed sources and provider failure/revocation boundaries. Broader assignment,
+scan and correction coverage must be judged against its actual producer, not an invented
+generic source name. See the GF4 closure report for exact remaining checks.
 
 Code ownership for the status column (all paths under `backend/apps/`):
 

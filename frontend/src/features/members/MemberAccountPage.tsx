@@ -12,6 +12,7 @@ import { OrganizationSelfCreation, useOrganizationSelfCreationVisible } from "..
 import { MemberAccountProfile } from "./MemberAccountProfile";
 import { MemberAccountSessions } from "./MemberAccountSessions";
 import { MemberAccountMembership } from "./MemberAccountMembership";
+import { OwnOrganizations } from "../organizationLeave/OwnOrganizations";
 import { MemberAccountExports } from "./MemberAccountExports";
 import { MemberAccountDeletion, AccountDeletionReceipt } from "./MemberAccountDeletion";
 import type { DeletionResult } from "./accountDeletionApi";
@@ -60,7 +61,7 @@ export function MemberAccountPage() {
   if (deleted) return <CenteredCardLayout state={{ status: "ready" }} title="Your account" body="Deletion request received." content={<AccountDeletionReceipt result={deleted} />} primary={{ label: "Return home", href: "/" }} />;
   return <MemberPortalTabs modules={data?.modules ?? []} active="account" user={{ name: "Your account", menu: [{ label: "Member area", href: home }], onSignOut: () => { void logout("member").catch(() => undefined).finally(() => { forgetOfflineMemberData(); client.clear(); setSignIn(true); }); } }}
     workspace={data ? { name: data.makerspace.name || "Space Works", subtitle: "Your account", avatar: data.branding?.logo_url || data.makerspace.logo_url ? { kind: "image", src: data.branding?.logo_url || data.makerspace.logo_url || "" } : { kind: "avatar", name: data.makerspace.name || "Space Works", seed: slug }, locked: true } : undefined}>
-    <MemberSectionNavigation><SettingsLayout header={{ title: "Account", subtitle: "Your personal profile and sign-in security.", secondary: { label: "Profile & card →", href: `${home}/account-portal` } }}
+    <MemberSectionNavigation><nav aria-label="Personal account tools" className="mb-5 flex flex-wrap gap-3"><a className="desk-button" href={`${home}/account/saved-details`}>Saved details</a><a className="desk-button" href={`${home}/account/security-activity`}>Security activity</a><a className="desk-button" href={`${home}/event-payouts`}>Event reimbursements</a></nav><SettingsLayout header={{ title: "Account", subtitle: "Your personal profile and sign-in security.", secondary: { label: "Profile & card →", href: `${home}/account-portal` } }}
       state={restoring || (bootstrap.isLoading && !["security", "deletion"].includes(section)) ? { status: "loading" } : bootstrap.error && !["security", "deletion"].includes(section) ? { status: "error", error: "Couldn't load your account. Try again.", onRetry: () => void bootstrap.refetch() } : { status: "ready" }}
       tabs={tabs} activeTab={section} sections={[{ id: section, title: tabs.find(tab => tab.key === section)?.label || "Account access", rows: <>
         {left ? <p role="status">You have left this makerspace. Your account remains available.</p> : null}
@@ -77,6 +78,6 @@ export function MemberAccountPage() {
           {selfService && section === "membership" ? <MemberAccountMembership key={`membership-${data.makerspace.id}`} makerspaceId={data.makerspace.id} onLeft={() => setLeft(true)} /> : null}
           {selfExport && section === "data" ? <MemberAccountExports key={`exports-${data.makerspace.id}`} makerspaceId={data.makerspace.id} /> : null}
         </> : null}
-      </> }, ...(showSelfCreation ? [{ id: "create-organization", title: "Create your organization", rows: <OrganizationSelfCreation /> }] : [])]} /></MemberSectionNavigation>
+      </> }, ...(!restoring && !signIn && !hasClaimSession() && section === (tabs[0]?.key || "profile") ? [{ id: "your-organizations", title: "Organization memberships", rows: <OwnOrganizations /> }] : []), ...(showSelfCreation ? [{ id: "create-organization", title: "Create your organization", rows: <OrganizationSelfCreation /> }] : [])]} /></MemberSectionNavigation>
   </MemberPortalTabs>;
 }

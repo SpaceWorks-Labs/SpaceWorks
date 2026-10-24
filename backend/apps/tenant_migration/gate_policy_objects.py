@@ -57,6 +57,8 @@ OBJECT_MUTATION_PARTICIPANTS = {
     "apps.maintenance.services_documents.delete_log_document": "Runs inside the model-resolved maintenance document route.",
     "apps.maintenance.services_documents.finalize_log_document": "Runs inside the model-resolved maintenance document route.",
     "apps.makerspaces.lifecycle_storage._delete_public_image_keys": "Tenant purge is an express source-gate exclusion.",
+    "apps.warranty.services.finalize_document": "Runs inside the model-resolved warranty document route.",
+    "apps.warranty.services.presign_document": "Runs inside the model-resolved warranty document route.",
     "apps.operations.report_delivery_storage.delete_report_object": (
         "Reached only inside run_report_schedules' skip-and-count tenant boundary, the "
         "tenant-resolved schedule delete route and the reports module purge."

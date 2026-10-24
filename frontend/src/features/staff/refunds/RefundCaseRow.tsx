@@ -8,6 +8,7 @@ export function policySentence(snapshot: unknown): string | null {
   const value = snapshot as Record<string, string | number | undefined>;
   switch (value.rule) {
     case "event_cancelled_full": return "The space cancelled the event, so the full amount is owed.";
+    case "staff_cancelled_full": return "Staff cancelled this booking, so the full amount is owed.";
     case "no_policy": return "No refund policy is set for this area. Decide the amount yourself.";
     case "no_policy_area": return "Refunds here have no automatic policy. Decide the amount yourself.";
     case "nothing_left": return "Nothing is left to refund on this charge.";

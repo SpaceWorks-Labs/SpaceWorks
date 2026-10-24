@@ -37,7 +37,8 @@ def assert_deletable(organization):
     # protects future references as well as tenant links and event organizers.
     disposable = {"organizations.OrganizationMembership", "organizations.OrganizationInvitation",
                   "organizations.OrganizationPublicPage", "organizations.OrganizationPublicPageStorage",
-                  "makerspaces.PublicHandle", "makerspaces.PublicHandleRedirect"}
+                  "makerspaces.PublicHandle", "makerspaces.PublicHandleRedirect",
+                  "organizations.OrganizationLeaveReceipt"}
     for relation in organization._meta.related_objects:
         if relation.related_model._meta.label in disposable:
             continue

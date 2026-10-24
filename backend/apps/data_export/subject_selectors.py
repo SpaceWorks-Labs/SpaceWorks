@@ -37,7 +37,7 @@ SUBJECT_PATHS = {
     "events.EventRegistration": ("member",),
     "events.EventCheckInEvent": ("registration__member",),
     "events.EventFeedbackResponse": ("registration__member",),
-    "events.EventAttendanceCertificate": ("registration__member",),
+    "events.EventAttendanceCertificate": ("recipient_member",),
     "evidence.EvidencePhoto": ("uploaded_by",),
     "evidence.EvidenceObjectRetentionState": ("evidence__uploaded_by",),
     "hardware_requests.HardwareRequest": ("requester",),

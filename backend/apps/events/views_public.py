@@ -141,7 +141,8 @@ class PublicEventRegistrationView(APIView):
         )
         serializer.is_valid(raise_exception=True)
         registration_data = dict(serializer.validated_data)
-        registration_data['custom_answers'] = request.data.get('custom_answers')
+        if 'form_payload' not in registration_data:
+            registration_data['custom_answers'] = request.data.get('custom_answers')
         try:
             registration = services.register(
                 event,

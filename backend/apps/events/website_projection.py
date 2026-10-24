@@ -20,23 +20,30 @@ def window(target):
     return target.starts_at.astimezone(timezone.utc), target.ends_at.astimezone(timezone.utc)
 
 
-def project(target, *, public=False, image_url=None):
+def project(target, *, public=False, image_url=None, request_context=None):
     if public:
         page = visible_page(target)
     elif isinstance(target, EventSeries):
         page = EventPage.objects.filter(series=target).first()
     else:
         page = effective_page(target)
-    return project_page(target, page, public=public, image_url=image_url)
+    return project_page(target, page, public=public, image_url=image_url, request_context=request_context)
 
 
-def project_page(target, page, *, public=False, image_url=None, snapshot=True, request=None):
+def project_page(target, page, *, public=False, image_url=None, snapshot=True, request=None, request_context=None):
+    request = request or request_context
+    request_context = request_context or request
     empty = {**page_defaults(), "revision": 0, "released": False, "inherited": False, "sections": [], "sessions": [], "assets": []}
     if page is None:
         return empty
     if public:
         from .website_revision_projection import project_revision
-        return project_revision(target, page, image_url=image_url, request=request)
+        result = project_revision(target, page, image_url=image_url, request=request)
+        if not isinstance(target, EventSeries):
+            # Programme sections (admission, teams, results) are live, never snapshotted.
+            from .contracts.pages_registration import project_sections
+            result["programme_sections"] = project_sections(event_id=target.pk, request_context=request_context)
+        return result
     sections = list(page.sections.filter(is_working=True).select_related("asset"))
     allowed = {row.pk: row for row in sections if not public or (
         row.visibility == "published" and group_enabled(page, SECTION_GROUPS.get(row.kind)))}
@@ -81,6 +88,9 @@ def project_page(target, page, *, public=False, image_url=None, snapshot=True, r
         result["venue"] = None
     if public and not group_enabled(page, "HERO"):
         result["tagline"] = ""
+    if public and not isinstance(target, EventSeries):
+        from .contracts.pages_registration import project_sections
+        result["programme_sections"] = project_sections(event_id=target.pk, request_context=request_context)
     if not public:
         result["assets"] = list(page.assets.values("id", "alt_text", "size_bytes"))
         pinned = set(page.revisions.values_list("asset_references__asset_id", flat=True))

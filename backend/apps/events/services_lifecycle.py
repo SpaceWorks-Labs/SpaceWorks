@@ -10,6 +10,8 @@ from apps.events.models import (
 from apps.events.services_calendar import calendar_event_changed
 from apps.makerspaces import limits
 from apps.makerspaces.guards import require_module_locked
+from .services_write_boundary import event_write
+from .programme_locks import current_locks
 
 
 def _boundary():
@@ -40,7 +42,8 @@ def _transition(event, actor, expected, new_status, action):
         message = f"Cannot transition event from {locked.status} to {new_status}."
         raise EventInvalidTransition(message)
     locked.status = new_status
-    locked.save(update_fields=["status", "updated_at"])
+    locked.version += 1
+    locked.save(update_fields=["status", "version", "updated_at"])
     calendar_event_changed(locked)
     meta = {"old_status": expected, "new_status": new_status}
     services._audit(locked, actor, action, locked, meta)
@@ -48,7 +51,7 @@ def _transition(event, actor, expected, new_status, action):
     return services._refresh(locked)
 
 
-@transaction.atomic
+@event_write
 def publish(event, *, actor, publish_website=False, website_revision=None):
     services = _boundary()
     _lock_series_first(event.pk)
@@ -68,7 +71,8 @@ def publish(event, *, actor, publish_website=False, website_revision=None):
     validate_event_audience(locked)
     limits.check_quota(locked.makerspace, "events", adding=1)
     locked.status = Event.Status.PUBLISHED
-    locked.save(update_fields=["status", "updated_at"])
+    locked.version += 1
+    locked.save(update_fields=["status", "version", "updated_at"])
     if publish_website:
         from .services_website import set_release_locked
         set_release_locked(locked, actor=actor, released=True, revision=website_revision)
@@ -79,7 +83,7 @@ def publish(event, *, actor, publish_website=False, website_revision=None):
     return services._refresh(locked)
 
 
-@transaction.atomic
+@event_write(permission="publish_schedule")
 def cancel(event, *, actor, notify=True):
     services = _boundary()
     _lock_series_first(event.pk)
@@ -88,9 +92,20 @@ def cancel(event, *, actor, notify=True):
         raise EventInvalidTransition(
             f"Cannot transition event from {locked.status} to {Event.Status.CANCELLED}."
         )
+    locked.status = Event.Status.CANCELLED
+    locked.version += 1
+    locked.save(update_fields=["status", "version", "updated_at"])
+    from .hackathons.admission_lifecycle import cancel_event_locked
+    cancel_event_locked(event_id=locked.pk, actor=actor, locks=current_locks(locked.pk))
+    from .contributions.admission_adapter import cancel_event_locked as cancel_contributions
+    cancel_contributions(event=locked, actor=actor, locks=current_locks(locked.pk))
+    from .credentials.workflow import revoke_locked
+    from .models import EventRegistration
+    for registration in EventRegistration.objects.select_for_update().filter(event=locked).order_by("pk"):
+        revoke_locked(registration, actor=actor, reason="event_cancelled")
     survey = EventFeedbackSurvey.objects.select_for_update().filter(event=locked).first()
     certificates = list(EventAttendanceCertificate.objects.select_for_update().filter(
-        registration__event=locked, status=EventAttendanceCertificate.Status.ACTIVE,
+        event=locked, status=EventAttendanceCertificate.Status.ACTIVE,
     ))
     now = timezone.now()
     if survey is not None and survey.is_open:
@@ -115,8 +130,6 @@ def cancel(event, *, actor, notify=True):
             locked, actor, "event.certificate_revoked", certificate,
             {"reason": certificate.revocation_reason, "revision": certificate.revision},
         )
-    locked.status = Event.Status.CANCELLED
-    locked.save(update_fields=["status", "updated_at"])
     calendar_event_changed(locked, now=now)
     services._audit(
         locked, actor, "event.cancelled", locked,
@@ -128,7 +141,7 @@ def cancel(event, *, actor, notify=True):
     return services._refresh(locked)
 
 
-def _cancel_open_charges_after_commit(event, actor):
+def _cancel_open_charges_after_commit(event, actor, *, registration_ids=None):
     """An event that will not happen must not keep billing its attendees.
 
     PENDING charges are cancelled. A settled one is money that really arrived: it stays
@@ -143,7 +156,7 @@ def _cancel_open_charges_after_commit(event, actor):
     from apps.events.service_payments import cancel_for_registration
     from apps.payments.models import Payment
 
-    registration_ids = list(
+    registration_ids = registration_ids if registration_ids is not None else list(
         EventRegistration.objects.filter(event=event).values_list("pk", flat=True)
     )
     pending = set(
@@ -178,8 +191,12 @@ def _cancel_open_charges_after_commit(event, actor):
         transaction.on_commit(cancel_all)
 
 
-@transaction.atomic
+@event_write(permission="publish_schedule")
 def complete(event, *, actor):
+    from .hackathons.admission_lifecycle import close_event_locked
+    close_event_locked(event=event, actor=actor, locks=current_locks(event.pk))
+    from .contributions.admission_adapter import close_event_locked as close_contributions
+    close_contributions(event=event, actor=actor, locks=current_locks(event.pk))
     return _transition(
         event, actor, Event.Status.PUBLISHED, Event.Status.COMPLETED, "event.completed"
     )

@@ -21,7 +21,9 @@ def build_most_lent(makerspace_id, *, limit=None, date_range=None, grain="day"):
         groups = {}
         seen = defaultdict(set)
         totals = defaultdict(int)
-        qs = dated(HardwareRequestItem.objects.filter(request__makerspace=space, issued_quantity__gt=0),
+        # Archived products leave every active product surface (1bd91c0b), most-lent included.
+        qs = dated(HardwareRequestItem.objects.filter(request__makerspace=space, issued_quantity__gt=0,
+                                                      product__is_archived=False),
                    "request__issued_at", space, date_range, grain).select_related("product")
         for item in qs.iterator():
             # Legacy issued rows may lack issued_at. Keep their unbounded export

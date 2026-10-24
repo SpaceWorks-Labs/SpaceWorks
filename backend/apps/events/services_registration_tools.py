@@ -23,6 +23,8 @@ from apps.operations.cancellation_restore import (
 )
 from apps.payments.availability import charge_tracking_enabled
 from apps.payments.models import Payment
+from .services_write_boundary import event_write
+from .hackathons.admission_bridge import require_ordinary_transition
 
 RESTORABLE = (EventRegistration.Status.REGISTERED, EventRegistration.Status.WAITLISTED,
               EventRegistration.Status.PENDING_APPROVAL)
@@ -67,7 +69,7 @@ def _lock(registration, actor):
     assert_write_allowed(registration.event.makerspace_id)
     assert_mapped_write_allowed(registration.event.makerspace_id)
     event = services._locked_event(registration.event_id, lock_makerspace=False)
-    from .organization_audience import lock_admission_sources
+    from .programme_locks import lock_admission_sources
     lock_admission_sources(event, event.registrations.values_list("member_id", flat=True))
     event.makerspace = require_module_locked(event.makerspace, "events")
     event_authority.require(actor, event, MANAGE_REGISTRATIONS)
@@ -77,12 +79,19 @@ def _lock(registration, actor):
     return event, _lock_registration(event, registration.pk)
 
 
-@transaction.atomic
-def edit_registration_answers(registration, *, actor, custom_answers):
+from .services_registration_preparation import ordinary_form, canonical_answers, attach_answers
+
+
+@ordinary_form
+@event_write(permission="manage_registrations")
+def edit_registration_answers(registration, *, actor, custom_answers=None, form_payload=None):
     from apps.events import services
     event, locked = _lock(registration, actor)
-    locked.custom_answers = validate_answers(event.custom_form, custom_answers)
-    locked.save(update_fields=["custom_answers"])
+    require_ordinary_transition(locked)
+    locked.custom_answers = canonical_answers(event, custom_answers)
+    locked.version += 1
+    locked.save(update_fields=["custom_answers", "version"])
+    attach_answers(event, locked)
     services._audit(event, actor, "event.registration_answers_edited", locked)
     return locked
 
@@ -98,11 +107,12 @@ def _later_promotion(event, registration):
     ).exists()
 
 
-@transaction.atomic
+@event_write(permission="manage_registrations")
 def restore_registration(registration, *, actor):
     from apps.events import services
     event, locked = _lock(registration, actor)
     locked.member = lock_obligation_owner(locked.member)
+    require_ordinary_transition(locked)
     now = timezone.now()
     ticket = locked.ticket_type
     prior = require_restorable(
@@ -149,7 +159,8 @@ def restore_registration(registration, *, actor):
     locked.status = prior
     locked.cancelled_at = None
     locked.status_before_cancel = ""
-    locked.save(update_fields=["status", "cancelled_at", "status_before_cancel", "waitlist_position_at"])
+    locked.version += 1
+    locked.save(update_fields=["status", "version", "cancelled_at", "status_before_cancel", "waitlist_position_at"])
     calendar_registration_changed(locked)
     services._audit(event, actor, "event.registration_restored", locked,
                     {"registration_id": locked.pk, "status": prior})

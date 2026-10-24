@@ -15,6 +15,9 @@ EVENTS = {
     ("members", "vouched"): (),
     ("stock", "scheduled"): (),
     ("stock", "completed"): (),
+    # Machine-service cancellation fans out to staff and rooms (notify_service); the
+    # requester leg is an owner self-notice, so only the bounded summary is offered.
+    ("printing", "cancelled"): (),
 }
 
 # These producers explicitly disable staff/room fan-out. Their personal content
@@ -24,7 +27,14 @@ PERSONAL_ONLY_EVENTS = frozenset({
     ("members", "broadcast"), ("members", "invitation"),
     ("api_access", "email.failed"), ("api_access", "scheduled_report"),
     ("payments", "document_issued"), ("presence", "expired"),
+    # Queue-head "next" is an owner self-notice only (service_queue_notices); it never
+    # reaches staff or rooms.
+    ("printing", "next"),
 })
+# Events programme notices are addressed to the applicant, team member or certificate
+# subject; none has a staff room body.
+from .notification_catalog_events_programme import PROGRAMME_EVENTS as _PROGRAMME_EVENTS
+PERSONAL_ONLY_EVENTS = PERSONAL_ONLY_EVENTS | frozenset(("events", event) for event in _PROGRAMME_EVENTS)
 
 
 def chat_only_entry(feature, event):

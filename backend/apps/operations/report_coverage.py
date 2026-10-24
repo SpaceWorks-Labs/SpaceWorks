@@ -39,6 +39,7 @@ REPORT_MODULE_COVERAGE = {
     "machines": ModuleReportCoverage("substantive", ("machine-usage", "module-operational-health")),
     "machine_service": ModuleReportCoverage("substantive", ("machine-service",)),
     "events": ModuleReportCoverage("substantive", ("event-attendance",)),
+    "event_reimbursements": ModuleReportCoverage("health_row", ("module-operational-health",)),
     "bookings": ModuleReportCoverage("substantive", ("booking-utilization",)),
     "maintenance": ModuleReportCoverage("substantive", ("maintenance-activity",)),
     "membership": ModuleReportCoverage("substantive", ("member-activity", "community-engagement")),

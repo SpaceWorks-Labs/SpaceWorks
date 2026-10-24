@@ -1,7 +1,7 @@
 """Explicit capabilities, allowance and theme shapes for the frozen v1 envelope."""
 
 from rest_framework import serializers as s
-from drf_spectacular.utils import extend_schema_field
+from drf_spectacular.utils import extend_schema_field, extend_schema_serializer
 from .public_page_sections import PAYLOADS
 from .public_page_contract import PALETTES
 
@@ -64,6 +64,8 @@ class ResolvedTheme(s.Serializer):
     dark = Palette()
 
 
+# Event presentation (profile photos) owns the plain "Presentation" component name.
+@extend_schema_serializer(component_name="PagePresentation")
 class Presentation(s.Serializer):
     accent_choice = s.ChoiceField(choices=("inherit", *PALETTES))
     resolved_theme = ResolvedTheme()

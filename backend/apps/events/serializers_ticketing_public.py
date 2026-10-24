@@ -30,7 +30,7 @@ class EventTicketingPublicSerializer(serializers.Serializer):
         from .ticketing import ticket_selection_required
         if hasattr(obj, "public_ticket_rows"):
             return self._feature_flags(obj)["tickets"] and any(
-                row.makerspace_id == obj.makerspace_id for row in obj.public_ticket_rows
+                row.makerspace_id == obj.makerspace_id and row.purpose == "participant" for row in obj.public_ticket_rows
             )
         return ticket_selection_required(obj)
 
@@ -52,6 +52,7 @@ class EventTicketingPublicSerializer(serializers.Serializer):
             member = flags["membership"] and obj.makerspace_id in self.context.get("ticket_membership_ids", set())
             rows = [row for row in obj.public_ticket_rows if
                     row.makerspace_id == obj.makerspace_id
+                    and row.purpose == "participant"
                     and (row.sales_start_at is None or row.sales_start_at <= now)
                     and (row.sales_end_at is None or row.sales_end_at > now)
                     and (member or row.audience == "public")]

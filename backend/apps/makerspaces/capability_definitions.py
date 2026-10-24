@@ -9,6 +9,7 @@ from .capability_definitions_w7_events import event_features
 from .capability_definitions_wp3 import wp3_features
 from .capability_definitions_wp4 import definitions as wp4_definitions
 from .capability_definitions_yuyu import definitions as yuyu_definitions
+from .capability_definitions_events_programme import programme_features
 
 
 @dataclass(frozen=True)
@@ -57,6 +58,14 @@ FEATURE_DEFINITIONS = (
                       "Count kit components at issue and return; retain missing-component accountability."),
     FeatureDefinition("staff.invitations", None, "Staff invitations",
                       "Invite staff with a single-use email link.", default_enabled=True),
+    # Delight is on for every space unless it turns it off. The deployment flags
+    # (UI_DELIGHT_ENABLED / UI_EASTER_EGGS_ENABLED) remain a global kill switch, and
+    # reduced-motion preferences always win in the browser.
+    FeatureDefinition("ui.delight", None, "Interface effects",
+                      "Artwork, gentle motion and celebration moments.", default_enabled=True),
+    FeatureDefinition("ui.easter_eggs", None, "Easter eggs",
+                      "Hidden playful moments; never on scanner, kiosk or payment screens.",
+                      default_enabled=True),
     FeatureDefinition("security.staff_mfa_required", None, "Require MFA for staff",
                       "Require staff with actions in this space to enroll in TOTP MFA."),
     FeatureDefinition("membership.vouching", "membership", "Membership vouching",
@@ -211,6 +220,7 @@ FEATURE_DEFINITIONS = (
     ),
 )
 FEATURE_DEFINITIONS += event_features(FeatureDefinition)
+FEATURE_DEFINITIONS += programme_features(FeatureDefinition)
 FEATURE_DEFINITIONS += module_family_features(FeatureDefinition)
 FEATURE_DEFINITIONS += wp3_features(FeatureDefinition)
 FEATURE_DEFINITIONS += wp4_definitions(FeatureDefinition)

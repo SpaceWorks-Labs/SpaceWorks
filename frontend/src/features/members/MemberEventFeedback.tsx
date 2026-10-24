@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { memberRequest } from "../../lib/api";
-import { CustomFormFields } from "../forms/CustomFormFields";
+import { EventFeedbackFields } from "../events/programme/EventFeedbackFields";
 import { validateCustomAnswers, type CustomAnswers, type CustomFormQuestion } from "../forms/customFormTypes";
 
 type Form = {
@@ -59,7 +59,7 @@ export function MemberEventFeedback({ makerspaceId, makerspaceSlug, registration
     {open && form.isLoading ? <p className="text-sm text-muted">Loading feedback form…</p> : null}
     {open && form.data ? <form className="mt-2 grid gap-4 rounded-lg border border-line p-3" onSubmit={(event) => { event.preventDefault(); const next = validateCustomAnswers(form.data!.survey.questions, answers); setErrors(next); if (!Object.keys(next).length) submit.mutate(); }}>
       <h3 className="title-section">{form.data.survey.title}</h3>
-      <CustomFormFields schema={form.data.survey.questions} answers={answers} onChange={setAnswers} errors={errors} yesNoAsCheckbox />
+      <EventFeedbackFields schema={form.data.survey.questions} answers={answers} onChange={setAnswers} errors={errors} yesNoAsCheckbox />
       {form.data.requires_auth ? <label className="grid gap-1"><span className="eyebrow">Registration email</span><input className="desk-input" type="email" required value={email} onChange={(event) => setEmail(event.target.value)} /></label> : null}
       <button className="desk-button-primary" type="submit" disabled={submit.isPending}>{submit.isPending ? "Submitting…" : "Submit feedback"}</button>
       {submit.isSuccess ? <p className="text-sm text-success-ink">Feedback recorded.</p> : null}

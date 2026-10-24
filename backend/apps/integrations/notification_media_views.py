@@ -1,4 +1,4 @@
-"""Public provider fetch; possession never bypasses the live payer policy."""
+"""Provider fetch; possession never bypasses the live document-owner policy."""
 import logging
 
 from django.http import HttpResponse
@@ -37,7 +37,8 @@ class NotificationMediaView(APIView):
 
     @extend_schema(tags=["Notification contract"], auth=[], request=None,
         summary="Consume a single-use provider document grant",
-        description="Live payer, endpoint consent, installation, preferences and tenant write gates are checked. "
+        description="Live document owner, source revision, endpoint consent, integration generation, installation, "
+                    "preferences and tenant write gates are checked. "
                     "HEAD returns 405 without consuming. All responses are private and no-store.",
         responses={(200, "application/pdf"): OpenApiTypes.BINARY,
                    404: OpenApiResponse(ErrorSerializer), 405: OpenApiResponse(ErrorSerializer),

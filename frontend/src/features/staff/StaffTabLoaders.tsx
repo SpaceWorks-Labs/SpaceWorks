@@ -42,6 +42,7 @@ export const MakerspaceSettingsPanel = lazy(() => import("./MakerspaceSettingsPa
 export const ModulesPanel = lazy(() => import("./ModulesPanel").then((m) => ({ default: m.ModulesPanel })));
 export const PaymentsPanel = lazy(() => import("./PaymentsPanel").then((m) => ({ default: m.PaymentsPanel })));
 export const RefundQueue = lazy(() => import("./refunds/RefundQueue").then((m) => ({ default: m.RefundQueue })));
+export const EventPayoutsSection = lazy(() => import("./EventPayoutsSection").then((m) => ({ default: m.EventPayoutsSection })));
 export const HandoverConsole = lazy(() => import("./panels/machine/HandoverConsole").then((m) => ({ default: m.HandoverConsole })));
 export const DataExportsPanel = lazy(() => import("./DataExportsPanel").then((m) => ({ default: m.DataExportsPanel })));
 export const BackupRestorePanel = lazy(() => import("./BackupRestorePanel").then((m) => ({ default: m.BackupRestorePanel })));

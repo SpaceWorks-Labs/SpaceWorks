@@ -11,6 +11,26 @@ GitHub member sign-in is available through browser OAuth with PKCE, verified pri
 > integrations and overall implementation status. The rules these areas impose live in
 > `docs/INVARIANTS.md`; when a feature landed is in `docs/PROJECT-HISTORY.md`.
 
+## Events programme integration checkpoint - 2026-10-18
+
+GF4 on `lane/events-g2` integrates EV2-A/B/C/D/E and EV3 handoffs: canonical admission,
+prepared A/C/F/P forms, encrypted ordinary registration, source-aware entitlements,
+check-in/feedback, ordered erasure/deletion, dedicated asset accounting/import publication,
+durable cleanup/recovery, owned seed installation, released sections and the SPA consumers.
+The Events setup area now leaves all five programme features off; account/credential
+settings travel through shared Compose anchors without new generated secrets.
+
+**Authored integration is not an enableable release.** PostgreSQL/migration/backfill,
+real providers/storage/browser/vendor/PDF/physical QR and integrated owner QA evidence
+remain required. Keep every programme capability and event config off. Generated
+schema/client/catalogue digest were intentionally not refreshed in GF4.
+
+Separate reimbursement/staged-forms (decisions 34/35), Pages/shared-handle and cloud
+programmes retain their own integration contracts. Missing dependencies or absent domain
+code are not accepted as a complete combined programme. See the [closure ledger](events/integration-status.md),
+[operator runbook](events/operations.md), [source map](SOURCE-MAP-EVENTS-PROGRAMME.md)
+and [acceptance checklist](events/acceptance.md) for exact boundaries and verification.
+
 ## Admin control plane (superadmin-only)
 
 The **Unfold Django admin is the Super Admin's sole control plane**, mounted at **`/control/`** (NOT
@@ -59,9 +79,12 @@ invalidate older access, refresh, device and control-panel sessions. `/mfa/contr
 finishes the Django password session of an enrolled superadmin before `/control/` becomes
 accessible. Operators can recover a lost superadmin authenticator with host-only
 `recover_superadmin --reset-mfa`; this clears the credential and sessions and returns the
-account to password sign-in until it enrolls again. A superadmin's password is likewise
-reset only on the host (`changepassword` / `recover_superadmin`): the email-OTP
-forgot-password flow discards superadmin accounts at issuance and re-checks at confirmation.
+account to password sign-in until it enrolls again (superadmin MFA is optional). A superadmin
+can also reset a forgotten password by emailed OTP through the platform context
+(`/admin/reset-password?context=platform`): it needs platform mail configured and a request
+Origin in `PLATFORM_STAFF_ORIGINS`, and is re-checked at confirmation. The member-context flow
+still discards superadmin accounts. Host-side `changepassword` / `recover_superadmin` remain
+the out-of-band path when platform mail is unavailable.
 Spent MFA challenges join the existing 30-day auth-challenge cleanup.
 
 `staff.invitations` defaults on. Staff with makerspace-management authority invite an

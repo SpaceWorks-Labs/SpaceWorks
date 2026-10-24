@@ -70,6 +70,17 @@ def final_row(
     for field in model._meta.local_concrete_fields:
         if deferred_pointer(field):
             row[field.column] = None
+    if label in {"events.SubmissionAsset", "events.HackathonParticipantAsset"}:
+        from apps.events.submissions.portability import asset_import_values
+        row = asset_import_values(row)
+        if source["state"] not in {"ready", "expired"}:
+            # Pending source bytes do not travel. Preserve inert metadata under
+            # a fresh target locator, never a source multipart/final key.
+            from uuid import uuid4
+            object_key_map = {**object_key_map, source["object_key"]: f"import-coordination/{uuid4()}/final"}
+    if label in {"events.StageFormAsset", "payments.FinanceAttachment"}:
+        from .reimbursement_assets_import import asset_import_row
+        row, object_key_map = asset_import_row(label, source, row, object_key_map)
     rewrite_object_fields(model, row, object_key_map)
     if not _remap_foreign_keys(model, source, row, job, pk_map, target, references):
         return None
@@ -90,7 +101,16 @@ def final_row(
             "pk": source[model._meta.pk.attname],
             "field": mapped.field_name,
         }
-        row[column], raw_plaintext = reencrypt_mapped_value_with_plaintext(
+        from .pii_events_programme import rebind_programme_document
+        transformed = rebind_programme_document(model, mapped.field_name, row[column], source=source, row=row,
+            source_id=int(job.source_makerspace_id), target_id=target.pk, deks=deks,
+            map_id=lambda label, value: pk_map.lookup(apps.get_model(label), value))
+        if transformed is None:
+            from .pii_reimbursements import rebind_reimbursement_document
+            transformed = rebind_reimbursement_document(model, mapped.field_name, row[column], source=source,
+                row=row, source_id=int(job.source_makerspace_id), target_id=target.pk, deks=deks,
+                map_id=lambda label, value: pk_map.lookup(apps.get_model(label), value))
+        row[column], raw_plaintext = transformed if transformed is not None else reencrypt_mapped_value_with_plaintext(
             row[column],
             source_aad=source_aad,
             target_makerspace_id=target.pk,
@@ -106,6 +126,9 @@ def final_row(
         )
     if label == "machines.MachineServiceRequest":
         mark_imported_head(model, row)
+    from .pii_events_programme import rebind_derivation_history
+    rebind_derivation_history(model, source, row, source_makerspace_id=int(job.source_makerspace_id),
+        target_makerspace_id=target.pk, deks=deks)
     if label == "events.EventRegistration":
         row.update(
             event_registration_hash_columns(
@@ -150,6 +173,8 @@ def update_resolved_row(model, source, target):
 
 def _reconstructed_value(label, field, fresh_values):
     disposition = OMITTED_FIELD_RECONSTRUCTIONS[(label, field.name)]
+    if label in {"events.SubmissionAsset", "events.HackathonParticipantAsset"} and field.name in {"staging_key", "verification_key"}:
+        return _fresh_unique(field, fresh_values)
     if disposition is OmittedFieldDisposition.FRESH:
         value = _fresh_unique(field, fresh_values)
     elif disposition is OmittedFieldDisposition.EMPTY_STRING:
@@ -168,7 +193,11 @@ def _reconstructed_value(label, field, fresh_values):
 def _fresh_unique(field, fresh_values, generator=None):
     key = (field.model._meta.label, field.name)
     current_batch = fresh_values.setdefault(key, set())
-    generate = generator or field.get_default
+    if field.model._meta.label in {"events.SubmissionAsset", "events.HackathonParticipantAsset"} and field.name in {"staging_key", "verification_key"}:
+        from uuid import uuid4
+        generate = lambda: f"import-coordination/{uuid4()}/{field.name}"
+    else:
+        generate = generator or field.get_default
     for _attempt in range(16):
         value = generate()
         if value in current_batch:
@@ -189,6 +218,9 @@ def protect_carried_unique_values(model, row, target, fresh_values):
         if policy is None:
             continue
         value = row[field.column]
+        if value is None:
+            # NULL never violates a unique constraint; there is no identity to preserve.
+            continue
         key = (label, field.name)
         current_batch = fresh_values.setdefault(key, set())
         collision = value in current_batch or model._base_manager.filter(

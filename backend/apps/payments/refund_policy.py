@@ -27,6 +27,9 @@ from apps.payments.money import minor_unit_exponent
 
 ZERO = Decimal("0.00")
 POLICY_AREAS = frozenset(RefundPolicy.Area.values)
+#: Cancellations the space made itself are owed in full, whatever the policy (decisions 60, 72).
+FULL_REASONS = {RefundCase.ReasonCode.EVENT_CANCELLED: "event_cancelled_full",
+                RefundCase.ReasonCode.STAFF_CANCELLED: "staff_cancelled_full"}
 
 
 def round_down(amount, currency):
@@ -78,8 +81,8 @@ def assess(payment, *, reason_code, cancelled_at=None):
                 "paid": str(payment.amount), "already_refunded": str(refunded), "balance": str(balance)}
     if balance <= 0:
         return ZERO, {**snapshot, "rule": "nothing_left"}
-    if reason_code == RefundCase.ReasonCode.EVENT_CANCELLED:
-        return round_down(balance, payment.currency), {**snapshot, "rule": "event_cancelled_full"}
+    if reason_code in FULL_REASONS:
+        return round_down(balance, payment.currency), {**snapshot, "rule": FULL_REASONS[reason_code]}
     area = area_for(payment)
     if area not in POLICY_AREAS:
         return ZERO, {**snapshot, "rule": "no_policy_area"}

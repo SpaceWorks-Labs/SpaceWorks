@@ -1,6 +1,6 @@
 # SpaceWorks modules — what each one is, and what happens without it
 
-Space Works ships **37 modules**: 6 **core** ones that cannot be switched off, 1 that is **on by
+Space Works ships **38 modules**: 6 **core** ones that cannot be switched off, 1 that is **on by
 default** (`backup`), and the rest opt-in. This page is the per-module reference the README links into — one entry
 per key, saying what it is, what it puts on screen, what disappears if you do not install it, and what
 happens to its data.
@@ -33,7 +33,7 @@ govern sign-in availability. Membership adds plans, vouching, renewals and the m
 | Online payments | `payments` | `payments.enabled` plus the online-payment feature of each selected domain |
 | Reports | `reports` | `reports.saved_views`; `reports.event_pdf`, `reports.event_exports` with Events |
 | Chat alerts | `telegram`, `slack`, `mattermost`, `discord`, `webhook` | Idle until URLs/tokens are configured |
-| Always on | Six core modules, `backup`, `notifications`, `email`, `member_accounts` | Every satisfiable child of `backup`, `notifications`, `email` and `member_accounts`, `billing.reminders`, `charges.enabled`, `billing.documents`, `staff.invitations`, `presence.geofence` |
+| Always on | Six core modules, `backup`, `notifications`, `email`, `member_accounts` | Every satisfiable child of `backup`, `notifications`, `email` and `member_accounts`, `billing.reminders`, `charges.enabled`, `billing.documents`, `staff.invitations`, `presence.geofence`, `ui.delight`, `ui.easter_eggs` |
 
 The source is `makerspaces/setup_areas.py`; registry module keys/defaults are unchanged. Inventory
 off clears `loans.enabled` while keeping core. Optional-module uninstall retains all data. Charges,
@@ -213,6 +213,54 @@ approved archive fields and do not reopen expired event websites.
 
 [Read the events module reference](MODULES-WORKSHOPS.md#events).
 
+**Programme checkpoint (2026-10-18, `f1ef7736`): keep the new features off.** Hackathons
+are features inside Events, not a separate module. Five declared switches default off:
+`events.hackathons`, `events.mentoring` (requires hackathons), `events.mentor_rounds`
+(requires mentoring), `events.volunteering`, and `events.project_gallery` (requires
+hackathons). Each hackathon also needs its disabled-by-default event config enabled.
+Volunteering can serve ordinary events. Schema, routes and generated API exist; live
+provider installation and acceptance remain incomplete. See the [runbooks](events/README.md)
+and [exact integration closure ledger](events/integration-status.md).
+
+The current `setup_areas.features_for()` selects every child of a chosen area, including
+these five when Events is selected. That setup path still needs an explicit independent
+opt-in/exclusion before programme acceptance; do not infer safe installation from the
+registry's false defaults alone.
+
+Authored workflows cover applications/review/private decision release/RSVP/waitlists,
+three team modes plus opt-in finder, contributor shifts/hours, Mentor Desk, immutable
+upload/link submissions, weighted or top-three judging, results/gallery, v2 badge
+credentials, certificate verification/library/bulk/print, forms v2 and operations tools.
+Account-owned Saved details is independent of Events and host membership; its vault is
+not organizer-readable.
+
+Staged forms are part of Events (no module key). Organisers publish forms tied to a
+stage: application, shortlisted, accepted/RSVP, pre-event or post-event. Application-stage
+forms are answered with the signup itself and are saved in the same transaction, so a
+required form left out refuses the whole registration or application. A required form
+set to "block" stops RSVP, check-in (including offline-synced check-ins) or a travel
+claim until it is complete; "warn" lets the member continue and sends a reminder. Stage
+uploads count against per-member and per-event quotas and expire a set number of days
+after the event (`EVENT_STAGE_*` settings). An Events purge deletes stage rows after
+keeping their file-cleanup locators; a travel-support-only purge keeps them.
+
+Feature disablement removes its gated live actions/reads and retains definitions, history
+and private objects. Events uninstall retains those rows; deployment tombstoning removes
+runtime surfaces while retention/PII/purge/backup declarations survive. Events purge uses
+the child-before-parent graph and removes owned programme rows and keys, preserving the
+core money ledger, global account vault and foreign profile bytes. **Durable multipart/
+version cleanup receipts and storage reconciliation still need integration**; collecting
+keys is not proof that purge removed bytes. Imported public/consent/grant/credential state
+is inert until fresh target-side authorization; imported storage allowance is zero until
+target accounting is installed.
+
+Managed hackathon storage is a separate decimal **25 GB per event** pool (25,000,000,000
+bytes); self-host can configure a byte budget or unlimited event pool. File/group/submission
+bounds and used+reserved accounting still apply. Files expire 365 days from the recorded
+results/cancellation/fallback anchor without deleting records/hashes; corrections do not
+extend expiry. Live expiry does not erase older backup archives. [Media limits](events/media.md)
+and [operator notes](events/operations.md) explain pending storage/scheduler adapters.
+
 Events can run with membership and the online payments rail off. Members-only remains the
 default audience; opt-in account registration, invitations, ticket types and promo codes
 support public workshops. Paid tickets still create core ledger charges for offline settlement.
@@ -248,16 +296,20 @@ issued certificates freeze the selected design, so later changes never alter pen
 retried certificates. Turning the feature off removes editing and preview access while
 existing certificate snapshots remain readable through their ordinary authorized path.
 Artwork, revisions and certificates are removed by an Events purge in dependency order.
-Badges use the shared positioned layout engine with bundled fonts and overflow validation;
-printed contacts and bearer QR codes are forbidden. Custom answers require registration
+Legacy display badges use the shared positioned layout engine and remain free of contacts
+and bearer QR codes. The separate v2 desk-badge workflow permits only its typed opaque,
+event-bound check-in credential QR; it requires authenticated online resolution and
+generation-bound confirmation. It never permits contact fields, arbitrary bearer URLs or
+offline v2 admission. Custom answers require registration
 management plus the tenant audit permission. These badge changes use the existing Events
 module rather than a new feature switch.
 
 Opt-in `events.broadcasts` requires Notifications and Email. Staff with event registration
 authority compose email campaigns filtered by registration status and attendance, review
 drafts, send and cancel from the Events drawer. Only verified eligible accounts receive
-mail; preferences, suppression and quiet hours apply. Personal channel envelopes supplement the
-existing campaign email worker, with email pre-skipped there to avoid duplicate mail. Staff rooms
+mail; preferences, suppression and quiet hours apply. With a saved personal category selection,
+envelopes own channels including email/fallback; otherwise the campaign worker owns email
+and extra-channel envelopes pre-skip it to avoid duplicate mail. Staff rooms
 never receive campaign bodies. Delivery history survives uninstall;
 events purge removes campaigns and their event-source outboxes. Imported unfinished
 campaigns are cancelled and cannot resume. Bulk email-bound invitations reuse Events
@@ -573,6 +625,8 @@ in the console rather than a superadmin. A feature is inert while its parent mod
 | Feature | Inside | Default | What it does | Without it |
 |---|---|:--:|---|---|
 | `billing.documents` | standalone core ledger (mail needs `email`) | ● | Issue numbered [receipt and credit-note PDFs](payment-documents.md), with issuer settings and accounting account mappings | New collections have no document; existing documents stay readable and documented charges still receive refund/correction documents |
+| `ui.delight` | standalone (deployment flag `UI_DELIGHT_ENABLED`) | ● | Artwork, gentle motion and celebration moments across the app; reduced-motion preferences always apply | Plain screens with no decorative motion or artwork |
+| `ui.easter_eggs` | standalone (deployment flag `UI_EASTER_EGGS_ENABLED`) | ● | Hidden playful moments; never on scanner, kiosk, check-in or payment screens | No easter eggs |
 | `billing.reminders` | `notifications` (needs `email`) | | Email the payer about due and overdue charges using [core billing policy](payment-billing.md), including cash-only charges | No automatic payment reminders; debt and receipts stay visible |
 | `charges.enabled` | — | ● | Master switch for recording money owed | The space charges for nothing: no debt is recorded in any area |
 | `charges.machines` | `machines` (needs `machine_service`) | ● | Record a charge when a priced machine job completes | Machine jobs are free |
@@ -598,6 +652,11 @@ in the console rather than a superadmin. A feature is inert while its parent mod
 | `bookings.utilization_pdf` | `bookings` (needs `reports`, `bookings.analytics`) | | Audited resource PDF for a complete tenant-local period, requiring full tenant booking management AND audit | Resource PDF refuses; stored booking history stays |
 | `bookings.exports` | `bookings` (needs `reports`) | | Tenant-local reservation contacts and custom-answer previews/CSV/XLSX, requiring resource management AND audit | New detail exports refuse; booking history stays |
 | `events.organization_audience` | `events` | | Live organizer/venue-owner membership audience; no membership or account-registration prerequisite | Configuration and new admission refuse; existing owned tickets remain |
+| `events.hackathons` | `events` | | Off-default programme applications, RSVP, teams and submissions; event config also required; integration pending | Programme actions refuse; history retained |
+| `events.mentoring` | `events` | `events.hackathons` feature | Off-default mentor assignments/help/office hours; integration pending | Mentor surfaces refuse; retained work/history remain |
+| `events.mentor_rounds` | `events` | `events.mentoring` feature | Off-default leased mentor check-in rounds; integration pending | Round actions refuse; history retained |
+| `events.volunteering` | `events` | | Off-default ordinary-event/hackathon postings/shifts/verified hours; integration pending | Volunteer actions refuse; retained hours/history remain |
+| `events.project_gallery` | `events` | `events.hackathons` feature | Off-default frozen public project selections with live consent; integration pending | Public gallery/bytes refuse; private snapshots retained |
 | `events.certificate_designer` | `events` | | Immutable private certificate designs and server previews | Editing/previews refuse; existing issuance snapshots retained |
 | `bookings.broadcasts` | `bookings` | `notifications`, `email` | Email upcoming resource bookers with live consent and booking checks | Compose, queue and delivery refuse; history retained |
 
@@ -645,3 +704,35 @@ Turning a website section off also hides its direct public detail and image acce
 another enabled section uses the image. Content editing requires event `edit_details`;
 programme edits and live track delays require `publish_schedule`. These additions use the
 existing `events.website` feature; embedding still additionally requires `events.embed`.
+
+### event_reimbursements
+
+Opt-in, off by default, and dependent only on `events`. Adds support requests,
+finite budget pools, awards and post-event expense claims to ordinary events and
+hackathons. Staged forms belong to Events and work without this module.
+
+Payouts record payments already made by a human; this module never transfers money.
+Core Payments retains obligations, encrypted payee revisions, decision evidence and
+append-only payout corrections independently of Events, this module and the online
+payment rail. Recording/amending requires both `view_finance` and the separate
+`record_reimbursement_payout` action plus recent session reauthentication. Only the
+Space Manager built-in gains that action; `record_payment` grants no payout access.
+Archive pauses finance access until unarchive. Uninstall preserves all rows.
+Destructive module purge must refuse unfinished awards/claims or missing core
+evidence/attachment closure, then preserve the core ledger. Whole-tenant purge
+keeps its existing explicit full-graph behavior. Payee and decision-summary fields
+require the tenant key broker even with optional PII encryption disabled.
+
+A support request can be sent with the registration or hackathon application (it is
+saved in the same transaction), or later from the member's event page. Sending one
+while this module is off is refused rather than silently dropped. Award-acceptance and
+claim-deadline reminders, and the core payee-details reminder, run through the shared
+reminder sweeper. Check-in and attendance corrections feed claim eligibility. Receipt
+retention, payee purge timing and attachment budgets are deployment settings
+(`EVENT_REIMBURSEMENT_*`). Archiving shows the count of unpaid event payouts and warns
+that settlement stops until the makerspace is restored. `purge_module_data --preflight`
+prints the blockers and preserved ledger counts without deleting anything; the same
+preflight always runs before a real purge, and `--yes` skips only the prompt.
+Moving a space to another deployment carries every request, award, claim, decision,
+payout, payee record and receipt (payee bank details stay encrypted throughout); the
+imported programme arrives paused until finance reconciles it on the new deployment.

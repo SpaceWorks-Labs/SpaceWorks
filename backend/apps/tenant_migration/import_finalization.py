@@ -38,6 +38,8 @@ def _commit_completion(job_id, *, actor):
         raise ImportVerificationError("The import finalization claim is no longer valid.")
     if not job.materialization_report:
         raise ImportVerificationError("The durable materialization report is missing.")
+    from .event_asset_import import publish_portable
+    publish_portable(job)
     job.verification_report = job.materialization_report
     job.status = TenantImportJob.Status.COMPLETED
     job.terminal_at = timezone.now()

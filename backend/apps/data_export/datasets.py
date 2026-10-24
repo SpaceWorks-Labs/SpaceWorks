@@ -58,7 +58,7 @@ DATASET_SPECS = {
     "events.EventStationBinding": ("events/station_bindings.csv", P(("event__makerspace",))),
     "events.EventFeedbackSurvey": ("events/feedback_surveys.csv", P(("event__makerspace",))),
     "events.EventFeedbackResponse": ("events/feedback_responses.csv", P(("survey__event__makerspace",))),
-    "events.EventAttendanceCertificate": ("events/attendance_certificates.csv", P(("registration__event__makerspace",))),
+    "events.EventAttendanceCertificate": ("events/attendance_certificates.csv", P(("event__makerspace",))),
     "events.EventCertificateArtwork": ("events/certificate_artwork.csv", P(("event__makerspace",))),
     "events.EventCertificateTemplateRevision": ("events/certificate_template_revisions.csv", P(("event__makerspace",))),
     "evidence.EvidencePhoto": ("evidence/photos.csv", P(("makerspace",))),
@@ -204,6 +204,10 @@ DATASET_SPECS.update({
     "integrations.WhatsAppTemplateBinding": ("messaging/whatsapp_templates.csv", P(("makerspace",))),
     "integrations.MessagingConsent": ("messaging/consents.csv", P(("makerspace",))),
 })
+from apps.tenant_migration.catalog_events_programme_references import DATASETS as PROGRAMME_DATASETS
+DATASET_SPECS.update({label: (path, P((owner,))) for label, (path, owner) in PROGRAMME_DATASETS.items()})
+from apps.tenant_migration.catalog_reimbursements import DATASETS as REIMBURSEMENT_DATASETS
+DATASET_SPECS.update({label: (path, P((owner,))) for label, (path, owner) in REIMBURSEMENT_DATASETS.items()})
 DATASETS = {}
 from .datasets_wp3 import wp3_dataset_specs
 DATASET_SPECS.update(wp3_dataset_specs(P))

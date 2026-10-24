@@ -23,6 +23,7 @@ The contract that makes it safe to offer at all:
 from apps.integrations.notification_cutover import guarded
 
 import logging
+from contextlib import nullcontext
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -41,6 +42,9 @@ def purgeable_modules():
     return [{"key": plan.key, "summary": plan.summary} for plan in PLANS]
 
 
+from apps.events.profile_photos.purge_scope import presentation_purge_scope
+
+
 @guarded()
 def purge_module(makerspace, key, actor):
     """Delete one module's data for one makerspace. Returns the row counts."""
@@ -53,13 +57,19 @@ def purge_module(makerspace, key, actor):
     }
     audit.record(actor, "makerspace.module_purge_started", makerspace=None, target=None, meta=meta)
 
-    with transaction.atomic():
+    sources = presentation_purge_scope(makerspace.pk, actor=actor) if key == "membership" else nullcontext()
+    from .module_purge_collectors_reimbursements import finance_key_context
+    finance_keys = finance_key_context(makerspace, key)
+    with sources, finance_keys, transaction.atomic():
         locked = makerspace.__class__.objects.select_for_update().get(pk=makerspace.pk)
         # Re-check under the lock: an install could have committed since `_resolve`.
         if plan.key in (locked.enabled_modules or []):
             raise ValidationError(
                 f"{plan.key} was re-installed; uninstall it again before purging."
             )
+        # Unfinished reimbursement work refuses before any key collection or deletion.
+        from .module_purge_collectors_reimbursements import purge_preflight
+        purge_preflight(locked, plan.key)
         # Collect under the makerspace lock to narrow the attach/delete race. This does
         # not eliminate it under READ COMMITTED: a row another transaction commits
         # between this SELECT and the DELETE is invisible to the former and visible to
@@ -85,10 +95,11 @@ def purge_module(makerspace, key, actor):
     # Both accounting paths run after commit and release quota only for objects the
     # bucket confirmed are gone -- a failed delete must free nothing, or the makerspace
     # stops being charged for storage it still holds.
-    _free_private_storage(makerspace, private_sizes, _delete_private_keys(private_keys))
+    transaction.on_commit(lambda: _free_private_storage(
+        makerspace, private_sizes, _delete_private_keys(private_keys)))
     # Storage HEADs cannot run inside the purge transaction: network failures must not
     # roll back deleted rows or hold the makerspace lock across one round trip per key.
-    _delete_public_images_and_free_storage(makerspace, public_keys)
+    transaction.on_commit(lambda: _delete_public_images_and_free_storage(makerspace, public_keys))
     return counts
 
 

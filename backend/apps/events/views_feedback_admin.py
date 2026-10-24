@@ -47,11 +47,11 @@ ERRORS = {
 
 def _manageable_certificate(actor, pk):
     certificate = get_object_or_404(
-        EventAttendanceCertificate.objects.select_related('registration__event__makerspace', 'response').filter(
-            registration__event_id__in=event_authority.visible_events(actor, Event.objects.all()).values('pk'),
+        EventAttendanceCertificate.objects.select_related('event__makerspace', 'response').filter(
+            event_id__in=event_authority.visible_events(actor, Event.objects.all()).values('pk'),
         ), pk=pk,
     )
-    event_authority.require(actor, certificate.registration.event, None)
+    event_authority.require(actor, certificate.event, None)
     return certificate
 
 
@@ -169,5 +169,6 @@ class EventCertificateReissueView(APIView):
     def post(self, request, pk):
         certificate = _manageable_certificate(request.user, pk)
         EmptyActionSerializer(data=request.data).is_valid(raise_exception=True)
-        created = reissue(certificate.registration, actor=request.user)
+        from .certificates.issuance import reissue_certificate
+        created = reissue_certificate(certificate, actor=request.user)
         return Response(CertificateSummarySerializer(created).data, status=status.HTTP_201_CREATED)

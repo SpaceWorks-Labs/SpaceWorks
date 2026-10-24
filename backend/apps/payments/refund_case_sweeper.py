@@ -24,14 +24,34 @@ from apps.tenant_migration.gate_runtime import fanout_tenant_write
 
 logger = logging.getLogger(__name__)
 LOOKBACK = timedelta(days=7)
+#: The migration that introduced refund cases. Its apply time is the deploy watermark.
+WATERMARK_MIGRATION = ("payments", "0023_refund_cases")
+
+
+def deploy_watermark():
+    """When refund cases were installed on this deployment (decision 72).
+
+    The sweep never looks before it, so the first deploy does not back-fill cases for
+    cancellations that happened while the feature did not exist. Django records the
+    apply time in `django_migrations` once, durably, and a restore or tenant import
+    does not move it. None (no record) means the sweep does nothing: fail closed.
+    """
+    from django.db.migrations.recorder import MigrationRecorder
+    app, name = WATERMARK_MIGRATION
+    return MigrationRecorder.Migration.objects.filter(app=app, name=name).values_list("applied", flat=True).first()
+
+
+def sweep_since(now):
+    watermark = deploy_watermark()
+    return None if watermark is None else max(now - LOOKBACK, watermark)
 PAID = (Payment.Status.PAID_ONLINE, Payment.Status.PAID_OFFLINE)
 
 
-def missed_registration_cases(space, *, now, limit):
+def missed_registration_cases(space, *, since, limit):
     """`(payment, reason_code, cancelled_at)` for paid, cancelled registrations with no due case."""
     from apps.events.models import Event, EventRegistration
 
-    cutoff = now - LOOKBACK
+    cutoff = since
     standing = EventRegistration.objects.filter(
         event__makerspace=space, event__status=Event.Status.CANCELLED, event__updated_at__gte=cutoff,
     ).exclude(status__in=(EventRegistration.Status.CANCELLED, EventRegistration.Status.REJECTED))
@@ -50,7 +70,7 @@ def missed_registration_cases(space, *, now, limit):
     return found
 
 
-def missed_membership_cases(space, *, now, limit):
+def missed_membership_cases(space, *, since, limit):
     """Paid term charges of recently cancelled terms -- the term's own renewal and the one
     that bought it -- that have no due case yet."""
     from apps.audit.models import AuditLog
@@ -59,7 +79,7 @@ def missed_membership_cases(space, *, now, limit):
     cancelled = {}
     for target_id, at in AuditLog.objects.filter(
         makerspace=space, action="membership.term_cancelled", target_type="makerspaces.membershipterm",
-        created_at__gte=now - LOOKBACK,
+        created_at__gte=since,
     ).values_list("target_id", "created_at"):
         cancelled.setdefault(int(target_id), at)
     subjects = {}
@@ -82,7 +102,9 @@ def rebuild_missed_refund_cases(*, makerspace_id=None, limit=200, now=None):
 
     counts = {"opened": 0, "skipped": 0, "failed": 0}
     events_live = not app_is_tombstoned("events")
-    now = now or timezone.now()
+    since = sweep_since(now or timezone.now())
+    if since is None:
+        return counts
     spaces = rbac.scope_for_scheduled_work(Makerspace.objects.all(), field="pk").order_by("pk")
     if makerspace_id is not None:
         spaces = spaces.filter(pk=makerspace_id)
@@ -91,8 +113,8 @@ def rebuild_missed_refund_cases(*, makerspace_id=None, limit=200, now=None):
             with fanout_tenant_write(space.pk, operation="rebuild_refund_cases", counts=counts) as allowed:
                 if not allowed:
                     continue
-                found = missed_registration_cases(space, now=now, limit=limit) if events_live else []
-                for payment, reason, cancelled_at in [*found, *missed_membership_cases(space, now=now, limit=limit)]:
+                found = missed_registration_cases(space, since=since, limit=limit) if events_live else []
+                for payment, reason, cancelled_at in [*found, *missed_membership_cases(space, since=since, limit=limit)]:
                     try:
                         case = open_due_case(payment, reason_code=reason, actor=None,
                                              cancelled_at=None if reason == RefundCase.ReasonCode.EVENT_CANCELLED

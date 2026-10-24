@@ -29,6 +29,9 @@ SOURCE_LOCAL_AUDIT_EDGES = frozenset(
         ("payments.connect_previous_authorization_revoked", "connect_account_id"),
         ("procurement.moved_to_printing", "result_id"),
         ("qr.rebound", "new_target_id"),
+        # Managed staging origin of a dump request: deployment-local custody identifiers.
+        ("tenant_migration.tenant_dump_requested", "staging_capture_id"),
+        ("tenant_migration.tenant_dump_requested", "staging_deployment_id"),
         ("tenant_migration.pairing_approved", "migration_id"),
         ("tenant_migration.pairing_approved", "source_deployment_id"),
         ("tenant_migration.pairing_approved", "target_deployment_id"),
@@ -95,5 +98,22 @@ SOURCE_LOCAL_AUDIT_EDGES = frozenset(
         ("backup.offsite_copy_pruned", "destination_id"),
         ("backup.offsite_copy_verified", "archive_id"),
         ("backup.offsite_copy_verified", "destination_id"),
+        # Managed-cloud coordination, staging, mail budget and bucket receipts are
+        # deployment-local rows that never travel in a tenant dump.
+        ("cloud.delivery_cancelled", "delivery_id"),
+        ("cloud.tick_started", "tick_id"),
+        ("cloud.tick_finished", "tick_id"),
+        ("deployment.staging_created", "stage_id"),
+        ("deployment.staging_available", "stage_id"),
+        ("deployment.staging_deleted", "stage_id"),
+        ("email.budget_reserved", "reservation_id"),
+        ("email.budget_settled", "reservation_id"),
+        ("email.acceptance_reconciled", "reservation_id"),
+        # Delivery and email-log rows are omitted runtime telemetry.
+        ("notification.email_accepted", "delivery_id"),
+        ("notification.email_accepted", "email_log_id"),
+        ("storage.bucket_binding_migrated", "receipt_id"),
+        ("storage.bucket_handoff_resumed", "receipt_id"),
+        ("storage.legacy_receipt_bound", "receipt_id"),
     }
 )

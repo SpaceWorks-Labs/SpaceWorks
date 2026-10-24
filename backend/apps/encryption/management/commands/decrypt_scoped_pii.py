@@ -1,6 +1,7 @@
 """Fenced, authenticated rollback from scoped envelopes to legacy plaintext."""
 
 from uuid import UUID
+from contextlib import ExitStack
 
 from django.apps import apps
 from django.conf import settings
@@ -12,34 +13,17 @@ from django.db import transaction
 from apps.audit.services import record
 from apps.encryption.crypto import PiiUnavailable, is_envelope
 from apps.encryption.maintenance import decrypted_values, validate_legacy_values, write_legacy_values
+from apps.encryption.maintenance_programme import MANDATORY_SOURCE_LABEL, MANDATORY_SOURCE_ERROR
 from apps.encryption.blind_index import canonical_email
 from apps.encryption.models import PiiBlindIndex, PiiGlobalWriteFence, PiiMakerspaceWriteFence
 from apps.encryption.readiness import assert_ready
 from apps.encryption.registry import all_fields, fields_for_label, registered_labels
 from apps.encryption.write_fence import fence_operation
+from apps.encryption.tenant_preparation import prepare_tenant_key, tenant_key_context
 
 _FILTERS = {
-    "devices.PrinterJob": "makerspace_id",
-    "events.EventBroadcast": "makerspace_id",
-    "events.EventAttendanceCertificate": "registration__event__makerspace_id",
-    "events.EventFeedbackResponse": "survey__event__makerspace_id",
-    "makerspaces.InvitationRequest": "makerspace_id",
-    "makerspaces.MemberCard": "makerspace_id",
-    "makerspaces.MembershipRequest": "makerspace_id",
-    "integrations.NotificationEnvelope": "makerspace_id",
-    "integrations.NotificationEndpoint": "makerspace_id",
-    "integrations.NotificationEndpointChallenge": "makerspace_id",
-    "integrations.MessagingConsent": "makerspace_id",
-    "notifications.MemberBroadcast": "makerspace_id",
-    "notifications.NotificationInboxRow": "makerspace_id",
-    "hardware_requests.HardwareRequest": "makerspace_id",
-    "events.EventRegistration": "event__makerspace_id",
-    "bookings.Booking": "space__makerspace_id",
-    "bookings.BookingBroadcast": "makerspace_id",
-    "bookings.BookingDepartureEvent": "makerspace_id",
-    "machines.MachineServiceRequest": "makerspace_id",
-    "machines.MachineUsageEntry": "machine__makerspace_id",
-    "integrations.EmailLog": "makerspace_id",
+    label: fields_for_label(label)[0].makerspace_path.replace(".", "__")
+    for label in registered_labels()
 }
 
 
@@ -77,6 +61,10 @@ class Command(BaseCommand):
         if makerspace is None:
             raise CommandError("The makerspace does not exist.")
         mutate = not options["dry_run"] and not options["verify_only"]
+        if mutate:
+            selected = [options["model"]] if options["model"] else registered_labels()
+            if any(field.encryption_required for label in selected for field in fields_for_label(label)):
+                raise CommandError("Mandatory encrypted fields cannot be rolled back to persistent plaintext. Select an optional model.")
         operation = self._operation(options, mutate)
         if mutate:
             if options["confirm_makerspace"] != makerspace.pk:
@@ -89,6 +77,10 @@ class Command(BaseCommand):
             except PiiUnavailable as exc:
                 raise CommandError("Scoped PII readiness preflight failed.") from exc
         labels = [options["model"]] if options["model"] else sorted(registered_labels())
+        if MANDATORY_SOURCE_LABEL in labels and apps.get_model(MANDATORY_SOURCE_LABEL).objects.filter(
+            event__makerspace_id=makerspace.pk,
+        ).exists():
+            raise CommandError(MANDATORY_SOURCE_ERROR)
         total = {"decrypted": 0, "plaintext": 0, "empty": 0}
         for label in labels:
             counts = self._process_model(label, makerspace.pk, actor, operation, options, mutate)
@@ -118,13 +110,21 @@ class Command(BaseCommand):
 
     def _process_model(self, label, makerspace_id, actor, operation, options, mutate):
         model, fields = apps.get_model(label), fields_for_label(label)
-        filters = {_FILTERS[label]: makerspace_id}
+        filters = {fields[0].makerspace_path.replace(".", "__"): makerspace_id}
+        prepared = None
+        if any(field.encryption_required for field in fields) and model.objects.filter(**filters).exists():
+            prepared = prepare_tenant_key(makerspace_id, create=False)
         checkpoint, counts = options["resume_after_pk"], {"decrypted": 0, "plaintext": 0, "empty": 0}
         while True:
             ids = list(model.objects.filter(**filters, pk__gt=checkpoint).order_by("pk").values_list("pk", flat=True)[:options["batch_size"]])
             if not ids:
                 break
-            with transaction.atomic():
+            with ExitStack() as stack:
+                from apps.encryption.preparation import prepare_tenants
+                stack.enter_context(prepare_tenants([makerspace_id]))
+                if prepared:
+                    stack.enter_context(tenant_key_context(prepared))
+                stack.enter_context(transaction.atomic())
                 makerspace = apps.get_model("makerspaces.Makerspace").objects.select_for_update().get(pk=makerspace_id)
                 context = fence_operation(operation) if mutate else transaction.atomic()
                 with context:
@@ -173,6 +173,7 @@ class Command(BaseCommand):
                 raise ValidationError({"email": "A registration already uses this email."})
 
     def _verify_model(self, model, fields, filters, makerspace_id):
+        fields = tuple(field for field in fields if not field.encryption_required)
         for row in model.objects.filter(**filters).iterator(chunk_size=200):
             values = {}
             for field in fields:
@@ -194,7 +195,11 @@ class Command(BaseCommand):
             raise CommandError("Rollback verification found blind-index rows.")
 
     def _verify_global(self):
+        if apps.get_model(MANDATORY_SOURCE_LABEL).objects.exists():
+            raise CommandError(MANDATORY_SOURCE_ERROR)
         for field in all_fields():
+            if field.encryption_required:
+                continue
             model = apps.get_model(field.model_label)
             if any(is_envelope(row[0]) for row in model.objects.values_list(field.field_name).iterator(chunk_size=200)):
                 raise CommandError("Global rollback verification found an envelope.")

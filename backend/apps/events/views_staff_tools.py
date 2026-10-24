@@ -41,7 +41,7 @@ class EventRegistrationAnswersView(APIView):
                    responses={200: EventRegistrationAdminSerializer, **REGISTRATION_ACTION_ERRORS})
     def patch(self, request, pk):
         registration = _manageable_registration(request.user, pk, MANAGE_REGISTRATIONS)
-        serializer = RegistrationAnswersSerializer(data=request.data)
+        serializer = RegistrationAnswersSerializer(data=request.data, context={"event": registration.event})
         serializer.is_valid(raise_exception=True)
         edited = edit_registration_answers(registration, actor=request.user, **serializer.validated_data)
         # This edit carries no finance authority or payment summary.

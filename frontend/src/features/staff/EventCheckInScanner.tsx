@@ -1,3 +1,5 @@
+import { QuickBadgePrint } from "./eventCredentials/QuickBadgePrint";
+import { useReducedMotion } from "../../components/delight";
 import { opsStatusLabel } from "./opsPresentation";
 import { useEffect, useRef, useState } from "react";
 
@@ -28,6 +30,8 @@ export default function EventCheckInScanner({
   eventId: number;
   onClose: () => void;
 }) {
+  const [quickPrint, setQuickPrint] = useState<{ id: number; name: string } | null>(null);
+  const reducedMotion = useReducedMotion();
   const [resolved, setResolved] = useState<EventCheckInResolution | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [confirmed, setConfirmed] = useState<string | null>(null);
@@ -40,8 +44,8 @@ export default function EventCheckInScanner({
   const sectionRef = useRef<HTMLElement>(null);
   useEffect(() => {
     if (!resolved && !error && !confirmed) return;
-    sectionRef.current?.querySelector<HTMLElement>("section[aria-labelledby]")?.scrollIntoView?.({ block: "nearest", behavior: "smooth" });
-  }, [resolved, error, confirmed]);
+    sectionRef.current?.querySelector<HTMLElement>("section[aria-labelledby]")?.scrollIntoView?.({ block: "nearest", behavior: reducedMotion ? "auto" : "smooth" });
+  }, [resolved, error, confirmed, reducedMotion]);
 
   const handleScan = async (value: string) => {
     setError(null);
@@ -71,6 +75,7 @@ export default function EventCheckInScanner({
       await attend.mutateAsync(resolved.registration_id);
       setConfirmed(`${resolved.name} checked in.`);
       setAttendedId(resolved.registration_id);
+      setQuickPrint({ id: resolved.registration_id, name: resolved.name });
       setResolved(null);
     } catch (cause) {
       if (cause instanceof StructuredApiError && cause.status === 409) {
@@ -123,5 +128,6 @@ export default function EventCheckInScanner({
       } : error ? { title: "Couldn’t check in", tone: "danger", summary: error, next: { label: "Scan another", onClick: () => { setError(null); setResolved(null); } } } : confirmed ? { title: confirmed, tone: "success", next: { label: "Scan another", onClick: () => { setConfirmed(null); setAttendedId(null); } } } : undefined}
       controls={resolved || attendanceTools ? <>{resolved ? <button className="desk-button" type="button" onClick={() => setResolved(null)}>Scan another</button> : null}{attendanceTools}</> : undefined}
       recent={confirmed ? [{ key: "latest", label: confirmed, tone: "success" }] : []} recentTitle="Recent check-ins" />
+    {quickPrint ? <QuickBadgePrint key={quickPrint.id} eventId={eventId} registrationId={quickPrint.id} name={quickPrint.name} onClose={() => setQuickPrint(null)} /> : null}
   </section>;
 }

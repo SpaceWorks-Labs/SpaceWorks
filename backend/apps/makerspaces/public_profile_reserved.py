@@ -27,6 +27,7 @@ RESERVED_SEGMENTS = frozenset({
     'items',
     'kiosk',
     'm',
+    'machine-service',
     'machines',
     'media',
     'member',

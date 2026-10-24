@@ -7,7 +7,7 @@ from .tenant_dump_types import ModelDisposition, ModelRule, TableRule
 
 FIRST_PARTY_APP_LABELS = frozenset(
     """accounts admin_api apiclients audit backup bookings boxes data_export devices
-    encryption events evidence hardware_requests hosting_requests integrations inventory machines
+    encryption event_reimbursements events evidence hardware_requests hosting_requests integrations inventory machines
     maintenance makerspaces notifications operations organizations payments payments_rail
     presence
     printing procurement roadmap separability tenant_migration warranty""".split()
@@ -152,6 +152,10 @@ def _model_rules():
     return rules
 
 
+from .catalog_events_programme import EXPORTED_FIELDS as PROGRAMME_PROJECTED_FIELDS
+PROJECTED_MODEL_LABELS |= PROGRAMME_PROJECTED_FIELDS.keys()
+from .catalog_reimbursements import EXPORTED_FIELDS as REIMBURSEMENT_PROJECTED_FIELDS
+PROJECTED_MODEL_LABELS |= REIMBURSEMENT_PROJECTED_FIELDS.keys()
 FIRST_PARTY_MODEL_RULES = _model_rules()
 
 AUTO_CREATED_TABLE_RULES = {

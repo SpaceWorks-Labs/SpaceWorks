@@ -77,10 +77,17 @@ class EventAssetCopies(AssetCopies):
         return plan
 
 
-def event_asset_transaction(operation):
-    """Own both commits; refuse caller transactions which would retain locks."""
+def event_asset_transaction(operation, *, page_id=None):
+    """Own both commits; refuse caller transactions which would retain locks.
+
+    ``page_id`` is the EventPage key the events programme pre-allocated before any
+    lock (decision #86); a page created by either pass reuses it, so object keys
+    planned under that page prefix stay valid through the replay.
+    """
     from .event_asset_work import perform
     copies = EventAssetCopies()
+    if page_id is not None:
+        copies.remember("page", page_id)
     try:
         # The only unmeasured image is the legacy public event cover. Inspect it
         # outside atomic, then repeat validation before reserving any bytes.

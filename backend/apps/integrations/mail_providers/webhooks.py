@@ -7,7 +7,6 @@ from django.db import transaction
 from apps.accounts import rbac
 from apps.audit import services as audit
 from apps.integrations.models_email import EmailLog, EmailProviderWebhookReceipt
-from apps.integrations.models_suppression import EmailSuppression
 from apps.tenant_migration.gate_runtime import tenant_write
 
 
@@ -37,13 +36,13 @@ def observe(space, provider, event):
             log.provider_delivery_status = event.status
             log.save(update_fields=["provider_delivery_status", "updated_at"])
         if event.status in {"bounce", "complaint"} and log.provider_recipient_hash:
-            rows = rbac.scope_notification_policy(EmailSuppression.objects.all(), makerspace_id=space.pk)
-            suppression, _ = rows.get_or_create(makerspace=space, address_hash=log.provider_recipient_hash,
-                                                defaults={"reason": event.status})
-            suppression = rows.select_for_update().get(pk=suppression.pk)
-            if event.status == "complaint" and suppression.reason != "complaint":
-                suppression.reason = "complaint"
-                suppression.save(update_fields=["reason"])
+            # Decision #86c: the generic bounce webhook's record is canonical; forward into it.
+            from apps.integrations.email_provider_events import record_provider_event
+            record_provider_event(
+                space, event_id=f"{provider}:{hashlib.sha256(event.event_id.encode()).hexdigest()}",
+                reason=event.status, recipient_hash=log.provider_recipient_hash,
+                logs=EmailLog.objects.filter(pk=log.pk),
+            )
         audit.record(None, "email.provider_observed", makerspace=space, target=log,
                      meta={"provider": provider, "status": event.status})
     return True

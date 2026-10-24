@@ -152,7 +152,10 @@ def _machine_service_submit(makerspace) -> int:
 
 def _storage(makerspace) -> int:
     from .website_asset_journal import pending_bytes
-    return makerspace.storage_bytes_used + pending_bytes(makerspace.pk)
+    from .storage_events_programme import accounted_bytes
+    # Dedicated event pools count toward provider usage but not the ordinary tenant
+    # entitlement; pending page-asset deletions still hold their bytes until cleaned.
+    return max(0, makerspace.storage_bytes_used - accounted_bytes(makerspace)) + pending_bytes(makerspace.pk)
 
 
 def add_storage(makerspace, size_bytes) -> None:

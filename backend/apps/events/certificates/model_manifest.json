@@ -1,0 +1,867 @@
+{
+  "lane": "E",
+  "migration_owner": "G",
+  "models": [
+    {
+      "model": "events.EventAttendanceCertificate",
+      "source": "backend/apps/events/models_certificates.py",
+      "fields": [
+        {
+          "name": "event",
+          "definition": "models.ForeignKey('events.Event', on_delete=models.PROTECT, related_name='certificates')"
+        },
+        {
+          "name": "recipient_member",
+          "definition": "models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='event_certificates')"
+        },
+        {
+          "name": "role_assignment",
+          "definition": "models.ForeignKey('events.EventRoleAssignment', on_delete=models.PROTECT, null=True, blank=True, related_name='certificates')"
+        },
+        {
+          "name": "kind",
+          "definition": "models.CharField(max_length=24, choices=Kind.choices, default=Kind.ATTENDANCE)"
+        },
+        {
+          "name": "award",
+          "definition": "models.ForeignKey('events.HackathonPrize', on_delete=models.PROTECT, null=True, blank=True, related_name='certificates')"
+        },
+        {
+          "name": "result_revision",
+          "definition": "models.ForeignKey('events.EventResultRevision', on_delete=models.PROTECT, null=True, blank=True, related_name='certificates')"
+        },
+        {
+          "name": "public_verification_enabled",
+          "definition": "models.BooleanField(default=False)"
+        },
+        {
+          "name": "response",
+          "definition": "models.ForeignKey(EventFeedbackResponse, on_delete=models.PROTECT, related_name='certificates', null=True, blank=True)"
+        },
+        {
+          "name": "registration",
+          "definition": "models.ForeignKey(EventRegistration, on_delete=models.PROTECT, related_name='attendance_certificates', null=True, blank=True)"
+        },
+        {
+          "name": "serial",
+          "definition": "models.UUIDField(default=uuid4, unique=True, editable=False)"
+        },
+        {
+          "name": "revision",
+          "definition": "models.PositiveIntegerField()"
+        },
+        {
+          "name": "template_revision",
+          "definition": "models.ForeignKey('events.EventCertificateTemplateRevision', on_delete=models.PROTECT, null=True, blank=True, related_name='certificates')"
+        },
+        {
+          "name": "layout_snapshot",
+          "definition": "models.JSONField(default=dict, blank=True)"
+        },
+        {
+          "name": "recipient_name",
+          "definition": "models.TextField()"
+        },
+        {
+          "name": "event_title",
+          "definition": "models.CharField(max_length=200)"
+        },
+        {
+          "name": "event_starts_at",
+          "definition": "models.DateTimeField()"
+        },
+        {
+          "name": "event_ends_at",
+          "definition": "models.DateTimeField()"
+        },
+        {
+          "name": "event_timezone_name",
+          "definition": "models.CharField(max_length=64, default='UTC')"
+        },
+        {
+          "name": "issuer_name",
+          "definition": "models.CharField(max_length=200)"
+        },
+        {
+          "name": "object_key",
+          "definition": "models.CharField(max_length=512, unique=True)"
+        },
+        {
+          "name": "content_type",
+          "definition": "models.CharField(max_length=64, default='application/pdf')"
+        },
+        {
+          "name": "size_bytes",
+          "definition": "models.PositiveBigIntegerField(null=True, blank=True)"
+        },
+        {
+          "name": "sha256",
+          "definition": "models.CharField(max_length=64, blank=True)"
+        },
+        {
+          "name": "status",
+          "definition": "models.CharField(max_length=16, choices=Status.choices, default=Status.PENDING)"
+        },
+        {
+          "name": "issued_at",
+          "definition": "models.DateTimeField(auto_now_add=True)"
+        },
+        {
+          "name": "rendered_at",
+          "definition": "models.DateTimeField(null=True, blank=True)"
+        },
+        {
+          "name": "render_token",
+          "definition": "models.UUIDField(null=True, blank=True, editable=False)"
+        },
+        {
+          "name": "render_started_at",
+          "definition": "models.DateTimeField(null=True, blank=True, editable=False)"
+        },
+        {
+          "name": "render_attempts",
+          "definition": "models.PositiveIntegerField(default=0, editable=False)"
+        },
+        {
+          "name": "revoked_at",
+          "definition": "models.DateTimeField(null=True, blank=True)"
+        },
+        {
+          "name": "revoked_by",
+          "definition": "models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')"
+        },
+        {
+          "name": "revocation_reason",
+          "definition": "models.CharField(max_length=32, choices=RevocationReason.choices, blank=True)"
+        }
+      ],
+      "meta": [
+        "ordering = ['event_id', 'id']",
+        "constraints = [models.CheckConstraint(condition=Q(registration__isnull=False, role_assignment__isnull=True) | Q(registration__isnull=True, role_assignment__isnull=False, response__isnull=True), name='event_certificate_exact_subject'), models.UniqueConstraint(fields=['registration', 'kind', 'award', 'revision'], condition=Q(registration__isnull=False), nulls_distinct=False, name='event_cert_reg_revision_v2'), models.UniqueConstraint(fields=['role_assignment', 'kind', 'award', 'revision'], condition=Q(role_assignment__isnull=False), nulls_distinct=False, name='event_cert_role_revision_v2'), models.UniqueConstraint(fields=['registration', 'kind', 'award'], condition=Q(registration__isnull=False) & ~Q(status='revoked'), nulls_distinct=False, name='event_cert_reg_live_v2'), models.UniqueConstraint(fields=['role_assignment', 'kind', 'award'], condition=Q(role_assignment__isnull=False) & ~Q(status='revoked'), nulls_distinct=False, name='event_cert_role_live_v2')]"
+      ]
+    },
+    {
+      "model": "events.EventCertificateArtwork",
+      "source": "backend/apps/events/models_certificate_templates.py",
+      "fields": [
+        {
+          "name": "resource_id",
+          "definition": "models.UUIDField(default=uuid4, unique=True, editable=False)"
+        },
+        {
+          "name": "event",
+          "definition": "models.ForeignKey('events.Event', on_delete=models.CASCADE, related_name='certificate_artworks')"
+        },
+        {
+          "name": "object_key",
+          "definition": "models.CharField(max_length=512, unique=True)"
+        },
+        {
+          "name": "size_bytes",
+          "definition": "models.PositiveBigIntegerField(default=0)"
+        },
+        {
+          "name": "sha256",
+          "definition": "models.CharField(max_length=64, blank=True)"
+        },
+        {
+          "name": "version_id",
+          "definition": "models.CharField(max_length=1024, blank=True)"
+        },
+        {
+          "name": "promoted_at",
+          "definition": "models.DateTimeField(null=True, blank=True)"
+        },
+        {
+          "name": "created_at",
+          "definition": "models.DateTimeField(auto_now_add=True)"
+        }
+      ],
+      "meta": []
+    },
+    {
+      "model": "events.EventCertificateTemplateRevision",
+      "source": "backend/apps/events/models_certificate_templates.py",
+      "fields": [
+        {
+          "name": "event",
+          "definition": "models.ForeignKey('events.Event', on_delete=models.CASCADE, related_name='certificate_template_revisions')"
+        },
+        {
+          "name": "artwork",
+          "definition": "models.ForeignKey(EventCertificateArtwork, on_delete=models.PROTECT, null=True, blank=True, related_name='template_revisions')"
+        },
+        {
+          "name": "parameters",
+          "definition": "models.JSONField(default=dict)"
+        },
+        {
+          "name": "created_at",
+          "definition": "models.DateTimeField(auto_now_add=True)"
+        }
+      ],
+      "meta": [
+        "ordering = ('-id',)"
+      ]
+    },
+    {
+      "model": "events.EventRegistrationCredential",
+      "source": "backend/apps/events/credentials/models.py",
+      "fields": [
+        {
+          "name": "registration",
+          "definition": "models.ForeignKey('events.EventRegistration', on_delete=models.CASCADE, related_name='credentials')"
+        },
+        {
+          "name": "generation",
+          "definition": "models.PositiveIntegerField()"
+        },
+        {
+          "name": "token_digest",
+          "definition": "models.CharField(max_length=64, unique=True, editable=False)"
+        },
+        {
+          "name": "token_ciphertext",
+          "definition": "models.BinaryField(editable=False)"
+        },
+        {
+          "name": "key_version",
+          "definition": "models.PositiveIntegerField(editable=False)"
+        },
+        {
+          "name": "created_at",
+          "definition": "models.DateTimeField(auto_now_add=True)"
+        },
+        {
+          "name": "expires_at",
+          "definition": "models.DateTimeField()"
+        },
+        {
+          "name": "revoked_at",
+          "definition": "models.DateTimeField(null=True, blank=True)"
+        },
+        {
+          "name": "revoked_by",
+          "definition": "models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')"
+        },
+        {
+          "name": "revocation_reason",
+          "definition": "models.CharField(max_length=32, blank=True)"
+        }
+      ],
+      "meta": [
+        "constraints = [models.UniqueConstraint(fields=('registration', 'generation'), name='event_credential_generation'), models.UniqueConstraint(fields=('registration',), condition=Q(revoked_at__isnull=True), name='event_credential_live'), models.CheckConstraint(condition=Q(generation__gt=0), name='event_credential_generation_positive')]"
+      ]
+    },
+    {
+      "model": "events.EventCredentialCommand",
+      "source": "backend/apps/events/credentials/models.py",
+      "fields": [
+        {
+          "name": "event",
+          "definition": "models.ForeignKey('events.Event', on_delete=models.CASCADE)"
+        },
+        {
+          "name": "operation_id",
+          "definition": "models.UUIDField()"
+        },
+        {
+          "name": "actor",
+          "definition": "models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)"
+        },
+        {
+          "name": "request_sha256",
+          "definition": "models.CharField(max_length=64)"
+        },
+        {
+          "name": "result",
+          "definition": "models.JSONField(default=dict)"
+        },
+        {
+          "name": "created_at",
+          "definition": "models.DateTimeField(auto_now_add=True)"
+        }
+      ],
+      "meta": [
+        "constraints = [models.UniqueConstraint(fields=('event', 'operation_id'), name='event_credential_command')]"
+      ]
+    },
+    {
+      "model": "events.EventCertificateLibraryTemplate",
+      "source": "backend/apps/events/certificates/library_models.py",
+      "fields": [
+        {
+          "name": "makerspace",
+          "definition": "models.ForeignKey('makerspaces.Makerspace', on_delete=models.CASCADE)"
+        },
+        {
+          "name": "name",
+          "definition": "models.CharField(max_length=120)"
+        },
+        {
+          "name": "version",
+          "definition": "models.PositiveIntegerField(default=1)"
+        },
+        {
+          "name": "archived",
+          "definition": "models.BooleanField(default=False)"
+        },
+        {
+          "name": "created_at",
+          "definition": "models.DateTimeField(auto_now_add=True)"
+        }
+      ],
+      "meta": []
+    },
+    {
+      "model": "events.EventCertificateLibraryArtwork",
+      "source": "backend/apps/events/certificates/library_models.py",
+      "fields": [
+        {
+          "name": "template",
+          "definition": "models.ForeignKey(EventCertificateLibraryTemplate, on_delete=models.CASCADE, related_name='artworks')"
+        },
+        {
+          "name": "resource_id",
+          "definition": "models.UUIDField(default=uuid4, unique=True, editable=False)"
+        },
+        {
+          "name": "object_key",
+          "definition": "models.CharField(max_length=512, unique=True)"
+        },
+        {
+          "name": "sha256",
+          "definition": "models.CharField(max_length=64)"
+        },
+        {
+          "name": "size_bytes",
+          "definition": "models.PositiveBigIntegerField()"
+        },
+        {
+          "name": "version_id",
+          "definition": "models.CharField(max_length=1024, blank=True)"
+        },
+        {
+          "name": "promoted_at",
+          "definition": "models.DateTimeField(null=True, blank=True)"
+        },
+        {
+          "name": "created_at",
+          "definition": "models.DateTimeField(auto_now_add=True)"
+        }
+      ],
+      "meta": []
+    },
+    {
+      "model": "events.EventCertificateLibraryRevision",
+      "source": "backend/apps/events/certificates/library_models.py",
+      "fields": [
+        {
+          "name": "template",
+          "definition": "models.ForeignKey(EventCertificateLibraryTemplate, on_delete=models.CASCADE, related_name='revisions')"
+        },
+        {
+          "name": "parameters",
+          "definition": "models.JSONField()"
+        },
+        {
+          "name": "artwork",
+          "definition": "models.ForeignKey(EventCertificateLibraryArtwork, on_delete=models.PROTECT, null=True, blank=True)"
+        },
+        {
+          "name": "created_at",
+          "definition": "models.DateTimeField(auto_now_add=True)"
+        }
+      ],
+      "meta": [
+        "ordering = ('-id',)"
+      ]
+    },
+    {
+      "model": "events.EventCertificateLibraryCommand",
+      "source": "backend/apps/events/certificates/library_models.py",
+      "fields": [
+        {
+          "name": "makerspace",
+          "definition": "models.ForeignKey('makerspaces.Makerspace', on_delete=models.CASCADE)"
+        },
+        {
+          "name": "template",
+          "definition": "models.ForeignKey(EventCertificateLibraryTemplate, on_delete=models.CASCADE)"
+        },
+        {
+          "name": "operation_id",
+          "definition": "models.UUIDField()"
+        },
+        {
+          "name": "request_sha256",
+          "definition": "models.CharField(max_length=64)"
+        },
+        {
+          "name": "result",
+          "definition": "models.JSONField(default=dict)"
+        }
+      ],
+      "meta": [
+        "constraints = [models.UniqueConstraint(fields=('makerspace', 'operation_id'), name='event_cert_library_op')]"
+      ]
+    },
+    {
+      "model": "events.EventCertificatePublicationPolicy",
+      "source": "backend/apps/events/certificates/models.py",
+      "fields": [
+        {
+          "name": "event",
+          "definition": "models.OneToOneField('events.Event', on_delete=models.CASCADE)"
+        },
+        {
+          "name": "enabled",
+          "definition": "models.BooleanField(default=False)"
+        },
+        {
+          "name": "version",
+          "definition": "models.PositiveIntegerField(default=0)"
+        },
+        {
+          "name": "changed_at",
+          "definition": "models.DateTimeField(auto_now=True)"
+        }
+      ],
+      "meta": []
+    },
+    {
+      "model": "events.CertificateIssueBatch",
+      "source": "backend/apps/events/certificates/models.py",
+      "fields": [
+        {
+          "name": "event",
+          "definition": "models.ForeignKey('events.Event', on_delete=models.CASCADE)"
+        },
+        {
+          "name": "actor",
+          "definition": "models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)"
+        },
+        {
+          "name": "operation_id",
+          "definition": "models.UUIDField()"
+        },
+        {
+          "name": "request_sha256",
+          "definition": "models.CharField(max_length=64)"
+        },
+        {
+          "name": "public_verification_enabled",
+          "definition": "models.BooleanField(default=True)"
+        },
+        {
+          "name": "state",
+          "definition": "models.CharField(max_length=12, default='queued', choices=((key, key) for key in ('queued', 'running', 'completed', 'failed')))"
+        },
+        {
+          "name": "version",
+          "definition": "models.PositiveIntegerField(default=0)"
+        },
+        {
+          "name": "created_at",
+          "definition": "models.DateTimeField(auto_now_add=True)"
+        },
+        {
+          "name": "completed_at",
+          "definition": "models.DateTimeField(null=True, blank=True)"
+        }
+      ],
+      "meta": [
+        "constraints = [models.UniqueConstraint(fields=('event', 'operation_id'), name='event_certificate_batch_op')]"
+      ]
+    },
+    {
+      "model": "events.CertificateIssueBatchItem",
+      "source": "backend/apps/events/certificates/models.py",
+      "fields": [
+        {
+          "name": "batch",
+          "definition": "models.ForeignKey(CertificateIssueBatch, on_delete=models.CASCADE, related_name='items')"
+        },
+        {
+          "name": "subject_kind",
+          "definition": "models.CharField(max_length=16, choices=((key, key) for key in ('registration', 'role_assignment')))"
+        },
+        {
+          "name": "subject_id",
+          "definition": "models.PositiveBigIntegerField()"
+        },
+        {
+          "name": "kind",
+          "definition": "models.CharField(max_length=24)"
+        },
+        {
+          "name": "award_id",
+          "definition": "models.PositiveBigIntegerField(null=True, blank=True)"
+        },
+        {
+          "name": "result_revision_id",
+          "definition": "models.PositiveBigIntegerField(null=True, blank=True)"
+        },
+        {
+          "name": "certificate",
+          "definition": "models.ForeignKey('events.EventAttendanceCertificate', on_delete=models.SET_NULL, null=True, blank=True)"
+        },
+        {
+          "name": "state",
+          "definition": "models.CharField(max_length=12, default='queued')"
+        },
+        {
+          "name": "error_code",
+          "definition": "models.CharField(max_length=40, blank=True)"
+        }
+      ],
+      "meta": [
+        "constraints = [models.UniqueConstraint(fields=('batch', 'subject_kind', 'subject_id', 'kind', 'award_id'), nulls_distinct=False, name='event_certificate_batch_subject')]"
+      ]
+    },
+    {
+      "model": "events.EventBadgeTemplateRevision",
+      "source": "backend/apps/events/certificates/print_models.py",
+      "fields": [
+        {
+          "name": "event",
+          "definition": "models.ForeignKey('events.Event', on_delete=models.CASCADE, related_name='badge_template_revisions')"
+        },
+        {
+          "name": "document",
+          "definition": "models.JSONField()"
+        },
+        {
+          "name": "stock",
+          "definition": "models.CharField(max_length=24)"
+        },
+        {
+          "name": "created_at",
+          "definition": "models.DateTimeField(auto_now_add=True)"
+        }
+      ],
+      "meta": []
+    },
+    {
+      "model": "events.BadgePrintJob",
+      "source": "backend/apps/events/certificates/print_models.py",
+      "fields": [
+        {
+          "name": "event",
+          "definition": "models.ForeignKey('events.Event', on_delete=models.CASCADE)"
+        },
+        {
+          "name": "actor",
+          "definition": "models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)"
+        },
+        {
+          "name": "operation_id",
+          "definition": "models.UUIDField()"
+        },
+        {
+          "name": "request_sha256",
+          "definition": "models.CharField(max_length=64)"
+        },
+        {
+          "name": "event_version",
+          "definition": "models.PositiveIntegerField(default=0)"
+        },
+        {
+          "name": "fields_sha256",
+          "definition": "models.CharField(max_length=64)"
+        },
+        {
+          "name": "template",
+          "definition": "models.JSONField()"
+        },
+        {
+          "name": "template_revision",
+          "definition": "models.ForeignKey(EventBadgeTemplateRevision, on_delete=models.PROTECT)"
+        },
+        {
+          "name": "stock",
+          "definition": "models.CharField(max_length=24)"
+        },
+        {
+          "name": "include_photo",
+          "definition": "models.BooleanField(default=False)"
+        },
+        {
+          "name": "registration_ids",
+          "definition": "models.JSONField(default=list)"
+        },
+        {
+          "name": "state",
+          "definition": "models.CharField(max_length=12, default='queued')"
+        },
+        {
+          "name": "render_token",
+          "definition": "models.UUIDField(null=True, blank=True)"
+        },
+        {
+          "name": "render_started_at",
+          "definition": "models.DateTimeField(null=True, blank=True)"
+        },
+        {
+          "name": "row_failures",
+          "definition": "models.JSONField(default=list)"
+        },
+        {
+          "name": "object_key",
+          "definition": "models.CharField(max_length=512, unique=True)"
+        },
+        {
+          "name": "sha256",
+          "definition": "models.CharField(max_length=64, blank=True)"
+        },
+        {
+          "name": "size_bytes",
+          "definition": "models.PositiveBigIntegerField(default=0)"
+        },
+        {
+          "name": "created_at",
+          "definition": "models.DateTimeField(auto_now_add=True)"
+        },
+        {
+          "name": "expires_at",
+          "definition": "models.DateTimeField()"
+        },
+        {
+          "name": "cleaned_at",
+          "definition": "models.DateTimeField(null=True, blank=True)"
+        },
+        {
+          "name": "next_cleanup_at",
+          "definition": "models.DateTimeField(null=True, blank=True)"
+        }
+      ],
+      "meta": [
+        "constraints = [models.UniqueConstraint(fields=('event', 'operation_id'), name='event_badge_print_op')]"
+      ]
+    },
+    {
+      "model": "events.BadgePrintResource",
+      "source": "backend/apps/events/certificates/print_models.py",
+      "fields": [
+        {
+          "name": "job",
+          "definition": "models.ForeignKey(BadgePrintJob, on_delete=models.CASCADE, related_name='resources')"
+        },
+        {
+          "name": "registration",
+          "definition": "models.ForeignKey('events.EventRegistration', on_delete=models.CASCADE)"
+        },
+        {
+          "name": "kind",
+          "definition": "models.CharField(max_length=8, choices=((key, key) for key in ('photo', 'logo', 'qr')))"
+        },
+        {
+          "name": "credential",
+          "definition": "models.ForeignKey('events.EventRegistrationCredential', on_delete=models.CASCADE, null=True, blank=True)"
+        },
+        {
+          "name": "credential_generation",
+          "definition": "models.PositiveIntegerField(default=0)"
+        },
+        {
+          "name": "presentation",
+          "definition": "models.ForeignKey('events.EventMemberPresentation', on_delete=models.SET_NULL, null=True, blank=True)"
+        },
+        {
+          "name": "presentation_version",
+          "definition": "models.PositiveIntegerField(default=0)"
+        },
+        {
+          "name": "source_profile_id",
+          "definition": "models.PositiveBigIntegerField(null=True, blank=True)"
+        },
+        {
+          "name": "source_avatar_revision",
+          "definition": "models.CharField(max_length=64, blank=True)"
+        },
+        {
+          "name": "source_key_sha256",
+          "definition": "models.CharField(max_length=64, blank=True)"
+        },
+        {
+          "name": "object_key",
+          "definition": "models.CharField(max_length=512, unique=True, null=True, blank=True)"
+        },
+        {
+          "name": "sha256",
+          "definition": "models.CharField(max_length=64, blank=True)"
+        },
+        {
+          "name": "size_bytes",
+          "definition": "models.PositiveBigIntegerField(default=0)"
+        },
+        {
+          "name": "expires_at",
+          "definition": "models.DateTimeField()"
+        },
+        {
+          "name": "created_at",
+          "definition": "models.DateTimeField(auto_now_add=True)"
+        },
+        {
+          "name": "bound_at",
+          "definition": "models.DateTimeField(null=True, blank=True)"
+        },
+        {
+          "name": "cleaned_at",
+          "definition": "models.DateTimeField(null=True, blank=True)"
+        }
+      ],
+      "meta": [
+        "constraints = [models.UniqueConstraint(fields=('job', 'registration', 'kind'), name='event_badge_print_resource')]"
+      ]
+    },
+    {
+      "model": "events.EventMemberPresentation",
+      "source": "backend/apps/events/profile_photos/models.py",
+      "fields": [
+        {
+          "name": "event",
+          "definition": "models.ForeignKey('events.Event', on_delete=models.CASCADE)"
+        },
+        {
+          "name": "member",
+          "definition": "models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='+')"
+        },
+        {
+          "name": "selected_profile",
+          "definition": "models.ForeignKey('makerspaces.MemberProfile', on_delete=models.SET_NULL, null=True, blank=True, related_name='event_presentations')"
+        },
+        {
+          "name": "selected_membership",
+          "definition": "models.ForeignKey('makerspaces.MakerspaceMembership', on_delete=models.SET_NULL, null=True, blank=True, related_name='+')"
+        },
+        {
+          "name": "source_revision",
+          "definition": "models.CharField(max_length=64, blank=True)"
+        },
+        {
+          "name": "print_photo_consent",
+          "definition": "models.BooleanField(default=False)"
+        },
+        {
+          "name": "public_card_consent",
+          "definition": "models.BooleanField(default=False)"
+        },
+        {
+          "name": "public_card_scopes",
+          "definition": "models.JSONField(default=list, blank=True)"
+        },
+        {
+          "name": "consent_revision",
+          "definition": "models.PositiveIntegerField(default=0)"
+        },
+        {
+          "name": "consented_at",
+          "definition": "models.DateTimeField(null=True, blank=True)"
+        },
+        {
+          "name": "revoked_at",
+          "definition": "models.DateTimeField(null=True, blank=True)"
+        },
+        {
+          "name": "version",
+          "definition": "models.PositiveIntegerField(default=0)"
+        }
+      ],
+      "meta": [
+        "constraints = [models.UniqueConstraint(fields=('event', 'member'), name='event_member_presentation'), models.CheckConstraint(condition=Q(selected_profile__isnull=False, selected_membership__isnull=False) | Q(selected_profile__isnull=True, selected_membership__isnull=True, print_photo_consent=False, public_card_consent=False, public_card_scopes=[]), name='event_presentation_selection_shape')]"
+      ]
+    },
+    {
+      "model": "events.EventMemberCard",
+      "source": "backend/apps/events/profile_photos/models.py",
+      "fields": [
+        {
+          "name": "presentation",
+          "definition": "models.ForeignKey(EventMemberPresentation, on_delete=models.CASCADE, related_name='cards')"
+        },
+        {
+          "name": "public_id",
+          "definition": "models.UUIDField(default=uuid4, unique=True, editable=False)"
+        },
+        {
+          "name": "scope",
+          "definition": "models.CharField(max_length=8, choices=((key, key) for key in ('team', 'mentor', 'judge')))"
+        }
+      ],
+      "meta": [
+        "constraints = [models.UniqueConstraint(fields=('presentation', 'scope'), name='event_public_card_scope')]"
+      ]
+    },
+    {
+      "model": "events.EventPresentationCommand",
+      "source": "backend/apps/events/profile_photos/models.py",
+      "fields": [
+        {
+          "name": "presentation",
+          "definition": "models.ForeignKey(EventMemberPresentation, on_delete=models.CASCADE)"
+        },
+        {
+          "name": "operation_id",
+          "definition": "models.UUIDField()"
+        },
+        {
+          "name": "request_sha256",
+          "definition": "models.CharField(max_length=64)"
+        },
+        {
+          "name": "result",
+          "definition": "models.JSONField(default=dict)"
+        },
+        {
+          "name": "created_at",
+          "definition": "models.DateTimeField(auto_now_add=True)"
+        }
+      ],
+      "meta": [
+        "constraints = [models.UniqueConstraint(fields=('presentation', 'operation_id'), name='event_presentation_command')]"
+      ]
+    }
+  ],
+  "shared_field_changes_required": {
+    "events.EventRegistration": {
+      "credential_mode": "CharField choices legacy/v2, default legacy, service-owned; all legacy UUID resolve/offline/sync/roster paths refuse v2"
+    },
+    "events.Event": {
+      "version": "PositiveIntegerField default 0; G aggregate version field"
+    }
+  },
+  "required_database_guards": [
+    "credential immutable generation/binding; one-way revocation; unique live generation",
+    "presentation same owner/source profile/membership and scope bounds; source deletion atomically clears both FKs/consents before SET_NULL",
+    "certificate exactly one subject; same event/member/response/artwork/award/result; immutable subject and issuance fields; legal status transitions",
+    "immutable event/library/badge revisions and promoted artwork",
+    "immutable bound print resources; receipt replay uniqueness",
+    "Library capture command permits preparing resource bindings then a single applied result; applied receipt is immutable. Other E command receipts are append-only."
+  ],
+  "migration_backfills": [
+    "certificate.event <- registration.event; recipient_member <- registration.member; kind attendance; event_timezone_name <- event.timezone_name",
+    "preserve attendance revision and serial; public_verification_enabled false for all historical rows; policies default off",
+    "replace old certificate revision/live uniqueness with versioned subject+kind+award constraints including null prizes",
+    "new artwork.resource_id UUID unique; no portable collision overwrite",
+    "Certificate rendering claims: nullable render_token/render_started_at and render_attempts=0; stale or null legacy rendering claims can be reclaimed after five minutes."
+  ],
+  "portable_dispositions": {
+    "credentials": "OMIT ciphertext/digest/rows; RESET registration credential_mode legacy; explicit reissue required",
+    "presentation": "RESET all consent/selection/card identifiers; never carry foreign source profile/membership references",
+    "certificate_publication": "RESET policy and publication flags; keep serial/revisions; collision refuses",
+    "print_jobs_and_resources": "coordination OMIT; no portable User closure; retain source ownership for all-version cleanup",
+    "issue_batches_and_receipts": "coordination OMIT; preserve issued certificates",
+    "library_and_designs": "PRESERVE tenant/event owned revisions; remap owned keys/resource references; clear source VersionIds; private artwork checksums preserved"
+  },
+  "pii": "No new plaintext identifying columns. Existing EventAttendanceCertificate.recipient_name remains scoped encrypted; scope must change to explicit event.makerspace_id.",
+  "objects": [
+    "EventCertificateArtwork.object_key + staging key",
+    "EventCertificateLibraryArtwork.object_key + staging key",
+    "EventAttendanceCertificate.object_key + staging key",
+    "BadgePrintJob.object_key",
+    "BadgePrintResource.object_key if nonnull"
+  ],
+  "field_note": "Definitions are literal stdlib AST snapshots, not migrations or generated API snapshots."
+}

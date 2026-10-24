@@ -24,7 +24,7 @@ def collect_private_object_keys(makerspace, *, include_coordination=True):
         (MakerspacePublicPageAsset, {"page__makerspace": makerspace}),
         (BookingResourcePageAsset, {"page__space__makerspace": makerspace}),
         (EvidencePhoto, {"makerspace": makerspace}),
-        (EventAttendanceCertificate, {"registration__event__makerspace": makerspace}),
+        (EventAttendanceCertificate, {"event__makerspace": makerspace}),
         (WarrantyDocument, {"warranty__makerspace": makerspace}),
         (ToBuyReceipt, {"to_buy_item__makerspace": makerspace}),
         (MaintenanceLogDocument, {"log__machine__makerspace": makerspace}),
@@ -36,6 +36,8 @@ def collect_private_object_keys(makerspace, *, include_coordination=True):
                 from apps.evidence.storage import staging_key
                 add(staging_key(key))
     collect_service(makerspace, add)
+    from .storage_keys_events_programme import collect_programme_keys
+    collect_programme_keys(makerspace, add, include_coordination=include_coordination)
     from apps.payments.models import PaymentDocument
     for key in PaymentDocument.objects.filter(makerspace=makerspace).values_list("branding_logo_key", flat=True):
         add(key)
@@ -53,6 +55,10 @@ def collect_private_object_keys(makerspace, *, include_coordination=True):
             from apps.storage_capabilities.presigning import public_image_staging
             for key in collect_public_image_keys(makerspace, include_coordination=False):
                 add(public_image_staging(key, private_bucket=settings.AWS_STORAGE_BUCKET_NAME).key)
+    else:
+        # Migration capture/verification only; purge keeps its locator-driven deletion.
+        from .storage_keys_reimbursements import collect_portable_keys
+        collect_portable_keys(makerspace, add)
     return keys
 
 

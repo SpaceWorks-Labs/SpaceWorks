@@ -41,9 +41,11 @@ modules.
 | `events` | 12 | An events programme: events, notifications, email, member accounts, payments, reports (core is present but hidden by the `events` edition) |
 | `bookings` | 12 | Bookable rooms and resources: bookings, notifications, email, member accounts, payments, reports (core hidden by the `bookings` edition) |
 
-**Installing without a profile** gives you **7 modules**: the six core ones plus `backup`.
-Member accounts and mobile apps are opt-in; installing `mobile` also installs its
-`member_accounts` dependency.
+**Installing without a profile** gives you **8 modules**: the six core ones plus `backup` and
+`member_accounts`. Member accounts are default-on since owner decisions #80/#91, because a space without
+them takes account-less requests and self-checkout from anyone with a confirmed email -- that must be a
+deliberate untick. Mobile apps are opt-in; installing `mobile` or `membership` also installs
+`member_accounts`.
 
 The new `sms` and `whatsapp` notification modules default off. Only `everything` / `full`
 includes them; curated profile sizes stay unchanged.

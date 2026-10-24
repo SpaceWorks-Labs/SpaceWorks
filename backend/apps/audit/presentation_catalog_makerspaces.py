@@ -31,7 +31,6 @@ ENTRIES = (
       ),
     P("makerspace.purge_started", "Makerspace purge started"),
     P("makerspace.purged", "Makerspace purged"),
-    P("makerspace.request_access_changed", "Makerspace request access changed"),
     P("makerspace.return_policy_updated", "Makerspace return policy updated", (
         "policy_id",
         "before.default_loan_days",

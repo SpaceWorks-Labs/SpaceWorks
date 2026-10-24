@@ -16430,6 +16430,20 @@ export type PublicToolEvidenceUrlRequest = {
   "size_bytes"?: number | null;
 };
 
+export type PublicToolEvidenceUrlResponse = {
+  "evidence_id": number;
+  "upload_url": string;
+  "fields": {
+  [key: string]: unknown;
+};
+  "object_key": string;
+  "method"?: string;
+  "headers"?: {
+  [key: string]: unknown;
+};
+  "evidence_grant"?: string;
+};
+
 export type PublicToolLoan = {
   "has_kit_checklist": boolean;
   "public_token": string;

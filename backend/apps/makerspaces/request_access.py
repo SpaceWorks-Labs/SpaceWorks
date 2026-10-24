@@ -1,4 +1,4 @@
-"""Who may submit a borrow request — the single answer, in one place (owner decision #80).
+"""Who may submit a borrow request — the single answer, in one place (owner decisions #80/#91).
 
 Derived, never stored; there is no opt-in switch (`makerspaces/0105` dropped the old one).
 
@@ -7,13 +7,14 @@ Derived, never stored; there is no opt-in switch (`makerspaces/0105` dropped the
 ===================  ===========  ==============================================
 on                   on           ``members``  — an active MakerspaceMembership
 on                   off          ``accounts`` — any active signed-in account
-off                  either       ``contact``  — no account: name + phone + email,
+off                  (off)        ``contact``  — no account: name + phone + email,
                                   the email confirmed with a one-time code
 ===================  ===========  ==============================================
 
-A space without member accounts has accounts for STAFF only, so a public borrower cannot
-sign in at all; the contact path is what lets them ask. Its requests are recorded against
-the makerspace's inert `anonymous_requester` principal with an encrypted contact snapshot.
+`membership` requires `member_accounts` (#91), so the last row never has it. A space
+without member accounts has accounts for STAFF only, so EVERYONE there -- signed in or
+not -- requests and self-checks-out by the contact path (#91). Its requests are recorded
+against the makerspace's inert `anonymous_requester` principal with an encrypted snapshot.
 """
 
 MEMBERSHIP_MODULE = "membership"
@@ -51,6 +52,17 @@ def effective_policy(makerspace) -> str:
 
 def contact_requests_allowed(makerspace) -> bool:
     return effective_policy(makerspace) == CONTACT
+
+
+def uses_contact_path(request, makerspace) -> bool:
+    """Whether this caller borrows by the contact path (#80/#91).
+
+    Without member accounts EVERY account -- staff and organisation sign-ins included --
+    uses the contact form. A walk-in's claim session is the exception: it is not an
+    account but the staff-created person record itself (Phase 7), so it keeps acting as
+    that person and every handover stays attributed to them.
+    """
+    return contact_requests_allowed(makerspace) and getattr(request, "claim_session", None) is None
 
 
 def require_current_term(makerspace, membership):

@@ -145,6 +145,7 @@ export function PublicRequestPanel({
               >
                 <PublicToolScanPanel
                   makerspaceSlug={makerspaceSlug}
+                  requestAccess={requestAccess}
                 />
               </div>
             ) : null}

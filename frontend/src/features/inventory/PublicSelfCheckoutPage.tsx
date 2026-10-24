@@ -18,6 +18,8 @@ import { checkoutTool, returnTool } from "./selfCheckoutApi";
 import { ResultCard } from "./PublicToolResultCard";
 import { invalidatePublicInventory } from "../staff/queryInvalidation";
 import { useTenantBootstrap } from "./usePublicInventory";
+import { ContactFields } from "./ContactFields";
+import { useToolContact } from "./useToolContact";
 
 type Mode = "checkout" | "return";
 
@@ -39,12 +41,15 @@ export function PublicSelfCheckoutPage() {
   const [uploadKey, setUploadKey] = useState(0);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [scannedPayload, setScannedPayload] = useState("");
-  const kits = useKitChecklist(`/public/${makerspaceSlug}/tools/checklist`,
-    { payload: scannedPayload, phase: mode === "checkout" ? "issue" : "return" }, Boolean(scannedPayload),
-    (path, body) => tenantPublicRequest<KitPreview>(makerspaceSlug, path, { method: "POST", body: JSON.stringify(body) }));
-
   const bootstrapQuery = useTenantBootstrap(makerspaceSlug, tenant.mode === "central");
   const bootstrap = tenant.mode === "single" ? tenant.bootstrap : bootstrapQuery.data;
+  // No member accounts: everyone borrows with a confirmed contact, and the signed-in kit
+  // preview is skipped (#91).
+  const contact = useToolContact(makerspaceSlug, bootstrap?.makerspace.request_access === "contact");
+  const kits = useKitChecklist(`/public/${makerspaceSlug}/tools/checklist`,
+    { payload: scannedPayload, phase: mode === "checkout" ? "issue" : "return" }, Boolean(scannedPayload) && !contact.enabled,
+    (path, body) => tenantPublicRequest<KitPreview>(makerspaceSlug, path, { method: "POST", body: JSON.stringify(body) }));
+
   const brandStyle = useTenantBranding(bootstrap);
   const features = tenant.mode === "single" ? tenant.bootstrap?.features ?? [] : bootstrap?.features ?? [];
   const displayName =
@@ -61,14 +66,17 @@ export function PublicSelfCheckoutPage() {
             payload,
             evidence_id: issueEvidenceId as number,
             kit_checklist: kits.counts,
+            ...contact.body(issueEvidenceId),
           })
         : returnTool(makerspaceSlug, {
             payload,
             evidence_id: returnEvidenceId as number,
             remark: returnRemark.trim(),
             kit_checklist: kits.counts,
+            ...contact.body(returnEvidenceId),
           }),
     onSuccess: () => {
+      contact.afterHandover();
       setScannedPayload("");
       invalidatePublicInventory(queryClient, makerspaceSlug);
       if (mode === "checkout") {
@@ -80,11 +88,11 @@ export function PublicSelfCheckoutPage() {
       setUploadKey((key) => key + 1);
     },
   });
-  const canScan =
+  const canScan = contact.ready && (
     mode === "checkout"
       ? issueEvidenceId !== null
       : returnEvidenceId !== null &&
-        returnRemark.trim().length > 0;
+        returnRemark.trim().length > 0);
 
   function scanTool(payload: string) {
     if (!canScan) {
@@ -95,7 +103,7 @@ export function PublicSelfCheckoutPage() {
   }
 
   useEffect(() => {
-    if (scannedPayload && kits.ready && !kits.components.length) {
+    if (scannedPayload && (kits.ready || contact.enabled) && !kits.components.length) {
       const payload = scannedPayload;
       setScannedPayload("");
       loanMutation.mutate({ payload });
@@ -123,9 +131,10 @@ export function PublicSelfCheckoutPage() {
         next: { label: mode === "checkout" ? "Borrow another" : "Return another", onClick: () => loanMutation.reset() } } : undefined}
       work={<div className="grid gap-5"><MakerspaceBrand name={displayName} logoUrl={bootstrap?.makerspace.logo_url} fallback="logo" />
         <div className="[&>[role=radiogroup]]:flex [&>[role=radiogroup]]:w-full [&_[role=radio]]:flex-1"><SegmentedControl label="Checkout mode" value={mode} options={[{ value: "checkout", label: "Borrow" }, { value: "return", label: "Return" }]} onChange={value => { setMode(value as Mode); setScannedPayload(""); }} /></div>
+        {contact.details ? <ContactFields contact={contact.details} /> : null}
         <p className="text-sm text-muted">{mode === "checkout" ? "Take a photo of the tool, then scan its QR label." : "Take a return photo and describe its condition, then scan its QR label."}</p>
-        {mode === "checkout" ? <PublicEvidenceUpload key={`issue-${uploadKey}`} slug={makerspaceSlug} evidenceType="issue" disabled={loanMutation.isPending} onUploaded={setIssueEvidenceId} />
-          : <><PublicEvidenceUpload key={`return-${uploadKey}`} slug={makerspaceSlug} evidenceType="return" disabled={loanMutation.isPending} onUploaded={setReturnEvidenceId} />
+        {mode === "checkout" ? <PublicEvidenceUpload key={`issue-${uploadKey}`} slug={makerspaceSlug} evidenceType="issue" disabled={loanMutation.isPending} contactEmail={contact.uploadEmail} onUploaded={(id, grant) => { contact.remember(id, grant); setIssueEvidenceId(id); }} />
+          : <><PublicEvidenceUpload key={`return-${uploadKey}`} slug={makerspaceSlug} evidenceType="return" disabled={loanMutation.isPending} contactEmail={contact.uploadEmail} onUploaded={(id, grant) => { contact.remember(id, grant); setReturnEvidenceId(id); }} />
             <label className="grid gap-2 text-sm font-semibold">Return condition notes<textarea className="desk-input min-h-24 w-full resize-y font-normal" required value={returnRemark} onChange={event => setReturnRemark(event.target.value)} /></label></>}
         <KitChecklistCapture checklist={kits} />
       </div>} />

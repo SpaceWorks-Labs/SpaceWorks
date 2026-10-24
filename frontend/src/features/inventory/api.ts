@@ -1,4 +1,5 @@
 import { apiGet, tenantPublicRequest } from "../../lib/api";
+import type { ContactHandover } from "./selfCheckoutApi";
 import type {
   Makerspace,
   PaginatedResponse,
@@ -100,7 +101,7 @@ export async function publicToolCheckout(
     payload: string;
     evidence_id: number;
     remark?: string;
-  },
+  } & ContactHandover,
 ): Promise<PublicToolLoan> {
   return tenantPublicRequest<PublicToolLoan>(
     slug,
@@ -120,7 +121,7 @@ export async function publicToolReturn(
     remark: string;
     report_problem?: boolean;
     problem_note?: string;
-  },
+  } & ContactHandover,
 ): Promise<PublicToolLoan> {
   return tenantPublicRequest<PublicToolLoan>(
     slug,

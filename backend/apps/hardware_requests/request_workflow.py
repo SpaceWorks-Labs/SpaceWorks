@@ -46,6 +46,7 @@ def submit_request(
     contact_snapshot,
     audit_actor,
     account_less_marker="",
+    contact_key="",
 ):
     require_member_account(requester_principal)
     with transaction.atomic():
@@ -59,7 +60,8 @@ def submit_request(
 
         requester_principal = lock_obligation_owner(requester_principal)
         require_feature(makerspace, "loans.enabled")
-        availability.enforce_submission_borrow_limits(makerspace, requester_principal, items)
+        availability.enforce_submission_borrow_limits(makerspace, requester_principal, items,
+                                                      contact_key=contact_key)
         request = HardwareRequest.objects.create(
             makerspace=makerspace,
             requester=requester_principal,
@@ -69,6 +71,8 @@ def submit_request(
             requester_contact_phone=contact_snapshot.phone,
             # Non-empty marks an account-less row, which every owner/contact-mail path keys on.
             anonymous_idempotency_key_fingerprint=account_less_marker,
+            # The confirmed-email fingerprint: the account-less person, for borrow limits.
+            anonymous_payload_fingerprint=contact_key,
             status=HardwareRequest.Status.PENDING_APPROVAL,
             requested_for=requested_for,
         )

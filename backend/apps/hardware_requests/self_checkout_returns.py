@@ -32,7 +32,13 @@ def return_tool(
     report_problem=False,
     problem_note="",
     kit_checklist=None,
+    contact=None,
 ):
+    """Return a self-checked-out tool; ``contact`` is an account-less borrower (#91).
+
+    Account-less loans all share the space's principal, so with ``contact`` the loan
+    must also carry the same confirmed-email key it was checked out under.
+    """
     remark = str(remark or "").strip()
     if not remark:
         raise RequestValidationError("Return remark is required.")
@@ -61,7 +67,9 @@ def return_tool(
         )
         if loan is None:
             raise InvalidTransition("This QR code is not currently checked out.")
-        if loan.requester_id != requester.id:
+        if loan.requester_id != requester.id or (
+            contact is not None and loan.request.anonymous_payload_fingerprint != contact.key
+        ):
             raise RequesterBlocked("This tool was checked out by a different user.")
 
         resolutions = [{"item": item, "returned": remaining_quantity(item), "damaged": 0, "missing": 0}
@@ -91,7 +99,7 @@ def return_tool(
             request=loan.request,
         )
         audit.record(
-            requester,
+            None if contact else requester,
             "public_tool.returned",
             makerspace=makerspace,
             target=loan.request,
@@ -106,7 +114,7 @@ def return_tool(
                 note=problem_note.strip(),
             )
             audit.record(
-                requester,
+                None if contact else requester,
                 "public_tool.problem_reported",
                 makerspace=makerspace,
                 target=report,

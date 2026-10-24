@@ -12,11 +12,14 @@ export function PublicEvidenceUpload({
   evidenceType,
   disabled = false,
   onUploaded,
+  contactEmail,
 }: {
   slug: string;
   evidenceType: "issue" | "return";
   disabled?: boolean;
-  onUploaded: (evidenceId: number | null) => void;
+  onUploaded: (evidenceId: number | null, evidenceGrant?: string) => void;
+  // Account-less upload (#91): the borrower's email, which the returned grant is bound to.
+  contactEmail?: string;
 }) {
   const [status, setStatus] = useState<"idle" | "uploading" | "done" | "error">("idle");
   const [error, setError] = useState("");
@@ -26,7 +29,8 @@ export function PublicEvidenceUpload({
     () => typeof navigator !== "undefined" && !!navigator.mediaDevices?.getUserMedia,
   );
   const label = evidenceType === "issue" ? "Issue photo" : "Return photo";
-  const busy = disabled || status === "uploading";
+  const needsEmail = contactEmail !== undefined && !contactEmail.includes("@");
+  const busy = disabled || status === "uploading" || needsEmail;
 
   useEffect(() => {
     setStatus("idle");
@@ -46,10 +50,11 @@ export function PublicEvidenceUpload({
         evidence_type: evidenceType,
         content_type: file.type,
         size_bytes: file.size,
+        ...(contactEmail !== undefined ? { contact_email: contactEmail } : {}),
       });
       await uploadPublicEvidenceFile(presigned, file);
       setStatus("done");
-      onUploaded(presigned.evidence_id);
+      onUploaded(presigned.evidence_id, presigned.evidence_grant);
     } catch (err) {
       setStatus("error");
       setError(err instanceof Error ? err.message : "Upload failed.");
@@ -63,6 +68,7 @@ export function PublicEvidenceUpload({
   return (
     <div className="grid min-w-0 gap-2">
       <p className="text-sm font-semibold text-ink">{label}</p>
+      {needsEmail ? <p className="text-sm text-muted">Enter your email above before adding the photo.</p> : null}
       {cameraSupported ? (
         <button className="desk-button w-full" type="button" aria-label={`Take ${label}`} disabled={busy} onClick={() => setCameraOpen(true)}>
           <Camera aria-hidden="true" size={18} />

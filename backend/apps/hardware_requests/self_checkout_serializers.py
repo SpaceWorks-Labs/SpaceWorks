@@ -1,5 +1,6 @@
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
+from apps.evidence.serializers import EvidenceUrlResponseSerializer
 from apps.inventory.kit_serializers import KitCountsField
 
 
@@ -61,3 +62,31 @@ class PublicToolLoanSerializer(serializers.Serializer):
             {"product_name": item.product.name, "quantity": item.issued_quantity}
             for item in items
         ]
+
+
+class _ContactFields(serializers.Serializer):
+    """Account-less self-checkout identity (#91): a space without member accounts."""
+
+    contact_name = serializers.CharField(max_length=200, trim_whitespace=True)
+    contact_email = serializers.EmailField(max_length=254)
+    contact_phone = serializers.CharField(max_length=32, trim_whitespace=True)
+    email_code = serializers.RegexField(r"^\d{6}$", write_only=True)
+    evidence_grant = serializers.CharField(max_length=512, write_only=True)
+
+
+class ContactToolCheckoutSerializer(_ContactFields, PublicToolCheckoutSerializer):
+    pass
+
+
+class ContactToolScanSerializer(_ContactFields, PublicToolScanSerializer):
+    pass
+
+
+class ContactEvidenceUrlRequestSerializer(PublicToolEvidenceUrlRequestSerializer):
+    contact_email = serializers.EmailField(max_length=254)
+
+
+class PublicToolEvidenceUrlResponseSerializer(EvidenceUrlResponseSerializer):
+    """The evidence upload URL, plus the grant an account-less borrower sends back."""
+
+    evidence_grant = serializers.CharField(required=False)

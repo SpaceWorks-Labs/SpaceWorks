@@ -151420,6 +151420,7 @@
         "/api/v1/public/{makerspace_slug}/tools/checklist": {
             "post": {
                 "operationId": "api_v1_public_tools_checklist_create",
+                "description": "Signed-in member where the makerspace has member accounts. Without them (`request_access: contact`) send `contact_email` and the `email_code`; the code is checked, not spent (#104).",
                 "summary": "Preview kit components for a scanned self-checkout tool",
                 "parameters": [
                     {
@@ -151473,7 +151474,8 @@
                 "security": [
                     {
                         "jwtAuth": []
-                    }
+                    },
+                    {}
                 ],
                 "responses": {
                     "200": {

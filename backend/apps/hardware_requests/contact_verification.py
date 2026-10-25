@@ -82,7 +82,16 @@ def issue_code(makerspace, email):
                  meta={"email_hash": key, "email_sent": sent})
 
 
-def consume_code(makerspace, email, code):
+def check_code(makerspace, email, code):
+    """Confirm the code WITHOUT spending it -- the kit preview before a checkout (#104).
+
+    The checkout that follows consumes the same code; a wrong guess here still burns an
+    attempt and is audited, so previews cannot be used to brute-force a code.
+    """
+    return consume_code(makerspace, email, code, spend=False)
+
+
+def consume_code(makerspace, email, code, *, spend=True):
     """Consume the newest usable code for this address, or refuse with one generic error.
 
     A wrong code burns an attempt and is audited in its own committed transaction, so a
@@ -98,10 +107,10 @@ def consume_code(makerspace, email, code):
         matched = challenge is not None and hmac.compare_digest(
             challenge.code_digest, _digest(str(code or "").strip()),
         )
-        if matched:
+        if matched and spend:
             challenge.consumed_at = now
             challenge.save(update_fields=["consumed_at"])
-        else:
+        elif not matched:
             if challenge is not None:
                 challenge.failed_attempts += 1
                 challenge.save(update_fields=["failed_attempts"])

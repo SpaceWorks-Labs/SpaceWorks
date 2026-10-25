@@ -22,6 +22,8 @@ export function useToolContact(makerspaceSlug: string, enabled: boolean) {
     ready: contact.ready,
     /** `undefined` off the contact path; "" means "type your email before the photo". */
     uploadEmail: enabled ? email : undefined,
+    /** The typed code, for the kit preview, which checks it without spending it (#104). */
+    code: draft.emailCode,
     remember: (evidenceId: number | null, grant?: string) => {
       if (evidenceId !== null && grant) setGrants((current) => ({ ...current, [evidenceId]: grant }));
     },

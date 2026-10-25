@@ -2204,8 +2204,10 @@ checkout and return routes take the same name/phone/email + code identity (`self
 the evidence rules are unchanged. Uploads belong to the principal, so each returns a signed
 `evidence_grant` bound to the borrower's address, which the handover must send back; a return must come
 from the address the checkout used (`anonymous_payload_fingerprint` holds the per-makerspace email
-fingerprint, which also scopes borrow limits to the person). The signed-in kit preview is not offered on
-this path. `membership` requires `member_accounts` (#91): installing it pulls member accounts in, and
+fingerprint, which also scopes borrow limits to the person). The kit contents preview works on this path too
+(#104, `kit_contact_preview.py`): it CHECKS the email code without spending it (a wrong guess still burns
+an attempt and is audited), the checkout or return then spends it, and a return preview only finds a loan
+checked out under the same confirmed email. `membership` requires `member_accounts` (#91): installing it pulls member accounts in, and
 `makerspaces/0108` turned member accounts on, audited, for spaces that had membership without them.
 Staff handout is unchanged.
 

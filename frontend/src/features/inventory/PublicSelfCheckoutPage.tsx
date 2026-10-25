@@ -43,11 +43,14 @@ export function PublicSelfCheckoutPage() {
   const [scannedPayload, setScannedPayload] = useState("");
   const bootstrapQuery = useTenantBootstrap(makerspaceSlug, tenant.mode === "central");
   const bootstrap = tenant.mode === "single" ? tenant.bootstrap : bootstrapQuery.data;
-  // No member accounts: everyone borrows with a confirmed contact, and the signed-in kit
-  // preview is skipped (#91).
+  // No member accounts: everyone borrows with a confirmed contact (#91), and the kit preview
+  // is keyed to that confirmed email instead of a session (#104): it checks the code, the
+  // checkout spends it.
   const contact = useToolContact(makerspaceSlug, bootstrap?.makerspace.request_access === "contact");
   const kits = useKitChecklist(`/public/${makerspaceSlug}/tools/checklist`,
-    { payload: scannedPayload, phase: mode === "checkout" ? "issue" : "return" }, Boolean(scannedPayload) && !contact.enabled,
+    { payload: scannedPayload, phase: mode === "checkout" ? "issue" : "return",
+      ...(contact.enabled ? { contact_email: contact.uploadEmail, email_code: contact.code } : {}) },
+    Boolean(scannedPayload) && contact.ready,
     (path, body) => tenantPublicRequest<KitPreview>(makerspaceSlug, path, { method: "POST", body: JSON.stringify(body) }));
 
   const brandStyle = useTenantBranding(bootstrap);
@@ -103,7 +106,7 @@ export function PublicSelfCheckoutPage() {
   }
 
   useEffect(() => {
-    if (scannedPayload && (kits.ready || contact.enabled) && !kits.components.length) {
+    if (scannedPayload && kits.ready && !kits.components.length) {
       const payload = scannedPayload;
       setScannedPayload("");
       loanMutation.mutate({ payload });

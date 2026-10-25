@@ -170,8 +170,9 @@ Required by the members-only events path. Bookings can run without this module.
   directory, no member cards, no plans. Waivers stay (they are liability evidence, so publishing,
   accepting and witnessing one is core). Separate tenant staff creation, initial-password onboarding
   and admin-issued reset remain available; email invitations additionally need Email + `staff.invitations`. `payments.membership` and `charges.membership` become inert.
-- **Deliberately does not require `member_accounts`.** Identity can come from external OIDC or a staff-created
-  person record, so the two are independent switches.
+- **Requires `member_accounts` (owner decision #91).** A space without member accounts has accounts for staff
+  only, so it has no members to admit. Installing membership pulls member accounts in; `makerspaces/0108`
+  turned member accounts on, with an audit entry, for spaces that already had membership without them.
 - **It decides who may submit a borrow request.** With this module on, submitting requires an active member
   of the makerspace. With it off, any signed-in member account may submit — a request is only a proposal that
   staff must accept, and waiver acceptance cannot be recorded without a membership row anyway. Both need
@@ -191,7 +192,9 @@ Required by the members-only events path. Bookings can run without this module.
 
 ### member_accounts
 
-Required by `mobile`. Member, staff and platform are separate immutable account kinds; this
+Default-on, and required by `mobile` and `membership` (#91). Without it (owner decisions #80/#91) the
+space's accounts are for staff only: everyone -- signed in or not -- borrows by request or self-checkout
+with name, phone and an email confirmed by a one-time code. Member, staff and platform are separate immutable account kinds; this
 key never converts a member into staff. Native staff use password/MFA/attestation with fixed
 tenant authority, while phone/social/OIDC native login is member-only and platform grants
 are forbidden. Member self-deletion, 90-day archive, identity-only restore and purge are

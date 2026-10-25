@@ -599,11 +599,11 @@ there is no separate switch:
 | --- | --- | --- |
 | on | on | **Members** — an active member of that makerspace |
 | on | off | **Account holders** — anyone signed in |
-| off | either | **Anyone, no account** — name, phone and email, the email confirmed with a one-time code |
+| off | off (Membership needs Member accounts) | **Everyone, no account** — name, phone and email, the email confirmed with a one-time code |
 
 Members must pass the applicable presence, waiver and current-term checks; account holders must be
-active and unrestricted. Without member accounts the space's accounts are for staff only, so a borrower
-gives their name, phone and email and types the 6-digit code mailed to that address before the request is
+active and unrestricted. Without member accounts the space's accounts are for staff only, so everyone —
+even someone signed in — gives their name, phone and email (for self-checkout too) and types the 6-digit code mailed to that address before the request is
 filed — nobody can file a request against someone else's email. Phone and email are stored encrypted and
 shown to staff only; the name is the borrower's public name. Every such request is recorded against the
 makerspace's single shared requester principal, which every per-person ranking excludes. Borrower

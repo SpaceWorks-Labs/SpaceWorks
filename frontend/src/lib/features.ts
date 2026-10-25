@@ -51,6 +51,7 @@ export const FEATURE_DEFINITIONS: readonly FeatureDefinition[] = [
   { key: "charges.membership", parent_module: "membership", label: "Track membership charges" },
   { key: "charges.loans", parent_module: "request_workflow", label: "Track loan charges" },
   { key: "inventory.self_checkout", parent_module: null, label: "Self checkout" },
+  { key: "inventory.contact_self_checkout", parent_module: null, label: "Self checkout without an account" },
   { key: "payments.enabled", parent_module: "payments", label: "Payments" },
   { key: "mobile.push", parent_module: "mobile", label: "Native push" },
   { key: "presence.geofence", parent_module: null, label: "Presence geofence" },

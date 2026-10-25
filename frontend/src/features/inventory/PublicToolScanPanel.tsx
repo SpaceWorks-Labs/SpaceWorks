@@ -8,9 +8,13 @@ import type { PublicToolLoan } from "../../types/inventory";
 import { invalidatePublicInventory } from "../staff/queryInvalidation";
 import { publicToolCheckout, publicToolReturn } from "./api";
 import { PublicEvidenceUpload } from "./PublicEvidenceUpload";
+import { ContactFields } from "./ContactFields";
+import { useToolContact } from "./useToolContact";
 
 type PublicToolScanPanelProps = {
   makerspaceSlug: string;
+  // "contact" where the makerspace has no member accounts: no account, confirmed email (#91).
+  requestAccess?: "contact";
 };
 
 type Mode = "checkout" | "return";
@@ -47,8 +51,9 @@ function Step({ n, title, children }: { n: number; title: string; children: Reac
   );
 }
 
-export function PublicToolScanPanel({ makerspaceSlug }: PublicToolScanPanelProps) {
+export function PublicToolScanPanel({ makerspaceSlug, requestAccess }: PublicToolScanPanelProps) {
   const queryClient = useQueryClient();
+  const contact = useToolContact(makerspaceSlug, requestAccess === "contact");
   const [mode, setMode] = useState<Mode>("checkout");
   const [scannedToken, setScannedToken] = useState("");
   const [scannerOpen, setScannerOpen] = useState(false);
@@ -64,9 +69,11 @@ export function PublicToolScanPanel({ makerspaceSlug }: PublicToolScanPanelProps
       publicToolCheckout(makerspaceSlug, {
         payload: effectivePayload,
         evidence_id: issueEvidenceId as number,
+        ...contact.body(issueEvidenceId),
       }),
     onSuccess: () => {
       invalidatePublicInventory(queryClient, makerspaceSlug);
+      contact.afterHandover();
       setIssueEvidenceId(null);
       setUploadKey((key) => key + 1);
     },
@@ -79,9 +86,11 @@ export function PublicToolScanPanel({ makerspaceSlug }: PublicToolScanPanelProps
         remark: returnRemark.trim(),
         report_problem: reportProblem,
         problem_note: reportProblem ? problemNote.trim() : "",
+        ...contact.body(returnEvidenceId),
       }),
     onSuccess: () => {
       invalidatePublicInventory(queryClient, makerspaceSlug);
+      contact.afterHandover();
       setReturnEvidenceId(null);
       setReturnRemark("");
       setReportProblem(false);
@@ -91,12 +100,14 @@ export function PublicToolScanPanel({ makerspaceSlug }: PublicToolScanPanelProps
   });
   const checkoutDisabled =
     !effectivePayload ||
-    issueEvidenceId === null;
+    issueEvidenceId === null ||
+    !contact.ready;
   const returnDisabled =
     !effectivePayload ||
     returnEvidenceId === null ||
     !returnRemark.trim() ||
-    (reportProblem && !problemNote.trim());
+    (reportProblem && !problemNote.trim()) ||
+    !contact.ready;
   const error = checkout.error?.message ?? returnTool.error?.message;
   const result = checkout.data ?? returnTool.data;
   const returning = mode === "return";
@@ -105,6 +116,7 @@ export function PublicToolScanPanel({ makerspaceSlug }: PublicToolScanPanelProps
     : returning ? (returnEvidenceId === null ? "Add a return photo." : !returnRemark.trim() ? "Add return condition notes."
       : reportProblem && !problemNote.trim() ? "Describe the problem for staff." : "")
       : issueEvidenceId === null ? "Add a photo of the tool." : "";
+  const contactMissing = missing || contact.ready ? "" : "Give your name, phone and email, and type the emailed code.";
 
   // Check out and Return are one choice, not two side-by-side forms: side by side they wrapped one
   // word per line in the narrow request column. Both photo steps stay mounted (just hidden) so an
@@ -122,7 +134,13 @@ export function PublicToolScanPanel({ makerspaceSlug }: PublicToolScanPanelProps
           onChange={(value) => setMode(value as Mode)} />
       </div>
 
-      <Step n={1} title="Scan the tool's QR">
+      {contact.details ? (
+        <Step n={1} title="Your details (no account needed)">
+          <ContactFields contact={contact.details} />
+        </Step>
+      ) : null}
+
+      <Step n={contact.details ? 2 : 1} title="Scan the tool's QR">
         {scannedToken ? (
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-control border border-success bg-success-soft px-3 py-1 text-success-ink">
             <span className="inline-flex items-center gap-2 text-sm font-semibold"><CircleCheck aria-hidden="true" size={18} />Tool scanned</span>
@@ -137,14 +155,15 @@ export function PublicToolScanPanel({ makerspaceSlug }: PublicToolScanPanelProps
         )}
       </Step>
 
-      <Step n={2} title={returning ? "Return photo and notes" : "Photo of the tool"}>
+      <Step n={contact.details ? 3 : 2} title={returning ? "Return photo and notes" : "Photo of the tool"}>
         <div hidden={returning}>
           <PublicEvidenceUpload
             key={`issue-${uploadKey}`}
             slug={makerspaceSlug}
             evidenceType="issue"
             disabled={checkout.isPending}
-            onUploaded={setIssueEvidenceId}
+            contactEmail={contact.uploadEmail}
+            onUploaded={(id, grant) => { contact.remember(id, grant); setIssueEvidenceId(id); }}
           />
         </div>
         <div hidden={!returning} className="grid gap-4">
@@ -153,7 +172,8 @@ export function PublicToolScanPanel({ makerspaceSlug }: PublicToolScanPanelProps
             slug={makerspaceSlug}
             evidenceType="return"
             disabled={returnTool.isPending}
-            onUploaded={setReturnEvidenceId}
+            contactEmail={contact.uploadEmail}
+            onUploaded={(id, grant) => { contact.remember(id, grant); setReturnEvidenceId(id); }}
           />
           <label className="grid gap-1">
             <span className="text-sm font-semibold text-ink">Return condition notes</span>
@@ -195,7 +215,7 @@ export function PublicToolScanPanel({ makerspaceSlug }: PublicToolScanPanelProps
         >
           {returning ? (returnTool.isPending ? "Returning..." : "Return") : checkout.isPending ? "Checking out..." : "Check out"}
         </button>
-        {missing ? <p className="text-sm text-muted">{missing}</p> : null}
+        {missing || contactMissing ? <p className="text-sm text-muted">{missing || contactMissing}</p> : null}
       </div>
       {error ? (
         <p role="alert" className="break-words rounded-lg border border-danger/40 bg-panel px-3 py-2 text-sm text-danger">

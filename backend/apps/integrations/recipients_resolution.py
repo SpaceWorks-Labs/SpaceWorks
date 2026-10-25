@@ -156,16 +156,21 @@ def _selected_memberships(makerspace, rows, scope=None):
         if role_selected
         else {}
     )
+    feature = rows[0].feature
+    # A room-scoped booking alert judges role recipients by the same "may see this room"
+    # rule as named people (owner decision #91); every other role keeps its reach floor.
+    rooms = feature == "bookings"
     person_sees = person_object_filter(
-        [membership for membership, row in candidates if row.kind != NotificationRecipientKind.ROLE],
+        [membership for membership, row in candidates
+         if rooms or row.kind != NotificationRecipientKind.ROLE],
         scope,
-        feature=rows[0].feature,
+        feature=feature,
     )
     return [
         membership
         for membership, row in candidates
         if (_role_scope_admits(membership_scopes, membership, scope)
-            if row.kind == NotificationRecipientKind.ROLE else person_sees(membership))
+            if row.kind == NotificationRecipientKind.ROLE and not rooms else person_sees(membership))
     ]
 
 

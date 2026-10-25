@@ -151542,6 +151542,7 @@
         "/api/v1/public/{makerspace_slug}/tools/checkout": {
             "post": {
                 "operationId": "api_v1_public_tools_checkout_create",
+                "description": "Signed-in member account where the makerspace has member accounts. Without them (bootstrap `request_access: contact`) everyone sends `contact_name`, `contact_phone`, `contact_email` and an `email_code` from `requests/email-code`, plus the `evidence_grant` the upload URL returned; evidence rules are unchanged (#91).",
                 "summary": "Check out a public tool by QR",
                 "parameters": [
                     {
@@ -151608,7 +151609,8 @@
                 "security": [
                     {
                         "jwtAuth": []
-                    }
+                    },
+                    {}
                 ],
                 "responses": {
                     "201": {
@@ -151697,6 +151699,7 @@
         "/api/v1/public/{makerspace_slug}/tools/evidence-url": {
             "post": {
                 "operationId": "api_v1_public_tools_evidence_url_create",
+                "description": "Signed-in member account where the makerspace has member accounts. Without them (bootstrap `request_access: contact`) everyone sends `contact_name`, `contact_phone`, `contact_email` and an `email_code` from `requests/email-code`, plus the `evidence_grant` the upload URL returned; evidence rules are unchanged (#91).",
                 "summary": "Create a public self-checkout evidence upload URL",
                 "parameters": [
                     {
@@ -151750,14 +151753,15 @@
                 "security": [
                     {
                         "jwtAuth": []
-                    }
+                    },
+                    {}
                 ],
                 "responses": {
                     "201": {
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/EvidenceUrlResponse"
+                                    "$ref": "#/components/schemas/PublicToolEvidenceUrlResponse"
                                 }
                             }
                         },
@@ -151839,6 +151843,7 @@
         "/api/v1/public/{makerspace_slug}/tools/return": {
             "post": {
                 "operationId": "api_v1_public_tools_return_create",
+                "description": "Signed-in member account where the makerspace has member accounts. Without them (bootstrap `request_access: contact`) everyone sends `contact_name`, `contact_phone`, `contact_email` and an `email_code` from `requests/email-code`, plus the `evidence_grant` the upload URL returned; evidence rules are unchanged (#91).",
                 "summary": "Return a public tool by QR",
                 "parameters": [
                     {
@@ -151903,7 +151908,8 @@
                 "security": [
                     {
                         "jwtAuth": []
-                    }
+                    },
+                    {}
                 ],
                 "responses": {
                     "200": {
@@ -222189,6 +222195,42 @@
                 "required": [
                     "content_type",
                     "evidence_type"
+                ]
+            },
+            "PublicToolEvidenceUrlResponse": {
+                "type": "object",
+                "description": "The evidence upload URL, plus the grant an account-less borrower sends back.",
+                "properties": {
+                    "evidence_id": {
+                        "type": "integer"
+                    },
+                    "upload_url": {
+                        "type": "string",
+                        "format": "uri"
+                    },
+                    "fields": {
+                        "type": "object",
+                        "additionalProperties": {}
+                    },
+                    "object_key": {
+                        "type": "string"
+                    },
+                    "method": {
+                        "type": "string"
+                    },
+                    "headers": {
+                        "type": "object",
+                        "additionalProperties": {}
+                    },
+                    "evidence_grant": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "evidence_id",
+                    "fields",
+                    "object_key",
+                    "upload_url"
                 ]
             },
             "PublicToolLoan": {

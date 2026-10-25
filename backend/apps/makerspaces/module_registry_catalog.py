@@ -130,13 +130,15 @@ MODULES = (
         "maintenance", GUARD, group=GROUP_MACHINES, frontend_workflows=("maintenance",),
         requires_modules=("machines",),
     ),
-    # Community enrolment/content. Identity may instead come from external OIDC or a
-    # staff-created person record, so this deliberately does not depend on
-    # `member_accounts`.
+    # Community enrolment/content. Requires `member_accounts` (owner decision #91): a
+    # space without member accounts has accounts for staff only (#80), so it has no
+    # members to admit. Installing membership pulls member accounts in, and
+    # makerspaces/0108 repaired spaces that already had membership without them.
     ModuleDefinition(
         "membership", "Membership",
         "Join requests, referrals, verification, profiles, directory and member activity.",
         "makerspaces", FEATURE_PARENT, group=GROUP_MEMBERSHIP,
+        requires_modules=("member_accounts",),
     ),
     # Enforced by apps/notifications, but historically absent from the defaults list --
     # which is why the /control/ matrix (choices = defaults + keys already on the row)
@@ -192,7 +194,8 @@ MODULES = (
     ),
     # These keys were placed in front of substrate that had been unconditionally
     # present, so migration 0057 backfilled their original keys onto existing rows.
-    # Member accounts, mobile and payments are opt-in for new makerspaces.
+    # Mobile and payments are opt-in for new makerspaces. Member accounts became
+    # default-on with owner decisions #80/#91 (see its definition).
     # `payments` stopped being default-enabled when charge TRACKING moved out from under
     # it (`charges.*`): the module now buys only the online rail, which a cash-taking
     # space needs none of. Existing rows keep the key from migration 0057.
@@ -204,11 +207,14 @@ MODULES = (
     # Member-facing identity only. Staff authentication is core RBAC and is NEVER gated:
     # a space that could switch off its own staff logins could not be administered, the
     # same reasoning that keeps the staff roster ungated by `membership` (plan A7).
+    # Default-on since #80/#91: WITHOUT it a space takes account-less requests and
+    # self-checkout from anyone with a confirmed email, so that mode must be a deliberate
+    # untick, never the accident of a bare create. Setup always installed it already.
     ModuleDefinition(
         "member_accounts", "Member accounts",
         "Member self-service enrolment and built-in password, social and phone login. "
         "Staff sign-in, external identity and member-domain APIs are unaffected.",
-        "accounts", GUARD, group=GROUP_MEMBERSHIP,
+        "accounts", GUARD, group=GROUP_MEMBERSHIP, default_enabled=True,
     ),
     # Requires `member_accounts` because a device grant is bound to a user: without
     # member accounts there is no identity for a phone to hold.

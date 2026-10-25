@@ -10,6 +10,7 @@ from rest_framework.views import APIView
 
 from apps.apiclients.throttling import MemberPrincipalRateThrottle
 from apps.hardware_requests import workflow
+from apps.hardware_requests.contact_identity import confirm_contact
 from apps.hardware_requests.exceptions import ErrorSerializer
 from apps.hardware_requests.models import HardwareRequest
 from apps.hardware_requests.request_workflow import RequesterSnapshot
@@ -27,7 +28,7 @@ from apps.inventory.models import InventoryProduct
 from apps.makerspaces.lookup import get_public_makerspace
 from apps.makerspaces.guards import require_feature
 from apps.makerspaces.platform import module_enabled
-from apps.makerspaces.request_access import contact_requests_allowed, require_current_term
+from apps.makerspaces.request_access import require_current_term, uses_contact_path
 from apps.presence.guard import require_active_account, require_active_member_presence
 from apps.openapi import (
     PUBLIC_API_AUTH_PARAMETERS,
@@ -41,11 +42,11 @@ class RequestSubmitView(APIView):
 
     A space WITH member accounts requires a signed-in account: the requester is
     ``request.user`` and the contact snapshot is account-derived (an anonymous POST is a
-    401). A space WITHOUT member accounts has accounts for staff only, so a public
-    borrower with no session takes the contact path: name, phone and email are required,
-    the email must carry the one-time code from ``requests/email-code``, and the request
-    is recorded against the space's inert principal with an encrypted contact snapshot.
-    A signed-in caller (staff, or an institution's OIDC identity) keeps the account path.
+    401). A space WITHOUT member accounts has accounts for staff only, so EVERY request
+    there takes the contact path, signed in or not (owner decision #91): name, phone and
+    email are required, the email must carry the one-time code from
+    ``requests/email-code``, and the request is recorded against the space's inert
+    principal with an encrypted contact snapshot.
     """
 
     permission_classes = [AllowAny]
@@ -82,10 +83,9 @@ class RequestSubmitView(APIView):
     def post(self, request, makerspace_slug, *args, **kwargs):
         makerspace = get_public_makerspace(makerspace_slug)
         require_feature(makerspace, "loans.enabled")
-        # A signed-in caller keeps their own identity everywhere (an institution's OIDC
-        # sign-in still names people without member accounts); only an account-less
-        # caller in a space without member accounts takes the contact path.
-        contact = contact_requests_allowed(makerspace) and not request.user.is_authenticated
+        # Without member accounts everyone uses the contact form, even a signed-in staff
+        # or organisation account (#91); a walk-in's claim session keeps its person record.
+        contact = uses_contact_path(request, makerspace)
         if not contact and not request.user.is_authenticated:
             raise NotAuthenticated()
         _require_module(makerspace, "request_workflow")
@@ -112,9 +112,13 @@ class RequestSubmitView(APIView):
             )
 
         if contact:
-            principal, snapshot, actor, marker = _contact_identity(makerspace, data)
+            identity = confirm_contact(makerspace, data)
+            principal, actor, marker, key = identity.principal, None, identity.marker, identity.key
+            snapshot = RequesterSnapshot(
+                username="", name=identity.name, email=identity.email, phone=identity.phone,
+            )
         else:
-            principal, actor, marker = request.user, request.user, ""
+            principal, actor, marker, key = request.user, request.user, "", ""
             snapshot = RequesterSnapshot(
                 username=request.user.username, name=request.user.display_name,
                 email=request.user.email, phone=request.user.phone,
@@ -133,27 +137,12 @@ class RequestSubmitView(APIView):
             contact_snapshot=snapshot,
             audit_actor=actor,
             account_less_marker=marker,
+            contact_key=key,
         )
         return Response(
             RequestSubmitResponseSerializer(hardware_request).data,
             status=status.HTTP_201_CREATED,
         )
-
-
-def _contact_identity(makerspace, data):
-    """Consume the email code, then name the principal and the borrower's own snapshot."""
-    from apps.accounts.audit_events import fingerprint
-    from apps.hardware_requests.contact_verification import consume_code
-    from apps.makerspaces.anonymous_requesters import get_or_create_anonymous_requester
-
-    challenge = consume_code(makerspace, data["contact_email"], data["email_code"])
-    snapshot = RequesterSnapshot(
-        username="", name=data["contact_name"], email=data["contact_email"], phone=data["contact_phone"],
-    )
-    # The marker every account-less path keys on (owner exclusion, contact mail); one per
-    # consumed code, so the per-makerspace uniqueness constraint holds.
-    marker = fingerprint(f"contact-code:{challenge.pk}")
-    return get_or_create_anonymous_requester(makerspace), snapshot, None, marker
 
 
 def _honeypot_response():

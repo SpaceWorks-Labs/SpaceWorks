@@ -150,6 +150,16 @@ FEATURE_DEFINITIONS = (
         "Member self-checkout and staff direct handouts of QR tools.",
         default_enabled=True,
     ),
+    # Owner decisions #91/#95: where Member accounts are off, borrowers may also check a
+    # tool out with no account -- name, phone and an email confirmed by a code. Its own
+    # switch, off by default; returning is never blocked by it.
+    FeatureDefinition(
+        "inventory.contact_self_checkout", None, "Self checkout without an account",
+        "Without Member accounts, borrowers check tools out with name, phone and an "
+        "emailed code. Evidence rules are unchanged; returns always stay open.",
+        default_enabled=False,
+        requires_features=("inventory.self_checkout",),
+    ),
     # The three below are standalone master switches (plan A6). Each is an additive
     # `AND` in front of an existing readiness check, never a replacement -- turning one
     # ON must not make an unconfigured capability start working. They default ENABLED so

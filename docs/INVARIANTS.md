@@ -2055,8 +2055,8 @@ never mute a makerspace. Deliberately the opposite of the *access* rules, which 
   Personal owner deliveries (the requester/booker/registrant the alert is about) are the object's owner and
   are not filtered. A booking alert is ROOM-scoped (its scope is the room's machine type,
   `bookings/notifications.scope_for`), so for people the floor also admits whoever can see the room:
-  `MANAGE_BOOKINGS` holders and live staff-grant holders on a room of that type. The `kind=role` floor
-  is unchanged and still machine-reach only.
+  `MANAGE_BOOKINGS` holders and live staff-grant holders on a room of that type. For booking alerts the
+  `kind=role` rows follow that same people rule (#91); every other role keeps its machine-reach floor.
 - **Staff API + console are mandatory, not optional** — `/control/` is not proxied on the public frontend
   port, so without `notification-recipient-rules` and `notification-destinations` a space manager could not
   configure any of this. Saves **replace** rather than merge (a merge makes unticking impossible), an
@@ -2179,9 +2179,11 @@ feature for normal staff. New workflow actions ship their staff UI in the same b
 `apps/makerspaces/request_access.py` is the only answer, with three states and no stored switch
 (`makerspaces/0105` dropped `anonymous_requests_enabled`): `member_accounts` on + `membership` on →
 **members**; `member_accounts` on + `membership` off → **accounts** (any active signed-in account);
-`member_accounts` off → **contact**. A space without member accounts has accounts for STAFF only, so a
-public borrower with no session takes the contact path (a signed-in caller -- staff, or an institution's
-OIDC identity -- keeps the account path): `contact_name`,
+`member_accounts` off → **contact**. A space without member accounts has accounts for STAFF only, so EVERY
+request there takes the contact path, signed in or not (owner decision #91: staff and organisation
+sign-ins included; `request_access.uses_contact_path`). The one exception is a walk-in's claim session,
+which is not an account but the staff-created person record itself, so it keeps acting as that person:
+`contact_name`,
 `contact_phone` and `contact_email` are all required, and the email must carry the one-time code mailed by
 `POST public/<slug>/requests/email-code`. `hardware_requests/contact_verification.py` reuses the sign-up
 OTP machinery (the `EmailVerificationChallenge` table, generator, HMAC digest, 10-minute expiry, 60-second
@@ -2196,7 +2198,16 @@ scoped-PII encrypted contact snapshot and are staff-only; the typed name is the 
 (`inventory.public_stats_hardware.public_display_name` prefers `requester_name`). Bootstrap publishes
 `request_access: "contact"` only for such spaces. The email-code route answers 404 where the space has
 member accounts. Rows from the retired unverified opt-in keep `requester_contact_verified=False` and its
-mail suppression. Self-checkout and staff handout are unchanged by this rule.
+mail suppression. **Self-checkout follows the same rule (#91), behind its own switch (#95):** without member accounts,
+and with `inventory.contact_self_checkout` on (default off; returns never need it), the evidence-URL,
+checkout and return routes take the same name/phone/email + code identity (`self_checkout_contact.py`);
+the evidence rules are unchanged. Uploads belong to the principal, so each returns a signed
+`evidence_grant` bound to the borrower's address, which the handover must send back; a return must come
+from the address the checkout used (`anonymous_payload_fingerprint` holds the per-makerspace email
+fingerprint, which also scopes borrow limits to the person). The signed-in kit preview is not offered on
+this path. `membership` requires `member_accounts` (#91): installing it pulls member accounts in, and
+`makerspaces/0108` turned member accounts on, audited, for spaces that had membership without them.
+Staff handout is unchanged.
 
 **PRD §4.4's self-accept rule is DROPPED (owner decision #75e).** The PRD line "an admin cannot accept
 their own personal request unless also superadmin" is not a requirement: `request_workflow.accept_request`

@@ -11,11 +11,15 @@ from apps.makerspaces.models_loan_policy import MakerspaceLoanPolicy
 from apps.makerspaces.platform import feature_enabled, module_enabled
 
 
-def enforce_borrow_limits(makerspace, borrower, incoming_quantity):
+def enforce_borrow_limits(makerspace, borrower, incoming_quantity, *, contact_key=""):
     """Call under the tenant row lock before creating/issuing a loan.
 
     Pending requests do not occupy a loan slot. Submission checks are advisory;
     issue/checkout/handout checks enforce the current ceiling at the actual handover.
+
+    ``contact_key`` narrows an account-less borrower (#80/#91): every such loan shares the
+    makerspace's inert principal, so the person is their confirmed-email fingerprint,
+    stored on the request as ``anonymous_payload_fingerprint``.
     """
     if not feature_enabled(makerspace, "loans.limits"):
         return
@@ -35,6 +39,8 @@ def enforce_borrow_limits(makerspace, borrower, incoming_quantity):
     active = rbac.scope_by_borrower(borrower, HardwareRequest.objects.all(), makerspace=makerspace).filter(
         status__in=[HardwareRequest.Status.ISSUED, HardwareRequest.Status.PARTIALLY_RETURNED],
     )
+    if contact_key:
+        active = active.filter(anonymous_payload_fingerprint=contact_key)
     if max_active and active.count() >= max_active:
         raise ValidationError({"code": "loan_limit", "detail": "The borrower has reached the active-loan limit."})
     items = rbac.scope_by_borrower(
@@ -52,15 +58,16 @@ def enforce_request_borrow_limits(request, rejects_by_item=None):
     rejects_by_item = rejects_by_item or {}
     quantity = sum(item.accepted_quantity - rejects_by_item.get(item.pk, (0,))[0]
                    for item in request.items.all())
-    enforce_borrow_limits(request.makerspace, request.requester, quantity)
+    enforce_borrow_limits(request.makerspace, request.requester, quantity,
+                          contact_key=request.anonymous_payload_fingerprint)
 
 
-def enforce_product_borrow_limits(makerspace, borrower, product_quantities):
-    enforce_borrow_limits(makerspace, borrower, sum(product_quantities.values()))
+def enforce_product_borrow_limits(makerspace, borrower, product_quantities, *, contact_key=""):
+    enforce_borrow_limits(makerspace, borrower, sum(product_quantities.values()), contact_key=contact_key)
 
 
-def enforce_submission_borrow_limits(makerspace, borrower, items):
-    enforce_borrow_limits(makerspace, borrower, sum(item["quantity"] for item in items))
+def enforce_submission_borrow_limits(makerspace, borrower, items, *, contact_key=""):
+    enforce_borrow_limits(makerspace, borrower, sum(item["quantity"] for item in items), contact_key=contact_key)
 
 
 def outstanding_request_items(queryset):

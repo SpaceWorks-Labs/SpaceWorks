@@ -35,7 +35,7 @@ A multi-tenant system for managing community hardware loans across makerspaces. 
 remarks + audit log). Photo bytes may expire under the configured retention policy, while immutable photo
 metadata, remarks, scans and audit history preserve the durable accountability trail. Public users
 browse and request; when self-checkout is enabled they may also issue/return eligible QR tools after
-authentication and evidence upload. Staff physically issue reviewed requests and direct handouts according
+authentication (or, without member accounts, a confirmed contact) and evidence upload. Staff physically issue reviewed requests and direct handouts according
 to action scope.
 
 ## Architecture: Concepts That Span Multiple Modules
@@ -148,14 +148,17 @@ the Auth module** — forgetting this is a cross-tenant data leak, not just a bu
   console narrowing, not a grant ceiling. The `guest-admin/` **URL paths** in `hardware_requests/urls.py`
   remain the handover API surface (module key `guest_handover`); renaming them would break clients.
   Full detail: **Handover roles** in `docs/INVARIANTS.md`.
-- **Who may request is decided by the `member_accounts` module (owner decision #80).** A space WITH member
+- **Who may request or self-check-out is decided by the `member_accounts` module (#80, #91).** A space WITH member
   accounts requires a signed-in account (`RequestSubmitView`; an anonymous POST is a 401): with
   **`membership` on** an active member must pass the presence, waiver and current-term checks; with it
   **off** any active signed-in account may submit. A space WITHOUT member accounts has accounts for
-  **staff only**: a public borrower with no session requests with **name, phone and email, all
-  required** (a signed-in caller — staff, or an institution's OIDC identity — keeps the account path), and the email
-  must carry a one-time code from `requests/email-code` (the sign-up OTP machinery, throttled and audited)
-  before the request exists. That path is automatic — there is no opt-in switch (`makerspaces/0105`
+  **staff only**, so EVERYONE there — signed in or not, staff and organisation sign-ins included (a
+  walk-in's claim session keeps its own person record) —
+  requests and self-checks-out with **name, phone and email, all required**, and the email must carry a
+  one-time code from `requests/email-code` (the sign-up OTP machinery, throttled and audited) before the
+  request or handover exists; account-less self-checkout also needs its own switch,
+  `inventory.contact_self_checkout` (#95, default off, returns always open); evidence rules are unchanged. `membership` requires
+  `member_accounts` (`makerspaces/0108` repaired rows that had membership without it). That path is automatic — there is no opt-in switch (`makerspaces/0105`
   dropped the old one). Such requests are recorded against the space's inert
   `Makerspace.anonymous_requester` principal; phone and email live only in the request's scoped-PII
   encrypted contact snapshot and are staff-only, and the typed name is the borrower's public name.

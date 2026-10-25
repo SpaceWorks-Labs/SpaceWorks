@@ -27,7 +27,12 @@ from apps.makerspaces.loan_policy import loan_days
 from apps.hardware_requests import kit_checklists as kits
 
 
-def checkout_tool(makerspace, requester, payload, *, evidence_id, remark="", kit_checklist=None):
+def checkout_tool(makerspace, requester, payload, *, evidence_id, remark="", kit_checklist=None, contact=None):
+    """Issue a QR tool to ``requester``; ``contact`` is an account-less borrower (#91).
+
+    With ``contact``, ``requester`` is the space's inert principal and the confirmed
+    name, phone and email form the snapshot; its key scopes the borrow limits.
+    """
     # Gate on the feature and on servability BEFORE touching evidence. Promotion moved
     # out of the transaction so its row locks never span S3 I/O, and moving the evidence
     # work up with it put it ahead of the feature check -- so a makerspace with
@@ -61,22 +66,30 @@ def checkout_tool(makerspace, requester, payload, *, evidence_id, remark="", kit
             raise InvalidTransition("This QR code is already checked out.")
 
         target_label, product_quantities, asset_ids, container = _checkout_target(qr)
-        availability.enforce_product_borrow_limits(makerspace, requester, product_quantities)
+        availability.enforce_product_borrow_limits(
+            makerspace, requester, product_quantities, contact_key=contact.key if contact else "",
+        )
         due_at = timezone.now() + timedelta(days=loan_days(makerspace, product_quantities))
         hardware_request = _issued_request(
             makerspace,
             requester,
-            requester.username,
+            "" if contact else requester.username,
             product_quantities,
-            requester_name=requester.display_name,
-            contact_email=requester.email,
-            contact_phone=requester.phone,
+            requester_name=contact.name if contact else requester.display_name,
+            contact_email=contact.email if contact else requester.email,
+            contact_phone=contact.phone if contact else requester.phone,
             return_due_at=due_at,
         )
+        if contact:
+            hardware_request.anonymous_idempotency_key_fingerprint = contact.marker
+            hardware_request.anonymous_payload_fingerprint = contact.key
         hardware_request.issue_evidence = evidence
         checklist = kits.record_issue(requester, hardware_request, container, kit_checklist)
         hardware_request.issue_remark = kits.checklist_remark(str(remark or "").strip(), checklist)
-        hardware_request.save(update_fields=["issue_evidence", "issue_remark", "updated_at"])
+        hardware_request.save(update_fields=[
+            "issue_evidence", "issue_remark", "anonymous_idempotency_key_fingerprint",
+            "anonymous_payload_fingerprint", "updated_at",
+        ])
         loan = PublicToolLoan.objects.create(
             makerspace=makerspace,
             qr_code=qr,
@@ -98,7 +111,7 @@ def checkout_tool(makerspace, requester, payload, *, evidence_id, remark="", kit
             request=hardware_request,
         )
         audit.record(
-            requester,
+            None if contact else requester,
             "public_tool.checked_out",
             makerspace=makerspace,
             target=hardware_request,

@@ -239,12 +239,15 @@ the Auth module** — forgetting this is a cross-tenant data leak, not just a bu
   the original file as a **thin re-export barrel** (explicit `from .submodule import (...)`, never
   `import *`) so `from app.views import X` and `views.X` keep resolving; for `admin.py` the barrel must
   still import the admin submodules so the `@admin.register` side effects fire. **The ceiling is enforced on what you touch.**
-  Measured on 2026-10-18: **two `backend/apps/` non-migration, non-test Python files exceed
-  300 lines** -- `machines/access.py` (367) and `tenant_migration/source_gate_guards.py` (301).
-  `config/settings.py` remains the accepted exception (Django settings conventionally use one file).
-  `backend/tests/` is not held to the ceiling. Frontend: **zero** non-test, non-generated files
-  exceeded it when measured 2026-10-17 after the mobile programme; that frontend count was
-  not remeasured in this documentation pass.
+  **CI enforces it too:** the `rules` job of the Checks workflow runs `scripts/ci/check_rules.py`
+  (`python scripts/ci/check_rules.py` locally) over tracked, non-migration, non-test, non-generated files in
+  `backend/apps`, `backend/config` and `frontend/src`; its `ALLOWLIST` is the only exception list, and
+  today it holds just `config/settings.py` (Django settings conventionally use one file). Measured
+  2026-10-26: **seven `backend/apps/` files exceed 300 lines** -- `machines/access.py` (367),
+  `tenant_migration/row_planning.py` (325), `apiclients/scope_registry.py` (313),
+  `tenant_migration/authority_guards.py` (309), `makerspaces/module_purge.py` (305),
+  `tenant_migration/materialization.py` (302), `tenant_migration/source_gate_guards.py` (301) -- and the
+  P2 split sweep owns them; frontend has none. `backend/tests/` is not held to the ceiling.
   **Split an over-ceiling file in its own commit before adding to it**, and when splitting one that other
   modules import from, check for guards pinned to its path: `tests/makerspaces/test_tenant_servability_guard.py`
   pins two function *bodies* to `accounts/rbac.py` by `(path, function)`, and

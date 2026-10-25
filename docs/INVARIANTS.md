@@ -908,7 +908,7 @@ removed, while nonempty role sections are refused. Membership and per-person aut
 in a pack. Tenant imports reduce member memberships to Member; staff retain built-in roles and
 remapped additional roles/type links under D11 (see the account-kinds section above).
 
-**`apps/makerspaces/module_registry.py` is the single source of truth for module keys.** All 37
+**`apps/makerspaces/module_registry.py` is the single source of truth for module keys.** All 38
 `ModuleDefinition`s live there (`key`, `label`, `description`, `app_label`, `enforcement`, `group`,
 `requires_modules`, `default_enabled`, `is_core`, `frontend_exposed`, `frontend_workflows`), and the
 lists that used to be hand-kept in parallel now **derive** from it: `models.DEFAULT_ENABLED_MODULES`,

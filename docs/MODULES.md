@@ -1,7 +1,7 @@
 # SpaceWorks modules — what each one is, and what happens without it
 
-Space Works ships **38 modules**: 6 **core** ones that cannot be switched off, 1 that is **on by
-default** (`backup`), and the rest opt-in. This page is the per-module reference the README links into — one entry
+Space Works ships **38 modules**: 6 **core** ones that cannot be switched off, 2 that are **on by
+default** (`backup` and `member_accounts`, owner decision #91), and the rest opt-in. This page is the per-module reference the README links into — one entry
 per key, saying what it is, what it puts on screen, what disappears if you do not install it, and what
 happens to its data.
 
@@ -80,8 +80,8 @@ docker compose run --rm --no-deps backend --role management python manage.py uni
 A module another installed module depends on cannot be uninstalled until the dependant goes first, and
 core modules cannot be uninstalled at all.
 
-The registry contains 37 keys (36 in the main catalogue plus presence): six core,
-backup enabled by default, and 30 opt-in. SMS/WhatsApp are separate opt-in modules.
+The registry contains 38 keys (37 in the main catalogue plus presence): six core,
+backup and member accounts enabled by default, and 30 opt-in. SMS/WhatsApp are separate opt-in modules.
 Migration 0097 preserves only previously enabled canonical WhatsApp installations;
 new SMS/WhatsApp installations remain off. Existing operational channel conversion
 preserves enablement/opt-outs and never enables platform sending. Module-list validation

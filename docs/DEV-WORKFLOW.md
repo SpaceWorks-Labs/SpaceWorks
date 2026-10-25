@@ -208,3 +208,27 @@ colour contrast; `e2e/a11y.spec.ts` covers that in Chromium).
 Tests run locally only, before pushing: `./scripts/dev.sh test` and `./scripts/dev.sh e2e`.
 Actions builds/publishes backend/frontend images, creates the GitHub Release, promotes rolling tags
 and optionally deploys through the self-hosted runner; `security-audit.yml` runs `pip-audit` on PRs.
+
+## CI checks (`.github/workflows/checks.yml`)
+
+The **Checks** workflow runs on every PR into `main` or `dev`, on pushes to `dev`, and by hand. It runs
+**checks only** (owner decision #108): the pytest and vitest suites stay local and gitignored, so a green
+Checks run is not a test run. Its four jobs are the required status checks on `main`; keep their names:
+
+- **`frontend`** — `npm ci`, `npx tsc -b`, `npm run build` (which runs the PWA verify script). There is no
+  lint step because no ESLint config is committed.
+- **`backend`** — Python 3.12, `manage.py check`, `manage.py makemigrations --check --dry-run`. Settings
+  get dummy values plus keys from `scripts/ci/throwaway_keys.py` (`SECRET_KEY` and the
+  Fernet keys, including the mandatory `PII_MASTER_KEY`); no database or service is started.
+- **`contracts`** — regenerates the OpenAPI snapshot (`spectacular --format openapi-json`) and fails on
+  any diff with `frontend/openapi-schema.json`; reruns `npm run generate:api` and fails if
+  `frontend/src/generated/api.ts` changes; runs `validate_catalog()`, so a stale
+  `CATALOG_SCHEMA_SHA256` fails here.
+- **`rules`** — `scripts/ci/check_rules.py`: the 300-line ceiling over tracked, non-migration, non-test,
+  non-generated source files in `backend/apps`, `backend/config` and `frontend/src` (its `ALLOWLIST`
+  holds the accepted exceptions, today only `config/settings.py`), plus `CLAUDE.md` == `AGENTS.md`.
+
+Run the rules locally with `python scripts/ci/check_rules.py` from anywhere in the repo; it measures
+tracked files only, so local test trees never affect it. The backend and contracts commands need Linux
+(`apps/backup` imports `fcntl`), so run them in a `python:3.12-slim` container or the backend image
+rather than a Windows venv, with the same dummy env the workflow sets.

@@ -1,0 +1,154 @@
+name: Checks
+
+# CHECKS ONLY (owner decision #108). The pytest and vitest suites are deliberately
+# local-only and gitignored; nothing here runs them.
+#
+# Required status checks on main. These job ids and names are what branch protection
+# matches, so keep them stable:
+#   - frontend
+#   - backend
+#   - contracts
+#   - rules
+
+on:
+  pull_request:
+    branches:
+      - main
+      - dev
+  push:
+    branches:
+      - dev
+  workflow_dispatch:
+
+concurrency:
+  group: checks-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+# Dummy but valid settings for Django commands that never touch a database or a
+# service. Nothing here is a secret: the job generates SECRET_KEY and the Fernet keys.
+env:
+  DEBUG: "True"
+  TRUSTED_PROXY_COUNT: "0"
+  ALLOWED_HOSTS: localhost,127.0.0.1
+  DATABASE_URL: postgres://checks:checks@localhost:5432/checks
+  EMAIL_BACKEND: django.core.mail.backends.console.EmailBackend
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  frontend:
+    name: frontend
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check
+        run: npx tsc -b
+
+      # No ESLint configuration is committed, so there is no lint step yet.
+
+      - name: Build (includes the PWA verify script)
+        run: npm run build
+
+  backend:
+    name: backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Generate throwaway keys
+        run: python ../scripts/ci/throwaway_keys.py >> "$GITHUB_ENV"
+
+      - name: Django system checks
+        run: python manage.py check
+
+      - name: No missing migrations
+        run: python manage.py makemigrations --check --dry-run
+
+  contracts:
+    name: contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install backend dependencies
+        run: pip install -r backend/requirements.txt
+
+      - name: Generate throwaway keys
+        run: python scripts/ci/throwaway_keys.py >> "$GITHUB_ENV"
+
+      - name: OpenAPI snapshot matches the code
+        working-directory: backend
+        run: |
+          python manage.py spectacular --format openapi-json --file "$RUNNER_TEMP/openapi-schema.json"
+          if ! diff -u ../frontend/openapi-schema.json "$RUNNER_TEMP/openapi-schema.json"; then
+            echo "::error file=frontend/openapi-schema.json::OpenAPI snapshot is stale. Regenerate it: cd backend && python manage.py spectacular --format openapi-json --file ../frontend/openapi-schema.json"
+            exit 1
+          fi
+
+      - name: Generated API client matches the snapshot
+        working-directory: frontend
+        run: |
+          npm run generate:api
+          if ! git diff --exit-code -- src/generated/api.ts; then
+            echo "::error file=frontend/src/generated/api.ts::api.ts is stale. Regenerate it: cd frontend && npm run generate:api"
+            exit 1
+          fi
+
+      - name: Tenant-dump catalog digest (CATALOG_SCHEMA_SHA256)
+        working-directory: backend
+        run: |
+          python manage.py shell -c "from apps.tenant_migration.tenant_dump_catalog import validate_catalog; validate_catalog(); print('catalog digest ok')"
+
+  rules:
+    name: rules
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 300-line ceiling and CLAUDE.md/AGENTS.md twins
+        run: python scripts/ci/check_rules.py

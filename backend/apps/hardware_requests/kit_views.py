@@ -1,7 +1,7 @@
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -19,7 +19,10 @@ from apps.hardware_requests.serializers import IssueRejectSerializer, ReturnItem
 from apps.inventory.kit_serializers import KitPreviewSerializer
 from apps.makerspaces.guards import require_feature, require_module
 from apps.makerspaces.models import Makerspace
+from apps.hardware_requests.kit_contact_preview import ContactKitPreviewInputSerializer, contact_kit_rows
+from apps.hardware_requests.self_checkout_contact import contact_mode
 from apps.hardware_requests.self_checkout_views import _public_tool_makerspace
+from apps.hardware_requests.throttles import AnonymousRequestIpBurstThrottle, AnonymousRequestIpHourThrottle
 from apps.presence.guard import require_active_member_presence
 from apps.apiclients.throttling import MemberPrincipalRateThrottle
 from apps.openapi import PUBLIC_API_AUTH_PARAMETERS
@@ -103,16 +106,25 @@ class MemberKitPreviewInputSerializer(serializers.Serializer):
 
 
 class MemberKitPreviewView(APIView):
-    permission_classes = [IsAuthenticated]
-    throttle_classes = [MemberPrincipalRateThrottle]
+    permission_classes = [AllowAny]
+    throttle_classes = [MemberPrincipalRateThrottle, AnonymousRequestIpBurstThrottle, AnonymousRequestIpHourThrottle]
     throttle_scope = "public_tool_checkout"
 
     @extend_schema(tags=["Public requests"], summary="Preview kit components for a scanned self-checkout tool",
+                   description=("Signed-in member where the makerspace has member accounts. Without them "
+                                "(`request_access: contact`) send `contact_email` and the `email_code`; the "
+                                "code is checked, not spent (#104)."),
+                   auth=[{"jwtAuth": []}, {}],
                    request=MemberKitPreviewInputSerializer, parameters=PUBLIC_API_AUTH_PARAMETERS,
                    responses={200: KitPreviewSerializer, **ERRORS})
     def post(self, request, makerspace_slug):
         space = _public_tool_makerspace(makerspace_slug)
         require_feature(space, "inventory.self_checkout")
+        if contact_mode(request, space, taking=str(request.data.get("phase", "")) == "issue"):
+            serializer = ContactKitPreviewInputSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            rows = contact_kit_rows(space, serializer.validated_data)
+            return Response(KitPreviewSerializer({"components": rows}).data)
         require_active_member_presence(request.user, space)
         serializer = MemberKitPreviewInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)

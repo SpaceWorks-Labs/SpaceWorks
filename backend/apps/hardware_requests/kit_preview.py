@@ -16,6 +16,10 @@ from apps.makerspaces.platform import feature_enabled
 def preview_targets(actor, makerspace, *, items=(), qr_payloads=(), container_id=None, public=False):
     action = rbac.Action.ISSUE_DIRECT_LOAN
     def scoped(rows):
+        if public and actor is None:
+            # An account-less borrower (#104): no membership to scope by; the public
+            # self-checkout filters below are what bound the preview.
+            return rows.filter(makerspace=makerspace)
         return (rbac.scope_by_makerspace(actor, rows) if public else
                 rbac.scope_by_action(actor, action, rows)).filter(makerspace=makerspace)
 

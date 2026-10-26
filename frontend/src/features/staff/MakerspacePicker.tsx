@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { SpaceWorksBadge } from "../../components/SpaceWorksLogo";
 import { ThemeToggle } from "../../components/ThemeToggle";
-import { ListRow, StatusPill } from "../../components/ui";
+import { ListRow } from "../../components/ui";
 import { DashboardLayout } from "../../components/layouts/DashboardLayout";
 import { configuredApiUrl } from "../../lib/runtimeConfig";
 import type { Makerspace } from "./StaffPanels";
@@ -45,6 +45,5 @@ export function MakerspacePicker({
     main={[{ title: "Your makerspaces", isEmpty: !matches.length, empty: { message: makerspaces.length ? "No spaces match. Try another name, code or slug." : "No makerspaces exist yet. Create one from the Django control plane.", action: makerspaces.length ? undefined : { label: "Open control plane", href: controlPlaneUrl() } }, content: <div className="grid gap-3 sm:grid-cols-2">{matches.map(space => <ListRow key={space.id} title={space.name}
       identity={{ kind: "icon", icon: "Building2", tone: "accent" }}
       meta={<>{space.public_code ?? space.slug} · Operate this makerspace →</>}
-      onClick={() => onSelect(space.id)}
-      right={space.superadmin_access_enabled === false ? <StatusPill tone="warn" label="Superadmin access: Off" /> : null} />)}</div> }]} />;
+      onClick={() => onSelect(space.id)} />)}</div> }]} />;
 }

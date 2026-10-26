@@ -28,20 +28,21 @@ def require_authority(actor, space, *, target=None, roles=None):
         raise PermissionDenied()
     platform = actor.account_kind == "platform" and actor.is_superuser
     if platform:
-        if not space.superadmin_access_enabled or not rbac.can(actor, rbac.Action.MANAGE_MAKERSPACE, space.pk):
+        if not rbac.can(actor, rbac.Action.MANAGE_MAKERSPACE, space.pk):
             raise PermissionDenied()
     elif not manager_membership(actor, space):
         raise PermissionDenied()
-    can_manage_managers = platform or not space.superadmin_access_enabled
+    # Only the platform administrator manages Space Managers (owner decisions #110, #111 Q14).
+    can_manage_managers = platform
     if target is not None:
         if (target.account_kind != "staff" or target.staff_makerspace_id != space.pk
                 or target.retired_at is not None or target.pk == actor.pk):
             raise PermissionDenied("Staff lifecycle changes cannot target your own account.")
         membership = MakerspaceMembership.objects.get(user=target, makerspace=space)
         if "space_manager" in role_keys(membership) and not can_manage_managers:
-            raise PermissionDenied("Only the platform administrator may manage Space Managers while access is enabled.")
+            raise PermissionDenied("Only the platform administrator may manage Space Managers.")
     if roles is not None and any(role.slug == "space_manager" for role in roles) and not can_manage_managers:
-        raise PermissionDenied("Only the platform administrator may create or assign Space Managers while access is enabled.")
+        raise PermissionDenied("Only the platform administrator may create or assign Space Managers.")
     return can_manage_managers
 
 

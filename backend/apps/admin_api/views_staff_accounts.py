@@ -97,7 +97,6 @@ class StaffAccountPolicyView(StaffAccountBase):
             "can_manage_space_managers": managers,
             "machine_types": list(assignable_machine_types(space).values("id", "name")),
             "roles": RoleSerializer(role_queryset().filter(makerspace=space), many=True).data,
-            "superadmin_access_enabled": space.superadmin_access_enabled,
             "email_onboarding_available": onboarding_available(space)})
         response["Cache-Control"] = "private, no-store"
         return response

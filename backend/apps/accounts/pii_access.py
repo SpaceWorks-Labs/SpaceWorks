@@ -8,7 +8,7 @@ per-person window is audited in EVERY space that person belongs to.
 
 Expiry is closed lazily: any read of a superadmin's windows (masking, the status
 endpoint) first closes that superadmin's lapsed windows and records the expiry with the
-real ``expired_at`` time. No mail is sent.
+real expiry time as ``closed_at``. No mail is sent.
 """
 
 from django.core.exceptions import ValidationError

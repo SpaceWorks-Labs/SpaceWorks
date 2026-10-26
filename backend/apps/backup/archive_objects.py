@@ -37,7 +37,8 @@ NON_OBJECT_KEY_FIELDS = frozenset({
     ("integrations.NotificationProviderReference", "sender_key"),
     ("operations.CloudEmailReservation", "attempt_key"),  # stable mail replay identity
     ("operations.CloudObjectUsageReceipt", "operation_key"),  # accounting idempotency, no object locator
-    ("operations.CloudObjectReservation", "key"),  # digest of physical identity and key, not a locator
+    # Replay-receipt digest of tenant, provider and event id, not a locator.
+    ("integrations.EmailProviderWebhookReceipt", "event_key"),
     # Notification intent and delivery-target identities, never bucket locators.
     ("integrations.NotificationEnvelope", "dedup_key"),
     ("integrations.NotificationDelivery", "target_key"),

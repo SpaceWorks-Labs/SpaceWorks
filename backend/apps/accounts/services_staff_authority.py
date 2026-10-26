@@ -11,7 +11,6 @@ def has_local_staff_authority(user, *, makerspace_id=None):
         MakerspaceMembership.objects.filter(user=user, status="active"),
         relation="makerspace",
     ).select_related("assigned_role").prefetch_related(additional_roles_prefetch())
-    memberships = rbac.hide_from_superadmin(user, memberships, field="makerspace_id")
     if makerspace_id is not None:
         memberships = memberships.filter(makerspace_id=makerspace_id)
     return any(rbac.actions_for_membership(row) for row in memberships)

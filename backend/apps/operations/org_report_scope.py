@@ -190,16 +190,13 @@ def resolve_organization_report_scope(
     )
     # Term 5: importing, aborted, and archived spaces cannot serve reports.
     makerspaces = servable_queryset(makerspaces)
-    # Term 6 is platform-reach consent, NOT hide -- named precisely because an earlier
-    # draft called this "hard-hide" and that was wrong. It matches eligible_makerspaces()
-    # and the rbac organization branch, so a tenant that has withdrawn platform reach is
-    # absent from organization-level aggregates too.
-    # Two deliberate non-filters, recorded so nobody "fixes" them later:
+    # Term 6 (platform-reach consent) is gone: the superadmin is always on (#110), so
+    # every servable owned space counts. Two deliberate non-filters, recorded so nobody
+    # "fixes" them later:
     #   - hidden_from_central_directory is DIRECTORY visibility, not authorization; an
     #     owning organization still sees a space it owns that is off the central list.
     #   - there is no hidden LifecycleState (only ACTIVE/IMPORTING/ABORTED), so
     #     servable_queryset above already covers importing, aborted and archived.
-    makerspaces = makerspaces.filter(superadmin_access_enabled=True)
     # Term 7: the reports module and every declared source module are required.
     makerspaces = makerspaces.filter(enabled_modules__contains=["reports"])
     for module in definition.required_modules:

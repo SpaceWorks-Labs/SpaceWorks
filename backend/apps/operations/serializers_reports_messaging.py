@@ -49,7 +49,7 @@ class PlatformServicesRowSerializer(serializers.Serializer):
     currency = serializers.CharField(allow_null=True)
     amount = serializers.DecimalField(max_digits=24, decimal_places=2, allow_null=True)
     purpose = serializers.ChoiceField(choices=["otp", "notifications"], allow_null=True,
-                                    help_text="SMS OTP vs addressed notifications. Null for other services and hidden buckets.")
+                                    help_text="SMS OTP vs addressed notifications. Null for other services.")
 
 
 class PlatformServicesReportSerializer(GenericAnalyticsReportSerializer):

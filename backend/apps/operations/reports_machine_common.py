@@ -23,7 +23,7 @@ def spaces(makerspace_id, modules, actor=None, *, identities=False):
     """None actor is the existing trusted internal/org builder seam.
 
     HTTP and scheduled dispatch always forward their actor. A resolved local role
-    still narrows a superadmin, including in a hidden tenant.
+    still narrows a superadmin.
     """
     if identities and (makerspace_id is None or actor is None):
         from rest_framework.exceptions import PermissionDenied
@@ -53,10 +53,6 @@ def spaces(makerspace_id, modules, actor=None, *, identities=False):
             require_module(space, module)
         if actor is not None:
             require_action(actor, rbac.Action.MANAGE_MACHINES, space.pk)
-            from .platform_scope import tenant_local_hidden_block_applies
-            if tenant_local_hidden_block_applies(actor, space, rbac.Action.MANAGE_MACHINES):
-                from .report_types import ReportNotFound
-                raise ReportNotFound()
             if identities:
                 require_action(actor, rbac.Action.VIEW_AUDIT, space.pk)
         scope = role_scope.manage_scope_for(actor, space.pk) if actor is not None else role_scope.EXEMPT

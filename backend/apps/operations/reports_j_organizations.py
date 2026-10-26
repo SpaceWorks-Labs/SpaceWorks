@@ -63,7 +63,7 @@ def build_organization_membership(makerspace_id, *, limit=None, date_range=None,
         records.extend({"makerspace_id": link["makerspace_id"], **row} for row in cohorts[org_id])
     if makerspace_id is None:
         # Only genuinely unlinked global organizations receive a deployment row;
-        # an organization linked solely to hidden tenants cannot use this path.
+        # an organization with any makerspace link never uses this path.
         for org_id in Organization.objects.filter(is_active=True, makerspace_links__isnull=True).values_list("pk", flat=True):
             records.extend({"makerspace_id": None, **row} for row in _cohorts(org_id, date_range, grain))
     return result(FIELDS, records, makerspace_id, limit,

@@ -46,7 +46,7 @@ def _scoped_schedule(user, pk):
     queryset = rbac.scope_by_action(
         user, action, ReportSchedule.objects.select_related("makerspace", "destination", "created_by")
     )
-    schedule = get_object_or_404(rbac.hide_from_superadmin(user, queryset), pk=pk)
+    schedule = get_object_or_404(queryset, pk=pk)
     require_module(schedule.makerspace, "reports")
     return schedule
 

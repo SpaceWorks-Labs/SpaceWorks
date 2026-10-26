@@ -52,7 +52,7 @@ PAYMENT_FILTER_KEYS = ("status", "subject_type")
 def run_report_schedules(*, now=None, limit=50):
     limit = bounded.limit(limit)
     now = now or timezone.now()
-    # Archived, reports-disabled and superadmin-hidden makerspaces never run: the same
+    # Archived and reports-disabled makerspaces never run: the same
     # eligibility the aggregate reports use, applied before any row is claimed.
     due = list(
         rbac.scope_for_scheduled_work(ReportSchedule.objects.all()).filter(

@@ -61,7 +61,7 @@ def lock_and_validate_staff_authority(
     is_global_superadmin = bool(
         locked_actor.is_superuser or locked_actor.role == User.Role.SUPERADMIN
     )
-    if is_global_superadmin and makerspace.superadmin_access_enabled:
+    if is_global_superadmin:
         effective_actions = set(rbac.ROLE_GRANTABLE_ACTIONS)
     else:
         effective_actions = rbac.actions_for_membership(membership)

@@ -87,10 +87,7 @@ def _lock_callback_authority(makerspace_id, actor_id):
         is_servable(makerspace)
         and active_user(actor)
         and (
-            (
-                (actor.is_superuser or actor.role == User.Role.SUPERADMIN)
-                and makerspace.superadmin_access_enabled
-            )
+            actor.is_superuser or actor.role == User.Role.SUPERADMIN
             or rbac.Action.MANAGE_MAKERSPACE
             in rbac.actions_for_membership(membership)
         )

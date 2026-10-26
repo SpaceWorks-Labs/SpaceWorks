@@ -29,7 +29,6 @@ def visible_space(actor, makerspace_id):
     local = rbac.scope_by_makerspace(actor, spaces, makerspace_field="id")
     if ids is not rbac.ALL:
         spaces = spaces.filter(Q(pk__in=ids) | Q(pk__in=local.values("pk")))
-    spaces = rbac.hide_from_superadmin(actor, spaces, field="id")
     return get_object_or_404(spaces, pk=makerspace_id)
 
 

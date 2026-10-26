@@ -35,15 +35,14 @@ def grants_directly(actor, makerspace_id, action):
     if rbac._is_superadmin(actor):
         # Authority does not come from a role row, so no role can qualify it. Tier 1
         # already treats them as EXEMPT; agreeing here keeps the two consistent.
-        return not rbac.superadmin_hidden_block_applies(actor, makerspace_id, action)
+        return True
     return role_grants_directly(actor, makerspace_id, action)
 
 
 def role_grants_directly(actor, makerspace_id, action):
     """Whether the actor's assigned ROLE stores ``action`` outright.
 
-    Deliberately blind to superadmin status, unlike ``grants_directly``. This preserves
-    a hidden-space superadmin's explicit machine-role narrowing.
+    Deliberately blind to superadmin status, unlike ``grants_directly``.
     """
     if actor is None or not getattr(actor, "is_authenticated", False):
         return False
@@ -60,7 +59,7 @@ def organization_grants_directly(actor, makerspace_id, action):
     This is intentionally separate from machine/type-manager authority: callers must
     opt into the narrow organization partition they can safely expose. The shared
     organization vocabulary rejects ``MANAGE_MACHINES`` before any implication is
-    expanded, and the shared membership query supplies hard-hide/servability filtering.
+    expanded, and the shared membership query supplies servability filtering.
     """
     if (
         actor is None

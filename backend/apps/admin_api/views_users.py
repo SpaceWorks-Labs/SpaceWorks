@@ -45,11 +45,6 @@ class StaffListCreateView(RecentReauthenticationMixin, generics.ListCreateAPIVie
             role=target_role
         )
         if scope is rbac.ALL:
-            queryset = rbac.hide_from_superadmin(
-                self.request.user,
-                queryset,
-                field="makerspace_id",
-            )
             return queryset.order_by("user__username")
         if target_role in _SM_DELEGABLE_ROLES:
             manage_scope = rbac.makerspaces_for_action(
@@ -127,9 +122,8 @@ class AuditLogListView(generics.ListAPIView):
         filters = AuditLogFilterSerializer(data=self.request.query_params)
         filters.is_valid(raise_exception=True)
         queryset = AuditLog.objects.select_related("actor").order_by("-created_at", "-pk")
-        # Tenant/action scope, hidden and archived spaces are applied BEFORE user filters.
+        # Tenant/action scope and archived spaces are applied BEFORE user filters.
         queryset = rbac.scope_by_action(self.request.user, rbac.Action.VIEW_AUDIT, queryset)
-        queryset = rbac.hide_from_superadmin(self.request.user, queryset, field="makerspace_id")
         archived = rbac.archived_makerspace_ids()
         if archived:
             queryset = queryset.exclude(makerspace_id__in=archived)

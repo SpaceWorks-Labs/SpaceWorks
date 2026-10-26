@@ -30,8 +30,6 @@ def authorize(campaign, actor):
     require_feature(space.makerspace, "bookings.broadcasts")
     for module in ("notifications", "email"):
         require_module(space.makerspace, module)
-    if not space.makerspace.superadmin_access_enabled:
-        raise PermissionDenied()
 
 
 def bookings(campaign):

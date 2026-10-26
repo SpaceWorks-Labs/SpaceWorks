@@ -51,12 +51,7 @@ _ERRORS = {
 def _makerspace(actor, makerspace_id):
     # Archived spaces are excluded everywhere but /control/, and installing a module on
     # one would be a change nobody can see the effect of.
-    #
-    # Resolved through rbac rather than servability alone: a makerspace whose manager
-    # switched superadmin access off is hard-hidden from the global superadmin, and an
-    # object lookup on a hidden space answers 404 like every other staff route. Without
-    # this the module console was the one surface that still let a superadmin reshape a
-    # space it is supposed to be unable to see.
+    # Resolved through rbac, like every other staff makerspace lookup.
     return get_object_or_404(
         rbac.scope_by_action(
             actor,

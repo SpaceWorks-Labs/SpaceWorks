@@ -236,7 +236,7 @@ class ApiClientRotateSecretView(RecentReauthenticationMixin, generics.GenericAPI
             # the locked row so a concurrent scope update cannot widen that access.
             if (
                 set(client.scopes) - TENANT_GRANTABLE_SCOPES
-                and not actor_may_grant_privileged_scopes(request.user, client.makerspace_id)
+                and not actor_may_grant_privileged_scopes(request.user)
             ):
                 raise PermissionDenied(
                     "Only a global superadmin may rotate a client with privileged scopes."

@@ -32,16 +32,12 @@ class InventoryLendingHistoryView(APIView):
     def get(self, request, pk):
         from apps.accounts import rbac
 
-        # Product-first scoping 404s for non-audit roles / cross-tenant. The
-        # soft-hide also 404s a superadmin querying a makerspace that has opted
-        # out of superadmin access, since this exposes borrower PII (mirrors the
-        # audit/report soft-hide).
+        # Product-first scoping 404s for non-audit roles / cross-tenant.
         scoped = rbac.scope_by_action(
             request.user,
             rbac.Action.VIEW_AUDIT,
             InventoryProduct.objects.all(),
         )
-        scoped = rbac.hide_from_superadmin(request.user, scoped, "makerspace_id")
         product = get_object_or_404(scoped, pk=pk)
         items = (
             HardwareRequestItem.objects.filter(

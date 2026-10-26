@@ -1,6 +1,6 @@
 """Object-level authorization for the Machines module.
 
-Builds on apps.accounts.rbac (which already enforces hard-hide + archived scoping).
+Builds on apps.accounts.rbac (which already enforces archived scoping).
 Three tiers:
   1. MANAGE_MACHINES — full control of the machines the holder's ROLE is scoped to
      (`role_scope`), which for a space manager or superadmin is all of them.
@@ -253,7 +253,7 @@ def can_assign_operator(actor, machine, target_level, existing_level=None):
 def scope_machines_for_actor(actor, queryset):
     """Machines the actor may see: union of MANAGE_MACHINES labs, type-managed
     machines (via managing_action), and explicitly-assigned operator machines.
-    Starts from membership + hard-hide + archived scope (via rbac helpers)."""
+    Starts from membership + archived scope (via rbac helpers)."""
     from django.db.models import Q
 
     if actor is None or not getattr(actor, "is_authenticated", False):
@@ -261,8 +261,8 @@ def scope_machines_for_actor(actor, queryset):
 
     manage_scope = rbac.makerspaces_for_action(actor, Action.MANAGE_MACHINES)
     if manage_scope is rbac.ALL:
-        # ALL is only the action-level tenant scope. A superadmin who is an explicit
-        # member of a hard-hidden makerspace may still have a machine-scoped role there,
+        # ALL is only the action-level tenant scope. A superadmin who is also an
+        # explicit member of a makerspace may still have a machine-scoped role there,
         # so resolve every tenant represented by this multi-makerspace queryset through
         # role_scope.manage_scopes_for (via scoped_q) instead of treating ALL as exempt.
         manage_scope = set(queryset.values_list("makerspace_id", flat=True).distinct())

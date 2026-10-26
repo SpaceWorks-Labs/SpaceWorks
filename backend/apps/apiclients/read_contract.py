@@ -51,7 +51,7 @@ def resolve_read_target(request, match):
     if client is None:
         return None, False
     tenant = client.makerspace
-    if not is_servable(tenant) or not tenant.superadmin_access_enabled:
+    if not is_servable(tenant):
         return None, False
     if adapter.model_label:
         model = apps.get_model(adapter.model_label)

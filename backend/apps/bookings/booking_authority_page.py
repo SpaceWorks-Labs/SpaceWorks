@@ -33,10 +33,6 @@ def features_for_page(rows):
             field: servable and configuration_feature_enabled(makerspace, key)
             for field, key in features.items()
         }
-        # Broadcast history and mutations both refuse a hidden makerspace,
-        # including for its local staff. Match that live policy in the UI flag.
-        if not makerspace.superadmin_access_enabled:
-            result[pk]["broadcasts_enabled"] = False
     return result
 
 

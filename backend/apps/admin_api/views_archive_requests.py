@@ -123,9 +123,8 @@ class MakerspaceArchiveRequestListCreateView(generics.ListCreateAPIView):
         tags=["Admin makerspaces"],
         summary="Request makerspace archival",
         description=(
-            "Requires local MANAGE_MAKERSPACE authority on a live makerspace, including "
-            "when superadmin access is disabled. A platform superadmin reviews the "
-            "request through the control-panel lifecycle list."
+            "Requires local MANAGE_MAKERSPACE authority on a live makerspace. A platform "
+            "superadmin reviews the request through the control-panel lifecycle list."
         ),
         request=MakerspaceArchiveRequestSerializer,
         responses={

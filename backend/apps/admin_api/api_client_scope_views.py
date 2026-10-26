@@ -51,7 +51,7 @@ class ApiClientScopeCatalogView(APIView):
     )
     def get(self, request, makerspace_id):
         _visible_makerspace(request.user, makerspace_id)
-        privileged = actor_may_grant_privileged_scopes(request.user, makerspace_id)
+        privileged = actor_may_grant_privileged_scopes(request.user)
         paginator = self.pagination_class()
         page = paginator.paginate_queryset(
             scope_catalog(privileged=privileged), request, view=self

@@ -59,12 +59,7 @@ class ApiClientSerializer(serializers.ModelSerializer):
         disagree about who is privileged.
         """
         request = self.context.get("request")
-        actor = getattr(request, "user", None)
-        makerspace_id = (
-            getattr(self.instance, "makerspace_id", None)
-            or self.context.get("makerspace_id")
-        )
-        return actor_may_grant_privileged_scopes(actor, makerspace_id)
+        return actor_may_grant_privileged_scopes(getattr(request, "user", None))
 
     def validate_client_type_scope_ceiling(self, attrs):
         """Validate the requested state against this serializer's current instance."""

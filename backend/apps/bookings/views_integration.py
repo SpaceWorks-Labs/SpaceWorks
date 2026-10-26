@@ -31,7 +31,7 @@ BOOKING_DESCRIPTION = (
 class BookingIntegrationReadView(SignedReadView):
     def tenant(self, request):
         tenant = request.api_client.makerspace
-        if not is_servable(tenant) or not tenant.superadmin_access_enabled:
+        if not is_servable(tenant):
             raise NotFound()
         if not module_enabled(tenant, "bookings") or not feature_enabled(tenant, "bookings.api_read"):
             raise NotFound()

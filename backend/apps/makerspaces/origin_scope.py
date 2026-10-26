@@ -3,7 +3,6 @@ from urllib.parse import urlsplit
 from django.conf import settings
 from rest_framework.exceptions import PermissionDenied
 
-from apps.accounts import rbac
 from apps.makerspaces.models import Makerspace, MakerspaceMembership
 from apps.makerspaces.origin_scope_routes import (
     QUERY_SCOPED_ROUTES,
@@ -92,9 +91,6 @@ def validate_native_makerspace_scope(request, user, grant):
         makerspace_id=makerspace_id,
         status='active',
     ), relation="makerspace").select_related('makerspace', 'assigned_role')
-    memberships = rbac.hide_from_superadmin(
-        user, memberships, field='makerspace_id'
-    )
     membership = memberships.first()
     if membership is None:
         raise PermissionDenied('Makerspace selection is not available.')

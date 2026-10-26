@@ -9,6 +9,8 @@ from apps.makerspaces.platform import feature_enabled
 from apps.makerspaces.servability import servable_queryset
 from apps.separability.registry import runtime_active
 from apps.tenant_migration.gate_runtime import fanout_tenant_write
+from apps.events.tasks_sweeps import batch
+from apps.operations.cloud_jobs import bounded
 
 logger = logging.getLogger(__name__)
 
@@ -37,14 +39,14 @@ def maintain_tenant(space, counts):
     # service rechecks the event/module and owns all audit/lease transitions.
     event_ids = EventHelpRequest.objects.filter(makerspace=space,
         state__in=("open", "claimed")).order_by("event_id").values_list("event_id", flat=True).distinct()
-    for event_id in event_ids.iterator(chunk_size=100):
+    for event_id in bounded.items(event_ids.iterator(chunk_size=100)):
         _attempt(expire, counts, event_id=event_id, limit=100)
         if feature_enabled(space, "events.mentoring"):
             _attempt(escalate, counts, event_id=event_id)
     for model, callback in ((EventContributorNotice, contribution), (MentorNotificationIntent, help_notice)):
         rows = model.objects.filter(makerspace=space, delivered_at__isnull=True,
             available_at__lte=now, attempts__lt=15).order_by("available_at", "pk")
-        for notice_id in rows.values_list("pk", flat=True)[:100]:
+        for notice_id in bounded.items(list(rows.values_list("pk", flat=True)[:batch(100)])):
             _attempt(callback, counts, **{"notice_id" if model is EventContributorNotice else "intent_id": notice_id})
 
 
@@ -54,7 +56,7 @@ def sweep_contributor_maintenance_task():
     if not runtime_active("events"):
         return counts
     spaces = servable_queryset(Makerspace.objects.filter(enabled_modules__contains=["events"]))
-    for space in spaces.order_by("pk").iterator(chunk_size=100):
+    for space in bounded.page(spaces.order_by("pk"), "event-contributor-spaces"):
         with fanout_tenant_write(space.pk, operation="event_contributor_maintenance", counts=counts) as allowed:
             if not allowed:
                 continue

@@ -54,6 +54,13 @@ def scope(context):
         _scope.reset(token)
 
 
+def defer():
+    """A domain that bounds its own work reports that rows remain for the next chunk."""
+    progress = _scope.get()
+    if progress is not None:
+        progress.incomplete = True
+
+
 def check():
     progress = _scope.get()
     if progress is not None:
@@ -87,6 +94,18 @@ def delete(rows, label):
 def limit(default):
     progress = _scope.get()
     return default if progress is None else min(default, max(1, progress.context.limit - progress.processed))
+
+
+# A heavy row effect (scan, render, validation, object I/O) takes one row per chunk so
+# it can never outlive the tick's total deadline.
+HEAVY_ROWS = 1
+
+
+def rows(default, *, heavy=False):
+    """A domain sweep's batch size: unchanged outside a chunk, the chunk's remaining
+    limit inside one, and HEAVY_ROWS for heavy row effects."""
+    size = limit(default)
+    return min(size, HEAVY_ROWS) if heavy and active() else size
 
 
 def page(rows, label, *, key="pk"):

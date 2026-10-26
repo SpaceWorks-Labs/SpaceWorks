@@ -1,4 +1,5 @@
 """Post-purge cleanup keeps retrying all versions after bounded writes settle."""
+from apps.operations.cloud_jobs import bounded
 from datetime import timedelta
 import logging
 from django.db import connection, transaction
@@ -66,7 +67,7 @@ def cleanup_receipt(pk):
 def sweep(limit=100):
     ids = list(BadgePrintCleanupReceipt.objects.filter(next_attempt_at__lte=timezone.now()).filter(Q(lease_until__isnull=True) | Q(lease_until__lte=timezone.now()))
         .order_by("next_attempt_at", "pk").values_list("pk", flat=True)[:min(max(limit, 1), 500)])
-    for pk in ids:
+    for pk in bounded.items(ids):
         try:
             cleanup_receipt(pk)
         except Exception:

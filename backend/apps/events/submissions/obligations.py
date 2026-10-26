@@ -1,4 +1,5 @@
 """Permanent locator custody and leased, post-purge byte reconciliation."""
+from apps.operations.cloud_jobs import bounded
 from datetime import timedelta
 import logging
 from uuid import uuid4
@@ -70,7 +71,7 @@ def sweep(*, storage, limit=100):
         Q(lease_until__isnull=True) | Q(lease_until__lte=now)
     ).order_by("next_attempt_at", "pk").values_list("pk", flat=True)[:min(max(limit, 1), 500)]
     counts = {"cleaned": 0, "failed": 0}
-    for pk in list(ids):
+    for pk in bounded.items(list(ids)):
         try:
             counts["cleaned"] += int(reconcile(pk, storage=storage))
         except Exception:

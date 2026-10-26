@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Camera, CircleCheck, ImageUp } from "lucide-react";
 
 import { CameraCapture } from "../../components/ui";
@@ -32,13 +32,17 @@ export function PublicEvidenceUpload({
   const needsEmail = contactEmail !== undefined && !contactEmail.includes("@");
   const busy = disabled || status === "uploading" || needsEmail;
 
+  // Callers pass an inline callback, so its identity changes every render; reset only when the
+  // evidence type changes, through the latest callback, or a finished upload would be discarded.
+  const onUploadedRef = useRef(onUploaded);
+  onUploadedRef.current = onUploaded;
   useEffect(() => {
     setStatus("idle");
     setError("");
     setFileName("");
     setCameraOpen(false);
-    onUploaded(null);
-  }, [evidenceType, onUploaded]);
+    onUploadedRef.current(null);
+  }, [evidenceType]);
 
   async function handleFile(file: File) {
     setStatus("uploading");

@@ -6,7 +6,7 @@
       "name": "web",
       "image": {
         "registry_type": "GHCR",
-        "registry": "spaceworks-hq",
+        "registry": "spaceworks-labs",
         "repository": "spaceworks-backend",
         "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
       },
@@ -58,7 +58,7 @@
       "name": "worker",
       "image": {
         "registry_type": "GHCR",
-        "registry": "spaceworks-hq",
+        "registry": "spaceworks-labs",
         "repository": "spaceworks-backend",
         "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
       },
@@ -103,7 +103,7 @@
       "name": "scheduler",
       "image": {
         "registry_type": "GHCR",
-        "registry": "spaceworks-hq",
+        "registry": "spaceworks-labs",
         "repository": "spaceworks-backend",
         "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
       },
@@ -150,7 +150,7 @@
       "name": "release",
       "image": {
         "registry_type": "GHCR",
-        "registry": "spaceworks-hq",
+        "registry": "spaceworks-labs",
         "repository": "spaceworks-backend",
         "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
       },

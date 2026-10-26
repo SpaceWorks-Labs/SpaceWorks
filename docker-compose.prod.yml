@@ -16,7 +16,7 @@ x-spaceworks-host-orchestration:
   writer_services: [backend, live, worker, beat]
   sibling_lifecycle: bundled-owned-database
 x-host-bootstrap: &host-bootstrap
-  image: ${MAKERSPACE_BACKEND_IMAGE:-ghcr.io/spaceworks-hq/spaceworks-backend}:${MAKERSPACE_IMAGE_TAG:-latest}
+  image: ${MAKERSPACE_BACKEND_IMAGE:-ghcr.io/spaceworks-labs/spaceworks-backend}:${MAKERSPACE_IMAGE_TAG:-latest}
   user: "0:0"
   entrypoint: ["python", "/app/scripts/bootstrap_host_orchestration.py"]
   environment: &host-bootstrap-env
@@ -90,7 +90,7 @@ services:
     logging: *default-logging
     healthcheck: {test: ["CMD", "redis-cli", "ping"], interval: 10s, timeout: 5s, retries: 6}
   backend:
-    image: ${MAKERSPACE_BACKEND_IMAGE:-ghcr.io/spaceworks-hq/spaceworks-backend}:${MAKERSPACE_IMAGE_TAG:-latest}
+    image: ${MAKERSPACE_BACKEND_IMAGE:-ghcr.io/spaceworks-labs/spaceworks-backend}:${MAKERSPACE_IMAGE_TAG:-latest}
     restart: *default-restart
     logging: *default-logging
     environment: &backend-env
@@ -242,7 +242,7 @@ services:
       - ${SPACEWORKS_HOST_STATE_DIR:-/var/lib/spaceworks/host}/public:/run/spaceworks-host:ro
       - ./scripts:/run/spaceworks-privileged-scripts:ro
   live:
-    image: ${MAKERSPACE_BACKEND_IMAGE:-ghcr.io/spaceworks-hq/spaceworks-backend}:${MAKERSPACE_IMAGE_TAG:-latest}
+    image: ${MAKERSPACE_BACKEND_IMAGE:-ghcr.io/spaceworks-labs/spaceworks-backend}:${MAKERSPACE_IMAGE_TAG:-latest}
     restart: unless-stopped
     environment: *backend-env
     command: ["--role", "backend", "gunicorn", "--config", "python:config.gunicorn_metrics", "config.wsgi:application", "--bind", "0.0.0.0:8000", "-k", "gthread", "--threads", "${LIVE_THREADS:-32}", "--timeout", "0", "--access-logfile", "-", "--error-logfile", "-"]
@@ -253,7 +253,7 @@ services:
     <<: *host-bootstrap
     depends_on: {db: {condition: service_healthy}}
   migrate:
-    image: ${MAKERSPACE_BACKEND_IMAGE:-ghcr.io/spaceworks-hq/spaceworks-backend}:${MAKERSPACE_IMAGE_TAG:-latest}
+    image: ${MAKERSPACE_BACKEND_IMAGE:-ghcr.io/spaceworks-labs/spaceworks-backend}:${MAKERSPACE_IMAGE_TAG:-latest}
     environment:
       <<: *backend-env
       DATABASE_URL: postgres://${POSTGRES_USER:-makerspace}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-makerspace_manager}
@@ -272,7 +272,7 @@ services:
     <<: *host-bootstrap
     depends_on: {migrate: {condition: service_completed_successfully}}
   worker:
-    image: ${MAKERSPACE_BACKEND_IMAGE:-ghcr.io/spaceworks-hq/spaceworks-backend}:${MAKERSPACE_IMAGE_TAG:-latest}
+    image: ${MAKERSPACE_BACKEND_IMAGE:-ghcr.io/spaceworks-labs/spaceworks-backend}:${MAKERSPACE_IMAGE_TAG:-latest}
     restart: *default-restart
     logging: *default-logging
     environment: *backend-env
@@ -284,7 +284,7 @@ services:
       - ./scripts:/run/spaceworks-privileged-scripts:ro
     depends_on: {db: {condition: service_healthy}, redis: {condition: service_healthy}, orchestration-ready: {condition: service_completed_successfully}}
   beat:
-    image: ${MAKERSPACE_BACKEND_IMAGE:-ghcr.io/spaceworks-hq/spaceworks-backend}:${MAKERSPACE_IMAGE_TAG:-latest}
+    image: ${MAKERSPACE_BACKEND_IMAGE:-ghcr.io/spaceworks-labs/spaceworks-backend}:${MAKERSPACE_IMAGE_TAG:-latest}
     restart: *default-restart
     logging: *default-logging
     environment: *backend-env
@@ -297,7 +297,7 @@ services:
     depends_on: {db: {condition: service_healthy}, redis: {condition: service_healthy}, orchestration-ready: {condition: service_completed_successfully}}
   candidate-backend:
     profiles: [host-recovery]
-    image: ${MAKERSPACE_BACKEND_IMAGE:-ghcr.io/spaceworks-hq/spaceworks-backend}:${MAKERSPACE_IMAGE_TAG:-latest}
+    image: ${MAKERSPACE_BACKEND_IMAGE:-ghcr.io/spaceworks-labs/spaceworks-backend}:${MAKERSPACE_IMAGE_TAG:-latest}
     environment: *backend-env
     command: ["--role", "backend", "gunicorn", "--config", "python:config.gunicorn_metrics", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "1", "--access-logfile", "-", "--error-logfile", "-"]
     healthcheck: {test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health/readiness/', timeout=3).read()\""], interval: 10s, timeout: 5s, retries: 6}
@@ -307,7 +307,7 @@ services:
       - ${SPACEWORKS_HOST_STATE_DIR:-/var/lib/spaceworks/host}/public:/run/spaceworks-host:ro
     depends_on: {db: {condition: service_healthy}, redis: {condition: service_healthy}, createbuckets: {condition: service_completed_successfully}}
   frontend:
-    image: ${MAKERSPACE_FRONTEND_IMAGE:-ghcr.io/spaceworks-hq/spaceworks-frontend}:${MAKERSPACE_IMAGE_TAG:-latest}
+    image: ${MAKERSPACE_FRONTEND_IMAGE:-ghcr.io/spaceworks-labs/spaceworks-frontend}:${MAKERSPACE_IMAGE_TAG:-latest}
     restart: *default-restart
     environment:
       UI_DELIGHT_ENABLED: "${UI_DELIGHT_ENABLED:-True}"

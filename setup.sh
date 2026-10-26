@@ -44,7 +44,7 @@ if [[ "$BUILD_FROM_SOURCE" == 1 ]]; then
 else
   unset SPACEWORKS_COMPOSE_BUILD_LAYER
   export SPACEWORKS_HOST_CONFIG_BUILD=0
-  HOST_CONFIG_IMAGE="${MAKERSPACE_BACKEND_IMAGE:-ghcr.io/spaceworks-hq/spaceworks-backend}:${MAKERSPACE_IMAGE_TAG:-latest}"
+  HOST_CONFIG_IMAGE="${MAKERSPACE_BACKEND_IMAGE:-ghcr.io/spaceworks-labs/spaceworks-backend}:${MAKERSPACE_IMAGE_TAG:-latest}"
 fi
 
 say()  { printf '\n\033[1;36m%s\033[0m\n' "$*"; }

@@ -2,7 +2,7 @@
   "version": 1,
   "provider": "render",
   "profile": "full",
-  "backend_image": "ghcr.io/spaceworks-hq/spaceworks-backend@sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "backend_image": "ghcr.io/spaceworks-labs/spaceworks-backend@sha256:0000000000000000000000000000000000000000000000000000000000000000",
   "database_provider": "generic",
   "database_connection_mode": "direct",
   "maintenance_connection_mode": "direct",

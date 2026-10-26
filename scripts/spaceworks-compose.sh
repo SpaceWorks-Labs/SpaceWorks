@@ -115,7 +115,7 @@ if command -v python3 >/dev/null 2>&1 \
 else
   # Minimal Linux hosts need no host Python. Validate as the host UID so the
   # same static-env owner check applies; retain supplementary read groups.
-  image="${HOST_CONFIG_IMAGE:-${MAKERSPACE_BACKEND_IMAGE:-ghcr.io/spaceworks-hq/spaceworks-backend}:${MAKERSPACE_IMAGE_TAG:-latest}}"
+  image="${HOST_CONFIG_IMAGE:-${MAKERSPACE_BACKEND_IMAGE:-ghcr.io/spaceworks-labs/spaceworks-backend}:${MAKERSPACE_IMAGE_TAG:-latest}}"
   groups=()
   for gid in $(id -G); do groups+=(--group-add "$gid"); done
   container_args=(--topology "$TOPOLOGY" --static-env /static.env

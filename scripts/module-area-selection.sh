@@ -133,7 +133,7 @@ module_refresh_edition() {
   local tag="${MAKERSPACE_IMAGE_TAG:-$(repository_env_value MAKERSPACE_IMAGE_TAG)}" HOST_CONFIG_IMAGE
   if [[ -z "$tag" && -f "$ROOT/.spaceworks-version" ]]; then tag="$(tr -d '[:space:]' < "$ROOT/.spaceworks-version")"; fi
   tag="${tag:-latest}"
-  HOST_CONFIG_IMAGE="${MAKERSPACE_BACKEND_IMAGE:-ghcr.io/spaceworks-hq/spaceworks-backend}:$tag"
+  HOST_CONFIG_IMAGE="${MAKERSPACE_BACKEND_IMAGE:-ghcr.io/spaceworks-labs/spaceworks-backend}:$tag"
   source "$ROOT/scripts/setup-host-orchestration.sh"
   refresh_compose_config || { module_warn 'Areas applied; edition configuration refresh failed. Run bash scripts/init-host-orchestration.sh, then scripts/spaceworks-compose.sh bundled up -d.'; return 1; }
   ${COMPOSE[@]+${COMPOSE[@]+"${COMPOSE[@]}"}} up -d || { module_warn 'Edition saved; application restart failed. Run scripts/spaceworks-compose.sh bundled up -d.'; return 1; }

@@ -37,14 +37,14 @@ Docker Desktop installation on Windows/macOS:
 On Linux, paste:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/SpaceWorks-HQ/SpaceWorks/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/SpaceWorks-Labs/SpaceWorks/main/install.sh | bash
 ```
 
 It installs into `/opt/spaceworks` by default. To choose another directory, export it for the `bash`
 side of the pipe:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/SpaceWorks-HQ/SpaceWorks/main/install.sh | SPACEWORKS_DIR="$HOME/SpaceWorks" bash
+curl -fsSL https://raw.githubusercontent.com/SpaceWorks-Labs/SpaceWorks/main/install.sh | SPACEWORKS_DIR="$HOME/SpaceWorks" bash
 ```
 
 Use the second form in Windows Git Bash. The installer downloads the newest **tagged GitHub release**
@@ -78,7 +78,7 @@ The script will ask you a few simple questions (press Enter to accept the sugges
 | Who can submit borrow requests? | members, signed-in accounts (default), or anyone |
 | Sign-in choices | Two-step sign-in [Y/n]; Google, Apple, GitHub comma list [google], or `none`; provider keys are entered later in the console |
 | Optional integrations | Stripe secret/webhook keys and currency |
-| GitHub repository | `SpaceWorks-HQ/SpaceWorks`, or your fork as `Owner/Repo` (asked before download by curl) |
+| GitHub repository | `SpaceWorks-Labs/SpaceWorks`, or your fork as `Owner/Repo` (asked before download by curl) |
 | Automatic deploys | optional GitHub Actions runner; press Enter for No. Linux with systemd only; setup prints the GitHub steps |
 
 Setup creates an organization with that name and links it as the owner of your first makerspace. If you
@@ -279,7 +279,7 @@ After the area questions:
 4. Require two-step sign-in (MFA) for staff? [y/N], only when platform two-step sign-in is on. When off, this question is skipped and no staff-MFA feature is written.
 5. Admin username [admin], email [required], password [auto-generate].
 6. Stripe secret/webhook keys [skip] only with Online payments; checkout reuses the shared currency.
-7. Repository [SpaceWorks-HQ/SpaceWorks] unless selected before download; optional Linux/systemd runner [y/N].
+7. Repository [SpaceWorks-Labs/SpaceWorks] unless selected before download; optional Linux/systemd runner [y/N].
 8. The summary lists areas, all settings and deployment actions, followed by Proceed? [Y/n].
 
 The Membership module currently enforces members-only borrow requests. Enabling it explicitly

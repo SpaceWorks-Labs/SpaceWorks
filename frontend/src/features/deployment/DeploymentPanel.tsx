@@ -31,7 +31,7 @@ export function DeploymentPanel({ data }: { data: DeploymentSummary | TenantDepl
       <SettingsRow label="Backup capabilities">{data.mode === "host" ? "Supervised host recovery follows the configured host contract." : "Deployment archives and in-place restore require a host supervisor."}
         <p className="mt-2">Portable tenant dump: {data.portable_dump_available ? "Qualified; import into a fresh supervised target" : "Unavailable on this deployment"}.</p>
         {!data.portable_dump_available ? <p className="mt-2">{data.portable_dump_reason || "Direct/session maintenance, isolated scratch databases and capture proofs must pass before export."}</p> : null}
-        <a className="desk-link mt-2 inline-flex min-h-11 items-center" href="https://github.com/SpaceWorks-HQ/SpaceWorks/blob/main/docs/deploy/cloud-recovery.md" target="_blank" rel="noreferrer">Recovery limitations and operator steps</a>
+        <a className="desk-link mt-2 inline-flex min-h-11 items-center" href="https://github.com/SpaceWorks-Labs/SpaceWorks/blob/main/docs/deploy/cloud-recovery.md" target="_blank" rel="noreferrer">Recovery limitations and operator steps</a>
       </SettingsRow>
       {data.mode === "managed" ? <SettingsRow label="Platform updates">Deploy through your cloud provider.</SettingsRow> : null}
       {data.profile === "free" && data.free_usage ? <FreeQuotaPanel usage={data.free_usage} /> : null}

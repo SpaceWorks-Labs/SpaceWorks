@@ -3,9 +3,9 @@ deploymentMode: host
 deploymentProfile: full
 taskProfile: redis
 scheduler: beat
-backendImage: ghcr.io/spaceworks-hq/spaceworks-backend
+backendImage: ghcr.io/spaceworks-labs/spaceworks-backend
 backendDigest: ""
-frontendImage: ghcr.io/spaceworks-hq/spaceworks-frontend
+frontendImage: ghcr.io/spaceworks-labs/spaceworks-frontend
 frontendDigest: ""
 imageTag: ""
 imagePullPolicy: IfNotPresent

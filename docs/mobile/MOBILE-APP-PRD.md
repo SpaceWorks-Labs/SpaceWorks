@@ -11,9 +11,9 @@ sign-off is implied: notification sending remains held pending conversion/replay
 
 | Repo | Purpose |
 |---|---|
-| https://github.com/SpaceWorks-HQ/SpaceWorks-Android | Android app — Kotlin |
-| https://github.com/SpaceWorks-HQ/SpaceWorks-iOS | iOS app — Swift |
-| https://github.com/SpaceWorks-HQ/SpaceWorks-Design | Brand + design system (public) |
+| https://github.com/SpaceWorks-Labs/SpaceWorks-Android | Android app — Kotlin |
+| https://github.com/SpaceWorks-Labs/SpaceWorks-iOS | iOS app — Swift |
+| https://github.com/SpaceWorks-Labs/SpaceWorks-Design | Brand + design system (public) |
 
 ---
 
@@ -63,7 +63,7 @@ an updated `openapi.json`. Never work around a missing endpoint by scraping web 
 
 ## 4. Brand and design
 
-Source of truth: **https://github.com/SpaceWorks-HQ/SpaceWorks-Design** — add it to each app repo as a git
+Source of truth: **https://github.com/SpaceWorks-Labs/SpaceWorks-Design** — add it to each app repo as a git
 submodule at `design/` and pin a commit.
 
 | What | Where in the design repo |

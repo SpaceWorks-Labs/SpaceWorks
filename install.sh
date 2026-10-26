@@ -43,7 +43,7 @@ if [[ "$SETUP_NON_INTERACTIVE" == 1 && -z "$ANSWERS_ARG" && "$INSTALL_RESUME" !=
 fi
 [[ -z "$ANSWERS_ARG" || "$SETUP_NON_INTERACTIVE" == 1 ]] || { echo '--answers-file requires --non-interactive.' >&2; exit 64; }
 [[ -z "$ANSWERS_ARG" || "$ANSWERS_ARG" == /* ]] || ANSWERS_ARG="$PWD/$ANSWERS_ARG"
-REPOSITORY="${REPO_ARG:-${SPACEWORKS_REPOSITORY:-SpaceWorks-HQ/SpaceWorks}}"
+REPOSITORY="${REPO_ARG:-${SPACEWORKS_REPOSITORY:-SpaceWorks-Labs/SpaceWorks}}"
 INSTALL_DIR="${SPACEWORKS_DIR:-/opt/spaceworks}"
 if [[ "$INSTALL_DIR" =~ ^[A-Za-z]:[/\\] ]]; then
   command -v cygpath >/dev/null 2>&1 || { echo 'Use a native absolute installation path.' >&2; exit 64; }

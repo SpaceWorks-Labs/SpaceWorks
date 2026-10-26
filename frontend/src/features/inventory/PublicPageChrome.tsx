@@ -2,7 +2,7 @@ import { ThemeToggle } from "../../components/ThemeToggle";
 import { MakerspaceMapLink } from "../../components/MakerspaceMapLink";
 import type { TenantBootstrap } from "../../lib/api";
 
-export const LICENSE_URL = "https://github.com/SpaceWorks-HQ/SpaceWorks/blob/main/LICENSE";
+export const LICENSE_URL = "https://github.com/SpaceWorks-Labs/SpaceWorks/blob/main/LICENSE";
 
 /** Shared public navigation derives only from the bootstrap already loaded by its caller. */
 export function publicPageChrome(slug: string, name: string, path: (part?: string) => string, bootstrap?: TenantBootstrap | null) {

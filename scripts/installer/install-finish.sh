@@ -36,7 +36,7 @@ if [[ "$ACTION" != fresh && "$ACTION" != resume ]]; then
 fi
 if [[ "$ACTION" == fresh ]]; then
 probe_command='source "$ROOT/scripts/installer/compose-capabilities.sh"; probe_compose_capabilities'
-probe_image="${MAKERSPACE_BACKEND_IMAGE:-ghcr.io/spaceworks-hq/spaceworks-backend}:$VERSION"
+probe_image="${MAKERSPACE_BACKEND_IMAGE:-ghcr.io/spaceworks-labs/spaceworks-backend}:$VERSION"
 if [[ "$RUN_INSTALLED_AS_ROOT" == 1 ]]; then
   ${RUN_ROOT[@]+"${RUN_ROOT[@]}"} env ROOT="$STAGE_DIR" HOST_CONFIG_IMAGE="$probe_image" bash -c "$probe_command" || die 'Compose cannot apply the required overlays.'
 elif [[ "$USE_DOCKER_GROUP" == 1 ]]; then

@@ -13,7 +13,7 @@
         "serviceAccountName": "spaceworks-jobs@PROJECT.iam.gserviceaccount.com",
         "containers": [
           {
-            "image": "ghcr.io/spaceworks-hq/spaceworks-backend@sha256:0000000000000000000000000000000000000000000000000000000000000000",
+            "image": "ghcr.io/spaceworks-labs/spaceworks-backend@sha256:0000000000000000000000000000000000000000000000000000000000000000",
             "args": [
               "--role",
               "beat",

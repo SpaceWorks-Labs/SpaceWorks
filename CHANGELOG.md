@@ -133,21 +133,21 @@ The feature-research programme, Waves 1-6 plus the coverage-gap packages:
   accepts or declines, and the partner's members then discover and register through their own
   member area. Registration records durable provenance, so later edits to the collaborator list
   cannot erase a member's history or void a QR already issued
-  ([799804d](https://github.com/SpaceWorks-HQ/SpaceWorks/commit/799804d101a1ef74a17a20ef0a4332715bd675ba))
+  ([799804d](https://github.com/SpaceWorks-Labs/SpaceWorks/commit/799804d101a1ef74a17a20ef0a4332715bd675ba))
 * **events:** a visiting member accepts the host's waiver on the registration itself, rather than
   by manufacturing a membership at the host — which would corrupt the host's roster, quotas, dues
   and member reporting. Audited by waiver id and version, never by body
-  ([dab0354](https://github.com/SpaceWorks-HQ/SpaceWorks/commit/dab035456decbfb3315533354a345fa255761311))
+  ([dab0354](https://github.com/SpaceWorks-Labs/SpaceWorks/commit/dab035456decbfb3315533354a345fa255761311))
 * **events:** QR check-in for event registrations. Resolution is read-only and answers unknown,
   malformed and wrong-event tokens identically, so it cannot be used to tell them apart
-  ([d59f38d](https://github.com/SpaceWorks-HQ/SpaceWorks/commit/d59f38d6ded06592f8041517d24cc5c3af39d8bd))
+  ([d59f38d](https://github.com/SpaceWorks-Labs/SpaceWorks/commit/d59f38d6ded06592f8041517d24cc5c3af39d8bd))
 * **members:** opt-in publication of recently attended events on a maker profile, consent-gated
   separately from the rest of the profile because attendance is not something the member typed
-  ([9ed0fcb](https://github.com/SpaceWorks-HQ/SpaceWorks/commit/9ed0fcb5af38994f67180cd0746e26b34abe7873))
+  ([9ed0fcb](https://github.com/SpaceWorks-Labs/SpaceWorks/commit/9ed0fcb5af38994f67180cd0746e26b34abe7873))
 * **events:** registering no longer requires an active presence session — signing up is planning
   to attend, not attending. Presence is proven at the door by the staff-scanned QR, and the nine
   other presence-guarded surfaces are unchanged
-  ([f16896f](https://github.com/SpaceWorks-HQ/SpaceWorks/commit/f16896f5062010f44e6b3eca1aeb6252a93ef632))
+  ([f16896f](https://github.com/SpaceWorks-Labs/SpaceWorks/commit/f16896f5062010f44e6b3eca1aeb6252a93ef632))
 
 ### Bug Fixes
 

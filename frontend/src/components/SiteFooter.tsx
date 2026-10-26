@@ -19,7 +19,7 @@ export function SiteFooter({ branding }: { branding?: Record<string, string> }) 
           </Link>
           <a
             className="inline-flex min-h-11 items-center rounded-control hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
-            href="https://github.com/SpaceWorks-HQ/SpaceWorks/blob/main/LICENSE"
+            href="https://github.com/SpaceWorks-Labs/SpaceWorks/blob/main/LICENSE"
             target="_blank"
             rel="noreferrer"
           >

@@ -7,7 +7,7 @@ from .environment import command, role_environment
 from .private_files import write_private
 
 # The one published backend image runs every profile (owner decision #75a).
-IMAGE_PLACEHOLDER = "ghcr.io/spaceworks-hq/spaceworks-backend@sha256:" + "0" * 64
+IMAGE_PLACEHOLDER = "ghcr.io/spaceworks-labs/spaceworks-backend@sha256:" + "0" * 64
 
 
 def render_blueprint(values, answers, *, saas=False):

@@ -51,7 +51,7 @@ published main release. Forks configure their own repository, releases, runner a
 
 | Variable | Default | Notes |
 | --- | --- | --- |
-| `SPACEWORKS_REPOSITORY` | `SpaceWorks-HQ/SpaceWorks` | Strict GitHub `owner/repo`; installer source, release lookup and runner registration URL. Persisted in `.env`. The lower-cased owner supplies default GHCR backend/frontend image namespaces unless `MAKERSPACE_BACKEND_IMAGE` / `MAKERSPACE_FRONTEND_IMAGE` override them. |
+| `SPACEWORKS_REPOSITORY` | `SpaceWorks-Labs/SpaceWorks` | Strict GitHub `owner/repo`; installer source, release lookup and runner registration URL. Persisted in `.env`. The lower-cased owner supplies default GHCR backend/frontend image namespaces unless `MAKERSPACE_BACKEND_IMAGE` / `MAKERSPACE_FRONTEND_IMAGE` override them. An install that still saves the old `SpaceWorks-HQ/*` repository or `ghcr.io/spaceworks-hq/*` images is switched to `SpaceWorks-Labs` / `ghcr.io/spaceworks-labs` automatically by the updater, installer re-run and compose wrapper (owner decision #107); forks are untouched. |
 
 ## TLS, cookies and proxies
 

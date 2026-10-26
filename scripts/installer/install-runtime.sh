@@ -4,7 +4,7 @@ set -euo pipefail
 # One command for everyone: --repo (or SPACEWORKS_REPOSITORY) picks a fork up front;
 # otherwise a fresh install asks below, defaulting to the main project.
 [[ -z "$REPO_ARG" ]] || SPACEWORKS_REPOSITORY="$REPO_ARG"
-REPOSITORY="${SPACEWORKS_REPOSITORY:-SpaceWorks-HQ/SpaceWorks}"
+REPOSITORY="${SPACEWORKS_REPOSITORY:-SpaceWorks-Labs/SpaceWorks}"
 INSTALL_DIR="${SPACEWORKS_DIR:-/opt/spaceworks}"
 MIN_FREE_KB=$((8 * 1024 * 1024))
 RUN_ROOT=()

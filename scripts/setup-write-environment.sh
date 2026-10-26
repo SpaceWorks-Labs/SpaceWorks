@@ -191,7 +191,7 @@ write_free_profile_environment() {
     env_setting "$name" "$value"
   done < "$template"
   write_continuity_keys .env
-  env_setting SPACEWORKS_REPOSITORY "${SPACEWORKS_REPOSITORY:-SpaceWorks-HQ/SpaceWorks}"
+  env_setting SPACEWORKS_REPOSITORY "${SPACEWORKS_REPOSITORY:-SpaceWorks-Labs/SpaceWorks}"
 }
 
 print_key_backup_notice() {

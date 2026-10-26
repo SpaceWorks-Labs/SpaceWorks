@@ -14,7 +14,7 @@ Tools, loans, machines, events and bookings. One self-hosted home for your maker
 [Install](#quick-start) · [Modules](#modules) · [Hosting](#hosting) · [Contribute](#contributing)
 
 <a href="LICENSE"><img alt="License: AGPL-3.0-or-later" src="https://img.shields.io/badge/license-AGPL--3.0--or--later-006E63?labelColor=142C2A"></a>
-<a href="https://github.com/SpaceWorks-HQ/SpaceWorks/actions/workflows/release.yml"><img alt="Release" src="https://github.com/SpaceWorks-HQ/SpaceWorks/actions/workflows/release.yml/badge.svg?branch=main"></a>
+<a href="https://github.com/SpaceWorks-Labs/SpaceWorks/actions/workflows/release.yml"><img alt="Release" src="https://github.com/SpaceWorks-Labs/SpaceWorks/actions/workflows/release.yml/badge.svg?branch=main"></a>
 <img alt="Django 6 and React 19" src="https://img.shields.io/badge/stack-Django%206%20%C2%B7%20React%2019-B5CDFF?labelColor=142C2A">
 <a href=".github/CONTRIBUTING.md"><img alt="Contributions welcome" src="https://img.shields.io/badge/contributions-welcome-DFFF8F?labelColor=142C2A"></a>
 
@@ -118,7 +118,7 @@ loads the approved fonts. Use the supplied logo masters and clear, warm, specifi
 On a 64-bit Linux server (or macOS / Windows with Docker Desktop running), as a user with `sudo`:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/SpaceWorks-HQ/SpaceWorks/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/SpaceWorks-Labs/SpaceWorks/main/install.sh | bash
 ```
 
 It asks every question first, shows a summary, and changes nothing until you confirm. Run the same
@@ -173,7 +173,7 @@ downloading** that questionnaire; a source checkout asks it near the end.
     See [all follow-up questions/defaults](docs/setup-for-makerspaces.md#area-follow-up-questions).
 12. **Admin:** username, email and password (blank generates one).
 13. **Stripe:** optional secret/webhook key pair only with Online payments; uses the area currency.
-14. **Repository:** `SpaceWorks-HQ/SpaceWorks` or your fork, unless already selected by curl install.
+14. **Repository:** `SpaceWorks-Labs/SpaceWorks` or your fork, unless already selected by curl install.
 15. **Runner:** automatic GitHub Actions deploys [y/N], offered on Linux with running systemd.
 
 Enter accepts each displayed default; invalid answers are asked again. One summary shows every choice,
@@ -189,7 +189,7 @@ to install and update from: press Enter for the main project, or type your fork 
 the question (for example in a script), pass the fork up front:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/SpaceWorks-HQ/SpaceWorks/main/install.sh | bash -s -- --repo YourName/SpaceWorks
+curl -fsSL https://raw.githubusercontent.com/SpaceWorks-Labs/SpaceWorks/main/install.sh | bash -s -- --repo YourName/SpaceWorks
 ```
 
 `SPACEWORKS_REPOSITORY=YourName/SpaceWorks` on the `bash` side of the pipe does the same. The choice is
@@ -239,8 +239,8 @@ bash scripts/init-host-orchestration.sh   # one-time root-owned pointer/key/conf
 scripts/spaceworks-compose.sh bundled up -d
 ```
 
-With the default repository this pulls **`ghcr.io/spaceworks-hq/spaceworks-backend`** +
-**`ghcr.io/spaceworks-hq/spaceworks-frontend`** and brings up the full stack automatically.
+With the default repository this pulls **`ghcr.io/spaceworks-labs/spaceworks-backend`** +
+**`ghcr.io/spaceworks-labs/spaceworks-frontend`** and brings up the full stack automatically.
 
 ### Updating
 
@@ -743,8 +743,8 @@ request improvements are tracked separately:
   module key.
 
 Current work and shipped changes are tracked in
-[GitHub issues](https://github.com/SpaceWorks-HQ/SpaceWorks/issues),
-[pull requests](https://github.com/SpaceWorks-HQ/SpaceWorks/pulls), and the release notes. The running
+[GitHub issues](https://github.com/SpaceWorks-Labs/SpaceWorks/issues),
+[pull requests](https://github.com/SpaceWorks-Labs/SpaceWorks/pulls), and the release notes. The running
 product intentionally does not expose a separate roadmap page.
 
 ## Roles & access
@@ -825,10 +825,10 @@ corresponding source code of your modified version under the same license.
 
 Thanks to **everyone** who has contributed to Space Works — code, docs, bug reports, or running it at their
 space. The wall below is pulled live from this repository's
-[GitHub contributor graph](https://github.com/SpaceWorks-HQ/SpaceWorks/graphs/contributors) and
+[GitHub contributor graph](https://github.com/SpaceWorks-Labs/SpaceWorks/graphs/contributors) and
 shows **all** contributors — bots and automation included, no filtering:
 
-[![Contributors](https://contrib.rocks/image?repo=SpaceWorks-HQ/SpaceWorks&max=100)](https://github.com/SpaceWorks-HQ/SpaceWorks/graphs/contributors)
+[![Contributors](https://contrib.rocks/image?repo=SpaceWorks-Labs/SpaceWorks&max=100)](https://github.com/SpaceWorks-Labs/SpaceWorks/graphs/contributors)
 
 <sub>Contributor image by [contrib.rocks](https://contrib.rocks).</sub>
 

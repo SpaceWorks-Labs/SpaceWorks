@@ -32,7 +32,7 @@ export function AboutPage() {
     <div className="space-y-5 text-base leading-7 text-muted">
       <p>Space Works brings public equipment catalogues, traceable hardware loans, 3D-print requests, and makerspace operations together.</p>
       <p>Each space controls its inventory, branding, team, and notifications. Members browse and request tools; staff review requests and record every issue and return with evidence.</p>
-      <p>Free and open source under the <a className="underline decoration-line underline-offset-4 hover:text-ink focus-visible:outline-2 focus-visible:outline-focus" href="https://github.com/SpaceWorks-HQ/SpaceWorks/blob/main/LICENSE" target="_blank" rel="noreferrer">GNU Affero General Public License v3 ↗</a>. Use, study, share, and modify it under the licence terms.</p>
+      <p>Free and open source under the <a className="underline decoration-line underline-offset-4 hover:text-ink focus-visible:outline-2 focus-visible:outline-focus" href="https://github.com/SpaceWorks-Labs/SpaceWorks/blob/main/LICENSE" target="_blank" rel="noreferrer">GNU Affero General Public License v3 ↗</a>. Use, study, share, and modify it under the licence terms.</p>
     </div>
     <WorkshopLogbook />
     <div className="mt-5"><AboutMakerMode /></div>

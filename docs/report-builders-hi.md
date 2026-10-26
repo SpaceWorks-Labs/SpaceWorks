@@ -56,7 +56,7 @@ append-only history of re-registrations or deleted devices.
 recorded tenant; week/month sum daily session observations (session-days). Summed
 organization observations count each tenant's sessions, so shared grants can occur
 in several tenant partitions. The platform helper deduplicates grants across
-visible tenant/NULL rows per recorded day and excludes hidden tenant rows.
+tenant/NULL rows per recorded day.
 
 Tenant mobile authentication reads only audit rows with a recorded tenant or
 recorded selected tenant in metadata. It never follows actor memberships to infer

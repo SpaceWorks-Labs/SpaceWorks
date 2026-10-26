@@ -774,8 +774,8 @@ off, an administrator sets or generates a password and hands it over; Membership
 be enabled. Admin-issued reset ends sessions and forces password change. Separate staff/platform
 email OTP recovery ends sessions, clears forced password change and preserves enrolled MFA; it needs
 configured Platform Email, including when tenant Email is off. Deactivation retains history and revokes credentials; reactivation
-needs new credentials. With superadmin access off, only local Space Managers manage staff, including
-other Space Managers; nobody can manage self or remove the last active manager.
+needs new credentials. Only the platform superadmin manages Space Managers; local Space Managers manage
+the other staff. Nobody can manage self or remove the last active manager.
 
 Space Manager and Member each stand alone; the other five roles can combine. Machine scope is assigned
 per person by type: no links means no machines; a type covers machines added later, while new types

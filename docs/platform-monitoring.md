@@ -1,10 +1,9 @@
 # Platform monitoring and tenant usage
 
 The central staff console has a **Platform dashboard** tab for active superadmins.
-It is unavailable on a tenant's custom-domain origin. Hidden makerspaces never
-enter the platform counts, usage rows, delivery counts or tenant checks, including
-when the operator separately holds a membership in one. Lifecycle counts include
-visible importing, aborted and archived tenants; detailed usage covers only
+It is unavailable on a tenant's custom-domain origin. Every makerspace enters the
+platform counts, usage rows, delivery counts and tenant checks (the superadmin is
+always on). Lifecycle counts include importing, aborted and archived tenants; detailed usage covers only
 servable tenants. Global deployment backup/update state is deployment telemetry.
 
 Space Managers (the `manage_makerspace` action) have a **Usage & limits** tab for
@@ -25,8 +24,7 @@ schemas. They introduce no module keys or new feature switches.
   `operations/platform_checks.py` registry on demand. Each result carries an
   `ok`, `warn` or `error` status, a human message and a local inspection/fix URL.
 - `/api/v1/admin/makerspace/<id>/usage`: `manage_makerspace`, scoped through RBAC
-  and servability. A visible non-manager gets 403, another/hidden tenant gets 404.
-  Hidden-space managers retain their membership authority on this tenant route.
+  and servability. A non-manager in the space gets 403, another tenant gets 404.
 
 ## Problem checks
 
@@ -37,7 +35,6 @@ schemas. They introduce no module keys or new feature switches.
   outstanding failed/abandoned copy errors, even after a newer successful copy.
   Re-verification/retention transport errors on verified copies also error. The
   latest deployment destination probe contributes its safe audited result.
-  Upload snapshots for hidden tenants and their destination error rollups are excluded.
 - Scheduler: no execution or age over 3 cadences warns; latest execution failure
   errors. Cadences come from the existing cron registry.
 - Updates: pending/available warns; failed errors; disabled is informational.

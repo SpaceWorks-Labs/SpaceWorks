@@ -29,10 +29,8 @@ and scheduler callers use the same dates; rolling windows retain their instants.
 
 Counts-only is represented by `identity_bearing=False`. All deployment-capable
 definitions declare `makerspace_id`; tenant builders omit that infrastructure
-column. Platform global facts carry a NULL makerspace. The sole anonymous tenant
-exception is the hidden service/day bucket in platform-services, produced through
-the infrastructure helper. It contains service/day/bucket/count only; other
-columns are absent internally and NULL in the public matrix projection.
+column. Platform global facts carry a NULL makerspace. There is no anonymous
+tenant bucket: every servable makerspace reports under its own `makerspace_id`.
 
 ## Exact public fields
 
@@ -59,7 +57,7 @@ columns are absent internally and NULL in the public matrix projection.
   success_count, success_rate_percent.
 - **platform-services v3:** makerspace_id, period, day, service, provider_source,
   status, bucket, count, currency, amount, purpose. SMS distinguishes OTP from
-  addressed notifications; WhatsApp notification counts and the hidden bucket
+  addressed notifications; WhatsApp notification counts
   follow [Messaging analytics](report-builders-messaging.md).
 - **platform-usage:** makerspace_id, period, metric, entity_kind, entity_id,
   unit, currency, value.
@@ -88,7 +86,7 @@ columns are absent internally and NULL in the public matrix projection.
   that cohort once. An authorized organization can see its own global funnel even
   before it owns a makerspace; that global total has an empty tenant breakdown.
   Platform enumeration uses PlatformContext and includes unlinked organizations as
-  deployment-attributed rows, excluding organizations linked solely to hidden spaces.
+  deployment-attributed rows.
   Invitation outcomes and membership status are current states
   of creation cohorts, not historical state-change events.
 - Delivery health retains every original module summary and adds dated report
@@ -97,13 +95,12 @@ columns are absent internally and NULL in the public matrix projection.
 - Platform builders require a server-minted active-superadmin PlatformContext even
   on direct calls. Services use recorded provider_source, both per-device push
   ledgers, SMS/attestation ledgers and backup coverage/standalone runs. Parent push
-  deliveries and retry counters are not counted again. Hidden own-provider usage
-  is excluded; hidden platform usage has no outcome or currency breakdown.
+  deliveries and retry counters are not counted again.
 - Connect is limited to attributed charges, effective settlements and succeeded
   refunds through finance_sources. Amounts stay per currency; no provider-attempt
   failure series is inferred. Own-provider payment usage is counts only. Backup
   runs with tenant coverage are counted through that coverage, without a second
-  deployment run row that could expose hidden outcomes or duplicate operations.
+  deployment run row that could duplicate operations.
 - Platform usage retains makerspace rows for loans, borrowed products, bookings,
   events, revenue/refunds per currency, machine hours, consumables, growth and
   adoption. Service, manual and booked hours remain separate. Machine reads use
@@ -129,9 +126,7 @@ columns are absent internally and NULL in the public matrix projection.
 - GET `/api/v1/admin/platform/analytics/makerspaces`
 
 The first two accept start/end, grain and limit. The picker is DRF-paginated at 24
-rows and accepts a tenant report_key. Hidden spaces require an explicit active
-local membership granting that report's action. Platform metrics always retain
-the stricter exclusion, regardless of local membership. Every new route has an
+rows and accepts a tenant report_key; it lists every servable space. Every new route has an
 extend_schema request/response/error declaration; snapshots were left untouched.
 
 ## Files changed

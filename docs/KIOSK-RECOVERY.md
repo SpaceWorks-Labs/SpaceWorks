@@ -5,7 +5,7 @@ time; the original fingerprint, state, evidence, failure and attempt timestamps
 stay unchanged. No recovery endpoint mutates inventory or request/loan state.
 
 The Requests panel lists retained failures under each operation's current RBAC
-action, including combined built-in roles and organization-derived grants. Origin scope, hidden spaces,
+action, including combined built-in roles and organization-derived grants. Origin scope,
 archival and restricted/suspended users keep their normal denial semantics.
 Historical review is independent of the kiosk feature and module switches:
 turning off a channel does not erase its outstanding review obligations. Any

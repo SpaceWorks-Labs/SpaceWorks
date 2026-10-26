@@ -58,5 +58,5 @@ image before `migrate`; resolve every “must fix before upgrading” notificati
 [upgrade recovery](update-recovery.md#fixed-role-upgrade-2026-10-16).
 
 All routes continue to use the central RBAC makerspace scope, active-account checks,
-tenant-origin restrictions and superadmin-hidden fences. Cash and membership mutations
+and tenant-origin restrictions. Cash and membership mutations
 retain their transaction and audit services. No model, module or feature key was added.

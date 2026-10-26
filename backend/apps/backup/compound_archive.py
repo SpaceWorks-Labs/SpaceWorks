@@ -22,7 +22,7 @@ from apps.backup.outer_manifest_facts import closure_digest_from_slice_ledgers
 from apps.backup.physical_catalog import catalog_digest, physical_catalog_ledger
 from apps.backup.postgres_client import server_major
 from apps.backup.reconstruction_verifier import verify_reconstruction
-from apps.backup.recipient_selection import BackupBuildError
+from apps.backup.build_errors import BackupBuildError
 from apps.backup.recipients import fingerprint_for
 from apps.backup.source_reservations import capture_source_reservations
 from apps.backup.source_verifier import verify_and_sign_source_partition

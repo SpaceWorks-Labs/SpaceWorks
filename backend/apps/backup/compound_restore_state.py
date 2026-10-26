@@ -14,7 +14,7 @@ from apps.backup.models import (
     B1RestoreOperationState,
 )
 from apps.backup.not_restored import active_component_states
-from apps.backup.recipient_selection import BackupBuildError
+from apps.backup.build_errors import BackupBuildError
 from apps.backup.reservation_enforcement import install_reservation_entry
 
 

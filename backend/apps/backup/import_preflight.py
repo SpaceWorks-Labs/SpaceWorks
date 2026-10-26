@@ -10,7 +10,7 @@ from apps.backup.digests import sha256_file
 from apps.backup.management.commands.backup_preflight import build_info
 from apps.backup.outer_manifest import PROTOCOL_VERSION, verify_outer_manifest
 from apps.backup.postgres_client import server_major
-from apps.backup.recipient_selection import BackupBuildError
+from apps.backup.build_errors import BackupBuildError
 
 
 DEPLOYMENT_FORMAT = "spaceworks-phase5a-v3"

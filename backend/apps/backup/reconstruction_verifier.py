@@ -9,7 +9,7 @@ from django.db import connections, transaction
 
 from apps.backup.main_projection_verification import verify_readable_main
 from apps.backup.projection_databases import restore_dump, temporary_database
-from apps.backup.recipient_selection import BackupBuildError
+from apps.backup.build_errors import BackupBuildError
 from apps.backup.reservation_catalog import load_unique_rules
 from apps.backup.source_reservations import _evaluate_rule, _qualifying_count
 from .slice_rows import SLICE_ROW_SPECS as DATASET_SPECS

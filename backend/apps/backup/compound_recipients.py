@@ -11,7 +11,7 @@ from apps.backup.models import (
     PlatformBackupSettings,
 )
 from apps.backup.outer_manifest import component_id
-from apps.backup.recipient_selection import BackupBuildError
+from apps.backup.build_errors import BackupBuildError
 from apps.backup.recipients import fingerprint_for
 from apps.makerspaces.models import Makerspace
 

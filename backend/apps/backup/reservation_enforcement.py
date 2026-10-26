@@ -9,7 +9,7 @@ from django.utils import timezone
 
 from apps.backup.models import B1FenceContinuity, B1ReservationEntry
 from apps.backup.postgres_client import server_major
-from apps.backup.recipient_selection import BackupBuildError
+from apps.backup.build_errors import BackupBuildError
 from apps.backup.reservation_catalog import load_unique_rules
 from apps.backup.reservation_registry import (
     canonicalizer_for,

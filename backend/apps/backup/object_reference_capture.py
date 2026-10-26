@@ -19,7 +19,7 @@ from apps.backup.object_ownership_registry import (
     ReferencePolicy,
     validate_object_reference_registry,
 )
-from apps.backup.recipient_selection import BackupBuildError
+from apps.backup.build_errors import BackupBuildError
 
 
 def build_object_ownership_plan(sovereign_makerspace_ids):

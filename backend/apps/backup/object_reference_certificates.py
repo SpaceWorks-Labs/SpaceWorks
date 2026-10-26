@@ -3,7 +3,7 @@
 from django.apps import apps
 
 from .object_ownership import MAIN_COMPONENT, ObjectReference, slice_component
-from .recipient_selection import BackupBuildError
+from .build_errors import BackupBuildError
 
 
 def certificate_snapshot_references(sovereign):

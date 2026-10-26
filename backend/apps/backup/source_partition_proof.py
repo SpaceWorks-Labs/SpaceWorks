@@ -7,7 +7,7 @@ import re
 
 from django.conf import settings
 
-from apps.backup.recipient_selection import BackupBuildError
+from apps.backup.build_errors import BackupBuildError
 from apps.ed25519 import (
     Ed25519Error,
     decode_key,

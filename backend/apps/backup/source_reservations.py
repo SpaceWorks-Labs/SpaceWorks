@@ -15,7 +15,7 @@ from apps.backup.main_projection_registry import (
     boundary_rules,
     sovereign_q,
 )
-from apps.backup.recipient_selection import BackupBuildError
+from apps.backup.build_errors import BackupBuildError
 from apps.backup.reservation_catalog import load_unique_rules
 from apps.backup.reservation_keys import (
     CanonicalComponent,

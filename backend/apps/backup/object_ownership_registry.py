@@ -6,7 +6,7 @@ from enum import StrEnum
 from django.apps import apps
 
 from apps.backup.archive_objects import OBJECT_FIELD_NAMES
-from apps.backup.recipient_selection import BackupBuildError
+from apps.backup.build_errors import BackupBuildError
 
 
 class BucketRule(StrEnum):

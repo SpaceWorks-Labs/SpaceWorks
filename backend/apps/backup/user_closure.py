@@ -3,7 +3,7 @@
 import hashlib
 import struct
 
-from apps.backup.recipient_selection import BackupBuildError
+from apps.backup.build_errors import BackupBuildError
 
 
 USER_CLOSURE_ENCODING_VERSION = 1

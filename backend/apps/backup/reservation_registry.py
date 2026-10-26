@@ -7,7 +7,7 @@ import json
 
 from django.apps import apps
 
-from apps.backup.recipient_selection import BackupBuildError
+from apps.backup.build_errors import BackupBuildError
 from apps.backup.reservation_canonicalizers import (
     canonicalizer_for,
     canonicalizer_identity,

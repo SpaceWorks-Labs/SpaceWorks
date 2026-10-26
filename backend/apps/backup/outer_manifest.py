@@ -11,7 +11,7 @@ from apps.backup.outer_manifest_facts import (
     component_ciphertext_ledger,
     reservation_fence_ledger,
 )
-from apps.backup.recipient_selection import BackupBuildError
+from apps.backup.build_errors import BackupBuildError
 from apps.backup.outer_manifest_validation import (
     component_id,  # noqa: F401  re-exported: outer_manifest is component_id's public home
     validate_unsigned_manifest,

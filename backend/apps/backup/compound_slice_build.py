@@ -11,7 +11,7 @@ from apps.backup.dek_rewrap import enumerate_staged_deks, seal_staged_deks
 from apps.backup.digests import build_content_ledger, sha256_file
 from apps.backup.main_projection_inverse import boundary_deltas
 from apps.backup.object_ownership import slice_component
-from apps.backup.recipient_selection import BackupBuildError
+from apps.backup.build_errors import BackupBuildError
 from apps.backup.slice_verification import verify_unsealed_slice
 
 

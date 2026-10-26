@@ -38,7 +38,7 @@ from apps.backup.postgres_client import (
     client_binary,
 )
 from apps.backup.producer_capability import assert_producer_capability
-from apps.backup.recipient_selection import BackupBuildError
+from apps.backup.build_errors import BackupBuildError
 
 
 @dataclass(frozen=True)

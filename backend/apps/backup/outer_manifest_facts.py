@@ -5,7 +5,7 @@ import json
 
 from apps.backup.digests import sha256_file
 from apps.backup.outer_manifest_validation import component_id
-from apps.backup.recipient_selection import BackupBuildError
+from apps.backup.build_errors import BackupBuildError
 from apps.backup.recipients import fingerprint_for
 from apps.backup.user_closure import user_closure_digest
 

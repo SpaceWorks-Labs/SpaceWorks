@@ -8,7 +8,7 @@ from pathlib import Path
 import subprocess
 
 from apps.backup.digests import sha256_bytes, sha256_file
-from apps.backup.recipient_selection import BackupBuildError
+from apps.backup.build_errors import BackupBuildError
 from apps.encryption import services
 from apps.encryption.cache import dek_cache_disabled
 from apps.encryption.models import MakerspaceEncryptionKey

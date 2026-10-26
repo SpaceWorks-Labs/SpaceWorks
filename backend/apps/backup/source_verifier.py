@@ -19,7 +19,7 @@ from apps.backup.physical_catalog import (
 )
 from apps.backup.postgres_client import server_major
 from apps.backup.projection_databases import restore_dump, temporary_database
-from apps.backup.recipient_selection import BackupBuildError
+from apps.backup.build_errors import BackupBuildError
 from apps.backup.reservation_catalog import load_unique_rules
 from apps.backup.reservation_keys import reservation_commitment
 from apps.backup.source_partition_proof import (

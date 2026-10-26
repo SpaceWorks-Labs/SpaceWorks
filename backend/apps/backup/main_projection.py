@@ -21,7 +21,7 @@ from apps.backup.projection_databases import (
     restore_dump,
     temporary_database,
 )
-from apps.backup.recipient_selection import BackupBuildError
+from apps.backup.build_errors import BackupBuildError
 
 
 def project_readable_main_dump(

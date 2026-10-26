@@ -2,7 +2,7 @@
 
 from django.db import connections
 
-from apps.backup.recipient_selection import BackupBuildError
+from apps.backup.build_errors import BackupBuildError
 
 
 def sequence_facts(using):

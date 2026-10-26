@@ -6,7 +6,7 @@ import json
 from typing import Callable
 
 from apps.backup.catalog_casts import canonicalize_varchar_array_text_casts
-from apps.backup.recipient_selection import BackupBuildError
+from apps.backup.build_errors import BackupBuildError
 from apps.backup.reservation_catalog import IndexComponent, UniqueRule
 
 

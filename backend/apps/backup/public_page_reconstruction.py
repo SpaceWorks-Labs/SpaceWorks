@@ -9,7 +9,7 @@ import re
 
 from django.db import connections
 
-from .recipient_selection import BackupBuildError
+from .build_errors import BackupBuildError
 
 
 @contextmanager

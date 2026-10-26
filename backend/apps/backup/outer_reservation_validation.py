@@ -4,7 +4,7 @@ import base64
 import hashlib
 import json
 
-from apps.backup.recipient_selection import BackupBuildError
+from apps.backup.build_errors import BackupBuildError
 from apps.backup.postgres_client import server_major
 from apps.backup.reservation_catalog import load_unique_rules
 from apps.backup.reservation_registry import (

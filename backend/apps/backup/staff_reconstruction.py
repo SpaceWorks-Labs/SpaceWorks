@@ -5,7 +5,7 @@ import re
 
 from django.db import connections
 
-from .recipient_selection import BackupBuildError
+from .build_errors import BackupBuildError
 from .slice_merge_raw import prepared_record
 from .staff_shells import shell_fixture
 

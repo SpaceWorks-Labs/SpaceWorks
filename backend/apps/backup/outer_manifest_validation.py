@@ -2,7 +2,7 @@
 
 import uuid
 
-from apps.backup.recipient_selection import BackupBuildError
+from apps.backup.build_errors import BackupBuildError
 from apps.backup.outer_reservation_validation import validate_reservation_manifest
 
 

@@ -1,7 +1,7 @@
 """Physical-table guard for the readable-main projection registry."""
 
 from django.db import connections
-from apps.backup.recipient_selection import BackupBuildError
+from apps.backup.build_errors import BackupBuildError
 
 def assert_catalog_matches(using, rules):
     from .main_projection_registry import DJANGO_RUNTIME_TABLES

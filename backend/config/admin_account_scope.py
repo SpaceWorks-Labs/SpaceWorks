@@ -1,4 +1,4 @@
-"""Staff principals inherit their tenant's control-plane visibility."""
+"""Staff principals are listed in /control/ only while their tenant can serve."""
 
 from django.db.models import Q
 
@@ -7,7 +7,7 @@ def visible_staff_spaces():
     from apps.makerspaces.models import Makerspace
     from apps.makerspaces.servability import servable_q
 
-    return Makerspace.objects.filter(servable_q(), superadmin_access_enabled=True)
+    return Makerspace.objects.filter(servable_q())
 
 
 def scope_account_rows(queryset):

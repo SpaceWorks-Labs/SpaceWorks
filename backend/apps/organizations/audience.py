@@ -9,7 +9,7 @@ from .models import Organization, OrganizationMakerspace, OrganizationMembership
 
 
 def usable_spaces():
-    return Makerspace.objects.filter(servable_q(), superadmin_access_enabled=True)
+    return Makerspace.objects.filter(servable_q())
 
 
 def active_accounts(queryset=None):

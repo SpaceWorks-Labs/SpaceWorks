@@ -35,9 +35,7 @@ class QrRebindAdminForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        visible_spaces = servable_queryset(Makerspace.objects.filter(
-            superadmin_access_enabled=True,
-        )).order_by("name")
+        visible_spaces = servable_queryset().order_by("name")
         visible_space_ids = visible_spaces.values("id")
         visible_products = InventoryProduct.objects.select_related("makerspace").filter(
             makerspace_id__in=visible_space_ids,

@@ -70,11 +70,11 @@ def _guarded(label, function, *args):
 def _organizer_spaces(event_id, venue_id):
     # is_active on the organization is a KILL SWITCH: it confers no organizer authority, so
     # it must stop this fan-out too -- registration notices carry the registrant's name.
-    # Unservable and hard-hidden makerspaces are excluded for the same reason they are
-    # excluded from organization-derived authority.
+    # Unservable makerspaces are excluded for the same reason they are excluded from
+    # organization-derived authority.
     return (OrganizationMakerspace.objects.filter(
         servable_q("makerspace"), organization__organized_events__event_id=event_id,
-        organization__is_active=True, makerspace__superadmin_access_enabled=True,
+        organization__is_active=True,
     ).exclude(makerspace_id=venue_id).select_related("makerspace").order_by("makerspace_id").distinct())
 
 

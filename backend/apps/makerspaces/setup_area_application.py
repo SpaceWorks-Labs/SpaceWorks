@@ -14,6 +14,7 @@ from .setup_areas import AREAS, modules_for, features_for, INVENTORY_FEATURES
 from .capabilities import FEATURES, validate_capabilities, feature_required_modules
 from .setup_settings import apply_settings, save_space
 from .setup_defaults import initial_settings
+from .security_settings_registry import is_security_feature
 
 SETTING_AREAS = {"loan_policy": "inventory", "loan_charges": "inventory", "admission": "membership", "plan": "membership",
                  "machine_policy": "machines"}
@@ -136,15 +137,20 @@ def apply_areas(actor, space, answers):
         if "inventory" in areas - configuring:
             preserved |= INVENTORY_FEATURES
         features = (features - preserved) | (previous_features & preserved)
+    # Security keys change only through the security service (authority, lock floor,
+    # audit), applied below once the generic writers are done.
+    security = {key: enabled for key, enabled in settings.get("features", {}).items() if is_security_feature(key)}
     for key, enabled in settings.get("features", {}).items():
+        if key in security:
+            continue
         if enabled:
             features.add(key)
         else:
             features.discard(key)
-    if enable_area_features:
-        # MFA is a standalone security choice, never part of the everything preset.
-        features.discard("security.staff_mfa_required")
-        features |= previous_features & {"security.staff_mfa_required"}
+    # Stored security choices always survive here (MFA is never part of the everything
+    # preset either); only the security service below may change them.
+    features = {key for key in features if not is_security_feature(key)} | {
+        key for key in previous_features if is_security_feature(key)}
     if "inventory" not in areas:
         if "configure_areas" in answers:
             # Hiding lending is not cancelling the policy/charges on tools already
@@ -168,6 +174,10 @@ def apply_areas(actor, space, answers):
     # Admission stores the chosen mode/schema, but area features remain enabled even
     # when their settings make them inert (e.g. vouching with approval admission).
     space = save_space(actor, space, {"enabled_features": canonical})
+    if not enable_area_features:
+        from . import security_settings
+        for key, enabled in security.items():
+            space = security_settings.set_setting(actor, space, key, enabled)
     if mode and effective_policy(space) != mode:
         raise ValidationError({"request_access": f"The live policy is {effective_policy(space)}."})
     return space

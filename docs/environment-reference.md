@@ -273,7 +273,8 @@ later changes; the command validates the full state and records an audit event i
 ## Two-step sign-in
 
 Superadmins sign in with a password and may opt in to TOTP; staff enrollment is required
-when a space enables `security.staff_mfa_required`. Members can opt in at `/mfa`. Secrets use the
+when a space enables `security.staff_mfa_required` in its Security settings (the Space Manager or a
+superadmin changes it, with a fresh identity check; a superadmin can lock it on). No setting or key is needed. Members can opt in at `/mfa`. Secrets use the
 existing `API_CLIENT_ENC_KEY` encryption; recovery codes are hashed. No separate key is needed.
 
 `Platform login methods` in `/control/` shows `mfa_enabled` read-only (existing deployments

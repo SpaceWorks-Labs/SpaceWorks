@@ -2461,6 +2461,62 @@ bearers live only in local modal state: secret requests return void to TanStack 
 the modal discards them. Shared query keys start with `["devices", makerspaceId]`; mutations invalidate
 both list and detail. Machine/QR-only adapter controls must wait for scoped sibling APIs.
 
+## Per-space security settings, platform locks and superadmin PII access
+
+Owner decisions #110c/#110e and #111 Q9-Q13 (P1b, superadmin always on).
+
+- **One registry.** `makerspaces/security_settings_registry.py` lists every per-space security setting
+  (key, label, kind `bool|int|choice|list`, default, `stricter(a, b)`, storage `feature|policy`). Release 1
+  registers only `security.staff_mfa_required` (storage `feature`: presence in `enabled_features`).
+  Release 2 login-security adds its keys here with storage `policy` and creates the policy table; do not add a
+  second registry or panel.
+- **One writer.** `makerspaces/security_settings.py` (`set_setting`, `set_settings`, `lock`, `unlock`,
+  `effective`) is the only path that changes a security key. It holds the makerspace row lock, checks
+  authority, checks the lock floor and records `makerspace.security_setting_changed` (key, from, to,
+  `via=space|platform`), `_locked` (key, floor, note) or `_unlocked` (key, floor), all makerspace-scoped so
+  the space's audit readers see them. No email.
+- **Authority (Q10/Q11).** Only the space's OWN Space Manager (a staff account of that tenant holding the
+  Space Manager identity through its direct membership) or an active platform superadmin. Never delegable:
+  no module manager, no organization grant, no resource grant. Precedence: platform lock > Space Manager >
+  module manager. Every change needs recent re-authentication: the API uses `require_recent_reauth`,
+  `/control/` its own step-up (`RecentReauthenticationAdminMixin`), and the host setup command
+  (`apply_setup_areas`, a superadmin on the server shell) goes through the same service.
+- **The lock is a floor (Q9).** `MakerspaceSecurityLock(makerspace, key, floor, note<=200, locked_by,
+  locked_at)`, unique per (makerspace, key). The space may tighten but never go below the floor; a boolean
+  lock means "forced on" (a false floor is refused) and locking raises a looser stored value to the floor,
+  audited as a `via=platform` change. Only a superadmin unlocks; unlocking keeps the stored value. The
+  space sees "Locked by platform: <note>".
+- **The guard.** `makerspaces/security_lock_guard.py` is a `pre_save` receiver on `Makerspace` (registered
+  in `makerspaces/apps.py`). A change to a security key that did not come from the service is NOT applied --
+  the stored value is put back -- so the generic settings PATCH, the `/control/` capability matrix (which
+  shows `security.*` read-only), module install/uninstall, space packs and setup can never change or loosen
+  one. A service write below a lock's floor raises `SecuritySettingLocked` (`security_setting_locked`,
+  a 400 on the API and a Django `ValidationError` elsewhere). A queryset `.update(enabled_features=...)`
+  bypasses the receiver; a local AST test keeps that pattern out of `backend/apps`.
+- **Readers are unchanged.** `accounts/mfa_policy.py` still reads `enabled_features__contains`; the lock
+  works by keeping the stored value at or above the floor.
+- **Superadmin PII view (#110e, Q12).** Everything is visible to the superadmin, but personal data is
+  MASKED until they open a window. PII means the scoped-encryption registry's fields plus an account's
+  email, phone and name. `PlatformPiiAccessGrant(id, actor, makerspace | subject, reason 10-300, opened_at,
+  expires_at, closed_at, close_reason)` is a 30-minute window on one space, or on one person across every
+  space they belong to (the `/control/` per-person reveal). Rows are append-only except the one-way close.
+  Opening needs a reason and recent re-authentication (password; MFA is not demanded) and is audited as
+  `platform.pii_access_opened`; closing and expiry as `platform.pii_access_closed` (`close_reason`
+  `closed|expired`, `closed_at` = the real expiry time). Each row is makerspace-scoped; a per-person reveal
+  writes one row in EVERY space the person belongs to. Expiry is closed lazily on the next read of that
+  superadmin's windows or of the space's status (no Celery task yet). The space's Space Manager reads the
+  open windows through `GET .../pii-access` and the audit log.
+- **Masking is presentation only.** `accounts/pii_presentation.py` (`pii_visible`, `person_pii_visible`,
+  `PiiMaskingSerializerMixin`, `require_pii_access`) and `accounts/admin_pii_masking.PiiMaskingAdminMixin`
+  mask staff-console API responses, `/control/` list/change pages and PII exports (identity-bearing reports
+  refuse with `pii_access_required`). NEVER mask at the decrypt seam
+  (`encryption/mappers.ScopedPiiModelMixin`) or in a workflow: mail, receipts, notifications and every
+  service read the real attributes. Non-superadmins are never masked; RBAC alone decides what they see.
+  Platform accounts are not tenant data and are not masked. A masked `/control/` change page leaves the PII
+  fields out of the form, so saving it cannot overwrite them.
+- **Portability.** Both models are `OmittedModel`s in `data_export/classification_security.py` and DROP in
+  tenant dumps (`tenant_migration/catalog_security.py`); their user edges are excluded. The audit rows travel.
+
 ## Account deletion
 
 Self-deletion, archive/restore, the 90-day purge and Apple revocation are member-only. Staff

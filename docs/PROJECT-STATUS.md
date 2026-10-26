@@ -63,7 +63,8 @@ JSON API + public docs stay on the strict policy).
 
 **Staff MFA and invitations (Wave 1).** TOTP is optional for superadmins (password-only
 until they enroll; changed 2026-10-16), required for staff when a makerspace enables
-`security.staff_mfa_required`, and optional for members.
+`security.staff_mfa_required` (set in the space's Security panel by its Space Manager or a superadmin, who
+can lock it on; see **Per-space security settings** in `docs/INVARIANTS.md`), and optional for members.
 When MFA is available, enrolled password, phone and native password sign-ins return an
 opaque five-minute challenge before issuing tokens. Identity-provider sign-ins (Google,
 Apple and configured OIDC) skip local TOTP by owner decision and carry provider proof.

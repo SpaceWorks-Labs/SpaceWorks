@@ -87,3 +87,5 @@ __all__ += ["AccountPurgeProgress", "AccountPurgeObject", "AppleRefreshCredentia
 from apps.accounts.models_account_restore import AccountRestoreIntent  # noqa: E402
 __all__ += ["AccountRestoreIntent"]
 from .models_activity import DeviceActivityDay, AttestationVerificationLog  # noqa: F401
+from .models_pii_access import PlatformPiiAccessGrant  # noqa: E402,F401
+__all__ += ["PlatformPiiAccessGrant"]

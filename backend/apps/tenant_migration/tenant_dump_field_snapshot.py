@@ -136,3 +136,5 @@ from .catalog_reimbursements import EXTRA_FIELDS as REIMBURSEMENT_EXTRA
 FIRST_PARTY_FIELD_NAMES.update(REIMBURSEMENT_FIELDS)
 for _label, _names in REIMBURSEMENT_EXTRA.items():
     FIRST_PARTY_FIELD_NAMES[_label] |= frozenset(_names.split())
+from .catalog_security import FIELD_NAMES as SECURITY_FIELDS
+FIRST_PARTY_FIELD_NAMES.update(SECURITY_FIELDS)

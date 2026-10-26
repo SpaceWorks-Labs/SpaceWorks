@@ -98,3 +98,8 @@ export const FEATURE_DEFINITIONS: readonly FeatureDefinition[] = [
 export function featureEnabled(features: Iterable<string>, key: string) {
   return new Set(features).has(key);
 }
+
+/** Security keys live in the Security panel (Space Manager/superadmin, re-auth, audit), never in Features. */
+export function isSecurityFeature(key: string) {
+  return key.startsWith("security.");
+}

@@ -1,7 +1,7 @@
 import type { StaffAuthUser } from "../../lib/api";
 import type { Makerspace } from "./panels/shared";
 import { TenantUsagePanel } from "./StaffTabLoaders";
-import { Users, EmailTemplatesPanel, EmailLogPanel, ApiClientsPanel, PlatformSettingsPanel, MakerspaceSettingsPanel, ModulesPanel, DataExportsPanel, BackupRestorePanel, TenantMigrationPanel } from "./StaffTabLoaders";
+import { Users, EmailTemplatesPanel, EmailLogPanel, ApiClientsPanel, PlatformSettingsPanel, MakerspaceSettingsPanel, ModulesPanel, DataExportsPanel, BackupRestorePanel, TenantMigrationPanel, SecuritySettingsPanel, PiiAccessBanner } from "./StaffTabLoaders";
 
 export function StaffPlatformTabContent({ activeTab, activeMakerspace, makerspaces, isSuperadmin, canManageMakerspace, currentUser, onAuthRefresh, allowedTabs, singleTenantLocked }: { activeTab: string; activeMakerspace: Makerspace; makerspaces: Makerspace[]; isSuperadmin: boolean; canManageMakerspace: boolean; currentUser: StaffAuthUser; onAuthRefresh: () => void; allowedTabs?: readonly string[]; singleTenantLocked?: boolean }) {
   const makerspaceKey = activeMakerspace.id;
@@ -25,6 +25,11 @@ export function StaffPlatformTabContent({ activeTab, activeMakerspace, makerspac
           singleTenantLocked={singleTenantLocked}
         />
       ) : null}
+      {activeTab === "security" && canManageMakerspace ? (
+        <SecuritySettingsPanel key={makerspaceKey} makerspace={activeMakerspace} />
+      ) : null}
+      {/* Staff names and emails sit on Users; a superadmin sees them masked until a window opens. */}
+      {activeTab === "users" && isSuperadmin ? <PiiAccessBanner key={`pii:${makerspaceKey}`} makerspaceId={makerspaceKey} compact /> : null}
       {activeTab === "emailtemplates" ? (
         <EmailTemplatesPanel key={makerspaceKey} makerspace={activeMakerspace} />
       ) : null}

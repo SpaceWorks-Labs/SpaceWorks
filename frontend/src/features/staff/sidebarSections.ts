@@ -3,7 +3,7 @@ import {
   ArrowLeftRight, ShoppingCart, Tags, Container, BookOpen, ShieldCheck, QrCode, ScanLine,
   Upload, Cog, Monitor, Users, Calendar, CalendarClock, CreditCard, ChartNoAxesCombined,
   ScrollText, CircleAlert, Building2, Network, Settings, Mail, KeyRound, Download,
-  DatabaseBackup, Gauge, Puzzle, MoveRight, Globe, CalendarCheck, Undo2, type LucideIcon,
+  DatabaseBackup, Gauge, Puzzle, MoveRight, Globe, CalendarCheck, Undo2, Lock, type LucideIcon,
 } from "lucide-react";
 import type { ShellItem, ShellSection } from "../../components/shell";
 import { TAB_LABELS } from "./staffAccess";
@@ -18,7 +18,7 @@ export const SIDEBAR_SECTIONS: readonly Definition[] = [
   { key: "community", label: "Community", tabs: ["members", "events", "bookings", "granted"], more: ["cards"] },
   { key: "insights", label: "Insights", tabs: ["reports", "audit", "accountability"] },
   { key: "organizations", label: "Organizations", caption: "Across venues", tabs: ["organizations", "organized", "organization-analytics"] },
-  { key: "settings", tabs: ["settings", "users", "emailtemplates", "email-logs", "api", "exports", "backups", "usage", "modules", "migration"] },
+  { key: "settings", tabs: ["settings", "security", "users", "emailtemplates", "email-logs", "api", "exports", "backups", "usage", "modules", "migration"] },
   { key: "platform", label: "Platform", tabs: ["platform-dashboard", "platform"] },
 ];
 export const SIDEBAR_LABELS: Readonly<Record<string, string>> = {
@@ -33,7 +33,7 @@ const ICONS: Record<string, LucideIcon> = {
   qr: QrCode, scanner: ScanLine, bulk: Upload, machines: Cog, devices: Monitor, members: Users,
   events: Calendar, bookings: CalendarClock, cards: CreditCard, reports: ChartNoAxesCombined,
   audit: ScrollText, accountability: CircleAlert, organizations: Building2, organized: Calendar, granted: CalendarCheck,
-  "organization-analytics": Network, settings: Settings, users: Users, emailtemplates: Mail,
+  "organization-analytics": Network, settings: Settings, security: Lock, users: Users, emailtemplates: Mail,
   "email-logs": Mail, api: KeyRound, exports: Download, backups: DatabaseBackup, usage: Gauge,
   modules: Puzzle, migration: MoveRight, "platform-dashboard": Globe, platform: Settings,
 };
@@ -54,7 +54,7 @@ export const SPACE_MANAGER_SECTIONS: readonly Definition[] = [
   { key: "events", label: "Events", tabs: ["events", "granted"], more: ["organized"] },
   { key: "bookings", label: "Bookings", tabs: ["bookings"] },
   { key: "money", label: "Money", tabs: ["payments", "refunds", "reports"] },
-  { key: "settings", label: "Space settings", tabs: ["settings", "emailtemplates", "email-logs", "api", "audit", "exports", "backups", "usage", "modules", "migration"] },
+  { key: "settings", label: "Space settings", tabs: ["settings", "security", "emailtemplates", "email-logs", "api", "audit", "exports", "backups", "usage", "modules", "migration"] },
   { key: "platform", label: "Platform", tabs: ["platform-dashboard", "platform"] },
 ];
 const SPACE_MANAGER_LABELS: Readonly<Record<string, string>> = { settings: "Settings hub" };

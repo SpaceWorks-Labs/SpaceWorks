@@ -3,6 +3,8 @@ from django.db import models
 
 from unfold.admin import ModelAdmin
 
+from apps.accounts.admin_pii_masking import PiiMaskingAdminMixin
+
 from apps.machines import services
 from apps.machines.models import (
     Machine,
@@ -131,7 +133,7 @@ class MachineOperatorAdmin(_ReadOnlyMachineChildAdmin):
 
 
 @admin.register(MachineUsageEntry)
-class MachineUsageEntryAdmin(_ReadOnlyMachineChildAdmin):
+class MachineUsageEntryAdmin(PiiMaskingAdminMixin, _ReadOnlyMachineChildAdmin):
     list_display = ("id", "machine", "hours", "source", "logged_by", "created_at")
     list_filter = ("source",)
     search_fields = ("machine__name",)
@@ -208,7 +210,7 @@ class MachineConsumableAdjustmentAdmin(_ReadOnlyMachineChildAdmin):
 
 
 @admin.register(MachineServiceRequest)
-class MachineServiceRequestAdmin(_ReadOnlyMachineChildAdmin):
+class MachineServiceRequestAdmin(PiiMaskingAdminMixin, _ReadOnlyMachineChildAdmin):
     list_display = ("id", "title", "bucket", "assigned_machine", "status", "created_at")
     list_filter = ("status", "assigned_machine", "bucket__machine")
     search_fields = ("title", "requester_name", "contact_email")

@@ -7,10 +7,7 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
-from apps.admin_api.permissions import (
-    IsActiveSuperAdmin,
-    require_makerspace_superadmin_access,
-)
+from apps.admin_api.permissions import IsActiveSuperAdmin
 from apps.audit import services as audit
 from apps.data_export import services as export_services
 from apps.data_export.models import DataExportJob
@@ -40,7 +37,6 @@ class MigrationAPIView(APIView):
         makerspace_id = self.kwargs.get("makerspace_id")
         if makerspace_id is not None:
             self.makerspace = get_object_or_404(Makerspace, pk=makerspace_id)
-            require_makerspace_superadmin_access(request.user, self.makerspace)
 
     def get_throttles(self):
         self.throttle_scope = (

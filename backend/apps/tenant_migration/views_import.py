@@ -11,7 +11,6 @@ from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
-from apps.admin_api.permissions import require_makerspace_superadmin_access
 from apps.audit import services as audit
 from apps.makerspaces.models import Makerspace
 
@@ -39,12 +38,10 @@ logger = logging.getLogger(__name__)
 
 
 def _job(actor, job_id):
-    job = get_object_or_404(
+    """The import job; ``actor`` is already an active superadmin (IsActiveSuperAdmin)."""
+    return get_object_or_404(
         TenantImportJob.objects.select_related("target_makerspace"), pk=job_id
     )
-    if job.target_makerspace is not None:
-        require_makerspace_superadmin_access(actor, job.target_makerspace)
-    return job
 
 
 class TenantImportListCreateView(MigrationAPIView):

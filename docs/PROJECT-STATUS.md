@@ -49,6 +49,10 @@ Django admin **actions that route through the existing services** (never mutatin
 issue/return remain React-only. Superadmin monitoring surfaces (QR ZIP, inline QR/photo previews, print file
 downloads) are read-only and guard storage failures. Design spec:
 `docs/superpowers/specs/2026-06-13-superadmin-admin-control-plane-design.md`.
+Since owner decision #115 the superadmin also works in the React staff console as any space's Space
+Manager: choose a space and every report, analytics page, export, setting and email surface of that
+space opens (person data masked outside a PII window); each `/control/` makerspace page links there,
+and the platform dashboard compares and totals the spaces.
 On a managed platform the **Hosting requests** model admin (sidebar entry beside Subdomain requests, hidden
 on self-host) reviews requests to host a makerspace: read-only rows, Accept/Reject actions (reject needs a
 reason that is emailed), and a "Create makerspace" link that re-authenticates and opens the existing Add

@@ -4,7 +4,7 @@ from apps.operations.reports_finance import LEDGER_FIELDS, REVENUE_FIELDS, CASH_
 from apps.operations.reports_accounting import FIELDS as ACCOUNTING_FIELDS
 from apps.operations.reports_payments_ageing import FIELDS as AGEING_FIELDS
 from apps.operations.reports_refunds import FIELDS as REFUND_FIELDS
-from apps.operations.report_charts_fg import REVENUE_CHART, CASH_CHART, AGEING_CHART
+from apps.operations.report_charts_fg import REVENUE_CHART, CASH_CHART, AGEING_CHART, REFUNDS_CHART
 from apps.operations.report_charts_remaining import LEDGER_CHART, JOURNAL_CHART
 from apps.operations.org_report_aggregate import register_combine
 from apps.operations.org_report_fg import combine_revenue, combine_cash, combine_ageing, combine_reconciliation
@@ -28,7 +28,7 @@ FINANCE_REPORT_DEFINITIONS = (
     # Refund cases and refunds raised outside them, by local month, area and reason.
     ReportDefinition("refunds", "apps.operations.reports_refunds.build_refunds", REFUND_FIELDS,
                      required_action=rbac.Action.VIEW_FINANCE, title="Refunds by area and reason",
-                     deployment_aggregate=False),
+                     deployment_aggregate=False, chart_hint="grouped_bar", chart_spec=REFUNDS_CHART),
 )
 
 # Money tracking is core: none of these requires the removable online rail.

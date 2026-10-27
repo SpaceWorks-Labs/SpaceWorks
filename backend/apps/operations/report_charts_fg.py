@@ -31,3 +31,7 @@ RECONCILIATION_CHART = chart("status", [(field, "currency_major") for field in (
     "amount_total", "outstanding_amount", "refunded_amount")], money=True,
     series=("makerspace_id", "subject_type", "settlement_method"),
     alt="{status}: {amount_total} {currency} across {payment_count} charges.")
+# Refund cases by local month (a "YYYY-MM" label, so a category axis), split by area/reason.
+REFUNDS_CHART = chart("month", [("refunded", "currency_major"), ("due", "currency_major")], money=True,
+    series=("area", "reason_code"),
+    alt="{month}: {refunded} {currency} refunded of {due} due for {reason_code} in {area}.")

@@ -107,11 +107,12 @@ into grouped sections and a test asserts every sidebar link resolves. `tests/tes
 walks every registered admin and forces an explicit scoped/global decision (via `NESTED_MAKERSPACE_LOOKUPS`
 / `GLOBAL_ADMIN_MODELS`) so a new admin can't silently leak across the superadmin hide/archive scoping.
 
-Hidden makerspaces remain hard-hidden for data and staff operations, with a narrow lifecycle list:
-platform superadmins may archive, unarchive, purge and review pending archive requests after recent
-control-session reauthentication. Hidden rows show governance fields only and expose no change page.
-Lifecycle decisions preserve the access flag and archive custody; purge removes live tenant custody
-while retaining encrypted artifacts, recipient reservations and recipient-use history.
+The superadmin is always on (P1b, owner decisions #110/#111): the `/control/` makerspace list is one
+ordinary list, and platform superadmins archive, unarchive, purge and review pending archive requests after
+recent control-session reauthentication, always seeing the unsettled-charge counts. Every backup is
+encrypted to the platform key; there are no archive recipients, custody states or custody alarms, and the
+`backup` module key is retired (managers see a read-only "Last backup" line). The tenant-exit export takes
+one-shot `--recipient` keys plus the platform key.
 
 **Non-technical install:** the root `install.sh` curl flow on supported Linux families or Windows Git Bash
 (preflight → tagged source archive → published-image pull → `setup.sh` secrets/instance/live module ticks →

@@ -69,7 +69,7 @@ opt-outs, including after a deployment tombstones notifications. Email, inbox an
 push preferences are independent. Member push intentionally requires an inbox row, so
 tenant `in_app` and personal `in_app` must allow its creation.
 
-Account recovery, verification, overdue return reminders, custody alarms and loan
+Account recovery, verification, overdue return reminders and loan
 closure-with-issue emails bypass personal opt-outs. Suppression still blocks known bad
 addresses, including transactional mail. Suppression stores a tenant-keyed HMAC of the
 normalized address, a reason (`bounce` or `complaint`) and the staff User who recorded it.

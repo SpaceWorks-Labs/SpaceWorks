@@ -403,11 +403,10 @@ console shows you:
 | **Payments** | Taking money online, through Stripe or Razorpay |
 | **Mobile apps** | Attested device sessions, native push and the in-app payment sheet |
 | **Connected devices** | Printers and label printers enrolled with their own signing key |
-| **Backup & custody** | Makerspace archives, recipient keys and custody status |
 
 **Choose areas before confirmation.** Setup enables each area's modules and every satisfiable feature.
 Setup first asks whether to enable every area (default no); yes still asks the normal follow-ups.
-Inventory & lending, Machines and Reports default on; the other five areas default off. Core, backup,
+Inventory & lending, Machines and Reports default on; the other five areas default off. Core,
 notifications, email and the per-person accounts module stay installed, as do charge tracking, receipt
 documents, billing reminders, staff invitations and self-check-in geofence. Accounts supplies self sign-up,
 password/social/phone sign-in and the member area; platform login-method/provider choices still apply.
@@ -500,7 +499,6 @@ cannot be removed. **Default** means it is on when you install outside the guide
 | **Reports** | [`reports`](docs/MODULES.md#reports) | | | Analytics, the ledger and CSV/XLSX export |
 | **Payments** | [`payments`](docs/MODULES.md#payments) | | | Taking money online (Stripe or Razorpay) |
 | **Mobile apps** | [`mobile`](docs/MODULES.md#mobile) | | | Attested device sessions, native push, payment sheet |
-| **Backup & custody** | [`backup`](docs/MODULES.md#backup) | | ● | Makerspace archives, archive-recipient keys and custody status |
 | **Connected devices** | [`devices`](docs/MODULES.md#devices) | | | Signed device enrollment, printer reports and label commands |
 
 `mobile` requires `member_accounts`; `printing` requires `machine_service`. Installing one pulls in
@@ -552,7 +550,8 @@ capabilities with no parent module.
 
 ### What you get if you choose nothing
 
-Installing without a profile gives you **7 modules**: the six core ones plus `backup`.
+Installing without a profile gives you **6 modules**: the six core ones. Backup and restore are
+platform duties, not a module: the superadmin backs up and restores every space.
 Outside guided setup, member accounts and mobile apps are opt-in; mobile pulls in `member_accounts`
 when installed. Guided setup always enables per-person accounts.
 

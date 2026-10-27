@@ -1,7 +1,8 @@
 # SpaceWorks modules — what each one is, and what happens without it
 
-Space Works ships **38 modules**: 6 **core** ones that cannot be switched off, 2 that are **on by
-default** (`backup` and `member_accounts`, owner decision #91), and the rest opt-in. This page is the per-module reference the README links into — one entry
+Space Works ships **37 modules**: 6 **core** ones that cannot be switched off, 1 that is **on by
+default** (`member_accounts`, owner decision #91), and the rest opt-in. The `backup` key was retired in
+P1b (owner decision #111 Q2): backup and restore are platform duties. This page is the per-module reference the README links into — one entry
 per key, saying what it is, what it puts on screen, what disappears if you do not install it, and what
 happens to its data.
 
@@ -33,7 +34,7 @@ govern sign-in availability. Membership adds plans, vouching, renewals and the m
 | Online payments | `payments` | `payments.enabled` plus the online-payment feature of each selected domain |
 | Reports | `reports` | `reports.saved_views`; `reports.event_pdf`, `reports.event_exports` with Events |
 | Chat alerts | `telegram`, `slack`, `mattermost`, `discord`, `webhook` | Idle until URLs/tokens are configured |
-| Always on | Six core modules, `backup`, `notifications`, `email`, `member_accounts` | Every satisfiable child of `backup`, `notifications`, `email` and `member_accounts`, `billing.reminders`, `charges.enabled`, `billing.documents`, `staff.invitations`, `presence.geofence`, `ui.delight`, `ui.easter_eggs` |
+| Always on | Six core modules, `notifications`, `email`, `member_accounts` | Every satisfiable child of `notifications`, `email` and `member_accounts`, `billing.reminders`, `charges.enabled`, `billing.documents`, `staff.invitations`, `presence.geofence`, `ui.delight`, `ui.easter_eggs` |
 
 The source is `makerspaces/setup_areas.py`; registry module keys/defaults are unchanged. Inventory
 off clears `loans.enabled` while keeping core. Optional-module uninstall retains all data. Charges,
@@ -80,8 +81,8 @@ docker compose run --rm --no-deps backend --role management python manage.py uni
 A module another installed module depends on cannot be uninstalled until the dependant goes first, and
 core modules cannot be uninstalled at all.
 
-The registry contains 38 keys (37 in the main catalogue plus presence): six core,
-backup and member accounts enabled by default, and 30 opt-in. SMS/WhatsApp are separate opt-in modules.
+The registry contains 37 keys (36 in the main catalogue plus presence): six core,
+member accounts enabled by default, and 30 opt-in. SMS/WhatsApp are separate opt-in modules.
 Migration 0097 preserves only previously enabled canonical WhatsApp installations;
 new SMS/WhatsApp installations remain off. Existing operational channel conversion
 preserves enablement/opt-outs and never enables platform sending. Module-list validation
@@ -102,7 +103,7 @@ uses the registry rather than scalar JSONField choices. Follow the independent
 **Notifications**: [notifications](#notifications) · [email](#email) · [sms](#sms) · [whatsapp](#whatsapp) · [telegram](#telegram) ·
 [slack](#slack) · [mattermost](#mattermost) · [discord](#discord) · [webhook](#webhook) — **Reports**: [reports](#reports) —
 **Payments**: [payments](#payments) — **Accounts**: [member_accounts](#member_accounts) —
-**Mobile apps**: [mobile](#mobile) · **Backup & custody**: [backup](#backup) · **Connected devices**: [devices](#devices)
+**Mobile apps**: [mobile](#mobile) · **Connected devices**: [devices](#devices)
 
 ---
 
@@ -604,11 +605,11 @@ owners, while native selection/new registration still require local membership. 
 is account-wide; self-deletion/restore are member-only. Core messaging consent is independent
 of this module; SMS/WhatsApp each have their own opt-in key.
 
-## Backup & custody
+## Backup
 
 ### backup
 
-[Read the backup module reference](MODULES-PLATFORM.md#backup).
+**Retired** in P1b: not a module any more. [What changed](MODULES-PLATFORM.md#backup-retired).
 
 ## Connected devices
 

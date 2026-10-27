@@ -1,43 +1,6 @@
-"""Durable Lane E artifact and component custody records."""
+"""Durable deployment-artifact and component records."""
 
 from django.db import models
-
-
-class B1ActivationState(models.Model):
-    class State(models.TextChoices):
-        ON = "on", "Platform readable"
-        OFF_PENDING = "off_pending", "Exclusion pending"
-        OFF_EFFECTIVE = "off_effective", "Exclusion effective"
-
-    makerspace = models.OneToOneField(
-        "makerspaces.Makerspace",
-        on_delete=models.CASCADE,
-        related_name="b1_activation_state",
-    )
-    state = models.CharField(max_length=16, choices=State.choices)
-    effective_artifact_id = models.UUIDField(null=True, blank=True)
-    effective_at = models.DateTimeField(null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        constraints = [
-            models.CheckConstraint(
-                condition=(
-                    models.Q(
-                        state__in=("on", "off_pending"),
-                        effective_artifact_id__isnull=True,
-                        effective_at__isnull=True,
-                    )
-                    | models.Q(
-                        state="off_effective",
-                        effective_artifact_id__isnull=False,
-                        effective_at__isnull=False,
-                    )
-                ),
-                name="backup_b1_activation_effective_facts",
-            )
-        ]
 
 
 class BackupArtifactLedger(models.Model):
@@ -147,29 +110,6 @@ class BackupArtifactComponent(models.Model):
 
     def delete(self, *args, **kwargs):
         raise RuntimeError("Backup artifact components cannot be deleted.")
-
-
-class BackupComponentRecipient(models.Model):
-    component = models.ForeignKey(
-        BackupArtifactComponent,
-        on_delete=models.PROTECT,
-        related_name="recipient_associations",
-    )
-    fingerprint = models.CharField(max_length=64)
-    associated_at = models.DateTimeField(auto_now_add=True)
-    tombstoned_at = models.DateTimeField(null=True, blank=True)
-
-    class Meta:
-        ordering = ("component_id", "pk")
-        constraints = [
-            models.UniqueConstraint(
-                fields=("component", "fingerprint"),
-                name="uniq_backup_component_recipient",
-            )
-        ]
-
-    def delete(self, *args, **kwargs):
-        raise RuntimeError("Recipient-use history is tombstoned, never deleted.")
 
 
 # Importing this module from backup.models registers the operational singleton with

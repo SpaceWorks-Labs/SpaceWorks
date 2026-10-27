@@ -49,15 +49,6 @@ ALWAYS_OMITTED = {
     ),
     ("audit.AuditLog", "event_uuid"): "Source-deployment audit integrity identity.",
     ("audit.AuditLog", "row_mac"): "Source-deployment audit integrity evidence.",
-    ("backup.MakerspaceArchiveRecipient", "verified_at"): (
-        "Proof of possession must be repeated on the target deployment."
-    ),
-    ("backup.MakerspaceArchiveRecipient", "challenge_nonce_digest"): (
-        "Source-deployment proof-of-possession challenge."
-    ),
-    ("backup.MakerspaceArchiveRecipient", "challenge_issued_at"): (
-        "Source-deployment proof-of-possession challenge lifecycle."
-    ),
     # A device key proves possession on ONE deployment; elsewhere it must be re-proven,
     # so the key travels nowhere and an imported device arrives pending (phase 7a).
     ("devices.Device", "public_key"): "Deployment-local device key; re-enroll on the target.",

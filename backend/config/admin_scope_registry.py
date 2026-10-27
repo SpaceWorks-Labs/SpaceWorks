@@ -78,22 +78,8 @@ GLOBAL_ADMIN_MODELS = {
     "backup.deploymentdatabaseidentity", "backup.backuplease",
     "backup.backuprun", "backup.backupruncoverage",
     "backup.restorerollbackobject",
-    # Fingerprint reservations are deliberately deployment-global and permanent:
-    # `makerspace_id_snapshot` is a plain integer, not an FK, so a reservation
-    # outlives its makerspace and cannot be reused. There is no Makerspace path.
-    "backup.archiverecipientreservation",
-    # Custody state is a deployment backup alarm, scoped like its siblings above
-    # (`backuparchive`, `restoreoperation`): an operator must be able to see that a
-    # makerspace is below its archive-recipient floor in order to act on it.
-    "backup.makerspacearchivecustodystate",
-    "backup.archivecustodyalarmdelivery",
-    "backup.makerspacetenantexitcustodystate",
-    "backup.tenantexitcustodyalarmdelivery",
     "tenant_migration.tenantdumpcapture",
-    "backup.b1activationstate", "backup.backupartifactledger",
-    "backup.backupartifactcomponent", "backup.backupcomponentrecipient",
-    "backup.b1restoreoperationstate", "backup.b1restorecomponentstate",
-    "backup.b1reservationentry", "backup.b1fencecontinuity",
+    "backup.backupartifactledger", "backup.backupartifactcomponent",
     "backup.backupdestination", "backup.backupdestinationupload",
     "encryption.piiglobalwritefence",
     # Platform-level hosting requests have no tenant (a nullable inviter makerspace is

@@ -1,7 +1,4 @@
-from django.core.exceptions import (
-    ObjectDoesNotExist,
-    ValidationError as DjangoValidationError,
-)
+from django.core.exceptions import ValidationError as DjangoValidationError
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from rest_framework.exceptions import PermissionDenied
@@ -20,12 +17,6 @@ from apps.makerspaces.validators import (
 )
 from apps.separability.tombstones import unavailable_apps
 from apps.admin_api.serializers_makerspace_domain import validate_frontend_domain
-
-
-_CREATE_ACCESS_SEQUENCE = (
-    "Create the makerspace with superadmin access enabled, enrol and verify at "
-    "least two archive recipients, then disable superadmin access."
-)
 
 
 class MakerspaceValidationMixin:
@@ -49,24 +40,6 @@ class MakerspaceValidationMixin:
 
     def get_discord_webhook_url_set(self, obj) -> bool:
         return bool(obj.discord_webhook_url)
-
-    @extend_schema_field(
-        {
-            "type": "string",
-            "nullable": True,
-            "enum": [
-                "healthy",
-                "not_applicable",
-                "degraded_one_recipient",
-                "floor_breached_zero",
-            ],
-        }
-    )
-    def get_archive_custody_state(self, obj):
-        try:
-            return obj.archive_custody_state.state
-        except ObjectDoesNotExist:
-            return None
 
     def validate_slack_webhook_url(self, value):
         return validate_webhook_url(value)
@@ -153,14 +126,6 @@ class MakerspaceValidationMixin:
         return super().to_internal_value(data)
 
     def validate(self, attrs):
-        if (
-            self.instance is None
-            and attrs.get("superadmin_access_enabled") is False
-        ):
-            raise serializers.ValidationError(
-                {"superadmin_access_enabled": _CREATE_ACCESS_SEQUENCE}
-            )
-
         geofence_enabled = attrs.get(
             "geofence_enabled",
             self.instance.geofence_enabled if self.instance else False,

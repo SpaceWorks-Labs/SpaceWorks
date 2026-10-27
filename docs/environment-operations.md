@@ -56,7 +56,6 @@ Host-orchestration paths and timing knobs; see `docs/self-hosting.md` and the re
 | `BACKUP_PRODUCER_ENTRYPOINT_PATH` | `'/app/scripts/spaceworks_entrypoint.py'` |  |
 | `BACKUP_PRODUCER_MIGRATIONS_DIR` | `str(BASE_DIR / 'apps')` |  |
 | `BACKUP_PRODUCER_PRIVILEGED_SCRIPTS_DIR` | `'/run/spaceworks-privileged-scripts'` |  |
-| `BACKUP_RECIPIENT_CHALLENGE_TTL_SECONDS` | `15 * 60` |  |
 | `DATA_EXPORT_DEADLINE_SECONDS` | `900` |  |
 | `DATA_EXPORT_DOWNLOAD_TTL_SECONDS` | `5 * 60` |  |
 | `DATA_EXPORT_PAGE_SIZE` | `500` |  |

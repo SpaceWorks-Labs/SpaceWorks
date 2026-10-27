@@ -42,18 +42,4 @@ class MakerspaceSwitcherSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
-class MakerspaceDisabledRowSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Makerspace
-        fields = [
-            "id",
-            "name",
-            "slug",
-            "public_code",
-            "location",
-            "superadmin_access_enabled",
-        ]
-        read_only_fields = fields
-
-
 from apps.admin_api.serializers_loan_policy import ReturnPolicySerializer  # noqa: E402,F401

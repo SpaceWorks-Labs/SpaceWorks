@@ -135,8 +135,6 @@ WRAPPER_SITE_PREFIXES = {
     "admin_api/views_assets.py": ("inventory.asset_needs_fix_",),
     "admin_api/views_makerspace_images.py": ("makerspace.logo_", "makerspace.cover_",),
     "admin_api/views_needs_fix.py": ("inventory.needs_fix_",),
-    "backup/recipient_states.py": ("backup.archive_recipient_",),
-    "backup/recipients.py": ("backup.archive_recipient_",),
     "bookings/services_bookings.py": ("booking.",),
     "bookings/services_broadcasts.py": ("booking.broadcast.",),
     "encryption/services.py": ("encryption.dek_",),

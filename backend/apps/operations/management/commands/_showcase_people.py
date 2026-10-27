@@ -1,7 +1,7 @@
 """The showcase makerspace itself, its staff, its members and one restricted account.
 
-The space is created through the staff create serializer (owner organization, custody
-state and the `makerspace.created` audit included), modules through `apply_profile`
+The space is created through the staff create serializer (owner organization and
+the `makerspace.created` audit included), modules through `apply_profile`
 and every capability through `setup_settings.save_space`, the audited settings path.
 Staff come from `create_staff_account`; members join through invite + approval, the
 same membership services the console uses, which also raises their dues.
@@ -57,7 +57,7 @@ def create_space(root):
              else {"organization_name": data.ORGANIZATION})
     serializer = MakerspaceSerializer(data={
         "name": data.NAME, "slug": data.SLUG, "location": data.LOCATION,
-        "public_inventory_enabled": True, "superadmin_access_enabled": True, **owner,
+        "public_inventory_enabled": True, **owner,
     }, context={"request": SimpleNamespace(user=root)})
     serializer.is_valid(raise_exception=True)
     space = serializer.save(created_by=root)

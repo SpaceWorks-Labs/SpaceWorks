@@ -2,27 +2,15 @@ from django.contrib import admin
 from unfold.admin import ModelAdmin
 
 from apps.backup.models import (
-    ArchiveCustodyAlarmDelivery,
-    ArchiveRecipientReservation,
-    B1ActivationState,
-    B1FenceContinuity,
-    B1ReservationEntry,
-    B1RestoreComponentState,
-    B1RestoreOperationState,
     BackupArchive,
     BackupArtifactComponent,
     BackupArtifactLedger,
-    BackupComponentRecipient,
     BackupLease,
     BackupRun,
     BackupRunCoverage,
     DeploymentRecoveryState,
-    MakerspaceArchiveCustodyState,
-    MakerspaceTenantExitCustodyState,
-    PlatformBackupSettings,
     RestoreOperation,
     RestoreRollbackObject,
-    TenantExitCustodyAlarmDelivery,
 )
 from apps.backup.models_host_identity import DeploymentDatabaseIdentity
 from config.admin_access import SuperuserOnlyModelAdmin
@@ -53,97 +41,15 @@ class RestoreOperationAdmin(ReadOnlyBackupAdmin):
     readonly_fields = tuple(field.name for field in RestoreOperation._meta.fields)
 
 
-@admin.register(MakerspaceArchiveCustodyState)
-class MakerspaceArchiveCustodyStateAdmin(ReadOnlyBackupAdmin):
-    list_display = (
-        "makerspace",
-        "state",
-        "reason_code",
-        "alarm_episode",
-        "entered_at",
-        "cleared_at",
-    )
-    list_filter = ("state", "reason_code")
-    readonly_fields = tuple(
-        field.name for field in MakerspaceArchiveCustodyState._meta.fields
-    )
-
-    def resolve_hidden_lookup(self):
-        # This deployment alarm must remain visible even when its makerspace has
-        # intentionally hidden ordinary tenant data from the control plane.
-        return None
-
-
-@admin.register(ArchiveCustodyAlarmDelivery)
-class ArchiveCustodyAlarmDeliveryAdmin(ReadOnlyBackupAdmin):
-    list_display = (
-        "id",
-        "makerspace",
-        "alarm_revision",
-        "cycle",
-        "channel",
-        "status",
-        "attempts",
-        "updated_at",
-    )
-    list_filter = ("channel", "status", "created_at")
-    readonly_fields = tuple(
-        field.name for field in ArchiveCustodyAlarmDelivery._meta.fields
-    )
-
-    def resolve_hidden_lookup(self):
-        # Platform custody operations remain visible when the affected tenant has
-        # deliberately hidden ordinary tenant data from the control plane.
-        return None
-
-
-@admin.register(MakerspaceTenantExitCustodyState)
-class MakerspaceTenantExitCustodyStateAdmin(ReadOnlyBackupAdmin):
-    list_display = (
-        "makerspace", "state", "reason_code", "alarm_episode", "entered_at", "cleared_at",
-    )
-    list_filter = ("state", "reason_code")
-    readonly_fields = tuple(
-        field.name for field in MakerspaceTenantExitCustodyState._meta.fields
-    )
-
-    def resolve_hidden_lookup(self):
-        return None
-
-
-@admin.register(TenantExitCustodyAlarmDelivery)
-class TenantExitCustodyAlarmDeliveryAdmin(ReadOnlyBackupAdmin):
-    list_display = (
-        "id", "makerspace", "alarm_revision", "cycle", "channel", "status", "attempts",
-    )
-    list_filter = ("channel", "status", "created_at")
-    readonly_fields = tuple(
-        field.name for field in TenantExitCustodyAlarmDelivery._meta.fields
-    )
-
-    def resolve_hidden_lookup(self):
-        return None
-
-
 for model in (
     DeploymentRecoveryState,
     BackupLease,
     BackupRun,
     BackupRunCoverage,
     RestoreRollbackObject,
-    ArchiveRecipientReservation,
-    B1ActivationState,
     BackupArtifactLedger,
     BackupArtifactComponent,
-    BackupComponentRecipient,
-    B1RestoreOperationState,
-    B1RestoreComponentState,
-    B1ReservationEntry,
-    B1FenceContinuity,
     DeploymentDatabaseIdentity,
-    # MakerspaceTenantExitCustodyState and TenantExitCustodyAlarmDelivery are NOT listed here:
-    # both carry dedicated @admin.register classes above, and registering them twice raises
-    # AlreadyRegistered at import time.
 ):
     admin.site.register(model, ReadOnlyBackupAdmin)
 

@@ -10,13 +10,13 @@ from apps.admin_api.recipient_rule_common import (
     rows_for,
 )
 from apps.admin_api.recipient_rule_merge import SHARED_KINDS, owned_links
-from apps.integrations import notification_catalog, recipients as recipient_selection
+from apps.integrations import notification_catalog, recipients as notification_recipients
 from apps.integrations.notification_enums import NotificationFeature
 from apps.integrations.models_recipients import NotificationRecipientKind
 from apps.machines.models import Machine, MachineType
 from apps.makerspaces.models import MakerspaceRole
 
-SELECTABLE = sorted(recipient_selection.SELECTABLE_FEATURES)
+SELECTABLE = sorted(notification_recipients.SELECTABLE_FEATURES)
 
 
 def serialize_rule(row):
@@ -95,7 +95,7 @@ def _features(makerspace, delegated):
             "events": list(notification_catalog.FEATURE_EVENTS.get(feature, ())),
         }
         for feature in offered
-        if recipient_selection.category_available(makerspace, feature)
+        if notification_recipients.category_available(makerspace, feature)
     ]
 
 

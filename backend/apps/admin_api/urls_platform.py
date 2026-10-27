@@ -23,7 +23,7 @@ from apps.backup.views_archives import (
     DeploymentArchiveListCreateView,
     MakerspaceArchiveListCreateView,
 )
-from apps.backup.views_custody import MakerspaceBackupCustodyView
+from apps.backup.views_backup_status import MakerspaceBackupStatusView
 from apps.backup.views_offsite import (
     BackupArchiveRehydrateView,
     BackupDestinationDetailView,
@@ -38,14 +38,6 @@ from apps.backup.views_restore import (
     RestoreDecisionView,
     RestoreOperationListCreateView,
     RestoreOperationView,
-)
-from apps.backup.views_recipients import (
-    ArchiveRecipientCompromiseView,
-    ArchiveRecipientListCreateView,
-    ArchiveRecipientReactivateView,
-    ArchiveRecipientReissueView,
-    ArchiveRecipientRevokeView,
-    ArchiveRecipientVerifyView,
 )
 from apps.data_export.views import (
     DataExportDetailView,
@@ -101,41 +93,11 @@ urlpatterns = [
     path("platform/backup-destinations/<int:destination_id>/test", BackupDestinationProbeView.as_view(), name="admin-backup-destination-probe"),
     path("platform/backup-destinations/<int:destination_id>/uploads", BackupDestinationUploadListView.as_view(), name="admin-backup-destination-uploads"),
     path("platform/backups/<uuid:archive_id>/rehydrate", BackupArchiveRehydrateView.as_view(), name="admin-backup-archive-rehydrate"),
-    path("makerspace/<int:makerspace_id>/backup-custody", MakerspaceBackupCustodyView.as_view(), name="admin-makerspace-backup-custody"),
+    path("makerspace/<int:makerspace_id>/backup-status", MakerspaceBackupStatusView.as_view(), name="admin-makerspace-backup-status"),
     path(
         "makerspace/<int:makerspace_id>/backups",
         MakerspaceArchiveListCreateView.as_view(),
         name="admin-makerspace-backups",
-    ),
-    path(
-        "makerspace/<int:makerspace_id>/archive-recipients",
-        ArchiveRecipientListCreateView.as_view(),
-        name="admin-archive-recipient-list-create",
-    ),
-    path(
-        "makerspace/<int:makerspace_id>/archive-recipients/<int:pk>/verify",
-        ArchiveRecipientVerifyView.as_view(),
-        name="admin-archive-recipient-verify",
-    ),
-    path(
-        "makerspace/<int:makerspace_id>/archive-recipients/<int:pk>/reissue-challenge",
-        ArchiveRecipientReissueView.as_view(),
-        name="admin-archive-recipient-reissue",
-    ),
-    path(
-        "makerspace/<int:makerspace_id>/archive-recipients/<int:pk>/revoke",
-        ArchiveRecipientRevokeView.as_view(),
-        name="admin-archive-recipient-revoke",
-    ),
-    path(
-        "makerspace/<int:makerspace_id>/archive-recipients/<int:pk>/compromise",
-        ArchiveRecipientCompromiseView.as_view(),
-        name="admin-archive-recipient-compromise",
-    ),
-    path(
-        "makerspace/<int:makerspace_id>/archive-recipients/<int:pk>/reactivate",
-        ArchiveRecipientReactivateView.as_view(),
-        name="admin-archive-recipient-reactivate",
     ),
     path(
         "backups/<uuid:archive_id>/download-url",

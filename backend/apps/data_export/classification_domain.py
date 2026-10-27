@@ -13,7 +13,6 @@ EXPORTED_MODEL_FIELDS = {
     "apiclients.ApiClient": "id label client_id secret_encrypted previous_secret_encrypted previous_secret_valid_until client_type scopes rate_limit_tier makerspace allowed_origins is_active last_seen_at last_seen_ip import_provenance_digest credential_delivered_at created_by created_at updated_at",
     "apiclients.ApiKeyRequest": "id makerspace requester label reason allowed_origins status resolution_note resolved_by resolved_at created_at updated_at",
     "audit.AuditLog": "id actor action target_type target_id makerspace meta event_uuid row_mac created_at",
-    "backup.MakerspaceArchiveRecipient": "id makerspace public_recipient fingerprint label added_by added_at revoked_at compromised_at verified_at challenge_nonce_digest challenge_issued_at",
     "bookings.BookableSpace": "id public_token makerspace name kind description capacity location image_key is_public show_public_availability show_public_booker_names approval_mode custom_form requester_notifications_enabled payment_amount min_booking_duration_minutes max_booking_duration_minutes booking_lead_time_minutes max_booking_advance_days pass_template is_active created_by created_at updated_at machine_type buffer_before_minutes buffer_after_minutes cancellation_cutoff_hours",
     "bookings.Booking": "id space public_token name email phone member starts_at ends_at status note custom_answers created_at",
     "boxes.Box": "kit_components id makerspace parent code label location description is_active created_at updated_at",

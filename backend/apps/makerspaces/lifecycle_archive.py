@@ -58,7 +58,7 @@ def _archive_locked(makerspace, actor, *, archived_at):
         "makerspace.archived",
         makerspace=makerspace,
         target=makerspace,
-        meta={**impact, "superadmin_access_enabled": makerspace.superadmin_access_enabled},
+        meta=impact,
     )
     return makerspace
 
@@ -79,8 +79,5 @@ def unarchive(makerspace, actor):
         locked.archived_at = None
         locked.archived_by = None
         locked.save(update_fields=["archived_at", "archived_by"])
-        audit.record(
-            actor, "makerspace.unarchived", makerspace=locked, target=locked,
-            meta={"superadmin_access_enabled": locked.superadmin_access_enabled},
-        )
+        audit.record(actor, "makerspace.unarchived", makerspace=locked, target=locked)
         return locked

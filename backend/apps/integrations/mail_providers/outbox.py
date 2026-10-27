@@ -96,16 +96,14 @@ def drain(*, monotonic_deadline, limit=20, guard=None, cursor=0):
             if candidate is None:
                 continue
             from apps.tenant_migration.gate_runtime import fanout_tenant_write
-            custody = candidate.stream == "backup" and candidate.event in {
-                "archive_custody_alarm", "tenant_exit_custody_alarm"}
-            if candidate.makerspace_id and not custody:
+            if candidate.makerspace_id:
                 with fanout_tenant_write(candidate.makerspace_id,
                                          operation="free_mail_drain", counts={}) as allowed:
                     if not allowed:
                         continue
                     count += _deliver_candidate(candidate, guard)
             else:
-                # Platform mail and the custody-alarm exemptions are never tenant-gated.
+                # Platform mail is never tenant-gated.
                 count += _deliver_candidate(candidate, guard)
     remaining = bool(ids) and (visited < ids[-1] or len(ids) > limit)
     return {"processed": count, "remaining": remaining, "cursor": visited if remaining else 0}

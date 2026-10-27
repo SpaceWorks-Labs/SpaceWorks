@@ -69,7 +69,6 @@ Every `THROTTLE_*` value is a DRF rate string (`<n>/<second|minute|hour|day>`). 
 | `THROTTLE_ANONYMOUS_REQUEST_EMAIL` | `'5/hour'` | Borrower email-code sends per address (spaces without member accounts). |
 | `THROTTLE_ANONYMOUS_REQUEST_IP_BURST` | `'5/min'` | Account-less borrow requests and code sends per IP. |
 | `THROTTLE_ANONYMOUS_REQUEST_IP_HOUR` | `'30/hour'` | Account-less borrow requests and code sends per IP. |
-| `THROTTLE_ARCHIVE_RECIPIENT_VERIFY` | `'10/min'` |  |
 | `THROTTLE_AUDIT_VERIFICATION` | `'6/hour'` | On-demand audit chain verification runs. |
 | `THROTTLE_BOOKING_SUBMIT` | `'10/hour'` |  |
 | `THROTTLE_DATA_EXPORT_CREATE` | `'3/hour'` |  |

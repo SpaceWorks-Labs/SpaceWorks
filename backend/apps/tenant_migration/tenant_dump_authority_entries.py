@@ -267,18 +267,6 @@ AUTHORITY_ENTRIES = (
         "Tenant-authored wording remains bounded by reset target delivery policy.",
     ),
     *_same(
-        "backup.MakerspaceArchiveRecipient",
-        "public_recipient fingerprint label",
-        D.PRESERVE,
-        "Public recipient metadata travels for fresh target proof.",
-    ),
-    *_same(
-        "backup.MakerspaceArchiveRecipient",
-        "verified_at challenge_nonce_digest challenge_issued_at",
-        D.RESET,
-        "Source proof state is not target proof of recipient possession.",
-    ),
-    *_same(
         "apiclients.ApiKeyRequest",
         "status",
         (D.PRESERVE, D.DROP),

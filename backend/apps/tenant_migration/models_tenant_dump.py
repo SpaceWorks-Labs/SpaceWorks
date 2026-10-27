@@ -42,7 +42,7 @@ class TenantDumpCapture(models.Model):
     # One-shot tenant recipients supplied with this export only (#111 Q7): canonical
     # {public_recipient, fingerprint} rows sealing the DEK envelope and, with the
     # platform key, the outer envelope. They confer no standing custody.
-    frozen_tenant_recipients = models.JSONField(default=list)
+    tenant_recipients = models.JSONField(default=list)
     gate_owner_id = models.UUIDField(null=True, blank=True)
     gate_fencing_token = models.PositiveBigIntegerField(default=0)
     database_snapshot_at = models.DateTimeField(null=True, blank=True)

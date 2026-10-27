@@ -49,7 +49,7 @@ def request_tenant_dump_capture(actor, makerspace, *, recipients):
             source_deployment_identity=public_deployment_identity(),
             source_makerspace_id=makerspace.pk,
             source_makerspace_slug=makerspace.slug,
-            frozen_tenant_recipients=list(tenant_recipients),
+            tenant_recipients=list(tenant_recipients),
             source_encryption_mode=bool(settings.PII_ENCRYPTION_ENABLED),
             catalog_digest=CATALOG_SCHEMA_SHA256,
         )

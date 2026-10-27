@@ -54,7 +54,7 @@ def recipient_sets(capture):
     """Derive envelope recipients without ever promoting the platform to DEK custody."""
     try:
         tenant_dek_recipients = tuple(
-            item["public_recipient"] for item in capture.frozen_tenant_recipients
+            item["public_recipient"] for item in capture.tenant_recipients
         )
     except (KeyError, TypeError):
         raise TenantDumpCustodyError(

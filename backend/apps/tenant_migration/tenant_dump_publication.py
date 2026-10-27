@@ -134,7 +134,7 @@ def publish_tenant_dump(capture_id):
                     "artifact_size_bytes": capture.artifact_size_bytes,
                     "recipient_fingerprints": [
                         item["fingerprint"]
-                        for item in capture.frozen_tenant_recipients
+                        for item in capture.tenant_recipients
                     ],
                 },
             )

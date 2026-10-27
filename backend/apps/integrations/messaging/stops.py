@@ -66,7 +66,6 @@ def process_stop(event):
 def append_stop_consents(event):
     """Best effort ledger annotation; protection above never depends on a tenant gate."""
     from apps.accounts.models import User
-    from apps.backup.not_restored import TenantNotRestored
     from apps.tenant_migration.gate_errors import SourceMigrationGateClosed
     from apps.tenant_migration.gate_runtime import fanout_tenant_write
     if not event.payload.get("stop"):
@@ -87,7 +86,7 @@ def append_stop_consents(event):
                 if not permitted:
                     continue
                 _append_stop_consent(event, space_id, user_id, phone)
-        except (SourceMigrationGateClosed, TenantNotRestored, User.DoesNotExist):
+        except (SourceMigrationGateClosed, User.DoesNotExist):
             continue
 
 

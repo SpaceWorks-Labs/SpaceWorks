@@ -1,9 +1,8 @@
-"""Structural allowlist validation for the readable Lane E manifest."""
+"""Structural allowlist validation for the signed deployment-archive manifest."""
 
 import uuid
 
 from apps.backup.build_errors import BackupBuildError
-from apps.backup.outer_reservation_validation import validate_reservation_manifest
 
 
 def component_id(capture_id, kind, makerspace_id=None):
@@ -48,20 +47,11 @@ def validate_unsigned_manifest(manifest, *, protocol_version):
             not in postgres["supported_source_majors"]
         ):
             raise ValueError
-        sets = manifest["makerspace_sets"]
-        retained = sets["retained"]
-        readable = sets["readable_main"]
-        sovereign = sets["sovereign"]
-        if any(
-            values != sorted(set(values))
-            or any(type(value) is not int for value in values)
-            or any(value <= 0 for value in values)
-            for values in (retained, readable, sovereign)
+        population = manifest["makerspace_ids"]
+        if (
+            population != sorted(set(population))
+            or any(type(value) is not int or value <= 0 for value in population)
         ):
-            raise ValueError
-        if set(readable).intersection(sovereign) or set(readable).union(
-            sovereign
-        ) != set(retained):
             raise ValueError
         main = manifest["main_component"]
         main_fingerprints = main["recipient_fingerprints"]
@@ -71,55 +61,19 @@ def validate_unsigned_manifest(manifest, *, protocol_version):
             or not _is_digest(main["ciphertext_sha256"])
             or not _is_digest(main["schema_catalog_digest"])
             or not _is_digest(main["semantic_digest"])
+            or not main_fingerprints
             or main_fingerprints != sorted(set(main_fingerprints))
             or any(not _is_digest(value) for value in main_fingerprints)
         ):
             raise ValueError
-        slices = manifest["slice_components"]
-        if [item["makerspace_id"] for item in slices] != sovereign:
-            raise ValueError
-        components = [main, *slices]
-        component_ids = []
-        for item in slices:
-            fingerprints = item["recipient_fingerprints"]
-            if (
-                item["kind"] != "slice"
-                or item["component_id"]
-                != component_id(capture_id, "slice", item["makerspace_id"])
-                or fingerprints != sorted(set(fingerprints))
-                or not fingerprints
-                or not _is_digest(item["ciphertext_sha256"])
-                or any(not _is_digest(value) for value in fingerprints)
-            ):
-                raise ValueError
-        for item in components:
-            component_ids.append(item["component_id"])
-        if len(component_ids) != len(set(component_ids)):
-            raise ValueError
-        expected_ids = set(component_ids)
         for ledger_name in ("object_ledgers", "content_ledgers"):
             ledger = manifest[ledger_name]
             if (
-                len(ledger) != len(expected_ids)
-                or {item["component_id"] for item in ledger} != expected_ids
-                or any(not _is_digest(item["digest"]) for item in ledger)
+                len(ledger) != 1
+                or ledger[0]["component_id"] != main["component_id"]
+                or not _is_digest(ledger[0]["digest"])
             ):
                 raise ValueError
-        seeds = {
-            (item["component_id"], item["makerspace_id"], item["state"])
-            for item in manifest["not_restored_seeds"]
-        }
-        expected_seeds = {
-            (item["component_id"], item["makerspace_id"], "pending")
-            for item in slices
-        }
-        if (
-            len(manifest["not_restored_seeds"]) != len(expected_seeds)
-            or seeds != expected_seeds
-            or not _is_digest(manifest["user_closure_digest"])
-        ):
-            raise ValueError
-        validate_reservation_manifest(manifest, components)
     except (KeyError, TypeError, ValueError) as exc:
         raise BackupBuildError("The outer archive manifest structure is invalid.") from exc
 

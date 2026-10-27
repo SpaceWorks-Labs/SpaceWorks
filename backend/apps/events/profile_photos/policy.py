@@ -12,13 +12,12 @@ _public_surfaces = {}
 
 
 def source_open(makerspace_id):
-    from apps.backup.not_restored import TenantNotRestored
     from apps.tenant_migration.gate_errors import SourceMigrationGateClosed
     from apps.tenant_migration.gate_runtime import assert_write_allowed
     try:
         assert_write_allowed(makerspace_id)
         return True
-    except (TenantNotRestored, SourceMigrationGateClosed):
+    except SourceMigrationGateClosed:
         return False
 
 

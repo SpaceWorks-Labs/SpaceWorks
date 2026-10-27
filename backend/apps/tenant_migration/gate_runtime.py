@@ -5,7 +5,6 @@ from contextvars import ContextVar
 from django.db import transaction
 from django.utils import timezone
 
-from apps.backup.not_restored import TenantNotRestored, assert_restored
 from apps.tenant_migration.gate_errors import SourceMigrationGateClosed
 from apps.tenant_migration.gate_locks import acquire_shared, shared_boundary
 from apps.tenant_migration.models_source_gate import SourceMigrationGate
@@ -37,7 +36,6 @@ def assert_write_allowed(makerspace_id):
 
 
 def _assert_gate_state(makerspace_id):
-    assert_restored(makerspace_id)
     gate = SourceMigrationGate.objects.only(
         "state", "purpose", "owner_id", "fencing_token", "lease_expires_at"
     ).filter(makerspace_id=makerspace_id).first()
@@ -82,7 +80,7 @@ def fanout_tenant_write(makerspace_id, *, operation, counts):
     with ExitStack() as stack:
         try:
             stack.enter_context(boundary_tenant_write(makerspace_id))
-        except (SourceMigrationGateClosed, TenantNotRestored):
+        except SourceMigrationGateClosed:
             counts["skipped"] = counts.get("skipped", 0) + 1
             logger.info(
                 "tenant_fanout_skipped_closed_source_gate",

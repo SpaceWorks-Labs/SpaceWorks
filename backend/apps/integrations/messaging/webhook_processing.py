@@ -5,7 +5,6 @@ from datetime import datetime, timedelta, timezone as dt_timezone
 from django.db import DatabaseError, transaction
 from django.utils import timezone
 
-from apps.backup.not_restored import TenantNotRestored
 from apps.integrations.models import MessagingDelivery, MessagingWebhookEvent
 from apps.tenant_migration.gate_errors import SourceMigrationGateError
 from apps.tenant_migration.gate_runtime import assert_write_allowed, tenant_write

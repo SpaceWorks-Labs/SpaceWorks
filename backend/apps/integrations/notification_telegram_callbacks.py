@@ -7,7 +7,6 @@ from django.utils import timezone
 from django.utils.crypto import constant_time_compare
 from rest_framework.exceptions import APIException
 
-from apps.backup.not_restored import TenantNotRestored
 from apps.tenant_migration.gate_errors import SourceMigrationGateError
 
 from .notification_providers import CallbackEvent, EndpointProof
@@ -79,7 +78,7 @@ def handle_start(request):
             return
         verified_callback(config, request, expected_user_id=challenge.user_id,
                           expected_challenge_id=challenge.pk)
-    except (APIException, SourceMigrationGateError, TenantNotRestored):
+    except (APIException, SourceMigrationGateError):
         # Expired/replayed proofs and closed tenant gates are terminal for this update.
         # Acknowledge so Telegram does not retry it; the browser can start a new challenge.
         logger.info("telegram_endpoint_proof_refused", extra={"configuration_id": config.pk})

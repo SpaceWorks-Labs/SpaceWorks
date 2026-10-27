@@ -1,19 +1,10 @@
-"""Guarded W8 source-DEK sealing from immutable snapshot enumeration."""
+"""Immutable source-DEK enumeration shared with the Lane D tenant-exit envelope."""
 
-import base64
 from dataclasses import dataclass
-import json
-import logging
-from pathlib import Path
-import subprocess
 
-from apps.backup.digests import sha256_bytes, sha256_file
+from apps.backup.digests import sha256_bytes
 from apps.backup.build_errors import BackupBuildError
-from apps.encryption import services
-from apps.encryption.cache import dek_cache_disabled
 from apps.encryption.models import MakerspaceEncryptionKey
-
-logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -58,98 +49,6 @@ def enumerate_staged_deks(makerspace_id, *, using="default"):
     return tuple(result)
 
 
-def seal_staged_deks(staged_rows, recipients, root):
-    """Unwrap only the frozen rows and stream each DEK directly into age."""
-    if type(staged_rows) is not tuple or any(
-        type(row) is not StagedDekRow for row in staged_rows
-    ):
-        raise BackupBuildError("W8 accepts only an immutable staged enumeration.")
-    staged = staged_rows
-    recipients = tuple(recipients)
-    validate_staged_deks(staged)
-    if not recipients or len(set(recipients)) != len(recipients):
-        raise BackupBuildError("W8 requires one non-empty frozen recipient set.")
-    root = Path(root)
-    root.mkdir(parents=True, exist_ok=True)
-    sealed = []
-    with dek_cache_disabled():
-        for row in staged:
-            destination = root / f"{row.row_identity}.json.age"
-            command = ["age"]
-            for recipient in recipients:
-                command += ["-r", recipient]
-            command += ["-o", str(destination)]
-            dek = payload = None
-            failed = False
-            try:
-                broker = services.broker_for_backend(row.broker_backend)
-                dek = broker.unwrap_dek(
-                    row.wrapped_dek, row.makerspace_id, row.version
-                )
-                if not isinstance(dek, bytes) or len(dek) != 32:
-                    raise ValueError("invalid DEK shape")
-                payload = _payload(row, dek)
-                subprocess.run(
-                    command,
-                    input=payload,
-                    check=True,
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                )
-                sealed.append(_sealed_record(row, destination))
-            except Exception as exc:
-                destination.unlink(missing_ok=True)
-                failed = True
-                # Identity and backend only. The exception's own message can
-                # carry provider-side detail, so record its type and nothing
-                # else -- a sealing failure must still be diagnosable.
-                failure = (type(exc).__name__, row.row_identity, row.broker_backend)
-            finally:
-                dek = None
-                payload = None
-            if failed:
-                logger.error(
-                    "backup.dek_seal_failed exception=%s row_identity=%s backend=%s",
-                    *failure,
-                )
-                # Raise after leaving the exception handler so the public error
-                # has no retained __context__ carrying provider-sensitive values.
-                raise BackupBuildError(
-                    "A frozen tenant DEK could not be sealed to its recipients."
-                )
-    verify_sealed_dek_inventory(staged, sealed, root)
-    return sealed
-
-
-def _payload(row, dek):
-    value = {
-        "row_identity": row.row_identity,
-        "makerspace_id": row.makerspace_id,
-        "version": row.version,
-        "status": row.status,
-        "source_broker_backend": row.broker_backend,
-        "source_broker_key_id": row.broker_key_id,
-        "source_wrapped_dek_sha256": row.wrapped_dek_sha256,
-        "dek_base64": base64.b64encode(dek).decode("ascii"),
-    }
-    return (json.dumps(value, sort_keys=True, separators=(",", ":")) + "\n").encode()
-
-
-def _sealed_record(row, path):
-    return {
-        "row_identity": row.row_identity,
-        "makerspace_id": row.makerspace_id,
-        "version": row.version,
-        "status": row.status,
-        "source_broker_backend": row.broker_backend,
-        "source_broker_key_id": row.broker_key_id,
-        "source_wrapped_dek_sha256": row.wrapped_dek_sha256,
-        "path": f"keys/deks/{row.row_identity}.json.age",
-        "size_bytes": path.stat().st_size,
-        "ciphertext_sha256": sha256_file(path),
-    }
-
-
 def validate_staged_deks(staged):
     """Validate immutable source-key identity and wrapped-byte integrity."""
     identities = set()
@@ -179,50 +78,3 @@ def validate_staged_deks(staged):
         )
         if not valid:
             raise BackupBuildError("W8 staging contains an unsupported or substituted key row.")
-
-
-def verify_sealed_dek_inventory(staged_rows, sealed_rows, root):
-    """Prove exact row equality and immutable ciphertext bytes before slice sealing."""
-    staged = tuple(staged_rows)
-    validate_staged_deks(staged)
-    expected = {_identity(row): row for row in staged}
-    actual = {}
-    for record in sealed_rows:
-        try:
-            identity = (record["row_identity"], record["makerspace_id"])
-        except (KeyError, TypeError) as exc:
-            raise BackupBuildError("W8 sealed inventory is malformed.") from exc
-        if identity in actual:
-            raise BackupBuildError("W8 sealed inventory contains a duplicate row.")
-        actual[identity] = record
-    if set(actual) != set(expected):
-        raise BackupBuildError("W8 sealed inventory is missing or has extra rows.")
-
-    root = Path(root)
-    for identity, row in expected.items():
-        record = actual[identity]
-        expected_metadata = {
-            "version": row.version,
-            "status": row.status,
-            "source_broker_backend": row.broker_backend,
-            "source_broker_key_id": row.broker_key_id,
-            "source_wrapped_dek_sha256": row.wrapped_dek_sha256,
-            "path": f"keys/deks/{row.row_identity}.json.age",
-        }
-        if any(record.get(name) != value for name, value in expected_metadata.items()):
-            raise BackupBuildError("W8 sealed inventory contains a substituted row.")
-        path = root / f"{row.row_identity}.json.age"
-        try:
-            size = path.stat().st_size
-            digest = sha256_file(path)
-        except OSError as exc:
-            raise BackupBuildError("W8 sealed ciphertext is missing.") from exc
-        if (
-            record.get("size_bytes") != size
-            or record.get("ciphertext_sha256") != digest
-        ):
-            raise BackupBuildError("W8 sealed ciphertext failed verification.")
-
-
-def _identity(row):
-    return row.row_identity, row.makerspace_id

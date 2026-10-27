@@ -10,7 +10,6 @@ from contextlib import contextmanager
 from django.db import transaction
 
 from apps.backup.models import DeploymentRecoveryState
-from apps.backup.not_restored import assert_restored
 from apps.events.models_event import Event
 from apps.events.models_series import EventSeries
 from apps.events.programme_locks import fences
@@ -21,7 +20,6 @@ from apps.tenant_migration.gate_locks import shared_boundary
 def require_retention_ready(makerspace_id):
     if not DeploymentRecoveryState.objects.filter(pk=1, mode=DeploymentRecoveryState.Mode.NORMAL).exists():
         raise RuntimeError("Retention is unavailable during deployment recovery.")
-    assert_restored(makerspace_id)
 
 
 @contextmanager

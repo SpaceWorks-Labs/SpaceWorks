@@ -90,7 +90,7 @@ def validate_process(profile, role, command):
         if role == ProcessRole.MANAGEMENT:
             finite = {
                 "check", "showmigrations", "setup_instance", "setup_platform_email",
-                "archive_custody_report", "backup_preflight", "export_tenant_migration_archive", "export_portable_tenant_dump", "verify_storage",
+                "backup_preflight", "export_tenant_migration_archive", "export_portable_tenant_dump", "verify_storage",
             }
             finite |= runtime_management
             adopt = command == ["python", "-m", "apps.backup.managed.adopt"]

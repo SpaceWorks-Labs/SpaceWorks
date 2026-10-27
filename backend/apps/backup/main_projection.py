@@ -1,4 +1,4 @@
-"""Derive a verified, sovereign-row-free readable main from the frozen dump."""
+"""Derive the verified readable main from the frozen deployment dump."""
 
 from pathlib import Path
 
@@ -148,11 +148,11 @@ def _mark_queryset(cursor, using, queryset, name):
         sql, params = query.get_compiler(using=using).as_sql()
     except EmptyResultSet:
         # Django refuses to compile a WHERE that can never match. Every boundary is
-        # unsatisfiable (`__in=()`) on a deployment with no sovereign tenant, which is
-        # the DEFAULT -- superadmin_access_enabled starts True, so a deployment where
-        # nobody has taken custody freezes zero slices. The marker must still exist and
-        # be empty, because _apply_marker joins it unconditionally; build it from the
-        # model's own primary key so the join keeps its exact type.
+        # unsatisfiable (`__in=()`) because no makerspace is ever excluded from the
+        # readable main (superadmin is always on, owner decision #110). The marker
+        # must still exist and be empty, because _apply_marker joins it
+        # unconditionally; build it from the model's own primary key so the join keeps
+        # its exact type.
         quote = cursor.db.ops.quote_name
         model = queryset.model
         sql = (

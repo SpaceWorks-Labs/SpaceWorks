@@ -194,8 +194,11 @@ def _send(delivery_id):
     return record_result(row, result)
 
 
-def finish_skipped(pk, reason):
-    Delivery.objects.filter(pk=pk).exclude(state__in=SUCCESS).update(
+def finish_skipped(pk, reason, *, keep_held=False):
+    rows = Delivery.objects.filter(pk=pk).exclude(state__in=SUCCESS)
+    if keep_held:
+        rows = rows.exclude(state="held")
+    rows.update(
         state="skipped", last_error=reason, retryable=False, claim_until=None, next_attempt_at=None,
         updated_at=timezone.now(),
     )
@@ -204,7 +207,9 @@ def finish_skipped(pk, reason):
 def record_result(row, result):
     bounded.check()
     if result.error_code == "skipped":
-        finish_skipped(row.pk, "transport_suppressed")
+        # A held (unknown-outcome) row stays held: an older attempt's late "skipped" must
+        # not turn a possibly delivered message into a cleanly skipped one.
+        finish_skipped(row.pk, "transport_suppressed", keep_held=True)
         return Delivery.objects.get(pk=row.pk)
     with transaction.atomic():
         current = Delivery.objects.select_for_update().get(pk=row.pk)

@@ -8,7 +8,10 @@ psycopg2-binary>=2.9
 django-cors-headers>=4.9
 django-axes>=8,<9
 django-csp>=4,<5
-drf-spectacular>=0.30
+# Exact pin: the CI `contracts` job diffs a freshly generated schema against
+# frontend/openapi-schema.json, so an upstream release must not change it unasked.
+# Bump deliberately and regenerate the snapshot and api.ts in the same commit.
+drf-spectacular==0.30.0
 # Pinned explicitly although drf-spectacular already requires it: `spectacular
 # --format openapi-yaml` needs it, and so does the deploy-manifest drift guard in
 # tests/test_env_surface_drift.py. A direct use deserves a direct pin -- otherwise the

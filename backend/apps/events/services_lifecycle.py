@@ -151,12 +151,18 @@ def _cancel_open_charges_after_commit(event, actor, *, registration_ids=None):
     the event row lock is held. `cancel_for_registration` swallows its own failures, so
     a provider outage never undoes the cancellation; the refund sweep rebuilds a case
     a failure left behind.
+
+    With ``registration_ids`` the caller has just cancelled or rejected those rows
+    itself: their settled charges are assessed under the refund policy
+    (``registration_cancelled``), exactly as the direct call did before the write
+    boundary moved this post-commit.
     """
     from apps.events.models import EventRegistration
     from apps.events.service_payments import cancel_for_registration
     from apps.payments.models import Payment
 
-    registration_ids = registration_ids if registration_ids is not None else list(
+    single = registration_ids is not None
+    registration_ids = registration_ids if single else list(
         EventRegistration.objects.filter(event=event).values_list("pk", flat=True)
     )
     pending = set(
@@ -167,15 +173,18 @@ def _cancel_open_charges_after_commit(event, actor, *, registration_ids=None):
             status=Payment.Status.PENDING,
         ).values_list("subject_id", flat=True)
     )
+    reason_code = "registration_cancelled" if single else "event_cancelled"
     # A member who had already cancelled was assessed under the policy at the time;
     # only registrations still standing when the space cancels are owed in full.
+    standing = EventRegistration.objects.filter(event=event)
+    standing = standing.filter(pk__in=registration_ids) if single else standing.exclude(
+        status__in=(EventRegistration.Status.CANCELLED, EventRegistration.Status.REJECTED),
+    )
     paid = set(
         Payment.objects.filter(
             makerspace=event.makerspace,
             subject_type=Payment.SubjectType.EVENT_REGISTRATION,
-            subject_id__in=EventRegistration.objects.filter(event=event).exclude(
-                status__in=(EventRegistration.Status.CANCELLED, EventRegistration.Status.REJECTED),
-            ).values("pk"),
+            subject_id__in=standing.values("pk"),
             status__in=(Payment.Status.PAID_ONLINE, Payment.Status.PAID_OFFLINE),
         ).values_list("subject_id", flat=True)
     )
@@ -185,7 +194,7 @@ def _cancel_open_charges_after_commit(event, actor, *, registration_ids=None):
             "event__makerspace"
         ):
             with transaction.atomic():
-                cancel_for_registration(registration, actor, reason_code="event_cancelled")
+                cancel_for_registration(registration, actor, reason_code=reason_code)
 
     if pending or paid:
         transaction.on_commit(cancel_all)

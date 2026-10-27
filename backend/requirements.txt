@@ -2,7 +2,9 @@ Django>=6.0,<6.1
 djangorestframework>=3.17
 django-environ>=0.14
 # HTTP transports; SES uses the existing boto3 dependency. Selection stays explicit.
-django-anymail[amazon-ses]==15.2
+# No [amazon-ses] extra: it only adds amazon-s3-encryption-client-python for anymail's
+# inbound SES webhook (not routed here), and that package caps cryptography below 49.
+django-anymail==15.2
 django-unfold>=0.100,<0.101
 psycopg2-binary>=2.9
 django-cors-headers>=4.9
@@ -24,7 +26,8 @@ pytest-django>=4.12
 whitenoise>=6.12
 segno
 djangorestframework-simplejwt>=5.5
-cryptography>=44
+# >=50 closes GHSA-g6cj-pr64-35w5, GHSA-jwv3-5hgf-82ww and GHSA-m2h6-j472-rp4c.
+cryptography>=50
 # App Attest's CBOR attestation object and COSE credential key.
 cbor2==6.1.5
 django-storages[s3]>=1.14,<2

@@ -30,6 +30,7 @@ import { type Makerspace, useStaffGet } from "./panels/shared";
 import { useTenant } from "../../lib/tenant";
 import { useLiveUpdates } from "../../lib/useLiveUpdates";
 import { wipeOfflineScopes } from "./eventCheckInOfflineStore";
+import { useSuperadminSpaceHint } from "./useSuperadminSpaceHint";
 
 export function useStaffSession(guestOnly: boolean) {
   const tenant = useTenant();
@@ -233,6 +234,8 @@ export function useStaffSession(guestOnly: boolean) {
     }
     setSelected(routeMakerspace.id);
   }, [routeMakerspace, selected, setSelected, singleTenantLocked]);
+
+  useSuperadminSpaceHint({ context, user, makerspaces: makerspaces.data, selected, setSelected });
 
   // Live hints for the signed-in console: every committed change invalidates the matching
   // queries instead of waiting for a poll. Off when signed out; pauses while the tab is hidden.

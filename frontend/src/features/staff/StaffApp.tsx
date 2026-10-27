@@ -161,7 +161,9 @@ export function StaffApp({ guestOnly = false }: { guestOnly?: boolean }) {
   }
 
   const activeMembership = user.makerspaces.find((item) => item.id === selected);
-  const activeActions = activeMembership?.actions ?? [];
+  // A superadmin holds every action in the space they chose (owner decision #115), and none
+  // before choosing one, so the console shows exactly that space's Space-Manager tabs.
+  const activeActions = isSuperadmin ? (activeMakerspace ? user.superadmin_actions ?? [] : []) : activeMembership?.actions ?? [];
   const makerspaceList = makerspaces.data ?? [];
 
   return (

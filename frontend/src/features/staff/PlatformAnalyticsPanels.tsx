@@ -5,6 +5,7 @@ import { analyticsRows, type AnalyticsPeriod } from "./panels/analyticsApi";
 import { DataState } from "./panels/OperationsReportState";
 import { PLATFORM_CHART_SPECS, usePlatformAnalytics, type AnalyticsMakerspace } from "./platformAnalyticsApi";
 import { PlatformAnalyticsPicker } from "./PlatformAnalyticsPicker";
+import { PlatformSpaceComparison } from "./PlatformSpaceComparison";
 import type { ChartRecord } from "./panels/charts/chartSpec";
 
 /** Names each row's makerspace and keeps only the reported dimensions, never raw ids. */
@@ -17,12 +18,13 @@ export function platformChartRows(rows: ChartRecord[], spaces: AnalyticsMakerspa
   });
 }
 
-export function PlatformAnalyticsPanels() {
+export function PlatformAnalyticsPanels({ spaces }: { spaces?: AnalyticsMakerspace[] }) {
   const [period, setPeriod] = useState<AnalyticsPeriod>({ start: "", end: "", grain: "day" });
   return <div className="grid min-w-0 gap-6">
     <AnalyticsPeriodControls value={period} onChange={setPeriod} />
     <PlatformReport reportKey="platform-services" title="Platform services" period={period} />
     <PlatformReport reportKey="platform-usage" title="Platform usage" period={period} />
+    <PlatformSpaceComparison period={period} spaces={spaces} />
     <PlatformAnalyticsPicker period={period} />
   </div>;
 }

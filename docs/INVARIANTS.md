@@ -415,7 +415,8 @@ space's Space Manager does, in every servable space:
   response gains `X-PII-Masked: 1`. A JSON write containing the mask is refused 400
   `pii_access_required`, so a masked value can never be saved back. Masking is presentation only.
 - *Reports (#115b).* Inside a space the superadmin reads every report, analytics page and export the
-  Space Manager does; the deployment aggregates (`analytics-aggregate`, `report-*-aggregate`,
+  Space Manager does; an `identity_bearing` report or export additionally needs a PII window on that
+  space (`report_subjects.require_report_action`, 403 `pii_access_required`); the deployment aggregates (`analytics-aggregate`, `report-*-aggregate`,
   `ledger-aggregate`) and the platform dashboard's "Compare spaces" table total and compare across
   spaces; each space's `/control/` page links into its reports (`admin_console_links.py`,
   `?context=platform&space=<slug>`).

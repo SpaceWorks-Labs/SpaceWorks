@@ -9,7 +9,7 @@ can be opened on this branch. Everyone else is decided by RBAC alone.
 
 At merge, replace everything below the docstring with:
 
-    from apps.accounts.pii_presentation import MASK, pii_visible  # noqa: F401
+    from apps.accounts.pii_presentation import MASK, pii_visible, require_pii_access  # noqa: F401
 """
 
 from apps.accounts.platform_tenant_surface import is_platform_superadmin
@@ -20,3 +20,11 @@ MASK = "••••••"
 def pii_visible(viewer, makerspace_id, *, subject=None):
     """May this viewer read unmasked PII belonging to one makerspace?"""
     return not is_platform_superadmin(viewer)
+
+
+def require_pii_access(viewer, makerspace_id):
+    """Refuse a person-identifying report or export to a superadmin without a window."""
+    if not pii_visible(viewer, makerspace_id):
+        from rest_framework.exceptions import PermissionDenied
+        raise PermissionDenied({"detail": "Open a PII access window on this space first.",
+                                "code": "pii_access_required"})

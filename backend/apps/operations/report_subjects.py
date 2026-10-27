@@ -92,3 +92,8 @@ def report_action_allowed(actor, definition, makerspace_id, filters=None):
 def require_report_action(actor, definition, makerspace_id, filters=None):
     if not report_action_allowed(actor, definition, makerspace_id, filters):
         require_action(actor, definition.required_action, makerspace_id)
+    if definition.identity_bearing:
+        # A superadmin reads or exports a person-identifying report only inside an open
+        # PII window on this space (owner decision #111 Q12); everyone else is unaffected.
+        from apps.accounts.pii_seam import require_pii_access
+        require_pii_access(actor, makerspace_id)

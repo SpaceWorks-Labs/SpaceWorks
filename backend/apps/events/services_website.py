@@ -22,7 +22,7 @@ from .website_preparation import prepared_page_write, prepared_copies
 
 def locked_target(target, actor, permission):
     from apps.makerspaces.public_page_authority import reject_platform
-    reject_platform(actor)
+    reject_platform(actor, tenant=True)
     from apps.tenant_migration.gate_runtime import assert_write_allowed
     assert_write_allowed(target.makerspace_id)
     if isinstance(target, Event):
@@ -32,7 +32,7 @@ def locked_target(target, actor, permission):
     target = type(target).objects.select_for_update().get(pk=target.pk)
     target.makerspace = require_module_locked(target.makerspace, "events")
     actor = lock_authority(actor, target)
-    reject_platform(actor)
+    reject_platform(actor, tenant=True)
     event_authority.require(actor, target, permission)
     require_feature(target, "events.website")
     if target.status in {"cancelled", "completed"}:
@@ -211,7 +211,7 @@ def _save_content_locked(target, actor, data, legacy_order, legacy_enabled, copi
 
 def set_release_locked(target, *, actor, released, revision):
     from apps.makerspaces.public_page_authority import reject_platform
-    reject_platform(actor)
+    reject_platform(actor, tenant=True)
     event_authority.require(actor, target, PUBLISH_SCHEDULE)
     require_feature(target, "events.website")
     if released and target.status != "published":

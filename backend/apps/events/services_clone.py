@@ -58,7 +58,7 @@ def _duplicate_fenced(event, actor, attach_series, assets, prepared):
     from .website_visibility import effective_page
     if effective_page(source) is not None:
         from apps.makerspaces.public_page_authority import reject_platform
-        reject_platform(actor)
+        reject_platform(actor, tenant=True)
     event_authority.require(actor, source, EDIT_DETAILS)
     # Standalone copies inherit neither scoped grants nor organizers. Only
     # tenant managers retain authority over the resulting draft.

@@ -35,7 +35,7 @@ ERRORS = {code: OpenApiResponse(ErrorSerializer, description=label) for code, la
 
 def target_for(request, pk, series=False, permission=VIEW):
     from apps.makerspaces.public_page_authority import reject_platform
-    reject_platform(request.user)
+    reject_platform(request.user, tenant=True)
     target = event_authority.get_event(request.user, pk, permission, series=series)
     from .feature_gates import require_feature
     require_feature(target, "events.website")

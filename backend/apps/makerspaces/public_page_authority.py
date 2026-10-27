@@ -14,19 +14,38 @@ from .models import Makerspace, MakerspaceMembership, MakerspaceRole
 from .servability import is_servable
 
 
-def reject_platform(actor):
+def reject_platform(actor, *, tenant=False):
+    """Refuse platform authority on page editing.
+
+    ``tenant=True`` marks content a makerspace owns (its own page, its events' websites).
+    There the platform superadmin edits like the space's Space Manager (owner decision
+    #115). Organization pages are deployment-global and stay owner-only.
+    """
+    from apps.accounts.platform_tenant_surface import is_platform_superadmin
+    if tenant and is_platform_superadmin(actor):
+        return
     if (actor is None or not actor.is_authenticated or actor.is_superuser
             or actor.role == "superadmin" or actor.account_kind == "platform"):
         raise PermissionDenied("Page editing requires an authorized owner account.")
 
 
+def _platform_superadmin_space(space, actor):
+    if (not actor.is_active or actor.access_status != "active" or actor.must_change_password
+            or not is_servable(space)):
+        raise PermissionDenied("Only this makerspace's local Space Manager may edit its page.")
+    return space, actor
+
+
 def lock_local_manager(owner_id, actor):
+    from apps.accounts.platform_tenant_surface import is_platform_superadmin
     from apps.tenant_migration.gate_runtime import assert_write_allowed
-    reject_platform(actor)
+    reject_platform(actor, tenant=True)
     if actor.account_kind == "staff" and actor.staff_makerspace_id != owner_id:
         raise NotFound()
     assert_write_allowed(owner_id)
     space = get_object_or_404(Makerspace.objects.select_for_update(), pk=owner_id)
+    if is_platform_superadmin(actor):
+        return _platform_superadmin_space(space, get_user_model().objects.select_for_update().get(pk=actor.pk))
     membership = MakerspaceMembership.objects.select_for_update().filter(
         makerspace=space, user_id=actor.pk).first()
     actor = get_user_model().objects.select_for_update().get(pk=actor.pk)
@@ -39,10 +58,13 @@ def lock_local_manager(owner_id, actor):
 
 def read_local_manager(owner_id, actor):
     """Same authority as lock_local_manager for reads: no tenant fence, no row locks."""
-    reject_platform(actor)
+    from apps.accounts.platform_tenant_surface import is_platform_superadmin
+    reject_platform(actor, tenant=True)
     if actor.account_kind == "staff" and actor.staff_makerspace_id != owner_id:
         raise NotFound()
     space = get_object_or_404(Makerspace, pk=owner_id)
+    if is_platform_superadmin(actor):
+        return _platform_superadmin_space(space, get_user_model().objects.get(pk=actor.pk))
     membership = MakerspaceMembership.objects.filter(makerspace=space, user_id=actor.pk).first()
     actor = get_user_model().objects.get(pk=actor.pk)
     reject_platform(actor)

@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 
 from apps.backup.digests import sha256_file
-from apps.backup.recipients import fingerprint_for
+from apps.backup.age_recipients import fingerprint_for
 
 from .tenant_dump_outer_manifest_validation import PAYLOAD_MEMBER
 

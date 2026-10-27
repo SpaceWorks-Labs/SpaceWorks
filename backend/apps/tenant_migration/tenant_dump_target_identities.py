@@ -8,7 +8,7 @@ import subprocess
 
 from django.core.exceptions import ValidationError
 
-from apps.backup.recipients import canonical_recipient, fingerprint_for
+from apps.backup.age_recipients import canonical_recipient, fingerprint_for
 
 from .tenant_dump_errors import TenantDumpTargetError
 

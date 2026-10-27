@@ -3,18 +3,13 @@
 import logging
 
 from django.conf import settings
-from django.core.exceptions import ValidationError
 from django.db import connection, transaction
 from django.utils import timezone
 
 from apps.audit import services as audit
 from apps.backup import storage
-from apps.backup.custody import with_makerspace_custody_lock
 from apps.backup.digests import sha256_file
-from apps.backup.recipient_selection import effective_tenant_recipients
-from apps.backup.recipients import canonical_recipient, fingerprint_for
-from apps.backup.services import superadmin_access_decision
-from apps.backup.tenant_exit_custody import sync_tenant_exit_custody_locked
+from apps.makerspaces.models import Makerspace
 
 from .deployment_keys import public_deployment_identity
 from .models import TenantDumpCapture
@@ -24,112 +19,62 @@ from .source_gate import quiesced_snapshot
 from .source_gate_release import release_after_copy_capture
 from .tenant_dump_capture_database import capture_database_image
 from .tenant_dump_catalog import CATALOG_SCHEMA_SHA256, validate_catalog
-from .tenant_dump_errors import TenantDumpBuildError, TenantDumpCustodyError
+from .tenant_dump_errors import TenantDumpBuildError
 from .money_digest import money_fingerprint
 from .tenant_dump_lineage import canonical_digest, object_ledger
+from .tenant_dump_recipients import one_shot_tenant_recipients
 from .tenant_dump_staging import create_capture_root, delete_owned_root
 
 
 logger = logging.getLogger(__name__)
 
 
-def request_tenant_dump_capture(actor, makerspace):
-    """Freeze request-time custody under Part A's serialization boundary."""
+def request_tenant_dump_capture(actor, makerspace, *, recipients):
+    """Record one tenant-exit request with its one-shot tenant recipients (#111 Q7).
+
+    The recipients are the public age keys the operator supplies for this export
+    only. They seal the tenant DEK envelope and, with the platform key, the outer
+    envelope; nothing about them is kept as standing custody state.
+    """
     validate_catalog()
+    tenant_recipients = one_shot_tenant_recipients(recipients)
     if settings.SPACEWORKS_DEPLOYMENT_MODE == "managed":
         from .cloud_portable import qualify_portable_export
         qualify_portable_export()
-    rejected = None
-    capture = None
-    with with_makerspace_custody_lock(makerspace.pk) as custody:
-        access_decision = superadmin_access_decision(custody.makerspace)
-        recipients = canonical_tenant_recipient_snapshot(custody.makerspace.pk)
-        state = sync_tenant_exit_custody_locked(custody)
-        if not recipients:
-            rejected = "A Lane D capture requires at least one verified tenant recipient."
-            audit.record(
-                actor,
-                "tenant_migration.tenant_dump_request_refused",
-                makerspace=custody.makerspace,
-                target=custody.makerspace,
-                meta={
-                    "reason_code": "floor_breached_zero",
-                    "superadmin_access_at_decision": access_decision,
-                    "custody_alarm_revision": state.alarm_revision,
-                },
-            )
-        else:
-            capture = TenantDumpCapture.objects.create(
-                makerspace=custody.makerspace,
-                requested_by=actor,
-                source_deployment_identity=public_deployment_identity(),
-                source_makerspace_id=custody.makerspace.pk,
-                source_makerspace_slug=custody.makerspace.slug,
-                superadmin_access_at_decision=access_decision,
-                frozen_tenant_recipients=list(recipients),
-                source_encryption_mode=bool(settings.PII_ENCRYPTION_ENABLED),
-                catalog_digest=CATALOG_SCHEMA_SHA256,
-            )
-            origin = {}
-            if settings.SPACEWORKS_DEPLOYMENT_MODE == "managed":
-                from apps.backup.managed.legacy_staging import request_origin
-                origin = request_origin(capture)
-            audit.record(
-                actor,
-                "tenant_migration.tenant_dump_requested",
-                makerspace=custody.makerspace,
-                target=capture,
-                meta={
-                    "superadmin_access_at_decision": (
-                        capture.superadmin_access_at_decision
-                    ),
-                    # Managed staging origin: literal keys (None on a host deployment)
-                    # so the audit presentation guard can project them.
-                    "staging_backend": origin.get("staging_backend"),
-                    "staging_capture_id": origin.get("staging_capture_id"),
-                    "staging_deployment_id": origin.get("staging_deployment_id"),
-                    "staging_database_uuid": origin.get("staging_database_uuid"),
-                    "recipient_fingerprints": [
-                        item["fingerprint"] for item in recipients
-                    ],
-                    "custody_state": state.state,
-                    "custody_alarm_revision": state.alarm_revision,
-                },
-            )
-    if rejected:
-        raise TenantDumpCustodyError(rejected)
-    return capture
-
-
-def canonical_tenant_recipient_snapshot(makerspace_id):
-    """Canonical cryptographic tuple set; caller holds the Part A recipient locks."""
-    result = []
-    seen = set()
-    for row in effective_tenant_recipients(makerspace_id):
-        try:
-            canonical = canonical_recipient(row["public_recipient"])
-        except ValidationError as exc:
-            raise TenantDumpCustodyError(
-                "An archive recipient is not a valid canonical native age key."
-            ) from exc
-        fingerprint = fingerprint_for(canonical)
-        if fingerprint != row["fingerprint"]:
-            raise TenantDumpCustodyError(
-                "An archive recipient fingerprint does not match its canonical key."
-            )
-        identity = (canonical, fingerprint)
-        if identity in seen:
-            raise TenantDumpCustodyError(
-                "The canonical tenant-recipient set contains a duplicate key."
-            )
-        seen.add(identity)
-        result.append(
-            {
-                "public_recipient": canonical,
-                "fingerprint": fingerprint,
-            }
+    with transaction.atomic():
+        makerspace = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
+        capture = TenantDumpCapture.objects.create(
+            makerspace=makerspace,
+            requested_by=actor,
+            source_deployment_identity=public_deployment_identity(),
+            source_makerspace_id=makerspace.pk,
+            source_makerspace_slug=makerspace.slug,
+            frozen_tenant_recipients=list(tenant_recipients),
+            source_encryption_mode=bool(settings.PII_ENCRYPTION_ENABLED),
+            catalog_digest=CATALOG_SCHEMA_SHA256,
         )
-    return tuple(sorted(result, key=lambda item: item["fingerprint"]))
+        origin = {}
+        if settings.SPACEWORKS_DEPLOYMENT_MODE == "managed":
+            from apps.backup.managed.legacy_staging import request_origin
+            origin = request_origin(capture)
+        audit.record(
+            actor,
+            "tenant_migration.tenant_dump_requested",
+            makerspace=makerspace,
+            target=capture,
+            meta={
+                # Managed staging origin: literal keys (None on a host deployment)
+                # so the audit presentation guard can project them.
+                "staging_backend": origin.get("staging_backend"),
+                "staging_capture_id": origin.get("staging_capture_id"),
+                "staging_deployment_id": origin.get("staging_deployment_id"),
+                "staging_database_uuid": origin.get("staging_database_uuid"),
+                "recipient_fingerprints": [
+                    item["fingerprint"] for item in tenant_recipients
+                ],
+            },
+        )
+    return capture
 
 
 def capture_tenant_dump_source(capture_id, *, sleep=None, storage_modes=None):

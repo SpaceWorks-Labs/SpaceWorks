@@ -39,7 +39,9 @@ class TenantDumpCapture(models.Model):
     source_deployment_identity = models.JSONField(default=dict)
     source_makerspace_id = models.BigIntegerField()
     source_makerspace_slug = models.SlugField(max_length=100)
-    superadmin_access_at_decision = models.BooleanField()
+    # One-shot tenant recipients supplied with this export only (#111 Q7): canonical
+    # {public_recipient, fingerprint} rows sealing the DEK envelope and, with the
+    # platform key, the outer envelope. They confer no standing custody.
     frozen_tenant_recipients = models.JSONField(default=list)
     gate_owner_id = models.UUIDField(null=True, blank=True)
     gate_fencing_token = models.PositiveBigIntegerField(default=0)

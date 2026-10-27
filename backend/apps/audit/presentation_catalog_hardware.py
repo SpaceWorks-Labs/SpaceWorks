@@ -51,6 +51,7 @@ ENTRIES = (
       )),
     P("inventory.asset_updated", "Inventory asset updated", ("fields", "product_id")),
     P("inventory.bulk_imported", "Inventory bulk imported", ("created", "updated")),
+    P("inventory.bulk_import_sheet_read", "Inventory import spreadsheet read", ("columns", "rows")),
     P("inventory.created", "Inventory created"),
     P("inventory.image_attached", "Inventory image attached"),
     P("inventory.image_cleared", "Inventory image cleared"),

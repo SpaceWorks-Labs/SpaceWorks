@@ -1,3 +1,5 @@
+import { staffRequest } from "../../../lib/api";
+
 export type RawRow = Record<string, unknown>;
 export type Field =
   | "name"
@@ -70,21 +72,19 @@ const aliases: Record<Field, string[]> = {
   box_code: ["box", "box code", "container", "container code"],
 };
 
-export async function parseFileSample(file: File) {
-  if (file.name.toLowerCase().endsWith(".xlsx")) return parseFile(file);
+export async function parseFileSample(file: File, makerspaceId: number) {
+  if (file.name.toLowerCase().endsWith(".xlsx")) return readSheetOnServer(file, makerspaceId);
   const data = await file.slice(0, sampleBytes).arrayBuffer();
   return parseDelimited(new TextDecoder().decode(data), file.name.toLowerCase().endsWith(".tsv") ? "\t" : undefined);
 }
 
-export async function parseFile(file: File) {
-  const data = await file.arrayBuffer();
-  if (file.name.toLowerCase().endsWith(".xlsx")) {
-    const XLSX = await import("xlsx");
-    const workbook = XLSX.read(data, { type: "array" });
-    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    return XLSX.utils.sheet_to_json<RawRow>(sheet, { defval: "" });
-  }
-  return parseDelimited(new TextDecoder().decode(data), file.name.toLowerCase().endsWith(".tsv") ? "\t" : undefined);
+// Workbooks are read by the server (openpyxl) rather than a browser spreadsheet library,
+// which kept unpatched advisories out of the staff bundle. Same row shape as before.
+async function readSheetOnServer(file: File, makerspaceId: number) {
+  const body = new FormData();
+  body.append("file", file);
+  const result = await staffRequest<{ rows: RawRow[] }>(`/admin/makerspace/${makerspaceId}/inventory/import/sheet`, { method: "POST", body });
+  return result.rows;
 }
 
 export function parseDelimited(text: string, forcedDelimiter?: string) {

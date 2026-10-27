@@ -86,6 +86,10 @@ OBJECT_MUTATION_PARTICIPANTS = {
     "apps.hardware_requests.replay_prepare._upload_again": (
         "Called inside replay prepare's Station-resolved source-gate boundary."
     ),
+    "apps.hardware_requests.self_checkout_contact.issue_upload": (
+        "Called only by the public self-checkout evidence views behind the tenant-resolved "
+        "source-gate assertion (signed-in and account-less paths, #95)."
+    ),
     "apps.evidence.services_upload.issue_upload": (
         "Called only by the staff upload-URL and kiosk evidence-prepare views, both behind "
         "the authenticated late source-gate assertion; the kiosk view also asserts it."

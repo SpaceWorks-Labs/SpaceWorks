@@ -69,28 +69,12 @@ export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMak
   const archiveRequests = useQuery({ queryKey: ["staff", "archive-requests", makerspace.id] as const, enabled: canManageMakerspace,
     queryFn: () => staffRequest<MakerspaceArchiveRequest[]>(`/admin/makerspace/${makerspace.id}/archive-requests`) });
   const archivePending = Boolean(archiveRequests.data?.some(request => request.status === "pending"));
-  const superadminAccessEnabled =
-    settings.data?.superadmin_access_enabled ?? makerspace.superadmin_access_enabled ?? true;
   const staffNotificationsEnabled =
     settings.data?.staff_notifications_enabled ?? makerspace.staff_notifications_enabled ?? true;
   const publicPrintStatusLookupPolicy =
     settings.data?.public_print_status_lookup_policy ?? makerspace.public_print_status_lookup_policy ?? "email_unverified";
   const enabledModules = settings.data?.enabled_modules ?? makerspace.enabled_modules ?? [];
-  const reEnableBlocked = isSuperadmin && !superadminAccessEnabled;
   const hostingAvailable = useHostingAvailability(canManageMakerspace);
-
-  const updateAccess = useMutation({
-    mutationFn: (next: boolean) =>
-      staffRequest<Makerspace>(`/admin/makerspaces/${makerspace.id}`, {
-        method: "PATCH",
-        body: JSON.stringify({ superadmin_access_enabled: next }),
-      }),
-    onSuccess: async (_data, next) => { await (() => {
-      queryClient.invalidateQueries({ queryKey: ["makerspace-settings", makerspace.id] });
-      queryClient.invalidateQueries({ queryKey: ["makerspaces"] });
-      queryClient.invalidateQueries({ queryKey: ["staff", "makerspaces"] });
-    })(); toast(`Superadmin access turned ${next ? "on" : "off"}.`); },
-  });
 
   const updateStaffNotifications = useMutation({
     mutationFn: (next: boolean) =>
@@ -135,20 +119,8 @@ export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMak
 
 
 
-  const nextValue = !superadminAccessEnabled;
-  const disabled = settings.isLoading || updateAccess.isPending || reEnableBlocked;
   const notificationsDisabled = settings.isLoading || updateStaffNotifications.isPending;
   const shared = { makerspace, settings: settings.data, loading: settings.isLoading };
-  const privacy = <SettingsRow label="Superadmin access" helper="Hide this makerspace from platform reports, dashboards, audit and admin lists. Only the makerspace admin can restore access. It does not revoke the superadmin's platform or database access.">
-    <div className="@container grid gap-3">
-      <StatusPill label={superadminAccessEnabled ? "On" : "Off"} tone={superadminAccessEnabled ? "success" : "warn"} />
-      {reEnableBlocked ? <p className="text-sm text-muted">Re-enable is controlled by the makerspace admin.</p> : null}
-      {updateAccess.error ? <p role="alert" className="text-sm text-danger">{updateAccess.error.message}</p> : null}
-      <button className="desk-button w-fit" type="button" disabled={disabled} onClick={() => updateAccess.mutate(nextValue)}>
-        {updateAccess.isPending ? "Saving…" : superadminAccessEnabled ? "Turn off access" : "Turn on access"}
-      </button>
-    </div>
-  </SettingsRow>;
   const staffEmail = <SettingsRow label="Staff email notifications" helper="Email this makerspace’s managers when hardware and print request statuses change.">
     <StatusPill label={staffNotificationsEnabled ? "On" : "Off"} tone={staffNotificationsEnabled ? "success" : "neutral"} />
     <label className="flex min-h-11 items-center gap-3 text-sm font-semibold">
@@ -223,9 +195,8 @@ export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMak
       {isSuperadmin ? <ApiClientsTelegramSettings makerspace={makerspace} /> : null}
       <IntegrationHealthPanel makerspace={makerspace} isSuperadmin={isSuperadmin} />
     </> },
-    { id: "privacy", title: "Privacy & evidence", rows: <>{privacy}
-      {canManageMakerspace ? <EvidenceRetentionPanel makerspaceId={makerspace.id} /> : null}
-    </> },
+    ...(canManageMakerspace ? [{ id: "privacy", title: "Privacy & evidence",
+      rows: <EvidenceRetentionPanel makerspaceId={makerspace.id} /> }] : []),
   ];
   // The hub goes first: search across every section here and the settings pages beside it.
   sections.unshift({ id: "start", title: "Start here", rows: <SettingsHub makerspace={settings.data ?? makerspace}

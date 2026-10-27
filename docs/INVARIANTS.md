@@ -2512,7 +2512,8 @@ Owner decisions #110c/#110e and #111 Q9-Q13 (P1b, superadmin always on).
   refuse with `pii_access_required`). NEVER mask at the decrypt seam
   (`encryption/mappers.ScopedPiiModelMixin`) or in a workflow: mail, receipts, notifications and every
   service read the real attributes. Non-superadmins are never masked; RBAC alone decides what they see.
-  Platform accounts are not tenant data and are not masked. A masked `/control/` change page leaves the PII
+  Platform accounts and platform mail (email logs with no makerspace, owner decision #114) are not
+  tenant data and are not masked. A masked `/control/` change page leaves the PII
   fields out of the form, so saving it cannot overwrite them.
 - **Portability.** Both models are `OmittedModel`s in `data_export/classification_security.py` and DROP in
   tenant dumps (`tenant_migration/catalog_security.py`); their user edges are excluded. The audit rows travel.

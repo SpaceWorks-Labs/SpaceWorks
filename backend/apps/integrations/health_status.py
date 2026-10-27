@@ -103,6 +103,8 @@ def _smtp_section(makerspace):
     from .mail_providers.selection import stored_config
     try:
         selected = stored_config(makerspace, tenant=True)
+        if selected is not None and selected.provider == "smtp" and makerspace.smtp_password:
+            makerspace.get_smtp_password()  # an unreadable tenant secret is a warning, not "ok"
         return {"status": "ok", "configured": selected is not None or platform_email_configured(),
                 "provider": selected.provider if selected else "platform"}
     except Exception:

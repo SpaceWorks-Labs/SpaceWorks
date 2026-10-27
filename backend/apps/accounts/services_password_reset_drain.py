@@ -158,7 +158,13 @@ def prepare_delivery(claim, *, now=None):
         )
         if envelope is None:
             return None
-        if user is None or envelope.email_normalized != claim.email_normalized or envelope.user_id != user.pk:
+        if user is None:
+            # The account vanished between lookup and lock: it can never be recovered, so
+            # the claimed envelope ends DISCARDED rather than staying claimed.
+            return _finish_claimed_terminal(
+                envelope, claim, PasswordResetEnvelopeStatus.DISCARDED, issued_at
+            )
+        if envelope.email_normalized != claim.email_normalized or envelope.user_id != user.pk:
             return None
         slug = envelope.makerspace.slug if envelope.makerspace_id else None
         archived = bool(envelope.context == "member" and user.account_kind == "member"

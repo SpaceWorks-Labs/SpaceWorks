@@ -47,6 +47,10 @@ class AuthUserPayload(serializers.Serializer):
         "id": serializers.IntegerField(), "slug": serializers.CharField(), "name": serializers.CharField(),
     }, allow_null=True)
     makerspaces = serializers.ListField(child=AuthMembershipSerializer)
+    superadmin_actions = serializers.ListField(
+        child=serializers.CharField(),
+        help_text="Every action the platform superadmin holds in each servable makerspace (owner decision #115); empty for everyone else.",
+    )
 
     def get_fields(self):
         from apps.makerspaces.resource_grant_sources import registered_sources

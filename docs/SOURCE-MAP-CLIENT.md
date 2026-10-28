@@ -5,7 +5,11 @@ The backend and shared device source map is in [SOURCE-MAP.md](SOURCE-MAP.md).
 Platform monitoring lives in `features/staff/PlatformDashboardPanel.tsx`, with tenant
 usage in `TenantUsagePanel.tsx` and hand-written calls/types in `platformMonitoringApi.ts`.
 `StaffApp.tsx` admits the global dashboard without a selected tenant; `staffAccess.ts`
-and `staffTabs.ts` own its superadmin navigation and the manager usage tab.
+and `staffTabs.ts` own its superadmin navigation and the manager usage tab. Once the superadmin
+chooses a space, `StaffApp` passes `/auth/me` `superadmin_actions` and `getStaffAccess` shows exactly
+that space's Space-Manager tabs beside the platform ones (#115); `useSuperadminSpaceHint.ts` opens a
+space from `?context=platform&space=<slug>` (the `/control/` links). `PlatformSpaceComparison.tsx`
+pivots platform-usage into a per-space table with totals on the platform dashboard.
 
 - `frontend/src/features/inventory/` — public catalog/detail/self-checkout + `ProductCard`/
   `AvailabilityBadge`. `frontend/src/features/staff/` — staff console panels; grouped nav via

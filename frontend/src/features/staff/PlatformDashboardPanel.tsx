@@ -24,7 +24,7 @@ export function PlatformDashboardPanel() {
     ? { size: "banner", tone: "danger", lead: "Couldn't load the platform dashboard.", body: dashboard.error.message, action: { label: "Retry", onClick: () => { void dashboard.refetch(); } } }
     : attention ? { size: "banner", tone: "danger", lead: attention.message, body: "Review this check before your next deployment change.", action: { label: "Inspect", href: problemHref(attention) } } : undefined;
   return <DashboardLayout header={{ title: "Platform", eyebrow: "Space Works",
-    subtitle: "Hidden tenants are excluded. Usage totals cover live, available tenants.",
+    subtitle: "Usage totals cover every live, available tenant.",
     meta: data ? <>Checked <RelativeTime date={data.checked_at} /></> : undefined,
     secondary: { label: "Run checks now", onClick: refresh, disabled: dashboard.isFetching || problems.isFetching, disabledReason: "Checks are running." } }}
     callout={callout}
@@ -35,7 +35,7 @@ export function PlatformDashboardPanel() {
       ...Object.entries(data.usage_totals).map(([key, value]) => ({ label: key.replace(/_/g, " "), value: usageAmount(value, key === "storage" ? "bytes" : "count") })),
     ] } : undefined}
     main={[
-      { title: "Analytics", content: <PlatformAnalyticsPanels />, empty: { message: "No platform activity yet." } },
+      { title: "Analytics", content: <PlatformAnalyticsPanels spaces={data?.tenants} />, empty: { message: "No platform activity yet." } },
       { title: "Problems", empty: { message: "All checks passed. Run checks again after a deployment change." },
         content: problems.isLoading ? <p role="status">Running checks…</p> : problems.isError ? <EmptyState message="Couldn't load problems. Try again." action={{ label: "Retry", onClick: () => { void problems.refetch(); } }} />
           : <div className="grid gap-3"><p className="text-sm text-muted">{problems.data ? <>Checked <RelativeTime date={problems.data.checked_at} />. </> : null}Checks also run every 15 minutes through the platform scheduler.</p>

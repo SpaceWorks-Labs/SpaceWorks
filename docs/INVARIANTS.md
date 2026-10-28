@@ -71,7 +71,10 @@ tokens carry `kind` and, for staff, `makerspace`; kind-less pre-cutover tokens a
 `accounts/surface_policy.py` rechecks the live account on access, refresh, MFA completion,
 reauthentication and device issuance. Staff stay in their own tenant and cannot enter member
 surfaces. Platform accounts reach platform/control operations and authorized staff lifecycle
-actions; every kind may use its own classified account utilities.
+actions, and (owner decision #115) every `membership-only` or `delegable` staff route outside
+`/api/v1/auth/` in every servable space -- see "Superadmin console parity" below. Member-only,
+signed-protocol and unknown routes stay closed to them; every kind may use its own classified
+account utilities.
 
 `accounts/delegated_routes.py` and `delegated_route_catalog.py` classify staff routes as
 `membership-only`, `delegable` or `shared-account-utility`. Unknown routes deny; Django URL
@@ -387,7 +390,41 @@ API-client reads and organization grants all cover every servable space, and sch
 (`rbac.scope_for_scheduled_work`) runs for every servable space. Platform accounts have no memberships; a
 local manager uses a separate tenant staff account. Only the superadmin manages Space Managers (D7).
 `accounts/rbac_superadmin.py` now holds only the identity helpers; keep its path, which
-`tenant_migration.authority_guards.AUTHORIZATION_SOURCES` pins. `Makerspace.superadmin_access_enabled`
+`tenant_migration.authority_guards.AUTHORIZATION_SOURCES` pins.
+
+**Superadmin console parity (owner decision #115).** The superadmin sees and uses everything a
+space's Space Manager does, in every servable space:
+- *Surface.* `accounts/platform_tenant_surface.admits` lets the platform superadmin (platform kind,
+  superuser, superadmin role, never native) into every `membership-only`/`delegable` route outside
+  `/api/v1/auth/`. It opens the surface only: each route's RBAC (global for the superadmin), module
+  gates, servability, recent re-authentication and audit still apply, and every change is audited in
+  that space with the superadmin as actor. Do not add per-route platform mirrors; the
+  `platform-tenant-*` report routes predate this and remain for the platform dashboard.
+- *Console.* `/auth/me` carries `superadmin_actions` (the grantable set; `[]` for everyone else). The
+  console passes them only once a space is chosen, so `getStaffAccess` shows exactly that space's
+  Space-Manager tabs beside the platform tabs, and only the platform tabs before a choice. Tabs that
+  belong to a person -- My channels, Organized events, Organization analytics, Assigned resources --
+  stay off, because their endpoints are per account, not per space.
+- *Email (#115a).* Provider and sender (`api-settings`, re-auth), templates, the delivery test (mailed
+  to the superadmin's own address) and the space's delivery log are all Space-Manager routes, so the
+  superadmin reaches them through the surface rule; each write is audited in that space.
+- *PII.* `accounts/platform_tenant_pii.PlatformTenantPiiMiddleware` masks person data in every
+  response to an admitted superadmin request unless `pii_seam.pii_visible` allows it (#111 Q12, #114):
+  DIRECT keys (email, phone, names, requester/contact fields, `to_email`, answer snapshots) always,
+  GENERIC keys (`name`, `note`, `subject`, bodies) only inside a dict that carries a DIRECT key. The
+  response gains `X-PII-Masked: 1`. A JSON write containing the mask is refused 400
+  `pii_access_required`, so a masked value can never be saved back. Masking is presentation only.
+- *Reports (#115b).* Inside a space the superadmin reads every report, analytics page and export the
+  Space Manager does; an `identity_bearing` report or export additionally needs a PII window on that
+  space (`report_subjects.require_report_action`, 403 `pii_access_required`); the deployment aggregates (`analytics-aggregate`, `report-*-aggregate`,
+  `ledger-aggregate`) and the platform dashboard's "Compare spaces" table total and compare across
+  spaces; each space's `/control/` page links into its reports (`admin_console_links.py`,
+  `?context=platform&space=<slug>`).
+- *Pages.* `public_page_authority.reject_platform(actor, tenant=True)` admits the superadmin to a
+  makerspace's own page and its events' websites; organization pages stay owner-only.
+- *Guard.* The local parity test walks every tenant staff route as a Space Manager and as the
+  superadmin and fails on any route the Space Manager opens and the superadmin cannot. Gaps are fixed,
+  never allow-listed. `Makerspace.superadmin_access_enabled`
 still exists until the P1b wave-2 migration drops it, but no read path consults it. Server-side operator
 recovery remains outside application authority.
 
@@ -6169,7 +6206,8 @@ deployment-global. A tenant link cannot export, purge or assign ownership of tha
 
 The owner edits: active local staff with the fixed Space Manager identity for a makerspace; an
 active organization profile governor for an organization; the existing exact event editorial/schedule
-permissions for an event or series. Platform accounts are excluded from page editing. Delegated
+permissions for an event or series. Platform accounts are excluded from page editing, except the
+platform superadmin on a makerspace's own page and its events' websites (owner decision #115). Delegated
 account admission is not an authority grant. Pre-auth claim sessions never edit pages. All tenant
 writers repeat the source fence and owner authority under locks; global organization writers select
 no tenant and do not inherit a linked tenant's source freeze. Organization editors use platform

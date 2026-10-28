@@ -144,7 +144,10 @@ def enforce_request(user, token, request):
         request.selected_makerspace_id = user.staff_makerspace_id
         return
     if kind == "platform":
-        if classification != SHARED_ACCOUNT_UTILITY and not _platform_route(name):
+        # Owner decision #115: the superadmin also enters every Space-Manager route.
+        from apps.accounts.platform_tenant_surface import admits
+        if (classification != SHARED_ACCOUNT_UTILITY and not _platform_route(name)
+                and not admits(user, request, classification, targets, invalid, native=native)):
             raise PermissionDenied("Platform account context is required.")
         return
     if classification == SHARED_ACCOUNT_UTILITY:

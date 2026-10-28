@@ -2636,6 +2636,7 @@ export type AuthUserPayload = {
   "account_kind": AccountKindEnum;
   "staff_makerspace": AuthStaffMakerspace | null;
   "makerspaces": Array<AuthMembership>;
+  "superadmin_actions": Array<string>;
   "event_grants"?: Array<GrantedEventEntry>;
   "booking_grants"?: Array<GrantedBookingEntry>;
 };

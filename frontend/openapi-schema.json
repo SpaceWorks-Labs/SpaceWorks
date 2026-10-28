@@ -161340,6 +161340,13 @@
                             "$ref": "#/components/schemas/AuthMembership"
                         }
                     },
+                    "superadmin_actions": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Every action the platform superadmin holds in each servable makerspace (owner decision #115); empty for everyone else."
+                    },
                     "event_grants": {
                         "type": "array",
                         "items": {
@@ -161366,6 +161373,7 @@
                     "role",
                     "session_authority",
                     "staff_makerspace",
+                    "superadmin_actions",
                     "username"
                 ]
             },

@@ -90,7 +90,9 @@ export function StaffTabContent({
       isEmpty empty={{ message: "Assign a makerspace to this account." }} body={{ kind: "rows", rows: null }} />;
   }
   const makerspaceKey = activeMakerspace.id;
-  const actorActions = currentUser.makerspaces.find((space) => space.id === makerspaceKey)?.actions ?? [];
+  // A platform superadmin has no membership row; inside a chosen space they hold every action (#115).
+  const actorActions = isSuperadmin ? currentUser.superadmin_actions ?? []
+    : currentUser.makerspaces.find((space) => space.id === makerspaceKey)?.actions ?? [];
   const allowedTabs = filterTabsByEnabledModules(getStaffAccess(actorActions, isSuperadmin, singleTenantLocked, isMachineOnly).allowedTabs, activeMakerspace);
   const has = (action: string) => isSuperadmin || actorActions.includes(action);
   return (

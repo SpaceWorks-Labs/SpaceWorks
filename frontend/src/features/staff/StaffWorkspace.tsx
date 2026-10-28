@@ -2,10 +2,11 @@ import { consoleSessionHref } from "../../lib/api/sessionContext";
 import { Link, Navigate, useLocation } from "react-router-dom";
 
 import { StaffShell } from "./StaffShell";
-import { PageHeader } from "../../components/ui";
+import { Callout, PageHeader } from "../../components/ui";
 import { StaffListContext } from "./StaffListContext";
 import { SetupChecklist } from "./SetupChecklist";
 import { StaffTabContent } from "./StaffTabContent";
+import { PiiAccessBanner } from "./PiiAccessBanner";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { getStaffAccess, STAFF_TAB_KEYS, TAB_LABELS } from "./staffAccess";
 import {
@@ -124,6 +125,12 @@ export function StaffWorkspace({
         guestOnly={guestOnly} singleTenantLocked={singleTenantLocked} handoutOnly={handoutOnly} grantOnly={grantOnly} user={user}
         roleName={activeRoleName} isSuperadmin={isSuperadmin} makerspaces={makerspaces} setSelected={setSelected}
         setTab={setTab} signOut={signOut} actions={actions}>
+        {/* #115: say plainly whose space this is; Lane C's PII banner is the action that opens or
+            closes the window (the Users tab already renders it, so it is not shown twice there). */}
+        {isSuperadmin && activeMakerspace && actions.length > 0 ? <div className="mb-4 grid gap-3"><Callout size="inline" tone="warn"
+          lead={`Working in ${activeMakerspace.name} as the platform superadmin.`}
+          body="Every change is audited in this space." />
+          {activeTab !== "users" ? <PiiAccessBanner key={`pii:${activeMakerspace.id}`} makerspaceId={activeMakerspace.id} compact /> : null}</div> : null}
         {routeTabDenied ? <PageHeader title="Page unavailable" /> : null}
           {routeTabDenied ? (
             <EmptyState

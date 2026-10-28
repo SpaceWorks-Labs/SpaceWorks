@@ -229,6 +229,8 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "axes.middleware.AxesMiddleware",
+    # Masks tenant PII for a superadmin inside a space's staff routes (owner decision #115).
+    "apps.accounts.platform_tenant_pii.PlatformTenantPiiMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"

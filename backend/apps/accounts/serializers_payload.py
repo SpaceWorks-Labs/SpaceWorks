@@ -149,6 +149,8 @@ def user_payload(user, request=None, *, session_authority=None):
                               "name": user.staff_makerspace.name}
                              if user.staff_makerspace_id else None),
         "makerspaces": membership_entries + org_only_entries,
+        # A platform account has no memberships; the console reads its per-space actions here.
+        "superadmin_actions": sorted(rbac.ROLE_GRANTABLE_ACTIONS) if is_superadmin else [],
     }
 
 

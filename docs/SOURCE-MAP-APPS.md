@@ -22,6 +22,12 @@ Continuation of [SOURCE-MAP.md](SOURCE-MAP.md).
   `require_pii_access`), `admin_pii_masking.py` and `admin_pii_access.py` (`/control/` masking, grant list,
   per-person reveal), `views_pii_access.py`; `platform_authority.is_platform_superadmin` is the predicate.
   `security_route_catalog.py` classifies the security/PII routes (membership-only, platform-reachable).
+  Superadmin console parity (#115): `platform_tenant_surface.py` admits the platform superadmin to
+  every `membership-only`/`delegable` staff route (called from `surface_policy.enforce_request`);
+  `platform_tenant_pii.py` is the response net (`PlatformTenantPiiMiddleware`, settings MIDDLEWARE)
+  that masks person data for that superadmin outside a PII window and refuses a JSON write carrying
+  the mask; `pii_seam.py` re-exports `pii_presentation`'s window so D's code asks one place.
+  `makerspaces/admin_console_links.py` puts the space's staff-console links on its `/control/` page.
 - `backend/apps/makerspaces/` — `Makerspace` model (tenant root; unique `slug`; `frontend_domain`, module
   flags, `resource_limit_overrides`, `archived_at`, `superadmin_access_enabled`), bootstrap views, dynamic
   CORS, module guards, `module_registry.py` (canonical module registry — all module lists derive from

@@ -50,6 +50,8 @@ export type StaffAuthUser = {
   role: string;
   is_superuser: boolean;
   must_change_password: boolean;
+  /** Every action the platform superadmin holds in each servable space (#115); [] otherwise. */
+  superadmin_actions?: string[];
   booking_grants?: {
     space_id: number; makerspace_id: number; makerspace_slug: string;
     name: string; source: "booking_grant"; permissions: string[];

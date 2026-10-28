@@ -16,8 +16,13 @@ class ProgrammeBoundary(ProgrammeReceipts):
         from apps.events.hackathons.admission_transactions import require_programme, lock_domain_parents
         from apps.events.submissions.pii import prepare_documents
         from apps.makerspaces import limits
+        from apps.events.models import Event
         accounts = (actor.pk,) if actor is not None else ()
-        tenants, accounts = event_scopes(event_id=event_id, account_ids=accounts)
+        try:
+            tenants, accounts = event_scopes(event_id=event_id, account_ids=accounts)
+        except Event.DoesNotExist:
+            # An unknown event is a 404 for every submission route, never a server error.
+            raise SubmissionError("not_found", 404) from None
         with prepare_documents(event_id), ExitStack() as stack:
             for pk in tenants:
                 stack.enter_context(boundary_tenant_write(pk))

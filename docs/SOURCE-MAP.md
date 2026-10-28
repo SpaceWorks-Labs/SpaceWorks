@@ -294,6 +294,19 @@ event and series serializers. `event_authority_page.py` resolves list-page autho
 batches; list views pass its results through serializer context, while details keep
 per-object checks. Discovery includes series entries with `event_id=null`,
 so a granted series remains reachable before it has occurrences.
+Settings authority (L17, #101): `makerspaces/settings_authority.py` is the one write gate
+(`assert_setting_write`, `decide`, `record_change`); `settings_authority_registry.py` holds the
+module → manager-action map, finance prefixes, the rental-timing fixed exception and the
+rows-only extension tuples; `settings_authority_writes.py` writes grants and locks,
+`settings_authority_effective.py` answers "what may I edit", `settings_authority_views.py` is the
+staff API and `models_settings_authority.py` the append-only grant/lock rows.
+`domain_settings.py` and `loan_policy_settings.py` are adapters on it. Folded capabilities (#97):
+`capability_definitions_r2_l17.py` defines the per-parent keys, `folded_capabilities.py` the 404
+gates and the To-Buy kind / warranty host mapping, `capability_purge.py` +
+`capability_purge_plans.py` + `admin_capability_purge.py` the superadmin purge, and
+`module_switch_authority.py` who may install a module (#128 C-10). Report sources that are
+capabilities resolve in `operations/report_sources.py`. Frontend: `features/staff/
+SettingsAuthorityCard.tsx`, `SettingLock.tsx` and `settingsAuthorityApi.ts`.
 Fixed membership roles live in `makerspaces/role_catalog.py`. `accounts/rbac_roles.py`
 shares the valid-role predicate between object resolution and SQL `Exists` filters;
 `makerspaces/role_membership_writes.py` is the complete-set writer used by lifecycle

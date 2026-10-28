@@ -2550,6 +2550,88 @@ Owner decisions #110c/#110e and #111 Q9-Q13 (P1b, superadmin always on).
 - **Portability.** Both models are `OmittedModel`s in `data_export/classification_security.py` and DROP in
   tenant dumps (`tenant_migration/catalog_security.py`); their user edges are excluded. The audit rows travel.
 
+## Settings authority (release 2, lane L17; #101, #128 C-11)
+
+- **One write gate.** Every module setting is written through
+  `makerspaces.settings_authority.assert_setting_write(actor, makerspace, module, key)`, never a
+  bare `manage_makerspace` check. It raises a typed 403: `setting_not_delegated` or
+  `setting_locked`. `domain_settings.py` and `loan_policy_settings.update_loan_policy` are
+  adapters on it: every key a request changes is authorized **before anything is written**, and
+  the whole request is refused if any key is.
+- **Order of the rules.** (1) The Space Manager (`manage_makerspace`, the superadmin included per
+  #115) edits every setting; a lock never binds them. (2) Security settings stay outside the layer
+  (only the space's Space Manager or the superadmin, through `security_settings`, #111 Q10/Q11);
+  finance settings (`payments.*`, `charges.*`, `billing.*`, `finance.*`, `tax*`, and the modules
+  `payments`/`charges`/`billing`/`finance`/`tax`) are Space-Manager-only and never delegable.
+  (3) A delegated editor must hold the module's manager action
+  (`settings_authority_registry.MODULE_MANAGER_ACTIONS`: events → `manage_events`, bookings →
+  `manage_bookings`, machines → `manage_machines`, inventory → `edit_inventory`; the Event Manager
+  gets the events grant like anyone, C-11c). (4) A live Space Manager lock on the key refuses with
+  `setting_locked` — the fixed exception included. (5) **Fixed exception (C-11d):** the Inventory
+  Manager always changes rental timing (`default_loan_days`, `loan_renewal_mode`,
+  `loan_max_renewals`, `loan_renewal_days`, `loans.renewals`, `rental_timing`) without a grant.
+  (6) Otherwise a live **per-person** grant (C-11a) for the module is required; for `machines` the
+  holder's machine types must also cover every machine in the space (machine settings are
+  tenant-wide).
+  Precedence overall: platform security lock > Space Manager > module manager.
+- **Grants and locks are append-only.** `ModuleSettingsGrant` / `ModuleSettingLock` rows are never
+  edited or deleted (model guard); they end once (`revoked_at`/`released_at` with the actor) and
+  the next period is a new row. One live row per (space, module, person) and per (space, key),
+  enforced by partial unique constraints. Only the Space Manager writes them
+  (`settings_authority_writes`), and a grant goes only to a person holding that module's manager
+  action who is not already a Space Manager.
+- **Upgrade, not policy.** `makerspaces/0111` granted every person who could edit a domain's
+  settings before release 2 (an active membership or active organization grant holding the domain
+  action, without `manage_makerspace`), audited `settings.grant_created` with `via=migration`.
+  **New spaces start with no grants.**
+- **Audit.** `settings.changed` per key (`module`, `key`, `from`, `to`, `via` =
+  `space_manager|module_grant|fixed_exception`, `grant_id`), `settings.grant_created|revoked`,
+  `settings.lock_created|released`. The grant/lock id meta paths are REMAP edges
+  (`tenant_migration/audit_references_meta_r2_l17.py`).
+- **Extending it.** A lane adding a delegable setting appends `(module, key)` to
+  `EXTRA_SETTING_KEYS`; a role that edits some keys without a grant (the Shop Manager, L22) appends a
+  `FixedException`. Both are rows-only hot registries.
+- **API.** `GET/PUT admin/makerspace/<id>/settings-authority/grants` (Space Manager; GET also lists
+  the eligible people per module, PII-masked for a superadmin without a window),
+  `GET/PUT …/locks` (Space Manager), `GET …/effective` (what the caller may edit, per module and
+  key; only modules the caller manages).
+
+## Folded modules: maintenance, To-Buy, warranty and repairs per parent (#97, #128 C-9/C-8/C-10)
+
+- **The `maintenance` and `procurement` module keys are retired.** Their surfaces, and warranty,
+  are capabilities under each parent (`capability_definitions_r2_l17.py`): `machines.maintenance`,
+  `machines.tobuy`, `machines.warranty`, `inventory.tobuy`, `inventory.warranty` (parentless
+  inventory family), plus reserved `machines.repairs|issue_reporting`,
+  `inventory.maintenance|repairs|issue_reporting`, `bookings.room_maintenance|room_repairs|
+  issue_reporting` (frontend_exposed=False, no surface until L12/L16). Rooms have no To-Buy or
+  warranty switch in release 2 (#137 Q-C3). Do not reintroduce the old keys; new features join
+  their parent as capabilities (#97).
+- **A switch-off is a 404, not a 400.** Folded routes gate through
+  `makerspaces.folded_capabilities.require_capability*` (NotFound, `code=capability_disabled`).
+  Off means no surface, no reminder, no alert, no low-stock draft; rows are kept.
+- **One list, two switches.** A To-Buy row's `kind` is its domain (`printing` → `machines.tobuy`,
+  `hardware` → `inventory.tobuy`); `procurement.access.scope_items` hides a switched-off stream and
+  creation refuses it. A warranty follows its host (machine → `machines.warranty`, asset →
+  `inventory.warranty`). A machines switch never hides inventory rows, and the reverse.
+- **App availability is part of the switch.** `FeatureDefinition.app_label` names the separable app
+  a capability gates; `configuration_feature_enabled` reads a tombstoned app as off.
+- **Reports read the same switches.** `ReportDefinition.required_modules` entries may be module
+  keys, capability keys or an any-of pair (`inventory.tobuy|machines.tobuy`); every enforcement
+  site goes through `operations/report_sources.py`. `maintenance` and `procurement` remain report
+  **coverage areas**, never module keys.
+- **#87 completion.** Ticking a capability in the `/control/` matrix ticks its parent and every
+  module and feature it `requires_*` (transitively); unticking a feature unticks the features built
+  on it, reported, never silently re-ticked (`admin_capability_completion.complete_selection`).
+- **Purge (C-8).** Switching off keeps the data; the separate superadmin `/control/` action
+  (`capability_purge`, `capability_purge_plans`) needs the stored switch off, a recent
+  re-authentication, the key typed back, shows a preview, deletes one parent's rows only and is
+  audited `makerspace.capability_purge_started|capability_purged` in the space's own log.
+- **Module switches (C-10).** The Space Manager installs and uninstalls modules from the console
+  (`admin_api/views_modules.py`, data kept); on the managed platform a module whose dependency
+  closure carries a fair-use limit (`module_switch_authority.LIMIT_GATED_MODULES` with a non-null
+  `resource_limit`) is installed by the superadmin only. Every purge stays superadmin-only. The
+  generic makerspace PATCH still refuses `enabled_modules`.
+
 ## Account deletion
 
 Self-deletion, archive/restore, the 90-day purge and Apple revocation are member-only. Staff

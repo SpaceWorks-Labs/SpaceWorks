@@ -53,7 +53,9 @@ exclusions applied in SQL rather than queried per tenant.
   thin `role_scope.py` import surface over `role_scope_resolution.py` (including the identity-sensitive
   `EXEMPT`/`NOTHING` sentinels), `role_scope_grants.py`, and `role_scope_queries.py`.
   `models_membership_scope.py` stores per-person machine-type links; `member_scope_services.py`
-  writes them. The removed `role_scope_services.py` no longer owns role-level scope.
+  writes them. The removed `role_scope_services.py` no longer owns role-level scope. Object-level
+  machine authorization is the `access.py` barrel over `access_core.py` (tiers and per-machine checks),
+  `access_bulk.py` (list-view capability flags) and `access_scoping.py` (query-level list scoping).
 - `backend/apps/events/` — the separable events module. `models.py` is the stable explicit re-export barrel.
 
   The programme's additional model barrel, workflow writers, retained registries and

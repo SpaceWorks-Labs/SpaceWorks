@@ -16,7 +16,8 @@ must never come back as data, so a JSON write carrying the mask is refused.
 from django.http.request import RawPostDataException
 from rest_framework.exceptions import ValidationError
 
-from apps.accounts.pii_seam import MASK, pii_visible
+from apps.accounts import pii_seam
+from apps.accounts.pii_seam import MASK
 
 DIRECT_KEYS = frozenset("""
 email phone phone_e164 first_name last_name display_name
@@ -90,7 +91,8 @@ class _Masker:
         space = row.get("makerspace_id", row.get("makerspace"))
         space = space if isinstance(space, int) and not isinstance(space, bool) else self.default
         if space not in self.cache:
-            self.cache[space] = pii_visible(self.viewer, space)
+            # Through the module, so the merge seam (and a test window) is the one answer.
+            self.cache[space] = pii_seam.pii_visible(self.viewer, space)
         return self.cache[space]
 
     def walk(self, data):

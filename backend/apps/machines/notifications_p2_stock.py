@@ -21,6 +21,9 @@ def eligible(envelope):
         makerspace_id=envelope.makerspace_id).filter(pk=envelope.source_id).first()
     if item is None or version(item) != envelope.revision or envelope.audience != "staff":
         return False
+    from apps.makerspaces.folded_capabilities import capability_on, tobuy_key
+    if not capability_on(item.makerspace, tobuy_key(item.kind)):
+        return False
     if item.machine_type_id and not staff_allowed(envelope, item.machine_type_id):
         return False
     return item.status == "received" if envelope.event == "procurement_received" else item.status in {"requested", "approved", "ordered"}

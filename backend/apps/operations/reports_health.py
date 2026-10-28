@@ -32,7 +32,7 @@ def build_fablab_health(makerspace_id, *, limit=None, date_range=None):
     now = timezone.now()
     today = timezone.localdate()
     base = eligible_makerspaces() if aggregate else Makerspace.objects.filter(pk=makerspace_id)
-    spaces = list(base.values("id", "enabled_modules").order_by("id"))
+    spaces = list(base.values("id", "enabled_modules", "enabled_features").order_by("id"))
     records = {row["id"]: _empty_record(row) for row in spaces}
     _run_section(spaces, records, "events", lambda ids: _event_rows(ids, date_range))
     _run_section(spaces, records, "bookings", lambda ids: _booking_rows(ids, date_range, now))
@@ -48,8 +48,12 @@ def build_fablab_health(makerspace_id, *, limit=None, date_range=None):
 def _empty_record(space):
     record = {}
     modules = set(space["enabled_modules"] or [])
+    features = set(space.get("enabled_features") or [])
     for section, metrics in SECTION_FIELDS.items():
         enabled = runtime_active(section) and section in modules
+        if section == "maintenance":
+            # The `machines.maintenance` capability since #97, not a module key.
+            enabled = runtime_active(section) and "machines" in modules and "machines.maintenance" in features
         record[f"{section}_enabled"] = enabled
         record[f"{section}_available"] = False
         record.update({metric: None for metric in metrics})

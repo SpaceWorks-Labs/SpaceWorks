@@ -34,16 +34,11 @@ from apps.makerspaces.module_purge_collectors import (
     machine_service_delete,
     machine_service_private_key_sizes,
     machine_service_private_keys,
-    maintenance_delete,
-    maintenance_private_key_sizes,
-    maintenance_private_keys,
     membership_delete,
     membership_private_key_sizes,
     membership_private_keys,
     membership_public_image_keys,
     notifications_delete,
-    procurement_delete,
-    procurement_private_keys,
     qr_print_batches_delete,
     slack_destinations_delete,
     stock_transfers_delete,
@@ -137,15 +132,8 @@ PLANS = (
         public_image_keys=bookings_public_images,
         private_keys=bookings_private_keys, private_key_sizes=bookings_private_key_sizes,
     ),
-    ModulePurgePlan(
-        "maintenance", "Maintenance schedules, logs and log documents.", maintenance_delete,
-        private_keys=maintenance_private_keys,
-        private_key_sizes=maintenance_private_key_sizes,
-    ),
-    ModulePurgePlan(
-        "procurement", "To-buy items and their receipts.", procurement_delete,
-        private_keys=procurement_private_keys,
-    ),
+    # Maintenance and To-Buy are per-parent capabilities since #97; their data purge is
+    # `capability_purge_plans` (split per parent), not a module plan.
     ModulePurgePlan(
         "notifications", "In-app notification rows.", notifications_delete,
         pii_labels=("notifications.NotificationInboxRow", "notifications.MemberBroadcast"),

@@ -20,7 +20,7 @@ FIELDS = (
 
 def build_maintenance_activity(makerspace_id, *, limit=None, date_range=None, grain="day", actor=None):
     rows = []
-    for space, scope in spaces(makerspace_id, ("machines", "maintenance"), actor):
+    for space, scope in spaces(makerspace_id, ("machines", "machines.maintenance"), actor):
         today = timezone.now().astimezone(ZoneInfo(space.timezone)).date()
         catalog = {m.pk: m for m in machines(space, scope).select_related("machine_type")}
         schedules = {s["machine_id"]: s for s in MaintenanceSchedule.objects.filter(

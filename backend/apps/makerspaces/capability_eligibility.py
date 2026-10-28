@@ -3,6 +3,7 @@
 from .capabilities import FEATURE_MODULES, FEATURES
 from .loan_visibility import LOAN_FEATURES
 from .module_registry import module_available
+from apps.separability.registry import runtime_active
 
 
 def configuration_feature_enabled(makerspace, key):
@@ -13,6 +14,8 @@ def configuration_feature_enabled(makerspace, key):
     if definition is None or key not in set(makerspace.enabled_features or []):
         return False
     if definition.parent_module is not None and definition.parent_module not in FEATURE_MODULES:
+        return False
+    if definition.app_label is not None and not runtime_active(definition.app_label):
         return False
     modules = set(makerspace.enabled_modules or [])
     required_modules = (

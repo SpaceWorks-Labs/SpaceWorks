@@ -19,7 +19,7 @@ def build_procurement_performance(makerspace_id, *, limit=None, date_range=None,
     if aggregate:
         group.insert(0, "makerspace_id")
     qs = apply_range(ToBuyItem.objects.filter(
-        makerspace_id__in=scoped_ids(makerspace_id, "procurement")
+        makerspace_id__in=scoped_ids(makerspace_id, "inventory.tobuy|machines.tobuy")
     ), "created_at", date_range).annotate(
         period=period_expression("created_at", grain),
         estimated_line=F("estimated_unit_cost") * F("quantity"),

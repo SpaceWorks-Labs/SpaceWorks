@@ -79,8 +79,8 @@ class PlatformAnalyticsMakerspacesView(APIView):
             raise reports.ReportNotFound()
         spaces = rbac.scope_by_action(request.user, definition.required_action, servable_queryset(Makerspace.objects.all()), field="id")
         spaces = spaces.filter(enabled_modules__contains=["reports"])
-        for module in definition.required_modules:
-            spaces = spaces.filter(enabled_modules__contains=[module])
+        from .report_sources import filter_sources
+        spaces = filter_sources(spaces, definition.required_modules)
         pager = AnalyticsPickerPagination()
         page = pager.paginate_queryset(spaces.order_by("name", "pk").distinct(), request, view=self)
         return pager.get_paginated_response(AnalyticsMakerspaceSerializer(page, many=True).data)

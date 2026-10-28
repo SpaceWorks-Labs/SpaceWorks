@@ -8,9 +8,10 @@ from django.utils import timezone
 from apps.accounts import rbac
 from apps.admin_api.permissions import active_user
 from apps.makerspaces.local_time import to_local
-from apps.makerspaces.platform import feature_enabled, module_enabled
+from apps.makerspaces.platform import feature_enabled
 from apps.makerspaces.servability import is_servable
 from .report_registry import REPORT_REGISTRY
+from .report_sources import source_enabled
 
 
 @dataclass(frozen=True)
@@ -75,10 +76,10 @@ def visible_widgets(actor, makerspace):
         if any(not rbac.can(actor, action, makerspace.pk) for action in actions):
             continue
         modules = set(widget.required_modules) | {module for d in definitions for module in d.required_modules}
-        if not all(module_enabled(makerspace, module) for module in modules):
+        if not all(source_enabled(makerspace, module) for module in modules):
             continue
         if any(not d.required_modules and d.section_modules
-               and not any(module_enabled(makerspace, module) for module in d.section_modules)
+               and not any(source_enabled(makerspace, module) for module in d.section_modules)
                for d in definitions):
             continue
         if widget.key in LOAN_WIDGETS and not feature_enabled(makerspace, "loans.enabled"):

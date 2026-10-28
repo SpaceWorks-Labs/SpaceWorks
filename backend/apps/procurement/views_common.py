@@ -14,9 +14,15 @@ and `views.py` is the thin re-export barrel that names the public surface.
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse
 
+from apps.makerspaces.folded_capabilities import (
+    TOBUY_KEYS, require_any_capability, require_capability, tobuy_key,
+)
 from apps.procurement.models import ToBuyItem
 from apps.procurement.serializers import ErrorSerializer
 
+# The app label. It stopped being a module key in #97: the list is switched per parent
+# (`machines.tobuy` for printing rows, `inventory.tobuy` for hardware rows), and a route
+# whose switch is off answers 404 while every row is kept.
 MODULE_KEY = "procurement"
 DEFAULT_LIST_LIMIT = 200
 MAX_LIST_LIMIT = 500
@@ -26,7 +32,10 @@ PROCUREMENT_ERROR_RESPONSES = {
     400: OpenApiResponse(ErrorSerializer, description="Invalid request."),
     401: OpenApiResponse(description="Authentication credentials were not provided."),
     403: OpenApiResponse(description="Permission denied."),
-    404: OpenApiResponse(description="Not found."),
+    404: OpenApiResponse(description=(
+        "Not found, or the To-Buy switch for this row's parent (machines.tobuy / "
+        "inventory.tobuy) is off for this makerspace."
+    )),
 }
 
 
@@ -47,6 +56,16 @@ KIND_PARAM = OpenApiParameter(
     description="Stream to add to. Honored only for makerspace admins/superadmin; "
     "other roles are auto-tagged by role.",
 )
+
+
+def require_tobuy(makerspace):
+    """404 unless at least one parent's To-Buy switch is on here."""
+    return require_any_capability(makerspace, TOBUY_KEYS)
+
+
+def require_item_switch(item):
+    """404 when the switch owning this row's domain is off (the row is kept)."""
+    return require_capability(item.makerspace, tobuy_key(item.kind))
 
 
 def list_limit(request):

@@ -8,6 +8,7 @@ This avoids re-reading restoration state for every projected field and row.
 from .capabilities import FEATURES, FEATURE_MODULES
 from .loan_visibility import LOAN_FEATURES
 from .module_registry import module_available
+from apps.separability.registry import runtime_active
 
 
 def feature_flags_for_servable(makerspace, keys):
@@ -22,6 +23,8 @@ def feature_flags_for_servable(makerspace, keys):
         if definition is None or key not in enabled:
             return False
         if definition.parent_module is not None and definition.parent_module not in FEATURE_MODULES:
+            return False
+        if definition.app_label is not None and not runtime_active(definition.app_label):
             return False
         required = (definition.parent_module, *definition.requires_modules)
         cache[key] = all(

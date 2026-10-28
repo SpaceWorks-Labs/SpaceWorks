@@ -96,29 +96,6 @@ def maintenance_private_key_sizes(makerspace):
     }
 
 
-def procurement_delete(makerspace, cursor):
-    from apps.procurement.models import ToBuyItem, ToBuyReceipt
-
-    receipts, receipt_labels = _delete(
-        ToBuyReceipt.objects.filter(to_buy_item__makerspace=makerspace)
-    )
-    items, item_labels = _delete(ToBuyItem.objects.filter(makerspace=makerspace))
-    return _counts(
-        model_labels=receipt_labels | item_labels,
-        receipts=receipts,
-        to_buy_items=items,
-    )
-
-
-def procurement_private_keys(makerspace, add):
-    from apps.procurement.models import ToBuyReceipt
-
-    for key in ToBuyReceipt.objects.filter(
-        to_buy_item__makerspace=makerspace
-    ).values_list("object_key", flat=True):
-        add(key)
-
-
 def notifications_delete(makerspace, cursor):
     from apps.accounts import rbac
     from apps.notifications.models import Notification, NotificationInboxRow, MemberBroadcast

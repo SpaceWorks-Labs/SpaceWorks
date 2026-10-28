@@ -10,6 +10,7 @@ from .capability_definitions_wp3 import wp3_features
 from .capability_definitions_wp4 import definitions as wp4_definitions
 from .capability_definitions_yuyu import definitions as yuyu_definitions
 from .capability_definitions_events_programme import programme_features
+from .capability_definitions_r2_l17 import definitions as r2_l17_definitions
 
 
 @dataclass(frozen=True)
@@ -26,6 +27,9 @@ class FeatureDefinition:
     requires_modules: tuple[str, ...] = ()
     requires_features: tuple[str, ...] = ()
     frontend_exposed: bool = True
+    # The separable app whose surfaces this switch gates, when that is not the parent's
+    # app (#97: `machines.maintenance` lives in `maintenance`). A tombstoned app reads off.
+    app_label: str | None = None
 
 
 FEATURE_DEFINITIONS = (
@@ -188,17 +192,16 @@ FEATURE_DEFINITIONS = (
         default_enabled=True,
     ),
     FeatureDefinition(
-        "notifications.delegated_recipients", "notifications",
+        "notifications.delegated_recipients", "machines",
         "Delegated maintenance recipients",
         "Let machine-scoped maintainers manage maintenance alert recipients for "
         "their own machines.",
         default_enabled=False,
         # It delegates MAINTENANCE alerts, narrowed by MACHINE scope, so it cannot function
-        # without either module. Declaring only `notifications` let capability validation
-        # accept an unusable combination, and -- worse -- uninstalling `maintenance` or
-        # `machines` did not prune the enabled feature, so reinstalling silently
-        # reactivated delegated access without anybody opting in again.
-        requires_modules=("maintenance", "machines"),
+        # without machine maintenance. Parented to `machines` since #97 folded the old
+        # `maintenance` module key; the key itself is unchanged for data stability.
+        requires_modules=("notifications",),
+        requires_features=("machines.maintenance",),
     ),
     FeatureDefinition(
         "machines.certifications", "machines", "Certification gating",
@@ -212,9 +215,9 @@ FEATURE_DEFINITIONS = (
         requires_modules=("notifications",),
     ),
     FeatureDefinition(
-        "maintenance.reminders", "maintenance", "Maintenance reminders",
+        "maintenance.reminders", "machines", "Maintenance reminders",
         "Notify scoped maintainers before and after maintenance is due.",
-        requires_modules=("machines", "notifications"),
+        requires_modules=("notifications",), requires_features=("machines.maintenance",),
     ),
     FeatureDefinition(
         "events.offline_checkin", "events", "Offline & station check-in",
@@ -235,6 +238,7 @@ FEATURE_DEFINITIONS += module_family_features(FeatureDefinition)
 FEATURE_DEFINITIONS += wp3_features(FeatureDefinition)
 FEATURE_DEFINITIONS += wp4_definitions(FeatureDefinition)
 FEATURE_DEFINITIONS += yuyu_definitions(FeatureDefinition)
+FEATURE_DEFINITIONS += r2_l17_definitions(FeatureDefinition)
 FEATURES = {definition.key: definition for definition in FEATURE_DEFINITIONS}
 # A feature's parent/required modules are validated against the module registry
 # rather than a hand-kept set, so adding a module can no longer leave a valid

@@ -37,8 +37,9 @@ def authorize_view(actor, space, state):
         raise PermissionDenied("The saved report is unavailable.")
     from .report_subjects import require_report_action
     require_report_action(actor, definition, space.pk, state.get("filters", {}))
+    from .report_sources import require_source
     for module in definition.required_modules:
-        require_module(space, module)
+        require_source(space, module)
     from .report_subjects import authorize
     authorize(actor, space, definition, state.get("filters", {}))
     return definition

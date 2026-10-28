@@ -199,7 +199,7 @@ def resolve_organization_report_scope(
     #     servable_queryset above already covers importing, aborted and archived.
     # Term 7: the reports module and every declared source module are required.
     makerspaces = makerspaces.filter(enabled_modules__contains=["reports"])
-    for module in definition.required_modules:
-        makerspaces = makerspaces.filter(enabled_modules__contains=[module])
+    from .report_sources import filter_sources
+    makerspaces = filter_sources(makerspaces, definition.required_modules)
 
     return combined_report_scope(makerspaces)

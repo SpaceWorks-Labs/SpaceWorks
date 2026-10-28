@@ -110,7 +110,7 @@ def check_report_module_coverage(app_configs=None, **kwargs):
             id="operations.E001",
         ))
     for module_key, coverage in REPORT_MODULE_COVERAGE.items():
-        if module_key == "presence" and "presence" in tombstoned_app_labels():
+        if module_key in {"presence", "maintenance", "procurement"} and module_key in tombstoned_app_labels():
             continue
         from apps.makerspaces.module_registry import module_available
         if module_key in MODULE_KEYS and not module_available(module_key):
@@ -128,7 +128,9 @@ def check_report_module_coverage(app_configs=None, **kwargs):
                     id="operations.E003",
                 ))
     for definition in REPORT_REGISTRY.values():
-        unknown = (set(definition.required_modules) | set(definition.section_modules)) - MODULE_KEYS
+        from apps.operations.report_sources import known_source
+        unknown = {key for key in (*definition.required_modules, *definition.section_modules)
+                   if not known_source(key)}
         if unknown:
             errors.append(checks.Error(
                 f"Report {definition.key!r} references unknown modules {sorted(unknown)}.",

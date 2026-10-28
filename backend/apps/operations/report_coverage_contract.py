@@ -38,7 +38,10 @@ _ROWS = (
 REPORT_COVERAGE_CONTRACT = {module: keys for modules, keys in _ROWS for module in modules}
 # These areas have no installable module key. They may have coverage declarations
 # in REPORT_MODULE_COVERAGE, but must never become required_modules/section_modules.
-REPORT_COVERAGE_AREAS = frozenset({"presence", "audit", "organizations", "platform"})
+# `maintenance` and `procurement` joined them in #97: retired module keys whose reports
+# now read the per-parent capabilities (`machines.maintenance`, `*.tobuy`).
+REPORT_COVERAGE_AREAS = frozenset({"presence", "audit", "organizations", "platform",
+                                   "maintenance", "procurement"})
 
 
 def required_report_modules():

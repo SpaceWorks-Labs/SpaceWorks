@@ -26,6 +26,9 @@ def eligible(envelope):
         field="machine__makerspace_id").select_related("machine__machine_type").filter(pk=envelope.source_id).first()
     if row is None or version(row) != envelope.revision or envelope.audience != "staff":
         return False
+    from apps.makerspaces.folded_capabilities import MACHINES_MAINTENANCE, capability_on
+    if not capability_on(envelope.makerspace, MACHINES_MAINTENANCE):
+        return False  # switched off since queueing (#97): the rows stay, the alert does not
     if envelope.event in {"due_soon", "overdue"}:
         if not row.is_active:
             return False

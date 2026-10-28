@@ -1,22 +1,25 @@
-"""Superadmin module install/uninstall surface.
+"""Module install/uninstall surface for the Space Manager and the superadmin.
 
-**Superadmin only, and that is not an oversight.** `enabled_modules` is superadmin-owned
-by existing design -- a staff PATCH carrying it is a hard 403 -- because a module set is
-what the operator sells or supports, not what a tenant helps themselves to. This view
-gives that owner a real UI instead of the shell, without widening who holds the power.
-
-The Space Manager keeps the surface they already own: `enabled_features`, edited from the
-makerspace settings panel.
+Owner decision #128 C-10 (superseding #77 Platform Q3): a Space Manager switches any
+module on or off in their own space from the settings hub -- switching off keeps every
+row, switching back on restores everything. On the managed platform, installing a module
+whose usage is capped by a fair-use limit stays superadmin-only
+(`module_switch_authority`), and every purge stays superadmin-only and outside this view.
+The generic makerspace PATCH still refuses `enabled_modules`: this audited service path is
+the only module writer.
 """
 
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import serializers, status
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts import rbac
-from apps.admin_api.permissions import IsActiveSuperAdmin
+from apps.accounts.platform_authority import is_platform_superadmin
+from apps.admin_api.permissions import IsActiveStaff
+from apps.makerspaces.module_switch_authority import limit_gated, may_install, may_uninstall
 from apps.makerspaces.module_groups import deployment_app_status, grouped_module_status
 from apps.makerspaces.module_install import (
     ModuleInstallError,
@@ -38,7 +41,10 @@ class ModuleActionSerializer(serializers.Serializer):
 
 
 _ERRORS = {
-    403: OpenApiResponse(description="Active superadmin access is required."),
+    403: OpenApiResponse(description=(
+        "Not this space's Space Manager or a superadmin; or, on the managed platform, a "
+        "limit-gated module that only the superadmin may install."
+    )),
     404: OpenApiResponse(
         description=(
             "Makerspace not found, archived, not active, or hidden from superadmins "
@@ -63,8 +69,18 @@ def _makerspace(actor, makerspace_id):
     )
 
 
+def _groups(actor, makerspace):
+    groups = grouped_module_status(makerspace)
+    for group in groups:
+        for row in group["modules"]:
+            row["install_requires_superadmin"] = (
+                not row["installed"] and not may_install(actor, makerspace, row["key"]))
+            row["limits"] = limit_gated(makerspace, row["key"]) if not row["installed"] else []
+    return groups
+
+
 class ModuleGroupListView(APIView):
-    permission_classes = [IsActiveSuperAdmin]
+    permission_classes = [IsActiveStaff]
 
     @extend_schema(
         tags=["Platform"],
@@ -78,8 +94,9 @@ class ModuleGroupListView(APIView):
         makerspace = _makerspace(request.user, makerspace_id)
         return Response(
             {
-                "groups": grouped_module_status(makerspace),
-                "deployment": deployment_app_status(),
+                "groups": _groups(request.user, makerspace),
+                # TOMBSTONED_APPS is a deployment decision: the superadmin's alone.
+                "deployment": deployment_app_status() if is_platform_superadmin(request.user) else None,
                 "profiles": [
                     {"key": key, "description": description}
                     for key, description in sorted(PROFILES.items())
@@ -89,7 +106,7 @@ class ModuleGroupListView(APIView):
 
 
 class ModuleInstallView(APIView):
-    permission_classes = [IsActiveSuperAdmin]
+    permission_classes = [IsActiveStaff]
 
     @extend_schema(
         tags=["Platform"],
@@ -105,6 +122,9 @@ class ModuleInstallView(APIView):
         makerspace = _makerspace(request.user, makerspace_id)
         serializer = ModuleActionSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        if not may_install(request.user, makerspace, serializer.validated_data["key"]):
+            raise PermissionDenied({"detail": "This module has a usage limit on this platform; ask the "
+                                    "platform administrator to install it.", "code": "module_install_superadmin_only"})
         try:
             added = install_module(makerspace, serializer.validated_data["key"], actor=request.user)
         except ModuleInstallError as exc:
@@ -112,11 +132,11 @@ class ModuleInstallView(APIView):
             # tombstoned app, required by another module), and rewording it here would
             # give the operator less than the CLI does.
             return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
-        return Response({"installed": added, "groups": grouped_module_status(makerspace)})
+        return Response({"installed": added, "groups": _groups(request.user, makerspace)})
 
 
 class ModuleUninstallView(APIView):
-    permission_classes = [IsActiveSuperAdmin]
+    permission_classes = [IsActiveStaff]
 
     @extend_schema(
         tags=["Platform"],
@@ -137,8 +157,10 @@ class ModuleUninstallView(APIView):
         makerspace = _makerspace(request.user, makerspace_id)
         serializer = ModuleActionSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        if not may_uninstall(request.user, makerspace):
+            raise PermissionDenied()
         try:
             removed = uninstall_module(makerspace, serializer.validated_data["key"], actor=request.user)
         except ModuleInstallError as exc:
             return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
-        return Response({"uninstalled": removed, "groups": grouped_module_status(makerspace)})
+        return Response({"uninstalled": removed, "groups": _groups(request.user, makerspace)})

@@ -16,7 +16,7 @@ from django.db import transaction
 from apps.audit import services as audit
 from apps.makerspaces.capabilities import prune_features, validate_capabilities
 from apps.makerspaces.models import Makerspace
-from apps.makerspaces.module_profiles import MINIMAL, profile_modules
+from apps.makerspaces.module_profiles import MINIMAL, profile_features, profile_modules
 from apps.makerspaces.request_access import effective_policy
 from apps.makerspaces.module_registry import (
     BY_KEY,
@@ -132,12 +132,12 @@ def apply_profile(makerspace, profile, actor=None):
             if any(before_publication.values()):
                 audit.record(actor, "makerspace.publication_changed", makerspace=locked, target=locked,
                              meta={"before": before_publication, "after": {"site": False, "catalogue": False}})
-        _apply(locked, keys | unknown, actor)
-    makerspace.refresh_from_db(fields=["enabled_modules", "public_inventory_enabled", "public_site_enabled"])
+        _apply(locked, keys | unknown, actor, add_features=profile_features(profile))
+    makerspace.refresh_from_db(fields=["enabled_modules", "enabled_features", "public_inventory_enabled", "public_site_enabled"])
     return sorted(keys | unknown)
 
 
-def _apply(locked, modules, actor):
+def _apply(locked, modules, actor, add_features=()):
     from apps.backup.module_gate import assert_uninstall_allowed
 
     try:
@@ -155,7 +155,8 @@ def _apply(locked, modules, actor):
     # Drop features whose modules are going away BEFORE validating, or the validation
     # refuses the change outright -- see `prune_features` for why this is a removal
     # rather than an error or a silent keep.
-    kept_features, dropped_features = prune_features(locked.enabled_features or [], modules)
+    kept_features, dropped_features = prune_features(
+        sorted({*(locked.enabled_features or []), *add_features}), modules)
     canonical_modules, canonical_features = validate_capabilities(
         sorted(modules), kept_features
     )

@@ -43,5 +43,5 @@ def dispatch(space, reminder, message, now, local_tz):
         reminders.notify_maintenance_lifecycle(row, "overdue", due_reason=message.body)
 
 
-SOURCE = ReminderSource("maintenance.meter", "maintenance", discover, build,
+SOURCE = ReminderSource("maintenance.meter", "machines", discover, build,
                         "maintenance.reminders", dispatch)

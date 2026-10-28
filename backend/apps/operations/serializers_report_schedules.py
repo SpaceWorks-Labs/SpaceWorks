@@ -183,10 +183,10 @@ class ReportScheduleSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"report_key": "Report is not exportable."})
         # The manual export refuses a report whose source module is off; a schedule for it
         # could only ever skip, so it is refused with the same 400 naming the module.
-        from apps.makerspaces.guards import require_module
+        from .report_sources import require_source
 
         for module in definition.required_modules:
-            require_module(self.context["makerspace"], module)
+            require_source(self.context["makerspace"], module)
         if not definition.schedulable:
             # Email/chat delivery would broaden custody of this report's data.
             raise serializers.ValidationError({"report_key": "Report cannot be scheduled."})

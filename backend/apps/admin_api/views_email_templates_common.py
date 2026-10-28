@@ -46,13 +46,15 @@ STREAM_ACTIONS = {
 STREAM_MODULES = {
     "events": "events",
     "bookings": "bookings",
-    "maintenance": "maintenance",
+    # Maintenance is the `machines.maintenance` capability since #97 (STREAM_CAPABILITIES).
+    "maintenance": "machines",
     "membership": "membership",
     "devices": "devices",
     # Payments is a core ledger stream: cash-only spaces can edit receipts/reminders.
-    "stock": "procurement",
+    # Stock is core too: inventory thresholds always alert, To-Buy has two switches.
     "certifications": "machines",
 }
+STREAM_CAPABILITIES = {"maintenance": "machines.maintenance"}
 
 def _resolve_makerspace(actor, makerspace_id, stream):
     actions = STREAM_ACTIONS.get(stream)
@@ -75,6 +77,9 @@ def _resolve_makerspace(actor, makerspace_id, stream):
     module_key = STREAM_MODULES.get(stream)
     if module_key is not None:
         require_module(makerspace, module_key)
+    if stream in STREAM_CAPABILITIES:
+        from apps.makerspaces.folded_capabilities import require_capability
+        require_capability(makerspace, STREAM_CAPABILITIES[stream])
     return makerspace
 def email_template_type_scope(actor, makerspace_id, stream):
     """None is unrestricted; a set (including empty) is narrowed type authority.

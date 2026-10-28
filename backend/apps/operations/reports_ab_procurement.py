@@ -17,10 +17,12 @@ def build_procurement_performance(makerspace_id, *, limit=None, date_range=None,
     from apps.makerspaces.platform import module_enabled
     from django.db.models import Q
     records = []
-    for space in spaces(makerspace_id, "procurement"):
+    from apps.makerspaces.platform import feature_enabled
+    for space in spaces(makerspace_id, "inventory.tobuy|machines.tobuy"):
         groups = {}
-        allowed = Q(kind="hardware")
-        if (actor is not None and module_enabled(space, "machines") and module_enabled(space, "printing")
+        # Each stream follows its own parent's To-Buy switch (#97, C-9).
+        allowed = Q(kind="hardware") if feature_enabled(space, "inventory.tobuy") else Q(pk__in=[])
+        if (actor is not None and feature_enabled(space, "machines.tobuy") and module_enabled(space, "printing")
                 and rbac.can(actor, rbac.Action.MANAGE_MACHINES, space.pk)):
             scope = role_scope.manage_scope_for(actor, space.pk)
             allowed |= Q(kind="printing") & role_scope.scope_q_for(scope, type_id_paths=("machine_type_id",))

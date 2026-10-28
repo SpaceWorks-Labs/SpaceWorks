@@ -21,6 +21,10 @@ MODULE_WORKFLOWS = module_workflows()
 FEATURE_WORKFLOWS = {
     "inventory.self_checkout": ["self_checkout", "self_return"],
     "inventory.kiosk": ["kiosk", "kiosk_scanner"],
+    # The retired `maintenance`/`procurement` module keys' workflows, now per parent (#97).
+    "machines.maintenance": ["maintenance"],
+    "machines.tobuy": ["procurement"],
+    "inventory.tobuy": ["procurement"],
 }
 
 

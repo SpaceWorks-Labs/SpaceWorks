@@ -1,13 +1,14 @@
 """Installer areas are bundles over the module and feature registries, not new gates."""
 from .capabilities import FEATURES, feature_required_modules
 from .module_registry import core_module_keys, with_dependencies
+from .capability_definitions_r2_l17 import RESERVED_KEYS
 
 AREAS = {
     "inventory": ("public_inventory", "request_workflow", "staff_admin", "scanner",
                   "evidence_uploads", "qr_management", "guest_handover", "asset_units",
                   "containers", "bulk_import", "stock_transfers", "qr_print_batches",
-                  "procurement", "stocktake", "devices"),
-    "machines": ("machines", "machine_service", "printing", "maintenance"),
+                  "stocktake", "devices"),
+    "machines": ("machines", "machine_service", "printing"),
     "events": ("events",),
     "bookings": ("bookings",),
     "membership": ("membership", "mobile"),
@@ -18,10 +19,13 @@ AREAS = {
 ALWAYS_MODULES = {"backup", "notifications", "email", "member_accounts"}
 ALWAYS_FEATURES = {"billing.reminders", "charges.enabled", "billing.documents",
                    "staff.invitations", "presence.geofence", "ui.delight", "ui.easter_eggs"}
-INVENTORY_FEATURES = {"inventory.self_checkout", "inventory.kiosk"}
+# The inventory family is parentless, so the area names its switches; To-Buy and warranty
+# replace the retired `procurement` module this area used to install (#97, C-9).
+INVENTORY_FEATURES = {"inventory.self_checkout", "inventory.kiosk", "inventory.tobuy", "inventory.warranty"}
 EXPLICIT_OPT_IN_FEATURES = frozenset({
     "events.hackathons", "events.mentoring", "events.mentor_rounds",
     "events.volunteering", "events.project_gallery",
+    *RESERVED_KEYS,
 })
 
 

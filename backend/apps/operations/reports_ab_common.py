@@ -5,7 +5,6 @@ from zoneinfo import ZoneInfo
 
 from django.utils import timezone
 
-from apps.makerspaces.platform import module_enabled
 from apps.operations.report_types import ReportNotFound, ReportResult
 from apps.operations.reports_common import apply_range, limited, period_expression, report_spaces
 from apps.operations.reports_j_common import calendar_range
@@ -15,8 +14,10 @@ GRAINS = ("day", "week", "month")
 
 
 def spaces(makerspace_id, *modules):
+    from apps.operations.report_sources import source_enabled
+
     return [space for space in report_spaces(makerspace_id, *modules)
-            if all(module_enabled(space, module) for module in modules)]
+            if all(source_enabled(space, module) for module in modules)]
 
 
 def dated(queryset, field, space, date_range, grain):

@@ -38,8 +38,9 @@ REPORT_DEFINITIONS = tuple(d for d in REPORT_DEFINITIONS if d.key not in MACHINE
 REPORT_DEFINITIONS = tuple(d for d in REPORT_DEFINITIONS if d.key != "module-operational-health") + J_REPORT_DEFINITIONS
 # Runtime entries disappear on a deployment tombstone; retention stays registered.
 from apps.separability.tombstones import tombstoned_app_labels
+from apps.operations.report_sources import source_app_labels
 REPORT_DEFINITIONS = tuple(d for d in REPORT_DEFINITIONS
-                           if not set(d.required_modules) & tombstoned_app_labels())
+                           if not source_app_labels(d.required_modules) & tombstoned_app_labels())
 # Declare infrastructure scope alongside data fields, without changing tenant
 # builders' column order or propagating scope into subject-only definitions.
 REPORT_DEFINITIONS = tuple(

@@ -48,12 +48,15 @@ FEATURE_MODULES = {
     NotificationFeature.PRINTING: "printing",
     NotificationFeature.EVENTS: "events",
     NotificationFeature.BOOKINGS: "bookings",
-    NotificationFeature.MAINTENANCE: "maintenance",
+    # A dotted key is a capability: maintenance is `machines.maintenance` since #97.
+    NotificationFeature.MAINTENANCE: "machines.maintenance",
     NotificationFeature.MEMBERS: "membership",
     NotificationFeature.DEVICES: "devices",
     # Ledger messages work without the separable online rail.
     NotificationFeature.PAYMENTS: "request_workflow",
-    NotificationFeature.STOCK: "procurement",
+    # Stock covers core inventory thresholds; To-Buy alerts are gated per row by
+    # their source (`machines.notifications_p2_stock`), since one list has two switches.
+    NotificationFeature.STOCK: None,
     NotificationFeature.CERTIFICATIONS: "machines",
     NotificationFeature.PRESENCE: "presence",
 }
@@ -66,14 +69,15 @@ def feature_available(makerspace, feature, *, source_kind="") -> bool:
     # Inventory is core (no module key): low-stock thresholds are never module-gated, and the
     # borrower back-in-stock watch follows the lending workflow it belongs to.
     overrides = {"machines.service": "machine_service", "operations.stocktake": "stocktake",
-                 "inventory.threshold": None, "inventory.watch": "request_workflow"}
+                 "inventory.threshold": None, "inventory.watch": "request_workflow",
+                 "machines.procurement": None}
     key = overrides[source_kind] if source_kind in overrides else FEATURE_MODULES.get(feature)
     if key is None or makerspace is None:
         return True
     try:
-        from apps.makerspaces.platform import module_enabled
+        from apps.makerspaces.platform import feature_enabled, module_enabled
 
-        return bool(module_enabled(makerspace, key))
+        return bool(feature_enabled(makerspace, key) if "." in key else module_enabled(makerspace, key))
     except Exception:
         # Fail open, as everywhere else here: a capability lookup failure must not mute a
         # space. A genuinely uninstalled module has no domain objects to notify about

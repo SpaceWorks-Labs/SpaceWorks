@@ -27,6 +27,15 @@ def viewable_kinds(actor, makerspace_id):
     return kinds
 
 
+def switched_kinds(makerspace_id):
+    """Streams whose parent To-Buy switch is on in this makerspace."""
+    from apps.makerspaces.folded_capabilities import tobuy_kinds_on
+    from apps.makerspaces.models import Makerspace
+
+    space = Makerspace.objects.filter(pk=makerspace_id).first()
+    return tobuy_kinds_on(space) if space is not None else []
+
+
 def can_use(actor, makerspace_id):
     """True if the actor has any procurement stream in this makerspace."""
     return bool(viewable_kinds(actor, makerspace_id))
@@ -93,9 +102,11 @@ def scope_items(queryset, actor, makerspace_id):
 
     Hardware access is unchanged. Printing access inherited by a scoped
     ``MANAGE_MACHINES`` role reaches linked types only; NULL and per-machine-only
-    authority deliberately reach no printing rows.
+    authority deliberately reach no printing rows. A stream whose parent switch is off
+    (`machines.tobuy` / `inventory.tobuy`, #97) is hidden; its rows are kept.
     """
-    kinds = viewable_kinds(actor, makerspace_id)
+    on = switched_kinds(makerspace_id)
+    kinds = [kind for kind in viewable_kinds(actor, makerspace_id) if kind in on]
     queryset = queryset.filter(makerspace_id=makerspace_id, kind__in=kinds)
     type_ids = machine_type_scope(actor, makerspace_id)
     if type_ids is None or PRINTING not in kinds:

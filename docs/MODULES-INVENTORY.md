@@ -116,7 +116,10 @@ thirteen modules under it are optional.
 ### bulk_import
 
 - **What it is** — spreadsheet import of inventory rows.
-- **What it adds** — the `bulk_import` workflow: upload a sheet, map columns, preview, commit.
+- **What it adds** — the `bulk_import` workflow: upload a sheet, map columns, preview, commit. An
+  `.xlsx` is read on the server for column matching (`POST …/inventory/import/sheet`, openpyxl,
+  first sheet, cached values only, size/row/column caps); the browser no longer ships a spreadsheet
+  parser.
 - **Without it** — inventory is created one product at a time in the console (or through the API). The
   most common reason to install it is the first week of migrating from a spreadsheet.
 - **Data** — `purge_module_data` reports it stores no data of its own to purge separately.

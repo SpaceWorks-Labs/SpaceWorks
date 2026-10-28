@@ -100,7 +100,7 @@ export function BulkImport({ makerspace }: { makerspace: Makerspace }) {
     setStep("map");
     setError("");
   };
-  const chooseFile = (file: File) => { setSource("file"); setSelectedFile(file); parseFileSample(file).then(loadRows).catch((exc: unknown) => setError(`We couldn't read that file${exc instanceof Error && exc.message ? `: ${exc.message}` : ""}. Save it as CSV or .xlsx and try again.`)); };
+  const chooseFile = (file: File) => { setSource("file"); setSelectedFile(file); parseFileSample(file, makerspace.id).then(loadRows).catch((exc: unknown) => setError(`We couldn't read that file${exc instanceof Error && exc.message ? `: ${exc.message}` : ""}. Save it as CSV or .xlsx and try again.`)); };
   const errors = result?.summary?.errors ?? result?.errors?.length ?? 0;
   const finish = step === "import" && !pending && Boolean(result) && activeJob?.status !== "failed";
   const preview = () => selectedFile ? startFileJob("preview") : submitRows(false, mappedRows());

@@ -167,7 +167,8 @@ data-export-download-url data-export-list-create delivery-log-list delivery-log-
 direct-loan-members direct-loan-return direct-loans email-suppression-delete email-suppression-list
 event-staff-invite-redeem evidence-detail evidence-retention-policy evidence-retention-preview
 evidence-upload-url guest-admin-active-loans guest-admin-request-return inventory-import-apply
-inventory-import-job-detail inventory-import-jobs inventory-import-preview ledger ledger-aggregate
+inventory-import-job-detail inventory-import-jobs inventory-import-preview
+inventory-import-sheet ledger ledger-aggregate
 ledger-export ledger-export-aggregate makerspace-integration-health makerspace-verify-domain
 notification-discord-install notification-mattermost-install notification-slack-install
 notification-timing-policy organization-analytics payment-billing-settings payment-deposit-release

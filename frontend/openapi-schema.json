@@ -59635,6 +59635,62 @@
                 }
             }
         },
+        "/api/v1/admin/makerspace/{makerspace_id}/inventory/import/sheet": {
+            "post": {
+                "operationId": "api_v1_admin_makerspace_inventory_import_sheet_create",
+                "description": "Read an uploaded .xlsx so the Bulk Import panel can match its columns.\n\nSame gate as the rest of Bulk Import: the `bulk_import` module and EDIT_INVENTORY\nin this makerspace. Nothing is stored; the import job re-reads the file itself.",
+                "summary": "Read the rows of an .xlsx file for bulk import column matching",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Bulk import"
+                ],
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/BulkImportSheet"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/BulkImportSheetResult"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "The bulk_import module is off, or the file is not an .xlsx, is unreadable, or is over the size, row or column limit."
+                    },
+                    "403": {
+                        "description": "No EDIT_INVENTORY permission in this makerspace."
+                    },
+                    "404": {
+                        "description": "Makerspace not found."
+                    }
+                }
+            }
+        },
         "/api/v1/admin/makerspace/{makerspace_id}/inventory/reorder-draft": {
             "post": {
                 "operationId": "api_v1_admin_makerspace_inventory_reorder_draft_create",
@@ -166633,6 +166689,35 @@
                     },
                     "mapping": {}
                 }
+            },
+            "BulkImportSheet": {
+                "type": "object",
+                "properties": {
+                    "file": {
+                        "type": "string",
+                        "format": "uri",
+                        "description": "The .xlsx workbook to read; only its first sheet is used."
+                    }
+                },
+                "required": [
+                    "file"
+                ]
+            },
+            "BulkImportSheetResult": {
+                "type": "object",
+                "properties": {
+                    "rows": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": {}
+                        },
+                        "description": "One object per non-blank row, keyed by the first row's headers; blank cells are \"\"."
+                    }
+                },
+                "required": [
+                    "rows"
+                ]
             },
             "BulkInviteInput": {
                 "type": "object",

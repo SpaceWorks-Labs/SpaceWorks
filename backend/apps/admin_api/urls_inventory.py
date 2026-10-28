@@ -69,6 +69,11 @@ urlpatterns = [
         name="inventory-import-apply",
     ),
     path(
+        "makerspace/<int:makerspace_id>/inventory/import/sheet",
+        views.BulkImportSheetView.as_view(),
+        name="inventory-import-sheet",
+    ),
+    path(
         "makerspace/<int:makerspace_id>/inventory/import/jobs",
         views.BulkImportJobListCreateView.as_view(),
         name="inventory-import-jobs",

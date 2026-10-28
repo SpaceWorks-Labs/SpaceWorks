@@ -563,6 +563,7 @@ export const openApiPaths = [
   "/api/v1/admin/makerspace/{makerspace_id}/inventory/import/jobs",
   "/api/v1/admin/makerspace/{makerspace_id}/inventory/import/jobs/{job_id}",
   "/api/v1/admin/makerspace/{makerspace_id}/inventory/import/preview",
+  "/api/v1/admin/makerspace/{makerspace_id}/inventory/import/sheet",
   "/api/v1/admin/makerspace/{makerspace_id}/inventory/reorder-draft",
   "/api/v1/admin/makerspace/{makerspace_id}/inventory/reorder-suggestions",
   "/api/v1/admin/makerspace/{makerspace_id}/kiosk-replays/",
@@ -3769,6 +3770,16 @@ export type BulkImportPreview = {
   [key: string]: unknown;
 }>;
   "mapping"?: unknown;
+};
+
+export type BulkImportSheet = {
+  "file": string;
+};
+
+export type BulkImportSheetResult = {
+  "rows": Array<{
+  [key: string]: unknown;
+}>;
 };
 
 export type BulkInviteInput = {

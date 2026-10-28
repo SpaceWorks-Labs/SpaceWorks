@@ -56,6 +56,17 @@ class BulkImportJobSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
+class BulkImportSheetSerializer(serializers.Serializer):
+    file = serializers.FileField(help_text="The .xlsx workbook to read; only its first sheet is used.")
+
+
+class BulkImportSheetResultSerializer(serializers.Serializer):
+    rows = serializers.ListField(
+        child=serializers.DictField(),
+        help_text="One object per non-blank row, keyed by the first row's headers; blank cells are \"\".",
+    )
+
+
 def _validate_import_payload(attrs):
     attrs["mapping"] = _mapping_value(attrs.get("mapping"))
     has_file = bool(attrs.get("file"))

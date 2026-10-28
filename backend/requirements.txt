@@ -2,13 +2,18 @@ Django>=6.0,<6.1
 djangorestframework>=3.17
 django-environ>=0.14
 # HTTP transports; SES uses the existing boto3 dependency. Selection stays explicit.
-django-anymail[amazon-ses]==15.2
+# No [amazon-ses] extra: it only adds amazon-s3-encryption-client-python for anymail's
+# inbound SES webhook (not routed here), and that package caps cryptography below 49.
+django-anymail==15.2
 django-unfold>=0.100,<0.101
 psycopg2-binary>=2.9
 django-cors-headers>=4.9
 django-axes>=8,<9
 django-csp>=4,<5
-drf-spectacular>=0.30
+# Exact pin: the CI `contracts` job diffs a freshly generated schema against
+# frontend/openapi-schema.json, so an upstream release must not change it unasked.
+# Bump deliberately and regenerate the snapshot and api.ts in the same commit.
+drf-spectacular==0.30.0
 # Pinned explicitly although drf-spectacular already requires it: `spectacular
 # --format openapi-yaml` needs it, and so does the deploy-manifest drift guard in
 # tests/test_env_surface_drift.py. A direct use deserves a direct pin -- otherwise the
@@ -21,7 +26,8 @@ pytest-django>=4.12
 whitenoise>=6.12
 segno
 djangorestframework-simplejwt>=5.5
-cryptography>=44
+# >=50 closes GHSA-g6cj-pr64-35w5, GHSA-jwv3-5hgf-82ww and GHSA-m2h6-j472-rp4c.
+cryptography>=50
 # App Attest's CBOR attestation object and COSE credential key.
 cbor2==6.1.5
 django-storages[s3]>=1.14,<2

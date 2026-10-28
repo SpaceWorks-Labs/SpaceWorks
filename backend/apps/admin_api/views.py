@@ -10,6 +10,7 @@ from apps.admin_api.views_bulk import (
     BulkImportPreviewView,
     _rows_from_upload,
 )
+from apps.admin_api.views_bulk_sheet import BulkImportSheetView
 from apps.admin_api.views_categories import CategoryDetailView, CategoryListCreateView
 from apps.admin_api.views_inventory import (
     InventoryDetailView,
@@ -72,6 +73,7 @@ __all__ = [
     "BulkImportJobDetailView",
     "BulkImportJobListCreateView",
     "BulkImportPreviewView",
+    "BulkImportSheetView",
     "CategoryDetailView",
     "CategoryListCreateView",
     "EmailLogListView",

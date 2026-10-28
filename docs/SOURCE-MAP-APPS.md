@@ -81,9 +81,10 @@ Continuation of [SOURCE-MAP.md](SOURCE-MAP.md).
   is tombstoned, while `urls_admin.py` and the corresponding `views_*`/`serializers_*` expose governance.
 - `backend/apps/apiclients/` — `ApiClient` (client_id + Fernet-encrypted HMAC secret), `ApiKeyRequest`, and
   `scope_registry.py`/`scope_registry_routes.py` — the single source of truth for which protected route each
-  scope authorizes, keyed on the versioned `view_name`. `scope_registry.py` keeps lookup, classification
-  and drift validation and re-exports `scope_registry_targets.py` (tenant target resolution) and
-  `scope_registry_exclusions.py` (session-only view names). `checks.py` is the deployment-time guard that a
+  scope authorizes, keyed on the versioned `view_name`. `scope_registry.py` keeps lookup, target
+  resolution, classification and drift validation (callers override those on the barrel) and re-exports
+  `scope_registry_requests.py` (URL match caching), `scope_registry_verdicts.py` (`ScopeObservation`,
+  `target_allows`) and `scope_registry_exclusions.py` (session-only view names). `checks.py` is the deployment-time guard that a
   widened `HMAC_PROTECTED_PATH_PREFIXES` has no unregistered routes. Verification itself lives in
   `apps/inventory/middleware.py`. `origin_validation.py` is the shared exact-origin boundary, and
   `ApiClientImportApproval` plus the import-provenance/delivery fields are Lane D's append-only,

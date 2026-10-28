@@ -1,5 +1,3 @@
-from dataclasses import dataclass
-
 from django.conf import settings
 from django.urls import URLPattern, URLResolver, get_resolver
 
@@ -18,8 +16,16 @@ from apps.apiclients.scope_registry_routes import (
 )
 from .scope_registry_exclusions import OWNER_SESSION_EXCLUSIONS, STAFF_ACCOUNT_EXCLUSIONS
 from .scope_registry_reads import read_scope_vocabulary
-from .scope_registry_public_pages import is_global_target
-from .scope_registry_targets import _request_match, resolve_target, resolve_view_name
+from .scope_registry_public_pages import is_global_target, resolve_handle_target
+from .scope_registry_requests import _request_match, resolve_view_name
+from .scope_registry_verdicts import ScopeObservation, target_allows
+
+# Split across siblings to stay under the size ceiling: `scope_registry_exclusions`
+# (session-only view names), `scope_registry_requests` (URL match caching) and
+# `scope_registry_verdicts` (ScopeObservation, target_allows). Target resolution, lookup,
+# classify and drift validation stay HERE on purpose: callers override `lookup`,
+# `resolve_target`, `resolve_handle_target` and `_urlconf_routes` on this module, and the
+# functions that use them must see the override.
 
 LEGACY_SCOPE = "legacy:v1"
 SCOPE_VOCABULARY = frozenset(
@@ -40,16 +46,6 @@ BROWSER_SCOPES = frozenset(
 )
 
 
-@dataclass(frozen=True, slots=True)
-class ScopeObservation:
-    view_name: str | None
-    method: str
-    verdict: bool
-    target_resolution: str
-    target_resolved: bool | None
-    target_makerspace_id: int | None
-
-
 def lookup(view_name, method):
     # This provider fetch is authorized solely by a single-use media grant. It is
     # outside protected prefixes; public scopes must never substitute for its token.
@@ -62,27 +58,75 @@ def lookup(view_name, method):
     return SCOPE_REGISTRY.get((view_name, method.upper()))
 
 
+def resolve_target(request, entry):
+    if entry.target_mode == TARGET_GLOBAL:
+        return None, True
+    try:
+        match = _request_match(request)
+        kwargs = getattr(match, "kwargs", {}) or {}
+        if entry.target_mode == TARGET_PUBLIC_HANDLE:
+            return resolve_handle_target(request, match)
+        if entry.target_mode == TARGET_CLIENT_SUBJECT:
+            from .read_contract import resolve_read_target
+            return resolve_read_target(request, match)
+        if entry.target_mode == TARGET_TENANT_SLUG:
+            from apps.makerspaces.lookup import get_public_makerspace
+
+            # get_public_makerspace raises Http404 for an unknown or unservable
+            # identifier, which the outer except turns into resolved=False. The
+            # explicit None check keeps that contract if it ever starts returning
+            # None instead: an unresolved tenant must never read as resolved, or
+            # the fail-open this registry exists to close comes straight back.
+            target = get_public_makerspace(kwargs.get("makerspace_slug"))
+            return (target, True) if target is not None else (None, False)
+        if entry.target_mode != TARGET_TENANT_TOKEN:
+            return None, False
+        token = kwargs.get("public_token")
+        view_name = getattr(match, "view_name", None)
+        from apps.accounts.programme_route_catalog import BY_NAME
+        if view_name in BY_NAME:
+            from apps.makerspaces.origin_scope_programme import programme_route_targets
+            from apps.makerspaces.models import Makerspace
+            _, targets, invalid, _ = programme_route_targets(view_name, kwargs)
+            if invalid or len(targets) != 1:
+                return None, False
+            target = Makerspace.objects.filter(pk=next(iter(targets))).first()
+            return target, target is not None
+        if view_name in {"public-profile", "public-profile-activity", "public-profile-events", "public-profile-projects", "public-profile-github"}:
+            from apps.makerspaces.public_profile_access import resolve_public_profile
+            claim, _ = resolve_public_profile(kwargs.get("handle"), request)
+            return claim.profile.membership.makerspace, True
+        if view_name == "public-event-code":
+            from apps.events.website_visibility import resolve as resolve_event
+            from apps.makerspaces.public_page_access import require_scope
+            event = resolve_event(None, token)
+            require_scope("makerspace", event.makerspace, request)
+            return event.makerspace, True
+        if view_name == "hardware_requests:request-status":
+            from apps.hardware_requests.models import HardwareRequest
+
+            row = HardwareRequest.objects.select_related("makerspace").filter(
+                public_token=token
+            ).first()
+        elif view_name in {"public-printer-service-status", "public-machine-service-status"}:
+            from apps.machines.models import MachineServiceRequest
+
+            row = MachineServiceRequest.objects.select_related("makerspace").filter(
+                public_token=token
+            ).first()
+        else:
+            return None, False
+        return (row.makerspace, True) if row is not None else (None, False)
+    except Exception:
+        return None, False
+
+
 def resolve_target_once(request, entry):
     if hasattr(request, "_api_client_scope_target"):
         return request._api_client_scope_target
     result = resolve_target(request, entry)
     request._api_client_scope_target = result
     return result
-
-
-def target_allows(entry, client, target, resolved):
-    if entry.server_only and getattr(client, "client_type", None) != "server":
-        return False
-    if entry.tenant_bound and client.makerspace_id is None:
-        return False
-    if not resolved:
-        return False
-    if entry.target_mode == TARGET_GLOBAL or is_global_target(target):
-        return client.makerspace_id is None or entry.tenant_apps_admitted
-    target_id = getattr(target, "pk", None)
-    if target_id is None:
-        return False
-    return client.makerspace_id is None or target_id == client.makerspace_id
 
 
 def scope_allows(entry, scopes):

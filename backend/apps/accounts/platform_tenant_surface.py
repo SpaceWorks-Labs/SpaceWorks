@@ -34,5 +34,5 @@ def admits(user, request, classification, targets, invalid, *, native=False):
         return False
     from apps.accounts.platform_tenant_pii import refuse_masked_write, remember_spaces
     refuse_masked_write(request)
-    remember_spaces(request, targets)
+    remember_spaces(request, targets, user)
     return True

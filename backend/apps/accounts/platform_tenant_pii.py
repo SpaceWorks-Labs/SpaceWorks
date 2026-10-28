@@ -38,13 +38,18 @@ def _django_request(request):
     return getattr(request, "_request", request)
 
 
-def remember_spaces(request, targets):
-    """Mark the request as a superadmin tenant request over these makerspaces."""
-    setattr(_django_request(request), _SPACES_ATTR, frozenset(targets or ()))
+def remember_spaces(request, targets, viewer):
+    """Mark the request as a superadmin tenant request over these makerspaces.
+
+    The admitted viewer is kept with it: masking decides on the account that passed the
+    surface rule, never on whatever `request.user` holds by the time the response renders.
+    """
+    setattr(_django_request(request), _SPACES_ATTR, (frozenset(targets or ()), viewer))
 
 
 def admitted_spaces(request):
-    return getattr(_django_request(request), _SPACES_ATTR, None)
+    admitted = getattr(_django_request(request), _SPACES_ATTR, None)
+    return None if admitted is None else admitted[0]
 
 
 def refuse_masked_write(request):
@@ -108,11 +113,11 @@ class _Masker:
 
 
 def mask_response(request, response):
-    targets = admitted_spaces(request)
+    admitted = getattr(_django_request(request), _SPACES_ATTR, None)
     data = getattr(response, "data", None)
-    if targets is None or not isinstance(data, (dict, list)):
+    if admitted is None or not isinstance(data, (dict, list)):
         return response
-    masker = _Masker(getattr(request, "user", None), targets)
+    masker = _Masker(admitted[1], admitted[0])
     masker.walk(data)
     if masker.masked:
         response["X-PII-Masked"] = "1"

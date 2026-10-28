@@ -100,6 +100,7 @@ export const openApiTags = [
   "Notification contract",
   "Notification delivery",
   "Notifications",
+  "PII access",
   "Page editor",
   "Payments",
   "Personal notification contract",
@@ -127,6 +128,7 @@ export const openApiTags = [
   "Reauthentication",
   "Reports",
   "Saved details",
+  "Security settings",
   "Server bookings",
   "Server events",
   "Social auth",
@@ -719,12 +721,15 @@ export const openApiPaths = [
   "/api/v1/admin/makerspaces/{makerspace_id}/memberships",
   "/api/v1/admin/makerspaces/{makerspace_id}/memberships/{membership_id}/machine-scope",
   "/api/v1/admin/makerspaces/{makerspace_id}/memberships/{membership_id}/role",
+  "/api/v1/admin/makerspaces/{makerspace_id}/pii-access",
   "/api/v1/admin/makerspaces/{makerspace_id}/report-schedules",
   "/api/v1/admin/makerspaces/{makerspace_id}/roles",
   "/api/v1/admin/makerspaces/{makerspace_id}/saved-report-views",
   "/api/v1/admin/makerspaces/{makerspace_id}/saved-report-views/{id}",
   "/api/v1/admin/makerspaces/{makerspace_id}/saved-views",
   "/api/v1/admin/makerspaces/{makerspace_id}/saved-views/{id}",
+  "/api/v1/admin/makerspaces/{makerspace_id}/security-settings",
+  "/api/v1/admin/makerspaces/{makerspace_id}/security-settings/{key}/lock",
   "/api/v1/admin/makerspaces/{makerspace_id}/spaces/",
   "/api/v1/admin/makerspaces/{makerspace_id}/staff-accounts/",
   "/api/v1/admin/makerspaces/{makerspace_id}/staff-accounts/policy",
@@ -5743,6 +5748,8 @@ export type DownloadGrant = {
 export type DrillStatusEnum = "verified" | "failed" | "never" | "unknown";
 
 export type DueModeEnum = "absolute" | "after_trigger" | "event_start" | "event_end";
+
+export type EditedAsEnum = "space" | "platform";
 
 export type EditorCapabilities = {
   "allowed_section_types": Array<SectionTypesEnum>;
@@ -13951,6 +13958,12 @@ export type PatchedSchedule = {
   "is_active"?: boolean;
 };
 
+export type PatchedSecuritySettingsUpdate = {
+  "values"?: {
+  [key: string]: unknown;
+};
+};
+
 export type PatchedShiftWrite = {
   "operation_id"?: string;
   "expected_version"?: number;
@@ -14464,6 +14477,33 @@ export type PhoneStartResponse = {
 export type PhoneStatus = {
   "phone_e164": string;
   "verified": boolean;
+};
+
+export type PiiAccessGrant = {
+  "id": string;
+  "scope": PiiAccessGrantScopeEnum;
+  "reason": string;
+  "opened_by": string;
+  "opened_at": string;
+  "expires_at": string;
+  "closed_at": string | null;
+  "close_reason": string;
+  "is_own": boolean;
+};
+
+export type PiiAccessGrantScopeEnum = "space" | "person";
+
+export type PiiAccessOpen = {
+  "reason": string;
+};
+
+export type PiiAccessStatus = {
+  "makerspace_id": number;
+  "viewer_is_superadmin": boolean;
+  "pii_visible": boolean;
+  "active": PiiAccessGrant | null;
+  "space_grants": Array<PiiAccessGrant>;
+  "recent": Array<PiiAccessGrant>;
 };
 
 export type PlatformAnalyticsReport = {
@@ -18370,6 +18410,38 @@ export type SecurityActivityPage = {
   "next": string | null;
   "previous": string | null;
   "results": Array<SecurityActivity>;
+};
+
+export type SecurityLock = {
+  "floor": unknown;
+  "note": string;
+  "locked_at": string;
+};
+
+export type SecurityLockRequest = {
+  "floor": unknown;
+  "note"?: string;
+};
+
+export type SecuritySetting = {
+  "key": string;
+  "label": string;
+  "description": string;
+  "kind": SecuritySettingKindEnum;
+  "default": unknown;
+  "choices": Array<unknown>;
+  "value": unknown;
+  "lock": SecurityLock | null;
+};
+
+export type SecuritySettingKindEnum = "bool" | "int" | "choice" | "list";
+
+export type SecuritySettings = {
+  "makerspace_id": number;
+  "settings": Array<SecuritySetting>;
+  "can_edit": boolean;
+  "can_lock": boolean;
+  "edited_as": EditedAsEnum | NullEnum | null;
 };
 
 export type Seed = {

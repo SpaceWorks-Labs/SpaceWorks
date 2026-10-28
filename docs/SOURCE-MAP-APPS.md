@@ -17,6 +17,11 @@ Continuation of [SOURCE-MAP.md](SOURCE-MAP.md).
   staff sessions. `login_methods.py` reads platform policy; `login_methods_services.py` applies
   audited setup/command changes and `login_methods_validation.py` prevents account lockout.
   `management/commands/set_login_methods.py` is the host recovery/configuration entry point.
+  Superadmin PII windows: `models_pii_access.py` (`PlatformPiiAccessGrant`), `pii_access.py` (open/close/
+  lazy expiry, audited per space), `pii_presentation.py` (presentation-only masking, serializer mixin,
+  `require_pii_access`), `admin_pii_masking.py` and `admin_pii_access.py` (`/control/` masking, grant list,
+  per-person reveal), `views_pii_access.py`; `platform_authority.is_platform_superadmin` is the predicate.
+  `security_route_catalog.py` classifies the security/PII routes (membership-only, platform-reachable).
 - `backend/apps/makerspaces/` — `Makerspace` model (tenant root; unique `slug`; `frontend_domain`, module
   flags, `resource_limit_overrides`, `archived_at`, `superadmin_access_enabled`), bootstrap views, dynamic
   CORS, module guards, `module_registry.py` (canonical module registry — all module lists derive from
@@ -28,6 +33,9 @@ Continuation of [SOURCE-MAP.md](SOURCE-MAP.md).
   the shared WCAG contract. `theme_validation.public_theme_config` sanitizes bootstrap
   colours while retaining independently valid logo and mode values.
   `profile_validation.py` validates IANA timezone, ISO country and opening-hours JSON;
+  Per-space security settings: `security_settings_registry.py` (the one registry), `security_settings.py`
+  (the only writer; locks and audit), `models_security.py` (`MakerspaceSecurityLock`), `security_lock_guard.py`
+  (pre-save backstop on `enabled_features`) and `admin_security.py` (the `/control/` Security page).
   `opening_hours_schema.py` documents the shared hours schema. `local_time.py` owns
   `local_now`, `to_local`, `local_day_bounds`, `is_open` and `next_open_interval`
   (aware inputs, UTC half-open bounds; fold/gap policy in its docstring).
@@ -120,6 +128,8 @@ Continuation of [SOURCE-MAP.md](SOURCE-MAP.md).
   email-log, notification-recipient, FabLab report views.
   `views_certifications.py` explicitly re-exports type endpoints from
   `views_certification_types.py` and grant endpoints from `views_certification_grants.py`.
+  `urls_security.py` routes `views_security_settings.py` (security settings and platform locks) and
+  `accounts/views_pii_access.py` (superadmin PII windows); shapes in `serializers_security_settings.py`.
 - `backend/apps/operations/` — open operations/reporting: health, stock transfers (intra + true
   cross-makerspace), stocktake, adjustments, ledger, `report_registry.py` + `report_scope.py` + `reports_*`
   builders, CSV/XLSX exports, container APIs, QR print batches (`qr_zip.py`), dashboard, accountability.

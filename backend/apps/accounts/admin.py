@@ -14,6 +14,8 @@ from unfold.admin import ModelAdmin, TabularInline
 from unfold.forms import AdminPasswordChangeForm
 from .admin_account_forms import AccountUserChangeForm, PlatformUserCreationForm
 from .admin_staff_lifecycle import ReadOnlyMembershipInlineMixin, StaffLifecycleAdminMixin
+from .admin_pii_access import PersonPiiRevealAdminMixin, PlatformPiiAccessGrantAdmin  # noqa: F401 (registers)
+from .admin_pii_masking import PiiMaskingAdminMixin
 from rest_framework.exceptions import APIException
 
 from apps.accounts.models import User
@@ -54,7 +56,8 @@ class MakerspaceMembershipInline(ReadOnlyMembershipInlineMixin, TabularInline):
 
 
 @admin.register(User)
-class UserAdmin(StaffLifecycleAdminMixin, SuperuserOnlyModelAdmin, DjangoUserAdmin, ModelAdmin):
+class UserAdmin(PersonPiiRevealAdminMixin, PiiMaskingAdminMixin, StaffLifecycleAdminMixin, SuperuserOnlyModelAdmin,
+                DjangoUserAdmin, ModelAdmin):
     actions = ["restrict_access", "restore_access", "reset_password_selected",
                "set_staff_password", "deactivate_staff_account", "reactivate_staff_account"]
     form = AccountUserChangeForm

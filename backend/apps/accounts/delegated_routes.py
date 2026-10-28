@@ -9,6 +9,7 @@ from .delegated_route_catalog import (
 from .claim_routes_public_pages import MAKERSPACE_PAGE_EDITORS, ORGANIZATION_PAGE_EDITORS
 from .programme_route_catalog import ROUTES as PROGRAMME_ROUTES
 from .reimbursement_route_catalog import ROUTES as REIMBURSEMENT_ROUTES
+from .security_route_catalog import ROUTES as SECURITY_ROUTES
 
 MEMBERSHIP_ONLY = "membership-only"
 DELEGABLE = "delegable"
@@ -33,6 +34,7 @@ ROUTE_CLASSES = MappingProxyType({
         "admin-staff-account-set-password", "admin-staff-account-resend-invite",
     ), MEMBERSHIP_ONLY),
     **dict.fromkeys(MEMBERSHIP_ROUTES, MEMBERSHIP_ONLY),
+    **dict.fromkeys(SECURITY_ROUTES, MEMBERSHIP_ONLY),
     **dict.fromkeys(DELEGABLE_ROUTES, DELEGABLE),
     **dict.fromkeys(SHARED_ROUTES, SHARED_ACCOUNT_UTILITY),
     **dict.fromkeys(TENANT_STAFF_ROUTES, MEMBERSHIP_ONLY),

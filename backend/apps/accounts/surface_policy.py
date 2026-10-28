@@ -34,6 +34,8 @@ tenant-migration-import-verification tenant-migration-target-activate tenant-mig
 admin-backup-download-url
 """.split())
 PLATFORM_ROUTES |= PLATFORM_ONLY_ROUTES
+from apps.accounts.security_route_catalog import ROUTES as SECURITY_ROUTES  # noqa: E402
+PLATFORM_ROUTES |= SECURITY_ROUTES
 
 
 def _active(user):

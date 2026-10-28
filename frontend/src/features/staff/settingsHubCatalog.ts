@@ -19,11 +19,12 @@ const SECTION_ENTRIES: HubEntry[] = [
   ["notifications", "Notifications", "Staff alerts, timing, muting, recipients and rooms.", "notifications staff email timing quiet hours mute recipients rooms destinations alerts"],
   ["channels", "Communication channels", "Email, Telegram, Slack, Mattermost, Discord, SMS, WhatsApp and app push.", "channels medium telegram slack mattermost discord sms whatsapp twilio meta push email fallback credentials bot token templates test delivery log"],
   ["integrations", "Email & integrations", "Outgoing email, webhooks and integration health.", "email smtp sender webhooks integrations health telegram api"],
-  ["privacy", "Privacy & evidence", "Superadmin access and evidence photo retention.", "privacy superadmin access evidence photos retention delete"],
+  ["privacy", "Privacy & evidence", "Evidence photo retention.", "privacy evidence photos retention delete"],
 ].map(([id, title, description, keywords]) => ({ id, title, description, keywords, target: { section: id } }));
 
 /** Settings that live on their own pages (or in a domain console's settings dialog). */
 const TAB_ENTRIES: HubEntry[] = [
+  ["security", "Security", "Staff sign-in rules, platform locks and platform access to personal data.", "security mfa two-step authenticator totp sign in lock platform pii personal data privacy superadmin"],
   ["users", "Staff & roles", "Create staff accounts, assign roles and machine types.", "staff team people appoint roles users accounts invite machine manager event manager booking manager inventory manager handover"],
   ["emailtemplates", "Email templates", "Edit the emails this space sends.", "email templates messages wording"],
   ["email-logs", "Email delivery log", "Every email sent, failed or skipped.", "email log delivery failed bounced sent"],

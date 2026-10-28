@@ -1,14 +1,14 @@
 const ALL_TABS = [
   "platform-dashboard", "usage",
   "dashboard", "notifications", "channels", "requests", "direct", "handover", "inventory", "needsfix", "categories", "machines", "events", "organized", "granted", "bookings", "members", "cards", "tobuy", "transfers",
-  "stocktake", "containers", "ledger", "reports", "accountability", "warranty", "bulk", "qr", "scanner", "api", "settings", "emailtemplates", "users", "platform", "audit",
+  "stocktake", "containers", "ledger", "reports", "accountability", "warranty", "bulk", "qr", "scanner", "api", "settings", "security", "emailtemplates", "users", "platform", "audit",
   "devices", "email-logs", "payments", "refunds", "organizations", "organization-analytics", "modules", "exports", "backups", "migration",
 ] as const;
 
 export const STAFF_TAB_KEYS: readonly string[] = ALL_TABS;
 
 // Mirrors surface_policy.PLATFORM_ROUTES: tenant operations require a staff account.
-const PLATFORM_TABS = ["platform-dashboard", "users", "organizations", "modules", "backups", "migration", "platform"];
+const PLATFORM_TABS = ["platform-dashboard", "users", "security", "organizations", "modules", "backups", "migration", "platform"];
 
 export const TAB_LABELS: Record<string, string> = {
   "platform-dashboard": "Platform dashboard",
@@ -46,6 +46,7 @@ export const TAB_LABELS: Record<string, string> = {
   audit: "Audit log",
   users: "Users",
   settings: "Settings",
+  security: "Security",
   emailtemplates: "Email templates",
   "email-logs": "Delivery logs",
   api: "API access",
@@ -67,7 +68,7 @@ export const TAB_GROUPS: { label: string; tabs: string[] }[] = [
   { label: "Members", tabs: ["members", "cards"] },
   { label: "Insights", tabs: ["reports", "organization-analytics", "accountability", "warranty", "audit"] },
   { label: "Organizations", tabs: ["organizations"] },
-  { label: "Admin", tabs: ["users", "settings", "usage", "emailtemplates", "email-logs", "api", "exports", "backups", "migration", "modules", "platform-dashboard", "platform"] },
+  { label: "Admin", tabs: ["users", "settings", "security", "usage", "emailtemplates", "email-logs", "api", "exports", "backups", "migration", "modules", "platform-dashboard", "platform"] },
 ];
 
 // Permissions only. Module availability is decided in exactly one place --
@@ -158,6 +159,8 @@ export function getStaffAccess(
     if (tabName === "warranty") return canEditInventory || canSeePrinting;
     if (tabName === "users") return canManageMakerspace;
     if (tabName === "settings") return canManageMakerspace;
+    // The backend narrows further: only this space's Space Manager or a platform superadmin.
+    if (tabName === "security") return canManageMakerspace;
     if (tabName === "emailtemplates") return canEditInventory || canSeePrinting || has("manage_devices") || canManageEvents || canManageBookings;
     if (tabName === "email-logs") return canManageMakerspace;
     if (tabName === "platform") return isSuperadmin && !singleTenantLocked;

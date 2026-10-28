@@ -9,6 +9,8 @@ from apps.makerspaces.admin_images import MakerspaceAdminForm as ImageMakerspace
 from apps.makerspaces.admin_capability_completion import FEATURES, complete_selection, matrix_rules
 from apps.makerspaces.module_registry import BY_KEY, MODULES, module_available
 from apps.makerspaces.request_access import effective_policy
+from apps.makerspaces.admin_security import MakerspaceSecurityAdminMixin
+from apps.makerspaces.security_settings_registry import is_security_feature
 
 
 def _labels(keys):
@@ -47,6 +49,14 @@ def _feature_label(feature):
         return f"-> {feature.label}"
     return f"-> {feature.label} (requires {', '.join(requirements)})"
 
+
+def _choice_label(feature):
+    # Security keys are shown, never edited, here: they change only through the
+    # Security section (Space Manager/superadmin authority, step-up and audit).
+    if is_security_feature(feature.key):
+        return f"-> {feature.label} (read-only here; change it under Security)"
+    return _feature_label(feature)
+
 class MakerspaceAdminForm(ImageMakerspaceAdminForm):
     capabilities = forms.MultipleChoiceField(
         required=False,
@@ -74,7 +84,7 @@ class MakerspaceAdminForm(ImageMakerspaceAdminForm):
             if key not in known
         )
         choices.extend(
-            (f"feature:{item.key}", _feature_label(item))
+            (f"feature:{item.key}", _choice_label(item))
             for item in FEATURE_DEFINITIONS
         )
         self.fields["capabilities"].choices = choices
@@ -95,7 +105,9 @@ class MakerspaceAdminForm(ImageMakerspaceAdminForm):
     def clean_capabilities(self):
         values = self.cleaned_data["capabilities"]
         modules = [value.removeprefix("module:") for value in values if value.startswith("module:")]
-        features = [value.removeprefix("feature:") for value in values if value.startswith("feature:")]
+        features = [value.removeprefix("feature:") for value in values if value.startswith("feature:")
+                    and not is_security_feature(value.removeprefix("feature:"))]
+        features += [key for key in self.capability_before["features"] if is_security_feature(key)]
         # MP-28 / owner decisions #82 and #87: the same rules the page script applies
         # (admin_capability_completion), so a save that bypasses the script lands in the
         # same place and nothing is silently re-ticked.
@@ -117,7 +129,7 @@ class MakerspaceAdminForm(ImageMakerspaceAdminForm):
         return values
 
 
-class MakerspaceCapabilityAdminMixin:
+class MakerspaceCapabilityAdminMixin(MakerspaceSecurityAdminMixin):
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
         before = getattr(form, "capability_before", {"modules": [], "features": []})

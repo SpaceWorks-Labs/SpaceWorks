@@ -18,6 +18,8 @@ class MakerspacesConfig(AppConfig):
 
         register_signal()
         self._register_separability()
+        from .security_lock_guard import register as register_security_guard
+        register_security_guard()
         from .public_profile_cache import register_signals
         from .profile_activity_sources import register_builtin_sources
         register_signals()

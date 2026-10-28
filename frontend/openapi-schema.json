@@ -79694,6 +79694,263 @@
                 }
             }
         },
+        "/api/v1/admin/makerspaces/{makerspace_id}/pii-access": {
+            "get": {
+                "operationId": "api_v1_admin_makerspaces_pii_access_retrieve",
+                "description": "A platform superadmin sees their own window and every open one; this space's Space Manager sees the same list read-only. Lapsed windows are closed and audited first.",
+                "summary": "PII access windows on a space",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "PII access"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PiiAccessStatus"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "post": {
+                "operationId": "api_v1_admin_makerspaces_pii_access_create",
+                "description": "Platform superadmin with recent re-authentication (403 `recent_reauth_required`). Audited as `platform.pii_access_opened` in this space; 409 `pii_access_already_open` when one is open.",
+                "summary": "Open a 30-minute PII window",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "PII access"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PiiAccessOpen"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PiiAccessOpen"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PiiAccessOpen"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PiiAccessStatus"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "A window is already open."
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "api_v1_admin_makerspaces_pii_access_destroy",
+                "description": "Platform superadmin; closes the caller's open window on this space and audits `platform.pii_access_closed`. 404 when none is open.",
+                "summary": "Close my PII window now",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "PII access"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PiiAccessStatus"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/v1/admin/makerspaces/{makerspace_id}/report-schedules": {
             "get": {
                 "operationId": "api_v1_admin_makerspaces_report_schedules_list",
@@ -81079,6 +81336,367 @@
                             }
                         },
                         "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/makerspaces/{makerspace_id}/security-settings": {
+            "get": {
+                "operationId": "api_v1_admin_makerspaces_security_settings_retrieve",
+                "description": "The Space Manager of this space or a platform superadmin. Each row carries its platform lock (floor and note) when one is set.",
+                "summary": "Read a space's security settings",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Security settings"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SecuritySettings"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "api_v1_admin_makerspaces_security_settings_partial_update",
+                "description": "Recent re-authentication required (403 `recent_reauth_required`). A value looser than a platform lock's floor is refused with 400 `security_setting_locked`. Audited as `makerspace.security_setting_changed`.",
+                "summary": "Change security settings",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Security settings"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedSecuritySettingsUpdate"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedSecuritySettingsUpdate"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedSecuritySettingsUpdate"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SecuritySettings"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/makerspaces/{makerspace_id}/security-settings/{key}/lock": {
+            "put": {
+                "operationId": "api_v1_admin_makerspaces_security_settings_lock_update",
+                "description": "Platform superadmin with recent re-authentication. The space cannot go below the floor; a boolean lock forces the setting on, and a looser stored value is raised to the floor. Audited as `makerspace.security_setting_locked`.",
+                "summary": "Lock a security setting at a floor",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "key",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "A registered security setting key.",
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Security settings"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SecurityLockRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SecurityLockRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SecurityLockRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SecuritySettings"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "api_v1_admin_makerspaces_security_settings_lock_destroy",
+                "description": "Platform superadmin with recent re-authentication. The stored value is kept. Audited as `makerspace.security_setting_unlocked`.",
+                "summary": "Remove a platform lock",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "key",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "A registered security setting key.",
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Security settings"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SecuritySettings"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "No such space or no lock."
                     }
                 }
             }
@@ -174034,6 +174652,14 @@
                 "type": "string",
                 "description": "* `absolute` - absolute\n* `after_trigger` - after_trigger\n* `event_start` - event_start\n* `event_end` - event_end"
             },
+            "EditedAsEnum": {
+                "enum": [
+                    "space",
+                    "platform"
+                ],
+                "type": "string",
+                "description": "* `space` - space\n* `platform` - platform"
+            },
             "EditorCapabilities": {
                 "type": "object",
                 "properties": {
@@ -212266,6 +212892,16 @@
                     }
                 }
             },
+            "PatchedSecuritySettingsUpdate": {
+                "type": "object",
+                "properties": {
+                    "values": {
+                        "type": "object",
+                        "additionalProperties": {},
+                        "description": "Setting key -> new value, e.g. {\"security.staff_mfa_required\": true}. Applied atomically."
+                    }
+                }
+            },
             "PatchedShiftWrite": {
                 "type": "object",
                 "properties": {
@@ -214317,6 +214953,122 @@
                 "required": [
                     "phone_e164",
                     "verified"
+                ]
+            },
+            "PiiAccessGrant": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "scope": {
+                        "$ref": "#/components/schemas/PiiAccessGrantScopeEnum"
+                    },
+                    "reason": {
+                        "type": "string"
+                    },
+                    "opened_by": {
+                        "type": "string",
+                        "description": "Display name of the superadmin who opened it."
+                    },
+                    "opened_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "expires_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "closed_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "close_reason": {
+                        "type": "string"
+                    },
+                    "is_own": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "close_reason",
+                    "closed_at",
+                    "expires_at",
+                    "id",
+                    "is_own",
+                    "opened_at",
+                    "opened_by",
+                    "reason",
+                    "scope"
+                ]
+            },
+            "PiiAccessGrantScopeEnum": {
+                "enum": [
+                    "space",
+                    "person"
+                ],
+                "type": "string",
+                "description": "* `space` - space\n* `person` - person"
+            },
+            "PiiAccessOpen": {
+                "type": "object",
+                "properties": {
+                    "reason": {
+                        "type": "string",
+                        "maxLength": 300,
+                        "minLength": 10
+                    }
+                },
+                "required": [
+                    "reason"
+                ]
+            },
+            "PiiAccessStatus": {
+                "type": "object",
+                "properties": {
+                    "makerspace_id": {
+                        "type": "integer"
+                    },
+                    "viewer_is_superadmin": {
+                        "type": "boolean"
+                    },
+                    "pii_visible": {
+                        "type": "boolean",
+                        "description": "Whether this viewer currently sees this space's PII unmasked."
+                    },
+                    "active": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/PiiAccessGrant"
+                            }
+                        ],
+                        "nullable": true,
+                        "description": "The viewer's own open window here, if any."
+                    },
+                    "space_grants": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PiiAccessGrant"
+                        },
+                        "description": "Open windows on this space, newest first."
+                    },
+                    "recent": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PiiAccessGrant"
+                        },
+                        "description": "The ten most recent windows on this space."
+                    }
+                },
+                "required": [
+                    "active",
+                    "makerspace_id",
+                    "pii_visible",
+                    "recent",
+                    "space_grants",
+                    "viewer_is_superadmin"
                 ]
             },
             "PlatformAnalyticsReport": {
@@ -230028,6 +230780,131 @@
                     "next",
                     "previous",
                     "results"
+                ]
+            },
+            "SecurityLock": {
+                "type": "object",
+                "properties": {
+                    "floor": {},
+                    "note": {
+                        "type": "string"
+                    },
+                    "locked_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "floor",
+                    "locked_at",
+                    "note"
+                ]
+            },
+            "SecurityLockRequest": {
+                "type": "object",
+                "properties": {
+                    "floor": {
+                        "description": "The floor the space may not go below; a boolean lock is always true."
+                    },
+                    "note": {
+                        "type": "string",
+                        "default": "",
+                        "maxLength": 200
+                    }
+                },
+                "required": [
+                    "floor"
+                ]
+            },
+            "SecuritySetting": {
+                "type": "object",
+                "properties": {
+                    "key": {
+                        "type": "string"
+                    },
+                    "label": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "kind": {
+                        "$ref": "#/components/schemas/SecuritySettingKindEnum"
+                    },
+                    "default": {},
+                    "choices": {
+                        "type": "array",
+                        "items": {}
+                    },
+                    "value": {},
+                    "lock": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/SecurityLock"
+                            }
+                        ],
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "choices",
+                    "default",
+                    "description",
+                    "key",
+                    "kind",
+                    "label",
+                    "lock",
+                    "value"
+                ]
+            },
+            "SecuritySettingKindEnum": {
+                "enum": [
+                    "bool",
+                    "int",
+                    "choice",
+                    "list"
+                ],
+                "type": "string",
+                "description": "* `bool` - bool\n* `int` - int\n* `choice` - choice\n* `list` - list"
+            },
+            "SecuritySettings": {
+                "type": "object",
+                "properties": {
+                    "makerspace_id": {
+                        "type": "integer"
+                    },
+                    "settings": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/SecuritySetting"
+                        }
+                    },
+                    "can_edit": {
+                        "type": "boolean",
+                        "description": "This space's Space Manager or a platform superadmin."
+                    },
+                    "can_lock": {
+                        "type": "boolean",
+                        "description": "Platform superadmins only."
+                    },
+                    "edited_as": {
+                        "nullable": true,
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/EditedAsEnum"
+                            },
+                            {
+                                "$ref": "#/components/schemas/NullEnum"
+                            }
+                        ]
+                    }
+                },
+                "required": [
+                    "can_edit",
+                    "can_lock",
+                    "edited_as",
+                    "makerspace_id",
+                    "settings"
                 ]
             },
             "Seed": {

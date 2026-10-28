@@ -1,0 +1,52 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<p><a href="{% url 'admin:makerspaces_makerspace_change' space.pk %}">Back to {{ space.name }}</a></p>
+<p>Changes here need a recent identity check and are recorded in this space's audit log, which its managers can read. A platform lock is a floor: the space can tighten the setting but not loosen it, and only a superadmin removes the lock.</p>
+
+<h2>Security settings</h2>
+<table>
+  <thead><tr><th scope="col">Setting</th><th scope="col">Value</th><th scope="col">Platform lock</th><th scope="col">Change</th></tr></thead>
+  <tbody>
+  {% for row in settings %}
+    <tr>
+      <td><strong>{{ row.label }}</strong><br><small>{{ row.description }}</small></td>
+      <td>{% if row.value %}On{% else %}Off{% endif %}</td>
+      <td>{% if row.lock %}Locked at {{ row.lock.floor }}{% if row.lock.note %}: {{ row.lock.note }}{% endif %}{% else %}Not locked{% endif %}</td>
+      <td>
+        <form method="post">{% csrf_token %}
+          <input type="hidden" name="action" value="set"><input type="hidden" name="key" value="{{ row.key }}">
+          {% if not row.value %}<input type="hidden" name="enabled" value="on">{% endif %}
+          <button type="submit">{% if row.value %}Turn off{% else %}Turn on{% endif %}</button>
+        </form>
+        {% if row.lock %}
+        <form method="post">{% csrf_token %}
+          <input type="hidden" name="action" value="unlock"><input type="hidden" name="key" value="{{ row.key }}">
+          <button type="submit">Remove lock</button>
+        </form>
+        {% else %}
+        <form method="post">{% csrf_token %}
+          <input type="hidden" name="action" value="lock"><input type="hidden" name="key" value="{{ row.key }}">
+          <label>Note for the space <input type="text" name="note" maxlength="200"></label>
+          <button type="submit">Lock on</button>
+        </form>
+        {% endif %}
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<h2>Personal data in this space</h2>
+{% if own_window %}
+  <p>Your PII access window is open until {{ own_window.expires_at }}. Reason: {{ own_window.reason }}</p>
+  <form method="post">{% csrf_token %}<input type="hidden" name="action" value="close_pii"><button type="submit">Close it now</button></form>
+{% else %}
+  <p>Members' personal details are masked for you in this space. Opening a 30-minute window needs a reason and is recorded in the space's audit log.</p>
+  <form method="post">{% csrf_token %}
+    <input type="hidden" name="action" value="open_pii">
+    <label for="pii-reason">Reason (10 to 300 characters)</label><br>
+    <textarea id="pii-reason" name="reason" rows="2" cols="60" minlength="10" maxlength="300" required></textarea><br>
+    <button type="submit">Open PII access for 30 minutes</button>
+  </form>
+{% endif %}
+{% endblock %}

@@ -52,8 +52,10 @@ class TenantDumpCatalogError(AssertionError):
 # steps plus reimbursements; re-pinned from schema_digest() over the merged graph.
 # lane/r1-security: makerspaces/0105 drops anonymous_requests_enabled and accounts/0046 drops
 # User.external_checkin_user_id (#80); re-pinned.
+# lane/p1b-c: makerspaces/0109 MakerspaceSecurityLock and accounts/0047 PlatformPiiAccessGrant
+# (security locks and the superadmin PII window, #114); re-pinned.
 # Orchestrator re-pins the live catalog after final schema/migration verification.
-CATALOG_SCHEMA_SHA256 = "c6bd391787bf7f4b9b6e8e313822f0ea5a054a5a81945b5446a0eeb6aca30a69"
+CATALOG_SCHEMA_SHA256 = "e3a364fc3c74229a126c827d45b4fd7d37b23e3169a855682db2eb7ed64b9f71"
 
 
 def catalog_models(apps_registry=apps):

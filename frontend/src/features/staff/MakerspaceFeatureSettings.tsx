@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { StatusPill as Badge } from "../../components/ui";
 import { staffRequest } from "../../lib/api";
-import { FEATURE_DEFINITIONS } from "../../lib/features";
+import { FEATURE_DEFINITIONS, isSecurityFeature } from "../../lib/features";
 import type { Makerspace } from "./panels/shared";
 
 type Props = {
@@ -18,7 +18,7 @@ type Props = {
 const GENERAL = "__general__";
 
 const MODULE_FEATURES = Object.entries(
-  FEATURE_DEFINITIONS.reduce<Record<string, typeof FEATURE_DEFINITIONS>>((groups, feature) => {
+  FEATURE_DEFINITIONS.filter(feature => !isSecurityFeature(feature.key)).reduce<Record<string, typeof FEATURE_DEFINITIONS>>((groups, feature) => {
     const group = feature.parent_module ?? GENERAL;
     groups[group] = [...(groups[group] ?? []), feature];
     return groups;

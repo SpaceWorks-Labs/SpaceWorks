@@ -103,7 +103,6 @@ def scope_queryset(
 
 def eligible_makerspaces(*source_modules):
     queryset = servable_queryset(Makerspace.objects.filter(
-        superadmin_access_enabled=True,
         enabled_modules__contains=["reports"],
     ))
     for module in source_modules:

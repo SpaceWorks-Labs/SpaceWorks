@@ -19,8 +19,8 @@ def machine_partition_q(actor, makerspace_id):
     Exemption is resolved with ``role_scope.manage_scope_for``, NOT by asking whether
     ``makerspaces_for_action`` returned ``rbac.ALL``. Those two disagree for exactly one
     actor and it is the dangerous one: a global superadmin who also holds an explicit
-    machine-scoped membership in a **hard-hidden** space is reduced to that role's
-    authority by design, yet still answers ``ALL`` at the action level -- so the ALL
+    machine-scoped membership in a space is reduced to that role's machine links by
+    ``manage_scopes_for``, yet still answers ``ALL`` at the action level -- so the ALL
     shortcut handed them every row in the space and the role's machine links did nothing.
     ``manage_scopes_for`` already gives the right answer for both shapes (EXEMPT when a
     superadmin has no membership there, the role's links when they do), and using it is

@@ -21,7 +21,6 @@ def user_payload(user, request=None, *, session_authority=None):
     archived_ids = rbac.archived_makerspace_ids()
     if archived_ids:
         memberships = memberships.exclude(makerspace_id__in=archived_ids)
-    memberships = rbac.hide_from_superadmin(user, memberships, field="makerspace_id")
     org_space_ids = None
     include_organizations = True
     if request is not None and getattr(request, 'device_grant', None):
@@ -41,15 +40,13 @@ def user_payload(user, request=None, *, session_authority=None):
     # Resolve effective actions from the already select_related-loaded membership rows so
     # /auth/login and /auth/me stay O(1) queries — calling rbac.effective_actions() per row
     # would re-query the membership + archived set for each makerspace (1+2N). This mirrors
-    # rbac.effective_actions: a superadmin in a VISIBLE makerspace gets the full grantable
-    # set; a superadmin who is an explicit member of a hard-hidden makerspace (kept here by
-    # hide_from_superadmin's explicit-member carve-out) is membership-limited; everyone else
-    # uses the membership's resolved actions. Archived rows are already excluded above.
+    # rbac.effective_actions: a superadmin gets the full grantable set in every servable
+    # makerspace; everyone else uses the membership's resolved actions. Archived rows are
+    # already excluded above.
     is_superadmin = user.is_superuser or user.role == User.Role.SUPERADMIN
-    hidden_ids = rbac.superadmin_hidden_makerspace_ids() if is_superadmin else ()
 
     def _membership_actions(m):
-        if is_superadmin and not rbac._id_in(m.makerspace_id, hidden_ids):
+        if is_superadmin:
             return sorted(rbac.ROLE_GRANTABLE_ACTIONS)
         return sorted(
             rbac.actions_for_membership(m)
@@ -57,7 +54,7 @@ def user_payload(user, request=None, *, session_authority=None):
         )
 
     def _can_configure_machine_types(m):
-        if is_superadmin and not rbac._id_in(m.makerspace_id, hidden_ids):
+        if is_superadmin:
             return True
         from apps.accounts.rbac_roles import membership_roles
 
@@ -92,7 +89,7 @@ def user_payload(user, request=None, *, session_authority=None):
         tab and its unread badge render, and the backend refuses the inbox for exactly this
         actor. A tab that renders and then 403s on every request is worse than no tab.
         """
-        if is_superadmin and not rbac._id_in(m.makerspace_id, hidden_ids):
+        if is_superadmin:
             return False
         actions = set(_membership_actions(m))
         if rbac.Action.MANAGE_MACHINES not in actions:

@@ -63,7 +63,7 @@ LOAN_WIDGETS = {"loan-throughput", "overdue-loans", "most-lent", "top-borrowers"
 
 
 def visible_widgets(actor, makerspace):
-    """Omit unauthorized data entirely, including action-specific hard-hidden data."""
+    """Omit unauthorized data entirely."""
     if not active_user(actor) or not is_servable(makerspace) or rbac.is_handout_only(actor, makerspace.pk):
         return ()
     visible = []
@@ -72,9 +72,7 @@ def visible_widgets(actor, makerspace):
         actions = {widget.required_action, *(d.required_action for d in definitions)}
         if any(d.identity_bearing for d in definitions):
             actions.add(rbac.Action.VIEW_AUDIT)
-        if any(not rbac.can(actor, action, makerspace.pk)
-               or rbac.superadmin_hidden_block_applies(actor, makerspace.pk, action)
-               for action in actions):
+        if any(not rbac.can(actor, action, makerspace.pk) for action in actions):
             continue
         modules = set(widget.required_modules) | {module for d in definitions for module in d.required_modules}
         if not all(module_enabled(makerspace, module) for module in modules):

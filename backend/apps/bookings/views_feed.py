@@ -57,8 +57,7 @@ def _feeds(space):
 
 def _require_owner(user, space):
     require_active_account(user, space)
-    if (user.is_tenant_dump_stub or rbac.personal_notification_membership_refused(user, space.pk)
-            or rbac.superadmin_hidden_block_applies(user, space.pk)):
+    if user.is_tenant_dump_stub or rbac.personal_notification_membership_refused(user, space.pk):
         raise PermissionDenied('An active account in good standing is required.')
 
 

@@ -1,7 +1,6 @@
 """Booking target adapter for the shared audited, locked grant lifecycle."""
 
 import logging
-from dataclasses import replace
 
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
@@ -34,13 +33,6 @@ def _locked_target(target):
     return locked
 
 
-def _locked_visible_target(target):
-    locked = _locked_target(target)
-    if not locked.makerspace.superadmin_access_enabled:
-        raise PermissionDenied("Resource invitations are unavailable while this makerspace is hidden.")
-    return locked
-
-
 ADAPTER = lifecycle.GrantAdapter(
     grant_model=BookingSpaceStaffGrant, invite_model=BookingSpaceStaffGrantInvite,
     permissions=PERMISSIONS, namespace="bookings", audit_prefix="booking.staff_grant",
@@ -52,7 +44,7 @@ ADAPTER = lifecycle.GrantAdapter(
 
 
 def create_invite(target, *, actor, permissions, email="", send_email=False):
-    return lifecycle.create_invite(replace(ADAPTER, lock_target=_locked_visible_target), target, actor=actor, permissions=permissions,
+    return lifecycle.create_invite(ADAPTER, target, actor=actor, permissions=permissions,
                                    email=email, send=_send_invite if send_email else None)
 
 
@@ -69,7 +61,7 @@ def revoke_invite(invite, *, actor):
 
 
 def redeem_invite(token, *, actor, makerspace_id=None):
-    return lifecycle.redeem_invite(replace(ADAPTER, lock_target=_locked_visible_target), token, actor=actor, makerspace_id=makerspace_id)
+    return lifecycle.redeem_invite(ADAPTER, token, actor=actor, makerspace_id=makerspace_id)
 
 
 def _send_invite(row, email, token):

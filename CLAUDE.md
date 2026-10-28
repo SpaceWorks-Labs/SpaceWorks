@@ -130,12 +130,12 @@ the Auth module** — forgetting this is a cross-tenant data leak, not just a bu
 ## Hard Rules Baked Into Workflows (don't regress these)
 
 - **Staff and member are separate accounts.** Only a Space Manager (own space, non-Space-Manager
-  staff) or permitted superadmin creates staff; members never receive built-in staff roles. Staff
+  staff) or the superadmin creates staff; members never receive built-in staff roles. Staff
   sign-in is username/email + password (+ authenticator MFA). Admin-issued resets revoke sessions
   and force password change; context-bound email OTP recovery via Platform Email clears that flag
   and retains MFA. Platform accounts have their own email recovery and host break-glass command.
-  With `superadmin_access_enabled=False`, only local Space Managers manage staff, including other
-  Space Managers; never self and never the last active manager. See **Account kinds** in `docs/INVARIANTS.md`.
+  The superadmin is always on and is the only one who manages Space Managers, in every space;
+  never self and never the last active manager. See **Account kinds** in `docs/INVARIANTS.md`.
 - Reviewed-request hardware **cannot be issued** without both a box QR scan and an issue photo.
 - Public self-checkout and staff direct handout **cannot be issued** without uploaded issue evidence and an
   eligible scanned/selected tool.
@@ -435,7 +435,7 @@ because none are quoted here — this index is a router, not a summary.
 | Section of `docs/INVARIANTS.md` | Before you touch |
 | --- | --- |
 | **Account kinds (member / staff / platform)** | account creation, kind/tenant constraints and uniqueness, staff lifecycle, auth surfaces and delegated routes, session contexts, reset/MFA, chat identity, staff export/import, retirement and backup shells |
-| **Cross-cutting invariants** | self-host vs managed SaaS and fair-use limits; `frontend_domain` and origin scoping; superadmin hide/archive/purge; archival vs member money; the two-key archive request; public borrower names; public image fields and storage accounting; rate-limit cache; object storage; the report registry; scoped PII encryption; fixed role sets; `module_registry` and opt-in modules; module install/uninstall/purge; the `email` module gate; A6 master switches; two-level capabilities; the `membership` module; payments, credentials and reconciliation; native device grants; OIDC, social, phone and login-method switches; walk-in/account-less identity; maker profiles and public handles; staff event registration; notifications v2; presence check-in and TV privacy; the colour vocabulary; the accessibility floor; console parity; managed hosting requests |
+| **Cross-cutting invariants** | self-host vs managed SaaS and fair-use limits; `frontend_domain` and origin scoping; superadmin always on; archive/purge; archival vs member money; the two-key archive request; public borrower names; public image fields and storage accounting; rate-limit cache; object storage; the report registry; scoped PII encryption; fixed role sets; `module_registry` and opt-in modules; module install/uninstall/purge; the `email` module gate; A6 master switches; two-level capabilities; the `membership` module; payments, credentials and reconciliation; native device grants; OIDC, social, phone and login-method switches; walk-in/account-less identity; maker profiles and public handles; staff event registration; notifications v2; presence check-in and TV privacy; the colour vocabulary; the accessibility floor; console parity; managed hosting requests |
 | **Handover roles and the retired Guest Admin** | built-in Handover and combined role sets, `rbac.HANDOUT_ACTIONS`, `is_handout_only`, the retired `guest_admin`/`print_manager` enum members and their migrations |
 | **Separability and tombstoning** | `apps/separability/`, `TOMBSTONED_APPS`, `SEPARABLE_APPS`, retention vs runtime registries, adding a PII-holding model |
 | **Machine scoping** | `MANAGE_MACHINES`, `machines/role_scope.py`, the Machines console, machine-service surfaces, procurement narrowing, dashboard scoping, delegated recipient rules |

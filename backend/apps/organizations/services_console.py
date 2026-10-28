@@ -27,10 +27,8 @@ def require_superadmin(actor):
 
 
 def visible_spaces(actor):
-    # Even a local membership must not let a platform actor grant authority by
-    # proxy into a space that explicitly opted out of platform access.
     return rbac.scope_by_action(actor, rbac.Action.MANAGE_MAKERSPACE,
-                                servable_queryset(), field="pk").filter(superadmin_access_enabled=True)
+                                servable_queryset(), field="pk")
 
 
 @transaction.atomic
@@ -48,7 +46,7 @@ def create_organization(actor, **values):
 @transaction.atomic
 def change_link(actor, organization_id, makerspace_id, *, relationship=None):
     require_superadmin(actor)
-    # Resolve visibility before returning a gate error for a hidden tenant. Take
+    # Resolve visibility before returning a gate error for an unservable tenant. Take
     # the shared freeze lock before the makerspace root lock, as other services do.
     get_object_or_404(visible_spaces(actor), pk=makerspace_id)
     assert_write_allowed(makerspace_id)

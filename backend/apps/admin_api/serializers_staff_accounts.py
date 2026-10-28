@@ -139,7 +139,6 @@ class StaffMachineTypeChoiceSerializer(serializers.Serializer):
 class StaffAccountPolicySerializer(serializers.Serializer):
     creatable_roles = serializers.ListField(child=serializers.CharField())
     can_manage_space_managers = serializers.BooleanField()
-    superadmin_access_enabled = serializers.BooleanField()
     email_onboarding_available = serializers.BooleanField()
     machine_types = StaffMachineTypeChoiceSerializer(many=True)
     roles = RoleSerializer(many=True)

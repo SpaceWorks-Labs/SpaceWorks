@@ -44,11 +44,6 @@ def attach_staff_membership(
                             roles if roles is not None else [role])
     role = roles[0]
     actor_is_superadmin = actor.is_superuser or actor.role == User.Role.SUPERADMIN
-    is_break_glass = (
-        actor_is_superadmin
-        and not makerspace.superadmin_access_enabled
-        and role.legacy_role == MakerspaceMembership.Role.SPACE_MANAGER
-    )
     with transaction.atomic():
         makerspace = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
         existing_user = User.objects.select_for_update().filter(username=username).first()
@@ -97,7 +92,7 @@ def attach_staff_membership(
                 raise ValidationError({"detail": "Community admission requires an unrestricted active account."})
             from apps.makerspaces.membership_activation import _activate_membership
             membership = _activate_membership(actor, makerspace, user, role, source="staff_create")
-            return membership, created, is_break_glass
+            return membership, created
         if not has_active_membership and user.is_active and (
             user.access_status == User.AccessStatus.ACTIVE
         ):
@@ -121,4 +116,4 @@ def attach_staff_membership(
                      meta={"membership_id": membership.pk,
                      "before": changes["before"], "after": changes["after"],
                      "removed_machine_type_ids": changes["removed_machine_type_ids"]})
-        return membership, created, is_break_glass
+        return membership, created

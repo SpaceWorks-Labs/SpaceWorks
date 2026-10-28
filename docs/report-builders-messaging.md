@@ -73,9 +73,8 @@ for visible tenants; own-provider rows expose counts/outcomes without segment bi
 Pending debt never contributes to collected platform revenue; document/settlement accounting stays
 on the canonical ledger. Historical usage is not erased by later module disablement.
 
-A server-owned PlatformContext is required. Hidden platform-provider usage passes through the
-anonymous hidden_makerspaces bucket with only service/day/count; no tenant, outcome, purpose or
-source breakdown survives. Hidden own-provider usage is excluded, even with local operator membership.
+A server-owned PlatformContext is required. Usage is grouped by makerspace for every servable space;
+there is no anonymous hidden bucket.
 Mobile reports recognize fixed-tenant native staff grants and current per-device children.
 
 ## HTTP and rollout

@@ -1,7 +1,7 @@
 """Organization admin registrations and stable import names."""
-from .admin_organizations import OrganizationAdmin, OrganizationMakerspaceInline, _hidden_makerspace_ids
+from .admin_organizations import OrganizationAdmin, OrganizationMakerspaceInline
 from .admin_memberships import OrganizationMembershipAdmin, OrganizationMembershipForm
 from .admin_links import OrganizationMakerspaceAdmin
 
 __all__ = ["OrganizationAdmin", "OrganizationMakerspaceInline", "OrganizationMembershipAdmin",
-           "OrganizationMembershipForm", "OrganizationMakerspaceAdmin", "_hidden_makerspace_ids"]
+           "OrganizationMembershipForm", "OrganizationMakerspaceAdmin"]

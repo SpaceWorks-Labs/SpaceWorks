@@ -68,7 +68,7 @@ def offsite_snapshot(visible_ids):
             Q(state="abandoned") | ~Q(last_error_code=""),
         ).exists()
         # Probe results are deployment-global audit events. Do not use the
-        # destination's last_error_code: a hidden tenant's upload can set it.
+        # destination's last_error_code: any tenant's upload can set it.
         probe = AuditLog.objects.filter(
             action="backup.destination_probed", target_type="backup.backupdestination",
             target_id=str(destination.pk), makerspace__isnull=True,

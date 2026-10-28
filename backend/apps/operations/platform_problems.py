@@ -16,9 +16,9 @@ from apps.operations.platform_signals import (
 logger = logging.getLogger(__name__)
 
 
-def run_problem_checks(actor=None):
+def run_problem_checks():
     now = timezone.now()
-    spaces = servable_queryset(platform_spaces(actor)).order_by("id")
+    spaces = servable_queryset(platform_spaces()).order_by("id")
     if not bounded.active():
         spaces = list(spaces)
     readers = {

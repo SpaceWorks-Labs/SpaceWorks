@@ -43,10 +43,6 @@ def _error_detail(exc):
 def _space_label(makerspace):
     if makerspace is None:
         return "(deleted)"
-    from apps.accounts import rbac
-
-    if makerspace.pk in rbac.superadmin_hidden_makerspace_ids():
-        return "(hidden makerspace)"
     return str(makerspace)
 
 
@@ -57,8 +53,7 @@ class HostingRequestAdmin(RecentReauthenticationAdminMixin, SuperuserOnlyModelAd
                     "created_at", "verified_at")
     list_filter = ("status", "source")
     search_fields = ("space_name", "applicant_email", "applicant_name")
-    # Makerspace links are shown through the summaries below, which mask a makerspace
-    # that is hard-hidden from superadmins instead of printing its name.
+    # Makerspace links are shown through the summaries below.
     readonly_fields = (
         *(field.name for field in HostingRequest._meta.concrete_fields
           if field.name not in ("inviter_makerspace", "created_makerspace")),

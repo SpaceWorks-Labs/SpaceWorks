@@ -75,7 +75,7 @@ class MembershipListCreateView(RecentReauthenticationMixin, APIView):
             # first, matching assignment and lifecycle writers' lock order.
             makerspace = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
             role_services.can_assign_roles(request.user, makerspace, roles)
-            membership, created, is_break_glass = attach_staff_membership(
+            membership, created = attach_staff_membership(
                 actor=request.user,
                 makerspace=makerspace,
                 roles=roles,
@@ -87,11 +87,7 @@ class MembershipListCreateView(RecentReauthenticationMixin, APIView):
             )
             audit.record(
                 request.user,
-                (
-                    "superadmin.break_glass_space_manager_created"
-                    if is_break_glass
-                    else "staff.created" if created else "staff.membership_updated"
-                ),
+                "staff.created" if created else "staff.membership_updated",
                 makerspace=makerspace,
                 target=membership.user,
                 meta={"role_ids": [role.pk for role in roles],

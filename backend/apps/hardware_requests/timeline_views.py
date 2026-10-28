@@ -58,7 +58,6 @@ class RequestTimelineView(APIView):
                 "issue_evidence",
             ),
         )
-        scoped = rbac.hide_from_superadmin(request.user, scoped, "makerspace_id")
         hardware_request = get_object_or_404(scoped, pk=pk)
         data = build_request_timeline(hardware_request, limit=_limit(request))
         return Response(RequestTimelineResponseSerializer(data).data)
@@ -80,7 +79,6 @@ class InventoryChainOfCustodyView(APIView):
             rbac.Action.VIEW_AUDIT,
             InventoryProduct.objects.all(),
         )
-        scoped = rbac.hide_from_superadmin(request.user, scoped, "makerspace_id")
         product = get_object_or_404(scoped, pk=pk)
         data = build_inventory_chain_of_custody(product, limit=_limit(request))
         return Response(InventoryChainOfCustodyResponseSerializer(data).data)

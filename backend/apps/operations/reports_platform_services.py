@@ -1,4 +1,4 @@
-"""Platform provider metering. The only permitted hidden-tenant projection lives here."""
+"""Platform provider metering across every servable makerspace."""
 
 from datetime import timezone as datetime_timezone
 
@@ -12,7 +12,7 @@ from apps.integrations.models import EmailLog, NotificationDeliveryLog
 from apps.integrations.models_tracking import SmsSendLog
 from apps.operations.reports_notification_facts import canonical_deliveries, delivery_facts
 from apps.operations.reports_push_facts import push_querysets
-from apps.operations.platform_scope import hidden_platform_service_bucket, platform_analytics_spaces, require_platform_context
+from apps.operations.platform_scope import platform_analytics_spaces, require_platform_context
 from apps.operations.report_types import ReportNotFound, ReportResult
 from apps.operations.reports_common import apply_range, limited
 from apps.operations.reports_j_common import calendar_range, period
@@ -41,10 +41,9 @@ def _outcomes(qs, service, *, scope="makerspace_id", outcome="status", provider=
                "provider_source": source if source in ("platform", "own") else "unknown"}
 
 
-def _payment_rows(visible_ids, hidden_ids, date_range, *, provider="connect"):
+def _payment_rows(ids, date_range, *, provider="connect"):
     # Use the dated finance seam for settlement/refund correction heads. No
     # payment handle, payer, receipt text or provider-attempt failure is exposed.
-    ids = visible_ids | hidden_ids
     payments = Payment.objects.filter(makerspace_id__in=ids, stripe_provider=provider).exclude(provider="unclaimed")
     if provider == "connect":
         payments = payments.filter(provider="stripe")
@@ -68,17 +67,15 @@ def build_platform_services(makerspace_id=None, *, platform_context=None, limit=
     date_range = calendar_range(date_range)
     if makerspace_id is not None:
         raise ReportNotFound()
-    from apps.makerspaces.models import Makerspace
     visible = set(platform_analytics_spaces(ctx).values_list("pk", flat=True))
-    hidden = set(Makerspace.objects.filter(superadmin_access_enabled=False).values_list("pk", flat=True))
-    permitted = Q(makerspace_id__in=visible | hidden) | Q(makerspace_id__isnull=True)
+    permitted = Q(makerspace_id__in=visible) | Q(makerspace_id__isnull=True)
     email = EmailLog.objects.filter(permitted).annotate(analytics_status=Case(
         When(status="skipped", error="email_address_suppressed", then=Value("suppressed")),
         default=F("status"), output_field=CharField(),
     ))
     raw = list(_outcomes(email, "email", outcome="analytics_status", date_range=date_range))
     raw.extend(_outcomes(SmsSendLog.objects.filter(permitted), "sms", date_range=date_range, purpose="otp"))
-    personal = apply_range(canonical_deliveries().filter(makerspace_id__in=visible | hidden).exclude(
+    personal = apply_range(canonical_deliveries().filter(makerspace_id__in=visible).exclude(
         channel__in=("email", "native_push", "in_app")), "created_at", date_range)
     for fact in delivery_facts(personal):
         channel = fact["channel"]
@@ -89,7 +86,7 @@ def build_platform_services(makerspace_id=None, *, platform_context=None, limit=
             "status": fact["status"], "provider_source": fact["provider_source"]
                 if fact["provider_source"] in ("own", "platform") else "unknown", "count": 1,
             **({"purpose": "notifications"} if channel in ("sms", "whatsapp") else {})})
-    for qs, tenant, _feature, _audience in push_querysets(visible | hidden):
+    for qs, tenant, _feature, _audience in push_querysets(visible):
         raw.extend(_outcomes(qs, "push", scope=tenant, date_range=date_range))
     # Chat providers are tenant-owned; the parent delivery log is never counted
     # again for native push, whose authority is the per-device outcome ledger.
@@ -102,7 +99,7 @@ def build_platform_services(makerspace_id=None, *, platform_context=None, limit=
                     "status": row["outcome"], "provider_source": "platform", "count": row["count"]})
     # Coverage is one service operation per run/tenant, including tenants packed
     # into a global archive. Global run health is a separate deployment row.
-    coverage = apply_range(BackupRunCoverage.objects.filter(makerspace_id_snapshot__in=visible | hidden), "run__started_at", date_range)
+    coverage = apply_range(BackupRunCoverage.objects.filter(makerspace_id_snapshot__in=visible), "run__started_at", date_range)
     for row in coverage.values("makerspace_id_snapshot", "run__started_at", "run__status", "state"):
         raw.append({"makerspace_id": row["makerspace_id_snapshot"], "day": row["run__started_at"].astimezone(datetime_timezone.utc).date(),
                     "service": "backups", "provider_source": "platform", "count": 1,
@@ -113,14 +110,13 @@ def build_platform_services(makerspace_id=None, *, platform_context=None, limit=
                     "status": {"complete": "sent", "failed": "failed"}.get(run["status"], "pending")})
     standalone = apply_range(BackupArchive.objects.filter(backup_run__isnull=True), "created_at", date_range)
     for archive in standalone.values("makerspace_id", "created_at", "status"):
-        if archive["makerspace_id"] not in visible | hidden and archive["makerspace_id"] is not None:
+        if archive["makerspace_id"] not in visible and archive["makerspace_id"] is not None:
             continue
         raw.append({"makerspace_id": archive["makerspace_id"], "day": archive["created_at"].astimezone(datetime_timezone.utc).date(),
                     "service": "backups", "provider_source": "platform", "count": 1,
                     "status": "sent" if archive["status"] in ("available", "expired") else "failed" if archive["status"] == "failed" else "pending"})
-    raw.extend(_payment_rows(visible, hidden, date_range))
-    raw.extend(_payment_rows(visible, set(), date_range, provider="raw"))
-    records = hidden_platform_service_bucket(ctx, raw, report_key="platform-services")
+    raw.extend(_payment_rows(visible, date_range))
+    raw.extend(_payment_rows(visible, date_range, provider="raw"))
     groups = {}
     for row in raw:
         if row["makerspace_id"] not in visible and row["makerspace_id"] is not None:
@@ -133,6 +129,6 @@ def build_platform_services(makerspace_id=None, *, platform_context=None, limit=
         state["count"] += row["count"]
         if "amount" in row:
             state["amount"] = (state["amount"] or 0) + row["amount"]
-    records.extend(groups.values())
+    records = list(groups.values())
     records.sort(key=lambda r: (r.get("period") or r.get("day"), r["service"], r.get("makerspace_id") or 0, r.get("status", ""), r.get("currency") or ""))
-    return ReportResult(FIELDS, limited(records, limit), {"limitations": "UTC cohorts; Connect offers attributed charge/settlement/successful refund counts and currency amounts, without provider-attempt failure history. Hidden service counts stay daily. Empty provider history is unknown. Backups count tenant coverage once; standalone runs/archives have no duplicate coverage."})
+    return ReportResult(FIELDS, limited(records, limit), {"limitations": "UTC cohorts; Connect offers attributed charge/settlement/successful refund counts and currency amounts, without provider-attempt failure history. Empty provider history is unknown. Backups count tenant coverage once; standalone runs/archives have no duplicate coverage."})

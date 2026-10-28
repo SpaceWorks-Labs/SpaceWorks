@@ -71,8 +71,8 @@ def _pii_request_ids(term, makerspace_id):
     label = "hardware_requests.HardwareRequest"
     if makerspace_id is not None:
         space_ids = [makerspace_id]
-    else:  # superadmin aggregate: bound to the visible makerspaces owning requests
-        excluded = rbac.superadmin_hidden_makerspace_ids() | rbac.archived_makerspace_ids()
+    else:  # superadmin aggregate: bound to the servable makerspaces owning requests
+        excluded = rbac.archived_makerspace_ids()
         base = HardwareRequest.objects.all()
         if excluded:
             base = base.exclude(makerspace_id__in=excluded)

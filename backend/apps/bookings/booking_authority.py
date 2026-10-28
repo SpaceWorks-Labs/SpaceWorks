@@ -41,7 +41,6 @@ def active_grants(actor, *, makerspace_id=None, space_ids=None):
     rows = BookingSpaceStaffGrant.objects.filter(
         user=actor, revoked_at__isnull=True, space__makerspace_id=F("makerspace_id"),
         makerspace__enabled_modules__contains=["bookings"],
-        makerspace__superadmin_access_enabled=True,
     ).filter(servable_q("makerspace")).select_related("makerspace", "space")
     if makerspace_id is not None:
         rows = rows.filter(makerspace_id=makerspace_id)

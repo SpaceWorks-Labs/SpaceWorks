@@ -78,6 +78,10 @@ class AdminSuperuserOnlyMiddleware:
 
 class SuperuserOnlyModelAdmin(AdminSourceGateMixin):
     def resolve_hidden_lookup(self):
+        """The makerspace-id lookup for this model, or None for a global model.
+
+        The source gate uses it to refuse writes into a tenant that is migrating.
+        """
         from apps.makerspaces.models import Makerspace
 
         model = self.model
@@ -102,81 +106,30 @@ class SuperuserOnlyModelAdmin(AdminSourceGateMixin):
             from config.admin_account_scope import scope_account_rows
 
             queryset = scope_account_rows(queryset)
-        lookup = self.resolve_hidden_lookup()
-        if not lookup:
-            return queryset
-
-        from apps.makerspaces.models import Makerspace
-
-        if self.model is Makerspace:
-            # Governance visibility: a superadmin can see that a hidden
-            # makerspace exists in the changelist only. Other admin contexts
-            # such as object pages, autocomplete, and FK widgets stay scoped.
-            url_name = getattr(getattr(request, "resolver_match", None), "url_name", "") or ""
-            if url_name.endswith("_changelist"):
-                return queryset
-
-        from apps.accounts import rbac
-
-        hidden = rbac.superadmin_hidden_makerspace_ids()
-        if hidden:
-            queryset = queryset.exclude(**{f"{lookup}__in": hidden})
         return queryset
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         # A plain (non-autocomplete) FK ModelChoiceField builds its options from the
-        # target model's default manager, NOT the target admin's get_queryset — so a
-        # makerspace FK widget (e.g. ApiClient/ToBuyItem add/change forms) would still
-        # list and let a superadmin target a hard-hidden makerspace. Scope every
-        # makerspace FK widget to visible makerspaces to close that hard-hide bypass.
-        from apps.makerspaces.models import Makerspace
+        # target model's default manager, NOT the target admin's get_queryset, so a
+        # User FK widget is scoped here the same way the account changelist is.
         from apps.accounts.models import User
 
         if getattr(getattr(db_field, "remote_field", None), "model", None) is User:
             from config.admin_account_scope import scope_account_rows
 
             kwargs["queryset"] = scope_account_rows(kwargs.get("queryset", User.objects.all()))
-
-        if (
-            getattr(db_field, "remote_field", None) is not None
-            and db_field.remote_field.model is Makerspace
-            and "queryset" not in kwargs
-        ):
-            from apps.accounts import rbac
-
-            queryset = Makerspace.objects.all()
-            hidden = rbac.superadmin_hidden_makerspace_ids()
-            if hidden:
-                queryset = queryset.exclude(id__in=hidden)
-            kwargs["queryset"] = queryset
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     def _obj_in_hidden(self, obj):
-        """True if `obj` belongs to a hard-hidden makerspace. Complements
-        get_queryset (which only hides changelists) by blocking the object-level
-        view/change/delete PAGES too, so /control/ can't reach a hidden row by id."""
-        if obj is None:
-            return False
-        if self.model._meta.label_lower == "accounts.user":
-            from config.admin_account_scope import staff_account_hidden
+        """True for a retired staff account or one whose makerspace cannot serve.
 
-            if staff_account_hidden(obj):
-                return True
-        lookup = self.resolve_hidden_lookup()
-        if not lookup:
+        Complements get_queryset by blocking the object-level view/change/delete
+        pages too, so /control/ cannot reach such an account by id."""
+        if obj is None or self.model._meta.label_lower != "accounts.user":
             return False
+        from config.admin_account_scope import staff_account_hidden
 
-        from apps.accounts import rbac
-
-        hidden = rbac.superadmin_hidden_makerspace_ids()
-        if not hidden:
-            return False
-        value = obj
-        for part in lookup.split("__"):
-            value = getattr(value, part, None)
-            if value is None:
-                return False
-        return value in hidden
+        return staff_account_hidden(obj)
 
     def _has_superuser_access(self, request):
         from apps.accounts.models import User

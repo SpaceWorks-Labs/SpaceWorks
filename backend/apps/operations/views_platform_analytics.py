@@ -43,7 +43,7 @@ class PlatformAnalyticsView(APIView):
 
     @extend_schema(
         tags=["Analytics"], summary="Get superadmin platform analytics", request=None,
-        description="Platform-only counts with the definition's typed chart_spec. Hidden tenants appear solely as anonymous daily platform-service counts; own-provider and business usage exclude them. Connect includes attributed ledger facts, with no provider-attempt failure history.",
+        description="Platform-only counts with the definition's typed chart_spec across every servable makerspace. Connect includes attributed ledger facts, with no provider-attempt failure history.",
         parameters=[OpenApiParameter("report_key", OpenApiTypes.STR, OpenApiParameter.PATH, enum=PLATFORM_KEYS),
                     *DATE_RANGE_PARAMETERS, OpenApiParameter("limit", OpenApiTypes.INT, OpenApiParameter.QUERY),
                     OpenApiParameter("grain", OpenApiTypes.STR, OpenApiParameter.QUERY, enum=["day", "week", "month"])],
@@ -67,7 +67,7 @@ class PlatformAnalyticsMakerspacesView(APIView):
 
     @extend_schema(
         tags=["Analytics"], summary="List makerspaces available for tenant analytics", request=None,
-        description="Paginated platform picker. Hidden makerspaces are blocked. Each tenant read rechecks report actions and modules through explicit platform read routes.",
+        description="Paginated platform picker of servable makerspaces. Each tenant read rechecks report actions and modules through explicit platform read routes.",
         parameters=[OpenApiParameter("report_key", OpenApiTypes.STR, OpenApiParameter.QUERY, description="Tenant report key; defaults to summary."),
                     OpenApiParameter("page", OpenApiTypes.INT, OpenApiParameter.QUERY)],
         responses={200: AnalyticsMakerspacePageSerializer, **ERROR_RESPONSES},
@@ -78,7 +78,6 @@ class PlatformAnalyticsMakerspacesView(APIView):
         if definition.key == "organization-membership":
             raise reports.ReportNotFound()
         spaces = rbac.scope_by_action(request.user, definition.required_action, servable_queryset(Makerspace.objects.all()), field="id")
-        spaces = spaces.filter(superadmin_access_enabled=True)
         spaces = spaces.filter(enabled_modules__contains=["reports"])
         for module in definition.required_modules:
             spaces = spaces.filter(enabled_modules__contains=[module])

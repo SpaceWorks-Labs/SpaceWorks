@@ -3,7 +3,6 @@ from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.urls import reverse
 
-from apps.accounts import rbac
 from apps.admin_api import bulk_import
 from apps.makerspaces.guards import require_module
 from apps.makerspaces.models import Makerspace
@@ -15,9 +14,7 @@ SESSION_KEY = "admin_inventory_bulk_import_preview"
 
 
 def visible_makerspaces():
-    qs = servable_queryset()
-    hidden = rbac.superadmin_hidden_makerspace_ids()
-    return qs.exclude(id__in=hidden) if hidden else qs
+    return servable_queryset()
 
 
 class BulkImportUploadForm(forms.Form):

@@ -24,7 +24,7 @@ def resolve(makerspace_slug, token):
         subject = get_object_or_404(BookableSpace.objects.select_related("makerspace"), public_token=token)
         makerspace_slug = subject.makerspace.slug
     tenant = get_public_makerspace(makerspace_slug)
-    if not tenant.superadmin_access_enabled or not module_enabled(tenant, "bookings"):
+    if not module_enabled(tenant, "bookings"):
         raise Http404
     return get_object_or_404(public_spaces(tenant).select_related("makerspace"), public_token=token)
 

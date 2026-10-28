@@ -14,7 +14,7 @@ export type StaffAccount = {
 };
 export type StaffAccountPolicy = {
   creatable_roles: StaffRoleKey[]; can_manage_space_managers: boolean;
-  superadmin_access_enabled: boolean; email_onboarding_available: boolean;
+  email_onboarding_available: boolean;
   machine_types: { id: number; name: string }[];
   roles: StaffRole[];
 };

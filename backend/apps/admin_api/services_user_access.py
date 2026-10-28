@@ -10,7 +10,6 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from apps.accounts import rbac
 from apps.accounts.models import User
 from apps.accounts.principal_guards import refuse_anonymous_requester_credential
-from apps.admin_api.permissions import hidden_space_manager_reset_break_glass
 from apps.audit import services as audit
 from apps.makerspaces.models import MakerspaceMembership
 
@@ -42,9 +41,6 @@ def reset_user_password(actor, target_pk, password=None, data=None):
             "This is a walk-in record, not an account. It has no password to reset."
         )
 
-    break_glass_password_reset = False
-    if is_superadmin:
-        break_glass_password_reset = hidden_space_manager_reset_break_glass(target)
     _require_non_superadmin_reset_scope(actor, target, is_superadmin)
 
     if data is not None:
@@ -73,11 +69,7 @@ def reset_user_password(actor, target_pk, password=None, data=None):
     blacklist_outstanding_tokens(target)
     audit.record(
         actor,
-        (
-            "superadmin.break_glass_space_manager_password_reset"
-            if break_glass_password_reset
-            else "user.password_reset"
-        ),
+        "user.password_reset",
         target=target,
         meta={"by_superadmin": is_superadmin},
     )

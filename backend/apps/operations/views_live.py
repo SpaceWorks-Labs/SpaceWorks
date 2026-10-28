@@ -33,7 +33,7 @@ def subscribed_channels(user):
     """Every channel this session may hear: its own user channel plus each visible makerspace."""
     channels = [live.user_channel(user.pk)]
     # scope_by_makerspace is the one authority: superadmin => every makerspace, staff => their
-    # memberships (archived/hidden excluded), a plain member => none.
+    # memberships (archived excluded), a plain member => none.
     scoped = rbac.scope_by_makerspace(user, Makerspace.objects.all(), makerspace_field="pk")
     channels.extend(
         live.makerspace_channel(pk) for pk in scoped.order_by("pk").values_list("pk", flat=True)

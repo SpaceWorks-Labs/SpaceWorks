@@ -28,7 +28,7 @@ def _locked_actor_actions(actor, makerspace):
         membership.assigned_role = MakerspaceRole.objects.select_for_update().get(
             pk=membership.assigned_role_id
         )
-    if _superadmin(actor) and makerspace.superadmin_access_enabled:
+    if _superadmin(actor):
         return set(rbac.ROLE_GRANTABLE_ACTIONS)
     return rbac.actions_for_membership(membership) | _locked_organization_actions(
         actor, makerspace

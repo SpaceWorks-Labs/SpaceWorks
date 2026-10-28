@@ -32,8 +32,6 @@ class NeedsFixShelfListView(generics.ListAPIView):
         makerspace_id = self.request.query_params.get("makerspace")
         if makerspace_id:
             qs = qs.filter(makerspace_id=makerspace_id)
-        else:
-            qs = rbac.hide_from_superadmin(self.request.user, qs, "makerspace_id")
         return qs.order_by("name")
 
 

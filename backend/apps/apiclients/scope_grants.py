@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 
-from apps.accounts import rbac
 from apps.accounts.models import User
 from apps.apiclients.scope_registry import (
     LEGACY_SCOPE,
@@ -86,19 +85,12 @@ def validate_grantable_scopes(scopes, *, privileged):
     return values
 
 
-def actor_may_grant_privileged_scopes(actor, makerspace_id):
-    is_superadmin = bool(
+def actor_may_grant_privileged_scopes(actor):
+    return bool(
         actor
         and (
             actor.is_superuser
             or getattr(actor, "role", None) == User.Role.SUPERADMIN
-        )
-    )
-    return bool(
-        is_superadmin
-        and (
-            makerspace_id is None
-            or int(makerspace_id) not in rbac.superadmin_hidden_makerspace_ids()
         )
     )
 

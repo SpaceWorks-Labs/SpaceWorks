@@ -105,9 +105,6 @@ DYNAMIC_EXACT_ACTIONS = frozenset({
     "report_schedule.failed",
     "staff.created",
     "staff.membership_updated",
-    "superadmin.break_glass_space_manager_created",
-    "superadmin.break_glass_space_manager_password_reset",
-    "user.password_reset",
     "warranty.created",
     "warranty.updated",
 })

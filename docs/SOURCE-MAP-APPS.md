@@ -3,14 +3,15 @@
 Continuation of [SOURCE-MAP.md](SOURCE-MAP.md).
 
 - `backend/config/` — Django project (`settings.py`, `urls.py`, wsgi/asgi). All API routes under `/api/`.
-  `config/admin_access.py` holds the `/control/` gating, CSP middleware, and the hidden-scope drift-guard
-  registries (`NESTED_MAKERSPACE_LOOKUPS`, `GLOBAL_ADMIN_MODELS`).
+  `config/admin_access.py` holds the `/control/` gating, CSP middleware, and the makerspace-lookup
+  registries (`NESTED_MAKERSPACE_LOOKUPS`, `GLOBAL_ADMIN_MODELS`) the source gate resolves tenants through.
 - `backend/apps/accounts/` — custom `User` model (`AUTH_USER_MODEL`), browser JWT auth, attested device
   grants/rotating refresh families, Google/Apple social identities + nonce/JWKS verification, and the
   Auth & RBAC module: thin `rbac.py` import surface/coordinator over `rbac_actions.py`,
   `rbac_memberships.py`, `rbac_organizations.py`, and `rbac_superadmin.py` (`can(...)`, action-based
-  `actions_for_membership`/`makerspaces_for_action`/`scope_by_action`, makerspace scoping, superadmin
-  hide/archive exclusion). GitHub member-only OAuth lives in `github_browser.py` (PKCE attempts),
+  `actions_for_membership`/`makerspaces_for_action`/`scope_by_action`, makerspace scoping, archive
+  exclusion; `rbac_superadmin.py` keeps only the superadmin identity helpers, its path pinned by
+  `AUTHORIZATION_SOURCES`). GitHub member-only OAuth lives in `github_browser.py` (PKCE attempts),
   `github_http.py` (bounded token/profile/email exchange), `serializers_github.py` and
   `views_github.py` (browser start/callback). It reuses the browser-attempt ledger and never issues
   staff sessions. `login_methods.py` reads platform policy; `login_methods_services.py` applies

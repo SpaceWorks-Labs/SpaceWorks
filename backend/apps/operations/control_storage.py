@@ -6,14 +6,11 @@ from django.db.models import Sum
 from django.template.response import TemplateResponse
 from django.views.decorators.http import require_safe
 
-from apps.accounts import rbac
 from apps.makerspaces.models import Makerspace
 
 
 def storage_summary():
-    tenants = Makerspace.objects.exclude(
-        pk__in=rbac.superadmin_hidden_makerspace_ids(),
-    ).order_by("-storage_bytes_used", "pk")
+    tenants = Makerspace.objects.order_by("-storage_bytes_used", "pk")
     with connection.cursor() as cursor:
         cursor.execute("SELECT pg_database_size(current_database())")
         database_bytes = cursor.fetchone()[0]

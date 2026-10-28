@@ -1,10 +1,9 @@
-"""Platform-only orchestration, with hidden tenants excluded before any reads."""
+"""Platform-only orchestration across every makerspace."""
 
 from collections import Counter
 
 from django.utils import timezone
 
-from apps.accounts import rbac
 from apps.integrations.models import EmailLog, NotificationDeliveryLog, NotificationDelivery
 from apps.integrations.models_tracking import PushDeliveryAttempt
 from apps.makerspaces import limits
@@ -17,16 +16,13 @@ from apps.operations.platform_signals import (
 from apps.operations.platform_integration_health import integration_snapshot
 
 
-def platform_spaces(actor=None):
-    # Platform monitoring never includes sovereign tenants, even when the operator
-    # separately has a membership there. The tenant usage endpoint still honors it.
-    rows = Makerspace.objects.filter(superadmin_access_enabled=True)
-    return rbac.hide_from_superadmin(actor, rows, field="id")
+def platform_spaces():
+    return Makerspace.objects.all()
 
 
-def build_platform_dashboard(actor=None):
+def build_platform_dashboard():
     now = timezone.now()
-    spaces = platform_spaces(actor)
+    spaces = platform_spaces()
     states = Counter({state: 0 for state in Makerspace.LifecycleState.values})
     states["archived"] = 0
     for row in spaces.values("lifecycle_state", "archived_at"):

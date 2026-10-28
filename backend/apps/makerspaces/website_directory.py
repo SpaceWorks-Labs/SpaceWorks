@@ -11,8 +11,7 @@ from .servability import servable_queryset
 
 def directory_spaces():
     return servable_queryset(Makerspace.objects.filter(
-        public_site_enabled=True, superadmin_access_enabled=True,
-        hidden_from_central_directory=False,
+        public_site_enabled=True, hidden_from_central_directory=False,
     ))
 
 
@@ -29,7 +28,7 @@ def sitemap_spaces(request):
     host = request.get_host().split(":")[0].lower()
     custom = servable_queryset(Makerspace.objects.filter(
         frontend_domain=host, frontend_domain_status=Makerspace.DomainStatus.VERIFIED,
-        public_site_enabled=True, superadmin_access_enabled=True,
+        public_site_enabled=True,
     ))
     if custom.exists():
         return custom

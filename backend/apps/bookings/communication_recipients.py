@@ -14,7 +14,7 @@ from apps.integrations.recipients_owners import eligible_owner
 
 def notification_account(makerspace, account_id, event):
     """Resolve the owner independently of email availability and preferences."""
-    if (not is_servable(makerspace) or not makerspace.superadmin_access_enabled
+    if (not is_servable(makerspace)
             or not module_enabled(makerspace, "bookings")
             or not eligible_owner(makerspace, account_id)):
         return None

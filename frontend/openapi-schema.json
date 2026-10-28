@@ -55820,7 +55820,7 @@
             },
             "post": {
                 "operationId": "api_v1_admin_makerspace_archive_requests_create",
-                "description": "Requires local MANAGE_MAKERSPACE authority on a live makerspace, including when superadmin access is disabled. A platform superadmin reviews the request through the control-panel lifecycle list.",
+                "description": "Requires local MANAGE_MAKERSPACE authority on a live makerspace. A platform superadmin reviews the request through the control-panel lifecycle list.",
                 "summary": "Request makerspace archival",
                 "parameters": [
                     {
@@ -88916,7 +88916,7 @@
         "/api/v1/admin/platform/analytics/{report_key}": {
             "get": {
                 "operationId": "api_v1_admin_platform_analytics_retrieve",
-                "description": "Platform-only counts with the definition's typed chart_spec. Hidden tenants appear solely as anonymous daily platform-service counts; own-provider and business usage exclude them. Connect includes attributed ledger facts, with no provider-attempt failure history.",
+                "description": "Platform-only counts with the definition's typed chart_spec across every servable makerspace. Connect includes attributed ledger facts, with no provider-attempt failure history.",
                 "summary": "Get superadmin platform analytics",
                 "parameters": [
                     {
@@ -89032,7 +89032,7 @@
         "/api/v1/admin/platform/analytics/makerspaces": {
             "get": {
                 "operationId": "api_v1_admin_platform_analytics_makerspaces_retrieve",
-                "description": "Paginated platform picker. Hidden makerspaces are blocked. Each tenant read rechecks report actions and modules through explicit platform read routes.",
+                "description": "Paginated platform picker of servable makerspaces. Each tenant read rechecks report actions and modules through explicit platform read routes.",
                 "summary": "List makerspaces available for tenant analytics",
                 "parameters": [
                     {
@@ -89290,7 +89290,7 @@
         "/api/v1/admin/platform/analytics/makerspaces/{makerspace_id}/dashboard": {
             "get": {
                 "operationId": "api_v1_admin_platform_analytics_makerspaces_dashboard_retrieve",
-                "description": "Platform browser read only. Hidden tenants are blocked; the canonical dashboard action checks apply.",
+                "description": "Platform browser read only. Unservable tenants are refused; the canonical dashboard action checks apply.",
                 "summary": "Staff operations counts, action-scoped widgets and handover queues",
                 "parameters": [
                     {
@@ -89646,7 +89646,7 @@
         "/api/v1/admin/platform/analytics/makerspaces/{makerspace_id}/reports/catalog": {
             "get": {
                 "operationId": "api_v1_admin_platform_analytics_makerspaces_reports_catalog_retrieve",
-                "description": "Platform browser read only. Hidden tenants are blocked; the canonical tenant report RBAC and module checks apply.",
+                "description": "Platform browser read only. Unservable tenants are refused; the canonical tenant report RBAC and module checks apply.",
                 "summary": "List makerspace report catalog",
                 "parameters": [
                     {
@@ -214802,7 +214802,7 @@
                     },
                     "purpose": {
                         "nullable": true,
-                        "description": "SMS OTP vs addressed notifications. Null for other services and hidden buckets.\n\n* `otp` - otp\n* `notifications` - notifications",
+                        "description": "SMS OTP vs addressed notifications. Null for other services.\n\n* `otp` - otp\n* `notifications` - notifications",
                         "oneOf": [
                             {
                                 "$ref": "#/components/schemas/PlatformServicesRowPurposeEnum"
@@ -232475,9 +232475,6 @@
                     "can_manage_space_managers": {
                         "type": "boolean"
                     },
-                    "superadmin_access_enabled": {
-                        "type": "boolean"
-                    },
                     "email_onboarding_available": {
                         "type": "boolean"
                     },
@@ -232499,8 +232496,7 @@
                     "creatable_roles",
                     "email_onboarding_available",
                     "machine_types",
-                    "roles",
-                    "superadmin_access_enabled"
+                    "roles"
                 ]
             },
             "StaffBookingInput": {

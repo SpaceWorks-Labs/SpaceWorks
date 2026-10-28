@@ -45,10 +45,8 @@ def platform_insights(actor, *, days=30, now=None):
     now = now or timezone.now()
     first = now.astimezone(UTC).date() - timedelta(days=days - 1)
     start = datetime.combine(first, time.min, tzinfo=UTC)
-    spaces = servable_queryset(Makerspace.objects.filter(superadmin_access_enabled=True))
-    accounts = User.objects.filter(is_tenant_dump_stub=False, is_walk_in=False).exclude(
-        Q(staff_makerspace__superadmin_access_enabled=False)
-        | Q(makerspace_memberships__makerspace__superadmin_access_enabled=False)).distinct()
+    spaces = servable_queryset(Makerspace.objects.all())
+    accounts = User.objects.filter(is_tenant_dump_stub=False, is_walk_in=False)
     account_growth = _daily(accounts, "date_joined", start, now)
     tenant_growth = _daily(spaces, "created_at", start, now)
     staff = accounts.filter(account_kind="staff", is_active=True, access_status="active",

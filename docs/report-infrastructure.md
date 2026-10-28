@@ -23,15 +23,9 @@ identity-bearing, tenant-only and unschedulable.
    when the builder is imported directly. Registry-dispatched builders additionally enforce
    that context. Only superadmin aggregate/platform views mint it using the private view factory.
    Use `platform_analytics_spaces(ctx)` for analytics; this delegates to
-   `platform_dashboard.platform_spaces()` and excludes hidden tenants regardless of membership.
-   Tenant-local views use `tenant_local_hidden_block_applies(actor, makerspace, action)`.
-4. **Anonymous service counts:** only `platform-services` may call
-   `hidden_platform_service_bucket(ctx, rows, report_key=...)`. Internal input rows contain
-   `makerspace_id`, `provider_source`, `service`, `day` (a date), and nonnegative integer `count`.
-   Supported services: `email`, `push`, `sms`, `whatsapp`, `attestation`, `connect`, `backups`.
-   The helper ignores own providers and visible spaces, then emits only service/day/bucket/count.
-   It must never be used for business activity, own-provider usage, adoption or growth.
-5. **Organization combination:** declare the matching `org_report_strategies.STRATEGIES` entry
+   `platform_dashboard.platform_spaces()` (every makerspace; the superadmin is always on).
+   Tenant-local views authorize through the report's own RBAC action.
+4. **Organization combination:** declare the matching `org_report_strategies.STRATEGIES` entry
    and call `org_report_aggregate.register_combine(report_key, combine)` from the area's
    registration module. The function signature is `combine(rows_by_space, *, limit)` and it
    returns a list of dictionaries. Each input item is `(makerspace_id, list_of_records)`;
@@ -39,11 +33,11 @@ identity-bearing, tenant-only and unschedulable.
    before dividing; preserve period/currency/unit partitions. Only public declared fields leave
    orchestration. Percentile/median keys remain organization-excluded. Strategy field comparisons
    omit the infrastructure `makerspace_id` column.
-6. **Grains:** advertise `week` in `definition.grains` when supported. Use
+5. **Grains:** advertise `week` in `definition.grains` when supported. Use
    `reports_common.period_expression(field, grain, makerspace=space)` for a tenant-local SQL
    calendar bucket, or `tzinfo=zone` for an explicitly resolved zone. ISO weeks start Monday.
    Organization views validate grain and orchestration forwards it only to grain-aware builders.
-7. **Coverage and conditions:** update `report_coverage.REPORT_MODULE_COVERAGE` associations;
+6. **Coverage and conditions:** update `report_coverage.REPORT_MODULE_COVERAGE` associations;
    the acceptance table is `report_coverage_contract.REPORT_COVERAGE_CONTRACT`.
    Grouped coverage associations do not create runtime dependencies. The coverage-only areas
    `presence`, `audit`, `organizations`, `platform` can have coverage entries but are not module
@@ -51,7 +45,7 @@ identity-bearing, tenant-only and unschedulable.
    Remove each completed key from `_PENDING_KEYS` in `test_grain_and_coverage_m1f0.py`.
    These are static strict xfails: completing a marked key produces XPASS until its mark is removed;
    regressions in completed keys fail normally.
-8. **Disclosure tests:** use `tests.operations.report_assertions.assert_report_disclosure_safe`
+7. **Disclosure tests:** use `tests.operations.report_assertions.assert_report_disclosure_safe`
    on JSON and decoded artifacts. Its default aggregate mode also refuses raw audit metadata,
    payloads, message bodies and feedback answers. Use `aggregate=False` only for intentional
    tenant-local subject exports. Builder metadata is a separate scalar allowlist in
@@ -137,7 +131,7 @@ the new guard and the edited coverage test must be included explicitly at integr
   dependency schemas were applied while preserving unrelated pre-existing snapshot drift.
   TypeScript was regenerated from that snapshot.
 - The 23 database tests cover tenant/org HTTP refusals, exports and scheduled artifacts,
-  local-time SQL weeks, organization grain forwarding, and hidden buckets. They remain unrun:
+  local-time SQL weeks and organization grain forwarding. They remain unrun:
   `scripts/dev.sh test` stopped before collection because sandbox access to Docker was denied.
   Run the four `test_*_m1f0.py` files through that isolated runner before integration.
 - Independent delegated code review is clean. The separate Codex CLI review could not start

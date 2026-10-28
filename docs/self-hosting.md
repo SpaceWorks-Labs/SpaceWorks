@@ -599,9 +599,7 @@ box; it stays dormant here.) End-to-end:
    domain**, enter the hostname, and Save. It shows **Active** immediately (no TXT record, no Verify
    step). Only a superadmin may set it — the staff-auth/CORS allowlist is process-global (not
    tenant-scoped), so on a multi-makerspace box an untrusted Space Manager must never be able to inject
-   a globally-trusted origin. This holds even for a makerspace hidden from the superadmin
-   (`superadmin_access_enabled=False`): to set its domain, have its Space Manager re-enable superadmin
-   access, set the domain as the superadmin, then re-hide it.
+   a globally-trusted origin.
 4. **Point the branded frontend at this backend.** Set the frontend container's
    `TENANT_ORIGIN_BOOTSTRAP=true` (resolve the makerspace by request origin) **or**
    `TENANT_TOKEN=<public_code>`, plus `TENANT_API_URL=/api`. See

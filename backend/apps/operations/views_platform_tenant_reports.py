@@ -1,7 +1,7 @@
 """Explicit platform read surface over the canonical tenant report handlers.
 
 No tenant session is minted: each handler retains its report/action/module checks.
-The platform surface also hard-blocks hidden tenants before any data is read.
+The platform surface refuses unservable tenants before any data is read.
 """
 
 from django.shortcuts import get_object_or_404
@@ -23,7 +23,7 @@ class PlatformTenantReadMixin:
         super().initial(request, *args, **kwargs)
         _platform_context_for_view(request)  # Also refuses native authority.
         get_object_or_404(
-            servable_queryset(Makerspace.objects.filter(superadmin_access_enabled=True)),
+            servable_queryset(Makerspace.objects.all()),
             pk=kwargs["makerspace_id"],
         )
 
@@ -33,21 +33,21 @@ class PlatformTenantReadMixin:
         return response
 
 
-@extend_schema(tags=["Platform tenant reports"], description="Platform browser read only. Hidden tenants are blocked; the canonical tenant report RBAC and module checks apply.")
+@extend_schema(tags=["Platform tenant reports"], description="Platform browser read only. Unservable tenants are refused; the canonical tenant report RBAC and module checks apply.")
 class PlatformTenantCatalogView(PlatformTenantReadMixin, ReportCatalogView):
     pass
 
 
-@extend_schema(tags=["Platform tenant reports"], description="Platform browser read only. Hidden tenants are blocked; the canonical tenant report RBAC and module checks apply.")
+@extend_schema(tags=["Platform tenant reports"], description="Platform browser read only. Unservable tenants are refused; the canonical tenant report RBAC and module checks apply.")
 class PlatformTenantAnalyticsView(PlatformTenantReadMixin, AnalyticsView):
     pass
 
 
-@extend_schema(tags=["Platform tenant reports"], description="Platform browser read only. Hidden tenants are blocked; the canonical dashboard action checks apply.")
+@extend_schema(tags=["Platform tenant reports"], description="Platform browser read only. Unservable tenants are refused; the canonical dashboard action checks apply.")
 class PlatformTenantDashboardView(PlatformTenantReadMixin, DashboardView):
     pass
 
 
-@extend_schema(tags=["Platform tenant reports"], description="Platform browser export only. Hidden tenants are blocked; the canonical export RBAC, module checks and render throttle apply.")
+@extend_schema(tags=["Platform tenant reports"], description="Platform browser export only. Unservable tenants are refused; the canonical export RBAC, module checks and render throttle apply.")
 class PlatformTenantExportView(PlatformTenantReadMixin, ReportExportView):
     pass

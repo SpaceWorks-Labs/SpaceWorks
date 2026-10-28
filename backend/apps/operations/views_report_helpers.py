@@ -60,7 +60,6 @@ def _makerspace_for_inventory_view(user, makerspace_id):
     queryset = rbac.scope_by_action(
         user, rbac.Action.VIEW_INVENTORY, Makerspace.objects.all(), field="id"
     )
-    queryset = rbac.hide_from_superadmin(user, queryset, field="id")
     return get_object_or_404(queryset, pk=makerspace_id)
 
 
@@ -93,14 +92,7 @@ def _makerspace_for_report_view(user, makerspace_id, report_key):
             queryset = queryset | rbac.scope_by_action(
                 user, rbac.Action.VIEW_AUDIT, spaces, field="id"
             )
-    queryset = rbac.hide_from_superadmin(user, queryset, field="id")
-    space = get_object_or_404(queryset.distinct(), pk=makerspace_id)
-    if definition is not None:
-        from .platform_scope import tenant_local_hidden_block_applies
-        if tenant_local_hidden_block_applies(user, space, definition.required_action):
-            from django.http import Http404
-            raise Http404
-    return space
+    return get_object_or_404(queryset.distinct(), pk=makerspace_id)
 
 
 def _makerspace_for_catalog(user, makerspace_id):
@@ -109,7 +101,6 @@ def _makerspace_for_catalog(user, makerspace_id):
         queryset = queryset | rbac.scope_by_action(
             user, action, Makerspace.objects.all(), field="id"
         )
-    queryset = rbac.hide_from_superadmin(user, queryset, field="id")
     return get_object_or_404(queryset.distinct(), pk=makerspace_id)
 
 

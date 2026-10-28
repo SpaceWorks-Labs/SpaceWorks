@@ -96,10 +96,9 @@ URLs. Do not describe the current implementation as providing slug-specific cook
 
 **Staff lifecycle and recovery (D2/D4/D6/D7, V2/V6).**
 
-Only a local Space Manager or permitted platform superadmin creates staff accounts. With
-superadmin access on, only the superadmin manages Space Managers; local managers manage the
-other staff. With `superadmin_access_enabled=False`, platform access is exclusively refused
-and local Space Managers may manage other Space Managers. No lifecycle action may target self.
+Only a local Space Manager or the platform superadmin creates staff accounts. Only the
+superadmin manages Space Managers, in every makerspace (owner decisions #110, #111 Q14); local
+Space Managers manage all other staff. No lifecycle action may target self.
 Deactivation and demotion lock the tenant and its Space Manager memberships and refuse removal
 of the last active Space Manager, including concurrent removals. Removal deactivates and keeps
 history; staff membership deletion/self-service leave and member-to-staff attachment are refused.
@@ -107,8 +106,8 @@ history; staff membership deletion/self-service leave and member-to-staff attach
 The lifecycle API under `admin/makerspaces/<id>/staff-accounts/` and `/control/` actions share
 services, recent server-owned reauthentication, tenant write gates, quotas and append-only audits.
 Generic admin account fields/password/bulk/delete and legacy membership/reset writers cannot
-bypass them. There is no hidden-Space-Manager application break-glass reset; the operator's
-server-side management command remains the platform break-glass recovery surface.
+bypass them. There is no application break-glass reset; the operator's server-side management
+command remains the platform break-glass recovery surface.
 
 Email onboarding initializes the already-created staff account, never links by email or creates
 one on redemption. Invitations bind account ID, full role/machine-scope snapshot and
@@ -136,8 +135,9 @@ Makerspace, account invitations, User, then envelopes. OTP expiry, attempt budge
 credential generation fence concurrent operations. Email confirmation validates the password,
 clears `must_change_password` and calls `revoke_sessions_only` once: sessions/device grants and open
 invitations end, generation advances once. Established MFA remains enrolled and required on next
-sign-in; pre-reset MFA/reauth proofs cannot complete. Staff envelopes of hidden tenants remain
-invisible even on the otherwise global operational envelope admin, including direct object reads.
+sign-in; pre-reset MFA/reauth proofs cannot complete. Staff envelopes of retired staff or of
+unservable tenants remain invisible even on the otherwise global operational envelope admin,
+including direct object reads.
 The operator's host command remains a platform break-glass option.
 
 JWT issuance/rotation and session/device logout lock User before outstanding/blacklist tokens,
@@ -273,8 +273,8 @@ CASCADE on account deletion and existing thirty-day auth-state cleanup. The comp
 model graph is pinned; deployment restore generation invalidates old proof.
 
 **Monitoring and analytics (Lane F).** `/control/storage/` is read-only and inherits
-superadmin/active-account/control-MFA boundaries; hidden tenant names/counters are
-excluded, deployment database/table totals remain global. Optional route metrics use
+superadmin/active-account/control-MFA boundaries and lists every tenant; deployment
+database/table totals remain global. Optional route metrics use
 bounded compiled route/method/status labels and Prometheus multi-process files,
 never raw paths/queries/credentials. Per-master directories are cleared at master
 start, with a separate directory for each standard container or pod. Prometheus owns
@@ -377,21 +377,19 @@ feeds general CORS + publishable-key validation) — so an API-client/public ori
 publishable-key calls but **can never mint a staff session**. `origin_scope.py` hard-scopes a browser
 staff request to its domain's makerspace; origin-less (server) requests fall back to `MakerspaceMembership`.
 
-**Superadmin access is a HARD block with one lifecycle governance exception.** `Makerspace.superadmin_access_enabled=False`
-excludes the space for a GLOBAL superadmin across `rbac.can`/`scope_by_action`/`makerspaces_for_action(s)`
-etc. Platform accounts have no memberships; a local manager uses a separate tenant staff account. Status contract: hidden
-→ **403** on action/permission-gated endpoints, **404** on object-lookup detail + re-enable PATCH,
-**empty 200** on scope-filtered lists. Existence stays visible as a slim row (governance). True→False is
-rejected unless Platform Email is configured (forgot-password recovery). Re-enable is space-manager-only.
-Staff management has no hidden-space platform exception: only local Space Managers may create or
-admin-reset staff there (D7). Platform superadmins may archive, unarchive, purge and review archive
-requests through the slim `/control/` lifecycle list, with recent session reauthentication on selection
-and confirmation POSTs. That exception grants no data, staff, settings, support or migration HTTP access.
-Server-side operator recovery remains outside application authority. **No command-line bypass either
-(BK-66):** `manage.py export_tenant_migration_archive` encrypts to the PLATFORM key
-(`BACKUP_AGE_RECIPIENT`), so `archive_envelope.build_tenant_migration_archive` refuses any platform-keyed
-build for a space with access off — read from the database at the start and again just before
-encryption — with a clear `CommandError`. A target-keyed build (the gated HTTP job) is not affected.
+**Superadmin is always on (owner decision #110).** The platform superadmin holds global authority in
+every servable makerspace: `rbac.can`, `effective_actions`, `scope_by_action`, `makerspaces_for_action(s)`,
+`resolve_scope` and `is_space_manager_identity` exclude only archived and otherwise unservable spaces
+(`archived_makerspace_ids` / `_exclude_archived_ids`), never a per-space switch. There is no hidden-space
+403/404/empty-200 contract, no slim `/control/` row, no Platform-Email precondition and no
+space-manager-only re-enable. Platform dashboards, reports, ledgers, `/control/` lists and FK widgets,
+API-client reads and organization grants all cover every servable space, and scheduled work
+(`rbac.scope_for_scheduled_work`) runs for every servable space. Platform accounts have no memberships; a
+local manager uses a separate tenant staff account. Only the superadmin manages Space Managers (D7).
+`accounts/rbac_superadmin.py` now holds only the identity helpers; keep its path, which
+`tenant_migration.authority_guards.AUTHORIZATION_SOURCES` pins. `Makerspace.superadmin_access_enabled`
+still exists until the P1b wave-2 migration drops it, but no read path consults it. Server-side operator
+recovery remains outside application authority.
 
 **Makerspace archive → purge (superadmin, `/control/` only).** `Makerspace.archived_at` is the
 single soft-delete flag; archive scoping is threaded through central rbac + all aggregates + public +
@@ -741,7 +739,7 @@ tests in the same change.
 
 **Reports/analytics extend one registry** (never a parallel system). `apps/operations/report_registry.py`
 holds canonical `ReportDefinition`s (module-gated, `report_scope.eligible_makerspaces` excludes archived
-+ reports-disabled + superadmin-hidden). FabLab domain builders (`reports_events`/`_bookings`/
++ reports-disabled). FabLab domain builders (`reports_events`/`_bookings`/
 `_maintenance`/`_machine_usage`/`_inventory` + fail-safe `reports_health`) mirror printing's date-range
 contract; **aggregate output groups by `makerspace_id` and never flattens cross-tenant data**. Per-makerspace
 report rows are gated by query-level scope (no per-row Python check → no N+1).
@@ -765,8 +763,8 @@ builders. Consumption predicates precede source materialization, cost reads matc
 batches of selected source identities, and return-history reads stay within selected requests.
 Every widget requires both its declared action
 and its report's action, source modules plus `reports`, and a servable tenant.
-Identity-bearing widgets additionally require `VIEW_AUDIT` and their domain action;
-hard-hidden superadmin access is checked per action. Machine widgets forward the actor
+Identity-bearing widgets additionally require `VIEW_AUDIT` and their domain action.
+Machine widgets forward the actor
 to the builders' `role_scope.manage_scope_for()` boundary, including consumable pools
 and cost: Inventory Manager alone does not gain machine-report authority.
 Handover-only actors get `scope_mode=handover`, empty `widgets` and `queue_tiles`
@@ -779,19 +777,16 @@ and project `chart_spec` onto the strategy's combined fields (no fake tenant dim
 
 **The platform tenant picker uses explicit platform reads.** `/admin/platform/analytics/makerspaces/<id>/`
 provides `reports/catalog`, `analytics/<key>`, `dashboard` and `reports/<key>/export` through the
-canonical tenant handlers. Each read retains report RBAC, module checks and servability and
-hard-blocks hidden tenants; it grants no staff session, device grant or tenant credential access.
+canonical tenant handlers. Each read retains report RBAC, module checks and servability;
+it grants no staff session, device grant or tenant credential access.
 Deferred dashboard widgets and exports use those same platform routes. Tenant staff accounts
 continue to use their separate fixed-tenant session.
 
-**Platform-service metering has one anonymous exception to `makerspace_id` grouping.**
-Only `platform-services`, with a server-owned active-superadmin `PlatformContext`, may use
-`operations/platform_scope.hidden_platform_service_bucket`: hidden tenants' platform-provider usage
-is one `hidden_makerspaces` count per allowlisted service and calendar day, without tenant id, name,
-outcome or other breakdown. Own-provider usage is excluded. All other platform analytics (including
-activity, adoption and growth) use `platform_dashboard.platform_spaces()` and omit hidden tenants
-even when the operator has a local membership. Tenant-local reports instead apply
-`superadmin_hidden_block_applies` for the report's own action. `eligible_makerspaces()` is unchanged.
+**Platform analytics group by `makerspace_id` across every servable space.** `platform-services`
+(with a server-owned active-superadmin `PlatformContext`) and every other platform analytic
+(activity, adoption, growth) read `platform_dashboard.platform_spaces()`; there is no anonymous
+hidden-tenant bucket any more (#110). Tenant-local reports apply the report's own action through
+RBAC.
 
 **One narrow, deliberate exception to the no-flattening rule, added 2026-08-20 by owner decision** after a
 Stage-4 review correctly flagged the organization dashboard as a regression of it: **a single
@@ -1290,7 +1285,7 @@ NOT in `MachineType.capability_config` (which is structural-only — no pricing/
 makerspace default currency snapshotted into `Payment`; the charge quantity is `service_payments.effective_quantity`
 (minutes→`actual_minutes`, else `actual_consumed_quantity`, else grams). Configuring machine types AND their
 pricing is gated by `rbac.is_space_manager_identity` (space-manager membership only — NOT `MANAGE_MACHINES`
-breadth — honoring archived/hard-hidden scoping; surfaced to the console via the per-membership
+breadth — honoring archived scoping; surfaced to the console via the per-membership
 `can_configure_machine_types` flag).** **Never-block:** machine `complete()`/`collect()` succeed even if
 Payment creation or Stripe checkout fails; checkout is created post-commit best-effort (and can be regenerated
 on demand via the member endpoint). **Webhook always settles:** `apply_webhook_event` verifies the
@@ -1313,7 +1308,7 @@ best-effort expire live online sessions.
 
 **Per-makerspace provider setup.** Space Managers select Stripe or Razorpay and provision
 their own credentials through the staff payment-settings API/panel (`MANAGE_MAKERSPACE`,
-scoped through RBAC, including `superadmin_access_enabled`). Provider/credential writes require
+scoped through RBAC). Provider/credential writes require
 recent server-owned session reauthentication. All credential inputs are write-only, including
 public keys; responses contain set booleans and exact per-space webhook URLs. Omission preserves
 a credential, `""` clears it, and secret setters encrypt it. Audits contain field names only.
@@ -2265,7 +2260,7 @@ accepted quantities. Accepting reserves stock and rejecting closes a person's as
 judgement made about twenty rows from a checkbox column. The mutations still go through
 `request_workflow`, so the state machine, audit entry and notification fan-out are unchanged — only the
 entry point moved. The review URL must keep `admin_site.admin_view`, must load through
-`self.get_queryset(request)` (the superadmin queryset excludes hard-hidden makerspaces), must re-check
+`self.get_queryset(request)` (the same admin scoping as the changelist), must re-check
 `has_change_permission`, and must parse quantities as ints before calling the workflow.
 
 **The shared account-less requester principal is not a person, and no per-PERSON aggregate may rank it.**
@@ -3027,22 +3022,21 @@ Load-bearing details that carried over unchanged:
   **implied** collect grant must never activate the second arm.
   - **`role_grants_directly` exists because `grants_directly` short-circuits on superadmin.**
     That short-circuit is right for tier-2 type authority (it does not come from a role row) and
-    wrong for "did this role grant this?". A global superadmin who *also* holds an explicit
-    machine-scoped membership in a **hard-hidden** space is reduced to that role's authority by
-    design, and `superadmin_hidden_block_applies` resolves through `actions_for_membership`,
-    which **expands implied actions** — so `MANAGE_MACHINES` implying collect made the union fire
-    for a role that never stored it. The role-only variant reads `granted_actions` directly.
+    wrong for "did this role grant this?". `actions_for_membership` **expands implied actions** —
+    so `MANAGE_MACHINES` implying collect would make the union fire for a role that never stored
+    it. The role-only variant reads `granted_actions` directly.
   - **Organization collection has its own direct-grant predicate and no machine arm.**
     `organization_grants_directly` uses the filtered organization vocabulary and the centralized
-    hidden/servable organization-membership query, and is ORed only into the makerspace-wide
+    servable organization-membership query, and is ORed only into the makerspace-wide
     `COMPLETED` collection partition. It never participates in `grants_directly`, type-manager
     authority, `_manage_queryset`, or service-file access. Thus a direct organization
     `collect_service_request` grant can list/detail/collect finished jobs, while pending and
     in-progress jobs and every lifecycle/file operation stay unavailable; organization
     `manage_printing` likewise grants no machine or machine-type manager authority.
   - **`_machine_partition_q` resolves exemption with `role_scope.manage_scope_for`, NOT with
-    `makerspaces_for_action(...) is rbac.ALL`.** Those disagree for exactly that same hidden-space
-    superadmin, who still answers `ALL` at the action level — so the `ALL` shortcut (inherited from
+    `makerspaces_for_action(...) is rbac.ALL`.** Those disagree for a global superadmin who also
+    holds an explicit machine-scoped membership: `manage_scopes_for` narrows them to that role's
+    links, yet they still answer `ALL` at the action level — so the `ALL` shortcut (inherited from
     the pre-6a `_narrow_to_machine_scope`) handed them every row and their machine links did
     nothing. `manage_scopes_for` already answers correctly for both shapes: EXEMPT when a
     superadmin has no membership there, the role's links when they do.
@@ -3645,8 +3639,8 @@ programme, session, speaker, image, embed and share reads also require `events.w
 and the effective page's release. Only `visibility=published` children are projected;
 unknown, foreign, draft, unreleased, disabled and expired website data are uniform 404s.
 Core event fields and existing public-bucket covers retain their original behavior.
-Directory discovery and sitemaps add public-site publication, canonical servability,
-hard-hide and central-directory consent; direct event access does not inherit directory
+Directory discovery and sitemaps add public-site publication, canonical servability
+and central-directory consent; direct event access does not inherit directory
 consent. Tenant custom-domain sitemaps name their own canonical URLs. Event discovery
 uses tenant-local date filters through `local_time.local_date_expression`, pagination 24,
 and honors `show_registration_count`; the older tenant list stays an array.
@@ -3985,7 +3979,7 @@ states (confirmed by default). Selection excludes started and contact-only booki
 deduplicates by account and uses the current verified account email, never copied
 `Booking.email`. Compose/queue/cancel and every send require live `manage_reservations`
 through `booking_authority`, `bookings.broadcasts`, Notifications and Email, plus a
-servable, non-hidden tenant. Ten queues/hour/tenant are serialized by its row lock;
+servable tenant. Ten queues/hour/tenant are serialized by its row lock;
 API calls additionally have a per-user throttle. Sender revocation and matching booking
 loss stop unclaimed sends on immediate, quiet-hours and retry paths. Render-time loss
 also skips safely. The batch worker reserves saved bookings-category choices through
@@ -4040,8 +4034,7 @@ payment summary; finance actions retain existing tenant finance/payment permissi
 
 `bookings.staff_grants` is opt-in, parented on Bookings, with no events dependency. Live
 queries recheck account standing, module/feature, canonical servability, target ownership
-and revocation. Hard-hidden tenants suppress resource-only discovery and new invite creation/redemption;
-their real local staff keep ordinary RBAC authority and can revoke dormant credentials. Origin target registration applies to every new route.
+and revocation. Origin target registration applies to every new route.
 The shared source registry projects `source="booking_grant"` with resource permissions,
 never tenant actions; sign-in/refresh/MFA discover it without importing events. Mixed
 assignments share the narrow workspace. Revocation is effective on the next request and
@@ -4201,8 +4194,7 @@ venue's OWNER organization. Manager/affiliate links and accepted collaborators a
 Active direct organization members qualify regardless of action grants; active members
 of the candidates' OWNER-linked spaces also qualify. Accounts must be persisted, active,
 unrestricted and non-stub. Organizations must be active; public-profile consent is not
-eligibility. Both venue and contributing spaces use canonical servability and exclude
-hard-hidden spaces, including for local members and superadmins. No membership or RBAC
+eligibility. Both venue and contributing spaces use canonical servability. No membership or RBAC
 identity is created. The venue remains the PII, audit, money and routing anchor.
 
 `organizations/audience.py` is the reusable, always-present batched membership predicate.
@@ -5417,7 +5409,7 @@ tenant-owned field or object key.
 
 
 - **Admission membership is not authority.** The always-present `organizations/audience.py`
-  checks active direct memberships and active memberships in OWNER-linked servable, non-hidden
+  checks active direct memberships and active memberships in OWNER-linked servable
   makerspaces against explicit organization IDs. It ignores action grants and profile-publication
   consent and never widens RBAC. Events supplies its own live organizer/venue candidate set;
   bookings imports no events policy. Owner-link admin writes use the console mutation service,
@@ -5431,7 +5423,7 @@ tenant-owned field or object key.
   `select_for_update`, then lock the organization. New names always create a new organization with a
   unique slug. Installer setup asks for the organization name as its own required question and preserves an
   existing owner on reruns, rechecking under the makerspace lock. Existing ownerless makerspaces are
-  untouched by migrations and remain usable; explicitly rerunning `setup_instance` can assign an owner (a hidden or migration-frozen
+  untouched by migrations and remain usable; explicitly rerunning `setup_instance` can assign an owner (a migration-frozen
   space is skipped with a warning; only a brand-new space fails the whole setup).
   Tenant import and `seed_e2e` are the exceptions to the creation requirement: a tenant dump carries no
   organization rows, so an imported target is created ownerless, and the development seeder may create
@@ -5464,13 +5456,10 @@ tenant-owned field or object key.
   (`uniq_makerspace_user`) allows exactly one membership row per user per space, so a mirrored org row
   cannot coexist with a local one, two orgs cannot both grant one user access to one space, and
   deleting one org's grant could strip locally-granted authority.
-- **Org grants never reach a hard-hidden makerspace, and both superadmin branches ignore them.**
-  `OrganizationMembership` has no `makerspace` FK, so it lives in `GLOBAL_ADMIN_MODELS` and the admin
-  hide-scoping never narrows it. Without the exclusion a superadmin could use the global membership
-  admin to grant a third party authority inside a space that is hard-hidden *from that superadmin* and
-  exercise it by proxy. A real local membership in a hidden space still confers authority; an
-  organization grant never does. Excluded in SQL inside `_organization_authority_memberships`, together
-  with `servable_q`, so every present and future consumer inherits it.
+- **Org grants reach every servable linked makerspace, and both superadmin branches ignore them.**
+  The superadmin is always on (#110), so there is no hidden space for a grant to proxy into. The
+  servability filter lives in SQL inside `_organization_authority_memberships` (`servable_q`), so every
+  present and future consumer inherits it.
 - **`manage_machines` cannot be granted through an organization, at the RBAC layer.**
   `ORGANIZATION_GRANTABLE_ACTIONS` is `ROLE_GRANTABLE_ACTIONS - {MANAGE_MACHINES}` and every
   organization consumer filters through it **before** `expand_implied_actions`: `can`,
@@ -5579,7 +5568,7 @@ registers adapters without queries; core imports no separable Events policy.
 mandatory independently of optional public-client rollout. Only verified HMAC
 receives the marker; user sessions, publishable keys and browser clients cannot.
 Read scopes are operator-only, absent from browser and legacy-v1 authority. Targets
-require exactly one live non-hidden tenant and a subject belonging to it.
+require exactly one live tenant and a subject belonging to it.
 Participant scope requires event scope; attendance additionally requires participant
 scope. Serializers use allow-lists and the scoped-PII model accessor for names,
 never raw encrypted values, contacts, answers, credentials or money. Attendance
@@ -5961,8 +5950,8 @@ Writing or clearing them (a channel-settings PATCH carrying `credentials`, inclu
 Mattermost/Discord installation POST) requires `require_recent_reauth` (ten-minute, session-bound
 step-up, 403 `recent_reauth_required`), exactly as payment credential writes do; non-secret toggles
 (`enabled`, `personal_enabled`, quotas, templates, `use_platform_sender`, ...) need no step-up.
-Superadmin's global bypass respects `superadmin_access_enabled`; explicit local role authority
-still applies. Control-plane tenant display contains only configuration/effective-source state.
+The superadmin's global authority applies in every servable space; explicit local role authority
+still applies to everyone else. Control-plane tenant display contains only configuration/effective-source state.
 
 Consent is an append-only per-tenant/account/channel ledger. Live SMS consent requires the latest
 row by id to be opted_in, with its encrypted phone snapshot AND verification timestamp matching
@@ -6116,9 +6105,8 @@ share APIs remain member-only. The universal resolver returns a live typed targe
 page or withdrawn consent is the same 404 as an unknown handle. Retired names recheck the current
 owner and return temporary no-store redirects. No migration automatically claims a slug or publishes.
 
-Makerspaces require `public_site_enabled`, canonical servability and a published revision. Direct
-availability does not require `superadmin_access_enabled`; directory/sitemap inclusion keeps its
-existing separate visibility rule. Organizations require active status and explicit profile consent,
+Makerspaces require `public_site_enabled`, canonical servability and a published revision.
+Directory/sitemap inclusion keeps its existing separate visibility rule (`hidden_from_central_directory`). Organizations require active status and explicit profile consent,
 independently of discoverability. Their pages, history, quota, assets and creator attribution are
 deployment-global. A tenant link cannot export, purge or assign ownership of that global content.
 

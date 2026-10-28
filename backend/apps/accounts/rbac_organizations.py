@@ -31,7 +31,6 @@ def _organization_authority_memberships(actor, *, makerspace_ids=None):
             user__account_kind="member",
             status=OrganizationMembership.Status.ACTIVE,
             organization__is_active=True,
-            organization__makerspace_links__makerspace__superadmin_access_enabled=True,
         )
         & servable_q("organization__makerspace_links__makerspace")
     )
@@ -57,14 +56,8 @@ def has_any_org_authority(actor) -> bool:
 def _org_actions_for(actor, makerspace_id) -> set:
     """Return actions active organization grants confer in one makerspace.
 
-    Hard-hidden makerspaces are excluded here, not at the call sites, so every
-    consumer of organization authority inherits the exclusion. Reason: an
-    OrganizationMembership has no makerspace FK, so it sits in
-    `GLOBAL_ADMIN_MODELS` and the admin hide-scoping never narrows it. Without
-    this a superadmin could use the global membership admin to grant a third
-    party authority inside a makerspace that is hard-hidden FROM that superadmin
-    -- a proxy around the hide invariant. A real local MakerspaceMembership in a
-    hidden space still confers authority; an organization grant never does.
+    Grants reach every servable linked makerspace; the servability filter lives in
+    `_organization_authority_memberships`, so every consumer inherits it.
     """
     if actor is None or not getattr(actor, "is_authenticated", False):
         return set()

@@ -217,6 +217,15 @@ SUPPLEMENTAL_AUTHORITY_ENTRIES = (
         "target authority, and an online refund cannot reach a provider whose handles were reset.",
     ),
     *_same(
+        "makerspaces.ModuleSettingsGrant", "module granted_at revoked_at", D.PRESERVE,
+        "A settings grant confers nothing alone: it needs the module's manager action in the "
+        "target, which an import never carries (imported staff are reduced to Member).",
+    ),
+    *_same(
+        "makerspaces.ModuleSettingLock", "setting_key note created_at released_at", D.PRESERVE,
+        "A Space Manager lock only narrows delegated edits; it is inert configuration.",
+    ),
+    *_same(
         "payments.RefundPolicy",
         "area plan full_before_minutes partial_before_minutes partial_percent full_within_days partial_mode "
         "cancellation_fee",

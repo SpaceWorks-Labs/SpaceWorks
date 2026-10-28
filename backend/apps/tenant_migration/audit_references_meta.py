@@ -265,3 +265,7 @@ AUDIT_META_REFERENCES.update(_reference(S, None, *(
     ("notification.email_accepted", "email_log_id"), ("storage.bucket_binding_migrated", "receipt_id"),
     ("storage.bucket_handoff_resumed", "receipt_id"), ("storage.legacy_receipt_bound", "receipt_id"),
 )))
+
+from .audit_references_meta_r2_l17 import SETTINGS_AUTHORITY_AUDIT_EDGES  # noqa: E402
+
+AUDIT_META_REFERENCES.update(SETTINGS_AUTHORITY_AUDIT_EDGES)

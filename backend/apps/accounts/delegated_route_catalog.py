@@ -128,6 +128,7 @@ admin-machine-type-email-template-detail admin-machine-type-email-template-reset
 admin-makerspace-archive-request-withdraw admin-makerspace-archive-requests
 admin-makerspace-backup-custody admin-makerspace-backups admin-makerspace-booking-queue
 admin-makerspace-cover admin-makerspace-domain-settings
+admin-settings-authority-grants admin-settings-authority-locks admin-settings-authority-effective
 admin-makerspace-hosting-invitation-cancel admin-makerspace-hosting-invitations admin-makerspace-logo
 admin-makerspace-payment-connect-onboard admin-makerspace-payment-settings admin-makerspace-profile
 admin-makerspace-setup-state admin-makerspace-subdomain-request admin-makerspace-usage

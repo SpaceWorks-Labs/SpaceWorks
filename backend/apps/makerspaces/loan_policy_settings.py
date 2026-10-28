@@ -8,19 +8,24 @@ from apps.audit import services as audit
 from apps.tenant_migration.gate_runtime import assert_write_allowed
 from .guards import require_module_locked
 from .models_loan_policy import MakerspaceLoanPolicy
+from .settings_authority import assert_setting_write, record_change
 
 
 @transaction.atomic
 def update_loan_policy(actor, makerspace, values):
     assert_write_allowed(makerspace.pk)
     makerspace = require_module_locked(makerspace, "request_workflow")
-    # The Inventory Manager owns lending; everyone else still needs MANAGE_MAKERSPACE.
+    # Lending settings belong to the inventory module of the settings-authority layer
+    # (#101): the Space Manager always, the Inventory Manager for rental timing without a
+    # grant (C-11d) and for the rest with the inventory grant, never past an SM lock.
     if not rbac.can(actor, rbac.Action.EDIT_INVENTORY, makerspace.pk):
         require_action(actor, rbac.Action.MANAGE_MAKERSPACE, makerspace.pk)
     policy =MakerspaceLoanPolicy.for_makerspace(makerspace)
     before = {key: value for key, value in ReturnPolicySerializer(policy).data.items() if key != "id"}
     serializer = ReturnPolicySerializer(policy, data=values, partial=True)
     serializer.is_valid(raise_exception=True)
+    changed = [key for key, value in serializer.validated_data.items() if getattr(policy, key, None) != value]
+    decisions = {key: assert_setting_write(actor, makerspace, "inventory", key) for key in changed}
     policy = serializer.save()
     makerspace.default_loan_days = policy.default_loan_days
     makerspace.save(update_fields=["default_loan_days"])
@@ -48,4 +53,6 @@ def update_loan_policy(actor, makerspace, values):
                          "loan_escalate_overdue_days": serializer.data["loan_escalate_overdue_days"],
                      },
                  })
+    for key, decision in decisions.items():
+        record_change(actor, makerspace, "inventory", key, before.get(key), serializer.data.get(key), decision)
     return policy

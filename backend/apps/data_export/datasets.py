@@ -117,6 +117,8 @@ DATASET_SPECS = {
     "makerspaces.Makerspace": ("makerspace/config.csv", P(("pk",))),
     "makerspaces.MakerspaceMembership": ("members/roster.csv", P(("makerspace",))),
     "makerspaces.MakerspaceRole": ("members/roles.csv", P(("makerspace",))),
+    "makerspaces.ModuleSettingsGrant": ("makerspace/settings_grants.csv", P(("makerspace",))),
+    "makerspaces.ModuleSettingLock": ("makerspace/setting_locks.csv", P(("makerspace",))),
     "makerspaces.MakerspaceWaiver": ("members/waivers.csv", P(("makerspace",))),
     "makerspaces.MemberCard": ("members/member_cards.csv", P(("makerspace",))),
     "makerspaces.MemberProfile": ("members/profiles.csv", P(("membership__makerspace",))),

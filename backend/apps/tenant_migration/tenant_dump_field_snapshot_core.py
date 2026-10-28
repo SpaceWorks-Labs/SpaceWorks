@@ -7,6 +7,8 @@ FIRST_PARTY_FIELD_NAMES = {
     "events.EventStaffGrant": frozenset("id makerspace event series permissions role_label created_at revoked_at user granted_by revoked_by".split()),
     "events.EventStaffGrantInvite": frozenset("id makerspace event series permissions role_label created_at revoked_at token_digest email_digest created_by expires_at redeemed_at redeemed_by".split()),
     'makerspaces.MembershipAdditionalRole': frozenset('id membership role assigned_by assigned_at'.split()),
+    'makerspaces.ModuleSettingsGrant': frozenset('id makerspace module grantee granted_by granted_at revoked_at revoked_by'.split()),
+    'makerspaces.ModuleSettingLock': frozenset('id makerspace setting_key locked_by note created_at released_at released_by'.split()),
     'machines.MembershipMachineTypeScope': frozenset('id membership machine_type created_at'.split()),
     "makerspaces.SpacePackProfile": frozenset("id name pack created_at updated_at".split()),
     "makerspaces.MakerspaceLoanPolicy": frozenset("id makerspace default_loan_days loan_renewal_mode loan_max_renewals loan_renewal_days loan_max_active loan_max_items loan_reminder_offsets_hours loan_escalate_overdue_days updated_at".split()),

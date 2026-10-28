@@ -97,9 +97,11 @@ def _event_rows(ids, date_range):
     completed = period & Q(events__status=Event.Status.COMPLETED)
     attended = Q(events__registrations__status=EventRegistration.Status.ATTENDED)
     registered = Q(events__registrations__status=EventRegistration.Status.REGISTERED)
+    # Annotation names must not shadow the `events` relation: an `events=` annotation
+    # turns every later `events__registrations` into a lookup on an IntegerField.
     rows = list(Makerspace.objects.filter(id__in=ids).values("id").annotate(
-        events=Count("events", filter=period, distinct=True),
-        registrations=Count("events__registrations", filter=period),
+        event_count=Count("events", filter=period, distinct=True),
+        registration_count=Count("events__registrations", filter=period),
         attended=Count("events__registrations", filter=period & attended),
         completed_attended=Count("events__registrations", filter=completed & attended),
         completed_registered=Count("events__registrations", filter=completed & registered),
@@ -108,8 +110,8 @@ def _event_rows(ids, date_range):
     for row in rows:
         denominator = row["completed_attended"] + row["completed_registered"]
         result.append({
-            "makerspace_id": row["id"], "events_in_period": row["events"],
-            "events_registrations": row["registrations"], "events_attended": row["attended"],
+            "makerspace_id": row["id"], "events_in_period": row["event_count"],
+            "events_registrations": row["registration_count"], "events_attended": row["attended"],
             "events_completed_attendance_rate_percent": round(row["completed_attended"] / denominator * 100, 2) if denominator else None,
             # Private inputs are retained in ReportResult.records but omitted from
             # FIELDS, so legacy single-space responses and exports do not change.

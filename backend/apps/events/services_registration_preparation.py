@@ -19,6 +19,11 @@ def ordinary_form(function):
     def wrapped(*args, **kwargs):
         bound = parameters.bind(*args, **kwargs)
         values = bound.arguments
+        # The member-account boundary comes first: a staff or platform account is refused
+        # before any form preparation reads the event (account split M5).
+        if values.get("member") is not None:
+            from apps.accounts.account_kind_guards import require_member_account
+            require_member_account(values["member"])
         target = values.get("event") or values.get("registration").event
         schema = target.custom_form
         if not isinstance(schema, dict) or schema.get("schema_version") != 2:

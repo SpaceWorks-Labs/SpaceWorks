@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from django.conf import settings
-from django.urls import URLPattern, URLResolver, get_resolver, resolve
+from django.urls import URLPattern, URLResolver, get_resolver
 
 from apps.apiclients.scope_registry_routes import (
     PUBLIC_ALL,
@@ -16,9 +16,10 @@ from apps.apiclients.scope_registry_routes import (
     TARGET_CLIENT_SUBJECT,
     ScopeRegistryEntry,
 )
-
+from .scope_registry_exclusions import OWNER_SESSION_EXCLUSIONS, STAFF_ACCOUNT_EXCLUSIONS
 from .scope_registry_reads import read_scope_vocabulary
-from .scope_registry_public_pages import is_global_target, resolve_handle_target
+from .scope_registry_public_pages import is_global_target
+from .scope_registry_targets import _request_match, resolve_target, resolve_view_name
 
 LEGACY_SCOPE = "legacy:v1"
 SCOPE_VOCABULARY = frozenset(
@@ -59,112 +60,6 @@ def lookup(view_name, method):
     if not view_name or not method:
         return None
     return SCOPE_REGISTRY.get((view_name, method.upper()))
-
-
-# Session-only lifecycle routes lie outside the HMAC protected prefixes. Explicit
-# exclusion also refuses deployments that extend those prefixes; legacy:v1 never
-# grants staff lifecycle authority.
-STAFF_ACCOUNT_EXCLUSIONS = frozenset({
-    "admin-staff-accounts", "admin-staff-account-policy", "admin-staff-account-change",
-    "admin-staff-account-deactivate", "admin-staff-account-reactivate",
-    "admin-staff-account-set-password", "admin-staff-account-resend-invite",
-})
-from .scope_registry_programme import SESSION_ONLY
-STAFF_ACCOUNT_EXCLUSIONS |= SESSION_ONLY
-# Reimbursement, stage-form and payout routes are full-session only: no API-key scope may
-# reach owner money, payee data, finance files or staff review (views refuse api_client too).
-from apps.accounts.reimbursement_route_catalog import BY_NAME as _REIMBURSEMENT_ROUTES
-STAFF_ACCOUNT_EXCLUSIONS |= frozenset(_REIMBURSEMENT_ROUTES)
-
-
-# Owner self-service on the member surface acts on the caller's own job; an API client
-# (public scopes or legacy:v1) never acquires it, even if a deployment widens prefixes.
-OWNER_SESSION_EXCLUSIONS = frozenset({"member-machine-service-cancel", "member-machine-service-owner"})
-
-
-def _request_match(request):
-    match = getattr(request, "resolver_match", None)
-    if match is not None:
-        return match
-    if hasattr(request, "_scope_registry_resolver_match"):
-        return request._scope_registry_resolver_match
-    try:
-        match = resolve(request.path_info)
-    except Exception:
-        match = None
-    request._scope_registry_resolver_match = match
-    return match
-
-
-def resolve_view_name(request):
-    try:
-        match = _request_match(request)
-        return getattr(match, "view_name", None) if match is not None else None
-    except Exception:
-        return None
-
-
-def resolve_target(request, entry):
-    if entry.target_mode == TARGET_GLOBAL:
-        return None, True
-    try:
-        match = _request_match(request)
-        kwargs = getattr(match, "kwargs", {}) or {}
-        if entry.target_mode == TARGET_PUBLIC_HANDLE:
-            return resolve_handle_target(request, match)
-        if entry.target_mode == TARGET_CLIENT_SUBJECT:
-            from .read_contract import resolve_read_target
-            return resolve_read_target(request, match)
-        if entry.target_mode == TARGET_TENANT_SLUG:
-            from apps.makerspaces.lookup import get_public_makerspace
-
-            # get_public_makerspace raises Http404 for an unknown or unservable
-            # identifier, which the outer except turns into resolved=False. The
-            # explicit None check keeps that contract if it ever starts returning
-            # None instead: an unresolved tenant must never read as resolved, or
-            # the fail-open this registry exists to close comes straight back.
-            target = get_public_makerspace(kwargs.get("makerspace_slug"))
-            return (target, True) if target is not None else (None, False)
-        if entry.target_mode != TARGET_TENANT_TOKEN:
-            return None, False
-        token = kwargs.get("public_token")
-        view_name = getattr(match, "view_name", None)
-        from apps.accounts.programme_route_catalog import BY_NAME
-        if view_name in BY_NAME:
-            from apps.makerspaces.origin_scope_programme import programme_route_targets
-            from apps.makerspaces.models import Makerspace
-            _, targets, invalid, _ = programme_route_targets(view_name, kwargs)
-            if invalid or len(targets) != 1:
-                return None, False
-            target = Makerspace.objects.filter(pk=next(iter(targets))).first()
-            return target, target is not None
-        if view_name in {"public-profile", "public-profile-activity", "public-profile-events", "public-profile-projects", "public-profile-github"}:
-            from apps.makerspaces.public_profile_access import resolve_public_profile
-            claim, _ = resolve_public_profile(kwargs.get("handle"), request)
-            return claim.profile.membership.makerspace, True
-        if view_name == "public-event-code":
-            from apps.events.website_visibility import resolve as resolve_event
-            from apps.makerspaces.public_page_access import require_scope
-            event = resolve_event(None, token)
-            require_scope("makerspace", event.makerspace, request)
-            return event.makerspace, True
-        if view_name == "hardware_requests:request-status":
-            from apps.hardware_requests.models import HardwareRequest
-
-            row = HardwareRequest.objects.select_related("makerspace").filter(
-                public_token=token
-            ).first()
-        elif view_name in {"public-printer-service-status", "public-machine-service-status"}:
-            from apps.machines.models import MachineServiceRequest
-
-            row = MachineServiceRequest.objects.select_related("makerspace").filter(
-                public_token=token
-            ).first()
-        else:
-            return None, False
-        return (row.makerspace, True) if row is not None else (None, False)
-    except Exception:
-        return None, False
 
 
 def resolve_target_once(request, entry):

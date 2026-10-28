@@ -53,6 +53,28 @@ class GrantSerializer(PiiMaskingSerializerMixin, serializers.ModelSerializer):
         return obj.grantee.email if obj.grantee else ""
 
 
+class CandidateSerializer(PiiMaskingSerializerMixin, serializers.Serializer):
+    pii_account_fields = ("name", "email")
+    id = serializers.IntegerField()
+    name = serializers.SerializerMethodField()
+    email = serializers.EmailField()
+
+    def get_pii_makerspace_id(self, instance):
+        return self.context["makerspace_id"]
+
+    def get_pii_subject(self, instance):
+        return instance
+
+    def get_name(self, obj) -> str:
+        return obj.get_full_name() or obj.username
+
+
+class GrantsResponseSerializer(serializers.Serializer):
+    grants = GrantSerializer(many=True)
+    candidates = serializers.DictField(child=CandidateSerializer(many=True),
+                                       help_text="Per module: the people who may be granted it here.")
+
+
 class GrantsUpdateSerializer(serializers.Serializer):
     module = serializers.ChoiceField(choices=sorted(MODULE_MANAGER_ACTIONS))
     grantee_ids = serializers.ListField(child=serializers.IntegerField(min_value=1), max_length=200)
@@ -108,28 +130,43 @@ def _live_grants(space):
     return ModuleSettingsGrant.objects.filter(makerspace=space, revoked_at__isnull=True).select_related("grantee")
 
 
+def _grants_payload(request, space):
+    from .models import MakerspaceMembership
+    from .settings_authority_writes import eligible_grantee
+
+    people = [row.user for row in MakerspaceMembership.objects.filter(
+        makerspace=space, status="active", user__is_active=True).select_related("user").order_by("user__username")]
+    context = {"request": request, "makerspace_id": space.pk}
+    return {
+        "grants": GrantSerializer(_live_grants(space), many=True, context=context).data,
+        "candidates": {module: CandidateSerializer(
+            [user for user in people if eligible_grantee(space, module, user)], many=True, context=context).data
+            for module in MODULE_MANAGER_ACTIONS},
+    }
+
+
 class SettingsGrantsView(APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(tags=TAGS, summary="List live per-person module settings grants",
-                   responses={200: GrantSerializer(many=True), 403: _SM_ONLY, 404: _NOT_FOUND, **errors(401)})
+                   responses={200: GrantsResponseSerializer, 403: _SM_ONLY, 404: _NOT_FOUND, **errors(401)})
     def get(self, request, makerspace_id):
         space = _manager_space(request.user, makerspace_id)
-        return Response(GrantSerializer(_live_grants(space), many=True, context={"request": request}).data)
+        return Response(_grants_payload(request, space))
 
     @extend_schema(
         tags=TAGS, summary="Replace one module's settings grants",
         description="Grants go to people who hold that module's manager action here and are not "
                     "already a Space Manager. Each grant created or revoked is audited.",
         request=GrantsUpdateSerializer,
-        responses={200: GrantSerializer(many=True), 400: OpenApiResponse(description="Unknown module or ineligible person."),
+        responses={200: GrantsResponseSerializer, 400: OpenApiResponse(description="Unknown module or ineligible person."),
                    403: _SM_ONLY, 404: _NOT_FOUND, **errors(401)})
     def put(self, request, makerspace_id):
         space = _manager_space(request.user, makerspace_id)
         body = GrantsUpdateSerializer(data=request.data)
         body.is_valid(raise_exception=True)
         set_grants(request.user, space, body.validated_data["module"], body.validated_data["grantee_ids"])
-        return Response(GrantSerializer(_live_grants(space), many=True, context={"request": request}).data)
+        return Response(_grants_payload(request, space))
 
 
 class SettingLocksView(APIView):

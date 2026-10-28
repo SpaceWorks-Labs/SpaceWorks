@@ -33,7 +33,7 @@ const TAB_ENTRIES: HubEntry[] = [
   ["exports", "Data export", "Export your space's data.", "export download data csv archive gdpr"],
   ["backups", "Backup & restore", "Backups of this space.", "backup restore snapshot recovery"],
   ["usage", "Usage & limits", "Storage and plan limits.", "usage limits storage quota plan"],
-  ["modules", "Modules", "Install or remove modules.", "modules install uninstall apps"],
+  ["modules", "Modules", "Switch modules on or off for this space.", "modules install uninstall apps switch on off maintenance to-buy warranty"],
   ["migration", "Tenant migration", "Move this space to another deployment.", "migration move tenant import export"],
   ["inventory", "Inventory settings", "Lending features and loan policy, from the Inventory page's settings menu.", "inventory lending loans settings loan policy"],
   ["machines", "Machine settings", "Machine features, from the Machines page.", "machines settings maintenance certification"],

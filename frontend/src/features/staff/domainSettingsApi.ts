@@ -13,7 +13,13 @@ export type DomainFeature = {
   requires_features: string[];
   enabled: boolean;
   available: boolean;
+  /** The caller may change it now (#101): Space Manager, a grant, or the rental-timing exception. */
+  editable: boolean;
+  /** A Space Manager lock blocks delegated edits of this key. */
+  locked: boolean;
 };
+
+export type SettingPermission = { editable: boolean; locked: boolean };
 
 export type DomainSettingValues = Partial<{
   event_default_registration_audience: "members" | "accounts" | "invite" | "participating_organizations";
@@ -28,6 +34,7 @@ export type DomainSettings = {
   editable: boolean;
   features: DomainFeature[];
   settings: DomainSettingValues;
+  setting_permissions: Record<string, SettingPermission>;
 };
 
 export type DomainSettingsPatch = { features?: Record<string, boolean>; settings?: DomainSettingValues };

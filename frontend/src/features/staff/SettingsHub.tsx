@@ -6,6 +6,7 @@ import { ProgressBar } from "../../components/ui";
 import { useChannels } from "../notifications/channelsApi";
 import type { Makerspace } from "./panels/shared";
 import { hubEntries, searchHub, setupChecklist, type HubEntry, type HubTarget } from "./settingsHubCatalog";
+import { SettingsAuthorityCard } from "./SettingsAuthorityCard";
 
 type Props = { makerspace: Makerspace; sectionIds: readonly string[]; allowedTabs: readonly string[];
   tabHref: (tab: string) => string };
@@ -46,6 +47,7 @@ export function SettingsHub({ makerspace, sectionIds, allowedTabs, tabHref }: Pr
         <span className="text-sm text-muted">Create staff accounts for this space, assign their roles and the machine types they manage.</span></span>
       <span aria-hidden="true" className="text-muted">→</span>
     </Link> : null}
+    {allowedTabs.includes("users") ? <SettingsAuthorityCard makerspaceId={makerspace.id} /> : null}
     <div role="search" className="grid min-w-0 gap-2">
       <label className="text-sm font-semibold text-ink" htmlFor="settings-hub-search">Search settings</label>
       <input id="settings-hub-search" type="search" className="desk-input w-full" value={query} placeholder="Try “WhatsApp”, “loan days” or “logo”"

@@ -1,4 +1,5 @@
 import { ModuleAnalytics } from "./panels/ModuleAnalytics";
+import { capabilityOn } from "../../lib/features";
 import { MyNotificationSettings } from "../notifications/MyNotificationSettings";
 import { Suspense, type ReactNode } from "react";
 
@@ -139,7 +140,7 @@ export function StaffTabContent({
           canManage={canManageMachines}
           enabledFeatures={activeMakerspace.enabled_features ?? []}
           canConfigureMachineTypes={canConfigureMachineTypes}
-          maintenanceEnabled={activeMakerspace.enabled_modules?.includes("maintenance") ?? false}
+          maintenanceEnabled={capabilityOn(activeMakerspace, "machines.maintenance")}
           machineServiceEnabled={activeMakerspace.enabled_modules?.includes("machine_service") ?? false}
           printingEnabled={activeMakerspace.enabled_modules?.includes("printing") ?? false}
           reportsEnabled={activeMakerspace.enabled_modules?.includes("reports") ?? false}

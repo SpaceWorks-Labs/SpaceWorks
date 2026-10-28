@@ -5,6 +5,7 @@ import { DashboardLayout, type DashboardLayoutProps } from "../../../components/
 import { useStaffGet, type Makerspace } from "./shared";
 import { dashboardDestination, dashboardHref } from "./dashboardLinks";
 import { filterTabsByEnabledModules } from "../staffTabs";
+import { capabilityOn } from "../../../lib/features";
 import { DashboardActivity, DashboardDueBack } from "./DashboardWidgets";
 import { DashboardQuickAdd } from "./DashboardQuickAdd";
 import { DashboardArchiveStatus } from "./DashboardArchiveStatus";
@@ -34,7 +35,7 @@ export function DashboardPanel({ makerspace, canManageMakerspace, allowedTabs, a
     && (tile.key !== "pending_payments" || (dashboard.data !== undefined && "pending_payments" in dashboard.data))
     && (!allowedTabs || allowedTabs.includes(dashboardDestination(tile.key).tab))
     && (!tile.key.includes("prints") || makerspace.enabled_modules === undefined || makerspace.enabled_modules.includes("printing"))
-    && (tile.key !== "maintenance_overdue" || makerspace.enabled_modules === undefined || makerspace.enabled_modules.includes("maintenance"))
+    && (tile.key !== "maintenance_overdue" || makerspace.enabled_features === undefined || capabilityOn(makerspace, "machines.maintenance"))
   ));
   const priority = (tile: typeof permitted[number]) => tile.actionNeeded && (dashboard.data?.[tile.key] ?? 0) > 0
     ? tile.tone === "danger" ? 0 : 1 : 2;

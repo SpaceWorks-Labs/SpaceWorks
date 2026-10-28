@@ -50,7 +50,8 @@ export function MachineDrawer({
     ...BASE_TABS.slice(0, 4),
     ...(maintenanceAllowed ? ["Maintenance" as const] : []),
     ...BASE_TABS.slice(4),
-    ...(details?.can_edit ? ["Warranty" as const] : []),
+    // The machines parent's own warranty switch (#97, C-9).
+    ...(details?.can_edit && enabledFeatures.includes("machines.warranty") ? ["Warranty" as const] : []),
   ];
 
   return <DetailLayout presentation="drawer" open onClose={onClose} drawerWidth={720}

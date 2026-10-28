@@ -36,7 +36,7 @@ export function StaffPlatformTabContent({ activeTab, activeMakerspace, makerspac
       {activeTab === "email-logs" && canManageMakerspace ? (
         <EmailLogPanel key={makerspaceKey} makerspace={activeMakerspace} />
       ) : null}
-      {activeTab === "modules" && isSuperadmin ? (
+      {activeTab === "modules" && canManageMakerspace ? (
         <ModulesPanel key={makerspaceKey} makerspaceId={activeMakerspace.id} />
       ) : null}
       {activeTab === "platform" ? (

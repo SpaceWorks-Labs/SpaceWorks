@@ -32,5 +32,6 @@ export function ContainersPanel({ makerspace, canEditInventory }: { makerspace: 
        <OverflowMenu label={`Actions for ${container.label}`} actions={[{ label: "Edit", onClick: () => openContainer(container.id, "details") }, { label: "Scan history", onClick: () => openContainer(container.id, "history") }]} /></div>} />) }}
    detail={<><ContainerCreateModal makerspaceId={makerspace.id} open={createOpen} onClose={() => setCreateOpen(false)} onCreated={created => { setCreateOpen(false); openContainer(created.id, "details"); }} />
      {selected ? <ContainerDetail key={selected.id} container={selected} makerspaceId={makerspace.id} canEditInventory={canEditInventory} kitEnabled={featureEnabled(makerspace.enabled_features ?? [], "loans.kit_checklist")}
+       warrantyEnabled={featureEnabled(makerspace.enabled_features ?? [], "inventory.warranty")}
      onClose={() => setParams(current => { current.delete("container"); current.delete("containerTab"); return current; })} /> : null}</>} />;
 }

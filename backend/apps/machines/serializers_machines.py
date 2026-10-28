@@ -184,6 +184,10 @@ class MachineSerializer(serializers.ModelSerializer):
         return public_image_storage.public_url(obj.image_key) or None
 
     def get_warranty_status(self, obj) -> str:
+        from apps.makerspaces.capability_eligibility import configuration_feature_enabled
+        # The machines parent's own warranty switch (#97): off shows nothing about warranties.
+        if not configuration_feature_enabled(obj.makerspace, "machines.warranty"):
+            return STATUS_UNKNOWN
         try:
             warranty = obj.warranty
         except Warranty.DoesNotExist:

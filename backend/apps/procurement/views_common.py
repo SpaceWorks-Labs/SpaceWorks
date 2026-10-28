@@ -20,10 +20,9 @@ from apps.makerspaces.folded_capabilities import (
 from apps.procurement.models import ToBuyItem
 from apps.procurement.serializers import ErrorSerializer
 
-# The app label. It stopped being a module key in #97: the list is switched per parent
+# `procurement` stopped being a module key in #97: the list is switched per parent
 # (`machines.tobuy` for printing rows, `inventory.tobuy` for hardware rows), and a route
 # whose switch is off answers 404 while every row is kept.
-MODULE_KEY = "procurement"
 DEFAULT_LIST_LIMIT = 200
 MAX_LIST_LIMIT = 500
 

@@ -15,7 +15,6 @@ from apps.procurement import access
 from apps.procurement.models import ToBuyItem
 from apps.procurement.views_common import (
     KIND_PARAM,
-    MODULE_KEY,
     PROCUREMENT_ERROR_RESPONSES,
     STATUS_PARAM,
     apply_status_filter,
@@ -227,7 +226,6 @@ class ToBuyDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 __all__ = [
     "KIND_PARAM",
-    "MODULE_KEY",
     "PROCUREMENT_ERROR_RESPONSES",
     "STATUS_PARAM",
     "ToBuyDetailView",

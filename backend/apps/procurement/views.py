@@ -1,6 +1,5 @@
 from apps.procurement.views_common import (
     KIND_PARAM,
-    MODULE_KEY,
     PROCUREMENT_ERROR_RESPONSES,
     STATUS_PARAM,
 )
@@ -23,7 +22,6 @@ from apps.procurement.views_receipts import (
 
 __all__ = [
     "KIND_PARAM",
-    "MODULE_KEY",
     "PROCUREMENT_ERROR_RESPONSES",
     "STATUS_PARAM",
     "ToBuyDetailView",

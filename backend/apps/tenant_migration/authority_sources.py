@@ -94,6 +94,9 @@ AUTHORIZATION_SOURCES = (
     APPS_DIR / "makerspaces" / "role_assignments.py",
     APPS_DIR / "accounts" / "mfa_policy.py",
     APPS_DIR / "machines" / "access.py",
+    APPS_DIR / "machines" / "access_core.py",
+    APPS_DIR / "machines" / "access_bulk.py",
+    APPS_DIR / "machines" / "access_scoping.py",
     APPS_DIR / "bookings" / "booking_authority.py",
 )
 AUTHORIZATION_SOURCES += tuple(APPS_DIR / path for path in _RECONCILIATION_SOURCES)

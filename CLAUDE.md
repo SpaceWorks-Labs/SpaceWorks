@@ -243,16 +243,17 @@ the Auth module** — forgetting this is a cross-tenant data leak, not just a bu
   (`python scripts/ci/check_rules.py` locally) over tracked, non-migration, non-test, non-generated files in
   `backend/apps`, `backend/config` and `frontend/src`; its `ALLOWLIST` is the only exception list, and
   today it holds just `config/settings.py` (Django settings conventionally use one file). Measured
-  2026-10-26: **seven `backend/apps/` files exceed 300 lines** -- `machines/access.py` (367),
-  `tenant_migration/row_planning.py` (325), `apiclients/scope_registry.py` (313),
-  `tenant_migration/authority_guards.py` (309), `makerspaces/module_purge.py` (305),
-  `tenant_migration/materialization.py` (302), `tenant_migration/source_gate_guards.py` (301) -- and the
-  P2 split sweep owns them; frontend has none. `backend/tests/` is not held to the ceiling.
+  2026-10-28: **four `backend/apps/` files exceed 300 lines** -- `tenant_migration/row_planning.py` (325),
+  `makerspaces/module_purge.py` (305), `tenant_migration/materialization.py` (302),
+  `tenant_migration/source_gate_guards.py` (301) -- and the P2 split sweep owns them; frontend has none.
+  (`machines/access.py`, `apiclients/scope_registry.py` and `tenant_migration/authority_guards.py` were
+  split behind barrels on 2026-10-28.) `backend/tests/` is not held to the ceiling.
   **Split an over-ceiling file in its own commit before adding to it**, and when splitting one that other
   modules import from, check for guards pinned to its path: `tests/makerspaces/test_tenant_servability_guard.py`
   pins two function *bodies* to `accounts/rbac.py` by `(path, function)`, and
-  `tenant_migration/authority_guards.py` pins whole *files* via `AUTHORIZATION_SOURCES` — the latter goes
-  silently blind rather than failing if you move code out from under it.
+  `tenant_migration/authority_guards.py` pins whole *files* via `AUTHORIZATION_SOURCES` (the list itself
+  lives in `tenant_migration/authority_sources.py`) — the latter goes silently blind rather than failing
+  if you move code out from under it, so list every new sibling there.
 - **Production-level code, not prototype code.** Validate all inputs at the boundary, handle external-service
   failure explicitly (especially outbound integrations — Stripe, Telegram, SMTP, object storage — fail safe,
   never crash a request flow), use structured logging, return consistent typed error responses, and never

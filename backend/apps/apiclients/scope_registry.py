@@ -1,7 +1,5 @@
-from dataclasses import dataclass
-
 from django.conf import settings
-from django.urls import URLPattern, URLResolver, get_resolver, resolve
+from django.urls import URLPattern, URLResolver, get_resolver
 
 from apps.apiclients.scope_registry_routes import (
     PUBLIC_ALL,
@@ -16,9 +14,18 @@ from apps.apiclients.scope_registry_routes import (
     TARGET_CLIENT_SUBJECT,
     ScopeRegistryEntry,
 )
-
+from .scope_registry_exclusions import OWNER_SESSION_EXCLUSIONS, STAFF_ACCOUNT_EXCLUSIONS
 from .scope_registry_reads import read_scope_vocabulary
 from .scope_registry_public_pages import is_global_target, resolve_handle_target
+from .scope_registry_requests import _request_match, resolve_view_name
+from .scope_registry_verdicts import ScopeObservation, target_allows
+
+# Split across siblings to stay under the size ceiling: `scope_registry_exclusions`
+# (session-only view names), `scope_registry_requests` (URL match caching) and
+# `scope_registry_verdicts` (ScopeObservation, target_allows). Target resolution, lookup,
+# classify and drift validation stay HERE on purpose: callers override `lookup`,
+# `resolve_target`, `resolve_handle_target` and `_urlconf_routes` on this module, and the
+# functions that use them must see the override.
 
 LEGACY_SCOPE = "legacy:v1"
 SCOPE_VOCABULARY = frozenset(
@@ -39,16 +46,6 @@ BROWSER_SCOPES = frozenset(
 )
 
 
-@dataclass(frozen=True, slots=True)
-class ScopeObservation:
-    view_name: str | None
-    method: str
-    verdict: bool
-    target_resolution: str
-    target_resolved: bool | None
-    target_makerspace_id: int | None
-
-
 def lookup(view_name, method):
     # This provider fetch is authorized solely by a single-use media grant. It is
     # outside protected prefixes; public scopes must never substitute for its token.
@@ -59,49 +56,6 @@ def lookup(view_name, method):
     if not view_name or not method:
         return None
     return SCOPE_REGISTRY.get((view_name, method.upper()))
-
-
-# Session-only lifecycle routes lie outside the HMAC protected prefixes. Explicit
-# exclusion also refuses deployments that extend those prefixes; legacy:v1 never
-# grants staff lifecycle authority.
-STAFF_ACCOUNT_EXCLUSIONS = frozenset({
-    "admin-staff-accounts", "admin-staff-account-policy", "admin-staff-account-change",
-    "admin-staff-account-deactivate", "admin-staff-account-reactivate",
-    "admin-staff-account-set-password", "admin-staff-account-resend-invite",
-})
-from .scope_registry_programme import SESSION_ONLY
-STAFF_ACCOUNT_EXCLUSIONS |= SESSION_ONLY
-# Reimbursement, stage-form and payout routes are full-session only: no API-key scope may
-# reach owner money, payee data, finance files or staff review (views refuse api_client too).
-from apps.accounts.reimbursement_route_catalog import BY_NAME as _REIMBURSEMENT_ROUTES
-STAFF_ACCOUNT_EXCLUSIONS |= frozenset(_REIMBURSEMENT_ROUTES)
-
-
-# Owner self-service on the member surface acts on the caller's own job; an API client
-# (public scopes or legacy:v1) never acquires it, even if a deployment widens prefixes.
-OWNER_SESSION_EXCLUSIONS = frozenset({"member-machine-service-cancel", "member-machine-service-owner"})
-
-
-def _request_match(request):
-    match = getattr(request, "resolver_match", None)
-    if match is not None:
-        return match
-    if hasattr(request, "_scope_registry_resolver_match"):
-        return request._scope_registry_resolver_match
-    try:
-        match = resolve(request.path_info)
-    except Exception:
-        match = None
-    request._scope_registry_resolver_match = match
-    return match
-
-
-def resolve_view_name(request):
-    try:
-        match = _request_match(request)
-        return getattr(match, "view_name", None) if match is not None else None
-    except Exception:
-        return None
 
 
 def resolve_target(request, entry):
@@ -173,21 +127,6 @@ def resolve_target_once(request, entry):
     result = resolve_target(request, entry)
     request._api_client_scope_target = result
     return result
-
-
-def target_allows(entry, client, target, resolved):
-    if entry.server_only and getattr(client, "client_type", None) != "server":
-        return False
-    if entry.tenant_bound and client.makerspace_id is None:
-        return False
-    if not resolved:
-        return False
-    if entry.target_mode == TARGET_GLOBAL or is_global_target(target):
-        return client.makerspace_id is None or entry.tenant_apps_admitted
-    target_id = getattr(target, "pk", None)
-    if target_id is None:
-        return False
-    return client.makerspace_id is None or target_id == client.makerspace_id
 
 
 def scope_allows(entry, scopes):

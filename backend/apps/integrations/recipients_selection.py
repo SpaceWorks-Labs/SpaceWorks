@@ -54,9 +54,9 @@ FEATURE_MODULES = {
     NotificationFeature.DEVICES: "devices",
     # Ledger messages work without the separable online rail.
     NotificationFeature.PAYMENTS: "request_workflow",
-    # Stock covers core inventory thresholds; To-Buy alerts are gated per row by
-    # their source (`machines.notifications_p2_stock`), since one list has two switches.
-    NotificationFeature.STOCK: None,
+    # One To-Buy list, two switches (#97): readable while either parent's is on. Core
+    # inventory thresholds and stocktake alerts override this per source kind below.
+    NotificationFeature.STOCK: "inventory.tobuy|machines.tobuy",
     NotificationFeature.CERTIFICATIONS: "machines",
     NotificationFeature.PRESENCE: "presence",
 }
@@ -70,14 +70,15 @@ def feature_available(makerspace, feature, *, source_kind="") -> bool:
     # borrower back-in-stock watch follows the lending workflow it belongs to.
     overrides = {"machines.service": "machine_service", "operations.stocktake": "stocktake",
                  "inventory.threshold": None, "inventory.watch": "request_workflow",
-                 "machines.procurement": None}
+                 "machines.procurement": "inventory.tobuy|machines.tobuy"}
     key = overrides[source_kind] if source_kind in overrides else FEATURE_MODULES.get(feature)
     if key is None or makerspace is None:
         return True
     try:
         from apps.makerspaces.platform import feature_enabled, module_enabled
 
-        return bool(feature_enabled(makerspace, key) if "." in key else module_enabled(makerspace, key))
+        return any(feature_enabled(makerspace, part) if "." in part else module_enabled(makerspace, part)
+                   for part in key.split("|"))
     except Exception:
         # Fail open, as everywhere else here: a capability lookup failure must not mute a
         # space. A genuinely uninstalled module has no domain objects to notify about

@@ -94,6 +94,10 @@ def create_staff(space, root, password):
         user.must_change_password = False
         user.save()
         staff[role_slug] = user
+    # Settings authority (#101): the demo Machine Manager runs machine settings themselves;
+    # the Inventory Manager shows the read-only state with only rental timing editable.
+    from apps.makerspaces.settings_authority_writes import set_grants
+    set_grants(root, space, "machines", [staff["machine_manager"].pk])
     return SimpleNamespace(manager=staff["space_manager"], inventory=staff["inventory_manager"],
                            machines=staff["machine_manager"], desk=staff["handover"])
 

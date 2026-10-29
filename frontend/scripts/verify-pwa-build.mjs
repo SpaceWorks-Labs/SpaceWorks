@@ -21,8 +21,7 @@ for (const entry of manifest) {
   assert(worker.includes(entry.url) && worker.includes(entry.revision), `Revision absent from worker: ${entry.url}`);
 }
 // Maker-preview vendors stay out of the install-time precache (runtime-cached instead).
-// Literal copy of src/sw/previewAssets.ts PREVIEW_ASSET_FILES (a unit test keeps them equal).
-const preview = /^(?:three\.module-[\w-]+\.js|occt-import-js-[\w-]+\.wasm|preview\.worker-[\w-]+\.js|kicanvas-entry-[\w-]+\.js)$/;
+const preview = /^(?:three\.module-[\w-]+\.js|occt-import-js-[\w-]+\.wasm|preview\.worker-[\w-]+\.js)$/;
 const lazyPreview = [];
 for (const asset of await readdir(resolve(output, "assets"))) {
   if (preview.test(asset)) {
@@ -33,13 +32,7 @@ for (const asset of await readdir(resolve(output, "assets"))) {
     assert(manifest.some(({ url }) => url === `/assets/${asset}`), `Emitted asset absent: ${asset}`);
   }
 }
-assert.equal(lazyPreview.length, 4, "Expected the three, occt WASM, preview worker and KiCad renderer files.");
-// The vendored KiCad renderer must never fetch fonts or remote files (privacy, CSP, brand fonts).
-for (const asset of lazyPreview.filter(name => name.startsWith("kicanvas-entry-"))) {
-  const source = await readFile(resolve(output, "assets", asset), "utf8");
-  assert(!source.includes("fonts.googleapis.com") && !/fetch\(\s*["'`]https?:/.test(source),
-    `The KiCad renderer must not reach remote hosts: ${asset}`);
-}
+assert.equal(lazyPreview.length, 3, "Expected the three, occt WASM and preview worker vendor files.");
 assert(worker.includes("spaceworks-preview-runtime-v1"), "Preview vendors need the bounded runtime cache.");
 // Patch, the mascot, is banned on kiosk surfaces: none of its files may enter the kiosk precache.
 const patchFiles = await readdir(resolve(output, "brand", "patch"));

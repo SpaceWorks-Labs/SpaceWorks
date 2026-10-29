@@ -21,8 +21,6 @@ class FormatSpec:
     preview: str = "download"
     confidence: str = "structural"
     mime_aliases: tuple[str, ...] = ()
-    # A smaller in-browser preview bound than the upload cap (None = the upload cap).
-    preview_max_bytes: int | None = None
 
     @property
     def download_only(self):
@@ -33,13 +31,12 @@ REGISTRY = {}
 
 
 def _add(exts, subtypes, group, cap, mime, checker, preview="download", *, opaque=False,
-         aliases=(), preview_cap=None):
+         aliases=()):
     for ext in exts.split():
         for subtype in subtypes.split():
             REGISTRY[ext, subtype] = FormatSpec(
                 ext, subtype, group, cap * MIB, mime, checker, preview,
                 "opaque-real-export-required" if opaque else "structural", tuple(aliases),
-                preview_cap * MIB if preview_cap else None,
             )
 
 
@@ -89,13 +86,10 @@ _add("drl xln", "excellon", "hardware-pcb", 10, "application/x-excellon", "text"
 _add("zip", "gerber", "hardware-pcb", 50, "application/zip", "zip", "gerber")
 _add("tgz", "odb", "hardware-pcb", 100, "application/gzip", "binary")
 _add("xml cvg", "ipc2581", "hardware-pcb", 100, "application/xml", "xml")
-# KiCad 6+ boards and schematics render in the browser (parsed on the main thread, so a 10 MiB
-# preview bound); symbols, footprints, projects and KiCad 5 files stay download-only.
-for ext, subtype, cap, preview in (("kicad_pcb", "kicad_pcb", 25, "kicad"), ("kicad_sch", "kicad_sch", 25, "kicad"),
-                                   ("kicad_sym", "kicad_symbol_lib", 10, "download"),
-                                   ("kicad_mod", "footprint", 5, "download"), ("kicad_mod", "module", 5, "download")):
-    _add(ext, subtype, "hardware-pcb", cap, "text/plain", "text", preview,
-         aliases=(f"application/x-{ext.replace('_', '-')}",), preview_cap=10 if preview == "kicad" else None)
+for ext, subtype, cap in (("kicad_pcb", "kicad_pcb", 25), ("kicad_sch", "kicad_sch", 25),
+                          ("kicad_sym", "kicad_symbol_lib", 10), ("kicad_mod", "footprint", 5),
+                          ("kicad_mod", "module", 5)):
+    _add(ext, subtype, "hardware-pcb", cap, "text/plain", "text", aliases=(f"application/x-{ext.replace('_', '-')}",))
 _add("kicad_pro", "kicad_project", "hardware-pcb", 1, "application/json", "text")
 _add("sch", "kicad5 eagle", "hardware-pcb", 25, "text/plain", "text",
      aliases=("application/xml", "text/xml"))

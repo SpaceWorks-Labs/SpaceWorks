@@ -5,7 +5,6 @@ import { ASK_PREVIEW_BYTES, checkMesh, MAX_PREVIEW_BYTES, MAX_PREVIEW_MS } from 
 import type { PreviewResult } from "./types";
 
 const MeshCanvas = lazy(() => import("./MeshCanvas"));
-const KicadCanvas = lazy(() => import("./KicadCanvas"));
 
 /** Validate generated SVG and display as an image, never insert SVG markup. */
 export function safeSvg(value: string) {
@@ -33,7 +32,6 @@ export function AssetPreview({ assetId, bytes, filename, extension, load, downlo
   load: (signal: AbortSignal) => Promise<Blob>; download: () => void;
 }) {
   const [state, setState] = useState<"idle" | "confirm" | "loading" | "ready" | "failed">("idle");
-  const kicad = extension === "kicad_pcb" || extension === "kicad_sch";
   const [result, setResult] = useState<PreviewResult | null>(null);
   const [image, setImage] = useState<string | null>(null);
   const stop = useRef<() => void>(() => {});
@@ -64,7 +62,7 @@ export function AssetPreview({ assetId, bytes, filename, extension, load, downlo
           if (!event.data.ok || !parsed) throw new Error();
           if (parsed.kind === "mesh") {
             for (const mesh of parsed.meshes) checkMesh(mesh.positions);
-          } else if (parsed.kind === "svg") setImage(URL.createObjectURL(new Blob([safeSvg(parsed.svg)], { type: "image/svg+xml" })));
+          } else setImage(URL.createObjectURL(new Blob([safeSvg(parsed.svg)], { type: "image/svg+xml" })));
           if (mounted.current) { setResult(parsed); setState("ready"); }
         } catch { if (mounted.current) setState("failed"); }
         finally { finish(); }
@@ -76,12 +74,9 @@ export function AssetPreview({ assetId, bytes, filename, extension, load, downlo
     <div className="flex flex-wrap items-center gap-3"><Box aria-hidden size={20} /><span className="font-semibold text-ink">Maker file preview</span></div>
     {state === "confirm" ? <Callout size="panel" tone="warn" lead="This is a large file."
       body="Loading the preview may use significant memory. You can download the original instead." /> : null}
-    {state === "failed" ? <p role="status" className="text-sm text-muted">{kicad
-      ? "We couldn't preview this KiCad file. Download it to open in KiCad." : "Preview unavailable. You can still download the original file."}</p> : null}
+    {state === "failed" ? <p role="status" className="text-sm text-muted">Preview unavailable. You can still download the original file.</p> : null}
     {state === "loading" ? <div role="status"><Spinner />Preparing preview… <ActionControl action={{ label: "Cancel preview", onClick: () => { stop.current(); setState("idle"); } }} /></div> : null}
     {state === "ready" && result?.kind === "mesh" ? <Suspense fallback={<Spinner />}><MeshCanvas meshes={result.meshes} /></Suspense> : null}
-    {state === "ready" && result?.kind === "kicad" ? <Suspense fallback={<Spinner />}>
-      <KicadCanvas text={result.text} variant={result.variant} filename={filename} download={download} /></Suspense> : null}
     {state === "ready" && image ? <img src={image} alt={`PCB preview of ${filename}`} className="max-h-96 w-full rounded-xl border border-line bg-panel object-contain" /> : null}
     <div className="flex flex-wrap gap-3">{state !== "loading" ? <ActionControl action={{
       label: state === "confirm" ? "Load large preview" : "Load preview", onClick: () => void run() }} /> : null}

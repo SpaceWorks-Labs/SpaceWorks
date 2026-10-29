@@ -1,4 +1,3 @@
-import { checkKicad, kicadVariant } from "./kicadCheck";
 import { checkMesh, checkPreviewZip, MAX_PREVIEW_BYTES, MAX_VERTICES } from "./previewBounds";
 import type { PreviewMesh, PreviewResult } from "./types";
 
@@ -91,8 +90,6 @@ self.onmessage = async (event: MessageEvent<{ buffer: ArrayBuffer; extension: st
     let result: PreviewResult;
     if (["stl", "obj", "3mf", "gcode.3mf"].includes(extension)) result = await meshPreview(buffer, extension);
     else if (["step", "stp", "iges", "igs"].includes(extension)) result = await brepPreview(buffer, extension);
-    // KiCad: check shape only; the renderer parses on the main thread inside KicadCanvas.
-    else if (kicadVariant(extension)) result = { kind: "kicad", ...checkKicad(buffer, extension) };
     else {
       const { read, plot, renderLayers, renderBoard } = await import("@tracespace/core");
       let files = [new File([buffer], filename)];

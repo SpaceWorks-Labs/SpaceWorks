@@ -21,7 +21,7 @@ ALWAYS_FEATURES = {"billing.reminders", "charges.enabled", "billing.documents",
 INVENTORY_FEATURES = {"inventory.self_checkout", "inventory.kiosk"}
 EXPLICIT_OPT_IN_FEATURES = frozenset({
     "events.hackathons", "events.mentoring", "events.mentor_rounds",
-    "events.volunteering", "events.project_gallery", "events.pairwise_judging", "events.kicad_preview",
+    "events.volunteering", "events.project_gallery", "events.pairwise_judging",
 })
 
 

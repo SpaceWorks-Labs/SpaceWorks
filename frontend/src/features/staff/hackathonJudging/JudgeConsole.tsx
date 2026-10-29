@@ -2,16 +2,18 @@ import { useState, type ReactNode } from 'react';
 import { DetailLayout } from '../../../components/layouts';
 import { EmptyState, ErrorBlock, Field, Pagination, StatusPill } from '../../../components/ui';
 import { useAssignments } from './api';
+import { PairwiseDesk } from './PairwiseDesk';
 import { PrivateProgrammeBoundary } from '../../events/hackathonGallery/PrivateProgrammeBoundary';
 import { StructuredApiError } from '../../../lib/api';
 import type { Assignment, Scope } from './types';
 
-function JudgeConsoleContent({ scope, renderAssets }: { scope: Scope; renderAssets: (assetIds: number[]) => ReactNode }) {
+function JudgeConsoleContent({ scope, renderAssets, pairwiseEnabled = false }: { scope: Scope; renderAssets: (assetIds: number[]) => ReactNode; pairwiseEnabled?: boolean }) {
   const [page, setPage] = useState(1); const { query, submit } = useAssignments(scope, page);
   const [resets, setResets] = useState<Record<number, number>>({});
   if (submit.error instanceof StructuredApiError && [401, 403, 404].includes(submit.error.status)) return <ErrorBlock error={submit.error} />;
   return <DetailLayout title="Your judging desk" state={{ status: query.isLoading ? 'loading' : query.isError ? 'error' : 'ready',
     error: query.error?.message, onRetry: () => void query.refetch() }} main={<div className="grid gap-6">
+      {pairwiseEnabled ? <PairwiseDesk scope={scope} renderAssets={renderAssets} /> : null}
       {!query.data?.count ? <EmptyState title="No assigned projects" description="Your projects will appear here when the organizer assigns this round." /> : null}
       {query.data?.results.map(row => <JudgeAssignmentEditor key={`${scope.context}:${scope.actorId}:${row.id}:${resets[row.id] ?? 0}`} assignment={row}
         pending={submit.isPending} error={submit.error} renderAssets={renderAssets}
@@ -39,7 +41,8 @@ export function JudgeAssignmentEditor({ assignment: row, onSubmit, pending, erro
   return <article className="grid gap-4 rounded-xl border border-line bg-panel p-4" aria-label={`Judge ${row.title}`}>
     <div className="flex flex-wrap items-center gap-3"><h2 className="title-section">{row.title}</h2><StatusPill label={row.state ?? 'Assigned'} /></div>
     <p className="whitespace-pre-wrap break-words text-sm">{row.description}</p>{renderAssets(row.asset_ids)}
-    {row.mode === 'weighted_1_5' ? <fieldset className="grid gap-4" disabled={pending || !row.allowed_actions.includes('score')}>
+    {row.mode === 'pairwise' ? <p className="text-sm text-muted">You compare this project in the pairwise desk above. Declare a conflict here if you find one later.</p>
+    : row.mode === 'weighted_1_5' ? <fieldset className="grid gap-4" disabled={pending || !row.allowed_actions.includes('score')}>
       <legend className="mb-3 font-semibold">Weighted 1–5 rubric</legend>
       {row.configuration.criteria.map(c => <Field key={c.key} label={`${c.label} · weight ${c.weight}`} hint="Choose the description that best matches this project.">
         <select className="desk-input min-h-11" value={scores[c.key] ?? ''} onChange={e => setScores({ ...scores, [c.key]: Number(e.target.value) })}>

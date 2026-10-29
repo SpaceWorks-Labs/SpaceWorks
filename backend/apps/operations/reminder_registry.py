@@ -39,7 +39,7 @@ def _production_sources():
         from apps.maintenance.reminders_meters import SOURCE as METER_SOURCE
         sources.append(METER_SOURCE)
         sources.append(ReminderSource(
-            "maintenance.due", "maintenance", machines.discover_maintenance,
+            "maintenance.due", "machines", machines.discover_maintenance,
             machines.build_maintenance, "maintenance.reminders", machines.dispatch_maintenance,
         ))
     if runtime_active("events"):

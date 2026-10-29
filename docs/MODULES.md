@@ -1,6 +1,6 @@
 # SpaceWorks modules — what each one is, and what happens without it
 
-Space Works ships **38 modules**: 6 **core** ones that cannot be switched off, 2 that are **on by
+Space Works ships **36 modules**: 6 **core** ones that cannot be switched off, 2 that are **on by
 default** (`backup` and `member_accounts`, owner decision #91), and the rest opt-in. This page is the per-module reference the README links into — one entry
 per key, saying what it is, what it puts on screen, what disappears if you do not install it, and what
 happens to its data.
@@ -25,8 +25,8 @@ govern sign-in availability. Membership adds plans, vouching, renewals and the m
 
 | Area | Modules | Features |
 | --- | --- | --- |
-| Inventory & lending | `public_inventory`, `request_workflow`, `staff_admin`, `scanner`, `evidence_uploads`, `qr_management` (core); `guest_handover`, `asset_units`, `containers`, `bulk_import`, `stock_transfers`, `qr_print_batches`, `procurement`, `stocktake`, `devices` | `loans.enabled`, `loans.limits`, `loans.renewals`, `loans.kit_checklist`, `inventory.notify_when_back`, `inventory.self_checkout`, `inventory.contact_self_checkout`, `inventory.kiosk`, `stocktake.discipline`, `packs.import`, `charges.loans`; `payments.loans` with Online payments |
-| Machines | `machines`, `machine_service`, `printing`, `maintenance` | `machines.certifications`, `machines.certification_reminders`, `machines.public_detail`, `machines.material_catalogue`, `machines.structured_intake`, `maintenance.reminders`, `maintenance.meters`, `maintenance.calendar_feed`, `charges.machines`, `notifications.delegated_recipients`; `payments.machines` with Online payments |
+| Inventory & lending | `public_inventory`, `request_workflow`, `staff_admin`, `scanner`, `evidence_uploads`, `qr_management` (core); `guest_handover`, `asset_units`, `containers`, `bulk_import`, `stock_transfers`, `qr_print_batches`, `stocktake`, `devices` | `loans.enabled`, `loans.limits`, `loans.renewals`, `loans.kit_checklist`, `inventory.notify_when_back`, `inventory.tobuy`, `inventory.warranty`, `inventory.self_checkout`, `inventory.contact_self_checkout`, `inventory.kiosk`, `stocktake.discipline`, `packs.import`, `charges.loans`; `payments.loans` with Online payments |
+| Machines | `machines`, `machine_service`, `printing` | `machines.maintenance`, `machines.tobuy`, `machines.warranty`, `machines.certifications`, `machines.certification_reminders`, `machines.public_detail`, `machines.material_catalogue`, `machines.structured_intake`, `maintenance.reminders`, `maintenance.meters`, `maintenance.calendar_feed`, `charges.machines`, `notifications.delegated_recipients`; `payments.machines` with Online payments |
 | Events | `events` | `events.api_read`, `events.certificate_designer`, `events.website`, `events.embed`; `events.broadcasts` with Notifications and Email; `events.organization_audience`, `events.offline_checkin`, `events.invites`, `events.account_registration`, `events.ticket_types`, `events.promo_codes`, `charges.events`; `payments.events` with Online payments |
 | Bookings | `bookings` | `bookings.recurring`, `bookings.staff_grants`, `bookings.clone`, `bookings.staff_tools`, `bookings.confirmations`, `bookings.checkin`, `bookings.passes`, `bookings.api_read`, `bookings.website`, `bookings.embed`, `charges.bookings`; `bookings.broadcasts` with Notifications and Email; `bookings.analytics`, `bookings.utilization_pdf`, `bookings.exports` with Reports; `payments.bookings` with Online payments |
 | Membership | `membership`, `mobile` | `membership.auto_renew`, `membership.lifecycle_mail`, `membership.self_service`, `membership.self_export`, `membership.vouching`, `membership.application_form`, `membership.broadcasts`, `mobile.push`, `charges.membership`; `payments.membership` with Online payments |
@@ -55,15 +55,16 @@ the existing services and audited model paths, and never calls purge.
 | Level | Who changes it | What it means |
 |---|---|---|
 | **Core module** | nobody | Always on. The Hard Rules make the loan spine *the system*: issuing hardware needs a box QR scan **and** an issue photo, so catalogue + requests + staff console + evidence + QR + scanner ship with every install. |
-| **Module** | superadmin (console or CLI) | A whole capability. Installing adds its surfaces; uninstalling hides them and **keeps every row**. |
-| **Feature** | Space Manager (in the console) | A switch *inside* a module, for something narrower than a whole capability. Inert while its parent module is off. |
+| **Module** | Space Manager or superadmin (console or CLI) | A whole capability. Installing adds its surfaces; uninstalling hides them and **keeps every row**. On the managed platform a module with a fair-use limit is installed by the superadmin only (#128 C-10). |
+| **Feature** | Space Manager, or the module's manager with a settings grant | A switch *inside* a module, for something narrower than a whole capability. Inert while its parent module is off. |
 
 ## What "without it" actually means
 
 Uninstalling a module does two things and nothing else:
 
 - **The API refuses its endpoints.** Every gated view calls `require_module(makerspace, "<key>")`, which
-  returns `400 {"module": "<key> is disabled for this makerspace."}`.
+  returns `400 {"module": "<key> is disabled for this makerspace."}`. A folded capability that is off
+  (maintenance, To-Buy, warranty) answers `404 {"code": "capability_disabled"}` instead.
 - **The frontend never renders the surface.** Bootstrap only publishes the workflows of installed
   modules, so the nav entry, page and buttons are simply not there.
 
@@ -80,8 +81,9 @@ docker compose run --rm --no-deps backend --role management python manage.py uni
 A module another installed module depends on cannot be uninstalled until the dependant goes first, and
 core modules cannot be uninstalled at all.
 
-The registry contains 38 keys (37 in the main catalogue plus presence): six core,
-backup and member accounts enabled by default, and 30 opt-in. SMS/WhatsApp are separate opt-in modules.
+The registry contains 36 keys (35 in the main catalogue plus presence): six core,
+backup and member accounts enabled by default, and 28 opt-in. `maintenance` and `procurement`
+were retired in release 2 and are capabilities now (see below). SMS/WhatsApp are separate opt-in modules.
 Migration 0097 preserves only previously enabled canonical WhatsApp installations;
 new SMS/WhatsApp installations remain off. Existing operational channel conversion
 preserves enablement/opt-outs and never enables platform sending. Module-list validation
@@ -94,9 +96,10 @@ uses the registry rather than scalar JSONField choices. Follow the independent
 [staff_admin](#staff_admin) · [evidence_uploads](#evidence_uploads) · [qr_management](#qr_management) ·
 [scanner](#scanner) · [asset_units](#asset_units) · [containers](#containers) ·
 [bulk_import](#bulk_import) · [stock_transfers](#stock_transfers) ·
-[qr_print_batches](#qr_print_batches) · [guest_handover](#guest_handover) · [procurement](#procurement)
+[qr_print_batches](#qr_print_batches) · [guest_handover](#guest_handover)
 **Stocktake**: [stocktake](#stocktake) — **Machines**: [machines](#machines) ·
-[machine_service](#machine_service) · [printing](#printing) · [maintenance](#maintenance) —
+[machine_service](#machine_service) · [printing](#printing) —
+**Per parent**: [maintenance, To-Buy, warranty and repairs](#maintenance-to-buy-warranty-and-repairs-switches-under-each-parent) —
 **Events**: [events](#events) — **Bookings**: [bookings](#bookings) —
 **Membership**: [membership](#membership) · [presence](#presence)
 **Notifications**: [notifications](#notifications) · [email](#email) · [sms](#sms) · [whatsapp](#whatsapp) · [telegram](#telegram) ·
@@ -160,9 +163,11 @@ Email, staff invitations or MFA. Modules never turn a member into built-in staff
 
 [Read the guest_handover module reference](MODULES-INVENTORY.md#guest_handover).
 
-### procurement
+### To-Buy (was `procurement`)
 
-[Read the procurement module reference](MODULES-INVENTORY.md#procurement).
+A capability now: `inventory.tobuy` and `machines.tobuy`, see
+[the per-parent switches](#maintenance-to-buy-warranty-and-repairs-switches-under-each-parent) and
+[the To-Buy reference](MODULES-INVENTORY.md#procurement).
 
 ## Stocktake
 
@@ -187,11 +192,57 @@ during module purge; independent manual pool usage and its recorded costs remain
 
 [Read the printing module reference](MODULES-WORKSHOPS.md#printing).
 
-### maintenance
+### Maintenance (was `maintenance`)
 
-Requires `machines`: installing maintenance also installs its machine inventory.
+A capability now: `machines.maintenance`, see
+[the per-parent switches](#maintenance-to-buy-warranty-and-repairs-switches-under-each-parent) and
+[the maintenance reference](MODULES-WORKSHOPS.md#maintenance).
 
-[Read the maintenance module reference](MODULES-WORKSHOPS.md#maintenance).
+## Maintenance, To-Buy, warranty and repairs: switches under each parent
+
+Owner decisions #97 and #128 C-9 retired the `maintenance` and `procurement` module keys and
+put what they switched — plus warranty, which never had a key — **under each parent** as
+two-level capabilities, each its own switch. Machine ones sit under `machines`, room ones
+under `bookings`, and item ones in the parentless inventory family (labelled "Inventory",
+like `inventory.kiosk`). Rooms get no To-Buy or warranty switch in release 2 (#137 Q-C3).
+The Django apps stay internal and separable (`TOMBSTONED_APPS` still removes them).
+
+| Capability | Parent | Default | What it switches |
+|---|---|:--:|---|
+| `machines.maintenance` | `machines` | | Machine maintenance schedules, logs, documents, overdue list, calendar feed, reminders and the dashboard/report sections |
+| `machines.tobuy` | `machines` | | To-Buy rows for machine consumables (the `printing` stream) and automatic filament low-stock drafts |
+| `machines.warranty` | `machines` | | Warranty records and documents on machines |
+| `inventory.tobuy` | — (Inventory) | | To-Buy rows for inventory items (the `hardware` stream), reorder drafts and, later, the shop |
+| `inventory.warranty` | — (Inventory) | | Warranty records and documents on inventory assets |
+| `machines.repairs`, `machines.issue_reporting` | `machines` | | Reserved for repairs and issue reporting (L16); no effect yet |
+| `inventory.maintenance`, `inventory.repairs`, `inventory.issue_reporting` | — (Inventory) | | Reserved (L12/L16); no effect yet |
+| `bookings.room_maintenance`, `bookings.room_repairs`, `bookings.issue_reporting` | `bookings` | | Reserved (L16); no effect yet |
+
+`maintenance.meters`, `maintenance.calendar_feed`, `maintenance.reminders` and
+`notifications.delegated_recipients` keep their keys and now sit under `machines`, each
+requiring `machines.maintenance`.
+
+- **One To-Buy list, two switches.** A row's stream is its domain: `printing` rows belong
+  to `machines.tobuy`, `hardware` rows to `inventory.tobuy`. A parent whose switch is off
+  hides its rows (its routes answer 404, its rows stay) and takes no new ones; the other
+  parent's rows are untouched. The list is gone only when both are off.
+- **One warranty app, two switches.** A warranty on a machine follows `machines.warranty`,
+  one on an asset `inventory.warranty`.
+- **Off means off.** Every folded route answers **404** while its switch is off; no
+  reminder, alert or low-stock draft is produced; nothing shows in the console. Turning the
+  switch back on restores everything.
+- **Upgrade.** Migration `makerspaces/0111` keeps every space exactly as it was:
+  `maintenance` installed → `machines.maintenance`; `procurement` installed →
+  `inventory.tobuy`, plus `machines.tobuy` where `machines` is installed; warranty rows on
+  assets/machines → the matching `*.warranty`. The old keys are stripped from stored rows and
+  audited as `makerspace.module_retired`. No row of any table is changed.
+- **Purge.** Switching off keeps the data. Deleting it is the separate superadmin
+  `/control/` action **Purge capability data** (recent re-authentication, a preview of the
+  rows, the key typed back, audited `makerspace.capability_purged`), split per parent:
+  purging `machines.tobuy` never deletes an inventory row.
+- **Who switches them.** The Space Manager; a module's manager with that module's settings
+  grant (see [Settings authority](INVARIANTS.md#settings-authority)).
+
 
 ## Events
 
@@ -619,8 +670,9 @@ of this module; SMS/WhatsApp each have their own opt-in key.
 
 ## Features: the level below a module
 
-A feature is narrower than a whole module, and unlike modules these are editable by a **Space Manager**
-in the console rather than a superadmin. A feature is inert while its parent module is off.
+A feature is narrower than a whole module. The **Space Manager** switches it in the console, as does
+the module's manager while holding that module's settings grant (#101, C-11). A feature is inert while
+its parent module is off.
 
 | Feature | Inside | Default | What it does | Without it |
 |---|---|:--:|---|---|
@@ -671,7 +723,10 @@ in the console rather than a superadmin. A feature is inert while its parent mod
 | `events.promo_codes` | `events` + `events.ticket_types` | | Limited-use, expiring percentage or fixed-amount discounts | Promo redemption is refused |
 | `events.offline_checkin` | `events` | | Expiring on-device roster plus event-scoped PIN check-in stations | Check-in needs a live connection and an authenticated staff actor |
 | `machines.certifications` | `machines` | | Members need an unexpired certification per machine type to book a linked space or request work; overrides need machine-type authority and are audited | Training is tracked out of band; nothing gates a request or booking |
-| `notifications.delegated_recipients` | `notifications` | | Machine-scoped maintainers manage maintenance alert recipients for their own machines. Needs `maintenance` and `machines` too | Only makerspace-level staff manage recipients |
+| `notifications.delegated_recipients` | `machines` (needs `notifications`, `machines.maintenance`) | | Machine-scoped maintainers manage maintenance alert recipients for their own machines | Only makerspace-level staff manage recipients |
+| `maintenance.reminders` | `machines` (needs `notifications`, `machines.maintenance`) | | Notify scoped maintainers before and after maintenance is due | No maintenance reminders |
+| `maintenance.meters` | `machines` (needs `machines.maintenance`) | | Usage-based schedules (hours, job counts) | Calendar schedules only |
+| `maintenance.calendar_feed` | `machines` (needs `machines.maintenance`) | | Personal iCal feed of scoped maintenance | No feed |
 | `inventory.self_checkout` | — | ● | Member self-checkout and staff direct handouts | Every handover goes through a staff-issued request |
 | `inventory.contact_self_checkout` | — + `inventory.self_checkout` | | Without Member accounts, borrowers check tools out with name, phone and an emailed code (#91); evidence rules unchanged | Account-less checkout is refused; account-less returns always stay open |
 | `presence.geofence` | — | ● | Required location check for self check-in | Self check-in refuses when disabled/unconfigured; authorized staff check-in remains available. Coordinates are not stored |

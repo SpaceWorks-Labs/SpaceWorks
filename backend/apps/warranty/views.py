@@ -13,11 +13,13 @@ from apps.warranty.access import (
     resolve_machine_host,
 )
 from apps.makerspaces.guards import require_module
+from apps.makerspaces.folded_capabilities import INVENTORY_WARRANTY, MACHINES_WARRANTY, require_capability
 from apps.machines import access as machine_access
 from apps.warranty.models import Warranty
 from apps.warranty.services import upsert_warranty
 
 
+# 404 also when the host's warranty switch (inventory.warranty / machines.warranty) is off.
 ERRORS = {401: ErrorSerializer, 403: ErrorSerializer, 404: ErrorSerializer}
 
 
@@ -28,6 +30,7 @@ class AssetWarrantyView(APIView):
         asset = resolve_asset_host(request.user, pk)
         require_action(request.user, rbac.Action.EDIT_INVENTORY, asset.makerspace_id)
         require_module(asset.makerspace_id, "staff_admin")
+        require_capability(asset.makerspace_id, INVENTORY_WARRANTY)
         return asset
 
     @extend_schema(
@@ -69,7 +72,7 @@ class MachineWarrantyView(APIView):
         machine = resolve_machine_host(request.user, pk)
         if not machine_access.can_manage_machine(request.user, machine):
             raise PermissionDenied()
-        require_module(machine.makerspace_id, "machines")
+        require_capability(machine.makerspace_id, MACHINES_WARRANTY)
         return machine
 
     @extend_schema(

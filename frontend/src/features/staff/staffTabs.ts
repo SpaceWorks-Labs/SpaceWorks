@@ -1,5 +1,5 @@
 import { currentSessionContext } from "../../lib/api/sessionContext";
-import { featureEnabled } from "../../lib/features";
+import { capabilityOn, featureEnabled } from "../../lib/features";
 import type { Makerspace } from "./panels/shared";
 import { readStorage, removeStorage, writeStorage } from "../../lib/safeStorage";
 
@@ -33,7 +33,6 @@ const TAB_MODULES: Record<string, string[]> = {
   bookings: ["bookings"],
   // A card belongs to a membership; without that module every member-card endpoint 404s.
   cards: ["membership"],
-  tobuy: ["procurement"],
   transfers: ["stock_transfers"],
   stocktake: ["stocktake"],
   containers: ["containers"],
@@ -46,7 +45,13 @@ const TAB_MODULES: Record<string, string[]> = {
   qr: ["qr_print_batches"],
   scanner: ["scanner"],
   reports: ["reports"],
-  warranty: ["staff_admin"],
+};
+
+// Tabs switched by per-parent capabilities rather than a module key (#97, #128 C-9): one
+// To-Buy list and one warranty app serve two parents, so either parent's switch shows it.
+const TAB_FEATURES: Record<string, string[]> = {
+  tobuy: ["inventory.tobuy", "machines.tobuy"],
+  warranty: ["inventory.warranty", "machines.warranty"],
 };
 
 // Tabs whose backing app can be tombstoned out of a deployment but which no module
@@ -110,6 +115,10 @@ export function filterTabsByEnabledModules(tabs: readonly string[], makerspace?:
       && !featureEnabled(makerspace.enabled_features, "loans.enabled")) return false;
     if (tabName === "direct") {
       return featureEnabled(makerspace.enabled_features ?? [], "inventory.self_checkout");
+    }
+    const switches = TAB_FEATURES[tabName];
+    if (switches && makerspace.enabled_features !== undefined) {
+      return switches.some((key) => capabilityOn(makerspace, key));
     }
     const required = TAB_MODULES[tabName];
     return !required || required.some((moduleName) => enabled.has(moduleName));

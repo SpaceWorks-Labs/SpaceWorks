@@ -6,7 +6,6 @@ from django.utils.dateparse import parse_date
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from apps.accounts import rbac
-from apps.makerspaces.guards import require_module
 from apps.makerspaces.models import Makerspace
 from apps.operations import reports
 from apps.operations.report_date_ranges import CalendarDateRange
@@ -14,8 +13,10 @@ from apps.operations.report_registry import REPORT_DEFINITIONS, REPORT_REGISTRY
 
 
 def _require_source_modules(makerspace, modules):
+    from .report_sources import require_source
+
     for module in modules:
-        require_module(makerspace, module)
+        require_source(makerspace, module)
 
 
 def _date_range(request, makerspace=None):

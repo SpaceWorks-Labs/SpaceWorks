@@ -5,7 +5,7 @@ import { SpacePackProfilePicker } from "../../SpacePackProfilePicker";
 import type { MakerspaceForm } from "./types";
 
 export const defaultCreationProfile = { timezone: "UTC", country: "", default_currency: "usd", opening_hours: {} };
-const modules = [["events", "Events"], ["bookings", "Bookings"], ["machines", "Machines"], ["maintenance", "Maintenance"], ["membership", "Membership"], ["printing", "Printing"], ["payments", "Online payments"], ["reports", "Reports"], ["notifications", "Notifications"]] as const;
+const modules = [["events", "Events"], ["bookings", "Bookings"], ["machines", "Machines"], ["membership", "Membership"], ["printing", "Printing"], ["payments", "Online payments"], ["reports", "Reports"], ["notifications", "Notifications"]] as const;
 
 export function CreationWizardSteps({ step, form, onChange, pending }: { step: number; form: MakerspaceForm; onChange: (form: MakerspaceForm) => void; pending: boolean }) {
   const profile = { ...defaultCreationProfile, ...form.profile };

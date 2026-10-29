@@ -20,7 +20,7 @@ type Contents = {
 };
 type History = { scans: { id: string; source: string; context: string; actor: number | null; created_at: string }[] };
 
-export function ContainerDetail({ container, makerspaceId, canEditInventory, kitEnabled, onClose }: { container: Container; makerspaceId: number; canEditInventory: boolean; kitEnabled: boolean; onClose: () => void }) {
+export function ContainerDetail({ container, makerspaceId, canEditInventory, kitEnabled, warrantyEnabled = true, onClose }: { container: Container; makerspaceId: number; canEditInventory: boolean; kitEnabled: boolean; warrantyEnabled?: boolean; onClose: () => void }) {
   const queryClient = useQueryClient();
   const [params] = useSearchParams();
   const panel = params.get("containerTab") ?? "contents";
@@ -72,7 +72,7 @@ export function ContainerDetail({ container, makerspaceId, canEditInventory, kit
           )) : !contents.isLoading && !contents.error ? <p className="text-xs text-muted">This container is empty.</p> : null}
           <h4 className="title-section mt-1">Asset units</h4>
           {!contents.isLoading && !contents.error && contents.data?.assets.length ? contents.data.assets.map((asset) => (
-            <AssetQrRow key={asset.id} asset={asset} canEditInventory={canEditInventory} />
+            <AssetQrRow key={asset.id} asset={asset} canEditInventory={canEditInventory} warrantyEnabled={warrantyEnabled} />
           )) : !contents.isLoading && !contents.error ? <p className="text-xs text-muted">This container is empty.</p> : null}
           {contents.data?.children.length ? (
             <p className="mt-1 text-xs text-muted">Sub-containers: {contents.data.children.map((child) => child.label).join(", ")}</p>
@@ -94,7 +94,7 @@ export function ContainerDetail({ container, makerspaceId, canEditInventory, kit
 
 // Reprint a single unit's QR without rebuilding a whole batch: POST asset/<id>/qr is a
 // get_or_create, so it returns the existing active QR (or makes one) and we render it.
-function AssetQrRow({ asset, canEditInventory }: { asset: { id: number; asset_tag: string; product: string; status: string }; canEditInventory: boolean }) {
+function AssetQrRow({ asset, canEditInventory, warrantyEnabled }: { asset: { id: number; asset_tag: string; product: string; status: string }; canEditInventory: boolean; warrantyEnabled: boolean }) {
   const [qrId, setQrId] = useState<number | null>(null);
   const [showWarranty, setShowWarranty] = useState(false);
   const show = useMutation({
@@ -106,11 +106,11 @@ function AssetQrRow({ asset, canEditInventory }: { asset: { id: number; asset_ta
       <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
         <span className="min-w-0 [overflow-wrap:anywhere]">{asset.asset_tag}</span><StatusPill label={asset.status.replace(/_/g, " ")} />
         <button type="button" className="desk-button-ghost" disabled={show.isPending} onClick={() => show.mutate()}>{qrId ? "QR shown" : "Show QR"}</button>
-        <OverflowMenu label={`Actions for ${asset.asset_tag}`} actions={[{ label: showWarranty ? "Hide warranty" : "Warranty", onClick: () => setShowWarranty(value => !value) }]} />
+        {warrantyEnabled ? <OverflowMenu label={`Actions for ${asset.asset_tag}`} actions={[{ label: showWarranty ? "Hide warranty" : "Warranty", onClick: () => setShowWarranty(value => !value) }]} /> : null}
         {qrId ? <div className="basis-full"><div className="w-40 max-w-full"><QrImage qrId={qrId} label={asset.asset_tag} /></div></div> : null}
         {show.error instanceof Error ? <span className="text-danger">{show.error.message}</span> : null}
       </div>
-      {showWarranty ? <div className="mt-2"><WarrantySection hostKind="asset" hostId={asset.id} disabled={!canEditInventory} /></div> : null}
+      {showWarranty && warrantyEnabled ? <div className="mt-2"><WarrantySection hostKind="asset" hostId={asset.id} disabled={!canEditInventory} /></div> : null}
     </div>
   );
 }

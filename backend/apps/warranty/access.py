@@ -5,6 +5,7 @@ from apps.accounts import rbac
 from apps.admin_api.permissions import require_action
 from apps.inventory.models import InventoryAsset
 from apps.makerspaces.guards import require_module
+from apps.makerspaces.folded_capabilities import INVENTORY_WARRANTY, MACHINES_WARRANTY, require_capability
 from apps.machines import access as machine_access
 from apps.machines.models import Machine
 from apps.warranty.models import Warranty, WarrantyDocument
@@ -71,8 +72,9 @@ def enforce(user, warranty):
     if warranty.machine_id:
         if not machine_access.can_manage_machine(user, warranty.machine):
             raise PermissionDenied()
-        require_module(warranty.makerspace_id, "machines")
+        require_capability(warranty.makerspace_id, MACHINES_WARRANTY)
         return
     action, module = action_and_module_for_warranty(warranty)
     require_action(user, action, warranty.makerspace_id)
     require_module(warranty.makerspace_id, module)
+    require_capability(warranty.makerspace_id, INVENTORY_WARRANTY)

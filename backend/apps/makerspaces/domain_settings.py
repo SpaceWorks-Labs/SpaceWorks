@@ -1,22 +1,26 @@
-"""Per-domain feature switches and settings, editable by that domain's own manager.
+"""Per-domain feature switches and settings: an ADAPTER on the settings-authority layer.
 
 "All role-related things go to the respective manager": the Event Manager decides the
 `events.*` switches, the Booking Manager the `bookings.*` ones, and so on, without holding
-`manage_makerspace`. This module is only a narrowing ADAPTER in front of the one settings
-write path (`setup_settings.save_space` -> `MakerspaceSerializer`): it decides which keys a
-domain owns, merges them into the stored list under the row lock, and hands the result to
-the serializer. Capability prerequisites, module checks and per-field validation therefore
-run exactly as they do for the full makerspace PATCH, and the audit rows are the same
-`makerspace.updated` / `makerspace.features_changed` entries.
+`manage_makerspace` -- but since #101/#128 C-11 only while the Space Manager has granted
+them that module (`settings_authority`), and never past a Space Manager lock. The fixed
+exception (C-11d) lets the Inventory Manager change rental timing without a grant.
+
+This module decides which keys a domain owns, asks `assert_setting_write` about every key
+a request actually changes (refusing the whole request if any is refused, before writing
+anything), merges them into the stored list under the row lock, and hands the result to
+the one settings write path (`setup_settings.save_space` -> `MakerspaceSerializer`), so
+capability prerequisites and per-field validation run as for the full makerspace PATCH.
+Each changed key is audited as `settings.changed` with the authority it was made under.
 
 What a domain deliberately does NOT own:
 
-* `enabled_modules` -- installing a module stays superadmin-only, everywhere.
-* `payments.*` and `charges.*` -- money owed and the online rail are a finance decision
-  (`view_finance` / `record_payment` / `manage_makerspace`), not a domain one, even when
-  the key is parented to that domain's module.
+* `enabled_modules` -- modules switch through `module_install` (#128 C-10).
+* `payments.*` and `charges.*` -- money owed and the online rail are a finance decision,
+  Space-Manager-only and never delegable, even when parented to that domain's module.
 * Keys under another prefix (`reports.event_pdf`, `notifications.delegated_recipients`)
   belong to the reports and notifications areas, which have no domain manager.
+* Reserved switches with no surface yet (`frontend_exposed=False`, e.g. L16's repairs).
 """
 
 from dataclasses import dataclass
@@ -64,42 +68,50 @@ def feature_keys(domain):
     prefixes = DOMAINS[domain].prefixes
     return tuple(
         definition.key for definition in FEATURE_DEFINITIONS
-        if definition.key.startswith(prefixes)
+        if definition.key.startswith(prefixes) and definition.frontend_exposed
     )
 
 
 def can_edit(actor, makerspace, domain):
-    """Whether an actor who already holds the domain action may WRITE its settings.
+    """Whether the actor may change this domain's settings in general (grant or Space Manager).
 
-    Every machine-domain key and setting is tenant-wide: certification gating, public
-    machine details, maintenance meters and the filament threshold apply to every machine
-    in the space. A Machine Manager's reach is limited to their assigned types, so letting
-    a type-scoped manager flip one would change machines they cannot otherwise touch. They
-    may write only while no machine outside their types exists (nothing outside their
-    reach is affected); otherwise it stays with the Space Manager. Reads are not narrowed.
+    Per-key answers -- locks, the rental-timing exception -- are in `key_permissions`.
     """
-    if domain != "machines":
+    from .settings_authority import is_space_manager, live_grant, machine_scope_covers_all
+
+    if is_space_manager(actor, makerspace):
         return True
-    from apps.machines.models import Machine
-    from apps.machines.role_scope import EXEMPT, manage_scope_for
-
-    scope = manage_scope_for(actor, makerspace.pk)
-    if scope is EXEMPT:
-        return True
-    type_ids, _machine_ids = scope
-    return not Machine.objects.filter(makerspace=makerspace).exclude(
-        machine_type_id__in=type_ids,
-    ).exists()
+    if live_grant(makerspace, domain, actor) is None:
+        return False
+    return domain != "machines" or machine_scope_covers_all(actor, makerspace)
 
 
-def describe(makerspace, domain, editable):
+def key_permissions(actor, makerspace, domain):
+    """`{key: {"editable": bool, "locked": bool}}` for every switch and setting of a domain."""
+    from .models_settings_authority import ModuleSettingLock
+    from .settings_authority import decide, live_grant
+
+    locks = {row.setting_key: row for row in ModuleSettingLock.objects.filter(
+        makerspace=makerspace, released_at__isnull=True)}
+    grant = live_grant(makerspace, domain, actor)
+    keys = (*feature_keys(domain), *DOMAINS[domain].settings)
+    return {key: {"editable": decide(actor, makerspace, domain, key, lock=locks.get(key), grant=grant).allowed,
+                  "locked": key in locks} for key in keys}
+
+
+def describe(makerspace, domain, editable, permissions=None):
     """Read model for one domain: its switches, their availability, and its settings."""
+    from apps.separability.registry import runtime_active
+
     enabled = set(makerspace.enabled_features or [])
     modules = set(makerspace.enabled_modules or [])
     by_key = {definition.key: definition for definition in FEATURE_DEFINITIONS}
+    permissions = permissions or {}
+    default = {"editable": editable, "locked": False}
     features = []
     for key in feature_keys(domain):
         definition = by_key[key]
+        allowed = permissions.get(key, default)
         features.append({
             "key": key,
             "label": definition.label,
@@ -110,7 +122,9 @@ def describe(makerspace, domain, editable):
             "available": all(
                 module in modules and module_available(module)
                 for module in feature_required_modules(key)
-            ),
+            ) and (definition.app_label is None or runtime_active(definition.app_label)),
+            "editable": allowed["editable"],
+            "locked": allowed["locked"],
         })
     return {
         "domain": domain,
@@ -118,6 +132,9 @@ def describe(makerspace, domain, editable):
         "features": features,
         "settings": {
             field: getattr(makerspace, field) for field in DOMAINS[domain].settings
+        },
+        "setting_permissions": {
+            field: permissions.get(field, default) for field in DOMAINS[domain].settings
         },
     }
 
@@ -139,13 +156,22 @@ def apply_domain_settings(actor, makerspace, domain, features, settings):
     from .models import Makerspace
     from .setup_settings import save_space
 
+    from .settings_authority import assert_setting_write, record_change
+
     with transaction.atomic():
         # Merge under the row lock: another domain's manager may be toggling their own
         # keys concurrently, and a read-modify-write outside it would lose their change.
         locked = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
+        stored = set(locked.enabled_features or [])
+        changes = {key: (key in stored, bool(on)) for key, on in features.items()
+                   if (key in stored) != bool(on)}
+        changes.update({field: (getattr(locked, field), value) for field, value in settings.items()
+                        if getattr(locked, field) != value})
+        # Every changed key is authorized before anything is written (#101).
+        decisions = {key: assert_setting_write(actor, locked, domain, key) for key in changes}
         values = dict(settings)
         if features:
-            merged = set(locked.enabled_features or [])
+            merged = set(stored)
             for key, on in features.items():
                 if on:
                     merged.add(key)
@@ -155,9 +181,17 @@ def apply_domain_settings(actor, makerspace, domain, features, settings):
         if not values:
             return locked
         try:
-            return save_space(actor, locked, values)
+            saved = save_space(actor, locked, values)
         except ValidationError as exc:
             raise ValidationError(_nest_errors(exc.detail)) from exc
+        for key, (before, after) in changes.items():
+            record_change(actor, saved, domain, key, _plain(before), _plain(after), decisions[key])
+        return saved
+
+
+def _plain(value):
+    """Audit meta takes JSON: decimals and other scalars are stored as strings."""
+    return value if isinstance(value, (bool, int, str, list, type(None))) else str(value)
 
 
 def _nest_errors(detail):

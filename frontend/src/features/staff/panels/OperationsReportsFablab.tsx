@@ -5,6 +5,7 @@ import { OperationsReportsEvents } from "./OperationsReportsEvents";
 import { OperationsReportsMachineUsage } from "./OperationsReportsMachineUsage";
 import { OperationsReportsMaintenance } from "./OperationsReportsMaintenance";
 import { type Makerspace } from "./shared";
+import { capabilityOn } from "../../../lib/features";
 import { useFablabReport, type FabLabHealthRow, type FablabPanelProps } from "./operationsReportsFablabApi";
 
 export function OperationsReportsFablab({
@@ -58,7 +59,7 @@ export function OperationsReportsFablab({
       <OperationsReportsMachineUsage {...base} enabled={moduleEnabled("machines")} />
       <OperationsReportsEvents {...base} enabled={moduleEnabled("events")} />
       <OperationsReportsBookings {...base} enabled={moduleEnabled("bookings")} />
-      <OperationsReportsMaintenance {...base} enabled={moduleEnabled("machines") && moduleEnabled("maintenance")} />
+      <OperationsReportsMaintenance {...base} enabled={moduleEnabled("machines") && capabilityOn(makerspace, "machines.maintenance")} />
     </section>
   );
 }

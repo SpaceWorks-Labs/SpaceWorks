@@ -58204,7 +58204,7 @@
             },
             "patch": {
                 "operationId": "api_v1_admin_makerspace_domain_settings_partial_update",
-                "description": "Toggles only this domain's feature keys (others keep their stored value) and writes its settings through the same validation as the makerspace PATCH: capability prerequisites and installed modules are enforced. Keys of another domain, `payments.*`/`charges.*`, `enabled_modules` and any unknown field are refused with 400. Audited as makerspace.updated / makerspace.features_changed.",
+                "description": "Toggles only this domain's feature keys (others keep their stored value) and writes its settings through the same validation as the makerspace PATCH: capability prerequisites and installed modules are enforced. Keys of another domain, `payments.*`/`charges.*`, `enabled_modules` and any unknown field are refused with 400. Every key the body changes is authorized by the settings-authority layer (#101): the Space Manager always, a module manager only with this module's grant and never past a lock; the Inventory Manager changes rental timing without a grant (C-11d). Audited as settings.changed per key, plus makerspace.updated / makerspace.features_changed.",
                 "summary": "Update one domain's feature switches and settings",
                 "parameters": [
                     {
@@ -58273,7 +58273,7 @@
                         "description": "A foreign or unknown key, a missing prerequisite feature or module, or an invalid setting value."
                     },
                     "403": {
-                        "description": "Not active staff, or a type-scoped Machine Manager while machines outside their assigned types exist."
+                        "description": "Not active staff; `setting_not_delegated` (no grant for this module, a finance/security key, or a type-scoped Machine Manager while machines outside their types exist); or `setting_locked` (a Space Manager lock)."
                     },
                     "401": {
                         "description": "Not signed in."
@@ -61863,7 +61863,7 @@
                         "description": "Unknown module, or not shipped by this deployment."
                     },
                     "403": {
-                        "description": "Active superadmin access is required."
+                        "description": "Not this space's Space Manager or a superadmin; or, on the managed platform, a limit-gated module that only the superadmin may install."
                     },
                     "404": {
                         "description": "Makerspace not found, archived, not active, or hidden from superadmins by its own manager."
@@ -61922,7 +61922,7 @@
                         "description": "Core module, or required by an installed module."
                     },
                     "403": {
-                        "description": "Active superadmin access is required."
+                        "description": "Not this space's Space Manager or a superadmin; or, on the managed platform, a limit-gated module that only the superadmin may install."
                     },
                     "404": {
                         "description": "Makerspace not found, archived, not active, or hidden from superadmins by its own manager."
@@ -66727,6 +66727,7 @@
             },
             "patch": {
                 "operationId": "api_v1_admin_makerspace_return_policy_partial_update",
+                "description": "Every changed field is authorized by the settings-authority layer (#101): the Space Manager always; the Inventory Manager changes loan length and renewals without a grant (#128 C-11d) and the other lending limits with the inventory settings grant. 403 `setting_not_delegated` / `setting_locked`. Audited as settings.changed per field.",
                 "parameters": [
                     {
                         "in": "path",
@@ -66834,6 +66835,281 @@
                             }
                         },
                         "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/makerspace/{makerspace_id}/settings-authority/effective": {
+            "get": {
+                "operationId": "api_v1_admin_makerspace_settings_authority_effective_retrieve",
+                "summary": "What the caller may edit, per module and setting",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Admin settings authority"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Effective"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "description": "The caller manages no module here."
+                    },
+                    "404": {
+                        "description": "Makerspace not found or not visible to the caller."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/makerspace/{makerspace_id}/settings-authority/grants": {
+            "get": {
+                "operationId": "api_v1_admin_makerspace_settings_authority_grants_retrieve",
+                "summary": "List live per-person module settings grants",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Admin settings authority"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/GrantsResponse"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "description": "Only this space's Space Manager (or the superadmin)."
+                    },
+                    "404": {
+                        "description": "Makerspace not found or not visible to the caller."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    }
+                }
+            },
+            "put": {
+                "operationId": "api_v1_admin_makerspace_settings_authority_grants_update",
+                "description": "Grants go to people who hold that module's manager action here and are not already a Space Manager. Each grant created or revoked is audited.",
+                "summary": "Replace one module's settings grants",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Admin settings authority"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/GrantsUpdate"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/GrantsUpdate"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/GrantsUpdate"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/GrantsResponse"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Unknown module or ineligible person."
+                    },
+                    "403": {
+                        "description": "Only this space's Space Manager (or the superadmin)."
+                    },
+                    "404": {
+                        "description": "Makerspace not found or not visible to the caller."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/makerspace/{makerspace_id}/settings-authority/locks": {
+            "get": {
+                "operationId": "api_v1_admin_makerspace_settings_authority_locks_list",
+                "summary": "List live Space Manager setting locks",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Admin settings authority"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Lock"
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "description": "Only this space's Space Manager (or the superadmin)."
+                    },
+                    "404": {
+                        "description": "Makerspace not found or not visible to the caller."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    }
+                }
+            },
+            "put": {
+                "operationId": "api_v1_admin_makerspace_settings_authority_locks_update",
+                "description": "A lock blocks every delegated edit of the key, the rental-timing exception included; it never binds the Space Manager. Security settings are locked by the platform elsewhere. Audited as settings.lock_created / settings.lock_released.",
+                "summary": "Lock or release one setting",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Admin settings authority"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/LockUpdate"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/LockUpdate"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/LockUpdate"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Lock"
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Not a delegable setting."
+                    },
+                    "403": {
+                        "description": "Only this space's Space Manager (or the superadmin)."
+                    },
+                    "404": {
+                        "description": "Makerspace not found or not visible to the caller."
+                    },
+                    "401": {
+                        "description": "Not signed in."
                     }
                 }
             }
@@ -145273,7 +145549,7 @@
                         "description": "Permission denied."
                     },
                     "404": {
-                        "description": "Not found."
+                        "description": "Not found, or the To-Buy switch for this row's parent (machines.tobuy / inventory.tobuy) is off for this makerspace."
                     }
                 }
             },
@@ -145358,7 +145634,7 @@
                         "description": "Permission denied."
                     },
                     "404": {
-                        "description": "Not found."
+                        "description": "Not found, or the To-Buy switch for this row's parent (machines.tobuy / inventory.tobuy) is off for this makerspace."
                     }
                 }
             }
@@ -145445,7 +145721,7 @@
                         "description": "Permission denied."
                     },
                     "404": {
-                        "description": "Not found."
+                        "description": "Not found, or the To-Buy switch for this row's parent (machines.tobuy / inventory.tobuy) is off for this makerspace."
                     }
                 }
             }
@@ -145512,7 +145788,7 @@
                         "description": "Permission denied."
                     },
                     "404": {
-                        "description": "Not found."
+                        "description": "Not found, or the To-Buy switch for this row's parent (machines.tobuy / inventory.tobuy) is off for this makerspace."
                     }
                 }
             }
@@ -145567,7 +145843,7 @@
                         "description": "Permission denied."
                     },
                     "404": {
-                        "description": "Not found."
+                        "description": "Not found, or the To-Buy switch for this row's parent (machines.tobuy / inventory.tobuy) is off for this makerspace."
                     }
                 }
             },
@@ -145639,7 +145915,7 @@
                         "description": "Permission denied."
                     },
                     "404": {
-                        "description": "Not found."
+                        "description": "Not found, or the To-Buy switch for this row's parent (machines.tobuy / inventory.tobuy) is off for this makerspace."
                     }
                 }
             },
@@ -145685,7 +145961,7 @@
                         "description": "Permission denied."
                     },
                     "404": {
-                        "description": "Not found."
+                        "description": "Not found, or the To-Buy switch for this row's parent (machines.tobuy / inventory.tobuy) is off for this makerspace."
                     }
                 }
             }
@@ -145760,7 +146036,7 @@
                         "description": "Permission denied."
                     },
                     "404": {
-                        "description": "Not found."
+                        "description": "Not found, or the To-Buy switch for this row's parent (machines.tobuy / inventory.tobuy) is off for this makerspace."
                     }
                 }
             }
@@ -145835,7 +146111,7 @@
                         "description": "Permission denied."
                     },
                     "404": {
-                        "description": "Not found."
+                        "description": "Not found, or the To-Buy switch for this row's parent (machines.tobuy / inventory.tobuy) is off for this makerspace."
                     }
                 }
             }
@@ -145893,7 +146169,7 @@
                         "description": "Permission denied."
                     },
                     "404": {
-                        "description": "Not found."
+                        "description": "Not found, or the To-Buy switch for this row's parent (machines.tobuy / inventory.tobuy) is off for this makerspace."
                     }
                 }
             },
@@ -145969,7 +146245,7 @@
                         "description": "Permission denied."
                     },
                     "404": {
-                        "description": "Not found."
+                        "description": "Not found, or the To-Buy switch for this row's parent (machines.tobuy / inventory.tobuy) is off for this makerspace."
                     }
                 }
             }
@@ -146047,7 +146323,7 @@
                         "description": "Permission denied."
                     },
                     "404": {
-                        "description": "Not found."
+                        "description": "Not found, or the To-Buy switch for this row's parent (machines.tobuy / inventory.tobuy) is off for this makerspace."
                     }
                 }
             }
@@ -146095,7 +146371,7 @@
                         "description": "Permission denied."
                     },
                     "404": {
-                        "description": "Not found."
+                        "description": "Not found, or the To-Buy switch for this row's parent (machines.tobuy / inventory.tobuy) is off for this makerspace."
                     }
                 }
             }
@@ -146153,7 +146429,7 @@
                         "description": "Permission denied."
                     },
                     "404": {
-                        "description": "Not found."
+                        "description": "Not found, or the To-Buy switch for this row's parent (machines.tobuy / inventory.tobuy) is off for this makerspace."
                     }
                 }
             }
@@ -166980,6 +167256,28 @@
                     "reason_code"
                 ]
             },
+            "Candidate": {
+                "type": "object",
+                "description": "Mask registry PII (and declared account fields) for a superadmin without a window.\n\n``pii_account_fields`` names representation keys that carry an account's email, phone\nor name. Override ``get_pii_makerspace_id`` when the row reaches its space differently,\nor ``get_pii_subject`` when the row is about one person.",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email"
+                    }
+                },
+                "required": [
+                    "email",
+                    "id",
+                    "name"
+                ]
+            },
             "Capacity": {
                 "type": "object",
                 "properties": {
@@ -169157,13 +169455,6 @@
                     "accepted",
                     "revision"
                 ]
-            },
-            "CodeEnum": {
-                "enum": [
-                    "payment_provider_conflict"
-                ],
-                "type": "string",
-                "description": "* `payment_provider_conflict` - payment_provider_conflict"
             },
             "CollaborativeEvent": {
                 "type": "object",
@@ -174580,14 +174871,24 @@
                     "available": {
                         "type": "boolean",
                         "description": "Every module this switch needs is installed and shipped here."
+                    },
+                    "editable": {
+                        "type": "boolean",
+                        "description": "The caller may change this switch now (#101)."
+                    },
+                    "locked": {
+                        "type": "boolean",
+                        "description": "A Space Manager lock blocks delegated edits."
                     }
                 },
                 "required": [
                     "available",
                     "description",
+                    "editable",
                     "enabled",
                     "key",
                     "label",
+                    "locked",
                     "parent_module",
                     "requires_features"
                 ]
@@ -174638,7 +174939,7 @@
                     },
                     "editable": {
                         "type": "boolean",
-                        "description": "False for a type-scoped Machine Manager while machines outside their assigned types exist: machine settings are tenant-wide."
+                        "description": "The caller is the Space Manager or holds this module's settings grant (and, for machines, covers every machine type in use). Per-key answers, including locks and the rental-timing exception, are on each feature and in `setting_permissions`."
                     },
                     "features": {
                         "type": "array",
@@ -174648,12 +174949,19 @@
                     },
                     "settings": {
                         "$ref": "#/components/schemas/DomainSettingValues"
+                    },
+                    "setting_permissions": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "$ref": "#/components/schemas/SettingPermission"
+                        }
                     }
                 },
                 "required": [
                     "domain",
                     "editable",
                     "features",
+                    "setting_permissions",
                     "settings"
                 ]
             },
@@ -174866,6 +175174,102 @@
                 },
                 "required": [
                     "institution"
+                ]
+            },
+            "Effective": {
+                "type": "object",
+                "properties": {
+                    "modules": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/EffectiveModule"
+                        }
+                    }
+                },
+                "required": [
+                    "modules"
+                ]
+            },
+            "EffectiveKey": {
+                "type": "object",
+                "properties": {
+                    "key": {
+                        "type": "string"
+                    },
+                    "editable": {
+                        "type": "boolean"
+                    },
+                    "via": {
+                        "nullable": true,
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/ViaEnum"
+                            },
+                            {
+                                "$ref": "#/components/schemas/NullEnum"
+                            }
+                        ]
+                    },
+                    "locked": {
+                        "type": "boolean"
+                    },
+                    "code": {
+                        "nullable": true,
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/EffectiveKeyCodeEnum"
+                            },
+                            {
+                                "$ref": "#/components/schemas/NullEnum"
+                            }
+                        ]
+                    },
+                    "lock_note": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "code",
+                    "editable",
+                    "key",
+                    "lock_note",
+                    "locked",
+                    "via"
+                ]
+            },
+            "EffectiveKeyCodeEnum": {
+                "enum": [
+                    "setting_not_delegated",
+                    "setting_locked"
+                ],
+                "type": "string",
+                "description": "* `setting_not_delegated` - setting_not_delegated\n* `setting_locked` - setting_locked"
+            },
+            "EffectiveModule": {
+                "type": "object",
+                "properties": {
+                    "module": {
+                        "type": "string"
+                    },
+                    "space_manager": {
+                        "type": "boolean"
+                    },
+                    "grant_id": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "keys": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/EffectiveKey"
+                        }
+                    }
+                },
+                "required": [
+                    "grant_id",
+                    "keys",
+                    "module",
+                    "space_manager"
                 ]
             },
             "EligibilityAcknowledgementCommand": {
@@ -184997,6 +185401,52 @@
                     "state"
                 ]
             },
+            "Grant": {
+                "type": "object",
+                "description": "Mask registry PII (and declared account fields) for a superadmin without a window.\n\n``pii_account_fields`` names representation keys that carry an account's email, phone\nor name. Override ``get_pii_makerspace_id`` when the row reaches its space differently,\nor ``get_pii_subject`` when the row is about one person.",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "module": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "grantee": {
+                        "type": "integer",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "grantee_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "grantee_email": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "granted_by": {
+                        "type": "integer",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "granted_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "granted_at",
+                    "granted_by",
+                    "grantee",
+                    "grantee_email",
+                    "grantee_name",
+                    "id",
+                    "module"
+                ]
+            },
             "GrantedBookingEntry": {
                 "type": "object",
                 "properties": {
@@ -185084,6 +185534,51 @@
                 ],
                 "type": "string",
                 "description": "* `event_grant` - event_grant"
+            },
+            "GrantsResponse": {
+                "type": "object",
+                "properties": {
+                    "grants": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Grant"
+                        }
+                    },
+                    "candidates": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/components/schemas/Candidate"
+                            }
+                        },
+                        "description": "Per module: the people who may be granted it here."
+                    }
+                },
+                "required": [
+                    "candidates",
+                    "grants"
+                ]
+            },
+            "GrantsUpdate": {
+                "type": "object",
+                "properties": {
+                    "module": {
+                        "$ref": "#/components/schemas/ModuleEnum"
+                    },
+                    "grantee_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "maxItems": 200
+                    }
+                },
+                "required": [
+                    "grantee_ids",
+                    "module"
+                ]
             },
             "GroupEnum": {
                 "enum": [
@@ -190757,6 +191252,61 @@
                 ],
                 "type": "string",
                 "description": "* `indoor` - Indoor\n* `outdoor` - Outdoor\n* `other` - Other"
+            },
+            "Lock": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "setting_key": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "note": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "locked_by": {
+                        "type": "integer",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "created_at",
+                    "id",
+                    "locked_by",
+                    "note",
+                    "setting_key"
+                ]
+            },
+            "LockUpdate": {
+                "type": "object",
+                "properties": {
+                    "setting_key": {
+                        "type": "string",
+                        "maxLength": 100
+                    },
+                    "locked": {
+                        "type": "boolean"
+                    },
+                    "note": {
+                        "type": "string",
+                        "default": "",
+                        "maxLength": 200
+                    }
+                },
+                "required": [
+                    "locked",
+                    "setting_key"
+                ]
             },
             "LogError": {
                 "type": "object",
@@ -199013,6 +199563,16 @@
                     "key"
                 ]
             },
+            "ModuleEnum": {
+                "enum": [
+                    "bookings",
+                    "events",
+                    "inventory",
+                    "machines"
+                ],
+                "type": "string",
+                "description": "* `bookings` - bookings\n* `events` - events\n* `inventory` - inventory\n* `machines` - machines"
+            },
             "ModulesEnum": {
                 "enum": [
                     "asset_units",
@@ -199029,7 +199589,6 @@
                     "guest_handover",
                     "machine_service",
                     "machines",
-                    "maintenance",
                     "mattermost",
                     "member_accounts",
                     "membership",
@@ -199038,7 +199597,6 @@
                     "payments",
                     "presence",
                     "printing",
-                    "procurement",
                     "public_inventory",
                     "qr_management",
                     "qr_print_batches",
@@ -199055,7 +199613,7 @@
                     "whatsapp"
                 ],
                 "type": "string",
-                "description": "* `asset_units` - asset_units\n* `backup` - backup\n* `bookings` - bookings\n* `bulk_import` - bulk_import\n* `containers` - containers\n* `devices` - devices\n* `discord` - discord\n* `email` - email\n* `event_reimbursements` - event_reimbursements\n* `events` - events\n* `evidence_uploads` - evidence_uploads\n* `guest_handover` - guest_handover\n* `machine_service` - machine_service\n* `machines` - machines\n* `maintenance` - maintenance\n* `mattermost` - mattermost\n* `member_accounts` - member_accounts\n* `membership` - membership\n* `mobile` - mobile\n* `notifications` - notifications\n* `payments` - payments\n* `presence` - presence\n* `printing` - printing\n* `procurement` - procurement\n* `public_inventory` - public_inventory\n* `qr_management` - qr_management\n* `qr_print_batches` - qr_print_batches\n* `reports` - reports\n* `request_workflow` - request_workflow\n* `scanner` - scanner\n* `slack` - slack\n* `sms` - sms\n* `staff_admin` - staff_admin\n* `stock_transfers` - stock_transfers\n* `stocktake` - stocktake\n* `telegram` - telegram\n* `webhook` - webhook\n* `whatsapp` - whatsapp"
+                "description": "* `asset_units` - asset_units\n* `backup` - backup\n* `bookings` - bookings\n* `bulk_import` - bulk_import\n* `containers` - containers\n* `devices` - devices\n* `discord` - discord\n* `email` - email\n* `event_reimbursements` - event_reimbursements\n* `events` - events\n* `evidence_uploads` - evidence_uploads\n* `guest_handover` - guest_handover\n* `machine_service` - machine_service\n* `machines` - machines\n* `mattermost` - mattermost\n* `member_accounts` - member_accounts\n* `membership` - membership\n* `mobile` - mobile\n* `notifications` - notifications\n* `payments` - payments\n* `presence` - presence\n* `printing` - printing\n* `public_inventory` - public_inventory\n* `qr_management` - qr_management\n* `qr_print_batches` - qr_print_batches\n* `reports` - reports\n* `request_workflow` - request_workflow\n* `scanner` - scanner\n* `slack` - slack\n* `sms` - sms\n* `staff_admin` - staff_admin\n* `stock_transfers` - stock_transfers\n* `stocktake` - stocktake\n* `telegram` - telegram\n* `webhook` - webhook\n* `whatsapp` - whatsapp"
             },
             "MostLentReport": {
                 "type": "object",
@@ -214089,13 +214647,20 @@
                         "type": "string"
                     },
                     "code": {
-                        "$ref": "#/components/schemas/CodeEnum"
+                        "$ref": "#/components/schemas/PaymentProviderConflictCodeEnum"
                     }
                 },
                 "required": [
                     "code",
                     "detail"
                 ]
+            },
+            "PaymentProviderConflictCodeEnum": {
+                "enum": [
+                    "payment_provider_conflict"
+                ],
+                "type": "string",
+                "description": "* `payment_provider_conflict` - payment_provider_conflict"
             },
             "PaymentReconciliation": {
                 "type": "object",
@@ -231961,6 +232526,21 @@
                     "status"
                 ]
             },
+            "SettingPermission": {
+                "type": "object",
+                "properties": {
+                    "editable": {
+                        "type": "boolean"
+                    },
+                    "locked": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "editable",
+                    "locked"
+                ]
+            },
             "SetupState": {
                 "type": "object",
                 "properties": {
@@ -239692,6 +240272,15 @@
                 "required": [
                     "version"
                 ]
+            },
+            "ViaEnum": {
+                "enum": [
+                    "space_manager",
+                    "module_grant",
+                    "fixed_exception"
+                ],
+                "type": "string",
+                "description": "* `space_manager` - space_manager\n* `module_grant` - module_grant\n* `fixed_exception` - fixed_exception"
             },
             "Visibility68aEnum": {
                 "enum": [

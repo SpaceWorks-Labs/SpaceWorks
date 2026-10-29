@@ -20,8 +20,8 @@ export const FEATURE_DEFINITIONS: readonly FeatureDefinition[] = [
   { key: "machines.public_detail", parent_module: "machines", label: "Public machine details" },
   { key: "machines.material_catalogue", parent_module: "machines", label: "Local material catalogue" },
   { key: "machines.structured_intake", parent_module: "machine_service", label: "Structured machine intake" },
-  { key: "maintenance.meters", parent_module: "maintenance", label: "Usage-based maintenance" },
-  { key: "maintenance.calendar_feed", parent_module: "maintenance", label: "Maintenance calendar feed" },
+  { key: "maintenance.meters", parent_module: "machines", label: "Usage-based maintenance" },
+  { key: "maintenance.calendar_feed", parent_module: "machines", label: "Maintenance calendar feed" },
   { key: "packs.import", parent_module: "staff_admin", label: "Space packs" },
   { key: "membership.auto_renew", parent_module: "membership", label: "Automatic membership renewal" },
   { key: "membership.lifecycle_mail", parent_module: "membership", label: "Membership lifecycle mail" },
@@ -55,7 +55,7 @@ export const FEATURE_DEFINITIONS: readonly FeatureDefinition[] = [
   { key: "payments.enabled", parent_module: "payments", label: "Payments" },
   { key: "mobile.push", parent_module: "mobile", label: "Native push" },
   { key: "presence.geofence", parent_module: null, label: "Presence geofence" },
-  { key: "notifications.delegated_recipients", parent_module: "notifications", label: "Delegated maintenance recipients" },
+  { key: "notifications.delegated_recipients", parent_module: "machines", label: "Delegated maintenance recipients" },
   { key: "notifications.member_inbox", parent_module: "notifications", label: "Member inbox" },
   { key: "notifications.member_preferences", parent_module: "notifications", label: "Member communication preferences" },
   { key: "events.invites", parent_module: "events", label: "Event invitations" },
@@ -74,7 +74,7 @@ export const FEATURE_DEFINITIONS: readonly FeatureDefinition[] = [
   { key: "events.volunteering", parent_module: "events", label: "Volunteer contributions" },
   { key: "events.project_gallery", parent_module: "events", label: "Project gallery" },
   { key: "machines.certification_reminders", parent_module: "machines", label: "Certification reminders" },
-  { key: "maintenance.reminders", parent_module: "maintenance", label: "Maintenance reminders" },
+  { key: "maintenance.reminders", parent_module: "machines", label: "Maintenance reminders" },
   { key: "machines.certifications", parent_module: "machines", label: "Certification gating" },
   { key: "inventory.kiosk", parent_module: null, label: "Kiosk" },
   { key: "bookings.passes", parent_module: "bookings", label: "Printable booking passes" },
@@ -93,6 +93,12 @@ export const FEATURE_DEFINITIONS: readonly FeatureDefinition[] = [
   { key: "bookings.api_read", parent_module: "bookings", label: "Signed booking integration reads" },
   { key: "bookings.website", parent_module: "bookings", label: "Resource websites" },
   { key: "bookings.embed", parent_module: "bookings", label: "Resource embeds" },
+  // L17 (#97, #128 C-9): maintenance, To-Buy and warranty under each parent.
+  { key: "machines.maintenance", parent_module: "machines", label: "Machine maintenance" },
+  { key: "machines.tobuy", parent_module: "machines", label: "Machine To-Buy" },
+  { key: "machines.warranty", parent_module: "machines", label: "Machine warranty" },
+  { key: "inventory.tobuy", parent_module: null, label: "Inventory To-Buy" },
+  { key: "inventory.warranty", parent_module: null, label: "Inventory warranty" },
 ];
 
 export function featureEnabled(features: Iterable<string>, key: string) {
@@ -102,4 +108,23 @@ export function featureEnabled(features: Iterable<string>, key: string) {
 /** Security keys live in the Security panel (Space Manager/superadmin, re-auth, audit), never in Features. */
 export function isSecurityFeature(key: string) {
   return key.startsWith("security.");
+}
+
+/** The heading a feature is listed under: its parent module, or the parentless families. */
+export function featureGroup(feature: FeatureDefinition) {
+  if (feature.parent_module) return feature.parent_module;
+  return feature.key.startsWith("inventory.") || feature.key.startsWith("loans.") ? "inventory" : "general";
+}
+
+/**
+ * Effective switch as the console can see it: stored, and its parent module installed.
+ * Mirrors `capability_eligibility.configuration_feature_enabled` for one level; the server
+ * still decides (a route whose switch is off answers 404).
+ */
+export function capabilityOn(
+  makerspace: { enabled_modules?: string[]; enabled_features?: string[] } | undefined, key: string,
+) {
+  if (!makerspace?.enabled_features?.includes(key)) return false;
+  const parent = FEATURE_DEFINITIONS.find(feature => feature.key === key)?.parent_module;
+  return !parent || (makerspace.enabled_modules ?? []).includes(parent);
 }

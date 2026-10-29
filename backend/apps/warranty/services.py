@@ -20,6 +20,7 @@ from apps.machines import access as machine_access
 from apps.machines.models import Machine
 from apps.makerspaces.authority_lock import ACCESS_CHANGED, require_under_lock
 from apps.makerspaces.guards import require_module
+from apps.makerspaces.folded_capabilities import INVENTORY_WARRANTY, MACHINES_WARRANTY, require_capability
 from apps.warranty import storage
 from apps.warranty.models import Warranty, WarrantyDocument
 
@@ -34,6 +35,7 @@ def _locked_host(actor, kind, host):
         )
         locked = InventoryAsset.objects.select_for_update(no_key=True).get(pk=host.pk)
         require_module(makerspace_id, "staff_admin")
+        require_capability(makerspace_id, INVENTORY_WARRANTY)
         return locked
     # Machine authority is object-level (role scope, type manager or operator row), and
     # operator assignments lock the machine, so it is evaluated after that lock.
@@ -44,7 +46,7 @@ def _locked_host(actor, kind, host):
     )
     if not machine_access.can_manage_machine(actor, locked):
         raise PermissionDenied(ACCESS_CHANGED)
-    require_module(makerspace_id, "machines")
+    require_capability(makerspace_id, MACHINES_WARRANTY)
     return locked
 
 

@@ -58,7 +58,7 @@ export function ModulesPanel({ makerspaceId }: { makerspaceId: number }) {
       </div>)}</> })),
     ...(modules.data?.deployment ? [{ id: "deployment", title: "Deployment", rows: <DeploymentModules deployment={modules.data.deployment} /> }] : []),
   ];
-  return <SettingsLayout header={{ title: "Modules", subtitle: "Switch feature families on for this space. Turning one off keeps its data; turning it back on restores everything. Delete data separately from the command line." }}
+  return <SettingsLayout header={{ title: "Modules", subtitle: "Switch feature families on for this space. Turning one off keeps its data; turning it back on restores everything. Deleting data is a separate step only the platform administrator can take." }}
     state={adminQueryState(modules, "modules")} isEmpty={groups.length === 0}
     empty={{ message: "No modules are available yet. Check the deployment configuration." }}
     sections={sections} />;

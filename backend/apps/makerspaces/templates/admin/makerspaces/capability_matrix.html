@@ -80,8 +80,17 @@
       if (module) {
         tickModule(value, ticked);
       } else {
-        const parent = (rules.features[value] || {}).parent;
-        if (parent) { check(parent, ticked); tickModule(parent, ticked); }
+        // A feature ticks its parent, every module it needs and every feature it
+        // requires (and theirs in turn), exactly as complete_selection does on save.
+        const tickFeature = (feature, seen) => {
+          if (seen.has(feature)) return;
+          seen.add(feature);
+          const rule = rules.features[feature] || {};
+          if (feature !== value) check(feature, ticked);
+          (rule.needs || []).forEach((needed) => { check(needed, ticked); tickModule(needed, ticked); });
+          (rule.requires_features || []).forEach((required) => tickFeature(required, seen));
+        };
+        tickFeature(value, new Set());
       }
       say(ticked.length ? `Also turned on ${ticked.join(', ')}: ${label(value)} needs them.` : '');
     }));

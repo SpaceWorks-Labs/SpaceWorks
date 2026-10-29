@@ -32,7 +32,7 @@ COVERAGE_REPORT_DEFINITIONS = (
     ReportDefinition(
         "procurement-performance", "apps.procurement.reports.build_procurement_performance",
         ("period", "kind", "status", "items", "units", "estimated_total", "actual_total", "received_items", "inventoried_items", "average_order_hours", "average_receive_hours", "last_activity_at"),
-        ("procurement",), required_action=rbac.Action.EDIT_INVENTORY,
+        ("inventory.tobuy|machines.tobuy",), required_action=rbac.Action.EDIT_INVENTORY,
         title="Procurement performance", chart_hint="stacked_bar", grains=("day", "month"),
     ),
     COMMUNICATIONS_REPORT_DEFINITION,
@@ -54,7 +54,7 @@ COVERAGE_REPORT_DEFINITIONS = (
         ("module_key", "enabled", "runtime_available", "coverage_kind", "activity_count", "failure_count", "last_activity_at", "rollup_watermark", "rollup_state"),
         required_action=rbac.Action.MANAGE_MAKERSPACE, title="Module operational health",
         chart_hint="status_grid", section_modules=(
-            "public_inventory", "request_workflow", "staff_admin", "guest_handover", "scanner", "printing", "telegram", "evidence_uploads", "qr_management", "bulk_import", "containers", "stock_transfers", "stocktake", "reports", "qr_print_batches", "asset_units", "procurement", "machines", "machine_service", "events", "bookings", "maintenance", "membership", "notifications", "email", "slack", "mattermost", "discord", "webhook", "payments", "member_accounts", "mobile", "devices", "backup",
+            "public_inventory", "request_workflow", "staff_admin", "guest_handover", "scanner", "printing", "telegram", "evidence_uploads", "qr_management", "bulk_import", "containers", "stock_transfers", "stocktake", "reports", "qr_print_batches", "asset_units", "machines", "machine_service", "events", "bookings", "membership", "notifications", "email", "slack", "mattermost", "discord", "webhook", "payments", "member_accounts", "mobile", "devices", "backup",
         ),
     ),
 )

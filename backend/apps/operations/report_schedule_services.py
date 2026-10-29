@@ -128,8 +128,9 @@ def _skip_reason(schedule, definition):
         return "format_not_allowed"
     if not module_enabled(schedule.makerspace, "reports"):
         return "module_disabled:reports"
+    from .report_sources import source_enabled
     for module in definition.required_modules:
-        if not module_enabled(schedule.makerspace, module):
+        if not source_enabled(schedule.makerspace, module):
             return f"module_disabled:{module}"
     if schedule.makerspace_id not in eligible_makerspace_ids():
         return "makerspace_not_report_eligible"

@@ -26,6 +26,13 @@ class DomainFeatureSerializer(serializers.Serializer):
     available = serializers.BooleanField(
         help_text="Every module this switch needs is installed and shipped here."
     )
+    editable = serializers.BooleanField(help_text="The caller may change this switch now (#101).")
+    locked = serializers.BooleanField(help_text="A Space Manager lock blocks delegated edits.")
+
+
+class SettingPermissionSerializer(serializers.Serializer):
+    editable = serializers.BooleanField()
+    locked = serializers.BooleanField()
 
 
 class DomainSettingValuesSerializer(serializers.Serializer):
@@ -53,12 +60,15 @@ class DomainSettingsSerializer(serializers.Serializer):
     domain = serializers.ChoiceField(choices=sorted(DOMAINS))
     editable = serializers.BooleanField(
         help_text=(
-            "False for a type-scoped Machine Manager while machines outside their "
-            "assigned types exist: machine settings are tenant-wide."
+            "The caller is the Space Manager or holds this module's settings grant (and, "
+            "for machines, covers every machine type in use). Per-key answers, including "
+            "locks and the rental-timing exception, are on each feature and in "
+            "`setting_permissions`."
         )
     )
     features = DomainFeatureSerializer(many=True)
     settings = DomainSettingValuesSerializer()
+    setting_permissions = serializers.DictField(child=SettingPermissionSerializer())
 
 
 class DomainSettingsUpdateSerializer(serializers.Serializer):

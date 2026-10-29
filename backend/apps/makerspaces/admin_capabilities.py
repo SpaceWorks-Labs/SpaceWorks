@@ -10,6 +10,7 @@ from apps.makerspaces.admin_capability_completion import FEATURES, complete_sele
 from apps.makerspaces.module_registry import BY_KEY, MODULES, module_available
 from apps.makerspaces.request_access import effective_policy
 from apps.makerspaces.admin_security import MakerspaceSecurityAdminMixin
+from apps.makerspaces.admin_capability_purge import MakerspaceCapabilityPurgeAdminMixin
 from apps.makerspaces.security_settings_registry import is_security_feature
 
 
@@ -111,7 +112,8 @@ class MakerspaceAdminForm(ImageMakerspaceAdminForm):
         # MP-28 / owner decisions #82 and #87: the same rules the page script applies
         # (admin_capability_completion), so a save that bypasses the script lands in the
         # same place and nothing is silently re-ticked.
-        result = complete_selection(self.capability_before["modules"], modules, features)
+        result = complete_selection(self.capability_before["modules"], modules, features,
+                                    self.capability_before["features"])
         unavailable = [key for key in result.added if not module_available(key)]
         if unavailable:
             raise forms.ValidationError(
@@ -129,7 +131,7 @@ class MakerspaceAdminForm(ImageMakerspaceAdminForm):
         return values
 
 
-class MakerspaceCapabilityAdminMixin(MakerspaceSecurityAdminMixin):
+class MakerspaceCapabilityAdminMixin(MakerspaceCapabilityPurgeAdminMixin, MakerspaceSecurityAdminMixin):
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
         before = getattr(form, "capability_before", {"modules": [], "features": []})

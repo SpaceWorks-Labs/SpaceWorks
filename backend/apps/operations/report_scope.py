@@ -105,9 +105,8 @@ def eligible_makerspaces(*source_modules):
     queryset = servable_queryset(Makerspace.objects.filter(
         enabled_modules__contains=["reports"],
     ))
-    for module in source_modules:
-        queryset = queryset.filter(enabled_modules__contains=[module])
-    return queryset
+    from .report_sources import filter_sources
+    return filter_sources(queryset, source_modules)
 
 
 def eligible_makerspace_ids(*source_modules):

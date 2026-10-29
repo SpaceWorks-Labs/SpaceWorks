@@ -188,8 +188,10 @@ def build_dashboard(
             warranty_expires_on__isnull=False,
             warranty_expires_on__lte=today + timedelta(days=30),
         ))
-        loans_on = not restricted and include_hardware and feature_enabled(makerspace, "loans.enabled")
-        machines_on = include_machines and module_enabled(makerspace, "machines")
+        # Each host kind follows its own parent's warranty switch (#97, C-9).
+        loans_on = (not restricted and include_hardware and feature_enabled(makerspace, "loans.enabled")
+                    and feature_enabled(makerspace, "inventory.warranty"))
+        machines_on = include_machines and feature_enabled(makerspace, "machines.warranty")
         warranties = warranties.filter(
             (Q(asset__isnull=False) if loans_on else Q(pk__in=[]))
             | (Q(machine__isnull=False) if machines_on else Q(pk__in=[]))
@@ -214,7 +216,7 @@ def build_dashboard(
         counts["warranty_expiring"] = warranties.count()
     except Exception as exc:
         logger.error("Dashboard aggregation failed", extra={"makerspace_id": makerspace.pk, "error_type": type(exc).__name__})
-    if include_machines and module_enabled(makerspace, "maintenance"):
+    if include_machines and feature_enabled(makerspace, "machines.maintenance"):
         try:
             from apps.maintenance.models import MaintenanceSchedule
 

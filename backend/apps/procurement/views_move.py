@@ -14,9 +14,9 @@ from apps.procurement.serializers import (
     ToBuyItemSerializer,
 )
 from apps.procurement.views_common import (
-    MODULE_KEY,
     PROCUREMENT_ERROR_RESPONSES,
     receipt_queryset_related,
+    require_item_switch,
 )
 
 
@@ -33,7 +33,7 @@ class ToBuyMoveBaseView(APIView):
             makerspace_id,
         ) if makerspace_id is not None else ToBuyItem.objects.none()
         item = get_object_or_404(queryset, pk=pk)
-        require_module(item.makerspace, MODULE_KEY)
+        require_item_switch(item)
         if not access.can_manage_kind(self.request.user, item.makerspace_id, item.kind):
             raise PermissionDenied()
         return item

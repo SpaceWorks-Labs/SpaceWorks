@@ -25,13 +25,13 @@ from apps.separability.tombstones import SEPARABLE_APPS, tombstoned_app_labels
 # knows -- and an operator deciding whether to remove an app needs the answer in the
 # terms they think in, not a list of module keys.
 SEPARABLE_APP_NOTES = {
-    "warranty": "Warranty tracking for assets, printers and machines.",
+    "warranty": "Warranty tracking for assets and machines (inventory.warranty, machines.warranty).",
     "presence": "Geofenced check-in and presence sessions.",
     "payments": "Every online payment surface. Existing Payment rows are kept and stay readable.",
     "events": "Event scheduling and registrations.",
     "bookings": "Resource booking and public self-booking.",
-    "maintenance": "Maintenance schedules and work orders.",
-    "procurement": "The to-buy list.",
+    "maintenance": "Maintenance schedules and work orders (the machines.maintenance switch).",
+    "procurement": "The To-Buy list (the machines.tobuy and inventory.tobuy switches).",
     "roadmap": "Already tombstoned; retained for migration history only.",
 }
 

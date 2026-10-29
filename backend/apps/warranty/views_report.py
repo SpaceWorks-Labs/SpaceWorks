@@ -21,6 +21,9 @@ from apps.warranty.serializers import (
 from apps.admin_api.views_inventory import InventoryPagination
 from apps.inventory.models import InventoryAsset
 from apps.makerspaces.platform import module_enabled
+from apps.makerspaces.folded_capabilities import (
+    INVENTORY_WARRANTY, MACHINES_WARRANTY, WARRANTY_KEYS, capability_on, require_any_capability,
+)
 from apps.makerspaces.servability import servable_queryset
 from apps.machines import access as machine_access
 from apps.machines.models import Machine
@@ -76,6 +79,8 @@ class MakerspaceWarrantyReportView(APIView):
             ),
             pk=makerspace_id,
         )
+        # Each host kind follows its own parent's switch; with both off the report is gone.
+        require_any_capability(makerspace, WARRANTY_KEYS)
         if not (
             rbac.can(request.user, rbac.Action.EDIT_INVENTORY, makerspace.id)
             or machine_access.can_see_machines(request.user, makerspace.id)
@@ -115,6 +120,7 @@ def _asset_hosts(user, makerspace, today, filters):
     if not (
         rbac.can(user, rbac.Action.EDIT_INVENTORY, makerspace_id)
         and module_enabled(makerspace, "staff_admin")
+        and capability_on(makerspace, INVENTORY_WARRANTY)
     ):
         return InventoryAsset.objects.none()
     qs = rbac.scope_by_action(
@@ -128,7 +134,7 @@ def _asset_hosts(user, makerspace, today, filters):
 
 
 def _machine_hosts(user, makerspace, today, filters):
-    if not module_enabled(makerspace, "machines"):
+    if not capability_on(makerspace, MACHINES_WARRANTY):
         return Machine.objects.none()
     qs = machine_access.scope_manageable_machines_for_actor(
         user,

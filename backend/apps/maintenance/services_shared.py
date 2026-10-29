@@ -6,7 +6,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from apps.accounts import rbac
 from apps.machines import access
 from apps.machines.models import Machine
-from apps.makerspaces.guards import require_module
+from apps.makerspaces.folded_capabilities import MACHINES_MAINTENANCE, require_capability
 from apps.makerspaces.servability import is_servable
 from apps.maintenance.exceptions import (
     MaintenanceStatusConflict,
@@ -25,8 +25,7 @@ def lock_machine(machine, actor):
 
 
 def prepare_machine(machine, actor, *, manage):
-    require_module(machine.makerspace, "maintenance")
-    require_module(machine.makerspace, "machines")
+    require_capability(machine.makerspace, MACHINES_MAINTENANCE)
     # Archived makerspaces are soft-deleted for everyone; reject after the row lock
     # reloads the makerspace so a per-machine operator can't complete an in-flight
     # mutation (and finalize an attachment) during the archive->purge window.

@@ -11,7 +11,6 @@ from apps.admin_api.permissions import IsActiveStaff
 from apps.audit import services as audit
 from apps.evidence.responses import storage_unavailable_response
 from apps.evidence.storage import StorageUnavailable
-from apps.makerspaces.guards import require_module
 from apps.procurement import access, storage
 from apps.procurement.models import ToBuyItem, ToBuyReceipt
 from apps.procurement.serializers import (
@@ -21,7 +20,7 @@ from apps.procurement.serializers import (
     ToBuyReceiptUploadResponseSerializer,
     ToBuyReceiptUrlSerializer,
 )
-from apps.procurement.views_common import MODULE_KEY, PROCUREMENT_ERROR_RESPONSES
+from apps.procurement.views_common import PROCUREMENT_ERROR_RESPONSES, require_item_switch
 
 
 def resolve_item(user, pk):
@@ -38,7 +37,7 @@ def resolve_item(user, pk):
         ),
         pk=pk,
     )
-    require_module(item.makerspace, MODULE_KEY)
+    require_item_switch(item)
     return item
 
 
@@ -54,7 +53,7 @@ def resolve_receipt(user, pk):
         pk=pk,
         to_buy_item=item,
     )
-    require_module(item.makerspace, MODULE_KEY)
+    require_item_switch(item)
     receipt.to_buy_item = item
     return receipt
 

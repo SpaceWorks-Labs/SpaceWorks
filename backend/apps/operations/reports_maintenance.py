@@ -39,7 +39,7 @@ def build_maintenance_activity(makerspace_id, *, limit=None, date_range=None):
         active=Count("id"), overdue=Count("id", filter=Q(next_due__lt=today)),
     )
     qs = Machine.objects.filter(
-        makerspace_id__in=scoped_ids(makerspace_id, "machines", "maintenance")
+        makerspace_id__in=scoped_ids(makerspace_id, "machines", "machines.maintenance")
     ).values("id", "makerspace_id", "name", "machine_type__name", "is_active").annotate(
         logs=Coalesce(Subquery(log_stats.values("count")[:1], output_field=IntegerField()), Value(0)),
         costed=Coalesce(Subquery(log_stats.values("costed")[:1], output_field=IntegerField()), Value(0)),

@@ -215,6 +215,18 @@ the Auth module** — forgetting this is a cross-tenant data leak, not just a bu
 - Public inventory must never expose: storage locations, box IDs, QR codes, scan history, evidence photos,
   requester history, or hidden counts. Public visibility is governed per-item by `is_public`,
   `show_public_count`, and `public_availability_mode` (`exact_count | status_only | hidden`).
+- **Maintenance, To-Buy, warranty and repairs are capabilities under each parent, not modules**
+  (#97, #128 C-9): `machines.*`, `bookings.*` and the parentless `inventory.*` family, each its own
+  switch. The `maintenance` and `procurement` module keys are retired — never reintroduce them. A
+  switched-off folded route answers 404 and its rows are kept; purging them is a separate
+  superadmin `/control/` action, per parent. New features join their parent as capabilities.
+- **Every module setting is written through `settings_authority.assert_setting_write`** (#101,
+  #128 C-11), never a bare `manage_makerspace` check: the Space Manager always; a module manager
+  only with a per-person grant and never past an SM lock; the Inventory Manager always for rental
+  timing. Security and finance settings are never delegated. The Space Manager switches modules
+  on and off (data kept); limit-gated installs on the managed platform and every purge stay
+  superadmin-only. Full rules: **Settings authority** and **Folded modules** in
+  `docs/INVARIANTS.md`.
 
 > The machine-scoping program (`MANAGE_MACHINES` per person by machine type, the Machines console, procurement and dashboard
 > narrowing) is documentation of an invariant, not a workflow rule, and lives under **Machine scoping** in
@@ -437,6 +449,8 @@ because none are quoted here — this index is a router, not a summary.
 | --- | --- |
 | **Account kinds (member / staff / platform)** | account creation, kind/tenant constraints and uniqueness, staff lifecycle, auth surfaces and delegated routes, session contexts, reset/MFA, chat identity, staff export/import, retirement and backup shells |
 | **Cross-cutting invariants** | self-host vs managed SaaS and fair-use limits; `frontend_domain` and origin scoping; superadmin always on; archive/purge; archival vs member money; the two-key archive request; public borrower names; public image fields and storage accounting; rate-limit cache; object storage; the report registry; scoped PII encryption; fixed role sets; `module_registry` and opt-in modules; module install/uninstall/purge; the `email` module gate; A6 master switches; two-level capabilities; the `membership` module; payments, credentials and reconciliation; native device grants; OIDC, social, phone and login-method switches; walk-in/account-less identity; maker profiles and public handles; staff event registration; notifications v2; presence check-in and TV privacy; the colour vocabulary; the accessibility floor; console parity; managed hosting requests |
+| **Settings authority** | `makerspaces/settings_authority*.py`, `domain_settings.py`, any module-setting write, grants, locks, the rental-timing exception |
+| **Folded modules** | `machines.maintenance`/`*.tobuy`/`*.warranty` and the reserved repairs keys, `folded_capabilities.py`, capability purge, module switches, report sources |
 | **Handover roles and the retired Guest Admin** | built-in Handover and combined role sets, `rbac.HANDOUT_ACTIONS`, `is_handout_only`, the retired `guest_admin`/`print_manager` enum members and their migrations |
 | **Separability and tombstoning** | `apps/separability/`, `TOMBSTONED_APPS`, `SEPARABLE_APPS`, retention vs runtime registries, adding a PII-holding model |
 | **Machine scoping** | `MANAGE_MACHINES`, `machines/role_scope.py`, the Machines console, machine-service surfaces, procurement narrowing, dashboard scoping, delegated recipient rules |

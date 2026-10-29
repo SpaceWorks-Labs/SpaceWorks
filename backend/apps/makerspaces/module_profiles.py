@@ -56,7 +56,7 @@ _LENDING_EXTRAS = frozenset({
 # accounts is one `install_module member_accounts` away if they later want the community
 # layer.
 _WORKSHOP_EXTRAS = frozenset({
-    "machines", "machine_service", "printing", "maintenance", "reports",
+    "machines", "machine_service", "printing", "reports",
     "notifications", "email",
     "backup",
 })
@@ -72,7 +72,7 @@ _WORKSHOP_EXTRAS = frozenset({
 _CLOUD_EXTRAS = frozenset({
     "guest_handover", "containers", "stock_transfers", "stocktake", "reports",
     "asset_units", "bulk_import", "qr_print_batches",
-    "machines", "machine_service", "maintenance",
+    "machines", "machine_service",
     "events", "bookings", "membership", "member_accounts",
     "notifications", "email", "payments",
     "backup",
@@ -106,6 +106,26 @@ PROFILES = {
 # TOMBSTONED_APPS, which is a different axis -- `suggest_tombstones` reads the installed
 # modules and names the apps that are safe to drop.
 DEFAULT_PROFILE = RECOMMENDED
+
+
+# Since #97 maintenance and To-Buy are capabilities, not module keys. A profile that used to
+# install the `maintenance`/`procurement` modules switches the same capabilities on, so a
+# profile still means what it meant before the fold. Reserved (L16) switches never appear.
+_PROFILE_FEATURES = {
+    CLOUD: ("machines.maintenance",),
+    WORKSHOP: ("machines.maintenance",),
+}
+
+
+def profile_features(name):
+    """Feature keys a profile switches on in addition to its modules' defaults."""
+    from apps.makerspaces.capability_definitions_r2_l17 import FOLDED_KEYS
+
+    if name not in PROFILES:
+        raise ValueError(f"Unknown profile {name!r}. Choose one of: {', '.join(sorted(PROFILES))}.")
+    if name in (EVERYTHING, FULL):
+        return FOLDED_KEYS
+    return _PROFILE_FEATURES.get(name, ())
 
 
 def profile_modules(name):

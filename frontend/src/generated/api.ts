@@ -26,6 +26,7 @@ export const openApiTags = [
   "Admin payment settings",
   "Admin requests",
   "Admin roles",
+  "Admin settings authority",
   "Admin users",
   "Admin warranty",
   "Analytics",
@@ -628,6 +629,9 @@ export const openApiPaths = [
   "/api/v1/admin/makerspace/{makerspace_id}/reports/{report_key}/export",
   "/api/v1/admin/makerspace/{makerspace_id}/request-history",
   "/api/v1/admin/makerspace/{makerspace_id}/return-policy",
+  "/api/v1/admin/makerspace/{makerspace_id}/settings-authority/effective",
+  "/api/v1/admin/makerspace/{makerspace_id}/settings-authority/grants",
+  "/api/v1/admin/makerspace/{makerspace_id}/settings-authority/locks",
   "/api/v1/admin/makerspace/{makerspace_id}/setup-state",
   "/api/v1/admin/makerspace/{makerspace_id}/space-pack",
   "/api/v1/admin/makerspace/{makerspace_id}/stock-transfers",
@@ -3851,6 +3855,12 @@ export type CancelUnpaidObligationCommand = {
   "note": string;
 };
 
+export type Candidate = {
+  "id": number;
+  "name": string;
+  "email": string;
+};
+
 export type Capacity = {
   "offered": number;
   "confirmed": number;
@@ -4382,8 +4392,6 @@ export type CocInput = {
   "revision": number;
   "accepted": boolean;
 };
-
-export type CodeEnum = "payment_provider_conflict";
 
 export type CollaborativeEvent = {
   "participating_organizations": Array<ParticipatingOrganization>;
@@ -5721,6 +5729,8 @@ export type DomainFeature = {
   "requires_features": Array<string>;
   "enabled": boolean;
   "available": boolean;
+  "editable": boolean;
+  "locked": boolean;
 };
 
 export type DomainSettings = {
@@ -5728,6 +5738,9 @@ export type DomainSettings = {
   "editable": boolean;
   "features": Array<DomainFeature>;
   "settings": DomainSettingValues;
+  "setting_permissions": {
+  [key: string]: SettingPermission;
+};
 };
 
 export type DomainSettingValues = {
@@ -5789,6 +5802,28 @@ export type EducationEntry = {
   "institution": string;
   "qualification"?: string;
   "year"?: string;
+};
+
+export type Effective = {
+  "modules": Array<EffectiveModule>;
+};
+
+export type EffectiveKey = {
+  "key": string;
+  "editable": boolean;
+  "via": ViaEnum | NullEnum | null;
+  "locked": boolean;
+  "code": EffectiveKeyCodeEnum | NullEnum | null;
+  "lock_note": string;
+};
+
+export type EffectiveKeyCodeEnum = "setting_not_delegated" | "setting_locked";
+
+export type EffectiveModule = {
+  "module": string;
+  "space_manager": boolean;
+  "grant_id": number | null;
+  "keys": Array<EffectiveKey>;
 };
 
 export type EligibilityAcknowledgementCommand = {
@@ -7635,6 +7670,16 @@ export type GitHubDay = {
   "count": number;
 };
 
+export type Grant = {
+  "id": number;
+  "module": string;
+  "grantee": number | null;
+  "grantee_name": string;
+  "grantee_email": string;
+  "granted_by": number | null;
+  "granted_at": string;
+};
+
 export type GrantedBookingEntry = {
   "space_id": number;
   "makerspace_id": number;
@@ -7657,6 +7702,18 @@ export type GrantedEventEntry = {
 };
 
 export type GrantedEventEntrySourceEnum = "event_grant";
+
+export type GrantsResponse = {
+  "grants": Array<Grant>;
+  "candidates": {
+  [key: string]: Array<Candidate>;
+};
+};
+
+export type GrantsUpdate = {
+  "module": ModuleEnum;
+  "grantee_ids": Array<number>;
+};
 
 export type GroupEnum = "fab-2d" | "fab-3dprint" | "fab-cnc" | "hardware-cad" | "hardware-pcb" | "firmware" | "source" | "embroidery" | "archives" | "video" | "deck" | "images" | "model";
 
@@ -9054,6 +9111,20 @@ export type Location = {
 };
 
 export type LocationKindEnum = "indoor" | "outdoor" | "other";
+
+export type Lock = {
+  "id": number;
+  "setting_key": string;
+  "note": string;
+  "locked_by": number | null;
+  "created_at": string;
+};
+
+export type LockUpdate = {
+  "setting_key": string;
+  "locked": boolean;
+  "note"?: string;
+};
 
 export type LogError = {
   "severity": string;
@@ -10993,7 +11064,9 @@ export type ModuleAction = {
   "key": string;
 };
 
-export type ModulesEnum = "asset_units" | "backup" | "bookings" | "bulk_import" | "containers" | "devices" | "discord" | "email" | "event_reimbursements" | "events" | "evidence_uploads" | "guest_handover" | "machine_service" | "machines" | "maintenance" | "mattermost" | "member_accounts" | "membership" | "mobile" | "notifications" | "payments" | "presence" | "printing" | "procurement" | "public_inventory" | "qr_management" | "qr_print_batches" | "reports" | "request_workflow" | "scanner" | "slack" | "sms" | "staff_admin" | "stock_transfers" | "stocktake" | "telegram" | "webhook" | "whatsapp";
+export type ModuleEnum = "bookings" | "events" | "inventory" | "machines";
+
+export type ModulesEnum = "asset_units" | "backup" | "bookings" | "bulk_import" | "containers" | "devices" | "discord" | "email" | "event_reimbursements" | "events" | "evidence_uploads" | "guest_handover" | "machine_service" | "machines" | "mattermost" | "member_accounts" | "membership" | "mobile" | "notifications" | "payments" | "presence" | "printing" | "public_inventory" | "qr_management" | "qr_print_batches" | "reports" | "request_workflow" | "scanner" | "slack" | "sms" | "staff_admin" | "stock_transfers" | "stocktake" | "telegram" | "webhook" | "whatsapp";
 
 export type MostLentReport = {
   "rows": Array<Array<unknown>>;
@@ -14264,8 +14337,10 @@ export type PaymentOfflineRefund = {
 
 export type PaymentProviderConflict = {
   "detail": string;
-  "code": CodeEnum;
+  "code": PaymentProviderConflictCodeEnum;
 };
+
+export type PaymentProviderConflictCodeEnum = "payment_provider_conflict";
 
 export type PaymentReconciliation = {
   "id": number;
@@ -18703,6 +18778,11 @@ export type SetStatus = {
   "status": string;
 };
 
+export type SettingPermission = {
+  "editable": boolean;
+  "locked": boolean;
+};
+
 export type SetupState = {
   "profile_set": boolean;
   "hours_set": boolean;
@@ -20648,6 +20728,8 @@ export type VersionEnum = 1;
 export type VersionInput = {
   "version": number;
 };
+
+export type ViaEnum = "space_manager" | "module_grant" | "fixed_exception";
 
 export type Visibility68aEnum = "draft" | "published";
 

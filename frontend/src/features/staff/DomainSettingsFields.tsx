@@ -1,4 +1,4 @@
-import { useId, useState } from "react";
+import { useId, useState, type ReactNode } from "react";
 
 import { SettingsRow } from "../../components/ui";
 import { SettingsEditorActions } from "./SettingsEditorActions";
@@ -69,12 +69,16 @@ function changes(values: DomainSettingValues, initial: Draft, draft: Draft): { p
   return { patch: patch as DomainSettingValues };
 }
 
-export function DomainSettingsFields({ values, disabled, pending, error, onSave }: {
+export function DomainSettingsFields({ values, disabled, pending, error, onSave, lockedFields, renderLock }: {
   values: DomainSettingValues;
   disabled: boolean;
   pending: boolean;
   error?: string;
   onSave: (patch: DomainSettingValues) => void;
+  /** Fields this caller may not change because the Space Manager locked them (#101). */
+  lockedFields?: ReadonlySet<string>;
+  /** The lock control or lock notice shown under a field. */
+  renderLock?: (field: string) => ReactNode;
 }) {
   const id = useId();
   const [initial] = useState(() => toDraft(values));
@@ -94,23 +98,27 @@ export function DomainSettingsFields({ values, disabled, pending, error, onSave 
     {(Object.keys(initial) as Field[]).map((field) => {
       const inputId = `${id}-${field}`;
       const value = draft[field];
+      const fieldDisabled = disabled || (lockedFields?.has(field) ?? false);
       return <SettingsRow key={field} label={COPY[field].label} helper={COPY[field].helper} htmlFor={inputId}>
+        <div className="grid min-w-0 gap-2">
         {typeof value === "boolean" ? (
           <label className="min-h-11 flex items-start gap-3 text-sm text-ink">
-            <input id={inputId} className="mt-1 h-4 w-4" type="checkbox" checked={value} disabled={disabled}
+            <input id={inputId} className="mt-1 h-4 w-4" type="checkbox" checked={value} disabled={fieldDisabled}
               onChange={(event) => set(field, event.target.checked)} />
             <span>{value ? "On" : "Off"}</span>
           </label>
         ) : field === "event_default_registration_audience" ? (
-          <select id={inputId} className="desk-input w-full min-w-0" value={String(value)} disabled={disabled}
+          <select id={inputId} className="desk-input w-full min-w-0" value={String(value)} disabled={fieldDisabled}
             onChange={(event) => set(field, event.target.value)}>
             {AUDIENCES.map(([key, label]) => <option key={key} value={key}>{label}</option>)}
           </select>
         ) : (
-          <input id={inputId} className="desk-input w-full min-w-0" value={String(value ?? "")} disabled={disabled}
+          <input id={inputId} className="desk-input w-full min-w-0" value={String(value ?? "")} disabled={fieldDisabled}
             inputMode={field === "filament_low_stock_threshold_grams" ? "decimal" : "numeric"}
             onChange={(event) => set(field, event.target.value)} />
         )}
+        {renderLock?.(field)}
+        </div>
       </SettingsRow>;
     })}
     {problem || error ? <p role="alert" className="text-sm text-danger">{problem || error}</p> : null}

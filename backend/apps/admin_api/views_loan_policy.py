@@ -36,7 +36,13 @@ class ReturnPolicyView(APIView):
         return Response(ReturnPolicySerializer(MakerspaceLoanPolicy.for_makerspace(makerspace)).data)
 
     @extend_schema(tags=["Admin makerspaces"], request=ReturnPolicySerializer,
-                   responses={200: ReturnPolicySerializer, **ERRORS})
+                   responses={200: ReturnPolicySerializer, **ERRORS},
+                   description=(
+                       "Every changed field is authorized by the settings-authority layer (#101): "
+                       "the Space Manager always; the Inventory Manager changes loan length and "
+                       "renewals without a grant (#128 C-11d) and the other lending limits with the "
+                       "inventory settings grant. 403 `setting_not_delegated` / `setting_locked`. "
+                       "Audited as settings.changed per field."))
     def patch(self, request, makerspace_id):
         makerspace = self._makerspace(request, makerspace_id)
         from apps.makerspaces.loan_policy_settings import update_loan_policy

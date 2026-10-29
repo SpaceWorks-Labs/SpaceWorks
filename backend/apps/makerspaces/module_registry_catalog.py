@@ -93,10 +93,8 @@ MODULES = (
         "asset_units", "Asset units", "Individually QR-tracked asset units.",
         "inventory", GUARD, group=GROUP_INVENTORY, frontend_workflows=("asset_qr_generation",),
     ),
-    ModuleDefinition(
-        "procurement", "Procurement", "To-buy list and procurement tracking.",
-        "procurement", GUARD, group=GROUP_INVENTORY, frontend_workflows=("procurement",),
-    ),
+    # `procurement` and `maintenance` are retired module keys (#97, #128 C-9): To-Buy,
+    # maintenance and warranty are per-parent capabilities (capability_definitions_r2_l17).
     ModuleDefinition(
         "machines", "Machines", "Machine registry, operators, usage and documents.",
         "machines", GUARD, group=GROUP_MACHINES,
@@ -124,11 +122,6 @@ MODULES = (
     # Self-booking accepts active accounts and preserves existing membership waivers.
     ModuleDefinition(
         "bookings", "Bookings", "Resource booking and public self-booking.", "bookings", GUARD, group=GROUP_BOOKINGS,
-    ),
-    ModuleDefinition(
-        "maintenance", "Maintenance", "Maintenance schedules and work orders.",
-        "maintenance", GUARD, group=GROUP_MACHINES, frontend_workflows=("maintenance",),
-        requires_modules=("machines",),
     ),
     # Community enrolment/content. Requires `member_accounts` (owner decision #91): a
     # space without member accounts has accounts for staff only (#80), so it has no

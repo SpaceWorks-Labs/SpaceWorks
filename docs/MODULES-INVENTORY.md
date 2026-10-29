@@ -154,12 +154,16 @@ thirteen modules under it are optional.
 
 ### procurement
 
+**Retired module key (#97, #128 C-9).** The To-Buy list is switched per parent: `inventory.tobuy`
+for inventory items, `machines.tobuy` for machine consumables. See
+[the per-parent switches](MODULES.md#maintenance-to-buy-warranty-and-repairs-switches-under-each-parent).
+
 - **What it is** — the "to buy" list and the receipts attached to it.
 - **What it adds** — the `procurement` workflow: raise a to-buy item, track it, attach a receipt, and
   move a purchased item into stock.
 - **Without it** — restocking is tracked outside the system. Low-stock signals still show in inventory;
   there is just nowhere in-app to record what was ordered.
-- **Data** — purgeable: to-buy items and their receipts (including the uploaded receipt files).
+- **Data** — purged per parent from `/control/` (Purge capability data): one parent's rows and receipts only.
 
 ---
 

@@ -58,7 +58,8 @@ Required by `printing`.
 
 ### maintenance
 
-**Requires `machines`**: every schedule, log and document belongs to a machine.
+**Retired module key (#97, #128 C-9): now the `machines.maintenance` capability** under `machines`.
+See [the per-parent switches](MODULES.md#maintenance-to-buy-warranty-and-repairs-switches-under-each-parent).
 
 - **What it is** — preventive maintenance schedules and immutable logs of completed maintenance,
   including reactive repairs. Work orders with status, assignee and priority are not available.
@@ -67,7 +68,7 @@ Required by `printing`.
   interval; a late completion starts a fresh interval. Backdated logs use their recorded date.
 - **Without it** — machines have no maintenance history and nothing schedules preventive work; a broken
   machine is handled as a service request or out of band.
-- **Data** — purgeable: maintenance schedules, logs and log documents (including uploaded files).
+- **Data** — purged from `/control/` (Purge capability data → `machines.maintenance`): schedules, logs and log documents (including uploaded files).
 
 ---
 

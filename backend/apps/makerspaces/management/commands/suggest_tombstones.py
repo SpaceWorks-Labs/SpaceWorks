@@ -19,6 +19,7 @@ is the right answer -- a tombstone would break them.
 from django.core.management.base import BaseCommand
 
 from apps.makerspaces.models import Makerspace
+from apps.makerspaces.capabilities import FEATURE_DEFINITIONS
 from apps.makerspaces.module_registry import MODULES
 from apps.separability.tombstones import SEPARABLE_APPS, tombstoned_app_labels
 
@@ -30,14 +31,17 @@ from apps.separability.tombstones import SEPARABLE_APPS, tombstoned_app_labels
 # to decide by hand about apps the registry could already answer for. Deriving the set means
 # a new app lands in the right bucket the day it is added, with or without a key.
 _KEYLESS_DESCRIPTIONS = {
-    "warranty": "warranty tracking (gated by core staff_admin, so it has no key of its own)",
+    "warranty": "warranty tracking",
     "presence": "geofenced check-in",
     "tenant_migration": "moving a makerspace between deployments (superadmin-only)",
 }
 
 
 def _keyless_apps():
+    # Apps gated by a capability's `app_label` (#97: maintenance, procurement, warranty)
+    # are answered by the stored features exactly as keyed apps are by the modules.
     keyed = {definition.app_label for definition in MODULES}
+    keyed |= {definition.app_label for definition in FEATURE_DEFINITIONS if definition.app_label}
     return {app for app in SEPARABLE_APPS if app not in keyed}
 
 
@@ -45,16 +49,22 @@ class Command(BaseCommand):
     help = "Suggest TOMBSTONED_APPS entries for modules no makerspace has installed."
 
     def handle(self, *args, **options):
-        installed = set()
+        installed, switched = set(), set()
         for row in Makerspace.objects.all():
             modules = row.enabled_modules
             if isinstance(modules, list):
                 installed |= {key for key in modules if isinstance(key, str)}
+            if isinstance(row.enabled_features, list):
+                switched |= {key for key in row.enabled_features if isinstance(key, str)}
 
         apps_in_use = {
             definition.app_label
             for definition in MODULES
             if definition.key in installed
+        } | {
+            definition.app_label
+            for definition in FEATURE_DEFINITIONS
+            if definition.app_label and definition.key in switched
         }
         already = tombstoned_app_labels()
 

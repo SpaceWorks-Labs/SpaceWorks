@@ -46,7 +46,7 @@ MACHINE_REPORT_DEFINITIONS = (
     _definition("machine-downtime", "reports_machine_downtime.build_machine_downtime", DOWNTIME_FIELDS, ("machines",), "stacked_bar",
                 _chart("period", (("status_hours", "hours"),), ("machine_id", "status")), grains=GRAINS),
     _definition("maintenance-activity", "reports_machine_maintenance_v2.build_maintenance_activity", MAINTENANCE_FIELDS,
-                ("machines", "maintenance"), "line", _chart("period", (("log_count", "maintenance logs"),), ("machine_id",)), version=2, grains=GRAINS),
+                ("machines", "machines.maintenance"), "line", _chart("period", (("log_count", "maintenance logs"),), ("machine_id",)), version=2, grains=GRAINS),
     _definition("machine-service", "reports_machine_service_v2.build_machine_service", SERVICE_FIELDS, ("machines", "machine_service"), "line",
                 _chart("period", (("failure_rate", "percent"),), ("machine_id",)), version=2, grains=GRAINS),
     _definition("service-queue-times", "reports_machine_queue.build_service_queue_times", QUEUE_FIELDS, ("machines", "machine_service"), "line",

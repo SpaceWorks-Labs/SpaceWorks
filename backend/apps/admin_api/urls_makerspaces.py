@@ -6,6 +6,9 @@ from apps.admin_api.views_subdomain_requests import SubdomainRequestListCreateVi
 from apps.admin_api.views_makerspace_profile import MakerspaceProfileView
 from apps.admin_api.views_setup_state import MakerspaceSetupStateView
 from apps.admin_api.views_domain_settings import MakerspaceDomainSettingsView
+from apps.makerspaces.settings_authority_views import (
+    EffectiveSettingsAuthorityView, SettingLocksView, SettingsGrantsView,
+)
 from apps.admin_api.views_space_packs import SpacePackView, SpacePackProfileListView
 
 
@@ -19,6 +22,12 @@ urlpatterns = [
         MakerspaceDomainSettingsView.as_view(),
         name="admin-makerspace-domain-settings",
     ),
+    path("makerspace/<int:makerspace_id>/settings-authority/grants", SettingsGrantsView.as_view(),
+         name="admin-settings-authority-grants"),
+    path("makerspace/<int:makerspace_id>/settings-authority/locks", SettingLocksView.as_view(),
+         name="admin-settings-authority-locks"),
+    path("makerspace/<int:makerspace_id>/settings-authority/effective", EffectiveSettingsAuthorityView.as_view(),
+         name="admin-settings-authority-effective"),
     path("makerspaces", views.MakerspaceListCreateView.as_view(), name="admin-makerspaces"),
     path("makerspaces/<int:pk>", views.MakerspaceDetailView.as_view(), name="admin-makerspace"),
     path(

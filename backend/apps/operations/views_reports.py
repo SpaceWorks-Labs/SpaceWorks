@@ -6,7 +6,6 @@ from rest_framework.views import APIView
 from apps.accounts import rbac
 from apps.admin_api.permissions import IsActiveStaff, require_action
 from apps.makerspaces.guards import require_module
-from apps.makerspaces.platform import module_enabled
 from apps.operations import accountability, reports
 from apps.operations.org_report_strategies import STRATEGIES
 from apps.operations.report_registry import (
@@ -126,7 +125,8 @@ class ReportCatalogView(APIView):
                 continue
             if definition.key in {"machine-usage-members", "booking-top-members"} and not rbac.can(request.user, rbac.Action.VIEW_AUDIT, makerspace.id):
                 continue
-            missing = [key for key in definition.required_modules if not module_enabled(makerspace, key)]
+            from .report_sources import source_enabled
+            missing = [key for key in definition.required_modules if not source_enabled(makerspace, key)]
             if definition.required_feature:
                 from apps.makerspaces.platform import feature_enabled
                 if not feature_enabled(makerspace, definition.required_feature):

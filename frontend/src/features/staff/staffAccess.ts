@@ -167,10 +167,9 @@ export function getStaffAccess(
     if (tabName === "emailtemplates") return canEditInventory || canSeePrinting || has("manage_devices") || canManageEvents || canManageBookings;
     if (tabName === "email-logs") return canManageMakerspace;
     if (tabName === "platform") return isSuperadmin && !singleTenantLocked;
-    // Superadmin-only, matching the backend: `enabled_modules` is superadmin-owned and a
-    // staff PATCH carrying it is a hard 403. Unlike `platform` this IS available in a
-    // single-tenant deployment -- that operator is exactly who needs to install modules.
-    if (tabName === "modules") return isSuperadmin;
+    // #128 C-10: the Space Manager switches modules on and off (data kept); the server
+    // keeps limit-gated installs on the managed platform for the superadmin.
+    if (tabName === "modules") return canManageMakerspace;
     if (tabName === "devices") return has("manage_devices");
     if (tabName === "machines") return canManageMachines;
     if (tabName === "events") return canManageEvents;

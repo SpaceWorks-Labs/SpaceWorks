@@ -4,13 +4,13 @@ The page script and this module apply the same three rules, so a save that bypas
 the script ends where the script would have:
 
 * Ticking a module ticks the modules it requires (transitively).
-* Ticking a feature ticks its parent module and that module's requirements.
-* Unticking a module that was on unticks every module and feature that needs it,
-  and the caller reports what was turned off. Nothing is ever silently re-ticked:
-  an untick wins over a still-ticked dependant.
+* Ticking a feature ticks its parent module, every module and feature it
+  `requires_*`, and their requirements in turn (LANE-RULES §9, #87).
+* Unticking a module that was on unticks every module and feature that needs it, and
+  unticking a feature unticks the features built on it; the caller reports what was
+  turned off. Nothing is ever silently re-ticked: an untick wins over a still-ticked
+  dependant.
 
-A feature's other declared requirements (`requires_modules`, `requires_features`) are
-not inferred when ticking; `validate_capabilities` still refuses a selection missing them.
 Core modules are always on, so unticking one removes nothing.
 """
 
@@ -37,7 +37,19 @@ class Completion:
     turned_off_features: list
 
 
-def complete_selection(before_modules, modules, features):
+def required_feature_closure(keys):
+    """Features plus every feature they transitively `requires_features`."""
+    resolved, queue = set(), list(keys)
+    while queue:
+        key = queue.pop()
+        if key in resolved or key not in FEATURES:
+            continue
+        resolved.add(key)
+        queue.extend(FEATURES[key].requires_features)
+    return resolved
+
+
+def complete_selection(before_modules, modules, features, before_features=()):
     ticked = set(modules)
     core = core_module_keys()
     unticked = (set(before_modules) - ticked) - core
@@ -45,7 +57,10 @@ def complete_selection(before_modules, modules, features):
     # would quietly tick the unticked module back.
     cascaded = {key for key in ticked - core if with_dependencies({key}) & unticked}
     removed = unticked | cascaded
-    kept_features, dropped = [], set()
+    # An unticked feature seeds the cascade like an unticked module: what is built on it
+    # goes too, and it is never re-ticked by a dependant that stayed ticked.
+    unticked_features = set(before_features) - set(features)
+    kept_features, dropped = [], set(unticked_features)
     for key in features:
         if key in FEATURES and feature_needs(key) & removed:
             dropped.add(key)
@@ -59,14 +74,19 @@ def complete_selection(before_modules, modules, features):
                 kept_features.remove(key)
                 dropped.add(key)
                 changed = True
-    parents = {FEATURES[key].parent_module for key in kept_features if key in FEATURES}
-    completed = with_dependencies((ticked - cascaded) | {p for p in parents if p})
+    requested = set(kept_features)
+    closure = required_feature_closure(requested)
+    kept_features = [key for key in FEATURES if key in closure]
+    needed = set()
+    for key in kept_features:
+        needed |= feature_needs(key)
+    completed = with_dependencies((ticked - cascaded) | needed)
     return Completion(
         modules=sorted(completed),
         features=kept_features,
-        added=sorted(completed - ticked - core),
+        added=sorted((completed - ticked - core) | (closure - requested)),
         turned_off_modules=sorted(cascaded),
-        turned_off_features=sorted(dropped),
+        turned_off_features=sorted(dropped - unticked_features),
     )
 
 

@@ -97,3 +97,17 @@ TRACKED_PRODUCTS = (
     ("Thermal Camera", "Measuring", 5, 1, HIDDEN, False),
     ("Sewing Machine", "Textiles", 6, 3, EXACT, True),
 )
+
+# A running hackathon judged by pairwise comparison. (leader, teammate, title, description).
+HACKATHON = {
+    "title": "Canal Street Build Weekend",
+    "description": "A 24-hour hardware hackathon: build something useful for the neighbourhood.",
+    "guidance": "Which project would you rather see installed on Canal Street next month?",
+    "projects": (
+        ("asha_menon", "meilin_chua", "Rainwater Gauge", "Solar logger that texts the allotment group when the butt is full."),
+        ("ravi_kumar", "kofi_mensah", "Bike Shed Lock", "NFC lock for the shared bike shed, with a paper fallback key."),
+        ("lena_ortiz", "aiko_tanaka", "Quiet Hours Light", "A traffic-light sign that shows when the workshop is in quiet hours."),
+        ("tomas_berg", "noor_rahman", "Tool Library Kiosk", "A tablet kiosk that shows which tools are in and lends them out."),
+    ),
+    "judges": ("priya_nair", "jonas_weber", "sara_haddad"),
+}

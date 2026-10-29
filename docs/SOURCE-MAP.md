@@ -820,6 +820,16 @@ and billed-zero segments keep distinct measurements. See [measurement notes](rep
 revision projections, handles, private uploads and cleanup. `public_page_urls.py`,
 `public_page_editor_urls.py` and `public_page_share_urls.py` are attached by `config/urls.py`.
 `events/urls_public_codes.py` supplies venue-targeted short-event reads only while Events is active.
+Release 2 L1's public event surface: `events/short_links.py` + `models_short_links.py` (codes, PII-free
+visit days, `visits(event, since)` for analytics) and `views_short_links_admin.py`; `website_visibility.py`
+(`public_q` access gate vs `listed_q` listing gate); `online_delivery.py` (delivery mode, the encrypted
+join link and `join_url_for`, the venue `map_url`); `embed_policy.py` + `models_embed_policy.py` +
+`views_embed.py` + `templates/events/embed.html` (the framable card); `share_cards.py` +
+`views_event_share.py` (the 1200x630 share PNG); `report_switches.py` (DY-61);
+`views_event_surface_settings.py` (embed policy, report switches, host options);
+`directories.host_makerspaces` (DY-63); `makerspaces/closed_notice.py` (#77 banner). Frontend:
+`features/staff/eventPublishing/` (three questions, editor fields, settings cards),
+`features/events/shortLinks/`, `features/events/publicSurface.ts`, `features/public/ClosedNoticeBanner.tsx`.
 `organizations/urls_public_page_collections.py` adds linked-space collections; the existing event
 catalogue supplies independent upcoming and minimal past periods.
 

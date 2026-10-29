@@ -6,6 +6,13 @@
 
 ## Condensed changelog (newest first — full detail in `git log`)
 
+- **2026-10-29 -- release 2 L1, the public event surface (#21 gaps 10/12, #69, #71, #73, #77).**
+  Short `/e/<code>` links with a PII-free visit counter (`events.short_links`); "who can find"
+  (listed/unlisted, noindex) and offline pages without a lifecycle state; online/hybrid events with a
+  confirmed-only encrypted join link (`events.online_delivery`); a styled embed card behind a per-space
+  allow-list; per-event share images; the ticket venue map link (X1); event report switches under the
+  Event Manager's grant (DY-61); the host-space picker (DY-63); the closed-for-now banner
+  (`public_site.closed_notice`, #77). Guest RSVP stays out and organisations host through an owned space.
 - **2026-10-22 -- release-1 fixes.** Exactly two published images (#75a): one `spaceworks-backend`
   (Dockerfile target `release`) runs every profile, selected at start-up; the common entrypoint hands
   managed mode to `cloud_entrypoint`, host mode is unchanged (#42). **Release note (#75b): Machine

@@ -46,7 +46,7 @@ def event_history(profile):
     # Keep this lazy so DRF applies count/limit/offset in PostgreSQL, rather than
     # loading the member's entire event payload before taking one page.
     return Event.objects.filter(
-        pk__in=badges, is_public=True, status__in=["published", "completed"],
+        pk__in=badges, is_public=True, listing="listed", page_state="live", status__in=["published", "completed"],
     ).order_by("-starts_at", "-pk").annotate(badge=Case(
         When(pk__in=[pk for pk, badge in badges.items() if badge == "SPOKE"], then=Value("SPOKE")),
         When(pk__in=[pk for pk, badge in badges.items() if badge == "HOSTED"], then=Value("HOSTED")),

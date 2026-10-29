@@ -30,6 +30,10 @@ DATASET_SPECS = {
 ALWAYS_OMITTED = {
     ("events.Event", "join_url_encrypted"): "Encrypted meeting join link; re-enter it on the target.",
 }
+# The credential-name guard matches `*state`; a page being up or taken down is not one.
+NON_CREDENTIAL = {
+    ("events.Event", "page_state"): "Public page up/taken-down setting, not a bearer credential.",
+}
 RELATIONAL_USER_FIELDS = frozenset({
     ("events.EventShortLink", "created_by"),
     ("events.EventShortLink", "retired_by"),

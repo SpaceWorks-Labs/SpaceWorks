@@ -36,6 +36,8 @@ from .credentials_events_programme import NON_CREDENTIAL as PROGRAMME_NON_CREDEN
 REVIEWED_NON_CREDENTIAL.update(PROGRAMME_NON_CREDENTIAL)
 from .credentials_reimbursements import NON_CREDENTIAL as REIMBURSEMENT_NON_CREDENTIAL
 REVIEWED_NON_CREDENTIAL.update(REIMBURSEMENT_NON_CREDENTIAL)
+from .classification_r2_l1 import NON_CREDENTIAL as R2_L1_NON_CREDENTIAL  # noqa: E402
+REVIEWED_NON_CREDENTIAL.update(R2_L1_NON_CREDENTIAL)
 
 
 def validate_credentials(fields=None):

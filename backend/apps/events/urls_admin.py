@@ -73,6 +73,7 @@ urlpatterns = [
     path("", include("apps.events.urls_partners")),
     path("", include("apps.events.urls_ticketing")),
     path("", include("apps.events.urls_speakers")),
+    path("", include("apps.events.urls_public_surface")),
     # Stage definitions, assignments, milestones and response review (staged_forms/urls_admin.py).
     path("events/<int:pk>/", include("apps.events.staged_forms.urls_admin")),
     path(

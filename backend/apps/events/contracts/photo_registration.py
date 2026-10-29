@@ -57,7 +57,7 @@ def team_surface(*, event_id, member_id):
     from apps.makerspaces.platform import module_enabled
     from apps.makerspaces.servability import is_servable
     from rest_framework.exceptions import APIException
-    event = Event.objects.select_related("makerspace").filter(pk=event_id, is_public=True,
+    event = Event.objects.select_related("makerspace").filter(pk=event_id, is_public=True, page_state="live",
         status__in=("published", "completed")).first()
     if not event or not (event.makerspace.public_site_enabled and is_servable(event.makerspace)
             and module_enabled(event.makerspace, "events") and public_surface_available("events")):

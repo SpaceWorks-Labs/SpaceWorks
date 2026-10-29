@@ -96,12 +96,9 @@ def resolve_target(request, entry):
             from apps.makerspaces.public_profile_access import resolve_public_profile
             claim, _ = resolve_public_profile(kwargs.get("handle"), request)
             return claim.profile.membership.makerspace, True
-        if view_name == "public-event-code":
-            from apps.events.website_visibility import resolve as resolve_event
-            from apps.makerspaces.public_page_access import require_scope
-            event = resolve_event(None, token)
-            require_scope("makerspace", event.makerspace, request)
-            return event.makerspace, True
+        if view_name in {"public-event-code", "public-event-short-code"}:
+            from apps.events.views_public_codes import api_client_target
+            return api_client_target(request, view_name, kwargs)
         if view_name == "hardware_requests:request-status":
             from apps.hardware_requests.models import HardwareRequest
 

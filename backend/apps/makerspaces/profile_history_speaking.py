@@ -21,7 +21,8 @@ def speaking_contributions(profile):
     result = []
     for row in contributions:
         event = row.event
-        if (event.status == "published" and event.is_public
+        if (event.status == "published" and event.is_public and event.listing == "listed"
+                and event.page_state == "live"
                 and row.occurred_at <= now
                 and is_servable(event.makerspace) and module_enabled(event.makerspace, "events")):
             result.append(row)

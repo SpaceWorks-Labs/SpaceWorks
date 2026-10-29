@@ -44,6 +44,11 @@ TenantBootstrapSerializer = inline_serializer(
                 "request_access": serializers.ChoiceField(
                     choices=[("contact", "contact")], required=False
                 ),
+                # Present only while `public_site.closed_notice` is on and set (#77).
+                "closed_notice": inline_serializer(name="TenantBootstrapClosedNotice", required=False, fields={
+                    "text": serializers.CharField(),
+                    "reopens_on": serializers.DateField(allow_null=True),
+                }),
             },
         ),
         "frontend": inline_serializer(

@@ -17,9 +17,11 @@ EVENT_FIELDS = frozenset(
      'location_kind', 'custom_form', 'capacity', 'is_public', 'payment_amount',
      'registration_requires_approval', 'registration_cutoff_at',
      'registration_cutoff_lead_minutes', 'cancellation_cutoff_hours', 'timezone_name',
-     'registration_audience', 'category_id', 'tags', 'show_registration_count', 'accent_preset'}
+     'registration_audience', 'category_id', 'tags', 'show_registration_count', 'accent_preset',
+     'listing', 'page_state'}
 )
-INHERITABLE_FIELDS = (EVENT_FIELDS - {"category_id", "tags", "show_registration_count", "accent_preset"}) | {"image_key"}
+INHERITABLE_FIELDS = (EVENT_FIELDS - {"category_id", "tags", "show_registration_count", "accent_preset",
+                                      "listing", "page_state"}) | {"image_key"}
 
 
 def _locked_event(event_id, *, lock_makerspace=True):

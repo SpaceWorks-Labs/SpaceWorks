@@ -34,6 +34,19 @@ class Event(models.Model):
     category = models.ForeignKey("events.EventCategory", on_delete=models.SET_NULL, null=True, blank=True, related_name="events")
     tags = models.JSONField(default=list, blank=True)
 
+    class Listing(models.TextChoices):
+        LISTED = "listed", "Listed"
+        UNLISTED = "unlisted", "Unlisted"
+
+    class PageState(models.TextChoices):
+        LIVE = "live", "Live"
+        OFFLINE = "offline", "Offline"
+
+    class DeliveryMode(models.TextChoices):
+        IN_PERSON = "in_person", "In person"
+        ONLINE = "online", "Online"
+        HYBRID = "hybrid", "Hybrid"
+
     class LocationKind(models.TextChoices):
         INDOOR = 'indoor', 'Indoor'
         OUTDOOR = 'outdoor', 'Outdoor'
@@ -96,6 +109,14 @@ class Event(models.Model):
         blank=True,
     )
     is_public = models.BooleanField(default=False)
+    # Release 2 L1, the public surface. "Who can find it" (listing) is independent of
+    # "who can see it" (is_public); page_state takes a published page down without a
+    # lifecycle change; join_url_encrypted is deployment-key ciphertext, released only to
+    # confirmed registrants (events/online_delivery.py).
+    listing = models.CharField(max_length=10, choices=Listing.choices, default=Listing.LISTED)
+    page_state = models.CharField(max_length=8, choices=PageState.choices, default=PageState.LIVE)
+    delivery_mode = models.CharField(max_length=10, choices=DeliveryMode.choices, default=DeliveryMode.IN_PERSON)
+    join_url_encrypted = models.TextField(blank=True, default="")
     show_registration_count = models.BooleanField(default=True)
     # Public-bucket object key for the event cover image. Managed only by the
     # dedicated image endpoints (never by the generic update path), so it is
@@ -164,6 +185,10 @@ class Event(models.Model):
                 ),
                 name="event_series_identity_all_or_none",
             ),
+            models.CheckConstraint(condition=Q(listing__in=("listed", "unlisted")), name="event_listing_valid"),
+            models.CheckConstraint(condition=Q(page_state__in=("live", "offline")), name="event_page_state_valid"),
+            models.CheckConstraint(condition=Q(delivery_mode__in=("in_person", "online", "hybrid")),
+                                   name="event_delivery_mode_valid"),
             models.UniqueConstraint(
                 fields=("series", "series_occurrence_key"),
                 name="uniq_event_series_occurrence_key",

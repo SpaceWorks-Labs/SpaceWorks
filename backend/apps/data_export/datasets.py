@@ -246,4 +246,6 @@ for _fidelity in Fidelity:
         explicit_omissions=_omissions,
     )
 
+from .classification_r2_l1 import DATASET_SPECS as R2_L1_DATASETS  # noqa: E402
+DATASET_SPECS.update(R2_L1_DATASETS)
 assert EXPORTED_MODELS == frozenset(DATASET_SPECS)

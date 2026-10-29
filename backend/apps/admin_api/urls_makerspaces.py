@@ -6,6 +6,7 @@ from apps.admin_api.views_subdomain_requests import SubdomainRequestListCreateVi
 from apps.admin_api.views_makerspace_profile import MakerspaceProfileView
 from apps.admin_api.views_setup_state import MakerspaceSetupStateView
 from apps.admin_api.views_domain_settings import MakerspaceDomainSettingsView
+from apps.makerspaces.closed_notice import PublicClosedNoticeView
 from apps.makerspaces.settings_authority_views import (
     EffectiveSettingsAuthorityView, SettingLocksView, SettingsGrantsView,
 )
@@ -28,6 +29,9 @@ urlpatterns = [
          name="admin-settings-authority-locks"),
     path("makerspace/<int:makerspace_id>/settings-authority/effective", EffectiveSettingsAuthorityView.as_view(),
          name="admin-settings-authority-effective"),
+    # L1 (#77): the Space Manager's closed-for-now banner on the public page.
+    path("makerspace/<int:makerspace_id>/public-closed-notice", PublicClosedNoticeView.as_view(),
+         name="admin-makerspace-public-closed-notice"),
     path("makerspaces", views.MakerspaceListCreateView.as_view(), name="admin-makerspaces"),
     path("makerspaces/<int:pk>", views.MakerspaceDetailView.as_view(), name="admin-makerspace"),
     path(

@@ -18,6 +18,9 @@ class PublicSiteSettings(models.Model):
     )
     public_stats_enabled = models.BooleanField(default=False)
     public_stats_show_holder_names = models.BooleanField(default=False)
+    # "Closed for now" banner on the public page (#77). Text only; no lifecycle state.
+    public_closed_notice = models.CharField(max_length=280, blank=True, default="")
+    public_reopens_on = models.DateField(null=True, blank=True)
 
     class Meta:
         abstract = True

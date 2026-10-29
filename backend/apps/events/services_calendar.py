@@ -6,10 +6,12 @@ from django.utils import timezone
 
 from apps.events.models import Event, EventRegistration, EventSeries
 from apps.events.services_recurrence import local_anchor
+from apps.events.website_visibility import listed_q
 
 
 CALENDAR_EVENT_FIELDS = frozenset({
     "title", "description", "starts_at", "ends_at", "location", "timezone_name", "is_public",
+    "listing", "page_state",
 })
 CALENDAR_SERIES_FIELDS = frozenset({
     "title", "description", "location", "recurrence_timezone", "dtstart_local_date",
@@ -111,6 +113,12 @@ def _event_component(event, *, registration=None):
         description = f"Registration status: {state}." + (
             f"\n\n{event.description}" if event.description else ""
         )
+        # The join link rides only a CONFIRMED registrant's own calendar (L1, G3).
+        from .online_delivery import join_url_for
+        join = join_url_for(registration)
+        if join:
+            description = f"Join online: {join}\n\n{description}"
+            component.add("url", join)
     else:
         updated = event.calendar_updated_at
     _add_common(
@@ -126,6 +134,12 @@ def _event_component(event, *, registration=None):
         updated_at=updated,
     )
     return component
+
+
+def _publicly_listed(event):
+    # A series feed is a calendar LISTING: unlisted or offline occurrences retire like
+    # private ones, so they never ride a public RRULE feed.
+    return event.is_public and event.listing == Event.Listing.LISTED and event.page_state == Event.PageState.LIVE
 
 
 def render_public_event_calendar(event):
@@ -167,7 +181,7 @@ def _series_exception(series, event):
     recurrence_id = datetime.strptime(local_text, "%Y%m%dT%H%M%S").replace(
         tzinfo=ZoneInfo(series.recurrence_timezone), fold=0
     )
-    hidden = not event.is_public
+    hidden = not _publicly_listed(event)
     status = "CANCELLED" if event.status == Event.Status.CANCELLED or hidden else "CONFIRMED"
     _add_common(
         component,
@@ -191,7 +205,7 @@ def _series_exception(series, event):
 
 
 def _series_copy_component(series, event):
-    if event.is_public:
+    if _publicly_listed(event):
         return _event_component(event)
     _Calendar, ICalEvent, _Timezone, _vRecur = _icalendar_types()
     component = ICalEvent()
@@ -234,10 +248,7 @@ def render_public_series_calendar(series):
     ) | series.occurrences.filter(
         series_revision=series.revision,
         status=Event.Status.CANCELLED,
-    ) | series.occurrences.filter(
-        series_revision=series.revision,
-        is_public=False,
-    )
+    ) | series.occurrences.filter(series_revision=series.revision).exclude(listed_q())
     for event in exceptions.exclude(series_occurrence_key__startswith="copy").distinct().order_by("starts_at", "pk"):
         calendar.add_component(_series_exception(series, event))
     # Extra copies are independent of template overrides/revision. An old-revision

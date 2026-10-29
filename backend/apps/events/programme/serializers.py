@@ -30,6 +30,10 @@ class CommandSerializer(ClosedSerializer):
 
 class PublishingInput(CommandSerializer):
     is_public = serializers.BooleanField(required=False)
+    listing = serializers.ChoiceField(choices=("listed", "unlisted"), required=False,
+                                      help_text="Who can find it; refused while the event is private.")
+    page_state = serializers.ChoiceField(choices=("live", "offline"), required=False,
+                                         help_text="offline takes the public page down without un-publishing.")
     registration_audience = serializers.ChoiceField(
         choices=("members", "accounts", "invite", "participating_organizations"), required=False)
     status = serializers.ChoiceField(choices=("draft", "published"), required=False)
@@ -52,6 +56,8 @@ class AggregateSerializer(serializers.Serializer):
 
 class PublishingSerializer(AggregateSerializer):
     is_public = serializers.BooleanField()
+    listing = serializers.ChoiceField(choices=("listed", "unlisted"))
+    page_state = serializers.ChoiceField(choices=("live", "offline"))
     registration_audience = serializers.CharField()
     status = serializers.CharField()
     website_released = serializers.BooleanField()

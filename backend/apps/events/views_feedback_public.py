@@ -36,7 +36,7 @@ def _public_feedback_event(makerspace, token):
         Event.objects.select_related("makerspace").filter(
             makerspace=makerspace,
             public_token=token,
-            is_public=True,
+            is_public=True, page_state=Event.PageState.LIVE,
             status__in=(Event.Status.PUBLISHED, Event.Status.COMPLETED),
             ends_at__lte=timezone.now(),
         )

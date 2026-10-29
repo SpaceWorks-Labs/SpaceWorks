@@ -37,6 +37,7 @@ PUBLIC_EVENT_FIELDS = (
     'status',
     'organizers',
     'series', 'registration_audience', 'category', 'tags', 'ticket_types', 'ticket_selection_required', 'promo_codes_enabled',
+    'delivery_mode', 'indexable',
 )
 
 
@@ -49,6 +50,20 @@ class EventOrganizerSummarySerializer(serializers.Serializer):
 class PublicEventSerializer(OrganizationAudienceFields, EventTicketingPublicSerializer):
     accent_preset = serializers.CharField(read_only=True, allow_blank=True)
     website = serializers.SerializerMethodField()
+    # How people attend is public; the join link itself never is (online_delivery.py).
+    delivery_mode = serializers.SerializerMethodField(
+        help_text="in_person, online or hybrid; null while the space has online events switched off.")
+    indexable = serializers.SerializerMethodField(
+        help_text="False for unlisted events: pages must send noindex, nofollow.")
+
+    @extend_schema_field(serializers.ChoiceField(choices=Event.DeliveryMode.choices, allow_null=True))
+    def get_delivery_mode(self, obj):
+        from .online_delivery import public_mode
+        return public_mode(obj)
+
+    @extend_schema_field(serializers.BooleanField())
+    def get_indexable(self, obj):
+        return bool(obj.is_public and obj.listing == Event.Listing.LISTED)
 
     @extend_schema_field(PublicWebsiteSerializer(allow_null=True))
     def get_website(self, obj):

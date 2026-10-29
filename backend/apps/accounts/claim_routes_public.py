@@ -69,6 +69,7 @@ PUBLIC_CLAIM_ROUTES = {
     **_anonymous("public-machine-service-status"),
     **_anonymous("public-event-list"),
     **_anonymous("public-event-detail"),
+    **_anonymous("public-event-share-image"),
     **_anonymous("public-event-website"),
     **_anonymous("public-event-website-section"),
     **_anonymous("public-event-website-speaker"),

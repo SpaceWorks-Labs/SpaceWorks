@@ -16,7 +16,8 @@ class VolunteerPostingPublicView(ProgrammeView):
     @extend_schema(auth=[], responses={200: page_schema("PublicVolunteerPostingPage", PostingSerializer), **ERRORS})
     def get(self, request, public_token):
         event = get_object_or_404(Event.objects.select_related("makerspace"), public_token=public_token,
-                                  status="published", is_public=True)
+                                  status="published", is_public=True,
+                                  page_state="live")
         require_feature(event.makerspace, "events.volunteering")
         now = timezone.now()
         rows = EventRolePosting.objects.filter(event=event, role="volunteer", visibility="public",

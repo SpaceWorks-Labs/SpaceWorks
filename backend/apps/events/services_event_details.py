@@ -25,6 +25,8 @@ def create_event(
     timezone_name=None, cancellation_cutoff_hours=None,
     registration_audience=None, category_id=None, tags=None, show_registration_count=True,
     organization_ids=None, collaborator_slugs=None, audience_organization_ids=None, accent_preset="",
+    listing=Event.Listing.LISTED, page_state=Event.PageState.LIVE, delivery_mode=Event.DeliveryMode.IN_PERSON,
+    join_url="",
 ):
     """Create a draft; organizers, partners and audience land in the SAME transaction.
 
@@ -57,9 +59,16 @@ def create_event(
         cancellation_cutoff_hours=cancellation_cutoff_hours,
         registration_cutoff_at=registration_cutoff_at,
         registration_cutoff_lead_minutes=registration_cutoff_lead_minutes,
-        is_public=is_public,
+        is_public=is_public, listing=listing, page_state=page_state, delivery_mode=delivery_mode,
         **({"timezone_name": timezone_name} if timezone_name else {}),
     )
+    if join_url or delivery_mode != Event.DeliveryMode.IN_PERSON:
+        from apps.makerspaces.folded_capabilities import require_capability
+        from apps.makerspaces.secrets import encrypt_value
+        from .online_delivery import FEATURE, validate_join_url
+        require_capability(locked_space, FEATURE)
+        cleaned = validate_join_url(join_url)
+        event.join_url_encrypted = encrypt_value(cleaned) if cleaned else ""
     from .registration_access import validate_event_audience
     validate_event_audience(event)
     _validate(event)

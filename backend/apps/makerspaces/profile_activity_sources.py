@@ -61,8 +61,9 @@ def register_builtin_sources():
 def attended_registrations(profile):
     from apps.events.member_history import registrations_for_space
     from apps.events.models import Event, EventRegistration
+    from apps.events.website_visibility import listed_q
     return registrations_for_space(profile.membership.makerspace, profile.membership.user).filter(
-        status=EventRegistration.Status.ATTENDED, event__is_public=True,
+        listed_q("event__"), status=EventRegistration.Status.ATTENDED,
         event__status__in=[Event.Status.PUBLISHED, Event.Status.COMPLETED],
         check_in_events__source__in=["online", "qr", "venue_station", "offline_sync"],
     ).distinct()

@@ -86,6 +86,7 @@ Every `THROTTLE_*` value is a DRF rate string (`<n>/<second|minute|hour|day>`). 
 | `THROTTLE_EVENT_OFFLINE_SYNC` | `'60/hour'` |  |
 | `THROTTLE_EVENT_REGISTER` | `'10/hour'` |  |
 | `THROTTLE_EVENT_REGISTRATION_RETRY` | `'30/hour'` |  |
+| `THROTTLE_EVENT_SHORT_LINK` | `'30/min'` |  |
 | `THROTTLE_EVENT_STATION_PIN_IP` | `'30/hour'` |  |
 | `THROTTLE_EVENT_STATION_PIN_TOKEN` | `'10/hour'` |  |
 | `THROTTLE_EVENT_STATION_REVEAL` | `'5/hour'` |  |

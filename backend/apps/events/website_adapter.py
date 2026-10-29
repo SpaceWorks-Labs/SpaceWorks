@@ -106,7 +106,9 @@ def share_card(event):
         if (document.get("section_enabled", {}).get("HERO", True)
                 and document.get("editorial_document", {}).get("cover_mode") == "asset"):
             return replace(result, image_url=f"{canonical_origin(event.makerspace)}/share/e/{event.public_token}/cover/")
-    return result
+    # L1 (G5): a cover-less event shares its rendered card instead of no image.
+    from .share_cards import with_share_image
+    return with_share_image(result, event)
 
 
 def register_website():

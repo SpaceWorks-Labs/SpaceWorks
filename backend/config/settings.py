@@ -1187,6 +1187,8 @@ REST_FRAMEWORK = {
         "tenant_migration_upload": env(
             "THROTTLE_TENANT_MIGRATION_UPLOAD", default="1200/min"
         ),
+        # --- release 2 lane L1: event short-link resolution (/e/<code>) ---
+        "event_short_link": env("THROTTLE_EVENT_SHORT_LINK", default="30/min"),
     },
     # Proxy-aware client IP for throttling. Production must declare its topology at
     # settings import above; direct DEBUG development defaults to zero trusted proxies.

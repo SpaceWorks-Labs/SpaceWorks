@@ -38,7 +38,8 @@ RECURRENCE_FIELDS = frozenset({
     "recurrence_timezone", "dtstart_local_date", "dtstart_local_time",
     "recurrence_rule", "duration_minutes",
 })
-SERIES_FIELDS = TEMPLATE_FIELDS | RECURRENCE_FIELDS
+# `listing` is copied to occurrences at generation only; each occurrence then owns its own.
+SERIES_FIELDS = TEMPLATE_FIELDS | RECURRENCE_FIELDS | {"listing"}
 
 
 def occurrence_inherited_value(event, field):
@@ -98,6 +99,7 @@ def _event_values(series, occurrence):
         "cancellation_cutoff_hours": series.cancellation_cutoff_hours,
         "registration_cutoff_lead_minutes": series.registration_cutoff_lead_minutes,
         "is_public": series.is_public,
+        "listing": series.listing,
         "status": (
             Event.Status.PUBLISHED
             if series.status == EventSeries.Status.PUBLISHED

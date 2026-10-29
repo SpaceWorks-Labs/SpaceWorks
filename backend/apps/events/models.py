@@ -99,3 +99,8 @@ __all__ += [
     "StageFormResponse", "StageFormResponseRevision", "StageFormAsset", "StageFileCleanup",
     "StageActivationJob", "StageReconcileCursor",
 ]
+
+# Release 2 L1: short links, their PII-free visit counter and the event embed allow-list.
+from .models_short_links import EventShortLink, EventShortLinkVisitDay  # noqa: E402
+from .models_embed_policy import EventEmbedPolicy  # noqa: E402
+__all__ += ["EventShortLink", "EventShortLinkVisitDay", "EventEmbedPolicy"]

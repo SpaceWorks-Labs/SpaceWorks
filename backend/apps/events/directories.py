@@ -54,6 +54,31 @@ def partner_makerspaces(actor):
     ))
 
 
+def host_makerspaces(actor, request=None):
+    """Spaces this actor may HOST a new event in (DY-63): event authority there, events on.
+
+    A request from a space's own staff origin can only host in that space, exactly as a
+    URL-scoped route from that origin would be (origin scoping, CLAUDE.md invariants).
+    """
+    rows = servable_queryset(rbac.scope_by_action(
+        actor, rbac.Action.MANAGE_EVENTS, Makerspace.objects.filter(enabled_modules__contains=["events"]),
+        field="id"))
+    if request is not None:
+        from apps.makerspaces.origin_scope import origin_scoped_makerspace_id
+        scoped = origin_scoped_makerspace_id(request)
+        if scoped is not None:
+            rows = rows.filter(pk=scoped)
+    return rows.order_by("name", "id")
+
+
+def require_host(actor, request, makerspace_id):
+    """The chosen host space, or 403 when the actor cannot host events there."""
+    host = host_makerspaces(actor, request).filter(pk=makerspace_id).first()
+    if host is None:
+        raise PermissionDenied("You cannot host events in that makerspace.")
+    return host
+
+
 def search(queryset, term):
     term = (term or "").strip()[:100]
     if term:

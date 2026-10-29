@@ -204,6 +204,13 @@ def bootstrap_payload(makerspace):
 
     if effective_policy(makerspace) == CONTACT:
         makerspace_payload["request_access"] = CONTACT
+    # #77: emitted only while the switch is on and a notice is set, so every other
+    # space keeps a byte-for-byte identical payload.
+    from apps.makerspaces.closed_notice import public_notice
+
+    notice = public_notice(makerspace)
+    if notice:
+        makerspace_payload["closed_notice"] = notice
     # Advisory geofence: expose the flag ONLY when configured AND the feature is on, so
     # dormant/self-host bootstrap payloads stay byte-for-byte unchanged (self-host
     # invariant) and a disabled feature cannot leave the client asking for coordinates

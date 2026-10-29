@@ -39,7 +39,7 @@ PUBLIC_EVENT_REGISTRATION_ERRORS = {
 }
 
 
-from .website_visibility import public_events as _public_events
+from .website_visibility import listed_events as _listed_events, public_events as _public_events
 
 
 class PublicEventListView(APIView):
@@ -65,7 +65,7 @@ class PublicEventListView(APIView):
         makerspace = get_public_makerspace(makerspace_slug)
         require_module_for_servable(makerspace, 'events')
         events = (
-            _public_events(makerspace)
+            _listed_events(makerspace)
             .select_related('series', 'category', 'makerspace__payment_settings')
             .prefetch_related(
                 Prefetch(

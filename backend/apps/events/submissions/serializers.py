@@ -1,5 +1,6 @@
 """Closed request/response schemas for every Lane B route."""
 from rest_framework import serializers
+from .asset_preview import KINDS as ASSET_PREVIEW_KINDS
 from .serializers_requirements import ProjectRequirementsSerializer
 
 
@@ -100,6 +101,10 @@ class AssetResponseSerializer(serializers.Serializer):
     extension = serializers.CharField(required=False)
     kind = serializers.CharField(required=False)
     media_metadata = serializers.DictField(required=False)
+    preview = serializers.ChoiceField(choices=ASSET_PREVIEW_KINDS, required=False,
+        help_text="The in-browser preview this file offers; `download` means download-only.")
+    preview_max_bytes = serializers.IntegerField(allow_null=True, required=False,
+        help_text="A preview bound below the upload cap; a larger file is download-only.")
 
 
 class ProjectResponseSerializer(serializers.Serializer):

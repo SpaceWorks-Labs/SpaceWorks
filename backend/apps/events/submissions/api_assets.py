@@ -7,6 +7,7 @@ from apps.audit.services import record
 
 from .asset_workflow import initialize_asset, model_for, asset_command
 from .asset_jobs import AssetJob
+from .asset_preview import asset_preview
 from .api_runtime import runtime
 from .errors import SubmissionError
 from .ports import boundary
@@ -32,11 +33,12 @@ def owned_asset(*, actor, event_id, team_id, asset_id, participant, action="uplo
 
 
 def project_asset(asset):
+    preview, preview_max_bytes = asset_preview(asset)
     return {"asset_id": asset.pk, "event_id": asset.event_id, "version": asset.version,
         "generation": asset.generation, "state": asset.state, "bytes": asset.actual_bytes,
         "mime": asset.canonical_mime, "sha256": asset.sha256, "expires_at": asset.expires_at,
         "filename": asset.original_filename, "extension": asset.extension, "kind": asset.kind,
-        "media_metadata": asset.media_metadata,
+        "media_metadata": asset.media_metadata, "preview": preview, "preview_max_bytes": preview_max_bytes,
         "allowed_actions": (["download", "grant_consent", "delete"] if hasattr(asset, "member_id")
                             else ["download"]) if asset.state == "ready" else []}
 

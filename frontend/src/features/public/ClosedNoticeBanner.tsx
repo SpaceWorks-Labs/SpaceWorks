@@ -12,5 +12,5 @@ export function ClosedNoticeBanner({ bootstrap }: { bootstrap: TenantBootstrap }
     ? new Intl.DateTimeFormat(undefined, { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" })
       .format(new Date(`${notice.reopens_on}T00:00:00Z`))
     : null;
-  return <div role="status"><Callout size="banner" tone="warn" lead={notice.text} body={reopens ? `Reopening ${reopens}.` : undefined} /></div>;
+  return <Callout size="banner" tone="warn" lead={notice.text} body={reopens ? `Reopening ${reopens}.` : undefined} />;
 }

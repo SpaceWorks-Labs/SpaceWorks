@@ -59,7 +59,7 @@ export function EventEmbedPolicyCard({ makerspaceId }: { makerspaceId: number })
         </div>
         <ul aria-label="Allowed sites" className="flex flex-wrap gap-2">{policy.allowed_origins.map(value => <li key={value}
           className="flex items-center gap-1 rounded-full border border-line bg-surface py-1 pl-3 pr-1 text-sm">{value}
-          <button type="button" className="grid h-8 w-8 place-items-center rounded-full hover:bg-panel" aria-label={`Remove ${value}`}
+          <button type="button" className="grid h-8 w-8 place-items-center rounded-full hover:bg-panel focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus" aria-label={`Remove ${value}`}
             onClick={() => setDraft({ ...policy, allowed_origins: policy.allowed_origins.filter(item => item !== value) })}><X aria-hidden="true" size={16} /></button></li>)}</ul>
       </div>
       <div className="grid gap-2"><p className="flex items-center gap-2 text-sm font-semibold"><Code2 aria-hidden="true" size={16} />Snippet</p>

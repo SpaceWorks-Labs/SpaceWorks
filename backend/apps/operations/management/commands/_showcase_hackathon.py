@@ -1,6 +1,6 @@
 """A running hackathon judged by pairwise comparison, for screenshots and the walkthrough.
 
-Judging goes through its real workflows: the event through `create_event`, judge roles through
+Judging goes through its real workflows: the event through `create_event` and `publish`, judge roles through
 the staff role workflow (which grants their judging authority), the round through
 `definitions_workflow` and `round_workflow`, and every comparison through `pairwise_workflow`,
 so the audit trail, cursor versions and coverage are exactly what judges would produce.
@@ -72,16 +72,22 @@ def seed_hackathon(space, manager, members):
     from apps.events.judging.models_definitions import JudgingRound
     from apps.events.judging.round_workflow import transition
     from apps.events.services_event_details import create_event
+    from apps.events.services_lifecycle import publish
     now = timezone.now()
     event = create_event(makerspace=space, actor=manager, title=data.HACKATHON["title"],
         description=data.HACKATHON["description"], starts_at=now - timedelta(hours=20),
         ends_at=now + timedelta(hours=4), location=data.LOCATION, capacity=40, is_public=True)
-    HackathonConfig.objects.create(event=event, enabled=True, team_mode="team_together", team_max=2)
-    for index, (leader, mate, title, description) in enumerate(data.HACKATHON["projects"]):
-        _project(event, members[leader], members[mate], index, title, description)
+    # Judge authority comes from role sources, which are live only while the event is published.
+    publish(event, actor=manager)
+    event.refresh_from_db()
+    # Judges were recruited before the programme opened, so approval needs no code-of-conduct
+    # acceptance (participants accept it in the application flow, which a seed cannot sign in to).
     judges = [members[name] for name in data.HACKATHON["judges"]]
     for judge in judges:
         _judge(event, manager, judge)
+    HackathonConfig.objects.create(event=event, enabled=True, team_mode="team_together", team_max=2)
+    for index, (leader, mate, title, description) in enumerate(data.HACKATHON["projects"]):
+        _project(event, members[leader], members[mate], index, title, description)
     saved = save_definition(event.pk, actor=manager, kind="judging-rounds", data=_command(
         key="finals", mode="pairwise", min_reviews=3, guidance=data.HACKATHON["guidance"]))
     transition(event.pk, saved["id"], actor=manager, action="open", data=_command(saved["version"]))

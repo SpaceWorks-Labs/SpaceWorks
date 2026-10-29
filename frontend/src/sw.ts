@@ -8,10 +8,10 @@ declare const self: ServiceWorkerGlobalScope & { __WB_MANIFEST: { url: string; r
 const manifest = self.__WB_MANIFEST;
 const paths = new Set(manifest.map((entry) => entry.url));
 const CACHE_PREFIX = "spaceworks-app-shell-";
-// Hashed preview vendors: cache-first, kept at most 30 days and 8 entries.
+// Hashed preview vendors: cache-first, kept at most 30 days and 10 entries.
 const PREVIEW_CACHE = "spaceworks-preview-runtime-v1";
 const PREVIEW_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
-const PREVIEW_MAX_ENTRIES = 8;
+const PREVIEW_MAX_ENTRIES = 10;
 const CACHED_AT = "x-spaceworks-cached-at";
 
 async function previewResponse(request: Request) {

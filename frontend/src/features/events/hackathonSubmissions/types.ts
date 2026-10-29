@@ -20,4 +20,7 @@ export type UploadSpec = { group: string; subtype: string };
 export type UploadDescriptor = import('../../../generated/api').UploadDescriptor;
 export type UploadResult = import('../../../generated/api').UploadResponse;
 export type PreviewMesh = { positions: Float32Array; normals?: Float32Array };
-export type PreviewResult = { kind: "mesh"; meshes: PreviewMesh[] } | { kind: "svg"; svg: string };
+export type PreviewResult = { kind: "mesh"; meshes: PreviewMesh[] } | { kind: "svg"; svg: string }
+  | { kind: "kicad"; text: string; variant: "pcb" | "sch" };
+/** The API's preview kind for a stored file (`apps/events/submissions/asset_preview.py`). */
+export type PreviewKind = "download" | "image" | "pdf" | "mesh" | "brep" | "gerber" | "kicad" | "text" | "table" | "video" | "listing";

@@ -4,6 +4,7 @@ import { memberRequest, memberRequestBlob } from "../../../lib/api";
 import { ActionControl, Card } from "../../../components/ui";
 import { memberBase, teamBase, submissionKey } from "./api";
 import type { Asset, SubmissionScope } from "./types";
+import { CANVAS, previewKind, tooLarge } from "./previewKind";
 import { AssetPreview } from "./AssetPreview";
 import { OriginalVideo } from "./OriginalVideo";
 import { TextTablePreview } from "./TextTablePreview";
@@ -34,19 +35,19 @@ export function AssetList({ scope, assetIds, publicIds, onConsent, onRemove, dis
         onChange={event => onConsent(id, event.target.checked)} />Allow this file in the published project gallery</label>
       <div className="flex flex-wrap gap-3"><ActionControl action={{ label: `Download file ${id}`, disabled: queries[index].data?.state !== "ready", onClick: () => { void download(id).catch(() => queries[index].refetch()); } }} />
         <ActionControl action={{ label: `Remove file ${id} from draft`, disabled, onClick: () => onRemove(id) }} /></div>
-      {queries[index].data?.state === "ready" && ((queries[index].data?.kind === "hardware-pcb" &&
-        /^(?:gbr|ger|gt[lsop]|gb[lsop]|gko|gm1|g\d+|drl|xln|zip)$/.test(queries[index].data?.extension ?? "")) ||
-        ["stl", "obj", "3mf", "gcode.3mf", "step", "stp", "iges", "igs"].includes(queries[index].data?.extension ?? "")) ?
+      {queries[index].data?.state === "ready" && tooLarge(queries[index].data) ?
+        <p role="status" className="text-sm text-muted">Too large to preview here. Download to open in KiCad.</p> : null}
+      {queries[index].data?.state === "ready" && CANVAS.has(previewKind(queries[index].data)) && !tooLarge(queries[index].data) ?
         <AssetPreview assetId={id} bytes={queries[index].data?.bytes ?? 0}
           filename={queries[index].data?.filename ?? `file-${id}`} extension={queries[index].data?.extension ?? ""}
           load={() => memberRequestBlob(`${memberBase(scope)}assets/${id}/preview/`)}
           download={() => { void download(id).catch(() => queries[index].refetch()); }} /> : null}
-      {queries[index].data?.state === "ready" && queries[index].data?.kind === "video" ?
+      {queries[index].data?.state === "ready" && previewKind(queries[index].data) === "video" ?
         <OriginalVideo bytes={queries[index].data?.bytes ?? 0} playable={queries[index].data?.media_metadata?.browser_playable === true}
           load={() => memberRequestBlob(`${memberBase(scope)}assets/${id}/download/`)}
           download={() => { void download(id).catch(() => queries[index].refetch()); }} /> : null}
-      {queries[index].data?.state === "ready" && /^(?:csv|pos|ino|py|c|h|cpp|hpp|cc|hex|scad|gcode|gco|g|nc|tap|ngc|cnc|asc)$/.test(queries[index].data?.extension ?? "") ?
-        <TextTablePreview bytes={queries[index].data?.bytes ?? 0} table={queries[index].data?.extension === "csv"}
+      {queries[index].data?.state === "ready" && ["text", "table"].includes(previewKind(queries[index].data)) ?
+        <TextTablePreview bytes={queries[index].data?.bytes ?? 0} table={previewKind(queries[index].data) === "table"}
           load={() => memberRequestBlob(`${memberBase(scope)}assets/${id}/preview/`)}
           download={() => { void download(id).catch(() => queries[index].refetch()); }} /> : null}
     </div></Card>)}

@@ -4,9 +4,9 @@ import { createHash } from "node:crypto";
 import { readdir, readFile, writeFile } from "node:fs/promises";
 import { resolve, relative } from "node:path";
 import { build, type Plugin, type ResolvedConfig } from "vite";
-// Same pattern as src/swPolicy.ts PREVIEW_ASSET (the worker's runtime cache); the build
-// verifier fails if these files are precached or the worker lacks that cache.
-const PREVIEW_ASSET = /^\/assets\/(?:three\.module-[\w-]+\.js|occt-import-js-[\w-]+\.wasm|preview\.worker-[\w-]+\.js)$/;
+// Literal copy of src/sw/previewAssets.ts PREVIEW_ASSET (the node build project cannot import
+// src/); a unit test keeps the copies equal and the build verifier fails if any is precached.
+const PREVIEW_ASSET = /^\/assets\/(?:three\.module-[\w-]+\.js|occt-import-js-[\w-]+\.wasm|preview\.worker-[\w-]+\.js|kicanvas-entry-[\w-]+\.js)$/;
 // Same pattern as src/swPolicy.ts PATCH_ARTWORK: the mascot is banned on kiosk surfaces, so its
 // bitmaps are neither precached nor runtime-cached by the kiosk worker.
 const PATCH_ARTWORK = /^\/brand\/patch\//;

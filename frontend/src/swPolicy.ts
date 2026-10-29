@@ -1,11 +1,11 @@
+import { PREVIEW_ASSET } from "./sw/previewAssets";
+
 export function kioskNavigation(path: string) {
   return /^\/kiosk\/[^/]+\/?$/.test(path) || /^\/m\/[^/]+\/kiosk\/[^/]+\/?$/.test(path);
 }
 
-// Maker-file preview vendors (three, the occt WASM and the preview worker, ~8 MB) are
-// fetched only when someone opens a 3D/CAD preview: never precached on install,
-// runtime-cached on first use instead.
-export const PREVIEW_ASSET = /^\/assets\/(?:three\.module-[\w-]+\.js|occt-import-js-[\w-]+\.wasm|preview\.worker-[\w-]+\.js)$/;
+// Maker-file preview vendors (~8 MB) are runtime-cached on first use, never precached.
+export { PREVIEW_ASSET };
 // Patch, the mascot, never appears on kiosk surfaces, so the kiosk worker never caches it.
 export const PATCH_ARTWORK = /^\/brand\/patch\//;
 

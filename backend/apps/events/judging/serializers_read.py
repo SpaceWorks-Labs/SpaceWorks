@@ -32,6 +32,7 @@ class CalculationRow(ClosedSerializer):
     score = serializers.CharField(allow_null=True)
     raw_score = serializers.CharField(allow_null=True, required=False)
     zscore = serializers.CharField(allow_null=True, required=False)
+    sigma = serializers.CharField(required=False, help_text="Pairwise rounds only: CrowdBT standard deviation.")
     coverage_complete = serializers.BooleanField()
     criterion_averages = serializers.DictField(child=serializers.CharField(), required=False)
     distribution = serializers.DictField(child=serializers.IntegerField(), required=False)
@@ -58,6 +59,8 @@ class RoundRead(ResultEnvelope, CalculationRead):
     assigned = serializers.IntegerField()
     submitted = serializers.IntegerField()
     recused = serializers.IntegerField()
+    guidance = serializers.CharField(allow_blank=True, required=False)
+    exploration = serializers.FloatField(allow_null=True, required=False)
     skipped = serializers.IntegerField()
 
 

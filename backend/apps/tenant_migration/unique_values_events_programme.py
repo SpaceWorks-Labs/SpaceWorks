@@ -62,3 +62,6 @@ RULES = {
     ('events.SubmissionAsset', 'field:staging_key'): _policy(REMAP, "Typed owners, canonical object keys or reconstructed coordination keys follow the target allocation; duplicate tuples refuse."),
     ('events.SubmissionAsset', 'field:verification_key'): _policy(REMAP, "Typed owners, canonical object keys or reconstructed coordination keys follow the target allocation; duplicate tuples refuse."),
 }
+
+from .catalog_r2_l7 import UNIQUE_CONSTRAINTS as _L7_UNIQUE  # noqa: E402
+RULES.update({key: _policy(REMAP, "Typed owners, canonical object keys or reconstructed coordination keys follow the target allocation; duplicate tuples refuse.") for key in _L7_UNIQUE})

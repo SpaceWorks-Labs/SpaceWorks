@@ -159,6 +159,8 @@ OMITTED_MODELS = {
     'encryption.PiiAccountWriteFence': 'Global account-owned data and coordination; excluded from all tenant datasets and user closure.',
     'organizations.OrganizationLeaveReceipt': 'Global account-owned data and coordination; excluded from all tenant datasets and user closure.',
 }
+from .catalog_r2_l7 import FIELD_NAMES as _L7_FIELD_NAMES  # noqa: E402
+FIELD_NAMES.update(_L7_FIELD_NAMES)
 EXPORTED_FIELDS = {label: " ".join(sorted(names)) for label, names in FIELD_NAMES.items() if label not in OMITTED_MODELS}
 
 EXTRA_FIELDS = {

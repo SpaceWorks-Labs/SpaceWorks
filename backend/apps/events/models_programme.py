@@ -47,6 +47,9 @@ from apps.events.judging.models_definitions import (
 from apps.events.judging.models_results import (
     EventResultRevision, EventResultRound, EventAward, ResultAnnouncement, ResultPublicationState, SponsorWinnerProposal, JudgingNotice,
 )
+from apps.events.judging.models_pairwise import (
+    JudgePairwiseComparison, JudgePairwiseInvalidation, JudgePairwiseCursor,
+)
 from apps.events.judging.models_scoring import (
     JudgingReason, JudgeAssignment, JudgingRoundProject, JudgeScore, JudgeRankingBallot, JudgeRankingChoice, JudgeConflict,
 )
@@ -103,6 +106,7 @@ __all__ = [
     'ResultAnnouncement', 'ResultPublicationState', 'SponsorWinnerProposal', 'JudgingNotice',
     'JudgingReason', 'JudgeAssignment', 'JudgingRoundProject', 'JudgeScore',
     'JudgeRankingBallot', 'JudgeRankingChoice', 'JudgeConflict', 'MentorAssignmentRun',
+    'JudgePairwiseComparison', 'JudgePairwiseInvalidation', 'JudgePairwiseCursor',
     'MentorAttentionPreference', 'MentorProfile', 'MentorTeamAssignment', 'EventHelpType',
     'EventHelpRequest', 'EventHelpAction', 'EventHelpComment', 'OfficeHoursBooking',
     'OfficeHoursChange', 'MentorRound', 'MentorRoundLock', 'MentorRoundCheckin',

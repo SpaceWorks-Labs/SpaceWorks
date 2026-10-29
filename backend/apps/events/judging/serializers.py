@@ -88,7 +88,7 @@ class CriterionInput(ClosedSerializer):
 
 class RoundInput(CommandInput):
     key = serializers.SlugField(max_length=64)
-    mode = serializers.ChoiceField(choices=("weighted_1_5", "top3"))
+    mode = serializers.ChoiceField(choices=("weighted_1_5", "top3", "pairwise"))
     min_reviews = serializers.IntegerField(min_value=3, max_value=20, required=False)
     normalization = serializers.ChoiceField(choices=("none", "zscore"), required=False)
     minutes_per_view = serializers.IntegerField(min_value=1, max_value=120, required=False)
@@ -96,6 +96,11 @@ class RoundInput(CommandInput):
     opens_at = serializers.DateTimeField(allow_null=True, required=False)
     closes_at = serializers.DateTimeField(allow_null=True, required=False)
     criteria = CriterionInput(many=True, required=False, allow_empty=False, max_length=30)
+    guidance = serializers.CharField(max_length=500, allow_blank=True, required=False,
+                                     help_text="Pairwise only: what 'better' means for judges.")
+    exploration = serializers.DecimalField(max_digits=3, decimal_places=2, min_value=Decimal("0"),
+                                           max_value=Decimal("0.30"), required=False,
+                                           help_text="Pairwise only: share of picks made at random among projects still needing coverage.")
 
     def validate_criteria(self, value):
         if len({row["key"] for row in value}) != len(value):

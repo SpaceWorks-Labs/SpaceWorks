@@ -12,6 +12,7 @@ IMMUTABLE_LABELS = frozenset({
     "events.EventShiftAttendanceCorrection", "events.EventHelpAction", "events.EventHelpComment",
     "events.MentorRoundCheckin", "events.OfficeHoursChange", "events.EventRoleAnswerRevision",
     "events.EventRequirementOverride", "events.JudgingReason", "events.JudgeScore",
+    "events.JudgePairwiseComparison",
 })
 MANDATORY_SOURCE_LABEL = "events.EventAnswerDerivation"
 MANDATORY_SOURCE_ERROR = ("Birth-date source evidence requires ciphertext; scoped PII rollback is refused while it is retained. "

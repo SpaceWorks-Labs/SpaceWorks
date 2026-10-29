@@ -7,7 +7,7 @@ from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from .boundary import audit, changed, command, envelope, mutation, owned
-from .ballot_invalidation import invalidate_peers_locked
+from .ballot_invalidation import invalidate_pairwise_locked, invalidate_peers_locked
 from .calculations import Criterion, top3_points, weighted_value
 from .conflicts import require_assignment
 from .errors import invalid
@@ -113,26 +113,33 @@ def recuse_or_skip(event_id, assignment_id, *, actor, action, data):
     with mutation(event_id, actor, permission="judge", account_ids=(actor.pk,)) as (event, locks):
         def run():
             round, assignment = _locked_assignment(event_id, assignment_id, values["expected_version"])
-            judge = runtime().judge(assignment.judge_role_assignment_id)
-            if judge.member_id != actor.pk or judge.event_id != event_id or not judge.active:
-                raise Http404
-            _open(round)
-            if assignment.state not in ("assigned", "scored"):
-                invalid()
-            reason = JudgingReason.objects.create(event=event, makerspace_id=event.makerspace_id,
-                                                  actor=actor, body=values["reason"])
-            if round.mode == "top3":
-                invalidate_peers_locked(event=event, actor=actor, assignment=assignment, locks=locks)
-            assignment.state = "recused" if action == "recuse" else "skipped"
-            assignment.reason = reason
-            if action == "recuse":
-                snapshot = runtime().snapshot(assignment.submission_snapshot_id)
-                conflict, created = JudgeConflict.objects.get_or_create(event=event, round=round, member=actor,
-                    team_id=snapshot.team_id, defaults={"reason": reason})
-                if not created and not conflict.active:
-                    conflict.active = True
-                    conflict.reason = reason
-                    conflict.version += 1
-                    conflict.save()
-            return changed(event, actor, f"judge_{action}", assignment)
+            return withdraw_locked(event, actor, round, assignment, action=action, text=values["reason"], locks=locks)
         return command(event, actor, values, path=f"judge-assignments/{assignment_id}/{action}", run=run)
+
+
+def withdraw_locked(event, actor, round, assignment, *, action, text, locks):
+    """Recuse or skip one locked assignment; shared by the assignment and pairwise routes."""
+    judge = runtime().judge(assignment.judge_role_assignment_id)
+    if judge.member_id != actor.pk or judge.event_id != event.pk or not judge.active:
+        raise Http404
+    _open(round)
+    if assignment.state not in ("assigned", "scored"):
+        invalid()
+    reason = JudgingReason.objects.create(event=event, makerspace_id=event.makerspace_id,
+                                          actor=actor, body=text)
+    if round.mode == "top3":
+        invalidate_peers_locked(event=event, actor=actor, assignment=assignment, locks=locks)
+    elif round.mode == "pairwise":
+        invalidate_pairwise_locked(event=event, actor=actor, assignment=assignment, reason=reason, locks=locks)
+    assignment.state = "recused" if action == "recuse" else "skipped"
+    assignment.reason = reason
+    if action == "recuse":
+        snapshot = runtime().snapshot(assignment.submission_snapshot_id)
+        conflict, created = JudgeConflict.objects.get_or_create(event=event, round=round, member=actor,
+            team_id=snapshot.team_id, defaults={"reason": reason})
+        if not created and not conflict.active:
+            conflict.active = True
+            conflict.reason = reason
+            conflict.version += 1
+            conflict.save()
+    return changed(event, actor, f"judge_{action}", assignment)

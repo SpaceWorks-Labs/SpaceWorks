@@ -5,6 +5,7 @@ from .models_definitions import HackathonPrize, HackathonTrack, JudgingCriterion
 from .models_results import (
     EventAward, EventResultRevision, EventResultRound, JudgingNotice, ResultAnnouncement, ResultPublicationState, SponsorWinnerProposal,
 )
+from .models_pairwise import JudgePairwiseComparison, JudgePairwiseCursor, JudgePairwiseInvalidation
 from .models_scoring import (
     JudgeAssignment, JudgeConflict, JudgeRankingBallot, JudgeRankingChoice, JudgeScore, JudgingReason, JudgingRoundProject,
 )
@@ -14,4 +15,5 @@ __all__ = [
     "JudgeScore", "JudgeRankingBallot", "JudgeRankingChoice", "JudgeConflict", "JudgingReason",
     "EventResultRevision", "EventResultRound", "EventAward", "ResultAnnouncement", "ResultPublicationState", "SponsorWinnerProposal",
     "ParticipantSponsorResumeConsent", "SponsorResumeConsentHistory", "JudgingNotice", "JudgingRoundProject",
+    "JudgePairwiseComparison", "JudgePairwiseInvalidation", "JudgePairwiseCursor",
 ]

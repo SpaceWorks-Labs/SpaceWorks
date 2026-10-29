@@ -34,8 +34,14 @@ def assignment_projection(actor, row, event):
         description=snapshot.description, mode=round.mode, batch=row.batch, configuration=round.configuration,
         scores=own_score.criterion_values if own_score else {}, notes=own_score.notes if own_score else "",
         asset_ids=list(snapshot.judge_asset_ids), batch_projects=batch_projects,
-        allowed_actions=(["score" if round.mode == "weighted_1_5" else "rank"] if can_score else [])
-        + (["recuse", "skip"] if can_recuse else []))
+        allowed_actions=_actions(round.mode, can_score, can_recuse))
+
+
+def _actions(mode, can_score, can_recuse):
+    # Pairwise projects are compared in the pairwise view; here a judge may only declare a conflict later.
+    if mode == "pairwise":
+        return ["recuse"] if can_recuse else []
+    return (["score" if mode == "weighted_1_5" else "rank"] if can_score else []) + (["recuse", "skip"] if can_recuse else [])
 
 
 class AssignmentList(PrivateView):

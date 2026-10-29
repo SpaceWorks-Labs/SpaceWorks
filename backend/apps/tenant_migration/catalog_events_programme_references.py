@@ -211,3 +211,6 @@ DEPLOYMENT_OWNERS = {
     'events.EventPresentationCommand': 'presentation__event__makerspace',
     'events.SubmissionAssetWork': 'asset__event__makerspace',
 }
+
+from .catalog_r2_l7 import DATASETS as _L7_DATASETS  # noqa: E402
+DATASETS.update(_L7_DATASETS)

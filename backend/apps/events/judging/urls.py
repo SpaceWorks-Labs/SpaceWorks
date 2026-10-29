@@ -4,6 +4,7 @@ from django.urls import path
 
 from apps.events.submissions import gallery_views as gallery
 from . import views_definitions as definitions
+from . import views_pairwise as pairwise
 from . import views_results as results
 from . import views_scoring as scoring
 from . import views_sponsors as sponsors
@@ -32,6 +33,13 @@ urlpatterns = [
     route(ADMIN, "judging-rounds/<int:round_id>/assign/", definitions.RoundAssign, "admin-judging-rounds-assign"),
     route(ADMIN, "judging-rounds/<int:round_id>/close/", definitions.RoundClose, "admin-judging-rounds-close"),
     route(ADMIN, "judging-rounds/<int:round_id>/finalize/", definitions.RoundFinalize, "admin-judging-rounds-finalize"),
+    route(ADMIN, "pairwise-rounds/", pairwise.PairwiseRounds, "admin-pairwise-rounds-list"),
+    route(ADMIN, "judging-rounds/<int:round_id>/pairwise/", pairwise.PairwiseState, "admin-pairwise-state"),
+    route(ADMIN, "judging-rounds/<int:round_id>/pairwise/next/", pairwise.PairwiseNext, "admin-pairwise-next"),
+    route(ADMIN, "judging-rounds/<int:round_id>/pairwise/compare/", pairwise.PairwiseCompare, "admin-pairwise-compare"),
+    route(ADMIN, "judging-rounds/<int:round_id>/pairwise/skip/", pairwise.PairwiseSkip, "admin-pairwise-skip"),
+    route(ADMIN, "judging-rounds/<int:round_id>/pairwise/recuse/", pairwise.PairwiseRecuse, "admin-pairwise-recuse"),
+    route(ADMIN, "judging-rounds/<int:round_id>/pairwise/standings/", pairwise.PairwiseStandings, "admin-pairwise-standings"),
     route(ADMIN, "judge-assignments/", scoring.AssignmentList, "admin-judge-assignments-list"),
     route(ADMIN, "judge-assignments/<int:assignment_id>/", scoring.AssignmentDetail, "admin-judge-assignments-detail"),
     route(ADMIN, "judge-assignments/<int:assignment_id>/score/", scoring.AssignmentScore, "admin-judge-assignments-score"),

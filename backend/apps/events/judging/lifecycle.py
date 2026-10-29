@@ -6,7 +6,7 @@ import logging
 from django.http import Http404
 
 from .boundary import assert_locked, audit, notice
-from .ballot_invalidation import invalidate_peers_locked
+from .ballot_invalidation import invalidate_pairwise_locked, invalidate_peers_locked
 from .models_results import JudgingNotice
 from .models_scoring import JudgeAssignment
 from .ports import runtime
@@ -30,6 +30,9 @@ def invalidate_snapshot_locked(*, event, snapshot_id, locks, actor):
             if row.state != "invalidated":
                 if round.mode == "top3":
                     count += invalidate_peers_locked(event=event, actor=actor, assignment=row, locks=locks)
+                elif round.mode == "pairwise":
+                    count += invalidate_pairwise_locked(event=event, actor=actor, assignment=row, locks=locks,
+                                                        reason=lambda: _snapshot_reason(event, actor))
                 row.state = "invalidated"
                 row.version += 1
                 row.save(update_fields=("state", "version"))
@@ -39,6 +42,12 @@ def invalidate_snapshot_locked(*, event, snapshot_id, locks, actor):
         audit(event, actor, "snapshot_judging_invalidated", event, snapshot_id=snapshot_id, count=count)
     # Immutable scores/results remain historical; live reads already refuse this snapshot.
     return count
+
+
+def _snapshot_reason(event, actor):
+    from .models_scoring import JudgingReason
+    return JudgingReason.objects.create(event=event, makerspace_id=event.makerspace_id, actor=actor,
+                                        body="The submission changed or is no longer eligible.")
 
 
 def sweep_notices(*, after_id=None, limit=100):

@@ -19,8 +19,11 @@ def round_calculation(round):
     valid = {a.pk: a for a in assignments if a.submission_snapshot_id in snapshots
              and eligible(judges[a.judge_role_assignment_id], snapshots[a.submission_snapshot_id], round)}
     config = round.configuration
-    if not config:
+    if not config or round.state == "draft":  # A pairwise draft keeps only its unfrozen settings here.
         return {"algorithm_version": ALGORITHM_VERSION, "rows": [], "coverage_complete": False}
+    if round.mode == "pairwise":
+        from .pairwise_projection import pairwise_calculation
+        return pairwise_calculation(round, snapshots)
     if round.mode == "weighted_1_5":
         criteria = [Criterion(row["key"], Decimal(row["weight"])) for row in config["criteria"]]
         scores = JudgeScore.objects.filter(assignment_id__in=valid, submitted_at__isnull=False).order_by("pk")
@@ -52,7 +55,7 @@ def progress(round, *, actor=None):
     if actor is not None:
         from apps.events import event_authority
         if event_authority.can(actor, round.event, "manage_hackathon"):
-            actions = {"draft": ["edit", "open"], "open": ["assign", "close"]}.get(round.state, [])
+            actions = {"draft": ["edit", "open"], "open": ["close"] if round.mode == "pairwise" else ["assign", "close"]}.get(round.state, [])
         if round.state == "closed" and event_authority.can(actor, round.event, None):
             actions = ["finalize"]
     return {"id": round.pk, "event_id": round.event_id, "version": round.version,
@@ -60,7 +63,11 @@ def progress(round, *, actor=None):
             "normalization": round.normalization, "opens_at": round.opens_at, "closes_at": round.closes_at,
             "criteria": list(round.criteria.values("key", "label", "weight", "anchors")),
             "minutes_per_view": round.minutes_per_view, "judging_minutes": round.judging_minutes,
-            "estimated_judges": estimate_judges(round.projects.count(), round.min_reviews, round.minutes_per_view, round.judging_minutes),
+            # Pairwise: the first view of each judge is not a comparison, so plan one extra view per project.
+            "estimated_judges": estimate_judges(round.projects.count(), round.min_reviews + (round.mode == "pairwise"),
+                                                round.minutes_per_view, round.judging_minutes),
+            "guidance": (round.configuration or {}).get("guidance", ""),
+            "exploration": (round.configuration or {}).get("pairwise", {}).get("exploration"),
             "allowed_actions": actions, "assigned": assignments.filter(state__in=("assigned", "scored")).count(),
             "submitted": sum(row["n"] for row in calculation["rows"]),
             "recused": assignments.filter(state="recused").count(),

@@ -50,7 +50,7 @@ def issue_device_token_pair(user, grant, *, family=None):
         raise AuthenticationFailed("Invalid device authorization.")
     surface = "staff_api" if user.account_kind == "staff" else "member"
     assert_surface(user, surface)
-    if grant.user_id != user.pk or grant.authority != user.account_kind:
+    if grant is None or grant.user_id != user.pk or grant.authority != user.account_kind:
         raise AuthenticationFailed("Invalid device authorization.")
     assert_token_issuance_allowed(user)
     if user.account_kind == "staff":

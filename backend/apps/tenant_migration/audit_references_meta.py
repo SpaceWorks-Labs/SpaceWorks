@@ -269,3 +269,7 @@ AUDIT_META_REFERENCES.update(_reference(S, None, *(
 from .audit_references_meta_r2_l17 import SETTINGS_AUTHORITY_AUDIT_EDGES  # noqa: E402
 
 AUDIT_META_REFERENCES.update(SETTINGS_AUTHORITY_AUDIT_EDGES)
+
+from .audit_references_meta_r2_l1 import PUBLIC_SURFACE_AUDIT_EDGES  # noqa: E402
+
+AUDIT_META_REFERENCES.update(PUBLIC_SURFACE_AUDIT_EDGES)

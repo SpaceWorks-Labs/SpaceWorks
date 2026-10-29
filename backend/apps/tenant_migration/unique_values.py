@@ -52,6 +52,8 @@ from .unique_values_reimbursements import RULES as REIMBURSEMENT_UNIQUE_RULES
 DEPLOYMENT_GLOBAL_UNIQUE_RULES.update(REIMBURSEMENT_UNIQUE_RULES)
 from .catalog_p2_bookings import unique_rules as _p2_booking_unique_rules
 DEPLOYMENT_GLOBAL_UNIQUE_RULES.update(_p2_booking_unique_rules(PRESERVE, REMAP, _policy))
+from .unique_values_r2_l1 import RULES as R2_L1_UNIQUE_RULES  # noqa: E402
+DEPLOYMENT_GLOBAL_UNIQUE_RULES.update(R2_L1_UNIQUE_RULES)
 
 
 def collision_policy(model_label, field_name):

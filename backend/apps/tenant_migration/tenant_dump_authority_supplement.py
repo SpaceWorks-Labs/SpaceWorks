@@ -287,3 +287,5 @@ SUPPLEMENTAL_AUTHORITY_ENTRIES = (
     *DEVICE_AUTHORITY_ENTRIES,
     *LABEL_AUTHORITY_ENTRIES,
 )
+from .catalog_r2_l1 import authority_entries as _r2_l1_authority  # noqa: E402
+SUPPLEMENTAL_AUTHORITY_ENTRIES += _r2_l1_authority(authority, D)

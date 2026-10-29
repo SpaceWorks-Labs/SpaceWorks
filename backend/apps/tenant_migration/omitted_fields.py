@@ -112,6 +112,7 @@ OMITTED_FIELD_RECONSTRUCTIONS = {
         ("makerspaces.Makerspace", "telegram_bot_token"),
         ("makerspaces.Makerspace", "smtp_password"),
         ("makerspaces.Makerspace", "slack_webhook_url"),
+        ("events.Event", "join_url_encrypted"),
         ("makerspaces.Makerspace", "mattermost_webhook_url"),
         ("makerspaces.Makerspace", "discord_webhook_url"),
         ("payments.MakerspacePaymentSettings", "stripe_publishable_key"),

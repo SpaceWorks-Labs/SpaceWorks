@@ -1,11 +1,15 @@
-"""Integrator attaches under api/v1 after token-target scope registration."""
+"""Integrator attaches under api/v1 after token-target scope registration.
 
-from django.urls import path, re_path
+The UUID route comes first; any other single segment falls through to the short-code
+route, whose view accepts exactly 7 base62 characters and answers 404 otherwise. Plain
+`path()` converters (not `re_path`) keep the route under the scanned `api/v1/public/`
+prefix that the API-client and claim-route registries enumerate.
+"""
+
+from django.urls import path
 from .views_public_codes import PublicEventCodeView, PublicEventShortCodeView
 
 urlpatterns = [
-    # The 7-character base62 short code first; a UUID has hyphens and never matches it.
-    re_path(r"^public/event-codes/(?P<code>[0-9A-Za-z]{7})/$", PublicEventShortCodeView.as_view(),
-            name="public-event-short-code"),
     path("public/event-codes/<uuid:public_token>/", PublicEventCodeView.as_view(), name="public-event-code"),
+    path("public/event-codes/<str:code>/", PublicEventShortCodeView.as_view(), name="public-event-short-code"),
 ]

@@ -1,6 +1,6 @@
 """Integrator attaches at root after crawler and origin registrations land."""
 
-from django.urls import path, re_path
+from django.urls import path
 from apps.separability.registry import runtime_active
 from .public_page_share import PublicPageCoverShareView, PublicPageShareView
 
@@ -13,9 +13,9 @@ if runtime_active("events"):
     urlpatterns += [
         path("share/e/<uuid:public_token>/", PublicEventCodeShareView.as_view(), name="public-event-code-share"),
         path("share/e/<uuid:public_token>/cover/", PublicEventCoverShareView.as_view(), name="public-event-cover-share"),
-        # Short codes are aliases of the same live gate; the crawler card never counts a visit.
-        re_path(r"^share/e/(?P<code>[0-9A-Za-z]{7})/$", PublicEventCodeShareView.as_view(),
-                name="public-event-short-code-share"),
-        re_path(r"^share/e/(?P<code>[0-9A-Za-z]{7})/cover/$", PublicEventCoverShareView.as_view(),
-                name="public-event-short-code-cover-share"),
+        # Short codes are aliases of the same live gate (the view 404s any other shape);
+        # the crawler card never counts a visit.
+        path("share/e/<str:code>/", PublicEventCodeShareView.as_view(), name="public-event-short-code-share"),
+        path("share/e/<str:code>/cover/", PublicEventCoverShareView.as_view(),
+             name="public-event-short-code-cover-share"),
     ]

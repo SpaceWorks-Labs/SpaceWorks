@@ -192,3 +192,5 @@ TARGET_FIELD_PROJECTION.update(broadcast_projections(TargetField))
 
 from .catalog_messaging import projections as messaging_projections
 TARGET_FIELD_PROJECTION.update(messaging_projections(TargetField))
+from .catalog_r2_l1 import projections as r2_l1_projections  # noqa: E402
+TARGET_FIELD_PROJECTION.update(r2_l1_projections(TargetField))

@@ -5,8 +5,8 @@
   preserves it and refuses a collision with `short_code_conflict` (a silent remap would
   break printed links; the operator regenerates on the target if it ever fires).
 * `EventShortLinkVisitDay` is an aggregate count with no person in it.
-* `EventEmbedPolicy` is inert configuration: it only narrows who may frame the space's
-  cards, and nothing frames them until `events.embed` is on in the target.
+* `EventEmbedPolicy` travels switched off with no origins: target staff establish framing
+  trust, exactly as the makerspace's `website_embed_origins` reset on import.
 * `Event.join_url_encrypted` is deployment-key ciphertext the target cannot read: it is
   cleared and re-entered there, like every encrypted integration credential.
 """
@@ -36,8 +36,18 @@ def authority_entries(authority, disposition):
               "The series default for who can find new occurrences is tenant publication content."),
         *same("events.Event", "join_url_encrypted", disposition.RESET,
               "Deployment-key ciphertext of the meeting link; cleared and re-entered on the target."),
-        *same("events.EventEmbedPolicy", "enabled allowed_origins", disposition.PRESERVE,
-              "An embed allow-list only narrows framing and is inert until events.embed is on."),
+        *same("events.EventEmbedPolicy", "enabled allowed_origins", disposition.RESET,
+              "Target staff establish framing trust, as for the makerspace framing origins."),
         *same("makerspaces.Makerspace", "public_closed_notice public_reopens_on", disposition.PRESERVE,
               "The closed-for-now banner is public page text; no lifecycle state."),
     )
+
+
+def projections(target_field):
+    """Target-owned values: framing trust and the unreadable join-link ciphertext reset."""
+    return {
+        ("events.EventEmbedPolicy", "enabled"): target_field(False, reason="Target staff establish framing trust."),
+        ("events.EventEmbedPolicy", "allowed_origins"): target_field([], reason="Target staff establish framing trust."),
+        ("events.Event", "join_url_encrypted"): target_field(
+            "", reason="Source deployment-key ciphertext; the join link is re-entered on the target."),
+    }

@@ -19,6 +19,7 @@ def _fields(label, names, reason):
 RESOURCE_AUTHORITY_FIELDS = {
     **_fields("machines.Machine", "is_public", "Portable publication choice remains bounded by target visibility and servability."),
     **_fields("events.Event", "is_public", "Portable event publication choice, never a staff authority grant."),
+    **_fields("events.Event", "page_state", "Portable page state (up or taken down), never a staff authority grant."),
     **_fields("events.EventSeries", "is_public", "Portable series publication choice, never a staff authority grant."),
     **_fields("bookings.BookableSpace", "is_public", "Portable resource publication choice, never a staff authority grant."),
     **_fields("events.EventSeries", "revision", _PROVENANCE),

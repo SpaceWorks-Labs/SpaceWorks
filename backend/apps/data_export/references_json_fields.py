@@ -102,3 +102,6 @@ JSON_REFERENCE_FIELDS |= frozenset({("integrations.WhatsAppTemplateBinding", "pa
 # NotificationCutover, WhatsAppTemplate) are omitted from tenant artifacts, so their
 # JSON payloads are never exported and need no reference declaration here; the
 # guard compares this registry against JSON fields on EXPORTED models only.
+
+# Release 2 L1: exact lowercase https framing origins, never identifiers (like website_embed_origins).
+JSON_REFERENCE_FIELDS |= frozenset({("events.EventEmbedPolicy", "allowed_origins")})

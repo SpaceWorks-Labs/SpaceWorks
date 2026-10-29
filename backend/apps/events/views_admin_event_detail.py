@@ -1,5 +1,4 @@
 from .serializers_website_publish import EventWebsitePublishInput
-from django.db import transaction
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
@@ -158,13 +157,17 @@ class EventDetailView(APIView):
                 raise PermissionDenied()
         values = dict(serializer.validated_data)
         online = {key: values.pop(key) for key in ("delivery_mode", "join_url") if key in values}
-        with transaction.atomic():
-            if values or not online:
-                event = services.update_event(event, actor=request.user, **values)
-            if online:
-                from .online_delivery import set_online
-                event = set_online(event, actor=request.user, delivery_mode=online.get("delivery_mode"),
-                                   join_url_value=online.get("join_url"))
+        if online:
+            # Both writes are outermost event commands (they prepare credentials before
+            # locks), so refuse a switched-off change up front instead of half-applying.
+            from .online_delivery import refuse_when_off
+            refuse_when_off(event, online.get("delivery_mode"), online.get("join_url"))
+        if values or not online:
+            event = services.update_event(event, actor=request.user, **values)
+        if online:
+            from .online_delivery import set_online
+            event = set_online(event, actor=request.user, delivery_mode=online.get("delivery_mode"),
+                               join_url_value=online.get("join_url"))
         return Response(EventAdminSerializer(event, context={"request": request}).data)
 
 

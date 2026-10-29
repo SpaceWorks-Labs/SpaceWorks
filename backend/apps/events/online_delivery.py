@@ -90,6 +90,15 @@ def map_url(event):
     return "https://www.openstreetmap.org/search?query=" + quote(query[:255]) if query else None
 
 
+def refuse_when_off(event, delivery_mode=None, join_url_value=None):
+    """404 before any write when a request would change online delivery while it is off."""
+    from apps.makerspaces.folded_capabilities import require_capability
+    changes_mode = delivery_mode is not None and delivery_mode != event.delivery_mode
+    changes_link = join_url_value is not None and validate_join_url(join_url_value) != stored_join_url(event)
+    if changes_mode or changes_link:
+        require_capability(event.makerspace, FEATURE)
+
+
 @event_write
 def set_online(event, *, actor, delivery_mode=None, join_url_value=None):
     """Change how people attend; audited without ever recording the link itself."""

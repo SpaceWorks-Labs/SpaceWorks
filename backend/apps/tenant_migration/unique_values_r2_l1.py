@@ -1,4 +1,7 @@
-"""Deployment-global uniqueness for lane L1's short links, visit days and embed policy.
+"""Deployment-global uniqueness for lane L1's short links and visit days.
+
+The one-per-space `EventEmbedPolicy.makerspace` is a tenant ownership root, not a
+deployment-global risk, so it needs no rule (like the public page OneToOnes).
 
 A short code is printed on posters, so it is preserved verbatim; a collision on the
 target (odds about 1 in 3.5 x 10^12 per pair) refuses the import with a typed
@@ -25,6 +28,4 @@ RULES = {
         REMAP, "One live code per event; follows the imported event."),
     ("events.EventShortLinkVisitDay", "ev_short_link_visit_day_once"): _policy(
         REMAP, "One counter per event per day; follows the imported event."),
-    ("events.EventEmbedPolicy", "field:makerspace"): _policy(
-        REMAP, "One allow-list per space; the tenant ownership root is remapped."),
 }

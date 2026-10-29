@@ -17,7 +17,6 @@ must close before enabling the off-default programme features.
 | Project draft, immutable submission | `events/submissions/workflow.py`, `snapshot_assets.py`, `models_projects.py`; moderation/triage via domain services |
 | Upload and accepted bytes | `events/submissions/asset_workflow.py`, `asset_jobs.py`, `storage.py`, `storage_promotion.py`; immutable verified copy/hash before final promotion |
 | File registry/validation | `maker_formats/registry.py`, `upload_policy.py`, bounded signature/XML/text/ZIP/image readers; `maker_file_formats.py` compatibility barrel keeps `legacy.py` policy |
-| In-browser previews | `maker_formats/registry.py` `preview`/`preview_max_bytes` is the **only** previewable-type list, served as `AssetResponse.preview` by `events/submissions/asset_preview.py` (KiCad gated by `events.kicad_preview`); frontend `features/events/hackathonSubmissions/{previewKind,AssetPreview,preview.worker,kicadCheck,KicadCanvas}`, renderer seam `src/vendor/kicanvas/`, lazy-vendor pattern `src/sw/previewAssets.ts` |
 | File quota | `events/submissions/quota.py`; `submissions/boundary_runtime.py` and `makerspaces/storage_events_programme.py` own dedicated receipt-backed accounting |
 | Live private bytes | `makerspaces/private_upload_transport.py` model-free transport; B `read_policy.py` + D predicates choose server-owned purpose; no download presign shortcut |
 | Scanner and video | `events/submissions/scanning.py`, `probing.py`, `probe_sandbox.py`; `contracts/asset_registration.py` installs scanner options and the non-root ffprobe launcher |

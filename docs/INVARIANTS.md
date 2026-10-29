@@ -3567,14 +3567,10 @@ The rules here are binding; a rule's presence does not claim every adapter is in
   (`manage_hackathon`), never shown to judges. Results reach the public only through
   `results_workflow.finalize` then `publish` (publish once). Off = pairwise routes 404 and pairwise
   definition/round commands 403; rows are kept.
-- **KiCad previews are a browser-only check-then-draw** (`events.kicad_preview`). The registry's
-  `preview` kind (`maker_formats/registry.py`, served as `AssetResponse.preview`) is the only list of
-  previewable files; the browser keeps no extension list. Only KiCad 6+ `.kicad_pcb`/`.kicad_sch` up to
-  `preview_max_bytes` (10 MiB, below the 25 MiB upload cap) preview; the worker checks UTF-8, header,
-  balance and a token budget before the main-thread renderer sees text, which is set through
-  `textContent`, never markup. The renderer chunk (`kicanvas-entry-*.js`) is a lazy preview vendor: never
-  precached, runtime-cached, and the build refuses it if it references Google Fonts or fetches a remote
-  host. Off = KiCad files are download-only.
+- **KiCad files are download-only** (owner, 2026-10-29). No in-browser KiCad renderer is vendored
+  or fetched; `.kicad_pcb`, `.kicad_sch` and every other KiCad type keep `preview="download"` in
+  `maker_formats/registry.py` and offer only the original-file download. Do not add a KiCad viewer
+  or a capability for one without a new owner decision.
 - **Accepted bytes have immutable ownership.** Stage-only grants, server-side size/hash/
   signature checks, optional explicit scan policy, bounded non-root video probe and
   conditional final promotion precede ready state. A configured scanner outage never

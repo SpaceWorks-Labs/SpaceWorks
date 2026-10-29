@@ -75,27 +75,16 @@ passes the default policy; organizer-specific lower policy wiring is not establi
 
 STL/OBJ/3MF mesh and Gerber/drill previews have lazy bounded workers; STEP/IGES loads on
 explicit request. External textures/references are refused. ZIP listing, expansion, mesh,
-time/output limits and cancellation guard the browser. KiCad 6+ boards and schematics
-(`.kicad_pcb`, `.kicad_sch`) preview in the browser when the space turns on
-`events.kicad_preview`: the worker checks UTF-8, the 10 MiB preview bound (uploads stay at
-25 MiB), the KiCad header, balanced s-expressions and a 2,000,000-token budget, then the
-renderer draws a read-only, zoomable drawing with board layer toggles. Symbol, footprint,
-project and KiCad 5 files stay download-only. The API's `preview` kind on each asset is the
-only source of truth for which preview a file gets. Vendor bundling/WASM APIs and actual
-browser previews still need acceptance (table below).
+time/output limits and cancellation guard the browser. KiCad files (boards, schematics,
+symbols, footprints, projects and KiCad 5) are download-only by owner decision (2026-10-29):
+there is no in-browser KiCad viewer; the file offers only its original download. Vendor
+bundling/WASM APIs and actual browser previews of the other formats still need acceptance.
 
 ### Preview acceptance (D19, AO4)
 
-| Format | Sample from the real tool | Expected | Result |
-|---|---|---|---|
-| STL, OBJ, 3MF | Exports from a slicer/CAD tool | Mesh preview on click | Not yet run in a browser in this lane |
-| STEP, IGES | Exports from a CAD tool | B-rep preview after explicit request | Not yet run in a browser in this lane |
-| Gerber, drill, Gerber ZIP | KiCad "Plot" + "Generate drill files" | Top-side board image | Not yet run in a browser in this lane |
-| `.kicad_pcb`, `.kicad_sch` (KiCad 7/8/9) | Saved from KiCad | Drawing with zoom/fit/layers | Blocked: the KiCanvas renderer is not vendored yet (`frontend/src/vendor/kicanvas/VENDORED.md`); the preview shows the download card |
-| Oversized or unsupported KiCad | Any file over 10 MiB, KiCad 5, footprints | Download-only card, never a broken canvas | Covered by unit tests (`AssetList`, `KicadCanvas`, worker checks) |
-
-The real-export matrix needs sample files produced by the real tools and a live browser; it
-was not run in lane L7 and is listed as open in the lane report.
+X3 is **not applicable** in release 2: it was scoped to accept the new KiCad viewer alongside
+the existing previews, and the owner chose no KiCad viewer. The existing 3D and Gerber previews
+keep the acceptance status recorded above.
 Images are metadata-stripped/re-encoded; text/CSV/toolpath previews escape content and
 protect exported cells from spreadsheet formulas. Accepted files are never executed.
 

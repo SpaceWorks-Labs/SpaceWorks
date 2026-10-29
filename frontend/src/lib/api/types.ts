@@ -19,6 +19,8 @@ export type TenantBootstrap = {
     // Present only for a makerspace without member accounts (#80): borrow requests then
     // take name, phone, email and an email code instead of a signed-in account.
     request_access?: "contact";
+    // #77: present only while the closed-for-now banner is switched on and set.
+    closed_notice?: { text: string; reopens_on: string | null };
   };
   frontend: {
     type: string;

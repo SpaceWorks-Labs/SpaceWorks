@@ -12,6 +12,7 @@ import { useTenantBootstrap } from "../inventory/usePublicInventory";
 import { WebsiteProgramme, WebsiteSectionCard, type WebsiteLinks } from "./PublicEventWebsite";
 import { markdownMode, type PublicEventWebsiteData } from "./websiteTypes";
 import { markdownExcerpt } from "../../components/restrictedMarkdownTokens";
+import { surfaceOf } from "./publicSurface";
 
 /** Read the current gated projection rather than retaining a detached speaker/session snapshot. */
 export function PublicWebsiteDetailPage({ view }: { view: "schedule" | "session" | "speaker" }) {
@@ -31,6 +32,11 @@ export function PublicWebsiteDetailPage({ view }: { view: "schedule" | "session"
     refetchOnMount: "always", refetchInterval: 30_000, refetchOnWindowFocus: true,
     retry: (count, error) => !(error instanceof StructuredApiError && error.status < 500) && count < 2,
   });
+  // The website sub-pages of an UNLISTED event are noindex like its main page (L1, G2).
+  const detail = useQuery({ queryKey: ["public-event", makerspaceSlug, publicToken], retry: false, staleTime: 30_000,
+    queryFn: () => tenantPublicRequest<object>(makerspaceSlug, `/public/${encodeURIComponent(makerspaceSlug)}/events/${encodeURIComponent(publicToken)}/`),
+    enabled: Boolean(allowed && makerspaceSlug && publicToken) });
+  const noindex = surfaceOf(detail.data).indexable === false;
   const page = query.error ? undefined : query.data;
   const base = path(`events/${encodeURIComponent(publicToken)}`);
   const links: WebsiteLinks = { schedule: `${base}/schedule`, speaker: (value) => `${base}/speakers/${encodeURIComponent(value)}`, session: (value) => `${base}/sessions/${encodeURIComponent(value)}` };
@@ -45,7 +51,7 @@ export function PublicWebsiteDetailPage({ view }: { view: "schedule" | "session"
     error: query.error && !(query.error instanceof StructuredApiError && query.error.status === 404) ? "Unable to load this event website." : "Page not found.",
     onRetry: query.error ? () => { void query.refetch(); } : undefined } : { status: "ready" as const };
   return <div style={brandStyle}>
-    {visible && page ? <PageMetadata title={title} description={markdownExcerpt(speaker?.body ?? session?.body ?? "Event programme", markdownMode(speaker?.body_rendering ?? session?.body_rendering))} path={location.pathname} /> : null}
+    {visible && page ? <PageMetadata title={title} description={markdownExcerpt(speaker?.body ?? session?.body ?? "Event programme", markdownMode(speaker?.body_rendering ?? session?.body_rendering))} path={location.pathname} noindex={noindex} /> : null}
     <PublicLayout {...publicPageChrome(makerspaceSlug, name, path, bootstrap)} state={state} width="narrow"
       breadcrumb={[{ label: "All events", href: path("events") }, { label: "Back to event", href: base }, { label: visible ? title : "Event website" }]}
       header={{ eyebrow: view === "schedule" ? undefined : view === "speaker" ? "Speaker" : "Session", title: visible ? title : "Event website" }}>

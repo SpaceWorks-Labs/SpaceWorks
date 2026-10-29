@@ -9,6 +9,7 @@ import { OrganizationEventAdmission } from "../events/OrganizationEventAdmission
 import { useState } from "react";
 import { downloadEventCalendar } from "../events/eventCalendar";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { surfaceOf } from "../events/publicSurface";
 import { useLocation, useParams } from "react-router-dom";
 import { StatusPill } from "../../components/ui";
 import { useTenantBranding } from "../../lib/useTenantBranding";
@@ -62,7 +63,7 @@ export function PublicEventDetailPage({ resolvedSlug, resolvedToken, canonicalUr
   const closedNote = organizationAudience ? cutoff || undefined : `Registration is closed.${cutoff ? ` ${cutoff}` : ""}`;
   if (error?.status === 404) return <CenteredCardLayout state={{ status: "ready" }} title="Event not found" body="This event is no longer available." primary={{ label: "All events", href: tenantPath("events") }} />;
   return <div style={brandStyle}>
-    {event ? <PageMetadata title={event.title} description={event.description.slice(0, 300)} path={canonicalUrl ?? location.pathname} image={event.website && "cover" in event.website ? event.website.cover?.url : event.image_url} imageAlt={event.website?.cover?.alt} /> : null}
+    {event ? <PageMetadata title={event.title} description={event.description.slice(0, 300)} path={canonicalUrl ?? location.pathname} image={event.website && "cover" in event.website ? event.website.cover?.url : event.image_url} imageAlt={event.website?.cover?.alt} noindex={surfaceOf(event).indexable === false} /> : null}
     <PublicLayout {...publicPageChrome(makerspaceSlug, name, tenantPath, bootstrap)} state={state}
       breadcrumb={[{ label: "All events", href: tenantPath("events") }, { label: event?.title ?? "Event" }]}>
       <PublicDetailLayout title={event?.title ?? "Event"} state={state}

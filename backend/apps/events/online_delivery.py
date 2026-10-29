@@ -98,7 +98,6 @@ def set_online(event, *, actor, delivery_mode=None, join_url_value=None):
     with transaction.atomic():
         locked = Event.objects.select_for_update(of=("self",)).select_related("makerspace").get(pk=event.pk)
         event_authority.require(actor, locked, EDIT_DETAILS)
-        require_capability(locked.makerspace, FEATURE)
         old_mode, fields = locked.delivery_mode, []
         if delivery_mode is not None and delivery_mode != locked.delivery_mode:
             if delivery_mode not in Event.DeliveryMode.values:
@@ -111,7 +110,8 @@ def set_online(event, *, actor, delivery_mode=None, join_url_value=None):
                 locked.join_url_encrypted = encrypt_value(cleaned) if cleaned else ""
                 fields.append("join_url_encrypted")
         if not fields:
-            return locked
+            return locked  # An unchanged echo never needs the switch (the form resends it).
+        require_capability(locked.makerspace, FEATURE)
         locked.version += 1
         locked.save(update_fields=[*fields, "version", "updated_at"])
         from .services_calendar import calendar_event_changed

@@ -39,30 +39,39 @@ class EmbedPolicySerializer(serializers.Serializer):
         return validate_origins(value)
 
 
+class EmbedPolicyResponse(EmbedPolicySerializer):
+    embed_path = serializers.CharField(read_only=True, help_text="Append <event public token>/ to frame one event.")
+
+
+def embed_payload(space, policy):
+    policy.embed_path = f"/embed/{space.slug}/"
+    return EmbedPolicyResponse(policy).data
+
+
 class EventEmbedPolicyView(APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(tags=["Admin events"], summary="Read the event embed allow-list", request=None,
                    description="404 while `events.embed` is off.",
-                   responses={200: EmbedPolicySerializer, **ERRORS})
+                   responses={200: EmbedPolicyResponse, **ERRORS})
     def get(self, request, makerspace_id):
         from apps.makerspaces.folded_capabilities import require_capability
         from .embed_policy import FEATURE, policy_for
         space = require_capability(_space(request, makerspace_id), FEATURE)
-        return private(EmbedPolicySerializer(policy_for(space)).data)
+        return private(embed_payload(space, policy_for(space)))
 
     @extend_schema(tags=["Admin events"], summary="Replace the event embed allow-list",
                    description="Off by default. Origins are exact lowercase https:// origins (frame-ancestors). "
                                "Settings authority: the Space Manager, or the Event Manager with the events "
                                "settings grant. Audited as `event.embed_policy_updated`.",
                    request=EmbedPolicySerializer,
-                   responses={200: EmbedPolicySerializer, 400: OpenApiResponse(ErrorSerializer), **ERRORS})
+                   responses={200: EmbedPolicyResponse, 400: OpenApiResponse(ErrorSerializer), **ERRORS})
     def put(self, request, makerspace_id):
         from .embed_policy import save_policy
         space = _space(request, makerspace_id)
         data = EmbedPolicySerializer(data=request.data)
         data.is_valid(raise_exception=True)
-        return private(EmbedPolicySerializer(save_policy(space, actor=request.user, **data.validated_data)).data)
+        return private(embed_payload(space, save_policy(space, actor=request.user, **data.validated_data)))
 
 
 class ReportSwitchSerializer(serializers.Serializer):

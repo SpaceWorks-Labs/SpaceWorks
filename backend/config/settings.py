@@ -884,6 +884,8 @@ CORS_ALLOW_HEADERS = (
     "x-kiosk-operator-lease",
     "x-publishable-key",
 )
+# --- release 2 lane L1: the SPA marks the first short-link resolve of a page load (one visit) ---
+CORS_ALLOW_HEADERS += ("x-sw-visit",)
 CORS_ALLOW_CREDENTIALS = True
 
 HMAC_CLIENT_ID = env("HMAC_CLIENT_ID", default="")

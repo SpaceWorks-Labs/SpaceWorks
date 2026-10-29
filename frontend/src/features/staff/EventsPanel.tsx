@@ -24,6 +24,7 @@ import { ListViewControls } from "./ListViewControls";
 import { useSearchParams } from "react-router-dom";
 import { useQuickCreate } from "./quickCreate";
 import { useDomainSettingsDialog } from "./useDomainSettingsDialog";
+import { EventSurfaceSettings } from "./eventPublishing/EventSurfaceSettings";
 
 export { EventDrawer };
 
@@ -63,7 +64,8 @@ export function EventsPanel({ makerspaceId, enabledFeatures = [], enabledModules
   const [creating, setCreating] = useState(false);
   useQuickCreate("event", () => { setCreationMode("single"); setCreating(true); });
   // The Event Manager owns the events.* switches and event defaults (domain-settings API).
-  const eventSettings = useDomainSettingsDialog(makerspaceId, "events");
+  // L1: the event report switches (DY-61) and the embed allow-list sit below the switches.
+  const eventSettings = useDomainSettingsDialog(makerspaceId, "events", true, <EventSurfaceSettings makerspaceId={makerspaceId} />);
 
   function submit() {
     // Unknown default and untouched field: let the server apply the space's default audience.
@@ -115,7 +117,7 @@ export function EventsPanel({ makerspaceId, enabledFeatures = [], enabledModules
   if (selectedSeriesId !== null) return <EventSeriesDrawer key={selectedSeriesId} seriesId={selectedSeriesId} makerspaceId={makerspaceId} onClose={() => setSelectedSeriesId(null)} onSelectOccurrence={id => { setSelectedSeriesId(null); openEvent(id); }} />;
   if (creating) return <FormPageLayout state={{ status: "ready" }} header={{ title: creationMode === "single" ? "New event" : "New series", subtitle: "Start with a draft. Publish when every detail is ready." }}
     back={{ label: "All events", onClick: () => setCreating(false) }} cancel={{ label: "Cancel", onClick: () => setCreating(false) }}
-    form={<div data-create-event>{creationMode === "single" ? <EventFields layout="split" organizationAudienceEnabled={organizationAudience} values={newValues} setValues={(next) => { if (next.registration_audience !== newValues.registration_audience) setAudienceEdited(true); setValues(next); }}
+    form={<div data-create-event>{creationMode === "single" ? <EventFields layout="split" organizationAudienceEnabled={organizationAudience} onlineEnabled={enabledFeatures.includes("events.online_delivery")} values={newValues} setValues={(next) => { if (next.registration_audience !== newValues.registration_audience) setAudienceEdited(true); setValues(next); }}
         moreExtras={<EventPartnersSection values={partners} setValues={setPartners} hostId={makerspaceId} audienceSelected={newValues.registration_audience === "participating_organizations"} />} />
       : <EventSeriesFields organizationAudienceEnabled={organizationAudience} values={newSeriesValues} setValues={(next) => { if (next.registration_audience !== newSeriesValues.registration_audience) setSeriesAudienceEdited(true); setSeriesValues(next); }} />}
       {create.error || createSeries.error ? <p className="mt-3 text-sm text-danger" role="alert">{eventErrorText(create.error || createSeries.error)}</p> : null}</div>}

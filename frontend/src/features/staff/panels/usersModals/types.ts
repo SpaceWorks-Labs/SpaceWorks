@@ -18,7 +18,6 @@ export type MakerspaceForm = {
   public_code: string;
   slug: string;
   location: string;
-  superadmin_access_enabled: boolean;
 };
 export type ResetPasswordForm = { password: string };
 export type ResetPasswordResult = { username: string; temporary_password: string };

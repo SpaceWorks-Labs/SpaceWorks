@@ -16,7 +16,6 @@ from apps.accounts.account_deletion_blockers import blocker, collect
 from apps.accounts.account_deletion_discovery import organization_ids, tenant_ids
 from apps.accounts.models import User
 from apps.audit import services as audit
-from apps.backup.not_restored import TenantNotRestored
 from apps.makerspaces.models import Makerspace, MakerspaceMembership, MembershipRequest
 from apps.organizations.models import Organization
 from apps.tenant_migration.gate_errors import SourceMigrationGateClosed
@@ -55,7 +54,7 @@ def _gates(ids):
             # In an atomic block this retains the gate's shared advisory lock
             # through commit, including when the tenant is currently frozen.
             assert_write_allowed(pk)
-        except (SourceMigrationGateClosed, TenantNotRestored):
+        except SourceMigrationGateClosed:
             gated.add(pk)
     return gated
 

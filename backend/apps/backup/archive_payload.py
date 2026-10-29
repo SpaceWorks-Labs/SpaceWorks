@@ -58,9 +58,7 @@ def _snapshot_payload(archive, root, modes, selected_recipients, *, compound_cap
                 object_plan = None
             else:
                 compound_capture.prepare_from_snapshot()
-                object_plan = build_object_ownership_plan(
-                    item.makerspace_id for item in compound_capture.frozen_slices
-                )
+                object_plan = build_object_ownership_plan(())
                 object_keys = object_plan.closure(MAIN_COMPONENT)
             _write_continuity_keys(root / "keys" / "env.json")
         else:
@@ -71,12 +69,7 @@ def _snapshot_payload(archive, root, modes, selected_recipients, *, compound_cap
             object_plan.bind_component(
                 MAIN_COMPONENT, root / "objects", object_manifest
             )
-            compound_capture.capture_from_snapshot(
-                tenant_payload=_tenant_payload,
-                capture_objects=_capture_objects,
-                write_json=_write_json,
-                object_plan=object_plan,
-            )
+            compound_capture.capture_from_snapshot(object_plan=object_plan)
     return {
         "format": "spaceworks-phase5a-v3",
         "archive_id": str(archive.pk),

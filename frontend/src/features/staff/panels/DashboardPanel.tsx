@@ -52,9 +52,8 @@ export function DashboardPanel({ makerspace, canManageMakerspace, allowedTabs, a
   // Widgets need explicit actor authority as well as the already-filtered tab list.
   const widgetsReady = allowedTabs !== undefined && actions !== undefined && dashboard.isSuccess;
   const routing = { makerspace, guestOnly, singleTenantLocked };
-  // BK-17: a Space Manager sees their own archive status; the custody read needs manage_makerspace.
+  // BK-17: a Space Manager sees their own backup status; the status read needs manage_makerspace.
   const archiveStatus = (canManageMakerspace || isSuperadmin) && !guestOnly
-    && (makerspace.enabled_modules === undefined || makerspace.enabled_modules.includes("backup"))
     && filterTabsByEnabledModules(["backups"], makerspace).length > 0 && (!allowedTabs || allowedTabs.includes("backups"))
     ? <DashboardArchiveStatus makerspaceId={makerspace.id} slug={makerspace.slug} guestOnly={guestOnly} singleTenantLocked={singleTenantLocked} />
     : undefined;

@@ -40,7 +40,6 @@ def eligible(envelope):
         return False
     space = envelope.makerspace
     space.refresh_from_db()
-    custody = envelope.stream == "backup" and envelope.event in {"archive_custody_alarm", "tenant_exit_custody_alarm"}
     owner_ok = eligible_owner(space, envelope.recipient_id)
     if not owner_ok and envelope.source_kind == "membership.application":
         from apps.makerspaces.notifications_p2_members import reapplication_owner_eligible
@@ -49,7 +48,7 @@ def eligible(envelope):
         from apps.accounts.models import User
         owner_ok = User.objects.filter(pk=envelope.recipient_id, is_active=True, access_status="active",
             is_tenant_dump_stub=False).exists() and not rbac.personal_notification_membership_refused(envelope.recipient, space.pk)
-    if not is_servable(space, allow_archived=custody) or not owner_ok:
+    if not is_servable(space) or not owner_ok:
         return False
     if not source_eligible(envelope):
         return False
@@ -61,7 +60,7 @@ def eligible(envelope):
                 and not requester_selected(space, envelope.feature, envelope.event, scope)):
             return False
     from .recipients import feature_available
-    if not custody and not mandatory_email(envelope.stream, envelope.event) and not feature_available(
+    if not mandatory_email(envelope.stream, envelope.event) and not feature_available(
         space, envelope.feature, source_kind=envelope.source_kind,
     ):
         return False

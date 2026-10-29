@@ -20,7 +20,6 @@ from django.db import transaction
 
 from apps.accounts.models import User
 from apps.accounts.staff_accounts import create_staff_account
-from apps.backup.custody import initialize_custody_state
 from apps.boxes.models import Box
 from apps.hardware_requests import request_workflow
 from apps.inventory.categories import ensure_default_categories
@@ -80,9 +79,8 @@ class Command(BaseCommand):
         )
         makerspace = Makerspace.objects.create(
             slug=slug, name="E2E Makerspace", location="E2E Test Bench",
-            public_inventory_enabled=True, superadmin_access_enabled=True, created_by=superadmin,
+            public_inventory_enabled=True, created_by=superadmin,
         )
-        initialize_custody_state(makerspace.pk)
         apply_profile(makerspace, RECOMMENDED, actor=superadmin)
         ensure_default_categories(makerspace)
 

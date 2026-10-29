@@ -27,7 +27,7 @@ from apps.admin_api.recipient_rule_serializers import (
     RecipientRulesPutSerializer,
     RecipientRulesResponseSerializer,
 )
-from apps.integrations import notification_catalog, recipients as recipient_selection
+from apps.integrations import notification_catalog, recipients as notification_recipients
 from apps.integrations.notification_enums import NotificationFeature
 from apps.integrations.recipient_rule_management import replace_recipient_rules
 from apps.machines import role_scope
@@ -86,13 +86,13 @@ class NotificationRecipientRulesView(APIView):
         feature = serializer.validated_data["feature"]
         event = serializer.validated_data["event"]
 
-        if feature not in recipient_selection.SELECTABLE_FEATURES:
+        if feature not in notification_recipients.SELECTABLE_FEATURES:
             return self._error("This feature does not support recipient selection.")
         if delegated and feature != NotificationFeature.MAINTENANCE:
             raise PermissionDenied(
                 "Delegated recipient management is limited to maintenance alerts."
             )
-        if not recipient_selection.category_available(makerspace, feature):
+        if not notification_recipients.category_available(makerspace, feature):
             return self._error(f"The {feature} module is not installed.")
         if event not in notification_catalog.FEATURE_EVENTS.get(feature, ()):
             return self._error(f"Unknown event '{event}' for feature '{feature}'.")

@@ -3,7 +3,6 @@ from apps.admin_api.serializers_theme import ThemeConfigField
 from rest_framework import serializers
 
 from apps.admin_api.serializers_makerspace_aux import (
-    MakerspaceDisabledRowSerializer,
     MakerspaceSwitcherSerializer,
     ReturnPolicySerializer,
 )
@@ -107,7 +106,6 @@ class MakerspaceSerializer(
     domain_verification_record = serializers.SerializerMethodField()
     platform_hosting = serializers.SerializerMethodField()
     is_platform_subdomain = serializers.SerializerMethodField()
-    archive_custody_state = serializers.SerializerMethodField()
     public_display_name = serializers.CharField(
         write_only=True,
         required=False,
@@ -154,8 +152,6 @@ class MakerspaceSerializer(
             "lapsed_members_cannot_borrow",
             "request_access",
             "filament_low_stock_threshold_grams",
-            "superadmin_access_enabled",
-            "archive_custody_state",
             "staff_notifications_enabled",
             "booking_requester_notifications_enabled",
             "event_default_registration_audience",
@@ -225,7 +221,6 @@ class MakerspaceSerializer(
             "domain_verification_record",
             "platform_hosting",
             "is_platform_subdomain",
-            "archive_custody_state",
             "telegram_bot_token_set",
             "smtp_password_set",
             "slack_webhook_url_set",

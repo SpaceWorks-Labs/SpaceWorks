@@ -17,7 +17,7 @@ def visible_archive_impacts(makerspaces):
     from apps.makerspaces import lifecycle
 
     return [{"object": space, **lifecycle.archive_impact(space)}
-            for space in makerspaces if space.superadmin_access_enabled]
+            for space in makerspaces]
 
 
 class MakerspaceLifecycleActionsMixin:
@@ -41,10 +41,7 @@ class MakerspaceLifecycleActionsMixin:
                     {
                         "object": makerspace,
                         "pending_archive_request": pending_by_makerspace.get(makerspace.pk),
-                        # A hidden space discloses governance fields only — never its money counts.
-                        "hidden": not makerspace.superadmin_access_enabled,
-                        **(lifecycle.archive_impact(makerspace)
-                           if makerspace.superadmin_access_enabled else {}),
+                        **lifecycle.archive_impact(makerspace),
                     }
                     for makerspace in makerspaces
                 ],

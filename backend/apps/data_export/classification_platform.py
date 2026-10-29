@@ -177,34 +177,19 @@ OMITTED_MODELS = {
     # a tenant archive. Archives are explicitly outside the purge guarantee, so they must
     # not travel inside one either.
     "backup.BackupArchive": "Deployment archive lifecycle and download bearer state.",
-    "backup.ArchiveRecipientReservation": "Deployment-local key-namespace state.",
-    "backup.MakerspaceArchiveCustodyState": (
-        "Deployment-local archive-custody alarm state, recomputed from recipients."
-    ),
-    "backup.ArchiveCustodyAlarmDelivery": (
-        "Deployment-local custody-alarm delivery and retry state."
-    ),
-    "backup.MakerspaceTenantExitCustodyState": "Deployment-local Lane D custody state, independently recomputed from recipients.",
-    "backup.TenantExitCustodyAlarmDelivery": "Deployment-local Lane D custody alarm delivery and retry state.",
     "backup.BackupLease": "Deployment scheduler lease.",
     "backup.BackupRun": "Deployment backup coverage run state.",
     "backup.BackupRunCoverage": (
         "Deployment backup coverage proof; it names a makerspace but is "
         "deployment coordination state, not portable tenant data."
     ),
-    "backup.B1ActivationState": "Deployment-local Lane E activation state.",
     "backup.BackupArtifactLedger": "Durable deployment backup artifact operations.",
     "backup.BackupArtifactComponent": "Durable deployment backup component operations.",
-    "backup.BackupComponentRecipient": "Durable recipient-use custody history.",
     "backup.DeploymentDatabaseIdentity": "Deployment-local identity regenerated after restore.",
     "backup.DeploymentRecoveryState": "Deployment recovery and quarantine state.",
     "backup.PlatformBackupSettings": "Platform backup configuration and age recipient.",
     "backup.RestoreOperation": "Deployment restore lifecycle state.",
     "backup.RestoreRollbackObject": "Deployment restore object-rollback journal.",
-    "backup.B1RestoreOperationState": "Deployment-local compound-restore stage state.",
-    "backup.B1RestoreComponentState": "Deployment-local opaque-slice restore state.",
-    "backup.B1ReservationEntry": "Deployment-local restore reservation and fence facts.",
-    "backup.B1FenceContinuity": "Deployment-local fence-continuity proof journal.",
     "backup.BackupDestination": "Platform offsite destination with encrypted credentials.",
     "backup.BackupDestinationUpload": (
         "Deployment offsite upload journal; archives are outside the purge guarantee."

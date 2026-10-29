@@ -55,10 +55,6 @@ class MakerspaceMembershipInline(ReadOnlyMembershipInlineMixin, TabularInline):
     autocomplete_fields = ("user",)
     extra = 0
 
-    def has_view_permission(self, request, obj=None):
-        if obj is not None and not obj.superadmin_access_enabled:
-            return False
-        return super().has_view_permission(request, obj)
 
 
 @admin.register(Makerspace)
@@ -79,12 +75,11 @@ class MakerspaceAdmin(
     actions = ["archive_makerspaces", "unarchive_makerspaces", "purge_makerspaces",
                "approve_archive_requests", "decline_archive_requests"]
     list_display = (
-        "governance_name", "governance_public_code", "slug", "governance_location",
-        "governance_public_inventory", "superadmin_access", "governance_domain",
-        "governance_directory", "frontend_mode", "lifecycle_state", "archived_at",
-        "archive_request_status", "governance_updated",
+        "name", "public_code", "slug", "location", "public_inventory_enabled",
+        "frontend_domain", "hidden_from_central_directory", "frontend_mode",
+        "lifecycle_state", "archived_at", "archive_request_status", "updated_at",
     )
-    list_filter = ("public_inventory_enabled", "superadmin_access_enabled", ArchivedFilter)
+    list_filter = ("public_inventory_enabled", ArchivedFilter)
     prepopulated_fields = {"slug": ("name",)}
     search_fields = ("name", "public_code", "slug", "location")
     fieldsets = (
@@ -135,19 +130,10 @@ class MakerspaceAdmin(
         from apps.integrations.messaging.settings_service import settings_payload
         if not obj.pk:
             return "Not configured"
-        if not obj.superadmin_access_enabled:
-            return "Tenant access disabled"
         data = settings_payload(obj)
         return "; ".join(f"{channel}: {source}" for channel, source in data["effective_source"].items())
 
     def save_model(self, request, obj, form, change):
-        """Initialise archive-custody state for makerspaces created via /control/.
-
-        The control-plane admin saves the model directly, so it never reaches the
-        admin-API serializer that seeds this row. Without it a new makerspace has no
-        custody state, which makes readiness UNDERCOUNT below-floor spaces and the API
-        return null until some later recipient mutation happens to create it.
-        """
         previous_domain = None
         domain_changed = False
         if change and "frontend_domain" in form.changed_data:
@@ -162,23 +148,10 @@ class MakerspaceAdmin(
                 apply_domain_change(obj, new_domain)
         super().save_model(request, obj, form, change)
         if not change:
-            from apps.backup.custody import initialize_custody_state
-
-            initialize_custody_state(obj.pk)
             self.assign_owner(request, obj, form)
         record_control_save(request.user, obj, form.changed_data, created=not change)
         if domain_changed:
             record_domain_change(request.user, obj, previous_domain)
-
-    def has_change_permission(self, request, obj=None):
-        if obj is not None and not obj.superadmin_access_enabled:
-            return False
-        return super().has_change_permission(request, obj)
-
-    def get_inline_instances(self, request, obj=None):
-        if obj is not None and not obj.superadmin_access_enabled:
-            return []
-        return super().get_inline_instances(request, obj)
 
     def has_delete_permission(self, request, obj=None):
         # The normal admin delete button is a permanent purge entry point. Keep it
@@ -216,14 +189,8 @@ class MakerspaceAdmin(
     def archived(self, obj):
         return obj.archived_at is not None
 
-    @admin.display(description="Superadmin access")
-    def superadmin_access(self, obj):
-        return "on" if obj.superadmin_access_enabled else "off"
-
     @admin.display(description="Frontend mode")
     def frontend_mode(self, obj):
-        if not obj.superadmin_access_enabled:
-            return "hidden"
         return "single-tenant" if obj.frontend_domain else "central"
 
 

@@ -41,10 +41,10 @@ export type BackupSettings = {
   last_error: string;
 };
 
-export const listTenantBackups = (makerspaceId: number) =>
-  staffRequest<BackupArchive[]>(`/admin/makerspace/${makerspaceId}/backups`);
-export const requestTenantBackup = (makerspaceId: number) =>
-  staffRequest<BackupArchive>(`/admin/makerspace/${makerspaceId}/backups`, { method: "POST", body: "{}" });
+/** The read-only "Last backup" line a makerspace's managers see (owner decision #111 Q2). */
+export type MakerspaceBackupStatus = { last_backed_up_at: string | null; nightly_backups_enabled: boolean };
+export const getMakerspaceBackupStatus = (makerspaceId: number) =>
+  staffRequest<MakerspaceBackupStatus>(`/admin/makerspace/${makerspaceId}/backup-status`);
 export const listDeploymentBackups = () => staffRequest<BackupArchive[]>("/admin/platform/backups");
 export const requestDeploymentBackup = () =>
   staffRequest<BackupArchive>("/admin/platform/backups", { method: "POST", body: "{}" });

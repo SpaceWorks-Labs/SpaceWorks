@@ -2,7 +2,7 @@
 
 from django.apps import apps
 
-from .recipient_selection import BackupBuildError
+from .build_errors import BackupBuildError
 
 PORTABLE_POINTERS = {
     ("makerspaces.MakerspacePublicPage", "draft_revision"): "makerspaces.MakerspacePublicPageRevision",

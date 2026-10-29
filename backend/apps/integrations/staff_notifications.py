@@ -6,7 +6,7 @@ from apps.accounts.models import User
 # Aliased: `staff_emails_for_feature` has a local list called `recipients`, and shadowing
 # the module makes every reference to it an UnboundLocalError inside that function.
 from apps.integrations import notification_rules
-from apps.integrations import recipients as recipient_selection
+from apps.integrations import recipients as notification_recipients
 from apps.makerspaces.models import MakerspaceMembership
 from .notifications_machine_scope import reminder_memberships
 
@@ -52,8 +52,8 @@ def _staff_emails_for_feature(makerspace, feature, event=None, scope=None) -> li
         # alert's subject; otherwise this falls through to action-based resolution, which is
         # what keeps today's behaviour intact (bookings email is ON by default, so a
         # "default nobody" reading would have silently stopped live booking mail).
-        if recipient_selection.has_selection(makerspace, feature, event, scope):
-            return recipient_selection.selected_emails(
+        if notification_recipients.has_selection(makerspace, feature, event, scope):
+            return notification_recipients.selected_emails(
                 makerspace, feature, event, scope
             )
 
@@ -93,7 +93,7 @@ def _staff_emails_for_feature(makerspace, feature, event=None, scope=None) -> li
         recipients = []
         # The fallback predates machine scoping and is makerspace-wide, so an alert naming
         # a machine must not mail a maintainer whose role cannot reach it.
-        admits = recipient_selection.reach_filter_for(memberships, scope)
+        admits = notification_recipients.reach_filter_for(memberships, scope)
         for membership in memberships:
             if not _holds_feature_action(membership, required_action):
                 continue
@@ -145,8 +145,8 @@ def _staff_user_ids_for_feature(makerspace, feature, event=None, scope=None) -> 
             return []
         # Push is filtered by the same selection as email (D8): it is the mobile form of
         # the member's own message, not a separate audience.
-        if recipient_selection.has_selection(makerspace, feature, event, scope):
-            return recipient_selection.selected_user_ids(
+        if notification_recipients.has_selection(makerspace, feature, event, scope):
+            return notification_recipients.selected_user_ids(
                 makerspace, feature, event, scope
             )
         required_action = _FEATURE_ACTIONS.get(feature)
@@ -161,7 +161,7 @@ def _staff_user_ids_for_feature(makerspace, feature, event=None, scope=None) -> 
             user__role=User.Role.SUPERADMIN
         ).select_related("assigned_role").prefetch_related(additional_roles_prefetch()).order_by("id")
         result = []
-        admits = recipient_selection.reach_filter_for(memberships, scope)
+        admits = notification_recipients.reach_filter_for(memberships, scope)
         for membership in memberships:
             if not _holds_feature_action(membership, required_action):
                 continue

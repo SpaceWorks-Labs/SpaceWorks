@@ -31,7 +31,7 @@ tenant-migration-pairings tenant-migration-imports tenant-migration-import-uploa
 tenant-migration-import-archive-chunk tenant-migration-import-archive-complete
 tenant-migration-import-detail tenant-migration-import-decisions tenant-migration-import-run
 tenant-migration-import-verification tenant-migration-target-activate tenant-migration-target-abort
-admin-backup-download-url
+admin-backup-download-url admin-makerspace-backups
 """.split())
 PLATFORM_ROUTES |= PLATFORM_ONLY_ROUTES
 from apps.accounts.security_route_catalog import ROUTES as SECURITY_ROUTES  # noqa: E402

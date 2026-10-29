@@ -432,11 +432,7 @@ recovery remains outside application authority.
 single soft-delete flag; archive scoping is threaded through central rbac + all aggregates + public +
 token-status surfaces (archived is invisible everywhere but `/control/`). `lifecycle.py` is the single
 lifecycle source. Its public decision services independently require an active platform superadmin.
-Hidden spaces support the same lifecycle without changing the access flag, custody activation or
-recipient set; unarchive preserves hiding and still refuses an active migrated-out handoff. The internal
-`_archive_locked()` caller used by tenant migration cutover also supports hidden spaces; migration HTTP
-routes retain their hard block. Archive, unarchive and purge completion audits retain the access flag
-from the locked decision row. **Purge** is break-glass: collects S3 keys, writes a platform-scoped audit, then in
+Unarchive still refuses an active migrated-out handoff. **Purge** is break-glass: collects S3 keys, writes a platform-scoped audit, then in
 one `transaction.atomic()` suspends immutability triggers **transaction-scoped** and deletes the full
 `PROTECT` object graph in verified dependency order, then best-effort deletes S3.
 - Self-host: `SET LOCAL session_replication_role='replica'` (all triggers off; FK off — ORM does
@@ -542,17 +538,12 @@ been **worse than doing nothing**, which is the lesson worth keeping here.
 mutate status outside it). Direct SM archive was rejected as a **self-lockout** — archiving
 removes the space from RBAC scope and `unarchive` is `/control/`-only, so the person who pressed
 the button loses the space and any way to undo it.
-- **Hidden spaces retain lifecycle governance.** A manager may request archival while
-  `superadmin_access_enabled=False`, and may disable access while a request is pending. The
-  `/control/` makerspace list exposes only name, slug, lifecycle state, archived timestamp,
-  archive-request status and the access-off label for a hidden row. Search and ordering use only
-  name/slug; setting filters omit hidden rows. There is no object/change link, inline or tenant-data
-  access. Platform superadmins can archive/unarchive/purge directly without a request, and can
-  approve/decline the pending request through dedicated list actions. Review discloses request id,
-  time, requester username and reason (no contact details).
-  The archive-request admin itself remains hard-hidden; neither model is globally exempted from
-  tenant lookup. Recent control-session reauthentication protects both action and confirmation POSTs,
-  including the ordinary makerspace delete route.
+- **The `/control/` makerspace list is one ordinary list** (P1b: superadmin is always on, so the
+  slim hidden-row variant is gone). Platform superadmins can archive/unarchive/purge directly
+  without a request, and can approve/decline the pending request through dedicated list actions,
+  whose confirmation pages always show the unsettled-charge counts. Review discloses request id,
+  time, requester username and reason (no contact details). Recent control-session reauthentication
+  protects both action and confirmation POSTs, including the ordinary makerspace delete route.
 - **Authority is the `MANAGE_MAKERSPACE` ACTION, never `rbac.is_space_manager_identity`.** That
   helper deliberately does not infer identity from actions. Organization-derived authority can
   carry the action without local Space Manager identity. Both view and service must check the
@@ -940,7 +931,7 @@ removed, while nonempty role sections are refused. Membership and per-person aut
 in a pack. Tenant imports reduce member memberships to Member; staff retain built-in roles and
 remapped additional roles/type links under D11 (see the account-kinds section above).
 
-**`apps/makerspaces/module_registry.py` is the single source of truth for module keys.** All 38
+**`apps/makerspaces/module_registry.py` is the single source of truth for module keys.** All 37
 `ModuleDefinition`s live there (`key`, `label`, `description`, `app_label`, `enforcement`, `group`,
 `requires_modules`, `default_enabled`, `is_core`, `frontend_exposed`, `frontend_workflows`), and the
 lists that used to be hand-kept in parallel now **derive** from it: `models.DEFAULT_ENABLED_MODULES`,
@@ -958,15 +949,16 @@ AST-parses `apps/` and fails if a registered module has no real guard call site,
 unregistered, if the derived lists change, or if a migration-referenced callable stops resolving.
 
 **Modules are OPT-IN.** `DEFAULT_ENABLED_MODULES` resolves to **7 keys** - the 6 core ones plus
-`backup`. Release deployment is host tooling, not a module.
+`member_accounts` (owner decision #91; the `backup` key was retired in P1b, #111 Q2). Release
+deployment is host tooling, not a module.
 `member_accounts`, `mobile` and `payments` once carried it too and are now opt-in for new
 makerspaces (existing rows kept them through `0057`). Everything else is off in the registry default. Guided setup explicitly installs the chosen
-areas and always-on services. Legacy CLI profiles remain available (`minimal` 6 / `workshop` 14 / `lending` 17 /
-`recommended` 20 / `cloud` 25 / `events` 12 / `bookings` 12 / `everything` = `full` 37 — pinned by
+areas and always-on services. Legacy CLI profiles remain available (`minimal` 6 / `workshop` 13 / `lending` 16 /
+`recommended` 19 / `cloud` 24 / `events` 12 / `bookings` 12 / `everything` = `full` 37 — pinned by
 `tests/modules/test_combo_profiles.py`).
 `ModuleDefinition.default_enabled` defaults to **False** and core must not set it (core is on by
-definition; two sources for one fact is the drift the registry exists to remove). `backup`, whose key
-fronts surfaces every makerspace already had, is the only registry entry that sets it, and `default_enabled_module_keys()` is the one place to ask
+definition; two sources for one fact is the drift the registry exists to remove). `member_accounts`
+is the only registry entry that sets it, and `default_enabled_module_keys()` is the one place to ask
 rather than counting by hand. (This paragraph read "core only (6 keys)", then "10 keys"; it is the
 kind of count that goes stale silently, which is why the README table is generated from the registry
 rather than written out.) **Existing makerspaces
@@ -1101,13 +1093,12 @@ transitively `retry_email_log()`, whose existing FAILED/SENDING whitelist alread
 A blocked message becomes a **terminal `EmailLog.Status.SKIPPED`** row — recorded, not dropped, so the
 operator can see what the toggle suppressed — and `SKIPPED` is neither a delivery nor a failure:
 `notify._dispatch_email_delivery` counts it as neither, because `notify_return_due` returns
-`bool(delivered_counts)` and a skip must not read as a reminder that went out. Five messages are
+`bool(delivered_counts)` and a skip must not read as a reminder that went out. Three messages are
 **exempt, matched on stream AND event** (an event name alone is not unique across streams):
 `("account","password_reset")`, `("account","email_verification")` — missing the second leaves a new
-account unable to verify and therefore unable to join — `("hardware","return_reminder")`, a
-duty-of-care message in the accountability flow, and the two backup custody alarms
-`("backup","archive_custody_alarm")` / `("backup","tenant_exit_custody_alarm")`
-(`integrations/dispatch.EMAIL_MODULE_EXEMPT`; this line said "three" until 2026-10-09). **Platform mail (`makerspace=None`) is never gated**:
+account unable to verify and therefore unable to join — and `("hardware","return_reminder")`, a
+duty-of-care message in the accountability flow (`integrations/dispatch_policy.EMAIL_MODULE_EXEMPT`; the
+two backup custody alarms left this list with custody itself in P1b). **Platform mail (`makerspace=None`) is never gated**:
 no tenant owns it, and the platform-level `integrations.email.email_enabled()` behind `/api/v1/config`
 is *deliverability*, not tenant enablement — conflating them hides forgot-password from the login screen.
 Because modules are opt-in, a newly registered key is off by default, which is right for a new makerspace
@@ -1157,7 +1148,7 @@ rail, and it now counts `stripe_payment_intent_id` as live, not just hosted sess
 rows are held to the same `PAYMENT_CLEARED_VALUES` projection as terminal ones, so no order id,
 session, intent, checkout URL, connected account or routing survives to be resumed on the target;
 (3) `money_digest.money_fingerprint` is taken INSIDE the capture gate over pending payments plus
-the settlement chain, and `publish_tenant_dump` revalidates it under the custody lock, refusing
+the settlement chain, and `publish_tenant_dump` revalidates it under the makerspace row lock, refusing
 with `money_drift` when the source has moved on. Terminal rows are deliberately excluded from the
 digest: they are immutable, so they cannot drift, and including them would make every ordinary
 settlement read as drift. A blank digest (captures predating the field) is not revalidated —
@@ -3630,9 +3621,9 @@ runtime providers/pages/reports do not. Reimbursement (decision 34) and full sta
 - **Attendance feeds payout eligibility in the attendance transaction.** Check-in bumps
   `attendance_revision`; a correction appends `EventAttendanceCorrection` with the latest
   check-in watermark; both republish claim eligibility while the add-on is live.
-- **Archive pauses settlement; hidden spaces show no counts.** `archive_impact` adds
-  `unpaid_event_payouts`; both archive routes omit every money count when superadmin access
-  is off. Payout authority requires a servable space, so nothing settles while archived.
+- **Archive pauses settlement.** `archive_impact` adds `unpaid_event_payouts`; both archive
+  routes show every money count. Payout authority requires a servable space, so nothing settles
+  while archived.
 - **Purge preflight is always shown.** `purge_module_data` prints the read-only
   `preflight_report` before any prompt and refuses on a blocker; `--preflight` exits after
   printing; `--yes` skips only the confirmation prompt.
@@ -4673,19 +4664,13 @@ responsibility; local purges never delete shared global organizations or foreign
 
 - **A restored `DataExportJob` download bearer is never usable.** The download route is anonymous,
   and quarantine's credential reset does not cover it. `apps/data_export/restore_hooks.py` clears
-  bearers at all three seams that copy these rows: classic `rehydrate_control_record` (both kinds),
-  compound `DatabaseStateTarget.rehydrate` on the candidate alias, and delayed B1 slice merge, where
-  `slice_fixtures` scrubs the `DROP_ROW_TO_SLICE` `row_preimage` before staging. Tenant dumps never
-  carry this model (`OMITTED_MODELS`).
+  bearers at classic `rehydrate_control_record` (both kinds). Tenant dumps never carry this model
+  (`OMITTED_MODELS`).
 - **A restored `backup.BackupArchive` download bearer is never usable.**
   `apps/backup/services_access.invalidate_download_tokens_after_restore` clears bearers at classic
-  `rehydrate_control_record` and compound `DatabaseStateTarget.rehydrate`. B1 slice merge needs no sweep:
-  `BackupArchive.makerspace` is a `PROJECT_GLOBAL_BOUNDARIES` `PROJECT_NULL_TO_SLICE` boundary whose
-  delta carries only the `field_preimage`. Tenant dumps omit the model (`OMITTED_MODELS`).
-- **`TenantDumpCapture` download bearers are cleared pre-emptively at all three seams** by
-  `apps/tenant_migration/restore_hooks.py`: classic `rehydrate_control_record`, compound
-  `DatabaseStateTarget.rehydrate`, and the `slice_fixtures` `row_preimage` scrub (its `makerspace` FK
-  is a `DROP_ROW_TO_SLICE` boundary). Today `publish_tenant_dump`'s token has no caller and no redeemer.
+  `rehydrate_control_record`. Tenant dumps omit the model (`OMITTED_MODELS`).
+- **`TenantDumpCapture` download bearers are cleared pre-emptively** by
+  `apps/tenant_migration/restore_hooks.py` at classic `rehydrate_control_record`. Today `publish_tenant_dump`'s token has no caller and no redeemer.
   **RULE:** a future `TenantDumpCapture` download route must keep these hooks, and any new model carrying
   a `download_token_*` bearer needs a sweep at every seam that copies its rows.
 
@@ -4700,7 +4685,7 @@ responsibility; local purges never delete shared global organizations or foreign
   `deployment_operation_lock`, holds no row lock during I/O, touches no `BackupRun`/`BackupArchive`
   state, and backs a journal row off `5 min × 2^attempts` capped at 6 h.
 - **Pushed:** every deployment archive and every run-produced tenant archive. **Not pushed:** ad hoc
-  Space-Manager archives. Destinations are platform-held only (a tenant cannot register its own).
+  makerspace archives. Destinations are platform-held only (a tenant cannot register its own).
 - **Verified copies are re-read every 30 days** (`offsite_reverify`). A digest mismatch returns the
   row to `pending` for a fresh upload and is audited `backup.offsite_copy_corrupted`; a transport
   failure only records its code. This is byte integrity, not a restore drill.
@@ -4716,9 +4701,10 @@ responsibility; local purges never delete shared global organizations or foreign
   never argv/env, and its output still goes through `import-backup.sh`'s signature preflight.
 - **Rehydration is create-only.** A verified copy is fetched and checked locally, then written to the
   archive's own locator with `If-None-Match: *`; it never overwrites a present primary object.
-- **The `backup` module gates tenant surfaces only.** Recipient compromise and every deployment surface
-  are never gated. `backup` cannot be uninstalled while superadmin access is off, and superadmin access
-  cannot be switched off while `backup` is uninstalled. Its purge deletes only ad hoc tenant archives.
+- **There is no `backup` module key (retired in P1b, owner decision #111 Q2).** Space Managers no longer
+  request, list or download archives: makerspace archives and downloads are superadmin-only. A manager
+  reads a read-only "Last backup" line (`GET /admin/makerspace/<id>/backup-status`, `MANAGE_MAKERSPACE`)
+  and keeps their own copy through data export. `backup/0032` strips the key from `enabled_modules`.
 - **Never hand a `StreamingBody` to `put_object`.** `create_final_from_staging` did, so against a real
   store (botocore 1.43, MinIO) promotion raised `io.UnsupportedOperation` — outside its caught
   exception types — because botocore seeks the body for checksums and, over http, reads it to sign
@@ -4791,79 +4777,50 @@ merchant/account/order/payment/session/intent handles and checkout URLs.
 The exact external-FK registry and independent scratch/target postconditions refuse
 schema drift or a surviving live provider binding.
 
-### Archive-recipient custody: the two-recipient admission floor (BUILT 2026-08-22)
+### Deployment archives: one platform-readable component (P1b, 2026-10-27)
 
-**A makerspace archive is encrypted to its own verified recipients, and the platform is added as a
-recipient ONLY when `superadmin_access_enabled` is true** (`backup/recipient_selection.py`). That is the
-whole custody model: with the switch off, the operator can *run* a tenant backup but cannot *open* it.
+**Superadmin is always on (owner decisions #110/#111), so every archive this deployment builds is
+encrypted to the platform key `BACKUP_AGE_RECIPIENT` and nothing else** (`backup/age_recipients.py`).
+There are no per-makerspace archive recipients, recipient challenges, custody states, custody alarms,
+recipient reservations or activation states; their tables were dropped in `backup/0030`. A deployment
+archive has exactly ONE component, the readable main. Sovereign slices, the readable-main exclusion of
+sovereign rows, the W8 slice DEK rewrap, E7 restore reservations and fences, the E8 delayed slice merge,
+the not-restored component state and the E9b compound restore coordinator were all deleted (`backup/0031`
+drops their tables and every `backup_b1_*` function). An archive that still declares `partial: true` is
+refused by the restore preflight before any effect: nothing can open its slices any more.
 
-**Lane E readable-main exclusion is BUILT (E1–E3, 2026-08-22).** A deployment archive keeps
-`manifest.json` and `database.dump` at the bundle root for restore compatibility and carries sealed tenant
-slices under `slices/`. The exclusion registry assigns every physical table either a deployment-global
-retain disposition or a tenant-owner predicate, and it assigns retained-row foreign keys into sliced tables
-an explicit project-null or drop-row disposition. A sovereign row is excluded from the readable main only
-after the same frozen makerspace has a plaintext-verified slice. The resulting main dump is restored into a
-fresh PostgreSQL verification database before packaging; its ownership postconditions, row-identity ledger,
-catalog and sequence high-water state are checked there. Slice rows and object digests are checked while
-plaintext is available before sealing. After sealing, the platform verifies only ciphertext size and digest;
-the platform cannot perform semantic verification without a tenant-held identity.
+**The readable main is still projected and verified before packaging.** `main_projection` restores the
+frozen dump into a scratch database, deletes `OMIT_OPERATIONAL` rows and emptied non-model tables (no
+makerspace is ever excluded), dumps it, restores that dump into a second fresh database and checks it
+against the expected row-identity ledger and the physical-catalog digest. The main-projection registry
+(`main_projection_registry.table_rules`) remains the drift guard every physical table must be classified
+in. Object capture still builds the typed `ObjectOwnershipPlan` (E4) and proves reference/manifest/byte
+equality for the main component; an evidence-retention tombstone is still the only no-byte member.
 
-**Lane E object ownership and W8 rewrap are fail-closed (E4, 2026-08-23).** Deployment capture builds one
-typed pre-projection multimap for every declared object-bearing field plus the exact object-bearing
-`AuditLog.meta` variants. Bucket selection is row-dependent where the schema says it is
-(`RestoreRollbackObject.copy_key` uses that row's `bucket_kind`). The same physical `(bucket_kind, key)`
-may have only one canonical component candidate: a main/slice or slice/slice conflict refuses the whole
-archive; first ship never duplicates bytes and has no shared envelope. Historical audit object strings and
-recursive archive pointers are explicit coordination references, not generic JSON discoveries. Each
-component then proves reference/manifest equality, binds immutable captured size and SHA-256 facts, and
-re-reads every packaged byte against them before the readable main can be projected. The only no-byte
-member is an evidence-retention tombstone backed by a terminal `EvidenceObjectRetentionState`: it remains
-part of exact reference/manifest equality, records the expiry timestamp and prior size, and is rejected if
-either final or staging bytes (including historical versions) still exist. Only
-surviving Mechanism-A rows get such tombstones: an abandoned upload deleted by cleanup has no row, member
-or tombstone, a `cleaning` row refuses capture, and the cleanup receipt key is `COORDINATION_ONLY`.
+**The signed outer manifest is protocol v2** (`compound_protocol.PROTOCOL_VERSION`). It is an allowlist:
+capture/build identity, source PostgreSQL/client facts, `makerspace_ids`, the main component (path, size,
+ciphertext SHA-256, schema-catalog digest, semantic digest, platform recipient fingerprints) and its object
+and content ledgers, plus compatibility names (`covered_makerspace_ids`, `excluded_makerspace_ids: []`,
+`partial: false`). Its Ed25519 signature binds canonical manifest bytes plus the one-entry component
+ledger; the artifact carries only the signer fingerprint and signature. Verification trusts
+`BACKUP_ARCHIVE_VERIFY_PUBLIC_KEY` from the host channel, while the producer alone gets
+`BACKUP_ARCHIVE_SIGNING_PRIVATE_KEY`. A manifest-provided key can never authenticate itself. A v1 archive
+(sovereign slices, reservation facts, source-partition proof) fails `format_version`; none without a slice
+could ever be built, because the v1 source verifier refused a capture with no slice.
 
-`MakerspaceEncryptionKey` is tenant-owned for Lane E projection even though manager data export omits it.
-Its source-broker row must not survive in the readable main. Inside the same immutable snapshot, W8 freezes
-the exact raw row identity, makerspace/version/status, broker coordinates, wrapped-DEK bytes and wrapped-byte
-digest. Only that frozen tuple may enter `backup/dek_rewrap.py`; inside `dek_cache_disabled()` the adapter
-unwraps those exact bytes and streams each plaintext DEK through stdin directly into an age envelope for
-the complete frozen tenant-recipient set. Plaintext DEKs never enter a manifest, filesystem member, process
-argv, log, exception or database row. Missing, duplicate, extra, unsupported or digest-substituted rows and
-any sealed-inventory or ciphertext-ledger mismatch fail the slice before outer sealing.
-
-**Lane E promotion is a signed, staged, durable protocol (E5, 2026-08-23).** The readable outer manifest
-is an allowlist: capture/build identity, source PostgreSQL/client compatibility facts, frozen
-retained/readable/sovereign ID sets, opaque component facts, component-level object/content ledger digests
-and counts, reservation/fence facts, not-restored seeds and the versioned length-framed
-`user_closure_digest`. Raw identity tuples remain inside sealed slices. Raw rows, object keys, low-entropy
-unique values, boundary endpoints, W8 payloads and inverse deltas must never be added to that manifest. The
-source build and PostgreSQL major are signed compatibility facts because restore preflight must reject an
-incompatible target before decryption or deployment mutation. Its Ed25519 signature binds canonical
-manifest bytes plus the component ledger;
-the artifact carries only the signer fingerprint and signature, never a public or private signing key.
-Verification trusts `BACKUP_ARCHIVE_VERIFY_PUBLIC_KEY` from the host channel, while the producer alone gets
-`BACKUP_ARCHIVE_SIGNING_PRIVATE_KEY`. A manifest-provided key can never authenticate itself.
-
-`BackupArtifactLedger`, `BackupArtifactComponent` and `BackupComponentRecipient` outlive the optional
-`BackupArchive` row. Artifact/component identity facts are immutable, transitions are database-guarded,
-component-recipient associations are unique and recipient-use history is tombstoned when managed bytes are
-deleted. Do not fold this state back into `BackupArchive`: byte retention may delete that convenience row,
-but reconciliation and recipient history must survive it. `B1ActivationState` is seeded here only because
-promotion must atomically advance captured `off_pending` rows; the general switch transition service remains
-Lane E E6 work.
+`BackupArtifactLedger` and `BackupArtifactComponent` outlive the optional `BackupArchive` row. Artifact and
+component identity facts are immutable and transitions are database-guarded. Do not fold this state back
+into `BackupArchive`: byte retention may delete that convenience row, but reconciliation must survive it.
 
 **A deployment artifact is never uploaded directly to its advertised key.** The server uploads to the
 artifact-unique staging locator, streams it back for size plus SHA-256, conditionally creates the immutable
 final locator with `If-None-Match: *`, and streams the final object back too. HEAD and ETag are not integrity
-proofs. No makerspace, recipient, activation or artifact row lock may be held during those remote steps.
-Only then may `promotion.promote_verified_artifact()` run its one short no-I/O transaction, in this lock
-order: frozen makerspaces by ID; recipient rows by PK; activation rows; artifact rows; components;
-recipient associations; `BackupArchive`; `PlatformBackupSettings`. That transaction revalidates the full
-frozen population, access/activation/custody and exact valid recipient sets, signed identities/digests,
-durable associations, final verification facts and predecessor success state. Availability, eligible
-activation, all success audits (including the exact manifest `user_closure_digest`) and `last_success_at`
-commit or roll back together.
+proofs. No artifact row lock may be held during those remote steps. Only then may
+`promotion.promote_verified_artifact()` run its one short no-I/O transaction, in this lock order: artifact
+rows; components; `BackupArchive`; `PlatformBackupSettings`. That transaction revalidates the signed
+manifest and its makerspace population against the frozen snapshot, the signed identities/digests, the
+durable component row, final verification facts and predecessor success state. Availability, the success
+audit and `last_success_at` commit or roll back together.
 
 The initial runner and `reconcile_backup_artifacts_task` call the same promotion primitive. Pending with
 staging resumes final creation; pending with final bytes stream-verifies and enters the same transaction;
@@ -4877,12 +4834,12 @@ installer writes `/var/lib/spaceworks/host/public/producer-capability.json` mode
 same-directory atomic replacement and parent-directory fsync, after the archive verification public key is
 installed. It records SHA-256 for the installed `host-capability.py`, `import-backup.sh`, `restore.sh`,
 `spaceworks-compose.sh`, its sourced `compose-deployment.sh`, and `validate-compose-wrapper.py` host scripts, SHA-256 for the image's actual common
-entrypoint, the closed supported compound-protocol range, only the verification-key fingerprint, and a
+entrypoint, the closed supported deployment-archive protocol range, only the verification-key fingerprint, and a
 length-framed digest of the installed Django migration files. It never records or receives the private
 archive-signing key.
 
 `backup/archive_builder.py` checks this marker only for deployment/compound builds and does so before
-recipient resolution, temporary workspace creation, capture bytes, encryption, staging upload or artifact
+platform-recipient resolution, temporary workspace creation, capture bytes, encryption, staging upload or artifact
 ledger persistence. The marker and directory must be root-owned and non-writable by non-root principals,
 and the marker must be exactly mode `0444`. The producer re-hashes every privileged script from the
 read-only host scripts mount, the common entrypoint from the running image and the installed migration
@@ -4892,111 +4849,6 @@ requires it to equal the configured verification key, and compares its fingerpri
 missing, unreadable, malformed, misowned, wrong-mode, locally modified or rolled-back input refuses with a
 stable reason code. Ordinary makerspace/single archives do not read this marker and remain available on
 hosts that do not have one.
-
-**Lane E activation is one switch over two state machines (E6, 2026-08-23).**
-`Makerspace.superadmin_access_enabled` is live platform authority;
-`B1ActivationState.state` is the deployment-archive guarantee (`on`, `off_pending`, `off_effective`). They
-must satisfy `flag=on ⇔ state=on` and `flag=off ⇔ state∈{off_pending,off_effective}`. Raw writes to either
-surface are forbidden. `backup/activation.py::set_superadmin_access` is the sole switch writer: under Part
-A's makerspace-first custody lock it locks recipients in PK order and the activation row next, then commits
-the flag, activation transition and `makerspace.superadmin_access_changed` audit together. Its committed
-event is scheduled with `transaction.on_commit(..., robust=True)`, so outbound consumers cannot run under
-the lock or roll back the switch. The deployment check `backup.E001`/`backup.E002` and
-`repair_b1_activation_state` independently detect missing rows and both directions of cross-table
-divergence; applied repairs require an accountable active superuser and audit every repaired row.
-
-The only switch-off transition is `on → off_pending`, after the two-recipient admission floor; it never
-claims effective exclusion. The only `off_pending → off_effective` writer remains E5's
-`promotion.promote_verified_artifact()` transaction, and it advances sovereign IDs only after the whole
-compound artifact is verified and available. Failed, historical or partially valid runs do not advance it.
-`off_effective → off_pending` is forbidden. Either off state may return to `on` through the authorized
-re-enable switch; this clears only the current activation pointer, while prior ciphertext, durable component
-recipient associations and recipient lifecycle facts remain unchanged. Capture and promotion both refuse
-flag/state divergence even if the deployment check was skipped. Rollout is deliberately conservative:
-existing flag-on rows seed `on`, existing flag-off rows seed `off_pending` regardless of recipient count or
-historical artifacts, and migration 0013 asserts one activation row for every retained makerspace.
-
-**Lane E restore reservations are database enforcement, not advisory metadata (E7, 2026-08-23).**
-Rehydrating an installed `B1ReservationEntry` installs a PostgreSQL row trigger on the registered target
-table in the same transaction. Numeric ranges reject explicit reserved identities; high-entropy
-commitments evaluate the reproduced index predicate and ordered expressions with the target-verified SQL
-canonicalizers before applying `reservation-key-v1`; low-entropy unique rules fence the affected writes;
-relationship fences cover inbound/endpoint and semantic-reference inserts, updates and deletes; and
-object-namespace fences cover creation, overwrite and deletion. The signed manifest fact remains unchanged:
-target-only executable SQL is derived from the reproduced catalog and stored only in the immutable local
-reservation row. An unknown constraint, definition or canonicalizer refuses installation.
-
-Relationship-fence ownership is evaluated through each boundary rule's derived `target_predicate`, not the
-target table's direct ownership predicate. A retained/global target may have no direct predicate while the
-boundary still carries a transitive makerspace path; treating that valid absence as an empty match would
-omit required fences and permit later writes to collide with an opaque slice.
-
-Outer-manifest validation rejects non-positive makerspace identities and validates sequence values as a
-coherent PostgreSQL range, not merely as integers: increments are non-zero, cache sizes are positive,
-captured/installed/next values stay within bounds, and `next = installed + increment`.
-
-The main-component header binds two different facts: `schema_catalog_digest` is the digest of the physical
-PostgreSQL catalog, while `semantic_digest` is the readable-main row/reference verification digest. They are
-not aliases and must not be collapsed into the former field's old semantic-only meaning.
-
-Physical-catalog and E7 unique-rule identities use the same named, proved catalog canonicalizer on both the
-live-source and dump-restored definitions. Its sole accepted deparse equivalence is a literal
-`character varying[]` cast to `text[]` at array level versus the same ordered literals cast from
-`character varying` to `text` element by element. Literal bytes, order and all surrounding constraint/index
-SQL remain exact. Non-literal arrays, mixed cast shapes and every unrecognised rendering receive no
-normalization; if their text differs, the catalog digest and unique-rule reproduction checks refuse the
-artifact. Never add general whitespace, parenthesis or arbitrary-cast tolerance to this comparison.
-
-The operation/component bindings are database foreign keys. Restore-operation proof identity, reservation
-facts and fence-continuity facts cannot be updated or deleted through ORM, Celery, cron, management commands
-or raw SQL. The operation-stage trigger permits only the next §8.4 step (or a typed fail-closed transition),
-and component state cannot jump directly from pending to restored. A component in any non-restored state is
-part of canonical makerspace servability: RBAC, machine-role resolution, tenant worker/fan-out gates and
-scheduled servability queries all deny it. PostgreSQL also rejects creation of a `Makerspace` at that
-reserved identity, so an opaque tenant can never be mistaken for an empty/new tenant.
-
-The source-proof module exposes neither a verifier-pass builder nor a signing function. Only the independent
-`source_verifier` constructs the `pass` result and opens the host signing identity, after reconstruction,
-catalog, reservation-key and readable-main non-occupancy verification. OCI identity is required from the
-real build environment and is exactly `sha256:` plus 64 lowercase hexadecimal digits; it is never synthesized
-from a build label. Target manifest validation reproduces every canonicalizer identity rather than accepting
-an unknown digest-shaped label.
-
-A deployment or tenant backup is refused while its scope contains a non-restored component. This applies at
-the archive builder boundary shared by HTTP, Celery, beat and the beat-less scheduled runner, preventing a
-follow-on backup from representing an opaque tenant as an absent/empty tenant.
-
-**Lane E delayed slice merge is fill-only and tenant-authorized (E8, 2026-08-24).** A tenant identity enters
-only through a consumed input stream and is sent to `age-keygen`/`age` through stdin; it is never a command
-argument, environment value, path, journal fact, log value, exception detail or database field, and its
-transient mutable buffer is cleared before final verification. Before decryption, the merge verifies the
-host-trusted outer signature, immutable restore/artifact/capture/component bindings, the stored ciphertext
-size and digest, and the derived recipient fingerprint. Plaintext exists only in a mode-`0700` scratch tree
-or an operation-owned staging schema while the component remains not-restored. Staging and application use
-raw fixture values and declared inverse deltas; mapped field getters are never part of the merge.
-
-`spaceworks_b1_merge` is a `NOLOGIN`, `NOINHERIT`, non-superuser PostgreSQL role with no sequence privileges
-and no delete grant. It can insert only a row reproduced byte-for-byte in the operation schema, and can
-update only a registered inverse-delta column from its exact projected value to its exact preimage. The
-database trigger also binds every write to an advisory-locked `merging` component, while E7's reservation
-trigger bypasses only that same component's reservations. Therefore the merge role cannot claim another
-component's slot, overwrite an occupied identity, mutate an undeclared main-owned value or call `setval`.
-
-W8 payloads are checked as one exact set, decrypted through the same transient identity, and rewrapped to
-the configured target broker with the original makerspace/version AAD; only target-wrapped bytes enter raw
-staging. Authenticated cross-component dependencies are persisted as component IDs plus reason codes. If a
-required opaque component identity is absent, all plaintext staging and merge-staged object bytes are
-discarded, the checkpoint resets to `dependency_wait`, and the original opaque slice remains the only
-tenant payload. A cross-linked group uses one ordered lock set and one database apply transaction.
-
-Database rows commit while every component is still not-restored. Object bytes then move from hashed
-merge-staging locators to create-only final keys under a mode-`0600`, file-and-directory-fsynced host journal.
-Any post-apply failure leaves the component `merging`, its reservations intact and the journal resumable;
-pre-apply terminal failure may mark it `failed` but still cannot release reservations. Only after raw rows,
-inverse boundaries, promoted object bytes, target DEKs, constraints and installed reservations verify does
-the final transaction drop plaintext staging, mark the whole locked group `restored`, delete only that
-group's reservation entries and release now-unused reservation triggers. Canonical servability therefore
-cannot expose a half-merged makerspace: addressability changes only at that final commit.
 
 **The PostgreSQL client major must equal the server major for anything that dumps or restores THIS
 deployment**, and `apps/backup/postgres_client.py` is the only place that resolves those binaries. The
@@ -5031,61 +4883,12 @@ identity digest and concrete-column row digest. The owning model's digest covers
 Never bypass `raw_projection.fixture_payload`'s refusal to synthesize missing auto-created M2M rows: a new
 through table without an explicit disposition is registry drift and must fail the build.
 
-> **The guarantee:** the platform-readable portion of a deployment artifact excludes sovereign tenant
-> content. The artifact still carries that content as opaque ciphertext, together with slice identifiers,
-> sizes, ciphertext digests and recipient facts. Opening the readable main does not open a sovereign slice;
-> doing that requires a matching tenant-held identity.
+> **Retracted (P1b, 2026-10-27).** This document used to carry a "guarantee" that the platform-readable
+> portion of a deployment artifact excluded sovereign tenant content. With the superadmin always on there
+> are no sovereign tenants and no sealed slices: **every byte of every archive is readable with the
+> platform key.** No UI, API, audit event, manifest field, docstring or comment may claim that any
+> makerspace is withheld from a backup or from the platform operator.
 
-This guarantee **does not establish** physical absence, data residency, deletion, storage reduction,
-concealment of a tenant's existence, or reduced subpoena/discovery scope. It is a custody and readability
-boundary only. Infrastructure snapshots, database PITR, the live service, older application artifacts and
-copies downloaded by their holders remain governed by their own controls and retention. No UI, API, audit
-event, log line, manifest field, docstring or comment may describe this as removal from the archive or claim
-one of those excluded properties.
-
-**The decision is snapshotted at request time, and selection FAILS CLOSED without it.** An archive is
-requested in a web process (`create_archive`) and built later in a Celery worker (`run_archive` via
-`run_backup_archive_task`), so the switch can be flipped in between. `create_archive` therefore
-re-reads the makerspace under `select_for_update()` and stores `superadmin_access_at_decision`; a NULL
-snapshot on a makerspace-scoped archive **raises** rather than falling back to the live flag. Falling
-back to the live flag is the bug this closes — never reintroduce it. Rows predating the field carry
-`legacy_pre_decision_snapshot` and are exempt from the constraint.
-
-**The floor is an ADMISSION floor, not an absolute invariant.** Ordinary revocation may not take a
-makerspace below **two** verified, non-revoked, non-compromised recipients, and switching
-`superadmin_access_enabled` off requires two. But **compromise always proceeds immediately**, even if
-that breaches the floor — security response must never wait for redundancy. A makerspace left at **one**
-recipient **continues** to back up under a recorded degraded state (owner decision); at **zero** it
-fails closed. Creating a makerspace with the switch already off is refused: at creation no recipient can
-exist, so the supported sequence is **create on → enrol and verify two → switch off**.
-
-The admission floor governs recipient maintenance, not authorized whole-tenant destruction.
-An archived hidden makerspace may be purged without restoring access or recipients. The authorized
-purge removes live tenant DEKs, recipients, custody/alarm rows and activation state; permanent
-recipient reservations, retained encrypted artifacts and recipient-use history survive their own
-retention rules. `BackupArchive.makerspace` becomes NULL while snapshot identities remain.
-Archive/unarchive never add a platform recipient or change activation state or the access flag.
-
-**Every transaction that changes the effective recipient count must go through
-`backup/custody.py::with_makerspace_custody_lock`, which locks the MAKERSPACE ROW FIRST, then recipient
-rows in `pk` order.** The full count-changing set is revoke, compromise, verify, reactivate, switch
-changes and restore activation. Archive creation directly locks the makerspace first to snapshot the
-switch decision; it changes no recipient count, so it does not widen that lock to recipient rows. A
-uniform order is mandatory: `verify_recipient` once locked the
-recipient row first and `reactivate_recipient` locked nothing at all, which is a deadlock and a lost
-update. **This supersedes Lane K1's "recipient mutation takes no lock".** K1's actual concern still
-holds — a backup build holds a *file* lock and its own `REPEATABLE READ` snapshot, never the makerspace
-row, so an urgent revocation is still never blocked by a running backup.
-
-**`MakerspaceArchiveCustodyState` is the authoritative alarm record**, written in the same transaction
-as the mutation that caused it. Custody is `not_applicable` while superadmin access is enabled;
-`alarm_revision` advances once for every state-or-reason transition and is the delivery identity.
-`alarm_episode` remains the reporting identity for repeat unhealthy episodes. The state is **derived,
-recomputable**, so backfilling it is idempotent. `ArchiveCustodyAlarmDelivery` is the recoverable outbox:
-tenant repair-capable staff receive the primary warning, and platform operators receive zero-recipient,
-unreachable-recipient, and exhausted-delivery escalations. Delivery is **at-least-once** — SMTP may accept
-a message before a worker dies and its retry may duplicate it, but the outbox never knowingly drops it.
-Readiness surfaces below-floor, zero-recipient, undelivered, and missing-operator-address counts.
 
 **Never combine a `RunPython` data migration and an `AddConstraint` on the same table in one
 migration.** PostgreSQL raises *"cannot ALTER TABLE because it has pending trigger events"* as soon as
@@ -5161,28 +4964,16 @@ A photo deleted by abandoned-upload cleanup (phase 11) is simply absent: it cont
 and no tombstone; a `cleaning` row refuses export like `expiring`, and import regenerates any private
 key an `EvidenceAbandonedUploadReceipt` reserves even when storage reports it absent.
 
-**Lane D D3 freezes custody and source bytes as one immutable capture lineage.** The request transaction
-reuses `backup/custody.py::with_makerspace_custody_lock`: makerspace first, every archive-recipient row in
-PK order, then the capture and audit decision. It stores the Part-A superadmin decision plus the exact sorted
-canonical native-age recipient/fingerprint tuples. Zero tenant recipients refuses the request even when the
-platform could open an outer envelope; one continues under `degraded_one_recipient`. Publication authority
-never comes from that old snapshot alone: `tenant_dump_publication.py` re-locks in the same order and requires
-exact tuple equality immediately before each encryption boundary and again while the final transaction makes
-the object discoverable and creates its single-use download state. Addition, revocation, compromise, invalid
-canonicalization, missing durable current-revision alarm intent, or an outbox that cannot retry/escalate makes
-the pending artifact unusable; its unpublished bytes and owned staging are deleted and a new request is
-required. Recipient substitution and silent age-header removal are forbidden.
-If object deletion fails, the refused capture retains the private unpublished key as a retry journal;
-`cleanup_refused_tenant_dump_artifacts_task` retries it hourly, and only confirmed deletion clears the key.
-
-`MakerspaceTenantExitCustodyState` is deliberately separate from Part A custody and ignores
-`superadmin_access_enabled`: two recipients is healthy, one degraded, zero breached. Thus Part A
-`not_applicable` and Lane D degraded may coexist truthfully. Its `TenantExitCustodyAlarmDelivery` outbox is
-deployment-local and decision-19b sovereign: active non-operator `MANAGE_MAKERSPACE` members are primary;
-operators receive every zero-recipient revision and resolve-time no-repair/no-mail fallback, plus exhausted
-tenant delivery escalation. Intents are created under the custody revision lock and delivery is at-least-once;
-SMTP success is not publication authority, but durable retry/escalation capacity is. Both rows are DROP in
-the Lane D catalog and are independently derived on source and target.
+**Lane D D3 freezes one-shot recipients and source bytes as one immutable capture lineage (rewritten
+P1b, #111 Q7).** `export_portable_tenant_dump --recipient <age key> [--recipient ...]` supplies the
+tenant recipients for THIS export only. `tenant_dump_recipients.one_shot_tenant_recipients` canonicalizes
+each key, refuses an invalid, duplicate or platform key and an empty set, and the request transaction locks
+the makerspace row and stores the canonical `{public_recipient, fingerprint}` set on the capture
+(`tenant_recipients`) with a `tenant_dump_requested` audit carrying only fingerprints. There is no
+standing recipient state, no custody state, no alarm outbox and no recipient-change refusal: one-shot
+keys cannot change after the request. If object deletion fails, the refused capture retains the private
+unpublished key as a retry journal; `cleanup_refused_tenant_dump_artifacts_task` retries it hourly, and
+only confirmed deletion clears the key.
 
 Phase S uses a `copy_capture` source-gate purpose and exports one PostgreSQL `REPEATABLE READ` snapshot to a
 full custom database image while copying the exact object closure under the same frozen source. Database and
@@ -5197,12 +4988,13 @@ The attestation scheduler and final Lane D publication share the audit scope adv
 activation/sealing/publication cannot race between the negative proof and the discoverability commit.
 
 **Lane D D4 makes outer readability and tenant-DEK custody separate cryptographic facts.**
-`outer_recipients` is the exact frozen tenant-recipient set plus the platform recipient only when the
-request-time `superadmin_access_at_decision` snapshot is true. `tenant_dek_recipients` is always exactly the
-frozen tenant set and never gains the platform recipient. The age command builders consume those distinctly
-named sets directly; `spaceworks-tenant-dump-v1` does not call the obsolete
+`outer_recipients` is the one-shot tenant set plus the platform recipient, always (superadmin is always
+on). `tenant_dek_recipients` is always exactly the one-shot tenant set and never gains the platform
+recipient. The age command builders consume those distinctly named sets directly; a missing or invalid
+`BACKUP_AGE_RECIPIENT` refuses the build. `spaceworks-tenant-dump-v1` does not call the obsolete
 `spaceworks-tenant-migration-v1` `archive_envelope.py` layout, whose platform-readable member contains
-plaintext DEKs.
+plaintext DEKs. `DERIVATION_POLICY_VERSION` is 6: the manifest's `source` block no longer records a
+request-time superadmin decision.
 
 A plaintext source is scanned across every registered mapped raw column and refuses if any non-empty value
 has the PII-envelope prefix. Its manifest declares `source_pii_mode=plaintext`, an empty retained-key
@@ -5238,10 +5030,10 @@ commits. The derivation-policy version is bumped whenever this custody/layout co
 re-verifies the source mode, mapped findings, key inventory and content-ledger declaration against the immutable
 capture.
 
-**Lane D D5 reconstructs target cryptography and custody only from tenant-held proof.** Before any target
+**Lane D D5 reconstructs target cryptography only from tenant-held proof.** Before any target
 state is changed, `tenant_dump_target_identities.py` accepts only absolute regular files that are mode `0600`
 on a non-root read-only host mount. Raw identities in argv or environment are refused. Each file is streamed
-to `age-keygen -y`, and the resulting canonical recipient/fingerprint set must equal the frozen tenant-DEK
+to `age-keygen -y`, and the resulting canonical recipient/fingerprint set must equal the one-shot tenant-DEK
 recipient set exactly; the platform-only outer identity therefore cannot pass. The path and identity bytes are
 never copied into target operation storage or database state.
 
@@ -5258,15 +5050,9 @@ target host can observe plaintext transiently, and process dumps or swap are not
 
 The target creates a fresh generation bound to its own `PII_SEARCH_HASH_KEY`, rebuilds every generic and event
 blind index, runs strict encryption readiness and performs authenticated deterministic sample decrypts while
-the makerspace remains `IMPORTING`. Imported archive-recipient rows retain only canonical public metadata:
-source challenge and `verified_at` state, reservations, both custody-state rows and both alarm outboxes are
-refused if restored. Matching mounted identities pass the normal target challenge/verification path, gain
-target reservations and a new `tenant_migration.target_archive_recipient_verified` audit event. Recomputing
-under the makerspace-first custody lock always leaves Part A `not_applicable` because target superadmin access
-is forced on; Lane D independently derives healthy/degraded/zero. Zero refuses readiness. One requires a
-positive degraded revision and every current decision-19b intent. Routing is explicitly rerunnable after the
-target superadmin is created, so missing repair-capable or mailable tenant staff must gain a durable operator
-escalation before activation readiness succeeds.
+the makerspace remains `IMPORTING`. The one-shot recipients prove possession at DEK install and are not
+kept on the target: no recipient rows, reservations or custody states are created, and activation
+(`target_cutover._require_lane_d_readiness`) re-runs encryption readiness only.
 
 - **Phase 4's archive projection DECRYPTS mapped PII.** `archive.source_value` reads fields through
   `getattr`, and `ScopedPiiModelMixin.__getattribute__` decrypts — so a PORTABLE archive built on it
@@ -5801,28 +5587,9 @@ prove its marker, then fsync the final ledger record while the supervisor still 
 cutover on re-entry requires both the pointer tuple and target database marker to match its ledger record.
 Missing recovery singleton rows and unknown recovery modes are routing-denied, never treated as NORMAL.
 
-**Lane E compound cutover is a separate H1-supervised operation, never the legacy in-place restore.** The
-coordinator reuses the side-effect-free import preflight, then proves the host-installed protocol/signer/
-migration/script/exact-writer-set capability and refuses any topology without atomic rename or store-native CAS, a durable
-generation, a queried database identity, the exact writer rollout, and a safe owned-or-supplied sibling
-lifecycle. An externally authoritative `DATABASE_URL` is supported only through a provider adapter whose
-control plane supplies the same journalled compare-and-swap. The H1 ledger begins before every target effect.
-The readable main is restored to a non-routable sibling; `database_grants` recreates the maintenance/runtime
-boundary before Django; signed reservation rows, database fences, sequence/catalog proofs and persistent
-not-restored component rows are installed and verified before any pointer effect. Object outcomes are chosen
-and fsynced in the ledger before their bytes are written.
-
-The cutover record retains the old and new database URLs in its private mode-`0600` host ledger, the queried
-sibling identity and ownership proof, grant state, pointer generations and every object outcome. These URLs
-are never copied to argv, ordinary logs, exceptions or the database. The candidate backend consumes an H1b
-single-use launch grant from a **BOUND** candidate-health marker and starts without the normal `migrate`
-dependency. Its readiness probe must reproduce the exact reservation/fence/not-restored declarations. Only
-then may `host_pointer` perform its fsynced atomic replacement. Explicit recovery acknowledgement is durable
-before the supervisor changes the marker to `normal`; that marker transition is complete before backend,
-worker, beat or cloud cron normal rollout. Rollback reverses the pointer first and the pre-journalled object
-effects second, retains the candidate ownership proof in both cutover and rollback records, and refuses any
-requested database destruction unless the live identity and run-owner proof match. An operator-supplied or
-otherwise unowned database is never dropped automatically.
+**The Lane E compound cutover coordinator was deleted in P1b (2026-10-27).** It only ever restored a
+partial archive (one carrying sovereign slices); with the superadmin always on no such archive exists, and
+`backup_control_preflight` refuses one before any effect. Whole-server restore is `scripts/restore.sh`.
 
 **Every legacy `scripts/restore.sh` `pg_restore --no-owner --no-acl` is followed immediately by shared
 role/grant reprovisioning before the next Django command.** This includes failure rollback, interrupted-run

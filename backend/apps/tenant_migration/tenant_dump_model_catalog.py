@@ -28,7 +28,7 @@ PROJECTED_MODEL_LABELS = frozenset(
     """operations.SavedView accounts.User apiclients.ApiKeyRequest audit.AuditLog
     makerspaces.MembershipAdditionalRole machines.MembershipMachineTypeScope
     notifications.MemberNotificationPreference notifications.NotificationPreference
-    backup.MakerspaceArchiveRecipient bookings.BookableSpace bookings.Booking boxes.Box
+    bookings.BookableSpace bookings.Booking boxes.Box
     boxes.BoxScan boxes.QrCode boxes.QrScanEvent devices.Device devices.DeviceEvent
     events.EventSeries events.Event events.EventRegistration
     events.EventCheckInEvent events.EventStationBinding events.EventFeedbackSurvey events.EventFeedbackResponse

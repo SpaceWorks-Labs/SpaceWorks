@@ -20,12 +20,7 @@ def _deliver(log):
         finished(log)
         return log
 
-    # Custody alarms are deployment control-plane mail even when addressed to a
-    # tenant custodian. Keep the source-gate exemption as narrow as the task policy.
-    custody_alarm = log.stream == "backup" and log.event in {
-        "archive_custody_alarm", "tenant_exit_custody_alarm",
-    }
-    if log.makerspace_id and not custody_alarm:
+    if log.makerspace_id:
         from apps.tenant_migration.gate_runtime import assert_write_allowed
         from apps.encryption.write_fence import assert_mapped_write_allowed
         # Reuse the task's dedicated boundary lock before opening an application

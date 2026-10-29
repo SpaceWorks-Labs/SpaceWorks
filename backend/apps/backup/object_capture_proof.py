@@ -1,5 +1,5 @@
 """Check canonical programme bytes against their independently retained metadata."""
-from .recipient_selection import BackupBuildError
+from .build_errors import BackupBuildError
 
 PROOF_FIELDS = {"expected_size_bytes", "expected_sha256"}
 

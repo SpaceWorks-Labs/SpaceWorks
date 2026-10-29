@@ -36,7 +36,6 @@ from .tenant_dump_lineage import (
 from .tenant_dump_objects import package_staged_objects
 from . import tenant_dump_outer_manifest_facts as outer_facts
 from .tenant_dump_pii import ENCRYPTED, scan_mapped_pii, source_pii_mode
-from .tenant_dump_publication import revalidate_before_encryption
 from .tenant_dump_recipients import recipient_sets
 from .tenant_dump_source_projection import project_makerspace_source
 from .tenant_dump_staging import require_owned_root
@@ -98,8 +97,7 @@ def derive_tenant_dump(capture_id, *, database=None):
         objects = package_staged_objects(root, bundle, object_entries)
         key_envelope = None
         if pii_mode == ENCRYPTED:
-            frozen = revalidate_before_encryption(capture.pk, stage="inner")
-            recipients = recipient_sets(capture, frozen)
+            recipients = recipient_sets(capture)
             key_envelope = seal_tenant_deks(
                 source_key_rows,
                 retained_keys,
@@ -129,8 +127,7 @@ def derive_tenant_dump(capture_id, *, database=None):
             encoding="utf-8",
         )
         manifest_path.chmod(0o600)
-        frozen = revalidate_before_encryption(capture.pk, stage="outer")
-        recipients = recipient_sets(capture, frozen)
+        recipients = recipient_sets(capture)
         seal_outer_bundle(
             bundle,
             artifact,

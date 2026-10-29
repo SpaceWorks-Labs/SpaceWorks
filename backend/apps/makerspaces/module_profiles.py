@@ -35,7 +35,6 @@ _RECOMMENDED_EXTRAS = frozenset({
     # that merely defaults on is NOT picked up here -- omitting this would hand a
     # freshly provisioned space no way for a member to register.
     "member_accounts",
-    "backup",
 })
 
 # A tool library: the hardware lending lifecycle and nothing else. No machines, no
@@ -45,7 +44,6 @@ _LENDING_EXTRAS = frozenset({
     "reports", "qr_print_batches", "asset_units", "email",
     # A tool library lends to people, so it needs member accounts to lend to.
     "member_accounts",
-    "backup",
 })
 
 # A machine shop: the machine registry, its service queue and the maintenance that keeps
@@ -58,7 +56,6 @@ _LENDING_EXTRAS = frozenset({
 _WORKSHOP_EXTRAS = frozenset({
     "machines", "machine_service", "printing", "maintenance", "reports",
     "notifications", "email",
-    "backup",
 })
 
 # The two deployment-shaped profiles. `cloud` is the module set that works on a single
@@ -75,7 +72,6 @@ _CLOUD_EXTRAS = frozenset({
     "machines", "machine_service", "maintenance",
     "events", "bookings", "membership", "member_accounts",
     "notifications", "email", "payments",
-    "backup",
 })
 
 _EVENTS_ONLY_EXTRAS = frozenset({

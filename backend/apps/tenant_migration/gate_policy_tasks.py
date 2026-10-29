@@ -31,17 +31,6 @@ TASK_EXEMPTIONS = {
     "apps.backup.tasks.scheduled_deployment_backup_task": "Deployment backup control plane.",
     "apps.backup.tasks.purge_expired_backup_archives_task": "Platform backup retention.",
     "apps.backup.tasks.cleanup_expired_restore_rollbacks_task": "Deployment recovery cleanup.",
-    "apps.backup.tasks.deliver_archive_custody_alarms_task": (
-        "Archive-custody alarm delivery. Writes only its own outbox rows and the "
-        "derived custody-state delivery marker -- both deployment control-plane "
-        "state, never tenant domain data -- and sends mail. It reads a makerspace "
-        "to resolve recipients but mutates no tenant row, so it cannot disturb a "
-        "frozen source."
-    ),
-    "apps.backup.tasks.deliver_tenant_exit_custody_alarms_task": (
-        "Lane D custody-alarm delivery writes only deployment-local derived state "
-        "and its recoverable outbox before sending mail."
-    ),
     "apps.backup.tasks_offsite.push_offsite_backups_task": (
         "Deployment offsite copy control plane: pushes, prunes and re-verifies sealed archives."
     ),
@@ -272,7 +261,7 @@ FANOUT_GATE_PARTICIPANTS = {
     ),
     "apps.integrations.mail_providers.chunks._phase": "Free-profile contract envelope delivery (one per chunk).",
     "apps.integrations.mail_providers.outbox.drain": (
-        "Free-profile mail drain; platform and custody-alarm mail stay ungated."
+        "Free-profile mail drain; platform mail stays ungated."
     ),
     "apps.operations.cloud_jobs.rollups.chunk": "Free-profile report rollup finalisation.",
 }

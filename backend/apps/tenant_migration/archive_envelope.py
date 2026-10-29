@@ -43,9 +43,6 @@ def build_tenant_migration_archive(
     actor=None, sleep=None, disclosure_approval=None, recipient=None,
 ):
     """Return ``(encrypted_path, manifest, encrypted_sha256)`` for one tenant."""
-    platform_custody = not recipient
-    if platform_custody:
-        _require_platform_custody_allowed(makerspace)
     output = Path(output).expanduser().resolve()
     if disclosure_approval is None and hasattr(makerspace, "_meta"):
         disclosure_approval = _current_approval(makerspace)
@@ -98,10 +95,6 @@ def build_tenant_migration_archive(
                     "fencing_token": gate_lease.fencing_token,
                 }
                 manifest_payload = _json_bytes(manifest)
-                if platform_custody:
-                    # Re-read just before encryption: the switch can be turned off
-                    # while the snapshot is being built.
-                    _require_platform_custody_allowed(makerspace)
                 output.parent.mkdir(parents=True, exist_ok=True)
                 _stream_age_archive(
                     export_root, key_payload, manifest_payload, output, recipient
@@ -122,27 +115,6 @@ def build_tenant_migration_archive(
                 "The tenant migration archive could not be built."
             ) from exc
 
-
-def _require_platform_custody_allowed(makerspace):
-    """Refuse to encrypt a tenant to the PLATFORM key once it turned superadmin access off.
-
-    The HTTP export path is gated by `require_makerspace_superadmin_access` and encrypts
-    to the target's own recipient. Falling back to `BACKUP_AGE_RECIPIENT` (the command-line
-    path) hands the whole tenant, DEKs included, to the platform operator -- exactly the
-    custody a space that switched superadmin access off has withdrawn (BK-66). Read from
-    the database, never the caller's instance, so a stale object cannot open the gate.
-    """
-    from apps.makerspaces.models import Makerspace
-
-    allowed = Makerspace.objects.filter(
-        pk=makerspace.pk, superadmin_access_enabled=True,
-    ).exists()
-    if not allowed:
-        raise MigrationArchiveError(
-            f"Makerspace '{makerspace.slug}' has turned superadmin access off, so it "
-            "cannot be exported to the platform archive key. Ask its Space Manager to "
-            "turn superadmin access back on, or run the target-keyed migration export."
-        )
 
 
 def _portable_job(makerspace, disclosure_approval):

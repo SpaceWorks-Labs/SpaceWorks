@@ -54,8 +54,10 @@ class TenantDumpCatalogError(AssertionError):
 # User.external_checkin_user_id (#80); re-pinned.
 # lane/p1b-c: makerspaces/0109 MakerspaceSecurityLock and accounts/0047 PlatformPiiAccessGrant
 # (security locks and the superadmin PII window, #114); re-pinned.
+# lane/p1b-b1 (#110/#111): backup/0030-0033 drop archive custody, decision snapshots, Lane E
+# restore state and the backup module; tenant_migration/0013 drops dump custody; re-pinned.
 # Orchestrator re-pins the live catalog after final schema/migration verification.
-CATALOG_SCHEMA_SHA256 = "e3a364fc3c74229a126c827d45b4fd7d37b23e3169a855682db2eb7ed64b9f71"
+CATALOG_SCHEMA_SHA256 = "38de652f424fe98b8cd760bc9652b32789feddd04918121949e40639c4e6ffc8"
 
 
 def catalog_models(apps_registry=apps):

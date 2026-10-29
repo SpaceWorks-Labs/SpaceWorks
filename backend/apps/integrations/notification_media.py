@@ -13,7 +13,6 @@ from django.utils import timezone
 
 from apps.accounts import rbac
 from apps.audit import services as audit
-from apps.backup.not_restored import TenantNotRestored
 from .notification_attachment_sources import (
     DocumentDeliveryError, attachment_references, authorized_attachment, render_attachment, source_for,
     attachment_tenant_ids,
@@ -130,7 +129,7 @@ def consume_grant(token):
         expected_reference, scopes = _discover(seed.delivery)
         with _source_boundaries(scopes):
             return _consume_locked_sources(seed, expected_reference, scopes, space_id)
-    except (SourceMigrationGateError, TenantNotRestored, DocumentDeliveryError):
+    except (SourceMigrationGateError, DocumentDeliveryError):
         return None
 
 
@@ -196,7 +195,7 @@ def cleanup_grants(limit=500, *, after_id=0):
                         audit.record(None, "notification.media_grant_cleaned", makerspace=Makerspace.objects.get(pk=space_id),
                                      meta={"grant_id": pk})
                 counts["deleted"] += int(grant is not None)
-        except (SourceMigrationGateError, TenantNotRestored):
+        except SourceMigrationGateError:
             counts["skipped"] += 1
             continue
         except Exception as exc:

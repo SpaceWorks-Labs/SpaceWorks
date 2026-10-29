@@ -55094,672 +55094,6 @@
                 }
             }
         },
-        "/api/v1/admin/makerspace/{makerspace_id}/archive-recipients": {
-            "get": {
-                "operationId": "api_v1_admin_makerspace_archive_recipients_list",
-                "summary": "List archive recipients for a makerspace",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "makerspace_id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "Backup recipients"
-                ],
-                "security": [
-                    {
-                        "jwtAuth": []
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "$ref": "#/components/schemas/ArchiveRecipient"
-                                    }
-                                }
-                            }
-                        },
-                        "description": ""
-                    },
-                    "400": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ArchiveRecipientError"
-                                }
-                            }
-                        },
-                        "description": "The recipient or lifecycle request is invalid."
-                    },
-                    "404": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ArchiveRecipientError"
-                                }
-                            }
-                        },
-                        "description": "The recipient does not exist in this makerspace."
-                    },
-                    "401": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ArchiveRecipientError"
-                                }
-                            }
-                        },
-                        "description": "Authentication is required."
-                    },
-                    "403": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ArchiveRecipientError"
-                                }
-                            }
-                        },
-                        "description": "Manage-makerspace permission is required."
-                    }
-                }
-            },
-            "post": {
-                "operationId": "api_v1_admin_makerspace_archive_recipients_create",
-                "description": "The decrypted challenge is a 32-byte nonce exchanged as canonical, unpadded base64url. Only the SHA-256 digest of the raw 32 nonce bytes is persisted.",
-                "summary": "Enroll an archive recipient and issue a custody challenge",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "makerspace_id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "Backup recipients"
-                ],
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/ArchiveRecipientCreate"
-                            }
-                        },
-                        "application/x-www-form-urlencoded": {
-                            "schema": {
-                                "$ref": "#/components/schemas/ArchiveRecipientCreate"
-                            }
-                        },
-                        "multipart/form-data": {
-                            "schema": {
-                                "$ref": "#/components/schemas/ArchiveRecipientCreate"
-                            }
-                        }
-                    },
-                    "required": true
-                },
-                "security": [
-                    {
-                        "jwtAuth": []
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ArchiveRecipientChallenge"
-                                }
-                            }
-                        },
-                        "description": ""
-                    },
-                    "400": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ArchiveRecipientError"
-                                }
-                            }
-                        },
-                        "description": "The recipient or lifecycle request is invalid."
-                    },
-                    "404": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ArchiveRecipientError"
-                                }
-                            }
-                        },
-                        "description": "The recipient does not exist in this makerspace."
-                    },
-                    "409": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ArchiveRecipientError"
-                                }
-                            }
-                        },
-                        "description": "The recipient or lifecycle request is invalid."
-                    },
-                    "503": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ArchiveRecipientError"
-                                }
-                            }
-                        },
-                        "description": "The age challenge could not be encrypted."
-                    },
-                    "401": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ArchiveRecipientError"
-                                }
-                            }
-                        },
-                        "description": "Authentication is required."
-                    },
-                    "403": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ArchiveRecipientError"
-                                }
-                            }
-                        },
-                        "description": "Manage-makerspace permission is required."
-                    }
-                }
-            }
-        },
-        "/api/v1/admin/makerspace/{makerspace_id}/archive-recipients/{id}/compromise": {
-            "post": {
-                "operationId": "api_v1_admin_makerspace_archive_recipients_compromise_create",
-                "summary": "Mark an archive recipient as compromised",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "required": true
-                    },
-                    {
-                        "in": "path",
-                        "name": "makerspace_id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "Backup recipients"
-                ],
-                "security": [
-                    {
-                        "jwtAuth": []
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ArchiveRecipient"
-                                }
-                            }
-                        },
-                        "description": ""
-                    },
-                    "400": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ArchiveRecipientError"
-                                }
-                            }
-                        },
-                        "description": "The recipient or lifecycle request is invalid."
-                    },
-                    "404": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ArchiveRecipientError"
-                                }
-                            }
-                        },
-                        "description": "The recipient does not exist in this makerspace."
-                    },
-                    "401": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ArchiveRecipientError"
-                                }
-                            }
-                        },
-                        "description": "Authentication is required."
-                    },
-                    "403": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ArchiveRecipientError"
-                                }
-                            }
-                        },
-                        "description": "Manage-makerspace permission is required."
-                    }
-                }
-            }
-        },
-        "/api/v1/admin/makerspace/{makerspace_id}/archive-recipients/{id}/reactivate": {
-            "post": {
-                "operationId": "api_v1_admin_makerspace_archive_recipients_reactivate_create",
-                "summary": "Reactivate a revoked archive recipient",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "required": true
-                    },
-                    {
-                        "in": "path",
-                        "name": "makerspace_id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "Backup recipients"
-                ],
-                "security": [
-                    {
-                        "jwtAuth": []
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ArchiveRecipient"
-                                }
-                            }
-                        },
-                        "description": ""
-                    },
-                    "400": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ArchiveRecipientError"
-                                }
-                            }
-                        },
-                        "description": "The recipient or lifecycle request is invalid."
-                    },
-                    "404": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ArchiveRecipientError"
-                                }
-                            }
-                        },
-                        "description": "The recipient does not exist in this makerspace."
-                    },
-                    "401": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ArchiveRecipientError"
-                                }
-                            }
-                        },
-                        "description": "Authentication is required."
-                    },
-                    "403": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ArchiveRecipientError"
-                                }
-                            }
-                        },
-                        "description": "Manage-makerspace permission is required."
-                    }
-                }
-            }
-        },
-        "/api/v1/admin/makerspace/{makerspace_id}/archive-recipients/{id}/reissue-challenge": {
-            "post": {
-                "operationId": "api_v1_admin_makerspace_archive_recipients_reissue_challenge_create",
-                "description": "The decrypted 32-byte nonce is exchanged as canonical, unpadded base64url. The prior challenge stops verifying when this request commits.",
-                "summary": "Reissue an archive-recipient custody challenge",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "required": true
-                    },
-                    {
-                        "in": "path",
-                        "name": "makerspace_id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "Backup recipients"
-                ],
-                "security": [
-                    {
-                        "jwtAuth": []
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ArchiveRecipientChallenge"
-                                }
-                            }
-                        },
-                        "description": ""
-                    },
-                    "400": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ArchiveRecipientError"
-                                }
-                            }
-                        },
-                        "description": "The recipient or lifecycle request is invalid."
-                    },
-                    "404": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ArchiveRecipientError"
-                                }
-                            }
-                        },
-                        "description": "The recipient does not exist in this makerspace."
-                    },
-                    "503": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ArchiveRecipientError"
-                                }
-                            }
-                        },
-                        "description": "The age challenge could not be encrypted."
-                    },
-                    "401": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ArchiveRecipientError"
-                                }
-                            }
-                        },
-                        "description": "Authentication is required."
-                    },
-                    "403": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ArchiveRecipientError"
-                                }
-                            }
-                        },
-                        "description": "Manage-makerspace permission is required."
-                    }
-                }
-            }
-        },
-        "/api/v1/admin/makerspace/{makerspace_id}/archive-recipients/{id}/revoke": {
-            "post": {
-                "operationId": "api_v1_admin_makerspace_archive_recipients_revoke_create",
-                "summary": "Revoke an archive recipient",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "required": true
-                    },
-                    {
-                        "in": "path",
-                        "name": "makerspace_id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "Backup recipients"
-                ],
-                "security": [
-                    {
-                        "jwtAuth": []
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ArchiveRecipient"
-                                }
-                            }
-                        },
-                        "description": ""
-                    },
-                    "400": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ArchiveRecipientError"
-                                }
-                            }
-                        },
-                        "description": "The recipient or lifecycle request is invalid."
-                    },
-                    "404": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ArchiveRecipientError"
-                                }
-                            }
-                        },
-                        "description": "The recipient does not exist in this makerspace."
-                    },
-                    "401": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ArchiveRecipientError"
-                                }
-                            }
-                        },
-                        "description": "Authentication is required."
-                    },
-                    "403": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ArchiveRecipientError"
-                                }
-                            }
-                        },
-                        "description": "Manage-makerspace permission is required."
-                    }
-                }
-            }
-        },
-        "/api/v1/admin/makerspace/{makerspace_id}/archive-recipients/{id}/verify": {
-            "post": {
-                "operationId": "api_v1_admin_makerspace_archive_recipients_verify_create",
-                "description": "Submit the decrypted nonce as canonical unpadded base64url. It must decode to exactly 32 bytes; padding and non-canonical forms are refused.",
-                "summary": "Verify possession of an archive recipient",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "required": true
-                    },
-                    {
-                        "in": "path",
-                        "name": "makerspace_id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "Backup recipients"
-                ],
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/ArchiveRecipientVerify"
-                            }
-                        },
-                        "application/x-www-form-urlencoded": {
-                            "schema": {
-                                "$ref": "#/components/schemas/ArchiveRecipientVerify"
-                            }
-                        },
-                        "multipart/form-data": {
-                            "schema": {
-                                "$ref": "#/components/schemas/ArchiveRecipientVerify"
-                            }
-                        }
-                    },
-                    "required": true
-                },
-                "security": [
-                    {
-                        "jwtAuth": []
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ArchiveRecipient"
-                                }
-                            }
-                        },
-                        "description": ""
-                    },
-                    "400": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ArchiveRecipientError"
-                                }
-                            }
-                        },
-                        "description": "The recipient or lifecycle request is invalid."
-                    },
-                    "409": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ArchiveRecipientError"
-                                }
-                            }
-                        },
-                        "description": "The recipient or lifecycle request is invalid."
-                    },
-                    "404": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ArchiveRecipientError"
-                                }
-                            }
-                        },
-                        "description": "The recipient does not exist in this makerspace."
-                    },
-                    "429": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ArchiveRecipientError"
-                                }
-                            }
-                        },
-                        "description": "Verification attempts for this recipient are throttled."
-                    },
-                    "401": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ArchiveRecipientError"
-                                }
-                            }
-                        },
-                        "description": "Authentication is required."
-                    },
-                    "403": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ArchiveRecipientError"
-                                }
-                            }
-                        },
-                        "description": "Manage-makerspace permission is required."
-                    }
-                }
-            }
-        },
         "/api/v1/admin/makerspace/{makerspace_id}/archive-requests": {
             "get": {
                 "operationId": "api_v1_admin_makerspace_archive_requests_list",
@@ -56270,10 +55604,10 @@
                 }
             }
         },
-        "/api/v1/admin/makerspace/{makerspace_id}/backup-custody": {
+        "/api/v1/admin/makerspace/{makerspace_id}/backup-status": {
             "get": {
-                "operationId": "api_v1_admin_makerspace_backup_custody_retrieve",
-                "summary": "Get the makerspace's archive and tenant-exit custody status",
+                "operationId": "api_v1_admin_makerspace_backup_status_retrieve",
+                "summary": "Get when this makerspace was last backed up",
                 "parameters": [
                     {
                         "in": "path",
@@ -56285,7 +55619,7 @@
                     }
                 ],
                 "tags": [
-                    "Backup recipients"
+                    "Backup"
                 ],
                 "security": [
                     {
@@ -56297,14 +55631,11 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/BackupCustody"
+                                    "$ref": "#/components/schemas/MakerspaceBackupStatus"
                                 }
                             }
                         },
                         "description": ""
-                    },
-                    "400": {
-                        "description": "The backup module is not installed for this makerspace."
                     },
                     "404": {
                         "description": "The requested resource does not exist in the actor's scope."
@@ -56354,9 +55685,6 @@
                         },
                         "description": ""
                     },
-                    "400": {
-                        "description": "The backup module is not installed for this makerspace."
-                    },
                     "404": {
                         "description": "The requested resource does not exist in the actor's scope."
                     },
@@ -56402,9 +55730,6 @@
                     },
                     "409": {
                         "description": "Managed host operation or unqualified writer drain is unavailable."
-                    },
-                    "400": {
-                        "description": "The backup module is not installed for this makerspace."
                     },
                     "404": {
                         "description": "The requested resource does not exist in the actor's scope."
@@ -159714,15 +159039,6 @@
                     "results"
                 ]
             },
-            "ArchiveCustodyStateEnum": {
-                "type": "string",
-                "enum": [
-                    "healthy",
-                    "not_applicable",
-                    "degraded_one_recipient",
-                    "floor_breached_zero"
-                ]
-            },
             "ArchiveHost": {
                 "type": "object",
                 "properties": {
@@ -159736,139 +159052,6 @@
                 "required": [
                     "canonical_url",
                     "name"
-                ]
-            },
-            "ArchiveRecipient": {
-                "type": "object",
-                "properties": {
-                    "id": {
-                        "type": "integer",
-                        "readOnly": true
-                    },
-                    "public_recipient": {
-                        "type": "string",
-                        "readOnly": true
-                    },
-                    "fingerprint": {
-                        "type": "string",
-                        "readOnly": true
-                    },
-                    "label": {
-                        "type": "string",
-                        "readOnly": true
-                    },
-                    "added_by": {
-                        "type": "integer",
-                        "readOnly": true,
-                        "nullable": true
-                    },
-                    "added_at": {
-                        "type": "string",
-                        "format": "date-time",
-                        "readOnly": true
-                    },
-                    "revoked_at": {
-                        "type": "string",
-                        "format": "date-time",
-                        "readOnly": true,
-                        "nullable": true
-                    },
-                    "compromised_at": {
-                        "type": "string",
-                        "format": "date-time",
-                        "readOnly": true,
-                        "nullable": true
-                    },
-                    "verified_at": {
-                        "type": "string",
-                        "format": "date-time",
-                        "readOnly": true,
-                        "nullable": true
-                    },
-                    "challenge_issued_at": {
-                        "type": "string",
-                        "format": "date-time",
-                        "readOnly": true,
-                        "nullable": true
-                    }
-                },
-                "required": [
-                    "added_at",
-                    "added_by",
-                    "challenge_issued_at",
-                    "compromised_at",
-                    "fingerprint",
-                    "id",
-                    "label",
-                    "public_recipient",
-                    "revoked_at",
-                    "verified_at"
-                ]
-            },
-            "ArchiveRecipientChallenge": {
-                "type": "object",
-                "properties": {
-                    "recipient": {
-                        "$ref": "#/components/schemas/ArchiveRecipient"
-                    },
-                    "encrypted_challenge": {
-                        "type": "string",
-                        "description": "The binary age ciphertext encoded as unpadded base64url for JSON transport. Its decrypted plaintext is the 32-byte nonce encoded as canonical, unpadded base64url."
-                    },
-                    "nonce_encoding": {
-                        "type": "string",
-                        "default": "base64url-unpadded",
-                        "description": "The decrypted nonce uses canonical unpadded base64url."
-                    }
-                },
-                "required": [
-                    "encrypted_challenge",
-                    "recipient"
-                ]
-            },
-            "ArchiveRecipientCreate": {
-                "type": "object",
-                "properties": {
-                    "public_recipient": {
-                        "type": "string",
-                        "maxLength": 200
-                    },
-                    "label": {
-                        "type": "string",
-                        "maxLength": 120
-                    }
-                },
-                "required": [
-                    "label",
-                    "public_recipient"
-                ]
-            },
-            "ArchiveRecipientError": {
-                "type": "object",
-                "properties": {
-                    "detail": {
-                        "type": "string"
-                    },
-                    "code": {
-                        "type": "string"
-                    }
-                },
-                "required": [
-                    "code",
-                    "detail"
-                ]
-            },
-            "ArchiveRecipientVerify": {
-                "type": "object",
-                "properties": {
-                    "nonce": {
-                        "type": "string",
-                        "description": "The decrypted 32-byte nonce in canonical, unpadded base64url form. Padding and non-canonical encodings are refused.",
-                        "maxLength": 128
-                    }
-                },
-                "required": [
-                    "nonce"
                 ]
             },
             "ArchiveRequestError": {
@@ -161724,51 +160907,6 @@
                 ],
                 "type": "string",
                 "description": "* `pending` - Pending\n* `running` - Running\n* `promoting` - Promoting\n* `available` - Available\n* `failed` - Failed\n* `expired` - Expired"
-            },
-            "BackupCustody": {
-                "type": "object",
-                "properties": {
-                    "superadmin_access_enabled": {
-                        "type": "boolean"
-                    },
-                    "verified_recipient_count": {
-                        "type": "integer"
-                    },
-                    "archive_custody": {
-                        "allOf": [
-                            {
-                                "$ref": "#/components/schemas/CustodyState"
-                            }
-                        ],
-                        "nullable": true
-                    },
-                    "tenant_exit_custody": {
-                        "allOf": [
-                            {
-                                "$ref": "#/components/schemas/CustodyState"
-                            }
-                        ],
-                        "nullable": true
-                    },
-                    "last_backed_up_at": {
-                        "type": "string",
-                        "format": "date-time",
-                        "nullable": true,
-                        "description": "Newest completed archive covering this makerspace: its own archive, or the deployment archive a nightly run covered it with. Null when none exists yet."
-                    },
-                    "nightly_backups_enabled": {
-                        "type": "boolean",
-                        "description": "Whether this deployment runs the nightly backup."
-                    }
-                },
-                "required": [
-                    "archive_custody",
-                    "last_backed_up_at",
-                    "nightly_backups_enabled",
-                    "superadmin_access_enabled",
-                    "tenant_exit_custody",
-                    "verified_recipient_count"
-                ]
             },
             "BackupDestination": {
                 "type": "object",
@@ -172190,33 +171328,6 @@
                     "held_remaining_minor",
                     "paid_minor",
                     "part_paid_remaining_minor"
-                ]
-            },
-            "CustodyState": {
-                "type": "object",
-                "properties": {
-                    "state": {
-                        "type": "string"
-                    },
-                    "reason_code": {
-                        "type": "string"
-                    },
-                    "entered_at": {
-                        "type": "string",
-                        "format": "date-time",
-                        "nullable": true
-                    },
-                    "cleared_at": {
-                        "type": "string",
-                        "format": "date-time",
-                        "nullable": true
-                    }
-                },
-                "required": [
-                    "cleared_at",
-                    "entered_at",
-                    "reason_code",
-                    "state"
                 ]
             },
             "CutoverOutcome": {
@@ -193893,18 +193004,6 @@
                         "format": "decimal",
                         "pattern": "^-?\\d{0,8}(?:\\.\\d{0,2})?$"
                     },
-                    "superadmin_access_enabled": {
-                        "type": "boolean"
-                    },
-                    "archive_custody_state": {
-                        "allOf": [
-                            {
-                                "$ref": "#/components/schemas/ArchiveCustodyStateEnum"
-                            }
-                        ],
-                        "nullable": true,
-                        "readOnly": true
-                    },
                     "staff_notifications_enabled": {
                         "type": "boolean"
                     },
@@ -194176,7 +193275,6 @@
                     }
                 },
                 "required": [
-                    "archive_custody_state",
                     "branding_config",
                     "cors_allowed_origins",
                     "country",
@@ -194294,6 +193392,25 @@
                 ],
                 "type": "string",
                 "description": "* `pending` - Pending\n* `approved` - Approved\n* `declined` - Declined\n* `withdrawn` - Withdrawn"
+            },
+            "MakerspaceBackupStatus": {
+                "type": "object",
+                "properties": {
+                    "last_backed_up_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true,
+                        "description": "Newest completed archive covering this makerspace: its own archive, or the deployment archive a nightly run covered it with. Null when none exists yet."
+                    },
+                    "nightly_backups_enabled": {
+                        "type": "boolean",
+                        "description": "Whether this deployment runs the nightly backup."
+                    }
+                },
+                "required": [
+                    "last_backed_up_at",
+                    "nightly_backups_enabled"
+                ]
             },
             "MakerspaceCreationSetup": {
                 "type": "object",
@@ -199016,7 +198133,6 @@
             "ModulesEnum": {
                 "enum": [
                     "asset_units",
-                    "backup",
                     "bookings",
                     "bulk_import",
                     "containers",
@@ -199055,7 +198171,7 @@
                     "whatsapp"
                 ],
                 "type": "string",
-                "description": "* `asset_units` - asset_units\n* `backup` - backup\n* `bookings` - bookings\n* `bulk_import` - bulk_import\n* `containers` - containers\n* `devices` - devices\n* `discord` - discord\n* `email` - email\n* `event_reimbursements` - event_reimbursements\n* `events` - events\n* `evidence_uploads` - evidence_uploads\n* `guest_handover` - guest_handover\n* `machine_service` - machine_service\n* `machines` - machines\n* `maintenance` - maintenance\n* `mattermost` - mattermost\n* `member_accounts` - member_accounts\n* `membership` - membership\n* `mobile` - mobile\n* `notifications` - notifications\n* `payments` - payments\n* `presence` - presence\n* `printing` - printing\n* `procurement` - procurement\n* `public_inventory` - public_inventory\n* `qr_management` - qr_management\n* `qr_print_batches` - qr_print_batches\n* `reports` - reports\n* `request_workflow` - request_workflow\n* `scanner` - scanner\n* `slack` - slack\n* `sms` - sms\n* `staff_admin` - staff_admin\n* `stock_transfers` - stock_transfers\n* `stocktake` - stocktake\n* `telegram` - telegram\n* `webhook` - webhook\n* `whatsapp` - whatsapp"
+                "description": "* `asset_units` - asset_units\n* `bookings` - bookings\n* `bulk_import` - bulk_import\n* `containers` - containers\n* `devices` - devices\n* `discord` - discord\n* `email` - email\n* `event_reimbursements` - event_reimbursements\n* `events` - events\n* `evidence_uploads` - evidence_uploads\n* `guest_handover` - guest_handover\n* `machine_service` - machine_service\n* `machines` - machines\n* `maintenance` - maintenance\n* `mattermost` - mattermost\n* `member_accounts` - member_accounts\n* `membership` - membership\n* `mobile` - mobile\n* `notifications` - notifications\n* `payments` - payments\n* `presence` - presence\n* `printing` - printing\n* `procurement` - procurement\n* `public_inventory` - public_inventory\n* `qr_management` - qr_management\n* `qr_print_batches` - qr_print_batches\n* `reports` - reports\n* `request_workflow` - request_workflow\n* `scanner` - scanner\n* `slack` - slack\n* `sms` - sms\n* `staff_admin` - staff_admin\n* `stock_transfers` - stock_transfers\n* `stocktake` - stocktake\n* `telegram` - telegram\n* `webhook` - webhook\n* `whatsapp` - whatsapp"
             },
             "MostLentReport": {
                 "type": "object",
@@ -210664,18 +209780,6 @@
                         "type": "string",
                         "format": "decimal",
                         "pattern": "^-?\\d{0,8}(?:\\.\\d{0,2})?$"
-                    },
-                    "superadmin_access_enabled": {
-                        "type": "boolean"
-                    },
-                    "archive_custody_state": {
-                        "allOf": [
-                            {
-                                "$ref": "#/components/schemas/ArchiveCustodyStateEnum"
-                            }
-                        ],
-                        "nullable": true,
-                        "readOnly": true
                     },
                     "staff_notifications_enabled": {
                         "type": "boolean"

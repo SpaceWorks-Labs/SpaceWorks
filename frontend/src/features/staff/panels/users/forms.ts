@@ -20,7 +20,6 @@ export const emptyMakerspaceForm: MakerspaceForm = {
   public_code: "",
   slug: "",
   location: "",
-  superadmin_access_enabled: true,
 };
 export const emptyResetPasswordForm: ResetPasswordForm = { password: "" };
 
@@ -49,6 +48,5 @@ export function makerspacePayload(form: MakerspaceForm) {
     public_code: form.public_code.trim(),
     slug: form.slug.trim(),
     location: form.location.trim(),
-    superadmin_access_enabled: form.superadmin_access_enabled,
   };
 }

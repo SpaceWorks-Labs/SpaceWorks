@@ -49,7 +49,7 @@ export function StaffPlatformTabContent({ activeTab, activeMakerspace, makerspac
         <DataExportsPanel key={makerspaceKey} makerspaceId={makerspaceKey} />
       ) : null}
       {activeTab === "backups" && canManageMakerspace ? (
-        <BackupRestorePanel key={makerspaceKey} makerspaceId={makerspaceKey} isSuperadmin={isSuperadmin} tenantBackupsEnabled={activeMakerspace?.enabled_modules?.includes("backup") ?? false} />
+        <BackupRestorePanel key={makerspaceKey} makerspaceId={makerspaceKey} isSuperadmin={isSuperadmin} />
       ) : null}
       {activeTab === "migration" && isSuperadmin ? (
         <TenantMigrationPanel key={makerspaceKey} makerspace={activeMakerspace} />

@@ -4,7 +4,6 @@ from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
 from apps.accounts.models import User
-from apps.backup.custody import initialize_custody_state
 from apps.apiclients.models import ApiClient
 from apps.boxes.models import Box
 from apps.inventory.categories import ensure_default_categories
@@ -26,21 +25,18 @@ DEMO_SPACES = [
         "name": "Alpha Robotics Lab",
         "location": "Main Campus - Room A12",
         "manager": "alpha_manager",
-        "superadmin_access_enabled": True,
     },
     {
         "slug": "beta-workshop",
         "name": "Beta Woodshop",
         "location": "North Wing - Woodshop",
         "manager": "beta_manager",
-        "superadmin_access_enabled": True,
     },
     {
         "slug": "gamma-fab",
         "name": "Gamma Fabrication Studio",
         "location": "Downtown Fab Studio",
         "manager": "gamma_manager",
-        "superadmin_access_enabled": True,
     },
 ]
 
@@ -93,11 +89,9 @@ class Command(BaseCommand):
                     "name": spec["name"],
                     "location": spec["location"],
                     "public_inventory_enabled": True,
-                    "superadmin_access_enabled": spec["superadmin_access_enabled"],
                     "created_by": superadmin,
                 },
             )
-            initialize_custody_state(makerspace.pk)
             spaces_created += int(created)
             # Modules are opt-in, so a freshly created makerspace starts core-only and
             # the machine-service seed below would hit `require_module` and abort the

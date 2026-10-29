@@ -13,7 +13,7 @@ from apps.backup.postgres_client import (
     client_binary,
     server_major,
 )
-from apps.backup.recipient_selection import BackupBuildError
+from apps.backup.build_errors import BackupBuildError
 
 logger = logging.getLogger(__name__)
 

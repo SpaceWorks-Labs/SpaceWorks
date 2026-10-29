@@ -34,7 +34,6 @@ export const openApiTags = [
   "Auth",
   "Backup",
   "Backup destinations",
-  "Backup recipients",
   "Backup recovery",
   "Booking website",
   "Bookings",
@@ -522,17 +521,11 @@ export const openApiPaths = [
   "/api/v1/admin/makerspace/{makerspace_id}/api-client-scopes",
   "/api/v1/admin/makerspace/{makerspace_id}/api-clients",
   "/api/v1/admin/makerspace/{makerspace_id}/api-settings",
-  "/api/v1/admin/makerspace/{makerspace_id}/archive-recipients",
-  "/api/v1/admin/makerspace/{makerspace_id}/archive-recipients/{id}/compromise",
-  "/api/v1/admin/makerspace/{makerspace_id}/archive-recipients/{id}/reactivate",
-  "/api/v1/admin/makerspace/{makerspace_id}/archive-recipients/{id}/reissue-challenge",
-  "/api/v1/admin/makerspace/{makerspace_id}/archive-recipients/{id}/revoke",
-  "/api/v1/admin/makerspace/{makerspace_id}/archive-recipients/{id}/verify",
   "/api/v1/admin/makerspace/{makerspace_id}/archive-requests",
   "/api/v1/admin/makerspace/{makerspace_id}/archive-requests/{id}/withdraw",
   "/api/v1/admin/makerspace/{makerspace_id}/audit-verifications",
   "/api/v1/admin/makerspace/{makerspace_id}/audit-verifications/{run_id}",
-  "/api/v1/admin/makerspace/{makerspace_id}/backup-custody",
+  "/api/v1/admin/makerspace/{makerspace_id}/backup-status",
   "/api/v1/admin/makerspace/{makerspace_id}/backups",
   "/api/v1/admin/makerspace/{makerspace_id}/billing-settings",
   "/api/v1/admin/makerspace/{makerspace_id}/categories",
@@ -2202,8 +2195,6 @@ export type ArchiveCollection = {
   "collection_url": string;
 };
 
-export type ArchiveCustodyStateEnum = "healthy" | "not_applicable" | "degraded_one_recipient" | "floor_breached_zero";
-
 export type ArchivedPaymentMakerspace = {
   "id": number;
   "slug": string;
@@ -2219,39 +2210,6 @@ export type ArchivedPaymentSummary = {
 export type ArchiveHost = {
   "name": string;
   "canonical_url": string;
-};
-
-export type ArchiveRecipient = {
-  "id": number;
-  "public_recipient": string;
-  "fingerprint": string;
-  "label": string;
-  "added_by": number | null;
-  "added_at": string;
-  "revoked_at": string | null;
-  "compromised_at": string | null;
-  "verified_at": string | null;
-  "challenge_issued_at": string | null;
-};
-
-export type ArchiveRecipientChallenge = {
-  "recipient": ArchiveRecipient;
-  "encrypted_challenge": string;
-  "nonce_encoding"?: string;
-};
-
-export type ArchiveRecipientCreate = {
-  "public_recipient": string;
-  "label": string;
-};
-
-export type ArchiveRecipientError = {
-  "detail": string;
-  "code": string;
-};
-
-export type ArchiveRecipientVerify = {
-  "nonce": string;
 };
 
 export type ArchiveRequestError = {
@@ -2720,15 +2678,6 @@ export type BackupArchive = {
 export type BackupArchiveScopeEnum = "deployment" | "makerspace";
 
 export type BackupArchiveStatusEnum = "pending" | "running" | "promoting" | "available" | "failed" | "expired";
-
-export type BackupCustody = {
-  "superadmin_access_enabled": boolean;
-  "verified_recipient_count": number;
-  "archive_custody": CustodyState | null;
-  "tenant_exit_custody": CustodyState | null;
-  "last_backed_up_at": string | null;
-  "nightly_backups_enabled": boolean;
-};
 
 export type BackupDestination = {
   "id": number;
@@ -5118,13 +5067,6 @@ export type CurrencyDashboard = {
   "ageing_0_7_minor": number;
   "ageing_8_30_minor": number;
   "ageing_31_plus_minor": number;
-};
-
-export type CustodyState = {
-  "state": string;
-  "reason_code": string;
-  "entered_at": string | null;
-  "cleared_at": string | null;
 };
 
 export type CutoverOutcome = {
@@ -9699,8 +9641,6 @@ export type Makerspace = {
   "lapsed_members_cannot_borrow"?: boolean;
   "request_access": string;
   "filament_low_stock_threshold_grams"?: string;
-  "superadmin_access_enabled"?: boolean;
-  "archive_custody_state": ArchiveCustodyStateEnum | null;
   "staff_notifications_enabled"?: boolean;
   "booking_requester_notifications_enabled"?: boolean;
   "event_default_registration_audience"?: DefaultRegistrationAudienceEnum;
@@ -9779,6 +9719,11 @@ export type MakerspaceArchiveRequest = {
 };
 
 export type MakerspaceArchiveRequestStatusEnum = "pending" | "approved" | "declined" | "withdrawn";
+
+export type MakerspaceBackupStatus = {
+  "last_backed_up_at": string | null;
+  "nightly_backups_enabled": boolean;
+};
 
 export type MakerspaceCreationSetup = {
   "profile"?: CreationProfile;
@@ -10993,7 +10938,7 @@ export type ModuleAction = {
   "key": string;
 };
 
-export type ModulesEnum = "asset_units" | "backup" | "bookings" | "bulk_import" | "containers" | "devices" | "discord" | "email" | "event_reimbursements" | "events" | "evidence_uploads" | "guest_handover" | "machine_service" | "machines" | "maintenance" | "mattermost" | "member_accounts" | "membership" | "mobile" | "notifications" | "payments" | "presence" | "printing" | "procurement" | "public_inventory" | "qr_management" | "qr_print_batches" | "reports" | "request_workflow" | "scanner" | "slack" | "sms" | "staff_admin" | "stock_transfers" | "stocktake" | "telegram" | "webhook" | "whatsapp";
+export type ModulesEnum = "asset_units" | "bookings" | "bulk_import" | "containers" | "devices" | "discord" | "email" | "event_reimbursements" | "events" | "evidence_uploads" | "guest_handover" | "machine_service" | "machines" | "maintenance" | "mattermost" | "member_accounts" | "membership" | "mobile" | "notifications" | "payments" | "presence" | "printing" | "procurement" | "public_inventory" | "qr_management" | "qr_print_batches" | "reports" | "request_workflow" | "scanner" | "slack" | "sms" | "staff_admin" | "stock_transfers" | "stocktake" | "telegram" | "webhook" | "whatsapp";
 
 export type MostLentReport = {
   "rows": Array<Array<unknown>>;
@@ -13359,8 +13304,6 @@ export type PatchedMakerspace = {
   "lapsed_members_cannot_borrow"?: boolean;
   "request_access"?: string;
   "filament_low_stock_threshold_grams"?: string;
-  "superadmin_access_enabled"?: boolean;
-  "archive_custody_state"?: ArchiveCustodyStateEnum | null;
   "staff_notifications_enabled"?: boolean;
   "booking_requester_notifications_enabled"?: boolean;
   "event_default_registration_audience"?: DefaultRegistrationAudienceEnum;

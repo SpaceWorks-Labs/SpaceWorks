@@ -78,7 +78,6 @@ payment and loan owners do not acquire a universal membership requirement.
 | Device `offline`, `recovered` | Authorized scoped staff | Staff personal + scoped rooms; preserve machine/type/category narrowing; no default member fan-out | TRUE — immutable outage/recovery edge sources [O] |
 | Subdomain request resolved | Explicit requester; authorized staff | Separate requester personal and staff summaries; route legacy direct Telegram through staff envelope | TRUE — private requester and staff source/room bodies [O] |
 | Makerspace archive requested/resolved | Superadmins / requesting staff | Platform email remains ungated; tenant rooms are not equivalent recipients | RETAINED — ungated platform mail [O] |
-| Archive/tenant-exit custody alarm | Borrower/custodian; scoped staff for staff variants only | Mandatory email remains independent of selected personal chat; preserve suppression, module exemptions and never-deferred policy | RETAINED — mandatory custody mail; no new personal-chat adapter [O] |
 | Scheduled report ready | Authorized selected staff | Existing selected email/room; personal endpoint selection must preserve report disclosure authority; never post unrestricted report links | TRUE — selected role/action personal navigation; external email retained [O] |
 | Stocktake scheduled/completed | Authorized scoped staff | Staff personal + scoped rooms; preserve machine/type/category narrowing; no default member fan-out | PARTIAL — producer and legacy inbox dedup wired; stock category still requires procurement [O] |
 | First email delivery failure | Authorized staff | In-app + selected staff personal; suppress recursive failure notification storms | TRUE — first-failure source and legacy inbox mirror share intent/UUID deduplication [O] |
@@ -90,8 +89,8 @@ payment and loan owners do not acquire a universal membership requirement.
 | Delivery tests | Space Manager / own verified endpoint or selected staff room | Provider.test diagnostics, including both WhatsApp providers; no member data in body | PARTIAL -- both factories/module registered; cutover activation held, staff SMS consent path unavailable [C] |
 | Platform problem-check beat task | Operators | Cache/dashboard remains intentional; no notification trigger added | RETAINED — cache/dashboard, no new trigger [O] |
 
-Five module exemptions stay exactly `(account,password_reset)`, `(account,email_verification)`,
-`(hardware,return_reminder)`, `(backup,archive_custody_alarm)`, `(backup,tenant_exit_custody_alarm)`.
+Three module exemptions stay exactly `(account,password_reset)`, `(account,email_verification)` and
+`(hardware,return_reminder)`; the two backup custody alarms left with custody itself (P1b).
 `closed_with_issue` is a separate personal-opt-out exception. Bounce/complaint suppression wins
 even for mandatory mail. Authentication and custody bodies must never enter staff rooms.
 

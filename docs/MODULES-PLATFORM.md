@@ -157,39 +157,29 @@ Requires `member_accounts`.
 
 ---
 
-## Backup & custody
+## Backup (not a module)
 
 Public-page history participates in existing backup ownership: makerspace and event content belongs
-to its tenant, while organization pages, assets, quota and creator attribution remain in the global
-deployment component. Organization content never travels merely because a tenant is linked to it.
-Portable tenant imports keep authored drafts/history and typed assets, reset publication and public
-disclosures, and recheck handle collisions. Deployment restores preserve publication and IDs, then
-verify pointers, reference completeness, effective schedule windows and retained-byte accounting
-before traffic or a slice's verified checkpoint can advance.
+to its tenant, while organization pages, assets, quota and creator attribution remain global.
+Organization content never travels merely because a tenant is linked to it. Portable tenant imports
+keep authored drafts/history and typed assets, reset publication and public disclosures, and recheck
+handle collisions. Deployment restores preserve publication and IDs, then verify pointers, reference
+completeness, effective schedule windows and retained-byte accounting before traffic.
 
-### backup
+### backup (retired)
 
-**On by default** (and backfilled onto every existing makerspace by `backup/0026`, because the key was
-placed in front of surfaces every makerspace already had).
+**Retired in P1b (owner decision #111 Q2).** There is no `backup` module key any more; `backup/0032`
+strips it from every makerspace's `enabled_modules`. Backup is a platform duty: the superadmin is
+always on, every archive is encrypted to the platform key, and the superadmin backs up and restores.
 
-- **What it is** — the makerspace-facing half of backup: a Space Manager's own archives and the keys
-  that decide who can open them.
-- **What it adds** — requesting, listing and downloading makerspace archives; enrolling, verifying,
-  revoking and reactivating archive-recipient `age` keys; and a read-only custody status (archive
-  custody and tenant-exit custody) at `makerspace/<id>/backup-custody`.
-- **Without it** — those routes answer **400** naming `backup`. What it does **not** switch off:
-  **marking a recipient compromised** (security response never waits on a module), and everything
-  deployment-level — the full deployment backup, its scheduled run (which still builds the per-tenant
-  archive of a superadmin-off makerspace), restores, recovery and offsite destinations all cover this
-  makerspace exactly as before.
-- **Coupled to superadmin access** — recipients are the only custody path for a makerspace whose
-  superadmin access is off, so `backup` **cannot be uninstalled while superadmin access is disabled**,
-  and superadmin access **cannot be disabled while `backup` is uninstalled**.
-- **Data** — `purge_module_data backup` deletes only the archives a Space Manager requested ad hoc
-  (finished ones, never one a restore references) and their stored bytes. It keeps archive
-  recipients and their reservations (sealed deployment slices are encrypted to them), custody state
-  and alarm history, run-produced tenant archives and offsite copies — those are the deployment's
-  backup of this makerspace. **Archives are outside the purge guarantee**: a copy someone already
+- **What a Space Manager has** — a read-only "Last backup" line on the dashboard and the Backup &
+  restore page (`GET makerspace/<id>/backup-status`: last covering archive and whether nightly backups
+  run). For their own copy of the space's data they use **data export**.
+- **What went away** — Space-Manager archive requests, listings and downloads; archive-recipient
+  `age` keys, their challenges, custody states and custody alarms; the `backup` uninstall block and
+  its purge plan. Makerspace archive listing, requests and downloads are superadmin-only.
+- **Data** — dropping the key deleted nothing a purge would have; recipient and custody tables were
+  dropped by `backup/0030`. **Archives are outside the purge guarantee**: a copy someone already
   downloaded, a deployment archive and an offsite copy are not deleted by any purge.
 
 ## Connected devices

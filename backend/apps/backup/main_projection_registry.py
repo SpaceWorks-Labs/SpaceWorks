@@ -7,7 +7,7 @@ from django.apps import apps
 from django.db import models
 from django.db.models import Q
 
-from apps.backup.recipient_selection import BackupBuildError
+from apps.backup.build_errors import BackupBuildError
 from apps.data_export.datasets import DATASET_SPECS
 from apps.data_export.models import MODELS
 from apps.data_export.types import TenantPredicate

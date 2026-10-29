@@ -4,7 +4,7 @@ import base64
 import json
 
 from apps.backup.dek_rewrap import StagedDekRow, validate_staged_deks
-from apps.backup.recipient_selection import BackupBuildError
+from apps.backup.build_errors import BackupBuildError
 from apps.encryption.models import MakerspaceEncryptionKey
 
 

@@ -39,6 +39,8 @@ def remap_contribution_proof(layout, map_id):
     elif proof.get("role") == "judge":
         proof["scores"] = pairs("JudgeScore", proof.get("scores"))
         proof["ballots"] = pairs("JudgeRankingBallot", proof.get("ballots"))
+        if "comparisons" in proof:
+            proof["comparisons"] = pairs("JudgePairwiseComparison", proof["comparisons"])
     else:
         raise ValueError("Unknown contribution proof role.")
     return value

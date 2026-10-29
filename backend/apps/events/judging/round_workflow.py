@@ -9,6 +9,9 @@ from .errors import ProgrammeError, invalid
 from .models_definitions import JudgingRound
 from .models_scoring import JudgeAssignment, JudgingReason, JudgingRoundProject
 from .ports import runtime
+from .pairwise_ranking import DEFAULTS, PAIRWISE_VERSION
+from .pairwise_projection import require_pairwise
+from .pairwise_workflow import seed_locked
 from .projections import round_calculation
 from .serializers import AssignInput, CommandInput, FinalizeRoundInput, validated
 
@@ -19,8 +22,10 @@ def transition(event_id, round_id, *, actor, action, data):
     with mutation(event_id, actor, permission=None if action == "finalize" else "manage_hackathon") as (event, _):
         def run():
             round = owned(JudgingRound, event_id, round_id, expected=values["expected_version"])
+            if round.mode == "pairwise":
+                require_pairwise(event, hide=False)
             if action == "open":
-                _open(round)
+                _open(round, event)
             elif action == "close" and round.state == "open":
                 round.state = "closed"
             elif action == "finalize" and round.state == "closed":
@@ -38,7 +43,7 @@ def transition(event_id, round_id, *, actor, action, data):
         return command(event, actor, values, path=f"judging-rounds/{round_id}/{action}", run=run)
 
 
-def _open(round):
+def _open(round, event):
     if round.state != "draft":
         invalid()
     now = timezone.now()
@@ -47,17 +52,24 @@ def _open(round):
     criteria = list(round.criteria.order_by("priority", "pk"))
     if round.mode == "weighted_1_5" and not criteria:
         invalid("A weighted round needs an anchored rubric.")
+    draft = round.configuration or {}
     round.configuration = {"mode": round.mode, "min_reviews": round.min_reviews,
                            "minutes_per_view": round.minutes_per_view, "judging_minutes": round.judging_minutes,
                            "normalization": round.normalization, "criteria_revision": round.criteria_revision,
                            "criteria": [{"key": c.key, "label": c.label, "weight": str(c.weight),
                                          "anchors": c.anchors} for c in criteria]}
+    if round.mode == "pairwise":
+        round.algorithm_version = PAIRWISE_VERSION
+        round.configuration |= {"guidance": draft.get("guidance", ""), "pairwise": {
+            **DEFAULTS, **draft.get("pairwise", {}), "seed": f"round-{round.pk}"}}
     snapshots = [s for s in runtime().snapshots(round.event_id) if s.event_id == round.event_id and s.eligible and s.current]
     if not snapshots:
         invalid("There are no eligible frozen submissions.")
     for snapshot in snapshots:
         JudgingRoundProject.objects.create(round=round, snapshot_id=snapshot.id)
     round.state = "open"
+    if round.mode == "pairwise":
+        seed_locked(event, round)
 
 
 def assign(event_id, round_id, *, actor, data):
@@ -67,6 +79,8 @@ def assign(event_id, round_id, *, actor, data):
             round = owned(JudgingRound, event_id, round_id, expected=values["expected_version"])
             if round.state != "open":
                 invalid()
+            if round.mode == "pairwise":
+                invalid("Pairwise rounds pick each judge's next project as they judge; there is no batch to plan.")
             judges = [runtime().judge(pk) for pk in values["judge_role_assignment_ids"]]
             if any(not j.active or j.event_id != event_id for j in judges):
                 from django.http import Http404

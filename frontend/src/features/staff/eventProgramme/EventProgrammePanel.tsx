@@ -40,7 +40,8 @@ export function EventProgrammePanel({ event, makerspaceId, section, access, feat
     renderRoleTools={row => <><RoleLifecycleActions scope={scope} row={row} />{access.manager ? <IssueRoleCertificate eventId={event.id} role={row} /> : null}</>} />
   if (section === 'mentor-desk') return <MentorWorkspace scope={scope} manager={access.hackathon || access.manager} roundsEnabled={features.includes('events.mentor_rounds')} />
   if (section === 'judging') return <JudgingWorkspace scope={{ ...scope, actorId: account.data.id, context: currentSessionContext() }} manager={access.hackathon}
-    judge={access.judge} sponsor={access.sponsor} timezone={event.timezone_name} galleryEnabled={features.includes('events.project_gallery')} />
+    judge={access.judge} sponsor={access.sponsor} timezone={event.timezone_name} galleryEnabled={features.includes('events.project_gallery')}
+    pairwiseEnabled={features.includes('events.pairwise_judging')} />
   if (section === 'programme-teams') return <ProgrammeTeamsPanel eventId={event.id} canTriage={access.hackathon} />
   if (section === 'certificates') return <div className="grid gap-6">
     {access.edit ? <EventCertificateDesigner makerspaceId={makerspaceId} eventId={event.id} /> : access.manager ? <BulkCertificates eventId={event.id} /> : null}

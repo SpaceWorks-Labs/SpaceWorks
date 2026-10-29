@@ -330,6 +330,12 @@ export const openApiPaths = [
   "/api/v1/admin/events/{id}/judging-rounds/{round_id}/close/",
   "/api/v1/admin/events/{id}/judging-rounds/{round_id}/finalize/",
   "/api/v1/admin/events/{id}/judging-rounds/{round_id}/open/",
+  "/api/v1/admin/events/{id}/judging-rounds/{round_id}/pairwise/",
+  "/api/v1/admin/events/{id}/judging-rounds/{round_id}/pairwise/compare/",
+  "/api/v1/admin/events/{id}/judging-rounds/{round_id}/pairwise/next/",
+  "/api/v1/admin/events/{id}/judging-rounds/{round_id}/pairwise/recuse/",
+  "/api/v1/admin/events/{id}/judging-rounds/{round_id}/pairwise/skip/",
+  "/api/v1/admin/events/{id}/judging-rounds/{round_id}/pairwise/standings/",
   "/api/v1/admin/events/{id}/judging-signals/",
   "/api/v1/admin/events/{id}/mentor-analytics/",
   "/api/v1/admin/events/{id}/mentor-assignments/",
@@ -351,6 +357,7 @@ export const openApiPaths = [
   "/api/v1/admin/events/{id}/mentor-rounds/{round_id}/teams/{team_id}/release/",
   "/api/v1/admin/events/{id}/mentor-rounds/{round_id}/teams/{team_id}/submit/",
   "/api/v1/admin/events/{id}/organizers/",
+  "/api/v1/admin/events/{id}/pairwise-rounds/",
   "/api/v1/admin/events/{id}/prizes/",
   "/api/v1/admin/events/{id}/prizes/{prize_id}/",
   "/api/v1/admin/events/{id}/programme/live/",
@@ -1933,8 +1940,6 @@ export type Allocation = {
   "line_uuid": string;
   "original_amount_minor": number;
 };
-
-export type AllowedActionsEnum = "test" | "schedule";
 
 export type AllowedFormatsEnum = "csv" | "xlsx" | "pdf";
 
@@ -3691,7 +3696,7 @@ export type BroadcastPreview = {
   "event_id": number;
   "version": number;
   "state": BroadcastPreviewStateEnum;
-  "allowed_actions": Array<AllowedActionsEnum>;
+  "allowed_actions": Array<BroadcastPreviewAllowedActionsEnum>;
   "preview_id": number;
   "revision": string;
   "recipient_count": number;
@@ -3700,6 +3705,8 @@ export type BroadcastPreview = {
   "desktop_html": string;
   "mobile_html": string;
 };
+
+export type BroadcastPreviewAllowedActionsEnum = "test" | "schedule";
 
 export type BroadcastPreviewStateEnum = "ready" | "scheduled" | "queued" | "sending" | "sent" | "cancelled" | "failed";
 
@@ -3815,6 +3822,7 @@ export type CalculationRow = {
   "score": string | null;
   "raw_score"?: string | null;
   "zscore"?: string | null;
+  "sigma"?: string;
   "coverage_complete": boolean;
   "criterion_averages"?: {
   [key: string]: string;
@@ -4582,6 +4590,15 @@ export type CommunicationsHealthRow = {
 };
 
 export type CommunicationsHealthRowMeasurementEnum = "delivery_cohort" | "webhook_receipts" | "current_consent_snapshot";
+
+export type CompareInput = {
+  "operation_id": string;
+  "expected_version": number;
+  "outcome": CompareInputOutcomeEnum;
+  "notes"?: string;
+};
+
+export type CompareInputOutcomeEnum = "previous" | "current";
 
 export type CompleteRequest = {
   "token": string;
@@ -12400,6 +12417,71 @@ export type PairingCreate = {
 };
 };
 
+export type PairwiseCard = {
+  "assignment_id": number;
+  "snapshot_id": number;
+  "title": string;
+  "description": string;
+  "track_id": number | null;
+  "asset_ids": Array<number>;
+};
+
+export type PairwiseCommandResult = {
+  "id": number | null;
+  "event_id": number;
+  "version": number;
+  "round_id": number;
+  "allowed_actions": Array<string>;
+};
+
+export type PairwiseJudgeCoverage = {
+  "judge_role_assignment_id": number;
+  "compared": number;
+  "skipped": number;
+};
+
+export type PairwiseRow = {
+  "snapshot_id": number;
+  "n": number;
+  "rank": number;
+  "score": string | null;
+  "sigma": string;
+  "coverage_complete": boolean;
+  "warnings": Array<string>;
+};
+
+export type PairwiseStandingsRead = {
+  "round_id": number;
+  "event_id": number;
+  "algorithm_version": string;
+  "coverage_complete": boolean;
+  "rows": Array<PairwiseRow>;
+  "judges": Array<PairwiseJudgeCoverage>;
+};
+
+export type PairwiseStateRead = {
+  "round_id": number;
+  "round_key": string;
+  "event_id": number;
+  "version": number;
+  "guidance": string;
+  "previous": PairwiseCard | null;
+  "current": PairwiseCard | null;
+  "compared": number;
+  "remaining": number;
+  "finished": boolean;
+  "allowed_actions": Array<PairwiseStateReadAllowedActionsEnum>;
+};
+
+export type PairwiseStateReadAllowedActionsEnum = "next" | "compare" | "skip" | "recuse";
+
+export type PairwiseStateReadPage = {
+  "count": number;
+  "next": string | null;
+  "previous": string | null;
+  "results": Array<PairwiseStateRead>;
+};
+
 export type Palette = {
   "fill": Array<number>;
   "foreground": Array<number>;
@@ -13984,6 +14066,8 @@ export type PatchedRoundInput = {
   "opens_at"?: string | null;
   "closes_at"?: string | null;
   "criteria"?: Array<CriterionInput>;
+  "guidance"?: string;
+  "exploration"?: string;
 };
 
 export type PatchedRoundWrite = {
@@ -18147,9 +18231,11 @@ export type RoundInput = {
   "opens_at"?: string | null;
   "closes_at"?: string | null;
   "criteria"?: Array<CriterionInput>;
+  "guidance"?: string;
+  "exploration"?: string;
 };
 
-export type RoundInputModeEnum = "weighted_1_5" | "top3";
+export type RoundInputModeEnum = "weighted_1_5" | "top3" | "pairwise";
 
 export type RoundProgress = {
   "round_id": number;
@@ -18179,6 +18265,8 @@ export type RoundRead = {
   "assigned": number;
   "submitted": number;
   "recused": number;
+  "guidance"?: string;
+  "exploration"?: number | null;
   "skipped": number;
 };
 
@@ -18881,6 +18969,12 @@ export type SignupStateEnum = "applied" | "waitlisted" | "approved" | "withdrawn
 export type Skill = {
   "name": string;
   "level": number;
+};
+
+export type SkipInput = {
+  "operation_id": string;
+  "expected_version": number;
+  "notes"?: string;
 };
 
 export type SocialIdentity = {

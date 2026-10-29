@@ -256,6 +256,177 @@
       ]
     },
     {
+      "name": "events-programme-admin-pairwise-rounds-list",
+      "path": "/api/v1/admin/events/{pk}/pairwise-rounds/",
+      "view": "pairwise.PairwiseRounds",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "authority": "judge plus own pairwise cursor and current nonconflicted assignment",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-pairwise-state",
+      "path": "/api/v1/admin/events/{pk}/judging-rounds/{round_id}/pairwise/",
+      "view": "pairwise.PairwiseState",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "authority": "judge plus own pairwise cursor and current nonconflicted assignment",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-pairwise-next",
+      "path": "/api/v1/admin/events/{pk}/judging-rounds/{round_id}/pairwise/next/",
+      "view": "pairwise.PairwiseNext",
+      "methods": [
+        "POST"
+      ],
+      "authority": "judge plus own pairwise cursor and current nonconflicted assignment",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-pairwise-compare",
+      "path": "/api/v1/admin/events/{pk}/judging-rounds/{round_id}/pairwise/compare/",
+      "view": "pairwise.PairwiseCompare",
+      "methods": [
+        "POST"
+      ],
+      "authority": "judge plus own pairwise cursor and current nonconflicted assignment",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-pairwise-skip",
+      "path": "/api/v1/admin/events/{pk}/judging-rounds/{round_id}/pairwise/skip/",
+      "view": "pairwise.PairwiseSkip",
+      "methods": [
+        "POST"
+      ],
+      "authority": "judge plus own pairwise cursor and current nonconflicted assignment",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-pairwise-recuse",
+      "path": "/api/v1/admin/events/{pk}/judging-rounds/{round_id}/pairwise/recuse/",
+      "view": "pairwise.PairwiseRecuse",
+      "methods": [
+        "POST"
+      ],
+      "authority": "judge plus own pairwise cursor and current nonconflicted assignment",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-pairwise-standings",
+      "path": "/api/v1/admin/events/{pk}/judging-rounds/{round_id}/pairwise/standings/",
+      "view": "pairwise.PairwiseStandings",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "authority": "manage_hackathon",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
       "name": "events-programme-admin-judge-assignments-list",
       "path": "/api/v1/admin/events/{pk}/judge-assignments/",
       "view": "scoring.AssignmentList",

@@ -43,7 +43,8 @@ Missing required adapters deliberately refuse rather than invent an admission or
    cannot enter it. Triage changes eligibility; content amendment makes a new snapshot and
    requires a reason. Prior scores become historical rather than applying to new content.
 10. Review judging coverage, ties and integrity flags. Weighted 1–5 or top-three ranking is
-    implemented; pairwise is a chosen later feature. AI/reuse declarations and integrity
+    implemented, and so is pairwise comparison when the space turns on
+    `events.pairwise_judging` (see the judge guide). AI/reuse declarations and integrity
     flags inform review and never automatically disqualify. Finalize a result revision,
     then separately publish it. Corrections append history and do not restart retention.
 11. Publish the gallery once using exact frozen items with live team consent. Granting

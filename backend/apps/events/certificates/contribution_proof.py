@@ -23,6 +23,13 @@ def snapshot(*, event_id, assignment_id):
             judge=role).order_by("pk").values_list("pk", "version"))
         proof["scores"] = [list(item) for item in proof["scores"]]
         proof["ballots"] = [list(item) for item in proof["ballots"]]
+        from apps.events.judging.models_pairwise import JudgePairwiseComparison
+        # Valid decisive pairwise comparisons are judging work too (skips and invalidated rows are
+        # not). Only pairwise judges carry the key, so earlier judge proofs stay byte-identical.
+        compared = [list(item) for item in JudgePairwiseComparison.objects.filter(event_id=event_id,
+            judge=role, invalidation__isnull=True).exclude(outcome="skip").order_by("pk").values_list("pk", "version")]
+        if compared:
+            proof["comparisons"] = compared
     else:
         raise ProgrammeConflict("Verified work is required.", code="certificate_ineligible")
     return proof

@@ -75,6 +75,7 @@ from .models_programme import (
     ResultAnnouncement, ResultPublicationState, SponsorWinnerProposal, JudgingNotice,
     JudgingReason, JudgeAssignment, JudgingRoundProject, JudgeScore,
     JudgeRankingBallot, JudgeRankingChoice, JudgeConflict, MentorAssignmentRun,
+    JudgePairwiseComparison, JudgePairwiseInvalidation, JudgePairwiseCursor,
     MentorAttentionPreference, MentorProfile, MentorTeamAssignment, EventHelpType,
     EventHelpRequest, EventHelpAction, EventHelpComment, OfficeHoursBooking,
     OfficeHoursChange, MentorRound, MentorRoundLock, MentorRoundCheckin,

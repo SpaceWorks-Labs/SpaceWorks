@@ -45,7 +45,8 @@ class HackathonPrize(EventOwned):
 
 class JudgingRound(EventOwned):
     key = models.SlugField(max_length=64)
-    mode = models.CharField(max_length=16, choices=(("weighted_1_5", "Weighted 1–5"), ("top3", "Top three")))
+    mode = models.CharField(max_length=16, choices=(("weighted_1_5", "Weighted 1–5"), ("top3", "Top three"),
+                                                    ("pairwise", "Pairwise comparison")))
     state = models.CharField(max_length=16, default="draft",
                             choices=[(v, v) for v in ("draft", "open", "closed", "finalized")])
     min_reviews = models.PositiveSmallIntegerField(default=3)
@@ -64,7 +65,7 @@ class JudgingRound(EventOwned):
         constraints = [
             models.UniqueConstraint(fields=("event", "key"), name="ev_round_key"),
             models.CheckConstraint(condition=Q(min_reviews__gte=3), name="ev_round_three_reviews"),
-            models.CheckConstraint(condition=Q(mode__in=("weighted_1_5", "top3")), name="ev_round_mode"),
+            models.CheckConstraint(condition=Q(mode__in=("weighted_1_5", "top3", "pairwise")), name="ev_round_mode"),
             models.CheckConstraint(condition=Q(state__in=("draft", "open", "closed", "finalized")), name="ev_round_state"),
             models.CheckConstraint(condition=Q(normalization__in=("none", "zscore")), name="ev_round_normalization"),
             models.CheckConstraint(condition=Q(minutes_per_view__gte=1, judging_minutes__gte=1), name="ev_round_timing"),

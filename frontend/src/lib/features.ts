@@ -73,6 +73,7 @@ export const FEATURE_DEFINITIONS: readonly FeatureDefinition[] = [
   { key: "events.mentor_rounds", parent_module: "events", label: "Mentor check-in rounds" },
   { key: "events.volunteering", parent_module: "events", label: "Volunteer contributions" },
   { key: "events.project_gallery", parent_module: "events", label: "Project gallery" },
+  { key: "events.pairwise_judging", parent_module: "events", label: "Pairwise judging" },
   { key: "machines.certification_reminders", parent_module: "machines", label: "Certification reminders" },
   { key: "maintenance.reminders", parent_module: "machines", label: "Maintenance reminders" },
   { key: "machines.certifications", parent_module: "machines", label: "Certification gating" },

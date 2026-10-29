@@ -8,4 +8,5 @@ def programme_features(feature):
         feature("events.mentor_rounds", "events", "Mentor check-in rounds", requires_features=("events.mentoring",)),
         feature("events.volunteering", "events", "Volunteer contributions"),
         feature("events.project_gallery", "events", "Project gallery", requires_features=("events.hackathons",)),
+        feature("events.pairwise_judging", "events", "Pairwise judging", requires_features=("events.hackathons",)),
     )

@@ -222,7 +222,7 @@
         "event": "models.ForeignKey(\"events.Event\", on_delete=models.CASCADE, related_name=\"+\")",
         "version": "models.PositiveIntegerField(default=1)",
         "key": "models.SlugField(max_length=64)",
-        "mode": "models.CharField(max_length=16, choices=(('weighted_1_5', 'Weighted 1–5'), ('top3', 'Top three')))",
+        "mode": "models.CharField(max_length=16, choices=(('weighted_1_5', 'Weighted 1–5'), ('top3', 'Top three'), ('pairwise', 'Pairwise comparison')))",
         "state": "models.CharField(max_length=16, default='draft', choices=[(v, v) for v in ('draft', 'open', 'closed', 'finalized')])",
         "min_reviews": "models.PositiveSmallIntegerField(default=3)",
         "criteria_revision": "models.PositiveIntegerField(default=1)",
@@ -936,6 +936,157 @@
       "tenant_scope": "event.makerspace_id"
     },
     {
+      "model": "events.JudgePairwiseComparison",
+      "module": "backend/apps/events/judging/models_pairwise.py",
+      "fields": {
+        "id": "models.BigAutoField(primary_key=True)",
+        "makerspace": "models.ForeignKey(\"makerspaces.Makerspace\", on_delete=models.CASCADE, related_name=\"+\")",
+        "event": "models.ForeignKey(\"events.Event\", on_delete=models.CASCADE, related_name=\"+\")",
+        "version": "models.PositiveIntegerField(default=1)",
+        "round": "models.ForeignKey('events.JudgingRound', on_delete=models.PROTECT, related_name='pairwise_comparisons')",
+        "judge": "models.ForeignKey('events.EventRoleAssignment', on_delete=models.PROTECT, related_name='+')",
+        "previous": "models.ForeignKey('events.JudgeAssignment', on_delete=models.PROTECT, related_name='+')",
+        "current": "models.ForeignKey('events.JudgeAssignment', on_delete=models.PROTECT, related_name='+')",
+        "outcome": "models.CharField(max_length=8, choices=[(value, value) for value in OUTCOMES])",
+        "notes": "models.TextField(blank=True, max_length=2000)",
+        "submitted_at": "models.DateTimeField()",
+        "sequence": "models.PositiveIntegerField()"
+      },
+      "foreign_keys": {
+        "makerspace": {
+          "definition": "models.ForeignKey(\"makerspaces.Makerspace\", on_delete=models.CASCADE, related_name=\"+\")",
+          "target": "makerspaces.Makerspace"
+        },
+        "event": {
+          "definition": "models.ForeignKey(\"events.Event\", on_delete=models.CASCADE, related_name=\"+\")",
+          "target": "events.Event"
+        },
+        "round": {
+          "definition": "models.ForeignKey('events.JudgingRound', on_delete=models.PROTECT, related_name='pairwise_comparisons')",
+          "target": "events.JudgingRound"
+        },
+        "judge": {
+          "definition": "models.ForeignKey('events.EventRoleAssignment', on_delete=models.PROTECT, related_name='+')",
+          "target": "events.EventRoleAssignment"
+        },
+        "previous": {
+          "definition": "models.ForeignKey('events.JudgeAssignment', on_delete=models.PROTECT, related_name='+')",
+          "target": "events.JudgeAssignment"
+        },
+        "current": {
+          "definition": "models.ForeignKey('events.JudgeAssignment', on_delete=models.PROTECT, related_name='+')",
+          "target": "events.JudgeAssignment"
+        }
+      },
+      "user_edges": {},
+      "constraints": [
+        "ev_pairwise_sequence",
+        "ev_pairwise_pair_once",
+        "ev_pairwise_distinct",
+        "ev_pairwise_outcome"
+      ],
+      "unique_fields": [],
+      "uniqueness_policy": "Remap composite FK keys; public UUIDs preserve and refuse collision preflight; OneToOne scope remaps. Never regenerate an announced identity.",
+      "tenant_export": "PRESERVE private evidence and typed refs at established fidelity; sequence preserved for replay order",
+      "tenant_import_reset": {},
+      "deployment_backup": "preserve under existing encrypted archive custody",
+      "pii_fields": [
+        "notes"
+      ],
+      "pii_scope": "makerspace_id",
+      "owned_object_fields": [],
+      "immutable": true,
+      "purge": "event host only; explicit dependency graph and lifecycle purge capability; never delete referenced global organizations or account vault",
+      "tenant_scope": "event.makerspace_id"
+    },
+    {
+      "model": "events.JudgePairwiseInvalidation",
+      "module": "backend/apps/events/judging/models_pairwise.py",
+      "fields": {
+        "id": "models.BigAutoField(primary_key=True)",
+        "comparison": "models.OneToOneField(JudgePairwiseComparison, on_delete=models.PROTECT, related_name='invalidation')",
+        "reason": "models.ForeignKey('events.JudgingReason', on_delete=models.PROTECT, related_name='+')",
+        "created_at": "models.DateTimeField(auto_now_add=True)"
+      },
+      "foreign_keys": {
+        "comparison": {
+          "definition": "models.OneToOneField(JudgePairwiseComparison, on_delete=models.PROTECT, related_name='invalidation')",
+          "target": "events.JudgePairwiseComparison"
+        },
+        "reason": {
+          "definition": "models.ForeignKey('events.JudgingReason', on_delete=models.PROTECT, related_name='+')",
+          "target": "events.JudgingReason"
+        }
+      },
+      "user_edges": {},
+      "constraints": [],
+      "unique_fields": [
+        "comparison"
+      ],
+      "uniqueness_policy": "Remap composite FK keys; public UUIDs preserve and refuse collision preflight; OneToOne scope remaps. Never regenerate an announced identity.",
+      "tenant_export": "PRESERVE private evidence and typed refs at established fidelity",
+      "tenant_import_reset": {},
+      "deployment_backup": "preserve under existing encrypted archive custody",
+      "pii_fields": [],
+      "pii_scope": null,
+      "owned_object_fields": [],
+      "immutable": true,
+      "purge": "event host only; explicit dependency graph and lifecycle purge capability; never delete referenced global organizations or account vault",
+      "tenant_scope": "comparison.event.makerspace_id"
+    },
+    {
+      "model": "events.JudgePairwiseCursor",
+      "module": "backend/apps/events/judging/models_pairwise.py",
+      "fields": {
+        "id": "models.BigAutoField(primary_key=True)",
+        "event": "models.ForeignKey(\"events.Event\", on_delete=models.CASCADE, related_name=\"+\")",
+        "version": "models.PositiveIntegerField(default=1)",
+        "round": "models.ForeignKey('events.JudgingRound', on_delete=models.CASCADE, related_name='pairwise_cursors')",
+        "judge": "models.ForeignKey('events.EventRoleAssignment', on_delete=models.PROTECT, related_name='+')",
+        "previous": "models.ForeignKey('events.JudgeAssignment', null=True, blank=True, on_delete=models.PROTECT, related_name='+')",
+        "current": "models.ForeignKey('events.JudgeAssignment', null=True, blank=True, on_delete=models.PROTECT, related_name='+')",
+        "draw_count": "models.PositiveIntegerField(default=0)",
+        "updated_at": "models.DateTimeField(auto_now=True)"
+      },
+      "foreign_keys": {
+        "event": {
+          "definition": "models.ForeignKey(\"events.Event\", on_delete=models.CASCADE, related_name=\"+\")",
+          "target": "events.Event"
+        },
+        "round": {
+          "definition": "models.ForeignKey('events.JudgingRound', on_delete=models.CASCADE, related_name='pairwise_cursors')",
+          "target": "events.JudgingRound"
+        },
+        "judge": {
+          "definition": "models.ForeignKey('events.EventRoleAssignment', on_delete=models.PROTECT, related_name='+')",
+          "target": "events.EventRoleAssignment"
+        },
+        "previous": {
+          "definition": "models.ForeignKey('events.JudgeAssignment', null=True, blank=True, on_delete=models.PROTECT, related_name='+')",
+          "target": "events.JudgeAssignment"
+        },
+        "current": {
+          "definition": "models.ForeignKey('events.JudgeAssignment', null=True, blank=True, on_delete=models.PROTECT, related_name='+')",
+          "target": "events.JudgeAssignment"
+        }
+      },
+      "user_edges": {},
+      "constraints": [
+        "ev_pairwise_cursor_once"
+      ],
+      "unique_fields": [],
+      "uniqueness_policy": "Remap composite FK keys; public UUIDs preserve and refuse collision preflight; OneToOne scope remaps. Never regenerate an announced identity.",
+      "tenant_export": "PRESERVE operational cursor with typed refs; excluded from member exports",
+      "tenant_import_reset": {},
+      "deployment_backup": "preserve under existing encrypted archive custody",
+      "pii_fields": [],
+      "pii_scope": null,
+      "owned_object_fields": [],
+      "immutable": false,
+      "purge": "event host only; explicit dependency graph and lifecycle purge capability; never delete referenced global organizations or account vault",
+      "tenant_scope": "event.makerspace_id"
+    },
+    {
       "model": "events.GalleryConsent",
       "module": "backend/apps/events/submissions/gallery_models.py",
       "fields": {
@@ -1348,7 +1499,8 @@
     "Gallery selections: typed asset/link belongs to exact pinned snapshot and team; selection metadata/title/description frozen; hide/version/reason allowed.",
     "ResultPublicationState current announcement belongs to same event; GalleryPublication result and GalleryAmendment result are same event.",
     "Resume consent: sponsor/asset/member/event/hash/purpose agree; granted state never inherited by replacement asset.",
-    "Score criterion JSON uses frozen criterion keys and integer 1..5 when submitted; no direct alternate status writers."
+    "Score criterion JSON uses frozen criterion keys and integer 1..5 when submitted; no direct alternate status writers.",
+    "JudgePairwiseComparison: previous/current assignments share its round and judge; round is open at insert unless importing; append-only. JudgePairwiseInvalidation: append-only, same event as its comparison. JudgePairwiseCursor: previous/current assignments share its round and judge."
   ],
   "pii_registry_entries": [
     {
@@ -1359,6 +1511,12 @@
     },
     {
       "model": "events.JudgeScore",
+      "field": "notes",
+      "scope": "makerspace_id",
+      "searchable": false
+    },
+    {
+      "model": "events.JudgePairwiseComparison",
       "field": "notes",
       "scope": "makerspace_id",
       "searchable": false
@@ -1389,6 +1547,9 @@
     "SponsorWinnerProposal",
     "JudgeRankingChoice",
     "JudgeRankingBallot",
+    "JudgePairwiseInvalidation",
+    "JudgePairwiseCursor",
+    "JudgePairwiseComparison",
     "JudgeScore",
     "JudgeAssignment/JudgeConflict/JudgingRoundProject",
     "JudgingCriterion",

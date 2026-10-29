@@ -92,3 +92,7 @@ SOURCE_PATHS = (
     'events/submissions/boundary_adapter.py',
     'events/submissions/read_policy.py',
 )
+
+from .catalog_r2_l7 import AUTHORITY_FIELDS as _L7_AUTHORITY, FIELD_NAMES as _L7_FIELD_NAMES  # noqa: E402
+FIELDS.update(_L7_AUTHORITY)
+SCANNED_LABELS = SCANNED_LABELS | frozenset(_L7_FIELD_NAMES)

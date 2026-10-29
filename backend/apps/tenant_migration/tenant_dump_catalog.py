@@ -56,8 +56,9 @@ class TenantDumpCatalogError(AssertionError):
 # (security locks and the superadmin PII window, #114); re-pinned.
 # lane/r2-l17: makerspaces/0110 settings authority (grants and SM locks) and 0111 folded
 # modules (#97, #101, #128); re-pinned.
+# lane/r2-l7b: events/0059-0060 pairwise judging and its guards; re-pinned over L17.
 # Orchestrator re-pins the live catalog after final schema/migration verification.
-CATALOG_SCHEMA_SHA256 = "91d8c9472d389821d165b2ff1ecc5fcb18c14601656afd46df67b07349ee69ff"
+CATALOG_SCHEMA_SHA256 = "a16664949cf14283e3c7db7ae5a41230fc39f0b2dcbc687be3de277bf93fab0a"
 
 
 def catalog_models(apps_registry=apps):

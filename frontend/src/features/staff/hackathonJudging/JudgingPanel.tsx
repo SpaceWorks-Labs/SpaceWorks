@@ -9,7 +9,10 @@ import { MentorShortlistBoard } from './MentorShortlistBoard';
 import type { Round, Scope } from './types';
 import { PrivateProgrammeBoundary } from '../../events/hackathonGallery/PrivateProgrammeBoundary';
 
-function JudgingPanelContent({ scope, timezone = 'UTC', fullManager = false, galleryEnabled = false }: { scope: Scope; timezone?: string; fullManager?: boolean; galleryEnabled?: boolean }) {
+const METHOD = { top3: 'Top-three ranking · fixed six points per ballot', pairwise: 'Pairwise comparison · judges pick the better of two projects' } as const;
+
+function JudgingPanelContent({ scope, timezone = 'UTC', fullManager = false, galleryEnabled = false, pairwiseEnabled = false }: {
+  scope: Scope; timezone?: string; fullManager?: boolean; galleryEnabled?: boolean; pairwiseEnabled?: boolean }) {
   const [page, setPage] = useState(1); const { query, mutate, denied } = useJudging(scope, true, false, page);
   const [judges, setJudges] = useState(''); const [reason, setReason] = useState('');
   const [strategy, setStrategy] = useState('balanced'); const [maxLoad, setMaxLoad] = useState(100);
@@ -29,7 +32,7 @@ function JudgingPanelContent({ scope, timezone = 'UTC', fullManager = false, gal
       <h2 className="title-panel">Judging</h2><p className="text-sm text-muted">Frozen submissions, fair coverage and a clear record of every result.</p></div></div>
     {query.isLoading ? <p role="status">Loading judging rounds…</p> : null}
     <ErrorBlock error={query.error || mutate.error} onRetry={() => void query.refetch()} />
-    <details><summary className="min-h-11 cursor-pointer py-3 font-semibold">Manage tracks, prizes and rubrics</summary><div className="mt-3"><DefinitionEditor scope={scope} /></div></details>
+    <details><summary className="min-h-11 cursor-pointer py-3 font-semibold">Manage tracks, prizes and rubrics</summary><div className="mt-3"><DefinitionEditor scope={scope} pairwiseEnabled={pairwiseEnabled} /></div></details>
     <fieldset className="grid gap-3 rounded-xl border border-line p-4" disabled={mutate.isPending}>
       <legend className="px-1 font-semibold">Assignment planning</legend>
       <Field label="Judge role assignment IDs" hint="Choose approved judges from the event Team tab; separate their IDs with commas."><input className="desk-input min-h-11" value={judges} onChange={e => setJudges(e.target.value)} /></Field>
@@ -41,15 +44,19 @@ function JudgingPanelContent({ scope, timezone = 'UTC', fullManager = false, gal
     {!query.isLoading && !query.data?.count ? <EmptyState title="No judging rounds yet" description="Create a rubric or a top-three round to begin." /> : null}
     {query.data?.results.map(round => <article key={round.id} className="grid gap-4 rounded-xl border border-line bg-panel p-4">
       <div className="flex flex-wrap items-center justify-between gap-3"><h3 className="title-section">{round.key}</h3><StatusPill label={round.state ?? 'Draft'} /></div>
-      <p className="text-sm text-muted">{round.mode === 'top3' ? 'Top-three ranking · fixed six points per ballot' : `Weighted 1–5 · ${round.normalization === 'zscore' ? 'z-score ranking' : 'weighted average'}`} · At least {round.min_reviews} reviews per project.</p>
+      <p className="text-sm text-muted">{round.mode === 'weighted_1_5' ? `Weighted 1–5 · ${round.normalization === 'zscore' ? 'z-score ranking' : 'weighted average'}` : METHOD[round.mode]} · At least {round.min_reviews} {round.mode === 'pairwise' ? 'comparisons' : 'reviews'} per project.</p>
+      {round.mode === 'pairwise' && !pairwiseEnabled ? <p role="status" className="text-sm text-muted">Pairwise judging is switched off for this space. The round and its comparisons are kept; switch it back on to continue.</p> : null}
       {round.closes_at ? <p className="text-sm">Closes {new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short', timeZone: timezone }).format(new Date(round.closes_at))} ({timezone})</p> : null}
+      {round.mode === 'pairwise' ? <p className="text-sm">{round.submitted / 2} valid comparisons · {round.assigned} projects shown · {round.recused} recused · {round.skipped} skipped</p> : <>
       <ProgressBar label={`Submitted assignments for ${round.key}`} value={round.assigned ? round.submitted / round.assigned : 0} />
-      <p className="text-sm">{round.submitted} of {round.assigned} assignments submitted · {round.recused} recused · {round.skipped} skipped</p>
+      <p className="text-sm">{round.submitted} of {round.assigned} assignments submitted · {round.recused} recused · {round.skipped} skipped</p></>}
       <p className="text-sm text-muted">Estimated judges: {round.estimated_judges} at {round.minutes_per_view} minutes per project in a {round.judging_minutes}-minute judging window.</p>
-      {round.rows.length ? <CoverageTable rows={round.rows} /> : null}
+      {round.rows.length ? <CoverageTable rows={round.rows} pairwise={round.mode === 'pairwise'} /> : null}
       <div className="flex flex-wrap gap-2">
-        {round.state === 'draft' ? <button type="button" className="desk-button-primary min-h-11" disabled={mutate.isPending} onClick={() => setConfirm({ round, action: 'open' })}>Open and freeze rubric</button> : null}
-        {round.state === 'open' ? <><button type="button" className="desk-button min-h-11" disabled={mutate.isPending || !judges.trim()} onClick={() => run(round, 'assign', true)}>Preview assignments</button>
+        {round.state === 'draft' ? <button type="button" className="desk-button-primary min-h-11" disabled={mutate.isPending || (round.mode === 'pairwise' && !pairwiseEnabled)} onClick={() => setConfirm({ round, action: 'open' })}>Open and freeze rubric</button> : null}
+        {round.state === 'open' && round.mode === 'pairwise' ? <button type="button" className="desk-button min-h-11" disabled={mutate.isPending || !pairwiseEnabled}
+          onClick={() => setConfirm({ round, action: 'close' })}>Close comparisons</button> : null}
+        {round.state === 'open' && round.mode !== 'pairwise' ? <><button type="button" className="desk-button min-h-11" disabled={mutate.isPending || !judges.trim()} onClick={() => run(round, 'assign', true)}>Preview assignments</button>
           <button type="button" className="desk-button-primary min-h-11" disabled={mutate.isPending || !judges.trim()} onClick={() => run(round, 'assign')}>Assign judges</button>
           <button type="button" className="desk-button min-h-11" disabled={mutate.isPending} onClick={() => setConfirm({ round, action: 'close' })}>Close scoring</button></> : null}
         {round.state === 'closed' && fullManager ? <><Field label="Coverage exception reason (only if needed)"><textarea className="desk-input min-h-24" maxLength={2000} value={reason} onChange={e => setReason(e.target.value)} /></Field>

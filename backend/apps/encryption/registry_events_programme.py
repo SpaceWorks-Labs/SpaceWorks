@@ -36,4 +36,5 @@ def programme_pii_fields(field):
         field("events.EventRequirementOverride", "reason", "makerspace_id", None, "source", "none"),
         field("events.JudgingReason", "body", "makerspace_id", None, "source", "none"),
         field("events.JudgeScore", "notes", "makerspace_id", None, "source", "none"),
+        field("events.JudgePairwiseComparison", "notes", "makerspace_id", None, "source", "none"),
     )

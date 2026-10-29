@@ -36,7 +36,7 @@ def role_eligible(*, event_id, assignment_id, kind):
             from apps.events.judging.models_scoring import JudgeScore, JudgeRankingBallot
             worked = JudgeScore.objects.filter(event_id=event_id, assignment__judge_role_assignment=role,
                 submitted_at__isnull=False).exists() or JudgeRankingBallot.objects.filter(
-                    event_id=event_id, judge=role).exists()
+                    event_id=event_id, judge=role).exists() or _compared(event_id, role)
         if not worked:
             raise ProgrammeConflict("Completed contribution evidence is required.", code="certificate_ineligible")
     member = User.objects.get(pk=role.member_id)
@@ -44,6 +44,12 @@ def role_eligible(*, event_id, assignment_id, kind):
     active_member(member)
     return EligibleSubject("role_assignment", role.pk, event_id, role.member_id,
                            member.display_name or member.get_full_name() or member.username)
+
+
+def _compared(event_id, role):
+    from apps.events.judging.models_pairwise import JudgePairwiseComparison
+    return JudgePairwiseComparison.objects.filter(event_id=event_id, judge=role, invalidation__isnull=True
+                                                  ).exclude(outcome="skip").exists()
 
 
 def install():

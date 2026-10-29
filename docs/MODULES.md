@@ -268,7 +268,8 @@ approved archive fields and do not reopen expired event websites.
 are features inside Events, not a separate module. Five declared switches default off:
 `events.hackathons`, `events.mentoring` (requires hackathons), `events.mentor_rounds`
 (requires mentoring), `events.volunteering`, and `events.project_gallery` (requires
-hackathons). Each hackathon also needs its disabled-by-default event config enabled.
+hackathons). Release 2 adds one more, off and requiring hackathons: `events.pairwise_judging` (a third
+judging mode). KiCad files stay download-only (owner, 2026-10-29). Each hackathon also needs its disabled-by-default event config enabled.
 Volunteering can serve ordinary events. Schema, routes and generated API exist; live
 provider installation and acceptance remain incomplete. See the [runbooks](events/README.md)
 and [exact integration closure ledger](events/integration-status.md).
@@ -709,6 +710,7 @@ its parent module is off.
 | `events.mentor_rounds` | `events` | `events.mentoring` feature | Off-default leased mentor check-in rounds; integration pending | Round actions refuse; history retained |
 | `events.volunteering` | `events` | | Off-default ordinary-event/hackathon postings/shifts/verified hours; integration pending | Volunteer actions refuse; retained hours/history remain |
 | `events.project_gallery` | `events` | `events.hackathons` feature | Off-default frozen public project selections with live consent; integration pending | Public gallery/bytes refuse; private snapshots retained |
+| `events.pairwise_judging` | `events` | `events.hackathons` feature | Off-default third judging mode: judges say which of two projects was better (CrowdBT ranking, at least three comparisons per project) | Pairwise routes 404, new pairwise rounds and their open/close/finalize refuse with 403; rounds, comparisons and cursors are kept and resume when switched back on |
 | `events.certificate_designer` | `events` | | Immutable private certificate designs and server previews | Editing/previews refuse; existing issuance snapshots retained |
 | `bookings.broadcasts` | `bookings` | `notifications`, `email` | Email upcoming resource bookers with live consent and booking checks | Compose, queue and delivery refuse; history retained |
 

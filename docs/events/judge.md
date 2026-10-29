@@ -21,8 +21,21 @@ does not confer tenant authority or access to all projects.
 5. Organizers review view counts, workload/coverage, distributions, low-n/zero-variance
    warnings, configured tie-break priority and shared ranks. Finalization requires adequate
    coverage or a full-manager reason, integrity confirmation and explicit tie decisions.
-   Optional z-score ordering is frozen into that calculation revision. Pairwise judging is
-   a chosen later feature.
+   Optional z-score ordering is frozen into that calculation revision.
+
+**Pairwise rounds** (switch `events.pairwise_judging`). You see one project at a time. The
+first is only viewed; from the second on you answer "which was better: the one before, or this
+one?" with **1** (before), **2** (now) or **S** (can't judge this one); **N** loads the next
+project. Private notes go with each answer; declare a conflict from the "More" menu. Projects
+come from your own track, room and batch scope only, never one you are conflicted with, and
+never twice. Projects still below the round's comparison target come first. You never see
+standings, so nothing anchors your choice. If two people judge at once, the page may say your
+place changed: reload it and continue. The ranking is a full replay of every valid
+comparison (crowd Bradley–Terry, written from Chen et al., WSDM 2013); a recusal or a changed
+submission removes exactly the comparisons that showed that project. Each project needs at
+least the round's minimum (three or more) valid comparisons, or a full-manager coverage
+exception, before the round can be finalized. Nothing is published until the organizer
+finalizes and then publishes results through the usual results step.
 6. Result finalization and public announcement are separate. Corrections append immutable
    revisions. The first announcement anchors file retention; correcting results does not
    give files a fresh year. Gallery publication independently needs exact item consent.

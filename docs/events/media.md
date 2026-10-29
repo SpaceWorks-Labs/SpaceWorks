@@ -75,8 +75,16 @@ passes the default policy; organizer-specific lower policy wiring is not establi
 
 STL/OBJ/3MF mesh and Gerber/drill previews have lazy bounded workers; STEP/IGES loads on
 explicit request. External textures/references are refused. ZIP listing, expansion, mesh,
-time/output limits and cancellation guard the browser. KiCad viewer is a chosen later
-feature. Vendor bundling/WASM APIs and actual browser previews still need acceptance.
+time/output limits and cancellation guard the browser. KiCad files (boards, schematics,
+symbols, footprints, projects and KiCad 5) are download-only by owner decision (2026-10-29):
+there is no in-browser KiCad viewer; the file offers only its original download. Vendor
+bundling/WASM APIs and actual browser previews of the other formats still need acceptance.
+
+### Preview acceptance (D19, AO4)
+
+X3 is **not applicable** in release 2: it was scoped to accept the new KiCad viewer alongside
+the existing previews, and the owner chose no KiCad viewer. The existing 3D and Gerber previews
+keep the acceptance status recorded above.
 Images are metadata-stripped/re-encoded; text/CSV/toolpath previews escape content and
 protect exported cells from spreadsheet formulas. Accepted files are never executed.
 

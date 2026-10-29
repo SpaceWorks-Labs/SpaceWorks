@@ -217,7 +217,9 @@ approved archive fields and do not reopen expired event websites.
 are features inside Events, not a separate module. Five declared switches default off:
 `events.hackathons`, `events.mentoring` (requires hackathons), `events.mentor_rounds`
 (requires mentoring), `events.volunteering`, and `events.project_gallery` (requires
-hackathons). Each hackathon also needs its disabled-by-default event config enabled.
+hackathons). Release 2 adds two more, both off and both requiring hackathons:
+`events.pairwise_judging` (a third judging mode) and `events.kicad_preview` (KiCad drawings in
+the submission preview). Each hackathon also needs its disabled-by-default event config enabled.
 Volunteering can serve ordinary events. Schema, routes and generated API exist; live
 provider installation and acceptance remain incomplete. See the [runbooks](events/README.md)
 and [exact integration closure ledger](events/integration-status.md).
@@ -657,6 +659,8 @@ in the console rather than a superadmin. A feature is inert while its parent mod
 | `events.mentor_rounds` | `events` | `events.mentoring` feature | Off-default leased mentor check-in rounds; integration pending | Round actions refuse; history retained |
 | `events.volunteering` | `events` | | Off-default ordinary-event/hackathon postings/shifts/verified hours; integration pending | Volunteer actions refuse; retained hours/history remain |
 | `events.project_gallery` | `events` | `events.hackathons` feature | Off-default frozen public project selections with live consent; integration pending | Public gallery/bytes refuse; private snapshots retained |
+| `events.pairwise_judging` | `events` | `events.hackathons` feature | Off-default third judging mode: judges say which of two projects was better (CrowdBT ranking, at least three comparisons per project) | Pairwise routes 404, new pairwise rounds and their open/close/finalize refuse with 403; rounds, comparisons and cursors are kept and resume when switched back on |
+| `events.kicad_preview` | `events` | `events.hackathons` feature | Off-default in-browser drawing of KiCad 6+ `.kicad_pcb`/`.kicad_sch` submissions (up to 10 MiB) | KiCad files are download-only, like every unpreviewed maker format; nothing is deleted |
 | `events.certificate_designer` | `events` | | Immutable private certificate designs and server previews | Editing/previews refuse; existing issuance snapshots retained |
 | `bookings.broadcasts` | `bookings` | `notifications`, `email` | Email upcoming resource bookers with live consent and booking checks | Compose, queue and delivery refuse; history retained |
 

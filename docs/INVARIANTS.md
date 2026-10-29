@@ -3550,6 +3550,31 @@ The rules here are binding; a rule's presence does not claim every adapter is in
   Missing/recused work is not zero. Results finalize separately from publication and
   corrections append revisions. One initial gallery publish selects exact consented items;
   live teammate withdrawal stops bytes immediately, regrant requires a fresh amendment.
+- **Pairwise judging is derived, never trusted, and never publishes itself** (`events.pairwise_judging`,
+  release 2 lane L7). A round has exactly one mode; `pairwise` forbids criteria and z-score and keeps
+  `min_reviews >= 3` (#128 C-33). Every project a judge is shown is a lazily created `JudgeAssignment`
+  (batch `pairwise`), so conflicts, recusal, track/room scope, view counts and sponsor scoping apply
+  unchanged; a judge never sees one project twice. `JudgePairwiseComparison` rows are append-only with a
+  gapless per-round `sequence` taken under the event lock; invalidation is an append-only
+  `JudgePairwiseInvalidation` (recusal, content or eligibility change), never an UPDATE or a reweight.
+  Standings and results are a full CrowdBT replay of valid comparisons in `sequence` order
+  (`pairwise_ranking.py`, pure Python from the paper); the cursor (`JudgePairwiseCursor`, CAS on its
+  version) only orders what a judge sees next. Priors, gamma, kappa, exploration and the seed freeze into
+  `JudgingRound.configuration` at open and into `EventResultRound.calculation` at finalize, with
+  `algorithm_version = "spaceworks-pairwise-crowdbt-v1"`. Coverage needs `min_reviews` valid decisive
+  comparisons per project or the existing full-manager coverage exception; equal `mu` to four decimals is
+  a shared rank that routes into the explicit tie decision. Live standings are organiser-only
+  (`manage_hackathon`), never shown to judges. Results reach the public only through
+  `results_workflow.finalize` then `publish` (publish once). Off = pairwise routes 404 and pairwise
+  definition/round commands 403; rows are kept.
+- **KiCad previews are a browser-only check-then-draw** (`events.kicad_preview`). The registry's
+  `preview` kind (`maker_formats/registry.py`, served as `AssetResponse.preview`) is the only list of
+  previewable files; the browser keeps no extension list. Only KiCad 6+ `.kicad_pcb`/`.kicad_sch` up to
+  `preview_max_bytes` (10 MiB, below the 25 MiB upload cap) preview; the worker checks UTF-8, header,
+  balance and a token budget before the main-thread renderer sees text, which is set through
+  `textContent`, never markup. The renderer chunk (`kicanvas-entry-*.js`) is a lazy preview vendor: never
+  precached, runtime-cached, and the build refuses it if it references Google Fonts or fetches a remote
+  host. Off = KiCad files are download-only.
 - **Accepted bytes have immutable ownership.** Stage-only grants, server-side size/hash/
   signature checks, optional explicit scan policy, bounded non-root video probe and
   conditional final promotion precede ready state. A configured scanner outage never

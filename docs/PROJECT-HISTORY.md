@@ -6,6 +6,13 @@
 
 ## Condensed changelog (newest first — full detail in `git log`)
 
+- **2026-10-29 -- pairwise judging and KiCad previews (release 2, lane L7; D6/D19, #73).** A third
+  judging mode, `pairwise`, behind `events.pairwise_judging`: judges answer "the one before or this one",
+  ranked by a CrowdBT replay written from the paper, with conflicts, recusal, scope and >=3 coverage
+  reused and results published only through the existing finalize/publish step. KiCad 6+ boards and
+  schematics get a checked, lazy, never-precached browser preview behind `events.kicad_preview`; the
+  API's preview kind replaces the browser's extension list. The KiCanvas renderer itself still has to
+  be vendored (`frontend/src/vendor/kicanvas/VENDORED.md`).
 - **2026-10-22 -- release-1 fixes.** Exactly two published images (#75a): one `spaceworks-backend`
   (Dockerfile target `release`) runs every profile, selected at start-up; the common entrypoint hands
   managed mode to `cloud_entrypoint`, host mode is unchanged (#42). **Release note (#75b): Machine

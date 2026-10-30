@@ -24,3 +24,6 @@ class IntegrationsConfig(AppConfig):
         register_slack()
         register_mattermost()
         register_discord()
+        # Release 2 L2 (X37): invitations offered on the invitee's own chat channels.
+        from .invite_chat import register as register_invite_chat
+        register_invite_chat()

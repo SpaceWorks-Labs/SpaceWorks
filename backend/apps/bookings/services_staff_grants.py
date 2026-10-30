@@ -75,5 +75,8 @@ def _send_invite(row, email, token):
                        text_body=f"Accept your resource staff invitation: {link}",
                        makerspace=row.makerspace, persist_body=False, sync=True,
                        stream="bookings", event="booking_staff_invitation", audience="staff")
+        from apps.integrations.invite_chat import dispatch_invite_chat  # X37: chat beside email
+        dispatch_invite_chat(row.makerspace, feature="bookings", invite=row, email=email,
+                             label="You are invited to help run a bookable space", link=link)
     except Exception:
         logger.error("booking_staff_invitation_email_failed", extra={"invite_id": row.pk})

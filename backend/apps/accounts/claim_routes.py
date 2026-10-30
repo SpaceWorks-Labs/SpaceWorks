@@ -16,6 +16,7 @@ from apps.accounts.claim_route_types import (
 from apps.accounts.claim_routes_auth import AUTH_CLAIM_ROUTES
 from apps.accounts.claim_routes_member import MEMBER_CLAIM_ROUTES
 from apps.accounts.claim_routes_public import PUBLIC_CLAIM_ROUTES
+from apps.accounts.delegated_route_catalog import ACCOUNT_MERGE_ROUTES, STAFF_ROLE_ROUTES
 
 
 CLAIM_REACHABLE_PREFIXES = (
@@ -63,6 +64,8 @@ STAFF_ACCOUNT_REFUSALS = frozenset({
     "admin-staff-accounts", "admin-staff-account-policy", "admin-staff-account-change",
     "admin-staff-account-deactivate", "admin-staff-account-reactivate",
     "admin-staff-account-set-password", "admin-staff-account-resend-invite",
+    # Release 2: staff roles and account merges are never reachable from a claim session.
+    *STAFF_ROLE_ROUTES, *ACCOUNT_MERGE_ROUTES,
 })
 
 

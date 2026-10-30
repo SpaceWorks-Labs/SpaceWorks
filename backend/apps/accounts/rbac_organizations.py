@@ -4,6 +4,7 @@ import logging
 
 from django.db.models import Q
 
+from .staff_identity import person_q
 from .rbac_actions import (
     ORGANIZATION_GRANTABLE_ACTIONS,
     actions_for_organization_membership,
@@ -25,10 +26,11 @@ def _organization_authority_memberships(actor, *, makerspace_ids=None):
 
     if is_native_session(actor):
         return OrganizationMembership.objects.none()
+    # Organization authority belongs to the person, never a platform account or shell.
     filters = (
-        Q(
+        person_q("user__")
+        & Q(
             user=actor,
-            user__account_kind="member",
             status=OrganizationMembership.Status.ACTIVE,
             organization__is_active=True,
         )

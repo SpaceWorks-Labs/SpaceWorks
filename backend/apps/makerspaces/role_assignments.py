@@ -22,7 +22,7 @@ def can_assign_roles(actor, makerspace, roles, target_membership=None):
         target_membership or MakerspaceMembership(makerspace=makerspace), roles
     )
     if any(role.slug != "member" for role in roles) or (
-            target_membership and target_membership.user.account_kind == "staff"):
+            target_membership and target_membership.track == MakerspaceMembership.Track.STAFF):
         from apps.accounts.staff_account_policy import require_authority
 
         require_authority(actor, makerspace,
@@ -78,12 +78,13 @@ def set_membership_roles(*, makerspace, actor, membership, roles):
         primary = MakerspaceRole.objects.select_for_update().get(pk=roles[0].pk)
         roles[0] = primary
         membership = (
-            MakerspaceMembership.objects.select_for_update()
+            MakerspaceMembership.track_manager(membership.track).select_for_update()
             .prefetch_related(additional_roles_prefetch())
             .get(pk=membership.pk, makerspace=makerspace)
         )
         can_assign_roles(actor, makerspace, roles, target_membership=membership)
-        if membership.user.account_kind == "staff" and "space_manager" not in {role.slug for role in roles}:
+        if (membership.track == MakerspaceMembership.Track.STAFF
+                and "space_manager" not in {role.slug for role in roles}):
             from apps.accounts.staff_account_policy import protect_last_manager
 
             protect_last_manager(makerspace, membership)

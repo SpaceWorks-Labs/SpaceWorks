@@ -30,35 +30,67 @@ def cancel_composer(campaign, actor, payload):
     return result
 
 
+HOLD = timedelta(seconds=5)
+
+
+def _confirm_locked(row, locked_actor, payload, *, available_at, hold):
+    if row.status != "draft" or row.render_schema_version != 2:
+        raise ProgrammeConflict("invalid_transition", "Only a composer draft can be scheduled.")
+    if payload["confirm"] is not True:
+        raise ValidationError({"confirm": "Confirm the selected audience before sending."})
+    now = timezone.now()
+    if available_at is None:
+        available_at = now + HOLD
+    elif available_at < now + HOLD:
+        raise ValidationError({"available_at": "Choose a send time at least five seconds from now."})
+    preview = EventBroadcastPreview.objects.filter(pk=payload["preview_id"], campaign=row,
+                                                    created_by=locked_actor).first()
+    count, revision = audience_proof(row)
+    if (preview is None or preview.content_sha256 != content_digest(row)
+            or payload["revision"] != preview.revision or revision != preview.revision
+            or payload["recipient_count"] != preview.recipient_count or count != preview.recipient_count):
+        raise ProgrammeConflict("stale_version", "The audience or event changed. Preview it again.")
+    if EventBroadcast.objects.filter(makerspace=row.makerspace,
+            queued_at__gte=now - timedelta(hours=1)).count() >= 10:
+        raise Throttled(detail="Limit of 10 broadcasts per hour for this makerspace.")
+    row.status = "scheduled"
+    row.available_at = available_at
+    row.confirmed_preview = preview
+    row.queued_at = now
+    row.undo_hold = hold
+    row.version += 1
+    row.save(update_fields=["status", "available_at", "confirmed_preview", "queued_at", "undo_hold",
+                            "version", "updated_at"])
+    record(locked_actor, "event.broadcast_held" if hold else "event.broadcast.scheduled",
+           makerspace=row.makerspace, target=row,
+           meta={"count": count, "preview_id": preview.pk, "version": row.version})
+    if hold:
+        # Broker timers are only a hint: the minute sweep releases it if this is lost.
+        transaction.on_commit(_release_hint, robust=True)
+    return {"campaign_id": row.pk, "state": row.status, "version": row.version}
+
+
+def _release_hint():
+    try:
+        resume_scheduled_broadcasts.apply_async(countdown=HOLD.total_seconds() + 1)
+    except Exception:
+        pass
+
+
 def schedule(campaign, actor, payload):
     def confirm(row, locked_actor):
-        if row.status != "draft" or row.render_schema_version != 2:
-            raise ProgrammeConflict("invalid_transition", "Only a composer draft can be scheduled.")
-        if payload["confirm"] is not True:
-            raise ValidationError({"confirm": "Confirm the selected audience before sending."})
-        now = timezone.now()
-        if payload["available_at"] < now + timedelta(seconds=5):
-            raise ValidationError({"available_at": "Choose a send time at least five seconds from now."})
-        preview = EventBroadcastPreview.objects.filter(pk=payload["preview_id"], campaign=row,
-                                                        created_by=locked_actor).first()
-        count, revision = audience_proof(row)
-        if (preview is None or preview.content_sha256 != content_digest(row)
-                or payload["revision"] != preview.revision or revision != preview.revision
-                or payload["recipient_count"] != preview.recipient_count or count != preview.recipient_count):
-            raise ProgrammeConflict("stale_version", "The audience or event changed. Preview it again.")
-        if EventBroadcast.objects.filter(makerspace=row.makerspace,
-                queued_at__gte=now - timedelta(hours=1)).count() >= 10:
-            raise Throttled(detail="Limit of 10 broadcasts per hour for this makerspace.")
-        row.status = "scheduled"
-        row.available_at = payload["available_at"]
-        row.confirmed_preview = preview
-        row.queued_at = now
-        row.version += 1
-        row.save(update_fields=["status", "available_at", "confirmed_preview", "queued_at", "version", "updated_at"])
-        record(locked_actor, "event.broadcast.scheduled", makerspace=row.makerspace,
-               target=row, meta={"count": count, "preview_id": preview.pk, "version": row.version})
-        return {"campaign_id": row.pk, "state": row.status, "version": row.version}
+        return _confirm_locked(row, locked_actor, payload, available_at=payload["available_at"], hold=False)
     campaign_command(campaign, actor, "broadcast.schedule", payload, confirm)
+    result = EventBroadcast.objects.get(pk=campaign.pk, event_id=campaign.event_id)
+    authorize(result, actor)
+    return result
+
+
+def send_now(campaign, actor, payload):
+    """Send = schedule at confirmation + 5 s; cancel inside the hold is the undo."""
+    def confirm(row, locked_actor):
+        return _confirm_locked(row, locked_actor, payload, available_at=None, hold=True)
+    campaign_command(campaign, actor, "broadcast.send", payload, confirm)
     result = EventBroadcast.objects.get(pk=campaign.pk, event_id=campaign.event_id)
     authorize(result, actor)
     return result

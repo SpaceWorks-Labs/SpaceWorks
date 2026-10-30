@@ -11,8 +11,10 @@ from rest_framework.exceptions import ValidationError
 
 from apps.integrations.broadcasts_templates import render, validate_strings
 
-PLACEHOLDERS = ("name", "event_title", "event_date", "event_location", "ticket_url")
-DESIGNS = ("classic", "bold", "minimal")
+from .broadcast_designs import DESIGNS
+
+PLACEHOLDERS = ("name", "event_title", "event_date", "event_location", "ticket_url",
+                "event_url", "feedback_url", "schedule_url", "organization")
 NAVIGATION_TARGETS = ("event", "ticket")
 GILROY_FACES = ((400, "Regular"), (500, "Medium"), (600, "SemiBold"), (700, "Bold"))
 
@@ -133,21 +135,21 @@ def render_content(campaign, context, *, width=640, preview=False):
         return values
     links_html = "".join('<p><a rel="noopener noreferrer" href="' + html.escape(item["url"], quote=True)
                          + '">' + html.escape(item["label"]) + '</a></p>' for item in links)
-    accent = {"classic": "#006E63", "bold": "#FF7447", "minimal": "#142C2A"}[campaign.design]
-    content = ("<header>Space Works</header><h1>" + html.escape(values["subject"]) + "</h1>"
-               + markdown_html(message) + links_html)
-    if width not in {360, 640}:
-        raise ValueError("Unsupported composer preview width")
-    frame = {"classic": "border-top:6px solid var(--accent);padding-top:24px;",
-             "bold": "border:3px solid var(--accent);padding:24px;",
-             "minimal": "border-bottom:2px solid var(--accent);padding-bottom:24px;"}[campaign.design]
-    values["html_body"] = ('<!doctype html><html lang="en"><head><meta charset="utf-8">'
-        '<meta name="viewport" content="width=device-width, initial-scale=1">'
-        '<style>' + font_faces(preview=preview) + ':root{color-scheme:light dark;--paper:#FFF4E8;--ink:#142C2A;--accent:' + accent + ';}'
-        '@media(prefers-color-scheme:dark){:root{--paper:#142C2A;--ink:#FFF4E8;--accent:#DFFF8F;}}'
-        'body{margin:0;padding:24px;background:var(--paper);color:var(--ink);font:400 16px Gilroy;}'
-        'main{max-width:' + str(width) + 'px;margin:auto;' + frame + '}'
-        'h1{font-weight:700;font-size:24px;}p{line-height:1.6;overflow-wrap:anywhere;}'
-        'a{color:var(--ink);text-decoration:underline;font-weight:600;}'
-        'header{font-weight:700;}</style></head><body><main>' + content + '</main></body></html>')
+    from .broadcast_designs import document
+    values["html_body"] = document(campaign.design, fonts=font_faces(preview=preview), width=width,
+        title_html=html.escape(values["subject"]), message_html=markdown_html(message), links_html=links_html,
+        organization=context.get("organization", ""),
+        cover_url=cover_url(campaign) if campaign.design == "photo_header" else "")
     return values
+
+
+def cover_url(campaign):
+    """The event's public cover image, as the public event page shows it, or nothing."""
+    event = getattr(campaign, "event", None)
+    if event is None:
+        return ""
+    key = event.image_key
+    if event.series_id and "image_key" not in (event.series_override_fields or []):
+        key = event.series.image_key
+    from apps.inventory import public_image_storage
+    return public_image_storage.public_url(key) or ""

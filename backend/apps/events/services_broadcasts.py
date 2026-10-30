@@ -48,6 +48,8 @@ def compose_locked(event, actor, values):
     ctas = values.pop("ctas", [])
     if schema == 2:
         from .programme.broadcast_content import pack
+        from .programme.broadcast_designs import require_design_allowed
+        require_design_allowed(event.makerspace, values.get("design", "classic"))
         values["body"] = pack(values.get("subject", ""), values.get("body", ""),
                               ctas=ctas, design=values.get("design", "classic"))
     elif schema != 1 or ctas:
@@ -57,14 +59,18 @@ def compose_locked(event, actor, values):
     # Validate caller input before encrypted persistence.
     if schema == 1:
         validate_strings(values.get("subject", ""), values.get("body", ""), PLACEHOLDERS)
+    validate_audience(campaign)
+    campaign.save()
+    record(actor, "event.broadcast.created", makerspace=event.makerspace, target=campaign)
+    return campaign
+
+
+def validate_audience(campaign):
     from .models import EventRegistration
     if (not isinstance(campaign.statuses, list) or not campaign.statuses
             or set(campaign.statuses) - set(EventRegistration.Status.values)
             or campaign.attendance not in {"any", "attended", "not_attended"}):
         raise ValidationError("Choose valid registration and attendance filters.")
-    campaign.save()
-    record(actor, "event.broadcast.created", makerspace=event.makerspace, target=campaign)
-    return campaign
 
 
 @transaction.atomic
@@ -103,8 +109,14 @@ def cancel_locked(campaign, actor):
         return campaign
     if campaign.status not in {"draft", "scheduled", "queued", "sending"}:
         raise ValidationError("This campaign cannot be changed in its current state.")
-    campaign.status, campaign.completed_at = "cancelled", timezone.now()
+    now = timezone.now()
+    # The undo: a "send now" stopped before its five-second hold elapsed. After the hold
+    # this is an ordinary cancel, which stops only unclaimed sends.
+    in_hold = (campaign.undo_hold and campaign.status == "scheduled"
+               and campaign.available_at is not None and now < campaign.available_at)
+    campaign.status, campaign.completed_at = "cancelled", now
     campaign.version += 1
     campaign.save(update_fields=["status", "completed_at", "version", "updated_at"])
-    record(actor, "event.broadcast.cancelled", makerspace=campaign.makerspace, target=campaign)
+    record(actor, "event.broadcast_cancelled_in_hold" if in_hold else "event.broadcast.cancelled",
+           makerspace=campaign.makerspace, target=campaign)
     return campaign

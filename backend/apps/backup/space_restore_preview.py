@@ -40,6 +40,11 @@ def compute_preview(makerspace, archive):
                            "removed": len(live - archived), "added": len(archived - live)})
         relinked += _foreign_inbound(makerspace.pk, label, archived & live)
     outcome = resolve(makerspace.pk, gone, apply=False)
+    from .space_restore_apply import staff_without_restored_membership
+    outcome.blocked.extend({"model": "accounts.User", "pk": str(pk), "field": "staff_makerspace",
+                            "references": "makerspaces.MakerspaceMembership", "reason": "staff_after_restore_point",
+                            "username": username}
+                           for pk, username in staff_without_restored_membership(makerspace, archive))
     memberships = next((row for row in models if row["label"] == "makerspaces.MakerspaceMembership"), {})
     return {
         "snapshot_at": snapshot_at.isoformat() if snapshot_at else None,

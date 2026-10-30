@@ -109,16 +109,17 @@ def _resolve_rows(makerspace_id, model, fk, pks, outcome, *, apply):
 
 
 def foreign_pks(makerspace_id, model, pks):
-    """Rows that demonstrably belong to another makerspace."""
+    """Rows that belong to another makerspace: by their canonical owner, or by a
+    ``makerspace`` column naming another space (a collaborator row names its own)."""
     label = model._meta.label
+    foreign = set()
     if label in SLICE_ROW_SPECS:
         own = set(live_queryset(label, makerspace_id).filter(pk__in=pks).values_list("pk", flat=True))
-        owned_anywhere = set(model._base_manager.filter(pk__in=pks).exclude(pk__in=own).values_list("pk", flat=True))
-        return owned_anywhere
+        foreign |= set(model._base_manager.filter(pk__in=pks).exclude(pk__in=own).values_list("pk", flat=True))
     if any(item.name == "makerspace" for item in model._meta.concrete_fields):
-        return set(model._base_manager.filter(pk__in=pks).exclude(makerspace_id=makerspace_id)
-                   .exclude(makerspace_id__isnull=True).values_list("pk", flat=True))
-    return set()
+        foreign |= set(model._base_manager.filter(pk__in=pks).exclude(makerspace_id=makerspace_id)
+                       .exclude(makerspace_id__isnull=True).values_list("pk", flat=True))
+    return foreign
 
 
 def raw_delete(model, pks):

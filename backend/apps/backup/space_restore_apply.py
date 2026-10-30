@@ -11,7 +11,7 @@ records are kept, and every reference into a removed row is resolved or blocks
 from collections import defaultdict
 
 from django.apps import apps
-from django.db import connection
+from django.db import DatabaseError, connection
 
 from apps.tenant_migration.dependency_order import topologically_sort_models
 
@@ -33,7 +33,15 @@ def apply_space_restore(makerspace, archive):
         raise SpaceRestoreError("wrong_space", "The archive belongs to a different makerspace.")
     with connection.cursor() as cursor:
         cursor.execute("SET LOCAL app.allow_immutable_delete = 'on'")
+        # Staff memberships are replaced (deleted and re-inserted with the same id); the
+        # account guards admit that only inside this exact tenant's purge context.
+        cursor.execute("SELECT set_config('app.account_retirement_makerspace_id', %s, true)",
+                       [str(makerspace.pk)])
         cursor.execute("SET CONSTRAINTS ALL DEFERRED")
+    blocked = staff_without_restored_membership(makerspace, archive)
+    if blocked:
+        raise SpaceRestoreError("staff_after_restore_point",
+                                "Staff accounts created after the restore point must be retired first.")
     labels = restorable_labels()
     models = topologically_sort_models([apps.get_model(label) for label in (*labels, *KEPT_LIVE)])
     users = UserRemap(makerspace)
@@ -57,10 +65,23 @@ def apply_space_restore(makerspace, archive):
     report["accounts_rescrubbed"] = rescrub_deleted_accounts(makerspace, users.referenced)
     report["users_reattributed"] = users.reattributed
     _rebuild_blind_indexes(makerspace)
-    with connection.cursor() as cursor:
-        # Prove every deferred foreign key now while the failure is still a typed error.
-        cursor.execute("SET CONSTRAINTS ALL IMMEDIATE")
+    try:
+        with connection.cursor() as cursor:
+            # Prove every deferred key and membership rule now, as a typed failure.
+            cursor.execute("SET CONSTRAINTS ALL IMMEDIATE")
+    except DatabaseError as exc:
+        raise SpaceRestoreError("integrity_check_failed",
+                                f"The restored rows do not satisfy a database rule: {str(exc).splitlines()[0][:300]}") from None
     return report
+
+
+def staff_without_restored_membership(makerspace, archive):
+    """Live staff of this space whose one required membership the archive does not carry."""
+    from apps.accounts.models import User
+
+    archived = {int(row["fields"]["user"]) for row in archive.rows("makerspaces.MakerspaceMembership")}
+    return list(User.objects.filter(account_kind="staff", staff_makerspace=makerspace, retired_at__isnull=True)
+                .exclude(pk__in=archived).order_by("pk").values_list("pk", "username"))
 
 
 def _insert(model, archive, makerspace, users):

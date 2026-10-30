@@ -9,6 +9,7 @@ import { opsQueryState, useOpsTabs } from "../staff/opsPresentation";
 import { inboxUnreadKey, personalRecipientKey } from "./personalQueryKeys";
 import { useOptionalTenant } from "../../lib/tenant";
 import { inboxRoute, isInboxLink } from "./inboxLinks";
+import { InboxRowActions } from "./InboxRowActions";
 export { inboxUnreadKey } from "./personalQueryKeys";
 export { isInboxLink } from "./inboxLinks";
 
@@ -45,8 +46,8 @@ function serverPageSize(data: Page<unknown>, page: number) {
   return Math.max(1, Math.round((data.count - length) / (page - 1)));
 }
 
-export function PersonalInbox({ makerspaceId, makerspaceSlug, member = false, announcement, overflow }: {
-  makerspaceId: number; makerspaceSlug?: string; member?: boolean; announcement?: Action; overflow?: Action[];
+export function PersonalInbox({ makerspaceId, makerspaceSlug, member = false, announcement, overflow, snooze = false }: {
+  makerspaceId: number; makerspaceSlug?: string; member?: boolean; announcement?: Action; overflow?: Action[]; snooze?: boolean;
 }) {
   const tenant = useOptionalTenant();
   const { slug } = useParams();
@@ -55,8 +56,10 @@ export function PersonalInbox({ makerspaceId, makerspaceSlug, member = false, an
   const send = member ? memberRequest : staffRequest;
   const mode = member ? "member" : "staff";
   const recipient = personalRecipientKey();
-  const tabs = useOpsTabs("inbox", [{ key: "unread", label: "Unread" }, { key: "all", label: "All" }], "all");
+  const tabs = useOpsTabs("inbox", [{ key: "unread", label: "Unread" }, { key: "all", label: "All" },
+    ...(snooze ? [{ key: "archived", label: "Archived" }] : [])], "all");
   const unread = tabs.active === "unread";
+  const archived = snooze && tabs.active === "archived";
   const [pageState, setPage] = useState({ page: 1, tab: tabs.active });
   const page = pageState.tab === tabs.active ? pageState.page : 1;
   useEffect(() => { setPage({ page: 1, tab: tabs.active }); }, [tabs.active]);
@@ -65,7 +68,8 @@ export function PersonalInbox({ makerspaceId, makerspaceSlug, member = false, an
   const path = `/notifications/inbox/${makerspaceId}`;
   const params = new URLSearchParams({ page: String(page), unread: String(unread) });
   if (feature) params.set("feature", feature);
-  const rows = useQuery({ queryKey: ["notifications-inbox", makerspaceId, mode, recipient, page, unread, feature],
+  if (archived) params.set("archived", "true");
+  const rows = useQuery({ queryKey: ["notifications-inbox", makerspaceId, mode, recipient, page, unread, feature, archived],
     queryFn: () => send<Page<InboxRow>>(`${path}?${params}`), refetchInterval: 60_000 });
   const count = useQuery({ queryKey: inboxUnreadKey(makerspaceId, mode),
     queryFn: () => send<{ count: number }>(`${path}/unread-count`), refetchInterval: 60_000 });
@@ -104,7 +108,8 @@ export function PersonalInbox({ makerspaceId, makerspaceSlug, member = false, an
                 <span className="mt-1 block line-clamp-2 whitespace-pre-wrap break-words">{row.summary}</span></>}
               right={<div className="flex flex-wrap items-center gap-2">{!row.read_at ? <StatusPill label="Unread" tone="accent" /> : null}
                 {isInboxLink(link) ? <RouteLink className="desk-button" href={link} onClick={() => { if (!row.read_at) read.mutate(row.id); }}>Open</RouteLink> : null}
-                {!row.read_at ? <button className="desk-button" disabled={read.isPending} onClick={() => read.mutate(row.id)}>Mark read</button> : null}</div>} />
+                {!row.read_at ? <button className="desk-button" disabled={read.isPending} onClick={() => read.mutate(row.id)}>Mark read</button> : null}
+                {snooze ? <InboxRowActions path={path} id={row.id} member={member} archived={archived} onChanged={refresh} /> : null}</div>} />
             {row.summary ? <div className="mx-4 mb-4">
               <button className="desk-button-ghost" aria-expanded={Boolean(expanded[row.id])}
                 onClick={() => { setExpanded(current => ({ ...current, [row.id]: !current[row.id] }));

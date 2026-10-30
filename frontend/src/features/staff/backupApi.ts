@@ -11,7 +11,12 @@ export type BackupArchive = {
   failure_detail: string;
   expires_at: string | null;
   created_at: string;
+  completed_at: string | null;
   purge_warning: string;
+  trigger: "on_demand" | "nightly" | "safety";
+  format: string;
+  /** A one-space restore point this server can open and restore. */
+  restorable_in_app: boolean;
 };
 
 export type RestoreOperation = {

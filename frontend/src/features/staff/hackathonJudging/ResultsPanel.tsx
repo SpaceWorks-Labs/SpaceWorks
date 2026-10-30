@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ConfirmDialog, ErrorBlock, Field, StatusPill } from '../../../components/ui';
 import { useDefinitions, useJudging } from './api';
 import { GalleryPublishPanel } from './GalleryPublishPanel';
+import { IntegrityFlag } from './IntegrityFlag';
 import type { Round, Scope } from './types';
 
 type Award = { prize_id: number; snapshot_id: number; rank: number; public_requested: boolean; tie_reason: string };
@@ -49,6 +50,7 @@ export function ResultsPanel({ scope, rounds, galleryEnabled = false }: { scope:
       <button className="desk-button min-h-11" type="button" onClick={() => setAwards(awards.filter((_, i) => i !== index))}>Remove award {index + 1}</button>
     </fieldset>)}
     <button className="desk-button min-h-11" type="button" disabled={mutate.isPending} onClick={() => setAwards([...awards, { prize_id: 0, snapshot_id: 0, rank: 1, public_requested: false, tie_reason: '' }])}>Add award</button>
+    <IntegrityFlag scope={scope} snapshotIds={snapshots} />
     <label className="flex min-h-11 items-center gap-3"><input type="checkbox" checked={integrity} onChange={e => setIntegrity(e.target.checked)} />I reviewed integrity flags and coverage exceptions</label>
     {version > 0 ? <Field label="Correction reason"><textarea className="desk-input min-h-24" maxLength={2000} value={reason} onChange={e => setReason(e.target.value)} /></Field> : null}
     <div className="flex flex-wrap gap-2">

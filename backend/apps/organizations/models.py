@@ -157,6 +157,8 @@ class OrganizationInvitation(models.Model):
         related_name="invitations",
     )
     token_digest = models.CharField(max_length=64, unique=True, editable=False)
+    # Decision #145: an optional invitee email is never stored, only its HMAC digest.
+    invitee_email_digest = models.CharField(max_length=64, blank=True, default="", editable=False)
     granted_actions = models.JSONField(default=list, blank=True)
     governance_actions = models.JSONField(default=list, blank=True)
     expires_at = models.DateTimeField()

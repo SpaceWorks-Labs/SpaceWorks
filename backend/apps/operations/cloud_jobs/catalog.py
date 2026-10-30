@@ -91,6 +91,12 @@ LEGACY_ENTRIES = (
     ("finance-event-payout-recovery", "apps.payments.event_payouts.tasks.recover_finance_work_task", 5),
     ("finance-event-payout-retention", "apps.payments.event_payouts.tasks.sweep_retention_task", 1440),
     ("account-saved-details", "apps.accounts.saved_details.tasks.process_saved_details", 5),
+    # Release 2 L2: bounded per-space sweeps (digest, GitHub flag, reconcile, re-ping, room health).
+    ("event-approval-digest", "apps.events.approval_digest.send_approval_digests_task", 30),
+    ("event-submission-integrity", "apps.events.submissions.integrity_jobs.sweep_integrity_checks_task", 15),
+    ("event-storage-reconcile", "apps.events.submissions.storage_reconcile.reconcile_event_storage_task", 1440),
+    ("notification-escalation", "apps.notifications.escalation.escalate_unseen_task", 5),
+    ("notification-destination-health", "apps.integrations.destination_health.disable_dead_destinations_task", 60),
 )
 _RETAINED = frozenset({
     "evidence-object-expiry", "evidence-abandoned-upload-cleanup",

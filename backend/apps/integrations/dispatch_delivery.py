@@ -108,6 +108,10 @@ def _deliver(log):
         )
         if rendered.html_body:
             msg.attach_alternative(rendered.html_body, "text/html")
+        if log.makerspace_id:
+            # R2 L2 (X2): a co-hosting organisation's display name and Reply-To only.
+            from apps.integrations.org_sender import apply as apply_org_sender
+            apply_org_sender(log, msg)
         if rendered.attachments:
             from apps.payments.document_delivery import render_attachment
             for reference in rendered.attachments:

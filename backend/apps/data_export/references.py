@@ -31,6 +31,8 @@ from apps.tenant_migration.catalog_events_programme_references import (
 RELATIONAL_USER_FIELDS |= PROGRAMME_USER_FIELDS
 from .classification_r2_l1 import RELATIONAL_USER_FIELDS as R2_L1_USER_FIELDS  # noqa: E402
 RELATIONAL_USER_FIELDS |= R2_L1_USER_FIELDS
+from .classification_r2_l2 import RELATIONAL_USER_FIELDS as R2_L2_USER_FIELDS  # noqa: E402
+RELATIONAL_USER_FIELDS |= R2_L2_USER_FIELDS
 _EXCLUDED_USER_EDGE_REASONS.update(PROGRAMME_EXCLUDED_EDGES)
 _EXCLUDED_USER_EDGE_REASONS.update(_p2_events.EXCLUDED_USER_EDGE_REASONS)
 from apps.tenant_migration.catalog_reimbursements import (

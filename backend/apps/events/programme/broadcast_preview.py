@@ -25,13 +25,18 @@ def delivery_revision(campaign):
 
 def content_digest(campaign):
     event = campaign.event
-    return fingerprint({"subject": campaign.subject, "body": campaign.body,
+    values = {"subject": campaign.subject, "body": campaign.body,
         "schema": campaign.render_schema_version, "design": campaign.design,
         "event": event.pk, "title": event.title, "starts_at": event.starts_at,
         "location": event.location, "public_token": str(event.public_token),
         "slug": event.makerspace.slug, "frontend_domain": event.makerspace.frontend_domain,
         "frontend_domain_status": event.makerspace.frontend_domain_status,
-        "statuses": sorted(campaign.statuses), "attendance": campaign.attendance})
+        "statuses": sorted(campaign.statuses), "attendance": campaign.attendance}
+    if campaign.design == "photo_header":
+        # Only the photo design renders the cover; other digests stay byte-stable.
+        from .broadcast_content import cover_url
+        values["cover"] = cover_url(campaign)
+    return fingerprint(values)
 
 
 def audience_proof(campaign):
@@ -51,12 +56,10 @@ def audience_proof(campaign):
 
 
 def preview_context(campaign, actor):
+    from .broadcast_placeholders import placeholder_context
     event = campaign.event
-    return {"name": actor.get_full_name() or actor.username,
-        "event_title": event.title, "event_date": event.starts_at.isoformat(),
-        "event_location": event.location,
-        "ticket_url": public_url(event.makerspace, "member", "events"),
-        "event_url": public_url(event.makerspace, "events", str(event.public_token))}
+    return placeholder_context(event, name=actor.get_full_name() or actor.username,
+                               ticket_url=public_url(event.makerspace, "member", "events"))
 
 
 def preview_response(preview, actor):

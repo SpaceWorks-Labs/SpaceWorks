@@ -11,6 +11,7 @@ from apps.accounts import rbac
 from apps.accounts.models import User
 from apps.audit import services as audit
 from apps.organizations import governance
+from apps.organizations import invitation_delivery as _delivery
 from apps.organizations.access import is_superadmin, lock_governance_membership
 from apps.organizations.exceptions import (
     InvitationExpired,
@@ -63,6 +64,7 @@ def create_invitation(
     governance_actions,
     granted_actions,
     expires_in_days=DEFAULT_EXPIRY_DAYS,
+    invitee_email="",
 ):
     proposed_governance = _clean_actions(
         governance_actions, governance.GOVERNANCE_ACTIONS, "governance_actions"
@@ -93,6 +95,7 @@ def create_invitation(
         granted_actions=proposed_grants,
         expires_at=timezone.now() + timedelta(days=expires_in_days),
         created_by=actor,
+        invitee_email_digest=_delivery.email_digest(invitee_email),
     )
     audit.record(
         actor,
@@ -105,6 +108,8 @@ def create_invitation(
             "expires_at": invitation.expires_at.isoformat(),
         },
     )
+    if invitee_email:
+        transaction.on_commit(lambda: _delivery.send(invitation, invitee_email, raw_token, actor))
     return invitation, raw_token
 
 

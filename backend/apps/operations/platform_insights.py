@@ -38,6 +38,15 @@ def _health(kind, rows, *, pending, failed):
     return {"kind": kind, **values}
 
 
+def _organization_insights(spaces):
+    """Cross-event organisation rows (R2 L2, G8); counts under k=10 are suppressed."""
+    from apps.separability.registry import runtime_active
+    if not runtime_active("events"):
+        return []
+    from apps.events.programme.analytics_org import organization_insights
+    return organization_insights(spaces)
+
+
 def platform_insights(actor, *, days=30, now=None):
     require_platform(actor)
     if type(days) is not int or not 1 <= days <= 30:
@@ -60,6 +69,7 @@ def platform_insights(actor, *, days=30, now=None):
                "accounts": account_growth.get(first + timedelta(days=index), 0),
                "makerspaces": tenant_growth.get(first + timedelta(days=index), 0)} for index in range(days)]
     return {"window": {"starts_at": start, "ends_at": now}, "growth": growth,
+            "organizations": _organization_insights(spaces),
             "staff_mfa": {"active": active, "enabled": enabled, "without_mfa": active - enabled,
                           "adoption_percent": round(enabled * 100 / active, 2) if active else None},
             "outbox": [
@@ -94,9 +104,20 @@ class OutboxHealthSerializer(serializers.Serializer):
     oldest_pending_at = serializers.DateTimeField(allow_null=True)
 
 
+class OrganizationInsightSerializer(serializers.Serializer):
+    organization_id = serializers.IntegerField()
+    name = serializers.CharField()
+    events = serializers.IntegerField(min_value=0)
+    registrations = serializers.IntegerField(min_value=0, allow_null=True)
+    attended = serializers.IntegerField(min_value=0, allow_null=True)
+    attendance_percent = serializers.FloatField(allow_null=True)
+    suppressed = serializers.BooleanField(help_text="True when a count is under 10 and is withheld.")
+
+
 class PlatformInsightsSerializer(serializers.Serializer):
     window = WindowSerializer()
     growth = GrowthSerializer(many=True)
+    organizations = OrganizationInsightSerializer(many=True)
     staff_mfa = MfaSerializer()
     outbox = OutboxHealthSerializer(many=True)
 

@@ -64,6 +64,9 @@ FEATURE_EVENTS = {
 }
 from .notification_catalog_events_programme import PROGRAMME_EVENTS
 FEATURE_EVENTS[F.EVENTS] += PROGRAMME_EVENTS
+# Release 2 L2 (X37): staff-grant invitations offered on the invitee's own chat channels.
+FEATURE_EVENTS[F.EVENTS] += ("invitation",)
+FEATURE_EVENTS[F.BOOKINGS] += ("invitation",)
 
 # Exact default on/off per (feature, channel). Preserves today's behavior: hardware/printing
 # email + hardware Telegram on; bookings email (Part J seam) + bookings Telegram on; Slack/

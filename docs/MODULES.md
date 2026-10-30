@@ -28,7 +28,7 @@ govern sign-in availability. Membership adds plans, vouching, renewals and the m
 | --- | --- | --- |
 | Inventory & lending | `public_inventory`, `request_workflow`, `staff_admin`, `scanner`, `evidence_uploads`, `qr_management` (core); `guest_handover`, `asset_units`, `containers`, `bulk_import`, `stock_transfers`, `qr_print_batches`, `stocktake`, `devices` | `loans.enabled`, `loans.limits`, `loans.renewals`, `loans.kit_checklist`, `inventory.notify_when_back`, `inventory.tobuy`, `inventory.warranty`, `inventory.self_checkout`, `inventory.contact_self_checkout`, `inventory.kiosk`, `stocktake.discipline`, `packs.import`, `charges.loans`; `payments.loans` with Online payments |
 | Machines | `machines`, `machine_service`, `printing` | `machines.maintenance`, `machines.tobuy`, `machines.warranty`, `machines.certifications`, `machines.certification_reminders`, `machines.public_detail`, `machines.material_catalogue`, `machines.structured_intake`, `maintenance.reminders`, `maintenance.meters`, `maintenance.calendar_feed`, `charges.machines`, `notifications.delegated_recipients`; `payments.machines` with Online payments |
-| Events | `events` | `events.api_read`, `events.certificate_designer`, `events.website`, `events.embed`, `events.short_links`, `events.online_delivery`; `events.broadcasts` with Notifications and Email; `events.organization_audience`, `events.offline_checkin`, `events.invites`, `events.account_registration`, `events.ticket_types`, `events.promo_codes`, `charges.events`; `payments.events` with Online payments |
+| Events | `events` | `events.api_read`, `events.certificate_designer`, `events.website`, `events.embed`, `events.short_links`, `events.online_delivery`, `events.anonymous_feedback`; `events.broadcasts` with Notifications and Email; `events.organization_audience`, `events.offline_checkin`, `events.invites`, `events.account_registration`, `events.ticket_types`, `events.promo_codes`, `charges.events`; `payments.events` with Online payments |
 | Bookings | `bookings` | `bookings.recurring`, `bookings.staff_grants`, `bookings.clone`, `bookings.staff_tools`, `bookings.confirmations`, `bookings.checkin`, `bookings.passes`, `bookings.api_read`, `bookings.website`, `bookings.embed`, `charges.bookings`; `bookings.broadcasts` with Notifications and Email; `bookings.analytics`, `bookings.utilization_pdf`, `bookings.exports` with Reports; `payments.bookings` with Online payments |
 | Membership | `membership`, `mobile` | `membership.auto_renew`, `membership.lifecycle_mail`, `membership.self_service`, `membership.self_export`, `membership.vouching`, `membership.application_form`, `membership.broadcasts`, `mobile.push`, `charges.membership`; `payments.membership` with Online payments |
 | Online payments | `payments` | `payments.enabled` plus the online-payment feature of each selected domain |
@@ -276,10 +276,9 @@ Volunteering can serve ordinary events. Schema, routes and generated API exist; 
 provider installation and acceptance remain incomplete. See the [runbooks](events/README.md)
 and [exact integration closure ledger](events/integration-status.md).
 
-The current `setup_areas.features_for()` selects every child of a chosen area, including
-these five when Events is selected. That setup path still needs an explicit independent
-opt-in/exclusion before programme acceptance; do not infer safe installation from the
-registry's false defaults alone.
+Choosing the Events area in setup does **not** switch these five on: `setup_areas.py` lists
+them (with every reserved key) in `EXPLICIT_OPT_IN_FEATURES`, so `features_for()` leaves them
+off and a space opts in to each programme switch on its own.
 
 Authored workflows cover applications/review/private decision release/RSVP/waitlists,
 three team modes plus opt-in finder, contributor shifts/hours, Mentor Desk, immutable
@@ -302,11 +301,15 @@ Feature disablement removes its gated live actions/reads and retains definitions
 and private objects. Events uninstall retains those rows; deployment tombstoning removes
 runtime surfaces while retention/PII/purge/backup declarations survive. Events purge uses
 the child-before-parent graph and removes owned programme rows and keys, preserving the
-core money ledger, global account vault and foreign profile bytes. **Durable multipart/
-version cleanup receipts and storage reconciliation still need integration**; collecting
-keys is not proof that purge removed bytes. Imported public/consent/grant/credential state
-is inert until fresh target-side authorization; imported storage allowance is zero until
-target accounting is installed.
+core money ledger, global account vault and foreign profile bytes. Every cleanup that
+removes an asset key (retention and purge custody alike) first proves the key is gone --
+all versions, delete markers and multipart uploads -- and then writes a durable, FK-free
+`SubmissionStorageCleanupReceipt` (key hash and counts, never a locator). A daily
+reconciliation (`event-storage-reconcile`) corrects event usage drift from the live asset
+rows, audited as `event.asset_usage_reconciled`. Imported public/consent/grant/credential state
+is inert until fresh target-side authorization; imported assets are charged to the target's
+event pool exactly once, when that reconciliation first sees them (the obligation row is the
+idempotency key).
 
 Managed hackathon storage is a separate decimal **25 GB per event** pool (25,000,000,000
 bytes); self-host can configure a byte budget or unlimited event pool. File/group/submission
@@ -436,6 +439,34 @@ shows a venue map link for in-person and hybrid events. The Event Manager switch
 PDF and event exports (`reports.event_pdf`, `reports.event_exports`) while holding the events
 settings grant. A staff member who runs events in several spaces picks the host space when
 creating an event.
+
+**Communications and analytics (release 2, L2).** The broadcast composer saves drafts as
+you type (versioned, so a second tab cannot overwrite silently), shows delivery tallies by
+best outcome (delivered, waiting, failed, skipped; never who), and "Send now" holds the
+message five seconds with a visible Undo; after that the accepted-mail rule applies.
+Opt-in **`events.broadcast_templates`** (off) adds 13 starter templates (subject, message,
+audience and design) and three more brand designs: accent band, photo header and letter.
+Opt-in **`events.approval_digest`** (off) emails each organiser one summary every 30 minutes
+while sign-ups wait for approval (titles and counts only; nothing when nothing waits).
+A staff removal is announced to the member only after its five-minute undo window has
+passed (an undone removal sends nothing), a member who verifies a new email gets their
+upcoming tickets again, a day-ahead reminder skips sign-ups from the last 12 hours, and a
+confirmation for an online or hybrid event carries the join link. Event analytics add
+arrivals by 15-minute window, the check-in method split, feedback choice charts (written
+answers are never charted), waitlist conversion, series turnout and short-link visits; the
+platform view adds organisation cross-event totals with counts under 10 withheld.
+**`events.anonymous_feedback`** (on) lets a feedback form promise anonymity while
+certificates are off: answers keep no registration, account or IP. With it off (or unticked
+on the form) feedback is identified and needs sign-in. A form already promised anonymous
+accepts nothing while the switch is off.
+Opt-in **`events.mentor_chat_alerts`** (off) posts new Mentor Desk help requests to the
+team chat rooms an organiser picks, only while a mentor is on shift: outbound text with the
+topic, team name and a Mentor Desk link, no buttons, quiet hours respected.
+Opt-in **`events.submission_integrity`** (off) checks each project snapshot's GitHub
+repository for commits from before kickoff and shows an information chip to judges and
+organisers. It never disqualifies, hides or scores; GitHub failures leave no flag.
+Opt-in **`events.organization_sender`** (off) shows a co-hosting organisation's name ("Club
+via Space") and Reply-To on event email; the space's address, provider and email gate stay.
 
 Not built, by decision: **guest RSVP** (registration always needs an account, #71), and
 **organisations host only through a space they own** (#71): an organisation never hosts an
@@ -589,6 +620,16 @@ both providers are registered/mounted and the former missing-module blocker is r
 SMS uses Twilio under its own default-off module. Physical sender/STOP history, BSUID correlation
 and device push live beneath canonical envelope delivery. The inbox module is optional.
 Member JWTs reach exactly the six personal routes and OAuth uses authenticated challenge verification.
+Release 2 (L2) adds: **`notifications.inbox_snooze`** (off) to snooze an inbox message for
+up to 30 days or archive it (off: every row shows again, nothing lost);
+**`notifications.web_push`** (off) for opt-in browser notifications of new inbox messages
+(W3C Web Push with the deployment's `WEB_PUSH_VAPID_*` keys; only public push services are
+accepted as endpoints); **`notifications.escalation`** (off) re-pings the space's general chat
+rooms and opted-in browsers once when an urgent staff notice is unseen for 30 minutes; and,
+for every space, a chat room whose last five deliveries all failed is switched off with a
+staff notice. Staff-grant invitations for events and bookable spaces, and organisation
+invitations given an optional invitee email (#145), are also offered on the invitee's own chat
+channels when the address belongs to a verified account (never a room).
 Remaining delivery limits are recorded in the
 [delivery contract](notification-contract.md#integration-limits-in-this-tree). Security mail and
 mandatory-mail exemptions keep their own delivery rules.
@@ -746,6 +787,15 @@ its parent module is off.
 | `mobile.push` | `mobile` | ● | Native push notifications | Apps rely on in-app/inbox notifications |
 | `events.short_links` | `events` | | Short `/e/<code>` links with a daily visit count | Only the long event address; existing codes are kept and 404 |
 | `events.online_delivery` | `events` | | Online/hybrid events and the confirmed-only join link | Every event reads as in person; join links are kept, never shown |
+| `events.broadcast_templates` | `events` | `events.broadcasts` feature | 13 starter templates and the accent-band, photo-header and letter designs | Blank composer with the classic, bold and minimal designs; saved campaigns keep rendering |
+| `events.approval_digest` | `events` | `notifications` | One 30-minute summary per organiser while approvals wait | No digest; approvals still show in the console |
+| `events.anonymous_feedback` | `events` | ● | A feedback form may keep answers unlinked to people (certificates off) | Feedback is identified; a form already promised anonymous accepts nothing |
+| `events.submission_integrity` | `events` | `events.hackathons` feature | Information chip when a repository has commits from before kickoff | No GitHub checks; existing flags kept |
+| `events.mentor_chat_alerts` | `events` | `events.mentoring` feature | New help requests posted to chosen team chat rooms while mentors are on shift | Personal mentor notices only; room choices kept |
+| `events.organization_sender` | `events` | `email` | Co-host organisation display name and Reply-To on event email | The space's own sender name; organisation settings kept |
+| `notifications.inbox_snooze` | `notifications` | | Snooze and archive inbox messages | Every message shows; snooze and archive states kept |
+| `notifications.web_push` | `notifications` | | Opt-in browser notifications (needs deployment VAPID keys) | No browser notifications; subscriptions kept |
+| `notifications.escalation` | `notifications` | | One re-ping when an urgent staff notice is unseen for 30 minutes | No re-ping |
 | `public_site.closed_notice` | standalone | | A Space Manager "closed for now" banner with an optional reopening date on the public page | No banner; the text is kept |
 | `bookings.api_read` | `bookings` | | Minimal resource/reservation reads for operator-granted, tenant-bound HMAC server clients; arrivals need a separate scope | Integration reads refuse; booking and audit history stays |
 | `bookings.passes` | `bookings` (needs `bookings.confirmations`) | | Answer-free pass designer, owner downloads and staff printing after active arrival | Pass routes refuse; stored layouts retained |

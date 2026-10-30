@@ -41,3 +41,59 @@ class EventProgrammeReportSerializer(serializers.Serializer):
     rows = serializers.ListField(child=serializers.ListField())
     typed_rows = FunnelSerializer(many=True)
     meta = serializers.DictField()
+
+
+# Release 2 L2 (G8): per-event extras. Counts only; never people, never free text.
+class ArrivalWindowSerializer(serializers.Serializer):
+    window_start = serializers.DateTimeField()
+    count = serializers.IntegerField(min_value=0)
+
+
+class CheckinMethodSerializer(serializers.Serializer):
+    method = serializers.ChoiceField(choices=("online", "qr", "offline_sync", "venue_station", "legacy"))
+    count = serializers.IntegerField(min_value=0)
+
+
+class AnswerCountSerializer(serializers.Serializer):
+    label = serializers.CharField()
+    count = serializers.IntegerField(min_value=0)
+
+
+class AnswerChartSerializer(serializers.Serializer):
+    question_id = serializers.CharField()
+    label = serializers.CharField(allow_blank=True)
+    type = serializers.ChoiceField(choices=("single_choice", "dropdown", "multi_choice", "yes_no"))
+    answers = AnswerCountSerializer(many=True)
+    total = serializers.IntegerField(min_value=0)
+
+
+class WaitlistConversionSerializer(serializers.Serializer):
+    ever_waitlisted = serializers.IntegerField(min_value=0)
+    promoted = serializers.IntegerField(min_value=0)
+    still_waiting = serializers.IntegerField(min_value=0)
+    conversion_percent = serializers.FloatField(allow_null=True)
+
+
+class SeriesTurnoutSerializer(serializers.Serializer):
+    event_id = serializers.IntegerField()
+    title = serializers.CharField()
+    starts_at = serializers.DateTimeField()
+    registered = serializers.IntegerField(min_value=0)
+    attended = serializers.IntegerField(min_value=0)
+
+
+class VisitDaySerializer(serializers.Serializer):
+    day = serializers.DateField()
+    count = serializers.IntegerField(min_value=0)
+
+
+class EventAnalyticsExtrasSerializer(serializers.Serializer):
+    event_id = serializers.IntegerField()
+    timezone_name = serializers.CharField()
+    window_minutes = serializers.IntegerField()
+    arrivals = ArrivalWindowSerializer(many=True)
+    checkin_methods = CheckinMethodSerializer(many=True)
+    answers = AnswerChartSerializer(many=True)
+    waitlist = WaitlistConversionSerializer()
+    series = SeriesTurnoutSerializer(many=True)
+    short_link_visits = VisitDaySerializer(many=True, allow_null=True)

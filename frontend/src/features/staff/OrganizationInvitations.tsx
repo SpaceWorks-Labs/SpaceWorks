@@ -17,6 +17,7 @@ export function OrganizationInvitations({ organization }: { organization: Organi
   const [governanceActions, setGovernanceActions] = useState<string[]>([]);
   const [grantedActions, setGrantedActions] = useState<string[]>([]);
   const [expiresInDays, setExpiresInDays] = useState(7);
+  const [inviteeEmail, setInviteeEmail] = useState("");
   const [rawToken, setRawToken] = useState<string | null>(null);
   const allowed = organization.governance_actions.includes("manage_organization_members");
   const invitations = useOrganizationInvitations(organization.id, page, allowed);
@@ -27,7 +28,8 @@ export function OrganizationInvitations({ organization }: { organization: Organi
   function submit(event: FormEvent) {
     event.preventDefault();
     create.mutate(
-      { governance_actions: governanceActions, granted_actions: grantedActions, expires_in_days: expiresInDays },
+      { governance_actions: governanceActions, granted_actions: grantedActions, expires_in_days: expiresInDays,
+        ...(inviteeEmail.trim() ? { invitee_email: inviteeEmail.trim() } : {}) },
       { onSuccess: (invitation) => setRawToken(invitation.token) },
     );
   }
@@ -44,6 +46,7 @@ export function OrganizationInvitations({ organization }: { organization: Organi
         <fieldset><legend className="eyebrow mb-2">Makerspace actions</legend><div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {organization.granted_actions.map((action) => <label className="flex min-h-11 items-center gap-3 rounded-xl border border-line p-4 text-sm has-checked:border-accent has-checked:bg-accent-soft" key={action}><input type="checkbox" checked={grantedActions.includes(action)} onChange={() => setGrantedActions(toggle(grantedActions, action))} />{action.split("_").join(" ")}</label>)}
         </div></fieldset>
+        <label className="grid max-w-md gap-1 text-sm font-semibold">Invitee email (optional)<input className="desk-input font-normal" type="email" maxLength={254} value={inviteeEmail} onChange={(event) => setInviteeEmail(event.target.value)} /><span className="text-xs font-normal text-muted">We email the link there, and to their own chat channels if they already have a verified account. Only a fingerprint of the address is kept.</span></label>
         <label className="grid max-w-48 gap-1 text-sm font-semibold">Expires in days<input className="desk-input" type="number" min="1" max="30" value={expiresInDays} onChange={(event) => setExpiresInDays(Number(event.target.value))} /></label>
         <button className="desk-button-primary w-fit" type="submit" disabled={create.isPending}>{create.isPending ? "Creating..." : "Create invitation"}</button>
         {create.error ? <p className="text-sm text-danger" role="alert">{create.error.message}</p> : null}

@@ -15,7 +15,7 @@ import { customAnswerErrors, validateCustomAnswers, type CustomAnswers, type Cus
 type FeedbackForm = {
   event: { title: string; starts_at: string; ends_at: string };
   survey: { title: string; thank_you_text: string; questions: CustomFormQuestion[] };
-  mode: "anonymous" | "certificate";
+  mode: "anonymous" | "certificate" | "identified";
   requires_auth: boolean;
   certificate: { id: number; status: string; revision: number } | null;
 };
@@ -47,7 +47,7 @@ export function PublicEventFeedbackPage() {
   }, [form.data?.requires_auth, restored]);
   const submit = useMutation({
     mutationFn: () => tenantPublicRequest<{ thank_you_text: string; certificate: FeedbackForm["certificate"] }>(makerspaceSlug, path, {
-      method: "POST", body: JSON.stringify({ answers, ...(form.data?.requires_auth ? { email } : {}) }),
+      method: "POST", body: JSON.stringify({ answers, ...(form.data?.mode === "certificate" ? { email } : {}) }),
     }),
     onSuccess: async () => {
       setAnswers({}); setEmail(""); setErrors({});
@@ -63,13 +63,13 @@ export function PublicEventFeedbackPage() {
   const data = form.data;
   const name = bootstrap?.branding.display_name || bootstrap?.makerspace.name || "Makerspace";
   return <div style={brandStyle}><PublicLayout {...publicPageChrome(makerspaceSlug, name, tenantPath, bootstrap)} width="narrow"
-    header={{ eyebrow: data?.event.title, title: data?.survey.title ?? "Event feedback", subtitle: data?.mode === "anonymous" ? "We don't store who sent this." : "Certificates go to people marked as attended." }}
+    header={{ eyebrow: data?.event.title, title: data?.survey.title ?? "Event feedback", subtitle: data?.mode === "anonymous" ? "We don't store who sent this." : data?.mode === "identified" ? "Sign in so the organisers know this came from an attendee." : "Certificates go to people marked as attended." }}
     state={form.isLoading ? { status: "loading" } : { status: "ready" }}>
     {data ? <>
-      {data.requires_auth && !restored ? <Card><p>Sign in to get your certificate.</p><Link className="desk-button-brand mt-3" to={tenantPath("member")}>Member sign in</Link></Card> : null}
+      {data.requires_auth && !restored ? <Card><p>{data.mode === "certificate" ? "Sign in to get your certificate." : "Sign in to share your feedback."}</p><Link className="desk-button-brand mt-3" to={tenantPath("member")}>Member sign in</Link></Card> : null}
       <form className="desk-panel mt-5 grid gap-5 p-5" onSubmit={event => { event.preventDefault(); const next = validateCustomAnswers(data.survey.questions, answers); setErrors(next); if (!Object.keys(next).length) submit.mutate(); }}>
         <EventFeedbackFields schema={data.survey.questions} answers={answers} onChange={setAnswers} errors={{ ...errors, ...customAnswerErrors(apiErrors) }} yesNoAsCheckbox />
-        {data.requires_auth ? <label className="grid gap-1"><span className="text-sm font-semibold text-ink">Registration email</span><input className="desk-input" type="email" required value={email} onChange={event => setEmail(event.target.value)} /></label> : null}
+        {data.mode === "certificate" ? <label className="grid gap-1"><span className="text-sm font-semibold text-ink">Registration email</span><input className="desk-input" type="email" required value={email} onChange={event => setEmail(event.target.value)} /></label> : null}
         <button className="desk-button-brand" type="submit" disabled={submit.isPending || (data.requires_auth && !restored)}>{submit.isPending ? "Submitting…" : "Submit feedback"}</button>
         {submit.error ? <p className="text-sm text-danger" role="alert">{submit.error.message}</p> : null}
       </form>

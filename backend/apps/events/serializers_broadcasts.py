@@ -47,7 +47,8 @@ class EventBroadcastSerializer(serializers.ModelSerializer):
     class Meta:
         model = EventBroadcast
         fields = ("id", "event", "subject", "body", "statuses", "attendance", "status", "created_at",
-                  "queued_at", "completed_at", "version", "render_schema_version", "design", "ctas", "available_at")
+                  "queued_at", "completed_at", "version", "render_schema_version", "design", "ctas", "available_at",
+                  "undo_hold")
         read_only_fields = fields
 
 
@@ -73,15 +74,53 @@ class BroadcastCommandSerializer(ClosedSerializer):
     expected_version = serializers.IntegerField(min_value=1)
 
 
+class BroadcastDraftContentSerializer(ClosedSerializer):
+    subject = serializers.CharField(max_length=200, allow_blank=True)
+    body = serializers.CharField(max_length=10000, allow_blank=True)
+    statuses = serializers.ListField(child=serializers.ChoiceField(choices=EventRegistration.Status.choices),
+                                    min_length=1, max_length=6)
+    attendance = serializers.ChoiceField(choices=["any", "attended", "not_attended"])
+    design = serializers.ChoiceField(choices=DESIGNS)
+    ctas = BroadcastCtaSerializer(many=True, max_length=3, default=list)
+
+
+class BroadcastDraftSerializer(BroadcastCommandSerializer):
+    draft = BroadcastDraftContentSerializer()
+
+
 class BroadcastTestSerializer(BroadcastCommandSerializer):
     preview_id = serializers.IntegerField(min_value=1)
 
 
-class BroadcastScheduleSerializer(BroadcastTestSerializer):
+class BroadcastSendSerializer(BroadcastTestSerializer):
     revision = serializers.RegexField(r"^[a-f0-9]{64}$")
     recipient_count = serializers.IntegerField(min_value=0)
     confirm = serializers.BooleanField()
+
+
+class BroadcastScheduleSerializer(BroadcastSendSerializer):
     available_at = serializers.DateTimeField()
+
+
+class BroadcastTalliesSerializer(serializers.Serializer):
+    campaign_id = serializers.IntegerField()
+    status = serializers.CharField()
+    total = serializers.IntegerField(min_value=0)
+    delivered = serializers.IntegerField(min_value=0)
+    waiting = serializers.IntegerField(min_value=0)
+    failed = serializers.IntegerField(min_value=0)
+    skipped = serializers.IntegerField(min_value=0)
+
+
+class BroadcastTemplateSerializer(serializers.Serializer):
+    key = serializers.CharField()
+    label = serializers.CharField()
+    description = serializers.CharField()
+    subject = serializers.CharField()
+    body = serializers.CharField()
+    statuses = serializers.ListField(child=serializers.ChoiceField(choices=EventRegistration.Status.choices))
+    attendance = serializers.ChoiceField(choices=["any", "attended", "not_attended"])
+    design = serializers.ChoiceField(choices=DESIGNS)
 
 
 class BroadcastPreviewSerializer(serializers.Serializer):

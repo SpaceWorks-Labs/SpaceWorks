@@ -23,9 +23,12 @@ class EventBroadcast(BroadcastCampaign):
                                   choices=[("any", "Any"), ("attended", "Attended"), ("not_attended", "Not attended")])
     version = models.PositiveIntegerField(default=1)
     render_schema_version = models.PositiveSmallIntegerField(default=1, choices=[(1, "Legacy"), (2, "Composer")])
-    design = models.CharField(max_length=12, default="classic",
-                              choices=[(name, name.title()) for name in ("classic", "bold", "minimal")])
+    design = models.CharField(max_length=12, default="classic", choices=[
+        (name, name.replace("_", " ").title())
+        for name in ("classic", "bold", "minimal", "accent_band", "photo_header", "letter")])
     available_at = models.DateTimeField(null=True, blank=True)
+    # "Send now" schedules at confirmation + 5 s; until then the organiser may undo it.
+    undo_hold = models.BooleanField(default=False)
     confirmed_preview = models.ForeignKey("events.EventBroadcastPreview", null=True, blank=True,
                                          on_delete=models.RESTRICT, related_name="confirmed_campaigns")
 

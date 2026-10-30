@@ -50,6 +50,7 @@ def write_envelope_inbox(envelope, rendered):
             })
         if created:
             transaction.on_commit(lambda: _hint(envelope.makerspace_id, envelope.recipient_id), robust=True)
+            transaction.on_commit(lambda pk=row.pk: browser_alert(pk), robust=True)
     return row
 
 
@@ -101,9 +102,16 @@ def _write_matrix_inbox(makerspace, feature, event, payload, event_key):
             )
             if created:
                 transaction.on_commit(lambda uid=user_id: _hint(makerspace.pk, uid), robust=True)
+                transaction.on_commit(lambda pk=row.pk: browser_alert(pk), robust=True)
 
 
 def _hint(makerspace_id, user_id):
     from apps.operations.live import _payload, publish, user_channel
 
     publish(user_channel(user_id), _payload("notification.created", makerspace_id, "", "", None))
+
+
+def browser_alert(row_id):
+    """Opt-in browser notification for a new inbox row (X38); dormant without VAPID keys."""
+    from apps.notifications.browser_alerts import enqueue
+    enqueue(row_id)

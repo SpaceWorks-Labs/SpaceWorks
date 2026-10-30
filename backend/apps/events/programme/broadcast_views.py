@@ -11,7 +11,7 @@ from apps.events.broadcasts import authorize
 from apps.events.event_permissions import MANAGE_REGISTRATIONS
 from apps.events.models_broadcasts import EventBroadcast
 from apps.events.serializers_broadcasts import (
-    BroadcastCommandSerializer, BroadcastPreviewSerializer, BroadcastScheduleSerializer,
+    BroadcastCommandSerializer, BroadcastDraftSerializer, BroadcastPreviewSerializer, BroadcastScheduleSerializer,
     BroadcastTestResultSerializer, BroadcastTestSerializer, EventBroadcastSerializer,
 )
 from apps.events.views_invites import ERRORS
@@ -38,6 +38,19 @@ class BroadcastDetailView(APIView):
         response = Response(EventBroadcastSerializer(get_campaign(request.user, pk, campaign_id)).data)
         response["Cache-Control"] = "private, no-store"
         return response
+
+    @extend_schema(tags=["Admin events"], request=BroadcastDraftSerializer,
+        responses={200: EventBroadcastSerializer, **ERRORS},
+        description="Autosave a composer draft (X41): subject, message, calls to action, audience and "
+                    "design. Versioned (expected_version) and idempotent (operation_id); only a "
+                    "version-2 draft changes. A stale version answers 409 so a second tab cannot "
+                    "overwrite silently.")
+    def patch(self, request, pk, campaign_id):
+        from .broadcast_draft import save_draft
+        campaign = get_campaign(request.user, pk, campaign_id)
+        payload = BroadcastDraftSerializer(data=request.data)
+        payload.is_valid(raise_exception=True)
+        return Response(EventBroadcastSerializer(save_draft(campaign, request.user, payload.validated_data)).data)
 
 
 class BroadcastPreviewView(APIView):

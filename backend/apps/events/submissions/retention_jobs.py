@@ -40,11 +40,12 @@ def cleanup_asset(*, asset_id, participant, storage):
         work.attempts += 1
         work.save()
     code = ""
+    tallies = {}
     try:
         keys = [asset.staging_key, asset.verification_key]
         if not temporary:
             keys.append(asset.object_key)
-        delete_keys(storage, keys)
+        tallies = delete_keys(storage, keys) or {}
     except SubmissionError:
         code = "storage_cleanup_pending"
     with _retention_event(original.event_id) as event:
@@ -71,6 +72,9 @@ def cleanup_asset(*, asset_id, participant, storage):
                 asset.expired_size_bytes = asset.actual_bytes
                 if asset.state == "expiring":
                     asset.state = "expired"
+            from .storage_cleanup import record_receipts
+            record_receipts(makerspace_id=event.makerspace_id, event_id=event.pk,
+                            asset_uuid=asset.public_id, tallies=tallies)
             if first or amount or asset.failure_code:
                 record(None, "event.asset_bytes_deleted", makerspace=event.makerspace, target=asset,
                        meta={"temporary_only": temporary})

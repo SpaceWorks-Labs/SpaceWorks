@@ -1,5 +1,6 @@
 import { PersonalInbox } from "../../notifications/PersonalInbox";
 import { MyNotificationSettings } from "../../notifications/MyNotificationSettings";
+import { BrowserAlertsToggle } from "../../notifications/BrowserAlertsToggle";
 import { BroadcastComposer } from "../BroadcastComposer";
 import type { Makerspace } from "./shared";
 import { useState } from "react";
@@ -13,8 +14,10 @@ export function NotificationInbox({ makerspace, canManageMembers = false }: { ma
   const myChannels: Action = { label: "My channels", icon: "Settings", onClick: () => setChannels(true) };
   const announcement: Action | undefined = canBroadcast ? { label: "Send announcement", onClick: () => setCompose(true) } : undefined;
   return <>
+    {makerspace.enabled_features?.includes("notifications.web_push") ? <BrowserAlertsToggle makerspaceId={makerspace.id} /> : null}
     <PersonalInbox makerspaceId={makerspace.id} makerspaceSlug={makerspace.slug} announcement={announcement ?? myChannels}
-      overflow={announcement && myChannels ? [myChannels] : undefined} />
+      overflow={announcement && myChannels ? [myChannels] : undefined}
+      snooze={Boolean(makerspace.enabled_features?.includes("notifications.inbox_snooze"))} />
     {canBroadcast ? <Modal open={compose} onClose={() => setCompose(false)} title="Send announcement">
       {compose ? <BroadcastComposer makerspaceId={makerspace.id} /> : null}
     </Modal> : null}

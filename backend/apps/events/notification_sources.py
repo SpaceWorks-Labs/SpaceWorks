@@ -90,7 +90,10 @@ def reminder_eligible(envelope):
     row = EventRegistration.objects.filter(
         pk=envelope.source_id, event=event, member_id=envelope.recipient_id,
         status=EventRegistration.Status.REGISTERED).first()
+    from .reminders import fresh_signup
     return bool(row and row.pk == envelope.context.get("registration_id")
+                and not fresh_signup(row, envelope.context["offset_seconds"],
+                                     getattr(envelope, "created_at", None) or timezone.now())
                 and _owner_space(row) == envelope.makerspace_id)
 
 
@@ -126,6 +129,13 @@ SOURCES = {
 def register_event_sources():
     for kind, source in SOURCES.items():
         register_source(kind, source)
+    # Release 2 L2: deferred removal notice, ticket re-send, approval digest, mentor alerts.
+    from .approval_digest import SOURCE as DIGEST_SOURCE, digest_eligible
+    from .notices_r2_l2 import REMOVAL_SOURCE, TICKET_SOURCE, connect, removal_eligible, ticket_eligible
+    register_source(REMOVAL_SOURCE, NotificationSource(removal_eligible))
+    register_source(TICKET_SOURCE, NotificationSource(ticket_eligible))
+    register_source(DIGEST_SOURCE, NotificationSource(digest_eligible))
+    connect()
     # Staged forms: assignment notices, incomplete-form warnings, milestones and RSVP deadlines.
     from .staged_forms.milestone_notices import MILESTONE_NOTICE_SOURCE
     from .staged_forms.notices import NOTICE_SOURCE, WARNING_NOTICE_SOURCE

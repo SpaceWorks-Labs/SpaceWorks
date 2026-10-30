@@ -119,7 +119,7 @@ HTTP_ANONYMOUS_EXEMPTIONS = {
             "Global platform hosting-request state; no tenant row or authority."
         )
         for view in (
-            "HostingRequestSubmitView", "HostingRequestOpenView",
+            "HostingRequestSubmitView", "HostingRequestOpenView", "HostingRequestResubmitView",
             "HostingInvitationResolveView", "HostingInvitationSubmitView",
         )
     },

@@ -13,7 +13,7 @@ PLATFORM_ROUTES = frozenset("""
 backup-recovery-state
 admin-module-groups admin-module-install admin-module-uninstall admin-space-pack-profiles
 admin-makerspace-provision-subdomain user-restrict user-restore-access
-admin-organization-list admin-organization-detail admin-organization-links
+admin-organization-list admin-organization-detail admin-organization-links admin-organization-email-sender
 admin-organization-link-delete admin-organization-memberships admin-organization-membership-detail
 admin-organization-invitations admin-organization-invitation-revoke
 tenant-migration-disclosure-closure tenant-migration-disclosure-approvals

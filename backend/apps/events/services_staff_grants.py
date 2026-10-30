@@ -121,5 +121,8 @@ def _send_invite(row, email, token):
                        text_body=f"Accept your event staff invitation: {link}",
                        makerspace=row.makerspace, persist_body=False, sync=True,
                        stream="events", event="event_staff_invitation", audience="staff")
+        from apps.integrations.invite_chat import dispatch_invite_chat  # X37: chat beside email
+        dispatch_invite_chat(row.makerspace, feature="events", invite=row, email=email,
+                             label="You are invited to help run an event", link=link)
     except Exception:
         logger.error("event_staff_invitation_email_failed", extra={"invite_id": row.pk})

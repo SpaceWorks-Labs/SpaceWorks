@@ -80,13 +80,10 @@ def render_recipient(campaign, account):
         return None
     ticket_space = registration.registered_via_makerspace or event.makerspace
     from .programme.broadcast_content import render_content
-    return render_content(campaign, {
-        "name": account.get_full_name() or account.username,
-        "event_title": event.title, "event_date": event.starts_at.isoformat(),
-        "event_location": event.location,
-        "ticket_url": public_url(ticket_space, "member", f"events/{registration.pk}/ticket"),
-        "event_url": public_url(event.makerspace, "events", str(event.public_token)),
-    })
+    from .programme.broadcast_placeholders import placeholder_context
+    return render_content(campaign, placeholder_context(
+        event, name=account.get_full_name() or account.username,
+        ticket_url=public_url(ticket_space, "member", f"events/{registration.pk}/ticket")))
 
 
 def register_broadcasts():

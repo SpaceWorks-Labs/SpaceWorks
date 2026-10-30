@@ -3,7 +3,9 @@
 1. Public submissions nobody confirmed within 48 hours are deleted outright.
 2. Dead requests keep their decision record but lose the applicant's personal details
    90 days after they died: rejected (from ``decided_at``), withdrawn (from
-   ``withdrawn_at``) and invitations never completed (from ``invite_expires_at``).
+   ``withdrawn_at``), invitations never completed (from ``invite_expires_at``) and
+   requests for changes never answered (from ``changes_requested_at``). Review-history
+   notes are wiped with them; the history rows themselves stay as the decision record.
 
 The applicant mail logs (``EmailLog`` rows with ``source_kind="hosting_request"``) go
 with them, since they hold the applicant's address. Bounded per run, row-locked with
@@ -34,7 +36,7 @@ S = HostingRequest.Status
 REDACTED_VALUES = {
     "applicant_name": "", "applicant_email": "", "applicant_phone": "", "description": "",
     "space_website_url": "", "invite_note": "", "new_organization_name": "",
-    "invite_token_digest": None, "access_token_digest": None,
+    "invite_token_digest": None, "access_token_digest": None, "changes_note": "",
 }
 
 
@@ -50,6 +52,8 @@ def _dead_unredacted(now):
     return HostingRequest.objects.filter(redacted_at__isnull=True).filter(
         Q(status=S.REJECTED, decided_at__lt=cutoff)
         | Q(status=S.WITHDRAWN, withdrawn_at__lt=cutoff)
+        # X31: a request for changes nobody answered in 90 days is as dead as a withdrawal.
+        | Q(status=S.CHANGES_REQUESTED, changes_requested_at__lt=cutoff)
         | Q(
             source=HostingRequest.Source.INVITED,
             status__in=(S.INVITED, S.PENDING_VERIFICATION),
@@ -85,6 +89,8 @@ def _redact_batch(now):
             HostingRequest.objects.filter(pk__in=ids).update(
                 **REDACTED_VALUES, redacted_at=now, updated_at=now,
             )
+            from apps.hosting_requests.models import HostingRequestRevision
+            HostingRequestRevision.objects.filter(request_id__in=ids).update(note="")
         return len(ids)
 
 

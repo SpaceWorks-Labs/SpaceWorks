@@ -11,6 +11,7 @@ import { HostingInvitations } from "../HostingInvitations";
 import { useHostingAvailability } from "../../hosting/hostingApi";
 import { OrganizationMemberships } from "../OrganizationMemberships";
 import { OrganizationProfileForm } from "../OrganizationProfileForm";
+import { OrganizationEmailSender } from "../OrganizationEmailSender";
 import { useOrganization, useOrganizations } from "../organizationsApi";
 import type { Makerspace } from "./shared";
 import { OrganizationCreate, OrganizationLinks } from "../OrganizationSetup";
@@ -75,6 +76,8 @@ export function OrganizationsPanel({ isSuperadmin = false, makerspaces = [] }: {
     ]} activeTab={new URLSearchParams(window.location.search).get("section") ?? "profile"}
     sections={detail.data ? [
       { id: "org-profile", title: "Profile", rows: <OrganizationProfileForm organization={detail.data} /> },
+      ...(detail.data.governance_actions.includes("manage_organization_profile") || isSuperadmin
+        ? [{ id: "org-email-sender", title: "Event email sender", rows: <OrganizationEmailSender organizationId={detail.data.id} /> }] : []),
       ...(canEditPage ? [{ id: "org-public-page", title: "Public page", rows: <PublicPageBuilder owner={{ kind: "organization", id: detail.data.id }} /> }] : []),
       // Without member rights both components render nothing, so their tabs and headings go too.
       ...(canManageMembers ? [{ id: "org-people", title: "People", rows: <OrganizationMemberships organization={detail.data} /> },

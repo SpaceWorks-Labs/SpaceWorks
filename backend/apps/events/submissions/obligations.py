@@ -44,8 +44,9 @@ def reconcile(receipt_id, *, storage, now=None):
             row.attempts += 1
             row.save(update_fields=["lease_token", "lease_until", "attempts"])
         code = ""
+        tallies = {}
         try:
-            delete_keys(storage, [row.object_key, row.staging_key, row.verification_key])
+            tallies = delete_keys(storage, [row.object_key, row.staging_key, row.verification_key]) or {}
         except SubmissionError:
             code = "storage_cleanup_pending"
         with transaction.atomic():
@@ -58,6 +59,9 @@ def reconcile(receipt_id, *, storage, now=None):
                 delta = settle(row, "release_all", row.reserved_bytes + row.charged_bytes)
                 provider_delta(row, delta)
                 row.last_cleaned_at = timezone.now()
+                from .storage_cleanup import record_receipts  # G11: durable proof of removal
+                record_receipts(makerspace_id=row.makerspace_id_snapshot, event_id=row.event_id_snapshot,
+                                asset_uuid=row.asset_uuid, tallies=tallies)
             row.last_code, row.lease_token, row.lease_until = code, None, None
             row.next_attempt_at = timezone.now() + timedelta(hours=12 if code else 6)
             row.save()

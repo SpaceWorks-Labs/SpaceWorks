@@ -11,6 +11,7 @@ import { MentorRoundsPanel } from '../mentorDesk/MentorRoundsPanel'
 import { MentorSettingsPanel, HelpCategoryEditor } from '../mentorDesk/MentorSettingsPanel'
 import { MentorConflictForm } from '../mentorDesk/MentorConflictForm'
 import { MentorAttentionPanel } from '../mentorDesk/MentorAttentionPanel'
+import { MentorAlertRooms } from '../mentorDesk/MentorAlertRooms'
 import { TeamImportPanel } from '../mentorDesk/TeamImportPanel'
 import { VolunteerManager } from '../mentorDesk/VolunteerManager'
 import { ContributorSetupPanel } from '../mentorDesk/ContributorSetupPanel'
@@ -54,6 +55,7 @@ export function MentorWorkspace({ scope, manager, roundsEnabled, ownAssignmentId
       settingsTools={<div className="grid gap-5">{manager ? <Field label="Mentor profile to configure"><select className="desk-input" value={mentorId} onChange={event => setMentorId(Number(event.target.value))}>
         <option value={0}>Choose a mentor</option>{mentors.map(row => <option key={row.id} value={row.id}>{row.label}</option>)}</select></Field> : null}
         {mentorId ? <><MentorSettingsPanel key={mentorId} scope={scope} assignmentId={mentorId} /><MentorConflictForm key={`conflict-${mentorId}`} scope={scope} assignmentId={mentorId} /></> : null}
+        {manager ? <MentorAlertRooms scope={scope} /> : null}
         {manager ? <><HelpCategoryEditor scope={scope} />{categories.data?.results.map(row => <HelpCategoryEditor key={row.id} scope={scope} initial={row} />)}</> : null}
       </div>}
       attentionTools={roundsEnabled ? <MentorAttentionPanel scope={scope} /> : undefined}

@@ -98,6 +98,8 @@ EVENTS_FIELDS = [
     {"name": "registration.id", "description": "Registration number, when one applies."},
     {"name": "registration.name", "description": "Registrant name, when one applies."},
     {"name": "registration.status", "description": "Registration status."},
+    {"name": "join_url", "description": "Join link for online/hybrid events; confirmed registrants only, "
+     "added to confirmation emails (R2 L1/L2)."},
     {"name": "next_steps", "description": "Default guidance sentence for this event."},
     *MAKERSPACE_FIELDS,
 ]
@@ -163,6 +165,7 @@ def _events_sample(bag, key):
             location="Main workshop",
         ),
         registration=bag(id=5, name="Alex Maker", status="registered"),
+        join_url="https://meet.example.org/laser-induction",
         next_steps=EVENTS_REQUESTER_BODIES[key],
     )
 

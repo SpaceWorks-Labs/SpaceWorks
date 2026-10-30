@@ -96,6 +96,10 @@ for _label, _names in REIMBURSEMENT_EXTRA.items():
     EXPORTED_MODEL_FIELDS[_label] += " " + _names
 from .classification_security import OMITTED_MODELS as SECURITY_OMITTED
 OMITTED_MODELS.update(SECURITY_OMITTED)
+from .classification_r2_l2 import OMITTED_MODELS as R2_L2_OMITTED, EXTRA_FIELDS as R2_L2_EXTRA  # noqa: E402
+OMITTED_MODELS.update(R2_L2_OMITTED)
+for _label, _names in R2_L2_EXTRA.items():
+    EXPORTED_MODEL_FIELDS[_label] += " " + _names
 EXPORTED_MODELS = frozenset(EXPORTED_MODEL_FIELDS)
 
 NOT_TENANT_MODELS = {

@@ -105,3 +105,9 @@ __all__ += [
 from .models_short_links import EventShortLink, EventShortLinkVisitDay  # noqa: E402
 from .models_embed_policy import EventEmbedPolicy  # noqa: E402
 __all__ += ["EventShortLink", "EventShortLinkVisitDay", "EventEmbedPolicy"]
+
+# Release 2 L2: integrity-check job state, storage cleanup receipts, mentor chat routes.
+from .models_r2_l2 import (  # noqa: E402
+    MentorAlertRoute, SubmissionIntegrityCheck, SubmissionStorageCleanupReceipt,
+)
+__all__ += ["MentorAlertRoute", "SubmissionIntegrityCheck", "SubmissionStorageCleanupReceipt"]

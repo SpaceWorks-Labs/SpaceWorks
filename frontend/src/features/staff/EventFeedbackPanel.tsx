@@ -26,6 +26,7 @@ export function EventFeedbackPanel({ visible = true, eventId, makerspaceId, canV
   const [thankYou, setThankYou] = useState("");
   const [questions, setQuestions] = useState<CustomFormQuestion[]>([]);
   const [certificateEnabled, setCertificateEnabled] = useState(false);
+  const [anonymous, setAnonymous] = useState(false);
   const configure = useConfigureFeedbackSurvey(eventId, makerspaceId);
   const open = useOpenFeedbackSurvey(eventId, makerspaceId);
   const close = useCloseFeedbackSurvey(eventId, makerspaceId);
@@ -38,6 +39,7 @@ export function EventFeedbackPanel({ visible = true, eventId, makerspaceId, canV
     setThankYou(survey.thank_you_text);
     setQuestions(survey.questions);
     setCertificateEnabled(survey.certificate_enabled);
+    setAnonymous(Boolean(survey.anonymous));
   }, [survey?.id, survey?.is_open, survey?.answered_question_ids.join("|")]);
 
   const error = configure.error || open.error || close.error || template.error;
@@ -65,11 +67,13 @@ export function EventFeedbackPanel({ visible = true, eventId, makerspaceId, canV
     </div> : null}
     {!surveyQuery.isLoading ? <form className="mt-4 grid gap-3" onSubmit={(event) => {
       event.preventDefault();
-      configure.mutate({ title, thank_you_text: thankYou, questions, ...(canManageCertificates ? { certificate_enabled: certificateEnabled } : {}) });
+      configure.mutate({ title, thank_you_text: thankYou, questions, ...(canManageCertificates ? { certificate_enabled: certificateEnabled } : {}),
+        ...(survey?.anonymous_available ? { anonymous: anonymous && !certificateEnabled } : {}) });
     }}>
       <label className="grid gap-1"><span className="eyebrow">Survey title</span><input className="desk-input" required maxLength={200} value={title} onChange={(event) => setTitle(event.target.value)} /></label>
       <label className="grid gap-1"><span className="eyebrow">Thank-you message</span><textarea className="desk-input min-h-20" maxLength={2000} value={thankYou} onChange={(event) => setThankYou(event.target.value)} /></label>
       {canManageCertificates ? <label className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={certificateEnabled} onChange={(event) => setCertificateEnabled(event.target.checked)} />Require an attended member and issue an attendance certificate</label> : null}
+      {survey?.anonymous_available ? <label className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={anonymous && !certificateEnabled} disabled={certificateEnabled || hasResponses} onChange={(event) => setAnonymous(event.target.checked)} />Anonymous: keep answers with no link to the person{certificateEnabled ? " (turn certificates off first)" : ""}</label> : null}
       <CustomFormBuilder value={questions} onChange={(value) => setQuestions(value ?? [])} allowedTypes={FEEDBACK_TYPES} lockedQuestionIds={survey?.answered_question_ids} legend="Feedback questions" emptyMessage="Add at least one question before opening the survey." />
       <div className="flex flex-wrap gap-2">
         <button className="desk-button-primary" type="submit" disabled={pending}>Save survey</button>

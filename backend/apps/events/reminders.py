@@ -19,6 +19,14 @@ from apps.operations.reminder_members import occurrence_subject, unfinished_subj
 from apps.operations.reminder_types import ReminderMessage, ReminderSource, ReminderSubject
 
 SOURCE_KEY = "events.registration"
+# A day-ahead (or longer) reminder skips sign-ups made in the 12 hours before it would go
+# out: someone who registered this morning does not need "see you tomorrow" tonight.
+FRESH_SIGNUP = timedelta(hours=12)
+LONG_LEAD = 24 * 3600
+
+
+def fresh_signup(row, offset_seconds, now):
+    return -offset_seconds >= LONG_LEAD and row.created_at > now - FRESH_SIGNUP
 
 
 def _registrations(makerspace):
@@ -58,6 +66,7 @@ def _eligible(makerspace, schedule, now):
         return None
     row = _registrations(makerspace).filter(pk=int(subject_id)).first()
     if (row is None or row.event.starts_at != schedule.due_at or row.event.starts_at <= now
+            or fresh_signup(row, schedule.offset_seconds, now)
             or not module_enabled(row.event.makerspace, "events")
             or _recipient(makerspace, row.member_id) is None):
         return None

@@ -8,8 +8,6 @@ from .gate_policy import (
     HTTP_ANONYMOUS_EXEMPTIONS,
     HTTP_ANONYMOUS_PARTICIPANTS,
     HTTP_EXEMPTIONS,
-    LIFECYCLE_EXEMPTIONS,
-    OBJECT_MUTATION_PARTICIPANTS,
     TASK_EXEMPTIONS,
     TASK_INTERNAL_PARTICIPANTS,
     TASK_TENANT_RESOLVERS,
@@ -22,12 +20,7 @@ from .source_gate_ast import (
     calls_gate as _calls_gate,
     class_allows_anonymous as _class_allows_anonymous,
     has_incompatible_task_base as _has_incompatible_task_base,
-    is_object_mutation as _is_object_mutation,
-    is_storage_primitive as _is_storage_primitive,
-    owner as _owner,
-    parents as _parents,
     relative as _relative,
-    storage_imports as _storage_imports,
     task_call as _task_call,
     task_name as _task_name,
     trees as _trees,
@@ -35,14 +28,16 @@ from .source_gate_ast import (
 )
 from .source_gate_fanout_guards import validate_fanout_gate_coverage
 from .source_gate_http_guards import validate_authenticated_http_boundary
+from .source_gate_object_guards import (
+    SourceGateCoverageError,
+    _exact,
+    discover_object_mutations,
+    validate_lifecycle_exemptions,
+    validate_object_mutation_coverage,
+)
 
 
 MUTATING_HTTP_METHODS = frozenset({"post", "put", "patch", "delete"})
-
-
-class SourceGateCoverageError(AssertionError):
-    pass
-
 
 def discover_tasks(apps_dir=APPS_DIR):
     entries = []
@@ -208,80 +203,6 @@ def validate_http_coverage(
     return entries
 
 
-def validate_lifecycle_exemptions(apps_dir=APPS_DIR):
-    actual = set()
-    functions = _all_functions(apps_dir)
-    for target in LIFECYCLE_EXEMPTIONS:
-        if target not in functions:
-            raise SourceGateCoverageError(f"stale lifecycle exemption: {target}")
-        if _calls_gate(functions[target]):
-            raise SourceGateCoverageError(
-                f"lifecycle exemption unexpectedly participates: {target}"
-            )
-        actual.add(target)
-    expected = {
-        "apps.encryption.services.rotate_dek",
-        "apps.encryption.services.disable_dek",
-        "apps.encryption.services.rewrap_dek",
-        "apps.makerspaces.lifecycle_archive.archive",
-        "apps.makerspaces.lifecycle_archive._archive_locked",
-        "apps.makerspaces.lifecycle_purge.purge",
-    }
-    _exact("lifecycle exemption", actual, expected)
-    return frozenset(actual)
-
-
-def discover_object_mutations(apps_dir=APPS_DIR):
-    entries = []
-    for path, module, tree in _trees(apps_dir):
-        if _is_storage_primitive(module) or ".migrations." in f".{module}.":
-            continue
-        storage_aliases, direct_names = _storage_imports(tree)
-        parents = _parents(tree)
-        for call in (node for node in ast.walk(tree) if isinstance(node, ast.Call)):
-            if not _is_object_mutation(call, storage_aliases, direct_names):
-                continue
-            owner = _owner(call, parents)
-            if owner is None:
-                continue
-            target, owner_node = owner
-            full_target = f"{module}.{target}"
-            participates = (
-                _calls_gate(owner_node)
-                or "views" in path.stem
-                or path.stem.startswith("admin")
-                or path.stem == "tasks"
-                or module.startswith("apps.backup.")
-                or full_target in LIFECYCLE_EXEMPTIONS
-            )
-            entries.append(EntryPoint(
-                full_target, _relative(path, apps_dir), call.lineno, participates,
-            ))
-    return tuple(sorted(entries))
-
-
-def validate_object_mutation_coverage(
-    apps_dir=APPS_DIR, *, participants=OBJECT_MUTATION_PARTICIPANTS
-):
-    entries = discover_object_mutations(apps_dir)
-    actual = {entry.target for entry in entries}
-    stale = set(participants) - actual
-    if stale:
-        raise SourceGateCoverageError(
-            f"stale object-mutation participation: {sorted(stale)}"
-        )
-    missing = sorted({
-        entry.target for entry in entries
-        if not entry.participates
-        and entry.target not in participants
-    })
-    if missing:
-        raise SourceGateCoverageError(
-            f"object mutations bypass source-gate participation: {missing}"
-        )
-    return entries
-
-
 def validate_source_gate_coverage(apps_dir=APPS_DIR):
     return {
         "tasks": validate_task_coverage(apps_dir),
@@ -291,11 +212,3 @@ def validate_source_gate_coverage(apps_dir=APPS_DIR):
         "objects": validate_object_mutation_coverage(apps_dir),
         "fanouts": validate_fanout_gate_coverage(apps_dir, error_class=SourceGateCoverageError),
     }
-
-
-def _exact(kind, actual, declared):
-    if actual != declared:
-        raise SourceGateCoverageError(
-            f"{kind} registry drifted; missing={sorted(actual - declared)}, "
-            f"stale={sorted(declared - actual)}"
-        )

@@ -109,7 +109,6 @@ class Makerspace(MakerspaceSecretsMixin, PublicSiteSettings):
         decimal_places=2,
         default=0,
     )
-    superadmin_access_enabled = models.BooleanField(default=True)
     staff_notifications_enabled = models.BooleanField(default=True)
     booking_requester_notifications_enabled = models.BooleanField(default=True)
     event_reminder_lead_hours = models.JSONField(

@@ -61,8 +61,10 @@ class TenantDumpCatalogError(AssertionError):
 # restore state and the backup module; tenant_migration/0013 drops dump custody; re-pinned.
 # lane/r2-l1b: events/0061 (re-chained after pairwise) public event surface and makerspaces/0112
 # closed notice; re-pinned.
+# lane/p1b-b2: makerspaces/0113 (re-chained after 0112) drops superadmin_access_enabled;
+# backup/0034-0036 per-space backup and restore; accounts/0048; re-pinned.
 # Orchestrator re-pins the live catalog after final schema/migration verification.
-CATALOG_SCHEMA_SHA256 = "de9aab0b9ab0dc86a491124255cfbec0e09f988cbc9d9b1b8b17c8391e17603f"
+CATALOG_SCHEMA_SHA256 = "5b92b8d4f3c790abb7c97b962078bf570b3ab22cac48e2bacff7c9875d704a40"
 
 
 def catalog_models(apps_registry=apps):

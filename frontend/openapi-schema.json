@@ -67652,6 +67652,121 @@
                 }
             }
         },
+        "/api/v1/admin/makerspace/{makerspace_id}/restores": {
+            "get": {
+                "operationId": "api_v1_admin_makerspace_restores_list",
+                "summary": "List a makerspace's restores",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Backup"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/SpaceRestore"
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "description": "The requested resource does not exist in the actor's scope."
+                    },
+                    "401": {
+                        "description": "Authentication is required."
+                    },
+                    "403": {
+                        "description": "The authenticated actor is not authorized."
+                    }
+                }
+            },
+            "post": {
+                "operationId": "api_v1_admin_makerspace_restores_create",
+                "description": "Creates the restore and computes its preview in the background. Nothing changes until the restore is confirmed.",
+                "summary": "Start restoring a makerspace from one of its restore points",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Backup"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SpaceRestoreCreate"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SpaceRestoreCreate"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SpaceRestoreCreate"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SpaceRestore"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "The request is invalid for the current lifecycle state."
+                    },
+                    "404": {
+                        "description": "The requested resource does not exist in the actor's scope."
+                    },
+                    "401": {
+                        "description": "Authentication is required."
+                    },
+                    "403": {
+                        "description": "The authenticated actor is not authorized."
+                    }
+                }
+            }
+        },
         "/api/v1/admin/makerspace/{makerspace_id}/return-policy": {
             "get": {
                 "operationId": "api_v1_admin_makerspace_return_policy_retrieve",
@@ -92462,6 +92577,38 @@
                 }
             }
         },
+        "/api/v1/admin/platform/backup-schedule": {
+            "get": {
+                "operationId": "api_v1_admin_platform_backup_schedule_retrieve",
+                "summary": "One schedule view: the nightly platform and per-space backups",
+                "tags": [
+                    "Backup"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/BackupSchedule"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Authentication is required."
+                    },
+                    "403": {
+                        "description": "The authenticated actor is not authorized."
+                    }
+                }
+            }
+        },
         "/api/v1/admin/platform/backup-settings": {
             "get": {
                 "operationId": "api_v1_admin_platform_backup_settings_retrieve",
@@ -97870,6 +98017,168 @@
                             }
                         },
                         "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/space-restores/{restore_id}": {
+            "get": {
+                "operationId": "api_v1_admin_space_restores_retrieve",
+                "summary": "Get a makerspace restore's preview, progress and report",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "restore_id",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Backup"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SpaceRestore"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "description": "The requested resource does not exist in the actor's scope."
+                    },
+                    "401": {
+                        "description": "Authentication is required."
+                    },
+                    "403": {
+                        "description": "The authenticated actor is not authorized."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/space-restores/{restore_id}/abort": {
+            "post": {
+                "operationId": "api_v1_admin_space_restores_abort_create",
+                "summary": "Cancel a makerspace restore before it applies",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "restore_id",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Backup"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SpaceRestore"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "The request is invalid for the current lifecycle state."
+                    },
+                    "404": {
+                        "description": "The requested resource does not exist in the actor's scope."
+                    },
+                    "401": {
+                        "description": "Authentication is required."
+                    },
+                    "403": {
+                        "description": "The authenticated actor is not authorized."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/space-restores/{restore_id}/confirm": {
+            "post": {
+                "operationId": "api_v1_admin_space_restores_confirm_create",
+                "description": "Requires recent re-authentication and the makerspace's slug. A safety backup of the live space is taken first; the restore refuses if it fails.",
+                "summary": "Confirm a previewed makerspace restore",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "restore_id",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Backup"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SpaceRestoreConfirm"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SpaceRestoreConfirm"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SpaceRestoreConfirm"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SpaceRestore"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "The request is invalid for the current lifecycle state."
+                    },
+                    "403": {
+                        "description": "Recent re-authentication is required (code reauthentication_required)."
+                    },
+                    "404": {
+                        "description": "The requested resource does not exist in the actor's scope."
                     }
                 }
             }
@@ -163457,6 +163766,23 @@
                     "purge_warning": {
                         "type": "string",
                         "readOnly": true
+                    },
+                    "trigger": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/BackupArchiveTriggerEnum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "format": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "restorable_in_app": {
+                        "type": "boolean",
+                        "readOnly": true,
+                        "description": "A one-space restore point this server can open and restore (its own restore key)."
                     }
                 },
                 "required": [
@@ -163465,14 +163791,17 @@
                     "created_at",
                     "expires_at",
                     "failure_detail",
+                    "format",
                     "id",
                     "makerspace",
                     "manifest",
                     "purge_warning",
+                    "restorable_in_app",
                     "scope",
                     "size_bytes",
                     "started_at",
-                    "status"
+                    "status",
+                    "trigger"
                 ]
             },
             "BackupArchiveScopeEnum": {
@@ -163494,6 +163823,15 @@
                 ],
                 "type": "string",
                 "description": "* `pending` - Pending\n* `running` - Running\n* `promoting` - Promoting\n* `available` - Available\n* `failed` - Failed\n* `expired` - Expired"
+            },
+            "BackupArchiveTriggerEnum": {
+                "enum": [
+                    "on_demand",
+                    "nightly",
+                    "safety"
+                ],
+                "type": "string",
+                "description": "* `on_demand` - Back up now\n* `nightly` - Nightly\n* `safety` - Before a restore"
             },
             "BackupDestination": {
                 "type": "object",
@@ -163819,6 +164157,92 @@
                     "expires_at",
                     "purge_warning",
                     "url"
+                ]
+            },
+            "BackupSchedule": {
+                "type": "object",
+                "properties": {
+                    "automatic_backups_enabled": {
+                        "type": "boolean"
+                    },
+                    "platform_nightly": {
+                        "type": "string",
+                        "description": "When the whole-platform nightly backup runs (UTC)."
+                    },
+                    "spaces_nightly": {
+                        "type": "string",
+                        "description": "When the nightly one-space backups run (UTC)."
+                    },
+                    "spaces_per_tick": {
+                        "type": "integer"
+                    },
+                    "daily_keep_days": {
+                        "type": "integer"
+                    },
+                    "weekly_keep_weeks": {
+                        "type": "integer"
+                    },
+                    "on_demand_keep_days": {
+                        "type": "integer"
+                    },
+                    "server_restore_key_configured": {
+                        "type": "boolean"
+                    },
+                    "last_platform_success_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "spaces": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/BackupScheduleSpace"
+                        }
+                    }
+                },
+                "required": [
+                    "automatic_backups_enabled",
+                    "daily_keep_days",
+                    "last_platform_success_at",
+                    "on_demand_keep_days",
+                    "platform_nightly",
+                    "server_restore_key_configured",
+                    "spaces",
+                    "spaces_nightly",
+                    "spaces_per_tick",
+                    "weekly_keep_weeks"
+                ]
+            },
+            "BackupScheduleSpace": {
+                "type": "object",
+                "properties": {
+                    "makerspace_id": {
+                        "type": "integer"
+                    },
+                    "slug": {
+                        "type": "string",
+                        "pattern": "^[-a-zA-Z0-9_]+$"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "last_nightly_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "last_backup_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "last_backup_at",
+                    "last_nightly_at",
+                    "makerspace_id",
+                    "name",
+                    "slug"
                 ]
             },
             "BadgeDesign": {
@@ -170892,6 +171316,10 @@
                     "date_joined": {
                         "type": "string",
                         "format": "date-time"
+                    },
+                    "pii_masked": {
+                        "type": "boolean",
+                        "readOnly": true
                     }
                 },
                 "required": [
@@ -170902,6 +171330,7 @@
                     "id",
                     "last_name",
                     "phone",
+                    "pii_masked",
                     "username"
                 ]
             },
@@ -235646,6 +236075,177 @@
                     "order"
                 ]
             },
+            "SpaceRestore": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "readOnly": true
+                    },
+                    "makerspace": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "makerspace_slug": {
+                        "type": "string",
+                        "readOnly": true,
+                        "pattern": "^[-a-zA-Z0-9_]+$"
+                    },
+                    "makerspace_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "archive": {
+                        "type": "string",
+                        "format": "uuid",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "source": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/SpaceRestoreSourceEnum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "safety_archive": {
+                        "type": "string",
+                        "format": "uuid",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "stage": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/SpaceRestoreStageEnum"
+                            }
+                        ],
+                        "readOnly": true,
+                        "default": "requested"
+                    },
+                    "snapshot_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "preview": {
+                        "readOnly": true
+                    },
+                    "progress": {
+                        "readOnly": true
+                    },
+                    "report": {
+                        "readOnly": true
+                    },
+                    "error_code": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "error_detail": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "blocked": {
+                        "type": "boolean",
+                        "readOnly": true,
+                        "description": "Rows outside the space would dangle (#113)."
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "preview_ready_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "applied_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "finished_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "applied_at",
+                    "archive",
+                    "blocked",
+                    "created_at",
+                    "error_code",
+                    "error_detail",
+                    "finished_at",
+                    "id",
+                    "makerspace",
+                    "makerspace_name",
+                    "makerspace_slug",
+                    "preview",
+                    "preview_ready_at",
+                    "progress",
+                    "report",
+                    "safety_archive",
+                    "snapshot_at",
+                    "source",
+                    "stage"
+                ]
+            },
+            "SpaceRestoreConfirm": {
+                "type": "object",
+                "properties": {
+                    "confirm_slug": {
+                        "type": "string",
+                        "description": "The makerspace's slug, typed exactly.",
+                        "maxLength": 100
+                    }
+                },
+                "required": [
+                    "confirm_slug"
+                ]
+            },
+            "SpaceRestoreCreate": {
+                "type": "object",
+                "properties": {
+                    "archive": {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "The one-space restore point to roll the makerspace back to."
+                    }
+                },
+                "required": [
+                    "archive"
+                ]
+            },
+            "SpaceRestoreSourceEnum": {
+                "enum": [
+                    "space_archive",
+                    "deployment_archive"
+                ],
+                "type": "string",
+                "description": "* `space_archive` - One-space backup\n* `deployment_archive` - Whole-platform backup"
+            },
+            "SpaceRestoreStageEnum": {
+                "enum": [
+                    "requested",
+                    "staging",
+                    "preview_ready",
+                    "applying",
+                    "completed",
+                    "failed",
+                    "aborted"
+                ],
+                "type": "string",
+                "description": "* `requested` - Requested\n* `staging` - Preparing preview\n* `preview_ready` - Preview ready\n* `applying` - Restoring\n* `completed` - Completed\n* `failed` - Failed\n* `aborted` - Cancelled"
+            },
             "SpeakerAccount": {
                 "type": "object",
                 "properties": {
@@ -236039,6 +236639,7 @@
             },
             "StaffAccount": {
                 "type": "object",
+                "description": "Staff names and emails are masked for a superadmin with no window on the space (#114).",
                 "properties": {
                     "id": {
                         "type": "integer",
@@ -236114,6 +236715,10 @@
                             }
                         ],
                         "readOnly": true
+                    },
+                    "pii_masked": {
+                        "type": "boolean",
+                        "readOnly": true
                     }
                 },
                 "required": [
@@ -236123,6 +236728,7 @@
                     "invitation_pending",
                     "machine_type_ids",
                     "mfa_enabled",
+                    "pii_masked",
                     "roles",
                     "username"
                 ]
@@ -242073,6 +242679,7 @@
             },
             "User": {
                 "type": "object",
+                "description": "Account email and name are masked for a superadmin without a window (#114).\n\nOn a makerspace's staff route Lane D's response net (`platform_tenant_pii`) already\nmasks by that space's window, so this only decides on platform routes, where no one\nspace applies: the person's own reveal, or windows on every space they belong to.",
                 "properties": {
                     "id": {
                         "type": "integer",
@@ -242123,10 +242730,15 @@
                         "type": "boolean",
                         "title": "Active",
                         "description": "Designates whether this user should be treated as active. Unselect this instead of deleting accounts."
+                    },
+                    "pii_masked": {
+                        "type": "boolean",
+                        "readOnly": true
                     }
                 },
                 "required": [
                     "id",
+                    "pii_masked",
                     "username"
                 ]
             },

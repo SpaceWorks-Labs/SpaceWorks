@@ -48,7 +48,7 @@ class RestrictUserView(APIView):
             target=user,
             meta={"status": user.access_status, "reason": user.restriction_reason},
         )
-        return Response(UserSerializer(user).data)
+        return Response(UserSerializer(user, context={"request": request}).data)
 
 
 class ResetUserPasswordView(APIView):
@@ -97,4 +97,4 @@ class RestoreUserAccessView(APIView):
             user.restriction_reason = ""
             user.save(update_fields=["access_status", "restriction_reason"])
             audit.record(request.user, "user.access_restored", target=user)
-        return Response(UserSerializer(user).data)
+        return Response(UserSerializer(user, context={"request": request}).data)

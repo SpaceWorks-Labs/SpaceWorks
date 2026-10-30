@@ -2,11 +2,11 @@
 
 from django.apps import apps
 
-from .object_ownership import MAIN_COMPONENT, ObjectReference, slice_component
+from .object_ownership import MAIN_COMPONENT, ObjectReference
 from .build_errors import BackupBuildError
 
 
-def certificate_snapshot_references(sovereign):
+def certificate_snapshot_references():
     model = apps.get_model("events.EventAttendanceCertificate")
     rows = model._base_manager.values("pk", "layout_snapshot", "event__makerspace_id")
     for row in rows.iterator(chunk_size=500):
@@ -22,7 +22,7 @@ def certificate_snapshot_references(sovereign):
         yield ObjectReference(
             bucket_kind="private", object_key=key,
             site=f"events.EventAttendanceCertificate:{row['pk']}:layout_snapshot.artwork_object_key",
-            candidate_owner=slice_component(owner) if owner in sovereign else MAIN_COMPONENT,
+            candidate_owner=MAIN_COMPONENT,
             canonical_makerspace_id=owner, module_key="events",
             coordination_policy="", coordination_makerspace_id=None,
         )

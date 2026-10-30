@@ -8,7 +8,9 @@ per-person window is audited in EVERY space that person belongs to.
 
 Expiry is closed lazily: any read of a superadmin's windows (masking, the status
 endpoint) first closes that superadmin's lapsed windows and records the expiry with the
-real expiry time as ``closed_at``. No mail is sent.
+real expiry time as ``closed_at``. The ``expire_pii_access_windows_task`` beat sweep
+closes the rest the same way, so a window nobody reads again still gets its expiry row
+in the space's audit log. No mail is sent.
 """
 
 from django.core.exceptions import ValidationError
@@ -146,16 +148,17 @@ def close_grant(actor, grant):
     return grant
 
 
-def sweep_expired(*, actor=None, makerspace_id=None, now=None):
-    """Close and audit lapsed windows; returns how many were closed."""
+def sweep_expired(*, actor=None, makerspace_id=None, now=None, limit=None):
+    """Close and audit lapsed windows (oldest expiry first); returns how many were closed."""
     now = now or timezone.now()
     rows = PlatformPiiAccessGrant.objects.filter(closed_at__isnull=True, expires_at__lte=now)
     if actor is not None:
         rows = rows.filter(actor=actor)
     if makerspace_id is not None:
         rows = rows.filter(makerspace_id=makerspace_id)
+    pks = rows.order_by("expires_at", "pk").values_list("pk", flat=True)
     closed = 0
-    for pk in rows.values_list("pk", flat=True):
+    for pk in (pks[:limit] if limit is not None else pks):
         with transaction.atomic():
             grant = (PlatformPiiAccessGrant.objects.select_for_update().select_related("actor")
                      .filter(pk=pk, closed_at__isnull=True).first())

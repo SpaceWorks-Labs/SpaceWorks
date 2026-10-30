@@ -43,8 +43,17 @@ class BackupArchive(models.Model):
         FAILED = "failed", "Failed"
         EXPIRED = "expired", "Expired"
 
+    class Trigger(models.TextChoices):
+        ON_DEMAND = "on_demand", "Back up now"
+        NIGHTLY = "nightly", "Nightly"
+        SAFETY = "safety", "Before a restore"
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     scope = models.CharField(max_length=16, choices=Scope.choices)
+    # What the payload is: "tenant_slice_v1" is the per-space raw slice a space restore
+    # reads; deployment archives keep their manifest format and leave this blank.
+    format = models.CharField(max_length=32, blank=True, default="")
+    trigger = models.CharField(max_length=16, choices=Trigger.choices, default=Trigger.ON_DEMAND)
     makerspace = models.ForeignKey(
         "makerspaces.Makerspace", null=True, blank=True, on_delete=models.SET_NULL,
         related_name="backup_archives",
@@ -102,6 +111,7 @@ from .models_restore import (  # noqa: E402,F401
 from .models_artifact_ledger import BackupArtifactComponent, BackupArtifactLedger  # noqa: E402,F401
 from .models_runs import BackupRun, BackupRunCoverage  # noqa: E402,F401
 from .models_offsite import BackupDestination, BackupDestinationUpload  # noqa: E402,F401
+from .models_space_restore import MakerspaceRestoreOperation  # noqa: E402,F401
 
 from .managed.models import ManagedDeploymentState, ManagedCaptureState, ManagedWriterBoundary  # noqa: F401,E402
 from .managed.models_staging import ManagedStagedObject, ManagedPresignLease  # noqa: F401,E402

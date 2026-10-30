@@ -632,6 +632,7 @@ export const openApiPaths = [
   "/api/v1/admin/makerspace/{makerspace_id}/reports/catalog",
   "/api/v1/admin/makerspace/{makerspace_id}/reports/{report_key}/export",
   "/api/v1/admin/makerspace/{makerspace_id}/request-history",
+  "/api/v1/admin/makerspace/{makerspace_id}/restores",
   "/api/v1/admin/makerspace/{makerspace_id}/return-policy",
   "/api/v1/admin/makerspace/{makerspace_id}/settings-authority/effective",
   "/api/v1/admin/makerspace/{makerspace_id}/settings-authority/grants",
@@ -807,6 +808,7 @@ export const openApiPaths = [
   "/api/v1/admin/platform/backup-destinations/{destination_id}/retire",
   "/api/v1/admin/platform/backup-destinations/{destination_id}/test",
   "/api/v1/admin/platform/backup-destinations/{destination_id}/uploads",
+  "/api/v1/admin/platform/backup-schedule",
   "/api/v1/admin/platform/backup-settings",
   "/api/v1/admin/platform/backups",
   "/api/v1/admin/platform/backups/{archive_id}/rehydrate",
@@ -860,6 +862,9 @@ export const openApiPaths = [
   "/api/v1/admin/requests/{id}/timeline",
   "/api/v1/admin/search",
   "/api/v1/admin/space-pack-profiles",
+  "/api/v1/admin/space-restores/{restore_id}",
+  "/api/v1/admin/space-restores/{restore_id}/abort",
+  "/api/v1/admin/space-restores/{restore_id}/confirm",
   "/api/v1/admin/spaces/{id}/",
   "/api/v1/admin/spaces/{id}/arrival/confirm/",
   "/api/v1/admin/spaces/{id}/arrival/resolve/",
@@ -2693,11 +2698,16 @@ export type BackupArchive = {
   "expires_at": string | null;
   "created_at": string;
   "purge_warning": string;
+  "trigger": BackupArchiveTriggerEnum;
+  "format": string;
+  "restorable_in_app": boolean;
 };
 
 export type BackupArchiveScopeEnum = "deployment" | "makerspace";
 
 export type BackupArchiveStatusEnum = "pending" | "running" | "promoting" | "available" | "failed" | "expired";
+
+export type BackupArchiveTriggerEnum = "on_demand" | "nightly" | "safety";
 
 export type BackupDestination = {
   "id": number;
@@ -2763,6 +2773,27 @@ export type BackupDownload = {
   "url": string;
   "expires_at": string;
   "purge_warning": string;
+};
+
+export type BackupSchedule = {
+  "automatic_backups_enabled": boolean;
+  "platform_nightly": string;
+  "spaces_nightly": string;
+  "spaces_per_tick": number;
+  "daily_keep_days": number;
+  "weekly_keep_weeks": number;
+  "on_demand_keep_days": number;
+  "server_restore_key_configured": boolean;
+  "last_platform_success_at": string | null;
+  "spaces": Array<BackupScheduleSpace>;
+};
+
+export type BackupScheduleSpace = {
+  "makerspace_id": number;
+  "slug": string;
+  "name": string;
+  "last_nightly_at": string | null;
+  "last_backup_at": string | null;
 };
 
 export type BadgeDesign = {
@@ -4354,6 +4385,7 @@ export type ClosureIdentity = {
   "display_name": string;
   "phone": string;
   "date_joined": string;
+  "pii_masked": boolean;
 };
 
 export type Coc = {
@@ -19160,6 +19192,40 @@ export type SpacePhotoOrder = {
   "order": Array<number>;
 };
 
+export type SpaceRestore = {
+  "id": string;
+  "makerspace": number;
+  "makerspace_slug": string;
+  "makerspace_name": string;
+  "archive": string | null;
+  "source": SpaceRestoreSourceEnum;
+  "safety_archive": string | null;
+  "stage": SpaceRestoreStageEnum;
+  "snapshot_at": string | null;
+  "preview": unknown;
+  "progress": unknown;
+  "report": unknown;
+  "error_code": string;
+  "error_detail": string;
+  "blocked": boolean;
+  "created_at": string;
+  "preview_ready_at": string | null;
+  "applied_at": string | null;
+  "finished_at": string | null;
+};
+
+export type SpaceRestoreConfirm = {
+  "confirm_slug": string;
+};
+
+export type SpaceRestoreCreate = {
+  "archive": string;
+};
+
+export type SpaceRestoreSourceEnum = "space_archive" | "deployment_archive";
+
+export type SpaceRestoreStageEnum = "requested" | "staging" | "preview_ready" | "applying" | "completed" | "failed" | "aborted";
+
 export type SpeakerAccount = {
   "id": number;
   "display_name": string;
@@ -19277,6 +19343,7 @@ export type StaffAccount = {
   "created_at": string;
   "invitation_pending": boolean;
   "can": StaffAccountCapabilities;
+  "pii_masked": boolean;
 };
 
 export type StaffAccountCapabilities = {
@@ -20765,6 +20832,7 @@ export type User = {
   "restriction_reason"?: string;
   "telegram_user_id"?: string;
   "is_active"?: boolean;
+  "pii_masked": boolean;
 };
 
 export type UserRoleEnum = "superadmin" | "space_manager" | "requester";

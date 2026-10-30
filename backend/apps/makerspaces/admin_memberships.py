@@ -1,6 +1,7 @@
 from django.contrib import admin
 from unfold.admin import ModelAdmin
 
+from apps.accounts.admin_pii_masking import PiiMaskingAdminMixin
 from apps.makerspaces.models import (
     MakerspaceMembership,
     MemberCard,
@@ -13,7 +14,13 @@ from config.admin_access import SuperuserOnlyModelAdmin
 
 
 @admin.register(MakerspaceMembership)
-class MakerspaceMembershipAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
+class MakerspaceMembershipAdmin(PiiMaskingAdminMixin, SuperuserOnlyModelAdmin, ModelAdmin):
+    # Actor snapshots carry a staff member's display name (#114: staff are masked too).
+    pii_extra_fields = (
+        "verified_actor_snapshot", "activated_actor_snapshot",
+        "revoked_actor_snapshot", "witnessed_actor_snapshot",
+    )
+
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == "user":
             from apps.accounts.models import User
@@ -73,7 +80,8 @@ class MakerspaceWaiverAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
 
 
 @admin.register(MembershipRequest)
-class MembershipRequestAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
+class MembershipRequestAdmin(PiiMaskingAdminMixin, SuperuserOnlyModelAdmin, ModelAdmin):
+    pii_extra_fields = ("invite_email",)
     list_display = ("makerspace", "kind", "state", "user", "invite_email", "created_at")
     readonly_fields = tuple(field.name for field in MembershipRequest._meta.fields)
 

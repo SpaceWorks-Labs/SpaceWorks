@@ -704,7 +704,8 @@ of this module; SMS/WhatsApp each have their own opt-in key.
 
 ### backup
 
-**Retired** in P1b: not a module any more. [What changed](MODULES-PLATFORM.md#backup-retired).
+**Retired** in P1b: not a module any more; per-space backup and restore are a platform duty with no
+switch. [What changed](MODULES-PLATFORM.md#backup-retired).
 
 ## Connected devices
 

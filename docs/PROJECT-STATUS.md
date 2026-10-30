@@ -117,7 +117,17 @@ ordinary list, and platform superadmins archive, unarchive, purge and review pen
 recent control-session reauthentication, always seeing the unsettled-charge counts. Every backup is
 encrypted to the platform key; there are no archive recipients, custody states or custody alarms, and the
 `backup` module key is retired (managers see a read-only "Last backup" line). The tenant-exit export takes
-one-shot `--recipient` keys plus the platform key.
+one-shot `--recipient` keys plus the platform key. `Makerspace.superadmin_access_enabled` is dropped
+(`makerspaces/0110`).
+
+**Per-space backup and restore (P1b B2):** every live space gets a nightly one-space archive (raw tenant
+slice, encrypted to the platform key and this server's restore key) plus "Back up now"; the superadmin
+restores ONE space from its own restore points through preview -> confirm (re-auth + typed slug) -> live
+progress, with a mandatory safety backup first, in one transaction with identical ids. The same flow is in
+the React Backup & Restore panel (scope picker, timeline, schedule view) and the `/control/` backup
+console. Rules: **Per-space backup and restore** in `docs/INVARIANTS.md`. Not built: restoring one space
+from a WHOLE-PLATFORM backup in the app (whole-platform archives are platform-key-only, so the server
+cannot open them; an owner decision is pending on host-side extraction versus adding the server key).
 
 **Non-technical install:** the root `install.sh` curl flow on supported Linux families or Windows Git Bash
 (preflight → tagged source archive → published-image pull → `setup.sh` secrets/instance/live module ticks →

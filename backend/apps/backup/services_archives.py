@@ -28,6 +28,7 @@ from apps.backup.services_archive_failures import (
 )
 from apps.backup.services_lease import _claim_lease, _release_lease
 from apps.makerspaces.models import Makerspace
+from apps.backup.space_restore_plan import FORMAT as SPACE_FORMAT
 
 
 logger = logging.getLogger(__name__)
@@ -39,6 +40,7 @@ def create_archive(
     scope,
     makerspace=None,
     backup_run=None,
+    trigger=BackupArchive.Trigger.ON_DEMAND,
 ):
     from .cloud_operations import require_deployment_archive
     require_deployment_archive(scope)
@@ -67,13 +69,15 @@ def create_archive(
             requested_by=actor,
             backup_run=locked_run,
             object_key=f"backup-archives/{scope}/{archive_id}.tar.age",
+            trigger=trigger,
+            format=SPACE_FORMAT if scope == BackupArchive.Scope.MAKERSPACE else "",
         )
         audit.record(
             actor,
             "backup.archive_requested",
             makerspace=makerspace,
             target=archive,
-            meta={"scope": scope, "archives_outside_purge_guarantee": True},
+            meta={"scope": scope, "trigger": trigger, "archives_outside_purge_guarantee": True},
         )
     return archive
 

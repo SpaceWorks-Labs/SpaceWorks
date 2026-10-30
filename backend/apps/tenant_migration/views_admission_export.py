@@ -80,7 +80,9 @@ class DisclosureClosureView(MigrationAPIView):
                 "identity_count": len(closure["identities"]), "format_version": 1,
             },
         )
-        return Response(PendingClosureSerializer(closure).data)
+        return Response(PendingClosureSerializer(
+            closure, context={"request": request, "makerspace_id": space.pk}
+        ).data)
 
 
 class DisclosureApprovalListCreateView(MigrationAPIView):

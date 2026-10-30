@@ -27,7 +27,6 @@ export type Makerspace = {
   platform_hosting?: boolean;
   is_platform_subdomain?: boolean;
   hidden_from_central_directory: boolean;
-  superadmin_access_enabled?: boolean;
   staff_notifications_enabled?: boolean;
   booking_requester_notifications_enabled?: boolean;
   event_reminder_lead_hours?: number[];

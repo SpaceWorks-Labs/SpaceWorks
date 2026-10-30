@@ -13,18 +13,27 @@ from apps.backup.retention import DAILY_KEEP_DAYS, WEEKLY_KEEP_WEEKS
 
 class BackupArchiveSerializer(serializers.ModelSerializer):
     purge_warning = serializers.SerializerMethodField()
+    restorable_in_app = serializers.SerializerMethodField(
+        help_text="A one-space restore point this server can open and restore (its own restore key)."
+    )
 
     class Meta:
         model = BackupArchive
         fields = (
             "id", "scope", "makerspace", "status", "manifest", "size_bytes",
             "age_encrypted", "failure_detail", "started_at", "completed_at",
-            "expires_at", "created_at", "purge_warning",
+            "expires_at", "created_at", "purge_warning", "trigger", "format", "restorable_in_app",
         )
         read_only_fields = fields
 
     def get_purge_warning(self, _instance) -> str:
         return ARCHIVE_PURGE_WARNING
+
+    def get_restorable_in_app(self, instance) -> bool:
+        from apps.backup.space_restore_plan import FORMAT
+        return bool(instance.scope == BackupArchive.Scope.MAKERSPACE and instance.format == FORMAT
+                    and instance.status == BackupArchive.Status.AVAILABLE
+                    and (instance.manifest or {}).get("server_restorable"))
 
 
 class BackupArchiveCreateSerializer(serializers.Serializer):

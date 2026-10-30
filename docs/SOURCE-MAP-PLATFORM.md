@@ -46,7 +46,10 @@
   signed grant, run ledger, supervisor and atomic pointer; `database_grants.py` is its independent
   PostgreSQL role boundary. `cloud_environment.py` captures host-rendered Cloud Compose interpolation into
   durable static configuration without consulting later ambient shells; only the root-only
-  `scripts/init-cloud-environment.py` renderer invokes Compose.
+  `scripts/init-cloud-environment.py` renderer invokes Compose. Per-space backup and restore (P1b B2:
+  nightly one-space archives, preview -> confirm -> apply, the `/control/` console and the one schedule
+  view) live in the `space_backup_*`/`space_restore_*` modules listed in
+  [SOURCE-MAP-RECOVERY.md](SOURCE-MAP-RECOVERY.md).
 
 - Lane F ops: `operations/route_metrics.py`, `config/gunicorn_metrics*.py` own
   bounded multi-process HTTP instrumentation; `operations/control_storage.py` and

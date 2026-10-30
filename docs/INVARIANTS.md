@@ -424,9 +424,9 @@ space's Space Manager does, in every servable space:
   makerspace's own page and its events' websites; organization pages stay owner-only.
 - *Guard.* The local parity test walks every tenant staff route as a Space Manager and as the
   superadmin and fails on any route the Space Manager opens and the superadmin cannot. Gaps are fixed,
-  never allow-listed. `Makerspace.superadmin_access_enabled`
-still exists until the P1b wave-2 migration drops it, but no read path consults it. Server-side operator
-recovery remains outside application authority.
+  never allow-listed. `Makerspace.superadmin_access_enabled` is gone: `makerspaces/0110` dropped it
+(after `backup/0030`, whose historical RunPython read it). Server-side operator recovery remains outside
+application authority.
 
 **Makerspace archive → purge (superadmin, `/control/` only).** `Makerspace.archived_at` is the
 single soft-delete flag; archive scoping is threaded through central rbac + all aggregates + public +
@@ -2527,8 +2527,10 @@ Owner decisions #110c/#110e and #111 Q9-Q13 (P1b, superadmin always on).
   `platform.pii_access_opened`; closing and expiry as `platform.pii_access_closed` (`close_reason`
   `closed|expired`, `closed_at` = the real expiry time). Each row is makerspace-scoped; a per-person reveal
   writes one row in EVERY space the person belongs to. Expiry is closed lazily on the next read of that
-  superadmin's windows or of the space's status (no Celery task yet). The space's Space Manager reads the
-  open windows through `GET .../pii-access` and the audit log.
+  superadmin's windows or of the space's status, and by `accounts.tasks.expire_pii_access_windows_task`
+  (beat every 5 minutes, at most `PII_EXPIRY_BATCH` = 500 oldest lapsed windows per tick), so a window
+  nobody reads again still gets its expiry row. Both paths set `closed_at = expires_at`. The space's
+  Space Manager reads the open windows through `GET .../pii-access` and the audit log.
 - **Masking is presentation only.** `accounts/pii_presentation.py` (`pii_visible`, `person_pii_visible`,
   `PiiMaskingSerializerMixin`, `require_pii_access`) and `accounts/admin_pii_masking.PiiMaskingAdminMixin`
   mask staff-console API responses, `/control/` list/change pages and PII exports (identity-bearing reports
@@ -2538,6 +2540,15 @@ Owner decisions #110c/#110e and #111 Q9-Q13 (P1b, superadmin always on).
   Platform accounts and platform mail (email logs with no makerspace, owner decision #114) are not
   tenant data and are not masked. A masked `/control/` change page leaves the PII
   fields out of the form, so saving it cannot overwrite them.
+- **Platform routes adopt the mixins explicitly (P1b B2).** Lane D's response net masks tenant staff
+  routes only. On platform routes: the tenant-migration disclosure closure masks each identity's email,
+  phone and name (the closure digest is computed from the real values, so approving a masked closure
+  still binds the exact identities); `StaffAccountSerializer` masks staff name and email by the space's
+  window (#114: staff are masked too); `UserSerializer` masks by the PERSON (`person_pii_visible`) and
+  defers to Lane D's net on a space route; the `/control/` membership and membership-request admins mask
+  actor snapshots and invite emails. The hosting-request review is a decision surface for a prospective
+  space with no tenant yet and stays unmasked (as the request review page, #114.4); event-organizer and
+  organization-member admins show usernames only.
 - **Portability.** Both models are `OmittedModel`s in `data_export/classification_security.py` and DROP in
   tenant dumps (`tenant_migration/catalog_security.py`); their user edges are excluded. The audit rows travel.
 
@@ -4814,8 +4825,8 @@ responsibility; local purges never delete shared global organizations or foreign
 - **An offsite copy is `bytes_verified`, never "restorable".** `offsite_push` streams the primary
   ciphertext to each active `BackupDestination`, re-hashes it on the way, then streams the remote
   object back and compares size + SHA-256 with the artifact ledger (or the archive row when no ledger
-  exists). HEAD/ETag are not proofs. The platform cannot open a sealed slice or a tenant archive, so no
-  surface may describe a verified copy as restorable.
+  exists). HEAD/ETag are not proofs. A verified copy is bytes, not a restore drill, so no surface may
+  describe a verified copy as restorable.
 - **A destination outage never fails a backup.** The push runs after the build has released
   `deployment_operation_lock`, holds no row lock during I/O, touches no `BackupRun`/`BackupArchive`
   state, and backs a journal row off `5 min × 2^attempts` capped at 6 h.
@@ -4846,6 +4857,79 @@ responsibility; local purges never delete shared global organizations or foreign
   the payload. Every promotion test mocked the primitive, so nothing noticed. It now spools staging to a
   private temporary file and puts that; `tests/backup/test_storage_promotion_real_store.py` runs it
   against the harness MinIO.
+
+### Per-space backup and restore (P1b B2, owner decisions #110d, #111 Q1-Q6/Q15/Q16, #113)
+
+**A one-space archive is the lossless raw tenant slice, never the PORTABLE tenant-migration envelope.**
+`BackupArchive(scope="makerspace", format="tenant_slice_v1")` carries `archive_payload._tenant_payload`:
+every `SLICE_ROW_SPECS` dataset row exactly as stored (real primary keys, PII still sealed under the
+space's own DEKs, which never leave the database), the captured object bytes and the manifest. The
+PORTABLE format resets authority, drops secrets and regenerates identities for a cross-deployment move;
+restoring through it could never give identical ids. The raw slice can, and needs no re-encryption: the
+AAD (makerspace, table, pk, field) is unchanged. Tenant migration to another deployment stays the
+PORTABLE/Lane D path.
+
+- **Recipients (Q3).** A one-space archive is encrypted to the platform key AND this server's restore key
+  (`TENANT_MIGRATION_AGE_RECIPIENT`); a deployment archive stays platform-key-only. Without the server
+  key the archive is still built (platform only), its manifest says `server_restorable: false`, and the
+  in-app restore refuses it (`archive_not_restorable`). The manifest also records `payload_format`,
+  `trigger` and `deployment_id`; a restore refuses another deployment's archive (`other_deployment`).
+- **Schedule (Q4).** `scheduled_space_backups_task` (beat 01:00-07:50 every 10 minutes) builds at most
+  `SPACES_PER_TICK` = 2 archives per tick for servable spaces with no live nightly archive in the last 20 h,
+  oldest-covered first, off the same `automatic_backups_enabled` switch as the whole-platform nightly. A
+  failed nightly is due again next tick. Nightly per-space archives (`trigger="nightly"`) rotate 7 daily +
+  4 weekly like the nightly run; "Back up now" keeps `retention_days`; a restore's safety backup is
+  `trigger="safety"`.
+- **What a restore replaces.** Every `restorable_labels()` row of the space (dataset labels minus the
+  skipped apps `accounts`/`token_blacklist`/`audit`, minus `KEPT_LIVE`, minus `NOT_RESTORED`) is deleted
+  and the archive's rows are inserted with their own primary keys, in ONE transaction, under
+  `SET LOCAL app.allow_immutable_delete = 'on'` (foreign keys stay on and deferred; never the replica
+  role). The Makerspace row is UPDATEd from the archive except `MAKERSPACE_KEEP_LIVE` (lifecycle,
+  storage accounting, verified routing, the anonymous principal). A column added after the archive takes
+  its declared default; one without a default refuses (`schema_incompatible`).
+- **What a restore keeps (Q5).** Accounts are never touched. The live audit history stays and archive
+  audit rows are never re-imported. Payments, settlements, refunds, refund cases and payment documents are
+  kept exactly as live (an archived money row is inserted only if the live table lost it); those created
+  after the restore point are listed in the preview and the report as "after the restore point".
+  Evidence photos and their retention state are kept; newer ones become orphaned records when the rows
+  that pointed at them roll back. A referenced account row that no longer exists is re-attributed to the
+  space's anonymous principal; an account erased since the restore point is scrubbed again in this space
+  (`account_purge_scrub.scrub_tenant`) so its personal data never comes back. An archived membership
+  of an account since retired (or of a platform account) is skipped with everything that depends on it,
+  by `on_delete` (`space_restore_skips.py`). A live staff account whose one required membership the
+  archive does not carry (staff added after the restore point) blocks the restore
+  (`staff_after_restore_point`): retire it first. Staff memberships are replaced inside the exact-tenant
+  context (`app.account_retirement_makerspace_id`), the only context the account guards admit.
+- **References into removed rows (#113).** `space_restore_graph.resolve` walks every concrete FK into a
+  row the restore removes (a live row the archive does not carry). A row of this space or a global
+  dependent follows Django's `on_delete` (CASCADE deletes it, SET_NULL clears the reference). A row of
+  ANOTHER space (by canonical owner or by its own `makerspace` column), an append-only record, or a
+  PROTECT/RESTRICT edge BLOCKS: the preview lists it, confirm refuses (`dangling_references`) and apply
+  re-checks inside the transaction. Every live set is read and every reference resolved BEFORE any row
+  is deleted, because ownership predicates join through parents. Rows of other spaces pointing at rows that come back are re-linked by
+  identity and only counted. Cross-space participation rows the slice carries only as references
+  (`EventCollaborator`) are not restored; the slice's nulled cross-space makerspace links are re-applied
+  when that space still exists.
+- **Lifecycle.** `MakerspaceRestoreOperation` moves requested -> staging -> preview_ready -> applying ->
+  completed | failed | aborted; one unfinished restore per space (database constraint). Request and
+  confirm are platform-superadmin only; confirm needs recent re-authentication and the typed slug. Apply
+  (a) builds a fresh safety archive of the live space and refuses if it does not complete (Q16); (b)
+  closes the space's source gate with its own owner id (`quiesced_snapshot`, MIGRATION purpose), refuses
+  unless the deployment is NORMAL with no active whole-platform restore, re-checks the preview's live
+  fingerprint (`live_drift`) and runs the whole replacement in that one transaction; (c) after commit
+  restores object bytes under their ORIGINAL keys (a key whose live bytes match is left alone; others are
+  re-uploaded through private staging and verified), then deletes bytes only removed rows referenced;
+  (d) reopens ONLY the gate it closed. Every step is audited in the restored space
+  (`backup.space_restore_*`), and completion or failure writes a console notice plus an email to the
+  space's managers (Q15). Decrypted material lives in a per-step temporary directory and is deleted when
+  the step ends (#50b). `resume_space_restores_task` picks up a lost dispatch and fails an interrupted step.
+- **One flow, two places (Q1, SEAMLESS).** The React Backup & Restore panel and `/control/` share the same
+  services: choose a scope (whole platform | one space), one timeline of restore points, "Back up now",
+  preview, confirm with re-authentication, live progress, and one schedule view
+  (`GET /admin/platform/backup-schedule`). Whole-platform restore points are listed in a space's timeline
+  but are not restorable in the app (see PROJECT-STATUS: one space from a whole-platform backup).
+- **Maintenance window.** The apply transaction holds row locks across the space's tables and the source
+  gate refuses its writers until it ends; schedule large restores accordingly.
 
 ### The SHAPE a projected model must have (catalog-driven, 2026-09-03)
 
@@ -4972,6 +5056,11 @@ installed. It records SHA-256 for the installed `host-capability.py`, `import-ba
 entrypoint, the closed supported deployment-archive protocol range, only the verification-key fingerprint, and a
 length-framed digest of the installed Django migration files. It never records or receives the private
 archive-signing key.
+
+**A host whose marker was installed for protocol v1 refuses every v2 deployment build** with
+`producer-capability-protocol-range` until the marker is reinstalled; `scripts/update.sh` reinstalls it
+from the new image before any worker starts, so an ordinary update needs no manual step. The test
+fixture (`tests/backup/conftest.py`) installs it from `SUPPORTED_PROTOCOL_*`, i.e. for v2.
 
 `backup/archive_builder.py` checks this marker only for deployment/compound builds and does so before
 platform-recipient resolution, temporary workspace creation, capture bytes, encryption, staging upload or artifact
@@ -5777,11 +5866,12 @@ boundary cover raw SQL and `docker exec` paths that never execute the image entr
 provider cannot establish and probe this split is unsupported, not degraded to an advisory process check.
 
 **Readiness remains reachable in quarantine and is bound to the host marker.** The readiness route is in
-the recovery allowlist and verifies the live database name/OID, no pending Django migration, every declared
-reservation row count/digest, every declared enabled database-fence definition, and every declared
-not-restored row count/digest.
-The `candidate-backend` recovery profile has no normal `migrate` dependency. Empty declarations are valid
-before E9 creates those database objects; E9 must populate exact declarations before candidate cutover.
+the recovery allowlist and verifies the live database name/OID and that no Django migration is pending.
+The `candidate-backend` recovery profile has no normal `migrate` dependency. **The host marker is version 3
+(P1b B2):** the E7/E9 reservation, database-fence and not-restored readiness declarations went with Lane E
+and are no longer part of the marker. A version-2 marker is still read when all three of its lists are
+empty (the only shape a v2 producer could write after P1b) and refused when any carries a fact;
+`transition_host_orchestration` no longer takes `--readiness-json`.
 An external scheduler is outside the image/marker boundary, so its topology must declare either the same
 host gate or durable provider-control-plane disablement unless the marker is `normal` or
 `acknowledged-normal`. The topology

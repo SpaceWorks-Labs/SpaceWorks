@@ -23,7 +23,7 @@ ENTRIES = (
     P("backup.archive_failed", "Backup archive failed", ("scope",)),
     P("backup.archive_imported", "Backup archive imported"),
     P("backup.archive_requested", "Backup archive requested",
-      ("archives_outside_purge_guarantee", "scope")),
+      ("archives_outside_purge_guarantee", "scope", "trigger")),
     P("backup.download_url_issued", "Backup download url issued",
       ("archives_outside_purge_guarantee",)),
     P("backup.downloaded", "Backup downloaded"),

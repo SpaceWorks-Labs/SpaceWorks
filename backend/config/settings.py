@@ -662,6 +662,12 @@ CELERY_BEAT_SCHEDULE = {
         "task": "apps.accounts.tasks.purge_deleted_accounts_task",
         "schedule": crontab(hour=3, minute=20),
     },
+    # Superadmin PII windows last 30 minutes (#111 Q12). Reads close lapsed windows
+    # lazily; this sweep writes the expiry audit row for windows nobody reads again.
+    "pii-access-expiry": {
+        "task": "apps.accounts.tasks.expire_pii_access_windows_task",
+        "schedule": crontab(minute="*/5"),
+    },
     "reminder-sweep": {
         "task": "apps.operations.tasks_reminders.run_reminder_sweep_task",
         "schedule": crontab(minute="*/5"),
@@ -791,6 +797,17 @@ CELERY_BEAT_SCHEDULE = {
     "scheduled-deployment-backup": {
         "task": "apps.backup.tasks.scheduled_deployment_backup_task",
         "schedule": crontab(hour=2, minute=0),
+    },
+    # Nightly one-space archives (#111 Q4): two due spaces per tick, oldest first, off
+    # the same automatic-backups switch; 01:00-07:50 covers 84 spaces a night.
+    "scheduled-space-backups": {
+        "task": "apps.backup.tasks.scheduled_space_backups_task",
+        "schedule": crontab(hour="1-7", minute="*/10"),
+    },
+    # Picks up a per-space restore step whose dispatch was lost, one per tick.
+    "resume-space-restores": {
+        "task": "apps.backup.tasks_space_restore.resume_space_restores_task",
+        "schedule": crontab(minute="*/5"),
     },
     "reconcile-backup-artifacts": {
         "task": "apps.backup.tasks.reconcile_backup_artifacts_task",

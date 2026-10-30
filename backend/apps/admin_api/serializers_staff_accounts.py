@@ -6,6 +6,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import APIException
 
 from apps.accounts.models import StaffInvitation, User
+from apps.accounts.pii_presentation import PiiMaskingSerializerMixin
 from apps.accounts.staff_account_policy import require_authority, role_keys
 from apps.accounts.services_staff_invitations import onboarding_available
 from apps.makerspaces.models import MakerspaceMembership
@@ -62,7 +63,11 @@ class StaffAccountCapabilitiesSerializer(serializers.Serializer):
     resend_invite = serializers.BooleanField()
 
 
-class StaffAccountSerializer(serializers.ModelSerializer):
+class StaffAccountSerializer(PiiMaskingSerializerMixin, serializers.ModelSerializer):
+    """Staff names and emails are masked for a superadmin with no window on the space (#114)."""
+
+    pii_account_fields = ("display_name", "email")
+    pii_masked = serializers.BooleanField(read_only=True, required=False)
     roles = serializers.SerializerMethodField()
     machine_type_ids = serializers.SerializerMethodField()
     mfa_enabled = serializers.SerializerMethodField()
@@ -73,7 +78,14 @@ class StaffAccountSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ["id", "username", "display_name", "email", "roles", "machine_type_ids", "is_active",
-                  "must_change_password", "mfa_enabled", "last_login", "created_at", "invitation_pending", "can"]
+                  "must_change_password", "mfa_enabled", "last_login", "created_at", "invitation_pending", "can",
+                  "pii_masked"]
+
+    def get_pii_makerspace_id(self, instance):
+        return self.context["space"].pk
+
+    def get_pii_subject(self, instance):
+        return instance
 
     def membership(self, obj):
         cache = self.__dict__.setdefault("_membership_cache", {})

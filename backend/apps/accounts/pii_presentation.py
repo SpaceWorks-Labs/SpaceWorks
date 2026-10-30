@@ -121,13 +121,16 @@ class PiiMaskingSerializerMixin:
     def get_pii_subject(self, instance):
         return None
 
+    def pii_row_visible(self, viewer, instance):
+        return pii_visible(viewer, self.get_pii_makerspace_id(instance), subject=self.get_pii_subject(instance))
+
     def to_representation(self, instance):
         data = super().to_representation(instance)
         request = self.context.get("request")
         viewer = getattr(request, "user", None)
         if not is_platform_superadmin(viewer):
             return data
-        if pii_visible(viewer, self.get_pii_makerspace_id(instance), subject=self.get_pii_subject(instance)):
+        if self.pii_row_visible(viewer, instance):
             return data
         names = (*registry_field_names(instance._meta.label), *self.pii_account_fields)
         if mask_data(data, names):

@@ -17,6 +17,10 @@ TASK_EXEMPTIONS = {
         "Read-only platform monitoring; writes only a disposable deployment cache marker."
     ),
     "apps.accounts.tasks.purge_auth_challenges_task": "Platform-global auth retention.",
+    "apps.accounts.tasks.expire_pii_access_windows_task": (
+        "Closes platform-owned PII windows (OMITTED, never exported) at their expiry and "
+        "appends the expiry audit row, exactly as the lazy close on any read does."
+    ),
     "apps.hosting_requests.tasks.sweep_hosting_requests_task": (
         "Platform-global hosting-request retention; deletes/redacts OMITTED platform rows, "
         "no tenant writes."
@@ -28,6 +32,20 @@ TASK_EXEMPTIONS = {
         "to that state."
     ),
     "apps.backup.tasks.run_backup_archive_task": "Deployment/tenant backup control plane.",
+    "apps.backup.tasks_space_restore.run_space_restore_preview_task": (
+        "Per-space restore preview: read-only comparison of an archive with the live space."
+    ),
+    "apps.backup.tasks_space_restore.run_space_restore_apply_task": (
+        "Per-space restore apply: claims the space's own source gate (quiesced_snapshot) "
+        "before it writes, so it IS the gate owner rather than a gated writer."
+    ),
+    "apps.backup.tasks_space_restore.resume_space_restores_task": (
+        "Resumes the two per-space restore steps above, one operation per tick."
+    ),
+    "apps.backup.tasks.scheduled_space_backups_task": (
+        "Nightly one-space archives: read-only snapshots under the deployment lease, "
+        "the same control plane as run_backup_archive_task."
+    ),
     "apps.backup.tasks.scheduled_deployment_backup_task": "Deployment backup control plane.",
     "apps.backup.tasks.purge_expired_backup_archives_task": "Platform backup retention.",
     "apps.backup.tasks.cleanup_expired_restore_rollbacks_task": "Deployment recovery cleanup.",

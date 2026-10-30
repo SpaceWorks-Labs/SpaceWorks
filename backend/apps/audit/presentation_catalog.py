@@ -55,6 +55,7 @@ from .presentation_catalog_p2_presence import ENTRIES as _PRESENCE
 from .presentation_catalog_security import ENTRIES as _SECURITY
 from .presentation_catalog_settings_authority import ENTRIES as _SETTINGS_AUTHORITY
 from .presentation_catalog_r2_l1 import ENTRIES as _R2_L1
+from .presentation_catalog_space_backup import ENTRIES as _SPACE_BACKUP
 
 PRESENTATION_CATALOG = _compose(
     _PROGRAMME,
@@ -64,6 +65,7 @@ PRESENTATION_CATALOG = _compose(
     _SECURITY,
     _SETTINGS_AUTHORITY,
     _R2_L1,
+    _SPACE_BACKUP,
     _ACCOUNTS, _MAKERSPACES, _HARDWARE, _MACHINES, _COMMUNITY, _MIGRATION, _PAYMENTS,
     _PLATFORM, _MEMBER_ACCOUNT, _MERGED, _PROFILES, _WA_TWILIO, _WA_META, _P2_P_CHAT, _P2_BOOKINGS, _P2_EVENTS,
     _MESSAGING,

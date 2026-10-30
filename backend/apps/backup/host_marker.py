@@ -13,7 +13,12 @@ import uuid
 from .host_marker_file import write_json_fsynced
 
 
-MARKER_VERSION = 2
+# v3 (P1b, owner decision #111 Q8): the restore reservation, fence and not-restored
+# readiness declarations are gone with Lane E. A v2 marker is still read when every one
+# of those lists is empty, which is the only shape a v2 producer could still write.
+MARKER_VERSION = 3
+LEGACY_MARKER_VERSION = 2
+_LEGACY_READINESS = {"reservations": [], "fences": [], "not_restored": []}
 MAX_OID = (1 << 32) - 1
 MAX_SYSTEM_IDENTIFIER = (1 << 64) - 1
 IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_$]*$")
@@ -52,9 +57,6 @@ class HostMarker:
     state: MarkerState
     database: DatabaseIdentity | None
     database_routing: str | None
-    reservations: tuple[dict, ...]
-    fences: tuple[dict, ...]
-    not_restored: tuple[dict, ...]
     operation: OperationIdentity | None = None
 
     def require_bound_database(self):
@@ -66,35 +68,6 @@ def _identifier(value, label):
     if not isinstance(value, str) or not IDENTIFIER.fullmatch(value):
         raise MarkerError(f"Host marker {label} is not a safe PostgreSQL identifier.")
     return value
-
-def _relation_check(item, label):
-    required = {"schema", "table", "expected_rows", "sha256"}
-    if not isinstance(item, dict) or set(item) != required:
-        raise MarkerError(f"Host marker {label} entry has an invalid shape.")
-    digest = item["sha256"]
-    if not isinstance(digest, str) or not SHA256.fullmatch(digest):
-        raise MarkerError(f"Host marker {label}.sha256 is invalid.")
-    return {
-        "schema": _identifier(item["schema"], f"{label}.schema"),
-        "table": _identifier(item["table"], f"{label}.table"),
-        "expected_rows": _nonnegative_int(item["expected_rows"], f"{label}.expected_rows"),
-        "sha256": digest,
-    }
-
-def _fence_check(item):
-    required = {"schema", "table", "trigger", "enabled", "definition_sha256"}
-    if not isinstance(item, dict) or set(item) != required or item["enabled"] is not True:
-        raise MarkerError("Host marker fence entry has an invalid shape.")
-    digest = item["definition_sha256"]
-    if not isinstance(digest, str) or not SHA256.fullmatch(digest):
-        raise MarkerError("Host marker fence definition digest is invalid.")
-    return {
-        "schema": _identifier(item["schema"], "fences.schema"),
-        "table": _identifier(item["table"], "fences.table"),
-        "trigger": _identifier(item["trigger"], "fences.trigger"),
-        "enabled": True,
-        "definition_sha256": digest,
-    }
 
 def _nonnegative_int(value, label):
     if isinstance(value, bool) or not isinstance(value, int) or value < 0:
@@ -165,9 +138,11 @@ def _operation(value):
 
 
 def parse_marker(payload) -> HostMarker:
+    if isinstance(payload, dict) and payload.get("version") == LEGACY_MARKER_VERSION:
+        payload = _upgrade_legacy(payload)
     if not isinstance(payload, dict) or set(payload) not in ({
-        "version", "state", "database", "readiness"
-    }, {"version", "state", "database", "readiness", "operation"}):
+        "version", "state", "database"
+    }, {"version", "state", "database", "operation"}):
         raise MarkerError("Host marker has an invalid top-level shape.")
     if type(payload["version"]) is not int or payload["version"] != MARKER_VERSION:
         raise MarkerError("Host marker version is unsupported.")
@@ -207,13 +182,6 @@ def parse_marker(payload) -> HostMarker:
             raise MarkerError("Host marker server identity names a different database.")
         database = DatabaseIdentity(name=name, oid=_positive_oid(database_payload["oid"]),
                                     server_identity=server)
-    readiness = payload["readiness"]
-    if not isinstance(readiness, dict) or set(readiness) != {
-        "reservations", "fences", "not_restored"
-    }:
-        raise MarkerError("Host marker readiness declaration has an invalid shape.")
-    if not all(isinstance(readiness[key], list) for key in readiness):
-        raise MarkerError("Host marker readiness declarations must be lists.")
     operation = _operation(payload["operation"]) if "operation" in payload else None
     if stage == MarkerStage.INTENT and (
         state != MarkerState.CANDIDATE_PREPARATION or operation is None
@@ -223,11 +191,18 @@ def parse_marker(payload) -> HostMarker:
         stage=stage, state=state,
         database=database,
         database_routing=routing,
-        reservations=tuple(_relation_check(item, "reservations") for item in readiness["reservations"]),
-        fences=tuple(_fence_check(item) for item in readiness["fences"]),
-        not_restored=tuple(_relation_check(item, "not_restored") for item in readiness["not_restored"]),
         operation=operation,
     )
+
+
+def _upgrade_legacy(payload):
+    """Read a v2 marker as v3; only its retired, always-empty readiness lists differ."""
+    if type(payload["version"]) is not int or payload.get("readiness") != _LEGACY_READINESS:
+        raise MarkerError("Host marker v2 carries restore readiness facts that no longer exist.")
+    return {
+        **{key: value for key, value in payload.items() if key != "readiness"},
+        "version": MARKER_VERSION,
+    }
 
 
 def _assert_trusted_file(path):
@@ -256,7 +231,7 @@ def read_marker(path, *, require_root_owned=True) -> HostMarker:
     return parse_marker(payload)
 
 
-def marker_payload(state, database, *, readiness=None, operation=None):
+def marker_payload(state, database, *, operation=None):
     state = MarkerState(state)
     if database is None and (
         state != MarkerState.CANDIDATE_PREPARATION or operation is None
@@ -274,11 +249,6 @@ def marker_payload(state, database, *, readiness=None, operation=None):
                 else "active"
             ),
         }),
-        "readiness": (
-            readiness
-            if readiness is not None
-            else {"reservations": [], "fences": [], "not_restored": []}
-        ),
     }
     if database is not None and database.server_identity is not None:
         payload["database"]["server_identity"] = database.server_identity

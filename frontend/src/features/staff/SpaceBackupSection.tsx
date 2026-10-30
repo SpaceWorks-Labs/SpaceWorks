@@ -4,7 +4,8 @@ import { EmptyState, ErrorText, ListRow, RelativeTime, StatusPill } from "../../
 import { ACTIVE_RESTORE_STAGES, listSpaceBackups, listSpaceRestores, requestSpaceBackup, startSpaceRestore } from "./spaceRestoreApi";
 import { SpaceRestoreFlow } from "./SpaceRestoreFlow";
 
-const TRIGGER: Record<string, string> = { nightly: "Nightly", on_demand: "Back up now", safety: "Before a restore" };
+const TRIGGER: Record<string, string> = { nightly: "Nightly", on_demand: "Back up now", safety: "Before a restore",
+  extracted: "From a whole-platform backup" };
 
 /** One space's restore points, "Back up now" and its restores (superadmin, #111 SEAMLESS). */
 export function SpaceBackupSection({ makerspaceId }: { makerspaceId: number }) {

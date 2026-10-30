@@ -126,7 +126,7 @@ def _pg_dump(destination, snapshot_id):
 
 
 
-def _tenant_payload(makerspace_id, root):
+def _tenant_payload(makerspace_id, root, *, using="default"):
     # The guard ends with raw row/object-key projection. Future DEK rewrap belongs
     # after this context because it is the separately authorized unwrap phase.
     with no_decrypt_guard():
@@ -136,7 +136,7 @@ def _tenant_payload(makerspace_id, root):
         external_references = []
         for label, (_path, predicate) in sorted(DATASET_SPECS.items()):
             model = apps.get_model(label)
-            queryset = model.objects.filter(canonical_owner_q(predicate, makerspace_id)).order_by(
+            queryset = model.objects.using(using).filter(canonical_owner_q(predicate, makerspace_id)).order_by(
                 model._meta.pk.name
             )
             records = raw_records(queryset, model)
@@ -160,7 +160,7 @@ def _tenant_payload(makerspace_id, root):
                     )
         User = apps.get_model("accounts.User")
         users = list(
-            User.objects.filter(pk__in=referenced_users).values("id", "username")
+            User.objects.using(using).filter(pk__in=referenced_users).values("id", "username")
         )
         _write_json(root / "global_user_references.json", users)
         _write_json(root / "external_references.json", external_references)

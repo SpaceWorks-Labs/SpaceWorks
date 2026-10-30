@@ -13,7 +13,7 @@ export type BackupArchive = {
   created_at: string;
   completed_at: string | null;
   purge_warning: string;
-  trigger: "on_demand" | "nightly" | "safety";
+  trigger: "on_demand" | "nightly" | "safety" | "extracted";
   format: string;
   /** A one-space restore point this server can open and restore. */
   restorable_in_app: boolean;

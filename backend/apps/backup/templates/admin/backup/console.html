@@ -12,7 +12,8 @@
 <h2>Whole-platform restore points</h2>
 <form method="post">{% csrf_token %}<button type="submit">Back up now</button></form>
 <p>A whole-platform restore runs on the host through the supervised restore flow (Restore operations).
-To restore ONE space, choose it above; its own nightly and on-demand backups are restorable in the app.</p>
+To restore ONE space, choose it above; its own nightly and on-demand backups are restorable in the app.
+To restore one space from a whole-platform backup: restore via host command (see docs), which adds it as a restore point of that space.</p>
 <table><thead><tr><th scope="col">Taken</th><th scope="col">Kind</th><th scope="col">Size</th></tr></thead><tbody>
 {% for row in archives %}<tr><td>{{ row.completed_at }}</td><td>{{ row.get_trigger_display }}</td><td>{{ row.size_bytes|filesizeformat }}</td></tr>
 {% empty %}<tr><td colspan="3">No whole-platform backups yet.</td></tr>{% endfor %}

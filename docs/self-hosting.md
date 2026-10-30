@@ -713,6 +713,31 @@ Restore order is database first, then object files. Stop the stack, restore the 
 `db` service, unpack the MinIO archive into the `minio_data` volume, then start the stack and check
 `/api/v1/health/readiness/`.
 
+### Restore one space
+
+Each live space also gets a nightly one-space backup, and the superadmin can "Back up now" any space.
+Those restore points are restored in the app (Backup and restore, choose the space): preview, confirm with
+your password and the space's slug, then watch progress. A safety backup of the space is taken first. This
+needs the server's restore key: set `TENANT_MIGRATION_AGE_RECIPIENT` and `TENANT_MIGRATION_AGE_IDENTITY_FILE`.
+
+To restore one space from a **whole-platform** backup instead, extract it on the host first. The platform
+key opens whole-platform archives and must stay off the server, so decrypt on a trusted machine and copy
+only the decrypted directory to the host:
+
+```bash
+# On a trusted machine holding the platform key (never copy the key to the server):
+mkdir decrypted && age --decrypt -i platform.key spaceworks-deployment-<id>.tar.age | tar -x -C decrypted
+# On the host, with the decrypted directory mounted into the backend container:
+scripts/spaceworks-compose.sh bundled run --rm -v "$PWD/decrypted:/extract:ro" backend --role management   python manage.py extract_space_restore_point --username <superadmin> --source /extract --makerspace <slug>
+rm -rf decrypted   # the decrypted copy holds every space's data
+```
+
+The command reads that space out of a scratch copy of the archived database (migrated to this release),
+re-encrypts it to the platform key and the server's restore key, and adds it to the space's restore points
+("From a whole-platform backup"), audited in the space. It refuses a link or special file in the
+directory, an age identity left in it, an archive that does not cover the space, a partial legacy archive,
+or one made by a newer release. Then restore it in the app as above.
+
 ## Tenant Frontends
 
 One backend can serve **many makerspaces**. A makerspace without its own server can be hosted as an

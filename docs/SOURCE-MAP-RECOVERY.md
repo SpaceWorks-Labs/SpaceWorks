@@ -38,7 +38,9 @@ Update it with code moves; the repository tree remains authoritative.
   (console notice + manager email), `tasks_space_restore.py`, `models_space_restore.py`
   (`MakerspaceRestoreOperation`), `views_space_restore.py` + `serializers_space_restore.py` (API, routed by
   `admin_api/urls_space_restore.py`), `admin_space_backup.py` + `admin_deployment.py` (the `/control/`
-  console). The host marker (`host_marker.py`) is v3 without readiness lists.
+  console). `space_extract.py` + `management/commands/extract_space_restore_point.py` turn one space of a
+  host-decrypted whole-platform backup into a restore point (#144). The host marker (`host_marker.py`) is v3
+  without readiness lists.
 
 - `backend/apps/tenant_migration/` — per-makerspace migration, managed → self-host (Phase 5B), in
   `SEPARABLE_APPS`. `source_gate.py` + `gate_locks.py`/`gate_runtime.py`/`gate_policy.py`/`middleware.py`/

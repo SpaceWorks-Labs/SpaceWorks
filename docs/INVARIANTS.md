@@ -4792,7 +4792,17 @@ PORTABLE/Lane D path.
   services: choose a scope (whole platform | one space), one timeline of restore points, "Back up now",
   preview, confirm with re-authentication, live progress, and one schedule view
   (`GET /admin/platform/backup-schedule`). Whole-platform restore points are listed in a space's timeline
-  but are not restorable in the app (see PROJECT-STATUS: one space from a whole-platform backup).
+  as "restore via host command".
+- **One space from a whole-platform backup (#144).** `manage.py extract_space_restore_point`
+  (`space_extract.py`) takes a directory the operator decrypted OFF the server with the platform key; the
+  platform key is never given to, read by or stored on the server, and the command refuses a directory
+  that still contains an age identity, any link or special file, an archive that does not cover the
+  space, a `partial` archive, or one whose applied migrations this code does not know. It restores the
+  archived `database.dump` into a scratch database, migrates it to this schema, reads the space's raw slice
+  from it (`_tenant_payload(..., using=alias)`), copies only the objects that slice references (path
+  traversal refused), encrypts to the platform AND server keys, and registers an AVAILABLE
+  `trigger="extracted"` restore point, audited `backup.space_restore_point_extracted` in the space. The
+  restore itself is the ordinary preview/confirm/apply.
 - **Maintenance window.** The apply transaction holds row locks across the space's tables and the source
   gate refuses its writers until it ends; schedule large restores accordingly.
 

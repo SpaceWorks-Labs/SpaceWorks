@@ -125,9 +125,9 @@ slice, encrypted to the platform key and this server's restore key) plus "Back u
 restores ONE space from its own restore points through preview -> confirm (re-auth + typed slug) -> live
 progress, with a mandatory safety backup first, in one transaction with identical ids. The same flow is in
 the React Backup & Restore panel (scope picker, timeline, schedule view) and the `/control/` backup
-console. Rules: **Per-space backup and restore** in `docs/INVARIANTS.md`. Not built: restoring one space
-from a WHOLE-PLATFORM backup in the app (whole-platform archives are platform-key-only, so the server
-cannot open them; an owner decision is pending on host-side extraction versus adding the server key).
+console. Rules: **Per-space backup and restore** in `docs/INVARIANTS.md`. One space from a WHOLE-PLATFORM
+backup (#144): the operator decrypts it off the server and `manage.py extract_space_restore_point` adds that
+space as an ordinary restore point (docs/self-hosting.md, "Restore one space").
 
 **Non-technical install:** the root `install.sh` curl flow on supported Linux families or Windows Git Bash
 (preflight → tagged source archive → published-image pull → `setup.sh` secrets/instance/live module ticks →

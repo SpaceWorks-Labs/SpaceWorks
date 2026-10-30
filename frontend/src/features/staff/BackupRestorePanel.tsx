@@ -75,6 +75,7 @@ export function BackupRestorePanel({ makerspaceId, isSuperadmin }: { makerspaceI
         ...(deploymentInfo?.mode === "managed" && scope === "platform" ? [{ id: "managed-deployment", title: "Deployment recovery", rows: <DeploymentNotices data={deploymentInfo} /> }] : []),
         ...(hostControls && scope === "platform" ? [{ id: "deployment", title: "Whole platform", rows: <div className="grid gap-4">
           <ArchiveDisclosure deployment />
+          <p className="text-sm text-muted">One space from a whole-platform backup: restore via host command (see docs). It becomes a restore point of that space here.</p>
           <BackupQuery query={settings} resource="backup settings">{settings.data ? <BackupScheduleSettings deployment={deploymentInfo} key={makerspaceId} data={settings.data} pending={saveSettings.isPending} onSave={(value, onSaved) => saveSettings.mutate(value, { onSuccess: onSaved })} /> : null}</BackupQuery>
           {saveSettings.error ? <ErrorText message={saveSettings.error.message} /> : null}
           <BackupQuery query={deployment} resource="deployment backups"><BackupArchiveRows rows={deployment.data ?? []} onDownload={id => download.mutate(id)} downloading={download.isPending ? download.variables : undefined} /></BackupQuery>

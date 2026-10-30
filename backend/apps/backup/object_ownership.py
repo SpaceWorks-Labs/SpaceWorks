@@ -1,4 +1,8 @@
-"""N-way object ownership planning and byte-level closure proofs."""
+"""Object ownership planning and byte-level closure proofs.
+
+Every captured object belongs to the one platform-readable main component (protocol v2,
+owner decision #110): there are no sovereign slices.
+"""
 
 from collections import defaultdict
 from dataclasses import dataclass
@@ -11,10 +15,6 @@ from apps.backup.build_errors import BackupBuildError
 
 
 MAIN_COMPONENT = "main"
-
-
-def slice_component(makerspace_id):
-    return f"slice:{int(makerspace_id)}"
 
 
 @dataclass(frozen=True)
@@ -46,9 +46,8 @@ class CapturedObject:
 class ObjectOwnershipPlan:
     """Immutable source references plus progressively bound capture facts."""
 
-    def __init__(self, references, sovereign_makerspace_ids):
+    def __init__(self, references):
         self.references = tuple(references)
-        self.sovereign_makerspace_ids = tuple(sorted(sovereign_makerspace_ids))
         grouped = defaultdict(list)
         for reference in self.references:
             grouped[(reference.bucket_kind, reference.object_key)].append(reference)
@@ -227,9 +226,7 @@ class ObjectOwnershipPlan:
                 )
 
     def assert_complete(self):
-        expected_components = {MAIN_COMPONENT} | {
-            slice_component(value) for value in self.sovereign_makerspace_ids
-        }
+        expected_components = {MAIN_COMPONENT}
         if set(self._captured) != expected_components:
             raise BackupBuildError("Not every object component closure was captured.")
         for component in expected_components:
@@ -259,8 +256,8 @@ class ObjectOwnershipPlan:
                     )
 
 
-def build_object_ownership_plan(sovereign_makerspace_ids):
+def build_object_ownership_plan():
     """Compatibility entrypoint; snapshot extraction lives in its own module."""
     from apps.backup.object_reference_capture import build_object_ownership_plan as build
 
-    return build(sovereign_makerspace_ids)
+    return build()

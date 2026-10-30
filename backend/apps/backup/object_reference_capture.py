@@ -11,7 +11,6 @@ from apps.backup.object_ownership import (
     MAIN_COMPONENT,
     ObjectOwnershipPlan,
     ObjectReference,
-    slice_component,
 )
 from apps.backup.object_ownership_registry import (
     AUDIT_META_OBJECT_VARIANTS,
@@ -22,9 +21,8 @@ from apps.backup.object_ownership_registry import (
 from apps.backup.build_errors import BackupBuildError
 
 
-def build_object_ownership_plan(sovereign_makerspace_ids):
+def build_object_ownership_plan():
     capture_at = timezone.now()
-    sovereign = frozenset(int(value) for value in sovereign_makerspace_ids)
     rules_by_model = {rule.model._meta.label: rule for rule in table_rules()}
     references = []
     for rule in validate_object_reference_registry():
@@ -61,9 +59,7 @@ def build_object_ownership_plan(sovereign_makerspace_ids):
             if bucket not in {"private", "public_image"}:
                 raise BackupBuildError("An object reference has an unsupported bucket kind.")
             owner_id = row.get(owner_lookup) if owner_lookup else None
-            component = _component_for(table_rule, owner_id, sovereign)
-            if rule.policy == ReferencePolicy.COORDINATION_ONLY:
-                component = None
+            component = None if rule.policy == ReferencePolicy.COORDINATION_ONLY else MAIN_COMPONENT
             coordination_id = row.get(rule.coordination_path) if rule.coordination_path else None
             retention = adapter.project(row, capture_at) if adapter else RetentionProjection()
             if not retention.capture:
@@ -89,8 +85,8 @@ def build_object_ownership_plan(sovereign_makerspace_ids):
             ))
     references.extend(_audit_meta_references())
     from .object_reference_certificates import certificate_snapshot_references
-    references.extend(certificate_snapshot_references(sovereign))
-    return ObjectOwnershipPlan(references, sovereign)
+    references.extend(certificate_snapshot_references())
+    return ObjectOwnershipPlan(references)
 
 
 def _owner_lookup(table_rule):
@@ -98,15 +94,6 @@ def _owner_lookup(table_rule):
         return None
     path = table_rule.predicate.any_paths[0]
     return path if path in {"pk", "id"} else f"{path}_id"
-
-
-def _component_for(table_rule, owner_id, sovereign):
-    if (
-        table_rule.disposition == RowDisposition.COPY_TO_SLICE
-        and owner_id in sovereign
-    ):
-        return slice_component(owner_id)
-    return MAIN_COMPONENT
 
 
 def _audit_meta_references():

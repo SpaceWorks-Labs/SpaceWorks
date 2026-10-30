@@ -147,11 +147,7 @@ def main():
         if current.database.server_identity is None:
             write_marker_fsynced(
                 marker_path,
-                marker_payload(state, identity, readiness={
-                    "reservations": list(current.reservations),
-                    "fences": list(current.fences),
-                    "not_restored": list(current.not_restored),
-                }),
+                marker_payload(state, identity),
             )
 
 

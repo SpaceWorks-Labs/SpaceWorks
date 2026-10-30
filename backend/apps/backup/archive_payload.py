@@ -58,7 +58,7 @@ def _snapshot_payload(archive, root, modes, selected_recipients, *, compound_cap
                 object_plan = None
             else:
                 compound_capture.prepare_from_snapshot()
-                object_plan = build_object_ownership_plan(())
+                object_plan = build_object_ownership_plan()
                 object_keys = object_plan.closure(MAIN_COMPONENT)
             _write_continuity_keys(root / "keys" / "env.json")
         else:

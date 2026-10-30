@@ -66,7 +66,6 @@ class BackupArtifactLedger(models.Model):
 class BackupArtifactComponent(models.Model):
     class Kind(models.TextChoices):
         MAIN = "main", "Readable main"
-        SLICE = "slice", "Sovereign slice"
 
     class StorageState(models.TextChoices):
         PENDING = "pending", "Pending"
@@ -100,11 +99,8 @@ class BackupArtifactComponent(models.Model):
                 nulls_distinct=False,
             ),
             models.CheckConstraint(
-                condition=(
-                    models.Q(kind="main", makerspace_id_snapshot__isnull=True)
-                    | models.Q(kind="slice", makerspace_id_snapshot__isnull=False)
-                ),
-                name="backup_component_kind_matches_tenant",
+                condition=models.Q(kind="main", makerspace_id_snapshot__isnull=True),
+                name="backup_component_main_only",
             ),
         ]
 

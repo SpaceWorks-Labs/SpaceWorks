@@ -46,20 +46,21 @@ def apply_space_restore(makerspace, archive):
     models = topologically_sort_models([apps.get_model(label) for label in (*labels, *KEPT_LIVE)])
     users = UserRemap(makerspace)
     report = {"replaced": {}, "restored": {}, "kept_live": {}}
-    gone = {}
+    # Ownership predicates join through parents (a registration through its event), so
+    # every live set is read, and every reference into a removed row resolved, BEFORE any
+    # row is deleted.
+    live = {label: set(live_queryset(label, makerspace.pk).values_list("pk", flat=True)) for label in labels}
+    gone = {label: live[label] - archive.pks(label) for label in labels}
+    outcome = resolve(makerspace.pk, gone, apply=True)
+    if outcome.blocked:
+        raise SpaceRestoreError("dangling_references", "Rows outside this space still point at rows the restore removes.")
     for label in labels:
-        live = set(live_queryset(label, makerspace.pk).values_list("pk", flat=True))
-        archived = archive.pks(label)
-        raw_delete(apps.get_model(label), live)
-        gone[label] = live - archived
-        report["replaced"][label] = len(live)
+        raw_delete(apps.get_model(label), live[label])
+        report["replaced"][label] = len(live[label])
     for model in models:
         report["restored"][model._meta.label] = _insert(model, archive, makerspace, users)
     _restore_makerspace_row(makerspace, archive, users)
     _relink_external(archive)
-    outcome = resolve(makerspace.pk, gone, apply=True)
-    if outcome.blocked:
-        raise SpaceRestoreError("dangling_references", "Rows outside this space still point at rows the restore removes.")
     report.update(outcome.summary())
     report["removed"] = {label: len(pks) for label, pks in gone.items() if pks}
     report["accounts_rescrubbed"] = rescrub_deleted_accounts(makerspace, users.referenced)
@@ -96,11 +97,16 @@ def _insert(model, archive, makerspace, users):
     with connection.cursor() as cursor:
         for record in rows:
             columns, values = prepared_record(model, users.remap(model, record), connection)
-            cursor.execute(
-                f"INSERT INTO {quote(model._meta.db_table)} ({', '.join(quote(c) for c in columns)}) "
-                f"VALUES ({', '.join(['%s'] * len(values))})",
-                values,
-            )
+            try:
+                cursor.execute(
+                    f"INSERT INTO {quote(model._meta.db_table)} ({', '.join(quote(c) for c in columns)}) "
+                    f"VALUES ({', '.join(['%s'] * len(values))})",
+                    values,
+                )
+            except DatabaseError as exc:  # the whole transaction rolls back; name the row
+
+                raise SpaceRestoreError("integrity_check_failed", f"{label} row {record['pk']} cannot be restored: "
+                                        f"{str(exc).splitlines()[0][:240]}") from None
             count += 1
     return count
 

@@ -112,6 +112,7 @@ _ROUTE_DEFINITIONS = (
     *tuple((name, _WRITE, PUBLIC_WRITE_SCOPES, TARGET_GLOBAL, False, False) for name in (
         "public-hosting-request-submit", "public-hosting-request-open",
         "public-hosting-invitation-resolve", "public-hosting-invitation-submit",
+        "public-hosting-request-resubmit",
     )),
     (
         "hardware_requests:request-submit", _WRITE, PUBLIC_WRITE_SCOPES,

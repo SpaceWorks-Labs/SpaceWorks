@@ -476,6 +476,13 @@ PRINT_ALLOWED_SCREENSHOT_MIME = [
 # contribution total onto their maker profile. Unset means the feature is dormant: no
 # call is made and profiles simply omit the section. Never required.
 GITHUB_API_TOKEN = env("GITHUB_API_TOKEN", default="")
+# --- Release 2 L2: browser notifications (W3C Web Push / VAPID). Unset = dormant. ---
+# The private key is the base64url raw P-256 scalar (secret-bearing); the public key is
+# derived from it. The subject is a mailto: or https: contact the push services may use.
+WEB_PUSH_VAPID_PRIVATE_KEY = env("WEB_PUSH_VAPID_PRIVATE_KEY", default="")
+WEB_PUSH_VAPID_SUBJECT = env("WEB_PUSH_VAPID_SUBJECT", default="")
+# Release 2 L2 (X31): applicants may edit and resubmit after "changes requested" (platform switch).
+HOSTING_REQUEST_RESUBMIT_ENABLED = env.bool("HOSTING_REQUEST_RESUBMIT_ENABLED", default=True)
 
 TELEGRAM_BOT_TOKEN = env("TELEGRAM_BOT_TOKEN", default="")
 NOTIFICATION_SLACK_REDIRECT_URI = env("NOTIFICATION_SLACK_REDIRECT_URI", default="")
@@ -840,6 +847,19 @@ CELERY_BEAT_SCHEDULE = {
 }
 from apps.presence.schedule import beat_entries as presence_beat_entries
 CELERY_BEAT_SCHEDULE.update(presence_beat_entries(TOMBSTONED_APPS))
+# --- Release 2 L2: approval digest, integrity flags, storage reconcile, escalation, room health ---
+CELERY_BEAT_SCHEDULE.update({
+    "event-approval-digest": {"task": "apps.events.approval_digest.send_approval_digests_task",
+                              "schedule": crontab(minute="*/30")},
+    "event-submission-integrity": {"task": "apps.events.submissions.integrity_jobs.sweep_integrity_checks_task",
+                                   "schedule": crontab(minute="*/15")},
+    "event-storage-reconcile": {"task": "apps.events.submissions.storage_reconcile.reconcile_event_storage_task",
+                                "schedule": crontab(hour=4, minute=25)},
+    "notification-escalation": {"task": "apps.notifications.escalation.escalate_unseen_task",
+                                "schedule": crontab(minute="*/5")},
+    "notification-destination-health": {"task": "apps.integrations.destination_health.disable_dead_destinations_task",
+                                        "schedule": crontab(minute=50)},
+})
 
 if "tenant_migration" in TOMBSTONED_APPS:
     CELERY_BEAT_SCHEDULE = {

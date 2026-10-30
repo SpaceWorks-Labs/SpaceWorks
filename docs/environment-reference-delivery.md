@@ -15,7 +15,10 @@ Platform SMTP, SMS, push and Stripe Connect credentials normally live encrypted 
 | `EMAIL_HOST_USER` | `''` |  |
 | `EMAIL_PORT` | `587` |  |
 | `EMAIL_USE_TLS` | `True` |  |
-| `GITHUB_API_TOKEN` | `''` | Optional; raises the GitHub rate limit for maker-profile contribution refresh. |
+| `GITHUB_API_TOKEN` | `''` | Optional; raises the GitHub rate limit for maker-profile contribution refresh and the hackathon first-commit flag. |
+| `WEB_PUSH_VAPID_PRIVATE_KEY` | `''` | Secret. Base64url raw P-256 private scalar for browser notifications (W3C Web Push); the public key is derived. Blank = browser notifications dormant. Generate once per deployment and keep it: rotating it invalidates every browser subscription. |
+| `HOSTING_REQUEST_RESUBMIT_ENABLED` | `True` | Managed platforms: applicants may edit and resubmit a hosting request after the superadmin asks for changes. `False` keeps "changes requested" one-way (the applicant reads the note only). |
+| `WEB_PUSH_VAPID_SUBJECT` | `''` | `mailto:` or `https:` contact sent to push services with each browser notification. Required with the key. |
 | `NOTIFICATION_SLACK_REDIRECT_URI` | `''` | Fixed HTTPS frontend notification-settings return, registered byte-for-byte in the provider app; blank refuses personal linking. No placeholders: the signed OAuth state carries the makerspace and challenge. |
 | `NOTIFICATION_MATTERMOST_REDIRECT_URI` | `''` | Same frontend OAuth return policy as Slack. |
 | `NOTIFICATION_DISCORD_REDIRECT_URI` | `''` | Same frontend OAuth return policy as Slack. |

@@ -147,7 +147,8 @@ admin-notification-destinations admin-notification-recipient-rules admin-notific
 admin-notification-rules admin-organization-detail admin-organization-directory
 admin-organization-hosting-invitation-cancel admin-organization-hosting-invitations
 admin-organization-invitation-revoke admin-organization-invitations admin-organization-link-delete
-admin-organization-links admin-organization-list admin-organization-membership-detail
+admin-organization-email-sender admin-organization-links admin-organization-list
+admin-organization-membership-detail
 admin-organization-memberships admin-organized-event-list admin-presence-end admin-presence-privacy
 admin-presence-sessions-current admin-presence-start admin-recurring-bookings admin-reorder-draft
 admin-reorder-suggestions admin-return-policy admin-role-list-create admin-saved-view-detail
@@ -198,7 +199,8 @@ auth-mfa-recovery auth-mfa-verify auth-reauth auth-reauth-enrollment-confirm
 auth-reauth-enrollment-email auth-reauth-social-complete auth-reauth-social-start auth-refresh
 contract-deliveries contract-endpoint-revoke contract-endpoint-start contract-endpoint-verify
 contract-endpoints contract-preferences device-grant-detail device-grants device-logout inbox-count
-inbox-list inbox-read inbox-read-all live member-account-profile member-account-session-detail
+inbox-list inbox-read inbox-read-all inbox-snooze inbox-archive inbox-restore browser-alert-key
+browser-alert-subscriptions live member-account-profile member-account-session-detail
 member-account-sessions member-preferences push-device-detail push-device-list-create
 """.split())
 

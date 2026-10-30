@@ -21,7 +21,8 @@ from django.utils import timezone
 logger = logging.getLogger(__name__)
 SOURCE = "integrations.invitation"
 EVENT = "invitation"
-INVITE_MODELS = {"events": "events.EventStaffGrantInvite", "bookings": "bookings.BookingSpaceStaffGrantInvite"}
+INVITE_MODELS = {"events": "events.EventStaffGrantInvite", "bookings": "bookings.BookingSpaceStaffGrantInvite",
+                 "members": "organizations.OrganizationInvitation"}
 
 
 def _account(email):
@@ -62,8 +63,13 @@ def invite_eligible(envelope):
     if label is None or envelope.audience != "member":
         return False
     row = apps.get_model(label).objects.filter(pk=envelope.source_id).first()
-    return bool(row and row.makerspace_id == envelope.makerspace_id and row.redeemed_at is None
-                and row.revoked_at is None and row.expires_at > timezone.now())
+    if row is None or row.redeemed_at is not None or row.revoked_at is not None or row.expires_at <= timezone.now():
+        return False
+    if label == "organizations.OrganizationInvitation":
+        from apps.organizations.models import OrganizationMakerspace
+        return row.organization.is_active and OrganizationMakerspace.objects.filter(
+            organization_id=row.organization_id, makerspace_id=envelope.makerspace_id).exists()
+    return row.makerspace_id == envelope.makerspace_id
 
 
 def register():

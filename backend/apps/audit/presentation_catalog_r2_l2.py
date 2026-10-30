@@ -26,6 +26,8 @@ ENTRIES = (
     P("notification.destination_auto_disabled", "Chat room switched off after failed deliveries",
       ("channel", "failures")),
     P("notification.escalated", "Unseen staff notice escalated", ("feature", "event", "rooms")),
+    P("organization.invitation_delivered", "Organisation invitation sent by email/chat",
+      ("organization_id", "emailed", "chat_offered")),
     P("hosting_request.changes_requested", "Hosting request: changes requested"),
     P("hosting_request.resubmitted", "Hosting request resubmitted", ("changed_fields",)),
 )

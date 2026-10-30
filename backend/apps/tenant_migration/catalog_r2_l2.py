@@ -32,6 +32,7 @@ EXTRA_FIELDS = {
     "events.EventFeedbackSurvey": frozenset({"anonymous"}),
     "notifications.NotificationInboxRow": frozenset({"snoozed_until", "archived_on"}),
     "hosting_requests.HostingRequest": frozenset({"changes_note", "changes_requested_at"}),
+    "organizations.OrganizationInvitation": frozenset({"invitee_email_digest"}),
 }
 
 

@@ -205728,11 +205728,16 @@
                         "readOnly": true
                     },
                     "state": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "sent_to_email": {
                         "allOf": [
                             {
-                                "$ref": "#/components/schemas/State31eEnum"
+                                "$ref": "#/components/schemas/SentToEmailEnum"
                             }
                         ],
+                        "description": "True when an invitee email was given.",
                         "readOnly": true
                     }
                 },
@@ -205747,6 +205752,7 @@
                     "redeemed_at",
                     "redeemed_by_id",
                     "revoked_at",
+                    "sent_to_email",
                     "state"
                 ]
             },
@@ -205770,6 +205776,21 @@
                         "maximum": 30,
                         "minimum": 1,
                         "default": 7
+                    },
+                    "invitee_email": {
+                        "description": "Optional. The link is also emailed there, and offered on that person's own chat channels when the address belongs to a verified account. Only a digest of the address is stored.",
+                        "oneOf": [
+                            {
+                                "type": "string",
+                                "format": "email",
+                                "default": "",
+                                "maxLength": 254
+                            },
+                            {
+                                "type": "string",
+                                "maxLength": 0
+                            }
+                        ]
                     }
                 }
             },
@@ -205823,11 +205844,16 @@
                         "readOnly": true
                     },
                     "state": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "sent_to_email": {
                         "allOf": [
                             {
-                                "$ref": "#/components/schemas/State31eEnum"
+                                "$ref": "#/components/schemas/SentToEmailEnum"
                             }
                         ],
+                        "description": "True when an invitee email was given.",
                         "readOnly": true
                     },
                     "token": {
@@ -205851,6 +205877,7 @@
                     "redeemed_at",
                     "redeemed_by_id",
                     "revoked_at",
+                    "sent_to_email",
                     "state",
                     "token"
                 ]
@@ -236008,6 +236035,15 @@
                 "type": "string",
                 "description": "* `billed` - billed\n* `estimated` - estimated\n* `not_applicable` - not_applicable"
             },
+            "SentToEmailEnum": {
+                "enum": [
+                    "active",
+                    "expired",
+                    "revoked",
+                    "redeemed"
+                ],
+                "type": "string"
+            },
             "SeriesCollaborationInbox": {
                 "type": "object",
                 "properties": {
@@ -240444,16 +240480,6 @@
                     "schema",
                     "stage_form_id"
                 ]
-            },
-            "State31eEnum": {
-                "enum": [
-                    "active",
-                    "expired",
-                    "revoked",
-                    "redeemed"
-                ],
-                "type": "string",
-                "description": "* `active` - active\n* `expired` - expired\n* `revoked` - revoked\n* `redeemed` - redeemed"
             },
             "State5c1Enum": {
                 "enum": [

@@ -97,7 +97,7 @@ export function useUpdateOrganization(id: number, slug: string) {
 export function useCreateOrganizationInvitation(id: number) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (payload: { governance_actions: string[]; granted_actions: string[]; expires_in_days: number }) =>
+    mutationFn: (payload: { governance_actions: string[]; granted_actions: string[]; expires_in_days: number; invitee_email?: string }) =>
       staffRequest<CreatedInvitation>(`/admin/organizations/${id}/invitations/`, { method: "POST", body: JSON.stringify(payload) }),
     onSuccess: () => client.invalidateQueries({ queryKey: ["organizations", id, "invitations"] }),
   });

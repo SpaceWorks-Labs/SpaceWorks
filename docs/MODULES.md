@@ -624,8 +624,9 @@ up to 30 days or archive it (off: every row shows again, nothing lost);
 accepted as endpoints); **`notifications.escalation`** (off) re-pings the space's general chat
 rooms and opted-in browsers once when an urgent staff notice is unseen for 30 minutes; and,
 for every space, a chat room whose last five deliveries all failed is switched off with a
-staff notice. Staff-grant invitations for events and bookable spaces are also offered on the
-invitee's own chat channels when the address belongs to a verified account (never a room).
+staff notice. Staff-grant invitations for events and bookable spaces, and organisation
+invitations given an optional invitee email (#145), are also offered on the invitee's own chat
+channels when the address belongs to a verified account (never a room).
 Remaining delivery limits are recorded in the
 [delivery contract](notification-contract.md#integration-limits-in-this-tree). Security mail and
 mandatory-mail exemptions keep their own delivery rules.

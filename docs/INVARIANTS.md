@@ -3654,6 +3654,10 @@ Load-bearing details that carried over unchanged:
   Telegram stays accept-and-ignore inbound. A room never receives an invitation link: the
   invite helper (`integrations/invite_chat`) writes a personal envelope for a verified account
   only, with the email channel pre-marked skipped (the invite email was sent directly).
+  Organisation invitations (#145) may name an invitee email: only its HMAC digest is stored
+  (`invitee_email_digest`), the address is used once after commit for the platform email
+  and the chat copy (in the organisation's owner space, else its first linked space), and
+  `organization.invitation_delivered` audits only whether each was sent.
 - **Removal notices wait out the undo.** A staff removal emits a deferred owner envelope at
   `cancelled_at + RESTORE_WINDOW`; its source check compares `cancelled_at`, so an undone
   removal never sends the removal notice (the existing "restored" notice still goes).

@@ -11,6 +11,7 @@ EDGES = {
     ("event.broadcast_held", "preview_id"): _S,
     ("mentor.help_alert_routed", "destination_id"): _S,
     ("organization.email_sender_updated", "organization_id"): _S,
+    ("organization.invitation_delivered", "organization_id"): _S,
     ("notification.inbox_snoozed", "row_id"): _S,
     ("notification.inbox_archived", "row_id"): _S,
     ("notification.inbox_restored", "row_id"): _S,

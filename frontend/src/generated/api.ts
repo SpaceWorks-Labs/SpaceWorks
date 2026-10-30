@@ -11856,13 +11856,15 @@ export type OrganizationInvitation = {
   "created_by_id": number | null;
   "redeemed_by_id": number | null;
   "created_at": string;
-  "state": State31eEnum;
+  "state": string;
+  "sent_to_email": SentToEmailEnum;
 };
 
 export type OrganizationInvitationCreate = {
   "governance_actions"?: Array<string>;
   "granted_actions"?: Array<string>;
   "expires_in_days"?: number;
+  "invitee_email"?: string;
 };
 
 export type OrganizationInvitationCreated = {
@@ -11876,7 +11878,8 @@ export type OrganizationInvitationCreated = {
   "created_by_id": number | null;
   "redeemed_by_id": number | null;
   "created_at": string;
-  "state": State31eEnum;
+  "state": string;
+  "sent_to_email": SentToEmailEnum;
   "token": string;
   "redeem_path": string;
 };
@@ -18884,6 +18887,8 @@ export type SegmentChoice = {
 
 export type SegmentSourceEnum = "billed" | "estimated" | "not_applicable";
 
+export type SentToEmailEnum = "active" | "expired" | "revoked" | "redeemed";
+
 export type SeriesCollaborationInbox = {
   "id": number;
   "series_id": number;
@@ -20021,8 +20026,6 @@ export type StageVirtualContext = {
   "event_date_revision": number;
   "response_id": number | null;
 };
-
-export type State31eEnum = "active" | "expired" | "revoked" | "redeemed";
 
 export type State5c1Enum = "open" | "settled" | "cancelled";
 

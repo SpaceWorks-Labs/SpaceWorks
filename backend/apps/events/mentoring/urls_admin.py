@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views_help as h, views_operations as o
+from .views_chat_alerts import MentorAlertRoutesView
 
 B = "events/<int:pk>/"
 N = "events-programme-admin-"
@@ -25,6 +26,7 @@ urlpatterns = [
     path(B + "mentor-rounds/<int:round_id>/teams/<int:team_id>/submit/", o.RoundSubmitView.as_view(), name=N + "mentor-rounds-teams-submit"),
     path(B + "mentor-rounds/<int:round_id>/teams/<int:team_id>/release/", o.RoundReleaseView.as_view(), name=N + "mentor-rounds-teams-release"),
     path(B + "mentor-analytics/", o.AnalyticsView.as_view(), name=N + "mentor-analytics"),
+    path(B + "mentor-alert-routes/", MentorAlertRoutesView.as_view(), name=N + "mentor-alert-routes"),
     path(B + "teams-import/preview/", o.ImportPreviewView.as_view(), name=N + "teams-import-preview"),
     path(B + "teams-import/commit/", o.ImportCommitView.as_view(), name=N + "teams-import-commit"),
 ]

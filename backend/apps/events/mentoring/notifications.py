@@ -71,11 +71,15 @@ def deliver_one(intent_id):
         else:
             recipient_ids = adapter.organizer_ids(event_id=event.pk) if row.kind == "attention" else recipients(request, event)
         if recipient_ids:
-            adapter.deliver_help(intent_id=row.pk, recipient_ids=recipient_ids, payload={
+            payload = {
                 "event_id": event.pk, "team_alias": adapter.teams.alias(event_id=event.pk, team_id=request.team_id),
                 "category": request.type.key, "priority": request.priority,
-                "navigation_path": f"/staff/events/{event.pk}/mentor-desk"},
-                idempotency_key=f"event-help:{row.pk}:{row.generation}")
+                "navigation_path": f"/staff/events/{event.pk}/mentor-desk"}
+            adapter.deliver_help(intent_id=row.pk, recipient_ids=recipient_ids, payload=payload,
+                                 idempotency_key=f"event-help:{row.pk}:{row.generation}")
+            # G9: the event's chosen team rooms, only while mentors are on shift (fail-safe).
+            from .chat_alerts import post_help_alert
+            post_help_alert(row, event, payload, recipient_ids)
     except Exception:
         logger.warning("event_mentor_notice_retry", extra={"intent_id": row.pk, "attempt": row.attempts})
         success = False

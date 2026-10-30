@@ -8,7 +8,8 @@ from apps.notifications.preferences import PERSONAL_CHANNELS
 class InboxSerializer(serializers.ModelSerializer):
     class Meta:
         model = NotificationInboxRow
-        fields = ("id", "feature", "event", "title", "summary", "link", "read_at", "created_at")
+        fields = ("id", "feature", "event", "title", "summary", "link", "read_at", "snoozed_until", "archived_at",
+                  "created_at")
         read_only_fields = fields
 
 

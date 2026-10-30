@@ -10,6 +10,8 @@ from apps.notifications.views import (
 app_name = "notifications"
 
 from .views_inbox import InboxListView, InboxReadAllView, InboxReadView, InboxUnreadView
+from .views_inbox_snooze import InboxArchiveView, InboxRestoreView, InboxSnoozeView
+from .views_browser_alerts import BrowserAlertKeyView, BrowserAlertSubscriptionView
 from .views_preferences import MemberPreferenceView, OneClickUnsubscribeView
 
 from .views_broadcasts import BroadcastCreateView, AnnouncementFeedView
@@ -21,6 +23,11 @@ urlpatterns = [
     path("inbox/<int:makerspace_id>/unread-count", InboxUnreadView.as_view(), name="inbox-count"),
     path("inbox/<int:makerspace_id>/read-all", InboxReadAllView.as_view(), name="inbox-read-all"),
     path("inbox/<int:makerspace_id>/<int:pk>/read", InboxReadView.as_view(), name="inbox-read"),
+    path("inbox/<int:makerspace_id>/<int:pk>/snooze", InboxSnoozeView.as_view(), name="inbox-snooze"),
+    path("inbox/<int:makerspace_id>/<int:pk>/archive", InboxArchiveView.as_view(), name="inbox-archive"),
+    path("inbox/<int:makerspace_id>/<int:pk>/restore", InboxRestoreView.as_view(), name="inbox-restore"),
+    path("browser-alerts/key", BrowserAlertKeyView.as_view(), name="browser-alert-key"),
+    path("browser-alerts/<int:makerspace_id>", BrowserAlertSubscriptionView.as_view(), name="browser-alert-subscriptions"),
     path("preferences/<int:makerspace_id>", MemberPreferenceView.as_view(), name="member-preferences"),
     path("unsubscribe/<str:token>", OneClickUnsubscribeView.as_view(), name="one-click-unsubscribe"),
     path(

@@ -14,7 +14,9 @@ from django.utils import timezone
 
 from .models import BackupArchive, DeploymentRecoveryState, MakerspaceRestoreOperation as Op
 from .space_restore_plan import SpaceRestoreError
-from .space_restore_services import fail, record, transition
+from apps.audit import services as audit
+
+from .space_restore_services import fail, transition
 
 logger = logging.getLogger(__name__)
 
@@ -36,10 +38,11 @@ def run_preview(op_id):
                     preview_fingerprint=fingerprint, preview_ready_at=timezone.now(),
                     progress={"step": "preview_ready", "percent": 20})
     if op is not None:
-        record(op.requested_by, op, "backup.space_restore_preview_ready",
-               removed_rows=preview["totals"]["removed_rows"], added_rows=preview["totals"]["added_rows"],
-               blocking_count=preview["blocking_count"],
-               money_after_restore_point=len(preview["money_after_restore_point"]))
+        audit.record(op.requested_by, "backup.space_restore_preview_ready", makerspace=op.makerspace, target=op,
+                     meta={"restore_id": str(op.pk), "removed_rows": preview["totals"]["removed_rows"],
+                           "added_rows": preview["totals"]["added_rows"],
+                           "blocking_count": preview["blocking_count"],
+                           "money_after_restore_point": len(preview["money_after_restore_point"])})
     return op
 
 
@@ -58,11 +61,14 @@ def run_apply(op_id):
     done = transition(op_id, (Op.Stage.APPLYING,), Op.Stage.COMPLETED, report=report,
                       finished_at=timezone.now(), progress={"step": "completed", "percent": 100})
     if done is not None:
-        record(done.confirmed_by, done, "backup.space_restore_completed", archive_id=str(done.archive_id),
-               safety_archive_id=str(done.safety_archive_id), removed_rows=sum(report["removed"].values()),
-               restored_rows=sum(report["restored"].values()),
-               money_after_restore_point=len(report["money_after_restore_point"]),
-               objects_restored=report.get("objects_restored", 0))
+        audit.record(done.confirmed_by, "backup.space_restore_completed", makerspace=done.makerspace,
+                     target=done, meta={
+                         "restore_id": str(done.pk), "archive_id": str(done.archive_id),
+                         "safety_archive_id": str(done.safety_archive_id),
+                         "removed_rows": sum(report["removed"].values()),
+                         "restored_rows": sum(report["restored"].values()),
+                         "money_after_restore_point": len(report["money_after_restore_point"]),
+                         "objects_restored": report.get("objects_restored", 0)})
         from .space_restore_notifications import notify_outcome
         notify_outcome(done)
     return done

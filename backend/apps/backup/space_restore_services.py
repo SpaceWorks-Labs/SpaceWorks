@@ -24,11 +24,6 @@ def _require_superadmin(actor):
         raise PermissionDenied("Only the platform superadmin restores a makerspace.")
 
 
-def record(actor, op, action, **meta):
-    audit.record(actor, action, makerspace=op.makerspace, target=op,
-                 meta={"restore_id": str(op.pk), **meta})
-
-
 def request_restore(actor, makerspace, archive):
     _require_superadmin(actor)
     try:
@@ -40,7 +35,8 @@ def request_restore(actor, makerspace, archive):
         with transaction.atomic():
             op = Op.objects.create(makerspace=makerspace, archive=archive, requested_by=actor,
                                    snapshot_at=archive.completed_at)
-            record(actor, op, "backup.space_restore_requested", archive_id=str(archive.pk), source=op.source)
+            audit.record(actor, "backup.space_restore_requested", makerspace=makerspace, target=op,
+                         meta={"restore_id": str(op.pk), "archive_id": str(archive.pk), "source": op.source})
     except IntegrityError:
         raise ValidationError({"detail": "This makerspace already has a restore in progress.",
                                "code": "restore_in_progress"}) from None
@@ -73,7 +69,8 @@ def confirm_restore(actor, op, typed_slug):
                        progress={"step": "queued", "percent": 0})
     if moved is None:
         raise ValidationError({"detail": "This restore is not waiting for confirmation.", "code": "stage_conflict"})
-    record(actor, moved, "backup.space_restore_confirmed", archive_id=str(moved.archive_id))
+    audit.record(actor, "backup.space_restore_confirmed", makerspace=moved.makerspace, target=moved,
+                 meta={"restore_id": str(moved.pk), "archive_id": str(moved.archive_id)})
     from .tasks_space_restore import dispatch_apply
     dispatch_apply(moved)
     return moved
@@ -86,7 +83,8 @@ def abort_restore(actor, op):
     if moved is None:
         raise ValidationError({"detail": "Only a restore that has not started applying can be cancelled.",
                                "code": "stage_conflict"})
-    record(actor, moved, "backup.space_restore_aborted", stage=previous)
+    audit.record(actor, "backup.space_restore_aborted", makerspace=moved.makerspace, target=moved,
+                 meta={"restore_id": str(moved.pk), "stage": previous})
     return moved
 
 
@@ -96,7 +94,8 @@ def fail(op_id, stage_from, error, actor=None):
     moved = transition(op_id, stage_from, Op.Stage.FAILED, error_code=code, error_detail=detail,
                        finished_at=timezone.now())
     if moved is not None:
-        record(actor, moved, "backup.space_restore_failed", stage=stage_from[0], error_code=code)
+        audit.record(actor, "backup.space_restore_failed", makerspace=moved.makerspace, target=moved,
+                     meta={"restore_id": str(moved.pk), "stage": stage_from[0], "error_code": code})
         from .space_restore_notifications import notify_outcome
         notify_outcome(moved)
     return moved

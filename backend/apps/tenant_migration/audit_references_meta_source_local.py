@@ -98,6 +98,17 @@ SOURCE_LOCAL_AUDIT_EDGES = frozenset(
         ("backup.offsite_copy_pruned", "destination_id"),
         ("backup.offsite_copy_verified", "archive_id"),
         ("backup.offsite_copy_verified", "destination_id"),
+        # Per-space restore journals and their restore points are deployment-operational.
+        ("backup.space_restore_requested", "restore_id"),
+        ("backup.space_restore_requested", "archive_id"),
+        ("backup.space_restore_preview_ready", "restore_id"),
+        ("backup.space_restore_confirmed", "restore_id"),
+        ("backup.space_restore_confirmed", "archive_id"),
+        ("backup.space_restore_completed", "restore_id"),
+        ("backup.space_restore_completed", "archive_id"),
+        ("backup.space_restore_completed", "safety_archive_id"),
+        ("backup.space_restore_failed", "restore_id"),
+        ("backup.space_restore_aborted", "restore_id"),
         # Managed-cloud coordination, staging, mail budget and bucket receipts are
         # deployment-local rows that never travel in a tenant dump.
         ("cloud.delivery_cancelled", "delivery_id"),

@@ -181,6 +181,14 @@ always on, every archive is encrypted to the platform key, and the superadmin ba
 - **Data** — dropping the key deleted nothing a purge would have; recipient and custody tables were
   dropped by `backup/0030`. **Archives are outside the purge guarantee**: a copy someone already
   downloaded, a deployment archive and an offsite copy are not deleted by any purge.
+- **Per-space backup and restore (P1b B2, not a module or capability)** — every live space gets a
+  nightly one-space archive off the platform "automatic backups" switch, plus the superadmin's "Back up
+  now"; the superadmin restores ONE space from its own restore points (preview, confirm with re-auth and
+  the space's slug, live progress; a safety backup first). It is a platform duty with no per-space
+  switch: a space cannot opt out of being backed up, and it never needs a module to be restored. The
+  space's managers are told by email and a console notice when a restore of their space completes or
+  fails, and every step is in their audit log. A restore keeps the live audit history, money records and
+  evidence photos; see **Per-space backup and restore** in `docs/INVARIANTS.md`.
 
 ## Connected devices
 

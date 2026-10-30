@@ -27,13 +27,26 @@ Update it with code moves; the repository tree remains authoritative.
   PostgreSQL role boundary. `cloud_environment.py` captures host-rendered Cloud Compose interpolation into
   durable static configuration without consulting later ambient shells; only the root-only
   `scripts/init-cloud-environment.py` renderer invokes Compose.
+  **Per-space backup and restore (P1b B2):** `space_backup_schedule.py` (nightly one-space archives and
+  the one schedule view); `space_restore_plan.py` (what a restore replaces/keeps, the archive reader,
+  raw fixture rows), `space_restore_graph.py` (on_delete resolution of references into removed rows,
+  #113 blocking), `space_restore_users.py` (account re-attribution and re-scrub),
+  `space_restore_apply.py` (the one-transaction replacement), `space_restore_objects.py` (bytes under
+  original keys), `space_restore_preview.py` (read-only preview + live fingerprint),
+  `space_restore_staging.py` (open with the server key, #50b), `space_restore_services.py` (journal
+  transitions + audit), `space_restore_runner.py` (safety backup, gate, apply), `space_restore_notifications.py`
+  (console notice + manager email), `tasks_space_restore.py`, `models_space_restore.py`
+  (`MakerspaceRestoreOperation`), `views_space_restore.py` + `serializers_space_restore.py` (API, routed by
+  `admin_api/urls_space_restore.py`), `admin_space_backup.py` + `admin_deployment.py` (the `/control/`
+  console). The host marker (`host_marker.py`) is v3 without readiness lists.
 
 - `backend/apps/tenant_migration/` — per-makerspace migration, managed → self-host (Phase 5B), in
   `SEPARABLE_APPS`. `source_gate.py` + `gate_locks.py`/`gate_runtime.py`/`gate_policy.py`/`middleware.py`/
-  `task_gate.py` (the write-drain lock protocol and its AST coverage guards in `source_gate_guards.py`);
+  `task_gate.py` (the write-drain lock protocol and its AST coverage guards in `source_gate_guards.py`, with
+the lifecycle/object-mutation half in `source_gate_object_guards.py`);
   `archive_envelope.py` + `object_export.py` (streamed into `age`); `admission.py` (the source-superadmin
-  closure approval); `materialization.py` + `raw_repository.py` + `row_planning.py`/`row_dispositions.py`
-  (one-shot insertion); `services_import_job.py` re-exports `services_import_run.py`
+  closure approval); `materialization.py` (+ `materialization_rows.py`) + `raw_repository.py` + `row_planning.py`
+  (+ `row_values.py`, `row_references.py`)/`row_dispositions.py` (one-shot insertion); `services_import_job.py` re-exports `services_import_run.py`
   (requester checks and attempt-fenced execution) with `import_run_lock.py` holding the dedicated
   advisory-lock connection; `target_projection.py` (barrel over `target_projection_{types,fields,rows,references}.py`)
   + `unique_values.py` (barrel: the rules dict is

@@ -18,7 +18,7 @@ Continuation of [SOURCE-MAP.md](SOURCE-MAP.md).
   audited setup/command changes and `login_methods_validation.py` prevents account lockout.
   `management/commands/set_login_methods.py` is the host recovery/configuration entry point.
   Superadmin PII windows: `models_pii_access.py` (`PlatformPiiAccessGrant`), `pii_access.py` (open/close/
-  lazy expiry, audited per space), `pii_presentation.py` (presentation-only masking, serializer mixin,
+  expiry, closed lazily on read and by the `expire_pii_access_windows_task` beat sweep, audited per space), `pii_presentation.py` (presentation-only masking, serializer mixin,
   `require_pii_access`), `admin_pii_masking.py` and `admin_pii_access.py` (`/control/` masking, grant list,
   per-person reveal), `views_pii_access.py`; `platform_authority.is_platform_superadmin` is the predicate.
   `security_route_catalog.py` classifies the security/PII routes (membership-only, platform-reachable).
@@ -29,7 +29,8 @@ Continuation of [SOURCE-MAP.md](SOURCE-MAP.md).
   the mask; `pii_seam.py` re-exports `pii_presentation`'s window so D's code asks one place.
   `makerspaces/admin_console_links.py` puts the space's staff-console links on its `/control/` page.
 - `backend/apps/makerspaces/` — `Makerspace` model (tenant root; unique `slug`; `frontend_domain`, module
-  flags, `resource_limit_overrides`, `archived_at`, `superadmin_access_enabled`), bootstrap views, dynamic
+  flags, `resource_limit_overrides`, `archived_at`; the superadmin access switch was dropped in
+  `makerspaces/0110`), bootstrap views, dynamic
   CORS, module guards, `module_registry.py` (canonical module registry — all module lists derive from
   it; the `ModuleDefinition` tuple itself lives in `module_registry_catalog.py`, the import-time checks in
   `module_registry_validation.py`, so add a module to the catalogue), `platform.py` (origin helpers), `limits.py` (fair-use quotas), `lifecycle.py` (archive/purge barrel

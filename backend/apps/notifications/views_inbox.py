@@ -51,7 +51,7 @@ class InboxListView(InboxBase):
         from .views_inbox_snooze import FEATURE, visible
         from apps.makerspaces.platform import feature_enabled
         if filters.validated_data["archived"] and feature_enabled(space, FEATURE):
-            rows = rows.filter(archived_at__isnull=False)
+            rows = rows.filter(archived_on__isnull=False)
         else:
             rows = visible(rows, space)
         if filters.validated_data["unread"]:

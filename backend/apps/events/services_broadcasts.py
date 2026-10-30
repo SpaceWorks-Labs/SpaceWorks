@@ -117,6 +117,8 @@ def cancel_locked(campaign, actor):
     campaign.status, campaign.completed_at = "cancelled", now
     campaign.version += 1
     campaign.save(update_fields=["status", "completed_at", "version", "updated_at"])
-    record(actor, "event.broadcast_cancelled_in_hold" if in_hold else "event.broadcast.cancelled",
-           makerspace=campaign.makerspace, target=campaign)
+    if in_hold:
+        record(actor, "event.broadcast_cancelled_in_hold", makerspace=campaign.makerspace, target=campaign)
+    else:
+        record(actor, "event.broadcast.cancelled", makerspace=campaign.makerspace, target=campaign)
     return campaign

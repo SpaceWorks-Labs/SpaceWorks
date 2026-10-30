@@ -8322,7 +8322,7 @@ export type Inbox = {
   "link": string;
   "read_at": string | null;
   "snoozed_until": string | null;
-  "archived_at": string | null;
+  "archived_on": string | null;
   "created_at": string;
 };
 

@@ -128,7 +128,7 @@ PUBLIC_CLAIM_ROUTES = {
     # Hosting a makerspace is platform-level and anonymous; a walk-in's claim session
     # has no business applying on anyone's behalf.
     **{(name, method): policy
-       for name in ("public-hosting-request-submit", "public-hosting-request-open",
+       for name in ("public-hosting-request-submit", "public-hosting-request-open", "public-hosting-request-resubmit",
                     "public-hosting-invitation-resolve", "public-hosting-invitation-submit")
        for method, policy in (
            ("POST", Refused("claim sessions cannot apply to host a makerspace")),

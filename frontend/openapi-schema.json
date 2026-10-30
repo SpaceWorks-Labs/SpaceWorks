@@ -191018,7 +191018,7 @@
                         "readOnly": true,
                         "nullable": true
                     },
-                    "archived_at": {
+                    "archived_on": {
                         "type": "string",
                         "format": "date-time",
                         "readOnly": true,
@@ -191031,7 +191031,7 @@
                     }
                 },
                 "required": [
-                    "archived_at",
+                    "archived_on",
                     "created_at",
                     "event",
                     "feature",

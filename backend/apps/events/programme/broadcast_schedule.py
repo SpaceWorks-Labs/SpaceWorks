@@ -61,9 +61,12 @@ def _confirm_locked(row, locked_actor, payload, *, available_at, hold):
     row.version += 1
     row.save(update_fields=["status", "available_at", "confirmed_preview", "queued_at", "undo_hold",
                             "version", "updated_at"])
-    record(locked_actor, "event.broadcast_held" if hold else "event.broadcast.scheduled",
-           makerspace=row.makerspace, target=row,
-           meta={"count": count, "preview_id": preview.pk, "version": row.version})
+    if hold:
+        record(locked_actor, "event.broadcast_held", makerspace=row.makerspace, target=row,
+               meta={"count": count, "preview_id": preview.pk, "version": row.version})
+    else:
+        record(locked_actor, "event.broadcast.scheduled", makerspace=row.makerspace, target=row,
+               meta={"count": count, "preview_id": preview.pk, "version": row.version})
     if hold:
         # Broker timers are only a hint: the minute sweep releases it if this is lost.
         transaction.on_commit(_release_hint, robust=True)

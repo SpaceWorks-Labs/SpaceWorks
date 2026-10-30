@@ -30,6 +30,33 @@ def disable_anonymous_feedback(apps, schema_editor):
                 enabled_features=[key for key in features if key != "events.anonymous_feedback"])
 
 
+def _guard(editable_draft):
+    draft = ("OLD.status='draft' AND OLD.confirmed_preview_id IS NULL AND NEW.status='draft' "
+             "AND NEW.confirmed_preview_id IS NULL AND NEW.event_id=OLD.event_id "
+             "AND NEW.makerspace_id=OLD.makerspace_id AND NEW.render_schema_version=2 "
+             "AND NOT (NEW.created_by_id IS NOT NULL AND NEW.created_by_id IS DISTINCT FROM OLD.created_by_id)")
+    skip = f"  IF {draft} THEN RETURN NEW; END IF;\n" if editable_draft else ""
+    return ("CREATE OR REPLACE FUNCTION events_programme_broadcast_guard() RETURNS trigger LANGUAGE plpgsql AS $$\n"
+            "BEGIN\n"
+            "  IF NEW.confirmed_preview_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM events_eventbroadcastpreview\n"
+            "    WHERE id=NEW.confirmed_preview_id AND campaign_id=NEW.id) THEN RAISE EXCEPTION 'broadcast preview campaign mismatch'; END IF;\n"
+            "  IF TG_OP='UPDATE' AND OLD.render_schema_version=2 THEN\n"
+            + skip +
+            "    IF (NEW.event_id,NEW.makerspace_id,NEW.subject,NEW.body,NEW.render_schema_version,NEW.design,NEW.statuses,NEW.attendance)\n"
+            "      IS DISTINCT FROM (OLD.event_id,OLD.makerspace_id,OLD.subject,OLD.body,OLD.render_schema_version,OLD.design,OLD.statuses,OLD.attendance)\n"
+            "      OR (NEW.created_by_id IS NOT NULL AND NEW.created_by_id IS DISTINCT FROM OLD.created_by_id)\n"
+            "      THEN RAISE EXCEPTION 'confirmed composer content/sender is immutable'; END IF;\n"
+            "  END IF;\n"
+            "  RETURN NEW;\n"
+            "END;\n$$;")
+
+
+# X41 draft autosave: an unconfirmed composer DRAFT may change its content in place; once a
+# preview is confirmed (scheduled, held, sent) the content and sender stay immutable.
+DRAFT_EDITABLE_GUARD = _guard(True)
+ORIGINAL_GUARD = _guard(False)
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -147,4 +174,5 @@ class Migration(migrations.Migration):
         ),
         migrations.RunPython(keep_existing_feedback_anonymous, migrations.RunPython.noop),
         migrations.RunPython(enable_anonymous_feedback, disable_anonymous_feedback),
+        migrations.RunSQL(DRAFT_EDITABLE_GUARD, ORIGINAL_GUARD),
     ]

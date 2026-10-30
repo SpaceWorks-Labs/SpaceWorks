@@ -286,4 +286,4 @@ FANOUT_GATE_PARTICIPANTS["apps.makerspaces.public_page_asset_cleanup.sweep"] = "
 from .source_gate_reimbursements import gate_tasks as gate_reimbursement_tasks
 gate_reimbursement_tasks(TASK_INTERNAL_PARTICIPANTS)
 from .gate_policy_r2_l2 import gate_tasks as gate_r2_l2_tasks
-gate_r2_l2_tasks(TASK_INTERNAL_PARTICIPANTS)
+gate_r2_l2_tasks(TASK_INTERNAL_PARTICIPANTS, FANOUT_GATE_PARTICIPANTS)

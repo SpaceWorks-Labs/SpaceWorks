@@ -41,7 +41,17 @@ def visible(rows, space, now=None):
         return rows
     from django.db.models import Q
     now = now or timezone.now()
-    return rows.filter(archived_at__isnull=True).filter(Q(snoozed_until__isnull=True) | Q(snoozed_until__lte=now))
+    return rows.filter(archived_on__isnull=True).filter(Q(snoozed_until__isnull=True) | Q(snoozed_until__lte=now))
+
+
+def _audit_change(user, space, row, action):
+    # Literal action names keep the audit presentation catalogue exact.
+    if action == "snoozed":
+        audit.record(user, "notification.inbox_snoozed", makerspace=space, target=space, meta={"row_id": row.pk})
+    elif action == "archived":
+        audit.record(user, "notification.inbox_archived", makerspace=space, target=space, meta={"row_id": row.pk})
+    else:
+        audit.record(user, "notification.inbox_restored", makerspace=space, target=space, meta={"row_id": row.pk})
 
 
 class _InboxRowAction(InboxBase):
@@ -56,8 +66,7 @@ class _InboxRowAction(InboxBase):
             for field, value in values.items():
                 setattr(row, field, value)
             row.save(update_fields=list(values))
-            audit.record(request.user, f"notification.inbox_{self.action}", makerspace=space, target=space,
-                         meta={"row_id": row.pk})
+            _audit_change(request.user, space, row, self.action)
         return Response(InboxSerializer(row).data)
 
 
@@ -77,7 +86,7 @@ class InboxArchiveView(_InboxRowAction):
 
     @extend_schema(tags=["Personal notifications"], request=None, responses={200: InboxSerializer, **WRITE_ERRORS})
     def post(self, request, makerspace_id, pk):
-        return self.change(request, makerspace_id, pk, archived_at=timezone.now())
+        return self.change(request, makerspace_id, pk, archived_on=timezone.now())
 
 
 class InboxRestoreView(_InboxRowAction):
@@ -86,4 +95,4 @@ class InboxRestoreView(_InboxRowAction):
     @extend_schema(tags=["Personal notifications"], request=None, responses={200: InboxSerializer, **WRITE_ERRORS},
                    description="Bring an archived or snoozed message back to the list now.")
     def post(self, request, makerspace_id, pk):
-        return self.change(request, makerspace_id, pk, archived_at=None, snoozed_until=None)
+        return self.change(request, makerspace_id, pk, archived_on=None, snoozed_until=None)

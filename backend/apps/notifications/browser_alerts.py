@@ -92,9 +92,14 @@ def deliver_browser_alert(row_id):
     if (row is None or not configured() or not module_enabled(row.makerspace, "notifications")
             or not feature_enabled(row.makerspace, FEATURE)):
         return 0
-    from apps.tenant_migration.gate_runtime import fanout_tenant_write
-    with fanout_tenant_write(row.makerspace_id, operation="browser_alert", counts={}) as allowed:
-        return _deliver(row) if allowed else 0
+    from apps.tenant_migration.gate_runtime import tenant_write
+    try:
+        with tenant_write(row.makerspace_id):
+            return _deliver(row)
+    except Exception:
+        # A frozen or migrating tenant: no browser alert; nothing else depends on it.
+        logger.info("browser_alert_skipped", extra={"row_id": row_id})
+        return 0
 
 
 def _deliver(row):

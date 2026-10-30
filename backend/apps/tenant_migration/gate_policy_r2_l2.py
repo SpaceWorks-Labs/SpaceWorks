@@ -19,10 +19,21 @@ PARTICIPANTS = {
         "A dead room is switched off under tenant_write for its own makerspace."
     ),
     "apps.notifications.browser_alerts.deliver_browser_alert": (
-        "Subscription bookkeeping is written inside the row's tenant skip-and-count source boundary."
+        "Subscription bookkeeping is written under tenant_write for the row's own makerspace; "
+        "a closed gate skips the alert."
     ),
 }
 
 
-def gate_tasks(participants):
+# The callables that open a per-tenant `fanout_tenant_write` skip-and-count boundary.
+FANOUT = {
+    "apps.events.approval_digest.send_approval_digests_task": "Per-space approval digest envelopes.",
+    "apps.events.submissions.integrity_jobs.sweep_integrity_checks_task": "Per-space GitHub flag checks.",
+    "apps.notifications.escalation.escalate_unseen_task": "Per-space escalation re-pings.",
+}
+
+
+def gate_tasks(participants, fanout=None):
     participants.update(PARTICIPANTS)
+    if fanout is not None:
+        fanout.update(FANOUT)

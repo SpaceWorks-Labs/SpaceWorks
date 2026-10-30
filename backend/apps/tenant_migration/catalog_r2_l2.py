@@ -6,7 +6,7 @@ the reason). New columns on travelling rows:
 * `EventBroadcast.undo_hold` -- a historical send mode; an in-flight hold never travels
   because the campaign projection already cancels unsent campaigns.
 * `EventFeedbackSurvey.anonymous` -- the form's promise to respondents; it travels.
-* `NotificationInboxRow.snoozed_until/archived_at` -- the whole row is dropped already.
+* `NotificationInboxRow.snoozed_until/archived_on` -- the whole row is dropped already.
 * `HostingRequest.changes_note/changes_requested_at` -- platform rows, dropped already.
 """
 
@@ -30,7 +30,7 @@ FIELD_NAMES = {
 EXTRA_FIELDS = {
     "events.EventBroadcast": frozenset({"undo_hold"}),
     "events.EventFeedbackSurvey": frozenset({"anonymous"}),
-    "notifications.NotificationInboxRow": frozenset({"snoozed_until", "archived_at"}),
+    "notifications.NotificationInboxRow": frozenset({"snoozed_until", "archived_on"}),
     "hosting_requests.HostingRequest": frozenset({"changes_note", "changes_requested_at"}),
 }
 
@@ -44,6 +44,6 @@ def authority_entries(authority, disposition):
               "Historical send mode; unsent campaigns are cancelled by the broadcast projection."),
         *same("events.EventFeedbackSurvey", "anonymous", disposition.PRESERVE,
               "The form's anonymity promise to respondents travels with the form."),
-        *same("notifications.NotificationInboxRow", "snoozed_until archived_at", disposition.DROP,
+        *same("notifications.NotificationInboxRow", "snoozed_until archived_on", disposition.DROP,
               "Personal inbox state is omitted from portable artifacts."),
     )

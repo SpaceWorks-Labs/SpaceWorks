@@ -1,9 +1,9 @@
 """Re-check a staff actor's authority under row locks, inside the write's transaction.
 
 A view authorizes with ordinary reads and a service then mutates. Without a second check
-under lock, a role edit, a removed membership, a revoked organization grant or link, a
-superadmin-access switch-off or an archive that commits in between still lets the write
-land with authority the actor no longer holds.
+under lock, a role edit, a removed membership, a revoked organization grant or link or
+an archive that commits in between still lets the write land with authority the actor no
+longer holds.
 
 The order is the one every membership and role writer already takes: the makerspace row
 first, then the actor's membership, its roles and the organization rows parent-first (the

@@ -74,7 +74,7 @@ AUTHORITY_ENTRIES = (
     ),
     *_same(
         "makerspaces.Makerspace",
-        "membership_policy referrals_enabled superadmin_access_enabled frontend_domain "
+        "membership_policy referrals_enabled frontend_domain "
         "frontend_domain_status domain_verification_token domain_verified_at "
         "frontend_domain_changed_at cors_allowed_origins enabled_modules enabled_features "
         "resource_limit_overrides hidden_from_central_directory storage_bytes_used "

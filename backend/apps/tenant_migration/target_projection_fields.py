@@ -75,9 +75,6 @@ TARGET_FIELD_PROJECTION = {
     ("makerspaces.Makerspace", "hidden_from_central_directory"): TargetField(
         False, reason="A hidden row without a domain violates ck_makerspace_hidden_requires_domain."
     ),
-    ("makerspaces.Makerspace", "superadmin_access_enabled"): TargetField(
-        True, reason="Source policy cannot remove the tenant from target superadmin authority."
-    ),
     ("makerspaces.Makerspace", "archived_at"): TargetField(
         None, reason="Source lifecycle state cannot make the new target tenant unreachable."
     ),

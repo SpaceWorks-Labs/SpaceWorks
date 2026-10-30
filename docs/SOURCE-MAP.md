@@ -651,6 +651,31 @@ identity normalization and production minimum-version comparison. `mobile_associ
   read-only report builder used by `views_mobile_readiness.py` and `admin_native_apps.py`;
   `forms_native_apps.py` validates registration edits. Operator setup: `docs/mobile-integration.md`.
 
+### Release 2 L2 (communications, analytics, programme closures)
+
+- `events/programme/broadcast_{designs,placeholders,tallies,draft,views_extra}.py` -- six brand
+  designs, the placeholder context, counts-only tallies, draft autosave, send/tallies/templates
+  routes; `integrations/broadcasts_templates.py` holds the 13 starter templates.
+- `events/approval_digest.py`, `events/notices_r2_l2.py` -- organiser digest; removal notice,
+  ticket re-send, join link in confirmations. `events/reminders.py::fresh_signup` (12 h skip).
+- `events/programme/analytics_{extras,org,views,serializers}.py` -- per-event extras and k>=10
+  organisation insights (read by `operations/platform_insights.py`).
+- `events/mentoring/chat_alerts.py`, `views_chat_alerts.py` -- room alerts and the room picker.
+- `events/submissions/integrity_{jobs,http}.py`, `views_integrity.py`, `storage_reconcile.py`,
+  `storage_cleanup.record_receipts` -- GitHub flag job, receipts and reconciliation.
+- `events/feedback_modes.py` -- certificate / anonymous / identified feedback.
+- `events/models_r2_l2.py` -- integrity checks, storage receipts, mentor alert routes.
+- `integrations/{org_sender,org_sender_views,invite_chat,destination_health}.py`,
+  `integrations/models_org_sender.py`.
+- `notifications/{views_inbox_snooze,browser_alerts,browser_alert_crypto,views_browser_alerts,
+  escalation,models_browser_alerts}.py`; `frontend/public/browser-alerts-sw.js`.
+- `hosting_requests/workflow.py::request_changes|resubmit`, `HostingRequestRevision`.
+- Frontend: `features/staff/eventProgramme/{BroadcastTemplateGallery,BroadcastDesignPicker,
+  BroadcastUndoBar,BroadcastTalliesRow,EventAnalyticsExtras}.tsx`, `broadcastAutosave.ts`,
+  `staff/hackathonJudging/IntegrityFlag.tsx`, `staff/mentorDesk/MentorAlertRooms.tsx`,
+  `hosting/HostingResubmitFlow.tsx`, `notifications/{InboxRowActions,BrowserAlertsToggle}.tsx`,
+  `staff/OrganizationEmailSender.tsx`.
+
 ## Domain and frontend map
 See [SOURCE-MAP-DOMAINS.md](SOURCE-MAP-DOMAINS.md) for hardware loans, payments,
 printing, events, the frontend directories and connected device monitoring.

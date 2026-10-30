@@ -313,6 +313,14 @@ add form's hidden `hosting_request` field is rendered and honoured only when `ad
   problems are 400; unknown/expired tokens 404). Approval only **marks** a request accepted and emails the
   applicant; nothing is provisioned. Rejection needs a 10–2000 character reason that is emailed and kept
   after redaction (the reject form warns not to include personal details).
+- **Changes requested and resubmit (R2 L2, X31).** Only the superadmin, from `/control/`
+  ("Request changes"), moves `submitted -> changes_requested` with a 10–2000 character note; the
+  access token is rotated and the new status link is emailed with the note. The applicant edits
+  the space fields and resubmits with that link (`public/hosting/requests/resubmit`, 404 while
+  `HOSTING_REQUEST_RESUBMIT_ENABLED` is false), which returns the row to `submitted`. Every step
+  appends a `HostingRequestRevision` (kind, note, changed field names) -- the review history the
+  applicant sees. An unanswered request for changes is dead after 90 days: personal details,
+  the open note and every history note are wiped (#49); the history rows stay.
 - **Authority, no new action.** A makerspace invitation needs `MANAGE_MAKERSPACE` in that (servable)
   makerspace; an organization invitation needs a member account holding `MANAGE_ORGANIZATION_MEMBERS`
   (`lock_governance_membership`). **"Join <organization>" is offered only when the inviter governs that
@@ -3616,6 +3624,42 @@ Load-bearing details that carried over unchanged:
   `default-src 'none'`, no forms, and every action opens the SPA in a new tab. A stored origin
   that no longer validates fails closed. (The older shared `/embed/<slug>/events/<token>/`
   route still frames released event websites to `website_embed_origins`.)
+
+### Communications, analytics and programme closures (release 2 L2)
+
+- **Broadcast hold.** "Send now" is a schedule at confirmation + 5 s with `undo_hold=true`
+  (`programme/broadcast_schedule.send_now`); a cancel before `available_at` is the undo,
+  audited `event.broadcast_cancelled_in_hold`. After the hold the ordinary rule applies:
+  cancel stops only unclaimed sends and provider-accepted mail is never recalled. The release
+  is the DB deadline (`resume_scheduled_broadcasts`); the broker hint is only a hint.
+- **Drafts change only as versioned composer commands** (`broadcast_draft.save_draft`):
+  live `manage_registrations`, idempotency key, `expected_version` CAS, version-2 DRAFT only.
+- **Tallies are counts.** `broadcast_tallies` counts each recipient once by best outcome and
+  never returns an identity; the email reservation marker is not an outcome.
+- **Anonymous feedback stays anonymous.** A survey with `anonymous=true` (only while
+  `certificate_enabled=false`, frozen after the first response) stores responses with no
+  registration, no account and no IP; its audit row has no actor and no target id. With
+  `events.anonymous_feedback` off such a form accepts nothing (`feedback_modes` -> 404); it
+  never falls back to identified answers. Analytics chart choice questions only.
+- **The integrity flag never disqualifies (#8).** `submissions/integrity_jobs` only writes
+  `SubmissionIntegrityCheck` and the informational `SubmissionIntegrityFlag`; it never touches
+  submission state, triage, eligibility or visibility. GitHub I/O is outside locks, pinned to
+  `api.github.com` with no redirects and a byte cap; any failure leaves no flag.
+- **Chat routing is outbound only.** Mentor help room alerts (`mentoring/chat_alerts`), the
+  escalation re-ping and invitation chat copies are plain text with no buttons and no names;
+  Telegram stays accept-and-ignore inbound. A room never receives an invitation link: the
+  invite helper (`integrations/invite_chat`) writes a personal envelope for a verified account
+  only, with the email channel pre-marked skipped (the invite email was sent directly).
+- **Removal notices wait out the undo.** A staff removal emits a deferred owner envelope at
+  `cancelled_at + RESTORE_WINDOW`; its source check compares `cancelled_at`, so an undone
+  removal sends nothing, and the matching "restored" notice is suppressed.
+- **Org sender changes display only.** `integrations/org_sender.apply` may change the From
+  display name and Reply-To of event email when `events.organization_sender` is on; the From
+  address, provider connection, email module gate and suppressions are the space's.
+- **Browser notifications cannot be an SSRF.** Only HTTPS push-service hosts on the allow-list
+  are stored or posted to; endpoint and auth secret are Fernet ciphertext; 404/410 retires.
+- **Storage receipts are permanent and FK-free** (key hash + counts, never a locator), written
+  only after absence of every version, marker and multipart upload is proven.
 
 ### Events programme integration contract (2026-10-18)
 

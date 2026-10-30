@@ -63,16 +63,19 @@ mark attendance. Lost badges require rotation; ordinary member-profile QR is a d
 credential. [Operator checks](operations.md#online-scanner-and-print-checks) must pass first.
 
 Readiness and event-day summaries hide counts the actor may not see. Save, event publish
-and website release remain distinct actions. Broadcasts require preview, current audience
-count and explicit confirmation, with send time at least five seconds ahead. Cancellation
-cannot retract messages a provider has accepted. Series guests retain per-occurrence
+and website release remain distinct actions. Broadcasts save as drafts while you type and
+require preview, current audience count and explicit confirmation. "Send now" waits five
+seconds with an Undo; a scheduled send must be at least five seconds ahead. After the hold,
+cancellation cannot retract messages a provider has accepted. Delivery tallies show how many
+people each send reached, never who. With `events.broadcast_templates` on, start from one of
+13 templates and pick the accent-band, photo-header or letter design. Series guests retain per-occurrence
 permissions. Use only brand accent presets; review unsaved changes before navigation.
 
 Before closing, check [media expiry](media.md#retention-and-removal), budgets, pending work
 and cleanup failures. Turning a feature off retains history and owned objects. Purge is
 destructive and is not a routine close-event step. The core payment ledger survives Events
-purge. Reimbursement and stage-triggered forms (owner decisions 34/35) remain pending in
-this checkpoint; current form-key selection is not that complete staged-forms workflow.
+purge. Travel reimbursement ([reimbursement](reimbursement.md)) and stage-triggered forms
+([staged forms](staged-forms.md)) are built (owner decisions 34/35).
 
 Routes: admin prefix `/api/v1/admin/events/{event_id}/`; `hackathon/`, `applications/`,
 `application-decisions/preview|stage|release|cancel/`, `programme/readiness|live|publishing/`,

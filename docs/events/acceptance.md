@@ -47,7 +47,7 @@ mounted, not that a production provider or UI consumer is installed.
 | 2 bulk + library | E `certificates/issuance.py`, `library_capture.py`; A `certificates/bulk/`, `certificates/batches/{batch_id}/`; tenant library routes | T `certificates/test_batches_library.py`, `test_library_artwork_copy.py`; owned seed installation authored; real storage/rendering proof pending |
 | 3 desk ID print | E `certificates/{badge_designs,print_workflow}.py`; A `badges/print-jobs/` | T `certificates/test_print_policy.py`; QuickPrint mounted; physical stock-size QR/resources/photo proof pending |
 | 4 forms v2/show-if | `backend/apps/forms_schema/`, E `programme/forms.py`; A `forms/{form_key}/` | T `forms/test_v2_contracts.py`, `test_v2_boundaries.py`; real consumer/P adapters installed; transactional/provider acceptance pending |
-| 5 broadcast v2 | E `programme/broadcast_*`; existing broadcasts + preview/test/schedule/cancel | T `communications/test_broadcast_schedule.py`, `test_broadcast_self_test.py`; provider/retry/browser proof pending |
+| 5 broadcast v2 | E `programme/broadcast_*`; existing broadcasts + preview/test/schedule/cancel; R2 L2 adds `send/` (5 s undo), `tallies/`, draft `PATCH`, `broadcast-templates/` | T `communications/test_broadcast_schedule.py`, `test_broadcast_self_test.py`; R2 L2 local `test_broadcast_hold.py`, `test_broadcast_templates.py`, `test_broadcast_tallies_and_draft.py`; provider/retry/browser proof pending |
 | 6 readiness | E `programme/readiness.py`; A `programme/readiness/` | T `operations/test_readiness_forms.py`; actual domain providers installed; Docker/current-authority proof pending |
 | 7 event-day mode | E `programme/live.py`; A `programme/live/` | T `operations/test_live_funnel.py`; UI mounted; live/current-authority proof pending |
 | 8 funnel | `backend/apps/operations/reports_events_programme.py`; existing analytics route and `event-programme` report registry | T `operations/test_live_funnel.py`; shared registry/typed union/provider authored; Docker/privacy acceptance pending |
@@ -63,3 +63,15 @@ Owner decisions 34 (reimbursement, superseding “not now”) and 35 (staged for
 required before integration acceptance; they belong to the separate approved R plan.
 AO19/AO20 and later cloud/governance checklist rows are not silently closed by AO1–AO18/AO23.
 The cloud/VPS work is separately owned; this branch supplies no fresh-VM or free-tier proof.
+
+## Release 2 L2 closures (communications, analytics, programme)
+
+Built on staging with local tests (`backend/tests/l2_local/`, kept out of the repository):
+the organiser approval digest; the removal notice after the undo window and the ticket
+re-send on a verified new email; the 12-hour fresh sign-up reminder skip; analytics extras
+(arrivals, check-in methods, choice charts, waitlist conversion, series turnout, short-link
+visits) and organisation insights with k >= 10 suppression; Mentor Desk chat-room alerts
+while mentors are on shift; the GitHub first-commit information flag (never a verdict);
+durable storage cleanup receipts with daily reconciliation; and per-form anonymous feedback.
+Browser and provider acceptance for these rows follows the same rule as above.
+

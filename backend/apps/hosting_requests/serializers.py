@@ -72,6 +72,16 @@ class HostingRequestStatusSerializer(serializers.ModelSerializer):
         return (row.status == HostingRequest.Status.CHANGES_REQUESTED
                 and getattr(settings, "HOSTING_REQUEST_RESUBMIT_ENABLED", True))
 
+    EDIT_FIELDS = ("location", "space_website_url", "description", "proposed_slug", "new_organization_name")
+
+    def to_representation(self, row):
+        # The editable details travel back only while the applicant is asked to change them.
+        data = super().to_representation(row)
+        if not data["editable"]:
+            for name in self.EDIT_FIELDS:
+                data.pop(name, None)
+        return data
+
 
 class HostingResubmitSerializer(serializers.Serializer):
     token = serializers.CharField(max_length=200, write_only=True)

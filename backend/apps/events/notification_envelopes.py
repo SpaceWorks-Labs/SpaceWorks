@@ -146,8 +146,6 @@ def owner_envelope(event, event_name, registration, intent):
         if not eligible_owner(space, registration.member_id):
             return None
         return removal_envelope(event, registration, space)
-    if event_name == "registration_restored" and staff_removal(registration):
-        return None  # an undone removal was never announced, so its undo is not either
     if not _owner_allowed(space, event_name) or not eligible_owner(space, registration.member_id):
         return None
     context = events_context(event, event_name, registration,

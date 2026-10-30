@@ -92,7 +92,8 @@ def reminder_eligible(envelope):
         status=EventRegistration.Status.REGISTERED).first()
     from .reminders import fresh_signup
     return bool(row and row.pk == envelope.context.get("registration_id")
-                and not fresh_signup(row, envelope.context["offset_seconds"], envelope.created_at)
+                and not fresh_signup(row, envelope.context["offset_seconds"],
+                                     getattr(envelope, "created_at", None) or timezone.now())
                 and _owner_space(row) == envelope.makerspace_id)
 
 

@@ -47,6 +47,7 @@ class BackupArchive(models.Model):
         ON_DEMAND = "on_demand", "Back up now"
         NIGHTLY = "nightly", "Nightly"
         SAFETY = "safety", "Before a restore"
+        EXTRACTED = "extracted", "From a whole-platform backup"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     scope = models.CharField(max_length=16, choices=Scope.choices)

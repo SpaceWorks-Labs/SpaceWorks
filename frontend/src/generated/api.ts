@@ -2753,7 +2753,7 @@ export type BackupArchiveScopeEnum = "deployment" | "makerspace";
 
 export type BackupArchiveStatusEnum = "pending" | "running" | "promoting" | "available" | "failed" | "expired";
 
-export type BackupArchiveTriggerEnum = "on_demand" | "nightly" | "safety";
+export type BackupArchiveTriggerEnum = "on_demand" | "nightly" | "safety" | "extracted";
 
 export type BackupDestination = {
   "id": number;

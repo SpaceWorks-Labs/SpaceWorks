@@ -109,6 +109,8 @@ SOURCE_LOCAL_AUDIT_EDGES = frozenset(
         ("backup.space_restore_completed", "safety_archive_id"),
         ("backup.space_restore_failed", "restore_id"),
         ("backup.space_restore_aborted", "restore_id"),
+        ("backup.space_restore_point_extracted", "archive_id"),
+        ("backup.space_restore_point_extracted", "source_archive_id"),
         # Managed-cloud coordination, staging, mail budget and bucket receipts are
         # deployment-local rows that never travel in a tenant dump.
         ("cloud.delivery_cancelled", "delivery_id"),

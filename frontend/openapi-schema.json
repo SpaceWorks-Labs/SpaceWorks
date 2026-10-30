@@ -165779,10 +165779,11 @@
                 "enum": [
                     "on_demand",
                     "nightly",
-                    "safety"
+                    "safety",
+                    "extracted"
                 ],
                 "type": "string",
-                "description": "* `on_demand` - Back up now\n* `nightly` - Nightly\n* `safety` - Before a restore"
+                "description": "* `on_demand` - Back up now\n* `nightly` - Nightly\n* `safety` - Before a restore\n* `extracted` - From a whole-platform backup"
             },
             "BackupDestination": {
                 "type": "object",

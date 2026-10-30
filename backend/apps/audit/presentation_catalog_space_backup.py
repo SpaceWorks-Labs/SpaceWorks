@@ -15,5 +15,7 @@ ENTRIES = (
       ("restore_id", "archive_id", "safety_archive_id", "removed_rows", "restored_rows", "money_after_restore_point",
        "objects_restored")),
     P("backup.space_restore_failed", "Space restore failed", ("restore_id", "stage", "error_code")),
+    P("backup.space_restore_point_extracted", "Space restore point extracted from a whole-platform backup",
+      ("archive_id", "source_archive_id", "size_bytes")),
     P("backup.space_restore_aborted", "Space restore cancelled", ("restore_id", "stage")),
 )

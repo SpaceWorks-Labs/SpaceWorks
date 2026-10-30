@@ -29,7 +29,7 @@ are never changed. Every step needs a recent identity check and is recorded in t
           <button type="submit">Restore&hellip;</button>
         </form>
         {% elif item.scope == "platform" %}
-          <small>Restore one space from a whole-platform backup with the host extraction command.</small>
+          <small>Restore via host command (see docs): <code>extract_space_restore_point</code> turns it into a restore point of this space.</small>
         {% else %}
           <small>Not restorable in the app (not encrypted to this server's restore key).</small>
         {% endif %}

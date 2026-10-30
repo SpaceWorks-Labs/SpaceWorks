@@ -10616,6 +10616,123 @@
                 }
             }
         },
+        "/api/v1/admin/events/{id}/analytics/extras/": {
+            "get": {
+                "operationId": "api_v1_admin_events_analytics_extras_retrieve",
+                "description": "Arrivals by 15-minute window, check-in method split, feedback choice counts (free text is never charted), waitlist conversion, series turnout and short-link visits (null while events.short_links is off). Counts only, no people.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Admin events"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EventAnalyticsExtras"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "description": "Invalid field values, disabled events module or disabled feature."
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/v1/admin/events/{id}/application-decisions/{batch_id}/": {
             "get": {
                 "operationId": "api_v1_admin_events_application_decisions_retrieve",
@@ -14004,6 +14121,126 @@
                 }
             }
         },
+        "/api/v1/admin/events/{id}/broadcast-templates/": {
+            "get": {
+                "operationId": "api_v1_admin_events_broadcast_templates_list",
+                "description": "Thirteen starter templates that prefill subject, body, audience and design. Requires live event manage_registrations authority, the broadcast gates and events.broadcast_templates (404 while it is off).",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Admin events"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/BroadcastTemplate"
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "description": "Invalid field values, disabled events module or disabled feature."
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/v1/admin/events/{id}/broadcasts/": {
             "get": {
                 "operationId": "api_v1_admin_events_broadcasts_retrieve",
@@ -14296,6 +14533,148 @@
                 "tags": [
                     "Admin events"
                 ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EventBroadcast"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "description": "Invalid field values, disabled events module or disabled feature."
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "api_v1_admin_events_broadcasts_partial_update",
+                "description": "Autosave a composer draft (X41): subject, message, calls to action, audience and design. Versioned (expected_version) and idempotent (operation_id); only a version-2 draft changes. A stale version answers 409 so a second tab cannot overwrite silently.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "campaign_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Admin events"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedBroadcastDraft"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedBroadcastDraft"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedBroadcastDraft"
+                            }
+                        }
+                    }
+                },
                 "security": [
                     {
                         "jwtAuth": []
@@ -14885,6 +15264,276 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/EventBroadcast"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "description": "Invalid field values, disabled events module or disabled feature."
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/events/{id}/broadcasts/{campaign_id}/send/": {
+            "post": {
+                "operationId": "api_v1_admin_events_broadcasts_send_create",
+                "description": "Confirm exactly the preview revision/count and send. The campaign is held for five seconds (available_at = now + 5 s, undo_hold = true); cancelling inside the hold is the undo. After the hold the ordinary rule applies: cancel stops unclaimed sends and provider-accepted mail cannot be recalled.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "campaign_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Admin events"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/BroadcastSend"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/BroadcastSend"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/BroadcastSend"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EventBroadcast"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "description": "Invalid field values, disabled events module or disabled feature."
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/events/{id}/broadcasts/{campaign_id}/tallies/": {
+            "get": {
+                "operationId": "api_v1_admin_events_broadcasts_tallies_retrieve",
+                "description": "Counts of recipients by best delivery outcome (delivered, waiting, failed, skipped) from the delivery ledger. Never lists recipients.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "campaign_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Admin events"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/BroadcastTallies"
                                 }
                             }
                         },
@@ -26109,6 +26758,296 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/events/{id}/mentor-alert-routes/": {
+            "get": {
+                "operationId": "api_v1_admin_events_mentor_alert_routes_retrieve",
+                "description": "Rooms that receive new help requests while mentors are on shift. Outbound text only: no buttons, no names.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Admin events"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MentorAlertRoutes"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "410": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "413": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "put": {
+                "operationId": "api_v1_admin_events_mentor_alert_routes_update",
+                "description": "Replace the chosen rooms (audited as mentor.help_alert_routes_changed).",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Admin events"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/MentorAlertRoutesWrite"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/MentorAlertRoutesWrite"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/MentorAlertRoutesWrite"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MentorAlertRoutes"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "410": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "413": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
                                 }
                             }
                         },
@@ -43426,6 +44365,150 @@
                 }
             }
         },
+        "/api/v1/admin/events/{id}/submissions/{submission_id}/integrity/": {
+            "get": {
+                "operationId": "api_v1_admin_events_submissions_integrity_retrieve_2",
+                "description": "Informational GitHub first-commit signal for judges and organisers. It never disqualifies, hides or scores a project.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "submission_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event submissions"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SubmissionIntegrity"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "410": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "413": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/v1/admin/events/{id}/submissions/{submission_id}/triage/": {
             "post": {
                 "operationId": "api_v1_admin_events_submissions_triage_create",
@@ -43481,6 +44564,142 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ProjectResponse"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "410": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "413": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/events/{id}/submissions/integrity/": {
+            "get": {
+                "operationId": "api_v1_admin_events_submissions_integrity_retrieve",
+                "description": "Snapshots of this event that carry an informational integrity flag (at most 500). Information only; nothing is hidden or disqualified.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event submissions"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/FlaggedSnapshotList"
                                 }
                             }
                         },
@@ -88718,6 +89937,169 @@
                 "responses": {
                     "204": {
                         "description": "No response body"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Authentication is required."
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Organization authority is required."
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Organization not found."
+                    },
+                    "400": {
+                        "description": "Invalid organization data."
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Organization state conflict."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/organizations/{id}/email-sender/": {
+            "get": {
+                "operationId": "api_v1_admin_organizations_email_sender_retrieve",
+                "description": "Requires manage_organization_profile in this organization, or the superadmin.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Organizations"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OrganizationEmailSender"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Authentication is required."
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Organization authority is required."
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Organization not found."
+                    }
+                }
+            },
+            "put": {
+                "operationId": "api_v1_admin_organizations_email_sender_update",
+                "description": "Set the display name and Reply-To used on event email when this organisation co-hosts. The From address and mail provider stay the hosting space's. Audited as organization.email_sender_updated.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Organizations"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/OrganizationEmailSender"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/OrganizationEmailSender"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/OrganizationEmailSender"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OrganizationEmailSender"
+                                }
+                            }
+                        },
+                        "description": ""
                     },
                     "401": {
                         "content": {
@@ -145652,10 +147034,202 @@
                 }
             }
         },
+        "/api/v1/notifications/browser-alerts/{makerspace_id}": {
+            "get": {
+                "operationId": "api_v1_notifications_browser_alerts_retrieve",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Personal notifications"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SubscriptionState"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    }
+                }
+            },
+            "post": {
+                "operationId": "api_v1_notifications_browser_alerts_create",
+                "description": "Opt this browser in. Only public push services are accepted as endpoints.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Personal notifications"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SubscriptionWrite"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SubscriptionWrite"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SubscriptionWrite"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SubscriptionState"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "api_v1_notifications_browser_alerts_destroy",
+                "description": "Opt this browser out (send the same endpoint).",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Personal notifications"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SubscriptionState"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    }
+                }
+            }
+        },
+        "/api/v1/notifications/browser-alerts/key": {
+            "get": {
+                "operationId": "api_v1_notifications_browser_alerts_key_retrieve",
+                "tags": [
+                    "Personal notifications"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/BrowserAlertKey"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    }
+                }
+            }
+        },
         "/api/v1/notifications/inbox/{makerspace_id}": {
             "get": {
                 "operationId": "api_v1_notifications_inbox_retrieve",
                 "parameters": [
+                    {
+                        "in": "query",
+                        "name": "archived",
+                        "schema": {
+                            "type": "boolean"
+                        },
+                        "description": "Archived messages only (notifications.inbox_snooze)."
+                    },
                     {
                         "in": "query",
                         "name": "feature",
@@ -145734,6 +147308,67 @@
                 }
             }
         },
+        "/api/v1/notifications/inbox/{makerspace_id}/{id}/archive": {
+            "post": {
+                "operationId": "api_v1_notifications_inbox_archive_create",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Personal notifications"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Inbox"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    },
+                    "423": {
+                        "description": "Makerspace writes are frozen for tenant migration."
+                    },
+                    "503": {
+                        "description": "A required dependency is unavailable."
+                    }
+                }
+            }
+        },
         "/api/v1/notifications/inbox/{makerspace_id}/{id}/read": {
             "post": {
                 "operationId": "api_v1_notifications_inbox_read_create",
@@ -145758,6 +147393,149 @@
                 "tags": [
                     "Personal notifications"
                 ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Inbox"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    },
+                    "423": {
+                        "description": "Makerspace writes are frozen for tenant migration."
+                    },
+                    "503": {
+                        "description": "A required dependency is unavailable."
+                    }
+                }
+            }
+        },
+        "/api/v1/notifications/inbox/{makerspace_id}/{id}/restore": {
+            "post": {
+                "operationId": "api_v1_notifications_inbox_restore_create",
+                "description": "Bring an archived or snoozed message back to the list now.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Personal notifications"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Inbox"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    },
+                    "423": {
+                        "description": "Makerspace writes are frozen for tenant migration."
+                    },
+                    "503": {
+                        "description": "A required dependency is unavailable."
+                    }
+                }
+            }
+        },
+        "/api/v1/notifications/inbox/{makerspace_id}/{id}/snooze": {
+            "post": {
+                "operationId": "api_v1_notifications_inbox_snooze_create",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Personal notifications"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/InboxSnooze"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/InboxSnooze"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/InboxSnooze"
+                            }
+                        }
+                    },
+                    "required": true
+                },
                 "security": [
                     {
                         "jwtAuth": []
@@ -155288,6 +157066,63 @@
                 }
             }
         },
+        "/api/v1/public/hosting/requests/resubmit": {
+            "post": {
+                "operationId": "api_v1_public_hosting_requests_resubmit_create",
+                "description": "Only while the request is in changes_requested, with the link from the changes email. Edits the space details, keeps the review history, and returns the request to review (X31). 404 when resubmission is switched off.",
+                "summary": "Resubmit a hosting request after changes were requested",
+                "tags": [
+                    "Hosting requests"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/HostingResubmit"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/HostingResubmit"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/HostingResubmit"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HostingRequestStatus"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "404": {
+                        "description": "Unknown, expired or no longer available link."
+                    },
+                    "409": {
+                        "description": "Conflicts with the current state."
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
+                    },
+                    "503": {
+                        "description": "A required dependency is unavailable."
+                    }
+                }
+            }
+        },
         "/api/v1/public/machine-service/3d-printer/requests/{public_token}/status": {
             "get": {
                 "operationId": "api_v1_public_machine_service_3d_printer_requests_status_retrieve",
@@ -159936,6 +161771,39 @@
                     "version"
                 ]
             },
+            "AlertRoom": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "label": {
+                        "type": "string"
+                    },
+                    "channel": {
+                        "$ref": "#/components/schemas/AlertRoomChannelEnum"
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "channel",
+                    "id",
+                    "is_active",
+                    "label"
+                ]
+            },
+            "AlertRoomChannelEnum": {
+                "enum": [
+                    "telegram",
+                    "slack",
+                    "discord",
+                    "mattermost"
+                ],
+                "type": "string",
+                "description": "* `telegram` - telegram\n* `slack` - slack\n* `discord` - discord\n* `mattermost` - mattermost"
+            },
             "AlignEnum": {
                 "enum": [
                     "left",
@@ -160380,6 +162248,63 @@
                 ],
                 "type": "string",
                 "description": "* `pending` - Pending\n* `not_configured` - Not configured\n* `externally_anchored` - Externally anchored\n* `invalid` - Invalid\n* `unavailable` - Unavailable"
+            },
+            "AnswerChart": {
+                "type": "object",
+                "properties": {
+                    "question_id": {
+                        "type": "string"
+                    },
+                    "label": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "$ref": "#/components/schemas/AnswerChartTypeEnum"
+                    },
+                    "answers": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AnswerCount"
+                        }
+                    },
+                    "total": {
+                        "type": "integer",
+                        "minimum": 0
+                    }
+                },
+                "required": [
+                    "answers",
+                    "label",
+                    "question_id",
+                    "total",
+                    "type"
+                ]
+            },
+            "AnswerChartTypeEnum": {
+                "enum": [
+                    "single_choice",
+                    "dropdown",
+                    "multi_choice",
+                    "yes_no"
+                ],
+                "type": "string",
+                "description": "* `single_choice` - single_choice\n* `dropdown` - dropdown\n* `multi_choice` - multi_choice\n* `yes_no` - yes_no"
+            },
+            "AnswerCount": {
+                "type": "object",
+                "properties": {
+                    "label": {
+                        "type": "string"
+                    },
+                    "count": {
+                        "type": "integer",
+                        "minimum": 0
+                    }
+                },
+                "required": [
+                    "count",
+                    "label"
+                ]
             },
             "AnswerReview": {
                 "type": "object",
@@ -161427,6 +163352,23 @@
                     "starts_at"
                 ]
             },
+            "ArrivalWindow": {
+                "type": "object",
+                "properties": {
+                    "window_start": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "count": {
+                        "type": "integer",
+                        "minimum": 0
+                    }
+                },
+                "required": [
+                    "count",
+                    "window_start"
+                ]
+            },
             "Asset": {
                 "type": "object",
                 "properties": {
@@ -162334,6 +164276,15 @@
                     "unsatisfied_team_ids",
                     "version"
                 ]
+            },
+            "Attendance2a9Enum": {
+                "enum": [
+                    "any",
+                    "attended",
+                    "not_attended"
+                ],
+                "type": "string",
+                "description": "* `any` - any\n* `attended` - attended\n* `not_attended` - not_attended"
             },
             "AttendanceAttestationCommand": {
                 "type": "object",
@@ -167759,6 +169710,46 @@
                 "type": "string",
                 "description": "* `event` - event\n* `ticket` - ticket"
             },
+            "BroadcastDraftContent": {
+                "type": "object",
+                "properties": {
+                    "subject": {
+                        "type": "string",
+                        "maxLength": 200
+                    },
+                    "body": {
+                        "type": "string",
+                        "maxLength": 10000
+                    },
+                    "statuses": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/StatusesDf6Enum"
+                        },
+                        "maxItems": 6,
+                        "minItems": 1
+                    },
+                    "attendance": {
+                        "$ref": "#/components/schemas/Attendance2a9Enum"
+                    },
+                    "design": {
+                        "$ref": "#/components/schemas/Design224Enum"
+                    },
+                    "ctas": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/BroadcastCta"
+                        }
+                    }
+                },
+                "required": [
+                    "attendance",
+                    "body",
+                    "design",
+                    "statuses",
+                    "subject"
+                ]
+            },
             "BroadcastInput": {
                 "type": "object",
                 "properties": {
@@ -167943,6 +169934,124 @@
                     "revision"
                 ]
             },
+            "BroadcastSend": {
+                "type": "object",
+                "properties": {
+                    "operation_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "expected_version": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "preview_id": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "revision": {
+                        "type": "string",
+                        "pattern": "^[a-f0-9]{64}$"
+                    },
+                    "recipient_count": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "confirm": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "confirm",
+                    "expected_version",
+                    "operation_id",
+                    "preview_id",
+                    "recipient_count",
+                    "revision"
+                ]
+            },
+            "BroadcastTallies": {
+                "type": "object",
+                "properties": {
+                    "campaign_id": {
+                        "type": "integer"
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "total": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "delivered": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "waiting": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "failed": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "skipped": {
+                        "type": "integer",
+                        "minimum": 0
+                    }
+                },
+                "required": [
+                    "campaign_id",
+                    "delivered",
+                    "failed",
+                    "skipped",
+                    "status",
+                    "total",
+                    "waiting"
+                ]
+            },
+            "BroadcastTemplate": {
+                "type": "object",
+                "properties": {
+                    "key": {
+                        "type": "string"
+                    },
+                    "label": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "subject": {
+                        "type": "string"
+                    },
+                    "body": {
+                        "type": "string"
+                    },
+                    "statuses": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/StatusesDf6Enum"
+                        }
+                    },
+                    "attendance": {
+                        "$ref": "#/components/schemas/Attendance2a9Enum"
+                    },
+                    "design": {
+                        "$ref": "#/components/schemas/Design224Enum"
+                    }
+                },
+                "required": [
+                    "attendance",
+                    "body",
+                    "description",
+                    "design",
+                    "key",
+                    "label",
+                    "statuses",
+                    "subject"
+                ]
+            },
             "BroadcastTest": {
                 "type": "object",
                 "properties": {
@@ -168008,6 +170117,22 @@
                 ],
                 "type": "string",
                 "description": "* `queued` - queued\n* `skipped` - skipped\n* `failed` - failed"
+            },
+            "BrowserAlertKey": {
+                "type": "object",
+                "properties": {
+                    "configured": {
+                        "type": "boolean"
+                    },
+                    "public_key": {
+                        "type": "string",
+                        "description": "VAPID applicationServerKey (base64url)."
+                    }
+                },
+                "required": [
+                    "configured",
+                    "public_key"
+                ]
             },
             "BudgetPreview": {
                 "type": "object",
@@ -169726,6 +171851,45 @@
                 ],
                 "type": "string",
                 "description": "* `telegram` - telegram\n* `slack` - slack\n* `mattermost` - mattermost\n* `discord` - discord\n* `whatsapp` - whatsapp"
+            },
+            "CheckStateEnum": {
+                "enum": [
+                    "not_checked",
+                    "pending",
+                    "clear",
+                    "flagged",
+                    "no_repository",
+                    "unavailable"
+                ],
+                "type": "string",
+                "description": "* `not_checked` - not_checked\n* `pending` - pending\n* `clear` - clear\n* `flagged` - flagged\n* `no_repository` - no_repository\n* `unavailable` - unavailable"
+            },
+            "CheckinMethod": {
+                "type": "object",
+                "properties": {
+                    "method": {
+                        "$ref": "#/components/schemas/CheckinMethodMethodEnum"
+                    },
+                    "count": {
+                        "type": "integer",
+                        "minimum": 0
+                    }
+                },
+                "required": [
+                    "count",
+                    "method"
+                ]
+            },
+            "CheckinMethodMethodEnum": {
+                "enum": [
+                    "online",
+                    "qr",
+                    "offline_sync",
+                    "venue_station",
+                    "legacy"
+                ],
+                "type": "string",
+                "description": "* `online` - online\n* `qr` - qr\n* `offline_sync` - offline_sync\n* `venue_station` - venue_station\n* `legacy` - legacy"
             },
             "CheckoutUrl": {
                 "type": "object",
@@ -174846,6 +177010,18 @@
                 "type": "string",
                 "description": "* `deployment` - deployment"
             },
+            "Design224Enum": {
+                "enum": [
+                    "classic",
+                    "bold",
+                    "minimal",
+                    "accent_band",
+                    "photo_header",
+                    "letter"
+                ],
+                "type": "string",
+                "description": "* `classic` - classic\n* `bold` - bold\n* `minimal` - minimal\n* `accent_band` - accent_band\n* `photo_header` - photo_header\n* `letter` - letter"
+            },
             "DestinationDispatch": {
                 "type": "object",
                 "properties": {
@@ -177465,6 +179641,65 @@
                     "updated_at"
                 ]
             },
+            "EventAnalyticsExtras": {
+                "type": "object",
+                "properties": {
+                    "event_id": {
+                        "type": "integer"
+                    },
+                    "timezone_name": {
+                        "type": "string"
+                    },
+                    "window_minutes": {
+                        "type": "integer"
+                    },
+                    "arrivals": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ArrivalWindow"
+                        }
+                    },
+                    "checkin_methods": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/CheckinMethod"
+                        }
+                    },
+                    "answers": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AnswerChart"
+                        }
+                    },
+                    "waitlist": {
+                        "$ref": "#/components/schemas/WaitlistConversion"
+                    },
+                    "series": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/SeriesTurnout"
+                        }
+                    },
+                    "short_link_visits": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/VisitDay"
+                        },
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "answers",
+                    "arrivals",
+                    "checkin_methods",
+                    "event_id",
+                    "series",
+                    "short_link_visits",
+                    "timezone_name",
+                    "waitlist",
+                    "window_minutes"
+                ]
+            },
             "EventAttendanceMark": {
                 "type": "object",
                 "properties": {
@@ -177722,6 +179957,10 @@
                         "format": "date-time",
                         "readOnly": true,
                         "nullable": true
+                    },
+                    "undo_hold": {
+                        "type": "boolean",
+                        "readOnly": true
                     }
                 },
                 "required": [
@@ -177739,6 +179978,7 @@
                     "status",
                     "statuses",
                     "subject",
+                    "undo_hold",
                     "version"
                 ]
             },
@@ -177762,10 +180002,13 @@
                 "enum": [
                     "classic",
                     "bold",
-                    "minimal"
+                    "minimal",
+                    "accent_band",
+                    "photo_header",
+                    "letter"
                 ],
                 "type": "string",
-                "description": "* `classic` - Classic\n* `bold` - Bold\n* `minimal` - Minimal"
+                "description": "* `classic` - Classic\n* `bold` - Bold\n* `minimal` - Minimal\n* `accent_band` - Accent Band\n* `photo_header` - Photo Header\n* `letter` - Letter"
             },
             "EventBroadcastInput": {
                 "type": "object",
@@ -177793,7 +180036,7 @@
                     "attendance": {
                         "allOf": [
                             {
-                                "$ref": "#/components/schemas/EventBroadcastInputAttendanceEnum"
+                                "$ref": "#/components/schemas/Attendance2a9Enum"
                             }
                         ],
                         "default": "any"
@@ -177809,7 +180052,7 @@
                     "design": {
                         "allOf": [
                             {
-                                "$ref": "#/components/schemas/EventBroadcastInputDesignEnum"
+                                "$ref": "#/components/schemas/Design224Enum"
                             }
                         ],
                         "default": "classic"
@@ -177825,24 +180068,6 @@
                     "body",
                     "subject"
                 ]
-            },
-            "EventBroadcastInputAttendanceEnum": {
-                "enum": [
-                    "any",
-                    "attended",
-                    "not_attended"
-                ],
-                "type": "string",
-                "description": "* `any` - any\n* `attended` - attended\n* `not_attended` - not_attended"
-            },
-            "EventBroadcastInputDesignEnum": {
-                "enum": [
-                    "classic",
-                    "bold",
-                    "minimal"
-                ],
-                "type": "string",
-                "description": "* `classic` - classic\n* `bold` - bold\n* `minimal` - minimal"
             },
             "EventBroadcastList": {
                 "type": "object",
@@ -182524,10 +184749,11 @@
             "FeedbackFormModeEnum": {
                 "enum": [
                     "anonymous",
-                    "certificate"
+                    "certificate",
+                    "identified"
                 ],
                 "type": "string",
-                "description": "* `anonymous` - anonymous\n* `certificate` - certificate"
+                "description": "* `anonymous` - anonymous\n* `certificate` - certificate\n* `identified` - identified"
             },
             "FeedbackResponse": {
                 "type": "object",
@@ -182657,6 +184883,15 @@
                         "type": "boolean",
                         "readOnly": true
                     },
+                    "anonymous": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "anonymous_available": {
+                        "type": "boolean",
+                        "readOnly": true,
+                        "description": "True while the space has events.anonymous_feedback on (the switch can be offered)."
+                    },
                     "answered_question_ids": {
                         "type": "array",
                         "items": {
@@ -182682,6 +184917,8 @@
                     }
                 },
                 "required": [
+                    "anonymous",
+                    "anonymous_available",
                     "answered_question_ids",
                     "certificate_enabled",
                     "closed_at",
@@ -182726,6 +184963,10 @@
                     "certificate_enabled": {
                         "type": "boolean",
                         "default": false
+                    },
+                    "anonymous": {
+                        "type": "boolean",
+                        "description": "Collect answers with no link to the person (certificates off and events.anonymous_feedback on). Omit to keep the current choice; a new form defaults to anonymous while certificates are off."
                     }
                 },
                 "required": [
@@ -183188,6 +185429,42 @@
                 "required": [
                     "email",
                     "role_slug"
+                ]
+            },
+            "FlaggedSnapshot": {
+                "type": "object",
+                "properties": {
+                    "snapshot_id": {
+                        "type": "integer"
+                    },
+                    "submission_id": {
+                        "type": "integer"
+                    },
+                    "rule_keys": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "required": [
+                    "rule_keys",
+                    "snapshot_id",
+                    "submission_id"
+                ]
+            },
+            "FlaggedSnapshotList": {
+                "type": "object",
+                "properties": {
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/FlaggedSnapshot"
+                        }
+                    }
+                },
+                "required": [
+                    "results"
                 ]
             },
             "FontEnum": {
@@ -187676,7 +189953,7 @@
                     "status": {
                         "allOf": [
                             {
-                                "$ref": "#/components/schemas/StatusAc9Enum"
+                                "$ref": "#/components/schemas/StatusB35Enum"
                             }
                         ],
                         "readOnly": true
@@ -187749,7 +190026,7 @@
                     "status": {
                         "allOf": [
                             {
-                                "$ref": "#/components/schemas/StatusAc9Enum"
+                                "$ref": "#/components/schemas/StatusB35Enum"
                             }
                         ],
                         "readOnly": true
@@ -187962,7 +190239,7 @@
                     "status": {
                         "allOf": [
                             {
-                                "$ref": "#/components/schemas/StatusAc9Enum"
+                                "$ref": "#/components/schemas/StatusB35Enum"
                             }
                         ],
                         "readOnly": true
@@ -187992,13 +190269,58 @@
                         "type": "string",
                         "nullable": true,
                         "readOnly": true
+                    },
+                    "changes_note": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "revisions": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/HostingRevision"
+                        },
+                        "readOnly": true
+                    },
+                    "editable": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "location": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "space_website_url": {
+                        "type": "string",
+                        "format": "uri",
+                        "readOnly": true
+                    },
+                    "description": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "proposed_slug": {
+                        "type": "string",
+                        "readOnly": true,
+                        "pattern": "^[-a-zA-Z0-9_]+$"
+                    },
+                    "new_organization_name": {
+                        "type": "string",
+                        "readOnly": true
                     }
                 },
                 "required": [
+                    "changes_note",
                     "created_at",
                     "decided_at",
+                    "description",
+                    "editable",
+                    "location",
+                    "new_organization_name",
+                    "proposed_slug",
                     "rejection_reason",
+                    "revisions",
                     "space_name",
+                    "space_website_url",
                     "status",
                     "verified_at"
                 ]
@@ -188082,6 +190404,104 @@
                     "location",
                     "space_name"
                 ]
+            },
+            "HostingResubmit": {
+                "type": "object",
+                "properties": {
+                    "token": {
+                        "type": "string",
+                        "writeOnly": true,
+                        "maxLength": 200
+                    },
+                    "space_name": {
+                        "type": "string",
+                        "maxLength": 200,
+                        "minLength": 2
+                    },
+                    "location": {
+                        "type": "string",
+                        "maxLength": 200,
+                        "minLength": 2
+                    },
+                    "space_website_url": {
+                        "oneOf": [
+                            {
+                                "type": "string",
+                                "format": "uri",
+                                "maxLength": 200
+                            },
+                            {
+                                "type": "string",
+                                "maxLength": 0
+                            }
+                        ]
+                    },
+                    "description": {
+                        "type": "string",
+                        "maxLength": 2000,
+                        "minLength": 20
+                    },
+                    "proposed_slug": {
+                        "oneOf": [
+                            {
+                                "type": "string",
+                                "maxLength": 50,
+                                "pattern": "^[-a-zA-Z0-9_]+$"
+                            },
+                            {
+                                "type": "string",
+                                "maxLength": 0
+                            }
+                        ]
+                    },
+                    "new_organization_name": {
+                        "type": "string",
+                        "maxLength": 200
+                    },
+                    "note": {
+                        "type": "string",
+                        "default": "",
+                        "maxLength": 2000
+                    }
+                },
+                "required": [
+                    "token"
+                ]
+            },
+            "HostingRevision": {
+                "type": "object",
+                "properties": {
+                    "kind": {
+                        "$ref": "#/components/schemas/HostingRevisionKindEnum"
+                    },
+                    "note": {
+                        "type": "string"
+                    },
+                    "changed_fields": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "changed_fields",
+                    "created_at",
+                    "kind",
+                    "note"
+                ]
+            },
+            "HostingRevisionKindEnum": {
+                "enum": [
+                    "changes_requested",
+                    "resubmitted"
+                ],
+                "type": "string",
+                "description": "* `changes_requested` - changes_requested\n* `resubmitted` - resubmitted"
             },
             "HostingToken": {
                 "type": "object",
@@ -188592,6 +191012,18 @@
                         "readOnly": true,
                         "nullable": true
                     },
+                    "snoozed_until": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "archived_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
                     "created_at": {
                         "type": "string",
                         "format": "date-time",
@@ -188599,12 +191031,14 @@
                     }
                 },
                 "required": [
+                    "archived_at",
                     "created_at",
                     "event",
                     "feature",
                     "id",
                     "link",
                     "read_at",
+                    "snoozed_until",
                     "summary",
                     "title"
                 ]
@@ -188637,6 +191071,19 @@
                     "next",
                     "previous",
                     "results"
+                ]
+            },
+            "InboxSnooze": {
+                "type": "object",
+                "properties": {
+                    "until": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Show the message again at this time (at most 30 days ahead)."
+                    }
+                },
+                "required": [
+                    "until"
                 ]
             },
             "InheritFieldsEnum": {
@@ -189174,6 +191621,37 @@
                         "type": "boolean"
                     }
                 }
+            },
+            "IntegrityFlag": {
+                "type": "object",
+                "properties": {
+                    "rule_key": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "severity": {
+                        "$ref": "#/components/schemas/IntegrityFlagSeverityEnum"
+                    },
+                    "checked_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "checked_at",
+                    "message",
+                    "rule_key",
+                    "severity"
+                ]
+            },
+            "IntegrityFlagSeverityEnum": {
+                "enum": [
+                    "informational"
+                ],
+                "type": "string",
+                "description": "* `informational` - informational"
             },
             "IntegritySourceEnum": {
                 "enum": [
@@ -200125,6 +202603,44 @@
                 "type": "string",
                 "description": "* `active` - Active\n* `expired` - Expired\n* `cancelled` - Cancelled"
             },
+            "MentorAlertRoutes": {
+                "type": "object",
+                "properties": {
+                    "rooms": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AlertRoom"
+                        },
+                        "description": "The space's chat rooms an organiser may choose."
+                    },
+                    "destination_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "required": [
+                    "destination_ids",
+                    "rooms"
+                ]
+            },
+            "MentorAlertRoutesWrite": {
+                "type": "object",
+                "properties": {
+                    "destination_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "maxItems": 10
+                    }
+                },
+                "required": [
+                    "destination_ids"
+                ]
+            },
             "MentorConflictsPage": {
                 "type": "object",
                 "properties": {
@@ -203043,6 +205559,40 @@
                     "results"
                 ]
             },
+            "OrganizationEmailSender": {
+                "type": "object",
+                "properties": {
+                    "sender_name": {
+                        "type": "string",
+                        "description": "Shown as '<name> via <space>' on event email from spaces that allow co-host senders.",
+                        "maxLength": 80
+                    },
+                    "reply_to": {
+                        "oneOf": [
+                            {
+                                "type": "string",
+                                "format": "email",
+                                "maxLength": 254
+                            },
+                            {
+                                "type": "string",
+                                "maxLength": 0
+                            }
+                        ]
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "reply_to",
+                    "sender_name",
+                    "updated_at"
+                ]
+            },
             "OrganizationEventCollection": {
                 "oneOf": [
                     {
@@ -203083,6 +205633,49 @@
                     "logo_url",
                     "name",
                     "slug"
+                ]
+            },
+            "OrganizationInsight": {
+                "type": "object",
+                "properties": {
+                    "organization_id": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "events": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "registrations": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "nullable": true
+                    },
+                    "attended": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "nullable": true
+                    },
+                    "attendance_percent": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
+                    },
+                    "suppressed": {
+                        "type": "boolean",
+                        "description": "True when a count is under 10 and is withheld."
+                    }
+                },
+                "required": [
+                    "attendance_percent",
+                    "attended",
+                    "events",
+                    "name",
+                    "organization_id",
+                    "registrations",
+                    "suppressed"
                 ]
             },
             "OrganizationInvitation": {
@@ -209408,6 +212001,22 @@
                         "type": "string",
                         "format": "date-time",
                         "readOnly": true
+                    }
+                }
+            },
+            "PatchedBroadcastDraft": {
+                "type": "object",
+                "properties": {
+                    "operation_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "expected_version": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "draft": {
+                        "$ref": "#/components/schemas/BroadcastDraftContent"
                     }
                 }
             },
@@ -217460,6 +220069,12 @@
                             "$ref": "#/components/schemas/Growth"
                         }
                     },
+                    "organizations": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/OrganizationInsight"
+                        }
+                    },
                     "staff_mfa": {
                         "$ref": "#/components/schemas/Mfa"
                     },
@@ -217472,6 +220087,7 @@
                 },
                 "required": [
                     "growth",
+                    "organizations",
                     "outbox",
                     "staff_mfa",
                     "window"
@@ -233600,6 +236216,36 @@
                     "results"
                 ]
             },
+            "SeriesTurnout": {
+                "type": "object",
+                "properties": {
+                    "event_id": {
+                        "type": "integer"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "starts_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "registered": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "attended": {
+                        "type": "integer",
+                        "minimum": 0
+                    }
+                },
+                "required": [
+                    "attended",
+                    "event_id",
+                    "registered",
+                    "starts_at",
+                    "title"
+                ]
+            },
             "ServiceAccept": {
                 "type": "object",
                 "properties": {
@@ -238052,17 +240698,18 @@
                 "type": "string",
                 "description": "* `pending` - Pending\n* `verified` - Verified\n* `failed` - Failed"
             },
-            "StatusAc9Enum": {
+            "StatusB35Enum": {
                 "enum": [
                     "invited",
                     "pending_verification",
                     "submitted",
+                    "changes_requested",
                     "accepted",
                     "rejected",
                     "withdrawn"
                 ],
                 "type": "string",
-                "description": "* `invited` - Invited\n* `pending_verification` - Awaiting email confirmation\n* `submitted` - Submitted\n* `accepted` - Accepted\n* `rejected` - Rejected\n* `withdrawn` - Withdrawn"
+                "description": "* `invited` - Invited\n* `pending_verification` - Awaiting email confirmation\n* `submitted` - Submitted\n* `changes_requested` - Changes requested\n* `accepted` - Accepted\n* `rejected` - Rejected\n* `withdrawn` - Withdrawn"
             },
             "StatusB9dEnum": {
                 "enum": [
@@ -238840,6 +241487,78 @@
                 ],
                 "type": "string",
                 "description": "* `machine_service_request` - Machine service request\n* `booking` - Booking\n* `event_registration` - Event registration\n* `makerspace_membership` - Makerspace membership\n* `membership_term` - Membership renewal\n* `membership_request` - Membership admission\n* `loan_deposit` - Loan deposit\n* `loan_late_fee` - Loan late fee"
+            },
+            "SubmissionIntegrity": {
+                "type": "object",
+                "properties": {
+                    "submission_id": {
+                        "type": "integer"
+                    },
+                    "snapshot_id": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "check_state": {
+                        "$ref": "#/components/schemas/CheckStateEnum"
+                    },
+                    "flags": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/IntegrityFlag"
+                        }
+                    }
+                },
+                "required": [
+                    "check_state",
+                    "flags",
+                    "snapshot_id",
+                    "submission_id"
+                ]
+            },
+            "SubscriptionKeys": {
+                "type": "object",
+                "properties": {
+                    "p256dh": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_-]{80,100}$"
+                    },
+                    "auth": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_-]{16,32}$"
+                    }
+                },
+                "required": [
+                    "auth",
+                    "p256dh"
+                ]
+            },
+            "SubscriptionState": {
+                "type": "object",
+                "properties": {
+                    "subscribed_browsers": {
+                        "type": "integer",
+                        "minimum": 0
+                    }
+                },
+                "required": [
+                    "subscribed_browsers"
+                ]
+            },
+            "SubscriptionWrite": {
+                "type": "object",
+                "properties": {
+                    "endpoint": {
+                        "type": "string",
+                        "format": "uri",
+                        "maxLength": 1024
+                    },
+                    "keys": {
+                        "$ref": "#/components/schemas/SubscriptionKeys"
+                    }
+                },
+                "required": [
+                    "endpoint"
+                ]
             },
             "Suppression": {
                 "type": "object",
@@ -242024,6 +244743,34 @@
                     "expires_at",
                     "voucher_id",
                     "voucher_name"
+                ]
+            },
+            "WaitlistConversion": {
+                "type": "object",
+                "properties": {
+                    "ever_waitlisted": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "promoted": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "still_waiting": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "conversion_percent": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "conversion_percent",
+                    "ever_waitlisted",
+                    "promoted",
+                    "still_waiting"
                 ]
             },
             "WaiverAcceptResponse": {

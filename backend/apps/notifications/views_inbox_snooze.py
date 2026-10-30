@@ -25,7 +25,7 @@ FEATURE = "notifications.inbox_snooze"
 MAX_SNOOZE = timedelta(days=30)
 
 
-class SnoozeSerializer(serializers.Serializer):
+class InboxSnoozeSerializer(serializers.Serializer):
     until = serializers.DateTimeField(help_text="Show the message again at this time (at most 30 days ahead).")
 
     def validate_until(self, value):
@@ -64,10 +64,10 @@ class _InboxRowAction(InboxBase):
 class InboxSnoozeView(_InboxRowAction):
     action = "snoozed"
 
-    @extend_schema(tags=["Personal notifications"], request=SnoozeSerializer,
+    @extend_schema(tags=["Personal notifications"], request=InboxSnoozeSerializer,
                    responses={200: InboxSerializer, **WRITE_ERRORS})
     def post(self, request, makerspace_id, pk):
-        payload = SnoozeSerializer(data=request.data)
+        payload = InboxSnoozeSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
         return self.change(request, makerspace_id, pk, snoozed_until=payload.validated_data["until"])
 

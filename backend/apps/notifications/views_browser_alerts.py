@@ -18,7 +18,7 @@ from .browser_alerts import FEATURE, allowed_endpoint, configured, endpoint_hash
 from .models_browser_alerts import BrowserAlertSubscription
 
 
-class KeySerializer(serializers.Serializer):
+class BrowserAlertKeySerializer(serializers.Serializer):
     configured = serializers.BooleanField()
     public_key = serializers.CharField(allow_blank=True, help_text="VAPID applicationServerKey (base64url).")
 
@@ -40,7 +40,7 @@ class SubscriptionStateSerializer(serializers.Serializer):
 class BrowserAlertKeyView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(tags=["Personal notifications"], responses={200: KeySerializer, **errors(401)})
+    @extend_schema(tags=["Personal notifications"], responses={200: BrowserAlertKeySerializer, **errors(401)})
     def get(self, request):
         return Response({"configured": configured(), "public_key": public_key()})
 

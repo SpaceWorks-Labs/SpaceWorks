@@ -44,6 +44,9 @@ class EventSeries(models.Model):
     cancellation_cutoff_hours = models.PositiveIntegerField(null=True, blank=True, validators=[MaxValueValidator(8760)])
     registration_cutoff_lead_minutes = models.PositiveIntegerField(null=True, blank=True)
     is_public = models.BooleanField(default=False)
+    # Series-level "who can find" default, copied to occurrences when they are generated.
+    listing = models.CharField(max_length=10, choices=(("listed", "Listed"), ("unlisted", "Unlisted")),
+                               default="listed")
     image_key = models.CharField(max_length=300, blank=True, default="")
 
     recurrence_timezone = models.CharField(max_length=64)

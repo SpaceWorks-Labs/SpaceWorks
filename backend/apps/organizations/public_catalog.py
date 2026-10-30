@@ -26,6 +26,7 @@ def public_events_for(organization, *, period="upcoming", now=None):
         return None
     from apps.events.models import Event
     from apps.events.organizer_models import EventOrganizer
+    from apps.events.website_visibility import listed_q
     from apps.makerspaces.editions import public_surface_available
     from apps.makerspaces.module_registry import module_available
     if (not organization.is_active or not organization.public_profile_enabled
@@ -34,8 +35,8 @@ def public_events_for(organization, *, period="upcoming", now=None):
     now = now or timezone.now()
     organized = EventOrganizer.objects.filter(event_id=OuterRef("pk"), organization=organization)
     rows = Event.objects.filter(
-        Exists(organized), makerspace__in=directory_spaces(),
-        makerspace__enabled_modules__contains=["events"], is_public=True,
+        Exists(organized), listed_q(), makerspace__in=directory_spaces(),
+        makerspace__enabled_modules__contains=["events"],
     ).select_related("makerspace__payment_settings").prefetch_related("organizers__organization")
     if period == "past":
         return rows.filter(status__in=("published", "completed"), ends_at__lt=now).order_by("-ends_at", "-id")

@@ -10,3 +10,9 @@ class ProgrammeTicketSerializer(MemberEventTicketSerializer):
     event = TicketEventSerializer(read_only=True)
     attended_at = serializers.DateTimeField(allow_null=True, read_only=True)
     credential_mode = serializers.ChoiceField(choices=("legacy", "v2", "inert"), read_only=True)
+    # L1 (G3, X1): released by `online_delivery` -- the join link to confirmed registrants
+    # of an online/hybrid event only, the venue map link for in-person and hybrid events.
+    delivery_mode = serializers.ChoiceField(choices=("in_person", "online", "hybrid"), allow_null=True,
+                                            read_only=True)
+    join_url = serializers.URLField(allow_null=True, read_only=True)
+    map_url = serializers.URLField(allow_null=True, read_only=True)

@@ -80,6 +80,7 @@ urlpatterns = [
     *free_tick_paths(settings.SPACEWORKS_DEPLOYMENT_PROFILE),
     path("mfa/reauth/", control_reauthentication, name="control-reauthentication"),
     path("", include("apps.makerspaces.website_urls")),
+    *separable("events", "", "apps.events.urls_embed"),  # release 2 L1: framable event card
     path("mfa/control/", control_mfa, name="control-mfa"),
     path(
         "api/v1/backups/download/<uuid:archive_id>/<str:token>",

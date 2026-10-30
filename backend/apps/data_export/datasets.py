@@ -216,6 +216,8 @@ _MODEL_KEYSETS = {
     "evidence.EvidenceObjectRetentionState": ("evidence_id",),
     "evidence.EvidenceRetentionPolicy": ("makerspace_id",),
 }
+from .classification_r2_l1 import DATASET_SPECS as R2_L1_DATASETS  # noqa: E402
+DATASET_SPECS.update(R2_L1_DATASETS)
 for _fidelity in Fidelity:
     for _label, (_path, _predicate) in DATASET_SPECS.items():
         _columns_for_dataset, _omissions = _columns(_fidelity, _label)

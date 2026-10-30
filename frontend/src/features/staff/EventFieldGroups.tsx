@@ -2,26 +2,29 @@ import { EventField } from "./EventField";
 import { CustomFormBuilder } from "../forms/CustomFormBuilder";
 import { AudienceOptions } from "./EventAudienceOptions";
 import type { EventFormValues } from "./EventFormFields";
+import { EventDeliveryFields, EventVisibilityFields } from "./eventPublishing/EventSurfaceFields";
 
 export type EventFieldGroupProps = {
   values: EventFormValues; setValues: (values: EventFormValues) => void; settings: boolean;
   /** Each flag is already resolved against `disabled` and the viewer's event staff grant. */
   details: boolean; schedule: boolean; price: boolean; approvalLocked: boolean; organizationAudienceEnabled: boolean;
+  onlineEnabled?: boolean;
 };
 
 const checkRow = "flex min-h-11 items-center gap-2 py-3 text-sm text-ink sm:col-span-2";
 
 /** What an event needs to exist: a name, a time, a place, a size and who may come. */
-export function EventEssentialFields({ values, setValues, settings, details, schedule, organizationAudienceEnabled }: EventFieldGroupProps) {
+export function EventEssentialFields({ values, setValues, settings, details, schedule, organizationAudienceEnabled, onlineEnabled }: EventFieldGroupProps) {
   const set = <K extends keyof EventFormValues>(key: K, value: EventFormValues[K]) => setValues({ ...values, [key]: value });
   return <>
     <EventField label="Title" settings={settings} wide><input className="desk-input w-full" value={values.title} onChange={(e) => set("title", e.target.value)} required disabled={details} maxLength={200} /></EventField>
     <EventField label="Starts" settings={settings}><input className="desk-input w-full min-w-0" type="datetime-local" value={values.starts_at} onChange={(e) => set("starts_at", e.target.value)} required disabled={schedule} /></EventField>
     <EventField label="Ends" settings={settings}><input className="desk-input w-full min-w-0" type="datetime-local" value={values.ends_at} onChange={(e) => set("ends_at", e.target.value)} required disabled={schedule} /></EventField>
     <EventField label="Location" settings={settings}><input className="desk-input w-full" value={values.location} onChange={(e) => set("location", e.target.value)} disabled={details} maxLength={255} /></EventField>
+    {onlineEnabled ? <EventDeliveryFields values={values} setValues={setValues} settings={settings} disabled={details} /> : null}
     <EventField label="Capacity" settings={settings} helper="Use 0 for Unlimited."><input className="desk-input w-full" type="number" min="0" value={values.capacity} onChange={(e) => set("capacity", Number(e.target.value))} disabled={details} /></EventField>
     <EventField label="Registration audience" settings={settings} wide helper="Who may register. Enable account registration, invitations or organization audiences in feature settings first."><select className="desk-input w-full" value={values.registration_audience ?? "members"} disabled={details} onChange={(e) => set("registration_audience", e.target.value as EventFormValues["registration_audience"])}><AudienceOptions value={values.registration_audience} organizationAudienceEnabled={organizationAudienceEnabled} /></select></EventField>
-    <label className={checkRow}><input type="checkbox" checked={values.is_public} onChange={(e) => set("is_public", e.target.checked)} disabled={details} />Show this event on the public Events page</label>
+    <EventVisibilityFields values={values} setValues={setValues} settings={settings} disabled={details} />
   </>;
 }
 

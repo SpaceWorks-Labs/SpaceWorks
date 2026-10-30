@@ -1,4 +1,5 @@
 import { WebsiteEmbedOrigins } from "./WebsiteEmbedOrigins";
+import { ClosedNoticeSettings } from "./ClosedNoticeSettings";
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { staffRequest } from "../../lib/api";
@@ -28,6 +29,7 @@ export function MakerspacePublicSiteSettings({ makerspace, loading }: { makerspa
       </select>
     </label>
     <p className="text-xs text-muted">Automatic and Inventory now show the combined makerspace page. If the selected family is disabled, the home uses an available family.</p>
+    {makerspace.enabled_features?.includes("public_site.closed_notice") ? <ClosedNoticeSettings makerspaceId={makerspace.id} /> : null}
     <details onToggle={(event) => setEmbedOpen(event.currentTarget.open)}><summary className="cursor-pointer font-semibold">Website embedding</summary>{embedOpen ? <WebsiteEmbedOrigins makerspaceId={makerspace.id} /> : null}</details>
     {update.error ? <p role="alert" className="text-sm text-danger">{update.error.message}</p> : null}
   </div>;

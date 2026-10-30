@@ -15,8 +15,8 @@ def event_cards(kind, owner, *, page=1):
     else:
         if not module_enabled(owner, "events"):
             return [], 0
-        from apps.events.website_visibility import public_events
-        rows = public_events(owner).select_related("makerspace").order_by("starts_at", "id")
+        from apps.events.website_visibility import listed_events
+        rows = listed_events(owner).select_related("makerspace").order_by("starts_at", "id")
     if rows is None:
         return [], 0
     count = rows.count()

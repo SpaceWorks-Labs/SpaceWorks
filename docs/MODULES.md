@@ -28,7 +28,7 @@ govern sign-in availability. Membership adds plans, vouching, renewals and the m
 | --- | --- | --- |
 | Inventory & lending | `public_inventory`, `request_workflow`, `staff_admin`, `scanner`, `evidence_uploads`, `qr_management` (core); `guest_handover`, `asset_units`, `containers`, `bulk_import`, `stock_transfers`, `qr_print_batches`, `stocktake`, `devices` | `loans.enabled`, `loans.limits`, `loans.renewals`, `loans.kit_checklist`, `inventory.notify_when_back`, `inventory.tobuy`, `inventory.warranty`, `inventory.self_checkout`, `inventory.contact_self_checkout`, `inventory.kiosk`, `stocktake.discipline`, `packs.import`, `charges.loans`; `payments.loans` with Online payments |
 | Machines | `machines`, `machine_service`, `printing` | `machines.maintenance`, `machines.tobuy`, `machines.warranty`, `machines.certifications`, `machines.certification_reminders`, `machines.public_detail`, `machines.material_catalogue`, `machines.structured_intake`, `maintenance.reminders`, `maintenance.meters`, `maintenance.calendar_feed`, `charges.machines`, `notifications.delegated_recipients`; `payments.machines` with Online payments |
-| Events | `events` | `events.api_read`, `events.certificate_designer`, `events.website`, `events.embed`; `events.broadcasts` with Notifications and Email; `events.organization_audience`, `events.offline_checkin`, `events.invites`, `events.account_registration`, `events.ticket_types`, `events.promo_codes`, `charges.events`; `payments.events` with Online payments |
+| Events | `events` | `events.api_read`, `events.certificate_designer`, `events.website`, `events.embed`, `events.short_links`, `events.online_delivery`; `events.broadcasts` with Notifications and Email; `events.organization_audience`, `events.offline_checkin`, `events.invites`, `events.account_registration`, `events.ticket_types`, `events.promo_codes`, `charges.events`; `payments.events` with Online payments |
 | Bookings | `bookings` | `bookings.recurring`, `bookings.staff_grants`, `bookings.clone`, `bookings.staff_tools`, `bookings.confirmations`, `bookings.checkin`, `bookings.passes`, `bookings.api_read`, `bookings.website`, `bookings.embed`, `charges.bookings`; `bookings.broadcasts` with Notifications and Email; `bookings.analytics`, `bookings.utilization_pdf`, `bookings.exports` with Reports; `payments.bookings` with Online payments |
 | Membership | `membership`, `mobile` | `membership.auto_renew`, `membership.lifecycle_mail`, `membership.self_service`, `membership.self_export`, `membership.vouching`, `membership.application_form`, `membership.broadcasts`, `mobile.push`, `charges.membership`; `payments.membership` with Online payments |
 | Online payments | `payments` | `payments.enabled` plus the online-payment feature of each selected domain |
@@ -399,6 +399,48 @@ require an enhanced page to be released. Uninstall hides the enhanced surfaces a
 the rows and objects; Events purge removes both. Portable imports retain editorial content
 and private objects but reset page release and framing origins for target-side review.
 
+#### Public event surface (release 2, L1)
+
+Four answers decide who reaches an event, and none of them is a new lifecycle state:
+
+* **Who can see it** is `is_public` (only your team, or anyone with the link).
+* **Who can find it** is `Event.listing`: *listed* events appear on the events page, Discover,
+  organisation and Pages collections, member profiles, series listings and the sitemap;
+  *unlisted* events appear on none of them and their pages, share cards and API answers carry
+  `noindex, nofollow`, but anyone holding the link (`/events/<token>`, `/e/<token>`, a short
+  link) can open them and sign up. A private event is never listed. A series' `listing` is
+  copied to occurrences when they are generated; each occurrence then owns its own.
+* **Who can sign up** is the unchanged `registration_audience`.
+* **Page state** (`page_state`: live or offline) takes a published page down everywhere
+  public, as a uniform 404, without cancelling or unpublishing the event.
+
+Opt-in **`events.short_links`** (off) gives an event one live `/e/<7-char base62>` code beside
+the long address, made on request by staff holding the event's publishing authority. The
+code follows the event (slug and host changes keep it working); regenerating retires the old
+code at once, and a retired code is never issued again. Resolution is rate-limited and has
+exactly the public event gate. Visits are one number per event per local day, counted for
+people (not link previews), never who visited. Off: staff routes and codes 404; codes are kept.
+
+Opt-in **`events.online_delivery`** (off) marks an event in person, online or hybrid. The join
+link is stored encrypted and is released only to a confirmed registrant: their ticket, their
+confirmation email and their own calendar. It is never on a public page, share card, embed or
+audit row. Off: no mode chip, no link anywhere, editor fields hidden; the link is kept.
+
+**`events.embed`** also serves a styled card at `/embed/<space>/<event token>/`, framable only
+by the origins in the space's own event allow-list (`EventEmbedPolicy`, off by default; set in
+the events settings by the Space Manager, or the Event Manager with the events grant).
+Sign-up opens the event in a new tab.
+
+Every public event has a share image (`share.png`) used when it has no cover. The member ticket
+shows a venue map link for in-person and hybrid events. The Event Manager switches the event
+PDF and event exports (`reports.event_pdf`, `reports.event_exports`) while holding the events
+settings grant. A staff member who runs events in several spaces picks the host space when
+creating an event.
+
+Not built, by decision: **guest RSVP** (registration always needs an account, #71), and
+**organisations host only through a space they own** (#71): an organisation never hosts an
+event without a makerspace.
+
 ## Bookings
 
 Opt-in `bookings.website` adds resource detail pages with curated rules, amenities, FAQs,
@@ -701,6 +743,9 @@ its parent module is off.
 | `payments.membership` | `membership` | | Card rail for dues | Dues are still recorded and settled offline |
 | `payments.loans` | `payments` | | Card rail for loan deposits and late fees | Loan charges are still recorded and settled offline |
 | `mobile.push` | `mobile` | ● | Native push notifications | Apps rely on in-app/inbox notifications |
+| `events.short_links` | `events` | | Short `/e/<code>` links with a daily visit count | Only the long event address; existing codes are kept and 404 |
+| `events.online_delivery` | `events` | | Online/hybrid events and the confirmed-only join link | Every event reads as in person; join links are kept, never shown |
+| `public_site.closed_notice` | standalone | | A Space Manager "closed for now" banner with an optional reopening date on the public page | No banner; the text is kept |
 | `bookings.api_read` | `bookings` | | Minimal resource/reservation reads for operator-granted, tenant-bound HMAC server clients; arrivals need a separate scope | Integration reads refuse; booking and audit history stays |
 | `bookings.passes` | `bookings` (needs `bookings.confirmations`) | | Answer-free pass designer, owner downloads and staff printing after active arrival | Pass routes refuse; stored layouts retained |
 | `bookings.analytics` | `bookings` (needs `reports`) | | Resource calendar reservation occupancy with resource management AND tenant audit authority | Resource analytics refuses; existing tenant-wide utilisation is unchanged |

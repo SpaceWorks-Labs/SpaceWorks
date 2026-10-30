@@ -10,6 +10,7 @@ from apps.events.capacity import effective_registration_cutoff, registration_is_
 from apps.inventory import public_image_storage
 from apps.makerspaces.platform import feature_enabled
 from apps.events.serializers_public import EventOrganizerSummarySerializer
+from .serializers_public_surface import PUBLIC_SURFACE_FIELDS, EventPublicSurfaceFields
 
 
 class EventRegistrationCountsSerializer(serializers.Serializer):
@@ -35,7 +36,8 @@ from .serializers_event_authority import EventAuthorityFields
 from .serializers_organization_audience import OrganizationAudienceFields
 
 
-class EventAdminSerializer(OrganizationAudienceFields, EventAuthorityFields, serializers.ModelSerializer):
+class EventAdminSerializer(EventPublicSurfaceFields, OrganizationAudienceFields, EventAuthorityFields,
+                           serializers.ModelSerializer):
     can_duplicate = serializers.SerializerMethodField(
         help_text="Whether the actor has tenant event-management authority to duplicate this event.",
     )
@@ -92,6 +94,7 @@ class EventAdminSerializer(OrganizationAudienceFields, EventAuthorityFields, ser
             'registration_counts',
             'organizers',
             'audience_organizations',
+            *PUBLIC_SURFACE_FIELDS,
         )
         read_only_fields = fields
 
@@ -108,7 +111,7 @@ class EventAdminSerializer(OrganizationAudienceFields, EventAuthorityFields, ser
 
     @extend_schema_field(serializers.ListField(child=serializers.CharField()))
     def get_ticketing_features(self, obj):
-        return [key for key in ("events.invites", "events.ticket_types", "events.promo_codes", "events.organization_audience", "events.certificate_designer", "events.website", "events.embed") if self._feature_enabled(obj, key)]
+        return [key for key in ("events.invites", "events.ticket_types", "events.promo_codes", "events.organization_audience", "events.certificate_designer", "events.website", "events.embed", "events.online_delivery", "events.short_links") if self._feature_enabled(obj, key)]
 
     def _feature_enabled(self, obj, key):
         flags = self.context.get("event_feature_flags", {}).get(obj.makerspace_id)

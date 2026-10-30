@@ -67,7 +67,9 @@ def _duplicate_fenced(event, actor, attach_series, assets, prepared):
     assets.watch("source_series", series)
     assets.watch("source_tickets", bounded_children(source.ticket_types.order_by("pk").values()))
     assets.watch("source_surveys", list(EventFeedbackSurvey.objects.filter(event=source).order_by("pk").values()))
-    values = copy_fields(source, EVENT_FIELDS | {"badge_template", "timezone_name"})
+    # A copy keeps who can find it and how people attend, but starts live: an offline
+    # page is a decision about the source, and a join link is per occurrence.
+    values = copy_fields(source, (EVENT_FIELDS - {"page_state"}) | {"badge_template", "timezone_name", "delivery_mode"})
     values["title"] = source.title[:193].rstrip() + " (copy)"
     clone = Event(makerspace=source.makerspace, created_by=actor,
                   organization_admission_blocked=source.organization_admission_blocked, **values)

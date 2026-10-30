@@ -108,6 +108,8 @@ ALWAYS_OMITTED = {
     ("payments.Payment", "stripe_checkout_session_expired_at"): "Source checkout session state.",
     ("payments.Payment", "stripe_payment_intent_id"): "Source provider identifier.",
 }
+from .classification_r2_l1 import ALWAYS_OMITTED as _R2_L1_OMITTED  # noqa: E402
+ALWAYS_OMITTED.update(_R2_L1_OMITTED)
 
 FIVE_CONFIG_FIELDS = {
     ("makerspaces.Makerspace", "branding_config"),

@@ -10,6 +10,9 @@ class IntegrationEventSerializer(serializers.Serializer):
     starts_at = serializers.DateTimeField()
     ends_at = serializers.DateTimeField()
     location = serializers.CharField()
+    # L1: integrators filter on these themselves; the tenant credential sees every event.
+    is_public = serializers.BooleanField()
+    listing = serializers.ChoiceField(choices=("listed", "unlisted"))
 
 
 class IntegrationParticipantSerializer(serializers.Serializer):

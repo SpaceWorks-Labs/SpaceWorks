@@ -42,6 +42,8 @@ EXPORTED_MODEL_FIELDS.update(P2_BOOKING_FIELDS)
 EXPORTED_MODEL_FIELDS["bookings.Booking"] += " " + " ".join(sorted(BOOKING_EXTRA_FIELDS))
 EXPORTED_MODEL_FIELDS["notifications.MemberNotificationPreference"] += " daily_digest"
 EXPORTED_MODEL_FIELDS["notifications.NotificationPreference"] = "id makerspace user category channels email_fallback updated_at"
+from .classification_r2_l1 import extend as extend_r2_l1
+extend_r2_l1(EXPORTED_MODEL_FIELDS)
 EXPORTED_MODEL_FIELDS = exported_fields(EXPORTED_MODEL_FIELDS)
 OMITTED_MODELS = {
     **NOTIFICATION_OMITTED,

@@ -6,6 +6,13 @@
 
 ## Condensed changelog (newest first — full detail in `git log`)
 
+- **2026-10-29 -- release 2 L1, the public event surface (#21 gaps 10/12, #69, #71, #73, #77).**
+  Short `/e/<code>` links with a PII-free visit counter (`events.short_links`); "who can find"
+  (listed/unlisted, noindex) and offline pages without a lifecycle state; online/hybrid events with a
+  confirmed-only encrypted join link (`events.online_delivery`); a styled embed card behind a per-space
+  allow-list; per-event share images; the ticket venue map link (X1); event report switches under the
+  Event Manager's grant (DY-61); the host-space picker (DY-63); the closed-for-now banner
+  (`public_site.closed_notice`, #77). Guest RSVP stays out and organisations host through an owned space.
 - **2026-10-29 -- pairwise judging (release 2, lane L7; D6, #73).** A third judging mode, `pairwise`,
   behind `events.pairwise_judging`: judges answer "the one before or this one", ranked by a CrowdBT
   replay written from the paper, with conflicts, recusal, scope and >=3 coverage reused and results

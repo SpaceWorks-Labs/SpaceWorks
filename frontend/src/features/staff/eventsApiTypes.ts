@@ -46,6 +46,13 @@ export type StaffEvent = {
   registration_open: boolean;
   offline_checkin_enabled: boolean;
   is_public: boolean;
+  /** L1: who can find it and whether the public page is up. */
+  listing?: "listed" | "unlisted";
+  page_state?: "live" | "offline";
+  delivery_mode?: "in_person" | "online" | "hybrid";
+  /** Plaintext only for readers with edit_details while online events are on. */
+  join_url?: string | null;
+  join_url_set?: boolean;
   show_registration_count?: boolean;
   image_url: string | null;
   status: EventStatus;
@@ -99,6 +106,11 @@ export type EventPayload = {
   is_public: boolean;
   show_registration_count?: boolean;
   custom_form: CustomFormSchema;
+  // L1: who can find it, the public page state and online delivery (join link write-only).
+  listing?: "listed" | "unlisted";
+  page_state?: "live" | "offline";
+  delivery_mode?: "in_person" | "online" | "hybrid";
+  join_url?: string;
 };
 
 /** Create-only extras, applied in the same transaction as the new draft. */

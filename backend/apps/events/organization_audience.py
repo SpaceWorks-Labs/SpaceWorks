@@ -16,7 +16,7 @@ FEATURE = "events.organization_audience"
 PROJECTION_FEATURES = (
     "events.invites", "events.ticket_types", "events.promo_codes", FEATURE,
     "events.offline_checkin", "events.broadcasts", "events.website", "events.embed",
-    "events.certificate_designer",
+    "events.certificate_designer", "events.online_delivery", "events.short_links",
     "reports.event_exports", "reports.event_pdf",
 )
 

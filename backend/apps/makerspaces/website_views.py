@@ -67,7 +67,8 @@ class WebsitePublicView(APIView):
 class WebsiteEmbedView(WebsitePublicView):
     @extend_schema(tags=["Public websites"], auth=[], responses={200: OpenApiResponse(str, description="Self-contained HTML with exact framing CSP."), **ERRORS})
     def get(self, request, makerspace_slug, kind, public_token):
-        adapter = adapter_for(kind)
+        # Owner decision #143: events embed only through L1's card with its EventEmbedPolicy.
+        adapter = adapter_for("" if kind == "events" else kind)
         subject = adapter.resolve(makerspace_slug, public_token)
         adapter.page(subject)
         if not feature_enabled(subject.makerspace, f"{adapter.module}.embed"):

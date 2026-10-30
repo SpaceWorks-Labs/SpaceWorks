@@ -3576,6 +3576,38 @@ Load-bearing details that carried over unchanged:
 
 ## Events program invariants (four phases, `f16896f`..`dab0354`)
 
+### Public event surface (release 2 L1): who can find, offline pages, join links, embeds
+
+- **Two gates, never one boolean.** `website_visibility.public_q()` / `public_events()` is the
+  ACCESS gate (is_public + `page_state=live` + published + not ended) for every token-addressed
+  surface: detail, register, feedback, `.ics`, gallery, share card and image, `/e/<uuid>`, short
+  links and the embed. `listed_q()` / `listed_events()` adds `listing=listed` and is the LISTING
+  gate for every surface that lists: the events list, `discover_events` (and so the sitemap),
+  `organizations/public_catalog.py`, `makerspaces/public_page_derived.py`, member-profile
+  attended/hosted/spoke history and public series feeds. A new listing surface reads `listed_q`;
+  reading `public_q` there leaks unlisted events.
+- **Unlisted is reachable by link and never indexed.** Public JSON answers (`robots()` in
+  `views_public_codes.py`), the share image and share HTML for an unlisted event send
+  `X-Robots-Tag: noindex, nofollow`; the SPA sets the robots meta from the payload's `indexable`.
+  A private event is never listed (the publishing command refuses `listing` while private).
+- **Offline is not a lifecycle state.** `page_state=offline` 404s the event on every public
+  surface (uniformly, like an unknown token) and leaves `status` alone, so lifecycle readers,
+  registrations and money are untouched. A clone starts live.
+- **Short codes.** One live `EventShortLink` per event (partial unique index); the only update
+  is retiring a live row once (model guard + `events_short_link_guard` trigger); retired codes
+  are kept forever and never reissued; a code resolves through exactly the `/e/<uuid>` gate plus
+  `events.short_links`. Visit rows hold an integer per local day and nothing about the visitor;
+  a counter failure never fails the response, and share cards never count.
+- **The join link is released by `online_delivery.join_url_for(registration)` only**: confirmed
+  registrants, published/completed online or hybrid events, `events.online_delivery` on. It is
+  deployment-key ciphertext at rest, cleared on tenant import, omitted from exports, never in a
+  public serializer, share card, embed or audit row (audit records only that it changed).
+- **Embed framing** is `events.embed` AND an enabled `EventEmbedPolicy` with at least one exact
+  lowercase https origin; the card sets `Content-Security-Policy: frame-ancestors <origins>`,
+  `default-src 'none'`, no forms, and every action opens the SPA in a new tab. A stored origin
+  that no longer validates fails closed. (The older shared `/embed/<slug>/events/<token>/`
+  route still frames released event websites to `website_embed_origins`.)
+
 ### Events programme integration contract (2026-10-18)
 
 Checkpoint `f1ef7736` adds the programme schema/mounts and generated API, not completed

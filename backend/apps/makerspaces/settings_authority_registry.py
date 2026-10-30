@@ -53,6 +53,11 @@ FIXED_EXCEPTIONS = (
 EXTRA_SETTING_KEYS = (
     *(("inventory", key) for key in LOAN_POLICY_KEYS),
     ("inventory", "rental_timing"),
+    # L1: DY-61 puts the two event report switches under the Event Manager's grant
+    # (#101, #128 C-11c), and the event embed allow-list is an events setting.
+    ("events", "reports.event_pdf"),
+    ("events", "reports.event_exports"),
+    ("events", "event_embed_policy"),
 )
 
 

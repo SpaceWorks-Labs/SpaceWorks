@@ -237,7 +237,9 @@ routes. The prefix remains mandatory even if removed from an operator override
 or public-API enforcement is off. Sign the full path including its query string
 using the existing protocol above. Nonce, clock and rotation policies are unchanged.
 
-Events allow only ID, title, status, start/end and location. Participants allow
+Events allow only ID, title, status, start/end, location, `is_public` and `listing` (release 2 L1:
+the tenant credential still reads every event, private and unlisted included, and filters on these
+fields itself). Participants allow
 registration ID, display name and registration date. With both prerequisite
 scopes, `participants:attendance:read` adds the current attendance date (null when
 no longer attended). Contacts, answers, ticket/check-in credentials and money are

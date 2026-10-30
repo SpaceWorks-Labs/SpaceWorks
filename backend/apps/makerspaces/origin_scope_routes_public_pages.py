@@ -10,6 +10,8 @@ GLOBAL_ROUTES = ORGANIZATION_PAGE_EDITORS | frozenset({
 })
 HANDLE_ROUTES = frozenset({"public-page-handle", "public-page-share", "public-page-cover-share"})
 EVENT_ROUTES = frozenset({"public-event-code", "public-event-code-share", "public-event-cover-share"})
+EVENT_CODE_ROUTES = frozenset({"public-event-short-code", "public-event-short-code-share",
+                               "public-event-short-code-cover-share"})
 SLUG_ROUTES = frozenset({"public-makerspace-page", "public-makerspace-page-asset"})
 
 
@@ -32,6 +34,11 @@ def page_route_targets(name, kwargs, request):
         if not apps.is_installed("apps.events"):
             return name, set(), True, True
         target = apps.get_model("events.Event").objects.filter(public_token=kwargs.get("public_token")).values_list("makerspace_id", flat=True).first()
+    elif name in EVENT_CODE_ROUTES:
+        if not apps.is_installed("apps.events"):
+            return name, set(), True, True
+        target = apps.get_model("events.EventShortLink").objects.filter(
+            code=kwargs.get("code"), retired_at__isnull=True).values_list("makerspace_id", flat=True).first()
     elif name in SLUG_ROUTES:
         from .lookup import get_public_makerspace
         from django.http import Http404

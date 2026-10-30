@@ -873,6 +873,8 @@ CORS_ALLOW_HEADERS = (
     "x-kiosk-operator-lease",
     "x-publishable-key",
 )
+# --- release 2 lane L1: the SPA marks the first short-link resolve of a page load (one visit) ---
+CORS_ALLOW_HEADERS += ("x-sw-visit",)
 CORS_ALLOW_CREDENTIALS = True
 
 HMAC_CLIENT_ID = env("HMAC_CLIENT_ID", default="")
@@ -1173,6 +1175,8 @@ REST_FRAMEWORK = {
         "tenant_migration_upload": env(
             "THROTTLE_TENANT_MIGRATION_UPLOAD", default="1200/min"
         ),
+        # --- release 2 lane L1: event short-link resolution (/e/<code>) ---
+        "event_short_link": env("THROTTLE_EVENT_SHORT_LINK", default="30/min"),
     },
     # Proxy-aware client IP for throttling. Production must declare its topology at
     # settings import above; direct DEBUG development defaults to zero trusted proxies.

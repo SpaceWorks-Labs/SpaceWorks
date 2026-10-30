@@ -7,7 +7,7 @@ PUBLIC_PAGE_CLAIM_ROUTES = {
     for name in (
         "public-page-handle", "public-makerspace-page", "public-makerspace-page-asset",
         "public-organization-page", "public-organization-page-asset",
-        "public-organization-makerspaces", "public-event-code",
+        "public-organization-makerspaces", "public-event-code", "public-event-short-code",
     )
     for method in ("GET", "HEAD", "OPTIONS")
 }

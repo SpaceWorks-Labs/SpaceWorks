@@ -87,6 +87,11 @@ class EventListCreateView(APIView):
         serializer.is_valid(raise_exception=True)
         values = dict(serializer.validated_data)
         values.pop('inherit_fields', None)
+        host_id = values.pop('host_makerspace_id', None)
+        if host_id is not None and host_id != makerspace.pk:
+            # DY-63: host in another space where the actor holds event authority.
+            from .directories import require_host
+            makerspace = _visible_makerspace(request.user, require_host(request.user, request, host_id).pk)
         event = services.create_event(
             makerspace=makerspace,
             actor=request.user,

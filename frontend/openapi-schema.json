@@ -31857,6 +31857,8 @@
                                             "event_id": 42,
                                             "version": 4,
                                             "is_public": false,
+                                            "listing": "listed",
+                                            "page_state": "live",
                                             "registration_audience": "accounts",
                                             "status": "draft",
                                             "website_released": false,
@@ -39962,6 +39964,325 @@
                 }
             }
         },
+        "/api/v1/admin/events/{id}/short-link/": {
+            "get": {
+                "operationId": "api_v1_admin_events_short_link_retrieve",
+                "description": "404 while `events.short_links` is off.",
+                "summary": "Read the event's short link and its visit counts",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Admin events"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ShortLink"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "post": {
+                "operationId": "api_v1_admin_events_short_link_create",
+                "description": "Returns the live code when one already exists. Published events only. Audited as `event.short_link.created`.",
+                "summary": "Create the event's short link (idempotent)",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Admin events"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ShortLink"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ShortLink"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/events/{id}/short-link/regenerate/": {
+            "post": {
+                "operationId": "api_v1_admin_events_short_link_regenerate_create",
+                "description": "The old code returns 404 at once and is never issued again. Audited as `event.short_link.regenerated`.",
+                "summary": "Retire the short link and issue a new one",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Admin events"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RegenerateInput"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RegenerateInput"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RegenerateInput"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ShortLink"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/v1/admin/events/{id}/speaker-candidates/": {
             "get": {
                 "operationId": "api_v1_admin_events_speaker_candidates_retrieve",
@@ -47345,6 +47666,86 @@
                             }
                         },
                         "description": "Private image storage is unavailable."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/events/host-options/": {
+            "get": {
+                "operationId": "api_v1_admin_events_host_options_list",
+                "description": "Spaces with events on where the caller holds event authority; a request from a space's own staff origin lists only that space.",
+                "summary": "Spaces the caller may host a new event in (DY-63)",
+                "tags": [
+                    "Admin events"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/HostOption"
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
                     }
                 }
             }
@@ -65623,6 +66024,178 @@
                 }
             }
         },
+        "/api/v1/admin/makerspace/{makerspace_id}/public-closed-notice": {
+            "get": {
+                "operationId": "api_v1_admin_makerspace_public_closed_notice_retrieve",
+                "description": "Space Manager only; 404 while `public_site.closed_notice` is off.",
+                "summary": "Read the closed-for-now banner",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Admin makerspaces"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ClosedNotice"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "put": {
+                "operationId": "api_v1_admin_makerspace_public_closed_notice_update",
+                "description": "No lifecycle change: the space keeps working. Audited as `makerspace.closed_notice_updated`.",
+                "summary": "Set or clear the closed-for-now banner",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Admin makerspaces"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ClosedNotice"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ClosedNotice"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ClosedNotice"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ClosedNotice"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/v1/admin/makerspace/{makerspace_id}/qr-print-batches": {
             "get": {
                 "operationId": "api_v1_admin_makerspace_qr_print_batches_list",
@@ -76162,6 +76735,388 @@
                         "description": ""
                     },
                     "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/makerspaces/{makerspace_id}/events/embed-policy/": {
+            "get": {
+                "operationId": "api_v1_admin_makerspaces_events_embed_policy_retrieve",
+                "description": "404 while `events.embed` is off.",
+                "summary": "Read the event embed allow-list",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Admin events"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EmbedPolicyResponse"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "put": {
+                "operationId": "api_v1_admin_makerspaces_events_embed_policy_update",
+                "description": "Off by default. Origins are exact lowercase https:// origins (frame-ancestors). Settings authority: the Space Manager, or the Event Manager with the events settings grant. Audited as `event.embed_policy_updated`.",
+                "summary": "Replace the event embed allow-list",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Admin events"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/EmbedPolicy"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/EmbedPolicy"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/EmbedPolicy"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EmbedPolicyResponse"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/makerspaces/{makerspace_id}/events/report-switches/": {
+            "get": {
+                "operationId": "api_v1_admin_makerspaces_events_report_switches_retrieve",
+                "summary": "Read the event report switches (DY-61)",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Admin events"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ReportSwitches"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "api_v1_admin_makerspaces_events_report_switches_partial_update",
+                "description": "The Space Manager always; the Event Manager only with the events settings grant and never past a lock (`setting_not_delegated` / `setting_locked`). Each change is audited as `settings.changed`.",
+                "summary": "Switch the event PDF and event exports (DY-61)",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Admin events"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedReportSwitchesInput"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedReportSwitchesInput"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedReportSwitchesInput"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ReportSwitches"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -147082,6 +148037,7 @@
         "/api/v1/public/{makerspace_slug}/events/{public_token}/": {
             "get": {
                 "operationId": "api_v1_public_events_retrieve",
+                "description": "Reachable for listed AND unlisted public events (an unlisted event is open to anyone holding its link); unlisted answers carry `X-Robots-Tag: noindex, nofollow`. Offline pages are 404.",
                 "parameters": [
                     {
                         "in": "path",
@@ -147641,6 +148597,68 @@
                             }
                         },
                         "description": "Event state conflict or cancelled paid registration cannot be reused."
+                    }
+                }
+            }
+        },
+        "/api/v1/public/{makerspace_slug}/events/{public_token}/share.png": {
+            "get": {
+                "operationId": "api_v1_public_events_share.png_retrieve",
+                "description": "Live-gated like the event page: private, draft, ended and offline events are 404; unlisted events are served with `X-Robots-Tag: noindex, nofollow`. Never carries the join link.",
+                "summary": "Event share image (PNG, 1200x630)",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_slug",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "public_token",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Public events"
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "image/png": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        },
+                        "description": "PNG image."
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Unknown or unavailable event."
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Rate limit exceeded."
                     }
                 }
             }
@@ -153453,9 +154471,53 @@
                 }
             }
         },
-        "/api/v1/public/event-codes/{public_token}/": {
+        "/api/v1/public/event-codes/{code}/": {
             "get": {
                 "operationId": "api_v1_public_event_codes_retrieve",
+                "parameters": [
+                    {
+                        "in": "header",
+                        "name": "X-SW-Visit",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Send `1` on the first resolve of a page load to count one visit."
+                    },
+                    {
+                        "in": "path",
+                        "name": "code",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Public events"
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PublicEventCode"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "description": "Unknown, retired, hidden, offline, disabled or ended event."
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded (30 per minute per client)."
+                    }
+                }
+            }
+        },
+        "/api/v1/public/event-codes/{public_token}/": {
+            "get": {
+                "operationId": "api_v1_public_event_codes_retrieve_2",
                 "parameters": [
                     {
                         "in": "path",
@@ -155956,6 +157018,67 @@
                 }
             }
         },
+        "/embed/{makerspace_slug}/{public_token}/": {
+            "get": {
+                "operationId": "embed_retrieve_2",
+                "description": "Self-contained HTML. 404 unless the space enabled embeds and the event is live.",
+                "summary": "Framable event card (HTML, not JSON)",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_slug",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "public_token",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Public events"
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "text/html": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "description": "Event card HTML."
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Unknown or unavailable."
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Rate limit exceeded."
+                    }
+                }
+            }
+        },
         "/robots.txt": {
             "get": {
                 "operationId": "robots.txt_retrieve",
@@ -156075,9 +157198,82 @@
                 }
             }
         },
-        "/share/e/{public_token}/": {
+        "/share/e/{code}/": {
             "get": {
                 "operationId": "share_e_retrieve",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "code",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Public events"
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "text/html": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "description": "Live-gated short-event metadata."
+                    },
+                    "404": {
+                        "description": "Unavailable event."
+                    }
+                }
+            }
+        },
+        "/share/e/{code}/cover/": {
+            "get": {
+                "operationId": "share_e_cover_retrieve",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "code",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Public events"
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        },
+                        "description": "Current released cover WebP; private, no-store."
+                    },
+                    "404": {
+                        "description": "Unavailable event or released cover."
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded."
+                    },
+                    "503": {
+                        "description": "Image storage is unavailable."
+                    }
+                }
+            }
+        },
+        "/share/e/{public_token}/": {
+            "get": {
+                "operationId": "share_e_retrieve_2",
                 "parameters": [
                     {
                         "in": "path",
@@ -156111,7 +157307,7 @@
         },
         "/share/e/{public_token}/cover/": {
             "get": {
-                "operationId": "share_e_cover_retrieve",
+                "operationId": "share_e_cover_retrieve_2",
                 "parameters": [
                     {
                         "in": "path",
@@ -169582,6 +170778,25 @@
                 "type": "string",
                 "description": "* `browser` - Browser\n* `server` - Server"
             },
+            "ClosedNotice": {
+                "type": "object",
+                "properties": {
+                    "public_closed_notice": {
+                        "type": "string",
+                        "description": "Shown on the public page; blank hides the banner.",
+                        "maxLength": 280
+                    },
+                    "public_reopens_on": {
+                        "type": "string",
+                        "format": "date",
+                        "nullable": true,
+                        "description": "Optional reopening date in the space's own calendar."
+                    }
+                },
+                "required": [
+                    "public_closed_notice"
+                ]
+            },
             "ClosureApproval": {
                 "type": "object",
                 "properties": {
@@ -173715,6 +174930,15 @@
                 "type": "string",
                 "description": "* `email` - email\n* `channel` - channel"
             },
+            "DeliveryMode6a4Enum": {
+                "enum": [
+                    "in_person",
+                    "online",
+                    "hybrid"
+                ],
+                "type": "string",
+                "description": "* `in_person` - In person\n* `online` - Online\n* `hybrid` - Hybrid"
+            },
             "DeliveryPage": {
                 "type": "object",
                 "properties": {
@@ -176017,6 +177241,52 @@
                     "code"
                 ]
             },
+            "EmbedPolicy": {
+                "type": "object",
+                "properties": {
+                    "enabled": {
+                        "type": "boolean"
+                    },
+                    "allowed_origins": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "maxLength": 255
+                        },
+                        "maxItems": 20
+                    }
+                },
+                "required": [
+                    "allowed_origins",
+                    "enabled"
+                ]
+            },
+            "EmbedPolicyResponse": {
+                "type": "object",
+                "properties": {
+                    "enabled": {
+                        "type": "boolean"
+                    },
+                    "allowed_origins": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "maxLength": 255
+                        },
+                        "maxItems": 20
+                    },
+                    "embed_path": {
+                        "type": "string",
+                        "readOnly": true,
+                        "description": "Append <event public token>/ to frame one event."
+                    }
+                },
+                "required": [
+                    "allowed_origins",
+                    "embed_path",
+                    "enabled"
+                ]
+            },
             "EndReasonEnum": {
                 "enum": [
                     "superseded",
@@ -176377,6 +177647,40 @@
                             "$ref": "#/components/schemas/EventOrganizerSummary"
                         },
                         "readOnly": true
+                    },
+                    "listing": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/Listing5c7Enum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "page_state": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/PageState1b0Enum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "delivery_mode": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/DeliveryMode6a4Enum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "join_url": {
+                        "type": "string",
+                        "nullable": true,
+                        "readOnly": true,
+                        "description": "Online join link; null unless the reader holds edit_details on this event."
+                    },
+                    "join_url_set": {
+                        "type": "boolean",
+                        "readOnly": true
                     }
                 },
                 "required": [
@@ -176393,18 +177697,23 @@
                     "created_at",
                     "created_by_id",
                     "custom_form",
+                    "delivery_mode",
                     "description",
                     "effective_registration_cutoff_at",
                     "ends_at",
                     "id",
                     "image_url",
                     "is_public",
+                    "join_url",
+                    "join_url_set",
+                    "listing",
                     "location",
                     "location_kind",
                     "makerspace_id",
                     "offline_checkin_enabled",
                     "organization_admission_blocked",
                     "organizers",
+                    "page_state",
                     "participating_organizations",
                     "payment_amount",
                     "registration_audience",
@@ -177286,6 +178595,21 @@
                 "type": "object",
                 "description": "Create-only extras; PATCH keeps using the dedicated organizer/partner routes.",
                 "properties": {
+                    "listing": {
+                        "$ref": "#/components/schemas/Listing5c7Enum"
+                    },
+                    "page_state": {
+                        "$ref": "#/components/schemas/PageState1b0Enum"
+                    },
+                    "delivery_mode": {
+                        "$ref": "#/components/schemas/DeliveryMode6a4Enum"
+                    },
+                    "join_url": {
+                        "type": "string",
+                        "writeOnly": true,
+                        "description": "https:// link released only to confirmed registrants.",
+                        "maxLength": 2000
+                    },
                     "accent_preset": {
                         "oneOf": [
                             {
@@ -178317,6 +179641,11 @@
                         },
                         "description": "Partner makerspaces to invite; each must accept before its members can register.",
                         "maxItems": 50
+                    },
+                    "host_makerspace_id": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "Host the event in another space where the actor holds event authority (GET admin/events/host-options/). Defaults to the space in the URL."
                     }
                 },
                 "required": [
@@ -179246,6 +180575,9 @@
                     },
                     "is_public": {
                         "type": "boolean"
+                    },
+                    "listing": {
+                        "$ref": "#/components/schemas/Listing5c7Enum"
                     },
                     "created_by_id": {
                         "type": "integer",
@@ -180430,6 +181762,14 @@
                     "is_public": {
                         "type": "boolean",
                         "default": false
+                    },
+                    "listing": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/Listing5c7Enum"
+                            }
+                        ],
+                        "description": "Who can find new occurrences; each occurrence can change its own.\n\n* `listed` - Listed\n* `unlisted` - Unlisted"
                     },
                     "recurrence_timezone": {
                         "type": "string",
@@ -186499,6 +187839,25 @@
                 "type": "string",
                 "description": "* `speaker` - speaker"
             },
+            "HostOption": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "slug": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "name",
+                    "slug"
+                ]
+            },
             "HostWaiver": {
                 "type": "object",
                 "properties": {
@@ -187909,11 +189268,19 @@
                     },
                     "location": {
                         "type": "string"
+                    },
+                    "is_public": {
+                        "type": "boolean"
+                    },
+                    "listing": {
+                        "$ref": "#/components/schemas/ListingD06Enum"
                     }
                 },
                 "required": [
                     "ends_at",
                     "id",
+                    "is_public",
+                    "listing",
                     "location",
                     "starts_at",
                     "status",
@@ -191357,6 +192724,22 @@
                     "entries",
                     "title"
                 ]
+            },
+            "Listing5c7Enum": {
+                "enum": [
+                    "listed",
+                    "unlisted"
+                ],
+                "type": "string",
+                "description": "* `listed` - Listed\n* `unlisted` - Unlisted"
+            },
+            "ListingD06Enum": {
+                "enum": [
+                    "listed",
+                    "unlisted"
+                ],
+                "type": "string",
+                "description": "* `listed` - listed\n* `unlisted` - unlisted"
             },
             "Live": {
                 "type": "object",
@@ -204251,6 +205634,22 @@
                     "resolved_theme"
                 ]
             },
+            "PageState0c7Enum": {
+                "enum": [
+                    "live",
+                    "offline"
+                ],
+                "type": "string",
+                "description": "* `live` - live\n* `offline` - offline"
+            },
+            "PageState1b0Enum": {
+                "enum": [
+                    "live",
+                    "offline"
+                ],
+                "type": "string",
+                "description": "* `live` - Live\n* `offline` - Offline"
+            },
             "PageTeam": {
                 "type": "object",
                 "properties": {
@@ -209862,6 +211261,14 @@
                         "type": "boolean",
                         "default": false
                     },
+                    "listing": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/Listing5c7Enum"
+                            }
+                        ],
+                        "description": "Who can find new occurrences; each occurrence can change its own.\n\n* `listed` - Listed\n* `unlisted` - Unlisted"
+                    },
                     "recurrence_timezone": {
                         "type": "string",
                         "maxLength": 64
@@ -209891,7 +211298,23 @@
             },
             "PatchedEventWrite": {
                 "type": "object",
+                "description": "Write fields mixed into the event create/update serializer.",
                 "properties": {
+                    "listing": {
+                        "$ref": "#/components/schemas/Listing5c7Enum"
+                    },
+                    "page_state": {
+                        "$ref": "#/components/schemas/PageState1b0Enum"
+                    },
+                    "delivery_mode": {
+                        "$ref": "#/components/schemas/DeliveryMode6a4Enum"
+                    },
+                    "join_url": {
+                        "type": "string",
+                        "writeOnly": true,
+                        "description": "https:// link released only to confirmed registrants.",
+                        "maxLength": 2000
+                    },
                     "accent_preset": {
                         "oneOf": [
                             {
@@ -213510,6 +214933,22 @@
                     "is_public": {
                         "type": "boolean"
                     },
+                    "listing": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/ListingD06Enum"
+                            }
+                        ],
+                        "description": "Who can find it; refused while the event is private.\n\n* `listed` - listed\n* `unlisted` - unlisted"
+                    },
+                    "page_state": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/PageState0c7Enum"
+                            }
+                        ],
+                        "description": "offline takes the public page down without un-publishing.\n\n* `live` - live\n* `offline` - offline"
+                    },
                     "registration_audience": {
                         "$ref": "#/components/schemas/RegistrationAudienceCa2Enum"
                     },
@@ -213654,6 +215093,17 @@
                             "$ref": "#/components/schemas/RecipientActionsEnum"
                         },
                         "maxItems": 20
+                    }
+                }
+            },
+            "PatchedReportSwitchesInput": {
+                "type": "object",
+                "properties": {
+                    "switches": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "boolean"
+                        }
                     }
                 }
             },
@@ -219622,16 +221072,52 @@
                             }
                         ],
                         "readOnly": true
+                    },
+                    "delivery_mode": {
+                        "readOnly": true,
+                        "nullable": true,
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/ProgrammeTicketDeliveryModeEnum"
+                            },
+                            {
+                                "$ref": "#/components/schemas/NullEnum"
+                            }
+                        ]
+                    },
+                    "join_url": {
+                        "type": "string",
+                        "format": "uri",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "map_url": {
+                        "type": "string",
+                        "format": "uri",
+                        "readOnly": true,
+                        "nullable": true
                     }
                 },
                 "required": [
                     "attended_at",
                     "credential_mode",
+                    "delivery_mode",
                     "event",
+                    "join_url",
+                    "map_url",
                     "registration_id",
                     "status",
                     "ticket_png_available"
                 ]
+            },
+            "ProgrammeTicketDeliveryModeEnum": {
+                "enum": [
+                    "in_person",
+                    "online",
+                    "hybrid"
+                ],
+                "type": "string",
+                "description": "* `in_person` - in_person\n* `online` - online\n* `hybrid` - hybrid"
             },
             "ProjectBudget": {
                 "type": "object",
@@ -220721,6 +222207,24 @@
                         "nullable": true,
                         "readOnly": true
                     },
+                    "delivery_mode": {
+                        "description": "in_person, online or hybrid; null while the space has online events switched off.",
+                        "nullable": true,
+                        "readOnly": true,
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/DeliveryMode6a4Enum"
+                            },
+                            {
+                                "$ref": "#/components/schemas/NullEnum"
+                            }
+                        ]
+                    },
+                    "indexable": {
+                        "type": "boolean",
+                        "readOnly": true,
+                        "description": "False for unlisted events: pages must send noindex, nofollow."
+                    },
                     "public_token": {
                         "type": "string",
                         "format": "uuid",
@@ -220850,10 +222354,12 @@
                     "category",
                     "currency",
                     "custom_form",
+                    "delivery_mode",
                     "description",
                     "effective_registration_cutoff_at",
                     "ends_at",
                     "image_url",
+                    "indexable",
                     "location",
                     "location_kind",
                     "organizers",
@@ -220967,6 +222473,24 @@
                         ],
                         "nullable": true,
                         "readOnly": true
+                    },
+                    "delivery_mode": {
+                        "description": "in_person, online or hybrid; null while the space has online events switched off.",
+                        "nullable": true,
+                        "readOnly": true,
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/DeliveryMode6a4Enum"
+                            },
+                            {
+                                "$ref": "#/components/schemas/NullEnum"
+                            }
+                        ]
+                    },
+                    "indexable": {
+                        "type": "boolean",
+                        "readOnly": true,
+                        "description": "False for unlisted events: pages must send noindex, nofollow."
                     },
                     "public_token": {
                         "type": "string",
@@ -221105,10 +222629,12 @@
                     "content_url",
                     "currency",
                     "custom_form",
+                    "delivery_mode",
                     "description",
                     "effective_registration_cutoff_at",
                     "ends_at",
                     "image_url",
+                    "indexable",
                     "location",
                     "location_kind",
                     "organizers",
@@ -222247,6 +223773,24 @@
                         "nullable": true,
                         "readOnly": true
                     },
+                    "delivery_mode": {
+                        "description": "in_person, online or hybrid; null while the space has online events switched off.",
+                        "nullable": true,
+                        "readOnly": true,
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/DeliveryMode6a4Enum"
+                            },
+                            {
+                                "$ref": "#/components/schemas/NullEnum"
+                            }
+                        ]
+                    },
+                    "indexable": {
+                        "type": "boolean",
+                        "readOnly": true,
+                        "description": "False for unlisted events: pages must send noindex, nofollow."
+                    },
                     "public_token": {
                         "type": "string",
                         "format": "uuid",
@@ -222389,12 +223933,14 @@
                     "category",
                     "currency",
                     "custom_form",
+                    "delivery_mode",
                     "description",
                     "effective_registration_cutoff_at",
                     "ends_at",
                     "event_url",
                     "host",
                     "image_url",
+                    "indexable",
                     "location",
                     "location_kind",
                     "organizers",
@@ -224623,6 +226169,12 @@
                     "is_public": {
                         "type": "boolean"
                     },
+                    "listing": {
+                        "$ref": "#/components/schemas/ListingD06Enum"
+                    },
+                    "page_state": {
+                        "$ref": "#/components/schemas/PageState0c7Enum"
+                    },
                     "registration_audience": {
                         "type": "string"
                     },
@@ -224642,6 +226194,8 @@
                     "event_id",
                     "id",
                     "is_public",
+                    "listing",
+                    "page_state",
                     "registration_audience",
                     "state",
                     "status",
@@ -227246,6 +228800,17 @@
                 "type": "string",
                 "description": "* `pending` - Pending\n* `succeeded` - Succeeded\n* `failed` - Failed"
             },
+            "RegenerateInput": {
+                "type": "object",
+                "properties": {
+                    "confirm": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "confirm"
+                ]
+            },
             "RegistrationAudienceCa2Enum": {
                 "enum": [
                     "members",
@@ -228805,6 +230370,71 @@
                 ],
                 "type": "string",
                 "description": "* `csv` - CSV\n* `xlsx` - XLSX"
+            },
+            "ReportSwitch": {
+                "type": "object",
+                "properties": {
+                    "key": {
+                        "$ref": "#/components/schemas/ReportSwitchKeyEnum"
+                    },
+                    "label": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "enabled": {
+                        "type": "boolean",
+                        "description": "Stored switch."
+                    },
+                    "effective": {
+                        "type": "boolean",
+                        "description": "On, with events and reports installed."
+                    },
+                    "editable": {
+                        "type": "boolean"
+                    },
+                    "locked": {
+                        "type": "boolean"
+                    },
+                    "code": {
+                        "type": "string",
+                        "nullable": true,
+                        "description": "Why it is read-only, when it is."
+                    }
+                },
+                "required": [
+                    "code",
+                    "description",
+                    "editable",
+                    "effective",
+                    "enabled",
+                    "key",
+                    "label",
+                    "locked"
+                ]
+            },
+            "ReportSwitchKeyEnum": {
+                "enum": [
+                    "reports.event_pdf",
+                    "reports.event_exports"
+                ],
+                "type": "string",
+                "description": "* `reports.event_pdf` - reports.event_pdf\n* `reports.event_exports` - reports.event_exports"
+            },
+            "ReportSwitches": {
+                "type": "object",
+                "properties": {
+                    "switches": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ReportSwitch"
+                        }
+                    }
+                },
+                "required": [
+                    "switches"
+                ]
             },
             "ReportViewState": {
                 "type": "object",
@@ -233312,6 +234942,41 @@
                 "required": [
                     "expected_version",
                     "operation_id"
+                ]
+            },
+            "ShortLink": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "url": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "visits_30d": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/VisitDay"
+                        }
+                    },
+                    "total_visits": {
+                        "type": "integer",
+                        "minimum": 0
+                    }
+                },
+                "required": [
+                    "code",
+                    "created_at",
+                    "total_visits",
+                    "url",
+                    "visits_30d"
                 ]
             },
             "ShortlistCommand": {
@@ -238204,6 +239869,23 @@
                     "workflows"
                 ]
             },
+            "TenantBootstrapClosedNotice": {
+                "type": "object",
+                "properties": {
+                    "text": {
+                        "type": "string"
+                    },
+                    "reopens_on": {
+                        "type": "string",
+                        "format": "date",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "reopens_on",
+                    "text"
+                ]
+            },
             "TenantBootstrapFrontend": {
                 "type": "object",
                 "properties": {
@@ -238510,6 +240192,9 @@
                     },
                     "request_access": {
                         "$ref": "#/components/schemas/RequestAccessEnum"
+                    },
+                    "closed_notice": {
+                        "$ref": "#/components/schemas/TenantBootstrapClosedNotice"
                     }
                 },
                 "required": [
@@ -240884,6 +242569,23 @@
                 ],
                 "type": "string",
                 "description": "* `draft` - draft\n* `published` - published"
+            },
+            "VisitDay": {
+                "type": "object",
+                "properties": {
+                    "day": {
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "count": {
+                        "type": "integer",
+                        "minimum": 0
+                    }
+                },
+                "required": [
+                    "count",
+                    "day"
+                ]
             },
             "Vouch": {
                 "type": "object",

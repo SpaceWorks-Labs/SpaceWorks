@@ -16,7 +16,7 @@ export const emptyEventForm: EventFormValues = {
   cancellation_cutoff_hours: null,
   show_registration_count: true,
   is_public: false, registration_audience: "members", category_id: null, tags: [],
-  custom_form: null,
+  custom_form: null, listing: "listed", delivery_mode: "in_person",
 };
 
 function localDate(value: string) {
@@ -38,6 +38,9 @@ export function valuesFor(event: StaffEvent): EventFormValues {
     show_registration_count: event.show_registration_count ?? true,
     is_public: event.is_public, registration_audience: event.registration_audience ?? "members", category_id: event.category_id ?? null, tags: event.tags ?? [],
     custom_form: event.custom_form,
+    listing: event.listing ?? "listed", delivery_mode: event.delivery_mode ?? "in_person",
+    // Only an editor of a space with online events reads the link; otherwise it is never resent.
+    ...(event.join_url ? { join_url: event.join_url } : {}),
   };
 }
 
@@ -50,17 +53,19 @@ export function payloadFor(values: EventFormValues): EventPayload {
   };
 }
 
-export function EventFields({ values, setValues, disabled = false, approvalLocked = false, settings = false, canEditDetails = true, canEditSchedule = true, canEditPrice = true, organizationAudienceEnabled = false, layout = "all", moreExtras }: {
+export function EventFields({ values, setValues, disabled = false, approvalLocked = false, settings = false, canEditDetails = true, canEditSchedule = true, canEditPrice = true, organizationAudienceEnabled = false, onlineEnabled = false, layout = "all", moreExtras }: {
   values: EventFormValues; setValues: (values: EventFormValues) => void;
   disabled?: boolean; approvalLocked?: boolean; settings?: boolean;
   canEditDetails?: boolean; canEditSchedule?: boolean; canEditPrice?: boolean; organizationAudienceEnabled?: boolean;
+  /** The events.online_delivery switch is on: show how people attend and the join link. */
+  onlineEnabled?: boolean;
   /** "split" tucks everything past the essentials into a collapsed "More options"; "essentials" omits it. */
   layout?: "all" | "split" | "essentials";
   /** Extra create-time steps (partners, organizers) that belong behind "More options". */
   moreExtras?: ReactNode;
 }) {
   // Event staff grants split editing three ways: details, schedule (publish) and price (manager).
-  const group = { values, setValues, settings, organizationAudienceEnabled, approvalLocked,
+  const group = { values, setValues, settings, organizationAudienceEnabled, onlineEnabled, approvalLocked,
     details: disabled || !canEditDetails, schedule: disabled || !canEditSchedule, price: disabled || !canEditPrice };
   const grid = settings ? "divide-y divide-line" : "grid gap-4 sm:grid-cols-2";
   if (layout === "essentials") return <div className={grid}><EventEssentialFields {...group} /></div>;

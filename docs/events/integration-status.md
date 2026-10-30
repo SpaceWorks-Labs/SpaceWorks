@@ -32,7 +32,8 @@ Decisions 34/35 are the separately approved reimbursement/staged-forms programme
 Its finance/core-encryption/migration changes are absent from this Events merge;
 six existing editor keys do not implement staged forms. Its integration must land
 before claiming the complete combined owner programme. The separate Pages programme
-owns shared handles, short links and full maker/org builders. Events sections do not
+owns shared handles and full maker/org builders; event short links (`/e/<code>`) shipped in release 2 L1
+(`events.short_links`, see MODULES.md "Public event surface"). Events sections do not
 substitute for those domains.
 
 The five maker-preview dependencies require reachable package-registry installation

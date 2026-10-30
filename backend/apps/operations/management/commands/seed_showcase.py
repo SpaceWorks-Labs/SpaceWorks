@@ -23,6 +23,7 @@ from . import _showcase_data as data
 from ._showcase_community import (
     membership_plan, publish_public_page, seed_bookings, seed_notices, settle_some_dues,
 )
+from ._showcase_events import seed_events
 from ._showcase_hackathon import seed_hackathon
 from ._showcase_inventory import seed_inventory
 from ._showcase_machines import seed_machines
@@ -82,6 +83,7 @@ class Command(BaseCommand):
         seed_bookings(space, staff.manager, members)
         seed_notices(space, staff.manager)
         seed_hackathon(space, staff.manager, members)
+        seed_events(space, staff.manager)
         publish_public_page(space, staff.manager)
         restrict(root, members[data.RESTRICTED_MEMBER[0]],
                  "Two multimeters not returned after the March repair cafe.")

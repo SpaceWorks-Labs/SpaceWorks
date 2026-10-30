@@ -23,7 +23,8 @@ def public_event(*, request_context, public_token=None, event_id=None, gallery=T
     if event is None:
         raise Http404
     space = event.makerspace
-    if (not event.is_public or event.status not in ("published", "completed") or not is_servable(space)
+    if (not event.is_public or event.page_state != "live" or event.status not in ("published", "completed")
+            or not is_servable(space)
             or not space.public_site_enabled or not module_enabled(space, "events")
             or not public_surface_available("events")):
         raise Http404

@@ -37,6 +37,10 @@ FIRST_PARTY_FIELD_NAMES["bookings.Booking"] |= {"checkin_token", "arrived_at"}
 from .catalog_p2_bookings import FIELD_NAMES as P2_BOOKING_FIELDS, BOOKING_EXTRA_FIELDS as P2_BOOKING_EXTRA
 FIRST_PARTY_FIELD_NAMES.update(P2_BOOKING_FIELDS)
 FIRST_PARTY_FIELD_NAMES["bookings.Booking"] |= P2_BOOKING_EXTRA
+from .catalog_r2_l1 import FIELD_NAMES as R2_L1_FIELDS, EXTRA_FIELDS as R2_L1_EXTRA  # noqa: E402
+FIRST_PARTY_FIELD_NAMES.update(R2_L1_FIELDS)
+for _label, _names in R2_L1_EXTRA.items():
+    FIRST_PARTY_FIELD_NAMES[_label] |= _names
 
 AUTO_CREATED_FIELD_NAMES = {
     'auth.Group_permissions': frozenset('group id permission'.split()),

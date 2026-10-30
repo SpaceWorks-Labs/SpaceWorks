@@ -74,6 +74,10 @@ class MemberEventTicketView(APIView):
         attendance = registration.check_in_events.order_by("-recorded_at", "-pk").first() if registration.status == "attended" else None
         data["attended_at"] = attendance.attended_at.isoformat() if attendance else None
         data["credential_mode"] = registration.credential_mode
+        from .online_delivery import join_url_for, map_url, public_mode
+        data["delivery_mode"] = public_mode(registration.event)
+        data["join_url"] = join_url_for(registration)
+        data["map_url"] = map_url(registration.event)
         response = Response(data)
         response["Cache-Control"] = "private, no-store"
         return response

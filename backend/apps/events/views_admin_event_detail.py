@@ -155,11 +155,19 @@ class EventDetailView(APIView):
             if ("payment_amount" in serializer.validated_data
                     or "payment_amount" in serializer.validated_data.get("inherit_fields", [])):
                 raise PermissionDenied()
-        event = services.update_event(
-            event,
-            actor=request.user,
-            **serializer.validated_data,
-        )
+        values = dict(serializer.validated_data)
+        online = {key: values.pop(key) for key in ("delivery_mode", "join_url") if key in values}
+        if online:
+            # Both writes are outermost event commands (they prepare credentials before
+            # locks), so refuse a switched-off change up front instead of half-applying.
+            from .online_delivery import refuse_when_off
+            refuse_when_off(event, online.get("delivery_mode"), online.get("join_url"))
+        if values or not online:
+            event = services.update_event(event, actor=request.user, **values)
+        if online:
+            from .online_delivery import set_online
+            event = set_online(event, actor=request.user, delivery_mode=online.get("delivery_mode"),
+                               join_url_value=online.get("join_url"))
         return Response(EventAdminSerializer(event, context={"request": request}).data)
 
 

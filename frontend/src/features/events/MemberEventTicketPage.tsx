@@ -18,6 +18,8 @@ import { PhotoChoice } from "./eventPresentation/PhotoChoice";
 
 export type MemberEventTicket = Omit<import('../../generated/api').ProgrammeTicket, 'event'> & {
   event: CalendarFields & { id?: number; public_token: string; timezone_name: string; status: string };
+  // L1 (G3, X1): the join link only for a confirmed registrant, and the venue map link.
+  delivery_mode?: "in_person" | "online" | "hybrid" | null; join_url?: string | null; map_url?: string | null;
 };
 
 const confirmed = (status: string) => ["registered", "attended"].includes(status);
@@ -78,7 +80,11 @@ export function MemberEventTicketPage() {
         <TicketCard organisation={spaceName} title={current.event.title}
           fields={[
             { label: "When", value: <time dateTime={current.event.starts_at}>{new Date(current.event.starts_at).toLocaleString()}</time> },
-            ...(current.event.location ? [{ label: "Where", value: current.event.location }] : []),
+            ...(current.event.location || current.map_url ? [{ label: "Where", value: <span className="grid gap-1">
+              {current.event.location ? <span>{current.event.location}</span> : null}
+              {current.map_url ? <a className="text-brand-ink underline" href={current.map_url} target="_blank" rel="noopener noreferrer">Open the map<span className="sr-only"> (opens in a new tab)</span></a> : null}
+            </span> }] : []),
+            ...(current.join_url ? [{ label: "Join online", value: <a className="break-all text-brand-ink underline" href={current.join_url} target="_blank" rel="noopener noreferrer">{current.join_url}</a> }] : []),
             { label: "Status", value: <StatusBadge status={current.status} /> },
             { label: "Registration", value: `#${current.registration_id}` },
           ]}

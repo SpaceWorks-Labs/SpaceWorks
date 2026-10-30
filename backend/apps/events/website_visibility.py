@@ -14,10 +14,30 @@ from .models_website import EventPage
 from .capacity import CONFIRMED_STATUSES
 
 
+def public_q(prefix=""):
+    """The ACCESS gate shared by every token-addressed public surface: visible and live.
+
+    Listing is deliberately absent: an unlisted event is reachable by anyone holding
+    its link or code. An offline page is gone from every public surface without
+    changing the event's lifecycle status.
+    """
+    return Q(**{f"{prefix}is_public": True, f"{prefix}page_state": Event.PageState.LIVE})
+
+
+def listed_q(prefix=""):
+    """The LISTING gate: access plus "who can find it = listed"."""
+    return public_q(prefix) & Q(**{f"{prefix}listing": Event.Listing.LISTED})
+
+
 def public_events(makerspace):
-    # Preserve the existing core gate exactly. The calling API retains its module error.
-    return Event.objects.filter(makerspace=makerspace, is_public=True,
+    # The calling API retains its module error.
+    return Event.objects.filter(public_q(), makerspace=makerspace,
                                status=Event.Status.PUBLISHED, ends_at__gte=timezone.now())
+
+
+def listed_events(makerspace):
+    """Every surface that LISTS events (event list, Pages collections, directories)."""
+    return public_events(makerspace).filter(listing=Event.Listing.LISTED)
 
 
 def resolve(makerspace_slug, token):
@@ -58,9 +78,9 @@ def discover_events(spaces, filters=None):
         return Event.objects.none()
     filters = filters or {}
     rows = Event.objects.filter(
-        servable_q("makerspace"), makerspace__in=spaces,
+        servable_q("makerspace"), listed_q(), makerspace__in=spaces,
         makerspace__enabled_modules__contains=["events"],
-        is_public=True, status=Event.Status.PUBLISHED, ends_at__gte=timezone.now(),
+        status=Event.Status.PUBLISHED, ends_at__gte=timezone.now(),
     ).select_related(
         "makerspace", "series", "website_page__published_revision",
         "series__website_page__published_revision",

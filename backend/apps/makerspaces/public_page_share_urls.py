@@ -13,4 +13,9 @@ if runtime_active("events"):
     urlpatterns += [
         path("share/e/<uuid:public_token>/", PublicEventCodeShareView.as_view(), name="public-event-code-share"),
         path("share/e/<uuid:public_token>/cover/", PublicEventCoverShareView.as_view(), name="public-event-cover-share"),
+        # Short codes are aliases of the same live gate (the view 404s any other shape);
+        # the crawler card never counts a visit.
+        path("share/e/<str:code>/", PublicEventCodeShareView.as_view(), name="public-event-short-code-share"),
+        path("share/e/<str:code>/cover/", PublicEventCoverShareView.as_view(),
+             name="public-event-short-code-cover-share"),
     ]

@@ -230,3 +230,9 @@ SHARED_ROUTES |= {"auth-logout-all", "member-messaging", "member-messaging-conse
 # Refund cases follow each charge's subject authority, like the reconciliation routes.
 MEMBERSHIP_ROUTES |= {"refund-case-list", "refund-case-detail", "refund-case-approve", "refund-case-decline",
                       "refund-policy-list", "refund-policy-detail", "refund-policy-plan"}
+
+# Release 2 L1, the public event surface: event-authority and space-settings routes.
+DELEGABLE_ROUTES |= {
+    "admin-event-short-link", "admin-event-short-link-regenerate", "admin-event-host-options",
+    "admin-event-embed-policy", "admin-event-report-switches", "admin-makerspace-public-closed-notice",
+}

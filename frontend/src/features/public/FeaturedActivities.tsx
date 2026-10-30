@@ -8,6 +8,7 @@ import { EventPrice } from "../events/EventPrice";
 import type { PublicEventDetail } from "../events/eventTicketTypes";
 import { eventActionLabel } from "../inventory/PublicEventCard";
 import { MakerspaceSection } from "./MakerspaceSection";
+import { deliveryLabel } from "../events/publicSurface";
 
 const PUBLIC_EVENTS_PATH: ApiPath = "/api/v1/public/{makerspace_slug}/events/";
 export const FEATURED_LIMIT = 6;
@@ -36,7 +37,8 @@ export function eventWhen(event: PublicEventDetail, timeZone?: string) {
 }
 
 function chips(event: PublicEventDetail) {
-  const labels = [event.category?.name, event.audience_label, ...(event.tags ?? [])]
+  // DY-73: how people attend leads the chips (absent while online events are off here).
+  const labels = [deliveryLabel(event), event.category?.name, event.audience_label, ...(event.tags ?? [])]
     .filter((label): label is string => Boolean(label?.trim()));
   return [...new Set(labels.map((label) => label.trim()))].slice(0, 3);
 }

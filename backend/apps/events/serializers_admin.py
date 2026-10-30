@@ -3,13 +3,14 @@ from collections.abc import Mapping
 from rest_framework import serializers
 from .models import Event
 from apps.forms_schema.serializers import CustomFormSchemaField
+from .serializers_public_surface import EventPublicSurfaceInput
 
 from .serializers_registration_admin import (
     EventRegistrationAdminSerializer, EventStaffRegistrationSerializer, EventEligibleMemberSerializer,
 )
 
 
-class EventWriteSerializer(serializers.Serializer):
+class EventWriteSerializer(EventPublicSurfaceInput, serializers.Serializer):
     accent_preset = serializers.ChoiceField(choices=Event.ACCENT_CHOICES, allow_blank=True, required=False)
     registration_audience = serializers.ChoiceField(choices=Event.RegistrationAudience.choices, required=False)
     category_id = serializers.IntegerField(min_value=1, allow_null=True, required=False)
@@ -123,6 +124,11 @@ class EventCreateSerializer(EventWriteSerializer):
     collaborator_slugs = serializers.ListField(
         child=serializers.SlugField(), max_length=50, required=False,
         help_text="Partner makerspaces to invite; each must accept before its members can register.",
+    )
+    host_makerspace_id = serializers.IntegerField(
+        min_value=1, required=False,
+        help_text="Host the event in another space where the actor holds event authority "
+                  "(GET admin/events/host-options/). Defaults to the space in the URL.",
     )
 
     def validate(self, attrs):

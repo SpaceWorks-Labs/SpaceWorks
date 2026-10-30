@@ -15,9 +15,12 @@ from apps.events.views_calendar import (
 from .views_public_detail import PublicEventDetailView
 
 from .views_organization_audience import EventOrganizationEligibilityView
+from .views_event_share import PublicEventShareImageView
 
 urlpatterns = [
     *website_patterns,
+    path("<slug:makerspace_slug>/events/<uuid:public_token>/share.png", PublicEventShareImageView.as_view(),
+         name="public-event-share-image"),
     path("<slug:makerspace_slug>/events/<uuid:public_token>/eligibility/", EventOrganizationEligibilityView.as_view(), name="public-event-organization-eligibility"),
     path("<slug:makerspace_slug>/events/<uuid:public_token>/", PublicEventDetailView.as_view(), name="public-event-detail"),
     path(

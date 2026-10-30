@@ -43,6 +43,8 @@ class EventSeriesWriteSerializer(serializers.Serializer):
         allow_null=True, default=None, min_value=0, required=False,
     )
     is_public = serializers.BooleanField(default=False, required=False)
+    listing = serializers.ChoiceField(choices=(("listed", "Listed"), ("unlisted", "Unlisted")), required=False,
+                                      help_text="Who can find new occurrences; each occurrence can change its own.")
     recurrence_timezone = serializers.CharField(max_length=64)
     dtstart_local_date = serializers.DateField()
     dtstart_local_time = serializers.TimeField()
@@ -108,7 +110,7 @@ class EventSeriesDetailSerializer(OrganizationAudienceFields, EventSeriesSummary
             "website_enabled", "description", "location", "location_kind", "custom_form", "capacity",
             "payment_amount", "registration_requires_approval", "registration_audience",
             "cancellation_cutoff_hours",
-            "registration_cutoff_lead_minutes", "is_public", "created_by_id", "created_at",
+            "registration_cutoff_lead_minutes", "is_public", "listing", "created_by_id", "created_at",
             "image_url",
         )
 

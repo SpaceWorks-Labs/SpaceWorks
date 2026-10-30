@@ -25,6 +25,7 @@ export function EventSettings({ event, makerspaceId, values, setValues, save, pe
         {access.manager ? <EventCategoriesField makerspaceId={makerspaceId} value={values.category_id ?? null} onChange={category_id => setValues({ ...values, category_id })} disabled={readOnly} /> : null}
         <EventFields values={values} setValues={setValues} disabled={readOnly} approvalLocked={event.status !== "draft"} settings
           organizationAudienceEnabled={event.ticketing_features?.includes("events.organization_audience")}
+          onlineEnabled={event.ticketing_features?.includes("events.online_delivery")}
           canEditDetails={access.edit} canEditSchedule={access.publish} canEditPrice={access.manager} />
         {!readOnly ? <div className={pageStickyActions}>
           <button type="button" className="desk-button" disabled={pending} onClick={() => setValues(valuesFor(event))}>Discard</button>

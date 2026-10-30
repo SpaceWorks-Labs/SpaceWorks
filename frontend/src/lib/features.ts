@@ -100,6 +100,10 @@ export const FEATURE_DEFINITIONS: readonly FeatureDefinition[] = [
   { key: "machines.warranty", parent_module: "machines", label: "Machine warranty" },
   { key: "inventory.tobuy", parent_module: null, label: "Inventory To-Buy" },
   { key: "inventory.warranty", parent_module: null, label: "Inventory warranty" },
+  // L1 (#21, #71, #73, #77): the public event surface.
+  { key: "events.short_links", parent_module: "events", label: "Event short links" },
+  { key: "events.online_delivery", parent_module: "events", label: "Online and hybrid events" },
+  { key: "public_site.closed_notice", parent_module: null, label: "Closed-for-now banner" },
 ];
 
 export function featureEnabled(features: Iterable<string>, key: string) {

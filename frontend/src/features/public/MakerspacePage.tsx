@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { ClosedNoticeBanner } from "./ClosedNoticeBanner";
 import { useParams } from "react-router-dom";
 import { PublicLayout } from "../../components/layouts";
 import type { PublicActionCardProps } from "../../components/layouts/PublicActionCard";
@@ -56,6 +57,7 @@ export function MakerspacePage({ profileSlug, profileOnly = false }: { profileSl
   if (families.has("membership")) actions.push({ label: "Member area", href: path("member") });
 
   const functional = (catalogue?: { body: ReactNode; aside: PublicActionCardProps }) => <div className="grid gap-8">
+    <ClosedNoticeBanner bootstrap={bootstrap} />
     {families.has("events") ? <FeaturedActivities slug={makerspaceSlug} path={path} timeZone={bootstrap.makerspace.timezone} /> : null}
     {catalogue ? <MakerspaceSection id="inventory" title="Inventory" subtitle="Tools, kits and materials you can borrow.">{catalogue.body}</MakerspaceSection> : null}
     {families.has("machines") ? <MachinesSection path={path} /> : null}

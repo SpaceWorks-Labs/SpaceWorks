@@ -140,11 +140,20 @@ def owner_envelope(event, event_name, registration, intent):
     if registration is None or not registration.member_id:
         return None
     space = registration.registered_via_makerspace or event.makerspace
+    from .notices_r2_l2 import removal_envelope, staff_removal, with_join_url
+    if event_name == "registration_cancelled" and staff_removal(registration):
+        # Undoable for five minutes: the member hears once the removal has stuck (G7).
+        if not eligible_owner(space, registration.member_id):
+            return None
+        return removal_envelope(event, registration, space)
+    if event_name == "registration_restored" and staff_removal(registration):
+        return None  # an undone removal was never announced, so its undo is not either
     if not _owner_allowed(space, event_name) or not eligible_owner(space, registration.member_id):
         return None
     context = events_context(event, event_name, registration,
                              next_steps=EVENTS_REQUESTER_BODIES.get(event_name, ""))
-    rendered = _rendered(render(space, "events", "requester", event_name, context), _owner_link(space, registration))
+    rendered = with_join_url(_rendered(render(space, "events", "requester", event_name, context),
+                                       _owner_link(space, registration)), event_name, registration)
     return _emit(space, registration.member, audience="requester", event_name=event_name,
                  source_kind=LIFECYCLE_SOURCE, source_id=f"r{registration.pk}", intent=intent,
                  event=event, registration=registration, rendered=rendered)

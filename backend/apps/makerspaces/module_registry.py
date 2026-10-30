@@ -12,7 +12,6 @@ derived helpers from here, so the reverse edge would be a circular import.
 
 from apps.makerspaces.module_registry_definitions import (
     FEATURE_PARENT,
-    GROUP_BACKUP,
     GROUP_BOOKINGS,
     GROUP_DEVICES,
     GROUP_EVENTS,

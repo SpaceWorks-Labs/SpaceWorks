@@ -1,4 +1,4 @@
-"""Recipient equality checks and irreversible Lane D publication."""
+"""Irreversible Lane D publication of a sealed tenant-exit artifact."""
 
 import hashlib
 import hmac
@@ -14,17 +14,13 @@ from django.utils import timezone
 from apps.audit import services as audit
 from apps.audit.batches import _scope_lock as acquire_audit_scope_lock
 from apps.backup import storage
-from apps.backup.custody import with_makerspace_custody_lock
 from apps.backup.digests import sha256_file
-from apps.backup.tenant_exit_custody import sync_tenant_exit_custody_locked
-from apps.backup.tenant_exit_custody_alarms import required_intents_present_locked
+from apps.makerspaces.models import Makerspace
 
 from .models import TenantDumpCapture
 from .tenant_dump_audit_anchors import prove_no_external_anchor
-from .tenant_dump_capture import canonical_tenant_recipient_snapshot
 from .tenant_dump_errors import (
     TenantDumpBuildError,
-    TenantDumpCustodyError,
     TenantDumpPublicationRefused,
     TenantDumpVerificationError,
 )
@@ -32,24 +28,6 @@ from .money_digest import MoneyDriftRefused, assert_money_unchanged
 from .tenant_dump_lineage import verify_artifact_lineage
 from .tenant_dump_outer_artifact import read_outer_manifest
 from .tenant_dump_staging import delete_owned_root
-
-
-ENCRYPTION_STAGES = frozenset({"inner", "outer"})
-
-
-def revalidate_before_encryption(capture_id, *, stage):
-    """READ COMMITTED equality boundary immediately before either age envelope."""
-    if stage not in ENCRYPTION_STAGES:
-        raise ValueError("Lane D encryption stage must be inner or outer.")
-    with with_makerspace_custody_lock(_makerspace_id(capture_id)) as custody:
-        state = sync_tenant_exit_custody_locked(custody)
-        capture = TenantDumpCapture.objects.select_for_update().get(pk=capture_id)
-        refusal = _recipient_refusal(capture, custody, state)
-        if refusal:
-            _refuse_locked(capture, refusal, f"recipient_changed_before_{stage}")
-    if refusal:
-        raise TenantDumpPublicationRefused(refusal)
-    return tuple(capture.frozen_tenant_recipients)
 
 
 def register_unpublished_artifact(capture_id, encrypted_path):
@@ -105,83 +83,68 @@ def register_unpublished_artifact(capture_id, encrypted_path):
 def publish_tenant_dump(capture_id):
     """Atomically expose bytes and create their single-use download state."""
     raw_token = secrets.token_urlsafe(32)
-    with with_makerspace_custody_lock(_makerspace_id(capture_id)) as custody:
-        acquire_audit_scope_lock(custody.makerspace.pk)
-        prove_no_external_anchor(custody.makerspace.pk)
-        state = sync_tenant_exit_custody_locked(custody)
+    refusal = ""
+    with transaction.atomic():
+        makerspace = Makerspace.objects.select_for_update().get(
+            pk=_makerspace_id(capture_id)
+        )
+        acquire_audit_scope_lock(makerspace.pk)
+        prove_no_external_anchor(makerspace.pk)
         capture = TenantDumpCapture.objects.select_for_update().get(pk=capture_id)
         if capture.status != TenantDumpCapture.Status.PENDING_PUBLICATION:
             raise TenantDumpBuildError("The Lane D capture is not pending publication.")
-        refusal = _recipient_refusal(capture, custody, state)
-        if refusal:
-            _refuse_locked(capture, refusal, "recipient_changed_before_publication")
+        try:
+            _verify_publication_lineage(capture)
+            # Pending charges travel in the artifact now, and the capture REOPENED
+            # the source -- so between the freeze and this moment the space may have
+            # settled a captured debt or raised a new one. Publishing then would hand
+            # out an artifact that bills a member for money already taken. This is
+            # the last source-side moment before the bytes become fetchable, and it
+            # runs under the same makerspace row lock.
+            assert_money_unchanged(capture)
+        except TenantDumpPublicationRefused as exc:
+            refusal = str(exc)
+            _refuse_locked(capture, refusal, "lineage_mismatch")
+        except MoneyDriftRefused as exc:
+            refusal = str(exc)
+            _refuse_locked(capture, refusal, "money_drift")
         else:
-            try:
-                _verify_publication_lineage(capture)
-                # Pending charges travel in the artifact now, and the capture REOPENED
-                # the source -- so between the freeze and this moment the space may have
-                # settled a captured debt or raised a new one. Publishing then would hand
-                # out an artifact that bills a member for money already taken. This is
-                # the last source-side moment before the bytes become fetchable, and it
-                # runs under the same custody lock.
-                assert_money_unchanged(capture)
-            except TenantDumpPublicationRefused as exc:
-                refusal = str(exc)
-                _refuse_locked(capture, refusal, "lineage_mismatch")
-            except MoneyDriftRefused as exc:
-                refusal = str(exc)
-                _refuse_locked(capture, refusal, "money_drift")
-            else:
-                if not capture.unpublished_object_key or not capture.artifact_sha256:
-                    raise TenantDumpBuildError(
-                        "The Lane D artifact has no sealed unpublished bytes."
-                    )
-                now = timezone.now()
-                capture.status = TenantDumpCapture.Status.PUBLISHED
-                capture.object_key = capture.unpublished_object_key
-                capture.unpublished_object_key = ""
-                capture.download_token_digest = _token_digest(raw_token)
-                capture.download_token_expires_at = now + timedelta(
-                    seconds=settings.BACKUP_DOWNLOAD_TTL_SECONDS
+            if not capture.unpublished_object_key or not capture.artifact_sha256:
+                raise TenantDumpBuildError(
+                    "The Lane D artifact has no sealed unpublished bytes."
                 )
-                capture.download_token_consumed_at = None
-                capture.published_at = now
-                capture.save()
-                audit.record(
-                    capture.requested_by,
-                    "tenant_migration.tenant_dump_published",
-                    makerspace=capture.makerspace,
-                    target=capture,
-                    meta={
-                        "artifact_sha256": capture.artifact_sha256,
-                        "artifact_size_bytes": capture.artifact_size_bytes,
-                        "recipient_fingerprints": [
-                            item["fingerprint"]
-                            for item in capture.frozen_tenant_recipients
-                        ],
-                    },
-                )
-                transaction.on_commit(
-                    lambda cid=capture.pk: _delete_capture_staging(cid),
-                    robust=True,
-                )
+            now = timezone.now()
+            capture.status = TenantDumpCapture.Status.PUBLISHED
+            capture.object_key = capture.unpublished_object_key
+            capture.unpublished_object_key = ""
+            capture.download_token_digest = _token_digest(raw_token)
+            capture.download_token_expires_at = now + timedelta(
+                seconds=settings.BACKUP_DOWNLOAD_TTL_SECONDS
+            )
+            capture.download_token_consumed_at = None
+            capture.published_at = now
+            capture.save()
+            audit.record(
+                capture.requested_by,
+                "tenant_migration.tenant_dump_published",
+                makerspace=capture.makerspace,
+                target=capture,
+                meta={
+                    "artifact_sha256": capture.artifact_sha256,
+                    "artifact_size_bytes": capture.artifact_size_bytes,
+                    "recipient_fingerprints": [
+                        item["fingerprint"]
+                        for item in capture.tenant_recipients
+                    ],
+                },
+            )
+            transaction.on_commit(
+                lambda cid=capture.pk: _delete_capture_staging(cid),
+                robust=True,
+            )
     if refusal:
         raise TenantDumpPublicationRefused(refusal)
     return TenantDumpCapture.objects.get(pk=capture_id), raw_token
-
-
-def _recipient_refusal(capture, custody, state):
-    try:
-        actual = list(canonical_tenant_recipient_snapshot(custody.makerspace.pk))
-    except TenantDumpCustodyError:
-        return "The canonical tenant-recipient set is no longer valid."
-    if actual != capture.frozen_tenant_recipients:
-        return "The tenant-recipient set changed after the Lane D request."
-    if state.state == state.State.FLOOR_BREACHED_ZERO:
-        return "The tenant-recipient set reached zero after the Lane D request."
-    if not required_intents_present_locked(state):
-        return "Tenant-exit custody lacks a durable current-revision alarm intent."
-    return ""
 
 
 def _verify_publication_lineage(capture):

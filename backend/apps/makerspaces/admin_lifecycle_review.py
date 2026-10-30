@@ -1,4 +1,4 @@
-"""Archive-request review from the narrow makerspace lifecycle list."""
+"""Archive-request review from the /control/ makerspace list."""
 
 from django.contrib import admin, messages
 from django.contrib.admin.helpers import ACTION_CHECKBOX_NAME
@@ -37,7 +37,7 @@ class MakerspaceLifecycleReviewMixin:
                     "username": item.requested_by.username if item.requested_by else "",
                     "reason": item.reason,
                     **({"impact": lifecycle.archive_impact(item.makerspace)}
-                       if approve and item.makerspace.superadmin_access_enabled else {}),
+                       if approve else {}),
                 } for item in pending],
                 "approve": approve, "opts": self.model._meta, "action_name": action,
                 "action_checkbox_name": ACTION_CHECKBOX_NAME,

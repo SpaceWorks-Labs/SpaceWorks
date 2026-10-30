@@ -58,12 +58,5 @@ class ReadinessView(APIView):
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
         from apps.encryption.readiness import assert_ready
-        from apps.backup.readiness import archive_custody_readiness
         assert_ready()
-        return Response(
-            {
-                "status": "ready",
-                "database": "ok",
-                "archive_custody": archive_custody_readiness(),
-            }
-        )
+        return Response({"status": "ready", "database": "ok"})

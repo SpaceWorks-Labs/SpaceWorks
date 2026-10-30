@@ -26,12 +26,30 @@ def settings_serializer(actor, makerspace, settings):
     return serializer
 
 
+SECURITY_FEATURE_PREFIX = "security."
+
+
+def keep_target_security(makerspace, config):
+    """A pack never carries security settings: the target keeps its own.
+
+    Security keys are per-space settings the Space Manager and the superadmin own
+    (owner decision #110c), so a pack from another space must not loosen or tighten
+    them. The target's current `security.*` features replace the pack's.
+    """
+    features = [
+        key for key in config["features"] if not key.startswith(SECURITY_FEATURE_PREFIX)
+    ]
+    features += [
+        key for key in makerspace.enabled_features or []
+        if key.startswith(SECURITY_FEATURE_PREFIX)
+    ]
+    return {**config, "features": sorted(set(features))}
+
+
 def prepare(actor, makerspace, config):
-    config = validate_configuration(config)
+    config = keep_target_security(makerspace, validate_configuration(config))
     if set(makerspace.enabled_modules or []) != set(config["modules"]) and not _superadmin(actor):
         raise PermissionDenied("Only a superadmin may change modules through a pack.")
-    from apps.backup.module_gate import assert_uninstall_allowed
-    assert_uninstall_allowed(makerspace, set(makerspace.enabled_modules or []), set(config["modules"]))
     current = configuration_for(actor, makerspace)
     candidate = copy(makerspace)
     candidate.enabled_modules = config["modules"]

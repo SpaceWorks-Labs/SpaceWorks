@@ -33,18 +33,12 @@ from apps.makerspaces.models import Makerspace
 logger = logging.getLogger(__name__)
 
 
-def superadmin_access_decision(makerspace):
-    """Return the access decision from a makerspace row locked by the caller."""
-    return makerspace.superadmin_access_enabled
-
-
 def create_archive(
     actor,
     *,
     scope,
     makerspace=None,
     backup_run=None,
-    superadmin_access_at_decision=None,
 ):
     from .cloud_operations import require_deployment_archive
     require_deployment_archive(scope)
@@ -58,15 +52,13 @@ def create_archive(
         locked_run = _lock_archive_run(backup_run)
         if makerspace is not None:
             makerspace = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
-            if locked_run is None:
-                superadmin_access_at_decision = superadmin_access_decision(makerspace)
-            else:
-                frozen = locked_run.flag_snapshot.get(str(makerspace.pk))
-                if type(frozen) is not bool:
-                    raise ValidationError(
-                        "The makerspace is not in the backup run cohort."
-                    )
-                superadmin_access_at_decision = frozen
+            if (
+                locked_run is not None
+                and str(makerspace.pk) not in locked_run.flag_snapshot
+            ):
+                raise ValidationError(
+                    "The makerspace is not in the backup run cohort."
+                )
         archive_id = uuid.uuid4()
         archive = BackupArchive.objects.create(
             id=archive_id,
@@ -74,7 +66,6 @@ def create_archive(
             makerspace=makerspace,
             requested_by=actor,
             backup_run=locked_run,
-            superadmin_access_at_decision=superadmin_access_at_decision,
             object_key=f"backup-archives/{scope}/{archive_id}.tar.age",
         )
         audit.record(

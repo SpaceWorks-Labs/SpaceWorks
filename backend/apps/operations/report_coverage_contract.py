@@ -27,7 +27,7 @@ _ROWS = (
      ("communications-health",)),
     (("mobile",), ("mobile-devices", "mobile-auth")),
     (("devices",), ("device-health",)),
-    (("reports", "backup", "sms", "whatsapp"), ("module-operational-health",)),
+    (("reports", "sms", "whatsapp"), ("module-operational-health",)),
     (("presence",), ("presence-activity",)),
     (("audit",), ("audit-activity",)),
     (("organizations",), ("organization-membership",)),

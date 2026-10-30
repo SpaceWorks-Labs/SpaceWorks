@@ -214,9 +214,6 @@ restore_preflight() {
     --current-oci-digest "$oci_digest"
 }
 preflight_result="$(restore_preflight | tail -n 1)"
-if [[ "$preflight_result" == "compound-coordinator-ready" ]]; then
-  die "scripts/restore.sh is the legacy in-place path and cannot execute a compound restore; invoke the target compound pre-cutover coordinator."
-fi
 [[ "$preflight_result" == "preflight-ok" ]] \
   || die "The restore preflight returned an unknown path result."
 claim_result="$(control claim "$RESTORE_ID" | tail -n 1)"

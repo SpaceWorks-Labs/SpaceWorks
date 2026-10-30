@@ -7,7 +7,6 @@ this tuple at import time, so a bad entry still fails the process at startup.
 
 from apps.makerspaces.module_registry_definitions import (
     FEATURE_PARENT,
-    GROUP_BACKUP,
     GROUP_BOOKINGS,
     GROUP_DEVICES,
     GROUP_EVENTS,
@@ -216,17 +215,6 @@ MODULES = (
         "Attested device sessions, native push and the in-app payment sheet.",
         "accounts", GUARD, group=GROUP_MOBILE,
         requires_modules=("member_accounts",),
-    ),
-    # Makerspace-facing backup surfaces only (apps/backup/module_gate.py). Default-on
-    # because the key was placed in front of surfaces every makerspace already had, and
-    # recipient enrolment is the only road to a superadmin-off makerspace; backup/0026
-    # backfills it onto existing rows. Deployment backup and restore are platform and
-    # are never gated by it, and recipient compromise always works.
-    ModuleDefinition(
-        "backup", "Backup & custody",
-        "Makerspace archive requests and downloads, archive-recipient keys and custody "
-        "status. Deployment backups still cover this makerspace without it.",
-        "backup", GUARD, group=GROUP_BACKUP, default_enabled=True,
     ),
     # Opt-in and dependency-free: device identity is a trust boundary that printer and
     # label adapters build on, so it must not force `machines` onto a label-only space.

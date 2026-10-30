@@ -1,4 +1,4 @@
-"""Registered staff-shell projection and its exact inverse, preserving audit IDs."""
+"""Registered staff-shell projection used by the readable-main registry."""
 
 from datetime import UTC, datetime
 
@@ -8,7 +8,6 @@ import json
 
 from apps.makerspaces.staff_retirement import shell_values
 from .raw_projection import concrete_record_payload
-from .slice_merge_types import SliceMergeError
 
 SHELL_TIMESTAMP = datetime(1970, 1, 1, tzinfo=UTC)
 
@@ -62,27 +61,3 @@ def project_staff_shells(cursor, marker):
         cursor.execute("UPDATE accounts_user SET " + ", ".join(
             f"{quote(User._meta.get_field(name).column)} = %s" for name in values
         ) + " WHERE id = %s", [*values.values(), pk])
-
-
-def restore_staff_shell(cursor, model, record, component_id):
-    """Occupied IDs are admissible only for the exact declared shell preimage."""
-    expected = record.get("_shell_preimage")
-    if model._meta.label != "accounts.User" or expected is None:
-        raise SliceMergeError("A staged row would overwrite an occupied target identity.")
-    from .slice_merge_raw import prepared_record
-    columns, values = prepared_record(model, expected, cursor.db)
-    quote = cursor.db.ops.quote_name
-    cursor.execute('SELECT * FROM accounts_user WHERE id = %s FOR UPDATE', [record["pk"]])
-    actual = dict(zip((column[0] for column in cursor.description), cursor.fetchone(), strict=True))
-    if actual != dict(zip(columns, values, strict=True)):
-        raise SliceMergeError("The staff restore target is not the expected inert shell.")
-    cursor.execute("SELECT 1 FROM backup_b1restorecomponentstate WHERE component_id = %s "
-        "AND operation_id::text = current_setting('app.b1_merge_operation') "
-        "AND makerspace_id_snapshot = %s AND state = 'merging'", [
-            component_id, record["fields"]["staff_makerspace"]])
-    if cursor.fetchone() is None:
-        raise SliceMergeError("The staff shell belongs to another restore component.")
-    columns, values = prepared_record(model, record, cursor.db)
-    cursor.execute("UPDATE accounts_user SET " + ", ".join(
-        f"{quote(column)} = %s" for column in columns
-    ) + " WHERE id = %s", [*values, record["pk"]])

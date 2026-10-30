@@ -55,7 +55,6 @@ REPORT_MODULE_COVERAGE = {
     "member_accounts": ModuleReportCoverage("composite", ("community-engagement",)),
     "mobile": ModuleReportCoverage("composite", ("community-engagement",)),
     "devices": ModuleReportCoverage("health_row", ("module-operational-health",)),
-    "backup": ModuleReportCoverage("health_row", ("module-operational-health",)),
 }
 REPORT_MODULE_COVERAGE["mobile"] = ModuleReportCoverage(
     "substantive", ("community-engagement", "mobile-devices", "mobile-auth", "communications-health"),

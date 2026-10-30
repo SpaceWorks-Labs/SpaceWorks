@@ -54,8 +54,6 @@ ENTRIES = (
     P("makerspace.subdomain_request_approved", "Makerspace subdomain request approved"),
     P("makerspace.subdomain_request_rejected", "Makerspace subdomain request rejected"),
     P("makerspace.subdomain_requested", "Makerspace subdomain requested"),
-    P("makerspace.superadmin_access_changed", "Makerspace superadmin access changed",
-      ("activation_after", "activation_before", "enabled")),
     P("makerspace.unarchived", "Makerspace unarchived"),
     P("makerspace.updated", "Makerspace updated"),
     P("makerspace.waiver_deactivated", "Makerspace waiver deactivated"),

@@ -26,10 +26,7 @@ def _manifest(
             "request_actor_id": capture.requested_by_id,
             "gate_owner_id": str(capture.gate_owner_id),
             "gate_fencing_token": capture.gate_fencing_token,
-            "superadmin_access_at_decision": (
-                capture.superadmin_access_at_decision
-            ),
-            "tenant_recipients": capture.frozen_tenant_recipients,
+            "tenant_recipients": capture.tenant_recipients,
             "database_snapshot_at": capture.database_snapshot_at.isoformat(),
             "postgres_major": capture.source_postgres_major,
             "encryption_mode": capture.source_encryption_mode,

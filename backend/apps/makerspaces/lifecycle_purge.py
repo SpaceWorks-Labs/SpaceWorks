@@ -50,5 +50,4 @@ def _audit_meta(makerspace):
         "makerspace_id": makerspace.pk,
         "name": makerspace.name,
         "slug": makerspace.slug,
-        "superadmin_access_enabled": makerspace.superadmin_access_enabled,
     }

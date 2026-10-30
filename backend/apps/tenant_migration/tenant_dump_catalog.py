@@ -57,8 +57,10 @@ class TenantDumpCatalogError(AssertionError):
 # lane/r2-l17: makerspaces/0110 settings authority (grants and SM locks) and 0111 folded
 # modules (#97, #101, #128); re-pinned.
 # lane/r2-l7b: events/0059-0060 pairwise judging and its guards; re-pinned over L17.
+# lane/p1b-b1 (#110/#111): backup/0030-0033 drop archive custody, decision snapshots, Lane E
+# restore state and the backup module; tenant_migration/0013 drops dump custody; re-pinned.
 # Orchestrator re-pins the live catalog after final schema/migration verification.
-CATALOG_SCHEMA_SHA256 = "a16664949cf14283e3c7db7ae5a41230fc39f0b2dcbc687be3de277bf93fab0a"
+CATALOG_SCHEMA_SHA256 = "e7e6888e3d74ed4e4bba2f76770f60d314bb9980ac7114b48d18b05bf436d1b0"
 
 
 def catalog_models(apps_registry=apps):

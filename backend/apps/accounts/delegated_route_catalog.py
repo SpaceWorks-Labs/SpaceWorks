@@ -7,6 +7,7 @@ existing action check. Names are explicit so a new URL cannot inherit authority.
 MEMBERSHIP_ROUTES = frozenset("""
 backup-recovery-state
 admin-backup-archive-rehydrate admin-backup-destination admin-backup-destination-probe
+admin-backup-download-url admin-makerspace-backups
 admin-backup-destination-push admin-backup-destination-retire admin-backup-destination-uploads
 admin-backup-destinations admin-certification-grant-renew admin-certification-grant-revoke
 admin-certification-members admin-certification-type-detail admin-certification-type-grants
@@ -69,11 +70,9 @@ kiosk-station-operator-lease kiosk-station-work-package kiosk-station-evidence-p
 kiosk-station-command-online payment-document-download
 accepted-requests accountability-dashboard active-loans admin-accessible-booking-spaces
 admin-accessible-events admin-api-client admin-api-client-rotate-secret admin-api-client-scopes
-admin-api-clients admin-api-key-requests admin-api-settings admin-archive-recipient-compromise
-admin-archive-recipient-list-create admin-archive-recipient-reactivate
-admin-archive-recipient-reissue admin-archive-recipient-revoke admin-archive-recipient-verify
+admin-api-clients admin-api-key-requests admin-api-settings
 admin-asset-warranty admin-audit-logs admin-audit-verification-detail admin-audit-verifications
-admin-backup-download-url admin-bookable-space-booking-rules admin-bookable-space-clone
+admin-bookable-space-booking-rules admin-bookable-space-clone
 admin-bookable-space-deactivate admin-bookable-space-detail admin-bookable-space-image-delete
 admin-bookable-space-image-finalize admin-bookable-space-image-presign
 admin-bookable-space-list-create admin-bookable-space-photo admin-bookable-space-photo-order
@@ -126,7 +125,7 @@ admin-kiosk-replay-resolve admin-machine-service-request-collect
 admin-machine-service-request-detail admin-machine-service-request-list-create
 admin-machine-type-email-template-detail admin-machine-type-email-template-reset admin-makerspace
 admin-makerspace-archive-request-withdraw admin-makerspace-archive-requests
-admin-makerspace-backup-custody admin-makerspace-backups admin-makerspace-booking-queue
+admin-makerspace-backup-status admin-makerspace-booking-queue
 admin-makerspace-cover admin-makerspace-domain-settings
 admin-settings-authority-grants admin-settings-authority-locks admin-settings-authority-effective
 admin-makerspace-hosting-invitation-cancel admin-makerspace-hosting-invitations admin-makerspace-logo

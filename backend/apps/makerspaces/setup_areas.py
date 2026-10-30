@@ -16,7 +16,7 @@ AREAS = {
     "reports": ("reports",),
     "chat": ("telegram", "slack", "mattermost", "discord", "webhook"),
 }
-ALWAYS_MODULES = {"backup", "notifications", "email", "member_accounts"}
+ALWAYS_MODULES = {"notifications", "email", "member_accounts"}
 ALWAYS_FEATURES = {"billing.reminders", "charges.enabled", "billing.documents",
                    "staff.invitations", "presence.geofence", "ui.delight", "ui.easter_eggs"}
 # The inventory family is parentless, so the area names its switches; To-Buy and warranty

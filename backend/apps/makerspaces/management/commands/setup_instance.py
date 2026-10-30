@@ -9,7 +9,6 @@ from django.http import Http404
 from django.utils.text import slugify
 from rest_framework.exceptions import APIException
 
-from apps.backup.custody import initialize_custody_state
 from apps.makerspaces.models import Makerspace
 from apps.makerspaces.module_install import apply_profile
 from apps.makerspaces.module_profiles import PROFILES
@@ -106,7 +105,6 @@ class Command(BaseCommand):
             if space_created:
                 assert_write_allowed(makerspace.pk)
                 makerspace = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
-                initialize_custody_state(makerspace.pk)
                 # Only on creation: reruns must preserve the operator's current module
                 # selection. The installer applies its confirmed areas afterwards with
                 # apply_setup_areas, so a profile is optional here.

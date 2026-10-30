@@ -7,7 +7,7 @@ from dataclasses import dataclass
 import re
 from typing import Callable
 
-from .recipient_selection import BackupBuildError
+from .build_errors import BackupBuildError
 
 
 @dataclass(frozen=True)

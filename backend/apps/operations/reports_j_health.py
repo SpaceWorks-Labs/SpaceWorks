@@ -2,8 +2,6 @@
 
 from django.db.models import Count
 
-from apps.backup.models import BackupArchive
-from apps.backup.models_offsite import BackupDestinationUpload
 from apps.makerspaces.platform import module_enabled
 from apps.operations.models_report_schedules import ReportDelivery
 from apps.operations.reports_common import apply_range, period_expression
@@ -26,11 +24,6 @@ def build_module_operational_health(makerspace_id, *, limit=None, date_range=Non
                 sources.append((channel, "notification_delivery",
                     NotificationDelivery.objects.filter(makerspace=space, channel=channel), "state",
                     {"accepted", "sent", "delivered", "read"}, {"failed"}))
-        if module_enabled(space, "backup"):
-            sources.extend([
-                ("backup", "archive", BackupArchive.objects.filter(makerspace=space, scope="makerspace"), "status", {"available", "expired"}, {"failed"}),
-                ("backup", "offsite", BackupDestinationUpload.objects.filter(makerspace_id_snapshot=space.pk), "state", {"bytes_verified", "deleted"}, {"abandoned"}),
-            ])
         for module, kind, qs, status_field, successes, failures in sources:
             qs = apply_range(qs, "created_at", window)
             groups = {}

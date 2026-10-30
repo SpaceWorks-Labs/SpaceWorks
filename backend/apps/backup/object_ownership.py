@@ -7,7 +7,7 @@ from pathlib import Path
 from apps.backup.digests import sha256_file
 from .object_capture_proof import capture_proof, assert_capture_proof
 from apps.backup.object_ownership_registry import ReferencePolicy
-from apps.backup.recipient_selection import BackupBuildError
+from apps.backup.build_errors import BackupBuildError
 
 
 MAIN_COMPONENT = "main"

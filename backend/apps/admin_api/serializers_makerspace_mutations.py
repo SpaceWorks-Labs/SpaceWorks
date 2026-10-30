@@ -3,23 +3,10 @@ from django.utils import timezone
 from rest_framework import serializers
 
 from apps.accounts.models import User
-from apps.backup.activation import (
-    ActivationModuleRequiredError,
-    ActivationRecipientFloorError,
-    set_superadmin_access,
-)
-from apps.backup.custody import with_makerspace_custody_lock
-from apps.integrations.email import platform_email_configured
 from apps.makerspaces import domain_verification
 from apps.makerspaces.models import (
     Makerspace,
     default_branding_config,
-)
-
-
-_DISABLE_ACCESS_SEQUENCE = (
-    "Enrol and verify at least two archive recipients before disabling "
-    "superadmin access."
 )
 
 
@@ -58,8 +45,6 @@ class MakerspaceMutationMixin:
                     "updated_at",
                 ]
             )
-        with with_makerspace_custody_lock(instance.pk) as custody:
-            instance = custody.makerspace
         if install_profile_id is not None:
             from apps.makerspaces.space_pack_services import apply_saved_profile
             apply_saved_profile(self.context["request"].user, instance, install_profile_id)
@@ -90,19 +75,12 @@ class MakerspaceMutationMixin:
         mattermost_webhook_url = validated_data.pop("mattermost_webhook_url", missing)
         discord_webhook_url = validated_data.pop("discord_webhook_url", missing)
         public_display_name = validated_data.pop("public_display_name", missing)
-        new_flag = validated_data.pop("superadmin_access_enabled", None)
 
-        with with_makerspace_custody_lock(instance.pk) as custody:
-            locked = custody.makerspace
+        with transaction.atomic():
+            locked = Makerspace.objects.select_for_update().get(pk=instance.pk)
             old_domain = locked.frontend_domain
             actor = self.context["request"].user
             is_superadmin = actor.is_superuser or actor.role == User.Role.SUPERADMIN
-            access_changes = (
-                new_flag is not None
-                and new_flag != locked.superadmin_access_enabled
-            )
-            if access_changes:
-                self._validate_access_change(locked, new_flag, is_superadmin)
             from apps.integrations.email_provider_serializers import apply_provider_update
             apply_provider_update(locked, validated_data)
             for field, value in validated_data.items():
@@ -132,43 +110,7 @@ class MakerspaceMutationMixin:
             locked.save()
             from apps.makerspaces.membership_admission_settings import sync_legacy_settings
             sync_legacy_settings(actor, locked, validated_data)
-            if access_changes:
-                try:
-                    set_superadmin_access(
-                        custody,
-                        enabled=new_flag,
-                        actor=actor,
-                    )
-                except ActivationRecipientFloorError as exc:
-                    raise serializers.ValidationError(
-                        {"superadmin_access_enabled": _DISABLE_ACCESS_SEQUENCE}
-                    ) from exc
-                except ActivationModuleRequiredError as exc:
-                    raise serializers.ValidationError(
-                        {"superadmin_access_enabled": str(exc)}
-                    ) from exc
             return locked
-
-    def _validate_access_change(self, locked, new_flag, is_superadmin):
-        if new_flag is True and is_superadmin:
-            raise serializers.ValidationError(
-                {
-                    "superadmin_access_enabled": (
-                        "Only the makerspace admin can re-enable superadmin access."
-                    )
-                }
-            )
-        if new_flag is not False:
-            return
-        if not platform_email_configured():
-            raise serializers.ValidationError(
-                {
-                    "superadmin_access_enabled": (
-                        "Configure Platform Email before disabling superadmin access, "
-                        "so password recovery remains possible."
-                    )
-                }
-            )
 
     @staticmethod
     def _apply_frontend_domain_change(locked, frontend_domain, is_superadmin):

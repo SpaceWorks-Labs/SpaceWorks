@@ -12,6 +12,14 @@
   published only through the existing finalize/publish step. Pairwise comparisons count as judging
   work for judge certificates; the Tinkerspace showcase seeds a pairwise hackathon. D19's KiCad viewer
   was dropped by the owner: KiCad files stay download-only and X3 is not applicable.
+- **2026-10-27 -- P1b B1: backup teardown for "superadmin always on" (#110/#111).** Archive
+  recipients, challenges, custody states, custody alarms and B1 activation are gone; every archive is
+  encrypted to the platform key (backup/0030-0031). Lane E sovereign slices, delayed merge, B1 restore
+  reservations and the compound restore coordinator are deleted; the deployment manifest is protocol v2
+  with one readable component (backup/0032), which also makes a whole-server backup buildable on a
+  deployment with no hidden space. The `backup` module key is retired (backup/0033): Space Managers see
+  a read-only "Last backup" line. Tenant exit takes one-shot `--recipient` keys plus the platform key
+  (tenant_migration/0013). The superadmin-access toggle has no write path; the field drop is B2.
 - **2026-10-22 -- release-1 fixes.** Exactly two published images (#75a): one `spaceworks-backend`
   (Dockerfile target `release`) runs every profile, selected at start-up; the common entrypoint hands
   managed mode to `cloud_entrypoint`, host mode is unchanged (#42). **Release note (#75b): Machine

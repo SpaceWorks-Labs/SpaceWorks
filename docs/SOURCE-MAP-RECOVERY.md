@@ -3,9 +3,10 @@
 This is the recovery reference linked by [SOURCE-MAP-APPS.md](SOURCE-MAP-APPS.md).
 Update it with code moves; the repository tree remains authoritative.
 
-- `backend/apps/backup/` — deployment backup + restore (Phase 5A/Lane E). `outer_manifest.py` owns the
-  signed readable manifest, `artifact_ledger.py` + `models_artifact_ledger.py` own durable component and
-  recipient custody, `activation.py` owns the access-switch/activation transition, and
+- `backend/apps/backup/` — deployment backup + restore (Phase 5A; one platform-readable component since
+  P1b). `age_recipients.py` owns canonical age keys and the platform recipient every archive uses;
+  `compound_archive.py` captures the single readable main; `outer_manifest.py` owns the signed v2
+  manifest, `artifact_ledger.py` + `models_artifact_ledger.py` own the durable artifact/component rows, and
   `artifact_protocol.py`/`promotion.py`/`reconciliation.py` own staged upload and the single availability
   transaction. `services.py` is the stable barrel over archive/access/lease/run lifecycle modules;
   `models_runs.py` + `runs.py` own scheduled-run cohort and coverage proofs, while `services_runs.py`
@@ -13,19 +14,15 @@ Update it with code moves; the repository tree remains authoritative.
   upload journal), `offsite_client.py` (S3 byte primitives), `offsite_enqueue.py` (eligibility + journal rows), `offsite_push.py` (fan-out + read-back
   verification), `offsite_retention.py`, `offsite_reverify.py` (periodic re-read), `offsite_restore.py` (create-only rehydration),
   `tasks_offsite.py`, `views_offsite.py`, `services_offsite.py` (shared API/admin retirement and probes)
-  and the `fetch_offsite_archive` command. `views_recipients.py` explicitly re-exports enrollment and
-  lifecycle views; `views_recipients_common.py` owns their scoped lookups and error contracts. `module_gate.py` owns
-  the `backup` module key; `views_custody.py` is its read-only custody status.
+  and the `fetch_offsite_archive` command. `views_backup_status.py` is the read-only "Last backup" line
+  a makerspace's managers see (there is no `backup` module key any more).
   `archive_metadata.py` owns stable build/settings manifest facts;
-  `backup_control_preflight.py` remains the E9b restore validator behind the `restore_preflight.py`
-  compatibility surface. Archive builder, `restore_diff`, the global quarantine
+  `backup_control_preflight.py` is the restore validator behind the `restore_preflight.py`
+  compatibility surface and refuses a legacy partial archive. Archive builder, `restore_diff`, the global quarantine
   `middleware.py` + `route_policy.py`, `recovery.py`, `object_restore.py`,
   `operation_lock.py`, and the privileged host scripts (`scripts/restore.sh`, `scripts/import-backup.sh`)
   own verified archive recovery independently of release deployment. Project JWT classes (`accounts/tokens.py`, `token_guard.py`) stamp
-  `auth_generation`. `custody.py` is the makerspace-first/recipient-PK serialization boundary;
-  `tenant_exit_custody.py` derives Lane D's independent tenant-only floor, while
-  `tenant_exit_custody_alarms.py` reuses the decision-19b recipient selectors and parameterized durable
-  dispatcher for its retryable outbox. The `host_*` modules own H1's marker, consume-only capability socket,
+  `auth_generation`. The `host_*` modules own H1's marker, consume-only capability socket,
   signed grant, run ledger, supervisor and atomic pointer; `database_grants.py` is its independent
   PostgreSQL role boundary. `cloud_environment.py` captures host-rendered Cloud Compose interpolation into
   durable static configuration without consulting later ambient shells; only the root-only
@@ -61,16 +58,16 @@ Update it with code moves; the repository tree remains authoritative.
   `tenant_dump_key_inventory.py` freezes and exact-set checks source-broker key facts, while
   `tenant_dump_dek_protocol.py`/`tenant_dump_dek_helper.py`/`tenant_dump_deks.py` keep plaintext DEKs inside
   the bounded child operation and emit only the tenant-recipient ciphertext;
-  `tenant_dump_recipients.py` keeps `outer_recipients` and `tenant_dek_recipients` distinct, and
+  `tenant_dump_recipients.py` validates the one-shot `--recipient` keys and keeps `outer_recipients`
+  (tenant keys plus the platform key) and `tenant_dek_recipients` (tenant keys only) distinct, and
   `tenant_dump_envelope.py` owns the declared key-member presence/absence ledger plus streaming outer seal;
   `tenant_dump_target.py` binds D5's pre-destructive identity proof to reconstruction, with
   `tenant_dump_target_identities.py` enforcing read-only mode-0600 tenant mounts,
   `tenant_dump_target_protocol.py`/`tenant_dump_target_helper.py`/`tenant_dump_target_deks.py` owning the
   key-free parent plus bounded target decrypt/rewrap child, and `tenant_dump_target_readiness.py` rebuilding
-  target search derivations and authenticated readiness; `tenant_dump_target_custody.py` re-proves carried
-  recipient public metadata and independently derives Part A versus Lane D custody and decision-19b routing;
-  `tenant_dump_manifest.py` and `tenant_dump_lineage.py` bind D4 custody facts and parent/policy digests;
-  `tenant_dump_publication.py` owns recipient revalidation, refusal cleanup and the atomic
+  target search derivations and authenticated readiness;
+  `tenant_dump_manifest.py` and `tenant_dump_lineage.py` bind D4 envelope facts and parent/policy digests;
+  `tenant_dump_publication.py` owns lineage/money revalidation, refusal cleanup and the atomic
   pending-to-published/download transition; `tenant_dump_audit_anchors.py` supplies the fail-closed
   external-anchor absence proof;
   `tenant_restore_orchestrator.py` is the D7 §5.4 ordered target-restore spine over H1;

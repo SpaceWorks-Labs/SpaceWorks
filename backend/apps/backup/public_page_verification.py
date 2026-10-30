@@ -11,7 +11,7 @@ from copy import deepcopy
 from django.apps import apps
 from django.db.models import Sum
 
-from .recipient_selection import BackupBuildError
+from .build_errors import BackupBuildError
 
 logger = logging.getLogger(__name__)
 

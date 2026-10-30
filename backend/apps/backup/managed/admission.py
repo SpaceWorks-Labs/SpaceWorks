@@ -32,9 +32,6 @@ def assert_recovery_normal(cursor):
     cursor.execute("SELECT mode, active_restore_id FROM public.backup_deploymentrecoverystate WHERE id = 1")
     if cursor.fetchone() != ("normal", None):
         raise ManagedAdmissionError("Recovery state is missing or does not admit managed services.")
-    cursor.execute("SELECT EXISTS (SELECT 1 FROM public.backup_b1restorecomponentstate WHERE state <> 'restored') OR EXISTS (SELECT 1 FROM public.backup_b1reservationentry)")
-    if cursor.fetchone()[0]:
-        raise ManagedAdmissionError("Outstanding restore components or reservations require host recovery.")
 
 
 def assert_binding(database, expected, *, require_narrow=True):

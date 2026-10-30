@@ -10,7 +10,6 @@ stay, their surfaces stop being served, and reinstalling restores them. That is
 what makes uninstall safe enough to not need a destructive-confirmation prompt.
 """
 
-from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 
 from apps.audit import services as audit
@@ -138,12 +137,6 @@ def apply_profile(makerspace, profile, actor=None):
 
 
 def _apply(locked, modules, actor, add_features=()):
-    from apps.backup.module_gate import assert_uninstall_allowed
-
-    try:
-        assert_uninstall_allowed(locked, set(locked.enabled_modules or []), set(modules))
-    except DjangoValidationError as exc:
-        raise ModuleInstallError(exc.messages[0]) from exc
     before = sorted(set(locked.enabled_modules or []))
     before_features = sorted(set(locked.enabled_features or []))
     # Installing `membership` FORCES account-less requests off inside `Makerspace.save()`

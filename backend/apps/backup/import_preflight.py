@@ -10,7 +10,7 @@ from apps.backup.digests import sha256_file
 from apps.backup.management.commands.backup_preflight import build_info
 from apps.backup.outer_manifest import PROTOCOL_VERSION, verify_outer_manifest
 from apps.backup.postgres_client import server_major
-from apps.backup.recipient_selection import BackupBuildError
+from apps.backup.build_errors import BackupBuildError
 
 
 DEPLOYMENT_FORMAT = "spaceworks-phase5a-v3"
@@ -106,7 +106,7 @@ def _validate_format(manifest):
         )
     if manifest.get("protocol_version") != PROTOCOL_VERSION:
         raise ImportPreflightError(
-            "format_version", "the Lane E compound protocol version is unsupported."
+            "format_version", "the deployment archive protocol version is unsupported."
         )
     if manifest.get("scope") != "deployment" or manifest.get("age_encrypted") is not True:
         raise ImportPreflightError(
@@ -117,16 +117,15 @@ def _validate_format(manifest):
 
 def _validate_compatibility_declarations(manifest):
     try:
-        sets = manifest["makerspace_sets"]
         identity = manifest["build_identity"]
         if (
             manifest["archive_id"] != manifest["artifact_id"]
             or manifest["snapshot_at"] != manifest["source_timestamp"]
             or manifest["build"] != identity["build"]
             or manifest["oci_digest"] != identity["oci_digest"]
-            or manifest["covered_makerspace_ids"] != sets["readable_main"]
-            or manifest["excluded_makerspace_ids"] != sets["sovereign"]
-            or manifest["partial"] is not bool(sets["sovereign"])
+            or manifest["covered_makerspace_ids"] != manifest["makerspace_ids"]
+            or manifest["excluded_makerspace_ids"] != []
+            or manifest["partial"] is not False
             or manifest["recipient_fingerprints"]
             != manifest["main_component"]["recipient_fingerprints"]
         ):
@@ -134,7 +133,7 @@ def _validate_compatibility_declarations(manifest):
     except (KeyError, TypeError, ValueError) as exc:
         raise ImportPreflightError(
             "format_declaration",
-            "the compound manifest compatibility declarations are inconsistent.",
+            "the deployment manifest compatibility declarations are inconsistent.",
         ) from exc
 
 

@@ -6,10 +6,16 @@ import type * as Api from "../../generated/api";
 
 // Wire types come from the generated OpenAPI client; these aliases keep the feature's names.
 export type HostingAck = Api.HostingAck;
-export type HostingRequestStatus = Api.StatusAc9Enum;
+export type HostingRequestStatus = "invited" | "pending_verification" | "submitted" | "changes_requested" | "accepted" | "rejected" | "withdrawn";
 export type HostingRequestBody = Api.HostingRequestSubmit;
 export type HostingInvitationSubmitBody = Api.HostingInvitationSubmit;
-export type HostingRequestView = Api.HostingRequestStatus;
+export type HostingRevision = { kind: "changes_requested" | "resubmitted"; note: string; changed_fields: string[]; created_at: string };
+/** X31 adds the review note, history and the editable fields to the applicant's status read. */
+export type HostingRequestDetails = Omit<Api.HostingRequestStatus, "status"> & { status: HostingRequestStatus;
+  changes_note?: string; revisions?: HostingRevision[]; editable?: boolean; location?: string;
+  space_website_url?: string; description?: string };
+export type HostingRequestView = HostingRequestDetails;
+export type HostingResubmitBody = { space_name?: string; location?: string; space_website_url?: string; description?: string; note?: string };
 export type HostingInvitationPreview = Api.HostingInvitationPreview;
 export type HostingInvitation = Api.HostingInvitation;
 export type HostingInvitationCreated = Api.HostingInvitationCreated;
@@ -41,6 +47,10 @@ export function useSubmitHostingRequest() {
 
 export function useOpenHostingRequest() {
   return useMutation({ mutationFn: (token: string) => post<HostingRequestView>("/public/hosting/requests/open", { token }) });
+}
+
+export function useResubmitHostingRequest() {
+  return useMutation({ mutationFn: (body: HostingResubmitBody & { token: string }) => post<HostingRequestView>("/public/hosting/requests/resubmit", body) });
 }
 
 export function useResolveHostingInvitation() {

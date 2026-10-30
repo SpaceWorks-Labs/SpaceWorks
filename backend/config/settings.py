@@ -1033,6 +1033,11 @@ ACCOUNT_PII_KEY_BROKER = env("ACCOUNT_PII_KEY_BROKER", default="local")
 ACCOUNT_PII_MASTER_KEY = env("ACCOUNT_PII_MASTER_KEY", default="")
 ACCOUNT_PII_MASTER_KEY_PREVIOUS = env("ACCOUNT_PII_MASTER_KEY_PREVIOUS", default="")
 ACCOUNT_PII_AWS_KMS_KEY_ID = env("ACCOUNT_PII_AWS_KMS_KEY_ID", default="")
+# --- Release 2 / U-A1: one account per person -------------------------------------------
+# The unification migration converts live staff accounts only when this equals the
+# plan_sha256 that `manage.py account_unification_report` printed for this database.
+ACCOUNT_UNIFICATION_ACK = env("ACCOUNT_UNIFICATION_ACK", default="")
+# --- end U-A1 --------------------------------------------------------------------------
 ACCOUNT_SAVED_ASSET_BUDGET_BYTES = env.int("ACCOUNT_SAVED_ASSET_BUDGET_BYTES", default=50 * 1024**2)
 ACCOUNT_SAVED_RESUME_SCAN_REQUIRED = env.bool("ACCOUNT_SAVED_RESUME_SCAN_REQUIRED", default=False)
 ACCOUNT_SAVED_RESUME_SCANNER = env("ACCOUNT_SAVED_RESUME_SCANNER", default="")

@@ -21,7 +21,7 @@ class SettingPolicy:
 # Literal by design: the env-surface test compares this with its existing scanner, so a
 # newly read setting cannot silently inherit a policy.
 ENV_SURFACE = frozenset("""
-ACCOUNT_DELETION_RETENTION_DAYS
+ACCOUNT_DELETION_RETENTION_DAYS ACCOUNT_UNIFICATION_ACK
 MANAGED_UPLOAD_TRANSFER_BOUND_SECONDS SPACEWORKS_FINITE_MAINTENANCE_JOB PYTHONPATH
 TRUSTED_EDGE_INGRESS_SECRET
 

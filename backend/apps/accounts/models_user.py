@@ -10,9 +10,13 @@ def _normalized_email(value):
 
 
 class User(AbstractUser):
+    # One account per person. ``member`` IS the person (exposed as ``person`` in the
+    # API); ``platform`` is the superadmin. ``staff`` survives only for inert shells:
+    # legacy retired staff accounts and accounts merged into a person (``merged_into``).
+    # Staff authority is a staff-TRACK membership on a person, never an account kind.
     class AccountKind(models.TextChoices):
-        MEMBER = "member", "Member"
-        STAFF = "staff", "Staff"
+        MEMBER = "member", "Person"
+        STAFF = "staff", "Inert shell"
         PLATFORM = "platform", "Platform"
 
     objects = UserManager()
@@ -22,6 +26,12 @@ class User(AbstractUser):
         related_name="staff_accounts",
     )
     retired_at = models.DateTimeField(null=True, blank=True)
+    # An alias, not a delete: immutable history (audit actor, evidence, scans, ledger)
+    # keeps pointing at the shell, and ``staff_identity.actor_ids_for`` follows it.
+    merged_into = models.ForeignKey(
+        "self", on_delete=models.PROTECT, null=True, blank=True, related_name="merged_shells",
+    )
+    merged_at = models.DateTimeField(null=True, blank=True)
     credential_generation = models.PositiveIntegerField(default=0)
     deletion_requested_at = models.DateTimeField(null=True, blank=True)
     deletion_purge_after = models.DateTimeField(null=True, blank=True)

@@ -35,10 +35,11 @@ AUTHORITY_FIELDS = {
 }
 
 _REMAP = "Typed owners, canonical object keys or reconstructed coordination keys follow the target allocation; duplicate tuples refuse."
+# `JudgePairwiseInvalidation.comparison` is its tenant ownership path
+# (comparison__event__makerspace), so its one-to-one uniqueness is tenant-scoped, not a risk.
 UNIQUE_CONSTRAINTS = (
     ('events.JudgePairwiseComparison', 'ev_pairwise_sequence'),
     ('events.JudgePairwiseComparison', 'ev_pairwise_pair_once'),
-    ('events.JudgePairwiseInvalidation', 'field:comparison'),
     ('events.JudgePairwiseCursor', 'ev_pairwise_cursor_once'),
 )
 

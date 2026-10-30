@@ -7,6 +7,7 @@ only move the journal and dispatch. The views own re-authentication and the type
 
 from django.db import IntegrityError, transaction
 from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from apps.accounts.platform_authority import is_platform_superadmin
@@ -33,8 +34,9 @@ def request_restore(actor, makerspace, archive):
         raise ValidationError({"detail": str(exc), "code": exc.code}) from None
     try:
         with transaction.atomic():
+            snapshot_at = parse_datetime(str(archive.manifest.get("snapshot_at") or "")) or archive.completed_at
             op = Op.objects.create(makerspace=makerspace, archive=archive, requested_by=actor,
-                                   snapshot_at=archive.completed_at)
+                                   snapshot_at=snapshot_at)
             audit.record(actor, "backup.space_restore_requested", makerspace=makerspace, target=op,
                          meta={"restore_id": str(op.pk), "archive_id": str(archive.pk), "source": op.source})
     except IntegrityError:

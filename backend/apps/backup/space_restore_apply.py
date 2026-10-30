@@ -64,6 +64,7 @@ def apply_space_restore(makerspace, archive):
     report["removed"] = {label: len(pks) for label, pks in gone.items() if pks}
     report["accounts_rescrubbed"] = rescrub_deleted_accounts(makerspace, users.referenced)
     report["users_reattributed"] = users.reattributed
+    report["merges_followed"] = users.followed_merges
     _rebuild_blind_indexes(makerspace)
     try:
         with connection.cursor() as cursor:

@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from apps.hosting_requests.models import HostingRequest
@@ -39,16 +40,48 @@ class HostingAckSerializer(serializers.Serializer):
     detail = serializers.CharField()
 
 
+class HostingRevisionSerializer(serializers.Serializer):
+    kind = serializers.ChoiceField(choices=("changes_requested", "resubmitted"))
+    note = serializers.CharField(allow_blank=True)
+    changed_fields = serializers.ListField(child=serializers.CharField())
+    created_at = serializers.DateTimeField()
+
+
 class HostingRequestStatusSerializer(serializers.ModelSerializer):
     rejection_reason = serializers.SerializerMethodField()
+    revisions = serializers.SerializerMethodField()
+    editable = serializers.SerializerMethodField()
 
     class Meta:
         model = HostingRequest
-        fields = ("status", "space_name", "created_at", "verified_at", "decided_at", "rejection_reason")
+        fields = ("status", "space_name", "created_at", "verified_at", "decided_at", "rejection_reason",
+                  "changes_note", "revisions", "editable", "location", "space_website_url", "description",
+                  "proposed_slug", "new_organization_name")
         read_only_fields = fields
 
     def get_rejection_reason(self, row) -> str | None:
         return row.rejection_reason if row.status == HostingRequest.Status.REJECTED else None
+
+    @extend_schema_field(HostingRevisionSerializer(many=True))
+    def get_revisions(self, row):
+        return [{"kind": item.kind, "note": item.note, "changed_fields": item.changed_fields,
+                 "created_at": item.created_at} for item in row.revisions.all()[:50]]
+
+    def get_editable(self, row) -> bool:
+        from django.conf import settings
+        return (row.status == HostingRequest.Status.CHANGES_REQUESTED
+                and getattr(settings, "HOSTING_REQUEST_RESUBMIT_ENABLED", True))
+
+
+class HostingResubmitSerializer(serializers.Serializer):
+    token = serializers.CharField(max_length=200, write_only=True)
+    space_name = serializers.CharField(min_length=2, max_length=200, required=False)
+    location = serializers.CharField(min_length=2, max_length=200, required=False)
+    space_website_url = serializers.URLField(max_length=200, required=False, allow_blank=True)
+    description = serializers.CharField(min_length=20, max_length=2000, required=False)
+    proposed_slug = serializers.SlugField(max_length=50, required=False, allow_blank=True)
+    new_organization_name = serializers.CharField(max_length=200, required=False, allow_blank=True)
+    note = serializers.CharField(max_length=2000, required=False, allow_blank=True, default="")
 
 
 class HostingInvitationPreviewSerializer(serializers.Serializer):

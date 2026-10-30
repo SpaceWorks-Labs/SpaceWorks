@@ -12,7 +12,7 @@
   {% if needs_reason %}
     <p>The reason is required and is emailed to each applicant.</p>
     <p>
-      <label for="id_rejection_reason">Rejection reason</label><br>
+      <label for="id_rejection_reason">{{ reason_label|default:"Rejection reason" }}</label><br>
       <textarea id="id_rejection_reason" name="rejection_reason" minlength="10" maxlength="2000" required rows="5" aria-describedby="id_rejection_reason_help"></textarea><br>
       <small id="id_rejection_reason_help">This reason is kept after the applicant's details are wiped — do not include personal details.</small>
     </p>

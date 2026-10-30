@@ -48,7 +48,7 @@ def _space_label(makerspace):
 
 @admin.register(HostingRequest)
 class HostingRequestAdmin(RecentReauthenticationAdminMixin, SuperuserOnlyModelAdmin, ModelAdmin):
-    actions = ["accept_selected", "reject_selected"]
+    actions = ["accept_selected", "request_changes_selected", "reject_selected"]
     list_display = ("space_name", "applicant_email", "source", "status", "inviter_summary",
                     "created_at", "verified_at")
     list_filter = ("status", "source")
@@ -122,12 +122,12 @@ class HostingRequestAdmin(RecentReauthenticationAdminMixin, SuperuserOnlyModelAd
             return redirect("/mfa/reauth/?" + urlencode({"next": request.path}))
         return redirect(prefill.add_url(row))
 
-    def _confirm(self, request, rows, *, action_name, needs_reason, title, submit_label):
+    def _confirm(self, request, rows, *, action_name, needs_reason, title, submit_label, reason_label=""):
         return TemplateResponse(request, TEMPLATE, {
             **self.admin_site.each_context(request),
             "title": title, "hosting_requests": rows, "opts": self.model._meta,
             "action_name": action_name, "action_checkbox_name": ACTION_CHECKBOX_NAME,
-            "needs_reason": needs_reason, "submit_label": submit_label,
+            "needs_reason": needs_reason, "submit_label": submit_label, "reason_label": reason_label,
         })
 
     def _decide(self, request, rows, decide, done):
@@ -158,3 +158,14 @@ class HostingRequestAdmin(RecentReauthenticationAdminMixin, SuperuserOnlyModelAd
                                  title="Reject hosting requests", submit_label="Reject requests")
         reason = request.POST.get("rejection_reason", "")
         self._decide(request, rows, lambda row: workflow.reject(request.user, row.pk, reason), "Rejected")
+
+    @admin.action(description="Request changes on selected hosting requests")
+    def request_changes_selected(self, request, queryset):
+        rows = list(queryset)
+        if "confirm_decision" not in request.POST:
+            return self._confirm(request, rows, action_name="request_changes_selected", needs_reason=True,
+                                 title="Request changes", submit_label="Send the request for changes",
+                                 reason_label="What should the applicant change?")
+        note = request.POST.get("rejection_reason", "")
+        self._decide(request, rows, lambda row: workflow.request_changes(request.user, row.pk, note),
+                     "Asked for changes on")

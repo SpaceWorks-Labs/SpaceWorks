@@ -5,6 +5,8 @@
              invited | pending_verification(invited) -inviter cancels-> withdrawn
              pending_verification(invited) -answer again-> pending_verification
     submitted | accepted (no makerspace linked) -reject(reason)-> rejected
+    submitted -request changes(note)-> changes_requested -applicant resubmits-> submitted
+    changes_requested -reject(reason)-> rejected
 
 Unverified public submissions are not audited (anonymous input must not grow the
 append-only log); every later transition is. Lock order: makerspace -> organization ->
@@ -38,7 +40,12 @@ ALLOWED = frozenset({
     (S.SUBMITTED, S.ACCEPTED),
     (S.SUBMITTED, S.REJECTED),
     (S.ACCEPTED, S.REJECTED),
+    (S.SUBMITTED, S.CHANGES_REQUESTED),
+    (S.CHANGES_REQUESTED, S.SUBMITTED),
+    (S.CHANGES_REQUESTED, S.REJECTED),
 })
+RESUBMIT_FIELDS = ("space_name", "location", "space_website_url", "description", "proposed_slug",
+                   "new_organization_name")
 
 
 def _transition(row, to):
@@ -235,4 +242,50 @@ def link_created_makerspace(actor, request_id, makerspace):
         actor, "hosting_request.makerspace_linked", target=row,
         meta={"makerspace_id": makerspace.pk},
     )
+    return row
+
+
+@transaction.atomic
+def request_changes(actor, row_id, note):
+    """X31: ask the applicant for changes; a fresh status link goes to them (#47: control only)."""
+    from apps.hosting_requests.models import HostingRequestRevision
+    require_superadmin(actor)
+    note = clean_reason(note)
+    row = _locked(pk=row_id)
+    _transition(row, S.CHANGES_REQUESTED)
+    now = timezone.now()
+    row.changes_note, row.changes_requested_at = note, now
+    raw = _rotate_access_token(row, now)
+    row.save(update_fields=["status", "changes_note", "changes_requested_at", "access_token_digest",
+                            "verification_expires_at", "updated_at"])
+    HostingRequestRevision.objects.create(request=row, kind="changes_requested", note=note, actor=actor)
+    audit.record(actor, "hosting_request.changes_requested", target=row, meta={})
+    notifications.schedule_changes_requested(row, raw)
+    return row
+
+
+@transaction.atomic
+def resubmit(raw_access_token, data, note=""):
+    """The applicant's edit after a request for changes; back to review, history kept."""
+    from django.conf import settings
+    from apps.hosting_requests.models import HostingRequestRevision
+    if not getattr(settings, "HOSTING_REQUEST_RESUBMIT_ENABLED", True):
+        raise Http404()
+    row = _locked(access_token_digest=tokens.digest(raw_access_token))
+    if row.status != S.CHANGES_REQUESTED:
+        raise HostingRequestConflict()
+    changed = []
+    for name in RESUBMIT_FIELDS:
+        if name in data:
+            value = str(data[name] or "").strip()
+            if value != getattr(row, name):
+                setattr(row, name, value)
+                changed.append(name)
+    _transition(row, S.SUBMITTED)
+    row.changes_note, row.changes_requested_at = "", None
+    row.save()
+    HostingRequestRevision.objects.create(request=row, kind="resubmitted", note=str(note or "").strip()[:2000],
+                                          changed_fields=changed)
+    audit.record(None, "hosting_request.resubmitted", target=row, meta={"changed_fields": changed})
+    notifications.schedule_new(row)
     return row

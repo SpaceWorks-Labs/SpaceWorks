@@ -122,6 +122,16 @@ def schedule_rejected(row):
     ))
 
 
+def schedule_changes_requested(row, raw_token):
+    row_id, to_email, space, note = row.pk, row.applicant_email, row.space_name, row.changes_note
+    body = (f"The platform team asked for some changes to your request to host {space} on Space Works.\n\n"
+            f"What to change: {note}\n\nUpdate and resubmit your request: {status_link(raw_token)}\n")
+    transaction.on_commit(lambda: _send(
+        row_id, to_email=to_email, subject="Changes requested on your hosting request",
+        text_body=body, event="hosting_request_changes_requested", audience="applicant",
+    ))
+
+
 def send_invitation(row, raw_token, inviter_name):
     """Send now (after the creating transaction committed) and report delivery status."""
     link = invite_link(raw_token)

@@ -27,6 +27,7 @@ from apps.hosting_requests.serializers import (
     HostingInvitationSubmitSerializer,
     HostingRequestStatusSerializer,
     HostingRequestSubmitSerializer,
+    HostingResubmitSerializer,
     HostingTokenSerializer,
 )
 from apps.hosting_requests.throttles import HostingRequestEmailThrottle
@@ -150,3 +151,27 @@ class HostingInvitationSubmitView(APIView):
         if _email_budget_left(request, self):
             workflow.submit_invited(token, data)
         return _ack()
+
+
+class HostingRequestResubmitView(APIView):
+    permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "hosting_request_token"
+
+    @extend_schema(
+        tags=TAGS, auth=[], summary="Resubmit a hosting request after changes were requested",
+        description="Only while the request is in changes_requested, with the link from the "
+                    "changes email. Edits the space details, keeps the review history, and returns "
+                    "the request to review (X31). 404 when resubmission is switched off.",
+        request=HostingResubmitSerializer,
+        responses={200: HostingRequestStatusSerializer, **errors(400, 404, 409, 429, 503,
+                                                               e404="Unknown, expired or no longer available link.")},
+    )
+    def post(self, request):
+        require_public_available()
+        serializer = HostingResubmitSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = dict(serializer.validated_data)
+        token, note = data.pop("token"), data.pop("note", "")
+        row = workflow.resubmit(token, data, note)
+        return _no_store(Response(HostingRequestStatusSerializer(row).data))

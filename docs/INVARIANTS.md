@@ -4759,13 +4759,19 @@ PORTABLE/Lane D path.
   Evidence photos and their retention state are kept; newer ones become orphaned records when the rows
   that pointed at them roll back. A referenced account row that no longer exists is re-attributed to the
   space's anonymous principal; an account erased since the restore point is scrubbed again in this space
-  (`account_purge_scrub.scrub_tenant`) so its personal data never comes back.
+  (`account_purge_scrub.scrub_tenant`) so its personal data never comes back. An archived membership
+  of an account since retired (or of a platform account) is skipped with everything that depends on it,
+  by `on_delete` (`space_restore_skips.py`). A live staff account whose one required membership the
+  archive does not carry (staff added after the restore point) blocks the restore
+  (`staff_after_restore_point`): retire it first. Staff memberships are replaced inside the exact-tenant
+  context (`app.account_retirement_makerspace_id`), the only context the account guards admit.
 - **References into removed rows (#113).** `space_restore_graph.resolve` walks every concrete FK into a
   row the restore removes (a live row the archive does not carry). A row of this space or a global
   dependent follows Django's `on_delete` (CASCADE deletes it, SET_NULL clears the reference). A row of
   ANOTHER space (by canonical owner or by its own `makerspace` column), an append-only record, or a
   PROTECT/RESTRICT edge BLOCKS: the preview lists it, confirm refuses (`dangling_references`) and apply
-  re-checks inside the transaction. Rows of other spaces pointing at rows that come back are re-linked by
+  re-checks inside the transaction. Every live set is read and every reference resolved BEFORE any row
+  is deleted, because ownership predicates join through parents. Rows of other spaces pointing at rows that come back are re-linked by
   identity and only counted. Cross-space participation rows the slice carries only as references
   (`EventCollaborator`) are not restored; the slice's nulled cross-space makerspace links are re-applied
   when that space still exists.

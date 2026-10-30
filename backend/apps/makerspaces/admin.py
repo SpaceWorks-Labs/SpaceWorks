@@ -6,6 +6,7 @@ from unfold.admin import ModelAdmin, TabularInline
 
 from apps.makerspaces.admin_capabilities import MakerspaceAdminForm, MakerspaceCapabilityAdminMixin
 from apps.makerspaces.admin_console_links import MakerspaceConsoleLinksAdminMixin
+from apps.backup.admin_space_backup import MakerspaceBackupAdminMixin
 from apps.makerspaces.admin_images import MakerspaceImageAdminMixin
 from apps.makerspaces.admin_owner import MakerspaceOwnerAdminMixin
 from apps.makerspaces.admin_lifecycle_actions import MakerspaceLifecycleActionsMixin
@@ -68,6 +69,7 @@ class MakerspaceAdmin(
     MakerspaceImageAdminMixin,
     MakerspaceCapabilityAdminMixin,
     MakerspaceConsoleLinksAdminMixin,
+    MakerspaceBackupAdminMixin,
     SuperuserOnlyModelAdmin,
     ModelAdmin,
 ):

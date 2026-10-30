@@ -1,0 +1,45 @@
+{% extends "admin/base_site.html" %}
+{% block extrahead %}{{ block.super }}{% if refresh %}<meta http-equiv="refresh" content="5">{% endif %}{% endblock %}
+{% block content %}
+<p><a href="{% url 'admin:makerspaces_makerspace_backup' space.pk %}">Back to backups of {{ space.name }}</a></p>
+<p><strong>{{ op.get_stage_display }}</strong>{% if op.progress.percent %} &middot; {{ op.progress.percent }}%{% endif %}
+{% if op.error_detail %}<br>{{ op.error_detail }}{% endif %}</p>
+
+{% if preview %}
+<h2>Preview</h2>
+<p>Restore point taken {{ preview.snapshot_at }}. {{ preview.totals.removed_rows }} rows created since then go;
+{{ preview.totals.added_rows }} rows deleted since then come back; memberships: {{ preview.memberships.removed }} removed,
+{{ preview.memberships.restored }} restored. {{ preview.objects.count }} files ({{ preview.objects.bytes|filesizeformat }}).</p>
+<p>Kept and flagged "after the restore point": {{ preview.money_after_restore_point|length }} payment records;
+{{ preview.evidence_after_restore_point }} newer evidence photos kept as orphaned records.
+Accounts: {{ preview.accounts.reattributed }} references re-attributed to the space's anonymous principal,
+{{ preview.accounts.erased_since }} deleted accounts stay erased. {{ preview.inbound_relinked }} rows in other spaces re-link to restored rows.</p>
+{% if preview.blocked %}
+<p><strong>Blocked:</strong> {{ preview.blocking_count }} rows outside this space would be left pointing at rows the restore removes.</p>
+<ul>{% for row in preview.blocking %}<li>{{ row.model }} #{{ row.pk }} &rarr; {{ row.references }} ({{ row.reason }})</li>{% endfor %}</ul>
+{% endif %}
+<table><thead><tr><th scope="col">Records</th><th scope="col">Now</th><th scope="col">In the restore point</th></tr></thead><tbody>
+{% for row in preview.models %}<tr><td>{{ row.label }}</td><td>{{ row.live }}</td><td>{{ row.archived }}</td></tr>{% endfor %}
+</tbody></table>
+{% endif %}
+
+{% if op.stage == "preview_ready" and not preview.blocked %}
+<h2>Confirm</h2>
+<form method="post">{% csrf_token %}
+  <input type="hidden" name="action" value="confirm">
+  <label for="confirm-slug">Type <code>{{ space.slug }}</code> to restore this space</label><br>
+  <input id="confirm-slug" name="confirm_slug" autocomplete="off" required>
+  <button type="submit">Restore {{ space.name }}</button>
+</form>
+{% endif %}
+{% if op.stage == "requested" or op.stage == "staging" or op.stage == "preview_ready" %}
+<form method="post">{% csrf_token %}<input type="hidden" name="action" value="abort"><button type="submit">Cancel this restore</button></form>
+{% endif %}
+
+{% if report %}
+<h2>Result</h2>
+<p>Safety backup: {{ op.safety_archive_id }}. Files restored: {{ report.objects_restored }}, verified in place: {{ report.objects_verified }}.</p>
+{% if report.money_after_restore_point %}<p>Review these payment records made after the restore point:</p>
+<ul>{% for row in report.money_after_restore_point %}<li>{{ row.model }} #{{ row.pk }}: {{ row.amount }} {{ row.currency }} ({{ row.status }}), {{ row.created_at }}</li>{% endfor %}</ul>{% endif %}
+{% endif %}
+{% endblock %}

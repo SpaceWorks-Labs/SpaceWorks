@@ -3656,7 +3656,7 @@ Load-bearing details that carried over unchanged:
   only, with the email channel pre-marked skipped (the invite email was sent directly).
 - **Removal notices wait out the undo.** A staff removal emits a deferred owner envelope at
   `cancelled_at + RESTORE_WINDOW`; its source check compares `cancelled_at`, so an undone
-  removal sends nothing, and the matching "restored" notice is suppressed.
+  removal never sends the removal notice (the existing "restored" notice still goes).
 - **Org sender changes display only.** `integrations/org_sender.apply` may change the From
   display name and Reply-To of event email when `events.organization_sender` is on; the From
   address, provider connection, email module gate and suppressions are the space's.

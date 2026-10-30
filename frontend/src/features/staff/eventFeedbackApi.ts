@@ -21,6 +21,8 @@ export type FeedbackSurvey = {
   questions: CustomFormQuestion[];
   is_open: boolean;
   certificate_enabled: boolean;
+  anonymous?: boolean;
+  anonymous_available?: boolean;
   answered_question_ids: string[];
   opened_at: string | null;
   closed_at: string | null;
@@ -65,7 +67,7 @@ function useInvalidateFeedback(eventId: number, makerspaceId: number) {
 export function useConfigureFeedbackSurvey(eventId: number, makerspaceId: number) {
   const invalidate = useInvalidateFeedback(eventId, makerspaceId);
   return useMutation({
-    mutationFn: (payload: Pick<FeedbackSurvey, "title" | "thank_you_text" | "questions"> & Partial<Pick<FeedbackSurvey, "certificate_enabled">>) =>
+    mutationFn: (payload: Pick<FeedbackSurvey, "title" | "thank_you_text" | "questions"> & Partial<Pick<FeedbackSurvey, "certificate_enabled" | "anonymous">>) =>
       staffRequest<FeedbackSurvey>(path("/admin/events/{id}/feedback-survey/", eventId), {
         method: "PUT", body: JSON.stringify(payload),
       }),

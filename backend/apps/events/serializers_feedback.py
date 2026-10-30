@@ -33,12 +33,20 @@ class FeedbackSurveySerializer(serializers.Serializer):
     is_open = serializers.BooleanField(read_only=True)
     certificate_enabled = serializers.BooleanField(read_only=True)
     anonymous = serializers.BooleanField(read_only=True)
+    anonymous_available = serializers.SerializerMethodField(
+        help_text="True while the space has events.anonymous_feedback on (the switch can be offered).")
     answered_question_ids = serializers.ListField(
         child=serializers.CharField(), read_only=True,
     )
     opened_at = serializers.DateTimeField(allow_null=True, read_only=True)
     closed_at = serializers.DateTimeField(allow_null=True, read_only=True)
     response_count = serializers.IntegerField(read_only=True, required=False)
+
+
+    def get_anonymous_available(self, obj) -> bool:
+        from apps.makerspaces.platform import feature_enabled
+        event = getattr(obj, "event", None)
+        return bool(event is not None and feature_enabled(event.makerspace, "events.anonymous_feedback"))
 
 
 class FeedbackSurveyAdminEnvelopeSerializer(serializers.Serializer):

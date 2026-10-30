@@ -24,6 +24,7 @@ from .space_restore_plan import (
     prepared_record,
     restorable_labels,
 )
+from .space_restore_skips import ArchiveSkips
 from .space_restore_users import UserRemap, rescrub_deleted_accounts
 
 
@@ -57,8 +58,10 @@ def apply_space_restore(makerspace, archive):
     for label in labels:
         raw_delete(apps.get_model(label), live[label])
         report["replaced"][label] = len(live[label])
+    skips = ArchiveSkips()
     for model in models:
-        report["restored"][model._meta.label] = _insert(model, archive, makerspace, users)
+        report["restored"][model._meta.label] = _insert(model, archive, users, skips)
+    report["skipped"] = skips.counts()
     _restore_makerspace_row(makerspace, archive, users)
     _relink_external(archive)
     report.update(outcome.summary())
@@ -86,7 +89,7 @@ def staff_without_restored_membership(makerspace, archive):
                 .exclude(pk__in=archived).order_by("pk").values_list("pk", "username"))
 
 
-def _insert(model, archive, makerspace, users):
+def _insert(model, archive, users, skips):
     label = model._meta.label
     rows = archive.rows(label)
     if label in KEPT_LIVE:
@@ -96,7 +99,10 @@ def _insert(model, archive, makerspace, users):
     count = 0
     with connection.cursor() as cursor:
         for record in rows:
-            columns, values = prepared_record(model, users.remap(model, record), connection)
+            record = skips.admit(model, users.remap(model, record))
+            if record is None:
+                continue
+            columns, values = prepared_record(model, record, connection)
             try:
                 cursor.execute(
                     f"INSERT INTO {quote(model._meta.db_table)} ({', '.join(quote(c) for c in columns)}) "
@@ -104,7 +110,6 @@ def _insert(model, archive, makerspace, users):
                     values,
                 )
             except DatabaseError as exc:  # the whole transaction rolls back; name the row
-
                 raise SpaceRestoreError("integrity_check_failed", f"{label} row {record['pk']} cannot be restored: "
                                         f"{str(exc).splitlines()[0][:240]}") from None
             count += 1

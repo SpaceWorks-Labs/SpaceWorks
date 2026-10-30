@@ -78,17 +78,25 @@ def configure_survey(
     thank_you_text="",
     questions=None,
     certificate_enabled=False,
+    anonymous=None,
 ):
+    from .feedback_modes import record_anonymous_change, resolve_anonymous
     locked_event = _locked_event(event)
     survey = _locked_survey(locked_event, required=False)
     created = survey is None
     if created:
         survey = EventFeedbackSurvey(event=locked_event)
+    was_anonymous = bool(survey.pk and survey.anonymous)
     survey.title = title
     survey.thank_you_text = thank_you_text
     survey.questions = _canonical_questions(questions)
+    survey.anonymous = resolve_anonymous(locked_event, survey, anonymous, certificate_enabled)
     survey.certificate_enabled = certificate_enabled
-    survey.save()
+    try:
+        survey.save()
+    except DjangoValidationError as exc:
+        raise serializers.ValidationError(exc.message_dict) from exc
+    record_anonymous_change(actor, locked_event, survey, was_anonymous)
     audit.record(
         actor,
         "event.feedback_survey_configured",
@@ -148,7 +156,9 @@ def close_survey(event, *, actor):
 def submit_anonymous_feedback(event, answers):
     locked_event = _locked_event(event)
     survey = _locked_survey(locked_event)
-    if survey.certificate_enabled or not _submission_ready(locked_event, survey):
+    from apps.makerspaces.platform import feature_enabled
+    if (survey.certificate_enabled or not survey.anonymous or not _submission_ready(locked_event, survey)
+            or not feature_enabled(locked_event.makerspace, "events.anonymous_feedback")):
         raise FeedbackIneligible()
     snapshot, encoded = _snapshot(survey.questions, answers)
     response = EventFeedbackResponse.objects.create(

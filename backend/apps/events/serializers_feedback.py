@@ -17,6 +17,9 @@ class FeedbackSurveyWriteSerializer(serializers.Serializer):
     )
     questions = serializers.JSONField()
     certificate_enabled = serializers.BooleanField(default=False, required=False)
+    anonymous = serializers.BooleanField(required=False, help_text=(
+        "Collect answers with no link to the person (certificates off and events.anonymous_feedback on). "
+        "Omit to keep the current choice; a new form defaults to anonymous while certificates are off."))
 
     def validate_questions(self, value):
         return validate_feedback_schema(value)
@@ -29,6 +32,7 @@ class FeedbackSurveySerializer(serializers.Serializer):
     questions = serializers.JSONField(read_only=True)
     is_open = serializers.BooleanField(read_only=True)
     certificate_enabled = serializers.BooleanField(read_only=True)
+    anonymous = serializers.BooleanField(read_only=True)
     answered_question_ids = serializers.ListField(
         child=serializers.CharField(), read_only=True,
     )
@@ -85,7 +89,7 @@ class FeedbackResponseListSerializer(serializers.Serializer):
 class FeedbackFormSerializer(serializers.Serializer):
     event = serializers.DictField(read_only=True)
     survey = FeedbackSurveySerializer(read_only=True)
-    mode = serializers.ChoiceField(choices=("anonymous", "certificate"), read_only=True)
+    mode = serializers.ChoiceField(choices=("anonymous", "certificate", "identified"), read_only=True)
     requires_auth = serializers.BooleanField(read_only=True)
     certificate = CertificateSummarySerializer(allow_null=True, read_only=True, required=False)
 

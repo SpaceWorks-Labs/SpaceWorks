@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
-from rest_framework.exceptions import NotFound, ValidationError
+from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -21,10 +21,6 @@ from apps.events.serializers_feedback import (
     FeedbackSubmissionSerializer,
 )
 from apps.events.services_certificates import download_url
-from apps.events.services_feedback import (
-    submit_anonymous_feedback,
-    submit_identified_feedback,
-)
 from apps.events.views_feedback_public import feedback_form_payload
 from apps.hardware_requests.exceptions import ErrorSerializer
 from apps.makerspaces.guards import require_module
@@ -84,23 +80,9 @@ class MemberEventFeedbackView(APIView):
         survey, _certificate = _survey_for_registration(registration)
         serializer = FeedbackSubmissionSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        data = serializer.validated_data
-        if survey.certificate_enabled:
-            if "email" not in data:
-                raise ValidationError({"email": "This field is required."})
-            _response, certificate = submit_identified_feedback(
-                registration.event,
-                actor=request.user,
-                email=data["email"],
-                answers=data["answers"],
-                registration=registration,
-            )
-        else:
-            if "email" in data:
-                raise ValidationError({"email": "Email is not accepted for anonymous feedback."})
-            _response, certificate = submit_anonymous_feedback(
-                registration.event, data["answers"],
-            )
+        from apps.events.feedback_modes import submit
+        _response, certificate = submit(registration.event, survey, user=request.user,
+                                        data=serializer.validated_data, registration=registration)
         payload = {"thank_you_text": survey.thank_you_text, "certificate": certificate}
         return Response(FeedbackSubmissionResponseSerializer(payload).data, status=201)
 

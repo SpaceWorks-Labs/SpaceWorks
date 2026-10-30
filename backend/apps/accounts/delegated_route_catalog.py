@@ -211,6 +211,8 @@ PLATFORM_ONLY_ROUTES = frozenset("""
 admin-platform-mobile-readiness platform-analytics platform-analytics-makerspaces
 platform-tenant-report-catalog platform-tenant-analytics platform-tenant-dashboard
 platform-tenant-report-export
+admin-makerspace-restores admin-space-restore admin-space-restore-confirm admin-space-restore-abort
+admin-backup-schedule
 """.split())
 
 TENANT_STAFF_ROUTES = frozenset("""

@@ -69,7 +69,7 @@ PROJECT_GLOBAL_BOUNDARIES = frozenset({
     ("organizations.OrganizationPublicPageRevisionMember", "profile"),
     ("backup.BackupArchive", "makerspace"),
     ("operations.CloudEmailReservation", "log"),
-    ("backup.RestoreRollbackObject", "makerspace"),
+    ("backup.RestoreRollbackObject", "makerspace"), ("backup.MakerspaceRestoreOperation", "makerspace"),
     ("tenant_migration.TenantImportJob", "target_makerspace"),
 })
 

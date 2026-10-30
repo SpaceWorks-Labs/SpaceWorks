@@ -6,6 +6,11 @@ from apps.backup.object_restore import cleanup_expired_rollback_objects
 from apps.backup.reconciliation import reconcile_artifact_uploads
 
 
+from apps.backup.tasks_space_restore import (  # noqa: E402,F401  (task registration)
+    resume_space_restores_task,
+    run_space_restore_apply_task,
+    run_space_restore_preview_task,
+)
 from apps.backup.tasks_offsite import (  # noqa: E402,F401  (task registration)
     dispatch_offsite_push,
     push_offsite_backups_task,
@@ -30,6 +35,12 @@ def scheduled_deployment_backup_task(self):
     if run is not None:
         dispatch_offsite_push()
     return bool(run and run.status == BackupRun.Status.COMPLETE)
+
+
+@shared_task(bind=True, max_retries=0)
+def scheduled_space_backups_task(self):
+    from apps.backup.space_backup_schedule import run_due_space_backups
+    return run_due_space_backups()
 
 
 @shared_task(bind=True, max_retries=0)

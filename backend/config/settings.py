@@ -798,6 +798,17 @@ CELERY_BEAT_SCHEDULE = {
         "task": "apps.backup.tasks.scheduled_deployment_backup_task",
         "schedule": crontab(hour=2, minute=0),
     },
+    # Nightly one-space archives (#111 Q4): two due spaces per tick, oldest first, off
+    # the same automatic-backups switch; 01:00-07:50 covers 84 spaces a night.
+    "scheduled-space-backups": {
+        "task": "apps.backup.tasks.scheduled_space_backups_task",
+        "schedule": crontab(hour="1-7", minute="*/10"),
+    },
+    # Picks up a per-space restore step whose dispatch was lost, one per tick.
+    "resume-space-restores": {
+        "task": "apps.backup.tasks_space_restore.resume_space_restores_task",
+        "schedule": crontab(minute="*/5"),
+    },
     "reconcile-backup-artifacts": {
         "task": "apps.backup.tasks.reconcile_backup_artifacts_task",
         "schedule": crontab(minute="*/5"),

@@ -51,6 +51,8 @@ LEGACY_ENTRIES = (
     ("finalize-report-rollups", "apps.operations.tasks.finalize_report_rollups_task", 1440),
     ("report-schedules", "apps.operations.tasks_report_schedules.run_report_schedules_task", 15),
     ("scheduled-deployment-backup", "apps.backup.tasks.scheduled_deployment_backup_task", 1440),
+    ("scheduled-space-backups", "apps.backup.tasks.scheduled_space_backups_task", 10),
+    ("resume-space-restores", "apps.backup.tasks_space_restore.resume_space_restores_task", 5),
     ("reconcile-backup-artifacts", "apps.backup.tasks.reconcile_backup_artifacts_task", 5),
     ("push-offsite-backups", "apps.backup.tasks.push_offsite_backups_task", 5),
     ("purge-expired-backup-archives", "apps.backup.tasks.purge_expired_backup_archives_task", 1440),
@@ -106,7 +108,8 @@ _HEAVY = frozenset({
     # Events scans, renders and validation (#89b): one heavy chunk starts per tick.
     "event-asset-work", "event-certificate-batches", "event-certificate-renders",
     "event-stage-file-recovery", "finance-event-payout-recovery",
-    "subject-access-exports", "report-schedules", "scheduled-deployment-backup",
+    "subject-access-exports", "report-schedules", "scheduled-deployment-backup", "scheduled-space-backups",
+    "resume-space-restores",
     "reconcile-backup-artifacts", "push-offsite-backups",
     "resume-expired-tenant-import-finalizations", "finalize-report-rollups",
 })

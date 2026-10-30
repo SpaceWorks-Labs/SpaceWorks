@@ -3,6 +3,11 @@
 The superadmin platform key (``BACKUP_AGE_RECIPIENT``) opens every archive this
 deployment builds, whatever its scope. There are no per-makerspace archive
 recipients: owner decision #110b removed recipient custody entirely.
+
+A one-space archive is ALSO encrypted to this server's own restore key
+(``TENANT_MIGRATION_AGE_RECIPIENT``, owner decision #111 Q3), so the app can open it to
+preview and restore that space while the platform key stays offline. Without that key
+the archive is still built for the platform key alone, and an in-app restore refuses it.
 """
 
 import hashlib
@@ -15,6 +20,7 @@ from .recipients_bech32 import Bech32DecodeError, convert_bits, decode, encode
 
 
 PLATFORM_RECIPIENT_LABEL = "Platform backup recipient"
+SERVER_RECIPIENT_LABEL = "This server's restore key"
 _BECH32_MESSAGES = {
     "invalid_bech32": "The recipient is not valid Bech32.",
     "bech32m_checksum": "Bech32m recipients are not supported by age.",
@@ -88,7 +94,16 @@ def platform_recipient():
     }
 
 
+def server_recipient():
+    public_recipient = settings.TENANT_MIGRATION_AGE_RECIPIENT
+    if not public_recipient:
+        return None
+    return {"label": SERVER_RECIPIENT_LABEL, "public_recipient": public_recipient}
+
+
 def selection_for(archive) -> list[dict]:
-    """Return the recipients one archive is encrypted to: the platform key only."""
-    del archive
-    return [platform_recipient()]
+    """The platform key, plus this server's restore key for a one-space archive."""
+    selected = [platform_recipient()]
+    if archive.scope == "makerspace" and (server := server_recipient()) is not None:
+        selected.append(server)
+    return selected

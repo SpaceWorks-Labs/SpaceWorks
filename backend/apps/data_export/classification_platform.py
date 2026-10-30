@@ -189,6 +189,10 @@ OMITTED_MODELS = {
     "backup.DeploymentRecoveryState": "Deployment recovery and quarantine state.",
     "backup.PlatformBackupSettings": "Platform backup configuration and age recipient.",
     "backup.RestoreOperation": "Deployment restore lifecycle state.",
+    "backup.MakerspaceRestoreOperation": (
+        "Per-space restore journal; it names a makerspace but is deployment recovery "
+        "state, never portable tenant data."
+    ),
     "backup.RestoreRollbackObject": "Deployment restore object-rollback journal.",
     "backup.BackupDestination": "Platform offsite destination with encrypted credentials.",
     "backup.BackupDestinationUpload": (

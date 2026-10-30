@@ -80,6 +80,7 @@ def _snapshot_payload(archive, root, modes, selected_recipients, *, compound_cap
         "makerspace_id": archive.makerspace_id,
         "recipients": selected_recipients,
         "covered_makerspace_ids": covered_makerspace_ids,
+        **_space_restore_facts(archive, selected_recipients),
         "excluded_makerspace_ids": [],
         "partial": False,
         "snapshot_at": snapshot_at.isoformat(),
@@ -96,6 +97,22 @@ def _snapshot_payload(archive, root, modes, selected_recipients, *, compound_cap
         "storage": {"consistency": modes, "objects": object_manifest},
         "age_encrypted": True,
         "purge_warning": ARCHIVE_PURGE_WARNING,
+    }
+
+
+def _space_restore_facts(archive, selected_recipients):
+    """What an in-app space restore checks before it trusts this archive."""
+    if archive.scope != BackupArchive.Scope.MAKERSPACE:
+        return {}
+    from apps.tenant_migration.deployment_keys import public_deployment_identity
+    from .space_restore_plan import FORMAT
+    return {
+        "payload_format": FORMAT,
+        "trigger": archive.trigger,
+        "deployment_id": public_deployment_identity()["deployment_id"],
+        "server_restorable": any(
+            item["label"] == "This server's restore key" for item in selected_recipients
+        ),
     }
 
 

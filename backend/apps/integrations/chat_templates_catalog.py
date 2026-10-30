@@ -10,6 +10,8 @@ EVENTS = {
     ("hardware_requests", "problem_report.filed"): ("problem_report_id",),
     ("api_access", "api_key_request_resolved"): ("request.id", "request.status"),
     ("api_access", "subdomain_request_resolved"): (),
+    ("api_access", "space_restore_completed"): (),
+    ("api_access", "space_restore_failed"): (),
     ("members", "joined"): ("subject.id", "subject.status"),
     ("members", "verified"): ("subject.id", "subject.status"),
     ("members", "vouched"): (),

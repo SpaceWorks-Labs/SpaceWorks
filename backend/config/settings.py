@@ -662,6 +662,12 @@ CELERY_BEAT_SCHEDULE = {
         "task": "apps.accounts.tasks.purge_deleted_accounts_task",
         "schedule": crontab(hour=3, minute=20),
     },
+    # Superadmin PII windows last 30 minutes (#111 Q12). Reads close lapsed windows
+    # lazily; this sweep writes the expiry audit row for windows nobody reads again.
+    "pii-access-expiry": {
+        "task": "apps.accounts.tasks.expire_pii_access_windows_task",
+        "schedule": crontab(minute="*/5"),
+    },
     "reminder-sweep": {
         "task": "apps.operations.tasks_reminders.run_reminder_sweep_task",
         "schedule": crontab(minute="*/5"),

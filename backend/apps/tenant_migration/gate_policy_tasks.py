@@ -17,6 +17,10 @@ TASK_EXEMPTIONS = {
         "Read-only platform monitoring; writes only a disposable deployment cache marker."
     ),
     "apps.accounts.tasks.purge_auth_challenges_task": "Platform-global auth retention.",
+    "apps.accounts.tasks.expire_pii_access_windows_task": (
+        "Closes platform-owned PII windows (OMITTED, never exported) at their expiry and "
+        "appends the expiry audit row, exactly as the lazy close on any read does."
+    ),
     "apps.hosting_requests.tasks.sweep_hosting_requests_task": (
         "Platform-global hosting-request retention; deletes/redacts OMITTED platform rows, "
         "no tenant writes."

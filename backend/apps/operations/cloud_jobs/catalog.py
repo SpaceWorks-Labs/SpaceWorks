@@ -68,6 +68,7 @@ LEGACY_ENTRIES = (
     ("inventory-stock-snapshot", "apps.inventory.tasks.snapshot_stock_task", 1440),
     ("member-push-recovery", "apps.notifications.tasks.sweep_member_push", 5),
     ("purge-deleted-accounts", "apps.accounts.tasks.purge_deleted_accounts_task", 1440),
+    ("pii-access-expiry", "apps.accounts.tasks.expire_pii_access_windows_task", 5),
     ("hosting-request-retention", "apps.hosting_requests.tasks.sweep_hosting_requests_task", 1440),
     # Events programme (lane/events-final): the exact entries its beat-less command ran.
     ("event-admission-deadlines", "apps.events.tasks_programme.sweep_admission_deadlines_task", 5),

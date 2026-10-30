@@ -21,6 +21,17 @@ def purge_deleted_accounts_task():
     return purge_deleted_accounts()
 
 
+# One bounded batch per tick; the oldest lapsed windows close first, and any left over
+# are picked up on the next tick (or lazily by the superadmin's next read).
+PII_EXPIRY_BATCH = 500
+
+
+@shared_task(name="apps.accounts.tasks.expire_pii_access_windows_task")
+def expire_pii_access_windows_task():
+    from apps.accounts.pii_access import sweep_expired
+    return sweep_expired(limit=PII_EXPIRY_BATCH)
+
+
 @shared_task(name="apps.accounts.tasks.revoke_apple_tokens_task")
 def revoke_apple_tokens_task(user_id):
     from apps.accounts.apple_revocation import sweep_revocations

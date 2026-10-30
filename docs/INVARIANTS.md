@@ -3634,6 +3634,10 @@ Load-bearing details that carried over unchanged:
   is the DB deadline (`resume_scheduled_broadcasts`); the broker hint is only a hint.
 - **Drafts change only as versioned composer commands** (`broadcast_draft.save_draft`):
   live `manage_registrations`, idempotency key, `expected_version` CAS, version-2 DRAFT only.
+  The `events_programme_broadcast_guard` trigger (relaxed in `events/0060`) lets content
+  change only while the row is an unconfirmed draft on the same event and space with the same
+  sender; once a preview is confirmed (scheduled, held, sent) content and sender are
+  immutable as before. Earlier previews of an edited draft go stale by their content digest.
 - **Tallies are counts.** `broadcast_tallies` counts each recipient once by best outcome and
   never returns an identity; the email reservation marker is not an outcome.
 - **Anonymous feedback stays anonymous.** A survey with `anonymous=true` (only while

@@ -240,3 +240,6 @@ DELEGABLE_ROUTES |= {
     "admin-event-short-link", "admin-event-short-link-regenerate", "admin-event-host-options",
     "admin-event-embed-policy", "admin-event-report-switches", "admin-makerspace-public-closed-notice",
 }
+# Release 2 L4, the membership lifecycle: per-makerspace membership authority only.
+# Each view keeps its own action check.
+MEMBERSHIP_ROUTES |= {"admin-financial-year"}

@@ -146,3 +146,7 @@ from .catalog_r2_l2 import FIELD_NAMES as R2_L2_FIELDS, EXTRA_FIELDS as R2_L2_EX
 FIRST_PARTY_FIELD_NAMES.update(R2_L2_FIELDS)
 for _label, _names in R2_L2_EXTRA.items():
     FIRST_PARTY_FIELD_NAMES[_label] |= _names
+from .catalog_r2_l4 import FIELD_NAMES as R2_L4_FIELDS, EXTRA_FIELDS as R2_L4_EXTRA
+FIRST_PARTY_FIELD_NAMES.update(R2_L4_FIELDS)
+for _label, _names in R2_L4_EXTRA.items():
+    FIRST_PARTY_FIELD_NAMES[_label] |= frozenset(_names.split())

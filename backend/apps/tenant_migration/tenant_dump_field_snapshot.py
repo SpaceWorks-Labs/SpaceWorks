@@ -142,3 +142,7 @@ for _label, _names in REIMBURSEMENT_EXTRA.items():
     FIRST_PARTY_FIELD_NAMES[_label] |= frozenset(_names.split())
 from .catalog_security import FIELD_NAMES as SECURITY_FIELDS
 FIRST_PARTY_FIELD_NAMES.update(SECURITY_FIELDS)
+from .catalog_r2_l2 import FIELD_NAMES as R2_L2_FIELDS, EXTRA_FIELDS as R2_L2_EXTRA  # noqa: E402
+FIRST_PARTY_FIELD_NAMES.update(R2_L2_FIELDS)
+for _label, _names in R2_L2_EXTRA.items():
+    FIRST_PARTY_FIELD_NAMES[_label] |= _names

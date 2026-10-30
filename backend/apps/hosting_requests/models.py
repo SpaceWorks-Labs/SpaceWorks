@@ -16,6 +16,7 @@ class HostingRequest(models.Model):
         INVITED = "invited", "Invited"
         PENDING_VERIFICATION = "pending_verification", "Awaiting email confirmation"
         SUBMITTED = "submitted", "Submitted"
+        CHANGES_REQUESTED = "changes_requested", "Changes requested"
         ACCEPTED = "accepted", "Accepted"
         REJECTED = "rejected", "Rejected"
         WITHDRAWN = "withdrawn", "Withdrawn"
@@ -70,6 +71,9 @@ class HostingRequest(models.Model):
         settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+",
     )
     rejection_reason = models.TextField(max_length=2000, blank=True)
+    # R2 L2 (X31): the reviewer's open request for changes; cleared on resubmission.
+    changes_note = models.TextField(max_length=2000, blank=True)
+    changes_requested_at = models.DateTimeField(null=True, blank=True)
     created_makerspace = models.ForeignKey(
         "makerspaces.Makerspace", null=True, blank=True, on_delete=models.SET_NULL, related_name="+",
     )
@@ -94,6 +98,11 @@ class HostingRequest(models.Model):
                 name="hostreq_decided_has_time",
             ),
             models.CheckConstraint(
+                condition=~Q(status="changes_requested") | Q(redacted_at__isnull=False) | (
+                    ~Q(changes_note="") & Q(changes_requested_at__isnull=False)),
+                name="hostreq_changes_have_note",
+            ),
+            models.CheckConstraint(
                 condition=~Q(status="withdrawn") | Q(withdrawn_at__isnull=False),
                 name="hostreq_withdrawn_has_time",
             ),
@@ -109,3 +118,27 @@ class HostingRequest(models.Model):
 
     def __str__(self):
         return f"{self.space_name} ({self.get_status_display()})"
+
+
+class HostingRequestRevision(models.Model):
+    """Append-only review history: each request for changes and each resubmission.
+
+    Platform coordination state like its request: no tenant, omitted from tenant exports,
+    and its note is wiped with the request's personal details (#49).
+    """
+
+    class Kind(models.TextChoices):
+        CHANGES_REQUESTED = "changes_requested", "Changes requested"
+        RESUBMITTED = "resubmitted", "Resubmitted"
+
+    request = models.ForeignKey(HostingRequest, on_delete=models.CASCADE, related_name="revisions")
+    kind = models.CharField(max_length=24, choices=Kind.choices)
+    note = models.TextField(max_length=2000, blank=True)
+    changed_fields = models.JSONField(default=list, blank=True)
+    actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("created_at", "id")

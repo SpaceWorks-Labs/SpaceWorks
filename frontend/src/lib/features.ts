@@ -103,6 +103,15 @@ export const FEATURE_DEFINITIONS: readonly FeatureDefinition[] = [
   { key: "events.short_links", parent_module: "events", label: "Event short links" },
   { key: "events.online_delivery", parent_module: "events", label: "Online and hybrid events" },
   { key: "public_site.closed_notice", parent_module: null, label: "Closed-for-now banner" },
+  { key: "events.broadcast_templates", parent_module: "events", label: "Broadcast templates and designs" },
+  { key: "events.approval_digest", parent_module: "events", label: "Approval digest" },
+  { key: "events.anonymous_feedback", parent_module: "events", label: "Anonymous feedback forms" },
+  { key: "events.submission_integrity", parent_module: "events", label: "GitHub first-commit flag" },
+  { key: "events.mentor_chat_alerts", parent_module: "events", label: "Mentor help chat alerts" },
+  { key: "events.organization_sender", parent_module: "events", label: "Co-host sender name" },
+  { key: "notifications.escalation", parent_module: "notifications", label: "Escalation re-ping" },
+  { key: "notifications.web_push", parent_module: "notifications", label: "Browser notifications" },
+  { key: "notifications.inbox_snooze", parent_module: "notifications", label: "Inbox snooze and archive" },
 ];
 
 export function featureEnabled(features: Iterable<string>, key: string) {

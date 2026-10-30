@@ -24,6 +24,9 @@ class NotificationInboxRow(ScopedPiiModelMixin, models.Model):
     summary = models.TextField(blank=True)
     link = models.CharField(max_length=300, blank=True)
     read_at = models.DateTimeField(null=True, blank=True)
+    # R2 L2 (`notifications.inbox_snooze`): hidden from the list until then / until restored.
+    snoozed_until = models.DateTimeField(null=True, blank=True)
+    archived_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

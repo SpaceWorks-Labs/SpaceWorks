@@ -32,6 +32,9 @@ class EventFeedbackSurvey(models.Model):
     questions = models.JSONField(default=list, validators=[validate_feedback_schema])
     is_open = models.BooleanField(default=False)
     certificate_enabled = models.BooleanField(default=False)
+    # Per-form switch (#71): answers keep no link to the person. Only while certificates
+    # are off, because a certificate needs the attendee's identity.
+    anonymous = models.BooleanField(default=False)
     answered_question_ids = models.JSONField(default=list, blank=True)
     opened_at = models.DateTimeField(null=True, blank=True)
     closed_at = models.DateTimeField(null=True, blank=True)
@@ -60,6 +63,8 @@ class EventFeedbackSurvey(models.Model):
             )
         if self.is_open and not self.questions:
             raise ValidationError({"questions": "An open survey needs a question."})
+        if self.anonymous and self.certificate_enabled:
+            raise ValidationError({"anonymous": "Anonymous feedback needs certificates turned off."})
         if not self.pk:
             return
         original = type(self).objects.filter(pk=self.pk).first()
@@ -69,6 +74,8 @@ class EventFeedbackSurvey(models.Model):
             raise ValidationError(
                 {"certificate_enabled": "Certificate mode is frozen after a response."}
             )
+        if self.anonymous != original.anonymous:
+            raise ValidationError({"anonymous": "Anonymity is frozen after a response."})
         old = {question["id"]: question for question in original.questions}
         new = {question["id"]: question for question in self.questions}
         for question_id in original.answered_question_ids:
@@ -105,9 +112,11 @@ class EventFeedbackResponse(ScopedPiiModelMixin, models.Model):
         ordering = ["created_at", "id"]
         constraints = [
             models.CheckConstraint(
+                # Anonymous rows carry no person; identified rows may or may not ask for
+                # a certificate (identified feedback without certificates, #71).
                 condition=(
                     Q(registration__isnull=True, certificate_requested=False)
-                    | Q(registration__isnull=False, certificate_requested=True)
+                    | Q(registration__isnull=False)
                 ),
                 name="event_feedback_response_mode_matches_identity",
             ),

@@ -5,27 +5,20 @@ from django.apps import apps
 from apps.encryption.registry import fields_for
 
 from .archive_stream import database_value
-from .closure_references import (
-    CROSS_TENANT_DEPENDENT_REFERENCES,
-    MOVABLE_ROW_REFERENCES,
-    MissingReferenceDisposition,
-)
 from .event_hashes import event_registration_hash_columns
 from .identity_resolution import decision_for_source_user
-from .omitted_fields import OMITTED_FIELD_RECONSTRUCTIONS, OmittedFieldDisposition
 from .object_fields import rewrite_object_fields
 from .pii_reencryption import reencrypt_mapped_value_with_plaintext
-from .insertion_errors import PrimaryKeyMapUnavailable
 from .row_dispositions import row_disposition, _seeded_target_pk
 from .semantic_remap import remap_semantic_references
 from .row_conditions import condition_matches
-from .target_projection import (
-    FK_POLICIES,
-    SEEDED_RESOLUTIONS,
-    TARGET_FIELD_PROJECTION,
-    ReferenceDisposition,
+from .row_references import (
+    _clear_walk_in_waiver_evidence,
+    _null_with_provenance,
+    _remap_foreign_keys,
 )
-from .unique_values import collision_policy
+from .row_values import _fresh_unique, _reconstructed_value, protect_carried_unique_values
+from .target_projection import SEEDED_RESOLUTIONS, TARGET_FIELD_PROJECTION
 
 
 def final_row(
@@ -171,75 +164,6 @@ def update_resolved_row(model, source, target):
     return True
 
 
-def _reconstructed_value(label, field, fresh_values):
-    disposition = OMITTED_FIELD_RECONSTRUCTIONS[(label, field.name)]
-    if label in {"events.SubmissionAsset", "events.HackathonParticipantAsset"} and field.name in {"staging_key", "verification_key"}:
-        return _fresh_unique(field, fresh_values)
-    if disposition is OmittedFieldDisposition.FRESH:
-        value = _fresh_unique(field, fresh_values)
-    elif disposition is OmittedFieldDisposition.EMPTY_STRING:
-        value = ""
-    elif disposition is OmittedFieldDisposition.NULL:
-        value = None
-    elif disposition is OmittedFieldDisposition.DERIVED:
-        value = field.get_default() if field.has_default() else None
-    elif disposition is OmittedFieldDisposition.DROP_ROW:
-        value = ""
-    else:
-        raise ValueError(f"Unsupported omitted-field disposition for {label}.{field.name}.")
-    return value
-
-
-def _fresh_unique(field, fresh_values, generator=None):
-    key = (field.model._meta.label, field.name)
-    current_batch = fresh_values.setdefault(key, set())
-    if field.model._meta.label in {"events.SubmissionAsset", "events.HackathonParticipantAsset"} and field.name in {"staging_key", "verification_key"}:
-        from uuid import uuid4
-        generate = lambda: f"import-coordination/{uuid4()}/{field.name}"
-    else:
-        generate = generator or field.get_default
-    for _attempt in range(16):
-        value = generate()
-        if value in current_batch:
-            continue
-        if field.model._base_manager.filter(**{field.name: value}).exists():
-            continue
-        current_batch.add(value)
-        return value
-    raise RuntimeError(f"Could not generate a unique value for {key[0]}.{key[1]}.")
-
-
-def protect_carried_unique_values(model, row, target, fresh_values):
-    """Preserve carried labels/keys, changing only a value that actually collides."""
-    outcomes = []
-    label = model._meta.label
-    for field in model._meta.local_concrete_fields:
-        policy = collision_policy(label, field.name)
-        if policy is None:
-            continue
-        value = row[field.column]
-        if value is None:
-            # NULL never violates a unique constraint; there is no identity to preserve.
-            continue
-        key = (label, field.name)
-        current_batch = fresh_values.setdefault(key, set())
-        collision = value in current_batch or model._base_manager.filter(
-            **{field.name: value}
-        ).exists()
-        if collision:
-            generator = (
-                (lambda: policy.generator(row, target, value))
-                if policy.generator is not None
-                else field.get_default
-            )
-            row[field.column] = _fresh_unique(field, fresh_values, generator)
-            outcomes.append((field.name, "regenerated"))
-        else:
-            current_batch.add(value)
-            outcomes.append((field.name, "preserved"))
-    return outcomes
-
-
 def _apply_target_fields(label, source, row):
     for (model_label, name), policy in TARGET_FIELD_PROJECTION.items():
         if model_label != label:
@@ -248,78 +172,3 @@ def _apply_target_fields(label, source, row):
             continue
         field = apps.get_model(label)._meta.get_field(name)
         row[field.column] = policy.resolved_value(label, name)
-
-
-def _remap_foreign_keys(model, source, row, job, pk_map, target, references):
-    from .portable_staff import apply_staff_role
-    staff = apply_staff_role(model, source, row, target)
-    for field in model._meta.local_concrete_fields:
-        if not field.is_relation or field.related_model is None:
-            continue
-        source_value = row[field.column]
-        if source_value is None:
-            continue
-        edge_policy = FK_POLICIES.get((model._meta.label, field.name))
-        if staff and (model._meta.label, field.name) in {
-            ("makerspaces.MakerspaceMembership", "assigned_role"),
-            ("makerspaces.MembershipAdditionalRole", "role"),
-        }:
-            continue
-        if staff and model._meta.label == "machines.MembershipMachineTypeScope":
-            edge_policy = None
-        if edge_policy and edge_policy.disposition is ReferenceDisposition.DROP_ROW:
-            return False
-        if edge_policy and edge_policy.disposition is ReferenceDisposition.REMAP_TARGET_MEMBER:
-            row[field.column] = target.roles.get(slug="member").pk
-            continue
-        if field.related_model._meta.label == "accounts.User":
-            row[field.column] = pk_map.lookup(field.related_model, source_value)
-        elif field.related_model._meta.label == "encryption.SearchKeyGeneration":
-            continue
-        elif field.related_model._meta.label == "accounts.MemberClaimCode":
-            row[field.column] = None
-        else:
-            try:
-                row[field.column] = pk_map.lookup(field.related_model, source_value)
-            except PrimaryKeyMapUnavailable:
-                if field.name == "profile" and model._meta.label in {
-                    "makerspaces.MakerspacePublicPageRevisionMember", "events.EventPageRevisionMember",
-                }:
-                    row[field.column] = None
-                    continue
-                # A crafted archive may retain the numeric id beside its snapshot.
-                # Only a declared NULL disposition authorizes turning that id inert.
-                if field.null and _null_with_provenance(
-                    model._meta.label, field.name, source, references
-                ):
-                    row[field.column] = None
-                else:
-                    raise
-    return True
-
-
-def _null_with_provenance(label, field_name, source, references):
-    rule = MOVABLE_ROW_REFERENCES.get((label, field_name))
-    if rule is not None:
-        disposition = rule.disposition
-    else:
-        disposition = CROSS_TENANT_DEPENDENT_REFERENCES.get((label, field_name))
-    return (
-        disposition is MissingReferenceDisposition.NULL_WITH_PROVENANCE
-        and references.get(label, source["id"], field_name) is not None
-    )
-
-
-def _clear_walk_in_waiver_evidence(label, source, row, job):
-    if label != "makerspaces.MakerspaceMembership":
-        return
-    decision = decision_for_source_user(job, source["user_id"])
-    if decision.identity_resolution != decision.IdentityResolution.CREATE_WALK_IN:
-        return
-    for name in (
-        "waiver_accepted_at", "waiver_version_accepted", "accepted_waiver",
-        "witnessed_waiver", "witnessed_waiver_version", "witnessed_by",
-        "witnessed_actor_snapshot", "witnessed_at",
-    ):
-        field = apps.get_model(label)._meta.get_field(name)
-        row[field.column] = None

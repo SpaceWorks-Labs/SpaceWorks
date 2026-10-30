@@ -47,7 +47,7 @@ class StaffAccountBase(RecentReauthenticationMixin, GenericAPIView):
 
     def context_for(self, request, makerspace_id):
         space, actor = scoped_space(request.user, makerspace_id)
-        return {"space": space, "actor": actor}
+        return {"space": space, "actor": actor, "request": request}
 
     def account_response(self, request, makerspace_id, account):
         response = Response(StaffAccountSerializer(account,

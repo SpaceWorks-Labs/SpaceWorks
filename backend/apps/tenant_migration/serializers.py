@@ -38,6 +38,22 @@ class ClosureIdentitySerializer(serializers.Serializer):
     display_name = serializers.CharField(allow_blank=True)
     phone = serializers.CharField(allow_blank=True)
     date_joined = serializers.DateTimeField()
+    pii_masked = serializers.BooleanField(read_only=True, required=False)
+
+    def to_representation(self, instance):
+        """Mask email, phone and name for a superadmin with no PII window (#114).
+
+        The closure digest is computed from the real values and never from this output,
+        so approving a masked closure still binds the exact identities it names.
+        """
+        data = super().to_representation(instance)
+        request = self.context.get("request")
+        from apps.accounts.pii_presentation import ACCOUNT_PII_FIELDS, mask_data, pii_visible
+        if request is not None and not pii_visible(
+            request.user, self.context.get("makerspace_id"), subject=instance["id"]
+        ) and mask_data(data, ACCOUNT_PII_FIELDS):
+            data["pii_masked"] = True
+        return data
 
 
 class PendingClosureSerializer(serializers.Serializer):

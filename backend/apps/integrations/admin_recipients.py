@@ -53,7 +53,7 @@ class NotificationRecipientAdminForm(forms.ModelForm):
         if user is not None:
             from apps.makerspaces.models import MakerspaceMembership
 
-            has_membership = MakerspaceMembership.objects.filter(
+            has_membership = MakerspaceMembership.both_tracks().filter(
                 makerspace=makerspace, user=user, status="active"
             ).exists()
             if not has_membership:

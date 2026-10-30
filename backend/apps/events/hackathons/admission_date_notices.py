@@ -1,4 +1,5 @@
 """Durable, source-backed date review notices for all three answer subjects."""
+from apps.accounts.staff_identity import is_person
 from apps.events.contracts.subjects import SubjectKind
 from apps.events.answer_derivations.subjects import subject_model, require_event
 
@@ -19,7 +20,7 @@ def eligible(envelope):
         require_event(row.event)
         return bool(str(row.event.event_date_revision) == envelope.revision and row.member
             and row.member.is_active and row.member.access_status == "active"
-            and row.member.account_kind == "member" and not row.member.is_tenant_dump_stub)
+            and is_person(row.member) and not row.member.is_tenant_dump_stub)
     except (ValueError, APIException):
         return False
 

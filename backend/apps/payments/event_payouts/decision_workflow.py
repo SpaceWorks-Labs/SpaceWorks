@@ -5,6 +5,7 @@ locks. No authorization or domain lookup is delegated back out of a core lock.
 """
 from uuid import UUID
 from django.db import connection, transaction
+from apps.accounts.staff_identity import is_person
 from apps.audit.services import record
 from apps.encryption.account_write_fence import assert_account_fence_held
 from .errors import require
@@ -25,7 +26,7 @@ def create_locked(*, makerspace, event, owner, actor, operation_id, decision_sum
     snapshot = validate_summary(decision_summary)
     require(snapshot["decision"]["actor_id"] == actor.pk, "decision_actor_mismatch")
     require(event.makerspace_id == makerspace.pk and owner is not None
-        and owner.account_kind == "member", "decision_scope_mismatch")
+        and is_person(owner), "decision_scope_mismatch")
     operation_id = UUID(str(operation_id))
     source_uuid = UUID(snapshot["source"]["claim_uuid"])
     digest = fingerprint({"source_uuid": source_uuid, "event_id": event.pk,

@@ -1,5 +1,7 @@
 """One public authorization predicate; every refusal is the same 404."""
 
+
+from apps.accounts.staff_identity import is_person
 from urllib.parse import urlsplit
 from django.conf import settings
 from django.utils import timezone
@@ -18,7 +20,7 @@ def profile_is_public(profile):
     membership = profile.membership
     user = membership.user
     return bool(profile.public_visible and profile.public_consented_at
-                and user.account_kind == "member" and user.is_active and user.access_status == "active"
+                and is_person(user) and user.is_active and user.access_status == "active"
                 and membership.status == "active" and not user.is_tenant_dump_stub
                 and is_servable(membership.makerspace)
                 and module_enabled(membership.makerspace, "membership"))

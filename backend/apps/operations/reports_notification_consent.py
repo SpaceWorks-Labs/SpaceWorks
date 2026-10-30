@@ -1,6 +1,7 @@
 """Current member consent snapshots, bound to canonical sender and account proof."""
 from django.db.models import OuterRef, Subquery
 
+from apps.accounts.staff_identity import person_q
 from apps.accounts import rbac
 from apps.integrations.models_endpoints import ChannelConfiguration, NotificationEndpoint
 from apps.integrations.models_messaging_consent import MessagingConsent
@@ -11,7 +12,7 @@ from apps.makerspaces.models import MakerspaceMembership
 
 def consented_members(space, channel):
     members = rbac.scope_notification_policy(MakerspaceMembership.objects.all(), makerspace_id=space.pk).filter(
-        status="active", user__account_kind="member", user__is_active=True,
+        person_q("user__"), status="active", user__is_active=True,
         user__access_status="active", user__is_tenant_dump_stub=False,
         user__retired_at=None, user__deletion_requested_at=None,
     ).values("user_id")

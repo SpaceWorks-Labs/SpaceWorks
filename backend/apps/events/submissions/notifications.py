@@ -1,4 +1,5 @@
 """Source-backed submission status notices contain no project answers or files."""
+from apps.accounts.staff_identity import person_q
 from apps.accounts.models import User
 from apps.events.submissions.models_projects import HackathonSubmission
 from apps.integrations.notification_sources import NotificationSource, register_source
@@ -33,7 +34,7 @@ def enqueue_locked(*, project, action):
     if action not in STATES:
         return
     ids = project.team.memberships.filter(state="active").values_list("member_id", flat=True)
-    for member in User.objects.filter(pk__in=ids, account_kind="member", is_active=True, access_status="active",
+    for member in User.objects.filter(person_q(), pk__in=ids, is_active=True, access_status="active",
             is_tenant_dump_stub=False).order_by("pk"):
         emit(makerspace=project.event.makerspace, recipient=member, feature="events", stream="events",
             event=action, audience="member", dedup_key=f"event-submission:{project.pk}:{project.version}:{member.pk}",

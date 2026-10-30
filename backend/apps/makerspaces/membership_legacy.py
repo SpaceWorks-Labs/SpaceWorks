@@ -1,5 +1,6 @@
 """Audited, locked lifecycle changes for makerspace memberships."""
 
+from apps.accounts.staff_identity import person_q
 from apps.accounts.account_kind_guards import require_member_account
 
 from django.db import IntegrityError, transaction
@@ -81,7 +82,7 @@ def invite_membership(actor, makerspace, invite_email, assigned_role):
         role_services.can_assign_role(actor, makerspace, role)
         if _is_community_invitation(role):
             require_module(makerspace, "membership")
-        user = User.objects.filter(account_kind="member", email__iexact=email).first()
+        user = User.objects.filter(person_q(), email__iexact=email).first()
         # The rule `refer_membership` already had. Approving an invitation for someone who is
         # already a member would silently rewrite their role; that is `change_role`'s job.
         if user and MakerspaceMembership.objects.filter(
@@ -119,7 +120,7 @@ def refer_membership(actor, makerspace, invite_email):
         require_module(makerspace, "membership")
         if not makerspace.referrals_enabled or not actor_membership or not actor_membership.can_refer:
             raise PermissionDenied()
-        target = User.objects.filter(account_kind="member", email__iexact=email).first()
+        target = User.objects.filter(person_q(), email__iexact=email).first()
         if target and MakerspaceMembership.objects.filter(
             makerspace=makerspace, user=target, status="active"
         ).exists():

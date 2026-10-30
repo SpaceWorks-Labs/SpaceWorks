@@ -1,5 +1,7 @@
 """Who counts as an active platform superadmin for security and PII decisions."""
 
+from apps.accounts.staff_identity import is_platform
+
 
 def is_platform_superadmin(user):
     """A live platform account holding superuser status.
@@ -11,7 +13,7 @@ def is_platform_superadmin(user):
         user is not None
         and getattr(user, "is_authenticated", False)
         and not getattr(user, "is_tenant_dump_stub", False)
-        and getattr(user, "account_kind", None) == "platform"
+        and is_platform(user)
         and getattr(user, "is_superuser", False)
         and getattr(user, "is_active", False)
         and getattr(user, "retired_at", None) is None

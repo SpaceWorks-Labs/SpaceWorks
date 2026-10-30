@@ -16,11 +16,10 @@ from apps.makerspaces.models import Makerspace, MakerspaceMembership, Membership
 
 
 def revoke_membership(actor, membership, reason=""):
-    if membership.user.account_kind == "staff":
-        from apps.accounts.staff_account_lifecycle import deactivate
-        deactivate(actor, membership.makerspace_id, membership.user_id, reason=reason)
-        membership.refresh_from_db()
-        return membership
+    # One account per person: this is the COMMUNITY revocation (cards, terms, presence,
+    # admission cleanup). A staff-track row is revoked by the staff-roles service.
+    if membership.track == MakerspaceMembership.Track.STAFF:
+        raise PermissionDenied("Revoke staff roles from the staff roles screen.")
     with transaction.atomic():
         makerspace = Makerspace.objects.select_for_update().get(pk=membership.makerspace_id)
         membership = MakerspaceMembership.objects.select_for_update().get(pk=membership.pk)

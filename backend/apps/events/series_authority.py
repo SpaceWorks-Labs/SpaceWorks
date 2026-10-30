@@ -1,5 +1,6 @@
 from django.db.models import Q
 
+from apps.accounts.staff_identity import is_person, person_q
 from apps.accounts import rbac
 from apps.accounts.models import User
 from apps.organizations.models import OrganizationMembership
@@ -15,7 +16,7 @@ def _is_superadmin(actor):
 
 def organizer_series_q(actor, *, prefix=""):
     if (actor is None or not getattr(actor, "is_authenticated", False)
-            or getattr(actor, "account_kind", None) != "member"
+            or not is_person(actor)
             or _is_superadmin(actor) or is_native_session(actor)):
         return Q(pk__in=[])
     organization = f"{prefix}organizers__organization"
@@ -43,9 +44,8 @@ def can_manage_series(actor, series):
     if (_is_superadmin(actor) or is_native_session(actor)
             or series.makerspace_id in rbac.archived_makerspace_ids()):
         return False
-    memberships = OrganizationMembership.objects.filter(
+    memberships = OrganizationMembership.objects.filter(person_q("user__"),
         user=actor,
-        user__account_kind="member",
         status=OrganizationMembership.Status.ACTIVE,
         organization__is_active=True,
         organization__organized_event_series__series=series,

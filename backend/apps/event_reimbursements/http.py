@@ -3,6 +3,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
 from rest_framework.exceptions import NotFound
+from apps.accounts.staff_identity import is_person, is_platform
 from apps.accounts import rbac
 from apps.accounts.claim_sessions import claim_context
 from apps.accounts.reauthentication import binding
@@ -26,8 +27,8 @@ class PrivateView(BasePrivateView):
 
 
 def check_read(request, event, *, owner=False):
-    require(getattr(request, "api_client", None) is None and getattr(request.user, "account_kind", None)
-            in ("member", "staff", "platform"), "full_session_required", status=403)
+    require(getattr(request, "api_client", None) is None
+            and (is_person(request.user) or is_platform(request.user)), "full_session_required", status=403)
     binding(request)
     require(claim_context(request.user) is None, "full_session_required", status=403)
     require_active_principal(request.user, event.makerspace)

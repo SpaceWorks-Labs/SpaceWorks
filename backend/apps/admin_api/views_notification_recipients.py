@@ -63,7 +63,7 @@ class NotificationRecipientsView(APIView):
         # assigned_role JSON, so we resolve eligibility in Python then re-filter to keep a
         # queryset (the PATCH path calls .filter(id__in=...) on this).
         base = (
-            MakerspaceMembership.objects.filter(
+            MakerspaceMembership.staff_tracks.filter(
                 makerspace=makerspace,
                 user__is_active=True,
                 user__access_status=User.AccessStatus.ACTIVE,
@@ -115,7 +115,7 @@ class NotificationRecipientsView(APIView):
                 membership.receives_notifications = new_value
                 changed.append(membership)
         if changed:
-            MakerspaceMembership.objects.bulk_update(changed, ["receives_notifications"])
+            MakerspaceMembership.staff_tracks.bulk_update(changed, ["receives_notifications"])
             audit.record(
                 request.user,
                 "makerspace.notification_recipients_updated",

@@ -134,8 +134,10 @@ def _grants_payload(request, space):
     from .models import MakerspaceMembership
     from .settings_authority_writes import eligible_grantee
 
-    people = [row.user for row in MakerspaceMembership.objects.filter(
-        makerspace=space, status="active", user__is_active=True).select_related("user").order_by("user__username")]
+    # Candidates come from both tracks: staff rows hold the module roles.
+    people = sorted({row.user for manager in (MakerspaceMembership.objects, MakerspaceMembership.staff_tracks)
+                     for row in manager.filter(makerspace=space, status="active", user__is_active=True)
+                     .select_related("user")}, key=lambda user: user.username)
     context = {"request": request, "makerspace_id": space.pk}
     return {
         "grants": GrantSerializer(_live_grants(space), many=True, context=context).data,

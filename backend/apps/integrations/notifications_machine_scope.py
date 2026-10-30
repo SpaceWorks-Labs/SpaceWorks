@@ -41,7 +41,7 @@ def reminder_staff_ids(makerspace, feature, event, scope):
         ).values("pk")), pk=scope.machine_type_id,
     ).first() if scope.machine_type_id else None
     rows = rbac.scope_for_scheduled_work(
-        MakerspaceMembership.objects.select_related("user"), makerspace_id=makerspace.pk,
+        MakerspaceMembership.staff_tracks.select_related("user"), makerspace_id=makerspace.pk,
     ).filter(status="active")
     return {row.user_id for row in rows if (
         access.can_manage_machine(row.user, machine) if machine else

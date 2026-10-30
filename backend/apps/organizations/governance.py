@@ -1,5 +1,6 @@
 """Organization-only authority, kept separate from makerspace RBAC grants."""
 
+from apps.accounts.staff_identity import is_person
 from apps.accounts.models import User
 from apps.accounts.native_session import is_native_session
 
@@ -19,7 +20,7 @@ def live_account(actor):
 
 
 def member_account(actor):
-    return live_account(actor) and actor.account_kind == User.AccountKind.MEMBER
+    return live_account(actor) and is_person(actor)
 
 
 def actions_for_membership(membership) -> set[str]:

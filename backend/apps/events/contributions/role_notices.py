@@ -1,4 +1,5 @@
 """Role decisions are private owner notices backed by the live assignment."""
+from apps.accounts.staff_identity import is_person
 from apps.integrations.notification_outbox import emit
 from apps.integrations.notification_sources import NotificationSource, register_source
 from .models_roles import EventRoleAssignment
@@ -31,7 +32,7 @@ def eligible(envelope):
     feature = "events.volunteering" if row.role == "volunteer" else "events.mentoring" if row.role == "mentor" else "events.hackathons"
     return bool(is_servable(event.makerspace) and module_enabled(event.makerspace, "events")
         and feature_enabled(event.makerspace, feature) and row.member.is_active
-        and row.member.account_kind == "member" and row.member.access_status == "active"
+        and is_person(row.member) and row.member.access_status == "active"
         and not row.member.is_tenant_dump_stub)
 
 

@@ -2,6 +2,7 @@
 
 from django.db.models import Exists, OuterRef, Q
 
+from apps.accounts.staff_identity import person_q
 from apps.accounts.models import User
 from apps.makerspaces.models import Makerspace, MakerspaceMembership
 from apps.makerspaces.servability import servable_q
@@ -13,8 +14,7 @@ def usable_spaces():
 
 
 def active_accounts(queryset=None):
-    return (queryset if queryset is not None else User.objects.all()).filter(
-        account_kind=User.AccountKind.MEMBER,
+    return (queryset if queryset is not None else User.objects.all()).filter(person_q(),
         is_active=True, access_status="active", is_tenant_dump_stub=False,
     )
 

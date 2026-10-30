@@ -1,5 +1,7 @@
 """Live section adapters. Optional domains load behind runtime/module gates."""
 
+
+from apps.accounts.staff_identity import person_q
 from django.utils import timezone
 from .platform import module_enabled
 
@@ -95,7 +97,7 @@ def derived_payload(kind, owner, key, payload, *, request=None):
         if payload["publish_public_member_count"] and current_consent and module_enabled(owner, "membership"):
             from .models import MakerspaceMembership
             metrics["public_member_count"] = MakerspaceMembership.objects.filter(
-                makerspace=owner, status="active", user__account_kind="member", user__is_active=True,
+                person_q("user__"), makerspace=owner, status="active", user__is_active=True,
                 user__access_status="active", user__is_tenant_dump_stub=False).count()
         # An empty metrics block would render a bare heading; omit the section instead.
         return {"title": title, "metrics": metrics} if metrics else None

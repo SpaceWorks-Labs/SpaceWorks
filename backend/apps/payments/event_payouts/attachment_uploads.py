@@ -3,6 +3,7 @@ from datetime import timedelta
 from uuid import uuid4
 from django.db import connection
 from django.utils import timezone
+from apps.accounts.staff_identity import is_person
 from apps.audit.services import record
 from apps.makerspaces.private_upload_transport import ObjectLocator, UploadRequest, bounded_not_after
 from .attachment_models import FinanceAttachment
@@ -20,7 +21,7 @@ def create_locked(*, makerspace, event_id, event_title, owner, binding_kind, bin
     scanner_policy = current()
     purpose = "reimbursement_receipt" if binding_kind == "claim" else "reimbursement_payee_document"
     require(binding_kind in ("claim", "payee"), "invalid_attachment_binding", status=400)
-    require(owner is not None and owner.account_kind == "member", "invalid_attachment_owner")
+    require(owner is not None and is_person(owner), "invalid_attachment_owner")
     if obligation is not None:
         require(obligation.makerspace_id == makerspace.pk and obligation.event_id_snapshot == event_id
             and obligation.owner_member_id == owner.pk, "attachment_scope_mismatch")

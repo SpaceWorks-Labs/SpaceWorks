@@ -1,6 +1,7 @@
 """Canonical source/recipient policy plus attested device/account context."""
 from django.core.exceptions import ValidationError
 
+from apps.accounts.staff_identity import has_staff_role, is_person
 from apps.integrations.notification_resolution import eligible, resolve
 from apps.notifications.inbox_scope import persisted_scope
 
@@ -20,10 +21,12 @@ def device_allowed(device, envelope):
     account_ok = (user.is_active and user.access_status == "active" and not user.is_tenant_dump_stub
                   and user.retired_at is None and user.deletion_requested_at is None
                   and user.account_purged_at is None)
+    # Member envelopes ride member grants; staff envelopes ride the staff grant fixed to
+    # this space, held by a person with a live staff role there (one account per person).
     context_ok = (
-        user.account_kind == "member" and grant.authority == "member" and grant.staff_makerspace_id is None
+        is_person(user) and grant.authority == "member" and grant.staff_makerspace_id is None
         if envelope.audience in {"member", "requester"} else
-        user.account_kind == "staff" and user.staff_makerspace_id == envelope.makerspace_id
+        has_staff_role(user, envelope.makerspace_id)
         and grant.authority == "staff" and grant.staff_makerspace_id == envelope.makerspace_id
         and grant.login_method == "password"
     )

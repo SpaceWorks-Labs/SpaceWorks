@@ -61,8 +61,10 @@ def _revoke(user, *, reason, actor, all_credentials):
         if all_credentials:
             counts.update(revoke_pending_proofs(locked, now=now))
             counts["password_reset_envelopes"] = revoke_reset_envelopes(envelopes, now=now)
+        # An account is global (one per person), so its credential revocation is a
+        # platform-level audit row, not one space's.
         audit.record(actor, "account.credentials_revoked", target=locked,
-                     makerspace=locked.staff_makerspace, meta={
+                     makerspace=None, meta={
             "reason": reason, "counts": counts,
             "scope": "all" if all_credentials else "sessions",
         })

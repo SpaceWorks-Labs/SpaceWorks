@@ -7,6 +7,7 @@ from django.db import connection, transaction
 from django.utils import timezone
 
 from apps.accounts.models import User
+from apps.accounts.staff_identity import is_person
 from apps.accounts.services_tokens import blacklist_outstanding_tokens
 from apps.audit import services as audit
 
@@ -61,7 +62,7 @@ def transition_walk_in_to_account(
     hooks = tuple(_REVOCATION_HOOKS.values())
     with transaction.atomic():
         locked = User.objects.select_for_update().get(pk=user.pk)
-        if locked.account_kind != "member" or not locked.is_walk_in:
+        if not is_person(locked) or not locked.is_walk_in:
             raise WalkInTransitionError("This user is not a walk-in record.")
 
         with connection.cursor() as cursor:

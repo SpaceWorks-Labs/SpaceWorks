@@ -11,16 +11,17 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.accounts.staff_identity import is_platform, person_q
 from apps.accounts.models import User
 from apps.admin_api.permissions import IsActiveSuperAdmin, active_user
 from apps.integrations.models_contract import NotificationDelivery, NotificationEnvelope
 from apps.integrations.models_email import EmailLog
-from apps.makerspaces.models import Makerspace
+from apps.makerspaces.models import Makerspace, MakerspaceMembership
 from apps.makerspaces.servability import servable_queryset
 
 
 def require_platform(actor):
-    if (not active_user(actor) or actor.account_kind != "platform"
+    if (not active_user(actor) or not is_platform(actor)
             or not (actor.is_superuser or actor.role == User.Role.SUPERADMIN)):
         raise PermissionDenied()
 
@@ -58,8 +59,9 @@ def platform_insights(actor, *, days=30, now=None):
     accounts = User.objects.filter(is_tenant_dump_stub=False, is_walk_in=False)
     account_growth = _daily(accounts, "date_joined", start, now)
     tenant_growth = _daily(spaces, "created_at", start, now)
-    staff = accounts.filter(account_kind="staff", is_active=True, access_status="active",
-                            staff_makerspace__in=spaces)
+    staff_rows = MakerspaceMembership.staff_tracks.filter(makerspace__in=spaces, status="active")
+    staff = accounts.filter(person_q(), pk__in=staff_rows.values("user_id"), is_active=True,
+                            access_status="active")
     active = staff.count()
     enabled = staff.filter(usermfa__enabled_at__isnull=False).exclude(usermfa__secret="").count()
     email = EmailLog.objects.filter(Q(makerspace__in=spaces) | Q(makerspace__isnull=True))

@@ -4,6 +4,7 @@ from django.db.models import F, Q
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import PermissionDenied
 
+from apps.accounts.staff_identity import is_person
 from apps.accounts import rbac
 from apps.makerspaces.capability_eligibility import feature_enabled_servable_ids
 from apps.makerspaces.guards import require_module
@@ -35,7 +36,7 @@ def active_grants(actor, *, makerspace_id=None, space_ids=None):
     from apps.makerspaces.module_registry import module_available
     rows = BookingSpaceStaffGrant.objects.none()
     # Forced-password login can discover authority; writes still require active().
-    if (not active_account(actor) or getattr(actor, "account_kind", None) != "member"
+    if (not active_account(actor) or not is_person(actor)
             or not module_available("bookings")):
         return rows
     rows = BookingSpaceStaffGrant.objects.filter(

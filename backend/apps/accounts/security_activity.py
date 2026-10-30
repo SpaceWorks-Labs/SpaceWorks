@@ -8,6 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.accounts.staff_identity import actor_ids_for, is_person
 from apps.admin_api.permissions import active_user
 from apps.audit.models import AuditLog
 
@@ -28,11 +29,12 @@ SECURITY_ACTIONS = frozenset({
 
 
 def own_security_activity(actor):
-    if not active_user(actor) or actor.account_kind != "member":
+    if not active_user(actor) or not is_person(actor):
         raise PermissionDenied()
-    # Auth actions where this account is the actor only. An administrator's action,
-    # arbitrary target strings and shared/global auth failures cannot select another user.
-    return AuditLog.objects.filter(actor_id=actor.pk, action__in=SECURITY_ACTIONS).only(
+    # Auth actions where this person is the actor only (their merged shells included).
+    # An administrator's action, arbitrary target strings and shared/global auth
+    # failures cannot select another user.
+    return AuditLog.objects.filter(actor_id__in=actor_ids_for(actor), action__in=SECURITY_ACTIONS).only(
         "pk", "action", "created_at").order_by("-created_at", "-pk")
 
 

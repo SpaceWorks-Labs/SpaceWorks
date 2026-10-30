@@ -2,6 +2,7 @@ from dataclasses import dataclass, replace
 
 from django.utils import timezone
 
+from apps.accounts.staff_identity import is_person
 from apps.accounts.claim_sessions import claim_context
 from apps.accounts.models import User
 from apps.makerspaces.models import MakerspaceMembership, MakerspaceWaiver
@@ -98,7 +99,7 @@ def _require_active_identity(user, makerspace, *, any_kind=False):
         user
         and user.is_authenticated
         and user.pk
-        and (any_kind or user.account_kind == User.AccountKind.MEMBER)
+        and (any_kind or is_person(user))
         and user.is_active
         and user.access_status == User.AccessStatus.ACTIVE
         and not user.is_tenant_dump_stub

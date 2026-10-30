@@ -143,9 +143,10 @@ class ReportScheduleSerializer(serializers.ModelSerializer):
         # recipients; legacy schedules are still reauthorized by the runner.
         from apps.makerspaces.models import MakerspaceMembership
         space = self.context["makerspace"]
-        members = MakerspaceMembership.objects.none()
+        members = MakerspaceMembership.staff_tracks.none()
         for action in {definition.required_action for definition in REPORT_REGISTRY.values()}:
-            members = members | rbac.scope_by_action(self.context["request"].user, action, MakerspaceMembership.objects.all())
+            members = members | rbac.scope_by_action(self.context["request"].user, action,
+                                                     MakerspaceMembership.staff_tracks.all())
         known = {email.lower() for email in members.filter(makerspace=space).values_list("user__email", flat=True) if email}
         existing = {email.strip().lower() for email in getattr(self.instance, "recipient_emails", [])}
         if known & ({email.strip().lower() for email in emails} - existing):

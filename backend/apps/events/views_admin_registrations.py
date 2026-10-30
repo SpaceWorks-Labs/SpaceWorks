@@ -4,6 +4,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.accounts.staff_identity import person_q
 from apps.accounts import rbac
 from apps.accounts.models import User
 from apps.admin_api.permissions import IsActiveStaff
@@ -100,16 +101,15 @@ class EventRegistrationListView(APIView):
         serializer = EventStaffRegistrationSerializer(data=request.data, context={"event": event})
         serializer.is_valid(raise_exception=True)
         if event.registration_audience != "members":
-            account = get_object_or_404(User.objects.filter(account_kind=User.AccountKind.MEMBER,
-                is_active=True, access_status=User.AccessStatus.ACTIVE), pk=serializer.validated_data["member_id"])
+            account = get_object_or_404(User.objects.filter(
+                person_q(), is_active=True, access_status=User.AccessStatus.ACTIVE), pk=serializer.validated_data["member_id"])
         else:
             account = get_object_or_404(
-                MakerspaceMembership.objects.select_related('user').filter(
+                MakerspaceMembership.objects.select_related('user').filter(person_q("user__"),
                     makerspace=event.makerspace,
                     user_id=serializer.validated_data['member_id'],
                     status='active',
                     user__is_active=True,
-                    user__account_kind=User.AccountKind.MEMBER,
                     # Account standing, not just the membership row: a restricted or
                     # suspended account is blocked everywhere else and must be blocked here
                     # too, or the console becomes the way around an access restriction.

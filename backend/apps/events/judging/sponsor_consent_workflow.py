@@ -4,6 +4,8 @@ Grant is explicit and asset/hash/purpose specific. Effective reads also require
 an own-track frozen submission; a contributor role alone cannot confer access.
 """
 
+
+from apps.accounts.staff_identity import is_person
 from django.contrib.auth import get_user_model
 from django.http import Http404
 from django.utils import timezone
@@ -157,7 +159,7 @@ def require_effective_for_asset(*, event_id, member_id, sponsor_id, asset_id, pu
     asset, sponsor = _asset(event_id, member_id, asset_id, ready=False), _sponsor(event_id, sponsor_id)
     member = get_user_model().objects.filter(pk=member_id).first()
     from apps.events import event_authority
-    if not member or not event_authority._active(member) or member.account_kind != "member":
+    if not member or not event_authority._active(member) or not is_person(member):
         raise Http404
     row = ParticipantSponsorResumeConsent.objects.filter(event_id=event_id, member_id=member_id,
         sponsor_id=sponsor_id, participant_asset_id=asset_id, purpose=purpose, state="granted").first()

@@ -9,6 +9,7 @@ from django.http import Http404
 from django.utils.text import slugify
 from rest_framework.exceptions import APIException
 
+from apps.accounts.staff_identity import is_platform
 from apps.makerspaces.models import Makerspace
 from apps.makerspaces.module_install import apply_profile
 from apps.makerspaces.module_profiles import PROFILES
@@ -66,7 +67,7 @@ class Command(BaseCommand):
         )
         # CLI access already overrides application rules; this assertion makes an
         # improbable collision loud instead of silently changing a person record.
-        if not created and user.account_kind != "platform":
+        if not created and not is_platform(user):
             raise CommandError("Setup requires a separate platform account; existing member/staff accounts cannot be promoted.")
         if not created and user.is_walk_in:
             raise CommandError(f"Cannot set up {username!r}: the existing user is a walk-in.")

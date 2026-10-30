@@ -1,5 +1,6 @@
 from django import forms
 from django.contrib import admin
+from apps.accounts.staff_identity import person_q
 from apps.accounts.reauthentication_control import RecentReauthenticationAdminMixin
 from django.db import transaction
 from unfold.admin import ModelAdmin
@@ -18,7 +19,7 @@ class OrganizationMembershipForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if "user" in self.fields:
-            self.fields["user"].queryset = self.fields["user"].queryset.filter(account_kind="member")
+            self.fields["user"].queryset = self.fields["user"].queryset.filter(person_q())
 
     class Meta:
         model = OrganizationMembership

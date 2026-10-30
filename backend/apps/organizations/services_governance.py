@@ -3,6 +3,7 @@ from django.db import transaction
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
+from apps.accounts.staff_identity import is_person
 from apps.accounts import rbac
 from apps.admin_api.permissions import active_user
 from apps.audit import services as audit
@@ -61,7 +62,7 @@ def self_departure(organization, *, user):
     safe for direct internal callers. No caller-controlled membership ID or actor
     may select another person's authority.
     """
-    if user.account_kind != "member":
+    if not is_person(user):
         raise PermissionDenied("Only member accounts hold organization memberships.")
     locked = Organization.objects.select_for_update().get(pk=organization.pk)
     target = locked.memberships.select_for_update().filter(user_id=user.pk).first()

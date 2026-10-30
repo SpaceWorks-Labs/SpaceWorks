@@ -18,8 +18,9 @@ from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
+from apps.accounts.staff_identity import PERSON_KIND, PLATFORM_KIND
 from apps.accounts.models import User
-from apps.accounts.staff_accounts import create_staff_account
+from apps.makerspaces.staff_role_grants import grant_staff_role
 from apps.boxes.models import Box
 from apps.hardware_requests import request_workflow
 from apps.inventory.categories import ensure_default_categories
@@ -67,7 +68,7 @@ class Command(BaseCommand):
         user = User.objects.create_user(
             username=username, email=f"{username}@e2e.local", password=password, role=role,
             access_status=User.AccessStatus.ACTIVE,
-            account_kind="platform" if flags.get("is_superuser") else "member", **flags,
+            account_kind=PLATFORM_KIND if flags.get("is_superuser") else PERSON_KIND, **flags,
         )
         user.must_change_password = False
         user.save(update_fields=["must_change_password"])
@@ -84,12 +85,9 @@ class Command(BaseCommand):
         apply_profile(makerspace, RECOMMENDED, actor=superadmin)
         ensure_default_categories(makerspace)
 
-        manager = create_staff_account(makerspace, name="E2E Manager", username=f"e2e_manager_{token}",
-            email=f"e2e_manager_{token}@e2e.local", roles=[makerspace.roles.get(slug="space_manager")],
-            machine_type_ids=[], created_by=superadmin)
-        manager.set_password(password)
-        manager.must_change_password = False
-        manager.save(update_fields=["password", "must_change_password"])
+        manager = self._user(f"e2e_manager_{token}", User.Role.SPACE_MANAGER, password, display_name="E2E Manager")
+        grant_staff_role(makerspace=makerspace, user=manager, actor=superadmin,
+                         roles=[makerspace.roles.get(slug="space_manager")])
         member = self._user(f"e2e_member_{token}", User.Role.REQUESTER, password)
         MakerspaceMembership.objects.create(
             user=member, makerspace=makerspace, role="custom", assigned_role=makerspace.roles.get(slug="member"),

@@ -44,7 +44,7 @@ def set_member_machine_scope(*, makerspace, membership, actor, machine_type_ids)
     """Makerspace FOR NO KEY UPDATE, then membership FOR UPDATE OF self."""
     makerspace = Makerspace.objects.select_for_update(no_key=True).get(pk=makerspace.pk)
     membership = (
-        MakerspaceMembership.objects.select_for_update(of=("self",))
+        MakerspaceMembership.staff_tracks.select_for_update(of=("self",))
         .select_related("assigned_role").prefetch_related(additional_roles_prefetch())
         .get(pk=membership.pk, makerspace=makerspace)
     )

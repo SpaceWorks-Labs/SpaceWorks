@@ -3,6 +3,7 @@
 from django.apps import apps
 from rest_framework.exceptions import NotFound
 
+from apps.accounts.staff_identity import person_q
 from apps.accounts.models import User
 from apps.events.contracts.subjects import AnswerSubject, SubjectKind
 from apps.makerspaces.platform import module_enabled
@@ -16,8 +17,8 @@ SUBJECT_MODELS = {
 
 
 def require_member(actor_id):
-    actor = User.objects.filter(
-        pk=actor_id, account_kind="member", is_active=True, access_status="active",
+    actor = User.objects.filter(person_q(),
+        pk=actor_id, is_active=True, access_status="active",
         is_tenant_dump_stub=False, retired_at__isnull=True,
     ).first()
     if actor is None:

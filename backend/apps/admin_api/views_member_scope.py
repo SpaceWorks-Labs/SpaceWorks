@@ -16,8 +16,9 @@ from apps.makerspaces.models import MakerspaceMembership
 
 
 def _membership(actor, makerspace, membership_id):
+    # Machine scopes hang off staff-track rows (one account per person).
     rows = rbac.scope_by_action(actor, rbac.Action.MANAGE_MAKERSPACE,
-                               MakerspaceMembership.objects.all())
+                               MakerspaceMembership.staff_tracks.all())
     return get_object_or_404(rows.select_related("assigned_role").prefetch_related(
         additional_roles_prefetch(),
     ), pk=membership_id, makerspace=makerspace)

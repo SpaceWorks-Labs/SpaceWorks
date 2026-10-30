@@ -6,6 +6,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.accounts.staff_identity import person_q
 from apps.accounts import rbac
 from apps.admin_api.permissions import IsActiveStaff
 from apps.makerspaces.servability import servable_queryset
@@ -37,7 +38,7 @@ def scoped_account(space, account_id, *, present=False):
     known = Q(makerspace_memberships__makerspace=space)
     if present:
         known |= Q(presence_sessions__makerspace=space)
-    return get_object_or_404(get_user_model().objects.filter(known, account_kind="member").distinct(), pk=account_id)
+    return get_object_or_404(get_user_model().objects.filter(known, person_q()).distinct(), pk=account_id)
 
 
 class StaffPresenceView(APIView):

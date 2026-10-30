@@ -4,6 +4,8 @@ Only active separable apps register. Discovery evaluates callbacks against live 
 neither credentials nor tenant actions are cached in this registry.
 """
 
+
+from apps.accounts.staff_identity import is_person
 from dataclasses import dataclass
 from typing import Callable
 
@@ -31,14 +33,14 @@ def registered_sources():
 
 
 def has_authority(actor, *, makerspace_ids=None):
-    if getattr(actor, "account_kind", None) != "member":
+    if not is_person(actor):
         return False
     return any(source.has_authority(actor, makerspace_ids=makerspace_ids)
                for source in registered_sources())
 
 
 def payload_entries(actor, *, makerspace_ids=None):
-    if getattr(actor, "account_kind", None) != "member":
+    if not is_person(actor):
         return {source.key: [] for source in registered_sources()}
     return {source.key: source.entries(actor, makerspace_ids=makerspace_ids)
             for source in registered_sources()}

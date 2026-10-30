@@ -6,6 +6,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 
+from apps.accounts.staff_identity import is_person
 from apps.admin_api.permissions import active_user
 from .models import Organization
 from .member_leave import LeaveError, LeaveStateSerializer, project_leave_state
@@ -33,7 +34,7 @@ class MemberOrganizationsView(APIView):
                               **{code: LeaveError for code in (401, 403, 429)}})
     def get(self, request):
         actor = request.user
-        if not active_user(actor) or actor.account_kind != "member":
+        if not active_user(actor) or not is_person(actor):
             raise PermissionDenied()
         rows = Organization.objects.filter(memberships__user=actor).order_by("name", "pk").distinct()
         paginator = PageNumberPagination()

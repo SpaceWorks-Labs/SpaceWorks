@@ -105,7 +105,7 @@ def recipient_emails(schedule, definition):
     names a local account, it is also subject to current report authority and opt-out.
     """
     candidates = rbac.scope_for_scheduled_work(
-        MakerspaceMembership.objects.filter(makerspace=schedule.makerspace),
+        MakerspaceMembership.staff_tracks.filter(makerspace=schedule.makerspace),
         makerspace_id=schedule.makerspace_id,
     ).select_related("user", "assigned_role").prefetch_related(additional_roles_prefetch())
     explicit = {email.strip().lower(): email.strip() for email in schedule.recipient_emails or []}

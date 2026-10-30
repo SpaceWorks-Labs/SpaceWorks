@@ -12,6 +12,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.accounts.staff_identity import is_person
 from apps.accounts.reauthentication import require_recent_reauth
 from apps.accounts.models import User
 from apps.admin_api.permissions import active_user
@@ -32,7 +33,7 @@ def membership_version(row):
 
 def project_leave_state(organization, actor):
     """Ready-to-install owner-self projection; grants no membership-directory access."""
-    if not active_user(actor) or actor.account_kind != "member":
+    if not active_user(actor) or not is_person(actor):
         raise PermissionDenied()
     membership = get_object_or_404(OrganizationMembership, organization=organization, user=actor)
     is_governor = governance.MANAGE_ORGANIZATION_MEMBERS in governance.actions_for_membership(membership)
@@ -54,12 +55,12 @@ class LeaveConflict(APIException):
 @transaction.atomic
 def leave_organization(*, request, organization_id, operation_id, expected_version):
     actor = request.user
-    if not active_user(actor) or actor.account_kind != "member":
+    if not active_user(actor) or not is_person(actor):
         raise PermissionDenied()
     require_recent_reauth(request)
     organization = get_object_or_404(Organization.objects.select_for_update(), pk=organization_id)
     request.user = actor = User.objects.select_for_update().get(pk=actor.pk)
-    if not active_user(actor) or actor.account_kind != "member":
+    if not active_user(actor) or not is_person(actor):
         raise PermissionDenied()
     # Recheck the proof under the same transaction as the authority withdrawal.
     require_recent_reauth(request)

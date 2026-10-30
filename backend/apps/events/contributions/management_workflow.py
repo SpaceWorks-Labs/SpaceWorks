@@ -3,6 +3,7 @@ from django.core.exceptions import ValidationError as ModelValidationError
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
+from apps.accounts.staff_identity import person_q
 from apps.events import event_authority
 from . import commands
 from .allocation import require_capacity_edit
@@ -147,7 +148,7 @@ def save_role(*, actor, event_id, payload, assignment_id=None):
             return commands.changed(row, display_on_page=payload.get("display_on_page", row.display_on_page))
         _zero(payload)
         from apps.accounts.models import User
-        member = get_object_or_404(User, pk=payload.get("member_id"), account_kind="member",
+        member = get_object_or_404(User, person_q(), pk=payload.get("member_id"),
                                    is_active=True, access_status="active", is_tenant_dump_stub=False)
         role = payload.get("role")
         if role == "co_organizer":

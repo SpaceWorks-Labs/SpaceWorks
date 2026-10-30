@@ -77,7 +77,7 @@ def prepare_rules(makerspace, rules, *, delegated, reach, actor=None):
                 raise RuleValidationError("A named recipient needs a user.")
             if role_id is not None:
                 raise RuleValidationError("A named recipient cannot also name a role.")
-            if not MakerspaceMembership.objects.filter(
+            if not MakerspaceMembership.both_tracks().filter(
                 makerspace=makerspace, user_id=user_id, status="active"
             ).exists():
                 raise RuleValidationError(

@@ -16,8 +16,10 @@ def _eligible_memberships(makerspace):
     from apps.accounts.models import User
     from apps.makerspaces.models import MakerspaceMembership
 
+    # Both tracks: role and action selections reach staff rows, member selections
+    # community rows; addresses are de-duplicated downstream.
     return (
-        MakerspaceMembership.objects.filter(
+        MakerspaceMembership.both_tracks().filter(
             makerspace=makerspace,
             status="active",
             receives_notifications=True,

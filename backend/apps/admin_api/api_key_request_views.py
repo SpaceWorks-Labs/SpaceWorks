@@ -54,7 +54,7 @@ class ApiKeyRequestListCreateView(RecentReauthenticationMixin, generics.ListCrea
         # to the superadmin control plane, so this gate checks membership only.
         user = self.request.user
         is_superadmin = user.is_superuser or user.role == User.Role.SUPERADMIN
-        is_member = MakerspaceMembership.objects.filter(
+        is_member = MakerspaceMembership.staff_tracks.filter(
             user=user, makerspace_id=makerspace.id, status="active"
         ).exists()
         if not is_servable(makerspace):

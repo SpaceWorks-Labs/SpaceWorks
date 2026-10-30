@@ -1,5 +1,7 @@
 """Append complete immutable documents with typed asset/member reference sets."""
 
+
+from apps.accounts.staff_identity import is_person
 from copy import deepcopy
 from rest_framework.exceptions import ValidationError
 from .models_profiles import MemberProfile
@@ -22,7 +24,7 @@ def append_revision(adapter, page, document, actor, *, request=None):
     for pk in members.values():
         profile = profiles.get(pk)
         if (not profile_is_public(profile) or any(scope != profile.membership.makerspace_id for scope in scopes)
-                or profile.membership.user.account_kind != "member"):
+                or not is_person(profile.membership.user)):
             raise ValidationError({"document": "Choose a currently public member profile in the permitted scope."})
     stored = deepcopy(document)
     for section in stored["sections"]:

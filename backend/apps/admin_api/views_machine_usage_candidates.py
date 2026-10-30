@@ -7,6 +7,7 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.views import APIView
 
+from apps.accounts.staff_identity import person_q
 from apps.accounts import rbac
 from apps.admin_api.machine_access import resolve_machine
 from apps.admin_api.permissions import IsActiveStaff
@@ -34,9 +35,9 @@ class MachineUsageCandidatesView(APIView):
         if not access.can_operate_machine(request.user, machine):
             raise PermissionDenied()
         query = rbac.scope_by_makerspace(request.user, MakerspaceMembership.objects.all()).filter(
-            makerspace_id=machine.makerspace_id, status="active", user__is_active=True,
+            person_q("user__"), makerspace_id=machine.makerspace_id, status="active", user__is_active=True,
             user__access_status="active", user__is_tenant_dump_stub=False,
-            user__account_kind="member", user__retired_at__isnull=True,
+            user__retired_at__isnull=True,
             user__deletion_requested_at__isnull=True,
         )
         term = request.query_params.get("q", "").strip()[:100]

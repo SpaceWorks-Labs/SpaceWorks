@@ -35,7 +35,9 @@ def eligibility(candidate_or_delivery):
         return "matrix_disabled"
     if not user.is_active or user.access_status != "active" or user.is_tenant_dump_stub or user.deletion_requested_at:
         return "account_inactive"
-    membership = rbac.scope_notification_policy(MakerspaceMembership.objects.all(),
+    track = (MakerspaceMembership.Track.STAFF if row.audience == "staff" or diagnostic
+             else MakerspaceMembership.Track.COMMUNITY)
+    membership = rbac.scope_notification_policy(MakerspaceMembership.track_manager(track).all(),
         makerspace_id=space.pk).filter(user=user, status="active").first()
     if row.audience == "staff" or diagnostic:
         if membership is None:

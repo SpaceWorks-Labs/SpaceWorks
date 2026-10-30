@@ -51,7 +51,7 @@ def issue(actor, space, account, *, expires_in_days=7):
         raise ValidationError({"detail": "Only active staff awaiting initial password setup may be invited."})
     if type(expires_in_days) is not int or not 1 <= expires_in_days <= 30:
         raise ValidationError({"expires_in_days": "Use 1 to 30 days."})
-    membership = MakerspaceMembership.objects.get(user=account, makerspace=space, status="active")
+    membership = MakerspaceMembership.staff_tracks.get(user=account, makerspace=space, status="active")
     StaffInvitation.objects.filter(account=account, accepted_at__isnull=True,
                                    revoked_at__isnull=True).update(revoked_at=timezone.now())
     raw = secrets.token_urlsafe(32)

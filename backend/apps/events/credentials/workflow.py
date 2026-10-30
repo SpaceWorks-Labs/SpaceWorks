@@ -8,6 +8,7 @@ from django.db.models import Max
 from django.utils import timezone
 from rest_framework.exceptions import NotFound
 
+from apps.accounts.staff_identity import is_person
 from apps.audit.services import record
 from apps.events.checkin_policy import window_for
 from apps.events.event_permissions import CHECK_IN
@@ -28,7 +29,7 @@ def require_eligible(event, registration):
     member = registration.member
     if (registration.event_id != event.pk or event.status not in ("published", "completed")
             or registration.status not in ELIGIBLE or not member
-            or member.account_kind != "member" or not member.is_active
+            or not is_person(member) or not member.is_active
             or member.access_status != "active" or member.is_tenant_dump_stub or member.retired_at is not None):
         raise NotFound()
 
@@ -138,7 +139,7 @@ def command(event_id, registration_id, *, actor, operation_id, expected_version,
 
 def owner_payload(registration, *, actor):
     """Read-only. Issuance/adoption is explicit at registration/desk, never on GET."""
-    if actor.pk != registration.member_id or actor.account_kind != "member":
+    if actor.pk != registration.member_id or not is_person(actor):
         raise NotFound()
     require_eligible(registration.event, registration)
     row = current(registration)

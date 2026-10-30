@@ -19,7 +19,9 @@ def eligible(envelope, channel, endpoint=None):
         return False
     if envelope.audience != "staff" and not has_tenant_tie(user, space):
         return False
-    membership = rbac.scope_notification_policy(MakerspaceMembership.objects.all(),
+    # The opt-out lives on the row of the track this envelope addresses.
+    track = MakerspaceMembership.Track.STAFF if envelope.audience == "staff" else MakerspaceMembership.Track.COMMUNITY
+    membership = rbac.scope_notification_policy(MakerspaceMembership.track_manager(track).all(),
         makerspace_id=space.pk).filter(user=user).first()
     if membership and (membership.status == "revoked" or not membership.receives_notifications):
         return False

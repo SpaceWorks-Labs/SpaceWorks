@@ -1,3 +1,4 @@
+from apps.accounts.staff_identity import person_q
 from apps.accounts.reauthentication_permissions import RecentReauthenticationMixin
 from django.db import transaction
 from django.shortcuts import get_object_or_404
@@ -36,7 +37,7 @@ class MembershipListCreateView(RecentReauthenticationMixin, APIView):
     def get(self, request, makerspace_id):
         makerspace = member_makerspace(request.user, makerspace_id)
         memberships = (
-            MakerspaceMembership.objects.filter(makerspace=makerspace, user__account_kind="member")
+            MakerspaceMembership.objects.filter(person_q("user__"), makerspace=makerspace)
             .select_related("user", "makerspace", "assigned_role").prefetch_related(additional_roles_prefetch())
             .order_by("user__username")
         )

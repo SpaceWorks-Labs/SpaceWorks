@@ -2,6 +2,7 @@
 from django.core.exceptions import ValidationError as ModelValidationError
 from rest_framework.exceptions import APIException, NotFound
 
+from apps.accounts.staff_identity import is_person
 from apps.accounts import rbac
 from apps.accounts.claim_sessions import claim_context
 from apps.makerspaces.models import MakerspaceMembership, MemberProject
@@ -31,7 +32,7 @@ def require_enabled(space):
 def require_account(account, space):
     require_enabled(space)
     if not (account and account.is_authenticated and account.pk and account.is_active
-            and account.account_kind == "member" and account.access_status == "active"
+            and is_person(account) and account.access_status == "active"
             and not account.is_tenant_dump_stub and not account.retired_at
             and not account.deletion_requested_at and not account.account_purged_at):
         raise PresenceError("account_inactive", "An active signed-in account is required.", status_code=403)

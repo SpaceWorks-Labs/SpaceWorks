@@ -165,6 +165,7 @@ def _events_sample(bag, key):
             location="Main workshop",
         ),
         registration=bag(id=5, name="Alex Maker", status="registered"),
+        join_url="https://meet.example.org/laser-induction",
         next_steps=EVENTS_REQUESTER_BODIES[key],
     )
 

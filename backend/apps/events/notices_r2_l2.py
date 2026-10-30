@@ -70,6 +70,13 @@ CONFIRMATION_EVENTS = frozenset({"registration_created", "registration_approved"
                                  "registration_promoted", "registration_restored"})
 
 
+def join_url_value(event_name, registration):
+    if event_name not in CONFIRMATION_EVENTS:
+        return ""
+    from .online_delivery import join_url_for
+    return join_url_for(registration) or ""
+
+
 def with_join_url(rendered, event_name, registration):
     """Confirmation email carries the join link for online/hybrid events (L1 seam).
 

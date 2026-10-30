@@ -140,7 +140,7 @@ def owner_envelope(event, event_name, registration, intent):
     if registration is None or not registration.member_id:
         return None
     space = registration.registered_via_makerspace or event.makerspace
-    from .notices_r2_l2 import removal_envelope, staff_removal, with_join_url
+    from .notices_r2_l2 import join_url_value, removal_envelope, staff_removal, with_join_url
     if event_name == "registration_cancelled" and staff_removal(registration):
         # Undoable for five minutes: the member hears once the removal has stuck (G7).
         if not eligible_owner(space, registration.member_id):
@@ -150,6 +150,8 @@ def owner_envelope(event, event_name, registration, intent):
         return None
     context = events_context(event, event_name, registration,
                              next_steps=EVENTS_REQUESTER_BODIES.get(event_name, ""))
+    # `{{ join_url }}` for custom templates; render-only, never stored in envelope context.
+    context["join_url"] = join_url_value(event_name, registration)
     rendered = with_join_url(_rendered(render(space, "events", "requester", event_name, context),
                                        _owner_link(space, registration)), event_name, registration)
     return _emit(space, registration.member, audience="requester", event_name=event_name,

@@ -123,10 +123,33 @@ class PublicFunctional(s.Serializer):
     links = FunctionalLink(many=True)
 
 
+class PublicPlanCard(s.Serializer):
+    id = s.IntegerField()
+    slug = s.CharField(allow_blank=True)
+    name = s.CharField()
+    description = s.CharField(allow_blank=True)
+    plan_type = s.CharField()
+    interval = s.CharField()
+    custom_days = s.IntegerField(allow_null=True)
+    fixed_end_date = s.DateField(allow_null=True)
+    amount = s.DecimalField(max_digits=12, decimal_places=2)
+    renewal_price = s.DecimalField(max_digits=12, decimal_places=2)
+    currency = s.CharField()
+    joining_fee = s.CharField(allow_null=True)
+    join_mode = s.CharField()
+
+
+class PublicMembershipPlans(Titled):
+    count = s.IntegerField()
+    results = PublicPlanCard(many=True)
+    collection_url = s.CharField()
+
+
 PUBLIC_PAYLOADS = {"about": About, "gallery": PublicGallery, "team": PublicTeam,
     "testimonials": Testimonials, "links": Links, "upcoming_events": PublicUpcoming,
     "organization_events": PublicOrganizationEvents, "linked_makerspaces": PublicLinkedSpaces,
-    "stats": PublicStats, "location": PublicLocation, "functional_content": PublicFunctional}
+    "stats": PublicStats, "location": PublicLocation, "functional_content": PublicFunctional,
+    "membership_plans": PublicMembershipPlans}
 
 
 class ProjectedSection(s.Serializer):

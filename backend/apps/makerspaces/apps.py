@@ -36,6 +36,8 @@ class MakerspacesConfig(AppConfig):
         register_broadcast_notifications()
         from .notifications_p2_vouches import register as register_vouch_notifications
         register_vouch_notifications()
+        from .notifications_l4 import register as register_l4_notifications
+        register_l4_notifications()
 
         def invalidate_hosting_cache(**kwargs):
             # Any write to frontend_domain / frontend_domain_status must drop the

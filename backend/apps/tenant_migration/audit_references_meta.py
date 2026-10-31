@@ -38,6 +38,7 @@ from .target_projection_w7_events import EVENT_AUDIT_EDGES
 from .audit_references_events_programme import EDGES as PROGRAMME_AUDIT_EDGES
 from .audit_references_reimbursements import EDGES as REIMBURSEMENT_AUDIT_EDGES
 from .audit_references_r2_l2 import EDGES as R2_L2_AUDIT_EDGES
+from .audit_references_r2_l4 import EDGES as R2_L4_AUDIT_EDGES
 
 AUDIT_META_REFERENCES = {
     **_reference(S, None, *((action, field) for action in (
@@ -52,6 +53,7 @@ AUDIT_META_REFERENCES = {
     **PROGRAMME_AUDIT_EDGES,
     **REIMBURSEMENT_AUDIT_EDGES,
     **R2_L2_AUDIT_EDGES,
+    **R2_L4_AUDIT_EDGES,
     **_reference(S, None,
                  ("notification.media_grant_cleaned", "grant_id"),
                  ("notification.media_grant_issued", "delivery_id"),

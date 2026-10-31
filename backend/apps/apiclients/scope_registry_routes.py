@@ -108,6 +108,10 @@ _ROUTE_DEFINITIONS = (
     ("presence-end", _WRITE, PUBLIC_WRITE_SCOPES, TARGET_TENANT_SLUG, False, True),
     ("public-membership-request", _WRITE, PUBLIC_WRITE_SCOPES, TARGET_TENANT_SLUG, False, True),
     ("public-membership-admission", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False),
+    # Release 2 L4: public plan cards/pages and the invite-link check (reads only).
+    *tuple((name, _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False) for name in (
+        "public-membership-plans", "public-membership-plan-detail", "public-membership-invite",
+    )),
     ("public-invitation-request", _WRITE, PUBLIC_WRITE_SCOPES, TARGET_TENANT_SLUG, False, True),
     *tuple((name, _WRITE, PUBLIC_WRITE_SCOPES, TARGET_GLOBAL, False, False) for name in (
         "public-hosting-request-submit", "public-hosting-request-open",

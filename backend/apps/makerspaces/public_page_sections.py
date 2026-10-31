@@ -128,4 +128,4 @@ class Location(Titled):
 PAYLOADS = {"about": About, "gallery": Gallery, "team": Team, "testimonials": Testimonials,
             "links": Links, "stats": Stats, "location": Location, "upcoming_events": Titled,
             "linked_makerspaces": Titled, "organization_events": Titled,
-            "functional_content": StrictSerializer}
+            "functional_content": StrictSerializer, "membership_plans": Titled}

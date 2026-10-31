@@ -14,7 +14,8 @@ PALETTES = {"maker_teal": "#006E63", "workshop_orange": "#FF7447", "citron": "#D
 BASE_TYPES = ("about", "gallery", "team", "testimonials", "links")
 REQUIRED = {"makerspace": ("functional_content",),
             "organization": ("linked_makerspaces", "organization_events"), "event": ()}
-SECTION_TYPES = {"makerspace": (*BASE_TYPES, "upcoming_events", "stats", "location", "functional_content"),
+SECTION_TYPES = {"makerspace": (*BASE_TYPES, "upcoming_events", "stats", "location", "functional_content",
+                                "membership_plans"),
                  "organization": (*BASE_TYPES, "location", "linked_makerspaces", "organization_events"),
                  "event": BASE_TYPES}
 # Stable required-group identity across virtual GETs and first save.

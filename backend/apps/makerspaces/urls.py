@@ -31,6 +31,7 @@ from apps.makerspaces.profile_views import (
     MemberProfileView,
 )
 from .profile_contract_urls import urlpatterns as profile_contract_patterns
+from .urls_membership_l4 import urlpatterns as membership_l4_patterns
 
 urlpatterns = [
     *profile_contract_patterns,
@@ -76,3 +77,4 @@ urlpatterns = [
         name="member-directory-detail",
     ),
 ]
+urlpatterns += membership_l4_patterns

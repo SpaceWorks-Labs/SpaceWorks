@@ -19,7 +19,7 @@ from apps.admin_api.permissions import IsActiveStaff
 from apps.admin_api.views_member_memberships import _makerspace
 from apps.admin_api.views_roles import ERRORS
 from apps.audit import services as audit
-from apps.makerspaces.financial_year import SETTING_KEY, SETTING_MODULE, fy_bounds, fy_label
+from apps.makerspaces.financial_year import SETTING_KEY, SETTING_MODULE, fy_bounds, fy_label, fy_presets
 from apps.makerspaces.local_time import local_now
 from apps.makerspaces.models import Makerspace
 from apps.makerspaces.settings_authority import assert_setting_write, record_change
@@ -32,12 +32,17 @@ class FinancialYearSerializer(serializers.Serializer):
     current_label = serializers.CharField(read_only=True)
     current_start = serializers.DateField(read_only=True)
     current_end = serializers.DateField(read_only=True)
+    # Report filter presets: this financial year and the two before it.
+    presets = serializers.ListField(child=serializers.DictField(), read_only=True)
 
 
 def _payload(space):
-    start, end = fy_bounds(space, local_now(space).date())
+    today = local_now(space).date()
+    start, end = fy_bounds(space, today)
+    presets = [{**row, "start": row["start"].isoformat(), "end": row["end"].isoformat()}
+               for row in fy_presets(space, today)]
     return {"financial_year_start_month": space.financial_year_start_month,
-            "current_label": fy_label(space, start), "current_start": start, "current_end": end}
+            "current_label": fy_label(space, start), "current_start": start, "current_end": end, "presets": presets}
 
 
 def _readable_space(actor, makerspace_id):

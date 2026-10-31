@@ -25,6 +25,7 @@ from apps.payments.serializers_reconciliation import (
 )
 from apps.makerspaces.servability import servable_queryset
 from apps.payments.subjects import resolve_subject_labels
+from apps.payments.payment_rows_l5 import staff_row_context
 from apps.payments.schemas_billing import PAYMENT_FILTER_ERROR
 
 ERRORS = {
@@ -92,6 +93,7 @@ class PaymentListView(APIView):
             "payment_subject_labels": resolve_subject_labels(rows),
             # One query for the page, not one per settled row.
             "payment_settlements": ManualSettlement.effective_for_many(rows),
+            "payment_l5": staff_row_context(rows),
         }
         return pager.get_paginated_response(
             PaymentReconciliationSerializer(rows, many=True, context=context).data

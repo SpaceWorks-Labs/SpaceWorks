@@ -70,8 +70,18 @@ const EMPTY: LoanForm = {
   loan_deposit_blocks_issue: false,
 };
 
-/** Render only when the `payments.loans` feature is on; the parent owns that check. */
-export function MakerspaceLoanSettings({ makerspaceId }: { makerspaceId: number }) {
+/** Render only when the `payments.loans` feature is on; the parent owns that check. With
+ * `charges.pricing` on, the same columns are edited in Settings > Pricing > Lending instead. */
+export function MakerspaceLoanSettings({ makerspaceId, pricingOn = false }: { makerspaceId: number; pricingOn?: boolean }) {
+  if (pricingOn) {
+    return <SettingsRow label="Loans">
+      <p className="text-sm text-ink">Deposit, late fee and rental are set in Settings &gt; Pricing &gt; Lending.</p>
+    </SettingsRow>;
+  }
+  return <LoanSettingsEditor makerspaceId={makerspaceId} />;
+}
+
+function LoanSettingsEditor({ makerspaceId }: { makerspaceId: number }) {
   const queryClient = useQueryClient();
   const queryKey = ["payment-settings", makerspaceId];
   const path = `/admin/makerspace/${makerspaceId}/payment-settings`;

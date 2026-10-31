@@ -3,7 +3,14 @@ from apps.payments.models_billing import MakerspaceBillingSettings
 from apps.payments.models_documents import PaymentDocument
 from apps.payments.models_refund import Refund
 from apps.payments.models_refund_cases import RefundCase, RefundPolicy
-from apps.payments.models_settlement import ManualSettlement
+from apps.payments.models_settlement import ManualSettlement, SettlementConfirmation
+from apps.payments.models_capture_flags import PaymentCaptureFlag
+from apps.payments.models_claims import PaymentClaim
+from apps.payments.models_disputes import PaymentDispute, PaymentDisputeEvent
+from apps.payments.models_ledger_entries import LedgerEntry, OpeningBalance
+from apps.payments.models_pay_links import PaymentPayLink
+from apps.payments.models_event_budget import EventFinanceBudget
+from apps.payments.tax.models_tax import DocumentNumberCounter, MakerspaceTaxSettings
 from apps.payments.models_settings import (
     MakerspacePaymentSettings,
     PlatformStripeConnectSettings,
@@ -12,6 +19,17 @@ from apps.payments.models_settings import (
 )
 
 __all__ = [
+    "DocumentNumberCounter",
+    "EventFinanceBudget",
+    "LedgerEntry",
+    "MakerspaceTaxSettings",
+    "OpeningBalance",
+    "PaymentCaptureFlag",
+    "PaymentClaim",
+    "PaymentDispute",
+    "PaymentDisputeEvent",
+    "PaymentPayLink",
+    "SettlementConfirmation",
     "MakerspaceBillingSettings",
     "MakerspacePaymentSettings",
     "ManualSettlement",

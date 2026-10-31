@@ -115,3 +115,105 @@ its refund anchor. A different capture on an already settled charge raises one
 `payment.double_paid_refund_required` audit per provider payment ID, including the
 captured amount in minor units and currency. Staff refund that excess in the provider
 dashboard; the original charge and its refund balance remain unchanged.
+
+## Tax and GST
+
+`billing.tax` (off by default, a Space Manager-only finance setting, never delegable) turns on the
+tax engine. `GET/PUT admin/makerspace/<id>/billing/tax` holds the policy: mode `none`, `single`
+(a named tax such as VAT at a rate in basis points) or `gst_india` (supplier GSTIN with format,
+state-prefix and check-character validation, state, regular or composition scheme, exempt supplies,
+SAC code `999599` by default, and for foreign-currency charges either "outside GST" or export under
+LUT with the LUT number). Prices are inclusive (default) or exclusive; an exclusive policy adds the
+tax on top of the price a domain computed. `POST .../billing/tax/validate-gstin` checks a GSTIN
+offline and `POST .../billing/tax/preview` renders a sample invoice for unsaved settings. Writes
+answer 409 `tax_not_enabled` while the switch is off and 400 `gstin_invalid` for a bad GSTIN.
+
+The policy is **frozen per charge**: `create_payment` stores `Payment.tax_snapshot` (rate, mode,
+supply type, place of supply from the payer's state or GSTIN, falling back to the supplier state,
+and the exact taxable/component split). Editing the policy never changes an existing charge or
+document; the database refuses any change to a snapshot. CGST/SGST (UTGST in union territories)
+versus IGST follows the place of supply, and every split is exact at the ledger's two decimals by
+largest remainder (a yen has no subunit; a fils is capped to two places). Composition and exempt
+supplies issue a **bill of supply**; LUT exports a zero-rated tax invoice.
+
+Documents issued while tax is on take a gapless **per-financial-year** series: `INV26-27/0001` for
+receipts/tax invoices and a separate `CN…` credit-note series, prefixes of at most four
+characters and numbers of at most 16 (CGST Rule 46). The financial year comes from the space's FY
+start (April by default; L4's `financial_year` when present). Existing documents are never
+renumbered, and with tax off every document and number is byte-identical to release 1. The frozen
+`tax_breakdown` drives the PDF (title, identities, tax table, notes) and the returns. Credit notes
+apportion the invoice's remaining taxable value and tax, so partial refunds never over-credit.
+
+Reports (all `view_finance` + `billing.tax`): `gstr1` (B2B, B2CL, B2CS, EXP, CDNR, nil/exempt,
+Table 12 SAC and Table 13 documents), `gstr3b` (3.1a/b/c/e and 3.2 by place of supply),
+`tax-summary` (single-tax mode) and `documents-register` (every document plus a `gap` row for any
+skipped number). `GET .../billing/tax/gstr1.json?month=YYYY-MM` downloads the GSTN offline-tool
+JSON; it is a draft to review there, never filed automatically.
+
+## Offline collection, claims and the two-person check
+
+With `billing.offline_claims`, an INR pending charge shows a UPI QR built server-side from the
+billing settings' `upi_vpa`/`upi_payee_name` for the exact amount, with the note `SW-<id>`. The
+payer may post "I've paid" (`POST member/makerspaces/<id>/payments/<pid>/paid-claim`: UTR and
+date; one open claim per charge, one claim per reference per space, rate-limited). Staff with
+`record_payment` confirm (`paid-claims/<cid>/confirm`) -- which writes the `ManualSettlement`
+receipt in the same transaction that marks the charge paid -- or reject with a note. A claim moves
+no money.
+
+`billing.maker_checker` (off) applies to **offline income only** (#128 C-5): a cash/UPI/bank
+settlement becomes a `SettlementConfirmation` awaiting a second person with `record_payment`
+(`settlements`, `settlements/<sid>/confirm|reject`); the recorder can never confirm their own
+(409 `self_confirmation`, also a database check). Refunds, expenses and payouts never wait.
+
+## Online exceptions: capture flags, disputes, method labels, polling
+
+`billing.capture_flags` (on): money that arrives for a cancelled charge, a second capture, or a
+different amount/currency is **accepted and flagged** (`capture-flags`); a cancelled charge is
+recorded as paid online under a narrow database exception. The receipt is held until staff decide
+(`capture-flags/<id>/resolve`): issue it on the amount received, open a refund case (still
+approved by staff), or acknowledge with a note. Nothing is refunded automatically.
+
+Disputes from Stripe or Razorpay webhooks (through the rail) are always recorded with an
+append-only status history and a staff notice; `billing.disputes` shows them. A dispute never
+cancels a booking or ticket and never refunds. Receipts show the provider's masked method label
+("Visa ••4242", a masked UPI handle), filled once, never card data.
+
+The gateway poll (every 5 minutes, both schedulers) asks providers about open online attempts and
+settles a capture exactly as its webhook would; an attempt unpaid after a week is closed while
+the debt stays. Pending provider refunds are polled for status for 30 days and flagged after a
+day. Polling never creates, approves or cancels a refund.
+
+## Pay links
+
+`billing.pay_links` (off): staff with `record_payment` create a link for a pending charge that has
+no account and was raised by staff (`payments/<pid>/pay-link`, optional one-time email). The link
+holds a 256-bit token (only its digest is stored), expires (14 days default, 60 at most), and a new
+link revokes the old one. `public/pay/<token>` shows the space, the charge label and the amount --
+never who owes it -- and offers online checkout (rail) or an offline claim. Event registration
+still requires an account.
+
+## Finance ledger
+
+Every money movement is in the space's finance ledger (#94): member charges (`Payment`), refunds,
+event reimbursement/prize payouts and `LedgerEntry` rows for everything else -- expenses and
+non-charge receipts such as donations or grants. Entries carry a domain (inventory, loans,
+machines, bookings, events, membership, donations, shop, general), a machine type where it
+applies, a category, method (cash lands in the cash account, everything else in bank), date,
+reference, an optional receipt -- a photo or a PDF (#155), up to `EVIDENCE_MAX_BYTES` (10 MB),
+through the staging-key presign with the MIME type bound and promoted once -- and the source that
+caused them. They are voided with a reason, never edited or deleted.
+
+Other lanes record spending through `payments.ledger_api.record_expense(makerspace, domain,
+machine_type, amount, currency, method, reference, receipt, source_kind, source_id, actor, ...)`
+and `ledger_api.void(entry, actor, reason)`; a repeat call for the same live source returns the
+same row. Spending is always recorded; `finance.ledger` only hides the screens and reports.
+
+Visibility follows each area (#100): Space Managers and `view_finance` see everything; the
+Inventory Manager sees inventory and lending money, the Booking Manager bookings, the Machine
+Manager their machine types, the Event Manager events money (#128 C-16). The same areas record
+spending; finance staff with `view_finance` + `record_payment` record anywhere. Routes:
+`finance/access`, `finance/summary`, `finance/entries` (+ `/<id>`, `/void`, `/receipt-url`),
+`finance/receipt-upload`, `finance/opening-balances` and `finance/events/<event>` (+ `/budget`,
+`?format=csv`). Reports: `income-spending`, `finance-inventory|machines|bookings|events`,
+`event-finance`, `receipts-payments`, `subscription-income` and `money-methods` (provider and
+method splits with the failed-online rate).

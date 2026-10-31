@@ -2,7 +2,7 @@ const ALL_TABS = [
   "platform-dashboard", "usage",
   "dashboard", "notifications", "channels", "requests", "direct", "handover", "inventory", "needsfix", "categories", "machines", "events", "organized", "granted", "bookings", "members", "cards", "tobuy", "transfers",
   "stocktake", "containers", "ledger", "reports", "accountability", "warranty", "bulk", "qr", "scanner", "api", "settings", "security", "emailtemplates", "users", "platform", "audit",
-  "devices", "email-logs", "payments", "refunds", "organizations", "organization-analytics", "modules", "exports", "backups", "migration",
+  "devices", "email-logs", "payments", "refunds", "finance", "organizations", "organization-analytics", "modules", "exports", "backups", "migration",
 ] as const;
 
 export const STAFF_TAB_KEYS: readonly string[] = ALL_TABS;
@@ -55,6 +55,7 @@ export const TAB_LABELS: Record<string, string> = {
   platform: "Platform settings",
   payments: "Payments",
   refunds: "Refunds",
+  finance: "Finance",
   modules: "Modules",
   exports: "Data export",
   backups: "Backup & restore",
@@ -62,7 +63,7 @@ export const TAB_LABELS: Record<string, string> = {
 };
 
 export const TAB_GROUPS: { label: string; tabs: string[] }[] = [
-  { label: "Operate", tabs: ["dashboard", "notifications", "channels", "requests", "direct", "handover", "payments", "refunds", "ledger", "transfers", "stocktake", "tobuy"] },
+  { label: "Operate", tabs: ["dashboard", "notifications", "channels", "requests", "direct", "handover", "payments", "refunds", "finance", "ledger", "transfers", "stocktake", "tobuy"] },
   { label: "Inventory", tabs: ["inventory", "categories", "needsfix", "containers", "bulk", "qr", "scanner"] },
   { label: "Machines", tabs: ["machines", "devices"] },
   { label: "Events", tabs: ["events", "organized", "granted"] },
@@ -194,6 +195,9 @@ export function getStaffAccess(
     // staff read the cases for the charges they own. Cash-recording alone is not enough.
     if (tabName === "refunds") return canViewFinance || canManageEvents || canManageBookings || canManageMachines
       || canManageMembers || canManageMakerspace;
+    // #100: each area's manager sees that area's money; the server narrows every list.
+    if (tabName === "finance") return canViewFinance || canRecordPayment || canEditInventory || canManageBookings
+      || canManageMachines || canManageEvents;
     if (tabName === "exports") return canManageMakerspace;
     if (tabName === "backups") return canManageMakerspace;
     if (tabName === "migration") return isSuperadmin;

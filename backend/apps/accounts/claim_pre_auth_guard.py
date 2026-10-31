@@ -23,6 +23,9 @@ POLICY_OVERRIDE_ALLOWLIST = {
     # Presence TV throttles only declare a scope/rate; DRF owns every hook.
     "apps.presence.views_public.PresenceTVThrottle": set(),
     "apps.presence.views_public.PresenceTVUserThrottle": set(),
+    # Release 2 L5: claim and pay-link throttles only declare a scope; DRF owns every hook.
+    "apps.payments.throttles_l5.PaymentClaimThrottle": set(),
+    "apps.payments.throttles_l5.PayLinkThrottle": set(),
     "apps.bookings.views_passes.BookingPassRenderThrottle": set(),
     "apps.bookings.views_confirmation.BookingConfirmationThrottle": set(),
     "apps.bookings.throttles_feed.BookingFeedTokenThrottle": {"get_cache_key"},

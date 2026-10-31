@@ -46,6 +46,7 @@ const KioskStationPage = lazy(() => import("./features/kiosk/KioskStationPage").
 const PublicStatsPage = lazy(() => import("./features/stats/PublicStatsPage").then((m) => ({ default: m.PublicStatsPage })));
 const PublicHandlePage = lazy(() => import("./features/publicPages/PublicHandlePage").then((m) => ({ default: m.PublicHandlePage })));
 const PublicEventCodePage = lazy(() => import("./features/events/PublicEventCodePage").then((m) => ({ default: m.PublicEventCodePage })));
+const PayLinkPage = lazy(() => import("./features/finance/PayLinkPage").then((m) => ({ default: m.PayLinkPage })));
 const PresenceNowPage = lazy(() => import("./features/presence/PresenceNowPage").then((m) => ({ default: m.PresenceNowPage })));
 const PublicWebsiteDetailPage = lazy(() => import("./features/events/PublicWebsiteDetailPage").then((m) => ({ default: m.PublicWebsiteDetailPage })));
 const HostingRequestPage = lazy(() => import("./features/hosting/HostingRequestPage").then((m) => ({ default: m.HostingRequestPage })));
@@ -136,6 +137,8 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
     routes = <Routes><Route path="/staff/event-invite" element={<EventStaffInvitePage />} /></Routes>;
   } else if (location.pathname === "/member/archived") {
     routes = <Routes><Route path="/member/archived" element={<ArchivedPayments />} /></Routes>;
+  } else if (location.pathname.startsWith("/pay/")) {
+    routes = <Routes><Route path="/pay/:token" element={<PayLinkPage />} /></Routes>;
   } else if (location.pathname.startsWith("/organization-invitations/redeem/")) {
     routes = <Routes><Route path="/organization-invitations/redeem/:token" element={<OrganizationInvitationRedeemPage />} /></Routes>;
   } else if (location.pathname === "/discover/bookings") {

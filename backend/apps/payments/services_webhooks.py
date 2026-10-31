@@ -17,8 +17,23 @@ from apps.payments.terminal_settlement import (
     handle_stripe_paid_after_terminal,
 )
 from apps.makerspaces.servability import is_servable
-from apps.payments.notifications import notify_payment
-from apps.payments.admission_settlement import resume_admission_after_settlement
+from apps.payments.method_labels import stripe_label
+from apps.payments.online_settlement import flag_terminal_capture, settle_capture
+
+STRIPE_DISPUTE_EVENT_TYPES = frozenset({
+    "charge.dispute.created", "charge.dispute.updated", "charge.dispute.closed",
+    "charge.dispute.funds_withdrawn", "charge.dispute.funds_reinstated",
+})
+
+
+def _stripe_amount(obj, event_type):
+    """(minor, currency) the provider says it captured; (0, '') when it did not say."""
+    key = "amount_total" if event_type.startswith("checkout.session.") else "amount_received"
+    minor = _value(obj, key)
+    if minor is None and key == "amount_received":
+        minor = _value(obj, "amount")
+    currency = _value(obj, "currency") or ""
+    return (int(minor) if isinstance(minor, int) and not isinstance(minor, bool) else 0), str(currency).lower()
 
 
 def apply_webhook_event(
@@ -37,6 +52,12 @@ def apply_webhook_event(
         return apply_stripe_refund_event(
             makerspace, event, provider=provider, connected_account_id=connected_account_id
         )
+    if event_type in STRIPE_DISPUTE_EVENT_TYPES or event_type == "charge.succeeded":
+        # Ingested only through the rail's webhook routes (lane L5): disputes become a
+        # core-ledger record; a charge event only fills the payment method label.
+        from apps.payments_rail.dispute_ingest import apply_stripe_side_event
+        return apply_stripe_side_event(makerspace, event, provider=provider,
+                                       connected_account_id=connected_account_id)
     if event_type not in {
         "checkout.session.completed",
         "checkout.session.async_payment_succeeded",
@@ -96,28 +117,17 @@ def apply_webhook_event(
                 meta={"stripe_event_id": event_id},
             )
             return payment
+        minor, currency = _stripe_amount(obj, event_type)
         if payment.status != Payment.Status.PENDING:
+            flag_terminal_capture(payment, provider=Payment.Provider.STRIPE, capture_id=intent_id,
+                                  event_id=event_id, minor=minor, currency=currency)
             return handle_stripe_paid_after_terminal(
                 payment,
                 event_id=event_id,
                 intent_id=intent_id,
             )
-        payment.status = Payment.Status.PAID_ONLINE
-        if intent_id:
-            payment.stripe_payment_intent_id = intent_id
-        payment.save(update_fields=["status", "stripe_payment_intent_id", "updated_at"])
-        audit.record(
-            None,
-            "payment.paid_online",
-            makerspace=makerspace,
-            target=payment,
-            meta={"stripe_event_id": event_id},
-        )
-        from apps.payments.documents import issue_receipt
-        issue_receipt(payment)
-        notify_payment(payment, "payment_received")
-        resume_admission_after_settlement(payment)
-        return payment
+        return settle_capture(payment, provider=Payment.Provider.STRIPE, capture_id=intent_id,
+                              event_id=event_id, minor=minor, currency=currency, method_label=stripe_label(obj))
 
 
 def apply_razorpay_webhook_event(makerspace, event):
@@ -136,6 +146,9 @@ def apply_razorpay_webhook_event(makerspace, event):
         return None
     if event.refund_id:
         return apply_razorpay_refund_event(makerspace, event)
+    if event.dispute_id:
+        from apps.payments_rail.dispute_ingest import apply_razorpay_dispute_event
+        return apply_razorpay_dispute_event(makerspace, event)
     if not event.is_paid and not event.is_failed:
         # Non-payment events are not recorded: claiming their id would make a later
         # genuine settlement carrying the same delivery id read as a duplicate.
@@ -163,6 +176,8 @@ def apply_razorpay_webhook_event(makerspace, event):
             return record_payment_failure(payment, event_id=event.event_id, provider="razorpay")
         provider_payment_id = event.payment_id
         if payment.status != Payment.Status.PENDING:
+            flag_terminal_capture(payment, provider=Payment.Provider.RAZORPAY, capture_id=provider_payment_id,
+                                  event_id=event.event_id, minor=event.amount_minor, currency=event.currency)
             return handle_razorpay_paid_after_terminal(
                 payment,
                 event_id=event.event_id,
@@ -170,24 +185,9 @@ def apply_razorpay_webhook_event(makerspace, event):
                 amount_minor=event.amount_minor,
                 currency=event.currency,
             )
-        payment.status = Payment.Status.PAID_ONLINE
-        fields = ["status", "updated_at"]
-        if provider_payment_id:
-            payment.external_payment_id = provider_payment_id
-            fields.insert(1, "external_payment_id")
-        payment.save(update_fields=fields)
-        audit.record(
-            None,
-            "payment.paid_online",
-            makerspace=makerspace,
-            target=payment,
-            meta={"provider": "razorpay", "event_id": event.event_id},
-        )
-        from apps.payments.documents import issue_receipt
-        issue_receipt(payment)
-        notify_payment(payment, "payment_received")
-        resume_admission_after_settlement(payment)
-        return payment
+        return settle_capture(payment, provider=Payment.Provider.RAZORPAY, capture_id=provider_payment_id,
+                              event_id=event.event_id, minor=event.amount_minor, currency=event.currency,
+                              method_label=event.method_label)
 
 
 # Explicit compatibility exports; callers keep the existing webhook import paths.

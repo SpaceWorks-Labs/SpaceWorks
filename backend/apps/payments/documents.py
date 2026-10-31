@@ -23,10 +23,15 @@ def issue_bill(payment, *, actor=None):
 
 
 @transaction.atomic
-def issue_receipt(payment, *, actor=None, settlement=None):
+def issue_receipt(payment, *, actor=None, settlement=None, received_amount=None):
+    """`received_amount` is set only by a staff release of a held receipt (capture flag)."""
     payment = Payment.objects.select_for_update().get(pk=payment.pk)
     if payment.status not in (Payment.Status.PAID_ONLINE, Payment.Status.PAID_OFFLINE):
         raise ValueError("Only collected payments receive a receipt.")
+    from apps.payments.capture_flags import receipt_held
+    if received_amount is None and receipt_held(payment):
+        # Held until a staff member decides; see `capture_flags.resolve_flag`.
+        return None
     if payment.status == Payment.Status.PAID_OFFLINE:
         settlement = settlement or ManualSettlement.effective_for(payment)
         if settlement is None or settlement.payment_id != payment.pk:
@@ -41,7 +46,8 @@ def issue_receipt(payment, *, actor=None, settlement=None):
     return _issue(payment, kind="receipt", actor=actor, settlement=settlement,
                   money_at=settlement.received_at if settlement else payment.updated_at,
                   method=settlement.method if settlement else payment.provider,
-                  reference=settlement.reference if settlement else "", amount=payment.amount)
+                  reference=settlement.reference if settlement else "",
+                  amount=payment.amount if received_amount is None else received_amount)
 
 
 @transaction.atomic
@@ -84,11 +90,21 @@ def _issue(payment, *, kind, actor, money_at, method, reference, amount,
     Makerspace.objects.select_for_update().get(pk=space.pk)
     policy, _ = MakerspaceBillingSettings.objects.get_or_create(makerspace=space)
     policy = MakerspaceBillingSettings.objects.select_for_update().get(pk=policy.pk)
+    from .tax.document_tax import plan_for
+    plan = plan_for(payment, kind=kind, amount=amount, refund=refund, reverses=reverses)
     counter = "next_bill_number" if kind == "bill" else "next_document_number"
     prefix = policy.bill_prefix if kind == "bill" else policy.number_prefix
-    number = getattr(policy, counter)
-    while PaymentDocument.objects.filter(makerspace=space, number=f"{prefix}{number:06d}").exists():
-        number += 1
+    if plan is None:
+        number = getattr(policy, counter)
+        while PaymentDocument.objects.filter(makerspace=space, number=f"{prefix}{number:06d}").exists():
+            number += 1
+        numbering = {"sequence": number, "number": f"{prefix}{number:06d}"}
+    else:
+        from .numbering_fy import allocate
+        fy = allocate(space, plan.policy, kind, taken=lambda value: PaymentDocument.objects.filter(
+            makerspace=space, number=value).exists())
+        numbering = {"sequence": fy.sequence, "number": fy.number, "number_series": fy.series,
+                     "fy_start": fy.fy_start, "tax_breakdown": plan.breakdown}
     from .document_snapshot import issuer_snapshot
     from .document_pdf_assets import retain_logo
     logo_key, logo_digest = retain_logo(space)
@@ -98,7 +114,7 @@ def _issue(payment, *, kind, actor, money_at, method, reference, amount,
         raise ValueError("A payment document supports at most 200 lines.")
     document = PaymentDocument.objects.create(
         makerspace=space, payment=payment, settlement=settlement, refund=refund,
-        reverses=reverses, sequence=number, number=f"{prefix}{number:06d}",
+        reverses=reverses, **numbering,
         kind=kind, issued_by=actor,
         issuer=issuer_snapshot(payment, policy, kind),
         branding_logo_key=logo_key, branding_logo_sha256=logo_digest,
@@ -108,8 +124,9 @@ def _issue(payment, *, kind, actor, money_at, method, reference, amount,
         amount=amount, currency=payment.currency, settlement_method=method,
         settlement_reference=reference, money_at=money_at,
     )
-    setattr(policy, counter, number + 1)
-    policy.save(update_fields=[counter])
+    if plan is None:
+        setattr(policy, counter, number + 1)
+        policy.save(update_fields=[counter])
     audit.record(actor, "payment.document_issued", makerspace=space, target=document,
                  meta={"kind": kind, "number": document.number})
     from apps.payments.notifications_p2 import notify_document

@@ -127,6 +127,13 @@ export const FEATURE_DEFINITIONS: readonly FeatureDefinition[] = [
   { key: "membership.register_tools", parent_module: "membership", label: "Register filters and export" },
   { key: "membership.insights", parent_module: "membership", label: "Membership insights" },
   { key: "membership.monthly_summary", parent_module: "membership", label: "Monthly staff summary" },
+  { key: "billing.tax", parent_module: null, label: "Tax on charges" },
+  { key: "billing.maker_checker", parent_module: null, label: "Two-person check for offline income" },
+  { key: "billing.offline_claims", parent_module: null, label: "UPI QR and \"I've paid\" claims" },
+  { key: "billing.pay_links", parent_module: null, label: "Pay links for people without an account" },
+  { key: "billing.disputes", parent_module: null, label: "Payment disputes" },
+  { key: "billing.capture_flags", parent_module: null, label: "Unexpected online payments" },
+  { key: "finance.ledger", parent_module: null, label: "Finance ledger" },
 ];
 
 export function featureEnabled(features: Iterable<string>, key: string) {

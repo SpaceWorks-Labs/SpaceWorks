@@ -20,11 +20,12 @@ export const CASE_STATUS_LABELS: Record<RefundCaseStatusEnum, string> = {
   declined: "Declined", withdrawn: "Withdrawn", void: "Closed",
 };
 
-export const REASON_LABELS: Record<RefundCase["reason_code"], string> = {
+export const REASON_LABELS: Record<RefundCase["reason_code"] | "capture_flagged", string> = {
   event_cancelled: "Event cancelled by the space", registration_cancelled: "Registration cancelled",
   booking_cancelled: "Booking cancelled", staff_cancelled: "Cancelled by staff",
   membership_cancelled: "Membership term cancelled",
   member_request: "Member asked",
+  capture_flagged: "Unexpected online payment",
 };
 
 export function caseTone(status: RefundCaseStatusEnum): "success" | "warn" | "danger" | "neutral" {

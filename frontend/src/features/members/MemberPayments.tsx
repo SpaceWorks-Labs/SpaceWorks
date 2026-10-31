@@ -4,6 +4,7 @@ import { useState } from "react";
 import { DUE_OPTIONS, PaymentDueBadge } from "../staff/PaymentDueBadge";
 import { PaymentDocuments } from "../payments/PaymentDocuments";
 import { MemberRefundControl } from "./MemberRefundRequest";
+import { MemberPaymentOffline, type OfflineCollection } from "./MemberPaymentOffline";
 
 // Additive API field until the coordinator regenerates the OpenAPI client.
 export type MemberPayment = Omit<GeneratedMemberPayment, "refunded_amount" | "refunds" | "subject_type" | "refund_case" | "refund_requestable"> & {
@@ -11,6 +12,8 @@ export type MemberPayment = Omit<GeneratedMemberPayment, "refunded_amount" | "re
   // Optional so older fixtures and the archived read-only list need not carry them.
   refund_case?: GeneratedMemberPayment["refund_case"]; refund_requestable?: boolean;
   refunded_amount?: string | number; due_at?: string | null; due_date?: string | null; due_state?: string;
+  // Lane L5: UPI QR and claim (with billing.offline_claims) and the provider's masked method label.
+  offline_collection?: OfflineCollection; method_label?: string;
   refunds: Array<GeneratedMemberPayment["refunds"][number] & {
     method?: string; reference?: string; refunded_at?: string | null;
   }>;
@@ -55,6 +58,7 @@ export function MemberPaymentRows({
                 {payment.settlement.method.replace(/_/g, " ")}
               </span>
             ) : null}
+            {payment.method_label ? <span>Paid with {payment.method_label}</span> : null}
             {/* Money sent back on this charge. Pending refunds are shown too, so a payer
                 who was told a refund is on its way can see it is recorded. */}
             {(payment.refunds ?? []).filter((refund) => refund.status !== "failed").map((refund, index) => (
@@ -83,6 +87,8 @@ export function MemberPaymentRows({
               </button>
             </span>
           ) : null}
+          {refunds && makerspaceId !== undefined && payment.offline_collection
+            ? <MemberPaymentOffline makerspaceId={makerspaceId} paymentId={payment.id} offline={payment.offline_collection} /> : null}
           {refunds && makerspaceId !== undefined ? <MemberRefundControl makerspaceId={makerspaceId} payment={payment} /> : null}
         </>} /></li>
       ))}

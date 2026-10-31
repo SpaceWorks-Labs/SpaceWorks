@@ -22,12 +22,23 @@ def issuer_snapshot(payment, policy, kind):
         snapshot.update(due_at=payment.due_at.isoformat() if payment.due_at else "",
                         payment_instructions=policy.payment_instructions,
                         payment_navigation=payment_navigation(payment))
+        if payment.tax_snapshot:
+            snapshot["tax_note"] = bill_tax_note(payment)
     elif kind == "credit_note":
         receipt = payment.documents.filter(kind="receipt", reverses__isnull=True,
             reversed_by__isnull=True).order_by("-issued_at", "-pk").values_list("number", flat=True).first()
         if receipt:
             snapshot["receipt_number"] = receipt
     return snapshot
+
+
+def bill_tax_note(payment):
+    figures = payment.tax_snapshot.get("figures") or {}
+    name = payment.tax_snapshot.get("tax_name") or "Tax"
+    if not figures or figures.get("tax") in (None, "0", "0.00"):
+        return "No tax is charged on this amount. A receipt follows payment."
+    return (f"Includes {name} {int(payment.tax_snapshot['rate_bps']) / 100:g}%: "
+            f"{payment.currency.upper()} {figures['tax']}. A tax invoice follows payment.")
 
 
 def payment_navigation(payment):

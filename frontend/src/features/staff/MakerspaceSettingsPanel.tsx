@@ -23,6 +23,7 @@ import { KioskStationSettings } from "./KioskStationSettings";
 import { MakerspaceLocationSettings } from "./MakerspaceLocationSettings";
 import { MakerspaceProfileSettings } from "./MakerspaceProfileSettings";
 import { BillingDocumentsSettings } from "./BillingDocumentsSettings";
+import { TaxSettings } from "../finance/TaxSettings";
 import { SpacePacksPanel } from "./SpacePacksPanel";
 import { MakerspaceMembershipSettings } from "./MakerspaceMembershipSettings";
 import { MakerspacePaymentSettings } from "./MakerspacePaymentSettings";
@@ -178,6 +179,7 @@ export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMak
     { id: "money", title: "Money", rows: <>
       <MakerspacePaymentSettings makerspace={settings.data ?? makerspace} />
       {canManageMakerspace ? <BillingDocumentsSettings key={makerspace.id} makerspaceId={makerspace.id} /> : null}
+      {canManageMakerspace ? <TaxSettings key={`tax-${makerspace.id}`} makerspaceId={makerspace.id} /> : null}
     </> },
     { id: "notifications", title: "Notifications", rows: <>{staffEmail}
       {canManageMakerspace && enabledModules.includes("notifications") ? <NotificationTimingSettings key={makerspace.id} makerspaceId={makerspace.id} /> : null}

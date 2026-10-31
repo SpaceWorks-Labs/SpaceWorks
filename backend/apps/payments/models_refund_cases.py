@@ -55,6 +55,8 @@ class RefundCase(models.Model):
         STAFF_CANCELLED = "staff_cancelled", "Cancelled by staff"
         MEMBERSHIP_CANCELLED = "membership_cancelled", "Membership term cancelled"
         MEMBER_REQUEST = "member_request", "Member request"
+        #: Staff opened it for an unexpected online capture (lane L5 capture flags).
+        CAPTURE_FLAGGED = "capture_flagged", "Unexpected online capture"
 
     payment = models.ForeignKey(Payment, on_delete=models.PROTECT, related_name="refund_cases")
     kind = models.CharField(max_length=16, choices=Kind.choices)

@@ -116,6 +116,15 @@ class WebhookEvent:
     #: Captured amount in provider minor units, for excess-collection audit evidence.
     amount_minor: int = 0
     currency: str = ""
+    #: Display label for how it was paid ("Visa ••4242"); never card data (lane L5).
+    method_label: str = ""
+    #: Dispute notifications (lane L5). Non-empty `dispute_id` marks a dispute event;
+    #: `dispute_status` is the provider's raw status or phase.
+    dispute_id: str = ""
+    dispute_status: str = ""
+    dispute_reason: str = ""
+    dispute_amount_minor: int = 0
+    event_type: str = ""
 
 
 class PaymentProvider(Protocol):

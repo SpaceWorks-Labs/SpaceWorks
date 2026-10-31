@@ -197,6 +197,15 @@ the Auth module** — forgetting this is a cross-tenant data leak, not just a bu
   refunds, credential settings and every webhook. The `payments` MODULE key belongs to the rail,
   so tombstoning the rail drops the key. `TOMBSTONED_APPS=payments` still works and is
   translated to `payments_rail` (`separability.tombstones.RENAMED_LABELS`).
+- **Tax, offline income and spending (release 2 L5).** `billing.tax` (off by default) freezes each
+  charge's tax at `create_payment` (`Payment.tax_snapshot`, immutable) and numbers documents issued while
+  it is on in a gapless per-financial-year series; with it off every document and number is exactly
+  release 1. `billing.maker_checker` makes a second `record_payment` holder confirm every OFFLINE
+  settlement (never refunds, expenses or payouts; no self-confirm). Every money-out movement goes through
+  `payments.ledger_api.record_expense`, which is ALWAYS recorded -- `finance.ledger` hides only screens and
+  reports -- and each area's manager sees only that area's money through `payments.finance_scope`.
+  No code path moves money without a staff decision: claims, capture flags, disputes and the gateway
+  poll record and flag, never refund.
 - **Pending payments travel in a portable dump.** A single pending row used to refuse the whole
   dump; that is gone, because money owed is now recorded by default and the refusal made a dump
   impossible for any space keeping a ledger. Three things replace it: the preflight refuses a

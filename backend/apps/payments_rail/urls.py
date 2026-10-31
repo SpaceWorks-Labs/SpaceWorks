@@ -7,6 +7,7 @@ through, so the route would answer only to fail.
 from django.urls import path
 
 from apps.payments.views_refunds import PaymentRefundView
+from apps.payments_rail.views_pay_link_checkout import PublicPayLinkCheckoutView
 
 urlpatterns = [
     path(
@@ -14,4 +15,6 @@ urlpatterns = [
         PaymentRefundView.as_view(),
         name="payment-reconciliation-refund",
     ),
+    # Lane L5 (X19): an account-less payer pays a pay link's charge online.
+    path("public/pay/<str:token>/checkout", PublicPayLinkCheckoutView.as_view(), name="pay-link-checkout"),
 ]

@@ -33,14 +33,20 @@ class PaymentDocument(models.Model):
     money_at = models.DateTimeField()
     issued_at = models.DateTimeField(auto_now_add=True)
     issued_by = models.ForeignKey("accounts.User", null=True, blank=True, on_delete=models.PROTECT)
-    # Reserved for an owner-approved tax design. Always NULL; no tax is computed.
+    # Frozen at issue from the charge's `tax_snapshot` (lane L5). NULL on every document
+    # issued without a live tax policy, which is every release-1 document.
     tax_breakdown = models.JSONField(null=True, blank=True, default=None)
+    # Per-financial-year series (Rule 46). Blank/NULL keeps the release-1 single series.
+    number_series = models.CharField(max_length=16, blank=True, default="")
+    fy_start = models.DateField(null=True, blank=True)
 
     class Meta:
         ordering = ["sequence"]
         constraints = [
             models.UniqueConstraint(fields=["makerspace", "sequence"], condition=models.Q(
-                kind__in=["receipt", "credit_note"]), name="document_money_sequence"),
+                kind__in=["receipt", "credit_note"], fy_start__isnull=True), name="document_money_sequence"),
+            models.UniqueConstraint(fields=["makerspace", "number_series", "fy_start", "sequence"],
+                                    condition=models.Q(fy_start__isnull=False), name="document_fy_sequence"),
             models.UniqueConstraint(fields=["makerspace", "sequence"], condition=models.Q(kind="bill"), name="document_bill_sequence"),
             models.UniqueConstraint(fields=["payment"], condition=models.Q(kind="bill"), name="document_bill_once"),
             models.UniqueConstraint(fields=["makerspace", "number"], name="document_space_number"),
@@ -50,7 +56,11 @@ class PaymentDocument(models.Model):
                 settlement__isnull=True, refund__isnull=True, reverses__isnull=True, kind="receipt"), name="document_online_once"),
             models.CheckConstraint(condition=models.Q(amount__gt=0), name="document_amount_positive"),
             models.CheckConstraint(condition=models.Q(sequence__gt=0), name="document_sequence_positive"),
-            models.CheckConstraint(condition=models.Q(tax_breakdown__isnull=True), name="document_tax_unused"),
+            # Tax only on documents numbered in an FY series, i.e. issued with tax on.
+            models.CheckConstraint(condition=models.Q(tax_breakdown__isnull=True) | models.Q(fy_start__isnull=False),
+                                   name="document_tax_on_fy_series"),
+            models.CheckConstraint(condition=models.Q(fy_start__isnull=True, number_series="") | models.Q(
+                fy_start__isnull=False, number_series__in=["invoice", "credit_note"]), name="document_series_shape"),
         ]
 
     def clean(self):
@@ -84,7 +94,8 @@ class PaymentDocument(models.Model):
         elif self.refund:
             if self.kind != "credit_note" or self.refund.status != "succeeded" or self.amount != self.refund.amount:
                 raise ValidationError("A credit note must match a succeeded refund.")
-        elif self.kind not in ("receipt", "bill") or self.amount != self.payment.amount:
+        elif self.kind not in ("receipt", "bill") or (
+                self.amount != self.payment.amount and not self._received_amount_released()):
             raise ValidationError("A receipt must match the full collected amount.")
         if self.settlement and (self.kind != "receipt" or self.amount != self.settlement.amount):
             raise ValidationError("A settlement receipt must match its settlement.")
@@ -100,6 +111,13 @@ class PaymentDocument(models.Model):
                 raise ValidationError("Document lines must reconcile to the total.")
         except (InvalidOperation, TypeError, KeyError, ValueError):
             raise ValidationError("Invalid document lines.")
+
+    def _received_amount_released(self):
+        """Staff released a held receipt on the amount actually received (capture flag)."""
+        from apps.payments.models_capture_flags import PaymentCaptureFlag
+        return PaymentCaptureFlag.objects.filter(
+            payment_id=self.payment_id, resolution=PaymentCaptureFlag.Resolution.ISSUE_RECEIVED,
+            captured_amount=self.amount).exists()
 
     def save(self, *args, **kwargs):
         if self.pk:

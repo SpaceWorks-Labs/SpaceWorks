@@ -20,13 +20,14 @@ module only composes them (a hot file: lanes add rows, never edit others').
 from .merge_registry_rows_accounts import ROWS as _ACCOUNTS
 from .merge_registry_rows_community import ROWS as _COMMUNITY
 from .merge_registry_rows_events import ROWS as _EVENTS
+from .merge_registry_rows_finance import ROWS as _FINANCE
 from .merge_registry_rows_membership import ROWS as _MEMBERSHIP
 from .merge_registry_rows_operations import ROWS as _OPERATIONS
 from .merge_registry_types import (  # noqa: F401 -- re-exported
     KEEP_ON_SHELL, REPOINT, UNIQUE_RESOLVE, compose,
 )
 
-USER_REFERENCES, USER_ID_COLUMNS = compose(_ACCOUNTS, _COMMUNITY, _EVENTS, _OPERATIONS, _MEMBERSHIP)
+USER_REFERENCES, USER_ID_COLUMNS = compose(_ACCOUNTS, _COMMUNITY, _EVENTS, _OPERATIONS, _MEMBERSHIP, _FINANCE)
 
 
 def disposition_for(label, field_name):

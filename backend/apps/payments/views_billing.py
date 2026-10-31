@@ -25,7 +25,18 @@ class BillingSettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = MakerspaceBillingSettings
         fields = ("payment_terms_days", "reminder_days_before", "reminder_days_after", "max_reminders",
-                  "number_prefix", "bill_prefix", "payment_instructions", "legal_name", "address", "tax_id", "footer", "account_codes")
+                  "number_prefix", "bill_prefix", "payment_instructions", "legal_name", "address", "tax_id", "footer", "account_codes",
+                  "upi_vpa", "upi_payee_name")
+
+    def validate_upi_vpa(self, value):
+        """Lane L5: the UPI ID the QR pays (blank = no QR). Shown only with billing.offline_claims."""
+        from apps.payments.upi import UpiError, validate_vpa
+        if not value:
+            return ""
+        try:
+            return validate_vpa(value)
+        except UpiError as exc:
+            raise serializers.ValidationError(str(exc))
 
     def validate_account_codes(self, value):
         from django.core.exceptions import ValidationError

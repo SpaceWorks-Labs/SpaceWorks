@@ -24,6 +24,7 @@ from ._showcase_community import (
     membership_plan, publish_public_page, seed_bookings, seed_notices, settle_some_dues,
 )
 from ._showcase_events import seed_events
+from ._showcase_finance import seed_finance
 from ._showcase_hackathon import seed_hackathon
 from ._showcase_inventory import seed_inventory
 from ._showcase_machines import seed_machines
@@ -82,6 +83,7 @@ class Command(BaseCommand):
         RequestSeeder(space, staff, members, stock).run()
         seed_machines(space, staff.manager, staff.machines, members)
         settle_some_dues(space, staff.manager, members)
+        seed_finance(space, staff.manager)
         seed_bookings(space, staff.manager, members)
         seed_notices(space, staff.manager)
         seed_hackathon(space, staff.manager, members)

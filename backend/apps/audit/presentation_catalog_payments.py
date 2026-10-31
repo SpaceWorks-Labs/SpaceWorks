@@ -30,7 +30,7 @@ ENTRIES = (
       ("event_id", "prior_status", "provider", "resolved_status", "stripe_event_id")),
     P("payment.paid_offline", "Payment paid offline"),
     P("payment.paid_online", "Payment paid online",
-      ("event_id", "provider", "stripe_event_id")),
+      ("event_id", "late_capture", "polled", "provider", "stripe_event_id")),
     P("payment.refund_failed", "Payment refund failed"),
     P("payment.refund_policy_updated", "Payment refund policy updated",
       ("area", "fields", "plan_id", "removed")),

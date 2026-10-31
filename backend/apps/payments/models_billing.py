@@ -43,6 +43,10 @@ class MakerspaceBillingSettings(models.Model):
     tax_id = models.CharField(max_length=64, blank=True, default="")
     footer = models.TextField(max_length=1000, blank=True, default="")
     account_codes = models.JSONField(default=default_account_codes, validators=[validate_account_codes], blank=True)
+    # Lane L5 offline collection (`billing.offline_claims`). The UPI QR is built from these
+    # for the exact amount of one INR charge; a blank VPA means no QR.
+    upi_vpa = models.CharField(max_length=255, blank=True, default="")
+    upi_payee_name = models.CharField(max_length=50, blank=True, default="")
     # Internal sequence, never exposed as an editable API field. Rolled back with issue.
     next_document_number = models.PositiveBigIntegerField(default=1)
     next_bill_number = models.PositiveBigIntegerField(default=1)
@@ -58,6 +62,12 @@ class MakerspaceBillingSettings(models.Model):
         for name in ("number_prefix", "bill_prefix"):
             if any(ord(char) < 32 or ord(char) == 127 or char in "/\\" for char in getattr(self, name)):
                 raise ValidationError({name: "Use a prefix without control characters or slashes."})
+        if self.upi_vpa:
+            from apps.payments.upi import UpiError, validate_vpa
+            try:
+                self.upi_vpa = validate_vpa(self.upi_vpa)
+            except UpiError as exc:
+                raise ValidationError({"upi_vpa": str(exc)})
         if self.bill_prefix == self.number_prefix:
             raise ValidationError({"bill_prefix": "Bill and receipt prefixes must differ."})
         for name in ("reminder_days_before", "reminder_days_after"):

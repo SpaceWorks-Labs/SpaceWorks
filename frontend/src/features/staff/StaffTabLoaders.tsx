@@ -43,6 +43,7 @@ export const PiiAccessBanner = lazy(() => import("./PiiAccessBanner").then((m) =
 export const MakerspaceSettingsPanel = lazy(() => import("./MakerspaceSettingsPanel").then((m) => ({ default: m.MakerspaceSettingsPanel })));
 export const ModulesPanel = lazy(() => import("./ModulesPanel").then((m) => ({ default: m.ModulesPanel })));
 export const PaymentsPanel = lazy(() => import("./PaymentsPanel").then((m) => ({ default: m.PaymentsPanel })));
+export const FinancePanel = lazy(() => import("../finance/FinancePanel").then((m) => ({ default: m.FinancePanel })));
 export const RefundQueue = lazy(() => import("./refunds/RefundQueue").then((m) => ({ default: m.RefundQueue })));
 export const EventPayoutsSection = lazy(() => import("./EventPayoutsSection").then((m) => ({ default: m.EventPayoutsSection })));
 export const HandoverConsole = lazy(() => import("./panels/machine/HandoverConsole").then((m) => ({ default: m.HandoverConsole })));

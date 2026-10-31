@@ -72,6 +72,11 @@ OMITTED_TARGET_RELATIONS = {
         "accounts.MemberClaimCode",
         "omitted_target_model",
     ),
+    # Release 2 L5: a claim keeps its row; the bearer pay link it came through is dropped.
+    ("payments.PaymentClaim", "pay_link"): NullWithProvenance(
+        "payments.PaymentPayLink",
+        "omitted_target_model",
+    ),
 }
 
 PAYMENT_SUBJECT_REFERENCES = {

@@ -1281,6 +1281,52 @@ in the same transaction as the status flip. NOTE: the line below calling `paymen
 stale — it is parented to the `payments` module, and the per-domain `payments.*` keys are parented to
 their own domain modules with `payments` in `requires_modules`.
 
+**Money, tax and the finance ledger (release 2, lane L5; #59, #71, #94, #100, #128 C-5/C-15/C-16).**
+- *Tax is core, never the rail.* The engine (`payments/tax/`) lives in the permanent ledger; `billing.tax`
+  is parentless and off by default. With it off every charge, document and number is byte-identical to
+  release 1. A charge's `tax_snapshot` is frozen at `create_payment` and immutable (model and trigger
+  `payments_payment_l5_guard`); documents copy their `tax_breakdown` from it, never from live settings.
+  Splits are exact at two decimals by largest remainder; credit notes apportion what the invoice still
+  has uncredited. A document carries a breakdown only inside an FY series (`document_tax_on_fy_series`).
+- *FY numbering never renumbers.* Only documents issued while tax is on take the per-FY gapless series
+  (`DocumentNumberCounter`, locked in the issue transaction, ≤4-char prefix, ≤16-char number, separate
+  credit-note series); the release-1 series continues for everything else.
+- *Two-person check is offline income only.* `billing.maker_checker` turns an offline settlement into an
+  append-only `SettlementConfirmation`; the charge stays pending until a different `record_payment`
+  holder confirms (no self-confirm: 409 and a CHECK constraint). It never touches refunds, expenses or
+  payouts. Its queue is not switch-gated, so rows proposed while on still drain.
+- *Claims move nothing.* A payer's "I've paid" claim is a message; only a staff confirmation writes the
+  `ManualSettlement`, in the same transaction as the status flip. One claim per reference per space ever.
+- *Unexpected captures are accepted, flagged and held -- never refused or refunded* (`billing.capture_flags`).
+  A capture for a cancelled charge moves it to `paid_online` only under the transaction-local GUC
+  `app.allow_late_capture_settlement`; a receipt for a different amount is admitted by the document
+  guard only after a staff `issue_received` decision. Refund cases opened from a flag still need staff.
+- *Disputes are record-only.* Always recorded (append-only history) whatever `billing.disputes` says;
+  never cancel a subject, never refund, never change the Payment. Ingestion stays in `payments_rail`.
+- *Polling never refunds.* The 5-minute gateway poll only reads providers: it settles a capture exactly
+  as its webhook would, closes week-old unpaid attempts (the debt stays) and flags day-old pending refunds.
+- *Pay links are bearer capabilities for one account-less, staff-raised charge.* Digest only, expiring,
+  one live link per charge, public view shows no person; dropped from tenant dumps; no API-client scope.
+- *Spending is always recorded (C-15).* `ledger_api.record_expense`/`record_receipt`/`void` never consult
+  `finance.ledger`; that switch hides screens and reports only. `LedgerEntry` rows void once and are
+  otherwise immutable (trigger `payments_l5_append_only`, which also covers opening balances, event
+  budgets, claims, confirmations, flags, disputes and pay links; the purge GUC still deletes). A live
+  entry is unique per (kind, source_kind, source_id), so retried callers never double-record.
+- *PDF receipts are receipt-only (#155).* `evidence.image_validation` admits `application/pdf` (a `%PDF-`
+  header and an `%%EOF` trailer) only for keys of the `receipt` evidence type; issue and return evidence
+  and the staff/kiosk evidence presign stay images-only. Promotion still happens once from the staging key,
+  the presign binds the declared type and the size range, and `ledger_api` refuses a file whose detected
+  type differs from the declared one (`receipt_type_mismatch`) before marking it consumed.
+- *Finance visibility goes through rbac per area (#100).* `finance_scope.finance_view` is the only
+  answer: `view_finance` sees everything; `edit_inventory` inventory+loans; `manage_bookings` bookings;
+  `manage_machines` machines narrowed to `machines.role_scope` types; `manage_events` events (C-16).
+  Recording needs the area action or `view_finance`+`record_payment`; `record_payment` alone records
+  no spending. Area reports in the registry are not schedulable (a scheduled copy has no viewer).
+- *Nothing is counted twice.* Income vs spending reads Payments, Refunds, `EventPayoutEntry` tips and
+  `LedgerEntry` rows; refunds and payouts are never re-entered as ledger expenses.
+- *The money fingerprint covers L5 rows* (claims, confirmations, flags, disputes, ledger entries,
+  opening balances, event budgets, FY counters), each key omitted when empty so older captures match.
+
 **Booking ledger writes are required (BK-0, 2026-10-15).** With charge tracking enabled,
 instant creation and approval commit their required debt in the booking transaction.
 Debt lookup, insert or audit failure rolls back confirmation, calendar revision, audits

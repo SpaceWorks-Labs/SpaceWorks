@@ -7,7 +7,7 @@ from botocore.client import Config
 from botocore.exceptions import BotoCoreError, ClientError
 from django.conf import settings
 
-from apps.evidence.image_validation import image_mime_from_bytes
+from apps.evidence.image_validation import allowed_mime_for_key, detect_mime_for_key
 from apps.object_storage import delete_all_versions
 from apps.storage_capabilities import CapabilityError, capabilities_for
 from apps.storage_capabilities.budget import checkpoint, client_options
@@ -97,8 +97,8 @@ def delete_object_strict(object_key, *, operation_key=None):
 
 def copy_object(source_key, dest_key):
     def validate(snapshot, size):
-        mime = image_mime_from_bytes(snapshot.read(settings.EVIDENCE_MAX_BYTES + 1))
-        if mime not in settings.EVIDENCE_ALLOWED_MIME:
+        mime = detect_mime_for_key(dest_key, snapshot.read(settings.EVIDENCE_MAX_BYTES + 1))
+        if mime not in allowed_mime_for_key(dest_key, settings.EVIDENCE_ALLOWED_MIME):
             raise EvidenceObjectValidationError("invalid_image", "Evidence object is not a valid image.")
         return mime
 
@@ -195,8 +195,8 @@ def validate_evidence_object(object_key):
     if len(data) != size:
         raise EvidenceObjectValidationError("size_changed", "Evidence object size changed.")
 
-    content_type = image_mime_from_bytes(data)
-    if content_type not in settings.EVIDENCE_ALLOWED_MIME:
+    content_type = detect_mime_for_key(object_key, data)
+    if content_type not in allowed_mime_for_key(object_key, settings.EVIDENCE_ALLOWED_MIME):
         raise EvidenceObjectValidationError(
             "invalid_image", "Evidence object is not a valid image."
         )

@@ -160,3 +160,13 @@ PUBLIC_CLAIM_ROUTES = {
     ("hardware_requests:public-tool-return", "OPTIONS"): AnonymousRead(),
     **_anonymous("hardware_requests:request-status"),
 }
+
+# Release 2 L5 pay links: the link itself is the only credential. The views carry no
+# authentication classes, so a presented claim token is ignored, never used.
+PUBLIC_CLAIM_ROUTES.update({
+    **_anonymous("pay-link"),
+    ("pay-link-claim", "POST"): AnonymousRead(),
+    ("pay-link-claim", "OPTIONS"): AnonymousRead(),
+    ("pay-link-checkout", "POST"): AnonymousRead(),
+    ("pay-link-checkout", "OPTIONS"): AnonymousRead(),
+})

@@ -264,3 +264,14 @@ MEMBERSHIP_ROUTES |= {
     "admin-membership-title-assignments", "admin-membership-title-unassign", "admin-membership-consents",
     "admin-membership-history",
 }
+# Release 2 L5, money, tax and the finance ledger: each view re-checks its own action
+# (view_finance, record_payment or the area manager's action through `finance_scope`).
+MEMBERSHIP_ROUTES |= {
+    "billing-tax", "billing-tax-gstin", "billing-tax-preview", "billing-tax-gstr1-json",
+    "paid-claim-list", "paid-claim-confirm", "paid-claim-reject",
+    "settlement-confirmations", "settlement-confirm", "settlement-reject",
+    "capture-flag-list", "capture-flag-resolve", "dispute-list", "dispute-detail", "payment-pay-link",
+    "finance-access", "finance-summary", "finance-entries", "finance-entry", "finance-entry-void",
+    "finance-entry-receipt", "finance-receipt-upload", "finance-opening-balances", "finance-event",
+    "finance-event-budget",
+}

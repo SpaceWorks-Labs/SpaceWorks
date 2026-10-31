@@ -281,3 +281,6 @@ AUDIT_META_REFERENCES.update(PUBLIC_SURFACE_AUDIT_EDGES)
 from .audit_references_meta_unified_accounts import UNIFIED_ACCOUNT_AUDIT_EDGES  # noqa: E402
 
 AUDIT_META_REFERENCES.update(UNIFIED_ACCOUNT_AUDIT_EDGES)
+from .audit_references_r2_l5 import EDGES as R2_L5_AUDIT_EDGES  # noqa: E402
+
+AUDIT_META_REFERENCES.update(R2_L5_AUDIT_EDGES)

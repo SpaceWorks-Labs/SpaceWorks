@@ -43,6 +43,10 @@ def create_payment(
     # on the books, visible in the member area and settleable by staff. The row is stamped
     # `unclaimed` and the first checkout that reaches a provider claims it.
     require_member_account(member)
+    # Tax is frozen once, here, the single seam every domain raises charges through. With
+    # `billing.tax` off this returns the amount unchanged and no snapshot (release 1).
+    from apps.payments.tax.snapshot import freeze_for_charge
+    amount, tax_snapshot = freeze_for_charge(makerspace, amount, currency, member)
     source = resolve_payment_source(makerspace)
     if source is None:
         vendor = Payment.Provider.UNCLAIMED
@@ -74,6 +78,7 @@ def create_payment(
         stripe_provider=provider,
         stripe_connected_account_id=connected_account_id,
         stripe_application_fee_amount=fee_amount,
+        tax_snapshot=tax_snapshot,
     )
     # Raising a charge is when a member incurs a debt; the log previously recorded
     # only its settlement.

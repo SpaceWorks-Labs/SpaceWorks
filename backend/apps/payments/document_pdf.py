@@ -34,6 +34,7 @@ def _render(document):
     from apps.makerspaces.theme_validation import HEX_COLOR
     from .document_pdf_assets import load_logo
     from .document_snapshot import bill_status, local_date, payment_navigation, DEFAULT_ACCENT
+    from . import document_pdf_tax as tax
 
     issuer = document.issuer
     accent = issuer.get("accent_color", DEFAULT_ACCENT)
@@ -57,7 +58,10 @@ def _render(document):
     for label, key in (("Issuer identifier", "tax_id"), ("Contact", "contact_email")):
         if issuer.get(key):
             story.append(text(f"{label}: {issuer[key]}", small))
-    story.extend([Spacer(1, 7 * mm), text(document.get_kind_display(), heading, True),
+    breakdown = document.tax_breakdown
+    for label, value in (tax.identity_lines(breakdown) if breakdown else ()):
+        story.append(text(f"{label}: {value}", small))
+    story.extend([Spacer(1, 7 * mm), text(tax.tax_title(document) if breakdown else document.get_kind_display(), heading, True),
         text(document.number, bold=True), text(f"Issued {local_date(document, document.issued_at)}", small)])
     if document.kind == "bill":
         story.append(text(bill_status(document), bold=True))
@@ -80,11 +84,18 @@ def _render(document):
         ("BOX", (0, 0), (-1, -1), 1, accent), ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
         ("TOPPADDING", (0, 0), (-1, -1), 10), ("BOTTOMPADDING", (0, 0), (-1, -1), 10)]))
     story.extend([table, Spacer(1, 6 * mm), totals, Spacer(1, 5 * mm)])
+    if breakdown:
+        tax_table = Table([[text(label, small), text(value, small, True)] for label, value in tax.summary_rows(document)],
+                          colWidths=[50 * mm, 40 * mm], hAlign="RIGHT")
+        tax_table.setStyle(TableStyle([("LINEBELOW", (0, 0), (-1, -1), 0.3, colors.HexColor("#EFE6DB"))]))
+        story.extend([tax_table, Spacer(1, 5 * mm)])
     details = []
     if document.kind == "bill":
         details.extend([text(f"Due {local_date(document, issuer.get('due_at'))}"), text("How to pay", bold=True)])
         if issuer.get("payment_instructions"):
             details.append(text(issuer["payment_instructions"]))
+        if issuer.get("tax_note"):
+            details.append(text(issuer["tax_note"], small))
         # Financial details stay frozen; navigation follows the current tenant.
         from .models import Payment
         payment = Payment.objects.select_related("makerspace", "via_makerspace").get(pk=document.payment_id)
@@ -97,15 +108,15 @@ def _render(document):
             details.append(text("Pay online from your signed-in payments page.", small))
     else:
         details.extend([text(f"Money date: {local_date(document, document.money_at)}", small),
-                        text(f"Method: {document.settlement_method}", small),
+                        text(f"Method: {tax.method_text(document)}", small),
                         text(f"Reference: {document.settlement_reference or '-'}", small)])
         if document.reverses_id:
             details.append(text(f"Reverses {document.reverses.number}", small))
         elif document.kind == "credit_note" and issuer.get("receipt_number"):
             details.append(text(f"Refund against receipt {issuer['receipt_number']}", small))
     story.extend(details)
-    story.extend([Spacer(1, 7 * mm), text("Gross-only. No tax calculation is included.", small),
-                  text(issuer.get("footer", ""), small)])
+    notes = tax.footer_notes(document) if breakdown else ["Gross-only. No tax calculation is included."]
+    story.extend([Spacer(1, 7 * mm), *(text(note, small) for note in notes), text(issuer.get("footer", ""), small)])
     output = BytesIO()
     def page_footer(canvas, pdf):
         canvas.setStrokeColor(accent)

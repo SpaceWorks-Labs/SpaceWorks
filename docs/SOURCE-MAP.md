@@ -756,6 +756,14 @@ every `accounts.User` reference for merges, checked by `accounts.E003` in `check
 `management/commands/account_unification_report.py` (+ `unification_report_context.py`) and
 the frozen conversion in `accounts/migrations/_0050_conversion.py`; the unified triggers are
 frozen in `_0049_unified_guards.py`, the track triggers in `makerspaces/migrations/0114_membership_track.py`.
+Login security (release 2, S0 contract): `accounts/login_security_contract.py` names every
+error code, factor, purpose, audit action and retention rule; `login_security_settings.py`
+holds the frozen per-space `SecuritySetting` rows; `login_codes.py` the emailed-code primitives;
+`models_webauthn.py`, `models_login_risk.py`, `models_ip_access.py` and `models_mfa_grace.py`
+the schema (accounts 0051-0053; 0051's device-trigger body is in `_0051_passkey_device_guard.py`).
+`makerspaces/security_policy_store.py` stores `policy`-backed security values in
+`MakerspaceSecurityPolicy` (`models_security.py`) and `security_settings_person.py` resolves a
+value per space or per person (strictest across their staff spaces).
 `staff_accounts.py` atomically creates a tenant staff principal and its roles/type scopes;
 `staff_account_policy.py`, `staff_account_services.py` and `staff_account_lifecycle.py`
 own staff lifecycle authority, onboarding, deactivation and administrator password issue.

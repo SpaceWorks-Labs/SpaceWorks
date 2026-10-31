@@ -29,6 +29,12 @@ NUMERIC_LIMIT_KEYS = frozenset(
 )
 BOOLEAN_LIMIT_KEYS = frozenset({"custom_domain"})
 KNOWN_LIMIT_KEYS = NUMERIC_LIMIT_KEYS | BOOLEAN_LIMIT_KEYS
+# One vocabulary (#77): the per-space keys above are each defaulted in
+# MANAGED_RESOURCE_LIMITS and overridable per space (`resource_limit_overrides`); these
+# two are platform-wide daily counters, defaulted there and overridable per deployment
+# (MANAGED_OTP_EMAIL_DAILY_LIMIT / MANAGED_OTP_SMS_DAILY_LIMIT). `custom_domain` is the
+# one boolean key and defaults to allowed.
+PLATFORM_LIMIT_KEYS = frozenset({"otp_email", "otp_sms"})
 
 RESOURCE_LABELS = {
     "products": "products",

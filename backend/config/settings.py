@@ -112,12 +112,15 @@ MANAGED_RESOURCE_LIMITS = {
     "native_push": 500,
     "sms": 100,
     "whatsapp": 100,
+    # Release 2 L4 (#77): every limit key has a default; signed webhooks were unlimited.
+    "webhook": 100,
     "api_clients": 1,
     # Tenant exports retain a long-lived database snapshot while running. This is an
     # active-job ceiling, independent of the byte quota charged when an archive lands.
     "data_exports": 1,
-    "otp_email": 200,
-    "otp_sms": 100,
+    # Platform-wide daily caps (not per space); the deployment may override them (#77).
+    "otp_email": env.int("MANAGED_OTP_EMAIL_DAILY_LIMIT", default=200),
+    "otp_sms": env.int("MANAGED_OTP_SMS_DAILY_LIMIT", default=100),
 }
 # Applies on SELF-HOST TOO, unlike the managed limits above: every auth text is billed
 # by the operator's SMS vendor, so this is a cost ceiling rather than a fair-use quota.

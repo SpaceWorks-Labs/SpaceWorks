@@ -33,7 +33,7 @@ def definitions(feature):
             "settlement before the charge is marked paid. Never applies to spending.",
         ),
         feature(
-            "billing.offline_claims", None, "UPI QR and \"I've paid\" claims",
+            "billing.offline_claims", None, "UPI QR and “I’ve paid” claims",
             "Show a UPI QR for the exact amount and let payers tell you they paid; staff confirm "
             "or reject each claim.",
         ),

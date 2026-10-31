@@ -44,6 +44,10 @@ NON_OBJECT_KEY_FIELDS = frozenset({
     ("integrations.NotificationDelivery", "target_key"),
     # UUID identifying one inbox fan-out, never a bucket locator.
     ("notifications.NotificationInboxRow", "event_key"),
+    # UUID of the notification an escalation follows (L2), never a bucket locator.
+    ("notifications.NotificationEscalation", "event_key"),
+    # Name of the module setting a Space Manager locked (L17), never a bucket locator.
+    ("makerspaces.ModuleSettingLock", "setting_key"),
     ("accounts.NativeAppRegistration", "verifier_config_key"),
     # App Attest credential PEM, never an object-storage locator.
     ("accounts.DeviceGrant", "attestation_public_key"),

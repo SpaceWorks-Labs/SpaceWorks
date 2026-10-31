@@ -15,7 +15,7 @@ export type LedgerEntry = {
   id: number; kind: "receipt" | "expense"; domain: string; machine_type_id: number | null; machine_type_label: string;
   event_id: number | null; category: string; method: string; account: "cash" | "bank"; amount: string;
   currency: string; entry_date: string; description: string; counterparty: string; reference: string;
-  source_kind: string; source_id: string; has_receipt: boolean; created_at: string; voided_at: string | null;
+  source_kind: string; source_id: string; has_receipt: boolean; receipt_kind?: "pdf" | "image" | ""; created_at: string; voided_at: string | null;
   void_reason: string;
 };
 export type Page<T> = { count: number; next: string | null; previous: string | null; results: T[] };
@@ -102,7 +102,7 @@ export const financeApi = {
       post({ email })),
 };
 
-/** Upload one receipt photo to the staging key the server presigned; returns the evidence id. */
+/** Upload one receipt (photo or PDF) to the staging key the server presigned; returns the evidence id. */
 export async function uploadReceipt(makerspaceId: number, file: File) {
   const grant = await financeApi.receiptUpload(makerspaceId, file.type, file.size);
   let response: Response;

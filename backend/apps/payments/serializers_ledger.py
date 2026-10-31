@@ -10,6 +10,7 @@ from apps.payments.serializers_l5 import page_of
 
 class LedgerEntrySerializer(serializers.ModelSerializer):
     has_receipt = serializers.SerializerMethodField()
+    receipt_kind = serializers.SerializerMethodField(help_text="`pdf`, `image`, or blank without a receipt.")
     event_id = serializers.IntegerField(read_only=True, allow_null=True)
     machine_type_id = serializers.IntegerField(read_only=True, allow_null=True)
 
@@ -17,11 +18,16 @@ class LedgerEntrySerializer(serializers.ModelSerializer):
         model = LedgerEntry
         fields = ("id", "kind", "domain", "machine_type_id", "machine_type_label", "event_id", "category", "method",
                   "account", "amount", "currency", "entry_date", "description", "counterparty", "reference",
-                  "source_kind", "source_id", "has_receipt", "created_at", "voided_at", "void_reason")
+                  "source_kind", "source_id", "has_receipt", "receipt_kind", "created_at", "voided_at", "void_reason")
         read_only_fields = fields
 
     def get_has_receipt(self, entry) -> bool:
         return entry.receipt_id is not None
+
+    def get_receipt_kind(self, entry) -> str:
+        if entry.receipt_id is None:
+            return ""
+        return "pdf" if entry.receipt.content_type == "application/pdf" else "image"
 
 
 class LedgerEntryCreateSerializer(serializers.Serializer):
@@ -55,7 +61,8 @@ class VoidSerializer(serializers.Serializer):
 
 
 class ReceiptUploadRequestSerializer(serializers.Serializer):
-    content_type = serializers.ChoiceField(choices=["image/jpeg", "image/png", "image/webp"])
+    # Images and, for receipts only, PDF (#155). The presign binds the chosen type.
+    content_type = serializers.ChoiceField(choices=["image/jpeg", "image/png", "image/webp", "application/pdf"])
     size_bytes = serializers.IntegerField(min_value=1, required=False)
 
 

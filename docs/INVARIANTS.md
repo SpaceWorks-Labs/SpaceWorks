@@ -1216,6 +1216,11 @@ their own domain modules with `payments` in `requires_modules`.
   otherwise immutable (trigger `payments_l5_append_only`, which also covers opening balances, event
   budgets, claims, confirmations, flags, disputes and pay links; the purge GUC still deletes). A live
   entry is unique per (kind, source_kind, source_id), so retried callers never double-record.
+- *PDF receipts are receipt-only (#155).* `evidence.image_validation` admits `application/pdf` (a `%PDF-`
+  header and an `%%EOF` trailer) only for keys of the `receipt` evidence type; issue and return evidence
+  and the staff/kiosk evidence presign stay images-only. Promotion still happens once from the staging key,
+  the presign binds the declared type and the size range, and `ledger_api` refuses a file whose detected
+  type differs from the declared one (`receipt_type_mismatch`) before marking it consumed.
 - *Finance visibility goes through rbac per area (#100).* `finance_scope.finance_view` is the only
   answer: `view_finance` sees everything; `edit_inventory` inventory+loans; `manage_bookings` bookings;
   `manage_machines` machines narrowed to `machines.role_scope` types; `manage_events` events (C-16).

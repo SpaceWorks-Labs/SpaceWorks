@@ -48,7 +48,8 @@ export function LedgerEntryForm({ makerspaceId, access, onClose }: {
       <Field label="What it was for"><input className="desk-input" required maxLength={300} value={form.description} onChange={set("description")} /></Field>
       <Field label={kind === "expense" ? "Paid to (supplier)" : "Received from"}><input className="desk-input" maxLength={150} value={form.counterparty} onChange={set("counterparty")} /></Field>
       <Field label="Reference (bill or transaction number)"><input className="desk-input" maxLength={64} value={form.reference} onChange={set("reference")} /></Field>
-      <Field label="Receipt photo (optional)"><input type="file" accept="image/jpeg,image/png,image/webp" className="desk-input"
+      <Field label="Receipt photo or PDF (optional)" hint="JPEG, PNG, WebP or PDF, up to 10 MB."><input type="file"
+        accept="image/jpeg,image/png,image/webp,application/pdf" className="desk-input"
         onChange={event => setFile(event.target.files?.[0] ?? null)} /></Field>
       {save.error ? <p role="alert" className="text-sm text-danger">{financeError(save.error)}</p> : null}
       <div className="flex flex-wrap justify-end gap-2">

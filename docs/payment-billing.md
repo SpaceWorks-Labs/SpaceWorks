@@ -190,7 +190,8 @@ event reimbursement/prize payouts and `LedgerEntry` rows for everything else -- 
 non-charge receipts such as donations or grants. Entries carry a domain (inventory, loans,
 machines, bookings, events, membership, donations, shop, general), a machine type where it
 applies, a category, method (cash lands in the cash account, everything else in bank), date,
-reference, an optional receipt photo (staging-key presign, promoted once) and the source that
+reference, an optional receipt -- a photo or a PDF (#155), up to `EVIDENCE_MAX_BYTES` (10 MB),
+through the staging-key presign with the MIME type bound and promoted once -- and the source that
 caused them. They are voided with a reason, never edited or deleted.
 
 Other lanes record spending through `payments.ledger_api.record_expense(makerspace, domain,

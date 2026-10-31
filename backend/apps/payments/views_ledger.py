@@ -61,7 +61,7 @@ class LedgerEntryListView(APIView):
                    parameters=FILTERS, responses={200: LedgerEntryPage, **ERRORS})
     def get(self, request, makerspace_id):
         _space, view = finance_space(request, makerspace_id)
-        rows = ledger_entries.scoped_entries(request.user, makerspace_id, view)
+        rows = ledger_entries.scoped_entries(request.user, makerspace_id, view).select_related("receipt")
         params = request.query_params
         if params.get("kind") in LedgerEntry.Kind.values:
             rows = rows.filter(kind=params["kind"])
@@ -129,9 +129,10 @@ class LedgerEntryVoidView(APIView):
 class ReceiptUploadView(APIView):
     permission_classes = [IsActiveStaff]
 
-    @extend_schema(tags=["Finance"], summary="Get a presigned upload for a receipt photo",
-                   description="Uploads land on the staging key; recording the entry promotes the photo exactly "
-                               "once (Hard Rule). Needs authority to record in at least one area.",
+    @extend_schema(tags=["Finance"], summary="Get a presigned upload for a receipt photo or PDF",
+                   description="JPEG, PNG, WebP or PDF up to EVIDENCE_MAX_BYTES (10 MB default); the presign binds "
+                               "the type and size range. Uploads land on the staging key; recording the entry "
+                               "promotes the file exactly once (Hard Rule). Needs authority to record in an area.",
                    request=ReceiptUploadRequestSerializer,
                    responses={201: ReceiptUploadSerializer, 503: OpenApiResponse(ErrorSerializer), **ERRORS})
     def post(self, request, makerspace_id):
@@ -155,7 +156,7 @@ class ReceiptUploadView(APIView):
 class ReceiptUrlView(APIView):
     permission_classes = [IsActiveStaff]
 
-    @extend_schema(tags=["Finance"], summary="A short-lived link to an entry's receipt photo",
+    @extend_schema(tags=["Finance"], summary="A short-lived link to an entry's receipt (photo or PDF)",
                    responses={200: ReceiptUrlSerializer, 503: OpenApiResponse(ErrorSerializer), **ERRORS})
     def get(self, request, makerspace_id, entry_id):
         from apps.evidence.storage import StorageUnavailable, presigned_get_url

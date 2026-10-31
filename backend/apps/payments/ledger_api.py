@@ -15,7 +15,7 @@ Stable contract for every lane that moves money (#94, LANE-RULES §12):
   only allowed with domain `machines`. Together they decide who sees the row (#100).
 * `method` is one of `LedgerEntry.Method`; cash lands in the cash account, every other
   method in the bank account (the receipts-and-payments split per financial year).
-* `receipt` is an optional `evidence.EvidencePhoto` of this space (a photo of the bill),
+* `receipt` is an optional `evidence.EvidencePhoto` of this space (a photo or PDF of the bill),
   uploaded through the staging-key presign; it is finalized and marked consumed here, in
   the same transaction, and can back exactly one entry.
 * `source_kind`/`source_id` name what caused the row (`procurement.to_buy` + item id,
@@ -73,6 +73,9 @@ def _staged_receipt(makerspace, receipt):
         raise LedgerConflict("The receipt upload is invalid, expired or too large.", "receipt_invalid")
     if finalized is None:
         raise LedgerConflict("The receipt has not been uploaded yet.", "receipt_not_uploaded")
+    if photo.content_type and getattr(finalized, "content_type", "") != photo.content_type:
+        # The presign bound one MIME type; a different file behind it is refused (#155).
+        raise LedgerConflict("The uploaded file is not the type that was announced.", "receipt_type_mismatch")
     return photo, getattr(finalized, "size", None)
 
 

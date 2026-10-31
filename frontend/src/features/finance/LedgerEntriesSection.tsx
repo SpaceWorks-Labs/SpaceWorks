@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { BookOpen, Receipt } from "lucide-react";
+import { BookOpen, FileText, Receipt } from "lucide-react";
 
 import { Field, Modal, Pagination, StatusPill } from "../../components/ui";
 import { formatMoney } from "../staff/paymentsApi";
@@ -53,8 +53,10 @@ export function LedgerEntriesSection({ makerspaceId, access }: { makerspaceId: n
           <strong className={entry.voided_at ? "tabular-nums line-through" : "tabular-nums"}>
             {entry.kind === "expense" ? "−" : "+"}{formatMoney(entry.amount, entry.currency)}</strong>
           {entry.voided_at ? <StatusPill label="Void" tone="neutral" /> : <StatusPill label={entry.kind === "expense" ? "Paid out" : "Received"} tone={entry.kind === "expense" ? "warn" : "success"} />}
+          {/* Never an inline <img>: a PDF or photo opens through a short-lived signed link. */}
           {entry.has_receipt ? <button type="button" className="desk-button-ghost" onClick={() => void openReceipt(entry)}>
-            <Receipt aria-hidden="true" size={16} />Receipt</button> : null}
+            {entry.receipt_kind === "pdf" ? <FileText aria-hidden="true" size={16} /> : <Receipt aria-hidden="true" size={16} />}
+            {entry.receipt_kind === "pdf" ? "Receipt (PDF)" : "Receipt"}</button> : null}
           {!entry.voided_at && canRecord ? <button type="button" className="desk-button-ghost" onClick={() => setVoiding(entry)}>Void</button> : null}
         </div>
       </li>)}

@@ -531,6 +531,24 @@ is the shared step-1 for a caller already holding the Payment lock. The report i
 `operations/reports_refunds.py`. Frontend: `features/staff/refunds/` (queue, decision
 dialog, policy panel with `RefundPolicyCard` and per-plan `RefundMembershipPolicies`), `staff/RefundReceiptFields.tsx` (shared receipt inputs) and
 `members/MemberRefundRequest.tsx`.
+Money, tax and the finance ledger (release 2 L5): the tax engine is `payments/tax/` (`models_tax.py`
+settings and FY counters, `engine.py` splits, `apportion.py` credit notes, `gstin.py`, `snapshot.py`
+the per-charge freeze called from `services.create_payment`, `document_tax.py` the per-document plan,
+`fy.py`), with `numbering_fy.py`, `document_pdf_tax.py`, `tax_preview.py` and `views_tax.py`. Offline
+collection: `upi.py`, `models_claims.py`/`offline_claims.py`, `models_settlement.SettlementConfirmation`
+with `maker_checker.py`, `views_offline.py`. Online exceptions: `models_capture_flags.py`/`capture_flags.py`,
+`online_settlement.py` (the shared webhook/poll settle path), `models_disputes.py`/`services_disputes.py`
+(record) with `payments_rail/dispute_ingest.py` (ingest), `method_labels.py`, `gateway_poll.py` with
+`payments_rail/provider_poll.py`. Pay links: `models_pay_links.py`, `pay_links.py`, `views_pay_links.py`,
+`payments_rail/views_pay_link_checkout.py`. The finance ledger: `models_ledger_entries.py`,
+`ledger_api.py` (the `record_expense`/`record_receipt`/`void` contract other lanes call),
+`ledger_entries.py`, `finance_scope.py` (the only per-area visibility answer), `finance_rows.py` (every
+movement as rows), `reports_finance_ledger.py`, `models_event_budget.py`, `views_ledger.py`,
+`views_finance.py`, routes in `urls_l5.py`. Reports: `operations/report_definitions_finance_l5.py`,
+`reports_tax_gst.py`/`reports_tax_gst_json.py`/`reports_tax_returns.py`, `reports_bookkeeping_fy.py`,
+`reports_money_methods.py`. Capability keys: `makerspaces/capability_definitions_r2_l5.py`.
+Frontend: `features/finance/` (finance ledger, tax settings, claims/confirmations, flags, disputes,
+GST downloads), `features/members/MemberPaymentOffline.tsx` (UPI QR and claim) and `pages/PayLinkPage.tsx`.
 `operations/reports_cash_book.py` owns effective manual money-in/out totals.
 `payments/schemas_billing.py` documents typed business errors and DRF field-validation
 responses. The module guide links into `MODULES-INVENTORY.md`, `MODULES-WORKSHOPS.md`,

@@ -44,6 +44,8 @@ EXPORTED_MODEL_FIELDS["notifications.MemberNotificationPreference"] += " daily_d
 EXPORTED_MODEL_FIELDS["notifications.NotificationPreference"] = "id makerspace user category channels email_fallback updated_at"
 from .classification_r2_l1 import extend as extend_r2_l1
 extend_r2_l1(EXPORTED_MODEL_FIELDS)
+from .classification_r2_l5 import extend as extend_r2_l5  # noqa: E402
+extend_r2_l5(EXPORTED_MODEL_FIELDS)
 EXPORTED_MODEL_FIELDS = exported_fields(EXPORTED_MODEL_FIELDS)
 OMITTED_MODELS = {
     **NOTIFICATION_OMITTED,
@@ -98,6 +100,8 @@ from .classification_security import OMITTED_MODELS as SECURITY_OMITTED
 OMITTED_MODELS.update(SECURITY_OMITTED)
 from .classification_r2_l2 import OMITTED_MODELS as R2_L2_OMITTED, EXTRA_FIELDS as R2_L2_EXTRA  # noqa: E402
 OMITTED_MODELS.update(R2_L2_OMITTED)
+from .classification_r2_l5 import OMITTED_MODELS as R2_L5_OMITTED  # noqa: E402
+OMITTED_MODELS.update(R2_L5_OMITTED)
 for _label, _names in R2_L2_EXTRA.items():
     EXPORTED_MODEL_FIELDS[_label] += " " + _names
 EXPORTED_MODELS = frozenset(EXPORTED_MODEL_FIELDS)

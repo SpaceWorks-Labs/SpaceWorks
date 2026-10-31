@@ -146,3 +146,58 @@ class ManualSettlement(models.Model):
 
     def delete(self, *args, **kwargs):
         raise ValidationError("Manual settlements are append-only and cannot be deleted.")
+
+
+class SettlementConfirmation(models.Model):
+    """Maker-checker: an offline settlement one person recorded and a second must confirm.
+
+    Exists only while the space's `billing.maker_checker` switch is on. The charge
+    stays PENDING while this row is `awaiting_confirmation`; confirmation writes the
+    `ManualSettlement` and flips the charge in one transaction. The row is written once
+    and decided once (model and database trigger); the maker can never be the checker.
+    """
+
+    class Status(models.TextChoices):
+        AWAITING = "awaiting_confirmation", "Awaiting confirmation"
+        CONFIRMED = "confirmed", "Confirmed"
+        REJECTED = "rejected", "Rejected"
+
+    payment = models.ForeignKey(Payment, on_delete=models.CASCADE, related_name="settlement_confirmations")
+    method = models.CharField(max_length=16, choices=ManualSettlement.Method.choices)
+    reference = models.CharField(max_length=64, blank=True, default="")
+    received_at = models.DateTimeField()
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    currency = models.CharField(max_length=3, validators=[currency_validator])
+    proposed_by = models.ForeignKey("accounts.User", on_delete=models.PROTECT, related_name="+")
+    claim = models.ForeignKey("payments.PaymentClaim", null=True, blank=True, on_delete=models.CASCADE,
+                              related_name="confirmations")
+    status = models.CharField(max_length=24, choices=Status.choices, default=Status.AWAITING)
+    decided_by = models.ForeignKey("accounts.User", null=True, blank=True, on_delete=models.PROTECT, related_name="+")
+    decided_at = models.DateTimeField(null=True, blank=True)
+    decision_note = models.CharField(max_length=500, blank=True, default="")
+    settlement = models.OneToOneField(ManualSettlement, null=True, blank=True, on_delete=models.CASCADE,
+                                      related_name="confirmation")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at", "-pk"]
+        constraints = [
+            models.UniqueConstraint(fields=["payment"], condition=models.Q(status="awaiting_confirmation"),
+                                    name="settlement_confirmation_one_awaiting"),
+            models.CheckConstraint(condition=models.Q(amount__gt=0), name="settlement_confirmation_amount_positive"),
+            models.CheckConstraint(condition=models.Q(decided_by__isnull=True) | ~models.Q(
+                decided_by=models.F("proposed_by")), name="settlement_confirmation_no_self_confirm"),
+            models.CheckConstraint(condition=models.Q(status="awaiting_confirmation", decided_at__isnull=True) | models.Q(
+                ~models.Q(status="awaiting_confirmation"), decided_at__isnull=False),
+                name="settlement_confirmation_decision_shape"),
+        ]
+
+    def save(self, *args, **kwargs):
+        if self.pk:
+            original = type(self).objects.filter(pk=self.pk).values("status").first()
+            if original and original["status"] != self.Status.AWAITING:
+                raise ValidationError("A decided settlement confirmation is final.")
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError("Settlement confirmations are append-only.")

@@ -113,6 +113,13 @@ export const FEATURE_DEFINITIONS: readonly FeatureDefinition[] = [
   { key: "notifications.escalation", parent_module: "notifications", label: "Escalation re-ping" },
   { key: "notifications.web_push", parent_module: "notifications", label: "Browser notifications" },
   { key: "notifications.inbox_snooze", parent_module: "notifications", label: "Inbox snooze and archive" },
+  { key: "billing.tax", parent_module: null, label: "Tax on charges" },
+  { key: "billing.maker_checker", parent_module: null, label: "Two-person check for offline income" },
+  { key: "billing.offline_claims", parent_module: null, label: "UPI QR and \"I've paid\" claims" },
+  { key: "billing.pay_links", parent_module: null, label: "Pay links for people without an account" },
+  { key: "billing.disputes", parent_module: null, label: "Payment disputes" },
+  { key: "billing.capture_flags", parent_module: null, label: "Unexpected online payments" },
+  { key: "finance.ledger", parent_module: null, label: "Finance ledger" },
 ];
 
 export function featureEnabled(features: Iterable<string>, key: string) {

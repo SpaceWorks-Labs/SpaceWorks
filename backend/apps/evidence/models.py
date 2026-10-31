@@ -18,6 +18,9 @@ class EvidencePhoto(models.Model):
     class EvidenceType(models.TextChoices):
         ISSUE = "issue", "Issue"
         RETURN = "return", "Return"
+        # A bill or receipt photo attached to a finance ledger entry (lane L5). Consumed
+        # only by `payments.ledger_api`; never accepted as handover evidence.
+        RECEIPT = "receipt", "Receipt"
 
     class ConsumptionState(models.TextChoices):
         # Every pre-migration and imported row: never a cleanup candidate.

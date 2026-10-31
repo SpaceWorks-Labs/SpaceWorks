@@ -105,3 +105,7 @@ JSON_REFERENCE_FIELDS |= frozenset({("integrations.WhatsAppTemplateBinding", "pa
 
 # Release 2 L1: exact lowercase https framing origins, never identifiers (like website_embed_origins).
 JSON_REFERENCE_FIELDS |= frozenset({("events.EventEmbedPolicy", "allowed_origins")})
+
+# Release 2 L5: a charge's frozen tax policy (rates, GSTINs, figures); no references.
+from .classification_r2_l5 import JSON_FIELDS as _R2_L5_JSON  # noqa: E402
+JSON_REFERENCE_FIELDS |= _R2_L5_JSON

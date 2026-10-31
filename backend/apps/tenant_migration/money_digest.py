@@ -109,6 +109,9 @@ def money_fingerprint(makerspace_id, *, using="default"):
                     .values("next_document_number", "number_prefix", "next_bill_number", "bill_prefix"))
     if counters:
         payload["document_counter"] = counters
+    from .money_digest_l5 import l5_money_rows
+
+    payload.update(l5_money_rows(makerspace_id, using))
     encoded = json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str).encode()
     return hashlib.sha256(encoded).hexdigest()
 

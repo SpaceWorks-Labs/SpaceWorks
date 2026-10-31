@@ -100,6 +100,11 @@ class Payment(models.Model):
     stripe_checkout_url = models.URLField(blank=True, default="")
     stripe_checkout_session_expired_at = models.DateTimeField(null=True, blank=True)
     stripe_payment_intent_id = models.CharField(max_length=255, null=True, blank=True, unique=True)
+    # Lane L5. The tax policy frozen when the charge was raised (NULL with tax off), and
+    # the provider's display label for how it was paid ("Visa ••4242"). Neither is ever
+    # rewritten: the snapshot is insert-only and the label fills once, from blank.
+    tax_snapshot = models.JSONField(null=True, blank=True, default=None)
+    method_label = models.CharField(max_length=64, blank=True, default="")
     created_by = models.ForeignKey("accounts.User", on_delete=models.PROTECT, related_name="created_payments")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -164,8 +169,13 @@ class Payment(models.Model):
     def save(self, *args, **kwargs):
         if self.pk:
             original = type(self).objects.filter(pk=self.pk).values(
-                "status", "amount", "provider", "stripe_provider", "stripe_connected_account_id", "stripe_application_fee_amount", "online_rail", "due_at"
+                "status", "amount", "provider", "stripe_provider", "stripe_connected_account_id", "stripe_application_fee_amount", "online_rail", "due_at",
+                "tax_snapshot", "method_label",
             ).first()
+            if original and original["tax_snapshot"] != self.tax_snapshot:
+                raise ValidationError("A charge's tax snapshot is immutable.")
+            if original and original["method_label"] and original["method_label"] != self.method_label:
+                raise ValidationError("A payment method label is set once.")
             if original and original["due_at"] != self.due_at:
                 raise ValidationError("A charge due date is immutable.")
             if original and original["status"] != self.Status.PENDING and (

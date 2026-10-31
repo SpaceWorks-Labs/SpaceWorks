@@ -92,3 +92,12 @@ __all__ += ["PlatformPiiAccessGrant"]
 
 from apps.accounts.models_account_merge import AccountMergeIntent, AccountMergeRecord  # noqa: E402
 __all__ += ["AccountMergeIntent", "AccountMergeRecord"]
+
+from apps.accounts.models_webauthn import WebAuthnCeremony, WebAuthnCredential  # noqa: E402
+from apps.accounts.models_mfa_grace import StaffMfaGrace  # noqa: E402
+from apps.accounts.models_login_risk import KnownDevice, KnownNetwork, SecurityAlert  # noqa: E402
+from apps.accounts.models_ip_access import IPAccessRule, IPAutoBlock  # noqa: E402
+__all__ += [
+    "WebAuthnCeremony", "WebAuthnCredential", "StaffMfaGrace", "KnownDevice", "KnownNetwork",
+    "SecurityAlert", "IPAccessRule", "IPAutoBlock",
+]

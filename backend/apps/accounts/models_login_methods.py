@@ -58,6 +58,13 @@ class PlatformLoginMethods(models.Model):
             "staff-MFA-required makerspaces; enrolled authenticators are retained."
         ),
     )
+    passkeys_enabled = models.BooleanField(
+        default=True,
+        help_text=(
+            "Whether people may add and use passkeys. Offered, never forced: switching it "
+            "off never removes a passkey, and nobody is ever required to have one."
+        ),
+    )
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:

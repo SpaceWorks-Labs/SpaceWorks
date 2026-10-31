@@ -35,6 +35,7 @@ _SWITCH_FIELDS = (
     "google_enabled",
     "apple_enabled",
     "github_enabled",
+    "passkeys_enabled",
 )
 
 

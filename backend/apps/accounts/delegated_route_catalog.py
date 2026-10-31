@@ -252,3 +252,12 @@ MEMBERSHIP_ROUTES |= {
     "finance-entry-receipt", "finance-receipt-upload", "finance-opening-balances", "finance-event",
     "finance-event-budget",
 }
+
+# Release 2 L15, pricing: each view re-checks its own authority -- the settings layer for
+# rate cards, the item's own edit action for per-item prices, the Space Manager for
+# discounts and the currency, return_request for loan charges and fee waivers.
+MEMBERSHIP_ROUTES |= {
+    "pricing-default", "pricing-impact", "pricing-currency", "pricing-rental-timing", "pricing-discounts",
+    "pricing-discount", "pricing-discount-archive", "pricing-override", "loan-charges", "loan-fee-waivers",
+    "loan-fee-waiver-revoke", "loan-accountability-charge",
+}

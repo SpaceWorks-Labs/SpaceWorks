@@ -9,6 +9,7 @@ who take it at the desk. Only the routes that actually talk to a provider live i
 from django.urls import path
 
 from apps.payments.urls_l5 import L5_PATTERNS
+from apps.payments.urls_pricing import PRICING_PATTERNS
 from apps.payments.views_member import ArchivedPaymentDiscoveryView
 from apps.payments.views_documents import StaffDocumentListView, StaffDocumentGrantView, DocumentDownloadView
 from apps.payments.views_billing import BillingSettingsView
@@ -41,6 +42,7 @@ REFUND_CASE_PATTERNS = [
 urlpatterns = [
     *REFUND_CASE_PATTERNS,
     *L5_PATTERNS,
+    *PRICING_PATTERNS,
     path("admin/makerspace/<int:makerspace_id>/payment-documents", StaffDocumentListView.as_view(), name="staff-payment-documents"),
     path("admin/makerspace/<int:makerspace_id>/payment-documents/<int:document_id>/download-url", StaffDocumentGrantView.as_view(), name="staff-payment-document-url"),
     path("payment-documents/<int:document_id>/download", DocumentDownloadView.as_view(), name="payment-document-download"),

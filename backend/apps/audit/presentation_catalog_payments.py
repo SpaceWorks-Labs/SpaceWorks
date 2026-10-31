@@ -22,7 +22,7 @@ ENTRIES = (
       ("payment_id", "provider", "subject_id", "subject_type")),
     P("payment.checkout_expired", "Payment checkout expired", ("stripe_event_id",)),
     P("payment.created", "Payment created",
-      ("amount", "currency", "payment_id", "subject_id", "subject_type", "via_makerspace_id")),
+      ("amount", "currency", "payment_id", "subject_id", "subject_type", "via_makerspace_id", "discount_id")),
     P("payment.double_paid_refund_required", "Payment double paid refund required",
       ("event_id", "prior_status", "provider", "stripe_event_id")),
     P("payment.mobile_intent_created", "Payment mobile intent created", ("stripe_provider",)),

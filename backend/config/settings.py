@@ -1392,6 +1392,7 @@ SPECTACULAR_SETTINGS = {
             ("membership_cancelled", "Membership term cancelled"),
             ("member_request", "Member request"),
             ("capture_flagged", "Unexpected online capture"),  # lane L5 (capture flags)
+            ("fee_waived", "Loan fee waived by staff"),  # lane L15 (loan fee waivers)
         ],
         "InventoryAssetStatusEnum": [
             ("available", "Available"),
@@ -1577,3 +1578,15 @@ REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"].update({
     "pay_links": env("THROTTLE_PAY_LINKS", default="30/min"),
 })
 # --- end lane L5
+
+# --- lane L15 (release 2): the price preview, per account or per IP when signed out.
+REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"].update({
+    "pricing_quote": env("THROTTLE_PRICING_QUOTE", default="60/min"),
+})
+# Stable names for the pricing enums instead of hash-suffixed collision names.
+SPECTACULAR_SETTINGS["ENUM_NAME_OVERRIDES"].update({
+    "PricingDomainEnum": "apps.payments.models_pricing.PricingDomain.choices",
+    "PricingModeEnum": [("free", "Free"), ("paid", "Paid")],
+    "PriceOverrideModeEnum": [("inherit", "Use the space default"), ("free", "Free"), ("custom", "Custom price")],
+})
+# --- end lane L15

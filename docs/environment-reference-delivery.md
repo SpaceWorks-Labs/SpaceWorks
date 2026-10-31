@@ -76,6 +76,7 @@ Every `THROTTLE_*` value is a DRF rate string (`<n>/<second|minute|hour|day>`). 
 | `THROTTLE_BOOKING_SUBMIT` | `'10/hour'` |  |
 | `THROTTLE_PAYMENT_CLAIMS` | `'5/hour'` | Member "I've paid" offline claims per account (L5). |
 | `THROTTLE_PAY_LINKS` | `'30/min'` | Public pay-link reads, claims and checkouts per IP (L5). |
+| `THROTTLE_PRICING_QUOTE` | `'60/min'` | Price previews (`POST /api/v1/pricing/quote`) per account, or per IP when signed out (L15). |
 | `THROTTLE_DATA_EXPORT_CREATE` | `'3/hour'` |  |
 | `THROTTLE_DEVICE_ATTESTATION_CHALLENGE` | `'5/min'` |  |
 | `THROTTLE_DEVICE_LOGIN` | `'5/min'` |  |

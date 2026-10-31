@@ -170,3 +170,10 @@ PUBLIC_CLAIM_ROUTES.update({
     ("pay-link-checkout", "POST"): AnonymousRead(),
     ("pay-link-checkout", "OPTIONS"): AnonymousRead(),
 })
+
+# Release 2 L15: the price preview. A claim session is quoted the public price; only an
+# account session reads the member's own price.
+PUBLIC_CLAIM_ROUTES.update({
+    ("pricing-quote", "POST"): AnonymousRead(),
+    ("pricing-quote", "OPTIONS"): AnonymousRead(),
+})

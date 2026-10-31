@@ -15,7 +15,10 @@ SOURCE = "operations.report_ready"
 
 def recipients(schedule, definition):
     """Only role/action selectors establish personal recipients, never raw email."""
-    rows = scoped(MakerspaceMembership, schedule.makerspace_id).select_related(
+    # Report recipients are chosen by staff role/action: staff-track rows (U-A1).
+    rows = rbac.scope_notification_policy(
+        MakerspaceMembership.staff_tracks.all(), makerspace_id=schedule.makerspace_id,
+    ).select_related(
         "user", "assigned_role",
     ).prefetch_related(additional_roles_prefetch()).filter(status="active", receives_notifications=True)
     for member in rows:

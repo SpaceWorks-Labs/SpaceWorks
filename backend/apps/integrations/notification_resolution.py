@@ -102,7 +102,9 @@ def legacy_staff_email_allowed(envelope):
     from .staff_notifications import staff_user_ids_for_feature
     from apps.makerspaces.models import MakerspaceMembership
     user = envelope.recipient
-    membership = policy_rows(MakerspaceMembership, envelope.makerspace).select_related("assigned_role").filter(
+    membership = rbac.scope_notification_policy(
+        MakerspaceMembership.staff_tracks.all(), makerspace_id=envelope.makerspace.pk,
+    ).select_related("assigned_role").filter(
         user=user, status="active", receives_notifications=True).first()
     return bool(user.is_active and user.access_status == "active" and not user.is_tenant_dump_stub
         and rbac.actions_for_membership(membership)

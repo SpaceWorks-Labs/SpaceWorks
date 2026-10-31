@@ -65,8 +65,11 @@ class TenantDumpCatalogError(AssertionError):
 # backup/0034-0036 per-space backup and restore; accounts/0048; re-pinned.
 # lane/r2-l2b: events/0062 (re-chained after L1's 0061) communications, notifications/0011,
 # integrations/0049, hosting_requests/0002 and organizations/0008; re-pinned.
+# Release-2 batch U-A1 + L4 + L5: accounts/0049-0050 unified accounts, makerspaces/0114 membership
+# track and 0115-0117 (L4, re-chained after 0114) membership lifecycle, payments/0031-0032 and
+# evidence/0009 finance ledger and receipts; re-pinned.
 # Orchestrator re-pins the live catalog after final schema/migration verification.
-CATALOG_SCHEMA_SHA256 = "1a744a13dea7e7b4dc62925d43ff5be560d9a67824202a63ab76f3dc331631c4"
+CATALOG_SCHEMA_SHA256 = "d279f881acda7e9300b9fc09ce243635c63b6a6b49284bb4fd9b40000004e12c"
 
 
 def catalog_models(apps_registry=apps):

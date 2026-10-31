@@ -5,6 +5,7 @@ import { StatusStepper } from "../../../components/ui/StatusStepper";
 import { RequestTimelineBlock } from "./LoanTimeline";
 import type { HardwareRequest } from "./Queues";
 import { RequestEvidence } from "./RequestEvidence";
+import { LoanChargesPanel } from "../loanCharges/LoanChargesPanel";
 
 type Actor = { username: string; role: string };
 export function RequestDetail({ row, canViewAudit, primary, secondary, menu, extra, view, onView, onClose }: {
@@ -36,6 +37,7 @@ export function RequestDetail({ row, canViewAudit, primary, secondary, menu, ext
       {row.items.some(item => item.damaged_quantity || item.missing_quantity || item.needs_fix_quantity) ? <div className="rounded-xl border border-danger-line p-4 text-danger"><h2 className="title-section">Items needing attention</h2>
         {row.items.filter(item => item.damaged_quantity || item.missing_quantity || item.needs_fix_quantity).map(item => <p key={item.id}>{item.product_name}: {item.damaged_quantity} damaged · {item.missing_quantity} missing · {item.needs_fix_quantity} to-fix</p>)}</div> : null}
       {extra}
+      <LoanChargesPanel loan={row} />
     </div>}
     aside={active === "overview" ? <KeyValueCard items={[
       { label: "Purpose", value: <span className="break-words">{row.requested_for || "No note"}</span> },

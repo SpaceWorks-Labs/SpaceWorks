@@ -13,6 +13,7 @@ import { ScanCardBox } from "../panels/memberCards/ScanCardBox";
 import { HandoverBoxScan } from "./HandoverBoxScan";
 import { ReturnConfetti } from "../../../components/delight/ReturnConfetti";
 import { HandoverItems, initialResolutions, validResolutions } from "./HandoverItems";
+import { DamageChargeStep, needsDamageCharges } from "../loanCharges/DamageChargeStep";
 
 const steps = ["Scan container", "Check borrower card", "Check items", "Photo and confirmation", "Receipt"];
 export function HandoverWizard({ row, makerspace, mode, canScanCards = false, onClose }: {
@@ -92,6 +93,7 @@ export function HandoverWizard({ row, makerspace, mode, canScanCards = false, on
         const resolution = finalResolutions.find(value => value.item_id === item.id);
         return <p key={item.id}>{item.product_name}: {mode === "issue" ? `${item.accepted_quantity} issued` : resolution ? `${resolution.returned} returned, ${resolution.damaged} damaged, ${resolution.missing} missing` : "No return recorded in this handover"}</p>;
       })}{remark ? <p>{remark}</p> : null}<button className="desk-button mt-4" type="button" onClick={() => window.print()}>Print receipt</button></>,
+      children: mode === "return" && needsDamageCharges(makerspace, finalResolutions) ? <DamageChargeStep makerspaceId={makerspace.id} requestId={row.id} /> : undefined,
       next: { label: "Done", onClick: onClose } } : undefined}
     error={mutation.error ? { size: "panel", tone: "danger", lead: boxAssigned && mode === "issue" ? "Box assigned, but issue failed." : `Couldn't confirm ${mode}.`,
       body: `${mutation.error.message}${boxAssigned && mode === "issue" ? " The request still needs the issue step; retry with the assigned box." : ""}`,

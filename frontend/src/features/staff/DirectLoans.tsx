@@ -13,6 +13,7 @@ import { usePaginatedQuery } from "../../lib/usePaginatedQuery";
 import { DirectLoanList, type DirectLoan } from "./DirectLoanList";
 import { invalidateInventoryViews } from "./queryInvalidation";
 import { DirectLoanReturnModal } from "./DirectLoanReturnModal";
+import { DamageChargeDialog } from "./loanCharges/DamageChargeStep";
 import { type Makerspace, useStaffGet } from "./StaffPanels";
 import { MemberClaimCodes } from "./MemberClaimCodes";
 import { DirectLoanCompactWork } from "./DirectLoanCompactWork";
@@ -186,7 +187,7 @@ export function DirectLoans({ makerspace }: { makerspace: Makerspace }) {
     tabs={[{ key: "on-loan", label: "On loan", count: tab === "on-loan" ? loans.count : undefined, href: tabHref("on-loan") }, { key: "returned", label: "Returned", count: tab === "returned" ? loans.count : undefined, href: tabHref("returned") }, { key: "claim-codes", label: "Claim codes", href: tabHref("claim-codes") }]} activeTab={tab}
     isEmpty={tab !== "claim-codes" && !shown.length}
     empty={{ message: tab === "returned" ? "No direct handouts returned yet." : "No tools are out on direct handout. Start one with New handout above.", action: tab === "returned" ? undefined : { label: "New handout", onClick: () => setGuided(true) } }}
-    body={{ kind: "rows", rows: tab === "claim-codes" ? <MemberClaimCodes makerspaceId={makerspace.id} members={memberOptions} /> : <DirectLoanList loans={shown} onReturn={returnFlow.openReturnModal} /> }}
+    body={{ kind: "rows", rows: tab === "claim-codes" ? <MemberClaimCodes makerspaceId={makerspace.id} members={memberOptions} /> : <DirectLoanList loans={shown} onReturn={returnFlow.openReturnModal} makerspaceId={makerspace.id} /> }}
     pagination={tab === "claim-codes" ? undefined : { page: loans.page, pageSize: loans.pageSize, count: loans.count, onChange: loans.setPage }}
     detail={<>
       {guided ? <DirectHandoverWizard key={makerspace.id} makerspace={makerspace} onClose={() => setGuided(false)} compactWork={compactWork} compactAction={{ label: "Issue direct handout", disabled: !canIssue, pending: issue.isPending, onClick: () => issue.mutate() }} /> : null}
@@ -197,6 +198,7 @@ export function DirectLoans({ makerspace }: { makerspace: Makerspace }) {
         onNotesChange={returnFlow.setReturnNotes} onQrPayloadChange={returnFlow.setReturnQrPayload}
         onCancel={returnFlow.closeReturnModal} onSubmit={returnFlow.submitReturn}
       />
+      {returnFlow.chargeRequestId ? <DamageChargeDialog key={returnFlow.chargeRequestId} makerspaceId={makerspace.id} requestId={returnFlow.chargeRequestId} onClose={returnFlow.closeChargeStep} /> : null}
     </>}
   />;
 }

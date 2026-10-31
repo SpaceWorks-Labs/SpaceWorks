@@ -11,6 +11,9 @@ import {
 import { BookingConfirmation } from "./BookingConfirmation";
 import { AvailabilityCalendar } from "./AvailabilityCalendar";
 import { useSubmitPublicBooking, type PublicBookableSpace } from "./publicBookingsApi";
+import { PricePreview } from "../payments/PricePreview";
+import { isPriceChanged, PriceChangedNotice } from "../payments/PriceChangedNotice";
+import { isoTime } from "../payments/usePriceQuote";
 
 type StandardErrors = Partial<Record<"starts_at" | "ends_at", string>>;
 
@@ -44,6 +47,7 @@ export function PublicBookingForm({ makerspaceSlug, space, showCalendar = true }
   const [endsAt, setEndsAt] = useState("");
   const [answers, setAnswers] = useState<CustomAnswers>({});
   const [website, setWebsite] = useState("");
+  const [quoteDigest, setQuoteDigest] = useState("");
   const [standardErrors, setStandardErrors] = useState<StandardErrors>({});
   const [answerErrors, setAnswerErrors] = useState<Record<string, string>>({});
   const successRef = useRef<HTMLDivElement>(null);
@@ -86,6 +90,7 @@ export function PublicBookingForm({ makerspaceSlug, space, showCalendar = true }
       ends_at: new Date(endsAt).toISOString(),
       custom_answers: Object.keys(answers).length ? answers : null,
       website,
+      ...(quoteDigest ? { quote_digest: quoteDigest } : {}),
     });
   };
   const errorFor = (field: keyof StandardErrors) => standardErrors[field] || apiFieldError(apiError, field);
@@ -108,7 +113,9 @@ export function PublicBookingForm({ makerspaceSlug, space, showCalendar = true }
         <label className="absolute left-[-10000px] top-auto h-px w-px overflow-hidden" aria-hidden="true">Website
           <input name="website" tabIndex={-1} autoComplete="off" value={website} onChange={(event) => setWebsite(event.target.value)} />
         </label>
-        {booking.error ? <p className="text-sm text-danger" role="alert">{failureMessage(apiError)}</p> : null}
+        <PricePreview makerspaceSlug={makerspaceSlug} request={{ domain: "bookings", space_token: space.public_token, starts_at: isoTime(startsAt), ends_at: isoTime(endsAt) }} onDigest={setQuoteDigest} />
+        {isPriceChanged(booking.error) ? <PriceChangedNotice makerspaceSlug={makerspaceSlug} error={booking.error} />
+          : booking.error ? <p className="text-sm text-danger" role="alert">{failureMessage(apiError)}</p> : null}
         <button className="desk-button-brand" type="submit" disabled={booking.isPending}>
           {booking.isPending ? "Submitting..." : space.approval_mode === "approve" ? "Submit booking request" : "Book this slot"}
         </button>

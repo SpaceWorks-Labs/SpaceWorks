@@ -15,6 +15,7 @@ import {
 import { useMachineStatus } from "./useMachineStatus";
 import { ImageUploader } from "../../ImageUploader";
 import { MachinePublicSettings } from "../MachinePublicSettings";
+import { PriceOverrideCard } from "../../pricing/PriceOverrideCard";
 
 const MACHINE_STATUSES: MachineStatus[] = ["idle", "running", "reserved", "maintenance", "offline"];
 type MachineForm = Pick<Machine, "name" | "location" | "notes" | "firmware_version" | "camera_feed_url">;
@@ -106,6 +107,7 @@ export function OverviewTab({ machine, makerspaceId, canManageMachines, canEdit,
       {canManageMachines ? (
         <MachinePublicSettings machine={machine} makerspaceId={makerspaceId} />
       ) : null}
+      <PriceOverrideCard makerspaceId={makerspaceId} targetType="machine" targetId={machine.id} />
       {canChangeLifecycle ? <DangerZone title={machine.is_active ? "Retire machine" : "Reactivate machine"}
         consequence={machine.is_active ? "Takes this machine out of service and off the public page." : "Returns this machine to service."}
         action={{ label: machine.is_active ? "Retire" : "Reactivate", pending: lifecycle.isPending, onClick: () => lifecycle.mutate(machine.is_active ? "retire" : "unretire"),

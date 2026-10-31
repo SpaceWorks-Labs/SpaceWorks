@@ -6,6 +6,15 @@
 
 ## Condensed changelog (newest first — full detail in `git log`)
 
+- **2026-10-31 -- release 2 L15, paid and free everywhere (#84, #85).** One pricing kernel
+  (`payments/pricing`, `quote()`) behind every charge and every preview: per-area rate cards (free or
+  paid, caps, grace, billing increments), per-item prices, loan rental at checkout or at return, staff-set
+  damage and lost charges gated on the return photo, machine time AND material, hourly rooms, the one best
+  member discount then an event promo, staff loan fee waivers (paid fees open a refund case), a frozen
+  `Payment.pricing_snapshot`, and a public price preview with a `price_changed` digest. Switches
+  `charges.pricing`, `charges.discounts`, `loans.fee_waivers` (payments/0033-0034). Kiosk, direct and
+  self-checkout handouts are charged like reviewed loans.
+
 - **2026-10-29 -- release 2 L1, the public event surface (#21 gaps 10/12, #69, #71, #73, #77).**
   Short `/e/<code>` links with a PII-free visit counter (`events.short_links`); "who can find"
   (listed/unlisted, noindex) and offline pages without a lifecycle state; online/hybrid events with a

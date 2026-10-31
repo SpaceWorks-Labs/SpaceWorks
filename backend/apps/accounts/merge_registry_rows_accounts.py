@@ -67,6 +67,16 @@ ROWS = (
     (K, "tenant_migration.TenantDumpCapture", "requested_by", "Platform or deployment operation record; never rewritten by a merge."),
     (K, "tenant_migration.TenantImportJob", "actor", "Platform or deployment operation record; never rewritten by a merge."),
     (K, "token_blacklist.OutstandingToken", "user", "Credential, session or proof bound to the account; never moves."),
+    # Release 2 / S0 login security: credentials, proofs and telemetry stay with the account
+    # that made them; IP rules are mutable attribution; the staff grace is one per person.
+    (K, "accounts.WebAuthnCredential", "user", "Credential, session or proof bound to the account; never moves."),
+    (K, "accounts.WebAuthnCeremony", "user", "Credential, session or proof bound to the account; never moves."),
+    (K, "accounts.KnownDevice", "user", "Credential, session or proof bound to the account; never moves."),
+    (K, "accounts.KnownNetwork", "user", "Credential, session or proof bound to the account; never moves."),
+    (K, "accounts.SecurityAlert", "user", "Credential, session or proof bound to the account; never moves."),
+    (R, "accounts.IPAccessRule", "created_by", "Mutable ownership or attribution; moves to the survivor."),
+    (U, "accounts.StaffMfaGrace", "user", "One grace per person, ever (#135 Q-A2): a shell's grace moves to a "
+                                          "survivor that has none, so a merge never grants a second one."),
     (K, "#encryption.PiiGlobalWriteFence", "actor_id", "Write-fence actor of record; never rewritten by a merge."),
     (K, "#encryption.PiiMakerspaceWriteFence", "actor_id", "Write-fence actor of record; never rewritten by a merge."),
 )

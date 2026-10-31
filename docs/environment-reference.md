@@ -410,3 +410,35 @@ wiped independently of module state.
 
 Cloud integration: [hosting choices and operational contracts](deploy/cloud-overview.md). Full host defaults remain unchanged; managed/free is explicit and subject to release acceptance gates.
 Provider/cloud inputs and secret-file rules: [managed environment reference](deploy/cloud-environment.md). FREE_* caps apply only in the selected free profile.
+
+## Login security (release 2)
+
+These are the deployment's **platform defaults** for login security. Each space has its own
+security policy (Security settings in the staff console and `/control/`); a space may only
+make a value **stricter** than the platform default, never looser, and a superadmin lock is a
+floor the space cannot go below. For a person who is staff in several spaces, the strictest
+value across those spaces applies. Out-of-range values refuse to start the backend.
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `PASSWORD_BREACH_CHECK_ENABLED` | `True` | Refuse new passwords found in known breaches, using the Have I Been Pwned k-anonymity range API (only a 5-character hash prefix leaves the server). Fail-open: an unreachable service never blocks a password change. |
+| `PASSWORD_BREACH_CHECK_TIMEOUT_SECONDS` | `2` | Time limit for that lookup (1–10 seconds). |
+| `TURNSTILE_SITE_KEY` | empty | Cloudflare Turnstile site key. CAPTCHA stays off until both keys are set. |
+| `TURNSTILE_SECRET_KEY` | empty | Cloudflare Turnstile secret key (secret-bearing; set it together with the site key). |
+| `TURNSTILE_FAIL_MODE` | `open` | `open` lets a sign-in through when Turnstile cannot be reached; `closed` refuses it. |
+| `TURNSTILE_AFTER_FAILURES` | `3` | Failed sign-ins before the CAPTCHA is shown (1–20). |
+| `TURNSTILE_HOSTNAMES` | empty | Comma-separated hostnames a Turnstile token must have been issued for; empty accepts the request's own host. |
+| `LOGIN_IP_BLOCK_ENABLED` | `True` | Automatically block a source address that fails sign-in against many different accounts (credential stuffing). Superadmin allow and deny rules in `/control/` always win. |
+| `LOGIN_IP_BLOCK_DISTINCT_ACCOUNTS` | `10` | Distinct accounts one source may fail against inside the window before it is blocked (2–1000). |
+| `LOGIN_IP_BLOCK_WINDOW_SECONDS` | `900` | The counting window (60–86400 seconds). |
+| `LOGIN_IP_BLOCK_SECONDS` | `3600` | How long an automatic block lasts (60–604800 seconds). |
+| `LOGIN_RISK_FAILURE_THRESHOLD` | `3` | Failed sign-ins after which the next one is treated as unusual and asks for a second check (1–20). |
+| `LOGIN_REMEMBERED_DEVICE_DAYS` | `90` | How long a device that passed the unusual-login check stays remembered (1–90 days). |
+| `LOGIN_CODE_TTL_SECONDS` | `600` | Lifetime of an emailed 6-digit login code (60–1800 seconds). |
+| `SECURITY_ALERT_LINK_TTL_DAYS` | `14` | How long the "this wasn't me" link in a security alert email works (1–30 days). |
+| `WEBAUTHN_RP_NAME` | `Space Works` | Name a browser shows when creating a passkey (1–64 characters). The passkey relying-party ID is the site's own host. |
+| `THROTTLE_LOGIN_CODE_RESEND` | `'5/hour'` | Emailed login-code sends per challenge. |
+| `THROTTLE_LOGIN_CODE_IP` | `'30/hour'` | Login-code sends and checks per source address. |
+| `THROTTLE_PASSKEY_OPTIONS` | `'30/min'` | Passkey registration and sign-in option requests. |
+| `THROTTLE_PASSKEY_VERIFY` | `'10/min'` | Passkey verification attempts. |
+| `THROTTLE_SECURITY_ALERT_ACTION` | `'10/hour'` | Uses of a security alert's "this wasn't me" link. |

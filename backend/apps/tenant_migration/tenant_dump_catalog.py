@@ -68,8 +68,10 @@ class TenantDumpCatalogError(AssertionError):
 # Release-2 batch U-A1 + L4 + L5: accounts/0049-0050 unified accounts, makerspaces/0114 membership
 # track and 0115-0117 (L4, re-chained after 0114) membership lifecycle, payments/0031-0032 and
 # evidence/0009 finance ledger and receipts; re-pinned.
+# lane/r2-s0: accounts/0051-0053 passkeys, login risk and IP access; makerspaces/0118 (re-chained
+# after L4's 0117) per-space security policy; re-pinned.
 # Orchestrator re-pins the live catalog after final schema/migration verification.
-CATALOG_SCHEMA_SHA256 = "d279f881acda7e9300b9fc09ce243635c63b6a6b49284bb4fd9b40000004e12c"
+CATALOG_SCHEMA_SHA256 = "686a55b91e16bf8b46291e3cce0038b2eb97a4419d5b4cba36bd066679a8a41e"
 
 
 def catalog_models(apps_registry=apps):

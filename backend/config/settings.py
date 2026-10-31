@@ -1047,6 +1047,47 @@ ACCOUNT_PII_AWS_KMS_KEY_ID = env("ACCOUNT_PII_AWS_KMS_KEY_ID", default="")
 # plan_sha256 that `manage.py account_unification_report` printed for this database.
 ACCOUNT_UNIFICATION_ACK = env("ACCOUNT_UNIFICATION_ACK", default="")
 # --- end U-A1 --------------------------------------------------------------------------
+# --- Release 2 / S0: login security (#62, #66, #128 C-2) --------------------------------
+# Deployment-wide PLATFORM DEFAULTS. A space's security policy may only tighten them
+# (`makerspaces.security_settings_registry` `stricter`); it can never loosen one.
+# Breached-password check (HIBP k-anonymity range API): on, fail-open, bounded timeout.
+PASSWORD_BREACH_CHECK_ENABLED = env.bool("PASSWORD_BREACH_CHECK_ENABLED", default=True)
+PASSWORD_BREACH_CHECK_TIMEOUT_SECONDS = env.int("PASSWORD_BREACH_CHECK_TIMEOUT_SECONDS", default=2)
+# Cloudflare Turnstile. Dormant until BOTH keys are set; the secret is secret-bearing.
+TURNSTILE_SITE_KEY = env("TURNSTILE_SITE_KEY", default="")
+TURNSTILE_SECRET_KEY = env("TURNSTILE_SECRET_KEY", default="")
+TURNSTILE_FAIL_MODE = env("TURNSTILE_FAIL_MODE", default="open")
+TURNSTILE_AFTER_FAILURES = env.int("TURNSTILE_AFTER_FAILURES", default=3)
+TURNSTILE_HOSTNAMES = env.list("TURNSTILE_HOSTNAMES", default=[])
+# Automatic IP blocking for credential stuffing (one source, many accounts).
+LOGIN_IP_BLOCK_ENABLED = env.bool("LOGIN_IP_BLOCK_ENABLED", default=True)
+LOGIN_IP_BLOCK_DISTINCT_ACCOUNTS = env.int("LOGIN_IP_BLOCK_DISTINCT_ACCOUNTS", default=10)
+LOGIN_IP_BLOCK_WINDOW_SECONDS = env.int("LOGIN_IP_BLOCK_WINDOW_SECONDS", default=900)
+LOGIN_IP_BLOCK_SECONDS = env.int("LOGIN_IP_BLOCK_SECONDS", default=3600)
+# Unusual-login check, remembered devices, emailed login codes and alert links.
+LOGIN_RISK_FAILURE_THRESHOLD = env.int("LOGIN_RISK_FAILURE_THRESHOLD", default=3)
+LOGIN_REMEMBERED_DEVICE_DAYS = env.int("LOGIN_REMEMBERED_DEVICE_DAYS", default=90)
+LOGIN_CODE_TTL_SECONDS = env.int("LOGIN_CODE_TTL_SECONDS", default=600)
+SECURITY_ALERT_LINK_TTL_DAYS = env.int("SECURITY_ALERT_LINK_TTL_DAYS", default=14)
+# Passkeys (WebAuthn): the relying-party display name; the RP ID is the request's host.
+WEBAUTHN_RP_NAME = env("WEBAUTHN_RP_NAME", default="Space Works")
+for _name, _low, _high in (
+    ("PASSWORD_BREACH_CHECK_TIMEOUT_SECONDS", 1, 10), ("TURNSTILE_AFTER_FAILURES", 1, 20),
+    ("LOGIN_IP_BLOCK_DISTINCT_ACCOUNTS", 2, 1000), ("LOGIN_IP_BLOCK_WINDOW_SECONDS", 60, 86400),
+    ("LOGIN_IP_BLOCK_SECONDS", 60, 604800), ("LOGIN_RISK_FAILURE_THRESHOLD", 1, 20),
+    ("LOGIN_REMEMBERED_DEVICE_DAYS", 1, 90), ("LOGIN_CODE_TTL_SECONDS", 60, 1800),
+    ("SECURITY_ALERT_LINK_TTL_DAYS", 1, 30),
+):
+    if not _low <= globals()[_name] <= _high:
+        raise ImproperlyConfigured(f"{_name} must be between {_low} and {_high}.")
+del _name, _low, _high
+if TURNSTILE_FAIL_MODE not in {"open", "closed"}:
+    raise ImproperlyConfigured("TURNSTILE_FAIL_MODE must be open or closed.")
+if bool(TURNSTILE_SITE_KEY) != bool(TURNSTILE_SECRET_KEY):
+    raise ImproperlyConfigured("Set TURNSTILE_SITE_KEY and TURNSTILE_SECRET_KEY together, or neither.")
+if not WEBAUTHN_RP_NAME.strip() or len(WEBAUTHN_RP_NAME) > 64:
+    raise ImproperlyConfigured("WEBAUTHN_RP_NAME must be 1 to 64 characters.")
+# --- end S0 ----------------------------------------------------------------------------
 ACCOUNT_SAVED_ASSET_BUDGET_BYTES = env.int("ACCOUNT_SAVED_ASSET_BUDGET_BYTES", default=50 * 1024**2)
 ACCOUNT_SAVED_RESUME_SCAN_REQUIRED = env.bool("ACCOUNT_SAVED_RESUME_SCAN_REQUIRED", default=False)
 ACCOUNT_SAVED_RESUME_SCANNER = env("ACCOUNT_SAVED_RESUME_SCANNER", default="")
@@ -1228,6 +1269,12 @@ REST_FRAMEWORK = {
         ),
         # --- release 2 lane L1: event short-link resolution (/e/<code>) ---
         "event_short_link": env("THROTTLE_EVENT_SHORT_LINK", default="30/min"),
+        # --- release 2 lane S0: login security (codes, passkeys, alert links) ---
+        "login_code_resend": env("THROTTLE_LOGIN_CODE_RESEND", default="5/hour"),
+        "login_code_ip": env("THROTTLE_LOGIN_CODE_IP", default="30/hour"),
+        "passkey_options": env("THROTTLE_PASSKEY_OPTIONS", default="30/min"),
+        "passkey_verify": env("THROTTLE_PASSKEY_VERIFY", default="10/min"),
+        "security_alert_action": env("THROTTLE_SECURITY_ALERT_ACTION", default="10/hour"),
     },
     # Proxy-aware client IP for throttling. Production must declare its topology at
     # settings import above; direct DEBUG development defaults to zero trusted proxies.

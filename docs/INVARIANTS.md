@@ -2675,8 +2675,8 @@ Owner decisions #110c/#110e and #111 Q9-Q13 (P1b, superadmin always on).
 - **One registry.** `makerspaces/security_settings_registry.py` lists every per-space security setting
   (key, label, kind `bool|int|choice|list`, default, `stricter(a, b)`, storage `feature|policy`). Release 1
   registers only `security.staff_mfa_required` (storage `feature`: presence in `enabled_features`).
-  Release 2 login-security adds its keys here with storage `policy` and creates the policy table; do not add a
-  second registry or panel.
+  Release 2 login-security adds its keys here with storage `policy` (the table exists since lane S0, see
+  **Login security** below); do not add a second registry or panel.
 - **One writer.** `makerspaces/security_settings.py` (`set_setting`, `set_settings`, `lock`, `unlock`,
   `effective`) is the only path that changes a security key. It holds the makerspace row lock, checks
   authority, checks the lock floor and records `makerspace.security_setting_changed` (key, from, to,
@@ -2735,6 +2735,59 @@ Owner decisions #110c/#110e and #111 Q9-Q13 (P1b, superadmin always on).
   organization-member admins show usernames only.
 - **Portability.** Both models are `OmittedModel`s in `data_export/classification_security.py` and DROP in
   tenant dumps (`tenant_migration/catalog_security.py`); their user edges are excluded. The audit rows travel.
+
+## Login security (release 2; lane S0 froze the contract, S-A/S-B/S-C build on it)
+
+Owner decisions #62, #66, #74, #110c, #111 Q9-Q11, #128 C-1/C-2 and #135 Q-A1-Q-A4.
+
+- **One contract.** `accounts/login_security_contract.py` names every error code, the `email_code` MFA
+  source, the `mfa_method` claim (`totp|recovery|passkey`), `factors[]`, challenge purposes (`login`,
+  `risk`, `reauth:<intent>`), ceremony purposes, alert kinds, IP actions, grace sources, the reserved
+  `auth.*` audit actions and the retention table. Later lanes import these names; never spell a second one.
+  The reserved audit actions get their presentation entry from the lane that emits them (the presentation
+  guard refuses an entry nothing emits).
+- **Per-space settings are `policy` rows (#128 C-2).** `accounts/login_security_settings.py` freezes seven
+  `SecuritySetting` rows: `security.login_risk_check`, `remembered_device_days` (1-90),
+  `staff_session_max_hours` (1-720), `staff_idle_timeout_minutes` (0-1440, 0 = off and loosest),
+  `captcha_on_sign_in` (off < after_failures < always), `passkeys_allowed` (off is stricter; never
+  forced, #74) and `staff_ip_allowlist` (CIDRs; empty = any; narrower is stricter). The enforcing lane
+  appends a row to `security_settings_registry.REGISTRY` when its door honours it, never earlier, so the
+  panel never offers a setting nothing enforces.
+- **Storage.** `makerspaces.MakerspaceSecurityPolicy(makerspace O2O, values JSON, updated_at)`: a key that
+  is absent means the row default. Only `security_settings` writes it (`security_policy_store.write`, under
+  the space row lock, audited per change); `security_lock_guard.guard_security_policy` keeps the stored
+  values on every other write and refuses a service write below a floor. It has no actor column: the audit
+  row is the record. It TRAVELS with the space (exported, PROJECTED with values preserved); locks do not.
+- **Resolution (`makerspaces/security_settings_person.py`).** Platform default (deployment env, e.g.
+  `LOGIN_REMEMBERED_DEVICE_DAYS`) -> the space's value -> the superadmin floor, each only able to tighten.
+  `scope=staff_strictest` rows resolve per person as the strictest across every space where they hold a
+  staff role (`strictest_for_staff`); people with no staff role get the platform default (Q-A4).
+  `scope=space` rows (CAPTCHA on the verified domain, the staff IP allow-list) apply to that space's own
+  surfaces only (`space_value`). Platform IP deny rules and automatic blocks stay global in `/control/`.
+- **Lock semantics for booleans.** A boolean lock forces the STRICTER value: on for `login_risk_check`,
+  off for `passkeys_allowed`. For an allow-list, when neither list contains the other the floor wins.
+- **Passkeys count as the staff factor in the DB.** Accounts 0051 re-creates
+  `accounts_guard_device_context`: a staff device grant needs an enabled authenticator OR a passkey (the
+  passkey only while `PlatformLoginMethods.passkeys_enabled`, which defaults on and never forces one).
+- **Staff two-step grace schema (#128 C-1).** `accounts.StaffMfaGrace(user O2O, started_at, source
+  grant|invite|merge|upgrade, ends_at)`: three days, one per person ever (Q-A2; the merge registry moves a
+  shell's grace to a survivor without one). Existing unenrolled staff get theirs at first sign-in after the
+  upgrade (Q-A1). S-A creates and enforces rows.
+- **Credentials and telemetry never travel.** Passkeys, ceremonies, known devices and networks, alerts, the
+  grace, IP rules and auto-blocks are `OmittedModel`s (`data_export/classification_login_security.py`) and
+  DROP from tenant dumps (`tenant_migration/catalog_login_security.py`). Moving people's credentials with a
+  space is #137 Q-B1's own work.
+- **Codes.** `accounts/login_codes.py`: six CSPRNG digits; only `digest(code, purpose, subject)` is stored
+  (HMAC-SHA256 under a key derived from `SECRET_KEY` and the purpose); `verify` is constant time; TTL is
+  `LOGIN_CODE_TTL_SECONDS`, the attempt cap 5.
+
+### Login risk and remembered devices (S-B fills)
+
+### Security alerts and "this wasn't me" (S-B fills)
+
+### IP blocking, allow/deny rules and CAPTCHA (S-C fills)
+
+### Passkeys and the relying-party ID (S-A fills)
 
 ## Settings authority (release 2, lane L17; #101, #128 C-11)
 

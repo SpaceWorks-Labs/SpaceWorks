@@ -36,5 +36,6 @@ ENTRIES = (
     P("membership.import_accepted", "Imported membership accepted", ("membership_id", "imported_member_id", "term_id")),
     P("membership.summary_opted_out", "Opted out of the monthly membership summary", ("user_id",)),
     P("membership.summary_opted_in", "Opted back in to the monthly membership summary", ("user_id",)),
-    P("payment.refund_case_term_ended", "Refund approval ended the membership term", ("case_id", "payment_id", "term_id")),
+    # `payment.*` metadata is withheld by the dynamic deny policy, so the entry names the action only.
+    P("payment.refund_case_term_ended", "Refund approval ended the membership term"),
 )

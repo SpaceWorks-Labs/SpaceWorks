@@ -55,7 +55,9 @@ class PublicMembershipRequestView(APIView):
         require_module(makerspace, "membership")
         serializer = MembershipRequestCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        outcome = request_membership(request.user, makerspace, serializer.validated_data.get("application_answers"))
+        data = serializer.validated_data
+        outcome = request_membership(request.user, makerspace, data.get("application_answers"),
+                                     plan_id=data.get("plan_id"), invite_code=data.get("invite_code") or None)
         return Response(MembershipOutcomeSerializer(outcome).data, status=201)
 
 

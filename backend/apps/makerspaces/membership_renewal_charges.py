@@ -29,8 +29,8 @@ def raise_renewal(term):
             locked.membership = membership
             membership.user = lock_obligation_owner(membership.user)
             if (membership.status != "active" or locked.status != "active"
-                    or membership.renewal_cancelled_at or not locked.plan.is_active
-                    or locked.plan.amount <= 0 or not charge_tracking_enabled(space, "membership")):
+                    or membership.renewal_cancelled_at or not locked.plan.is_active or not locked.plan.renews
+                    or locked.plan.renewal_price <= 0 or not charge_tracking_enabled(space, "membership")):
                 return "skipped"
             if locked.renewal_payment_id:
                 term.renewal_payment = locked.renewal_payment
@@ -42,7 +42,7 @@ def raise_renewal(term):
             try:
                 with transaction.atomic():
                     payment = create_payment(
-                        **lookup, member=membership.user, amount=plan.amount,
+                        **lookup, member=membership.user, amount=plan.renewal_price,
                         currency=plan.currency, created_by=membership.user,
                         subject_label=f"Membership renewal: {plan.name}", due_at=locked.ends_at,
                     )

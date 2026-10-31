@@ -24,6 +24,7 @@ from apps.admin_api.serializers_membership_plans import (
 from apps.admin_api.views_member_memberships import _makerspace as manageable_makerspace
 from apps.audit import services as audit
 from apps.makerspaces.guards import require_module, require_module_locked
+from apps.makerspaces.membership_plan_policy import sync_plan_features
 from apps.makerspaces.membership_plan_services import cancel_term, create_term
 from apps.makerspaces.models import MakerspaceMembership, MembershipPlan, MembershipTerm
 
@@ -49,7 +50,7 @@ class MembershipPlanListCreateView(APIView):
     )
     def get(self, request, makerspace_id):
         makerspace = _gated_makerspace(request.user, makerspace_id)
-        rows = MembershipPlan.objects.filter(makerspace=makerspace).order_by("name", "pk")
+        rows = MembershipPlan.objects.filter(makerspace=makerspace).order_by("sort_order", "name", "pk")
         return Response(MembershipPlanSerializer(rows, many=True).data)
 
     @extend_schema(
@@ -60,7 +61,7 @@ class MembershipPlanListCreateView(APIView):
     )
     def post(self, request, makerspace_id):
         makerspace = _gated_makerspace(request.user, makerspace_id, rbac.Action.MANAGE_MAKERSPACE)
-        serializer = MembershipPlanSerializer(data=request.data)
+        serializer = MembershipPlanSerializer(data=request.data, context={"makerspace": makerspace})
         serializer.is_valid(raise_exception=True)
         try:
             with transaction.atomic():
@@ -70,8 +71,9 @@ class MembershipPlanListCreateView(APIView):
                 )
                 audit.record(request.user, "membership_plan.created", makerspace=makerspace,
                              target=row, meta={"plan_id": row.pk, "name": row.name})
+                sync_plan_features(makerspace)
         except IntegrityError as exc:
-            raise ValidationError({"name": "A plan with this name already exists."}) from exc
+            raise ValidationError({"name": "A plan with this name or slug already exists."}) from exc
         return Response(MembershipPlanSerializer(row).data, status=status.HTTP_201_CREATED)
 
 
@@ -90,7 +92,8 @@ class MembershipPlanDetailView(APIView):
                                  MembershipPlan.objects.select_related("makerspace")), pk=pk
         )
         makerspace = _gated_makerspace(request.user, row.makerspace_id, rbac.Action.MANAGE_MAKERSPACE)
-        serializer = MembershipPlanSerializer(row, data=request.data, partial=True)
+        serializer = MembershipPlanSerializer(row, data=request.data, partial=True,
+                                              context={"makerspace": makerspace})
         serializer.is_valid(raise_exception=True)
         try:
             with transaction.atomic():
@@ -98,8 +101,9 @@ class MembershipPlanDetailView(APIView):
                 row = serializer.save()
                 audit.record(request.user, "membership_plan.updated", makerspace=makerspace,
                              target=row, meta={"plan_id": row.pk, "fields": sorted(serializer.validated_data)})
+                sync_plan_features(makerspace)
         except IntegrityError as exc:
-            raise ValidationError({"name": "A plan with this name already exists."}) from exc
+            raise ValidationError({"name": "A plan with this name or slug already exists."}) from exc
         return Response(MembershipPlanSerializer(row).data)
 
 

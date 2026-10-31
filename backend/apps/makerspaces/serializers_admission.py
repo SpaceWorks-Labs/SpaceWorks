@@ -18,12 +18,16 @@ class AdmissionSettingsSerializer(serializers.ModelSerializer):
     vouch_expiry_days = serializers.IntegerField(min_value=1, max_value=365, required=False)
     request_expiry_days = serializers.IntegerField(min_value=1, max_value=365, required=False)
     joining_fee_currency = serializers.RegexField(r"^[A-Za-z]{3}$", required=False)
+    # Release 2 (L4): rejoin days, member-number pattern (X12) and the consent ledger (X10).
+    rejoin_after_days = serializers.IntegerField(min_value=1, max_value=3650, required=False, allow_null=True)
+    consent_purposes = serializers.JSONField(required=False)
 
     class Meta:
         model = MakerspaceMembershipSettings
         fields = ("configured", "join_mode", "vouches_required", "voucher_min_tenure_days", "voucher_pending_limit",
                   "vouch_expiry_days", "vouch_replaces_approval", "payment_timing", "application_schema",
-                  "default_plan", "joining_fee", "joining_fee_currency", "rejoin_dues_rule", "request_expiry_days", "recipe")
+                  "default_plan", "joining_fee", "joining_fee_currency", "rejoin_dues_rule", "request_expiry_days", "recipe",
+                  "rejoin_after_days", "member_number_pattern", "privacy_notice_version", "consent_purposes")
         read_only_fields = ("configured",)
 
     def __init__(self, *args, **kwargs):
@@ -34,6 +38,14 @@ class AdmissionSettingsSerializer(serializers.ModelSerializer):
 
     def validate_joining_fee_currency(self, value):
         return value.lower()
+
+    def validate_member_number_pattern(self, value):
+        from apps.makerspaces.membership_number import validate_pattern
+        return validate_pattern(value)
+
+    def validate_consent_purposes(self, value):
+        from apps.makerspaces.membership_consent import validate_purposes
+        return validate_purposes(value)
 
 
 class PublicAdmissionSerializer(serializers.Serializer):

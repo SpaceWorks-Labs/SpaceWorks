@@ -3,6 +3,10 @@ from rest_framework import serializers
 
 class MembershipRequestCreateSerializer(serializers.Serializer):
     application_answers = serializers.JSONField(required=False, allow_null=True)
+    # X8: a publicly listed plan the applicant chose (`membership.public_plans`), and
+    # X11: a multi-use invite link's code (`membership.admission_tools`).
+    plan_id = serializers.IntegerField(required=False, allow_null=True)
+    invite_code = serializers.CharField(required=False, allow_blank=True, max_length=64)
     website = serializers.CharField(required=False, allow_blank=True, write_only=True)
 
     def validate_website(self, value):

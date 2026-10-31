@@ -119,6 +119,7 @@ export const openApiTags = [
   "Public inventory",
   "Public machine service",
   "Public machines",
+  "Public memberships",
   "Public organizations",
   "Public pages",
   "Public profiles",
@@ -195,6 +196,8 @@ export const openApiPaths = [
   "/api/v1/admin/devices/{id}/enrollments",
   "/api/v1/admin/devices/{id}/revoke",
   "/api/v1/admin/direct-loans/{id}/return",
+  "/api/v1/admin/erasure-requests/{id}/approve",
+  "/api/v1/admin/erasure-requests/{id}/reject",
   "/api/v1/admin/event-certificates/{id}/download/",
   "/api/v1/admin/event-certificates/{id}/reissue/",
   "/api/v1/admin/event-certificates/{id}/revoke/",
@@ -682,6 +685,7 @@ export const openApiPaths = [
   "/api/v1/admin/makerspaces/{makerspace_id}/booking-issues/",
   "/api/v1/admin/makerspaces/{makerspace_id}/booking-machine-types/",
   "/api/v1/admin/makerspaces/{makerspace_id}/bookings/",
+  "/api/v1/admin/makerspaces/{makerspace_id}/erasure-requests",
   "/api/v1/admin/makerspaces/{makerspace_id}/event-categories/",
   "/api/v1/admin/makerspaces/{makerspace_id}/event-categories/{id}/",
   "/api/v1/admin/makerspaces/{makerspace_id}/event-certificate-library/",
@@ -715,9 +719,11 @@ export const openApiPaths = [
   "/api/v1/admin/makerspaces/{makerspace_id}/events/report-switches/",
   "/api/v1/admin/makerspaces/{makerspace_id}/evidence-retention",
   "/api/v1/admin/makerspaces/{makerspace_id}/evidence-retention/preview",
+  "/api/v1/admin/makerspaces/{makerspace_id}/financial-year",
   "/api/v1/admin/makerspaces/{makerspace_id}/hosting-invitations",
   "/api/v1/admin/makerspaces/{makerspace_id}/hosting-invitations/{id}/cancel",
   "/api/v1/admin/makerspaces/{makerspace_id}/invitation-requests",
+  "/api/v1/admin/makerspaces/{makerspace_id}/join-requests/bulk-decide",
   "/api/v1/admin/makerspaces/{makerspace_id}/machine-materials",
   "/api/v1/admin/makerspaces/{makerspace_id}/machine-materials/{id}",
   "/api/v1/admin/makerspaces/{makerspace_id}/machine-service/consumable-pools",
@@ -735,13 +741,23 @@ export const openApiPaths = [
   "/api/v1/admin/makerspaces/{makerspace_id}/member-cards/{membership_id}/issue",
   "/api/v1/admin/makerspaces/{makerspace_id}/member-claim-codes",
   "/api/v1/admin/makerspaces/{makerspace_id}/member-claim-codes/{claim_id}/revoke",
+  "/api/v1/admin/makerspaces/{makerspace_id}/member-register",
+  "/api/v1/admin/makerspaces/{makerspace_id}/members/import/apply",
+  "/api/v1/admin/makerspaces/{makerspace_id}/members/import/preview",
+  "/api/v1/admin/makerspaces/{makerspace_id}/members/imported",
   "/api/v1/admin/makerspaces/{makerspace_id}/members/{user_id}/events/",
   "/api/v1/admin/makerspaces/{makerspace_id}/membership-admission",
+  "/api/v1/admin/makerspaces/{makerspace_id}/membership-invite-links",
   "/api/v1/admin/makerspaces/{makerspace_id}/membership-plans",
+  "/api/v1/admin/makerspaces/{makerspace_id}/membership-summary",
+  "/api/v1/admin/makerspaces/{makerspace_id}/membership-titles",
   "/api/v1/admin/makerspaces/{makerspace_id}/memberships",
   "/api/v1/admin/makerspaces/{makerspace_id}/memberships/{membership_id}/machine-scope",
   "/api/v1/admin/makerspaces/{makerspace_id}/memberships/{membership_id}/role",
   "/api/v1/admin/makerspaces/{makerspace_id}/pii-access",
+  "/api/v1/admin/makerspaces/{makerspace_id}/refund-cases/{case_id}/membership-suggestion",
+  "/api/v1/admin/makerspaces/{makerspace_id}/renewal-reminders",
+  "/api/v1/admin/makerspaces/{makerspace_id}/renewal-worklist",
   "/api/v1/admin/makerspaces/{makerspace_id}/report-schedules",
   "/api/v1/admin/makerspaces/{makerspace_id}/roles",
   "/api/v1/admin/makerspaces/{makerspace_id}/saved-report-views",
@@ -768,17 +784,26 @@ export const openApiPaths = [
   "/api/v1/admin/member-cards/{id}/print.pdf",
   "/api/v1/admin/member-cards/{id}/reissue",
   "/api/v1/admin/member-cards/{id}/revoke",
+  "/api/v1/admin/membership-invite-links/{id}/revoke",
   "/api/v1/admin/membership-plans/{id}",
+  "/api/v1/admin/membership-plans/{id}/archive",
   "/api/v1/admin/membership-requests",
   "/api/v1/admin/membership-requests/{id}/approve",
   "/api/v1/admin/membership-requests/{id}/revoke",
   "/api/v1/admin/membership-terms/{id}/cancel",
+  "/api/v1/admin/membership-titles/{id}",
   "/api/v1/admin/memberships",
   "/api/v1/admin/memberships/{id}",
   "/api/v1/admin/memberships/{id}/capabilities",
+  "/api/v1/admin/memberships/{id}/consents",
+  "/api/v1/admin/memberships/{id}/extend",
+  "/api/v1/admin/memberships/{id}/history",
+  "/api/v1/admin/memberships/{id}/record",
   "/api/v1/admin/memberships/{id}/revoke",
   "/api/v1/admin/memberships/{id}/role",
   "/api/v1/admin/memberships/{id}/terms",
+  "/api/v1/admin/memberships/{id}/titles",
+  "/api/v1/admin/memberships/{id}/titles/{title_id}",
   "/api/v1/admin/memberships/{id}/unverify",
   "/api/v1/admin/memberships/{id}/verify",
   "/api/v1/admin/memberships/{id}/waiver/witness",
@@ -1088,8 +1113,11 @@ export const openApiPaths = [
   "/api/v1/member/makerspaces/{makerspace_id}/certifications",
   "/api/v1/member/makerspaces/{makerspace_id}/collaborative-events/",
   "/api/v1/member/makerspaces/{makerspace_id}/collaborative-events/{id}/register/",
+  "/api/v1/member/makerspaces/{makerspace_id}/consents",
   "/api/v1/member/makerspaces/{makerspace_id}/directory",
   "/api/v1/member/makerspaces/{makerspace_id}/directory/{membership_id}",
+  "/api/v1/member/makerspaces/{makerspace_id}/erasure-requests",
+  "/api/v1/member/makerspaces/{makerspace_id}/erasure-requests/{request_id}/withdraw",
   "/api/v1/member/makerspaces/{makerspace_id}/event-calendar-feed/",
   "/api/v1/member/makerspaces/{makerspace_id}/event-certificates/{id}/download/",
   "/api/v1/member/makerspaces/{makerspace_id}/event-history/",
@@ -1191,6 +1219,7 @@ export const openApiPaths = [
   "/api/v1/member/makerspaces/{makerspace_id}/member-card",
   "/api/v1/member/makerspaces/{makerspace_id}/member-card/photo",
   "/api/v1/member/makerspaces/{makerspace_id}/member-card/preview.pdf",
+  "/api/v1/member/makerspaces/{makerspace_id}/membership-history",
   "/api/v1/member/makerspaces/{makerspace_id}/my-usage",
   "/api/v1/member/makerspaces/{makerspace_id}/payment-documents",
   "/api/v1/member/makerspaces/{makerspace_id}/payment-documents/{document_id}/download-url",
@@ -1198,6 +1227,7 @@ export const openApiPaths = [
   "/api/v1/member/makerspaces/{makerspace_id}/payments/{payment_id}/checkout",
   "/api/v1/member/makerspaces/{makerspace_id}/payments/{payment_id}/mobile-intent",
   "/api/v1/member/makerspaces/{makerspace_id}/payments/{payment_id}/refund-request",
+  "/api/v1/member/makerspaces/{makerspace_id}/payments/{payment_id}/refund-suggestion",
   "/api/v1/member/makerspaces/{makerspace_id}/profile",
   "/api/v1/member/makerspaces/{makerspace_id}/profile/handle",
   "/api/v1/member/makerspaces/{makerspace_id}/profile/image",
@@ -1318,6 +1348,9 @@ export const openApiPaths = [
   "/api/v1/public/{makerspace_slug}/machines/details",
   "/api/v1/public/{makerspace_slug}/machines/{id}",
   "/api/v1/public/{makerspace_slug}/membership-admission",
+  "/api/v1/public/{makerspace_slug}/membership-invites/{code}",
+  "/api/v1/public/{makerspace_slug}/membership-plans",
+  "/api/v1/public/{makerspace_slug}/membership-plans/{plan_slug}",
   "/api/v1/public/{makerspace_slug}/membership-requests",
   "/api/v1/public/{makerspace_slug}/my-bookings/",
   "/api/v1/public/{makerspace_slug}/my-bookings/calendar/",
@@ -1940,6 +1973,10 @@ export type AdmissionSettings = {
   "rejoin_dues_rule"?: RejoinDuesRuleEnum;
   "request_expiry_days"?: number;
   "recipe"?: RecipeEnum;
+  "rejoin_after_days"?: number | null;
+  "member_number_pattern"?: string;
+  "privacy_notice_version"?: string;
+  "consent_purposes"?: unknown;
 };
 
 export type AdmissionVouchOutcome = {
@@ -3829,6 +3866,20 @@ export type BudgetPreview = {
   "available_minor": number;
 };
 
+export type BulkDecideInput = {
+  "request_ids": Array<number>;
+  "decision": BulkDecideInputDecisionEnum;
+  "reason"?: string;
+};
+
+export type BulkDecideInputDecisionEnum = "approve" | "reject";
+
+export type BulkDecideResult = {
+  "id": number;
+  "ok": boolean;
+  "code": string;
+};
+
 export type BulkImportJob = {
   "id": number;
   "mode": Mode087Enum;
@@ -4567,6 +4618,8 @@ export type CollaborativeEventRegistrationInput = {
 };
 };
 
+export type ColourEnum = "maker_teal" | "workshop_orange" | "citron" | "sky_blue" | "warm_yellow";
+
 export type ColourTokenEnum = "ink" | "teal" | "orange" | "citron" | "sky" | "yellow" | "cream";
 
 export type Command = {
@@ -4796,12 +4849,28 @@ export type ConsentCommandRead = {
   "revoked_at"?: string | null;
 };
 
+export type ConsentLedger = {
+  "purposes": Array<ConsentPurpose>;
+  "notice_version": string;
+  "consents": Array<ConsentRow>;
+};
+
 export type ConsentPage = {
   "count": number;
   "next": string | null;
   "previous": string | null;
   "results": Array<ConsentRead>;
   "sponsors": Array<SponsorOptionRead>;
+};
+
+export type ConsentPurpose = {
+  "key": string;
+  "label": string;
+  "description": string;
+};
+
+export type ConsentPurposeInput = {
+  "purpose": string;
 };
 
 export type ConsentRead = {
@@ -4817,6 +4886,17 @@ export type ConsentRead = {
 };
 
 export type ConsentReadStateEnum = "granted" | "revoked";
+
+export type ConsentRow = {
+  "id": number;
+  "purpose": string;
+  "notice_version": string;
+  "source": ConsentRowSourceEnum;
+  "given_at": string;
+  "withdrawn_at": string | null;
+};
+
+export type ConsentRowSourceEnum = "member" | "join";
 
 export type ConsentWrite = {
   "makerspace": number;
@@ -6075,6 +6155,23 @@ export type EnrollmentGrantPurposeEnum = "enroll" | "rotate" | "reactivate";
 
 export type EnvironmentEnum = "development" | "production";
 
+export type ErasureDecisionInput = {
+  "note"?: string;
+};
+
+export type ErasureInput = {
+  "note"?: string;
+};
+
+export type ErasureRequest = {
+  "id": number;
+  "status": StatusAf3Enum;
+  "member_note": string;
+  "decision_note": string;
+  "created_at": string;
+  "decided_at": string | null;
+};
+
 export type Error = {
   "code": string;
   "detail": string;
@@ -7018,6 +7115,12 @@ export type ExportPreviewRow = {
   "exported_at": string;
 };
 
+export type ExtendInput = {
+  "reason": string;
+  "days"?: number;
+  "until"?: string;
+};
+
 export type ExtendRsvpInput = {
   "operation_id": string;
   "expected_version": number;
@@ -7259,6 +7362,16 @@ export type FinanceRequestPage = {
   "next": string | null;
   "previous": string | null;
   "results": Array<PrivateRequestDetail>;
+};
+
+export type FinancialYear = {
+  "financial_year_start_month": number;
+  "current_label": string;
+  "current_start": string;
+  "current_end": string;
+  "presets": Array<{
+  [key: string]: unknown;
+}>;
 };
 
 export type Finder = {
@@ -8218,6 +8331,23 @@ export type ImportDecisionList = {
   "decisions": Array<ImportIdentityDecision>;
 };
 
+export type ImportedMember = {
+  "id": number;
+  "status": ImportedMemberStatusEnum;
+  "name": string;
+  "email": string;
+  "phone": string;
+  "external_number": string;
+  "plan": number | null;
+  "plan_name": string;
+  "starts_on": string | null;
+  "ends_on": string | null;
+  "created_at": string;
+  "accepted_at": string | null;
+};
+
+export type ImportedMemberStatusEnum = "invited" | "record_only" | "accepted" | "cancelled";
+
 export type ImportIdentityDecision = {
   "source_user_id": string;
   "identity_resolution": IdentityResolutionEnum;
@@ -8719,6 +8849,40 @@ export type InviteInput = {
   "expires_at"?: string | null;
 };
 
+export type InviteLink = {
+  "id": number;
+  "label": string;
+  "plan": number | null;
+  "plan_name": string;
+  "max_uses": number;
+  "uses": number;
+  "expires_at": string | null;
+  "revoked_at": string | null;
+  "live": boolean;
+  "created_at": string;
+};
+
+export type InviteLinkCreate = {
+  "label"?: string;
+  "plan_id"?: number | null;
+  "max_uses"?: number;
+  "expires_at"?: string | null;
+};
+
+export type InviteLinkCreated = {
+  "id": number;
+  "label": string;
+  "plan": number | null;
+  "plan_name": string;
+  "max_uses": number;
+  "uses": number;
+  "expires_at": string | null;
+  "revoked_at": string | null;
+  "live": boolean;
+  "created_at": string;
+  "code": string;
+};
+
 export type InviteList = {
   "count": number;
   "next": string | null;
@@ -9032,6 +9196,8 @@ export type LabelResult = {
 };
 
 export type LatePolicyEnum = "reject" | "accept_flagged";
+
+export type LateRenewalEnum = "backdate" | "payment_day";
 
 export type LayoutEnum = "grid" | "list";
 
@@ -10490,6 +10656,40 @@ export type MemberHelpTopicPage = {
   "results": Array<MemberHelpTopic>;
 };
 
+export type MemberImportPreview = {
+  "headers": Array<string>;
+  "mapping": {
+  [key: string]: unknown;
+};
+  "suggested_mapping": {
+  [key: string]: unknown;
+};
+  "counts": {
+  [key: string]: unknown;
+};
+  "rows": Array<{
+  [key: string]: unknown;
+}>;
+  "total_rows": number;
+};
+
+export type MemberImportResult = {
+  "batch_id": number;
+  "counts": {
+  [key: string]: unknown;
+};
+  "rows": Array<{
+  [key: string]: unknown;
+}>;
+};
+
+export type MemberImportUpload = {
+  "file": string;
+  "mapping"?: string;
+  "record_only_rows"?: string;
+  "skip_rows"?: string;
+};
+
 export type MemberKitPreviewInput = {
   "payload": string;
   "phase": PhaseEnum;
@@ -10666,6 +10866,17 @@ export type MemberRefundRequest = {
   "reason": string;
 };
 
+export type MemberRegisterRow = {
+  "member_number": string;
+  "name": string;
+  "email": string;
+  "plan": string;
+  "standing": string;
+  "term_ends_at": string | null;
+  "source": string;
+  "joined_at": string;
+};
+
 export type MemberRegistrationCancelResponse = {
   "status": MemberRegistrationCancelResponseStatusEnum;
 };
@@ -10774,6 +10985,10 @@ export type MembershipGrowthRow = {
   "active_members": number;
 };
 
+export type MembershipIds = {
+  "membership_ids": Array<number>;
+};
+
 export type MembershipList = {
   "id": number;
   "user": User;
@@ -10822,12 +11037,143 @@ export type MembershipPlan = {
   "renewal_retries"?: number;
   "reminder_days_before"?: unknown;
   "reminder_days_after"?: unknown;
+  "plan_type"?: PlanTypeEnum;
+  "fixed_end_date"?: string | null;
+  "renewal_amount"?: string | null;
+  "renewal_price": string;
+  "joining_fee"?: string | null;
+  "rejoin_rule"?: RejoinRuleEnum | BlankEnum | NullEnum | null;
+  "rejoin_after_days"?: number | null;
+  "payment_timing"?: PaymentTimingEnum | BlankEnum | NullEnum | null;
+  "join_mode"?: JoinModeEnum | BlankEnum | NullEnum | null;
+  "application_schema"?: Array<{
+  "id": string;
+  "label": string;
+  "type": "short_text" | "paragraph" | "number" | "date" | "single_choice" | "multi_choice" | "dropdown" | "yes_no";
+  "required": boolean;
+  "options": Array<string>;
+}> | {
+  "schema_version": 2;
+  "form_id": string;
+  "revision": number;
+  "questions": Array<{
+  "id": string;
+  "label": string;
+  "type": "short_text" | "long_text" | "number" | "date" | "date_of_birth" | "single_choice" | "multi_choice" | "yes_no" | "email" | "phone" | "url" | "asset_reference" | "age_at_event" | "emergency_contact" | "money" | "file" | "itinerary";
+  "required": boolean;
+  "help"?: string;
+  "placeholder"?: string;
+  "options"?: Array<{
+  "id": string;
+  "label": string;
+  "other"?: boolean;
+}>;
+  "bounds"?: {
+  "min_length"?: number;
+  "max_length"?: number;
+  "other_max_length"?: number;
+  "min_selections"?: number;
+  "max_selections"?: number;
+  "min"?: number;
+  "max"?: number;
+};
+  "show_if"?: {
+  "field_id": string;
+  "op": "eq" | "ne" | "in" | "contains" | "is_set";
+  "value"?: string | number | boolean | Array<string | number | boolean>;
+} | {
+  "all": Array<{
+  "field_id": string;
+  "op": "eq" | "ne" | "in" | "contains" | "is_set";
+  "value"?: string | number | boolean | Array<string | number | boolean>;
+} | {
+  "all": Array<{
+  "field_id": string;
+  "op": "eq" | "ne" | "in" | "contains" | "is_set";
+  "value"?: string | number | boolean | Array<string | number | boolean>;
+}>;
+} | {
+  "any": Array<{
+  "field_id": string;
+  "op": "eq" | "ne" | "in" | "contains" | "is_set";
+  "value"?: string | number | boolean | Array<string | number | boolean>;
+}>;
+}>;
+} | {
+  "any": Array<{
+  "field_id": string;
+  "op": "eq" | "ne" | "in" | "contains" | "is_set";
+  "value"?: string | number | boolean | Array<string | number | boolean>;
+} | {
+  "all": Array<{
+  "field_id": string;
+  "op": "eq" | "ne" | "in" | "contains" | "is_set";
+  "value"?: string | number | boolean | Array<string | number | boolean>;
+}>;
+} | {
+  "any": Array<{
+  "field_id": string;
+  "op": "eq" | "ne" | "in" | "contains" | "is_set";
+  "value"?: string | number | boolean | Array<string | number | boolean>;
+}>;
+}>;
+};
+  "profile_field_key"?: "name" | "phone" | "institution" | "organization" | "study_level" | "country" | "skills" | "github_url" | "linkedin_url" | "portfolio_url" | "resume" | "shirt_size" | "dietary_needs" | "accessibility_needs" | "emergency_contact" | "date_of_birth" | "age_at_event";
+  "visibility"?: "member" | "server";
+  "sensitive"?: boolean;
+  "money"?: {
+  "currencies": Array<string>;
+  "min_minor"?: number;
+  "max_minor"?: number;
+};
+  "file"?: {
+  "purpose": "stage_form_file" | "reimbursement_receipt" | "reimbursement_payee_document";
+  "max_files": number;
+  "max_bytes_each": number;
+};
+  "itinerary"?: {
+  "modes": Array<"rail" | "air" | "bus" | "car" | "other">;
+};
+  "disclosure"?: {
+  "organizer": boolean;
+  "reviewer": boolean;
+  "judge": boolean;
+};
+}>;
+  "event_context"?: {
+  "event_id": number;
+  "event_date_revision": number;
+  "timezone_name": string;
+  "as_of_date": string;
+};
+} | null;
+  "late_renewal"?: LateRenewalEnum;
+  "slug"?: string;
+  "description"?: string;
+  "sort_order"?: number;
+  "is_public"?: boolean;
+  "archived_at": string | null;
 };
 
 export type MembershipPolicyEnum = "request" | "open" | "invite_only";
 
 export type MembershipReason = {
   "reason": string;
+};
+
+export type MembershipRecord = {
+  "state_code"?: string;
+  "gstin"?: string;
+  "staff_notes"?: string;
+  "source": string;
+  "member_number": string;
+  "updated_at": string;
+};
+
+export type MembershipRecordInput = {
+  "state_code"?: string;
+  "gstin"?: string;
+  "staff_notes"?: string;
 };
 
 export type MembershipRequest = {
@@ -10848,6 +11194,8 @@ export type MembershipRequest = {
 
 export type MembershipRequestCreate = {
   "application_answers"?: unknown | null;
+  "plan_id"?: number | null;
+  "invite_code"?: string;
   "website"?: string;
 };
 
@@ -10909,6 +11257,17 @@ export type MembershipRoleSummary = {
   "is_protected": boolean;
 };
 
+export type MembershipSummaryInput = {
+  "enabled"?: boolean;
+  "opted_out"?: boolean;
+};
+
+export type MembershipSummaryStatus = {
+  "enabled": boolean;
+  "next_run_at": string | null;
+  "opted_out": boolean;
+};
+
 export type MembershipTerm = {
   "id": number;
   "membership": number;
@@ -10920,6 +11279,13 @@ export type MembershipTerm = {
   "renewal_payment": number | null;
   "created_by": number | null;
   "created_at": string;
+  "kind": MembershipTermKindEnum;
+  "price": string | null;
+  "joining_fee": string;
+  "currency": string;
+  "plan_type": PlanTypeEnum;
+  "standing": string;
+  "is_lifetime": boolean;
 };
 
 export type MembershipTermCreate = {
@@ -10927,7 +11293,19 @@ export type MembershipTermCreate = {
   "starts_at"?: string | null;
 };
 
+export type MembershipTermKindEnum = "new" | "renewal" | "reinstatement";
+
 export type MembershipTermStatusEnum = "active" | "expired" | "cancelled";
+
+export type MembershipTitle = {
+  "id": number;
+  "name": string;
+  "colour"?: ColourEnum | BlankEnum;
+  "sort_order"?: number;
+  "archived_at": string | null;
+  "created_at": string;
+  "updated_at": string;
+};
 
 export type MemberSignUp = {
   "display_name": string;
@@ -12910,6 +13288,10 @@ export type PatchedAdmissionSettings = {
   "rejoin_dues_rule"?: RejoinDuesRuleEnum;
   "request_expiry_days"?: number;
   "recipe"?: RecipeEnum;
+  "rejoin_after_days"?: number | null;
+  "member_number_pattern"?: string;
+  "privacy_notice_version"?: string;
+  "consent_purposes"?: unknown;
 };
 
 export type PatchedApiClient = {
@@ -13928,11 +14310,137 @@ export type PatchedMembershipPlan = {
   "renewal_retries"?: number;
   "reminder_days_before"?: unknown;
   "reminder_days_after"?: unknown;
+  "plan_type"?: PlanTypeEnum;
+  "fixed_end_date"?: string | null;
+  "renewal_amount"?: string | null;
+  "renewal_price"?: string;
+  "joining_fee"?: string | null;
+  "rejoin_rule"?: RejoinRuleEnum | BlankEnum | NullEnum | null;
+  "rejoin_after_days"?: number | null;
+  "payment_timing"?: PaymentTimingEnum | BlankEnum | NullEnum | null;
+  "join_mode"?: JoinModeEnum | BlankEnum | NullEnum | null;
+  "application_schema"?: Array<{
+  "id": string;
+  "label": string;
+  "type": "short_text" | "paragraph" | "number" | "date" | "single_choice" | "multi_choice" | "dropdown" | "yes_no";
+  "required": boolean;
+  "options": Array<string>;
+}> | {
+  "schema_version": 2;
+  "form_id": string;
+  "revision": number;
+  "questions": Array<{
+  "id": string;
+  "label": string;
+  "type": "short_text" | "long_text" | "number" | "date" | "date_of_birth" | "single_choice" | "multi_choice" | "yes_no" | "email" | "phone" | "url" | "asset_reference" | "age_at_event" | "emergency_contact" | "money" | "file" | "itinerary";
+  "required": boolean;
+  "help"?: string;
+  "placeholder"?: string;
+  "options"?: Array<{
+  "id": string;
+  "label": string;
+  "other"?: boolean;
+}>;
+  "bounds"?: {
+  "min_length"?: number;
+  "max_length"?: number;
+  "other_max_length"?: number;
+  "min_selections"?: number;
+  "max_selections"?: number;
+  "min"?: number;
+  "max"?: number;
+};
+  "show_if"?: {
+  "field_id": string;
+  "op": "eq" | "ne" | "in" | "contains" | "is_set";
+  "value"?: string | number | boolean | Array<string | number | boolean>;
+} | {
+  "all": Array<{
+  "field_id": string;
+  "op": "eq" | "ne" | "in" | "contains" | "is_set";
+  "value"?: string | number | boolean | Array<string | number | boolean>;
+} | {
+  "all": Array<{
+  "field_id": string;
+  "op": "eq" | "ne" | "in" | "contains" | "is_set";
+  "value"?: string | number | boolean | Array<string | number | boolean>;
+}>;
+} | {
+  "any": Array<{
+  "field_id": string;
+  "op": "eq" | "ne" | "in" | "contains" | "is_set";
+  "value"?: string | number | boolean | Array<string | number | boolean>;
+}>;
+}>;
+} | {
+  "any": Array<{
+  "field_id": string;
+  "op": "eq" | "ne" | "in" | "contains" | "is_set";
+  "value"?: string | number | boolean | Array<string | number | boolean>;
+} | {
+  "all": Array<{
+  "field_id": string;
+  "op": "eq" | "ne" | "in" | "contains" | "is_set";
+  "value"?: string | number | boolean | Array<string | number | boolean>;
+}>;
+} | {
+  "any": Array<{
+  "field_id": string;
+  "op": "eq" | "ne" | "in" | "contains" | "is_set";
+  "value"?: string | number | boolean | Array<string | number | boolean>;
+}>;
+}>;
+};
+  "profile_field_key"?: "name" | "phone" | "institution" | "organization" | "study_level" | "country" | "skills" | "github_url" | "linkedin_url" | "portfolio_url" | "resume" | "shirt_size" | "dietary_needs" | "accessibility_needs" | "emergency_contact" | "date_of_birth" | "age_at_event";
+  "visibility"?: "member" | "server";
+  "sensitive"?: boolean;
+  "money"?: {
+  "currencies": Array<string>;
+  "min_minor"?: number;
+  "max_minor"?: number;
+};
+  "file"?: {
+  "purpose": "stage_form_file" | "reimbursement_receipt" | "reimbursement_payee_document";
+  "max_files": number;
+  "max_bytes_each": number;
+};
+  "itinerary"?: {
+  "modes": Array<"rail" | "air" | "bus" | "car" | "other">;
+};
+  "disclosure"?: {
+  "organizer": boolean;
+  "reviewer": boolean;
+  "judge": boolean;
+};
+}>;
+  "event_context"?: {
+  "event_id": number;
+  "event_date_revision": number;
+  "timezone_name": string;
+  "as_of_date": string;
+};
+} | null;
+  "late_renewal"?: LateRenewalEnum;
+  "slug"?: string;
+  "description"?: string;
+  "sort_order"?: number;
+  "is_public"?: boolean;
+  "archived_at"?: string | null;
 };
 
 export type PatchedMembershipRoleAssign = {
   "role_id"?: number;
   "role_ids"?: Array<number>;
+};
+
+export type PatchedMembershipTitle = {
+  "id"?: number;
+  "name"?: string;
+  "colour"?: ColourEnum | BlankEnum;
+  "sort_order"?: number;
+  "archived_at"?: string | null;
+  "created_at"?: string;
+  "updated_at"?: string;
 };
 
 export type PatchedMentorProfileWrite = {
@@ -14922,6 +15430,8 @@ export type PiiAccessStatus = {
   "recent": Array<PiiAccessGrant>;
 };
 
+export type PlanTypeEnum = "rolling" | "financial_year" | "fixed_end" | "lifetime";
+
 export type PlatformAnalyticsReport = {
   "report_key"?: string;
   "rows": Array<Array<unknown>>;
@@ -15800,7 +16310,7 @@ export type ProjectBudget = {
   "remaining_bytes": number | null;
 };
 
-export type ProjectedPublicPageSection = PublicAboutSection | PublicGallerySection | PublicTeamSection | PublicTestimonialsSection | PublicLinksSection | PublicUpcomingEventsSection | PublicOrganizationEventsSection | PublicLinkedMakerspacesSection | PublicStatsSection | PublicLocationSection | PublicFunctionalContentSection;
+export type ProjectedPublicPageSection = PublicAboutSection | PublicGallerySection | PublicTeamSection | PublicTestimonialsSection | PublicLinksSection | PublicUpcomingEventsSection | PublicOrganizationEventsSection | PublicLinkedMakerspacesSection | PublicStatsSection | PublicLocationSection | PublicFunctionalContentSection | PublicMembershipPlansSection;
 
 export type ProjectionEnum = "organizer" | "finance";
 
@@ -16289,6 +16799,13 @@ export type PublicInventoryError = {
   "code"?: string;
 };
 
+export type PublicInviteLink = {
+  "valid": boolean;
+  "plan_id": number | null;
+  "plan_name": string;
+  "label": string;
+};
+
 export type PublicLandingPage6a0Enum = "auto" | "inventory" | "events" | "machines" | "bookings" | "membership";
 
 export type PublicLinkedMakerspacesSection = {
@@ -16405,6 +16922,20 @@ export type PublicMaterial = {
   "id": number | null;
   "name": string;
   "colours": Array<string>;
+};
+
+export type PublicMembershipPlans = {
+  "title": string;
+  "count": number;
+  "results": Array<PublicPlanCard>;
+  "collection_url": string;
+};
+
+export type PublicMembershipPlansSection = {
+  "id": string;
+  "type": TypeF8eEnum;
+  "enabled": boolean;
+  "payload": PublicMembershipPlans;
 };
 
 export type PublicMetrics = {
@@ -16544,6 +17075,13 @@ export type PublicPageLocationSectionInput = {
   "payload": Location;
 };
 
+export type PublicPageMembershipPlansSectionInput = {
+  "id": string;
+  "type": TypeF8eEnum;
+  "enabled": boolean;
+  "payload": Titled;
+};
+
 export type PublicPageOrganizationEventsSectionInput = {
   "id": string;
   "type": TypeD44Enum;
@@ -16563,7 +17101,7 @@ export type PublicPageProjection = {
   "sections": Array<ProjectedPublicPageSection>;
 };
 
-export type PublicPageSectionInput = PublicPageAboutSectionInput | PublicPageGallerySectionInput | PublicPageTeamSectionInput | PublicPageTestimonialsSectionInput | PublicPageLinksSectionInput | PublicPageStatsSectionInput | PublicPageLocationSectionInput | PublicPageUpcomingEventsSectionInput | PublicPageLinkedMakerspacesSectionInput | PublicPageOrganizationEventsSectionInput | PublicPageFunctionalContentSectionInput;
+export type PublicPageSectionInput = PublicPageAboutSectionInput | PublicPageGallerySectionInput | PublicPageTeamSectionInput | PublicPageTestimonialsSectionInput | PublicPageLinksSectionInput | PublicPageStatsSectionInput | PublicPageLocationSectionInput | PublicPageUpcomingEventsSectionInput | PublicPageLinkedMakerspacesSectionInput | PublicPageOrganizationEventsSectionInput | PublicPageFunctionalContentSectionInput | PublicPageMembershipPlansSectionInput;
 
 export type PublicPageStats = {
   "title": string;
@@ -16596,6 +17134,39 @@ export type PublicPageUpcomingEventsSectionInput = {
   "type": Type7f5Enum;
   "enabled": boolean;
   "payload": Titled;
+};
+
+export type PublicPlan = {
+  "id": number;
+  "slug": string;
+  "name": string;
+  "description": string;
+  "plan_type": PlanTypeEnum;
+  "interval": IntervalEnum;
+  "custom_days": number | null;
+  "fixed_end_date": string | null;
+  "amount": string;
+  "renewal_price": string;
+  "currency": string;
+  "joining_fee": string | null;
+  "join_mode": JoinModeEnum | NullEnum | null;
+  "sort_order": number;
+};
+
+export type PublicPlanCard = {
+  "id": number;
+  "slug": string;
+  "name": string;
+  "description": string;
+  "plan_type": string;
+  "interval": string;
+  "custom_days": number | null;
+  "fixed_end_date": string | null;
+  "amount": string;
+  "renewal_price": string;
+  "currency": string;
+  "joining_fee": string | null;
+  "join_mode": string;
 };
 
 export type PublicPrinterPool = {
@@ -17590,6 +18161,7 @@ export type RefundCaseApprove = {
   "reason"?: string;
   "note"?: string;
   "receipt"?: ManualRefundReceipt;
+  "keep_membership"?: boolean;
 };
 
 export type RefundCaseAreaEnum = "machines" | "bookings" | "events" | "membership" | "loans";
@@ -17641,6 +18213,14 @@ export type RefundPolicyAreaEnum = "events" | "bookings" | "membership";
 export type RefundProviderEnum = "stripe" | "razorpay" | "manual";
 
 export type RefundStatusEnum = "pending" | "succeeded" | "failed";
+
+export type RefundSuggestion = {
+  "applies": boolean;
+  "suggested_amount": string | null;
+  "currency": string;
+  "band": string;
+  "rule": string;
+};
 
 export type RegenerateInput = {
   "confirm": boolean;
@@ -17736,13 +18316,20 @@ export type RejectRequest = {
   "reason": string;
 };
 
-export type RejoinDuesRuleEnum = "once" | "each_join";
+export type RejoinDuesRuleEnum = "never" | "once" | "each_join" | "after_lapse";
+
+export type RejoinRuleEnum = "never" | "once" | "each_join" | "after_lapse";
 
 export type RelationEnum = "member" | "staff" | "registrant";
 
 export type RelationshipEnum = "owner" | "manager" | "affiliate";
 
 export type RenderSchemaVersion6daEnum = 1 | 2;
+
+export type RenewalReminderResult = {
+  "sent": Array<number>;
+  "skipped": Array<number>;
+};
 
 export type RenewHelp = {
   "operation_id": string;
@@ -17962,7 +18549,7 @@ export type ReportError = {
   "code"?: string;
 };
 
-export type ReportKeyEnum = "payment-cash-book" | "taken-items" | "active-loans" | "returns" | "damaged-missing" | "top-borrowers" | "recently-added" | "event-attendance" | "booking-utilization" | "member-activity" | "printer-service" | "fablab-health" | "payment-reconciliation" | "evidence-compliance" | "import-quality" | "communications-health" | "community-engagement" | "certification-coverage" | "audit-trail" | "membership-growth" | "member-retention" | "membership-revenue" | "payments-ledger" | "revenue-over-time" | "cash-book" | "payments-ageing" | "accounting-journal" | "refunds" | "event-registrations" | "event-feedback" | "event-attendance-pdf" | "booking-resource-utilization" | "booking-resource-utilization-pdf" | "booking-reservations" | "booking-answers" | "mobile-devices" | "mobile-auth" | "booking-occupancy" | "booking-lead-time" | "booking-top-members" | "event-signups" | "event-revenue" | "event-funnel" | "event-checkin-times" | "event-feedback-scores" | "most-lent" | "asset-usage" | "loan-throughput" | "inventory-utilisation" | "overdue-loans" | "damaged-lost" | "longest-loans" | "stock-health" | "request-funnel" | "problem-reports" | "inventory-watch-demand" | "summary" | "qr-scans" | "qr-scan-actors" | "inventory-control" | "consumable-usage" | "consumable-pools" | "procurement-performance" | "stock-transfers" | "stocktake-variance" | "machine-usage" | "machine-usage-members" | "machine-usage-heatmap" | "machine-downtime" | "maintenance-activity" | "machine-service" | "service-queue-times" | "printer-jobs" | "machine-errors" | "warranty-expiry" | "device-health" | "presence-activity" | "presence-top-visitors" | "presence-activity-hours" | "audit-activity" | "audit-top-actors" | "audit-activity-hours" | "organization-membership" | "module-operational-health" | "platform-services" | "platform-usage";
+export type ReportKeyEnum = "payment-cash-book" | "taken-items" | "active-loans" | "returns" | "damaged-missing" | "top-borrowers" | "recently-added" | "event-attendance" | "booking-utilization" | "member-activity" | "printer-service" | "fablab-health" | "payment-reconciliation" | "evidence-compliance" | "import-quality" | "communications-health" | "community-engagement" | "certification-coverage" | "audit-trail" | "membership-growth" | "member-retention" | "membership-revenue" | "membership-renewals" | "membership-bridge" | "membership-breakdown" | "membership-expiry-calendar" | "membership-applications-funnel" | "membership-win-back" | "member-register" | "membership-monthly-summary" | "payments-ledger" | "revenue-over-time" | "cash-book" | "payments-ageing" | "accounting-journal" | "refunds" | "event-registrations" | "event-feedback" | "event-attendance-pdf" | "booking-resource-utilization" | "booking-resource-utilization-pdf" | "booking-reservations" | "booking-answers" | "mobile-devices" | "mobile-auth" | "booking-occupancy" | "booking-lead-time" | "booking-top-members" | "event-signups" | "event-revenue" | "event-funnel" | "event-checkin-times" | "event-feedback-scores" | "most-lent" | "asset-usage" | "loan-throughput" | "inventory-utilisation" | "overdue-loans" | "damaged-lost" | "longest-loans" | "stock-health" | "request-funnel" | "problem-reports" | "inventory-watch-demand" | "summary" | "qr-scans" | "qr-scan-actors" | "inventory-control" | "consumable-usage" | "consumable-pools" | "procurement-performance" | "stock-transfers" | "stocktake-variance" | "machine-usage" | "machine-usage-members" | "machine-usage-heatmap" | "machine-downtime" | "maintenance-activity" | "machine-service" | "service-queue-times" | "printer-jobs" | "machine-errors" | "warranty-expiry" | "device-health" | "presence-activity" | "presence-top-visitors" | "presence-activity-hours" | "audit-activity" | "audit-top-actors" | "audit-activity-hours" | "organization-membership" | "module-operational-health" | "platform-services" | "platform-usage";
 
 export type ReportSchedule = {
   "id": number;
@@ -18848,7 +19435,7 @@ export type SearchOutput = {
 
 export type SectionOrderEnum = "HERO" | "ABOUT" | "HIGHLIGHTS" | "SCHEDULE" | "SPEAKERS" | "SPONSORS" | "VENUE" | "FAQ" | "RESOURCES" | "EDITORIAL";
 
-export type SectionTypesEnum = "about" | "gallery" | "team" | "testimonials" | "links" | "stats" | "location" | "upcoming_events" | "linked_makerspaces" | "organization_events" | "functional_content";
+export type SectionTypesEnum = "about" | "gallery" | "team" | "testimonials" | "links" | "stats" | "location" | "upcoming_events" | "linked_makerspaces" | "organization_events" | "functional_content" | "membership_plans";
 
 export type SecurityActivity = {
   "id": number;
@@ -19613,6 +20200,18 @@ export type StaffBookingInput = {
   "note"?: string;
 };
 
+export type StaffErasure = {
+  "id": number;
+  "membership": number;
+  "member_name": string;
+  "member_email": string;
+  "status": StatusAf3Enum;
+  "member_note": string;
+  "decision_note": string;
+  "created_at": string;
+  "decided_at": string | null;
+};
+
 export type StaffGrant = {
   "id": number;
   "makerspace": number;
@@ -20193,6 +20792,8 @@ export type Status83eEnum = "ok" | "warn" | "error" | "unknown";
 
 export type StatusA39Enum = "pending" | "verified" | "failed";
 
+export type StatusAf3Enum = "requested" | "approved" | "rejected" | "withdrawn";
+
 export type StatusB35Enum = "invited" | "pending_verification" | "submitted" | "changes_requested" | "accepted" | "rejected" | "withdrawn";
 
 export type StatusB9dEnum = "invited" | "accepted" | "declined";
@@ -20708,6 +21309,16 @@ export type TimelineActor = {
   "role": string;
 };
 
+export type TimelineEntry = {
+  "at": string;
+  "kind": string;
+  "text": string;
+  "plan": string;
+  "until": string | null;
+  "lifetime": boolean;
+  "reason": string;
+};
+
 export type TimelineEvent = {
   "kind": string;
   "at": string;
@@ -20751,6 +21362,18 @@ export type TimingPolicy = {
 };
 
 export type TimingPolicyChannelsEnum = "email" | "telegram" | "slack" | "mattermost" | "discord" | "native_push" | "webhook" | "sms" | "whatsapp";
+
+export type TitleAssignInput = {
+  "title_id": number;
+  "primary"?: boolean;
+};
+
+export type TitleAssignment = {
+  "id": number;
+  "title": MembershipTitle;
+  "is_primary": boolean;
+  "created_at": string;
+};
 
 export type Titled = {
   "title": string;
@@ -20973,6 +21596,8 @@ export type TypedManualUsageResponseMeteringUnitEnum = "minutes" | "weight" | "v
 export type TypeE4fEnum = "gallery";
 
 export type TypeF4fEnum = "location";
+
+export type TypeF8eEnum = "membership_plans";
 
 export type UnsubscribeResult = {
   "detail": string;
@@ -21551,6 +22176,16 @@ export type WitnessWaiverResponse = {
   "waiver_id": number;
   "waiver_version": string;
   "witnessed_at": string;
+};
+
+export type WorklistRow = {
+  "id": number;
+  "name": string;
+  "email": string;
+  "member_number": string;
+  "desk": {
+  [key: string]: unknown;
+};
 };
 
 export type Zone = {

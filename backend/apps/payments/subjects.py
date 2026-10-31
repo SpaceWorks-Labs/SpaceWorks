@@ -63,6 +63,9 @@ def resolve_subject_labels(payments):
         Payment.SubjectType.MEMBERSHIP_REQUEST: "Membership admission",
         Payment.SubjectType.LOAN_DEPOSIT: "Loan deposit",
         Payment.SubjectType.LOAN_LATE_FEE: "Late return fee",
+        Payment.SubjectType.LOAN_RENTAL: "Loan rental",
+        Payment.SubjectType.LOAN_DAMAGE: "Damage charge",
+        Payment.SubjectType.LOAN_LOST: "Lost item charge",
     }
     for payment in rows:
         label = fixed_labels.get(payment.subject_type)

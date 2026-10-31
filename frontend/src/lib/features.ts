@@ -120,6 +120,9 @@ export const FEATURE_DEFINITIONS: readonly FeatureDefinition[] = [
   { key: "billing.disputes", parent_module: null, label: "Payment disputes" },
   { key: "billing.capture_flags", parent_module: null, label: "Unexpected online payments" },
   { key: "finance.ledger", parent_module: null, label: "Finance ledger" },
+  { key: "charges.pricing", parent_module: null, label: "Price lists" },
+  { key: "charges.discounts", parent_module: null, label: "Member discounts" },
+  { key: "loans.fee_waivers", parent_module: "request_workflow", label: "Waive loan fees" },
 ];
 
 export function featureEnabled(features: Iterable<string>, key: string) {

@@ -17,6 +17,19 @@ def validate_membership_request(payment, identity_unchanged):
         raise ValidationError({"member": "Payment member must be the applicant."})
 
 
+def validate_loan_accountability(payment, identity_unchanged):
+    """Lane L15: a damage or lost charge belongs to one accountability row of this space."""
+    from apps.hardware_requests.models import RequesterAccountability
+
+    row = RequesterAccountability.objects.filter(
+        pk=payment.subject_id, makerspace_id=payment.makerspace_id,
+    ).only("requester_id").first()
+    if row is None and not identity_unchanged:
+        raise ValidationError({"subject_id": "Payment subject must belong to the payment makerspace."})
+    if row is not None and payment.member_id != row.requester_id:
+        raise ValidationError({"member": "Payment member must be the borrower."})
+
+
 def validate_subject(payment, identity_unchanged):
     """Every subject must belong to the payment's makerspace (and its member)."""
     from apps.payments.models_payment import Payment
@@ -63,6 +76,8 @@ def validate_subject(payment, identity_unchanged):
             makerspace_id=payment.makerspace_id,
         ).exists():
             raise ValidationError({"subject_id": "Payment subject must belong to the payment makerspace."})
+    if payment.subject_type in Payment.LOAN_ACCOUNTABILITY_SUBJECT_TYPES and payment.subject_id:
+        validate_loan_accountability(payment, identity_unchanged)
     if payment.subject_type == Payment.SubjectType.MEMBERSHIP_TERM and payment.subject_id:
         from apps.makerspaces.models import MembershipTerm
 

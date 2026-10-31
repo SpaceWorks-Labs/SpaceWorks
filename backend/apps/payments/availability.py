@@ -64,6 +64,10 @@ SUBJECT_DOMAINS = {
     "membership_request": "membership",
     "loan_deposit": "loans",
     "loan_late_fee": "loans",
+    # Lane L15: rental, damage and lost charges are loan money too.
+    "loan_rental": "loans",
+    "loan_damage": "loans",
+    "loan_lost": "loans",
 }
 
 

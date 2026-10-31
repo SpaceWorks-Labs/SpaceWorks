@@ -109,3 +109,7 @@ JSON_REFERENCE_FIELDS |= frozenset({("events.EventEmbedPolicy", "allowed_origins
 # Release 2 L5: a charge's frozen tax policy (rates, GSTINs, figures); no references.
 from .classification_r2_l5 import JSON_FIELDS as _R2_L5_JSON  # noqa: E402
 JSON_REFERENCE_FIELDS |= _R2_L5_JSON
+
+# Release 2 L15: frozen quotes and discount/waiver scopes (names, prices, rule ids only).
+from .classification_r2_l15 import JSON_FIELDS as _R2_L15_JSON  # noqa: E402
+JSON_REFERENCE_FIELDS |= _R2_L15_JSON

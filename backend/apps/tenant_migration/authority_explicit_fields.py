@@ -68,4 +68,7 @@ EXPLICIT_AUTHORITY_FIELDS = {
     ("integrations.NotificationRecipient", "user"): "Dropped named-user disclosure rule.",
     ("integrations.NotificationDestination", "channel"): "Selects credential and delivery semantics.",
     ("integrations.NotificationDestination", "telegram_chat_id"): "Target-bot disclosure destination.",
+    # Release 2 L4: an AST over-approximation (`source` is a common keyword); the
+    # membership's join/manual/import label is provenance and grants no authority.
+    ("makerspaces.MakerspaceMembership", "source"): "Join-path provenance label; grants no target authority.",
 }

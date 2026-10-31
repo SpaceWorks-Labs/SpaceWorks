@@ -239,6 +239,8 @@ NON_REFERENCE_JSON_FIELDS = frozenset({
 
 from .classification_wp4 import NON_REFERENCE_JSON_FIELDS as WP4_JSON
 NON_REFERENCE_JSON_FIELDS |= WP4_JSON
+from .classification_r2_l4 import NON_REFERENCE_JSON_FIELDS as R2_L4_JSON  # noqa: E402
+NON_REFERENCE_JSON_FIELDS |= R2_L4_JSON
 
 
 def validate_semantic_references(semantic_references=SEMANTIC_REFERENCES):

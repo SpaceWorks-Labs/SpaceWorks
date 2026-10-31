@@ -73,6 +73,15 @@ money. Only a staff approval creates a `Refund`, under the Payment then case row
   (the policy chooses), then nothing after the term ends, minus an optional fee. Dues and
   admission charges have no term, so they stay request-only. "Do not renew" only voids a
   pending renewal. Per-plan rules: `refund-policies/membership/plans/<plan>`.
+  Release 2 (L4): financial-year and fixed-end terms are pro-rated to their own end; a
+  lifetime term is refunded in full within `full_within_days`, then nothing; a paid but
+  unopened next term is owed in full. The member sees the policy's suggested amount
+  before asking (`member/makerspaces/<id>/payments/<pid>/refund-suggestion`, X20) and
+  staff see it on the case (`.../refund-cases/<case>/membership-suggestion`). Approving a
+  membership case ends the term the payment bought once the approval commits -- an
+  early-paid upcoming term is cancelled -- unless staff send `keep_membership: true`
+  (X21); ending it opens no second case. Joining fees and dues stay `Payment` income in
+  the `membership` domain for the finance ledger.
 - **Requests**: a member may ask on any own settled charge except a loan deposit. One
   active (open or approval-failed) case per payment; asking on an open due case adds the
   member's reason to it. Only an open request can be withdrawn.

@@ -27,6 +27,7 @@ from ._showcase_events import seed_events
 from ._showcase_hackathon import seed_hackathon
 from ._showcase_inventory import seed_inventory
 from ._showcase_machines import seed_machines
+from ._showcase_membership_l4 import seed_membership_lifecycle
 from ._showcase_people import create_members, create_space, create_staff, member_account, restrict
 from ._showcase_requests import RequestSeeder
 
@@ -76,6 +77,7 @@ class Command(BaseCommand):
         staff = create_staff(space, root, password)
         plan = membership_plan(space, staff.manager)
         members = create_members(space, root, staff.manager, plan, password)
+        seed_membership_lifecycle(space, staff.manager, members)
         stock = seed_inventory(space, staff.manager, staff.inventory)
         RequestSeeder(space, staff, members, stock).run()
         seed_machines(space, staff.manager, staff.machines, members)

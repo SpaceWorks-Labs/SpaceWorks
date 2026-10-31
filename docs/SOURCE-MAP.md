@@ -676,6 +676,31 @@ identity normalization and production minimum-version comparison. `mobile_associ
   `hosting/HostingResubmitFlow.tsx`, `notifications/{InboxRowActions,BrowserAlertsToggle}.tsx`,
   `staff/OrganizationEmailSender.tsx`.
 
+### Release 2 L4 (membership lifecycle)
+
+- `makerspaces/financial_year.py` -- the ONE financial-year helper (`fy_bounds`, `fy_label`, fixed
+  signatures L5 reads); `admin_api/views_financial_year.py` (a finance setting via `settings_authority`).
+- `makerspaces/models_membership_{rules,terms,records,privacy,invites,imports,summary}.py` -- plan/term
+  vocabularies, `MembershipTerm` + append-only `MembershipTermStatusEvent`, record/titles, consent and
+  erasure, invite links, imported members, summary opt-outs. `capability_definitions_r2_l4.py` (14 keys),
+  `membership_features.py` (404 gates).
+- Services: `membership_plan_{types,policy}.py`, `membership_term_history.py`, `membership_number.py`,
+  `membership_renewal_desk.py`, `membership_{records,titles,consent,erasure,summary}.py`,
+  `membership_history_timeline.py`, `membership_invite_links.py`, `membership_admission_{plans,bulk}.py`,
+  `membership_import_accept.py`, `membership_admission_settings_l4.py`, `membership_refund_suggestion.py`,
+  `notifications_l4.py`, `public_page_plans.py`, `views_public_plans.py`, `views_membership_member_l4.py`.
+- Staff API: `admin_api/urls_membership_lifecycle.py` -> `views_membership_{desk,records,erasure_import,
+  plan_archive,refunds,register,summary}.py`; import planning/apply in `bulk_import_members{,_apply}.py`.
+- Refunds: `payments/refund_policy_membership.py` (FY/fixed pro rata, lifetime band, `term_for_payment`),
+  `payments/refund_membership_term.py` (X21 term end after approval commits).
+- Reports: `operations/reports_membership_l4_{terms,lists}.py`, `reports_membership_summary.py`,
+  `report_definitions_membership_l4.py`.
+- Classification: `data_export/classification_r2_l4.py`, `tenant_migration/{catalog,audit_references}_r2_l4.py`,
+  `encryption/registry_r2_l4.py`, `audit/presentation_catalog_r2_l4.py`.
+- Frontend: `features/staff/membershipLifecycle/*`, `memberImport/*`, `MembershipPlanRulesFields.tsx`,
+  `MembershipAdmissionExtras.tsx`, `refunds/MembershipRefundExtras.tsx`, `members/{MemberAccountLifecycle,
+  AdmissionJoinWithPlans}.tsx`, `members/joinPlansApi.ts`, `publicPages/PublicPlanCards.tsx`.
+
 ## Domain and frontend map
 See [SOURCE-MAP-DOMAINS.md](SOURCE-MAP-DOMAINS.md) for hardware loans, payments,
 printing, events, the frontend directories and connected device monitoring.

@@ -20,6 +20,7 @@ import urllib.request
 from base64 import b64encode
 from urllib.parse import quote, urlencode
 
+from apps.payments.method_labels import razorpay_label
 from apps.payments.providers.base import (
     RAZORPAY,
     CheckoutRequest,
@@ -220,6 +221,7 @@ class RazorpayProvider:
         payment = (entities.get("payment") or {}).get("entity") or {}
         order = (entities.get("order") or {}).get("entity") or {}
         refund = (entities.get("refund") or {}).get("entity") or {}
+        dispute = (entities.get("dispute") or {}).get("entity") or {}
 
         # Razorpay does not send a top-level event id, so the delivery id header is the
         # idempotency anchor. Falling back to the entity id keeps the record unique per
@@ -237,9 +239,15 @@ class RazorpayProvider:
             amount_minor=int(payment.get("amount") or order.get("amount") or link.get("amount") or 0),
             currency=payment.get("currency") or order.get("currency") or link.get("currency") or "",
             order_id=link.get("id") or order.get("id") or payment.get("order_id") or "",
-            payment_id=payment.get("id") or refund.get("payment_id") or "",
+            payment_id=payment.get("id") or refund.get("payment_id") or dispute.get("payment_id") or "",
             metadata=link.get("notes") or payment.get("notes") or order.get("notes") or {},
             refund_id=refund.get("id") or "",
             refund_status=REFUND_STATUSES.get(refund.get("status") or "", ""),
             refund_amount_minor=int(refund.get("amount") or 0),
+            method_label=razorpay_label(payment),
+            dispute_id=dispute.get("id") or "",
+            dispute_status=str(dispute.get("status") or event_type.rpartition(".")[2] or "")[:32],
+            dispute_reason=str(dispute.get("reason_code") or dispute.get("reason_description") or "")[:64],
+            dispute_amount_minor=int(dispute.get("amount") or 0),
+            event_type=event_type,
         )

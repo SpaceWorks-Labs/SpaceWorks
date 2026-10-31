@@ -12,6 +12,8 @@ class PaymentsConfig(AppConfig):
         register()
         from .notifications_refund_cases import register as register_refund_cases
         register_refund_cases()
+        from .notifications_l5 import register as register_l5
+        register_l5()
         from .event_payout_bridge import install
         install()
 

@@ -3,12 +3,14 @@ import { PaymentDueBadge } from "./PaymentDueBadge";
 import { paymentAccess } from "./paymentAccess";
 import { formatMoney, PAYMENT_STATUSES, PAYMENT_SUBJECTS, settlementLabel, type PaymentRow, type RefundRow } from "./paymentsApi";
 
-export function paymentColumns({ access, pending, amendPending, run, onAmend, onRefund, onCorrectRefund }: {
+export function paymentColumns({ access, pending, amendPending, run, onAmend, onRefund, onCorrectRefund, onPayLink }: {
   access: (row: PaymentRow) => ReturnType<typeof paymentAccess>;
   pending: boolean; amendPending: boolean;
   run: (action: "mark-offline" | "waive", ids: number[], bulk: boolean) => void;
   onAmend: (row: PaymentRow) => void; onRefund: (row: PaymentRow) => void;
   onCorrectRefund: (paymentId: number, refund: RefundRow) => void;
+  /** Lane L5: offered only when the server says a pay link is possible for the row. */
+  onPayLink?: (row: PaymentRow) => void;
 }): DataTableColumn<PaymentRow>[] {
   return [
     { key: "subject_label", header: "Subject", render: row => <span className="font-semibold text-ink">{row.subject_label}</span> },
@@ -26,6 +28,7 @@ export function paymentColumns({ access, pending, amendPending, run, onAmend, on
       if (row.status === "pending" && permissions.waive) actions.push({ label: "Waive", disabled: pending, onClick: () => run("waive", [row.id], false) });
       if (row.status === "paid_offline" && row.settlement && permissions.record) actions.push({ label: "Correct receipt", disabled: amendPending, onClick: () => onAmend(row) });
       if ((row.status === "paid_online" || row.status === "paid_offline") && permissions.refund) actions.push({ label: row.subject_type === "loan_deposit" && row.status === "paid_offline" ? "Release deposit" : "Refund", onClick: () => onRefund(row) });
+      if (onPayLink && row.ledger_flags?.pay_link_available && permissions.record) actions.push({ label: "Pay link", onClick: () => onPayLink(row) });
       row.refunds?.filter(refund => refund.provider === "manual" && !refund.corrected).forEach(refund => {
         if (permissions.refund) actions.push({ label: `Correct refund #${refund.id}`, onClick: () => onCorrectRefund(row.id, refund) });
       });

@@ -5,6 +5,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Callout, DataTable, type Action } from "../../components/ui";
 import { DetailLayout, ListLayout } from "../../components/layouts";
 import { paymentColumns } from "./PaymentsRows";
+import { PayLinkDialog } from "../finance/PayLinkDialog";
 import { PaymentsFilters } from "./PaymentsFilters";
 import { StructuredApiError, staffRequest } from "../../lib/api";
 import {
@@ -50,6 +51,7 @@ export function PaymentsPanel({ makerspaceId, makerspaceName, actorActions = [],
   const [selected, setSelected] = useState<number[]>([]);
   const [conflict, setConflict] = useState("");
   const [refundRow, setRefundRow] = useState<PaymentRow | null>(null);
+  const [payLinkRow, setPayLinkRow] = useState<PaymentRow | null>(null);
   const payments = useQuery({
     queryKey: [...paymentListKey(makerspaceId, status, subject, forRecording, dueState), list.page, list.values.ordering],
     queryFn: () => staffRequest<Paginated<PaymentRow>>(paymentListPath(makerspaceId, status, subject, forRecording, dueState) + `${status || subject || forRecording || dueState ? "&" : "?"}page=${list.page}&ordering=${encodeURIComponent(list.values.ordering)}`),
@@ -95,7 +97,7 @@ export function PaymentsPanel({ makerspaceId, makerspaceName, actorActions = [],
   };
   const columns = paymentColumns({ access, pending: mutation.isPending, amendPending: amend.isPending, run,
     onAmend: setAmending, onRefund: setRefundRow,
-    onCorrectRefund: (paymentId, refund) => setCorrectingRefund({ paymentId, refund }) });
+    onCorrectRefund: (paymentId, refund) => setCorrectingRefund({ paymentId, refund }), onPayLink: setPayLinkRow });
   const statuses = [["pending", "To collect"], ["paid_online", "Paid online"], ["paid_offline", "Paid in person"], ["waived", "Waived"], ["canceled", "Cancelled"], ["", "All"]];
   const tabs = statuses.filter(([value]) => !forRecording || ["pending", "paid_offline", ""].includes(value)).map(([value, label]) => {
     const params = new URLSearchParams(location.search);
@@ -169,6 +171,8 @@ export function PaymentsPanel({ makerspaceId, makerspaceName, actorActions = [],
           onClose={() => setRefundRow(null)}
         />
       ) : null}
+      {payLinkRow ? <PayLinkDialog makerspaceId={makerspaceId} paymentId={payLinkRow.id} label={payLinkRow.subject_label}
+        onClose={() => setPayLinkRow(null)} /> : null}
       {correctingRefund ? <RefundReceiptAmendDialog makerspaceId={makerspaceId}
         paymentId={correctingRefund.paymentId} refund={correctingRefund.refund}
         onClose={() => setCorrectingRefund(null)} /> : null}

@@ -52,6 +52,9 @@ const TAB_MODULES: Record<string, string[]> = {
 const TAB_FEATURES: Record<string, string[]> = {
   tobuy: ["inventory.tobuy", "machines.tobuy"],
   warranty: ["inventory.warranty", "machines.warranty"],
+  // Lane L5: the finance tab holds the ledger and the money queues, each with its own switch.
+  finance: ["finance.ledger", "billing.offline_claims", "billing.maker_checker", "billing.capture_flags",
+    "billing.disputes"],
 };
 
 // Tabs whose backing app can be tombstoned out of a deployment but which no module

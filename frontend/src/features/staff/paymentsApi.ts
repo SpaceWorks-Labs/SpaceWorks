@@ -59,6 +59,9 @@ export type PaymentRow = {
   // The standing manual receipt for a `paid_offline` charge, else null. Mirrors
   // `serializers_reconciliation.StaffSettlementSerializer`.
   settlement?: StaffSettlement | null;
+  // Lane L5 row facts (method label, open claim/confirmation, flags, disputes, pay-link offer).
+  ledger_flags?: { method_label: string; awaiting_confirmation_id: number | null; open_claim_id: number | null;
+    open_flags: number; disputed: boolean; taxed: boolean; pay_link_available: boolean };
   created_at: string;
   updated_at: string;
 };

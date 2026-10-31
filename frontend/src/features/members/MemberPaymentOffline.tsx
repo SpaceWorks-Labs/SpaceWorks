@@ -1,0 +1,87 @@
+import { useEffect, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Copy, QrCode } from "lucide-react";
+import writerWasmUrl from "zxing-wasm/writer/zxing_writer.wasm?url";
+
+import { Field } from "../../components/ui";
+import { StructuredApiError, memberRequest } from "../../lib/api";
+
+export type OfflineCollection = {
+  upi: { vpa: string; payee_name: string; amount: string; currency: string; reference: string; uri: string } | null;
+  instructions: string;
+  claim: { id: number; reference: string; paid_on: string; status: string; decision_note: string } | null;
+  claimable: boolean;
+};
+
+const CLAIM_TEXT: Record<string, string> = {
+  submitted: "You told the space you paid. They'll confirm once it reaches their account.",
+  awaiting_confirmation: "Your payment is being confirmed by a second person.",
+  confirmed: "Your payment was confirmed.", rejected: "The space couldn't find this payment.",
+};
+
+/** A QR image for the exact UPI payment, drawn in the browser from the server-built intent. */
+export function useUpiQr(uri: string | null) {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (!uri) return;
+    let active = true; let objectUrl: string | undefined;
+    void import("zxing-wasm/writer").then(async writer => {
+      writer.setZXingModuleOverrides({ locateFile: () => writerWasmUrl });
+      const result = await writer.writeBarcode(uri, { format: "QRCode", scale: 6, addQuietZones: true });
+      if (result.image && active) { objectUrl = URL.createObjectURL(result.image); setUrl(objectUrl); }
+    }).catch(() => undefined);
+    return () => { active = false; if (objectUrl) URL.revokeObjectURL(objectUrl); };
+  }, [uri]);
+  return url;
+}
+
+/** UPI QR (exact amount) plus the "I've paid" claim; the space confirms or rejects it. */
+export function OfflinePayment({ offline, onClaim, pending, error }: {
+  offline: OfflineCollection; onClaim: (body: { reference: string; paid_on: string }) => void; pending: boolean; error: unknown;
+}) {
+  const qr = useUpiQr(offline.upi?.uri ?? null);
+  const [reference, setReference] = useState("");
+  const [paidOn, setPaidOn] = useState(() => new Date().toISOString().slice(0, 10));
+  const [copied, setCopied] = useState(false);
+  const message = error instanceof StructuredApiError ? error.detail ?? error.message : error ? "Couldn't send. Try again." : "";
+  return <div className="mt-3 grid gap-3 rounded-lg border border-line p-3 text-ink">
+    {offline.upi ? <div className="grid gap-2 sm:grid-cols-[10rem_1fr] sm:items-center">
+      {qr ? <img src={qr} className="aspect-square w-40 rounded-md border border-line bg-white p-1"
+        alt={`UPI QR code to pay ${offline.upi.payee_name} ${offline.upi.amount} rupees`} /> : <QrCode aria-hidden="true" size={40} />}
+      <div className="grid gap-1 text-sm">
+        <p>Pay <strong>₹{offline.upi.amount}</strong> to <strong>{offline.upi.payee_name}</strong></p>
+        <p className="flex flex-wrap items-center gap-2">UPI ID <span className="font-mono">{offline.upi.vpa}</span>
+          <button type="button" className="desk-button-ghost" onClick={() => { void navigator.clipboard?.writeText(offline.upi!.vpa); setCopied(true); }}>
+            <Copy aria-hidden="true" size={14} />{copied ? "Copied" : "Copy"}</button></p>
+        <p className="text-muted">Add the note <span className="font-mono">{offline.upi.reference}</span> so the space can match it.</p>
+        <a className="desk-button justify-self-start sm:hidden" href={offline.upi.uri}>Open UPI app</a>
+      </div>
+    </div> : null}
+    {offline.instructions ? <p className="whitespace-pre-line text-sm text-muted">{offline.instructions}</p> : null}
+    {offline.claim ? <p role="status" className="text-sm">{CLAIM_TEXT[offline.claim.status] ?? offline.claim.status}
+      {offline.claim.decision_note ? ` ${offline.claim.decision_note}` : ""}</p> : null}
+    {offline.claimable ? <form className="grid gap-2 sm:grid-cols-[1fr_auto_auto] sm:items-end"
+      onSubmit={event => { event.preventDefault(); onClaim({ reference, paid_on: paidOn }); }}>
+      <Field label="Transaction reference (UTR)"><input className="desk-input font-mono" required minLength={6} maxLength={35}
+        value={reference} onChange={event => setReference(event.target.value)} /></Field>
+      <Field label="Paid on"><input type="date" className="desk-input" required value={paidOn} onChange={event => setPaidOn(event.target.value)} /></Field>
+      <button type="submit" className="desk-button" disabled={pending}>I've paid</button>
+    </form> : null}
+    {message ? <p role="alert" className="text-sm text-danger">{message}</p> : null}
+  </div>;
+}
+
+/** The member area's wiring: posts the claim for the caller's own pending charge. */
+export function MemberPaymentOffline({ makerspaceId, paymentId, offline }: {
+  makerspaceId: number; paymentId: number; offline: OfflineCollection;
+}) {
+  const client = useQueryClient();
+  const claim = useMutation({
+    mutationFn: (body: { reference: string; paid_on: string }) => memberRequest(
+      `/member/makerspaces/${makerspaceId}/payments/${paymentId}/paid-claim`, { method: "POST", body: JSON.stringify(body) }),
+    onSuccess: () => { void client.invalidateQueries({
+      predicate: query => query.queryKey[0] === "member" && query.queryKey.includes("payments") }); },
+  });
+  if (!offline.upi && !offline.claim && !offline.claimable) return null;
+  return <OfflinePayment offline={offline} onClaim={body => claim.mutate(body)} pending={claim.isPending} error={claim.error} />;
+}

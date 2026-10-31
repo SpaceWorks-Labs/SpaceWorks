@@ -3,7 +3,7 @@ import {
   ArrowLeftRight, ShoppingCart, Tags, Container, BookOpen, ShieldCheck, QrCode, ScanLine,
   Upload, Cog, Monitor, Users, Calendar, CalendarClock, CreditCard, ChartNoAxesCombined,
   ScrollText, CircleAlert, Building2, Network, Settings, Mail, KeyRound, Download,
-  DatabaseBackup, Gauge, Puzzle, MoveRight, Globe, CalendarCheck, Undo2, Lock, type LucideIcon,
+  DatabaseBackup, Gauge, Puzzle, MoveRight, Globe, CalendarCheck, Undo2, Lock, Landmark, type LucideIcon,
 } from "lucide-react";
 import type { ShellItem, ShellSection } from "../../components/shell";
 import { TAB_LABELS } from "./staffAccess";
@@ -12,7 +12,7 @@ import { staffTabPath } from "./staffTabs";
 type Definition = { key: string; label?: string; caption?: string; tabs: string[]; more?: string[] };
 export const SIDEBAR_SECTIONS: readonly Definition[] = [
   { key: "home", tabs: ["dashboard", "notifications", "channels"] },
-  { key: "desk", label: "Front desk", tabs: ["requests", "direct", "handover", "payments", "refunds"] },
+  { key: "desk", label: "Front desk", tabs: ["requests", "direct", "handover", "payments", "refunds", "finance"] },
   { key: "inventory", label: "Inventory", tabs: ["inventory", "ledger", "scanner", "needsfix", "stocktake", "transfers", "tobuy"], more: ["categories", "containers", "warranty", "qr", "bulk"] },
   { key: "machines", label: "Machines", tabs: ["machines", "devices"] },
   { key: "community", label: "Community", tabs: ["members", "events", "bookings", "granted"], more: ["cards"] },
@@ -28,7 +28,7 @@ export const SIDEBAR_LABELS: Readonly<Record<string, string>> = {
 };
 const ICONS: Record<string, LucideIcon> = {
   dashboard: Home, notifications: Inbox, channels: Settings, requests: ClipboardList, direct: Hand, handover: PackageCheck,
-  payments: Wallet, refunds: Undo2, inventory: Boxes, needsfix: Wrench, stocktake: ClipboardCheck, transfers: ArrowLeftRight,
+  payments: Wallet, refunds: Undo2, finance: Landmark, inventory: Boxes, needsfix: Wrench, stocktake: ClipboardCheck, transfers: ArrowLeftRight,
   tobuy: ShoppingCart, categories: Tags, containers: Container, ledger: BookOpen, warranty: ShieldCheck,
   qr: QrCode, scanner: ScanLine, bulk: Upload, machines: Cog, devices: Monitor, members: Users,
   events: Calendar, bookings: CalendarClock, cards: CreditCard, reports: ChartNoAxesCombined,
@@ -53,7 +53,7 @@ export const SPACE_MANAGER_SECTIONS: readonly Definition[] = [
   { key: "machines", label: "Machines", tabs: ["machines", "devices"] },
   { key: "events", label: "Events", tabs: ["events", "granted"], more: ["organized"] },
   { key: "bookings", label: "Bookings", tabs: ["bookings"] },
-  { key: "money", label: "Money", tabs: ["payments", "refunds", "reports"] },
+  { key: "money", label: "Money", tabs: ["payments", "refunds", "finance", "reports"] },
   { key: "settings", label: "Space settings", tabs: ["settings", "security", "emailtemplates", "email-logs", "api", "audit", "exports", "backups", "usage", "modules", "migration"] },
   { key: "platform", label: "Platform", tabs: ["platform-dashboard", "platform"] },
 ];

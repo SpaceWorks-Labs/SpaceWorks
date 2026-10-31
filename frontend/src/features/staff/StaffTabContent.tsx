@@ -15,7 +15,7 @@ import { StaffPanelErrorBoundary } from "./StaffPanelErrorBoundary";
 import { PlatformProgrammeDashboard } from "./eventProgramme/PlatformProgrammeDashboard";
 import { GrantedResourcesPanel } from "./GrantedResourcesPanel";
 
-import { PaymentsPanel, RefundQueue, EventPayoutsSection, DevicesPanel, DashboardPanel, NotificationInbox, DirectLoans, Inventory, Ledger, MachinesPanel, EventsPanel, OrganizedEventsPanel, OrganizationAnalyticsPanel, OrganizationsPanel, BookingsPanel, MembersPanel, MemberCardsPanel, QrTools, RequestsPanel, OperationsReports, AuditLog, BulkImport, ScannerPanel, ContainersPanel, StocktakePanel, StockTransferPanel, ProcurementPanel, WarrantyPanel, AccountabilityPanel, Categories, NeedsFixShelf, HandoverConsole } from "./StaffTabLoaders";
+import { PaymentsPanel, RefundQueue, FinancePanel, EventPayoutsSection, DevicesPanel, DashboardPanel, NotificationInbox, DirectLoans, Inventory, Ledger, MachinesPanel, EventsPanel, OrganizedEventsPanel, OrganizationAnalyticsPanel, OrganizationsPanel, BookingsPanel, MembersPanel, MemberCardsPanel, QrTools, RequestsPanel, OperationsReports, AuditLog, BulkImport, ScannerPanel, ContainersPanel, StocktakePanel, StockTransferPanel, ProcurementPanel, WarrantyPanel, AccountabilityPanel, Categories, NeedsFixShelf, HandoverConsole } from "./StaffTabLoaders";
 
 export function StaffTabContent({
   activeMakerspace,
@@ -184,6 +184,8 @@ export function StaffTabContent({
       {activeTab === "refunds" && allowedTabs.includes("refunds") ? <RefundQueue key={makerspaceKey} makerspaceId={activeMakerspace.id}
         makerspaceName={activeMakerspace.name} canEditPolicy={canManageMakerspace}
         canDecide={["manage_events", "manage_bookings", "manage_machines", "manage_members", "manage_makerspace"].some(has)} /> : null}
+      {activeTab === "finance" && allowedTabs.includes("finance") ? <FinancePanel key={makerspaceKey} makerspace={activeMakerspace}
+        canViewFinance={has("view_finance")} canRecordPayment={has("record_payment")} /> : null}
       {activeTab === "payments" && has("view_finance") ? <EventPayoutsSection key={`payouts:${makerspaceKey}`} makerspaceId={activeMakerspace.id} /> : null}
       {activeTab === "tobuy" ? (
         <ProcurementPanel

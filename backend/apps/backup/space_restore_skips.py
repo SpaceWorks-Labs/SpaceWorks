@@ -61,6 +61,7 @@ class ArchiveSkips:
             from django.db.models import Q
 
             from apps.accounts.models import User
+            from apps.accounts.staff_identity import platform_q
             self._unavailable_users = set(User.objects.filter(
-                Q(retired_at__isnull=False) | Q(account_kind="platform")).values_list("pk", flat=True))
+                Q(retired_at__isnull=False) | platform_q()).values_list("pk", flat=True))
         return self._unavailable_users

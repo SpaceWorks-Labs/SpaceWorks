@@ -33,8 +33,14 @@ from .space_restore_plan import FORMAT, SpaceRestoreError
 AGE_IDENTITY_MARKER = "AGE-SECRET-KEY-"
 
 
-def extract_space_restore_point(actor, source_dir, makerspace):
-    """Return the new AVAILABLE BackupArchive for ``makerspace`` from ``source_dir``."""
+def extract_space_restore_point(actor, source_dir, makerspace, *, unification_ack=None):
+    """Return the new AVAILABLE BackupArchive for ``makerspace`` from ``source_dir``.
+
+    A backup taken before one account per person migrates through the account unification
+    in its scratch copy, which converts staff accounts only against the operator's
+    acknowledgement of that copy's own plan (``unification_ack``, the plan_sha256 the
+    refusal prints). The live deployment is never touched by it.
+    """
     from apps.accounts.platform_authority import is_platform_superadmin
 
     if not is_platform_superadmin(actor):
@@ -45,7 +51,8 @@ def extract_space_restore_point(actor, source_dir, makerspace):
         raise SpaceRestoreError("server_identity_missing", "TENANT_MIGRATION_AGE_RECIPIENT is not configured.")
     with tempfile.TemporaryDirectory(prefix="spaceworks-space-extract-") as workdir:
         bundle = Path(workdir, "bundle")
-        object_keys = _slice_from_scratch(root / "database.dump", makerspace.pk, bundle / "tenant")
+        object_keys = _slice_from_scratch(root / "database.dump", makerspace.pk, bundle / "tenant",
+                                          unification_ack=unification_ack)
         objects = _copy_objects(root, manifest, object_keys, bundle / "objects")
         archive_id = uuid.uuid4()
         recipients = [age_recipients.platform_recipient(), age_recipients.server_recipient()]
@@ -90,18 +97,38 @@ def _looks_like_identity(path):
         return False
 
 
-def _slice_from_scratch(dump, makerspace_id, destination):
+def _slice_from_scratch(dump, makerspace_id, destination, *, unification_ack=None):
     from .archive_payload import _tenant_payload
     from .projection_databases import restore_dump, temporary_database
 
     with temporary_database("space_extract") as (alias, name):
         restore_dump(dump, name)
         _require_known_migrations(alias)
-        call_command("migrate", database=alias, interactive=False, verbosity=0)
+        _migrate_scratch(alias, unification_ack)
         try:
             return _tenant_payload(makerspace_id, destination, using=alias)
         finally:
             connections[alias].close()
+
+
+def _migrate_scratch(alias, unification_ack):
+    from django.test.utils import override_settings
+
+    from apps.accounts.unification_plan import build_plan
+
+    try:
+        with override_settings(ACCOUNT_UNIFICATION_ACK=unification_ack or ""):
+            call_command("migrate", database=alias, interactive=False, verbosity=0)
+    except RuntimeError as exc:
+        if "Account unification" not in str(exc):
+            raise
+        plan = build_plan(connections[alias])
+        raise SpaceRestoreError(
+            "unification_ack_required",
+            f"This backup predates one account per person and converts {len(plan['staff_accounts'])} staff "
+            f"account(s) in its scratch copy. Review them, then re-run with --account-unification-ack "
+            f"{plan['plan_sha256']}.",
+        ) from None
 
 
 def _require_known_migrations(alias):

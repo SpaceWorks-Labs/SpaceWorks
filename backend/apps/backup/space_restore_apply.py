@@ -45,7 +45,7 @@ def apply_space_restore(makerspace, archive):
                                 "Staff roles granted after the restore point must be revoked first.")
     labels = restorable_labels()
     models = topologically_sort_models([apps.get_model(label) for label in (*labels, *KEPT_LIVE)])
-    users = UserRemap(makerspace)
+    users = UserRemap(makerspace, archive)
     report = {"replaced": {}, "restored": {}, "kept_live": {}}
     # Ownership predicates join through parents (a registration through its event), so
     # every live set is read, and every reference into a removed row resolved, BEFORE any
@@ -69,6 +69,7 @@ def apply_space_restore(makerspace, archive):
     report["accounts_rescrubbed"] = rescrub_deleted_accounts(makerspace, users.referenced)
     report["users_reattributed"] = users.reattributed
     report["merges_followed"] = users.followed_merges
+    report["merged_rows_kept_on_shells"] = users.merges.kept_on_shell
     _rebuild_blind_indexes(makerspace)
     try:
         with connection.cursor() as cursor:

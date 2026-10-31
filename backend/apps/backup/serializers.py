@@ -30,8 +30,8 @@ class BackupArchiveSerializer(serializers.ModelSerializer):
         return ARCHIVE_PURGE_WARNING
 
     def get_restorable_in_app(self, instance) -> bool:
-        from apps.backup.space_restore_plan import FORMAT
-        return bool(instance.scope == BackupArchive.Scope.MAKERSPACE and instance.format == FORMAT
+        from apps.backup.space_restore_plan import READABLE_FORMATS
+        return bool(instance.scope == BackupArchive.Scope.MAKERSPACE and instance.format in READABLE_FORMATS
                     and instance.status == BackupArchive.Status.AVAILABLE
                     and (instance.manifest or {}).get("server_restorable"))
 

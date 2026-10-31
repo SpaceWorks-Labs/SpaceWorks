@@ -15,7 +15,7 @@ from django.conf import settings
 from apps.tenant_migration.insertion_errors import ArchiveFormatError
 
 from . import storage
-from .space_restore_plan import FORMAT, SpaceArchive, SpaceRestoreError
+from .space_restore_plan import READABLE_FORMATS, SpaceArchive, SpaceRestoreError
 
 
 def require_server_identity():
@@ -32,7 +32,7 @@ def require_restorable(archive_row, makerspace):
         raise SpaceRestoreError("wrong_space", "This restore point belongs to a different makerspace.")
     if archive_row.status != "available":
         raise SpaceRestoreError("archive_unavailable", "This restore point is not available.")
-    if archive_row.format != FORMAT or not archive_row.manifest.get("server_restorable"):
+    if archive_row.format not in READABLE_FORMATS or not archive_row.manifest.get("server_restorable"):
         raise SpaceRestoreError(
             "archive_not_restorable",
             "This backup cannot be restored in the app; it was not encrypted to this server's restore key.",
@@ -68,7 +68,7 @@ def _validated(archive, archive_row, makerspace):
     manifest = archive.manifest
     if archive.makerspace_id != makerspace.pk or manifest.get("archive_id") != str(archive_row.pk):
         raise SpaceRestoreError("wrong_space", "The decrypted archive does not match this restore point.")
-    if manifest.get("payload_format") != FORMAT:
+    if manifest.get("payload_format") not in READABLE_FORMATS or manifest.get("payload_format") != archive_row.format:
         raise SpaceRestoreError("archive_not_restorable", "The archive payload format is not supported.")
     if manifest.get("deployment_id") != public_deployment_identity()["deployment_id"]:
         raise SpaceRestoreError(

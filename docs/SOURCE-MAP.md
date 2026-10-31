@@ -743,7 +743,19 @@ also include concrete artwork and revision rows. Frontend shared design controls
 `eventsCertificateDesignerApi.ts` own event draft/revision/upload/preview state.
 
 Account contexts live in `accounts/models_user.py` (re-exported by `models.py`),
-`account_constraints.py`, `account_kind_guards.py` and `managers.py`.
+`account_constraints.py`, `account_kind_guards.py` and `managers.py`. One account per person
+(release 2, U-A1): `accounts/staff_identity.py` is the single identity seam (person / platform /
+shell predicates, `has_staff_role`, `actor_ids_for`, `require_staff_mfa`);
+`makerspaces/membership_managers.py` holds the fail-closed track managers behind
+`MakerspaceMembership.objects` (community), `staff_tracks` and the reserved `all_tracks`;
+`makerspaces/staff_role_grants.py` grants staff roles to an existing person.
+`accounts/models_account_merge.py` holds `AccountMergeRecord`/`AccountMergeIntent`;
+`accounts/merge_registry.py` (+ `merge_registry_types.py`, `merge_registry_rows_*.py`) classifies
+every `accounts.User` reference for merges, checked by `accounts.E003` in `checks.py`.
+`accounts/unification_plan.py` computes the conversion plan and its `plan_sha256` for
+`management/commands/account_unification_report.py` (+ `unification_report_context.py`) and
+the frozen conversion in `accounts/migrations/_0050_conversion.py`; the unified triggers are
+frozen in `_0049_unified_guards.py`, the track triggers in `makerspaces/migrations/0114_membership_track.py`.
 `staff_accounts.py` atomically creates a tenant staff principal and its roles/type scopes;
 `staff_account_policy.py`, `staff_account_services.py` and `staff_account_lifecycle.py`
 own staff lifecycle authority, onboarding, deactivation and administrator password issue.

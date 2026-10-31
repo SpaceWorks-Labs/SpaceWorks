@@ -23,11 +23,107 @@ sending remains paused until durable ingress, conversion, replay, verification a
 checkpoints in [the rollout guide](notification-reconciliation-rollout.md) pass.
 Documentation is not rollout sign-off.
 
-## Account kinds (member / staff / platform)
+## One account per person (release 2, lane U-A1; #63, #65, #66)
 
-These are the account-split owner decisions D1–D12, including approved amendments V1–V12.
-They supersede older shared-account, staff social-login and staff-role stripping descriptions
-in historical batch notes below. Account identity never changes to obtain another surface.
+Owner decisions #63/#65/#66 reverse the account split (D1–D12): **one account per person**;
+staff roles are granted to that person; the superadmin stays a separate platform account.
+U-A1 ships the model, the database guards, the conversion and the identity/RBAC seams below.
+The login/session surface (U-A2), the staff-roles API and console (U-B), interactive merges and
+deletion (U-C) and portability (U-D) land in later lanes; until each lands, the split-account
+text kept under "Split-account surfaces awaiting their lanes" still describes that code.
+
+**Kinds.** `User.account_kind` stays non-null. `member` IS the person (shown as `person` in the
+API); `platform` is the superadmin (`is_superuser` + `role=superadmin`); `staff` survives only
+for **inert shells**: legacy retired staff accounts and accounts merged into a person
+(`merged_into`, PROTECT self-FK, + `merged_at`). Constraint `user_account_context`: shells are
+inactive, tenantless and retired or merged; people and platform accounts have no
+`staff_makerspace`, `retired_at` or `merged_into`. `accounts_guard_context` allows a kind change
+only inside a unification run (`app.account_unification_run_id`: staff->person by the
+conversion, person->merged shell by U-C's merge engine), inserts a shell or remaps
+`merged_into` only for the exact running tenant import (`app.account_shell_import_job_id`), and
+never deletes a shell. New accounts are people or platform (`UserManager` refuses `staff`).
+
+**Identity seam.** Code never reads `account_kind`/`staff_makerspace`; it asks
+`accounts/staff_identity.py`: `is_person`/`person_q`, `is_platform`/`platform_q`,
+`is_shell`/`shell_q`, `has_staff_role(user, makerspace_id=None)` and `staff_makerspace_ids`
+(active, valid staff-track rows in servable spaces), `staff_holder_q`, `has_elevated_authority`
+(staff role, organization authority or a resource grant; the superadmin is exempt),
+`actor_ids_for` (the person plus every shell merged into them, transitively: read history
+with it) and `require_staff_mfa(user, claims)` (interim: provider-asserted proof never
+satisfies an elevated person, then the ordinary MFA floor; S-A fills the final body). The
+remaining raw readers are model/constraint/guard code, creation writes, `DeviceGrant` columns,
+the `/control/` session-binding key and the files of U-A2/U-B/U-C/U-D.
+
+**Email and identities.** `uniq_person_email` (case-insensitive, non-empty, kind `member`)
+replaces `uniq_member_email` and `uniq_staff_space_email`; platform email stays separately
+unique; phone and Telegram uniqueness stay person-scoped. Nothing merges on email alone (#65).
+
+**Membership tracks.** `MakerspaceMembership.track` is `community` or `staff`, unique per
+`(makerspace, user, track)`, immutable once written (trigger), with per-track status. A
+community row holds Member alone; a staff row holds built-in staff roles: Space Manager alone,
+every other built-in staff role combines (keyed on role properties, so Technician and Shop
+Manager need no trigger change). Platform accounts hold no rows; a merged shell keeps only
+revoked rows. Staff-track rows are revoked, never deleted, outside the exact tenant purge
+(`app.tenant_purge_makerspace_id`, or the legacy retirement GUC B2's restore sets). Membership
+FKs are pinned to their track by deferred triggers: machine-type scopes and additional roles
+reference staff rows; claims, OIDC intents, calendar feeds, event presentations,
+certifications, import adoption, terms, cards, profiles and presence reference community rows.
+
+**Managers fail closed.** The default `objects` manager, and so every reverse relation
+(`user.makerspace_memberships`, `makerspace.memberships`), returns COMMUNITY rows only.
+Staff authority reads `MakerspaceMembership.staff_tracks`; `track_manager(track)` picks one
+known track; `both_tracks()` is the explicit "whole relation to a space" read (notification
+recipients, PII scope) and never authority. `all_tracks`/`_base_manager` on memberships are for
+backup, tenant migration, export and purge only (guard test `test_membership_tracks.py`). Join
+lookups (`makerspace_memberships__...`) are NOT filtered by a manager; add `__track` where it
+matters. A community revocation refuses a staff row (the staff-roles service revokes those).
+
+**RBAC.** `resolve_scope`/`scope_by_makerspace` union both tracks (a person sees the spaces they
+belong to and the ones they staff); `_membership_for`, `membership_role`,
+`makerspaces_for_action`, `is_space_manager_identity` and machine scopes read staff rows only;
+community rows never confer actions. Organization authority belongs to the person. Staff quota
+counts staff-track rows. Only the superadmin grants, changes, revokes or restores the Space
+Manager role (`role_membership_writes.assert_space_manager_change_allowed`, code
+`space_manager_superadmin_only`; #110, #111 Q14). `makerspaces/staff_role_grants.grant_staff_role`
+grants roles to an existing person (audited `staff_role.granted`); it never creates an account.
+The community restrict/restore switch refuses a person who holds staff roles.
+
+**Conversion (accounts 0049/0050, makerspaces 0114).** 0114 adds the track and backfills
+`staff` for staff accounts' rows. 0049 refuses before any schema change while live staff exist
+unless `ACCOUNT_UNIFICATION_ACK` equals the `plan_sha256` that `manage.py
+account_unification_report` prints (dry run, text|json, reads only pre-unification columns;
+lists roles, holds, MFA, last-manager checks, candidate pairs and, informationally, open PII
+windows and security locks). 0050 converts each staff account in place under the unification
+GUC (lock order Makerspace -> User -> envelopes): kind `member`, `staff_makerspace` NULL, the
+staff row and roles kept, email re-stamped unverified (#65), a colliding email/phone/Telegram id
+moved to an encrypted hold (a person's existing address always wins; two staff sharing one
+address both hold), credentials revoked and `credential_generation` bumped; one append-only
+`AccountMergeRecord(decision=converted)` with a deployment-key snapshot and one audit
+`account.converted` each. Then every native device grant and family ends (members' too, #66),
+staff recovery envelopes and open staff invitations are revoked, the deployment
+`auth_generation` advances, the context check is validated and `uniq_person_email` is created.
+No community membership is created for converted staff (#66). `User.role` is left as it was.
+Irreversible: restore the pre-upgrade backup to roll back. `AccountMergeRecord` is immutable
+once completed except the account purge's PII scrub (`app.account_purge_user_id`);
+`AccountMergeIntent` is U-C's proof state.
+
+**Merge registry.** `accounts/merge_registry.py` classifies every relation to `accounts.User`
+and every integer `*user_id`/`*actor_id` column as REPOINT, KEEP_ON_SHELL or UNIQUE_RESOLVE
+(rows in `merge_registry_rows_*.py`, a hot file: append rows only). System check
+`accounts.E003` refuses an unclassified or stale entry. U-C's engine walks it.
+
+**Native devices and recovery.** A device grant's principal is a person; a staff grant needs an
+active staff-track row in its fixed `staff_makerspace_id`, an enabled factor and attestation,
+and native selection of that space reads the staff row (member grants read community rows).
+Recovery envelopes are `member` or `platform` context only; legacy staff envelopes may only be
+retired.
+
+### Split-account surfaces awaiting their lanes (superseded as each lane lands)
+
+These are the account-split owner decisions D1–D12, including approved amendments V1–V12, as
+the code still implements them outside U-A1's files. The identity, uniqueness and membership
+bullets directly below are SUPERSEDED by the section above; the surface, lifecycle, recovery,
+transport and retirement text stays current until U-A2/U-B/U-C/U-D replace it.
 
 **Identity and database boundaries (D1–D3, M1–M5, V7/V10).**
 

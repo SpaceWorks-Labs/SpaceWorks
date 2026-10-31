@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { StatusPill } from "../../components/ui";
 import { formatMoney } from "../staff/paymentsApi";
+import { NoteDialog } from "./NoteDialog";
 import { financeApi, financeError, financeKeys, invalidateFinance, words, type Claim, type Confirmation } from "./financeApi";
 
 /**
@@ -27,10 +28,8 @@ export function MoneyQueues({ makerspaceId, claimsOn }: { makerspaceId: number; 
       financeApi.decideConfirmation(makerspaceId, row.id, decision, note),
     onSuccess: (row) => { invalidateFinance(client, makerspaceId); setMessage(`Settlement ${row.status}.`); },
   });
-  const reject = (apply: (note: string) => void) => {
-    const note = window.prompt("Tell the payer why (optional)") ?? null;
-    if (note !== null) apply(note);
-  };
+  const [rejecting, setRejecting] = useState<((note: string) => void) | null>(null);
+  const reject = (apply: (note: string) => void) => setRejecting(() => apply);
   const error = decideClaim.error ?? decideRow.error;
   return <div className="grid min-w-0 gap-6">
     {message ? <p role="status" className="text-sm">{message}</p> : null}
@@ -63,5 +62,7 @@ export function MoneyQueues({ makerspaceId, claimsOn }: { makerspaceId: number; 
         </div>}
       </li>)}</ul>
     </section>
+    {rejecting ? <NoteDialog title="Reject" label="Tell the payer why (optional)" confirmLabel="Reject"
+      onConfirm={note => { rejecting(note); setRejecting(null); }} onClose={() => setRejecting(null)} /> : null}
   </div>;
 }

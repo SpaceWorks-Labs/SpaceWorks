@@ -5,6 +5,7 @@ import { Scale } from "lucide-react";
 import { StatusPill } from "../../components/ui";
 import type { Tone } from "../../components/ui/types";
 import { formatMoney } from "../staff/paymentsApi";
+import { NoteDialog } from "./NoteDialog";
 import { financeApi, financeError, financeKeys, invalidateFinance, type CaptureFlag, type Dispute } from "./financeApi";
 
 const FLAG_TEXT: Record<CaptureFlag["kind"], string> = {
@@ -27,10 +28,8 @@ export function FlagsSection({ makerspaceId }: { makerspaceId: number }) {
       financeApi.resolveFlag(makerspaceId, flag.id, { resolution, note }),
     onSuccess: () => { invalidateFinance(client, makerspaceId); setDone("Decision saved."); },
   });
-  const acknowledge = (flag: CaptureFlag) => {
-    const note = window.prompt("What happened, for example where the money was refunded?");
-    if (note) resolve.mutate({ flag, resolution: "acknowledged", note });
-  };
+  const [acknowledging, setAcknowledging] = useState<CaptureFlag | null>(null);
+  const acknowledge = (flag: CaptureFlag) => setAcknowledging(flag);
   return <div className="grid min-w-0 gap-3">
     <p className="text-sm text-muted">The money is already with the provider. Issue the receipt on what arrived, open a refund case for
       someone to approve, or note what happened.</p>
@@ -48,6 +47,10 @@ export function FlagsSection({ makerspaceId }: { makerspaceId: number }) {
         <button type="button" className="desk-button-ghost" disabled={resolve.isPending} onClick={() => acknowledge(flag)}>Note what happened</button>
       </div>
     </li>)}</ul>
+    {acknowledging ? <NoteDialog title="Note what happened" required confirmLabel="Save note"
+      label="What happened, for example where the money was refunded?"
+      onConfirm={note => { resolve.mutate({ flag: acknowledging, resolution: "acknowledged", note }); setAcknowledging(null); }}
+      onClose={() => setAcknowledging(null)} /> : null}
   </div>;
 }
 

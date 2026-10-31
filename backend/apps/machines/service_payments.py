@@ -1,13 +1,23 @@
-"""Machine-service charging boundary; payment failures never affect fulfilment."""
+"""Machine-service charging boundary; payment failures never affect fulfilment.
+
+The amount comes from the pricing kernel (lane L15): time + material + per job, each
+resolved per component (pool / machine override, the type's pricing row, the space
+default), with the billing increment and minimum, and the member's best automatic
+discount. The quote is frozen on the charge. A job priced at 0 raises nothing.
+
+A failed job is free by default (A11). `create_for_failed_request` charges it under the
+space's (or the caller's) failure choice -- none, material only, or full -- and is the
+seam lane L12's job flow calls with the per-type, per-fault choice (#142 OQ-8). A job
+cancelled while running is never charged (#58/#61): nothing here is called for it.
+"""
 
 import logging
 from decimal import Decimal, InvalidOperation
 
 from django.db import transaction
 
-from apps.machines.models import MakerspaceMachineTypePricing
 from apps.payments.availability import charge_tracking_enabled, online_payments_enabled
-from apps.payments.models import MakerspacePaymentSettings, Payment
+from apps.payments.models import Payment
 from apps.payments.services import create_checkout, create_payment
 
 logger = logging.getLogger(__name__)
@@ -23,38 +33,52 @@ def effective_quantity(service_request, machine_type):
     return _decimal(service_request.actual_consumed_grams)
 
 
+def service_quote(service_request, *, outcome="completed", failure_charge=None, member=None):
+    from apps.payments.pricing import quote
+
+    return quote(service_request.makerspace, "machines", service_request,
+                 member=member or service_request.member or service_request.requester,
+                 params={"outcome": outcome, "failure_charge": failure_charge})
+
+
 def create_for_completed_request(service_request, actor):
+    return _raise(service_request, actor, outcome="completed")
+
+
+def create_for_failed_request(service_request, actor, *, failure_charge=None):
+    """L12 seam: charge a failed job under `failure_charge` (default: the space's choice)."""
+    return _raise(service_request, actor, outcome="failed", failure_charge=failure_charge)
+
+
+def _raise(service_request, actor, *, outcome, failure_charge=None):
+    from apps.payments.pricing.charging import raise_priced
+
     try:
         with transaction.atomic():
-            machine_type = service_request.assigned_machine.machine_type
+            if service_request.assigned_machine_id is None:
+                return None
             if not charge_tracking_enabled(service_request.makerspace, "machines"):
                 return None
-            pricing = MakerspaceMachineTypePricing.objects.filter(
-                makerspace=service_request.makerspace, machine_type=machine_type, payment_enabled=True
-            ).first()
-            if pricing is None:
-                return None
-            amount = (pricing.rate_per_unit * effective_quantity(service_request, machine_type) + pricing.flat_fee).quantize(Decimal("0.01"))
-            if amount <= 0:
-                return None
-            currency = MakerspacePaymentSettings.for_makerspace(service_request.makerspace).default_currency
-            payment = create_payment(
-                makerspace=service_request.makerspace,
-                subject_type=Payment.SubjectType.MACHINE_SERVICE_REQUEST,
-                subject_id=service_request.pk,
+            existing = Payment.objects.filter(
+                makerspace=service_request.makerspace, subject_type=Payment.SubjectType.MACHINE_SERVICE_REQUEST,
+                subject_id=service_request.pk).first()
+            if existing is not None:
+                return existing
+            priced = service_quote(service_request, outcome=outcome, failure_charge=failure_charge)
+            payment = raise_priced(
+                priced, makerspace=service_request.makerspace,
+                subject_type=Payment.SubjectType.MACHINE_SERVICE_REQUEST, subject_id=service_request.pk,
                 member=service_request.member or service_request.requester,
-                amount=amount,
-                currency=currency,
                 # A device-applied completion has no human actor (a device is never an
                 # actor), but the ledger needs a real User: attribute the charge to the
                 # staff member who accepted the job into the queue.
                 created_by=actor or service_request.accepted_by or service_request.handled_by,
+                target=service_request, create=create_payment,
                 # NO subject_label. `title` is free text a public member types, so it can
                 # contain their name, email or phone -- and a snapshot outlives the
                 # `machine_service` purge that exists to destroy exactly that. Leaving it
                 # blank keeps the live lookup (which still shows the title while the request
                 # exists) and degrades to the generic display once the request is gone.
-                # The other three subjects snapshot staff-authored or literal text instead.
             )
     except Exception:
         # Fulfilment must not fail on a charge error, but a debt that silently vanishes
@@ -63,7 +87,7 @@ def create_for_completed_request(service_request, actor):
             "machine_service_charge_not_recorded", extra={"service_request_id": service_request.pk}
         )
         return None
-    if online_payments_enabled(service_request.makerspace, "machines"):
+    if payment is not None and online_payments_enabled(service_request.makerspace, "machines"):
         try:
             create_checkout(payment)
         except Exception:

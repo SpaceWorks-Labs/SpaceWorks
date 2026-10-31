@@ -42,6 +42,11 @@ INBOX_ONLY_PROJECTIONS.update({
     ("hardware_requests", "late_fee_raised", audience): ("makerspace.name", "request.id")
     for audience in ("member", "staff")
 })
+# Lane L15: staff-only loan charge notices (the payer's notice is the ledger's charge_raised).
+INBOX_ONLY_PROJECTIONS.update({
+    ("hardware_requests", event, "staff"): ("makerspace.name", "request.id")
+    for event in ("rental_raised", "damage_charged", "lost_charged", "fees_waived")
+})
 INBOX_ONLY_PROJECTIONS.update({
     ("hardware_requests", "back_available", "member"): ("makerspace.name",),
     ("api_access", "api_key_request_resolved", "member"): ("makerspace.name", "api_key_request.id", "api_key_request.status"),

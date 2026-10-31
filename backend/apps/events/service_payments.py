@@ -10,6 +10,44 @@ logger = logging.getLogger(__name__)
 def registration_amount(registration):
     return registration.quoted_amount if registration.quoted_amount is not None else registration.event.payment_amount
 
+
+def member_price(event, member, amount, ticket=None):
+    """Lane L15 hook (A3): `(price, saving)` after the member's ONE best automatic discount.
+
+    Applied BEFORE any promo code, which the registration quote then takes off the
+    discounted price. Lane L6 owns the order quote after this; it keeps the same order.
+    """
+    from decimal import Decimal
+
+    from apps.payments.pricing import quote
+
+    if member is None or not getattr(member, "is_authenticated", False) or Decimal(amount) <= 0:
+        return Decimal(amount), Decimal("0")
+    priced = quote(event.makerspace, "events", event, member=member, params={"ticket": ticket})
+    if priced.discount is None or priced.subtotal != Decimal(amount):
+        return Decimal(amount), Decimal("0")
+    return priced.total, priced.discount_total
+
+
+def registration_snapshot(registration):
+    """The frozen quote for a registration charge: list price, discount, what is owed."""
+    from decimal import Decimal
+
+    from apps.payments.pricing.components import component
+    from apps.payments.pricing.quotes import Quote, line
+
+    owed = Decimal(registration_amount(registration))
+    discount = Decimal(registration.discount_amount or 0)
+    event = registration.event
+    currency = MakerspacePaymentSettings.for_makerspace(event.makerspace).default_currency
+    item = line(component("events", "per_registration"), currency=currency, quantity=1,
+                unit_amount=owed + discount, rate_source="registration",
+                target={"type": "event", "id": event.pk, "label": event.title},
+                detail={"ticket_type_id": registration.ticket_type_id, "promo_code_id": registration.promo_code_id})
+    from dataclasses import replace
+    priced = Quote(domain="events", currency=currency, lines=(replace(item, discount=discount),), mode="paid")
+    return priced.to_snapshot()
+
 from apps.payments.availability import charge_tracking_enabled, online_payments_enabled
 from apps.payments.models import MakerspacePaymentSettings, Payment
 from apps.payments.refund_cancellation import cancel_or_hold
@@ -63,6 +101,7 @@ def _get_or_create(registration, created_by):
                 ),
                 amount=registration_amount(registration),
                 currency=currency,
+                pricing_snapshot=registration_snapshot(registration),
                 created_by=created_by,
                 subject_label=event.title,
                 due_at=event.starts_at,

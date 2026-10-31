@@ -1,15 +1,20 @@
-"""Loan deposit: the issue gate and the post-issue raise.
+"""Loan charges at issue: the deposit gate, the deposit, and rental charged at checkout.
 
 Split out of `loan_payments.py` (still the public barrel). Every entry point swallows
-payment failures, because a provider outage must never stop a handover.
-"""
+payment failures, because a provider outage must never stop a handover. Amounts come
+from the pricing kernel (`apps.payments.pricing.quote`, lane L15), so the preview a
+member saw and the charge raised are the same computation.
 
-from decimal import Decimal
+* Deposit: release-1 behaviour (fixed per loan, or per item) through the rate card;
+  never discounted or waived. A deposit only ever BLOCKS a reviewed handover, and only
+  when the space opted in; a direct or kiosk handout is never blocked (A10).
+* Rental at checkout (A1): for the planned days to the due date, once per loan. Renewals
+  are not charged in v1; an early return refunds nothing automatically.
+"""
 
 from apps.audit import services as audit
 from apps.hardware_requests import notifications
 from apps.hardware_requests.loan_charges_common import (
-    ZERO,
     _get_or_create,
     _schedule_checkout,
     loans_enabled,
@@ -20,18 +25,15 @@ from apps.hardware_requests.workflow_errors import DepositRequired
 from apps.payments.models import MakerspacePaymentSettings, Payment
 
 
-def deposit_amount(request, settings_row):
-    mode = settings_row.loan_deposit_mode
-    if mode == MakerspacePaymentSettings.LoanDepositMode.FIXED:
-        return Decimal(settings_row.loan_deposit_amount or 0)
-    if mode == MakerspacePaymentSettings.LoanDepositMode.PER_PRODUCT:
-        total = ZERO
-        for item in request.items.select_related("product"):
-            per_unit = item.product.deposit_amount
-            if per_unit and item.accepted_quantity > 0:
-                total += Decimal(per_unit) * item.accepted_quantity
-        return total
-    return ZERO
+def deposit_quote(request):
+    from apps.payments.pricing import quote
+
+    return quote(request.makerspace, "loans", request, params={"components": ("deposit",)}, discounts=False)
+
+
+def deposit_amount(request, settings_row=None):
+    """Kept for callers of the barrel: the deposit this loan owes now."""
+    return deposit_quote(request).total
 
 
 def require_deposit_settled(request, actor):
@@ -44,10 +46,10 @@ def require_deposit_settled(request, actor):
         settings_row = MakerspacePaymentSettings.for_makerspace(request.makerspace)
         if not settings_row.loan_deposit_blocks_issue or not loans_enabled(request.makerspace):
             return None
-        amount = deposit_amount(request, settings_row)
-        if amount <= 0:
+        priced = deposit_quote(request)
+        if priced.total <= 0:
             return None
-        payment = _deposit(request, actor, amount, settings_row.default_currency)
+        payment = _deposit(request, actor, priced)
     except Exception:
         logger.exception("loan_deposit_gate_failed", extra={"request_id": request.pk})
         return None
@@ -56,28 +58,31 @@ def require_deposit_settled(request, actor):
     return payment
 
 
+def on_request_issued(request_id, actor):
+    """Post-commit, for EVERY issue path (reviewed, direct, kiosk, self-checkout)."""
+    deposit = raise_deposit(request_id, actor)
+    raise_rental_at_checkout(request_id, actor)
+    return deposit
+
+
 def raise_deposit(request_id, actor):
     """Post-commit: raise (or find) the deposit for a loan that was just issued."""
     try:
         request = HardwareRequest.objects.select_related("makerspace").get(pk=request_id)
-        if request.status != HardwareRequest.Status.ISSUED:
+        if request.status != HardwareRequest.Status.ISSUED or not loans_enabled(request.makerspace):
             return None
-        settings_row = MakerspacePaymentSettings.for_makerspace(request.makerspace)
-        if not loans_enabled(request.makerspace):
+        priced = deposit_quote(request)
+        if priced.total <= 0:
             return None
-        amount = deposit_amount(request, settings_row)
-        if amount <= 0:
-            return None
-        return _deposit(request, actor, amount, settings_row.default_currency)
+        return _deposit(request, actor, priced)
     except Exception:
         logger.exception("loan_deposit_raise_failed", extra={"request_id": request_id})
         return None
 
 
-def _deposit(request, actor, amount, currency):
+def _deposit(request, actor, priced):
     payment, created = _get_or_create(
-        request, Payment.SubjectType.LOAN_DEPOSIT, amount, currency,
-        actor, f"Loan deposit - request #{request.pk}",
+        request, Payment.SubjectType.LOAN_DEPOSIT, priced, actor, f"Loan deposit - request #{request.pk}",
     )
     if created:
         audit.record(
@@ -88,3 +93,16 @@ def _deposit(request, actor, amount, currency):
     if payment.status == Payment.Status.PENDING:
         _schedule_checkout(payment)
     return payment
+
+
+def raise_rental_at_checkout(request_id, actor):
+    from apps.hardware_requests.loan_charges_rental import raise_rental
+
+    try:
+        request = HardwareRequest.objects.select_related("makerspace").get(pk=request_id)
+        if request.status != HardwareRequest.Status.ISSUED:
+            return None
+        return raise_rental(request, actor, at="checkout")
+    except Exception:
+        logger.exception("loan_rental_raise_failed", extra={"request_id": request_id})
+        return None

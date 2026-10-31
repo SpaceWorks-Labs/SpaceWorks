@@ -6,6 +6,10 @@ from .email_templates_registry_helpers import EmailTemplateRegistryEntry, bag
 EVENTS = {
     ("hardware_requests", "deposit_raised"): ("request.id", "request.status"),
     ("hardware_requests", "late_fee_raised"): ("request.id", "request.status"),
+    ("hardware_requests", "rental_raised"): ("request.id", "request.status"),
+    ("hardware_requests", "damage_charged"): ("request.id", "request.status"),
+    ("hardware_requests", "lost_charged"): ("request.id", "request.status"),
+    ("hardware_requests", "fees_waived"): ("request.id", "request.status"),
     ("hardware_requests", "back_available"): ("product.id", "product.name"),
     ("hardware_requests", "problem_report.filed"): ("problem_report_id",),
     ("api_access", "api_key_request_resolved"): ("request.id", "request.status"),

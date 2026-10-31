@@ -117,6 +117,12 @@ def checkout_tool(makerspace, requester, payload, *, evidence_id, remark="", kit
             target=hardware_request,
             meta={"qr_id": qr.id, "target": target_label},
         )
+        # Lane L15 (A10): self-checkout loans are charged like reviewed loans. An
+        # account-less borrower (#91) has no account to owe it; the raise is skipped.
+        if contact is None:
+            from apps.hardware_requests import loan_payments
+            request_id = hardware_request.pk
+            transaction.on_commit(lambda: loan_payments.on_request_issued(request_id, requester))
         return loan
 
 

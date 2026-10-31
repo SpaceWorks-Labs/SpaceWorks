@@ -80,6 +80,24 @@ def notify_request(row, event, room_text=None):
     return NotificationResult(result.scheduled or bool(contact and contact.status != "skipped"))
 
 
+#: Loan charge event -> (subject type, label). Lane L15 adds rental, damage and lost.
+CHARGE_EVENTS = {
+    "deposit_raised": ("loan_deposit", "Loan deposit"),
+    "late_fee_raised": ("loan_late_fee", "Late return fee"),
+    "rental_raised": ("loan_rental", "Loan rental"),
+    "damage_charged": ("loan_damage", "Damage charge"),
+    "lost_charged": ("loan_lost", "Lost item charge"),
+}
+
+
+def _charge_request_id(payment):
+    """The loan a charge belongs to: its subject, or (damage/lost) its accountability row's loan."""
+    if payment.subject_type in ("loan_damage", "loan_lost"):
+        from .models import RequesterAccountability
+        return RequesterAccountability.objects.filter(pk=payment.subject_id).values_list("request_id", flat=True).first()
+    return payment.subject_id
+
+
 def eligible_charge(envelope):
     from apps.payments.models import Payment
     payment = rbac.scope_notification_policy(Payment.objects.all(),
@@ -88,12 +106,12 @@ def eligible_charge(envelope):
         return False
     if revision(payment.created_at, payment.subject_type, payment.subject_id) != envelope.revision:
         return False
-    expected = {"deposit_raised": Payment.SubjectType.LOAN_DEPOSIT,
-                "late_fee_raised": Payment.SubjectType.LOAN_LATE_FEE}.get(envelope.event)
+    expected = CHARGE_EVENTS.get(envelope.event, (None,))[0]
+    request_id = _charge_request_id(payment)
     return bool(envelope.audience == "staff" and expected == payment.subject_type
-                and payment.subject_id == envelope.context.get("request_id")
+                and request_id == envelope.context.get("request_id")
                 and rbac.scope_notification_policy(HardwareRequest.objects.all(),
-                    makerspace_id=envelope.makerspace_id).filter(pk=payment.subject_id).exists())
+                    makerspace_id=envelope.makerspace_id).filter(pk=request_id).exists())
 
 
 @safe_adapter
@@ -102,7 +120,7 @@ def notify_charge(row, event, payment):
     payment ledger: `payments.services.create_payment` already raises
     `charge_raised` for every loan charge, so a second owner intent here would
     duplicate it."""
-    label = "Loan deposit" if event == "deposit_raised" else "Late return fee"
+    label = CHARGE_EVENTS[event][1]
     version = revision(payment.created_at, payment.subject_type, payment.subject_id)
     return fanout(space=row.makerspace, feature="hardware_requests", stream="hardware",
         event=event, kind="hardware.charge", source=payment.pk, version=version, subject=payment,
@@ -111,8 +129,29 @@ def notify_charge(row, event, payment):
         staff={"subject": label, "text": f"Hardware request #{row.pk}: {label.lower()} raised."})
 
 
+def eligible_waiver(envelope):
+    from apps.payments.models import LoanFeeWaiver
+    waiver = rbac.scope_notification_policy(LoanFeeWaiver.objects.all(),
+        makerspace_id=envelope.makerspace_id).filter(pk=envelope.source_id, revokes__isnull=True).first()
+    return bool(envelope.audience == "staff" and waiver is not None
+                and waiver.request_id == envelope.context.get("request_id")
+                and revision(waiver.created_at, waiver.request_id) == envelope.revision)
+
+
+@safe_adapter
+def notify_waiver(row, waiver):
+    """Staff-only: a loan's fees were waived (lane L15, A14). The reason stays in the audit log."""
+    return fanout(space=row.makerspace, feature="hardware_requests", stream="hardware",
+        event="fees_waived", kind="hardware.fee_waiver", source=waiver.pk,
+        version=revision(waiver.created_at, waiver.request_id), subject=waiver,
+        context={"request_id": row.pk, "waiver_id": waiver.pk},
+        staff_context=hardware_context(row, staff=True),
+        staff={"subject": "Loan fees waived", "text": f"Hardware request #{row.pk}: loan fees waived."})
+
+
 def register():
     register_source(KIND, NotificationSource(eligible))
     register_source("hardware.charge", NotificationSource(eligible_charge))
+    register_source("hardware.fee_waiver", NotificationSource(eligible_waiver))
     from .notifications_p2_contact import register_source as register_contact
     register_contact()

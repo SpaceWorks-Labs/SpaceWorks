@@ -13,6 +13,7 @@ from .catalog_messaging import authority_entries as messaging_authority
 from .catalog_profiles import authority_entries as profile_authority
 from .catalog_public_pages import authority_entries as page_authority
 from .catalog_account_context import AUTHORITY_ENTRIES as ACCOUNT_CONTEXT_AUTHORITY
+from .catalog_unified_accounts import authority_entries as unified_accounts_authority
 from .target_projection_events_programme import TARGET_FIELDS as PROGRAMME_TARGET_FIELDS
 from .target_projection_reimbursements import TARGET_FIELDS as REIMBURSEMENT_TARGET_FIELDS
 
@@ -52,6 +53,7 @@ AUTHORITY_FIELD_OVERRIDES = _build((
     *WP4_AUTHORITY_ENTRIES,
     *broadcast_authority(authority, D),
     *messaging_authority(authority, D),
+    *unified_accounts_authority(authority, D),
 ))
 NON_MODEL_AUTHORITY_INPUTS = {
     "target_native_app_registrations": authority(D.RESET, "Use exact target configuration."),

@@ -1,4 +1,4 @@
-/* Brand colour fields (welcome-and-dark-spec.md §2.1). Each field is a scoped token island: it redefines
+/* Brand colour fields. Each field is a scoped token island: it redefines
    the tokens its subtree reads, so buttons, inputs, links and focus rings recolour themselves.
    Values are brand hexes as triplets (p.9) or documented brand-mixes; fields are flat (p.16). */
 

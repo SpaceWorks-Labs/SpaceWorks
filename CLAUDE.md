@@ -378,8 +378,8 @@ Stack (in use):
 - **Design system:** Space Works brand guidelines v1 (`docs/brand/`) for all colour, type, logo and icons;
   UX patterns from the Yuyu reference boards. Fonts (approved brand kit, 2026-10-15): Gilroy 400–700 for all text
   and headings, Unbounded for one accent per layout — no other family. Icons: `lucide-react`. Every screen composes one layout from
-  `frontend/src/components/layouts/` inside the sidebar `AppShell` (`components/shell/`). Plan and specs:
-  `docs/design-revamp/`.
+  `frontend/src/components/layouts/` inside the sidebar `AppShell` (`components/shell/`); shared UI
+  primitives are exported from `frontend/src/components/ui/index.ts`.
 - **API documentation:** drf-spectacular / OpenAPI (snapshot `frontend/openapi-schema.json` + generated
   `frontend/src/generated/api.ts`; regenerate both when routes/models change — spectacular needs
   `--format openapi-json`).

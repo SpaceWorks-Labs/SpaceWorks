@@ -2944,7 +2944,6 @@
     "frontend/src/features/staff/mentorDesk/roundDrafts.ts",
     "frontend/src/features/staff/mentorDesk/setupFields.tsx"
   ],
-  "handoff": "backend/apps/events/contributions/HANDOFF.md",
   "registry_inputs": {
     "MODEL_MODULES": [
       "apps.events.contributions.models_roles",

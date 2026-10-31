@@ -98,7 +98,7 @@
 /* asideSide="start": the aside leads when the columns stack, matching its desktop position. */
 .sw-detail-start > aside { order: -1; }
 
-/* Landing (welcome-and-dark-spec §3.2): the space grid steps 1/2/3/4 columns; on monitors the page
+/* Landing: the space grid steps 1/2/3/4 columns; on monitors the page
    widens to 1440 so the teal field and four cards share one measure. */
 .sw-space-grid { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
 @media (min-width: 640px) { .sw-space-grid { gap: 24px; grid-template-columns: repeat(2, minmax(0, 1fr)); } }

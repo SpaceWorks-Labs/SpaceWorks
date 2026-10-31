@@ -12,6 +12,7 @@ import { OrganizationSelfCreation, useOrganizationSelfCreationVisible } from "..
 import { MemberAccountProfile } from "./MemberAccountProfile";
 import { MemberAccountSessions } from "./MemberAccountSessions";
 import { MemberAccountMembership } from "./MemberAccountMembership";
+import { MemberHistory, MemberPrivacy } from "./MemberAccountLifecycle";
 import { OwnOrganizations } from "../organizationLeave/OwnOrganizations";
 import { MemberAccountExports } from "./MemberAccountExports";
 import { MemberAccountDeletion, AccountDeletionReceipt } from "./MemberAccountDeletion";
@@ -49,10 +50,13 @@ export function MemberAccountPage() {
   const data = bootstrap.data;
   const selfService = data?.modules?.includes("membership") && data.modules?.includes("member_accounts") && data.features?.includes("membership.self_service");
   const selfExport = data?.modules?.includes("membership") && data.modules?.includes("member_accounts") && data.features?.includes("membership.self_export");
+  const lifecycleOn = (key: string) => Boolean(data?.modules?.includes("membership") && data.features?.includes(`membership.${key}`));
+  const historyOn = lifecycleOn("history");
+  const privacyOn = lifecycleOn("consent") || lifecycleOn("erasure");
   const home = slug ? `/m/${slug}/member` : "/member";
   const selfCreationVisible = useOrganizationSelfCreationVisible(!restoring && !signIn && !hasClaimSession());
   if (signIn && !restoring) return <MemberAuthPanel tenantBrand={data ? { name: data.branding?.display_name || data.makerspace.name, logo: data.branding?.logo_url || data.makerspace.logo_url || undefined } : undefined} makerspaceSlug={slug} onAuthenticated={() => { void authenticated(); }} />;
-  const tabs = [["profile", "Profile"], ["security", "Security"], ["membership", "Membership"], ["data", "Your data"], ["deletion", "Delete account"]].filter(([key]) => ["security", "deletion"].includes(key) || (key === "data" ? selfExport : selfService)).map(([key, label]) => ({ key, label, href: `${location.pathname}?section=${key}` }));
+  const tabs = [["profile", "Profile"], ["security", "Security"], ["membership", "Membership"], ["history", "History"], ["privacy", "Privacy"], ["data", "Your data"], ["deletion", "Delete account"]].filter(([key]) => ["security", "deletion"].includes(key) || (key === "history" ? historyOn : key === "privacy" ? privacyOn : key === "data" ? selfExport : selfService)).map(([key, label]) => ({ key, label, href: `${location.pathname}?section=${key}` }));
   // Security stays available without replacing the tenant's default account section.
   const defaultSection = selfService ? "profile" : selfExport ? "data" : "deletion";
   const section = tabs.some(tab => tab.key === requestedSection) ? requestedSection : defaultSection;
@@ -73,9 +77,11 @@ export function MemberAccountPage() {
           {selfService && data ? <MemberAccountSessions key={`sessions-${data.makerspace.id}`} makerspaceId={data.makerspace.id} onSignedOut={() => setSignIn(true)} /> : null}
         </div> : null}
         {!restoring && data && !hasClaimSession() && !left ? <>
-          {!selfService && !selfExport && !["security", "deletion"].includes(section) ? <p>Account self-service is disabled for this makerspace.</p> : null}
+          {!selfService && !selfExport && !["security", "deletion", "history", "privacy"].includes(section) ? <p>Account self-service is disabled for this makerspace.</p> : null}
           {selfService && section === "profile" ? <MemberAccountProfile key={`profile-${data.makerspace.id}`} makerspaceId={data.makerspace.id} /> : null}
           {selfService && section === "membership" ? <MemberAccountMembership key={`membership-${data.makerspace.id}`} makerspaceId={data.makerspace.id} onLeft={() => setLeft(true)} /> : null}
+          {historyOn && section === "history" ? <MemberHistory key={`history-${data.makerspace.id}`} makerspaceId={data.makerspace.id} /> : null}
+          {privacyOn && section === "privacy" ? <MemberPrivacy key={`privacy-${data.makerspace.id}`} makerspaceId={data.makerspace.id} consentOn={lifecycleOn("consent")} erasureOn={lifecycleOn("erasure")} /> : null}
           {selfExport && section === "data" ? <MemberAccountExports key={`exports-${data.makerspace.id}`} makerspaceId={data.makerspace.id} /> : null}
         </> : null}
       </> }, ...(!restoring && !signIn && !hasClaimSession() && section === (tabs[0]?.key || "profile") ? [{ id: "your-organizations", title: "Organization memberships", rows: <OwnOrganizations /> }] : []), ...(showSelfCreation ? [{ id: "create-organization", title: "Create your organization", rows: <OrganizationSelfCreation /> }] : [])]} /></MemberSectionNavigation>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { Field, Modal, StatusPill } from "../../components/ui";
 import type { MemberRefundCase } from "../../generated/api";
@@ -12,6 +12,17 @@ const CHIP: Record<MemberRefundCase["status"], [string, "warn" | "success" | "da
   approved: ["Refund approved", "success"], declined: ["Refund declined", "danger"],
   withdrawn: ["Request withdrawn", "neutral"], void: ["Refund closed", "neutral"],
 };
+
+type Suggestion = { applies: boolean; suggested_amount: string | null; currency: string; band: string };
+
+/** X20: what the space's membership refund policy suggests if cancelled now. Only an estimate. */
+function RefundSuggestion({ makerspaceId, paymentId }: { makerspaceId: number; paymentId: number }) {
+  const suggestion = useQuery({ queryKey: ["member", "refund-suggestion", makerspaceId, paymentId],
+    queryFn: () => memberRequest<Suggestion>(`/member/makerspaces/${makerspaceId}/payments/${paymentId}/refund-suggestion`), retry: false });
+  if (!suggestion.data?.applies || suggestion.data.suggested_amount == null) return null;
+  return <p className="text-sm text-ink" role="status">The space's refund policy suggests about{" "}
+    <strong>{suggestion.data.suggested_amount} {suggestion.data.currency.toUpperCase()}</strong> if you cancel today. Staff decide the final amount.</p>;
+}
 
 function errorText(error: unknown) {
   if (error instanceof StructuredApiError && error.code === "refund_request_exists") {
@@ -61,6 +72,7 @@ export function MemberRefundControl({ makerspaceId, payment }: { makerspaceId: n
       <div className="grid gap-3">
         <p className="text-sm text-muted">Staff review every request. Nothing is refunded until they approve it,
           and you will see their answer here.</p>
+        {asking ? <RefundSuggestion makerspaceId={makerspaceId} paymentId={payment.id} /> : null}
         <Field label="Why are you asking?">
           <textarea className="desk-input min-h-24" maxLength={500} value={reason}
             onChange={(event) => setReason(event.target.value)} />

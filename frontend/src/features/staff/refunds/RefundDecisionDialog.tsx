@@ -10,6 +10,7 @@ import {
   REASON_LABELS, approveRefundCase, caseErrorMessage, declineRefundCase, invalidateRefundViews, type RefundCase,
 } from "./refundsApi";
 import { PolicySnapshotLine } from "./RefundCaseRow";
+import { MembershipRefundExtras } from "./MembershipRefundExtras";
 
 type Mode = "approve" | "decline";
 
@@ -30,6 +31,8 @@ export function RefundDecisionDialog({ makerspaceId, refundCase, onClose }: {
   const [mode, setMode] = useState<Mode>("approve");
   const [amount, setAmount] = useState(() => suggestedAmount(refundCase));
   const [note, setNote] = useState("");
+  const [keepMembership, setKeepMembership] = useState(false);
+  const membership = refundCase.area === "membership";
   const receipt = useRefundReceipt();
   const [problem, setProblem] = useState<string | null>(null);
   const money = (value: string) => formatMoney(value, refundCase.payment.currency);
@@ -38,6 +41,7 @@ export function RefundDecisionDialog({ makerspaceId, refundCase, onClose }: {
       ? declineRefundCase(makerspaceId, refundCase.id, note.trim())
       : approveRefundCase(makerspaceId, refundCase.id, {
         amount: amount.trim(), note: note.trim(), ...(offline ? { receipt: receipt.receipt() } : {}),
+        ...(membership ? { keep_membership: keepMembership } : {}),
       }),
     onSuccess: () => { invalidateRefundViews(queryClient, makerspaceId); onClose(); },
     onError: () => invalidateRefundViews(queryClient, makerspaceId),
@@ -75,6 +79,8 @@ export function RefundDecisionDialog({ makerspaceId, refundCase, onClose }: {
           <input className="desk-input" inputMode="decimal" value={amount}
             onChange={(event) => { setAmount(event.target.value); setProblem(null); }} />
         </Field>
+        {membership ? <MembershipRefundExtras makerspaceId={makerspaceId} caseId={refundCase.id}
+          keepMembership={keepMembership} onKeepMembership={setKeepMembership} /> : null}
         {offline ? <>
           <p className="text-sm text-muted">This charge was paid in person, so the money goes back the same way.
             Record how it was returned; the receipt is permanent.</p>

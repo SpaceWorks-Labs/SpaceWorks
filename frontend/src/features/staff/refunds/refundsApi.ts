@@ -44,7 +44,7 @@ export function listRefundCases(makerspaceId: number, status: string, page: numb
   return staffRequest<RefundCaseListResponse>(`/admin/makerspace/${makerspaceId}/refund-cases?${query}`);
 }
 
-export type ApproveBody = { amount?: string; reason?: string; note?: string; receipt?: RefundReceipt };
+export type ApproveBody = { amount?: string; reason?: string; note?: string; receipt?: RefundReceipt; keep_membership?: boolean };
 
 export function approveRefundCase(makerspaceId: number, caseId: number, body: ApproveBody) {
   return staffRequest<RefundCase>(`/admin/makerspace/${makerspaceId}/refund-cases/${caseId}/approve`, {

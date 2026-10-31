@@ -175,6 +175,8 @@ export function StaffTabContent({
           canManageMakerspace={canManageMakerspace}
           canViewFinance={has("view_finance")}
           canRecordPayment={has("record_payment")}
+          enabledFeatures={activeMakerspace.enabled_features ?? []}
+          makerspaceSlug={activeMakerspace.slug}
         />
       ) : null}
       {activeTab === "cards" && canUseMemberCards ? (

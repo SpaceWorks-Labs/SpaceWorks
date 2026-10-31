@@ -8,11 +8,14 @@ one online lives in `apps.payments_rail.urls_member`.
 from django.urls import path
 
 from apps.payments.views_member import MemberPaymentHistoryView
+from apps.payments.views_offline import MemberPaidClaimView
 from apps.payments.views_refund_member import MemberRefundRequestView, MemberRefundWithdrawView
 from apps.payments.views_documents import MemberDocumentListView, MemberDocumentGrantView
 
 
 urlpatterns = [
+    path("makerspaces/<int:makerspace_id>/payments/<int:payment_id>/paid-claim", MemberPaidClaimView.as_view(),
+         name="member-paid-claim"),
     path("makerspaces/<int:makerspace_id>/payments/<int:payment_id>/refund-request", MemberRefundRequestView.as_view(), name="member-refund-request"),
     path("makerspaces/<int:makerspace_id>/refund-requests/<int:case_id>/withdraw", MemberRefundWithdrawView.as_view(), name="member-refund-withdraw"),
     path("makerspaces/<int:makerspace_id>/payment-documents", MemberDocumentListView.as_view(), name="member-payment-documents"),

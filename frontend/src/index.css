@@ -100,7 +100,7 @@
     --color-sidebar-active: 0 110 99;
     --shadow-color: 20 44 42;
   }
-  /* Dark: Deep Ink + Maker Teal (+ Cream) brand-mixes; welcome-and-dark-spec.md §6.2.
+  /* Dark: Deep Ink + Maker Teal (+ Cream) brand-mixes.
      .sw-island-dark applies the same set to one subtree (the light-mode sign-in brand panel). */
   :root.dark,
   .sw-island-dark {

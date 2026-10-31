@@ -141,7 +141,7 @@
   Yuyu-style UX: a sidebar `AppShell` with workspace switcher replaces the header + floating dock, and every
   screen composes one of eleven reusable layouts (`components/layouts/`) from shared primitives. No feature
   added or removed; gating, routing, evidence hard rules and tenant colours unchanged (tenant palettes are
-  never newly rejected). Built in parallel Codex lanes; plan and specs in `docs/design-revamp/`.
+  never newly rejected). Built in parallel Codex lanes; the plan and lane specs were removed from the repository in release 2.
 
 - **2026-10-15 — standard containers and local tests.** The all-in-one image is no longer built or published; the single-box shape is removed with refusal and switch steps for existing installs. Own-nginx HTTPS setup generates proxy configuration and prints certificate/install steps; API-only setup offers HTTPS only and points to the external website. CI runs no tests: use `./scripts/dev.sh test` and `./scripts/dev.sh e2e` locally; Actions builds/releases backend/frontend images, promotes rolling tags and optionally deploys, with `pip-audit` retained on PRs.
 

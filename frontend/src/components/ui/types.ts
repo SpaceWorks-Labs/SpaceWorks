@@ -3,7 +3,7 @@ import type { IconName } from "./icon";
 export type { IconName } from "./icon";
 export type Tone = "success" | "warn" | "danger" | "accent" | "emphasis" | "info" | "neutral";
 
-// Shared slot contracts from ux-yuyu-spec §1A.0.
+// Shared slot contracts for the page layouts and primitives.
 export type Action = { label: string; href?: string; onClick?: () => void; icon?: IconName;
   pending?: boolean; pendingLabel?: string; disabled?: boolean; disabledReason?: string; // required when disabled
   tone?: "default" | "danger"; external?: boolean; confirms?: boolean;              // confirms → label gets "…"

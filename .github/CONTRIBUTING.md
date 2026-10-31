@@ -19,7 +19,7 @@ to get a change merged.
 - `backend/` — Django 6 + DRF API. Apps live under `backend/apps/` (accounts, makerspaces,
   inventory, hardware_requests, printing, operations, integrations, audit, evidence, …).
 - `frontend/` — React 19 + Vite + TypeScript (public catalog + staff console).
-- `docs/` — self-hosting guide, handover notes, and design specs.
+- `docs/` — user, operator and developer guides; [docs/README.md](../docs/README.md) indexes them.
 
 ## Architecture rules (please don't regress these)
 

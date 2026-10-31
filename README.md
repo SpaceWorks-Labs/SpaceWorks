@@ -1,119 +1,143 @@
 <div align="center">
 
-<br>
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/brand/lockup-horizontal-reversed.svg">
-  <img src="docs/brand/lockup-horizontal.svg" alt="Space Works" width="432">
-</picture>
-<br><br>
+<!--
+  BANNER PLACEHOLDER — filled in the final phase of release 2, once the tree is finished.
+  Add a <picture> here with docs/readme/banner-dark.png for (prefers-color-scheme: dark) and
+  docs/readme/banner.png for light (also the <img> fallback, width="100%"), then drop the
+  <h1> below if the banner carries the name. Do not add the tag before the images exist.
+-->
 
-# A place for shared work
+<h1>Space Works</h1>
 
-Tools, loans, machines, events and bookings. One self-hosted home for your makerspace.
+<p><strong>A place for shared work.</strong> Tools, loans, machines, events and bookings in one
+self-hosted home for your makerspace.</p>
 
-[Install](#quick-start) · [Modules](#modules) · [Hosting](#hosting) · [Contribute](#contributing)
+<p>
+  <a href="https://github.com/SpaceWorks-Labs/SpaceWorks/actions/workflows/checks.yml"><img src="https://img.shields.io/github/actions/workflow/status/SpaceWorks-Labs/SpaceWorks/checks.yml?branch=dev&style=flat-square&label=checks&labelColor=142C2A" alt="Checks workflow status" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/licence-AGPL--3.0--or--later-006E63?style=flat-square&labelColor=142C2A" alt="Licence: AGPL-3.0-or-later" /></a>
+  <a href="https://github.com/SpaceWorks-Labs/SpaceWorks/releases/latest"><img src="https://img.shields.io/github/v/release/SpaceWorks-Labs/SpaceWorks?style=flat-square&label=release&color=006E63&labelColor=142C2A" alt="Latest release" /></a>
+  <a href=".github/DEVELOPMENT.md"><img src="https://img.shields.io/badge/Python-3.12%2B-B5CDFF?style=flat-square&labelColor=142C2A&logo=python&logoColor=FFF4E8" alt="Python 3.12+" /></a>
+  <a href=".github/DEVELOPMENT.md"><img src="https://img.shields.io/badge/Node-22-DFFF8F?style=flat-square&labelColor=142C2A&logo=nodedotjs&logoColor=FFF4E8" alt="Node 22" /></a>
+  <a href="https://www.djangoproject.com"><img src="https://img.shields.io/badge/Django-6-B5CDFF?style=flat-square&labelColor=142C2A&logo=django&logoColor=FFF4E8" alt="Django 6" /></a>
+  <a href="https://react.dev"><img src="https://img.shields.io/badge/React-19-B5CDFF?style=flat-square&labelColor=142C2A&logo=react&logoColor=FFF4E8" alt="React 19" /></a>
+</p>
 
-<a href="LICENSE"><img alt="License: AGPL-3.0-or-later" src="https://img.shields.io/badge/license-AGPL--3.0--or--later-006E63?labelColor=142C2A"></a>
-<a href="https://github.com/SpaceWorks-Labs/SpaceWorks/actions/workflows/release.yml"><img alt="Release" src="https://github.com/SpaceWorks-Labs/SpaceWorks/actions/workflows/release.yml/badge.svg?branch=main"></a>
-<img alt="Django 6 and React 19" src="https://img.shields.io/badge/stack-Django%206%20%C2%B7%20React%2019-B5CDFF?labelColor=142C2A">
-<a href=".github/CONTRIBUTING.md"><img alt="Contributions welcome" src="https://img.shields.io/badge/contributions-welcome-DFFF8F?labelColor=142C2A"></a>
+<p>
+  <a href="docs/README.md">Docs</a> ·
+  <a href="docs/install-and-update.md">Install</a> ·
+  <a href="docs/MODULES.md">Modules</a> ·
+  <a href="#api">API</a> ·
+  <a href="CHANGELOG.md">Changelog</a> ·
+  <a href=".github/SECURITY.md">Security</a>
+</p>
 
-<br>
 </div>
 
-Space Works started in the **TinkerSpace Kochi** community: a way to see what equipment exists,
-who has borrowed it, what is available, and how a loan or print job moves from request to completion.
-Run it for your community, fork it, or adapt it to the way your workshop works.
+**Space Works is free, open-source software for running a makerspace.** It shows what equipment
+exists, who has borrowed it, what is available, and how every loan, print job, event and booking
+moves from request to completion. Every physical handover leaves evidence (a QR scan, a photo, a
+remark and an audit entry), so tools stay traceable to people. One self-hosted deployment can run
+**many makerspaces**, each with its own inventory, public URL, staff, chat rooms, QR namespace and
+audit scope. You install only the areas you use, and your members' data stays in your own database.
+Space Works started in the **TinkerSpace Kochi** community; run it for yours, fork it, or adapt it
+to the way your workshop works.
 
-One deployment can host **many makerspaces**. Each has its own inventory, public URL, staff,
-Telegram group, QR namespace and audit scope. Queries and actions are scoped to that makerspace.
+<!--
+  SCREENSHOT GALLERY PLACEHOLDER — filled in the final phase of release 2.
+  Add "## A look around" with a two-column <table> of docs/readme/screens/*.webp images, each with
+  alt text and a one-line bold caption (public catalogue, staff dashboard, handover with evidence,
+  machine queue, events, bookings, member area, dark mode). No image tags until the files exist.
+-->
 
-## What you can run
+## Who it is for
 
-- **Inventory and lending.** A public catalogue by makerspace/category, reviewed borrow requests,
-  staff direct handouts, and eligible authenticated QR self-checkout/return when enabled. Reviewed
-  issues require a box QR scan and photo; returns require a photo and remark. Every handover is audited.
-- **Machines and 3D printing.** Public print requests, machine/service queues, printers, spools,
-  filament usage, slicer estimates and optional staff-private cash charges at collection; maintenance,
-  certification and usage records.
-- **Events.** One-off events and recurring series, approval/waitlists, ticket types, invitations,
-  promo codes, account-linked speakers and claim links, collaborative hosts and participating-organization
-  audiences. A simpler create form and drawer keep advanced controls under More. QR door check-in includes
-  an expiring offline roster and event-scoped PIN stations. Feedback, attendance certificates,
-  printable badges, owned ticket downloads and member calendar feeds complete the attendee workflow.
-- **Bookings.** Bookable resources and public self-booking, recurrence, rescheduling, private
-  confirmations, arrival scanning and printable passes. A requests queue, decision reasons, place-photo
-  galleries and check-out remarks with issue follow-up complete the resource workflow. Public events
-  show a Hosted at venue block. Both Events and Bookings support resource staff grants, draft cloning, answer edits, cancellation undo, curated websites, email campaigns,
-  signed server reads and scoped reports through shared infrastructure.
-- **People and access.** Seven fixed built-in roles, combinable staff assignments and per-person
-  machine-type scope. Organizations can link spaces, publish profiles and cross-space event catalogues,
-  and grant actions across the network without conferring membership identity. Superadmins use a
-  separate Django control plane; see [roles and access](#roles--access).
-- **Public pages.** Makerspaces and organizations share the `/<handle>` namespace with member
-  profiles. Owners save drafts and explicitly publish section layouts; events keep their existing
-  website editor and gain `/e/<code>` links. Organization pages show linked public spaces and
-  organized events, including a minimal past archive. See the [publication and portability rules](docs/INVARIANTS.md#public-pages-shared-handles-and-owner-builders).
-- **Live work and search.** Staff queues, loans and check-ins update after commit through Redis-backed
-  Server-Sent Events, falling back to polling. Inventory, machine and event lists support `?q=`
-  full-text search with typo tolerance. Boxes, tools and individual assets have QR/scan history.
-- **Money and reports.** Track debt and offline receipts independently of optional Stripe/Razorpay
-  checkout. Overdue tracking, CSV/XLSX exports and accessible charts with table fallbacks cover
-  operations. Historical metric rollups are append-only: corrections add revisions. Every module
-  has a substantive report or an explicitly gated row.
-- **Notifications.** Transactional personal outboxes, verified Telegram, Slack, Mattermost, Discord
-  and Twilio/Meta WhatsApp connections, Twilio SMS, per-category selection and email fallback; staff rooms retain
-  their delivery matrix. Space Managers configure encrypted channel credentials. Member JWTs reach
-  personal routes; browser OAuth completes through authenticated challenge verification. WhatsApp
-  Twilio and Meta are registered/mounted; remaining delivery limits are recorded in the
-  [delivery contract](docs/notification-contract.md#integration-limits-in-this-tree). Sender-bound
-  consent, durable STOP and per-device envelope push preserve account-only owner access independently
-  of inbox installation. Sending activation and destructive retirement remain held pending
-  [conversion/replay sign-off](docs/notification-reconciliation-rollout.md).
-- **Accounts and profiles.** Separate member, tenant staff and platform accounts. Members use
-  password, Google, Apple, GitHub, OIDC (Keycloak, Authentik, Azure AD, Okta) or phone/SMS;
-  staff/platform use password plus authenticator MFA where required. Member methods are switchable;
-  external identity and staff-created walk-ins support spaces without the member-account ecosystem. Opt-in maker profiles
-  include projects, interests, education, optional GitHub counts and a consent-based member directory.
-  Public pages at `/<handle>` add fresh publication consent, separate activity-family opt-ins,
-  counts-only activity and GitHub calendars, and HOSTED/SPOKE event badges. Public reads expose
-  `viewer_is_owner`; the member profile exposes this membership's `verified` flag.
-- **Presence.** Time-limited member and guest check-in with project/visitor/event statuses, renewal
-  prompts, a hard location check for self check-in and a staff alternative. Privacy controls govern
-  the public TV display at `/m/<slug>/now`; browser GPS remains spoofable. Presence is installed on
-  existing spaces by migration 0096; new spaces opt in. Defaults are 1/2/3/4 h.
-- **Space management.** Task-grouped Space Manager navigation, a searchable settings hub and setup
-  checklist; domain managers reach their own settings from their consoles. The dashboard counts
-  unresolved booking issues under current booking authority and links to the issues view.
-- **Modules and editions.** Install only the areas you use; uninstall hides surfaces and retains data.
-  Events-only and bookings-only editions hide unused lending surfaces through `SPACEWORKS_EDITION`.
-- **Operations.** `X-Request-ID` connects JSON request logs and Celery; a token-protected Prometheus
-  endpoint reports queues, delivery failures and storage. Run tests locally before pushing with
-  `./scripts/dev.sh test` and `./scripts/dev.sh e2e`. Actions builds/publishes backend/frontend images,
-  creates the GitHub Release, promotes rolling tags and optionally deploys through a self-hosted
-  runner. `security-audit.yml` runs `pip-audit` on PRs.
-- **A durable handover trail.** Audit logs are append-only; attached photo metadata and scan records
-  are immutable. Photo bytes can expire under a per-space retention policy with an explicit expired
-  state; metadata, remarks and scans remain. A separate default-off cleanup can remove proven unused
-  upload slots that never became handover evidence.
+- **Makerspaces, hackerspaces, fab labs and community workshops** that lend tools and run shared
+  machines, and want to stop tracking them in spreadsheets and chat threads.
+- **University labs and institutional workshops** that need named accountability for every item
+  that leaves the shelf, and may already have their own identity provider.
+- **Networks of spaces** (a city network, a university, a chain) that want one deployment, separate
+  spaces, and organization-level staff who can act across them.
+- **Operators** who want to self-host on their own server, with a guided installer, pinned releases,
+  backups before every update and no third party in the loop.
 
-**Password sign-in works out of the box.** Google, Apple, GitHub and OIDC need credentials issued for
-your domain; phone sign-in needs an SMS account. These provider/code methods are member-only.
-Setup selects Google/Apple/GitHub options, and you enter provider keys later in the console. These keys are separate from `GITHUB_API_TOKEN`, which
-enables the optional contribution count on maker profiles; without that token the count stays hidden.
+## What you can do
 
-## Design system
+Grouped the way a space actually works. The full list lives in [Features](docs/FEATURES.md).
 
-The [Space Works brand v1](docs/brand/) and [design revamp](docs/design-revamp/) define the product's
-visual language: **Gilroy** for text and headings, **Unbounded** for one short accent per layout.
-Deep Ink and Warm Cream give structure and space; Maker Teal leads actions, Workshop Orange adds
-emphasis, and Citron, Sky Blue and Warm Yellow support information. The supplied horizontal logo
-above switches to its reversed artwork in dark mode. GitHub controls Markdown body fonts; the app
-loads the approved fonts. Use the supplied logo masters and clear, warm, specific language.
+### Lend tools and hardware
+
+- A **public catalogue** per makerspace, with per-item control over what the public sees.
+- **Borrow requests** that staff review, accept and issue; **direct handouts** at the front desk; and
+  optional **QR self-checkout and return** for eligible tools.
+- **Evidence on every handover:** a reviewed issue needs a box QR scan and a photo; a return needs a
+  photo and a remark. Boxes, tools and individual assets keep their scan history.
+- Asset units, containers, stock transfers between spaces, printable QR sheets, stocktakes and a
+  "to buy" list, each a module you can leave out.
+
+### Run machines and 3D printing
+
+- A machine registry with a **service and print queue**: public print requests, printers, spools,
+  filament usage and slicer estimates.
+- **Maintenance**, warranty and usage records, and optional **certification** per machine type before
+  a member can book or request work.
+- Per-person machine-type scope, so a Machine Manager sees only their machines.
+
+### Events and bookings
+
+- **Events:** one-off and recurring, approvals and waitlists, ticket types, invitations and promo codes,
+  QR door check-in with an offline roster and PIN stations, feedback, attendance certificates,
+  printable badges and member calendar feeds.
+- **Bookings:** bookable resources with public self-booking, recurrence, rescheduling, arrival scanning,
+  printable passes and a requests queue.
+- Both share curated public websites, email campaigns, draft cloning and scoped reports.
+
+### Members, money and messages
+
+- **Membership:** join requests, waivers, referrals, plans and renewals, opt-in maker profiles and a
+  consent-based member directory; **presence** check-in with a privacy-controlled TV display.
+- **Sign-in** with password, Google, Apple, GitHub, your own OIDC provider or a phone code, or run with
+  no member accounts at all using walk-in records. See [Sign-in, identity and borrowing](docs/sign-in-and-borrowing.md).
+- **Money owed is always recorded**, with offline receipts, due dates and reminders; online checkout
+  through **Stripe or Razorpay** is optional.
+- **Notifications** by email, in-app inbox, Telegram, Slack, Mattermost, Discord, signed webhooks, SMS
+  and WhatsApp, routed to [rooms and recipients](docs/notification-routing.md) you choose.
+- **Reports:** analytics, CSV/XLSX exports and accessible charts with table fallbacks.
+
+### Run it with confidence
+
+- **Append-only audit logs** and immutable evidence records; photo bytes can expire under a per-space
+  retention policy while the metadata, remarks and scans remain.
+- **Seven built-in roles**, scoped per makerspace and per action, plus a separate superadmin control plane.
+- Live staff queues over Server-Sent Events, full-text search with typo tolerance, request IDs across
+  logs and a token-protected Prometheus endpoint.
+- Platform backups, single-space restore points, and an encrypted export to move a space onto its own server.
+
+## Modules
+
+A makerspace only carries the parts it uses. Space Works ships **35 modules**: **6 core** modules that
+are always on (the public catalogue, request workflow, staff admin, evidence uploads, QR management and
+the scanner), because the handover rules depend on them, and the rest are **opt-in**. The console groups
+them into areas:
+
+| Area | Modules |
+| --- | --- |
+| **Inventory** *(always on)* | [`public_inventory`](docs/MODULES.md#public_inventory), [`request_workflow`](docs/MODULES.md#request_workflow), [`staff_admin`](docs/MODULES.md#staff_admin), [`evidence_uploads`](docs/MODULES.md#evidence_uploads), [`qr_management`](docs/MODULES.md#qr_management), [`scanner`](docs/MODULES.md#scanner), [`asset_units`](docs/MODULES.md#asset_units), [`containers`](docs/MODULES.md#containers), [`bulk_import`](docs/MODULES.md#bulk_import), [`stock_transfers`](docs/MODULES.md#stock_transfers), [`qr_print_batches`](docs/MODULES.md#qr_print_batches), [`guest_handover`](docs/MODULES.md#guest_handover), [`procurement`](docs/MODULES.md#to-buy-was-procurement) |
+| **Stocktake** | [`stocktake`](docs/MODULES.md#stocktake) |
+| **Machines** | [`machines`](docs/MODULES.md#machines), [`machine_service`](docs/MODULES.md#machine_service), [`printing`](docs/MODULES.md#printing), [`maintenance`](docs/MODULES.md#maintenance-was-maintenance) |
+| **Events** | [`events`](docs/MODULES.md#events) |
+| **Bookings** | [`bookings`](docs/MODULES.md#bookings) |
+| **Membership** | [`membership`](docs/MODULES.md#membership), [`member_accounts`](docs/MODULES.md#member_accounts), [`presence`](docs/MODULES.md#presence) |
+| **Notifications** | [`notifications`](docs/MODULES.md#notifications), [`email`](docs/MODULES.md#email), [`telegram`](docs/MODULES.md#telegram), [`slack`](docs/MODULES.md#slack), [`mattermost`](docs/MODULES.md#mattermost), [`discord`](docs/MODULES.md#discord), [`webhook`](docs/MODULES.md#webhook) |
+| **Reports** | [`reports`](docs/MODULES.md#reports) |
+| **Payments** | [`payments`](docs/MODULES.md#payments) (online checkout only; the ledger is always present) |
+| **Mobile apps** | [`mobile`](docs/MODULES.md#mobile) |
+| **Connected devices** | [`devices`](docs/MODULES.md#devices) |
+
+Uninstalling a module hides its surfaces and **keeps its data**; deleting a module's rows is a separate,
+superadmin-only step. [Choosing modules](docs/choosing-modules.md) covers setup areas, features,
+defaults and the commands; [MODULES.md](docs/MODULES.md) explains each module and what happens without it.
 
 ## Quick start
-
-### Install in one line
 
 On a 64-bit Linux server (or macOS / Windows with Docker Desktop running), as a user with `sudo`:
 
@@ -121,635 +145,92 @@ On a 64-bit Linux server (or macOS / Windows with Docker Desktop running), as a 
 curl -fsSL https://raw.githubusercontent.com/SpaceWorks-Labs/SpaceWorks/main/install.sh | bash
 ```
 
-It asks every question first, shows a summary, and changes nothing until you confirm. Run the same
-command again later to update or change modules. Details, requirements and options follow below.
+The installer asks every question first (hosting, website, HTTPS, storage, your makerspace and admin,
+sign-in providers and which areas to turn on), shows one summary, and **changes nothing until you
+confirm**. It then installs Docker if needed, generates every secret, pulls the newest published
+release's images and creates your first admin and makerspace. You need a 64-bit (x86_64 or arm64)
+machine, internet access to `github.com` and `ghcr.io`, and at least 8 GiB of free disk.
 
-### Full install guide
+Run the same command again later to **update** (it backs up the database first), **change modules**, or
+both. A GitHub Actions runner on your server can deploy each new release automatically.
 
-Space Works runs entirely through Docker Compose — it brings up **PostgreSQL, Redis, Silo object storage (the maintained, S3-compatible fork of the archived MinIO), the
-Celery worker/beat, and database migrations** and wires them to the app for you (the images don't bake
-in any addresses; the compose file passes them in). Pick one path:
+| Read this | When you want to |
+| --- | --- |
+| [Setting up Space Works](docs/setup-for-makerspaces.md) | A plain-language walkthrough, no technical background needed |
+| [Install and update](docs/install-and-update.md) | Every installer question, forks, manual setup, automatic deploys, Windows |
+| [Self-hosting guide](docs/self-hosting.md) | The production reference: HTTPS, the control plane, backups, environment |
+| [Recovery after an update](docs/update-recovery.md) | Restore a database dump or inspect a failed deployment |
 
-**Path 1 — Guided pinned install (easiest; no Git clone or local build).** One script checks the host,
-downloads the newest published GitHub release built from `main`, generates all secrets, pulls its
-published images, and creates your first admin + makerspace:
+After install the public catalogue is at `/`, the staff console at `/admin`, the API at `/api` and the
+superadmin-only Django control plane at `/control/` (never exposed on the public port by default).
 
-**Before you start, you need:**
+**Running from source** for development: `./scripts/dev.sh up --build` starts the whole stack in Docker
+with live reload, `./scripts/dev.sh test` runs the backend tests against disposable services and
+`./scripts/dev.sh e2e` runs the browser tests. See [DEVELOPMENT.md](.github/DEVELOPMENT.md).
 
-- a 64-bit (x86_64 or arm64) Linux server (Debian/Ubuntu, Fedora/RHEL/Alma/Rocky, Arch or openSUSE),
-  macOS, or Windows Git Bash/WSL;
-- on Linux, root or a user with `sudo` — the installer installs Docker, Docker Compose and curl after confirmation;
-  curl/wget and tar must already exist; on macOS/Windows, Docker Desktop installed and running;
-- internet access to `github.com` and `ghcr.io`, at least 8 GiB free disk, and curl (or wget) plus tar;
-- a terminal. Prepare the answers below; required ports depend on your choices.
+## Hosting
 
-The questionnaire asks these choices in order. The curl installer selects the **repository before
-downloading** that questionnaire; a source checkout asks it near the end.
+Space Works is built to be **self-hosted inside the makerspace, on your own server**. The supported
+shapes are:
 
-1. **Hosting:** one makerspace (default), several at `/m/<slug>`, or a platform with tenant subdomains
-   (platform domain required).
-2. **Website:** serve it here (default), or API only with HTTPS website origin(s), such as Netlify.
-3. **HTTPS:** plain HTTP for LAN/trial (default), automatic Caddy (domain/certificate email), or your
-   own reverse proxy. Platforms use automatic HTTPS; API-only requires HTTPS. Own-proxy setup writes
-   `spaceworks-proxy.nginx.conf` and prints DNS, Certbot, installation and reload steps.
-4. **Storage:** bundled Silo (default), or external S3 endpoint/region, separate private/public
-   buckets, access/secret keys, public-image base URL and PUT/POST presigning.
-5. **Control-plane proxy:** website access to `/control/` (default off), allowed peer IPs/CIDRs and,
-   with automatic HTTPS, an optional loopback HTTPS SSH-tunnel port. SaaS and API-only behind your
-   own proxy skip this choice. See [control-plane access](docs/PROJECT-STATUS.md#admin-control-plane-superadmin-only).
-6. **Web address:** hostname/IP if not already supplied.
-7. **Organization name:** created as the owner of your makerspace.
-8. **Makerspace name:** then the first tenant subdomain on a platform.
-9. **MFA:** platform two-step sign-in (default yes); superadmins enroll optionally.
-10. **Sign-in providers:** Google, Apple and/or GitHub, or none (default Google). Keys come later in
-    the console; GitHub is member-only.
-11. **Areas and follow-ups:** enable every area [y/N], or choose each in order: Inventory & lending
-    [Y/n], Machines [Y/n], Events [y/N], Bookings [y/N], Membership [y/N], Online payments [y/N],
-    Reports [Y/n], Chat alerts [y/N]. Each yes asks its settings immediately: loan limits/renewals,
-    self-checkout/kiosk, charges/currency/request access, certification/reminder leads, event
-    audience/currency, admission/vouches/application form and optional plans/renewals as applicable.
-    Then organization labels [y/N], timezone [UTC], quiet hours [22:00–08:00], daily digests [y/N]
-    and staff MFA [y/N] when platform MFA is on. The edition is derived from the selected areas.
-    See [all follow-up questions/defaults](docs/setup-for-makerspaces.md#area-follow-up-questions).
-12. **Admin:** username, email and password (blank generates one).
-13. **Stripe:** optional secret/webhook key pair only with Online payments; uses the area currency.
-14. **Repository:** `SpaceWorks-Labs/SpaceWorks` or your fork, unless already selected by curl install.
-15. **Runner:** automatic GitHub Actions deploys [y/N], offered on Linux with running systemd.
+- **One server with Docker Compose** (the installer's default): app, PostgreSQL, Redis, Silo object
+  storage, Celery worker and beat, and optional automatic HTTPS with Caddy.
+- **API on your server, website elsewhere** such as Netlify, with HTTPS on both sides and the required
+  origin, cookie, tenant-domain and storage settings.
+  See [split deployment](docs/README-HOSTING.md#split-deployment-backend-on-your-server-frontend-on-netlify).
+- **Managed cloud and Kubernetes**: provider recipes and their operational contracts are in the
+  [hosting overview](docs/deploy/cloud-overview.md) and the [Helm guide](docs/helm.md). Full host
+  defaults remain unchanged; managed/free is explicit and subject to release acceptance gates.
+- **A tenant on a neighbour's instance**, then an approved, encrypted export onto your own server when
+  you are ready. See [moving a makerspace](docs/README-HOSTING.md#moving-a-makerspace-onto-its-own-server)
+  and the [staff portability contract](docs/account-split-portability.md).
 
-Enter accepts each displayed default; invalid answers are asked again. One summary shows every choice,
-the services and host actions before **Proceed? [Y/n]**. Answering no leaves the install directory absent
-and runs no package manager or Docker changes. Only the pinned release is downloaded into temporary
-storage before confirmation. The summary explains: "migrate builds the database tables. It runs once
-and stops. It's required." and "orchestration is a start-up safety check. It runs once and stops.
-It's required." It shows whether the runner will be installed. Production creates your admin and
-makerspace, with no demo/example data.
+Keep a scheduler: production uses Celery beat, while the cloud profile uses cron. The retired
+all-in-one image is unsupported. [Recovery](docs/update-recovery.md) is separate from updates. The
+[hosting guide](docs/README-HOSTING.md#hosting) covers first-run generated credentials and the details.
 
-**One command for everyone, forks included.** The installer's first question is which GitHub repository
-to install and update from: press Enter for the main project, or type your fork as `owner/name`. To skip
-the question (for example in a script), pass the fork up front:
+## Architecture
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/SpaceWorks-Labs/SpaceWorks/main/install.sh | bash -s -- --repo YourName/SpaceWorks
+```mermaid
+flowchart LR
+  browser([Browser or app]) --> web["Website<br/>React 19 · Vite"]
+  web --> api["API<br/>Django 6 · DRF"]
+  api --> db[("PostgreSQL 16")]
+  api --> redis[("Redis")]
+  api --> s3[("Silo / S3<br/>private evidence")]
+  worker["Celery worker + beat"] --> db
+  worker --> out["Email · chat · push · webhooks"]
+  redis --> worker
+
+  classDef core fill:#006E63,stroke:#142C2A,color:#FFF4E8
+  classDef service fill:#FFF4E8,stroke:#006E63,color:#142C2A
+  class api,web core
+  class db,redis,s3,worker,out service
 ```
 
-`SPACEWORKS_REPOSITORY=YourName/SpaceWorks` on the `bash` side of the pipe does the same. The choice is
-saved in the install's `.env`, so every later update, installer re-run and the deploy runner keep
-following that repository, and its images (`ghcr.io/yourname/spaceworks-*`). Before a fork can be
-installed it must have published a release: run its **Continuous Release** workflow on `main` once (fork
-→ Actions → enable workflows → Continuous Release → Run workflow). The installer refuses a repository
-with no published release and says so. GitHub may create a fork's images as **private** packages, which
-a server cannot pull: on your profile or organization → **Packages**, open `spaceworks-backend` and
-`spaceworks-frontend` → **Package settings → Change visibility → Public** (once, after the first release).
-
-Run it as your normal user — it asks for your `sudo` password when it needs root, adds you to the
-`docker` group if required, and leaves the install owned by you. `curl … | sudo bash` also works and
-keeps the install (and its optional runner service) owned by root. `bash install.sh --help` prints the
-checklist without changing anything.
-
-It installs to `/opt/spaceworks`; set `SPACEWORKS_DIR` on the `bash` side of the pipe to override that
-(on Windows Git Bash, use `SPACEWORKS_DIR="$HOME/SpaceWorks"`). It detects x86_64/aarch64 and the host
-distribution, checks dependencies, Docker, ports, disk space and existing state, then installs missing
-Linux dependencies through apt, dnf/yum, pacman or zypper. It verifies release availability before
-deploying; the downloaded source and backend/frontend images are pinned to the tagged release.
-
-It prints your URL and login when it finishes and offers automatic deployment from published GitHub
-releases. Installs and updates pin `X.Y.Z-main.<run>.<12-hex sha>` images.
-`setup.sh` pulls published images by default; developers can explicitly build locally with
-`bash setup.sh --build`.
-
-Run the same curl command later and an existing install shows a menu. It never silently reinstalls or
-reruns first-instance setup:
-
-1. **Update to the latest release** — backs up the database, moves to the newest main release, runs
-   migrations and restarts. Modules and data stay as they are.
-2. **Change modules only** — turn optional modules (events, bookings, machines, membership, payments…)
-   on or off without downloading a new version.
-3. **Update, then change modules** — option 1 followed by option 2.
-4. **Cancel** — exit without changing anything (the default).
-An update rerun uses the latest main archive's updater. After the database backup it installs the
-closed host runtime bundle, retaining previous files in `backups/host-config-*` and refreshing the
-Compose trust records before deployment.
-
-**Path 2 — Manual prebuilt-image setup.** Pull the two published images and start the stack —
-after `cp .env.example .env` (fill in the few values it asks for):
-
-```bash
-export MAKERSPACE_IMAGE_TAG=latest        # or pin a release, e.g. 0.5.1-main.42.a1b2c3d4e5f6
-bash scripts/init-host-orchestration.sh   # one-time root-owned pointer/key/config state
-scripts/spaceworks-compose.sh bundled up -d
-```
-
-With the default repository this pulls **`ghcr.io/spaceworks-labs/spaceworks-backend`** +
-**`ghcr.io/spaceworks-labs/spaceworks-frontend`** and brings up the full stack automatically.
-
-### Updating
-
-Every merge to `main` builds a release: `.github/workflows/release.yml` publishes the Docker images and
-the GitHub release. A server picks it up in one of two ways.
-
-#### Automatic deploys with GitHub Actions (recommended)
-
-A GitHub Actions runner on your server receives a `deploy` job right after each release is published
-and runs the updater locally. Nothing is pushed into your server and no port is opened for GitHub. You
-need a **Linux server with systemd** and **admin access to the GitHub repository** you install from.
-
-1. **Install the runner on the server.** Answer **yes** to *"Install a GitHub Actions runner on this
-   server for automatic deploys?"* during setup, or later run, as the install owner:
-
-   ```bash
-   bash scripts/install-runner.sh
-   ```
-
-   It asks for a **registration token**. Get it on GitHub: the repository → **Settings → Actions →
-   Runners → New self-hosted runner**, then copy the token shown in the `config.sh` command (it expires
-   after an hour). Paste it at the prompt; it isn't echoed or saved. The script downloads GitHub's
-   runner, checks it against GitHub's published checksum, registers it with the label
-   `spaceworks-prod`, and runs it as a system service owned by the SpaceWorks install owner.
-2. **Check the runner is online.** Settings → Actions → Runners shows it as **Idle** with the label
-   `spaceworks-prod`.
-3. **Turn deploys on.** Settings → **Secrets and variables → Actions → Variables → New repository
-   variable**: name `SPACEWORKS_DEPLOY`, value `true`. Without it the deploy job is skipped, so a repo
-   or fork with no runner never waits forever.
-4. **Lock down who can reach the runner** (required; see Runner security below):
-   - Settings → **Actions → General → Fork pull request workflows** → *Require approval for all
-     external contributors*.
-   - Protect `main` so only you can merge (Settings → Branches → `main` → restrict who can push, and
-     apply the rule to administrators).
-   - In an organization, put the runner in a runner group limited to this repository (and, if your plan
-     offers it, to `release.yml` on `refs/heads/main`).
-5. **Test it.** Merge something to `main`, or re-run the latest *Continuous Release* workflow. The run
-   ends with a `deploy` job that runs on your server:
-
-   ```bash
-   bash "$SPACEWORKS_DIR/scripts/update.sh" --force --no-module-changes --version <that release>
-   ```
-
-   It takes a database backup, pulls the release, runs the orchestration check and `migrate`, waits
-   for the app to report healthy, and rolls back the application images if it doesn't. Overlapping
-   deploys queue rather than run together. The job log on GitHub shows each step, and the database
-   backup taken before the update stays in `backups/` on the server.
-
-To remove the runner: `bash scripts/install-runner.sh --remove` (it asks for a removal token from the
-same Runners page), then delete the `SPACEWORKS_DEPLOY` variable.
-
-#### Manual updates
-
-Run an update by hand as the install owner:
-
-```bash
-bash scripts/update.sh --force
-# Or deploy an exact published main release:
-bash scripts/update.sh --force --version 0.9.1-main.42.a1b2c3d4e5f6
-```
-
-The updater locks, backs up PostgreSQL to `backups/`, pulls pinned images, starts the stack through its
-migration and orchestration gates, waits for readiness, records `.spaceworks-version`, and removes
-successful run-once containers. A failed deployment attempts to restore the previous application images.
-Forward database migrations remain applied; the backup is never restored automatically and does not
-include uploaded files. See [recovery instructions](docs/update-recovery.md).
-
-Explicit `MAKERSPACE_BACKEND_IMAGE` / `MAKERSPACE_FRONTEND_IMAGE` values override the repository-derived
-image names. Forks need their own published release, runner and `SPACEWORKS_DEPLOY=true` variable.
-The installer prints the GitHub steps and preserves runner registration on reruns; use
-`bash scripts/install-runner.sh` later to install or replace it, or `--remove` to remove it.
-See [operator update steps](docs/self-hosting.md#updating).
-
-### Runner security
-
-This repository is public. GitHub recommends self-hosted runners only for private repositories: a fork's
-pull request can change workflows to target your runner. The runner controls Docker, effectively root
-on this server. Require approval for **all external contributors'** workflow runs; restrict the runner
-to this repository (and `release.yml` on `refs/heads/main` through a runner group where available).
-Never add the self-hosted label to a `pull_request` workflow. The deploy job uses no checkout or
-third-party actions. Keep runner auto-updates enabled. Read the
-[required runner security settings](docs/self-hosting.md#security) before enabling automatic deploys.
-
-### Upgrades and module changes
-
-Updates select the newest main release from GitHub. An interactive update reviews the live area switches
-after the new release is healthy. The useful explicit forms are:
-
-```bash
-bash scripts/update.sh --force --modules                    # update, then review modules
-bash scripts/update.sh --force --no-module-changes          # update images only
-bash scripts/update.sh --modules-only --makerspace my-space # modules only; no release check
-bash scripts/update.sh --all-modules --without=printing,payments \
-  --makerspace my-space --confirm-removals
-bash scripts/update.sh --all-modules --all-makerspaces      # explicit cross-tenant target
-```
-
-Modules belong to a makerspace through `Makerspace.enabled_modules`, not to the deployment as a whole.
-When more than one makerspace exists, select one with `--makerspace <slug>` or deliberately target all
-with `--all-makerspaces`; non-interactive updates refuse to guess. `--modules` requests the interactive
-area menu, while `--modules-only`, `--areas=inventory,machines,...`, `--all-modules`, `--without=a,b`, `--confirm-removals` and
-`--no-module-changes` support explicit operator and automation flows.
-
-Turning an area off hides its surfaces and calls `uninstall_module`; it does **not** delete rows.
-`purge_module_data` is a separate destructive command and is never called by setup or update.
-
-### Object storage: MinIO is archived, SpaceWorks now uses Silo
-
-The MinIO server project has been archived and no longer receives releases or security fixes, so from
-**0.9.0** SpaceWorks stores evidence photos, images and documents in
-[**Silo**](https://github.com/pgsty/silo) (`pgsty/silo`) instead — the maintained community fork of
-MinIO. It speaks the same S3 API and keeps MinIO's `MINIO_*` settings, ports (9000 API, 9001 console)
-and on-disk format, so nothing changes in your `.env`.
-
-- **Existing installs switch automatically** on their next update. Silo reads the existing
-  `minio_data` volume as-is: buckets, object versions, versioning and public-read settings carry over
-  with no migration step. The Compose service and volume keep the name `minio` on purpose, so endpoint
-  URLs such as `http://minio:9000` stay valid.
-- **Back up `minio_data` before that first update** (see the self-hosting guide). Silo does not
-  guarantee a rollback to MinIO once it has written to the volume.
-- The image is pinned with `SILO_IMAGE_TAG`; the old `MINIO_IMAGE_TAG` and `MC_IMAGE_TAG` settings are
-  no longer used and can be removed from `.env`.
-- Silo is licensed AGPL-3.0, the same as MinIO.
-
-### Windows support boundary
-
-- **Tier 1 — native:** install, run and upgrade with Docker Desktop plus Git Bash (or run the bash scripts
-  inside WSL). Because native Git Bash normally has no `flock`, the updater falls back to a PID/timestamp
-  directory lock, automatically clears a dead owner's lock, and provides `--override-lock` for a verified
-  wedged or unreadable owner.
-- **Tier 2 — WSL2 required:** in-place restore, backup import and compound host orchestration. Those
-  supervisors depend on Linux AF_UNIX sockets and root-owned-file trust semantics with no native Windows
-  equivalent; this tier does not have native parity.
-
-## Modules
-
-A makerspace only carries the parts it uses. Space Works ships **35 modules**; **6 are core** and
-always on (the public catalogue, request workflow, staff admin, evidence uploads, QR management and
-the scanner). The rest are **opt-in**.
-
-Core is not negotiable because the hardware-handover rules depend on it: issuing a tool requires a box
-QR scan *and* a photo, so a machines-only workshop still carries the request/QR/evidence spine.
-
-Per-module detail — what each key is and what you lose without it — is in
-[**docs/MODULES.md**](docs/MODULES.md).
-
-You do not have to think in 35 switches. They are grouped into **twelve areas**, which is what the
-console shows you:
-
-| Area | Covers |
-|---|---|
-| **Inventory** *(always on)* | The catalogue, request workflow, QR/evidence spine, asset units, containers, transfers, QR print batches, front-desk handover and purchasing |
-| **Stocktake** | Scan-first stock counts and variance reporting |
-| **Machines** | Machine registry, the service/print queue, maintenance and warranty |
-| **Events** | Event scheduling and registrations — recurring series, approval and waitlists, QR check-in at the door, post-event feedback and attendance certificates, member calendar feeds, printable attendee badges, and cross-makerspace collaborative events |
-| **Bookings** | Resource booking and public self-booking |
-| **Membership** | Join requests, waivers, referrals, member activity, maker profiles, presence — and the member-facing identity ecosystem |
-| **Notifications** | The in-app inbox and every outbound channel |
-| **Reports** | Analytics, the report registry and CSV/XLSX exports |
-| **Payments** | Taking money online, through Stripe or Razorpay |
-| **Mobile apps** | Attested device sessions, native push and the in-app payment sheet |
-| **Connected devices** | Printers and label printers enrolled with their own signing key |
-
-**Choose areas before confirmation.** Setup enables each area's modules and every satisfiable feature.
-Setup first asks whether to enable every area (default no); yes still asks the normal follow-ups.
-Inventory & lending, Machines and Reports default on; the other five areas default off. Core,
-notifications, email and the per-person accounts module stay installed, as do charge tracking, receipt
-documents, billing reminders, staff invitations and self-check-in geofence. Accounts supplies self sign-up,
-password/social/phone sign-in and the member area; platform login-method/provider choices still apply.
-Membership adds plans, vouching, renewals and the mobile app. Inventory off
-hides lending through `loans.enabled` and retains all data.
-See [Areas used by setup](docs/MODULES.md#areas-used-by-setup) for the module/feature mapping.
-
-Change areas later with installer menu 2/3 or `scripts/update.sh --modules-only`. The menu displays
-on/partial/off: numbers toggle, `a` selects all and `n` selects none. It asks settings only for newly
-enabled areas. Automation can select an exact set:
-
-```bash
-bash scripts/update.sh --modules-only --areas=inventory,machines --makerspace my-space --confirm-removals
-```
-
-**Change it later.** Uninstalling clears the capability and hides the surfaces; **your data is always
-retained** and reinstalling brings it back:
-
-```bash
-docker compose run --rm --no-deps backend --role management python manage.py list_modules
-docker compose run --rm --no-deps backend --role management python manage.py install_module bookings
-docker compose run --rm --no-deps backend --role management python manage.py uninstall_module bookings
-```
-
-Core modules cannot be uninstalled, nor can one another installed module depends on.
-
-### Deleting a module's data
-
-Uninstalling only hides. If you also want a module's rows *gone*, that is a separate, deliberate
-second step — so that no single command can both hide and destroy:
-
-```bash
-docker compose run --rm --no-deps backend --role management python manage.py purge_module_data bookings --list
-docker compose run --rm --no-deps backend --role management python manage.py purge_module_data bookings --makerspace my-space
-```
-
-- **The module must already be uninstalled.** Purging an installed module is refused.
-- **Superadmin only**, and it asks you to type the makerspace slug back before proceeding.
-- **It cannot be undone.** Uninstall is reversible; this is not.
-- **Payment records are kept.** Switching a module off and deleting its rows is not a reason to
-  destroy the record of money that really changed hands, so receipts stay visible and a pending
-  charge stays payable and can still be marked paid or waived. Each charge keeps the description it
-  was raised under, so it still reads sensibly once the booking or event behind it is gone. Deleting
-  a whole makerspace is the exception — there, its payments go with it.
-- Uploaded files are removed after the database work commits, and your storage quota is credited
-  back only for objects the bucket confirmed it deleted — a failed delete credits nothing, so the
-  counter can never drift below what you are actually storing.
-
-A module absent from the list either owns no data of its own or cannot be purged separately, and
-the command tells you which. `machines` is the notable second case: machine rows host warranty
-records, consumables and service history, so purge `machine_service` first.
-
-### Every module, by area
-
-The full list, so you can see exactly what an area is turning on. **Core** is always present and
-cannot be removed. **Default** means it is on when you install outside the guided installer.
-
-| Area | Module | Core | Default | What it adds |
-|---|---|:--:|:--:|---|
-| **Inventory** | [`public_inventory`](docs/MODULES.md#public_inventory) | ● | ● | The public catalogue |
-| | [`request_workflow`](docs/MODULES.md#request_workflow) | ● | ● | Borrow requests and the state machine |
-| | [`staff_admin`](docs/MODULES.md#staff_admin) | ● | ● | The staff console |
-| | [`evidence_uploads`](docs/MODULES.md#evidence_uploads) | ● | ● | Issue/return photos |
-| | [`qr_management`](docs/MODULES.md#qr_management) | ● | ● | QR codes for boxes, tools and assets |
-| | [`scanner`](docs/MODULES.md#scanner) | ● | ● | The camera scanner |
-| | [`asset_units`](docs/MODULES.md#asset_units) | | | Individually tracked units of a product |
-| | [`containers`](docs/MODULES.md#containers) | | | Boxes and storage containers |
-| | [`bulk_import`](docs/MODULES.md#bulk_import) | | | Spreadsheet import |
-| | [`stock_transfers`](docs/MODULES.md#stock_transfers) | | | Moving stock, including between makerspaces |
-| | [`qr_print_batches`](docs/MODULES.md#qr_print_batches) | | | Printable QR sheets and ZIP export |
-| | [`guest_handover`](docs/MODULES.md#guest_handover) | | | Front-desk direct handouts |
-| | [`procurement`](docs/MODULES.md#procurement) | | | The "to buy" list |
-| **Stocktake** | [`stocktake`](docs/MODULES.md#stocktake) | | | Scan-first stock counts and variance |
-| **Machines** | [`machines`](docs/MODULES.md#machines) | | | The machine registry |
-| | [`machine_service`](docs/MODULES.md#machine_service) | | | The service/job queue |
-| | [`printing`](docs/MODULES.md#printing) | | | 3D printing on top of `machine_service` |
-| | [`maintenance`](docs/MODULES.md#maintenance) | | | Scheduled and reactive maintenance |
-| **Events** | [`events`](docs/MODULES.md#events) | | | Scheduling, recurring series, registrations and waitlists, QR check-in, feedback and certificates, collaborative events |
-| **Bookings** | [`bookings`](docs/MODULES.md#bookings) | | | Resource booking and public self-booking |
-| **Membership** | [`membership`](docs/MODULES.md#membership) | | | Join requests, waivers, referrals, maker profiles |
-| | [`member_accounts`](docs/MODULES.md#member_accounts) | | | Member sign-up and member sign-in |
-| | [`presence`](docs/MODULES.md#presence) | | | Member/guest check-in and privacy-controlled TV display |
-| **Notifications** | [`notifications`](docs/MODULES.md#notifications) | | | The in-app inbox |
-| | [`email`](docs/MODULES.md#email) | | | Outbound email |
-| | [`telegram`](docs/MODULES.md#telegram) | | | Telegram room/verified personal alerts; private account linking |
-| | [`slack`](docs/MODULES.md#slack) | | | Slack alerts |
-| | [`mattermost`](docs/MODULES.md#mattermost) | | | Mattermost alerts |
-| | [`discord`](docs/MODULES.md#discord) | | | Discord alerts |
-| | [`webhook`](docs/MODULES.md#webhook) | | | Signed JSON webhooks to your own systems |
-| **Reports** | [`reports`](docs/MODULES.md#reports) | | | Analytics, the ledger and CSV/XLSX export |
-| **Payments** | [`payments`](docs/MODULES.md#payments) | | | Taking money online (Stripe or Razorpay) |
-| **Mobile apps** | [`mobile`](docs/MODULES.md#mobile) | | | Attested device sessions, native push, payment sheet |
-| **Connected devices** | [`devices`](docs/MODULES.md#devices) | | | Signed device enrollment, printer reports and label commands |
-
-`mobile` requires `member_accounts`; `printing` requires `machine_service`. Installing one pulls in
-what it needs. `membership` deliberately does **not** require `member_accounts` — identity can come
-from an external identity provider or a staff-created walk-in record instead.
-
-**Every module has a page.** [**docs/MODULES.md**](docs/MODULES.md) covers each of the 35 keys in turn:
-what it is, what it puts on screen, **what happens if you do not install it**, and what becomes of its
-data if you later purge it.
-
-### Features: the second level
-
-Some capabilities are narrower than a whole module, so they are **features**. A feature with a parent
-needs that module; standalone switches have no parent. Space Managers edit features in the console,
-while superadmins install modules.
-
-| Feature | Inside | Default | What it does |
-|---|---|:--:|---|
-| `payments.enabled` | `payments` | ● | Master switch for all online payments |
-| `charges.enabled` | — | ● | Master switch for recording money owed |
-| `charges.machines` | `machines` | ● | Record priced machine jobs (also needs `machine_service`) |
-| `charges.bookings` | `bookings` | ● | Record priced bookings |
-| `charges.events` | `events` | ● | Record paid event registrations |
-| `charges.membership` | `membership` | ● | Record dues and renewal charges |
-| `charges.loans` | `request_workflow` | ● | Record configured loan deposits and late fees |
-| `payments.machines` | `machines` | | Online checkout for machine jobs |
-| `payments.bookings` | `bookings` | | Online checkout for bookings |
-| `payments.events` | `events` | | Online checkout for event registration |
-| `payments.membership` | `membership` | | Online checkout for membership dues |
-| `payments.loans` | `payments` | | Online collection of loan deposits and late fees |
-| `mobile.push` | `mobile` | ● | Native push notifications |
-| `events.offline_checkin` | `events` | | Expiring on-device roster and event-scoped PIN check-in stations |
-| `machines.certifications` | `machines` | | Members need an unexpired certification per machine type to book a linked space or request work; overrides need machine-type authority and are audited |
-| `notifications.delegated_recipients` | `notifications` | | Machine-scoped maintainers manage maintenance recipients for their own machines (also needs `maintenance` and `machines`) |
-| `inventory.self_checkout` | — | ● | Member self-checkout and staff direct handouts |
-| `presence.geofence` | — | ● | Required location check for self check-in; staff alternative |
-| `inventory.kiosk` | — | | Scanner and handover Stations whose online handovers are attributed to a signed-in staff operator |
-
-Debt recording checks **`charges.enabled` and `charges.<domain>`**, plus the domain's ordinary
-pricing/rules. It needs neither gateway credentials nor the `payments` module. Tracking features
-default on; a zero/free price creates no debt. Staff record offline settlement with an append-only
-receipt (method, reference and received date); corrections add an amendment.
-
-All five `payments.<domain>` switches default off outside guided setup. Online checkout needs the
-opt-in `payments` module, `payments.enabled`, that domain's switch and valid Stripe/Razorpay
-credentials. The core ledger remains readable and settleable when the online rail is off or removed.
-`inventory.self_checkout`, `presence.geofence` and the charge-tracking master are standalone
-capabilities with no parent module.
-
-### What you get if you choose nothing
-
-Installing without a profile gives you **6 modules**: the six core ones. Backup and restore are
-platform duties, not a module: the superadmin backs up and restores every space.
-Outside guided setup, member accounts and mobile apps are opt-in; mobile pulls in `member_accounts`
-when installed. Guided setup always enables per-person accounts.
-
-The online rail is opt-in, but configured lending deposits/late fees can still create core ledger
-debts through `charges.*`; missing gateway keys never suppress that record. Other domain debts need
-their domain modules and pricing. Push needs FCM/APNs, chat needs its token/webhook, and sign-in
-methods beyond password need their own provider configuration.
-
-### Notification channels are modules
-
-`email`, `telegram`, `slack`, `mattermost`, `discord` and `webhook` are each a module, so a space that lives in
-Discord ships no Slack surface at all. Turning a channel's module on never makes it start sending on
-its own — you still add the webhook or token, and you still enable the events you want in the
-per-feature × per-channel matrix. Turning it off stops delivery but **keeps the stored credential**,
-so re-enabling needs no re-entry.
-
-Chat channels are configured **per makerspace** (the space owns the channel and pays for it). Sign-in
-providers are the opposite — they resolve before a makerspace is chosen, so they are configured once
-for the whole deployment.
-
-### Running without member accounts
-
-Turning **Member accounts** off removes the member-account *ecosystem*: nobody signs themselves up, and the
-member area, phone sign-in and the built-in Google/Apple/GitHub buttons all go with it. It does **not** remove
-identity, and it never touches staff sign-in — a deployment that could switch off its own staff logins
-could not be administered.
-
-People still get named, two ways:
-
-- **Your own identity provider.** A configured OIDC provider (Keycloak, Authentik, Azure AD, Okta,
-  Google Workspace) keeps working, because it is your institution's directory rather than an account
-  ecosystem this deployment runs.
-- **Walk-ins.** Front-desk staff add someone at the counter from the handout screen. That creates a
-  person record — a name, optionally an email and phone — with **no password and no way to sign in**.
-  It is enough to issue them a tool, register them for an event or run a machine job for them, and it
-  keeps every handover attributable to a real person, which the hardware rules require.
-
-#### Who may ask to borrow something
-
-Borrow requests are a proposal: staff acceptance reserves stock. Who may ask follows from the modules;
-there is no separate switch:
-
-| Member accounts (`member_accounts`) | Membership (`membership`) | Who may submit |
-| --- | --- | --- |
-| on | on | **Members** — an active member of that makerspace |
-| on | off | **Account holders** — anyone signed in |
-| off | off (Membership needs Member accounts) | **Everyone, no account** — name, phone and email, the email confirmed with a one-time code |
-
-Members must pass the applicable presence, waiver and current-term checks; account holders must be
-active and unrestricted. Without member accounts the space's accounts are for staff only, so everyone —
-even someone signed in — gives their name, phone and email (for self-checkout too) and types the 6-digit code mailed to that address before the request is
-filed — nobody can file a request against someone else's email. Phone and email are stored encrypted and
-shown to staff only; the name is the borrower's public name. Every such request is recorded against the
-makerspace's single shared requester principal, which every per-person ranking excludes. Borrower
-history and identity-based lookup use the authenticated owner, never matching submitted email/phone.
-Existing request status links remain bearer-token reads.
-
-### Choosing which ways in you offer
-
-**`/control/` → Platform login methods** switches the four member credential kinds independently: password,
-identity provider, phone code, and self sign-up. All four are on by default and switching one off
-never deletes anything, so turning it back on needs no re-entry.
-
-Each switch covers **every member** way in of that kind, including delegated helper workspaces.
-Staff and platform accounts always retain password sign-in (+ local MFA where required).
-Turning member passwords off also refuses a mobile app's device login, which would otherwise mint a long-lived session from the
-same password. Turning self sign-up off also stops an identity provider from creating a brand-new
-account — signing in on an already-linked account, and linking a provider to an account you already
-have, both keep working, because neither is a registration.
-
-Existing sessions are deliberately **not** revoked: a login-method switch is a policy change, not a
-revocation. Use the restrict/suspend flow to end someone's access.
-
-Changes that would strand a member with only a disabled provider are refused. Staff/platform
-accounts do not count social identities as alternative credentials and cannot use member recovery.
-Staff passwords can be issued by an authorized administrator. Staff and platform sign-in also offer
-**Forgot password?** using a six-digit email code through configured Platform Email. Staff recovery
-stays within the selected makerspace; platform recovery uses the platform console. MFA remains
-required after recovery. The host command remains available for platform break-glass recovery.
-
-### Rooms: sending different alerts to different places
-
-A chat channel can have more than one **room** — a Slack channel, a Discord channel, a Telegram group.
-Add them under **Settings → Notification channels → Rooms**. A room with nothing selected receives
-everything; narrow one to a machine, a machine type or an inventory category and it receives only
-those alerts. "All the 3D printers, plus the laser" needs no extra concept — the selections are a
-union.
-
-Two things worth knowing before you set this up:
-
-- **Webhook URLs are write-only.** They are stored encrypted and never shown again, so an edit that
-  only renames a room can leave the field blank.
-- **Telegram rooms share the makerspace's bot** — add the same bot to each group and paste each
-  group's chat ID. Rooms use the Communication channels bot token when configured, then the legacy
-  tenant/platform fallback. Decisions remain in the staff console or `/control/`; every decision
-  callback is ignored and no alert carries a keyboard. The webhook accepts verified private `/start`
-  account-link proofs only; setWebhook must include `message` in allowed_updates.
-
-A makerspace that has added no rooms keeps using the single webhook under **Chat webhooks**, exactly
-as before. Nothing changes until you add your first room.
-
-### Choosing who hears about what
-
-By default every alert goes to everyone whose role covers it — a booking alert reaches whoever can
-manage bookings. Under **Settings → Notification channels → Who gets notified** you can override that
-per event, for events, bookings, maintenance and members. A recipient can be:
-
-| Recipient | Means |
-|---|---|
-| A role | Everyone currently holding that role |
-| A named member | One person, who must be a member of this makerspace |
-| All members | The whole membership |
-| The person it is about | The requester, booker or registrant |
-
-**Leaving an event empty is the default, not silence** — remove every recipient and it goes back to
-notifying by role. A member who has switched their own notifications off is never mailed, even when
-somebody selects them.
-
-Recipients can be narrowed by machine or category the same way rooms are, and the narrowing can only
-ever *reduce* who is notified: a person is never alerted about a machine their role cannot see.
-
-### Editing the wording
-
-**Settings → Email templates** covers hardware, printing, events, bookings, maintenance and
-membership, for both the member-facing and staff-facing message. Each template lists the variables it
-can use and previews against sample data, and a saved template can be reset to the built-in wording at
-any time. Chat messages have one editable body per event, shared by all four chat channels — so you
-edit the wording once rather than four times.
-
-Chat rooms only ever receive the **staff** wording. Member-facing text ("your booking is confirmed")
-goes to email and to the member's phone, never into a shared room where everyone with channel access
-would see that member's name.
-
-### Removing a module from the build entirely
-
-Uninstalling is per makerspace. A deployment that will *never* use an area can drop its code surfaces
-too — no routes, no admin, no OpenAPI paths — while keeping every row and migration:
-
-```bash
-docker compose run --rm --no-deps backend --role management python manage.py suggest_tombstones   # prints the line to paste
-```
-
-Add the result to `.env` as `TOMBSTONED_APPS=`. It is deliberately conservative: an app is only
-suggested when **no** makerspace on the deployment uses any of its modules.
-
-## Documentation
-
-The expanded Events programme is at an **integration checkpoint**, with its new features
-off by default. See [current status and remaining work](docs/events/integration-status.md)
-before enabling hackathons, Mentor Desk, volunteering or project gallery. Schema/routes
-alone do not establish release acceptance.
-
-| I want… | Go to |
-|---|---|
-| What a **module** is and what happens without it | **[docs/MODULES.md](docs/MODULES.md)** |
-| A **plain-language, non-technical** walkthrough | **[docs/setup-for-makerspaces.md](docs/setup-for-makerspaces.md)** |
-| **Production** reference (env vars, TLS, upgrades, releases) | **[docs/self-hosting.md](docs/self-hosting.md)** |
-| **Advanced** config (Telegram, HMAC, Supabase, cron) | **[.github/ADVANCED.md](.github/ADVANCED.md)** |
-| **Develop / contribute** (run from source, tests, releases) | **[.github/DEVELOPMENT.md](.github/DEVELOPMENT.md)** |
-| Organize an event/hackathon: review, RSVP, results and certificates | [Organizer runbook](docs/events/organizer.md) |
-| Apply, form a team and submit files/links | [Participant runbook](docs/events/participant.md) |
-| Operate Mentor Desk, office hours and rounds | [Mentor runbook](docs/events/mentor.md) |
-| Apply for shifts and verify volunteer work | [Volunteer runbook](docs/events/volunteer.md) |
-| Judge frozen projects or review sponsor-track submissions | [Judge/sponsor runbook](docs/events/judge.md) |
-| Prepare migrations, credential/account keys, online scanner, optional ClamAV and ffprobe | [Events operator setup](docs/events/operations.md) |
-| Understand managed 25 GB/self-host budgets, media limits and file expiry | [Uploads and retention](docs/events/media.md) |
-| Review owner add-on code/test/route evidence | [AO traceability](docs/events/acceptance.md) |
-
-## Roadmap
-
-Ongoing work is focused on reliable self-hosting and complete makerspace operations:
-
-- automatic, backup-first deployment from published `main` releases;
-- stable public, member, staff, and superadmin workflows across the full module set;
-- continued accessibility, mobile, reporting, and operational resilience work.
-
-### Further work
-
-The module table describes implemented registry keys. Further hardware integration and invitation
-request improvements are tracked separately:
-
-- **Hardware integration** — Connected devices already supplies signed device identity, printer
-  reports and label commands. Broader CNC/controller and door/access-control integrations remain
-  further work; self check-in requires an in-range browser location, which remains spoofable. Device-reported state still needs authenticated,
-  scoped workflow enforcement.
-- **Invitation requests** — prospective members can already request invitations as well as receive
-  staff invitations or apply to join. Further work belongs in the issue tracker, not as an unbuilt
-  module key.
-
-Current work and shipped changes are tracked in
-[GitHub issues](https://github.com/SpaceWorks-Labs/SpaceWorks/issues),
-[pull requests](https://github.com/SpaceWorks-Labs/SpaceWorks/pulls), and the release notes. The running
-product intentionally does not expose a separate roadmap page.
-
-## Roles & access
-
-Access is per makerspace and action. **Super Admin** is global; each makerspace has seven fixed
-built-ins whose names and grants cannot be edited:
+The website is a thin client over an API built from deep modules. Two rules hold the system together:
+**one workflow module owns every request state transition**, and **one availability module owns all
+quantity math**, so stock can never go below zero and every handover is audited the same way. Every
+query for staff is scoped to a makerspace through the access-control module.
+
+**Stack:** Django 6 + DRF · React 19 + Vite 8 + Tailwind CSS 4 + TypeScript (TanStack Query v5) ·
+PostgreSQL 16 · Celery + Redis · Silo (S3-compatible MinIO fork) · django-unfold admin ·
+drf-spectacular / OpenAPI. Delivered as two Docker images (`spaceworks-backend`, `spaceworks-frontend`);
+everything else is official upstream images. Read [ARCHITECTURE.md](ARCHITECTURE.md) for request flows,
+tenancy and the module map.
+
+## API
+
+Every endpoint is documented in OpenAPI. A running deployment serves Swagger UI at `/docs/`, ReDoc at
+`/redoc/` and the schema at `/schema/`; the versioned API lives under `/api/v1/`. To connect another
+system, read the [API client protocol](docs/api-client-protocol.md) (scoped, signed clients) and
+[signed webhooks v2](docs/webhooks-v2.md). Printers and label printers use the
+[device protocol](docs/device-protocol.md); branded phone apps use the [mobile integration guide](docs/mobile-integration.md).
+
+## Roles and access
+
+Access is per makerspace and per action. The platform **Super Admin** is global; each makerspace has
+seven fixed built-in roles:
 
 | Role | Scope |
 | --- | --- |
@@ -761,74 +242,86 @@ built-ins whose names and grants cannot be edited:
 | **Handover** | Issue accepted requests/direct handouts, return tools, upload evidence and collect completed jobs |
 | **Member** | Community services without staff management actions |
 
-Staff accounts belong to one makerspace and are created under **Staff & roles** by its Space Manager
-(non-Space-Manager staff) or a permitted superadmin (including Space Managers). A staff email can
-also have a separate member account and separate staff accounts in other spaces. Staff sign in at
-`/m/<slug>/admin` with username/email + password (+ authenticator MFA); member and staff sessions
-can stay open together, with independent sign-out. Event/booking helpers and organization delegates
-continue to use their member login and only their granted workspace actions.
+Space Manager and Member each stand alone; the other five combine. Organizations can grant actions
+across linked spaces without conferring membership. Staff accounts, passwords, invitations and machine
+scope are covered in [Roles & access](docs/README-HOSTING.md#roles--access).
 
-Staff invitations set the initial password of that exact new staff account. With Email or invitations
-off, an administrator sets or generates a password and hands it over; Membership and MFA need not
-be enabled. Admin-issued reset ends sessions and forces password change. Separate staff/platform
-email OTP recovery ends sessions, clears forced password change and preserves enrolled MFA; it needs
-configured Platform Email, including when tenant Email is off. Deactivation retains history and revokes credentials; reactivation
-needs new credentials. Only the platform superadmin manages Space Managers; local Space Managers manage
-the other staff. Nobody can manage self or remove the last active manager.
+## Design system
 
-Space Manager and Member each stand alone; the other five roles can combine. Machine scope is assigned
-per person by type: no links means no machines; a type covers machines added later, while new types
-need assignment. Space Manager is exempt. Handover alone cannot accept/reject requests, edit inventory
-or manage QR. Organization grants add actions across linked spaces without membership identity.
-See [assignment rules, action ceilings and upgrade precautions](docs/README-HOSTING.md#roles--access).
+Space Works follows the [Space Works brand v1](docs/brand/): neutral first, accent second, and one bold
+moment per layout.
 
-## Hosting
+| Colour | Hex | Used for |
+| --- | --- | --- |
+| Deep Ink | `#142C2A` | Text, structure and depth |
+| Warm Cream | `#FFF4E8` | Canvas and breathing room |
+| Maker Teal | `#006E63` | Primary actions, links and focus |
+| Workshop Orange | `#FF7447` | Emphasis, with an ink label; never text |
+| Citron | `#DFFF8F` | Fresh fields and short tags |
+| Sky Blue | `#B5CDFF` | Supporting information |
+| Warm Yellow | `#FFD447` | Small highlights |
 
-Use bundled Docker Compose, or host the frontend separately from the API with HTTPS and the
-required origin, cookie, tenant-domain and storage configuration. Keep a scheduler: production uses
-Celery beat, while the cloud profile uses cron. The retired all-in-one image is unsupported.
-The [hosting guide](docs/README-HOSTING.md#hosting) covers first-run generated credentials, Docker and
-split deployments, and an approved, encrypted tenant export/import onto a space's own server.
-Migration preserves accountable records, approves personal-data closure and admits only one writable
-side through cutover; the source is archived. Tenant staff identities, roles/scopes and notification
-preferences travel without credentials; a target administrator issues new passwords. See the
-[staff portability contract](docs/account-split-portability.md).
-[Recovery](docs/update-recovery.md) is separate from updates.
+- **Type.** Gilroy for text and headings; Unbounded for one short accent per layout. GitHub controls
+  Markdown body fonts here; the app loads the approved fonts.
+- **Logo.** Use the supplied logo masters in [docs/brand](docs/brand/) as they are; never rebuild them.
+- **Voice.** Clear, warm and specific.
 
-## Tech stack
+## Documentation
 
-Django 6 + DRF · React 19 + Vite 8 + Tailwind CSS 4 + TypeScript (TanStack Query v5) · PostgreSQL 16 ·
-Celery + Redis · Silo (S3-compatible MinIO fork) · django-unfold admin · drf-spectacular / OpenAPI. Delivered as
-two Docker images (`spaceworks-backend`, `spaceworks-frontend`); everything else is official upstream images.
+| Read this | When you want to |
+| --- | --- |
+| [Documentation index](docs/README.md) | See every guide, grouped by task |
+| [Features](docs/FEATURES.md) | See everything Space Works does today |
+| [Modules](docs/MODULES.md) and [choosing modules](docs/choosing-modules.md) | Decide what to turn on |
+| [Self-hosting](docs/self-hosting.md) and [advanced configuration](.github/ADVANCED.md) | Run it in production |
+| [Events programme guide](docs/events/README.md) | Run hackathons, mentoring and volunteering (pre-release, off by default) |
+| [Environment reference](docs/environment-reference.md) | Look up an environment variable |
+| [Development](.github/DEVELOPMENT.md) | Run from source and run the tests |
+
+## Roadmap
+
+Ongoing work is focused on reliable, backup-first self-hosting from published releases, stable workflows
+across the full module set, and continued accessibility, mobile, reporting and resilience work. Broader
+hardware integration (CNC controllers, door access) is further work. See the [roadmap](docs/future-work.md)
+and [GitHub issues](https://github.com/SpaceWorks-Labs/SpaceWorks/issues).
 
 ## Contributing
 
-Space Works is a collaborative project for the makerspace community, and **contributors are very welcome** —
-code, docs, translations, or just running it at your space and reporting what's rough. See
-**[.github/CONTRIBUTING.md](.github/CONTRIBUTING.md)**. **No CLA is required** — by opening a pull
-request you agree your contribution is offered under the project's AGPL-3.0-or-later license
-(inbound = outbound); merged contributors are credited in
-[.github/CONTRIBUTORS.md](.github/CONTRIBUTORS.md).
+Space Works is a collaborative project for the makerspace community, and **contributors are very
+welcome**: code, docs, translations, or just running it at your space and reporting what is rough.
 
-## License
+- [Report a bug or suggest a feature](https://github.com/SpaceWorks-Labs/SpaceWorks/issues/new/choose).
+- Branch from `dev` (`feature/<short-slug>` or `fix/<short-slug>`) and open your pull request against
+  `dev`. `main` is production; only [@Shaan-Shoukath](https://github.com/Shaan-Shoukath) merges to it.
+- Found a security issue? Report it privately as described in the [security policy](.github/SECURITY.md),
+  not in a public issue.
 
-Space Works is **free and open source software**, licensed under the
-**[GNU Affero General Public License v3](LICENSE)** (`AGPL-3.0-or-later`).
-
-You are free to use, study, share, and modify Space Works — for **any** purpose, commercial or
-noncommercial — subject to the AGPL. Because the AGPL is a **network copyleft** license: if you run
-a modified version and let users interact with it over a network, you must offer those users the
-corresponding source code of your modified version under the same license.
+Read the [contributing guide](.github/CONTRIBUTING.md) and the [code of conduct](.github/CODE_OF_CONDUCT.md)
+before your first pull request. **No CLA is required**: by opening a pull request you agree your
+contribution is offered under the project's AGPL-3.0-or-later licence (inbound = outbound); merged
+contributors are credited in [CONTRIBUTORS.md](.github/CONTRIBUTORS.md).
 
 ## Contributors
 
-Thanks to **everyone** who has contributed to Space Works — code, docs, bug reports, or running it at their
+Thanks to **everyone** who has contributed to Space Works: code, docs, bug reports, or running it at their
 space. The wall below is pulled live from this repository's
 [GitHub contributor graph](https://github.com/SpaceWorks-Labs/SpaceWorks/graphs/contributors) and
-shows **all** contributors — bots and automation included, no filtering:
+shows **all** contributors, bots and automation included, with no filtering:
 
 [![Contributors](https://contrib.rocks/image?repo=SpaceWorks-Labs/SpaceWorks&max=100)](https://github.com/SpaceWorks-Labs/SpaceWorks/graphs/contributors)
 
 <sub>Contributor image by [contrib.rocks](https://contrib.rocks).</sub>
 
-Cloud integration: [hosting choices and operational contracts](docs/deploy/cloud-overview.md). Full host defaults remain unchanged; managed/free is explicit and subject to release acceptance gates.
+## Licence
+
+Space Works is **free and open source software**, licensed under the
+[GNU Affero General Public License v3.0 or later](LICENSE) (`AGPL-3.0-or-later`). In plain language:
+
+- You can use, study, change and share it, for **any** purpose, commercial or noncommercial.
+- If you share it, or a modified version, you share the source under the same licence.
+- **If you run a modified version and let users interact with it over a network**, you must offer
+  those users the corresponding source code of your modified version too.
+- It comes with no warranty.
+
+See [NOTICE](NOTICE) for attribution and third-party licences. The self-hosted fonts keep their own
+licences (see `frontend/public/fonts/LICENSES/`) and are not covered by the AGPL.

@@ -1,8 +1,8 @@
 # Space Works brand v1
 
 The [brand guidelines v1.0](space-works-brand-guidelines-v1.pdf) are the source of truth.
-This reference summarises the PDF; the product font implementation follows the binding
-[design revamp plan, section 0.4](../design-revamp/PLAN.md).
+This reference summarises the PDF; the product font implementation follows the approved brand kit
+described under Typography below.
 
 Space Works helps teams keep shared parts, tools and materials organised. The identity is clear,
 capable, curious and playful. The open box is an invitation: four flaps welcome the next project,
@@ -59,7 +59,7 @@ steps; both 500 and 600 retain Maker Teal, per the lane brief.
 ## Typography
 
 The PDF assigns Gilroy the primary role and Unbounded short geometric accents. The product follows
-the approved brand kit (SpaceWorks-Design, 15 October 2026), which supersedes PLAN section 0.4:
+the approved brand kit (SpaceWorks-Design, 15 October 2026), which supersedes the earlier revamp plan:
 
 - **Gilroy** Regular 400, Medium 500, SemiBold 600 and Bold 700 for all text: headings, titles and
   display numbers at 600, body 400, labels and meta 500, inline emphasis 700. Machine strings use

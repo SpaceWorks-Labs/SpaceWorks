@@ -18,7 +18,7 @@ export type AuthLayoutProps = LayoutProps & {
   legal?: ReactNode;
 };
 /**
- * Yuyu Y11 split screen. The brand panel is a colour field (welcome-and-dark-spec §4.1): Deep Ink in
+ * Split screen. The brand panel is a colour field (styles/fields.css): Deep Ink in
  * light (brand p.1 cover), Maker Teal in dark (p.7 reversed on teal), or the tenant's own brand fill.
  * One logo per screen, in the form column; Space Works facets only on the Space Works panel.
  */

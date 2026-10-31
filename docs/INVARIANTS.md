@@ -2324,7 +2324,7 @@ bypass. Coordinates are validated and discarded, never stored in sessions, audit
   the settings shell for Space Managers when the presence module is enabled.
 
 **One colour vocabulary.** `frontend/src/index.css` holds the literal light and dark RGB triplets
-from `docs/design-revamp/research/ui-brand-spec.md` section A. Keep `:root {` and `:root.dark {` literal:
+of the brand token set (palette in `docs/brand/README.md`). Keep `:root {` and `:root.dark {` literal:
 the backend contrast guard parses those blocks. Tailwind maps each colour token one-to-one.
 - `accent` is Maker Teal for staff actions, active navigation and focus. `brand` defaults to accent
   and is tenant-overridable on public/member surfaces only. Staff uses no brand utilities except

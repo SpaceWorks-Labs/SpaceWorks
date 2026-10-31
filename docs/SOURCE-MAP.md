@@ -157,9 +157,9 @@ Every routed screen renders exactly one page layout from `components/layouts/` (
 `PublicLayout`, `PublicDetailLayout` and `KioskLayout`; layouts own geometry, landmarks, the
 single `h1` and loading/error/empty switching, and contain no gating. Shared primitives
 (`PageHeader`, `Tabs`, `StatCard`, `ListRow`, `DateChip`/`IdentityChip`, `StatusPill`, `Callout`,
-`SettingsRow`, `DangerZone`, `ActivityRail`, `TicketCard`, `ScanWorkbench`, …) are documented in
-`docs/design-revamp/DR-PRIMITIVES.md`. Design source of truth: `docs/brand/` (brand guidelines v1 +
-logo masters) and `docs/design-revamp/` (plan, UI/UX specs); the same assets ship in the
+`SettingsRow`, `DangerZone`, `ActivityRail`, `TicketCard`, `ScanWorkbench`, …) are exported, with
+their prop types, from `components/ui/index.ts`. Design source of truth: `docs/brand/` (brand
+guidelines v1 + logo masters); the same assets ship in the
 `SpaceWorks-Labs/SpaceWorks-Design` repository for use as a submodule.
 
 `features/staff/sidebarSections.ts` owns the 42-key sidebar presentation map;

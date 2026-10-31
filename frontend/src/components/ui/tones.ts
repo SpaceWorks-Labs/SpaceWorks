@@ -1,6 +1,6 @@
 import type { Tone } from "./types";
 /** Small status marks (pills, avatars, date chips, identity tiles): solid brand fills with ink labels in
- * both modes, the brand-tested pairs drawn on p.16 (welcome-and-dark-spec.md W8). */
+ * both modes, the brand-tested pairs drawn on p.16 of the brand guidelines (docs/brand). */
 export const toneMarkClasses: Record<Tone, string> = {
   success: "border-transparent bg-success text-on-success",
   warn: "border-transparent bg-warn text-on-warn",

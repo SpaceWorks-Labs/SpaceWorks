@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { memberRequest, staffRequest, tenantPublicRequest } from "../../lib/api";
 
-// Hand-typed from the presence lane's contract (docs/p2-presence.md). The integrator
+// Hand-typed from the presence contract (docs/INVARIANTS.md, presence). The integrator
 // regenerates `generated/api.ts` after the merge; these shapes then become aliases.
 export type PresenceStatus = "working" | "visiting" | "attending_event" | "guest";
 export type PresenceSession = {

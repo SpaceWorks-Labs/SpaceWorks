@@ -6,6 +6,7 @@ from django.db.models import F, Q
 
 from apps.makerspaces import limits
 from apps.makerspaces.models import Makerspace
+from apps.backup.capture_managers import every_row
 
 
 ASSET_LABELS = ("events.SubmissionAsset", "events.HackathonParticipantAsset")
@@ -16,7 +17,7 @@ def canonical_asset(*, tenant_id, key, size, digest=None, bucket_kind="private")
         return False
     for label in ASSET_LABELS:
         model = apps.get_model(label)
-        rows = model.objects.filter(event__makerspace_id=tenant_id, object_key=key,
+        rows = every_row(model).filter(event__makerspace_id=tenant_id, object_key=key,
                                     actual_bytes=size, state="ready")
         if digest is not None:
             rows = rows.filter(sha256=digest)
@@ -47,7 +48,7 @@ def publish_assets(tenant_id, accepted_objects):
     for event in locked:
         event.makerspace = space
         # Ordinary events need no new usage row or target event storage allowance.
-        if any(apps.get_model(label).objects.filter(event=event).exists() for label in ASSET_LABELS):
+        if any(every_row(apps.get_model(label)).filter(event=event).exists() for label in ASSET_LABELS):
             finalize_imported_assets(event=event, accepted_objects=accepted_objects)
 
 

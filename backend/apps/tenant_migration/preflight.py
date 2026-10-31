@@ -12,6 +12,7 @@ from apps.encryption.crypto import parse_envelope
 from apps.encryption.models import MakerspaceEncryptionKey
 from apps.encryption.registry import all_fields
 from apps.payments.models import Payment
+from apps.backup.capture_managers import every_row
 
 
 class SourcePreflightError(RuntimeError):
@@ -81,7 +82,7 @@ def _check_live_envelopes(makerspace, keys):
     for field in all_fields():
         model = apps.get_model(field.model_label)
         tenant_lookup = field.makerspace_path.replace(".", "__")
-        rows = model.objects.filter(**{tenant_lookup: makerspace.pk}).only(
+        rows = every_row(model).filter(**{tenant_lookup: makerspace.pk}).only(
             "pk", field.field_name
         )
         for row in rows.iterator(chunk_size=200):

@@ -19,6 +19,7 @@ from .row_references import (
 )
 from .row_values import _fresh_unique, _reconstructed_value, protect_carried_unique_values
 from .target_projection import SEEDED_RESOLUTIONS, TARGET_FIELD_PROJECTION
+from apps.backup.capture_managers import every_row
 
 
 def final_row(
@@ -160,7 +161,7 @@ def update_resolved_row(model, source, target):
         )
         for name in resolution.archive_update_fields
     }
-    model.objects.filter(pk=target_pk).update(**values)
+    every_row(model).filter(pk=target_pk).update(**values)
     return True
 
 

@@ -41,7 +41,7 @@ def compute_preview(makerspace, archive):
         relinked += _foreign_inbound(makerspace.pk, label, archived & live)
     outcome = resolve(makerspace.pk, gone, apply=False)
     from .space_restore_apply import staff_without_restored_membership
-    outcome.blocked.extend({"model": "accounts.User", "pk": str(pk), "field": "staff_makerspace",
+    outcome.blocked.extend({"model": "accounts.User", "pk": str(pk), "field": "track",
                             "references": "makerspaces.MakerspaceMembership", "reason": "staff_after_restore_point",
                             "username": username}
                            for pk, username in staff_without_restored_membership(makerspace, archive))

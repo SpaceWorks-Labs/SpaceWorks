@@ -6,6 +6,7 @@ from django.apps import apps
 
 from .datasets import DATASETS
 from .types import Fidelity
+from apps.backup.capture_managers import every_row
 
 
 def select_related_paths(model_label, row_rules):
@@ -191,11 +192,11 @@ class ClosureReferenceProjector:
             if item.fidelity is Fidelity.PORTABLE and item.model == target_label
         )
         present = set(
-            model.objects.filter(
+            every_row(model).filter(
                 dataset.predicate.as_q(self.makerspace_id), pk__in=ids
             ).values_list("pk", flat=True)
         )
-        queryset = model.objects.filter(pk__in=ids)
+        queryset = every_row(model).filter(pk__in=ids)
         if target_label == "inventory.InventoryAsset":
             queryset = queryset.select_related("product")
         targets = {item.pk: item for item in queryset}

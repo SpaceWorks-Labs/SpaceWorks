@@ -18,6 +18,7 @@ from .models_protocol import DisclosureClosureApproval
 from .protocol_errors import ClosureAdmissionError, ClosureChangedError
 from .row_conditions import condition_matches
 from .target_projection import ROW_POLICIES, RowDisposition
+from apps.backup.capture_managers import every_row
 
 
 def export_row_policy(model_label, row):
@@ -72,18 +73,18 @@ def closure_digest(identities):
 
 def compute_pending_closure(makerspace):
     """Compute the exact projected identity list shown to the source superadmin."""
-    closure = set(User.objects.filter(account_kind="staff", staff_makerspace=makerspace,
-                                      retired_at__isnull=True).values_list("pk", flat=True))
+    from apps.data_export.runner_users import staff_track_user_ids
+    closure = staff_track_user_ids(makerspace.pk)
     for dataset in DATASETS.values():
         if dataset.fidelity is not Fidelity.PORTABLE or dataset.model == "accounts.User":
             continue
         model = apps.get_model(dataset.model)
-        rows = model.objects.filter(dataset.predicate.as_q(makerspace.pk))
+        rows = every_row(model).filter(dataset.predicate.as_q(makerspace.pk))
         for row in rows.iterator(chunk_size=500):
             emit, contributes = export_row_policy(dataset.model, row)
             if emit and contributes:
                 closure.update(_row_user_ids(dataset.model, row))
-    users = apps.get_model("accounts.User").objects.filter(pk__in=closure, retired_at__isnull=True)
+    users = every_row(apps.get_model("accounts.User")).filter(pk__in=closure, retired_at__isnull=True)
     identities = canonical_identities(users)
     return {"digest": closure_digest(identities), "identities": identities}
 

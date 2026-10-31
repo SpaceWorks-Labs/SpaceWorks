@@ -12,6 +12,7 @@ from django.apps import apps
 from django.db.models import Sum
 
 from .build_errors import BackupBuildError
+from .capture_managers import every_row
 
 logger = logging.getLogger(__name__)
 
@@ -143,7 +144,7 @@ def verify_quota(*, using):
         total = 0
         # Events retains its models and bytes even when its runtime is tombstoned.
         for label in ("makerspaces.MakerspacePublicPageAsset", "events.EventPageAsset"):
-            total += apps.get_model(label).objects.using(using).filter(
+            total += every_row(apps.get_model(label)).using(using).filter(
                 page__makerspace=space).aggregate(n=Sum("size_bytes"))["n"] or 0
         if space.storage_bytes_used < total:
             # Legitimate, not corruption: bytes uploaded while storage was unlimited

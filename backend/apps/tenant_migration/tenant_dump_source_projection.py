@@ -26,6 +26,7 @@ from .tenant_dump_user_rows import (
     apply_user_closure,
     excluded_stub_profile_object_keys,
 )
+from apps.backup.capture_managers import every_row
 
 
 class TenantDumpProjectionError(RuntimeError):
@@ -55,7 +56,7 @@ def project_makerspace_source(makerspace_id, *, using="default", capture_id=None
             if rule.disposition is ModelDisposition.DROP:
                 continue
             model = apps.get_model(label)
-            queryset = model._default_manager.using(using).filter(
+            queryset = every_row(model).using(using).filter(
                 predicate.as_q(makerspace_id)
             ).order_by(model._meta.pk.name)
             records = raw_records(queryset, model)
@@ -75,7 +76,7 @@ def project_makerspace_source(makerspace_id, *, using="default", capture_id=None
         projected["accounts.User"] = tuple(
             MappingProxyType(dict(row))
             for row in raw_records(
-                User._default_manager.using(using).filter(pk__in=user_ids).order_by(
+                every_row(User).using(using).filter(pk__in=user_ids).order_by(
                     User._meta.pk.name
                 ),
                 User,

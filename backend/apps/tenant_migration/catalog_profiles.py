@@ -1,3 +1,4 @@
+from apps.backup.capture_managers import every_row
 """Reviewed authored-content/namespace portability for the public profile contract."""
 
 PROFILE_FIELDS = ("public_visible public_consented_at show_activity_graph show_events show_speaking "
@@ -67,7 +68,7 @@ def prepare_import_handle(row, reservations=None):
     if handle in handles or owner_key[1] in users:
         return False
     if owner_key[0] == "user":
-        get_user_model().objects.select_for_update(no_key=True).get(pk=owner_key[1])
+        every_row(get_user_model()).select_for_update(no_key=True).get(pk=owner_key[1])
     else:
         from apps.makerspaces.models import Makerspace
         Makerspace.objects.select_for_update().get(pk=owner_key[1])

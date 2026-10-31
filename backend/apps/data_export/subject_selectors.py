@@ -5,9 +5,11 @@ not ownership: a staff member who handles somebody's loan cannot export that loa
 Unlisted tenant configuration and anonymous records have no proven subject binding.
 """
 
+from django.apps import apps
 from django.db.models import Q
 
 from apps.accounts import rbac
+from apps.backup.capture_managers import every_row
 
 from .datasets import DATASET_SPECS
 
@@ -77,13 +79,14 @@ def subject_query(model, user, makerspace_id):
     if label in RUNTIME_FIELDS:
         return runtime_subject_query(model, user, makerspace_id)
     if label == "accounts.User":
-        return model.objects.filter(pk=user.pk, retired_at__isnull=True)
+        return every_row(model).filter(pk=user.pk, retired_at__isnull=True)
     if label == "audit.AuditLog":
         own = Q(actor_id=user.pk) | Q(
             target_type="accounts.user", target_id=str(user.pk),
         )
+        # Both tracks: a person's staff role in this space is their own record too.
         memberships = rbac.scope_by_makerspace(
-            user, user.makerspace_memberships.all(),
+            user, every_row(apps.get_model("makerspaces.MakerspaceMembership")).filter(user=user),
         ).filter(makerspace_id=makerspace_id)
         own |= Q(
             target_type="makerspaces.makerspacemembership",
@@ -92,12 +95,12 @@ def subject_query(model, user, makerspace_id):
     else:
         paths = SUBJECT_PATHS.get(label)
         if not paths:
-            return model.objects.none()
+            return every_row(model).none()
         own = Q()
         for path in paths:
             own |= Q(**{f"{path}_id": user.pk})
     predicate = DATASET_SPECS[label][1]
-    query = model.objects.filter(own).filter(predicate.as_q(makerspace_id))
+    query = every_row(model).filter(own).filter(predicate.as_q(makerspace_id))
     # An explicit tenant intersection remains required even for a superadmin.
     return rbac.scope_by_makerspace(queryset=query, actor=user,
                                    makerspace_field=predicate.any_paths[0] + "_id")

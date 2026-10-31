@@ -4,11 +4,12 @@ from django.apps import apps
 
 from .errors import ExportIntegrityError
 from .runner_queries import after_keyset, key_value
+from apps.backup.capture_managers import every_row
 
 def _read_users(dataset, closure, page_size, deadline, monotonic):
     from .runner import _check_deadline
     model = apps.get_model("accounts.User")
-    queryset = model.objects.filter(pk__in=closure, retired_at__isnull=True)
+    queryset = every_row(model).filter(pk__in=closure, retired_at__isnull=True)
     cursor_values, rows = None, []
     while True:
         _check_deadline(dataset.path, len(rows), deadline, monotonic)
@@ -25,3 +26,12 @@ def _read_users(dataset, closure, page_size, deadline, monotonic):
     return rows, len(rows)
 
 
+def staff_track_user_ids(makerspace_id):
+    """People holding a staff-track row in this space, in any status: their roster rows
+    travel with the space, so their identities join the export's user closure."""
+    from apps.accounts.staff_identity import person_q
+    from apps.makerspaces.models import MakerspaceMembership
+
+    return set(every_row(MakerspaceMembership).filter(
+        person_q("user__"), makerspace_id=makerspace_id, track=MakerspaceMembership.Track.STAFF,
+    ).values_list("user_id", flat=True))

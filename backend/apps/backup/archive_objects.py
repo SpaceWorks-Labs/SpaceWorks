@@ -5,6 +5,7 @@ from django.conf import settings
 
 from apps.backup import storage
 from apps.data_export.datasets import DATASET_SPECS
+from .capture_managers import every_row
 
 
 OBJECT_FIELD_NAMES = frozenset({
@@ -110,7 +111,7 @@ def object_closure():
         if model._meta.label in {"evidence.EvidenceAbandonedUploadReceipt", "accounts.AccountPurgeObject",
                                   "backup.ManagedStagedObject"}:
             continue
-        collect_model_objects(model._default_manager.all(), model, result)
+        collect_model_objects(every_row(model).all(), model, result)
     return result
 
 

@@ -55,6 +55,25 @@ Staff work in the **React console** at `/admin`; the superadmin-only **Django co
 Request Workflow module is the single source of truth for state transitions, and the Inventory
 Availability module owns all quantity math. Details in **[.github/CONTRIBUTING.md](../.github/CONTRIBUTING.md)**.
 
+### Staff accounts and passwords
+
+Staff accounts belong to one makerspace and are created under **Staff & roles** by its Space Manager
+(non-Space-Manager staff) or a permitted superadmin (including Space Managers). A staff email can
+also have a separate member account and separate staff accounts in other spaces. Staff sign in at
+`/m/<slug>/admin` with username/email + password (+ authenticator MFA); member and staff sessions
+can stay open together, with independent sign-out. Event/booking helpers and organization delegates
+continue to use their member login and only their granted workspace actions.
+
+Staff invitations set the initial password of that exact new staff account. With Email or invitations
+off, an administrator sets or generates a password and hands it over; Membership and MFA need not
+be enabled. Admin-issued reset ends sessions and forces password change. Separate staff/platform
+email OTP recovery ends sessions, clears forced password change and preserves enrolled MFA; it needs
+configured Platform Email, including when tenant Email is off. Deactivation retains history and
+revokes credentials; reactivation needs new credentials. Only the platform superadmin manages Space
+Managers; local Space Managers manage the other staff. Nobody can manage self or remove the last
+active manager. Member sign-in methods and recovery are described in
+[Sign-in, identity and borrowing](sign-in-and-borrowing.md).
+
 ## Hosting
 
 **The goal is to self-host inside the makerspace, on your own server** — your data, your network, no

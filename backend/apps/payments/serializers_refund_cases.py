@@ -75,6 +75,8 @@ class RefundCaseApproveSerializer(serializers.Serializer):
     note = serializers.CharField(max_length=500, required=False, allow_blank=True, default="")
     # Required for a charge settled offline: the money goes back in person.
     receipt = ManualRefundReceiptSerializer(required=False)
+    # X21 (L4): approving a membership refund ends the term it paid for unless staff tick this.
+    keep_membership = serializers.BooleanField(required=False, default=False)
 
 
 class RefundCaseDeclineSerializer(serializers.Serializer):

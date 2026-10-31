@@ -185,6 +185,21 @@ Required by the members-only events path. Bookings can run without this module.
   private object stored only with the member's recorded consent, and revoking a card deletes the photo
   and blanks the name immediately while the redacted row, the revoked QR, the scans and the audit entries
   stay; a fresh card can then be issued. Revoking the membership revokes its card too. Cards print as one CR80 card or an A4/Letter sheet; nothing rendered is stored.
+- **Release-2 lifecycle (lane L4), 14 switches, all off by default.** Plan types — rolling, financial
+  year (ends at the space's financial year end; April by default, set by the Space Manager as a finance
+  setting), fixed end date and lifetime — with separate new and renewal prices and per-plan overrides of
+  the joining fee, rejoin rule (never / once / each join / after a lapse of N days), payment timing, join
+  mode and form (`membership.plan_rules`); public plan cards and per-plan pages (`membership.public_plans`);
+  the renewal desk (`membership.renewal_desk`); CSV/Excel import into pending memberships that are linked
+  only when the person accepts with that verified email (`membership.import`, #128 C-13); multi-use invite
+  links and bulk decisions (`membership.admission_tools`); member numbers (`membership.member_numbers`),
+  record fields (`membership.records`), display-only titles (`membership.titles`), the consent ledger
+  (`membership.consent`), per-space erasure requests (`membership.erasure`), the history timeline
+  (`membership.history`), register filters and export (`membership.register_tools`), insights reports
+  (`membership.insights`) and the monthly staff summary (`membership.monthly_summary`). Whatever the
+  switches, each term freezes its price, joining fee, currency and type, every standing change is written
+  to the append-only term history, and community admissions get a gapless member number. An approved
+  membership refund ends the term it paid for unless staff tick "keep membership" (X21).
 - **Data** — purgeable: join requests, member profiles with their projects and imagery, and member cards
   with their photos (their QR codes are revoked, never deleted). Memberships, waivers and acceptance
   evidence **stay** — they are core RBAC and liability state.

@@ -5,23 +5,13 @@ from django.db import models
 from django.db.models import Q
 
 from apps.forms_schema.validation import validate_form_schema
+from apps.makerspaces.models_membership_rules import JoinMode, PaymentTiming, RejoinRule
 
 
 class MakerspaceMembershipSettings(models.Model):
-    class JoinMode(models.TextChoices):
-        OPEN = "open", "Open"
-        APPROVAL = "approval", "Approval"
-        INVITE_ONLY = "invite_only", "Invite only"
-        VOUCH = "vouch", "Vouch"
-        CLOSED = "closed", "Closed"
-
-    class PaymentTiming(models.TextChoices):
-        AFTER = "after_activation", "Activate then charge"
-        BEFORE = "before_activation", "Pay before activation"
-
-    class RejoinRule(models.TextChoices):
-        ONCE = "once", "Joining dues once"
-        EACH_JOIN = "each_join", "Joining dues on each join"
+    JoinMode = JoinMode
+    PaymentTiming = PaymentTiming
+    RejoinRule = RejoinRule
 
     makerspace = models.OneToOneField(
         "makerspaces.Makerspace", on_delete=models.CASCADE, related_name="admission_settings"
@@ -44,6 +34,15 @@ class MakerspaceMembershipSettings(models.Model):
     joining_fee_currency = models.CharField(max_length=3, default="usd")
     rejoin_dues_rule = models.CharField(max_length=16, choices=RejoinRule.choices, default=RejoinRule.ONCE)
     request_expiry_days = models.PositiveIntegerField(default=30)
+    rejoin_after_days = models.PositiveIntegerField(null=True, blank=True)
+    # How the fixed member number is printed (X12, decisions 71 and #128 C-29), e.g.
+    # "TNK-{number:4}" -> TNK-0042. Tokens: {number} / {number:N} (zero-padded to N) and
+    # {year} (the year the person first joined). Validated by `membership_number`.
+    member_number_pattern = models.CharField(max_length=40, blank=True, default="")
+    # Consent ledger (X10): the published privacy-notice version and the purposes a member
+    # may agree to, as [{"key", "label", "description"}]. Empty = no consent questions.
+    privacy_notice_version = models.CharField(max_length=64, blank=True, default="")
+    consent_purposes = models.JSONField(default=list, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -53,6 +52,11 @@ class MakerspaceMembershipSettings(models.Model):
             models.CheckConstraint(condition=Q(vouches_required__gte=1, vouches_required__lte=5), name="admission_vouch_count_range"),
             models.CheckConstraint(condition=Q(voucher_pending_limit__gte=1), name="admission_voucher_limit_positive"),
             models.CheckConstraint(condition=Q(vouch_expiry_days__gte=1, request_expiry_days__gte=1), name="admission_expiry_positive"),
+            models.CheckConstraint(
+                condition=Q(rejoin_dues_rule="after_lapse", rejoin_after_days__gt=0)
+                | (~Q(rejoin_dues_rule="after_lapse") & Q(rejoin_after_days__isnull=True)),
+                name="admission_rejoin_days_matches_rule",
+            ),
         ]
 
 

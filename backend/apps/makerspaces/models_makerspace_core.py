@@ -98,6 +98,11 @@ class Makerspace(MakerspaceSecretsMixin, PublicSiteSettings):
         validators=[MinValueValidator(0)],
     )
     referrals_enabled = models.BooleanField(default=False)
+    # The month (1-12) the space's financial year starts; April by default (decision 71).
+    # Read through `makerspaces.financial_year`, never directly.
+    financial_year_start_month = models.PositiveSmallIntegerField(
+        default=4, validators=[MinValueValidator(1), MaxValueValidator(12)],
+    )
     # Opt-in: a member whose membership terms have all expired or been cancelled is
     # refused a borrow request like a non-member. A member with no term at all is never
     # affected -- plans are optional. Enforced by `request_access.require_current_term`.
@@ -236,6 +241,10 @@ class Makerspace(MakerspaceSecretsMixin, PublicSiteSettings):
             models.CheckConstraint(
                 condition=Q(membership_dues_amount__gte=0),
                 name="makerspace_dues_nonnegative",
+            ),
+            models.CheckConstraint(
+                condition=Q(financial_year_start_month__gte=1, financial_year_start_month__lte=12),
+                name="makerspace_fy_start_month_range",
             ),
         ]
 

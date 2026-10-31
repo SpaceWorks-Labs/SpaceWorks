@@ -14,6 +14,7 @@ import {
   startTerm,
 } from "./membershipPlansApi";
 import { formatMoney } from "./paymentsApi";
+import { MemberLifecycleDetails } from "./membershipLifecycle/MemberLifecycleDetails";
 
 /** Mount with `key={membershipId}`; the plan choice is per dialog, not per panel. */
 export function MemberTermsDialog({
@@ -21,11 +22,13 @@ export function MemberTermsDialog({
   membershipId,
   memberName,
   onClose,
+  features = [],
 }: {
   makerspaceId: number;
   membershipId: number;
   memberName: string;
   onClose: () => void;
+  features?: string[];
 }) {
   const client = useQueryClient();
   const terms = useQuery({ queryKey: membershipPlanKeys.terms(membershipId), queryFn: () => listTerms(membershipId) });
@@ -88,7 +91,8 @@ export function MemberTermsDialog({
               <div>
                 <p className="font-semibold text-ink">{term.plan_name}</p>
                 <p className="text-xs text-muted">
-                  {new Date(term.starts_at).toLocaleDateString()} – {new Date(term.ends_at).toLocaleDateString()}
+                  {new Date(term.starts_at).toLocaleDateString()} – {term.is_lifetime ? "lifetime" : new Date(term.ends_at).toLocaleDateString()}
+                  {term.kind ? ` · ${term.kind}` : ""}{term.price != null ? ` · ${formatMoney(term.price, term.currency || "usd")}` : ""}
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -105,6 +109,7 @@ export function MemberTermsDialog({
       ) : null}
       {terms.isError ? <p className="mt-3 text-sm text-danger" role="alert">{planErrorText(terms.error, "Could not load terms.")}</p> : null}
       {error ? <p className="mt-3 text-sm text-danger" role="alert">{planErrorText(error, "Could not update the term.")}</p> : null}
+      <MemberLifecycleDetails membershipId={membershipId} makerspaceId={makerspaceId} features={features} />
     </>} />
   );
 }

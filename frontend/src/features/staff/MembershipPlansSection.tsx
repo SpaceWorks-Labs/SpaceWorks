@@ -9,6 +9,7 @@ import {
   membershipPlanKeys,
   planErrorText,
   planIntervalLabel,
+  setPlanArchived,
   updatePlan,
   type MembershipPlan,
   type MembershipPlanInput,
@@ -17,6 +18,7 @@ import {
 import { formatMoney } from "./paymentsApi";
 import { Panel } from "./panels/shared";
 import { MembershipRenewalFields, emptyRenewal, planRenewal, renewalInput, validateRenewal } from "./MembershipRenewalFields";
+import { MembershipPlanRulesFields, emptyRules, rulesFromPlan, rulesInput, validateRules } from "./MembershipPlanRulesFields";
 
 type PlanForm = {
   name: string;
@@ -63,7 +65,10 @@ function toForm(plan: MembershipPlan): PlanForm {
   };
 }
 
-export function MembershipPlansSection({ makerspaceId }: { makerspaceId: number }) {
+export function MembershipPlansSection({ makerspaceId, features = [] }: { makerspaceId: number; features?: string[] }) {
+  const planRulesOn = features.includes("membership.plan_rules");
+  const publicPlansOn = features.includes("membership.public_plans");
+  const [rules, setRules] = useState(emptyRules);
   const client = useQueryClient();
   const plans = useQuery({ queryKey: membershipPlanKeys.plans(makerspaceId), queryFn: () => listPlans(makerspaceId) });
   const [editing, setEditing] = useState<MembershipPlan | null>(null);
@@ -72,14 +77,19 @@ export function MembershipPlansSection({ makerspaceId }: { makerspaceId: number 
   const [renewal, setRenewal] = useState(emptyRenewal);
   const refresh = () => client.invalidateQueries({ queryKey: membershipPlanKeys.plans(makerspaceId) });
   const save = useMutation({
-    mutationFn: () => (editing ? updatePlan(editing.id, { ...toInput(form), ...renewalInput(renewal) }) : createPlan(makerspaceId, { ...toInput(form), ...renewalInput(renewal) })),
+    mutationFn: () => {
+      const input = { ...toInput(form), ...renewalInput(renewal), ...rulesInput(rules, planRulesOn, publicPlansOn) } as MembershipPlanInput;
+      return editing ? updatePlan(editing.id, input) : createPlan(makerspaceId, input);
+    },
     onSuccess: () => {
       setEditing(null);
       setForm(EMPTY);
       setRenewal(emptyRenewal);
+      setRules(emptyRules);
       refresh();
     },
   });
+  const archive = useMutation({ mutationFn: (plan: MembershipPlan) => setPlanArchived(plan.id, !plan.archived_at), onSuccess: refresh });
   const toggleActive = useMutation({
     mutationFn: (plan: MembershipPlan) => updatePlan(plan.id, { is_active: !plan.is_active }),
     onSuccess: refresh,
@@ -89,7 +99,7 @@ export function MembershipPlansSection({ makerspaceId }: { makerspaceId: number 
     setProblem(null);
   };
   const submit = () => {
-    const next = validatePlanForm(form) ?? validateRenewal(renewal);
+    const next = validatePlanForm(form) ?? validateRenewal(renewal) ?? validateRules(rules);
     setProblem(next);
     if (!next) save.mutate();
   };
@@ -97,16 +107,18 @@ export function MembershipPlansSection({ makerspaceId }: { makerspaceId: number 
     setEditing(plan);
     setForm(toForm(plan));
     setRenewal(planRenewal(plan));
+    setRules(rulesFromPlan(plan));
     setProblem(null);
   };
   const cancelEdit = () => {
     setEditing(null);
     setForm(EMPTY);
     setRenewal(emptyRenewal);
+    setRules(emptyRules);
     setProblem(null);
   };
   const error = problem ?? (save.error ? planErrorText(save.error, "Could not save the plan.") : null)
-    ?? (toggleActive.error ? planErrorText(toggleActive.error, "Could not update the plan.") : null);
+    ?? (toggleActive.error ?? archive.error ? planErrorText(toggleActive.error ?? archive.error, "Could not update the plan.") : null);
 
   return (
     <Panel title="Membership plans">
@@ -120,10 +132,14 @@ export function MembershipPlansSection({ makerspaceId }: { makerspaceId: number 
         <ListRow key={plan.id} title={plan.name} identity={{ kind: "icon", icon: "Calendar", tone: "accent" }}
           meta={<>{planIntervalLabel(plan)} · {formatMoney(plan.amount, plan.currency)}</>}
           right={<div className="flex flex-wrap items-center gap-2">
-            <StatusPill tone={plan.is_active ? "success" : "neutral"} label={plan.is_active ? "Active" : "Inactive"} />
+            <StatusPill tone={plan.archived_at ? "neutral" : plan.is_active ? "success" : "neutral"} label={plan.archived_at ? "Archived" : plan.is_active ? "Active" : "Inactive"} />
+            {plan.is_public ? <StatusPill tone="info" label="Public" /> : null}
             <button className="desk-button" type="button" onClick={() => startEdit(plan)}>Edit</button>
             <button className="desk-button" type="button" disabled={toggleActive.isPending} onClick={() => toggleActive.mutate(plan)}>
               {plan.is_active ? "Deactivate" : "Activate"}
+            </button>
+            <button className="desk-button" type="button" disabled={archive.isPending} onClick={() => archive.mutate(plan)}>
+              {plan.archived_at ? "Restore" : "Archive"}
             </button>
           </div>} />
       ))}
@@ -169,6 +185,7 @@ export function MembershipPlansSection({ makerspaceId }: { makerspaceId: number 
           {editing ? <button className="desk-button" type="button" onClick={cancelEdit}>Cancel</button> : null}
         </div>
         <MembershipRenewalFields value={renewal} onChange={(value) => { setRenewal(value); setProblem(null); }} />
+        <MembershipPlanRulesFields value={rules} onChange={(value) => { setRules(value); setProblem(null); }} planRulesOn={planRulesOn} publicPlansOn={publicPlansOn} />
       </form>
       {error ? <p className="mt-2 text-sm text-danger" role="alert">{error}</p> : null}
     </Panel>

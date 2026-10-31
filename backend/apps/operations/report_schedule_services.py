@@ -128,6 +128,10 @@ def _skip_reason(schedule, definition):
         return "format_not_allowed"
     if not module_enabled(schedule.makerspace, "reports"):
         return "module_disabled:reports"
+    # A capability-gated report stops running while its switch is off (#95).
+    from apps.makerspaces.platform import feature_enabled
+    if definition.required_feature and not feature_enabled(schedule.makerspace, definition.required_feature):
+        return f"feature_disabled:{definition.required_feature}"
     from .report_sources import source_enabled
     for module in definition.required_modules:
         if not source_enabled(schedule.makerspace, module):

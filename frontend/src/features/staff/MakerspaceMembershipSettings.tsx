@@ -76,7 +76,7 @@ export function MakerspaceMembershipSettings({ makerspace, settings, loading }: 
   });
 
   return <>
-    {admissionEnabled ? <MembershipAdmissionSettings makerspaceId={makerspace.id} /> : <SettingsRow label="Membership joining" helper="Choose whether people join immediately, request approval, or need an invitation. This only controls self-join; manager invitations remain available."><div className="@container grid min-w-0 gap-4">
+    {admissionEnabled ? <MembershipAdmissionSettings makerspaceId={makerspace.id} features={makerspace.enabled_features ?? []} /> : <SettingsRow label="Membership joining" helper="Choose whether people join immediately, request approval, or need an invitation. This only controls self-join; manager invitations remain available."><div className="@container grid min-w-0 gap-4">
       <div className="grid min-w-0 gap-3  md:items-start">
         <div className="grid min-w-0 max-w-2xl gap-2">
           <div className="flex flex-wrap items-center gap-2"><Badge label="" tone={membershipPolicy === "invite_only" ? "neutral" : "success"}>{membershipPolicyLabel(membershipPolicy)}</Badge></div>

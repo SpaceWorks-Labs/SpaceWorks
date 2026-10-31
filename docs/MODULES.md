@@ -30,7 +30,7 @@ govern sign-in availability. Membership adds plans, vouching, renewals and the m
 | Machines | `machines`, `machine_service`, `printing` | `machines.maintenance`, `machines.tobuy`, `machines.warranty`, `machines.certifications`, `machines.certification_reminders`, `machines.public_detail`, `machines.material_catalogue`, `machines.structured_intake`, `maintenance.reminders`, `maintenance.meters`, `maintenance.calendar_feed`, `charges.machines`, `notifications.delegated_recipients`; `payments.machines` with Online payments |
 | Events | `events` | `events.api_read`, `events.certificate_designer`, `events.website`, `events.embed`, `events.short_links`, `events.online_delivery`, `events.anonymous_feedback`; `events.broadcasts` with Notifications and Email; `events.organization_audience`, `events.offline_checkin`, `events.invites`, `events.account_registration`, `events.ticket_types`, `events.promo_codes`, `charges.events`; `payments.events` with Online payments |
 | Bookings | `bookings` | `bookings.recurring`, `bookings.staff_grants`, `bookings.clone`, `bookings.staff_tools`, `bookings.confirmations`, `bookings.checkin`, `bookings.passes`, `bookings.api_read`, `bookings.website`, `bookings.embed`, `charges.bookings`; `bookings.broadcasts` with Notifications and Email; `bookings.analytics`, `bookings.utilization_pdf`, `bookings.exports` with Reports; `payments.bookings` with Online payments |
-| Membership | `membership`, `mobile` | `membership.auto_renew`, `membership.lifecycle_mail`, `membership.self_service`, `membership.self_export`, `membership.vouching`, `membership.application_form`, `membership.broadcasts`, `mobile.push`, `charges.membership`; `payments.membership` with Online payments |
+| Membership | `membership`, `mobile` | `membership.auto_renew`, `membership.lifecycle_mail`, `membership.self_service`, `membership.self_export`, `membership.vouching`, `membership.application_form`, `membership.broadcasts`, the 14 release-2 lifecycle switches (`membership.plan_rules` … `membership.monthly_summary`), `mobile.push`, `charges.membership`; `payments.membership` with Online payments |
 | Online payments | `payments` | `payments.enabled` plus the online-payment feature of each selected domain |
 | Reports | `reports` | `reports.saved_views`; `reports.event_pdf`, `reports.event_exports` with Events |
 | Chat alerts | `telegram`, `slack`, `mattermost`, `discord`, `webhook` | Idle until URLs/tokens are configured |
@@ -56,7 +56,7 @@ the existing services and audited model paths, and never calls purge.
 | Level | Who changes it | What it means |
 |---|---|---|
 | **Core module** | nobody | Always on. The Hard Rules make the loan spine *the system*: issuing hardware needs a box QR scan **and** an issue photo, so catalogue + requests + staff console + evidence + QR + scanner ship with every install. |
-| **Module** | Space Manager or superadmin (console or CLI) | A whole capability. Installing adds its surfaces; uninstalling hides them and **keeps every row**. On the managed platform a module with a fair-use limit is installed by the superadmin only (#128 C-10). |
+| **Module** | Space Manager or superadmin (console or CLI) | A whole capability. Installing adds its surfaces; uninstalling hides them and **keeps every row**. On the managed platform a module with a fair-use limit is installed by the superadmin only, and every purge (re-auth, preview, audited) is the superadmin's alone (#128 C-8, C-10). |
 | **Feature** | Space Manager, or the module's manager with a settings grant | A switch *inside* a module, for something narrower than a whole capability. Inert while its parent module is off. |
 
 ## What "without it" actually means
@@ -780,6 +780,20 @@ its parent module is off.
 | `membership.lifecycle_mail` | `membership` | | Send renewal lifecycle mail to the member | No automated lifecycle mail |
 | `membership.self_service` | `membership` | | Edit own contact fields, revoke sessions and cancel/leave | Staff manage membership changes |
 | `membership.self_export` | `membership` | | Request a private personal ZIP/JSON export | No member export surface |
+| `membership.plan_rules` | `membership` | | Financial-year, fixed-end and lifetime plans; separate renewal price; per-plan joining fee, rejoin rule, payment timing, join mode and form; late-renewal rule | Plans are rolling; plans already using these rules keep them, and changing them is refused |
+| `membership.public_plans` | `membership` | | Plan cards and per-plan pages on the public site and page builder; applicants choose a listed plan | Join uses the default plan; listing fields kept |
+| `membership.renewal_desk` | `membership` | | Renewal worklist, manual reminders (once per member per day) and extending a membership with a reason | Renewals run as configured; no desk |
+| `membership.import` | `membership` | | CSV/Excel member import into pending memberships with emailed invitations, or record-only rows (#128 C-13) | No import; pending rows and invitations kept |
+| `membership.admission_tools` | `membership` | | Multi-use invite links (limit, expiry, revoke) and bulk approve/reject | One request at a time; links stop working and are kept |
+| `membership.member_numbers` | `membership` | | Show the fixed member number and set its printed pattern | Numbers are still assigned, never shown |
+| `membership.records` | `membership` | | State code, GSTIN and staff-only notes on the member record | Record fields hidden; kept |
+| `membership.titles` | `membership` | | Display-only member titles; one primary title prints on the card | No titles shown; kept |
+| `membership.consent` | `membership` | | Consent ledger: purposes, notice version, give and withdraw | No consent screens; the ledger is kept |
+| `membership.erasure` | `membership` | | A member asks this space to anonymise their membership data; staff approve or reject | No erasure requests; existing ones kept |
+| `membership.history` | `membership` | | The membership history timeline in words for staff and the member | No timeline; the term history is still written |
+| `membership.register_tools` | `membership` | | Register filters by standing and the member-register CSV export (needs `reports`) | Plain roster only |
+| `membership.insights` | `membership` | | Renewal, collection, bridge, breakdown, expiry-calendar, win-back and funnel reports (needs `reports`) | Those reports refuse |
+| `membership.monthly_summary` | `membership` | | Monthly staff summary email as a scheduled-report preset, opt-out per person (needs `reports`) | The schedule is skipped while off; kept |
 | `charges.loans` | `request_workflow` | ● | Record loan deposits and late fees (amounts are set in payment settings) | Lateness is recorded but never charged |
 | `loans.enabled` | `staff_admin` | On | Public loan catalogue, borrow submission and staff loan consoles; disabling preserves core and data | Loan surfaces are hidden and new public borrowing is refused |
 | `payments.enabled` | `payments` | ● | Master switch for all online payments | Every `payments.<area>` switch below is inert |

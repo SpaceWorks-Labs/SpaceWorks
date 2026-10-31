@@ -24,6 +24,8 @@ Platform SMTP, SMS, push and Stripe Connect credentials normally live encrypted 
 | `NOTIFICATION_DISCORD_REDIRECT_URI` | `''` | Same frontend OAuth return policy as Slack. |
 | `NOTIFICATION_MATTERMOST_ALLOW_PRIVATE_HOSTS` | `False` | Only boolean true allows private self-hosted Mattermost addresses. |
 | `OTP_SMS_DAILY_CAP` | `200` | Platform-wide daily cap on SMS sign-in codes. |
+| `MANAGED_OTP_EMAIL_DAILY_LIMIT` | `200` | Managed mode: platform-wide daily cap on email sign-in codes (#77). |
+| `MANAGED_OTP_SMS_DAILY_LIMIT` | `100` | Managed mode: platform-wide daily cap on SMS sign-in codes, tightening `OTP_SMS_DAILY_CAP` (#77). |
 | `PUSH_TOKEN_HMAC_KEY` | `''` | Keys the device-token digest; push registration answers 503 while unset. |
 | `STRIPE_CONNECT_REDIRECT_URI` | `''` |  |
 | `TELEGRAM_API_URL` | `'https://api.telegram.org'` |  |

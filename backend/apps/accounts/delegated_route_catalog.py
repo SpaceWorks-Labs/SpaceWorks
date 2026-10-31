@@ -251,3 +251,16 @@ ACCOUNT_MERGE_ROUTES = frozenset({
     "auth-account-merge-start", "auth-account-merge-prove", "auth-account-merge-resend",
     "auth-account-merge-preview", "auth-account-merge-confirm", "auth-account-merge-cancel",
 })
+# Release 2 L4, the membership lifecycle: per-makerspace membership authority only.
+# Each view keeps its own action check.
+MEMBERSHIP_ROUTES |= {
+    "admin-financial-year", "admin-membership-plan-archive", "admin-membership-titles",
+    "admin-membership-title-detail", "admin-membership-invite-links", "admin-membership-invite-link-revoke",
+    "admin-membership-renewal-worklist", "admin-membership-renewal-reminders",
+    "admin-membership-join-requests-bulk-decide", "admin-member-import-preview", "admin-member-import-apply",
+    "admin-member-imported", "admin-membership-erasure-requests", "admin-membership-erasure-approve",
+    "admin-membership-erasure-reject", "admin-member-register", "admin-membership-summary",
+    "admin-refund-case-membership-suggestion", "admin-membership-extend", "admin-membership-record",
+    "admin-membership-title-assignments", "admin-membership-title-unassign", "admin-membership-consents",
+    "admin-membership-history",
+}

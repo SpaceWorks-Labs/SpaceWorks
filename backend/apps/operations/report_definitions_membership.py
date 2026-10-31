@@ -20,6 +20,9 @@ MEMBERSHIP_REPORT_DEFINITIONS = (
                      chart_hint="line", chart_spec=MEMBERSHIP_REVENUE_CHART),
 )
 
+from apps.operations.report_definitions_membership_l4 import L4_MEMBERSHIP_REPORT_DEFINITIONS  # noqa: E402
+MEMBERSHIP_REPORT_DEFINITIONS += L4_MEMBERSHIP_REPORT_DEFINITIONS
+
 register_combine("membership-growth", combine_growth)
 register_combine("member-retention", combine_retention)
 register_combine("membership-revenue", combine_membership_revenue)

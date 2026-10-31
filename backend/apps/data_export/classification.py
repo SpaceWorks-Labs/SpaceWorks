@@ -104,6 +104,13 @@ from .classification_unified_accounts import OMITTED_MODELS as UA1_OMITTED, EXTR
 OMITTED_MODELS.update(UA1_OMITTED)
 for _label, _names in UA1_EXTRA.items():
     EXPORTED_MODEL_FIELDS[_label] += " " + _names
+from .classification_r2_l4 import (
+    EXPORTED_FIELDS as R2_L4_FIELDS, FIELD_ADDITIONS as R2_L4_ADDITIONS, OMITTED_MODELS as R2_L4_OMITTED,
+)
+EXPORTED_MODEL_FIELDS.update(R2_L4_FIELDS)
+for _label, _names in R2_L4_ADDITIONS.items():
+    EXPORTED_MODEL_FIELDS[_label] += " " + _names
+OMITTED_MODELS.update(R2_L4_OMITTED)
 EXPORTED_MODELS = frozenset(EXPORTED_MODEL_FIELDS)
 
 NOT_TENANT_MODELS = {

@@ -94,6 +94,12 @@ def _activate_membership(actor, makerspace, user, role, *, request=None, source,
             membership.can_verify = False
             membership.save()
 
+        if not role.granted_actions:
+            # Community admissions get the fixed member number (X12); a staff role does
+            # not consume one. A later term opening numbers anyone who holds a term.
+            from apps.makerspaces.membership_number import assign as assign_number
+            assign_number(membership, source=source)
+
         role_changes = {}
         if adding or source == "approval":
             from apps.makerspaces.role_membership_writes import replace_membership_roles

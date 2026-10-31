@@ -25,10 +25,12 @@ def charge_admission(row, actor, policy):
     plan = row.selected_plan
     if plan and (plan.makerspace_id != row.makerspace_id or not plan.is_active):
         raise AdmissionError("membership_plan_unavailable", "The admission plan is no longer available.")
+    from apps.makerspaces.membership_plan_policy import joining_fee_for
+    fee, fee_currency = joining_fee_for(row.makerspace, policy, plan, row.user, rejoining=row.rejoining)
     row.first_term_amount = plan.amount if plan else 0
-    row.joining_fee = policy.joining_fee if not row.rejoining or policy.rejoin_dues_rule == "each_join" else 0
-    row.charge_currency = plan.currency if plan else policy.joining_fee_currency
-    if plan and row.joining_fee > 0 and plan.currency != policy.joining_fee_currency:
+    row.joining_fee = fee
+    row.charge_currency = plan.currency if plan else fee_currency
+    if plan and row.joining_fee > 0 and plan.currency != fee_currency:
         raise AdmissionError("membership_currency_mismatch", "The joining fee and plan must use the same currency.")
     row.save(update_fields=["first_term_amount", "joining_fee", "charge_currency"])
     amount = row.first_term_amount + row.joining_fee
@@ -65,7 +67,8 @@ def activate_admission(actor, row):
         request=row, source="approval", skip_dues=True,
     )
     if row.selected_plan_id:
-        create_term(actor, membership, row.selected_plan)
+        create_term(actor, membership, row.selected_plan, price=row.first_term_amount,
+                    joining_fee=row.joining_fee, admission_request=row)
     if row.user.is_walk_in and membership.can_refer:
         membership.can_refer = False
         membership.save(update_fields=["can_refer"])

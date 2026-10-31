@@ -58,19 +58,23 @@ def _expire(term):
     term.save(update_fields=["status"])
     audit.record(None, "membership.term_expired", makerspace=term.membership.makerspace,
                  target=term, meta={"membership_id": term.membership_id, "term_id": term.pk})
+    from apps.makerspaces.membership_term_history import record_expiry
+    record_expiry(term)
 
 
-def _open_next(term):
+def _open_next(term, now=None):
     from apps.makerspaces.membership_plan_services import create_term
+    from apps.makerspaces.membership_plan_types import late_renewal_start
     rows = renewal_terms(term.membership.makerspace_id)
-    if rows.filter(renewed_from=term).exists():
+    if not term.plan.renews or rows.filter(renewed_from=term).exists():
         return False
     # Staff may already have opened the successor. Never duplicate it or change plan.
     if rows.filter(membership=term.membership, status="active", starts_at__gte=term.ends_at).exists():
         return False
-    next_term = create_term(None, term.membership, term.plan, starts_at=term.ends_at)
-    next_term.renewed_from = term
-    next_term.save(update_fields=["renewed_from"])
+    paid = term.renewal_payment
+    starts_at = late_renewal_start(term.plan, term, now or timezone.now())
+    next_term = create_term(None, term.membership, term.plan, starts_at=starts_at, renewed_from=term,
+                            price=paid.amount if paid is not None and paid.status != "waived" else None)
     from apps.makerspaces.membership_renewal_notifications import notify_term
     notify_term(next_term, "renewed")
     audit.record(None, "membership.renewed", makerspace=term.membership.makerspace,
@@ -105,12 +109,13 @@ def _process(term_id, now, counts):
             term.save(update_fields=["grace_until"])
             audit.record(None, "membership.grace_promised", makerspace=membership.makerspace,
                          target=term)
-        if membership.renewal_cancelled_at is None and term.plan.is_active and days_left <= window:
+        if (membership.renewal_cancelled_at is None and term.plan.is_active and term.plan.renews
+                and days_left <= window):
             paid = term.renewal_payment and term.renewal_payment.status in (
                 Payment.Status.PAID_ONLINE, Payment.Status.PAID_OFFLINE, Payment.Status.WAIVED,
             )
-            if auto and (paid or term.plan.amount <= 0 or not charge_tracking_enabled(membership.makerspace, "membership")):
-                if _open_next(term):
+            if auto and (paid or term.plan.renewal_price <= 0 or not charge_tracking_enabled(membership.makerspace, "membership")):
+                if _open_next(term, now):
                     counts["opened"] += 1
             elif (term.status == "active" and now < grace_end(term) and
                   term.renewal_payment_id is None and

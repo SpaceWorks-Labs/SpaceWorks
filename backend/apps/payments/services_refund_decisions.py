@@ -49,7 +49,7 @@ def _amount(raw, case, payment, balance):
     return amount.quantize(Decimal("0.01"))
 
 
-def approve_case(case, *, actor, amount=None, reason="", note="", receipt=None):
+def approve_case(case, *, actor, amount=None, reason="", note="", receipt=None, keep_membership=False):
     exhausted = False
     with transaction.atomic():
         payment, locked = _lock_case(case, actor)
@@ -68,6 +68,9 @@ def approve_case(case, *, actor, amount=None, reason="", note="", receipt=None):
                                  balance="0.00")
     if refund.status == refund.Status.PENDING and payment.status == Payment.Status.PAID_ONLINE:
         _send_after_commit(refund, actor)
+    if not keep_membership:
+        from apps.payments.refund_membership_term import end_term_after_commit
+        end_term_after_commit(locked, payment, actor)
     return RefundCase.objects.select_related("payment__makerspace", "refund").get(pk=locked.pk)
 
 

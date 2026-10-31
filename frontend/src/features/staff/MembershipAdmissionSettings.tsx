@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CustomFormBuilder } from "../forms/CustomFormBuilder";
 import { admissionKeys, admissionSettings, saveAdmissionSettings, type AdmissionRecipe, type AdmissionSettings, type JoinMode, type PaymentTiming } from "../members/membershipAdmissionApi";
 import { listPlans, membershipPlanKeys } from "./membershipPlansApi";
+import { MembershipAdmissionExtras } from "./MembershipAdmissionExtras";
 
 export const ADMISSION_RECIPES: [AdmissionRecipe, string][] = [
   ["free_open", "Free + open"], ["free_vouch", "Free + vouch"], ["paid_approval", "Paid + approval"], ["paid_invite_only", "Paid + invite-only"], ["closed", "Closed"],
@@ -18,7 +19,7 @@ export function admissionRecipeDraft(settings: AdmissionSettings, recipe: Admiss
   return { ...defaults, join_mode: recipe === "paid_approval" ? "approval" : "invite_only", payment_timing: "before_activation" };
 }
 
-export function MembershipAdmissionSettings({ makerspaceId }: { makerspaceId: number }) {
+export function MembershipAdmissionSettings({ makerspaceId, features = [] }: { makerspaceId: number; features?: string[] }) {
   const client = useQueryClient();
   const settings = useQuery({ queryKey: admissionKeys.settings(makerspaceId), queryFn: () => admissionSettings(makerspaceId) });
   const plans = useQuery({ queryKey: membershipPlanKeys.plans(makerspaceId), queryFn: () => listPlans(makerspaceId) });
@@ -52,7 +53,7 @@ export function MembershipAdmissionSettings({ makerspaceId }: { makerspaceId: nu
         <label className="grid gap-1 text-sm text-ink">Default admission plan<select className="desk-input max-w-full" value={value.default_plan ?? ""} disabled={plans.isPending || plans.isError} onChange={(event) => update("default_plan", event.target.value ? Number(event.target.value) : null)}><option value="">No default plan</option>{activePlans.map((plan) => <option key={plan.id} value={plan.id}>{plan.name} · {plan.amount} {plan.currency.toUpperCase()}</option>)}</select></label>
         <label className="grid gap-1 text-sm text-ink">Joining fee<input className="desk-input" type="number" required min="0" step="0.01" value={value.joining_fee} onChange={(event) => update("joining_fee", event.target.value)} /></label>
         <label className="grid gap-1 text-sm text-ink">Joining fee currency<input className="desk-input" required pattern="[a-zA-Z]{3}" maxLength={3} value={value.joining_fee_currency} onChange={(event) => update("joining_fee_currency", event.target.value.toLowerCase())} /></label>
-        <label className="grid gap-1 text-sm text-ink">Re-join dues<select className="desk-input max-w-full" value={value.rejoin_dues_rule} onChange={(event) => update("rejoin_dues_rule", event.target.value as AdmissionSettings["rejoin_dues_rule"])}><option value="once">Once per person</option><option value="each_join">On every re-join</option></select></label>
+        <label className="grid gap-1 text-sm text-ink">Re-join dues<select className="desk-input max-w-full" value={value.rejoin_dues_rule} onChange={(event) => { const rule = event.target.value as AdmissionSettings["rejoin_dues_rule"]; setDraft({ ...value, rejoin_dues_rule: rule, rejoin_after_days: rule === "after_lapse" ? value.rejoin_after_days ?? 365 : null }); save.reset(); }}><option value="once">Once per person</option><option value="each_join">On every re-join</option>{features.includes("membership.plan_rules") || ["never", "after_lapse"].includes(value.rejoin_dues_rule) ? <><option value="never">Never</option><option value="after_lapse">Again after a lapse</option></> : null}</select></label>
         <NumberField label="Application expiry (days)" value={value.request_expiry_days} min={1} onChange={(next) => update("request_expiry_days", next)} />
       </div>
       <SettingsQueryState query={plans} resource="admission plans" />
@@ -67,6 +68,7 @@ export function MembershipAdmissionSettings({ makerspaceId }: { makerspaceId: nu
         </div>
         <label className="min-h-11 flex gap-2 text-sm text-ink"><input type="checkbox" checked={value.vouch_replaces_approval} onChange={(event) => update("vouch_replaces_approval", event.target.checked)} />Vouches replace staff approval</label>
       </fieldset>
+      <MembershipAdmissionExtras value={value} features={features} onChange={(next) => { setDraft(next); save.reset(); }} />
       <CustomFormBuilder value={value.application_schema} onChange={(schema) => update("application_schema", schema)} legend="Membership application questions" emptyMessage="No application questions. Applicants submit their verified account identity." />
     </fieldset>
     <SettingsEditorActions dirty={Boolean(draft || recipe)} onDiscard={() => { setDraft(null); setRecipe(""); save.reset(); }} pending={save.isPending} disabled={save.isPending} />

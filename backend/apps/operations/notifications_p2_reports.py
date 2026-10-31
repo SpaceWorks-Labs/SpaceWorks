@@ -21,9 +21,13 @@ def recipients(schedule, definition):
     ).select_related(
         "user", "assigned_role",
     ).prefetch_related(additional_roles_prefetch()).filter(status="active", receives_notifications=True)
+    from apps.makerspaces.membership_summary import opted_out_user_ids
+    opted_out = opted_out_user_ids(schedule)
     for member in rows:
         user = member.user
         if not active_user(user) or not rbac.can(user, definition.required_action, schedule.makerspace_id):
+            continue
+        if user.pk in opted_out:
             continue
         selected = any(role.slug in schedule.recipient_roles for role in membership_roles(member))
         if member.assigned_role_id is None and schedule.recipient_roles:

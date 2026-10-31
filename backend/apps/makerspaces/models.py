@@ -92,6 +92,18 @@ from apps.makerspaces.models_membership_plans import (  # noqa: E402,F401
     MembershipPlan,
     MembershipTerm,
 )
+from apps.makerspaces.models_membership_terms import MembershipTermStatusEvent  # noqa: E402,F401
+from apps.makerspaces.models_membership_records import (  # noqa: E402,F401
+    MembershipRecord, MembershipTitle, MembershipTitleAssignment,
+)
+from apps.makerspaces.models_membership_privacy import (  # noqa: E402,F401
+    MembershipConsent, MembershipErasureRequest,
+)
+from apps.makerspaces.models_membership_invites import MembershipInviteLink  # noqa: E402,F401
+from apps.makerspaces.models_membership_imports import (  # noqa: E402,F401
+    ImportedMember, MembershipImportBatch,
+)
+from apps.makerspaces.models_membership_summary import MembershipSummaryOptOut  # noqa: E402,F401
 from apps.makerspaces.models_admission import (  # noqa: E402,F401
     MakerspaceMembershipSettings,
     MembershipVouch,

@@ -1372,6 +1372,40 @@ community `members` category. Its source still rechecks the live role, owner, se
 the envelope or compatibility outbox owns the email leg exactly once. Community mail and existing
 membership staff summaries retain their membership category and gates.
 
+**Membership lifecycle (release 2 lane L4, 2026-10-31).** Fourteen `membership.*` switches, all off by
+default, 404 their routes when off and keep their rows (#95, #128 C-8). These hold regardless of them:
+- **Financial year.** `makerspaces/financial_year.py` is the only place that decides which financial year
+  a date is in; `fy_bounds(makerspace, on_date) -> (start, end)` (inclusive dates) and
+  `fy_label(makerspace, on_date)` have fixed signatures other lanes (L5) call. The start month is a
+  FINANCE setting: written only through `settings_authority.assert_setting_write("finance", ...)`, so the
+  Space Manager (or superadmin) alone, never delegable; audited as `settings.changed` and
+  `makerspace.financial_year_updated`. Changing it never moves an already-sold term.
+- **Terms are a sale record.** `MembershipTerm` freezes price, joining fee, currency and plan type at
+  opening; a plan edit never rewrites them (an imported or pre-R2 term has `price = NULL`, meaning unknown).
+  `kind` is new / renewal / reinstatement. Plan types: rolling, financial year (ends at the FY end), fixed
+  end (local midnight after the date), lifetime (`LIFETIME_ENDS_AT`; never renews, never pro-rated).
+- **Term history is append-only.** `MembershipTermStatusEvent` rows are never updated or deleted outside a
+  purge; each carries `effective_at` (the membership's own timeline) and `recorded_at`, so reports rebuild
+  backdated standing. Every writer that changes a term's standing writes one in the same transaction.
+- **Member numbers are fixed and gapless per space**, assigned under the makerspace lock at a community
+  admission or the first term; they survive revocation, rejoin and card reissue. The printed pattern is
+  display only.
+- **Imports never link accounts (#128 C-13).** An imported row is an `ImportedMember` bound to an INVITE
+  `MembershipRequest` with no user; only `claim_invitation` by a signed-in person whose VERIFIED email
+  equals the invitation's activates it. Record-only rows get no invitation.
+- **Titles grant nothing.** No rbac reader may read `MembershipTitle`; authority stays in roles.
+- **Erasure keeps money and audit.** Approving a per-space erasure ends the membership as a voluntary
+  departure and blanks this space's record, titles, profile, application answers and imported details;
+  `Payment`/refund/settlement rows and the audit log stay and the account is never deleted (account
+  deletion is U-C's).
+- **Refunds.** Membership refunds still move money only through a staff-approved `RefundCase`. An approved
+  membership case ends the term the payment bought after the approval commits (X21) unless staff tick
+  `keep_membership`; ending it opens no second case. FY/fixed terms are pro-rated to their own end; a
+  lifetime term is full within `full_within_days`, then nothing; a paid-but-unopened next term is owed in
+  full (#72).
+- **Switches gate changes, not stored rules.** With `membership.plan_rules` off a plan keeps the rules it
+  already has (no member's term changes underneath them); only CHANGING them is refused (`feature_disabled`).
+
 **Membership plans, terms and invitation requests (forward plan phase 6, 2026-09-04).** Plans are optional
 and never an access state: a `MembershipTerm` expiring changes neither `MakerspaceMembership.status` nor
 `User.access_status`; the only effect is the per-makerspace opt-in `lapsed_members_cannot_borrow`, enforced

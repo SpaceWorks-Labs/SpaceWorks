@@ -150,3 +150,7 @@ from .catalog_unified_accounts import FIELD_NAMES as UA1_FIELDS, EXTRA_FIELDS as
 FIRST_PARTY_FIELD_NAMES.update(UA1_FIELDS)
 for _label, _names in UA1_EXTRA.items():
     FIRST_PARTY_FIELD_NAMES[_label] |= _names
+from .catalog_r2_l4 import FIELD_NAMES as R2_L4_FIELDS, EXTRA_FIELDS as R2_L4_EXTRA
+FIRST_PARTY_FIELD_NAMES.update(R2_L4_FIELDS)
+for _label, _names in R2_L4_EXTRA.items():
+    FIRST_PARTY_FIELD_NAMES[_label] |= frozenset(_names.split())

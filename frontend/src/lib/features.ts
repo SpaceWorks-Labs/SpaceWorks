@@ -113,6 +113,20 @@ export const FEATURE_DEFINITIONS: readonly FeatureDefinition[] = [
   { key: "notifications.escalation", parent_module: "notifications", label: "Escalation re-ping" },
   { key: "notifications.web_push", parent_module: "notifications", label: "Browser notifications" },
   { key: "notifications.inbox_snooze", parent_module: "notifications", label: "Inbox snooze and archive" },
+  { key: "membership.plan_rules", parent_module: "membership", label: "Plan types and rules" },
+  { key: "membership.public_plans", parent_module: "membership", label: "Public plan pages" },
+  { key: "membership.renewal_desk", parent_module: "membership", label: "Renewal desk" },
+  { key: "membership.import", parent_module: "membership", label: "Member import" },
+  { key: "membership.admission_tools", parent_module: "membership", label: "Invite links and bulk decisions" },
+  { key: "membership.member_numbers", parent_module: "membership", label: "Member numbers" },
+  { key: "membership.records", parent_module: "membership", label: "Member record fields" },
+  { key: "membership.titles", parent_module: "membership", label: "Member titles" },
+  { key: "membership.consent", parent_module: "membership", label: "Consent ledger" },
+  { key: "membership.erasure", parent_module: "membership", label: "Erasure requests" },
+  { key: "membership.history", parent_module: "membership", label: "Membership history" },
+  { key: "membership.register_tools", parent_module: "membership", label: "Register filters and export" },
+  { key: "membership.insights", parent_module: "membership", label: "Membership insights" },
+  { key: "membership.monthly_summary", parent_module: "membership", label: "Monthly staff summary" },
 ];
 
 export function featureEnabled(features: Iterable<string>, key: string) {

@@ -25,6 +25,9 @@ import { MembershipAdmissionReview, type ReviewMembershipRequest } from "./Membe
 import { FlowLayout } from "../../components/layouts/FlowLayout";
 import { ListLayout } from "../../components/layouts/ListLayout";
 import { MemberRow } from "./MemberRow";
+import { MembershipLifecycleTab, lifecycleTabs } from "./membershipLifecycle/MembershipLifecycleTabs";
+import { BulkDecideBar } from "./membershipLifecycle/BulkDecideBar";
+import { FinancialYearSetting } from "./membershipLifecycle/FinancialYearSetting";
 import { assignableRoles, type MembershipRoles } from "./panels/roleSets";
 import type { StaffRole } from "./panels/rolesApi";
 
@@ -41,11 +44,12 @@ export const membershipErrorText = (error: unknown) =>
 // Waiver management and witnessed acceptance are core liability controls. Invitation stays,
 // because a STAFF invitation keeps working with
 // the module off (`invite_membership` discriminates on the role's granted actions).
-export function MembersPanel({ makerspaceId, membershipEnabled, presenceEnabled = false, canManageMakerspace = true, canViewFinance = false, canRecordPayment = false, actorActions, isSuperadmin, onAuthRefresh }: { makerspaceId: number; membershipEnabled: boolean; presenceEnabled?: boolean; canManageMakerspace?: boolean; canViewFinance?: boolean; canRecordPayment?: boolean; actorActions: string[]; isSuperadmin: boolean; onAuthRefresh: () => void }) {
+export function MembersPanel({ makerspaceId, membershipEnabled, presenceEnabled = false, canManageMakerspace = true, canViewFinance = false, canRecordPayment = false, actorActions, isSuperadmin, onAuthRefresh, enabledFeatures = [], makerspaceSlug = "" }: { makerspaceId: number; membershipEnabled: boolean; presenceEnabled?: boolean; canManageMakerspace?: boolean; canViewFinance?: boolean; canRecordPayment?: boolean; actorActions: string[]; isSuperadmin: boolean; onAuthRefresh: () => void; enabledFeatures?: string[]; makerspaceSlug?: string }) {
   const client = useQueryClient();
   const [params, setParams] = useSearchParams();
   const requestedSection = params.get("section") ?? "members";
-  const availableSections = ["members", "requests", ...(presenceEnabled ? ["presence"] : []), ...(membershipEnabled && canManageMakerspace ? ["plans"] : []), ...(canManageMakerspace ? ["waivers"] : [])];
+  const lifecycle = lifecycleTabs(enabledFeatures, membershipEnabled);
+  const availableSections = ["members", "requests", ...(presenceEnabled ? ["presence"] : []), ...(membershipEnabled && canManageMakerspace ? ["plans"] : []), ...(canManageMakerspace ? ["waivers"] : []), ...lifecycle.map((item) => item.key)];
   const tab = availableSections.includes(requestedSection) ? requestedSection : "members";
   const setTab = (section: string) => { const next = new URLSearchParams(params); next.set("section", section); setParams(next, { replace: true }); };
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -116,6 +120,7 @@ export function MembersPanel({ makerspaceId, membershipEnabled, presenceEnabled 
       ...(presenceEnabled ? [{ key: "presence", label: "Present now", href: "#presence", count: presence.data?.count ?? 0 }] : []),
       ...(membershipEnabled && canManageMakerspace ? [{ key: "plans", label: "Plans", href: "#plans" }] : []),
       ...(canManageMakerspace ? [{ key: "waivers", label: "Waivers", href: "#waivers" }] : []),
+      ...lifecycle,
     ];
   return <ListLayout state={{ status: querySection && activeQuery.isLoading ? "loading" : querySection && activeQuery.isError ? "error" : "ready", error: `Couldn't load ${tab === "requests" ? "requests" : "members"}. Try again.`, onRetry: () => { void activeQuery.refetch(); } }}
     tabs={sectionTabs} activeTab={tab} onTabChange={setTab}
@@ -157,6 +162,7 @@ export function MembersPanel({ makerspaceId, membershipEnabled, presenceEnabled 
       <Field label="Approve as"><select className="desk-input max-w-full" value={selectedRole ?? ""} onChange={event => setRoleId(Number(event.target.value))}>{grantableRoles.map(role => <option key={role.id} value={role.id}>{role.name}</option>)}</select></Field>
       {roles.isError ? <p role="alert" className="text-sm text-danger">{membershipErrorText(roles.error)}</p> : null}
       {membershipEnabled ? <MembershipPlanPicker makerspaceId={makerspaceId} value={planId} onChange={setPlanId} /> : null}
+      {membershipEnabled && enabledFeatures.includes("membership.admission_tools") ? <BulkDecideBar makerspaceId={makerspaceId} rows={requestRows} onDone={refresh} /> : null}
       {requestRows.map((row) => <MembershipAdmissionReview key={row.id} row={row} makerspaceId={makerspaceId}
         manageable={canManageMakerspace || !row.assigned_role || Boolean(roles.data?.some((role) => role.id === row.assigned_role?.id))}
         canViewFinance={canViewFinance} canRecordPayment={canRecordPayment || canManageMakerspace} canWaive={canManageMakerspace}
@@ -167,18 +173,19 @@ export function MembersPanel({ makerspaceId, membershipEnabled, presenceEnabled 
       {requests.isSuccess && !requestRows.length ? <p className="text-sm text-muted">No membership requests on this page.</p> : null}
       <MembershipPagination label="requests" page={requestPage} next={requests.data?.next} previous={requests.data?.previous} fetching={requests.isFetching} onPage={setRequestPage} /></Panel> : null}
     {membershipEnabled && tab === "requests" ? <InvitationRequestsSection makerspaceId={makerspaceId} roles={grantableRoles} /> : null}
-    {membershipEnabled && canManageMakerspace && tab === "plans" ? <MembershipPlansSection makerspaceId={makerspaceId} /> : null}
+    {membershipEnabled && canManageMakerspace && tab === "plans" ? <><FinancialYearSetting makerspaceId={makerspaceId} canEdit={canManageMakerspace} /><MembershipPlansSection makerspaceId={makerspaceId} features={enabledFeatures} /></> : null}
     {presenceEnabled && tab === "presence" ? presencePolicy.isSuccess
       ? <PresenceRoster makerspaceId={makerspaceId} presets={configuredPresets?.length ? configuredPresets : DEFAULT_PRESETS} />
       : presencePolicy.isError ? <p role="alert">Couldn't load check-in durations. <button type="button" onClick={() => { void presencePolicy.refetch(); }}>Try again</button></p>
       : <p role="status">Loading check-in durations…</p> : null}
     {canManageMakerspace && tab === "waivers" ? <MembershipWaiverPanel makerspaceId={makerspaceId} /> : null}
+    {lifecycle.some((item) => item.key === tab) ? <MembershipLifecycleTab tab={tab} makerspaceId={makerspaceId} slug={makerspaceSlug} features={enabledFeatures} canManageMakerspace={canManageMakerspace} standing={params.get("standing") ?? ""} /> : null}
     {error ? <p className="text-sm text-danger" role="alert">{membershipErrorText(error)}</p> : null}
   </> }} detail={<>
     <FlowLayout presentation="dialog" open={inviteOpen} title="Invite member" state={{ status: "ready" }} steps={[{ key: "invite", label: "Invitation", state: "current" }]} current="invite" onCancel={() => setInviteOpen(false)}
       footer={{ next: { label: "Invite", pending: invite.isPending, disabled: !inviteEmail || !selectedRole, disabledReason: "Enter an email and choose a role.", onClick: () => invite.mutate(undefined, { onSuccess: () => setInviteOpen(false) }) } }}
       work={<div className="grid gap-4"><Field label="Invite role"><select className="desk-input max-w-full" value={selectedRole ?? ""} onChange={event => setRoleId(Number(event.target.value))}>{grantableRoles.map(role => <option key={role.id} value={role.id}>{role.name}</option>)}</select></Field><Field label="Invite email"><input className="desk-input" type="email" value={inviteEmail} onChange={event => setInviteEmail(event.target.value)} /></Field>{invite.error ? <p role="alert" className="text-danger">{membershipErrorText(invite.error)}</p> : null}</div>} />
     {decision ? <MembershipReasonDialog key={`${decision.kind}-${decision.id}`} title={decision.title} pending={revoke.isPending || revokeRequest.isPending} error={(decision.kind === "member" ? revoke.error : revokeRequest.error) ? membershipErrorText(decision.kind === "member" ? revoke.error : revokeRequest.error) : null} onClose={() => setDecision(null)} onConfirm={(reason) => (decision.kind === "member" ? revoke : revokeRequest).mutate({ id: decision.id, reason })} /> : null}
-    {termsMember ? <MemberTermsDialog key={termsMember.id} makerspaceId={makerspaceId} membershipId={termsMember.id} memberName={termsMember.user.display_name || termsMember.user.username} onClose={() => setTermsMember(null)} /> : null}
+    {termsMember ? <MemberTermsDialog key={termsMember.id} makerspaceId={makerspaceId} features={enabledFeatures} membershipId={termsMember.id} memberName={termsMember.user.display_name || termsMember.user.username} onClose={() => setTermsMember(null)} /> : null}
   </>} />;
 }

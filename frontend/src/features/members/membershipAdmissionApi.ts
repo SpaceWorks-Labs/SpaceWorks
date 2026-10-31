@@ -16,8 +16,13 @@ export type AdmissionSettings = {
   default_plan: number | null;
   joining_fee: string;
   joining_fee_currency: string;
-  rejoin_dues_rule: "once" | "each_join";
+  rejoin_dues_rule: "never" | "once" | "each_join" | "after_lapse";
   request_expiry_days: number;
+  // Release 2 (L4): lapse days, member-number pattern (X12), consent ledger (X10).
+  rejoin_after_days?: number | null;
+  member_number_pattern?: string;
+  privacy_notice_version?: string;
+  consent_purposes?: { key: string; label: string; description: string }[];
 };
 export type PublicAdmission = Pick<AdmissionSettings, "join_mode" | "vouches_required" | "payment_timing" | "application_schema" | "joining_fee"> & {
   default_plan: { id: number; name: string; amount: string; currency: string } | null;

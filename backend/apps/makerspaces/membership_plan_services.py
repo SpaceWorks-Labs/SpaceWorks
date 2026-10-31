@@ -11,7 +11,6 @@ from apps.accounts.account_kind_guards import require_member_account
 import logging
 from datetime import timedelta
 
-from dateutil.relativedelta import relativedelta
 from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
@@ -19,24 +18,42 @@ from rest_framework.exceptions import ValidationError
 from apps.audit import services as audit
 from apps.accounts.account_obligations import lock_obligation_owner
 from apps.makerspaces.guards import require_module_locked
-from apps.makerspaces.models import MakerspaceMembership, MembershipPlan, MembershipTerm
+from apps.makerspaces import membership_plan_types as plan_types, membership_term_history as term_history
+from apps.makerspaces.models import MakerspaceMembership, MembershipTerm
 
 logger = logging.getLogger(__name__)
 
 # Compatibility window for plans that have not opted in to automation.
 RENEWAL_WINDOW = timedelta(days=7)
 
-
-def term_end(plan, starts_at):
-    if plan.interval == MembershipPlan.Interval.MONTHLY:
-        return starts_at + relativedelta(months=1)
-    if plan.interval == MembershipPlan.Interval.YEARLY:
-        return starts_at + relativedelta(years=1)
-    return starts_at + timedelta(days=plan.custom_days or 0)
+term_end = plan_types.term_end
 
 
-def create_term(actor, membership, plan, starts_at=None):
-    """Open a term for an active membership; a new term follows the current one."""
+def _start_for(membership, plan, now):
+    """Where a staff-opened term starts when no date is given: after the current term,
+    else after a predecessor still in grace (the plan's late-renewal rule), else now."""
+    current = (
+        membership.terms.filter(status=MembershipTerm.Status.ACTIVE, ends_at__gt=now)
+        .select_related("plan").order_by("-ends_at").first()
+    )
+    if current is not None:
+        if current.is_lifetime:
+            raise ValidationError({"detail": "This membership already holds a lifetime term."})
+        return current.ends_at
+    latest = plan_types.previous_term(membership)
+    if latest is not None and plan_types.in_staff_grace(latest, now):
+        return plan_types.late_renewal_start(plan, latest, now)
+    return now
+
+
+def create_term(actor, membership, plan, starts_at=None, *, kind=None, price=None, joining_fee=None,
+                renewed_from=None, admission_request=None, ends_at=None):
+    """Open a term for an active membership; a new term follows the current one.
+
+    The price, joining fee, currency and plan type are frozen on the term (X6); the
+    kind is derived from the membership's earlier terms unless the caller knows it.
+    `ends_at` is only for an imported term whose dates came from the file (G18).
+    """
     require_member_account(membership.user)
     with transaction.atomic():
         from apps.tenant_migration.gate_runtime import assert_write_allowed
@@ -52,24 +69,36 @@ def create_term(actor, membership, plan, starts_at=None):
         membership.user = lock_obligation_owner(membership.user)
         if plan.makerspace_id != makerspace.pk:
             raise ValidationError({"plan_id": "Plan must belong to this makerspace."})
-        if not plan.is_active:
+        if not plan.is_active or plan.archived_at is not None:
             raise ValidationError({"plan_id": "This plan is no longer active."})
         if membership.status != "active":
             raise ValidationError({"detail": "Only an active membership can hold a term."})
         now = timezone.now()
         if starts_at is None:
-            current = (
-                membership.terms.filter(status=MembershipTerm.Status.ACTIVE, ends_at__gt=now)
-                .order_by("-ends_at")
-                .first()
-            )
-            starts_at = current.ends_at if current is not None else now
+            starts_at = _start_for(membership, plan, now)
+        plan.makerspace = makerspace
+        local_start = _local_start(makerspace, starts_at)
+        if ends_at is None:
+            plan_types.require_openable(plan, local_start)
+            ends_at = term_end(plan, local_start)
+        elif ends_at <= starts_at:
+            raise ValidationError({"ends_on": "The term must end after it starts."})
+        kind = kind or plan_types.derive_kind(membership, starts_at, renewed_from=renewed_from)
+        from apps.makerspaces.membership_number import assign as assign_number
+        assign_number(membership, source=None)
         term = MembershipTerm.objects.create(
             membership=membership,
             plan=plan,
             starts_at=starts_at,
-            ends_at=term_end(plan, _local_start(makerspace, starts_at)),
+            ends_at=ends_at,
             created_by=actor,
+            renewed_from=renewed_from,
+            kind=kind,
+            price=plan_types.price_for(plan, kind) if price is None else price,
+            joining_fee=joining_fee or 0,
+            currency=plan.currency,
+            plan_type=plan.plan_type,
+            admission_request=admission_request,
         )
         audit.record(
             actor,
@@ -78,6 +107,8 @@ def create_term(actor, membership, plan, starts_at=None):
             target=term,
             meta={"membership_id": membership.pk, "plan_id": plan.pk, "term_id": term.pk},
         )
+        term.membership = membership
+        term_history.record_opened(term, actor=actor, now=now)
     return term
 
 
@@ -86,7 +117,7 @@ def _local_start(makerspace, starts_at):
     return to_local(makerspace, starts_at)
 
 
-def cancel_term(actor, term):
+def cancel_term(actor, term, *, reason="", hold_charges=True):
     with transaction.atomic():
         term = (
             MembershipTerm.objects.select_for_update(of=("self",))
@@ -105,7 +136,12 @@ def cancel_term(actor, term):
             target=term,
             meta={"membership_id": term.membership_id, "term_id": term.pk},
         )
-        _cancel_term_charges(makerspace, term, actor)
+        term_history.record(term, term_history.TermStanding.CANCELLED, effective_at=timezone.now(),
+                            actor=actor, reason=reason)
+        if hold_charges:
+            _cancel_term_charges(makerspace, term, actor)
+        else:
+            _cancel_pending_renewal(makerspace, term, actor)
     return term
 
 

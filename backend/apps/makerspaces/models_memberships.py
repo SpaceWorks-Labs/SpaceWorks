@@ -127,12 +127,23 @@ class MakerspaceMembership(models.Model):
     witnessed_actor_snapshot = models.JSONField(null=True, blank=True)
     witnessed_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    # Gapless per-space member number, assigned at first activation and kept for life --
+    # through card reissue, revocation and rejoining (X12). Printed with the space's
+    # optional prefix (`MakerspaceMembershipSettings.member_number_prefix`).
+    member_number = models.PositiveIntegerField(null=True, blank=True)
+    # How the person first became a member here (X13): join / manual / import.
+    source = models.CharField(max_length=16, blank=True, default="",
+                              choices=[("join", "Joined"), ("manual", "Added by staff"), ("import", "Imported")])
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
                 fields=["makerspace", "user", "track"],
                 name="uniq_makerspace_user_track",
+            ),
+            models.UniqueConstraint(
+                fields=["makerspace", "member_number"], condition=Q(member_number__isnull=False),
+                name="uniq_makerspace_member_number",
             ),
             models.CheckConstraint(
                 condition=(

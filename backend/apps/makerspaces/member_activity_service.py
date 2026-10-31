@@ -3,6 +3,7 @@ from django.db.models import Count, IntegerField, OuterRef, Q, Subquery
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 
+from apps.accounts.staff_identity import is_person
 from apps.accounts.models import User
 from apps.hardware_requests.self_checkout_models import PublicToolLoan
 from apps.makerspaces.models import MakerspaceMembership, MakerspaceWaiver
@@ -31,7 +32,7 @@ def active_member_memberships(user):
     """
     if not (
         user and user.is_authenticated and user.pk and user.is_active
-        and user.account_kind == "member"
+        and is_person(user)
         and user.access_status == User.AccessStatus.ACTIVE
     ):
         return MakerspaceMembership.objects.none()

@@ -81,7 +81,10 @@ def makerspaces_granting_directly(actor, action):
         return set()
     if rbac._is_superadmin(actor):
         return rbac.makerspaces_for_action(actor, action)
-    memberships = actor.makerspace_memberships.filter(status="active")
+    from apps.makerspaces.models import MakerspaceMembership
+
+    # Role grants live on staff-track rows (one account per person).
+    memberships = MakerspaceMembership.staff_tracks.filter(user_id=actor.pk, status="active")
     from apps.accounts.rbac_roles import direct_role_filter
 
     scope = set(

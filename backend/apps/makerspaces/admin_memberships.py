@@ -24,7 +24,8 @@ class MakerspaceMembershipAdmin(PiiMaskingAdminMixin, SuperuserOnlyModelAdmin, M
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == "user":
             from apps.accounts.models import User
-            kwargs["queryset"] = User.objects.filter(account_kind="member")
+            from apps.accounts.staff_identity import person_q
+            kwargs["queryset"] = User.objects.filter(person_q())
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     def formfield_for_choice_field(self, db_field, request, **kwargs):
@@ -39,12 +40,13 @@ class MakerspaceMembershipAdmin(PiiMaskingAdminMixin, SuperuserOnlyModelAdmin, M
         return False
 
     def get_readonly_fields(self, request, obj=None):
-        if obj and obj.user.account_kind == "staff":
+        # Staff-track rows change only through the staff-role services (U-B).
+        if obj and obj.track == MakerspaceMembership.Track.STAFF:
             return tuple(field.name for field in self.model._meta.fields) + ("additional_role_names",)
         return super().get_readonly_fields(request, obj)
 
     def has_change_permission(self, request, obj=None):
-        if obj and obj.user.account_kind == "staff" and request.method not in {"GET", "HEAD"}:
+        if obj and obj.track == MakerspaceMembership.Track.STAFF and request.method not in {"GET", "HEAD"}:
             return False
         return super().has_change_permission(request, obj)
     list_display = ("user", "makerspace", "role", "created_at")

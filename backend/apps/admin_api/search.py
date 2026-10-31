@@ -9,6 +9,7 @@ from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
 from rest_framework.views import APIView
 
+from apps.accounts.staff_identity import person_q
 from apps.accounts import rbac
 from apps.admin_api.permissions import IsActiveStaff
 from apps.admin_api.staff_list_scope import request_scope, visible_space
@@ -70,7 +71,7 @@ def search_hits(actor, space, term, limit):
         add("requests", rows, lambda row: f"Request #{row.pk} · {row.requested_for}", query=lambda row: {"id": str(row.pk), "history": "true"})
 
     if rbac.can(actor, rbac.Action.MANAGE_MEMBERS, space.pk):
-        rows = rbac.scope_by_action(actor, rbac.Action.MANAGE_MEMBERS, MakerspaceMembership.objects.filter(makerspace=space, user__account_kind="member").select_related("user"))
+        rows = rbac.scope_by_action(actor, rbac.Action.MANAGE_MEMBERS, MakerspaceMembership.objects.filter(person_q("user__"), makerspace=space).select_related("user"))
         # Username is the existing unencrypted account identifier. Name/email
         # fuzzy discovery needs a separate global-PII indexing product decision.
         add("members", rows.filter(user__username__icontains=term), lambda row: row.user.username, query=lambda row: {"id": str(row.pk)})

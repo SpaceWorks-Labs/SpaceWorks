@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from django.apps import apps
 from django.db import transaction
 from django.shortcuts import get_object_or_404
+from apps.accounts.staff_identity import is_person
 from apps.audit.services import record
 from apps.accounts.models import User
 from apps.events import event_authority
@@ -30,7 +31,7 @@ def digest(value):
 
 
 def active_member(actor):
-    if not event_authority._active(actor) or actor.account_kind != "member":
+    if not event_authority._active(actor) or not is_person(actor):
         raise ProgrammeError("member_required", "An active member account is required.", status=403)
 
 

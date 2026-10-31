@@ -105,7 +105,7 @@ def memberships_for(makerspace, *, assigned_role_id=None):
             additional_role_exists(role_ids=[assigned_role_id])
         )
     return (
-        MakerspaceMembership.objects.filter(role_filter, **filters)
+        MakerspaceMembership.both_tracks().filter(role_filter, **filters)
         .exclude(user__is_superuser=True)
         .select_related("user", "assigned_role").prefetch_related(additional_roles_prefetch())
         .order_by("user__username")

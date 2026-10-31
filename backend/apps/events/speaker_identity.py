@@ -15,6 +15,7 @@ from django.db.models import Q
 from django.utils import timezone
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 
+from apps.accounts.staff_identity import person_q
 from apps.audit.services import record
 from apps.makerspaces.resource_grants_services import _audit as grant_audit, credential_digest
 
@@ -37,7 +38,7 @@ def display_name(user):
 
 def candidates_q(event):
     """Community accounts known through membership, registration or a delegate grant."""
-    return Q(account_kind="member") & (Q(makerspace_memberships__makerspace_id=event.makerspace_id,
+    return person_q() & (Q(makerspace_memberships__makerspace_id=event.makerspace_id,
               makerspace_memberships__status="active")
             | Q(event_registrations__event_id=event.pk)
             | Q(event_staff_grants__event_id=event.pk, event_staff_grants__revoked_at__isnull=True))

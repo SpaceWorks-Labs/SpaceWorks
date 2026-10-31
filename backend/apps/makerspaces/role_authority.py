@@ -19,7 +19,7 @@ def _superadmin(actor):
 
 def _locked_actor_actions(actor, makerspace):
     membership = (
-        MakerspaceMembership.objects.prefetch_related(additional_roles_prefetch()).select_for_update(of=("self",))
+        MakerspaceMembership.staff_tracks.prefetch_related(additional_roles_prefetch()).select_for_update(of=("self",))
         .select_related("assigned_role")
         .filter(makerspace=makerspace, user=actor, status="active")
         .first()

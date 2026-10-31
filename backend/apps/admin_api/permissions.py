@@ -1,6 +1,7 @@
 from rest_framework.permissions import BasePermission
 from rest_framework.exceptions import PermissionDenied
 
+from apps.accounts.staff_identity import has_staff_role, is_person
 from apps.accounts import rbac
 from apps.accounts.models import User
 from apps.makerspaces.origin_scope import (
@@ -50,7 +51,9 @@ def require_action(user, action, makerspace_id):
 
 
 def require_user_access_mutation(actor, target):
-    if target.account_kind != "member":
+    # A person holding staff roles is managed through the staff-role lifecycle, so the
+    # community restrict/restore switch never silently removes someone's staff access.
+    if not is_person(target) or has_staff_role(target):
         raise PermissionDenied(
             "Staff and platform accounts cannot use community access changes."
         )

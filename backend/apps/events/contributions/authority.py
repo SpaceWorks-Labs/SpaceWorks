@@ -1,6 +1,7 @@
 """Live entitlement predicates consumed by every G event-authority query path."""
 from django.db.models import F, Q
 from django.utils import timezone
+from apps.accounts.staff_identity import person_q
 from apps.events import event_authority
 from apps.events.contracts.services import DelegationScope
 from .models_roles import EventGrantEntitlement
@@ -18,10 +19,10 @@ def _candidates(*, at=None, discovery=False):
     at = at or timezone.now()
     from apps.makerspaces.servability import servable_q
     return EventGrantEntitlement.objects.filter(servable_q("makerspace"),
-        makerspace__enabled_modules__contains=["events"]).filter(
+        makerspace__enabled_modules__contains=["events"]).filter(person_q("grant__user__"),
         revoked_at__isnull=True, grant__revoked_at__isnull=True,
         makerspace_id=F("grant__makerspace_id"),
-        grant__user__account_kind="member", grant__user__is_active=True,
+        grant__user__is_active=True,
         grant__user__access_status="active", grant__user__is_tenant_dump_stub=False,
         grant__user__retired_at__isnull=True,
     ).filter(Q(event_id=F("grant__event_id"), event__makerspace_id=F("makerspace_id"))

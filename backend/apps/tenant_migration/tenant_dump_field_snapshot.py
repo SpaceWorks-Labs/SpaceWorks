@@ -146,3 +146,7 @@ from .catalog_r2_l2 import FIELD_NAMES as R2_L2_FIELDS, EXTRA_FIELDS as R2_L2_EX
 FIRST_PARTY_FIELD_NAMES.update(R2_L2_FIELDS)
 for _label, _names in R2_L2_EXTRA.items():
     FIRST_PARTY_FIELD_NAMES[_label] |= _names
+from .catalog_unified_accounts import FIELD_NAMES as UA1_FIELDS, EXTRA_FIELDS as UA1_EXTRA  # noqa: E402
+FIRST_PARTY_FIELD_NAMES.update(UA1_FIELDS)
+for _label, _names in UA1_EXTRA.items():
+    FIRST_PARTY_FIELD_NAMES[_label] |= _names

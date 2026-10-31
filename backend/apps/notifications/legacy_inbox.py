@@ -27,7 +27,7 @@ def mirror_legacy_staff(makerspace, payload, *, source_intent=""):
         return
     if family not in {"hardware_requests", "printing"} and not matrix_enabled:
         return
-    memberships = rbac.scope_for_scheduled_work(MakerspaceMembership.objects.filter(
+    memberships = rbac.scope_for_scheduled_work(MakerspaceMembership.staff_tracks.filter(
         makerspace=makerspace, status="active", receives_notifications=True, user__is_active=True,
         user__access_status=User.AccessStatus.ACTIVE, user__is_tenant_dump_stub=False,
     )).select_related("user")

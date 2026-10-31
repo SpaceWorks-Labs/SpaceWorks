@@ -43,9 +43,10 @@ def assert_export(job):
     total_rows, total_bytes, closure = 0, 0, set()
     subject = job.fidelity == "SUBJECT"
     if not subject:
+        staff_rows = apps.get_model("makerspaces", "MakerspaceMembership").staff_tracks.filter(
+            makerspace_id=job.makerspace_id)
         closure.update(apps.get_model("accounts", "User").objects.filter(
-            account_kind="staff", staff_makerspace_id=job.makerspace_id,
-            retired_at__isnull=True).values_list("pk", flat=True)[:MAX_ROWS + 1])
+            pk__in=staff_rows.values("user_id")).values_list("pk", flat=True)[:MAX_ROWS + 1])
     fidelity = Fidelity.PORTABLE if subject else Fidelity(job.fidelity)
     for dataset in DATASETS.values():
         if dataset.fidelity is not fidelity or dataset.model == "accounts.User":

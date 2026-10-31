@@ -3,14 +3,22 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
 
+from apps.makerspaces.membership_managers import (
+    COMMUNITY, STAFF, AllTracksManager, CommunityMembershipManager, StaffTrackManager,
+)
 from apps.makerspaces.models_makerspace import Makerspace
 from apps.makerspaces.provenance import validate_actor_snapshot
 
 
 class MakerspaceMembership(models.Model):
-    # Role is per-makerspace: this membership is what grants a user space-manager/guest-admin
-    # rights for THIS makerspace. Global User.role stays for superadmin. Enforcement
-    # of scoping/suspension is centralized in the Phase 2 RBAC layer, not here.
+    # Role is per-makerspace and per TRACK: one person may hold a community row (Member)
+    # and a staff row (built-in staff roles) in the same makerspace. Global User.role
+    # stays for superadmin. Enforcement is centralized in the RBAC layer; the default
+    # manager is community-only so staff authority is never read by accident.
+    class Track(models.TextChoices):
+        COMMUNITY = COMMUNITY, "Community"
+        STAFF = STAFF, "Staff"
+
     class Role(models.TextChoices):
         SPACE_MANAGER = "space_manager", "Space Manager"
         INVENTORY_MANAGER = "inventory_manager", "Inventory Manager"
@@ -25,11 +33,28 @@ class MakerspaceMembership(models.Model):
         HANDOVER = "handover", "Handover"
         CUSTOM = "custom", "Custom"
 
+    objects = CommunityMembershipManager()
+    staff_tracks = StaffTrackManager()
+    all_tracks = AllTracksManager()
+
+    @classmethod
+    def track_manager(cls, track):
+        """The fail-closed manager for one known track (never ``all_tracks``)."""
+        return cls.staff_tracks if track == cls.Track.STAFF else cls.objects
+
+    @classmethod
+    def both_tracks(cls):
+        """Community OR staff rows, chosen on purpose: a person's whole relation to a
+        space (notification recipients, account scope). Never for authority."""
+        return cls.objects.all() | cls.staff_tracks.all()
+
     makerspace = models.ForeignKey(
         Makerspace,
         on_delete=models.CASCADE,
         related_name="memberships",
     )
+    # Immutable once written (DB trigger): the membership-FK track triggers depend on it.
+    track = models.CharField(max_length=16, choices=Track.choices, default=Track.COMMUNITY)
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -106,8 +131,8 @@ class MakerspaceMembership(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["makerspace", "user"],
-                name="uniq_makerspace_user",
+                fields=["makerspace", "user", "track"],
+                name="uniq_makerspace_user_track",
             ),
             models.CheckConstraint(
                 condition=(
@@ -171,4 +196,4 @@ class MakerspaceMembership(models.Model):
             )
 
     def __str__(self):
-        return f"{self.user} @ {self.makerspace.slug} ({self.role})"
+        return f"{self.user} @ {self.makerspace.slug} ({self.track}: {self.role})"

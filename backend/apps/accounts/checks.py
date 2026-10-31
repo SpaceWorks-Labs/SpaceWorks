@@ -78,3 +78,20 @@ def check_legacy_native_identities(app_configs=None, databases=None, **kwargs):
                 id="accounts.W001",
             ))
     return warnings
+
+
+@register(Tags.models)
+def check_merge_registry(app_configs=None, **kwargs):
+    """accounts.E003: every reference to accounts.User has an account-merge disposition."""
+    from .merge_registry import problems
+
+    hints = {
+        "unclassified_relations": "Classify it in an accounts/merge_registry_rows_*.py fragment.",
+        "unclassified_columns": "List the integer user-id column in a merge registry fragment.",
+        "stale_relations": "Remove the row: the relation no longer exists.",
+        "stale_columns": "Remove the row: the column no longer exists.",
+    }
+    return [Error(
+        f"Account-merge registry: {kind.replace('_', ' ')} {label}.{name}.",
+        hint=hints[kind], id="accounts.E003",
+    ) for kind, entries in problems().items() for label, name in entries]

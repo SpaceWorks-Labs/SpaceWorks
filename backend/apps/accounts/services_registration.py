@@ -16,6 +16,7 @@ from rest_framework import serializers
 
 from apps.accounts import audit_events
 from apps.accounts.models import EmailVerificationChallenge, User
+from apps.accounts.staff_identity import PERSON_KIND, is_person, person_q
 from apps.integrations.email import send_email_verification_otp
 from apps.makerspaces.limits import reserve_platform_otp_quota
 
@@ -51,9 +52,10 @@ def issue_challenge(user):
     now = timezone.now()
     with transaction.atomic():
         locked_user = User.objects.select_for_update().get(pk=user.pk)
-        # Staff typed this address as contact data; it is not identity proof. Returning
-        # quietly preserves the endpoint's account-enumeration-safe acknowledgement.
-        if locked_user.account_kind != "member" or locked_user.is_walk_in:
+        # A walk-in's address is staff-typed contact data, not identity proof, and only a
+        # person verifies (a converted staff address included, #65). Returning quietly
+        # preserves the endpoint's account-enumeration-safe acknowledgement.
+        if not is_person(locked_user) or locked_user.is_walk_in:
             return None
         email = _normalize_email(locked_user.email)
         if EmailVerificationChallenge.objects.filter(
@@ -108,7 +110,7 @@ def confirm_challenge(user, code):
     refused_walk_in = False
     with transaction.atomic():
         locked_user = User.objects.select_for_update().get(pk=user.pk)
-        if locked_user.account_kind != "member":
+        if not is_person(locked_user):
             raise serializers.ValidationError({"detail": GENERIC_CONFIRM_ERROR})
         email = _normalize_email(locked_user.email)
         # Resolve ONLY the caller's own newest usable challenge for their current email.
@@ -181,7 +183,7 @@ def register_member(display_name, email, phone, password):
     now = timezone.now()
     with transaction.atomic():
         user = (
-            User.objects.select_for_update().filter(account_kind="member", email__iexact=email).first()
+            User.objects.select_for_update().filter(person_q(), email__iexact=email).first()
         )
         if _self_registration_is_releasable(user, now):
             _release_self_registration(user, now)
@@ -193,7 +195,7 @@ def register_member(display_name, email, phone, password):
                 with transaction.atomic():
                     user = User(
                         username=f"member_{uuid.uuid4().hex}",
-                        account_kind="member",
+                        account_kind=PERSON_KIND,
                         display_name=display_name,
                         email=email,
                         phone=phone,
@@ -206,7 +208,7 @@ def register_member(display_name, email, phone, password):
             except IntegrityError:
                 user = (
                     User.objects.select_for_update()
-                    .filter(account_kind="member", email__iexact=email)
+                    .filter(person_q(), email__iexact=email)
                     .first()
                 )
 
@@ -255,7 +257,8 @@ def _self_registration_is_releasable(user, now):
         return False
     if SocialIdentity.objects.filter(user=user).exists():
         return False
-    if MakerspaceMembership.objects.filter(user=user).exists():
+    if (MakerspaceMembership.objects.filter(user=user).exists()
+            or MakerspaceMembership.staff_tracks.filter(user=user).exists()):
         return False
     return True
 

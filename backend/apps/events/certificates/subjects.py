@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 from rest_framework.exceptions import NotFound, PermissionDenied
 
+from apps.accounts.staff_identity import is_person, person_q
 from apps.events import event_authority
 from apps.events.models_registration import EventRegistration
 from apps.events.credentials.errors import ProgrammeConflict
@@ -59,7 +60,7 @@ def require_subject(event, *, subject_kind, subject_id, kind, award_id=None, res
         raise NotFound()
     assert_account_fence_held(result.member_id)
     from apps.accounts.models import User
-    if not User.objects.filter(pk=result.member_id, account_kind="member", is_active=True,
+    if not User.objects.filter(person_q(), pk=result.member_id, is_active=True,
             access_status="active", is_tenant_dump_stub=False, retired_at__isnull=True).exists():
         raise ProgrammeConflict("Recipient account is unavailable.", code="certificate_ineligible")
     if (prepared.member_id, prepared.name) != (result.member_id, result.recipient_name):
@@ -78,7 +79,7 @@ def require_read(certificate, actor):
     event = certificate.event
     if not event_authority._active(actor):
         raise PermissionDenied()
-    if actor.account_kind == "member" and certificate.recipient_member_id == actor.pk:
+    if is_person(actor) and certificate.recipient_member_id == actor.pk:
         from apps.makerspaces.guards import require_module
         require_module(event.makerspace, "events")
     else:

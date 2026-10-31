@@ -1,4 +1,5 @@
 """Core finance authority never depends on event grants or the payments rail."""
+from apps.accounts.staff_identity import is_person, is_platform
 from apps.accounts import rbac
 from apps.accounts.account_kind_guards import require_member_account
 from apps.accounts.reauthentication import binding, require_recent_reauth
@@ -12,7 +13,7 @@ from django.utils import timezone
 
 def authorize(request, space, *, owner_id=None, payout=False, mutation=False, owner=False):
     actor = request.user
-    require(getattr(actor, "account_kind", None) in ("member", "staff", "platform"), "full_session_required", status=403)
+    require(is_person(actor) or is_platform(actor), "full_session_required", status=403)
     require(claim_context(actor) is None, "full_session_required", status=403)
     binding(request)  # Reject API clients, native/device grants and partial sessions.
     token = getattr(request, "auth", None)

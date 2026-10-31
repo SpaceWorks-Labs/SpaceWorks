@@ -1,4 +1,5 @@
 """Explicit per-tenant consent, serialized with phone changes and account deletion."""
+from apps.accounts.staff_identity import has_staff_role
 from apps.integrations.notification_cutover import guarded
 from django.utils import timezone
 from rest_framework.exceptions import APIException, NotFound
@@ -29,16 +30,13 @@ def member_space(user, makerspace_id):
     space = Makerspace.objects.filter(pk=makerspace_id).first()
     if space is None or not is_servable(space):
         raise NotFound()
-    # Staff consent belongs only to this separate account's fixed local tenant.
-    # It grants no membership, delegation or cross-tenant sending authority.
-    if user.account_kind == User.AccountKind.STAFF:
+    # A person consents for a space they belong to, or one where they hold a staff role
+    # with live authority. Consent grants no membership, delegation or sending authority.
+    allowed = has_tenant_tie(user, space)
+    if not allowed and has_staff_role(user, space.pk):
         from apps.accounts import rbac
-        allowed = (user.is_active and user.access_status == "active"
-            and not user.is_tenant_dump_stub and user.retired_at is None
-            and user.deletion_requested_at is None and user.account_purged_at is None
-            and user.staff_makerspace_id == space.pk and bool(rbac.effective_actions(user, space.pk)))
-    else:
-        allowed = has_tenant_tie(user, space)
+        allowed = (user.access_status == "active" and user.deletion_requested_at is None
+                   and user.account_purged_at is None and bool(rbac.effective_actions(user, space.pk)))
     if not allowed:
         raise NotFound()
     return space

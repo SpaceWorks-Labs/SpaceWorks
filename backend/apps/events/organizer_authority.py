@@ -1,5 +1,6 @@
 from django.db.models import Q
 
+from apps.accounts.staff_identity import is_person, person_q
 from apps.accounts import rbac
 from apps.accounts.models import User
 from apps.organizations.models import OrganizationMembership
@@ -18,7 +19,7 @@ def organizer_event_q(actor, *, event_prefix=""):
     """Return the narrow SQL predicate for events organized by this actor's org."""
     if (
         actor is None
-        or getattr(actor, "account_kind", None) != "member"
+        or not is_person(actor)
         or not getattr(actor, "is_authenticated", False)
         or _is_superadmin(actor)
         # Native device sessions are membership-only: no organizer authority.
@@ -63,9 +64,8 @@ def can_manage_event(actor, event) -> bool:
     if (_is_superadmin(actor) or is_native_session(actor)
             or event.makerspace_id in rbac.archived_makerspace_ids()):
         return False
-    memberships = OrganizationMembership.objects.filter(
+    memberships = OrganizationMembership.objects.filter(person_q("user__"),
         user=actor,
-        user__account_kind="member",
         status=OrganizationMembership.Status.ACTIVE,
         organization__is_active=True,
         organization__organized_events__event=event,

@@ -38,7 +38,7 @@ def stored_actions_for_membership(membership):
     from .rbac_actions import ROLE_GRANTABLE_ACTIONS
 
     roles = membership_roles(membership)
-    if not roles or membership.user.account_kind != "staff":
+    if not roles or membership.track != "staff":
         return set()
     return {
         action for role in roles

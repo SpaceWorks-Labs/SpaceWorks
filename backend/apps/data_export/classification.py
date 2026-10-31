@@ -100,6 +100,10 @@ from .classification_r2_l2 import OMITTED_MODELS as R2_L2_OMITTED, EXTRA_FIELDS 
 OMITTED_MODELS.update(R2_L2_OMITTED)
 for _label, _names in R2_L2_EXTRA.items():
     EXPORTED_MODEL_FIELDS[_label] += " " + _names
+from .classification_unified_accounts import OMITTED_MODELS as UA1_OMITTED, EXTRA_FIELDS as UA1_EXTRA  # noqa: E402
+OMITTED_MODELS.update(UA1_OMITTED)
+for _label, _names in UA1_EXTRA.items():
+    EXPORTED_MODEL_FIELDS[_label] += " " + _names
 EXPORTED_MODELS = frozenset(EXPORTED_MODEL_FIELDS)
 
 NOT_TENANT_MODELS = {

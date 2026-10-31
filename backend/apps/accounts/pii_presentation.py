@@ -18,6 +18,7 @@ from datetime import timedelta
 from django.utils import timezone
 
 from apps.accounts.platform_authority import is_platform_superadmin
+from apps.accounts.staff_identity import is_platform
 
 MASK = "••••••"
 ACCOUNT_PII_FIELDS = ("email", "phone", "phone_e164", "first_name", "last_name", "display_name")
@@ -67,15 +68,14 @@ def pii_visible(viewer, makerspace_id, *, subject=None):
 
 def person_space_ids(person):
     from apps.makerspaces.models import MakerspaceMembership
-    ids = set(MakerspaceMembership.objects.filter(user=person).values_list("makerspace_id", flat=True))
-    if getattr(person, "staff_makerspace_id", None):
-        ids.add(person.staff_makerspace_id)
-    return ids
+    # Both tracks: the spaces a person belongs to and the ones they staff.
+    return {*MakerspaceMembership.objects.filter(user=person).values_list("makerspace_id", flat=True),
+            *MakerspaceMembership.staff_tracks.filter(user=person).values_list("makerspace_id", flat=True)}
 
 
 def person_pii_visible(viewer, person):
     """For account-level surfaces (/control/ user admin) where no single space applies."""
-    if not is_platform_superadmin(viewer) or getattr(person, "account_kind", None) == "platform":
+    if not is_platform_superadmin(viewer) or is_platform(person):
         return True
     spaces, people = _scopes(viewer)
     if person.pk in people:

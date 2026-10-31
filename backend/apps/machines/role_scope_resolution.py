@@ -29,7 +29,7 @@ def _scope_for_membership(membership):
     if valid is None:
         valid = valid_membership_context(membership)
     if not valid or (not hasattr(membership, "_valid_account_context")
-                     and membership.user.account_kind != "staff"):
+                     and membership.track != MakerspaceMembership.Track.STAFF):
         return NOTHING, None
     role = membership.assigned_role
     if role.makerspace_id != membership.makerspace_id:
@@ -53,8 +53,8 @@ def manage_scopes_for(actor, makerspace_ids):
     ids -= rbac.archived_makerspace_ids()
     if not ids or actor is None or not getattr(actor, "is_authenticated", False):
         return {}
-    memberships = list(actor.makerspace_memberships.select_related("assigned_role").filter(
-        status="active", makerspace_id__in=ids,
+    memberships = list(MakerspaceMembership.staff_tracks.select_related("assigned_role").filter(
+        user_id=actor.pk, status="active", makerspace_id__in=ids,
     ).annotate(_valid_account_context=valid_staff_membership_q(), _additional_manage_machines=additional_role_exists(
         actions=[Action.MANAGE_MACHINES],
     )))
@@ -84,7 +84,7 @@ def manage_scopes_for_memberships(memberships):
     unloaded = {row.pk for row in memberships if not hasattr(row, "_valid_account_context")}
     snapshots = {}
     if unloaded:
-        snapshots = {row.pk: row for row in MakerspaceMembership.objects.filter(
+        snapshots = {row.pk: row for row in MakerspaceMembership.staff_tracks.filter(
             pk__in=unloaded,
         ).select_related("assigned_role").annotate(
             _valid_account_context=valid_staff_membership_q(),

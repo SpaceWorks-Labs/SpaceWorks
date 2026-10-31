@@ -76,7 +76,7 @@ def _staff_emails_for_feature(makerspace, feature, event=None, scope=None) -> li
         )
 
         memberships = (
-            reminder_memberships(MakerspaceMembership.objects.all(), makerspace, feature, event).filter(
+            reminder_memberships(MakerspaceMembership.staff_tracks.all(), makerspace, feature, event).filter(
                 makerspace=makerspace,
                 status="active",
                 receives_notifications=True,
@@ -154,7 +154,7 @@ def _staff_user_ids_for_feature(makerspace, feature, event=None, scope=None) -> 
             return []
         stream = _FEATURE_STREAMS.get(feature)
         mutable = bool(stream and event and notification_rules.is_event_mutable(stream, "staff", event))
-        memberships = reminder_memberships(MakerspaceMembership.objects.all(), makerspace, feature, event).filter(
+        memberships = reminder_memberships(MakerspaceMembership.staff_tracks.all(), makerspace, feature, event).filter(
             makerspace=makerspace, status="active", receives_notifications=True,
             user__is_active=True, user__access_status=User.AccessStatus.ACTIVE,
         ).exclude(user__is_superuser=True).exclude(

@@ -1,5 +1,6 @@
 """Safe personal envelopes with live source checks on every delivery retry."""
 from django.utils import timezone
+from apps.accounts.staff_identity import person_q
 from apps.accounts.models import User
 from apps.integrations.notification_outbox import emit
 from apps.integrations.notification_sources import NotificationSource, register_source
@@ -70,7 +71,7 @@ def help_eligible(envelope):
 
 def deliver_contribution(*, notice_id, idempotency_key):
     row = EventContributorNotice.objects.select_related("event__makerspace").get(pk=notice_id)
-    for member in User.objects.filter(pk__in=contribution_recipients(row), account_kind="member", is_active=True, access_status="active",
+    for member in User.objects.filter(person_q(), pk__in=contribution_recipients(row), is_active=True, access_status="active",
             is_tenant_dump_stub=False):
         emit(makerspace=row.event.makerspace, recipient=member, feature="events", stream="events",
             event="contribution_update", audience="member", source_kind=CONTRIBUTION_SOURCE,
@@ -82,7 +83,7 @@ def deliver_contribution(*, notice_id, idempotency_key):
 def deliver_help(*, intent_id, recipient_ids, payload, idempotency_key):
     from apps.events.mentoring.models_rounds import MentorNotificationIntent
     row = MentorNotificationIntent.objects.select_related("event__makerspace").get(pk=intent_id)
-    for member in User.objects.filter(pk__in=recipient_ids, account_kind="member", is_active=True, access_status="active", is_tenant_dump_stub=False):
+    for member in User.objects.filter(person_q(), pk__in=recipient_ids, is_active=True, access_status="active", is_tenant_dump_stub=False):
         emit(makerspace=row.event.makerspace, recipient=member, feature="events", stream="events",
             event="mentor_help_update", audience="member", source_kind=HELP_SOURCE,
             source_id=str(row.pk), revision=str(row.generation), subject=row,

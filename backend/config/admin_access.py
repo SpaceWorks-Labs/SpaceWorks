@@ -63,10 +63,11 @@ class AdminSuperuserOnlyMiddleware:
 
     def _has_access(self, user):
         from apps.accounts.models import User
+        from apps.accounts.staff_identity import is_platform
 
         return bool(
             user.is_active
-            and user.account_kind == User.AccountKind.PLATFORM
+            and is_platform(user)
             and user.retired_at is None
             and user.is_superuser
             and getattr(user, "access_status", None) == User.AccessStatus.ACTIVE
@@ -133,13 +134,14 @@ class SuperuserOnlyModelAdmin(AdminSourceGateMixin):
 
     def _has_superuser_access(self, request):
         from apps.accounts.models import User
+        from apps.accounts.staff_identity import is_platform
 
         user = getattr(request, "user", None)
         return bool(
             user
             and user.is_authenticated
             and user.is_active
-            and user.account_kind == User.AccountKind.PLATFORM
+            and is_platform(user)
             and user.retired_at is None
             and user.is_superuser
             and getattr(user, "access_status", None) == User.AccessStatus.ACTIVE

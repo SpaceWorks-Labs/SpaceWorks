@@ -2,6 +2,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from drf_spectacular.utils import extend_schema
 
+from apps.accounts.staff_identity import person_q
 from apps.accounts.models import User
 from apps.admin_api.permissions import IsActiveStaff
 from apps.events.event_permissions import MANAGE_REGISTRATIONS
@@ -46,9 +47,8 @@ class EventEligibleMemberListView(APIView):
                 {"member_id": user.pk, "display_name": user.display_name or user.username}
                 for user in accounts
             ], many=True).data)
-        memberships = MakerspaceMembership.objects.select_related('user').filter(
+        memberships = MakerspaceMembership.objects.select_related('user').filter(person_q("user__"),
             makerspace=event.makerspace, status='active', user__is_active=True,
-            user__account_kind=User.AccountKind.MEMBER,
             user__access_status=User.AccessStatus.ACTIVE,
         ).exclude(user_id__in=registered).order_by(
             'user__display_name', 'user__username'

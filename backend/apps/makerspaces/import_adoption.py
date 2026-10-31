@@ -7,6 +7,7 @@ from django.db import DatabaseError, IntegrityError, transaction
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
+from apps.accounts.staff_identity import is_person, person_q
 from apps.accounts.models import User
 from apps.audit import services as audit
 from apps.makerspaces import limits
@@ -43,7 +44,7 @@ def _member_role(makerspace):
 
 def _validate_address_proof(user, pending):
     """Require a member account with the proven address, including walk-ins."""
-    current = User.objects.filter(pk=user.pk, account_kind="member").first()
+    current = User.objects.filter(person_q(), pk=user.pk).first()
     if (
         current is None
         or current.email_verified_at is None
@@ -210,7 +211,7 @@ def adopt_pending_membership(user, pending):
 
 def adopt_pending_memberships_for_user(user):
     """Discover proven-email imports without letting one tenant block the account."""
-    if user.account_kind != "member" or not user.email or user.email_verified_at is None:
+    if not is_person(user) or not user.email or user.email_verified_at is None:
         return []
     pending_rows = list(
         PendingImportedMembership.objects.filter(

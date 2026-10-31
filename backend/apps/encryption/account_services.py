@@ -10,6 +10,7 @@ from django.db.models import Max
 from django.utils import timezone
 
 from apps.accounts.models import User
+from apps.accounts.staff_identity import is_person
 from apps.audit.services import record
 from apps.encryption.account_models import AccountPiiKey, PiiAccountWriteFence
 from apps.encryption.account_readiness import (
@@ -64,7 +65,7 @@ def prepared_key(user_id, version):
 def _owner(user_id, *, locked=False):
     query = User.objects.select_for_update() if locked else User.objects
     user = query.get(pk=user_id)
-    if (not user.is_active or user.account_kind != User.AccountKind.MEMBER
+    if (not user.is_active or not is_person(user)
             or user.is_tenant_dump_stub or user.is_walk_in or user.retired_at is not None
             or user.access_status != User.AccessStatus.ACTIVE):
         raise AccountKeyUnavailable("Account key unavailable.")

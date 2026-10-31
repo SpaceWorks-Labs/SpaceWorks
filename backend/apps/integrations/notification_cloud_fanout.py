@@ -43,7 +43,7 @@ def preflight(makerspace, payload):
             "machine_scopes", "machine_type_scopes", "category_scopes")):
             raise UnsupportedFanout("Legacy notification room scope exceeds the free profile limit.")
     from apps.makerspaces.models import MakerspaceMembership
-    if MakerspaceMembership.objects.filter(makerspace=makerspace, status="active", user__account_kind="staff").count() > 25:
+    if MakerspaceMembership.staff_tracks.filter(makerspace=makerspace, status="active").count() > 25:
         raise UnsupportedFanout("Legacy staff resolution exceeds the free profile limit.")
     if len(payload.text.encode()) > 65536:
         raise UnsupportedFanout("Legacy notification content exceeds the free profile limit.")

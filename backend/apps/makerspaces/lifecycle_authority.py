@@ -2,11 +2,13 @@
 
 from django.core.exceptions import ValidationError
 
+from apps.accounts.staff_identity import is_platform
+
 
 def require_platform_superadmin(actor):
     if not (
         getattr(actor, "is_authenticated", False)
-        and getattr(actor, "account_kind", None) == "platform"
+        and is_platform(actor)
         and getattr(actor, "is_superuser", False)
         and getattr(actor, "is_active", False)
         and getattr(actor, "retired_at", None) is None

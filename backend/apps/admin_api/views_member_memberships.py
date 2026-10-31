@@ -1,3 +1,4 @@
+from apps.accounts.staff_identity import person_q
 from apps.accounts.reauthentication_permissions import RecentReauthenticationMixin
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema, OpenApiParameter, PolymorphicProxySerializer
@@ -77,7 +78,7 @@ class AdminMembershipRosterView(APIView):
     def get(self, request):
         makerspace = _makerspace(request.user, request.query_params.get("makerspace_id"))
         active = rbac.scope_by_action(request.user, rbac.Action.MANAGE_MEMBERS, MakerspaceWaiver.objects.filter(makerspace=makerspace, is_active=True)).first()
-        queryset = MakerspaceMembership.objects.filter(makerspace=makerspace, user__account_kind="member").select_related("user", "assigned_role").prefetch_related(additional_roles_prefetch()).order_by("user__username")
+        queryset = MakerspaceMembership.objects.filter(person_q("user__"), makerspace=makerspace).select_related("user", "assigned_role").prefetch_related(additional_roles_prefetch()).order_by("user__username")
         queryset = rbac.scope_by_action(request.user, rbac.Action.MANAGE_MEMBERS, queryset)
         selected_id = identity_filter(request.query_params)
         if selected_id is not None:

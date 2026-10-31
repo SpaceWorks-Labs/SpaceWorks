@@ -21,6 +21,7 @@ from rest_framework.exceptions import APIException, PermissionDenied
 
 from apps.accounts.models_pii_access import WINDOW, PlatformPiiAccessGrant
 from apps.accounts.platform_authority import is_platform_superadmin
+from apps.accounts.staff_identity import is_platform
 from apps.audit import services as audit
 
 SPACE, PERSON = "space", "person"
@@ -105,7 +106,7 @@ def open_person_grant(actor, person, reason):
     reason = clean_reason(reason)
     from apps.accounts.models import User
     person = User.objects.select_for_update().get(pk=person.pk)
-    if person.account_kind == "platform":
+    if is_platform(person):
         raise ValidationError("Platform accounts are not masked.", code="invalid_pii_subject")
     return _open(actor, reason, subject=person)
 

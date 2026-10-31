@@ -47,7 +47,7 @@ def lock_and_validate_staff_authority(
         raise PermissionDenied()
 
     membership = (
-        MakerspaceMembership.objects.prefetch_related(additional_roles_prefetch()).select_for_update()
+        MakerspaceMembership.staff_tracks.prefetch_related(additional_roles_prefetch()).select_for_update()
         .filter(user=locked_actor, makerspace=makerspace, status="active")
         .first()
     )

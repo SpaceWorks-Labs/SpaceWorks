@@ -10,6 +10,7 @@ from django.db.models import Q
 from django.utils import timezone
 from rest_framework import serializers
 
+from apps.accounts.staff_identity import person_q
 from apps.makerspaces.limits_core import RESOURCE_LABELS
 
 
@@ -58,9 +59,10 @@ def _staff(makerspace) -> int:
     from apps.accounts.models import User
     from apps.makerspaces.models import MakerspaceMembership
 
-    return MakerspaceMembership.objects.filter(
+    # Staff quota counts staff-TRACK rows on people (one account per person).
+    return MakerspaceMembership.staff_tracks.filter(
+        person_q("user__"),
         makerspace=makerspace,
-        user__account_kind="staff",
         user__is_active=True,
         user__access_status=User.AccessStatus.ACTIVE,
     ).count()
@@ -71,7 +73,7 @@ def _members(makerspace) -> int:
     from apps.makerspaces.models import MakerspaceMembership
 
     return MakerspaceMembership.objects.filter(
-        makerspace=makerspace, status="active", user__is_active=True, user__account_kind="member",
+        person_q("user__"), makerspace=makerspace, status="active", user__is_active=True,
         user__access_status=User.AccessStatus.ACTIVE,
     ).count()
 

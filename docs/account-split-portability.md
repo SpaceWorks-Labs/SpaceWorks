@@ -1,7 +1,7 @@
 # Account split: portability and retention contract
 
 Permanent D10/D11 and V3/V4/V5/V9/V11 contract for tenant migration and deployment
-backup. See [Account kinds](INVARIANTS.md#account-kinds-member--staff--platform) for
+backup. See [One account per person](INVARIANTS.md#one-account-per-person-release-2-lane-u-a1-63-65-66) for
 authentication/lifecycle rules and [SOURCE-MAP.md](SOURCE-MAP.md) for implementation ownership.
 
 PORTABLE archives and sovereign Lane D dumps carry tenant-owned staff identities,

@@ -2,6 +2,7 @@
 
 from rest_framework.exceptions import PermissionDenied
 
+from apps.accounts.staff_identity import is_platform
 from apps.accounts.models import User
 from apps.organizations import governance
 from apps.organizations.models import Organization, OrganizationMembership
@@ -10,7 +11,7 @@ from apps.organizations.models import Organization, OrganizationMembership
 def is_superadmin(actor) -> bool:
     return bool(
         governance.live_account(actor)
-        and actor.account_kind == User.AccountKind.PLATFORM
+        and is_platform(actor)
         and (actor.is_superuser or actor.role == User.Role.SUPERADMIN)
     )
 

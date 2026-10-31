@@ -1,6 +1,7 @@
 """Team notices bind actual team/invitation rows; never persist bearer links."""
 import hmac
 from django.utils import timezone
+from apps.accounts.staff_identity import person_q
 from apps.accounts.models import User
 from apps.integrations.notification_outbox import emit
 from apps.integrations.notification_sources import NotificationSource, register_source
@@ -29,7 +30,7 @@ def programme_live(event):
 def team_eligible(envelope):
     if envelope.event not in MESSAGES:
         return False
-    if not User.objects.filter(pk=envelope.recipient_id, account_kind="member", is_active=True,
+    if not User.objects.filter(person_q(), pk=envelope.recipient_id, is_active=True,
             access_status="active", is_tenant_dump_stub=False).exists():
         return False
     team = HackathonTeam.objects.select_related("event__makerspace").filter(pk=envelope.source_id,
@@ -50,7 +51,7 @@ def invite_eligible(envelope):
         return False
     row = HackathonTeamInvite.objects.select_related("team__event__makerspace").filter(
         pk=envelope.source_id, team__event_id=envelope.context.get("event_id")).first()
-    user = User.objects.filter(pk=envelope.recipient_id, account_kind="member", is_active=True,
+    user = User.objects.filter(person_q(), pk=envelope.recipient_id, is_active=True,
         access_status="active", is_tenant_dump_stub=False, email_verified_at__isnull=False).first()
     if (row is None or user is None or row.team.event.makerspace_id != envelope.makerspace_id
             or not programme_live(row.team.event) or row.revoked_at or row.redeemed_at
@@ -66,7 +67,7 @@ def emit_team_locked(*, team, kind, member_ids=None, request_id=None):
     if kind not in MESSAGES:
         raise ValueError("Unknown team notice.")
     members = member_ids if member_ids is not None else team.memberships.filter(state="active").values_list("member_id", flat=True)
-    for user in User.objects.filter(pk__in=members, account_kind="member", is_active=True,
+    for user in User.objects.filter(person_q(), pk__in=members, is_active=True,
             access_status="active", is_tenant_dump_stub=False):
         emit(makerspace=team.event.makerspace, recipient=user, feature="events", stream="events",
             event=kind, audience="member", source_kind=TEAM_SOURCE, source_id=str(team.pk), revision=str(team.version),
@@ -78,7 +79,7 @@ def emit_team_locked(*, team, kind, member_ids=None, request_id=None):
 def emit_invite_locked(*, invite, email):
     if not email:
         return  # A generic share link has no identified recipient to notify.
-    users = list(User.objects.filter(email__iexact=email, account_kind="member", is_active=True,
+    users = list(User.objects.filter(person_q(), email__iexact=email, is_active=True,
         access_status="active", is_tenant_dump_stub=False, email_verified_at__isnull=False)[:2])
     if len(users) != 1:
         return  # Never guess identity from ambiguous or unverified contact strings.

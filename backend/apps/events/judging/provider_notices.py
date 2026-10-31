@@ -1,5 +1,6 @@
 """Source-backed judging notices recheck assignments and released results."""
 
+from apps.accounts.staff_identity import person_q
 from apps.accounts.models import User
 from apps.integrations.notification_outbox import emit
 from apps.integrations.notification_sources import NotificationSource, register_source
@@ -67,8 +68,8 @@ def render(envelope):
 
 def deliver(notice_id):
     row = JudgingNotice.objects.select_related("event__makerspace").get(pk=notice_id)
-    for user in User.objects.filter(pk__in=recipients(row), is_active=True, access_status="active",
-                                    account_kind="member", is_tenant_dump_stub=False).order_by("pk"):
+    for user in User.objects.filter(person_q(), pk__in=recipients(row), is_active=True, access_status="active",
+                                    is_tenant_dump_stub=False).order_by("pk"):
         emit(makerspace=row.event.makerspace, recipient=user, feature="events", stream="events",
             event=row.kind, audience="member", dedup_key=f"event-judging:{row.pk}:{row.revision}:{user.pk}",
             source_kind=SOURCE, source_id=str(row.pk), revision=str(row.revision), subject=row.event,

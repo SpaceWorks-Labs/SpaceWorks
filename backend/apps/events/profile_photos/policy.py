@@ -2,6 +2,7 @@
 
 from rest_framework.exceptions import NotFound
 
+from apps.accounts.staff_identity import is_person
 from apps.events.models_registration import EventRegistration
 from apps.makerspaces.platform import module_enabled
 from apps.makerspaces.public_profile_access import profile_is_public
@@ -36,7 +37,7 @@ def register_public_surface(scope, predicate):
 
 
 def active_member(actor):
-    return bool(actor and actor.is_authenticated and actor.account_kind == "member"
+    return bool(actor and actor.is_authenticated and is_person(actor)
                 and actor.is_active and actor.access_status == "active" and not actor.is_tenant_dump_stub
                 and actor.retired_at is None)
 

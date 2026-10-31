@@ -6,6 +6,7 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.accounts.staff_identity import person_q
 from apps.accounts import rbac
 from apps.accounts.models import User
 from apps.hardware_requests import direct_loan_workflow
@@ -139,21 +140,21 @@ class DirectLoanMemberListView(generics.ListAPIView):
         require_feature(makerspace, "inventory.self_checkout")
         _require(self.request.user, rbac.Action.ISSUE_DIRECT_LOAN, makerspace.id)
         return MakerspaceMembership.objects.select_related("user").filter(
+            person_q("user__"),
             makerspace=makerspace,
             status="active",
             user__is_active=True,
-            user__account_kind=User.AccountKind.MEMBER,
             user__access_status=User.AccessStatus.ACTIVE,
         ).order_by("user__display_name", "user__username")
 
 
 def _borrower_for_makerspace(makerspace, borrower_id):
     membership = MakerspaceMembership.objects.select_related("user").filter(
+        person_q("user__"),
         makerspace=makerspace,
         user_id=borrower_id,
         status="active",
         user__is_active=True,
-        user__account_kind=User.AccountKind.MEMBER,
         user__access_status=User.AccessStatus.ACTIVE,
     ).first()
     if membership is None:

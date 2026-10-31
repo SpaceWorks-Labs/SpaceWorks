@@ -27,10 +27,11 @@ from .rbac_actions import (
     actions_satisfying,
     expand_implied_actions,
 )
-from .membership_context import valid_membership_q
 from .rbac_memberships import (
     _membership_for,
     _membership_is_space_manager,
+    _scope_ids,
+    _staff_rows,
     membership_role,
 )
 from .rbac_borrowers import scope_by_borrower
@@ -54,13 +55,9 @@ def resolve_scope(actor):
     if actor.is_superuser or actor.role == User.Role.SUPERADMIN:
         return _superadmin_visible_ids()
     # Organization grants confer actions, not identity, so they never widen this
-    # action-agnostic scope (or scope_by_makerspace(), which derives from it).
-    scope = set(
-        actor.makerspace_memberships.filter(valid_membership_q(), status="active").values_list(
-            "makerspace_id", flat=True
-        )
-    )
-    return _exclude_archived_ids(scope)
+    # action-agnostic scope (or scope_by_makerspace(), which derives from it). Both
+    # tracks count: a person sees the spaces they belong to and the ones they staff.
+    return _exclude_archived_ids(_scope_ids(actor))
 
 
 def scope_by_makerspace(actor, queryset, makerspace_field="makerspace_id"):
@@ -102,7 +99,7 @@ def makerspaces_for_action(actor, action):
         return set()
     assigned_filter, legacy_roles = _action_scope_filters(action)
     assigned_scope = set(
-        actor.makerspace_memberships.filter(
+        _staff_rows(actor).filter(
             status="active",
             assigned_role__isnull=False,
             assigned_role__makerspace=F("makerspace"),
@@ -110,7 +107,7 @@ def makerspaces_for_action(actor, action):
     )
     legacy_scope = (
         set(
-            actor.makerspace_memberships.filter(
+            _staff_rows(actor).filter(
                 status="active",
                 assigned_role__isnull=True,
                 role__in=legacy_roles,

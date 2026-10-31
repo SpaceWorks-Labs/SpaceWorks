@@ -10,15 +10,17 @@ from django.http import HttpResponseRedirect
 from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils.translation import gettext
-from unfold.admin import ModelAdmin, TabularInline
+from unfold.admin import ModelAdmin
 from unfold.forms import AdminPasswordChangeForm
 from .admin_account_forms import AccountUserChangeForm, PlatformUserCreationForm
-from .admin_staff_lifecycle import ReadOnlyMembershipInlineMixin, StaffLifecycleAdminMixin
+from .admin_membership_inlines import MakerspaceMembershipInline, StaffTrackMembershipInline
+from .admin_staff_lifecycle import StaffLifecycleAdminMixin
 from .admin_pii_access import PersonPiiRevealAdminMixin, PlatformPiiAccessGrantAdmin  # noqa: F401 (registers)
 from .admin_pii_masking import PiiMaskingAdminMixin
 from rest_framework.exceptions import APIException
 
 from apps.accounts.models import User
+from apps.accounts.staff_identity import is_shell, person_q
 from apps.accounts.principal_guards import (
     refuse_anonymous_requester_access_mutation,
     refuse_anonymous_requester_credential,
@@ -44,15 +46,6 @@ class RestrictAccessForm(forms.Form):
         required=True,
     )
     reason = forms.CharField(required=True, widget=forms.Textarea)
-
-
-class MakerspaceMembershipInline(ReadOnlyMembershipInlineMixin, TabularInline):
-    model = MakerspaceMembership
-    fk_name = "user"
-    fields = ("makerspace", "role")
-    readonly_fields = fields
-    autocomplete_fields = ("makerspace",)
-    extra = 0
 
 
 @admin.register(User)
@@ -85,23 +78,23 @@ class UserAdmin(PersonPiiRevealAdminMixin, PiiMaskingAdminMixin, StaffLifecycleA
         "makerspace_memberships__makerspace",
     )
     filter_horizontal = ()
-    inlines = (MakerspaceMembershipInline,)
+    inlines = (MakerspaceMembershipInline, StaffTrackMembershipInline)
 
     def get_search_results(self, request, queryset, search_term):
         # Django autocomplete calls the RELATED User admin, not the source form.
-        # Keep staff/platform identities out of organization community grants.
+        # Organization community grants go to people, never platform accounts or shells.
         if (request.GET.get("app_label"), request.GET.get("model_name"), request.GET.get("field_name")) == (
             "organizations", "organizationmembership", "user",
         ):
-            queryset = queryset.filter(account_kind="member")
+            queryset = queryset.filter(person_q())
         return super().get_search_results(request, queryset, search_term)
 
     def user_change_password(self, request, id, form_url=""):
         """Make the inherited password form an explicit account transition."""
         user = self.get_object(request, id)
-        if user is not None and user.account_kind == "staff":
+        if user is not None and is_shell(user):
             from django.core.exceptions import PermissionDenied
-            raise PermissionDenied("Use the 'Issue an initial or replacement staff password' action on the Users list.")
+            raise PermissionDenied("A retired or merged account never signs in again.")
         if request.method == "POST" and user is not None:
             try:
                 refuse_anonymous_requester_credential(user)
@@ -248,7 +241,8 @@ class UserAdmin(PersonPiiRevealAdminMixin, PiiMaskingAdminMixin, StaffLifecycleA
                     locked = User.objects.select_for_update().get(pk=user.pk)
                     refuse_anonymous_requester_access_mutation(locked)
                     if locked.access_status != User.AccessStatus.ACTIVE and locked.is_active:
-                        memberships = MakerspaceMembership.objects.select_related(
+                        # Restoring a person re-counts their staff-track rows against quota.
+                        memberships = MakerspaceMembership.staff_tracks.select_related(
                             "makerspace"
                         ).filter(user=locked).order_by("makerspace_id")
                         for membership in memberships:

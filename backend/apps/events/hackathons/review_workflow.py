@@ -3,6 +3,7 @@ from collections import Counter
 from django.db.models import Max
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from apps.accounts.staff_identity import person_q
 from apps.accounts.models import User
 from apps.events import event_authority
 from .admission_errors import check_version, fail
@@ -89,7 +90,7 @@ def assign(*, event_id, actor, data):
                 fail("invalid_subject", "Choose distinct submitted subjects.", status=400)
             seen.add(key)
             subjects.append(subject)
-        reviewers = list(User.objects.filter(pk__in=data["reviewer_ids"], account_kind="member", is_active=True, access_status="active"))
+        reviewers = list(User.objects.filter(person_q(), pk__in=data["reviewer_ids"], is_active=True, access_status="active"))
         reviewers = [reviewer for reviewer in reviewers if event_authority.can(reviewer, ctx.event, "review_applications")]
         if len(reviewers) != len(set(data["reviewer_ids"])):
             fail("not_found", "Not found.", status=404)
@@ -127,8 +128,8 @@ def submit(*, event_id, review_id, actor, data):
         assignment.save()
         record(ctx, "review_" + assignment.state, assignment, version=assignment.version)
         if assignment.state == "recused":
-            candidates = User.objects.filter(pk__in=ports().reviewer_candidates(event_id=event_id),
-                account_kind="member", is_active=True, access_status="active")
+            candidates = User.objects.filter(person_q(), pk__in=ports().reviewer_candidates(event_id=event_id),
+                is_active=True, access_status="active")
             assign_locked(ctx, [subject], list(candidates))
         ctx.finish("review", assignment.pk)
         return assignment

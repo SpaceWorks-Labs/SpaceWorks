@@ -41,7 +41,7 @@ class StaffListCreateView(RecentReauthenticationMixin, generics.ListCreateAPIVie
     def get_queryset(self):
         target_role = self.kwargs["role"]
         scope = rbac.makerspaces_for_action(self.request.user, rbac.Action.MANAGE_STAFF)
-        queryset = MakerspaceMembership.objects.select_related("user", "makerspace").filter(
+        queryset = MakerspaceMembership.staff_tracks.select_related("user", "makerspace").filter(
             role=target_role
         )
         if scope is rbac.ALL:
@@ -85,8 +85,8 @@ class MembershipRevokeView(RecentReauthenticationMixin, APIView):
         from apps.accounts.staff_account_lifecycle import deactivate
 
         membership = get_object_or_404(rbac.scope_by_action(
-            request.user, rbac.Action.MANAGE_MAKERSPACE, MakerspaceMembership.objects.all()), pk=pk)
-        if membership.user.account_kind != "staff":
+            request.user, rbac.Action.MANAGE_MAKERSPACE, MakerspaceMembership.both_tracks()), pk=pk)
+        if membership.track != MakerspaceMembership.Track.STAFF:
             raise ValidationError({"detail": "Use the community membership revocation workflow."})
         deactivate(request.user, membership.makerspace_id, membership.user_id,
                    reason="Removed through legacy staff console")

@@ -125,9 +125,12 @@ uses the registry rather than scalar JSONField choices. Follow the independent
 
 [Read the staff_admin module reference](MODULES-INVENTORY.md#staff_admin).
 
-Staff use separate, tenant-bound accounts created by a Space Manager or permitted superadmin.
-Password sign-in and admin-issued reset remain available without Member accounts, Membership,
-Email, staff invitations or MFA. Modules never turn a member into built-in staff.
+One account per person (release 2): staff roles are granted to a person's existing account as
+a staff-track membership, separate from any community membership in the same space; only the
+superadmin grants the Space Manager role. No module turns on staff authority by itself: a role
+grant does. Password sign-in remains available without Member accounts, Membership, Email,
+staff invitations or MFA. (The staff sign-in and recovery screens move onto the one personal
+sign-in in later release-2 lanes; until then they work as before.)
 
 ### evidence_uploads
 
@@ -601,8 +604,9 @@ lacks feature-enum/editor integration; see the presence rule in [INVARIANTS.md](
 
 [Read the member_accounts module reference](MODULES-WORKSHOPS.md#member_accounts).
 
-This controls the community account ecosystem. Staff/platform password doors and staff
-admin-issued recovery are independent; member self-service recovery never resets staff/platform.
+This controls the community account ecosystem. A person who holds staff roles uses the same
+account (one account per person, release 2); the platform account's password door and recovery
+stay independent, and member self-service recovery never resets a platform account.
 
 ## Notifications
 
@@ -733,8 +737,8 @@ See [refund cases in payment billing](payment-billing.md#refund-cases-and-polici
 
 [Read the mobile module reference](MODULES-PLATFORM.md#mobile).
 Configure branded app registrations, identity, associations and readiness with the
-[mobile integration operator guide](mobile-integration.md). Native staff require a separate
-staff account, password/MFA/attestation and fixed-tenant local actions. Phone/social/OIDC
+[mobile integration operator guide](mobile-integration.md). A native staff grant is a step-up on
+a person holding a staff role in its fixed tenant, with MFA and attestation. Phone/social/OIDC
 native login is member-only; platform grants are forbidden. Push uses envelope-owned device
 children independently of inbox creation. Delivery policy admits source-tied account-only
 owners, while native selection/new registration still require local membership. Logout-all

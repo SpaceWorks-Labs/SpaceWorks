@@ -17,6 +17,7 @@ from rest_framework.exceptions import PermissionDenied
 
 from apps.accounts import rbac
 from apps.accounts.platform_authority import is_platform_superadmin
+from apps.accounts.staff_identity import has_staff_role
 from apps.audit import services as audit
 
 from . import security_settings_registry as registry
@@ -34,8 +35,8 @@ def editor_via(actor, space):
         return None
     if is_platform_superadmin(actor):
         return PLATFORM
-    if (getattr(actor, "account_kind", None) == "staff" and actor.staff_makerspace_id == space.pk
-            and actor.is_active and actor.access_status == "active"
+    # The Space Manager is a person holding the Space Manager staff row of THIS space.
+    if (has_staff_role(actor, space.pk) and actor.access_status == "active"
             and rbac.is_space_manager_identity(actor, space.pk)):
         return SPACE
     return None

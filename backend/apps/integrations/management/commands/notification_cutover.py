@@ -1,6 +1,7 @@
 """Explicit deployment checkpoints; migrations never activate outbound sending."""
 from django.core.management.base import BaseCommand, CommandError
 
+from apps.accounts.staff_identity import platform_q
 from apps.integrations.notification_cutover import (
     activate, establish_barrier, state, switch_to_canonical, verify,
 )
@@ -24,8 +25,8 @@ class Command(BaseCommand):
             actor = None
             if options.get("operator_id") is not None:
                 from apps.accounts.models import User
-                actor = User.objects.filter(pk=options["operator_id"], is_active=True,
-                    account_kind="platform", role=User.Role.SUPERADMIN).first()
+                actor = User.objects.filter(platform_q(), pk=options["operator_id"], is_active=True,
+                    role=User.Role.SUPERADMIN).first()
                 if actor is None:
                     raise ValueError("Operator must be an active platform superadmin")
             if stage == "barrier":

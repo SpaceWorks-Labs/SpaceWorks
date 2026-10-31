@@ -2,20 +2,22 @@
 from decimal import Decimal
 from django.core.management.base import CommandError
 from django.db import transaction
+from apps.accounts.staff_identity import PERSON_KIND, PLATFORM_KIND, context_label, is_person
 from apps.accounts.models import User
-from apps.accounts.staff_accounts import create_staff_account
+from apps.makerspaces.models import MakerspaceMembership
+from apps.makerspaces.staff_role_grants import grant_staff_role
 from apps.machines.models import Machine, MachineConsumablePool, MachineServiceRequest, MachineType
 from apps.machines.service_workflow import submit as submit_service_request
 
 
 def seed_user(username, email, password, role, **flags):
     platform = role == User.Role.SUPERADMIN
-    kind = "platform" if platform else "member"
+    kind = PLATFORM_KIND if platform else PERSON_KIND
     user, created = User.objects.get_or_create(username=username, defaults={
         "email": email, "account_kind": kind, "role": role,
         "is_superuser": platform, "is_staff": platform,
     })
-    if user.account_kind != kind or user.is_walk_in:
+    if context_label(user) != kind or user.is_walk_in:
         raise CommandError(f"Existing demo identity {username!r} requires a dev data rebuild.")
     user.email, user.role = email, role
     user.access_status, user.must_change_password = "active", False
@@ -26,16 +28,17 @@ def seed_user(username, email, password, role, **flags):
 
 @transaction.atomic
 def seed_staff(makerspace, actor, username, password):
+    """One account per person: the documented dev login is a person holding the Space
+    Manager staff role in the demo space (granted by the superadmin, #110)."""
     user = User.objects.filter(username=username).first()
     if user is None:
-        user = create_staff_account(makerspace, name=username, username=username,
-            email=f"{username}@makerspace.local", roles=[makerspace.roles.get(slug="space_manager")],
-            machine_type_ids=[], created_by=actor)
-        # Keep the documented dev login. Usernames are global and mutable identifiers;
-        # account kind and the captured tenant remain immutable.
-        user.username = username
-    if user.account_kind != "staff" or user.staff_makerspace_id != makerspace.pk:
+        user = User.objects.create_user(username, email=f"{username}@makerspace.local",
+                                        display_name=username, role=User.Role.SPACE_MANAGER)
+    if not is_person(user) or user.is_walk_in:
         raise CommandError(f"Existing demo identity {username!r} requires a dev data rebuild.")
+    if not MakerspaceMembership.staff_tracks.filter(makerspace=makerspace, user=user).exists():
+        grant_staff_role(makerspace=makerspace, user=user, actor=actor,
+                         roles=[makerspace.roles.get(slug="space_manager")])
     user.set_password(password)
     user.must_change_password = False
     user.save()

@@ -5,6 +5,7 @@ from django.db import transaction
 from django.utils import timezone
 from rest_framework import serializers
 
+from apps.accounts.staff_identity import person_q
 from apps.accounts.models import User
 from apps.audit.services import record
 from apps.integrations.dispatch_outbox import dispatch_email
@@ -38,8 +39,7 @@ def bulk_invites(event, actor, emails, expires_at=None, send_email=True):
     for address in payload:
         invite, _code = create_invite(event, actor=actor, email=address, expires_at=expires_at)
         if send_email:
-            account = User.objects.filter(account_kind=User.AccountKind.MEMBER,
-                                          email__iexact=address).first()
+            account = User.objects.filter(person_q(), email__iexact=address).first()
             dispatch_email(makerspace=event.makerspace, to_email=address, subject="Event invitation",
                            text_body="", stream="events", event="invitation", feature="events", audience="requester",
                            recipient_id=account.pk if account else None, source_kind="event_invitation",

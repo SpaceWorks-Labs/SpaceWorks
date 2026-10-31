@@ -56,16 +56,18 @@ verified private account-link proofs, never workflow decisions. Two architectura
 
 ### Module responsibilities
 
-- **Auth & RBAC** — enforces account kind, the role/action matrix AND makerspace scoping on every query.
-  Member, tenant staff and platform superadmin are separate accounts, even for the same person/email.
-  Staff belong to one makerspace and are created only by its Space Manager or a permitted superadmin;
-  staff/platform sign in with password (+ authenticator MFA); recovery uses admin-issued resets or
-  separate context-bound email OTPs via configured Platform Email.
-  Native staff use staff accounts with password, MFA, attestation and a fixed tenant; native
-  phone/social/OIDC login and account self-deletion/restore are member-only. Platform native
-  grants are forbidden. Accounts `0032_account_context` is a development-data role reset,
-  never an authorized live-authority migration.
-  Resource helpers and organization delegates use member accounts, never built-in staff memberships.
+- **Auth & RBAC** — enforces the role/action matrix AND makerspace scoping on every query.
+  **One account per person (#63, release 2 U-A1):** staff roles are a STAFF-TRACK membership on
+  the person's account (`MakerspaceMembership.track` = `community` | `staff`); the superadmin is a
+  separate platform account; `account_kind="staff"` survives only for inert retired/merged shells.
+  Identity questions go through `accounts/staff_identity.py` (`is_person`, `has_staff_role`,
+  `actor_ids_for`, `require_staff_mfa`), never `account_kind`/`staff_makerspace`. The default
+  membership manager is community-only; staff authority reads `staff_tracks`. Until U-A2/U-B land,
+  the login/session surface, staff lifecycle and recovery code still follow the old split
+  (staff/platform password + authenticator MFA, context-bound recovery, native staff grants with
+  password, MFA, attestation and a fixed tenant; platform native grants forbidden).
+  Accounts `0032_account_context` is a development-data role reset, never an authorized
+  live-authority migration. Resource helpers and organization delegates are the person's.
   Super Admin is global; each makerspace has seven fixed built-in `MakerspaceRole` instances: Space Manager, Inventory
   Manager, Machine Manager, Event Manager, Booking Manager, Handover and Member. No custom roles or role
   editing. A membership holds a primary role plus combinable additional roles; Space Manager and Member
@@ -129,13 +131,13 @@ the Auth module** — forgetting this is a cross-tenant data leak, not just a bu
 
 ## Hard Rules Baked Into Workflows (don't regress these)
 
-- **Staff and member are separate accounts.** Only a Space Manager (own space, non-Space-Manager
-  staff) or the superadmin creates staff; members never receive built-in staff roles. Staff
-  sign-in is username/email + password (+ authenticator MFA). Admin-issued resets revoke sessions
-  and force password change; context-bound email OTP recovery via Platform Email clears that flag
-  and retains MFA. Platform accounts have their own email recovery and host break-glass command.
-  The superadmin is always on and is the only one who manages Space Managers, in every space;
-  never self and never the last active manager. See **Account kinds** in `docs/INVARIANTS.md`.
+- **One account per person.** Staff roles are granted to a person's existing account as a
+  staff-track row (never a separate account); nothing merges on email alone (#65); conversion
+  needs the reviewed `plan_sha256` (`ACCOUNT_UNIFICATION_ACK`). Platform accounts have their own
+  email recovery and host break-glass command. The superadmin is always on and is the only one
+  who grants, changes or revokes the Space Manager role, in every space
+  (`space_manager_superadmin_only`); never self and never the last active manager. See **One
+  account per person** in `docs/INVARIANTS.md`.
 - Reviewed-request hardware **cannot be issued** without both a box QR scan and an issue photo.
 - Public self-checkout and staff direct handout **cannot be issued** without uploaded issue evidence and an
   eligible scanned/selected tool.
@@ -447,7 +449,7 @@ because none are quoted here — this index is a router, not a summary.
 
 | Section of `docs/INVARIANTS.md` | Before you touch |
 | --- | --- |
-| **Account kinds (member / staff / platform)** | account creation, kind/tenant constraints and uniqueness, staff lifecycle, auth surfaces and delegated routes, session contexts, reset/MFA, chat identity, staff export/import, retirement and backup shells |
+| **One account per person** (and its "split-account surfaces awaiting their lanes") | account creation, kinds, shells and `merged_into`, membership tracks and managers, `staff_identity`, the merge registry, the unification migration and report, staff lifecycle, auth surfaces and delegated routes, session contexts, reset/MFA, chat identity, staff export/import, retirement and backup shells |
 | **Cross-cutting invariants** | self-host vs managed SaaS and fair-use limits; `frontend_domain` and origin scoping; superadmin always on; archive/purge; archival vs member money; the two-key archive request; public borrower names; public image fields and storage accounting; rate-limit cache; object storage; the report registry; scoped PII encryption; fixed role sets; `module_registry` and opt-in modules; module install/uninstall/purge; the `email` module gate; A6 master switches; two-level capabilities; the `membership` module; payments, credentials and reconciliation; native device grants; OIDC, social, phone and login-method switches; walk-in/account-less identity; maker profiles and public handles; staff event registration; notifications v2; presence check-in and TV privacy; the colour vocabulary; the accessibility floor; console parity; managed hosting requests; per-space security settings, platform locks and superadmin PII access (expiry sweep, platform-route masking) |
 | **Settings authority** | `makerspaces/settings_authority*.py`, `domain_settings.py`, any module-setting write, grants, locks, the rental-timing exception |
 | **Folded modules** | `machines.maintenance`/`*.tobuy`/`*.warranty` and the reserved repairs keys, `folded_capabilities.py`, capability purge, module switches, report sources |

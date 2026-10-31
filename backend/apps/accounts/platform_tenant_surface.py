@@ -12,6 +12,7 @@ identity routes (sign-in, sign-up, phone and social linking belong to member acc
 """
 
 from apps.accounts.delegated_routes import DELEGABLE, MEMBERSHIP_ONLY
+from apps.accounts.staff_identity import is_platform
 
 TENANT_CLASSES = frozenset({MEMBERSHIP_ONLY, DELEGABLE})
 _AUTH_PREFIX = "/api/v1/auth/"
@@ -20,7 +21,7 @@ _AUTH_PREFIX = "/api/v1/auth/"
 def is_platform_superadmin(user):
     return bool(
         user is not None
-        and getattr(user, "account_kind", None) == "platform"
+        and is_platform(user)
         and user.is_superuser
         and user.role == "superadmin"
     )

@@ -18,7 +18,8 @@ def lock_tenant_authority(actor, target, *, extra_organization_ids=(), extra_lin
         return None
     from apps.accounts.claim_sessions import carry_claim_context
     carry_claim_context(actor, locked_actor)
-    memberships = list(MakerspaceMembership.objects.select_for_update().filter(
+    # Authority lives on the staff-track row (one account per person).
+    memberships = list(MakerspaceMembership.staff_tracks.select_for_update().filter(
         user=locked_actor, makerspace_id=target.makerspace_id,
     ).order_by("pk"))
     # The membership row lock already serializes role-set edits (every writer holds it

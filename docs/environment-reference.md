@@ -27,6 +27,7 @@ Read by every backend process. `ALLOWED_HOSTS`, `SECRET_KEY` and the proxy postu
 |---|---|---|
 | `ADMIN_SITE_NAME` | `'Space Works'` |  |
 | `ACCOUNT_DELETION_RETENTION_DAYS` | `90` | Days between the account deletion request and scheduled identity purge; Stage A immediately deactivates the account. |
+| `ACCOUNT_UNIFICATION_ACK` | empty | Release-2 upgrade only: the `plan_sha256` printed by `manage.py account_unification_report` after you reviewed it. The one-account-per-person migration refuses to convert existing staff accounts until this matches; leave it empty on fresh installs and once migrated. |
 | `ALLOWED_HOSTS` | `['localhost', '127.0.0.1']` | Django's host check; add every custom domain on self-host. |
 | `CORS_ALLOWED_ORIGINS` | `['http://localhost:5000', 'http://localhost:5173']` |  |
 | `CSRF_TRUSTED_ORIGINS` | `[]` |  |

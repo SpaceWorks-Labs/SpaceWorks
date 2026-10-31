@@ -89,3 +89,6 @@ __all__ += ["AccountRestoreIntent"]
 from .models_activity import DeviceActivityDay, AttestationVerificationLog  # noqa: F401
 from .models_pii_access import PlatformPiiAccessGrant  # noqa: E402,F401
 __all__ += ["PlatformPiiAccessGrant"]
+
+from apps.accounts.models_account_merge import AccountMergeIntent, AccountMergeRecord  # noqa: E402
+__all__ += ["AccountMergeIntent", "AccountMergeRecord"]

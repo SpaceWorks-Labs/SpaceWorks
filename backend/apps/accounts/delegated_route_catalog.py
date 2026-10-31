@@ -240,3 +240,14 @@ DELEGABLE_ROUTES |= {
     "admin-event-short-link", "admin-event-short-link-regenerate", "admin-event-host-options",
     "admin-event-embed-policy", "admin-event-report-switches", "admin-makerspace-public-closed-notice",
 }
+
+# Release 2, one account per person: names fixed up front by U-A1 so U-B (staff roles),
+# S-A (MFA reset) and U-C (account merge) classify nothing themselves.
+STAFF_ROLE_ROUTES = frozenset({
+    "admin-staff-roles", "admin-staff-roles-detail", "admin-staff-roles-revoke",
+    "admin-staff-roles-restore", "admin-staff-roles-mfa-reset",
+})
+ACCOUNT_MERGE_ROUTES = frozenset({
+    "auth-account-merge-start", "auth-account-merge-prove", "auth-account-merge-resend",
+    "auth-account-merge-preview", "auth-account-merge-confirm", "auth-account-merge-cancel",
+})

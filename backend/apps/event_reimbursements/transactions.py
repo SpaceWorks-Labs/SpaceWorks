@@ -1,6 +1,7 @@
 """Source → PII fences → series/event → host → authority → domain parents."""
 from contextlib import contextmanager
 from django.db import transaction
+from apps.accounts.staff_identity import is_person, is_platform
 from apps.accounts import rbac
 from apps.accounts.account_kind_guards import require_member_account
 from apps.accounts.claim_sessions import claim_context
@@ -38,7 +39,7 @@ def check_origin(request, event, *, owner=False):
 
 
 def authorize(actor, event, *, owner=False, finance=False, permission=None, request=None):
-    require(getattr(actor, "account_kind", None) in ("member", "staff", "platform"), "full_session_required", status=403)
+    require(is_person(actor) or is_platform(actor), "full_session_required", status=403)
     require(claim_context(actor) is None, "full_session_required", status=403)
     require_active_principal(actor, event.makerspace)
     require(not actor.must_change_password, "full_session_required", status=403)

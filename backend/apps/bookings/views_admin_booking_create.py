@@ -6,6 +6,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.accounts.staff_identity import person_q
 from apps.accounts import rbac
 from apps.accounts.models import User
 from apps.admin_api.permissions import IsActiveStaff
@@ -37,8 +38,7 @@ def _members(actor, space):
     from .booking_authority import require
     require(actor, space, "manage_reservations")
     return MakerspaceMembership.objects.select_related("user").filter(
-        makerspace_id=space.makerspace_id, status="active", user__is_active=True,
-        user__account_kind=User.AccountKind.MEMBER,
+        person_q("user__"), makerspace_id=space.makerspace_id, status="active", user__is_active=True,
         user__access_status=User.AccessStatus.ACTIVE, user__is_tenant_dump_stub=False,
     )
 

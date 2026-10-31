@@ -1,6 +1,8 @@
-"""Staff principals are listed in /control/ only while their tenant can serve."""
+"""Which accounts /control/ lists: people and platform accounts, never inert shells.
 
-from django.db.models import Q
+One account per person: a retired or merged account is an inert shell kept only for its
+history, so the account admin neither lists it nor opens it by id.
+"""
 
 
 def visible_staff_spaces():
@@ -11,14 +13,12 @@ def visible_staff_spaces():
 
 
 def scope_account_rows(queryset):
-    return queryset.filter(
-        ~Q(account_kind="staff")
-        | Q(staff_makerspace__in=visible_staff_spaces(), retired_at__isnull=True)
-    )
+    from apps.accounts.staff_identity import shell_q
+
+    return queryset.exclude(shell_q())
 
 
 def staff_account_hidden(user):
-    return bool(user.account_kind == "staff" and (
-        user.retired_at is not None
-        or not visible_staff_spaces().filter(pk=user.staff_makerspace_id).exists()
-    ))
+    from apps.accounts.staff_identity import is_shell
+
+    return is_shell(user)

@@ -28,6 +28,7 @@ from ._showcase_finance import seed_finance
 from ._showcase_hackathon import seed_hackathon
 from ._showcase_inventory import seed_inventory
 from ._showcase_machines import seed_machines
+from ._showcase_pricing import seed_pricing
 from ._showcase_people import create_members, create_space, create_staff, member_account, restrict
 from ._showcase_requests import RequestSeeder
 
@@ -82,6 +83,7 @@ class Command(BaseCommand):
         seed_machines(space, staff.manager, staff.machines, members)
         settle_some_dues(space, staff.manager, members)
         seed_finance(space, staff.manager)
+        seed_pricing(space, staff.manager, plan)
         seed_bookings(space, staff.manager, members)
         seed_notices(space, staff.manager)
         seed_hackathon(space, staff.manager, members)

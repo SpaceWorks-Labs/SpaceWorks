@@ -6,8 +6,13 @@ is added here and nowhere else (release 2's login-security lane adds its rows he
 
 Storage decides where a value lives:
 - ``feature``: a key in ``Makerspace.enabled_features``; present means on (bool only).
-- ``policy``: a value in the per-space policy table release 2 adds. No row uses it yet,
-  and the service refuses it until that table exists.
+- ``policy``: a key in ``MakerspaceSecurityPolicy.values`` (one row per space); absent
+  means the row's ``default``. Any kind.
+
+Scope decides who a value applies to (#128 C-2):
+- ``space``: this space's own surfaces (its staff routes, its verified domain);
+- ``staff_strictest``: a person, as the strictest value across every space where they
+  hold a staff role (``security_settings_person.strictest_for_staff``).
 
 ``stricter(a, b)`` returns whichever of two valid values is the stricter one. A platform
 lock is a floor (owner decision #111 Q9): a space may only choose values at least as
@@ -22,6 +27,7 @@ from django.core.exceptions import ValidationError
 BOOL, INT, CHOICE, LIST = "bool", "int", "choice", "list"
 KINDS = frozenset({BOOL, INT, CHOICE, LIST})
 FEATURE, POLICY = "feature", "policy"
+SPACE, STAFF_STRICTEST = "space", "staff_strictest"
 
 
 def bool_stricter(a, b):
@@ -33,6 +39,18 @@ def higher_is_stricter(a, b):
 
 
 def lower_is_stricter(a, b):
+    return min(a, b)
+
+
+def bool_off_stricter(a, b):
+    """For a permission (``..._allowed``): off is the stricter value."""
+    return bool(a) and bool(b)
+
+
+def zero_off_lower_stricter(a, b):
+    """Lower is stricter, but 0 means "off" and is the loosest value."""
+    if a == 0 or b == 0:
+        return b if a == 0 else a
     return min(a, b)
 
 
@@ -56,6 +74,7 @@ class SecuritySetting:
     minimum: int | None = None
     maximum: int | None = None
     extra: dict = field(default_factory=dict)
+    scope: str = SPACE
 
     def normalize(self, value):
         """Validate one incoming value and return it in canonical form."""
@@ -77,7 +96,13 @@ class SecuritySetting:
             return value
         if not isinstance(value, list) or any(not isinstance(item, str) for item in value):
             raise ValidationError(f"{self.label} takes a list of text values.", code="invalid_security_value")
-        return sorted(set(value))
+        if len(value) > self.extra.get("max_items", 100):
+            raise ValidationError(f"{self.label} has too many entries.", code="invalid_security_value")
+        item = self.extra.get("normalize_item")
+        try:
+            return sorted({item(entry) if item else entry for entry in value})
+        except ValueError as exc:
+            raise ValidationError(f"{self.label}: {exc}", code="invalid_security_value") from exc
 
     def satisfies(self, value, floor):
         """True when ``value`` is at least as strict as ``floor``."""
@@ -85,9 +110,11 @@ class SecuritySetting:
 
     def normalize_floor(self, floor):
         floor = self.normalize(floor)
-        if self.kind == BOOL and floor is not True:
-            # Q9: a boolean lock means "forced on". A false floor would lock nothing.
-            raise ValidationError("A lock on an on/off setting forces it on; send true.",
+        strict = self.stricter(True, False) if self.kind == BOOL else None
+        if self.kind == BOOL and floor is not strict:
+            # Q9: a boolean lock forces the stricter value; the other would lock nothing.
+            word = "on; send true" if strict else "off; send false"
+            raise ValidationError(f"A lock on an on/off setting forces it {word}.",
                                   code="invalid_security_floor")
         return floor
 
@@ -102,7 +129,10 @@ REGISTRY = (
 BY_KEY = {setting.key: setting for setting in REGISTRY}
 FEATURE_KEYS = frozenset(setting.key for setting in REGISTRY if setting.storage == FEATURE)
 
-assert all(setting.kind in KINDS and setting.storage in {FEATURE, POLICY} for setting in REGISTRY)
+POLICY_KEYS = frozenset(setting.key for setting in REGISTRY if setting.storage == POLICY)
+
+assert all(setting.kind in KINDS and setting.storage in {FEATURE, POLICY}
+           and setting.scope in {SPACE, STAFF_STRICTEST} for setting in REGISTRY)
 assert all(setting.kind == BOOL for setting in REGISTRY if setting.storage == FEATURE)
 
 
@@ -113,12 +143,27 @@ def get(key):
     return setting
 
 
-def stored_value(makerspace, key):
-    """The value as stored on the row; ``feature`` storage is presence in enabled_features."""
+def stored_value(makerspace, key, policy_values=None):
+    """The value as stored; ``feature`` is presence in enabled_features, ``policy`` the
+    space's policy row (``policy_values`` when the caller already read it)."""
     setting = get(key)
     if setting.storage == FEATURE:
         return key in set(makerspace.enabled_features or [])
-    raise ValidationError("This setting's storage is not available yet.", code="security_storage_unavailable")
+    if policy_values is None:
+        from .security_policy_store import policy_values as read
+        policy_values = read(makerspace)
+    return policy_value(setting, policy_values)
+
+
+def policy_value(setting, values):
+    """One setting out of a policy ``values`` dict; a missing or unreadable entry is the
+    default (the store only ever writes normalized values)."""
+    if setting.key not in (values or {}):
+        return setting.default
+    try:
+        return setting.normalize(values[setting.key])
+    except ValidationError:
+        return setting.default
 
 
 def is_security_feature(key):

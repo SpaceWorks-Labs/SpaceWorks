@@ -17,6 +17,10 @@ Q9-Q11):
 The service marks the instance with the exact values it intends to write. A queryset
 ``.update(enabled_features=...)`` would bypass this receiver; a static guard test keeps
 that pattern out of the code base.
+
+``policy``-backed settings live in ``MakerspaceSecurityPolicy.values`` and get the same
+two rules from ``guard_security_policy``: a write that is not the service's keeps the
+stored values (every key, registered or not), and a service write below a floor is refused.
 """
 
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -88,7 +92,26 @@ def guard_security_settings(sender, instance, raw=False, update_fields=None, usi
     instance.enabled_features = canonical_features(features)
 
 
+def guard_security_policy(sender, instance, raw=False, using=None, **kwargs):
+    if raw:
+        return
+    stored = {}
+    if instance.pk is not None and not instance._state.adding:
+        stored = sender._base_manager.using(using or "default").filter(pk=instance.pk).values_list(
+            "values", flat=True).first() or {}
+    intended = {key: value for key, value in (getattr(instance, SERVICE_WRITE_ATTR, None) or {}).items()
+                if key in registry.POLICY_KEYS}
+    floors = _locked_floors(instance.makerspace_id, intended, using) if intended else {}
+    for key in sorted(intended):
+        if key in floors and not registry.BY_KEY[key].satisfies(intended[key], floors[key]):
+            raise SecuritySettingLocked(key)
+    instance.values = {**dict(stored), **intended}
+
+
 def register():
     from .models import Makerspace
+    from .models_security import MakerspaceSecurityPolicy
     pre_save.connect(guard_security_settings, sender=Makerspace,
                      dispatch_uid="makerspaces.guard_security_settings", weak=False)
+    pre_save.connect(guard_security_policy, sender=MakerspaceSecurityPolicy,
+                     dispatch_uid="makerspaces.guard_security_policy", weak=False)

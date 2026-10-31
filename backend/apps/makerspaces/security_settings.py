@@ -20,6 +20,7 @@ from apps.accounts.platform_authority import is_platform_superadmin
 from apps.accounts.staff_identity import has_staff_role
 from apps.audit import services as audit
 
+from . import security_policy_store as policy_store
 from . import security_settings_registry as registry
 from .models import Makerspace
 from .models_security import MakerspaceSecurityLock
@@ -58,12 +59,11 @@ def require_platform(actor, space):
 def effective(space):
     """Every registered setting with its stored value and any platform lock."""
     locks = {row.key: row for row in MakerspaceSecurityLock.objects.filter(makerspace=space)}
+    values = policy_store.policy_values(space) if registry.POLICY_KEYS else {}
     rows = []
     for setting in registry.REGISTRY:
-        if setting.storage != registry.FEATURE:
-            continue
         lock = locks.get(setting.key)
-        value = registry.stored_value(space, setting.key)
+        value = registry.stored_value(space, setting.key, values)
         if lock is not None:
             value = setting.stricter(value, lock.floor)
         rows.append({
@@ -77,7 +77,10 @@ def effective(space):
 
 
 def _write(space, key, value):
-    """Persist one feature-backed value through the guarded save."""
+    """Persist one value through the guarded save of its storage."""
+    if registry.get(key).storage == registry.POLICY:
+        policy_store.write(space, key, value)
+        return
     features = set(space.enabled_features or [])
     (features.add if value else features.discard)(key)
     from .security_lock_guard import canonical_features

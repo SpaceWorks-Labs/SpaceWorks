@@ -116,7 +116,7 @@ from apps.makerspaces.models_station_leases import (  # noqa: E402,F401
     StationOperatorLease,
     StationSessionRevocation,
 )
-from apps.makerspaces.models_security import MakerspaceSecurityLock  # noqa: E402,F401
+from apps.makerspaces.models_security import MakerspaceSecurityLock, MakerspaceSecurityPolicy  # noqa: E402,F401
 from apps.makerspaces.models_settings_authority import (  # noqa: E402,F401
     ModuleSettingLock,
     ModuleSettingsGrant,

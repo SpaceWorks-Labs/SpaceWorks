@@ -188,8 +188,8 @@ You have two good options before giving up:
    you'll get your own catalog, your own web address, and your own admin, all on their shared
    backend. Most makers are glad to help another space, and it's an easy way for them to contribute.
 2. **Use a hosted database (Supabase).** If partnering isn't possible, you can host the app on a
-   cloud platform and use a free **Supabase** Postgres database. This is more technical — see
-   **Option C** in the [README](../README.md#hosting).
+   cloud platform and use a free **Supabase** Postgres database. This is more technical — see the
+   [hosting overview](deploy/cloud-overview.md) and [Supabase PostgreSQL](supabase-deployment.md).
 
 ---
 

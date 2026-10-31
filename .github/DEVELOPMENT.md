@@ -1,7 +1,7 @@
 # Space Works — Development
 
 Running Space Works from source for local development or contributing. If you just want to **run** Space Works,
-use the [Quick start](../README.md#quick-start-run-it) instead — you don't need any of this.
+use the [Quick start](../README.md#quick-start) instead — you don't need any of this.
 
 **Toolchain prerequisites:** Python 3.12+ and Node 20.19+ (or 22.12+, for Vite 8). The Docker path
 bundles everything, so these only matter when you run the backend/frontend directly.

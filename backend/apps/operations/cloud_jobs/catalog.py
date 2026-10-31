@@ -97,6 +97,8 @@ LEGACY_ENTRIES = (
     ("event-storage-reconcile", "apps.events.submissions.storage_reconcile.reconcile_event_storage_task", 1440),
     ("notification-escalation", "apps.notifications.escalation.escalate_unseen_task", 5),
     ("notification-destination-health", "apps.integrations.destination_health.disable_dead_destinations_task", 60),
+    # Lane L5: read-only provider poll of open attempts and pending refunds.
+    ("payment-gateway-poll", "apps.payments.tasks.run_gateway_poll_task", 5),
 )
 _RETAINED = frozenset({
     "evidence-object-expiry", "evidence-abandoned-upload-cleanup",

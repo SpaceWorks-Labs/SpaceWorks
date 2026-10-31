@@ -58,7 +58,9 @@ FEATURE_EVENTS = {
     F.PAYMENTS: ("charge_raised", "payment_due_soon", "payment_due_today", "payment_overdue",
                  "payment_received", "refund_issued", "payment_failed", "document_issued",
                  "refund_due_opened", "refund_request_received", "refund_request_approved",
-                 "refund_request_declined"),
+                 "refund_request_declined", "paid_claim_received", "paid_claim_confirmed",
+                 "paid_claim_rejected", "settlement_awaiting_confirmation", "capture_flagged",
+                 "dispute_opened"),
     F.STOCK: ("low_stock", "procurement_received", "scheduled", "completed"),
     F.CERTIFICATIONS: ("granted", "revoked", "expiring", "expired"),
 }

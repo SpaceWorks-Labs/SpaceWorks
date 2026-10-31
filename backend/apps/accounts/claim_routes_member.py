@@ -268,3 +268,10 @@ MEMBER_CLAIM_ROUTES = {
     ),
     **_options("member-event-certificate-download"),
 }
+
+# Release 2 L5: telling a space you paid a charge offline is a money statement on the
+# account's own ledger; a walk-in claim session at a kiosk must not make one.
+MEMBER_CLAIM_ROUTES.update({
+    ("member-paid-claim", "POST"): Refused("offline payment claims require an account session"),
+    **_options("member-paid-claim"),
+})

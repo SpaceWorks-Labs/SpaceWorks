@@ -866,6 +866,12 @@ CELERY_BEAT_SCHEDULE.update({
     "notification-destination-health": {"task": "apps.integrations.destination_health.disable_dead_destinations_task",
                                         "schedule": crontab(minute=50)},
 })
+# --- lane L5 (release 2): gateway poll of open attempts and pending provider refunds.
+# Read-only provider lookups; the task itself no-ops while payments_rail is tombstoned.
+CELERY_BEAT_SCHEDULE["payment-gateway-poll"] = {
+    "task": "apps.payments.tasks.run_gateway_poll_task", "schedule": crontab(minute="*/5"),
+}
+# --- end lane L5
 
 if "tenant_migration" in TOMBSTONED_APPS:
     CELERY_BEAT_SCHEDULE = {
@@ -1385,6 +1391,7 @@ SPECTACULAR_SETTINGS = {
             ("booking_cancelled", "Booking cancelled"), ("staff_cancelled", "Cancelled by staff"),
             ("membership_cancelled", "Membership term cancelled"),
             ("member_request", "Member request"),
+            ("capture_flagged", "Unexpected online capture"),  # lane L5 (capture flags)
         ],
         "InventoryAssetStatusEnum": [
             ("available", "Available"),
@@ -1563,3 +1570,10 @@ if SPACEWORKS_DEPLOYMENT_MODE == "host":
     # Preserve PersistentScheduler's file/calendar behavior, while exposing real
     # dispatcher contact to the existing installer completion probe (C17).
     CELERY_BEAT_SCHEDULER = "apps.operations.cloud_jobs.host_beat.ObservedPersistentScheduler"
+
+# --- lane L5 (release 2): payer-facing throttles for offline claims and pay links.
+REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"].update({
+    "payment_claims": env("THROTTLE_PAYMENT_CLAIMS", default="5/hour"),
+    "pay_links": env("THROTTLE_PAY_LINKS", default="30/min"),
+})
+# --- end lane L5

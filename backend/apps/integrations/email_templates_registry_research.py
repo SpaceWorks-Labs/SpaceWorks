@@ -11,7 +11,10 @@ FAMILY_EVENTS = {
     "payments": ("charge_raised", "payment_due_soon", "payment_due_today", "payment_overdue",
                  "payment_received", "refund_issued", "payment_failed",
                  "refund_due_opened", "refund_request_received", "refund_request_approved",
-                 "refund_request_declined"),
+                 "refund_request_declined",
+                 # Lane L5: offline claims, maker-checker, capture flags, disputes.
+                 "paid_claim_received", "paid_claim_confirmed", "paid_claim_rejected",
+                 "settlement_awaiting_confirmation", "capture_flagged", "dispute_opened"),
     "membership": ("approved", "declined", "renewal_due", "lapsed", "renewal_failed", "awaiting_payment", "payment_due",
                    "renewed", "grace_started", "cancelled"),
     "stock": ("low_stock", "procurement_received"),
@@ -23,7 +26,9 @@ FAMILY_EVENTS = {
 # membership lifecycle and certification expiry communication to the affected member.
 REQUESTER_EVENTS = {
     # Refund-case arrivals are staff work items; only the decision reaches the payer.
-    "payments": frozenset(FAMILY_EVENTS["payments"]) - {"refund_due_opened", "refund_request_received"},
+    "payments": frozenset(FAMILY_EVENTS["payments"]) - {
+        "refund_due_opened", "refund_request_received", "paid_claim_received",
+        "settlement_awaiting_confirmation", "capture_flagged", "dispute_opened"},
     "membership": frozenset(FAMILY_EVENTS["membership"]),
     "certifications": frozenset({"expiring", "expired"}),
 }

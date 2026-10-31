@@ -154,6 +154,13 @@ from .scope_registry_p2_presence import routes as presence_routes
 _ROUTE_DEFINITIONS += presence_routes(PUBLIC_READ_SCOPES, PUBLIC_WRITE_SCOPES, TARGET_TENANT_SLUG)
 from .scope_registry_messaging import definitions as messaging_denied_routes
 _ROUTE_DEFINITIONS += messaging_denied_routes()
+# Lane L5 pay links: the token is a bearer credential for one charge, so no API-client
+# scope ever reaches them (no scopes = refused); only a browser holding the link pays.
+_ROUTE_DEFINITIONS += (
+    ("pay-link", ("GET", "HEAD"), frozenset(), TARGET_GLOBAL, False, False),
+    ("pay-link-claim", _WRITE, frozenset(), TARGET_GLOBAL, False, False),
+    ("pay-link-checkout", _WRITE, frozenset(), TARGET_GLOBAL, False, False),
+)
 
 
 from django.conf import settings

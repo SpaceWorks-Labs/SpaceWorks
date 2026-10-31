@@ -150,3 +150,7 @@ from .catalog_unified_accounts import FIELD_NAMES as UA1_FIELDS, EXTRA_FIELDS as
 FIRST_PARTY_FIELD_NAMES.update(UA1_FIELDS)
 for _label, _names in UA1_EXTRA.items():
     FIRST_PARTY_FIELD_NAMES[_label] |= _names
+from .catalog_login_security import FIELD_NAMES as S0_FIELDS, EXTRA_FIELDS as S0_EXTRA  # noqa: E402
+FIRST_PARTY_FIELD_NAMES.update(S0_FIELDS)
+for _label, _names in S0_EXTRA.items():
+    FIRST_PARTY_FIELD_NAMES[_label] |= _names

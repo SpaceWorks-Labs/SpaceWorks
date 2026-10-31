@@ -104,6 +104,9 @@ from .classification_unified_accounts import OMITTED_MODELS as UA1_OMITTED, EXTR
 OMITTED_MODELS.update(UA1_OMITTED)
 for _label, _names in UA1_EXTRA.items():
     EXPORTED_MODEL_FIELDS[_label] += " " + _names
+from .classification_login_security import OMITTED_MODELS as S0_OMITTED, EXPORTED_FIELDS as S0_FIELDS  # noqa: E402
+OMITTED_MODELS.update(S0_OMITTED)
+EXPORTED_MODEL_FIELDS.update(S0_FIELDS)
 EXPORTED_MODELS = frozenset(EXPORTED_MODEL_FIELDS)
 
 NOT_TENANT_MODELS = {

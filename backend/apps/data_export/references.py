@@ -48,6 +48,11 @@ from .classification_unified_accounts import (  # noqa: E402
 )
 RELATIONAL_USER_FIELDS |= UA1_USER_FIELDS
 _EXCLUDED_USER_EDGE_REASONS.update(UA1_EDGES)
+from .classification_login_security import (  # noqa: E402
+    RELATIONAL_USER_FIELDS as S0_USER_FIELDS, EXCLUDED_USER_EDGE_REASONS as S0_EDGES,
+)
+RELATIONAL_USER_FIELDS |= S0_USER_FIELDS
+_EXCLUDED_USER_EDGE_REASONS.update(S0_EDGES)
 from .types import (
     Fidelity,
     Omitted,

@@ -291,3 +291,5 @@ from .catalog_r2_l1 import authority_entries as _r2_l1_authority  # noqa: E402
 SUPPLEMENTAL_AUTHORITY_ENTRIES += _r2_l1_authority(authority, D)
 from .catalog_r2_l2 import authority_entries as _r2_l2_authority  # noqa: E402
 SUPPLEMENTAL_AUTHORITY_ENTRIES += _r2_l2_authority(authority, D)
+from .catalog_login_security import authority_entries as _s0_authority  # noqa: E402
+SUPPLEMENTAL_AUTHORITY_ENTRIES += _s0_authority(authority, D)

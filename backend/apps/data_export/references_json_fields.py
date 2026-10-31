@@ -105,3 +105,7 @@ JSON_REFERENCE_FIELDS |= frozenset({("integrations.WhatsAppTemplateBinding", "pa
 
 # Release 2 L1: exact lowercase https framing origins, never identifiers (like website_embed_origins).
 JSON_REFERENCE_FIELDS |= frozenset({("events.EventEmbedPolicy", "allowed_origins")})
+
+# Release 2 S0: per-space security policy values (registry keys -> bools, ints, choices, CIDRs).
+from .classification_login_security import JSON_REFERENCE_FIELDS as _S0_JSON_FIELDS  # noqa: E402
+JSON_REFERENCE_FIELDS |= _S0_JSON_FIELDS

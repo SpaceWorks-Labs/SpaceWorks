@@ -24,6 +24,8 @@ FEATURE_EVENTS = {
         "submitted", "accepted", "rejected", "issued", "partially_returned",
         "returned", "closed_with_issue", "return_reminder",
         "deposit_raised", "late_fee_raised",
+        # Lane L15: rental, damage and lost charges, and staff fee waivers.
+        "rental_raised", "damage_charged", "lost_charged", "fees_waived",
         "overdue_escalated", "back_available", "problem_report.filed",
     ),
     F.PRINTING: (

@@ -1232,8 +1232,11 @@
                             "enum": [
                                 "booking",
                                 "event_registration",
+                                "loan_damage",
                                 "loan_deposit",
                                 "loan_late_fee",
+                                "loan_lost",
+                                "loan_rental",
                                 "machine_service_request",
                                 "makerspace_membership",
                                 "membership_request",
@@ -54820,8 +54823,11 @@
                             "enum": [
                                 "booking",
                                 "event_registration",
+                                "loan_damage",
                                 "loan_deposit",
                                 "loan_late_fee",
+                                "loan_lost",
+                                "loan_rental",
                                 "machine_service_request",
                                 "makerspace_membership",
                                 "membership_request",
@@ -54986,8 +54992,11 @@
                             "enum": [
                                 "booking",
                                 "event_registration",
+                                "loan_damage",
                                 "loan_deposit",
                                 "loan_late_fee",
+                                "loan_lost",
+                                "loan_rental",
                                 "machine_service_request",
                                 "makerspace_membership",
                                 "membership_request",
@@ -55152,8 +55161,11 @@
                             "enum": [
                                 "booking",
                                 "event_registration",
+                                "loan_damage",
                                 "loan_deposit",
                                 "loan_late_fee",
+                                "loan_lost",
+                                "loan_rental",
                                 "machine_service_request",
                                 "makerspace_membership",
                                 "membership_request",
@@ -55318,8 +55330,11 @@
                             "enum": [
                                 "booking",
                                 "event_registration",
+                                "loan_damage",
                                 "loan_deposit",
                                 "loan_late_fee",
+                                "loan_lost",
+                                "loan_rental",
                                 "machine_service_request",
                                 "makerspace_membership",
                                 "membership_request",
@@ -55484,8 +55499,11 @@
                             "enum": [
                                 "booking",
                                 "event_registration",
+                                "loan_damage",
                                 "loan_deposit",
                                 "loan_late_fee",
+                                "loan_lost",
+                                "loan_rental",
                                 "machine_service_request",
                                 "makerspace_membership",
                                 "membership_request",
@@ -55650,8 +55668,11 @@
                             "enum": [
                                 "booking",
                                 "event_registration",
+                                "loan_damage",
                                 "loan_deposit",
                                 "loan_late_fee",
+                                "loan_lost",
+                                "loan_rental",
                                 "machine_service_request",
                                 "makerspace_membership",
                                 "membership_request",
@@ -55816,8 +55837,11 @@
                             "enum": [
                                 "booking",
                                 "event_registration",
+                                "loan_damage",
                                 "loan_deposit",
                                 "loan_late_fee",
+                                "loan_lost",
+                                "loan_rental",
                                 "machine_service_request",
                                 "makerspace_membership",
                                 "membership_request",
@@ -55982,8 +56006,11 @@
                             "enum": [
                                 "booking",
                                 "event_registration",
+                                "loan_damage",
                                 "loan_deposit",
                                 "loan_late_fee",
+                                "loan_lost",
+                                "loan_rental",
                                 "machine_service_request",
                                 "makerspace_membership",
                                 "membership_request",
@@ -56148,8 +56175,11 @@
                             "enum": [
                                 "booking",
                                 "event_registration",
+                                "loan_damage",
                                 "loan_deposit",
                                 "loan_late_fee",
+                                "loan_lost",
+                                "loan_rental",
                                 "machine_service_request",
                                 "makerspace_membership",
                                 "membership_request",
@@ -56314,8 +56344,11 @@
                             "enum": [
                                 "booking",
                                 "event_registration",
+                                "loan_damage",
                                 "loan_deposit",
                                 "loan_late_fee",
+                                "loan_lost",
+                                "loan_rental",
                                 "machine_service_request",
                                 "makerspace_membership",
                                 "membership_request",
@@ -56480,8 +56513,11 @@
                             "enum": [
                                 "booking",
                                 "event_registration",
+                                "loan_damage",
                                 "loan_deposit",
                                 "loan_late_fee",
+                                "loan_lost",
+                                "loan_rental",
                                 "machine_service_request",
                                 "makerspace_membership",
                                 "membership_request",
@@ -56646,8 +56682,11 @@
                             "enum": [
                                 "booking",
                                 "event_registration",
+                                "loan_damage",
                                 "loan_deposit",
                                 "loan_late_fee",
+                                "loan_lost",
+                                "loan_rental",
                                 "machine_service_request",
                                 "makerspace_membership",
                                 "membership_request",
@@ -56812,8 +56851,11 @@
                             "enum": [
                                 "booking",
                                 "event_registration",
+                                "loan_damage",
                                 "loan_deposit",
                                 "loan_late_fee",
+                                "loan_lost",
+                                "loan_rental",
                                 "machine_service_request",
                                 "makerspace_membership",
                                 "membership_request",
@@ -56978,8 +57020,11 @@
                             "enum": [
                                 "booking",
                                 "event_registration",
+                                "loan_damage",
                                 "loan_deposit",
                                 "loan_late_fee",
+                                "loan_lost",
+                                "loan_rental",
                                 "machine_service_request",
                                 "makerspace_membership",
                                 "membership_request",
@@ -57144,8 +57189,11 @@
                             "enum": [
                                 "booking",
                                 "event_registration",
+                                "loan_damage",
                                 "loan_deposit",
                                 "loan_late_fee",
+                                "loan_lost",
+                                "loan_rental",
                                 "machine_service_request",
                                 "makerspace_membership",
                                 "membership_request",
@@ -57310,8 +57358,11 @@
                             "enum": [
                                 "booking",
                                 "event_registration",
+                                "loan_damage",
                                 "loan_deposit",
                                 "loan_late_fee",
+                                "loan_lost",
+                                "loan_rental",
                                 "machine_service_request",
                                 "makerspace_membership",
                                 "membership_request",
@@ -57476,8 +57527,11 @@
                             "enum": [
                                 "booking",
                                 "event_registration",
+                                "loan_damage",
                                 "loan_deposit",
                                 "loan_late_fee",
+                                "loan_lost",
+                                "loan_rental",
                                 "machine_service_request",
                                 "makerspace_membership",
                                 "membership_request",
@@ -57642,8 +57696,11 @@
                             "enum": [
                                 "booking",
                                 "event_registration",
+                                "loan_damage",
                                 "loan_deposit",
                                 "loan_late_fee",
+                                "loan_lost",
+                                "loan_rental",
                                 "machine_service_request",
                                 "makerspace_membership",
                                 "membership_request",
@@ -67475,8 +67532,11 @@
                             "enum": [
                                 "booking",
                                 "event_registration",
+                                "loan_damage",
                                 "loan_deposit",
                                 "loan_late_fee",
+                                "loan_lost",
+                                "loan_rental",
                                 "machine_service_request",
                                 "makerspace_membership",
                                 "membership_request",
@@ -69220,6 +69280,866 @@
                             }
                         },
                         "description": "Tenant is frozen or not restored."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/makerspace/{makerspace_id}/pricing/{domain}": {
+            "get": {
+                "operationId": "api_v1_admin_makerspace_pricing_retrieve",
+                "description": "Space Manager, the area's manager, or view_finance. `editable` says whether the caller may save it; `refusal` names why not.",
+                "summary": "Read one area's rate card (free/paid, rates, caps)",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "domain",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Pricing"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PricingDefault"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    }
+                }
+            },
+            "put": {
+                "operationId": "api_v1_admin_makerspace_pricing_update",
+                "description": "Settings authority: the Space Manager, or the area's manager holding its settings grant. Lending also writes the deposit and late-fee block (the same columns `payment-settings` edits). Run the impact preview first: items that inherit the default change price; custom and Free items never do (A13). Membership is read-only here (plans own their prices).",
+                "summary": "Change one area's rate card",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "domain",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Pricing"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PricingDefaultWrite"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PricingDefaultWrite"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PricingDefaultWrite"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PricingDefault"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "`setting_not_delegated` or `setting_locked`."
+                    },
+                    "404": {
+                        "description": "Space not visible, the area's module is off (`pricing_domain_unknown`) or `charges.pricing` is off (`pricing_disabled`)."
+                    },
+                    "423": {
+                        "description": "Makerspace writes are frozen for tenant migration."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/makerspace/{makerspace_id}/pricing/{domain}/impact": {
+            "post": {
+                "operationId": "api_v1_admin_makerspace_pricing_impact_create",
+                "description": "Nothing is saved. Lists up to 200 item/component pairs whose effective price moves, with the total count.",
+                "summary": "Preview which items a rate-card change would reprice",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "domain",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Pricing"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PricingDefaultWrite"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PricingDefaultWrite"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PricingDefaultWrite"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PricingImpact"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/makerspace/{makerspace_id}/pricing/currency": {
+            "get": {
+                "operationId": "api_v1_admin_makerspace_pricing_currency_retrieve",
+                "summary": "Read the currency new charges are raised in",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Pricing"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PricingCurrency"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    }
+                }
+            },
+            "put": {
+                "operationId": "api_v1_admin_makerspace_pricing_currency_update",
+                "description": "Space Manager only (a finance setting). Works with the online-payment rail switched off or tombstoned; existing charges keep their currency.",
+                "summary": "Change the currency new charges are raised in",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Pricing"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PricingCurrency"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PricingCurrency"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PricingCurrency"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PricingCurrency"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "`setting_not_delegated` or `setting_locked`."
+                    },
+                    "404": {
+                        "description": "Space not visible, the area's module is off (`pricing_domain_unknown`) or `charges.pricing` is off (`pricing_disabled`)."
+                    },
+                    "423": {
+                        "description": "Makerspace writes are frozen for tenant migration."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/makerspace/{makerspace_id}/pricing/discounts": {
+            "get": {
+                "operationId": "api_v1_admin_makerspace_pricing_discounts_list",
+                "summary": "List member discount rules",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "archived",
+                        "schema": {
+                            "type": "boolean"
+                        },
+                        "description": "Include archived rules."
+                    },
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Pricing"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/PriceDiscount"
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    }
+                }
+            },
+            "post": {
+                "operationId": "api_v1_admin_makerspace_pricing_discounts_create",
+                "description": "One best automatic discount applies per quote (all members, a plan's members, or one member), then an event promo code on top; nothing else stacks. Deposits, late, damage and lost fees are never discounted unless named.",
+                "summary": "Create a member discount rule",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Pricing"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PriceDiscount"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PriceDiscount"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PriceDiscount"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PriceDiscount"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "`discount_invalid` or a field error."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Space Manager only (`setting_not_delegated`)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    },
+                    "423": {
+                        "description": "Makerspace writes are frozen for tenant migration."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/makerspace/{makerspace_id}/pricing/discounts/{discount_id}": {
+            "patch": {
+                "operationId": "api_v1_admin_makerspace_pricing_discounts_partial_update",
+                "summary": "Change a member discount rule",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "discount_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Pricing"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedPriceDiscount"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedPriceDiscount"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedPriceDiscount"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PriceDiscount"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "`discount_invalid` or a field error."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Space Manager only (`setting_not_delegated`)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    },
+                    "423": {
+                        "description": "Makerspace writes are frozen for tenant migration."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/makerspace/{makerspace_id}/pricing/discounts/{discount_id}/archive": {
+            "post": {
+                "operationId": "api_v1_admin_makerspace_pricing_discounts_archive_create",
+                "description": "Archived rules stop applying; quotes already frozen keep naming them.",
+                "summary": "Archive a member discount rule",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "discount_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Pricing"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PriceDiscount"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "`discount_invalid` or a field error."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Space Manager only (`setting_not_delegated`)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    },
+                    "423": {
+                        "description": "Makerspace writes are frozen for tenant migration."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/makerspace/{makerspace_id}/pricing/loans/rental-timing": {
+            "get": {
+                "operationId": "api_v1_admin_makerspace_pricing_loans_rental_timing_retrieve",
+                "summary": "Read when per-day rental is charged",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Pricing"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RentalTiming"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    }
+                }
+            },
+            "put": {
+                "operationId": "api_v1_admin_makerspace_pricing_loans_rental_timing_update",
+                "description": "`at_checkout` charges the planned days at issue; `at_return` the actual days at return. The Space Manager or the Inventory Manager (no settings grant needed, #128 C-11d); a Space Manager lock still refuses. Applies to loans issued after the change; audited as `settings.changed`.",
+                "summary": "Choose when per-day rental is charged",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Pricing"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RentalTiming"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RentalTiming"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RentalTiming"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RentalTiming"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "`setting_not_delegated` or `setting_locked`."
+                    },
+                    "404": {
+                        "description": "Space not visible, the area's module is off (`pricing_domain_unknown`) or `charges.pricing` is off (`pricing_disabled`)."
+                    },
+                    "423": {
+                        "description": "Makerspace writes are frozen for tenant migration."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/makerspace/{makerspace_id}/pricing/overrides/{target_type}/{target_id}": {
+            "get": {
+                "operationId": "api_v1_admin_makerspace_pricing_overrides_retrieve",
+                "summary": "Read an item's prices: effective price and its source per component",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "target_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "target_type",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "bookable_space",
+                                "consumable_pool",
+                                "inventory_product",
+                                "machine"
+                            ]
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Pricing"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PriceOverrideCard"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    }
+                }
+            },
+            "put": {
+                "operationId": "api_v1_admin_makerspace_pricing_overrides_update",
+                "description": "Only staff who edit the item (403 otherwise). A custom deposit or room price is written to the item's own price field. Audited `pricing.override_set` / `pricing.override_cleared`. 400 `component_not_allowed` for a component this item type does not take.",
+                "summary": "Set one component of an item's price to inherit, free or custom",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "target_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "target_type",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "bookable_space",
+                                "consumable_pool",
+                                "inventory_product",
+                                "machine"
+                            ]
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Pricing"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PriceOverrideWrite"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PriceOverrideWrite"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PriceOverrideWrite"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PriceOverrideCard"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    },
+                    "423": {
+                        "description": "Makerspace writes are frozen for tenant migration."
                     }
                 }
             }
@@ -71160,8 +72080,11 @@
                             "enum": [
                                 "booking",
                                 "event_registration",
+                                "loan_damage",
                                 "loan_deposit",
                                 "loan_late_fee",
+                                "loan_lost",
+                                "loan_rental",
                                 "machine_service_request",
                                 "makerspace_membership",
                                 "membership_request",
@@ -71440,6 +72363,379 @@
                             }
                         },
                         "description": "Not found."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/makerspace/{makerspace_id}/requests/{request_id}/accountability/{accountability_id}/charge": {
+            "post": {
+                "operationId": "api_v1_admin_makerspace_requests_accountability_charge_create",
+                "description": "return_request (handover roles included). One charge per damage/lost row; a second is 409 `charge_exists`. An amount above 0 needs the return photo that recorded the item (409 `return_photo_required`). 0 means no charge. A waived loan raises nothing.",
+                "summary": "Charge for a damaged or lost item (staff-set amount)",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "accountability_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "request_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Pricing"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/LoanAccountabilityCharge"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/LoanAccountabilityCharge"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/LoanAccountabilityCharge"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LoanAccountabilityChargeResult"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    },
+                    "409": {
+                        "description": "Conflicts with the current state."
+                    },
+                    "423": {
+                        "description": "Makerspace writes are frozen for tenant migration."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/makerspace/{makerspace_id}/requests/{request_id}/charges": {
+            "get": {
+                "operationId": "api_v1_admin_makerspace_requests_charges_retrieve",
+                "description": "return_request, issue_request or view_finance in the loan's space. Each damage/lost row carries the suggested charge and whether its return photo exists.",
+                "summary": "A loan's charges, fee waivers and damage/lost rows",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "request_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Pricing"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LoanCharges"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/makerspace/{makerspace_id}/requests/{request_id}/fee-waivers": {
+            "get": {
+                "operationId": "api_v1_admin_makerspace_requests_fee_waivers_list",
+                "summary": "List a loan's fee waivers (and revocations)",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "request_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Pricing"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/LoanFeeWaiver"
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    }
+                }
+            },
+            "post": {
+                "operationId": "api_v1_admin_makerspace_requests_fee_waivers_create",
+                "description": "return_request. Pending charges become waived; a charge already paid opens a refund case for staff approval (no money moves). The deposit is never waived. Charges raised later resolve to 0. 400 `waiver_reason_required`; 409 `waiver_exists` when a named fee is already waived.",
+                "summary": "Waive a loan's fees (all, or the named ones), with a reason",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "request_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Pricing"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/LoanFeeWaiverCreate"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/LoanFeeWaiverCreate"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/LoanFeeWaiverCreate"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LoanFeeWaiverResult"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    },
+                    "409": {
+                        "description": "Conflicts with the current state."
+                    },
+                    "423": {
+                        "description": "Makerspace writes are frozen for tenant migration."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/makerspace/{makerspace_id}/requests/{request_id}/fee-waivers/{waiver_id}/revoke": {
+            "post": {
+                "operationId": "api_v1_admin_makerspace_requests_fee_waivers_revoke_create",
+                "description": "return_request. Affects only charges not yet raised; nothing already waived or refunded is reopened. Written as a new append-only row.",
+                "summary": "Revoke a loan fee waiver, with a reason",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "request_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "waiver_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Pricing"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/LoanFeeWaiverRevoke"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/LoanFeeWaiverRevoke"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/LoanFeeWaiverRevoke"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LoanFeeWaiver"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    },
+                    "409": {
+                        "description": "Conflicts with the current state."
+                    },
+                    "423": {
+                        "description": "Makerspace writes are frozen for tenant migration."
                     }
                 }
             }
@@ -95948,8 +97244,11 @@
                             "enum": [
                                 "booking",
                                 "event_registration",
+                                "loan_damage",
                                 "loan_deposit",
                                 "loan_late_fee",
+                                "loan_lost",
+                                "loan_rental",
                                 "machine_service_request",
                                 "makerspace_membership",
                                 "membership_request",
@@ -98770,8 +100069,11 @@
                             "enum": [
                                 "booking",
                                 "event_registration",
+                                "loan_damage",
                                 "loan_deposit",
                                 "loan_late_fee",
+                                "loan_lost",
+                                "loan_rental",
                                 "machine_service_request",
                                 "makerspace_membership",
                                 "membership_request",
@@ -99125,8 +100427,11 @@
                             "enum": [
                                 "booking",
                                 "event_registration",
+                                "loan_damage",
                                 "loan_deposit",
                                 "loan_late_fee",
+                                "loan_lost",
+                                "loan_rental",
                                 "machine_service_request",
                                 "makerspace_membership",
                                 "membership_request",
@@ -103890,8 +105195,11 @@
                             "enum": [
                                 "booking",
                                 "event_registration",
+                                "loan_damage",
                                 "loan_deposit",
                                 "loan_late_fee",
+                                "loan_lost",
+                                "loan_rental",
                                 "machine_service_request",
                                 "makerspace_membership",
                                 "membership_request",
@@ -162016,6 +163324,94 @@
                 }
             }
         },
+        "/api/v1/public/{makerspace_slug}/pricing/quote": {
+            "post": {
+                "operationId": "api_v1_public_pricing_quote_create",
+                "description": "Quotes a public item, room, machine (or type), event or plan. Signed-in members of the space get their own price. Send `digest` back on submit: a moved price is 409 `price_changed` with the new quote. 404 when the thing is not public, the module is off or `charges.pricing` is off.",
+                "summary": "Preview a price (anonymous allowed)",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_slug",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Pricing"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PricingQuoteRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PricingQuoteRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PricingQuoteRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PricingPublicQuote"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/v1/public/{makerspace_slug}/requests": {
             "post": {
                 "operationId": "api_v1_public_requests_create",
@@ -175387,6 +176783,13 @@
                         "type": "integer",
                         "nullable": true,
                         "readOnly": true
+                    },
+                    "requested_price": {
+                        "type": "object",
+                        "additionalProperties": {},
+                        "nullable": true,
+                        "description": "L15 (#159): {total, currency, discount_total} frozen when a booking awaiting approval was requested; approval charges exactly this. Null for instant or legacy bookings.",
+                        "readOnly": true
                     }
                 },
                 "required": [
@@ -175406,6 +176809,7 @@
                     "payment",
                     "phone",
                     "public_token",
+                    "requested_price",
                     "restore_until",
                     "space_id",
                     "space_name",
@@ -181913,6 +183317,16 @@
                     "token"
                 ]
             },
+            "ComponentsEnum": {
+                "enum": [
+                    "rental",
+                    "late",
+                    "damage",
+                    "lost"
+                ],
+                "type": "string",
+                "description": "* `rental` - Rental\n* `late` - Late fee\n* `damage` - Damage\n* `lost` - Lost item"
+            },
             "ConditionEnum": {
                 "enum": [
                     "available",
@@ -185410,6 +186824,15 @@
                 "type": "string",
                 "description": "* `deployment` - deployment"
             },
+            "DepositModeEnum": {
+                "enum": [
+                    "none",
+                    "fixed",
+                    "per_product"
+                ],
+                "type": "string",
+                "description": "* `none` - none\n* `fixed` - fixed\n* `per_product` - per_product"
+            },
             "Design224Enum": {
                 "enum": [
                     "classic",
@@ -185992,6 +187415,10 @@
                         "type": "integer",
                         "readOnly": true
                     },
+                    "request_id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
                     "target_type": {
                         "type": "string",
                         "readOnly": true
@@ -186064,6 +187491,7 @@
                     "issued_by",
                     "items",
                     "public_token",
+                    "request_id",
                     "return_evidence_id",
                     "return_items",
                     "return_notes",
@@ -193402,6 +194830,15 @@
                     "email",
                     "notifications"
                 ]
+            },
+            "FailedJobChargeEnum": {
+                "enum": [
+                    "none",
+                    "material_only",
+                    "full"
+                ],
+                "type": "string",
+                "description": "* `none` - No charge\n* `material_only` - Material used only\n* `full` - Full charge"
             },
             "FailureCodeEnum": {
                 "enum": [
@@ -204536,6 +205973,187 @@
                     "version"
                 ]
             },
+            "LoanAccountabilityCharge": {
+                "type": "object",
+                "properties": {
+                    "amount": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$"
+                    },
+                    "note": {
+                        "type": "string",
+                        "default": "",
+                        "maxLength": 300
+                    }
+                },
+                "required": [
+                    "amount"
+                ]
+            },
+            "LoanAccountabilityChargeResult": {
+                "type": "object",
+                "properties": {
+                    "charge": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/LoanCharge"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "free_reason": {
+                        "type": "string",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "charge",
+                    "free_reason"
+                ]
+            },
+            "LoanAccountabilityRow": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "issue_type": {
+                        "type": "string"
+                    },
+                    "quantity": {
+                        "type": "integer"
+                    },
+                    "item_label": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "has_return_photo": {
+                        "type": "boolean"
+                    },
+                    "suggested_amount": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$"
+                    },
+                    "suggested_source": {
+                        "type": "string"
+                    },
+                    "charge": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/LoanCharge"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "no_charge_decided": {
+                        "type": "boolean",
+                        "description": "Staff recorded \"no charge\" for this row."
+                    }
+                },
+                "required": [
+                    "charge",
+                    "has_return_photo",
+                    "id",
+                    "issue_type",
+                    "item_label",
+                    "no_charge_decided",
+                    "quantity",
+                    "suggested_amount",
+                    "suggested_source"
+                ]
+            },
+            "LoanCharge": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "subject_type": {
+                        "type": "string"
+                    },
+                    "subject_id": {
+                        "type": "integer"
+                    },
+                    "label": {
+                        "type": "string"
+                    },
+                    "amount": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$"
+                    },
+                    "currency": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "amount",
+                    "created_at",
+                    "currency",
+                    "id",
+                    "label",
+                    "status",
+                    "subject_id",
+                    "subject_type"
+                ]
+            },
+            "LoanCharges": {
+                "type": "object",
+                "properties": {
+                    "request_id": {
+                        "type": "integer"
+                    },
+                    "currency": {
+                        "type": "string"
+                    },
+                    "pricing_enabled": {
+                        "type": "boolean"
+                    },
+                    "waivers_enabled": {
+                        "type": "boolean"
+                    },
+                    "can_waive": {
+                        "type": "boolean"
+                    },
+                    "charges": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/LoanCharge"
+                        }
+                    },
+                    "waivers": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/LoanFeeWaiver"
+                        }
+                    },
+                    "accountability": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/LoanAccountabilityRow"
+                        }
+                    }
+                },
+                "required": [
+                    "accountability",
+                    "can_waive",
+                    "charges",
+                    "currency",
+                    "pricing_enabled",
+                    "request_id",
+                    "waivers",
+                    "waivers_enabled"
+                ]
+            },
             "LoanDepositModeEnum": {
                 "enum": [
                     "none",
@@ -204544,6 +206162,123 @@
                 ],
                 "type": "string",
                 "description": "* `none` - No deposit\n* `fixed` - Fixed amount per loan\n* `per_product` - Sum of product deposits"
+            },
+            "LoanFeeWaiver": {
+                "type": "object",
+                "description": "Mask registry PII (and declared account fields) for a superadmin without a window.\n\n``pii_account_fields`` names representation keys that carry an account's email, phone\nor name. Override ``get_pii_makerspace_id`` when the row reaches its space differently,\nor ``get_pii_subject`` when the row is about one person.",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "request": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "components": {
+                        "readOnly": true
+                    },
+                    "covered": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "readOnly": true
+                    },
+                    "reason": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "revokes": {
+                        "type": "integer",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "revoked": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "created_by": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "created_by_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "components",
+                    "covered",
+                    "created_at",
+                    "created_by",
+                    "created_by_name",
+                    "id",
+                    "reason",
+                    "request",
+                    "revoked",
+                    "revokes"
+                ]
+            },
+            "LoanFeeWaiverCreate": {
+                "type": "object",
+                "properties": {
+                    "components": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ComponentsEnum"
+                        }
+                    },
+                    "reason": {
+                        "type": "string",
+                        "maxLength": 500
+                    }
+                },
+                "required": [
+                    "reason"
+                ]
+            },
+            "LoanFeeWaiverResult": {
+                "type": "object",
+                "properties": {
+                    "waiver": {
+                        "$ref": "#/components/schemas/LoanFeeWaiver"
+                    },
+                    "waived_payment_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        }
+                    },
+                    "refund_case_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "required": [
+                    "refund_case_ids",
+                    "waived_payment_ids",
+                    "waiver"
+                ]
+            },
+            "LoanFeeWaiverRevoke": {
+                "type": "object",
+                "properties": {
+                    "reason": {
+                        "type": "string",
+                        "maxLength": 500
+                    }
+                },
+                "required": [
+                    "reason"
+                ]
             },
             "LoanRenewal": {
                 "type": "object",
@@ -229050,6 +230785,95 @@
                     }
                 }
             },
+            "PatchedPriceDiscount": {
+                "type": "object",
+                "description": "Mask registry PII (and declared account fields) for a superadmin without a window.\n\n``pii_account_fields`` names representation keys that carry an account's email, phone\nor name. Override ``get_pii_makerspace_id`` when the row reaches its space differently,\nor ``get_pii_subject`` when the row is about one person.",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "name": {
+                        "type": "string",
+                        "maxLength": 120
+                    },
+                    "audience": {
+                        "$ref": "#/components/schemas/PriceDiscountAudienceEnum"
+                    },
+                    "plan": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "plan_name": {
+                        "type": "string",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "member": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "member_name": {
+                        "type": "string",
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "domains": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PricingDomainEnum"
+                        }
+                    },
+                    "components": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "maxLength": 32
+                        }
+                    },
+                    "percent_bps": {
+                        "type": "integer",
+                        "maximum": 10000,
+                        "minimum": 1,
+                        "nullable": true
+                    },
+                    "amount_off": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
+                        "nullable": true
+                    },
+                    "starts_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "ends_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    },
+                    "archived_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    }
+                }
+            },
             "PatchedPrinterPoolVisibility": {
                 "type": "object",
                 "properties": {
@@ -233990,6 +235814,1008 @@
                     "people",
                     "reason",
                     "subject_id"
+                ]
+            },
+            "PriceDiscount": {
+                "type": "object",
+                "description": "Mask registry PII (and declared account fields) for a superadmin without a window.\n\n``pii_account_fields`` names representation keys that carry an account's email, phone\nor name. Override ``get_pii_makerspace_id`` when the row reaches its space differently,\nor ``get_pii_subject`` when the row is about one person.",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "name": {
+                        "type": "string",
+                        "maxLength": 120
+                    },
+                    "audience": {
+                        "$ref": "#/components/schemas/PriceDiscountAudienceEnum"
+                    },
+                    "plan": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "plan_name": {
+                        "type": "string",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "member": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "member_name": {
+                        "type": "string",
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "domains": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PricingDomainEnum"
+                        }
+                    },
+                    "components": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "maxLength": 32
+                        }
+                    },
+                    "percent_bps": {
+                        "type": "integer",
+                        "maximum": 10000,
+                        "minimum": 1,
+                        "nullable": true
+                    },
+                    "amount_off": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
+                        "nullable": true
+                    },
+                    "starts_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "ends_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    },
+                    "archived_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "archived_at",
+                    "audience",
+                    "created_at",
+                    "id",
+                    "member_name",
+                    "name",
+                    "plan_name",
+                    "updated_at"
+                ]
+            },
+            "PriceDiscountAudienceEnum": {
+                "enum": [
+                    "all_members",
+                    "plan",
+                    "member"
+                ],
+                "type": "string",
+                "description": "* `all_members` - All members\n* `plan` - Members on a plan\n* `member` - One member"
+            },
+            "PriceOverrideCard": {
+                "type": "object",
+                "properties": {
+                    "target_type": {
+                        "$ref": "#/components/schemas/PriceOverrideCardTargetTypeEnum"
+                    },
+                    "target_id": {
+                        "type": "integer"
+                    },
+                    "label": {
+                        "type": "string"
+                    },
+                    "domain": {
+                        "type": "string"
+                    },
+                    "currency": {
+                        "type": "string"
+                    },
+                    "editable": {
+                        "type": "boolean"
+                    },
+                    "enabled": {
+                        "type": "boolean"
+                    },
+                    "components": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PriceOverrideComponent"
+                        }
+                    }
+                },
+                "required": [
+                    "components",
+                    "currency",
+                    "domain",
+                    "editable",
+                    "enabled",
+                    "label",
+                    "target_id",
+                    "target_type"
+                ]
+            },
+            "PriceOverrideCardTargetTypeEnum": {
+                "enum": [
+                    "inventory_product",
+                    "machine",
+                    "consumable_pool",
+                    "bookable_space"
+                ],
+                "type": "string",
+                "description": "* `inventory_product` - Inventory item\n* `machine` - Machine\n* `consumable_pool` - Material pool\n* `bookable_space` - Room or resource"
+            },
+            "PriceOverrideComponent": {
+                "type": "object",
+                "properties": {
+                    "component": {
+                        "type": "string"
+                    },
+                    "label": {
+                        "type": "string"
+                    },
+                    "unit": {
+                        "type": "string"
+                    },
+                    "has_cap": {
+                        "type": "boolean"
+                    },
+                    "mode": {
+                        "$ref": "#/components/schemas/PriceOverrideModeEnum"
+                    },
+                    "amount": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
+                        "nullable": true
+                    },
+                    "cap": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
+                        "nullable": true
+                    },
+                    "effective_amount": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$"
+                    },
+                    "effective_source": {
+                        "type": "string"
+                    },
+                    "default_amount": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$"
+                    }
+                },
+                "required": [
+                    "amount",
+                    "cap",
+                    "component",
+                    "default_amount",
+                    "effective_amount",
+                    "effective_source",
+                    "has_cap",
+                    "label",
+                    "mode",
+                    "unit"
+                ]
+            },
+            "PriceOverrideModeEnum": {
+                "enum": [
+                    "inherit",
+                    "free",
+                    "custom"
+                ],
+                "type": "string",
+                "description": "* `inherit` - Use the space default\n* `free` - Free\n* `custom` - Custom price"
+            },
+            "PriceOverrideWrite": {
+                "type": "object",
+                "properties": {
+                    "component": {
+                        "type": "string",
+                        "maxLength": 32
+                    },
+                    "mode": {
+                        "$ref": "#/components/schemas/PriceOverrideModeEnum"
+                    },
+                    "amount": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
+                        "nullable": true
+                    },
+                    "cap": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "component",
+                    "mode"
+                ]
+            },
+            "PricingCurrency": {
+                "type": "object",
+                "properties": {
+                    "default_currency": {
+                        "type": "string",
+                        "maxLength": 3,
+                        "pattern": "^[A-Za-z]{3}$"
+                    }
+                },
+                "required": [
+                    "default_currency"
+                ]
+            },
+            "PricingDefault": {
+                "type": "object",
+                "properties": {
+                    "domain": {
+                        "$ref": "#/components/schemas/PricingDomainEnum"
+                    },
+                    "label": {
+                        "type": "string"
+                    },
+                    "enabled": {
+                        "type": "boolean",
+                        "description": "The charges.pricing capability."
+                    },
+                    "currency": {
+                        "type": "string"
+                    },
+                    "mode": {
+                        "$ref": "#/components/schemas/PricingModeEnum"
+                    },
+                    "stored": {
+                        "type": "boolean",
+                        "description": "False until a Space Manager saves this area once."
+                    },
+                    "editable": {
+                        "type": "boolean"
+                    },
+                    "via": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "locked": {
+                        "type": "boolean"
+                    },
+                    "refusal": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "rental_timing": {
+                        "nullable": true,
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/RentalTimingEnum"
+                            },
+                            {
+                                "$ref": "#/components/schemas/NullEnum"
+                            }
+                        ]
+                    },
+                    "rental_timing_editable": {
+                        "type": "boolean"
+                    },
+                    "failed_job_charge": {
+                        "nullable": true,
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/FailedJobChargeEnum"
+                            },
+                            {
+                                "$ref": "#/components/schemas/NullEnum"
+                            }
+                        ]
+                    },
+                    "lines": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PricingRateLine"
+                        }
+                    },
+                    "lending": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/PricingLending"
+                            }
+                        ],
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "currency",
+                    "domain",
+                    "editable",
+                    "enabled",
+                    "failed_job_charge",
+                    "label",
+                    "lending",
+                    "lines",
+                    "locked",
+                    "mode",
+                    "refusal",
+                    "rental_timing",
+                    "rental_timing_editable",
+                    "stored",
+                    "via"
+                ]
+            },
+            "PricingDefaultWrite": {
+                "type": "object",
+                "properties": {
+                    "mode": {
+                        "$ref": "#/components/schemas/PricingModeEnum"
+                    },
+                    "lines": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PricingRateLine"
+                        }
+                    },
+                    "lending": {
+                        "$ref": "#/components/schemas/PricingLending"
+                    },
+                    "failed_job_charge": {
+                        "$ref": "#/components/schemas/FailedJobChargeEnum"
+                    }
+                }
+            },
+            "PricingDomainEnum": {
+                "enum": [
+                    "loans",
+                    "machines",
+                    "bookings",
+                    "events",
+                    "membership"
+                ],
+                "type": "string",
+                "description": "* `loans` - Lending\n* `machines` - Machines\n* `bookings` - Bookings\n* `events` - Events\n* `membership` - Membership"
+            },
+            "PricingImpact": {
+                "type": "object",
+                "properties": {
+                    "domain": {
+                        "type": "string"
+                    },
+                    "currency": {
+                        "type": "string"
+                    },
+                    "items_checked": {
+                        "type": "integer"
+                    },
+                    "changed": {
+                        "type": "integer"
+                    },
+                    "truncated": {
+                        "type": "boolean"
+                    },
+                    "changes": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PricingImpactChange"
+                        }
+                    }
+                },
+                "required": [
+                    "changed",
+                    "changes",
+                    "currency",
+                    "domain",
+                    "items_checked",
+                    "truncated"
+                ]
+            },
+            "PricingImpactChange": {
+                "type": "object",
+                "properties": {
+                    "target_type": {
+                        "type": "string"
+                    },
+                    "target_id": {
+                        "type": "integer"
+                    },
+                    "label": {
+                        "type": "string"
+                    },
+                    "component": {
+                        "type": "string"
+                    },
+                    "before": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$"
+                    },
+                    "after": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$"
+                    },
+                    "source": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "after",
+                    "before",
+                    "component",
+                    "label",
+                    "source",
+                    "target_id",
+                    "target_type"
+                ]
+            },
+            "PricingLending": {
+                "type": "object",
+                "properties": {
+                    "deposit_mode": {
+                        "$ref": "#/components/schemas/DepositModeEnum"
+                    },
+                    "deposit_amount": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$"
+                    },
+                    "deposit_blocks_issue": {
+                        "type": "boolean"
+                    },
+                    "late_per_day": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$"
+                    },
+                    "late_cap": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$"
+                    },
+                    "grace_days": {
+                        "type": "integer",
+                        "maximum": 365,
+                        "minimum": 0
+                    }
+                }
+            },
+            "PricingModeEnum": {
+                "enum": [
+                    "free",
+                    "paid"
+                ],
+                "type": "string",
+                "description": "* `free` - Free\n* `paid` - Paid"
+            },
+            "PricingPublicQuote": {
+                "type": "object",
+                "properties": {
+                    "quote": {
+                        "$ref": "#/components/schemas/PricingQuote"
+                    },
+                    "digest": {
+                        "type": "string"
+                    },
+                    "tax": {
+                        "$ref": "#/components/schemas/PricingQuoteTax"
+                    },
+                    "members_total": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
+                        "nullable": true
+                    },
+                    "member_price_applied": {
+                        "type": "boolean"
+                    },
+                    "deposit": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/PricingQuoteDeposit"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "policy": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/PricingQuotePolicy"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "refund_summary": {
+                        "type": "string",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "deposit",
+                    "digest",
+                    "member_price_applied",
+                    "members_total",
+                    "policy",
+                    "quote",
+                    "refund_summary",
+                    "tax"
+                ]
+            },
+            "PricingQuote": {
+                "type": "object",
+                "properties": {
+                    "domain": {
+                        "type": "string"
+                    },
+                    "currency": {
+                        "type": "string"
+                    },
+                    "mode": {
+                        "type": "string"
+                    },
+                    "lines": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PricingQuoteLine"
+                        }
+                    },
+                    "subtotal": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$"
+                    },
+                    "discount_total": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$"
+                    },
+                    "total": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$"
+                    },
+                    "discount": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/PricingQuoteDiscount"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "waiver": {
+                        "nullable": true
+                    },
+                    "notes": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "digest": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "currency",
+                    "digest",
+                    "discount",
+                    "discount_total",
+                    "domain",
+                    "lines",
+                    "mode",
+                    "notes",
+                    "subtotal",
+                    "total",
+                    "waiver"
+                ]
+            },
+            "PricingQuoteDeposit": {
+                "type": "object",
+                "properties": {
+                    "amount": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$"
+                    },
+                    "refundable": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "amount",
+                    "refundable"
+                ]
+            },
+            "PricingQuoteDiscount": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "audience": {
+                        "type": "string"
+                    },
+                    "saving": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$"
+                    }
+                },
+                "required": [
+                    "audience",
+                    "id",
+                    "name",
+                    "saving"
+                ]
+            },
+            "PricingQuoteItem": {
+                "type": "object",
+                "properties": {
+                    "product_id": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "quantity": {
+                        "type": "integer",
+                        "maximum": 1000,
+                        "minimum": 1
+                    }
+                },
+                "required": [
+                    "product_id",
+                    "quantity"
+                ]
+            },
+            "PricingQuoteLine": {
+                "type": "object",
+                "properties": {
+                    "component": {
+                        "type": "string"
+                    },
+                    "label": {
+                        "type": "string"
+                    },
+                    "subject_type": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "quantity": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,12}(?:\\.\\d{0,4})?$"
+                    },
+                    "unit_amount": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$"
+                    },
+                    "gross": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$"
+                    },
+                    "discount": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$"
+                    },
+                    "net": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$"
+                    },
+                    "source": {
+                        "type": "string"
+                    },
+                    "cap_applied": {
+                        "type": "boolean"
+                    },
+                    "target": {
+                        "nullable": true
+                    },
+                    "detail": {}
+                },
+                "required": [
+                    "cap_applied",
+                    "component",
+                    "detail",
+                    "discount",
+                    "gross",
+                    "label",
+                    "net",
+                    "quantity",
+                    "source",
+                    "subject_type",
+                    "target",
+                    "unit_amount"
+                ]
+            },
+            "PricingQuotePolicy": {
+                "type": "object",
+                "properties": {
+                    "late_per_day": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$"
+                    },
+                    "late_cap": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
+                        "nullable": true
+                    },
+                    "grace_days": {
+                        "type": "integer"
+                    },
+                    "damage_default": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$"
+                    },
+                    "lost_default": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$"
+                    },
+                    "damage_lost_text": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "damage_default",
+                    "damage_lost_text",
+                    "grace_days",
+                    "late_cap",
+                    "late_per_day",
+                    "lost_default"
+                ]
+            },
+            "PricingQuoteRequest": {
+                "type": "object",
+                "properties": {
+                    "domain": {
+                        "$ref": "#/components/schemas/PricingDomainEnum"
+                    },
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PricingQuoteItem"
+                        }
+                    },
+                    "days": {
+                        "type": "integer",
+                        "maximum": 365,
+                        "minimum": 0
+                    },
+                    "request_id": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "The member's own loan request."
+                    },
+                    "space_id": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "space_token": {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "A room's public token, instead of space_id."
+                    },
+                    "starts_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "ends_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "machine_id": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "machine_type_id": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "pool_id": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "minutes": {
+                        "type": "integer",
+                        "maximum": 100000,
+                        "minimum": 0
+                    },
+                    "quantity": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$"
+                    },
+                    "event_id": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "event_token": {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "An event's public token, instead of event_id."
+                    },
+                    "ticket_type_id": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "plan_id": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "joining": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "domain"
+                ]
+            },
+            "PricingQuoteTax": {
+                "type": "object",
+                "properties": {
+                    "net": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$"
+                    },
+                    "tax": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$"
+                    },
+                    "gross": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$"
+                    },
+                    "inclusive": {
+                        "type": "boolean"
+                    },
+                    "mode": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "gross",
+                    "inclusive",
+                    "mode",
+                    "net",
+                    "tax"
+                ]
+            },
+            "PricingRateLine": {
+                "type": "object",
+                "properties": {
+                    "component": {
+                        "type": "string"
+                    },
+                    "label": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "unit": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "has_cap": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "has_grace": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "has_increment": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "has_minimum": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "discountable": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "staff_set": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "prefill_only": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "read_only": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "amount": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$"
+                    },
+                    "cap": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
+                        "nullable": true
+                    },
+                    "grace_units": {
+                        "type": "integer",
+                        "maximum": 365,
+                        "minimum": 0
+                    },
+                    "billing_increment": {
+                        "type": "integer",
+                        "maximum": 1440,
+                        "minimum": 0
+                    },
+                    "minimum": {
+                        "type": "integer",
+                        "maximum": 1440,
+                        "minimum": 0
+                    },
+                    "source": {
+                        "type": "string",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "amount",
+                    "component",
+                    "discountable",
+                    "has_cap",
+                    "has_grace",
+                    "has_increment",
+                    "has_minimum",
+                    "label",
+                    "prefill_only",
+                    "read_only",
+                    "source",
+                    "staff_set",
+                    "unit"
                 ]
             },
             "PrintAccepted": {
@@ -243737,10 +246563,11 @@
                     "staff_cancelled",
                     "membership_cancelled",
                     "member_request",
-                    "capture_flagged"
+                    "capture_flagged",
+                    "fee_waived"
                 ],
                 "type": "string",
-                "description": "* `event_cancelled` - Event cancelled by the space\n* `registration_cancelled` - Registration cancelled\n* `booking_cancelled` - Booking cancelled\n* `staff_cancelled` - Cancelled by staff\n* `membership_cancelled` - Membership term cancelled\n* `member_request` - Member request\n* `capture_flagged` - Unexpected online capture"
+                "description": "* `event_cancelled` - Event cancelled by the space\n* `registration_cancelled` - Registration cancelled\n* `booking_cancelled` - Booking cancelled\n* `staff_cancelled` - Cancelled by staff\n* `membership_cancelled` - Membership term cancelled\n* `member_request` - Member request\n* `capture_flagged` - Unexpected online capture\n* `fee_waived` - Loan fee waived by staff"
             },
             "RefundCaseStatusEnum": {
                 "enum": [
@@ -244303,6 +247130,41 @@
                     "sent",
                     "skipped"
                 ]
+            },
+            "RentalTiming": {
+                "type": "object",
+                "properties": {
+                    "rental_timing": {
+                        "$ref": "#/components/schemas/RentalTimingEnum"
+                    },
+                    "editable": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "via": {
+                        "type": "string",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "locked": {
+                        "type": "boolean",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "editable",
+                    "locked",
+                    "rental_timing",
+                    "via"
+                ]
+            },
+            "RentalTimingEnum": {
+                "enum": [
+                    "at_checkout",
+                    "at_return"
+                ],
+                "type": "string",
+                "description": "* `at_checkout` - At checkout, for the planned days\n* `at_return` - At return, for the actual days"
             },
             "ReopenInput": {
                 "type": "object",
@@ -254983,10 +257845,13 @@
                     "membership_term",
                     "membership_request",
                     "loan_deposit",
-                    "loan_late_fee"
+                    "loan_late_fee",
+                    "loan_rental",
+                    "loan_damage",
+                    "loan_lost"
                 ],
                 "type": "string",
-                "description": "* `machine_service_request` - Machine service request\n* `booking` - Booking\n* `event_registration` - Event registration\n* `makerspace_membership` - Makerspace membership\n* `membership_term` - Membership renewal\n* `membership_request` - Membership admission\n* `loan_deposit` - Loan deposit\n* `loan_late_fee` - Loan late fee"
+                "description": "* `machine_service_request` - Machine service request\n* `booking` - Booking\n* `event_registration` - Event registration\n* `makerspace_membership` - Makerspace membership\n* `membership_term` - Membership renewal\n* `membership_request` - Membership admission\n* `loan_deposit` - Loan deposit\n* `loan_late_fee` - Loan late fee\n* `loan_rental` - Loan rental\n* `loan_damage` - Loan damage charge\n* `loan_lost` - Lost item charge"
             },
             "SubmissionIntegrity": {
                 "type": "object",

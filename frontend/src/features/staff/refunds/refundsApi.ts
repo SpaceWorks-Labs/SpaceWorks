@@ -25,6 +25,7 @@ export const REASON_LABELS: Record<RefundCase["reason_code"] | "capture_flagged"
   booking_cancelled: "Booking cancelled", staff_cancelled: "Cancelled by staff",
   membership_cancelled: "Membership term cancelled",
   member_request: "Member asked",
+  fee_waived: "Loan fee waived",
   capture_flagged: "Unexpected online payment",
 };
 

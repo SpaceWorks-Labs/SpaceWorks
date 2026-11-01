@@ -550,6 +550,23 @@ movement as rows), `reports_finance_ledger.py`, `models_event_budget.py`, `views
 Frontend: `features/finance/` (finance ledger, tax settings, claims/confirmations, flags, disputes,
 GST downloads), `features/members/MemberPaymentOffline.tsx` (UPI QR and claim) and `pages/PayLinkPage.tsx`.
 `operations/reports_cash_book.py` owns effective manual money-in/out totals.
+Pricing, paid and free everywhere (release 2 L15): `payments/pricing/` is the kernel -- `components.py`
+(the per-area component registry later lanes extend), `resolver.py` (`quote()`, the one resolver),
+`rates.py` (the rate card and per-component precedence), `adapters.py` (release-1 price columns read
+and written through), `build_loans.py`/`build_machines.py`/`build_other.py` (lines per area), `quotes.py`
+(the frozen `Quote`, rounding, digest), `discounts.py` (best automatic discount), `waivers.py` +
+`waiver_refunds.py` (loan fee waivers), `charging.py` (raise or audit free), `impact.py`,
+`admin_services.py`, `discount_services.py`, `public_quote.py`, `targets.py` (who prices which item),
+`card_payload.py`, `loan_charges_payload.py`. Models: `models_pricing.py` (PricingDefault,
+PricingDefaultLine, PriceOverride) and `models_pricing_rules.py` (PriceDiscount, LoanFeeWaiver); views
+`views_pricing.py`, `views_pricing_items.py`, `views_pricing_discounts.py`, `views_loan_charges.py`,
+`views_pricing_quote.py`, routes in `urls_pricing.py`. Seams: `hardware_requests/loan_charges_issue.py`
+(deposit gate, `on_request_issued` for every issue path), `loan_charges_rental.py`, `loan_charges_return.py`,
+`loan_charges_damage.py` behind the `loan_payments.py` barrel; `machines/service_payments.py`,
+`bookings/service_payments.py`, `events/service_payments.member_price`. Capability keys:
+`makerspaces/capability_definitions_r2_l15.py`. Frontend: `features/staff/pricing/` (Settings ›
+Pricing, discounts, `PriceOverrideCard`), `features/staff/loanCharges/` (Charges panel, Waive fees,
+the return charge step) and `features/payments/PricePreview.tsx`.
 `payments/schemas_billing.py` documents typed business errors and DRF field-validation
 responses. The module guide links into `MODULES-INVENTORY.md`, `MODULES-WORKSHOPS.md`,
 `MODULES-PLATFORM.md` and `MODULES-LIFECYCLE.md` to keep each reference below the file ceiling.

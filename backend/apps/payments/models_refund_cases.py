@@ -57,6 +57,8 @@ class RefundCase(models.Model):
         MEMBER_REQUEST = "member_request", "Member request"
         #: Staff opened it for an unexpected online capture (lane L5 capture flags).
         CAPTURE_FLAGGED = "capture_flagged", "Unexpected online capture"
+        #: Staff waived a loan fee the member had already paid (lane L15, A14).
+        FEE_WAIVED = "fee_waived", "Loan fee waived by staff"
 
     payment = models.ForeignKey(Payment, on_delete=models.PROTECT, related_name="refund_cases")
     kind = models.CharField(max_length=16, choices=Kind.choices)

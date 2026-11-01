@@ -112,6 +112,7 @@ export const openApiTags = [
   "Platform tenant reports",
   "Presence",
   "Presence staff",
+  "Pricing",
   "Procurement",
   "Public booking website",
   "Public bookings",
@@ -649,6 +650,14 @@ export const openApiPaths = [
   "/api/v1/admin/makerspace/{makerspace_id}/presence-sessions/check-out",
   "/api/v1/admin/makerspace/{makerspace_id}/presence-sessions/current",
   "/api/v1/admin/makerspace/{makerspace_id}/presence-sessions/privacy",
+  "/api/v1/admin/makerspace/{makerspace_id}/pricing/currency",
+  "/api/v1/admin/makerspace/{makerspace_id}/pricing/discounts",
+  "/api/v1/admin/makerspace/{makerspace_id}/pricing/discounts/{discount_id}",
+  "/api/v1/admin/makerspace/{makerspace_id}/pricing/discounts/{discount_id}/archive",
+  "/api/v1/admin/makerspace/{makerspace_id}/pricing/loans/rental-timing",
+  "/api/v1/admin/makerspace/{makerspace_id}/pricing/overrides/{target_type}/{target_id}",
+  "/api/v1/admin/makerspace/{makerspace_id}/pricing/{domain}",
+  "/api/v1/admin/makerspace/{makerspace_id}/pricing/{domain}/impact",
   "/api/v1/admin/makerspace/{makerspace_id}/printer-jobs",
   "/api/v1/admin/makerspace/{makerspace_id}/problem-reports/{id}/resolve",
   "/api/v1/admin/makerspace/{makerspace_id}/problem-reports/{id}/triage",
@@ -666,6 +675,10 @@ export const openApiPaths = [
   "/api/v1/admin/makerspace/{makerspace_id}/reports/catalog",
   "/api/v1/admin/makerspace/{makerspace_id}/reports/{report_key}/export",
   "/api/v1/admin/makerspace/{makerspace_id}/request-history",
+  "/api/v1/admin/makerspace/{makerspace_id}/requests/{request_id}/accountability/{accountability_id}/charge",
+  "/api/v1/admin/makerspace/{makerspace_id}/requests/{request_id}/charges",
+  "/api/v1/admin/makerspace/{makerspace_id}/requests/{request_id}/fee-waivers",
+  "/api/v1/admin/makerspace/{makerspace_id}/requests/{request_id}/fee-waivers/{waiver_id}/revoke",
   "/api/v1/admin/makerspace/{makerspace_id}/restores",
   "/api/v1/admin/makerspace/{makerspace_id}/return-policy",
   "/api/v1/admin/makerspace/{makerspace_id}/settings-authority/effective",
@@ -1400,6 +1413,7 @@ export const openApiPaths = [
   "/api/v1/public/{makerspace_slug}/presence-sessions/current/renew",
   "/api/v1/public/{makerspace_slug}/presence-sessions/preferences",
   "/api/v1/public/{makerspace_slug}/presence-sessions/projects",
+  "/api/v1/public/{makerspace_slug}/pricing/quote",
   "/api/v1/public/{makerspace_slug}/requests",
   "/api/v1/public/{makerspace_slug}/requests/email-code",
   "/api/v1/public/{makerspace_slug}/spaces/",
@@ -3259,6 +3273,9 @@ export type BookingAdmin = {
   "departed_at": string | null;
   "departures": Array<BookingDeparture>;
   "open_issue_id": number | null;
+  "requested_price": {
+  [key: string]: unknown;
+} | null;
 };
 
 export type BookingAnswerReport = {
@@ -4831,6 +4848,8 @@ export type CompleteRequest = {
   "signature": string;
 };
 
+export type ComponentsEnum = "rental" | "late" | "damage" | "lost";
+
 export type ConditionEnum = "available" | "damaged" | "lost" | "unknown";
 
 export type ConfidenceEnum = "estimated" | "rough" | "unavailable";
@@ -5707,6 +5726,8 @@ export type DeploymentSummary = {
 
 export type DeploymentSummaryScopeEnum = "deployment";
 
+export type DepositModeEnum = "none" | "fixed" | "per_product";
+
 export type Design224Enum = "classic" | "bold" | "minimal" | "accent_band" | "photo_header" | "letter";
 
 export type DestinationDispatch = {
@@ -5850,6 +5871,7 @@ export type DirectLoan = {
   "status": string;
   "items": Array<PublicToolLoanItem>;
   "id": number;
+  "request_id": number;
   "target_type": string;
   "target_label": string;
   "container_id": number;
@@ -7334,6 +7356,8 @@ export type FailedDeliveries = {
   "email": number;
   "notifications": number;
 };
+
+export type FailedJobChargeEnum = "none" | "material_only" | "full";
 
 export type FailureCodeEnum = "deadline_exceeded" | "integrity_error" | "storage_error" | "quota_exceeded" | "internal_error";
 
@@ -9714,7 +9738,79 @@ export type Live = {
   "first_run": boolean;
 };
 
+export type LoanAccountabilityCharge = {
+  "amount": string;
+  "note"?: string;
+};
+
+export type LoanAccountabilityChargeResult = {
+  "charge": LoanCharge | null;
+  "free_reason": string | null;
+};
+
+export type LoanAccountabilityRow = {
+  "id": number;
+  "issue_type": string;
+  "quantity": number;
+  "item_label": string | null;
+  "has_return_photo": boolean;
+  "suggested_amount": string;
+  "suggested_source": string;
+  "charge": LoanCharge | null;
+  "no_charge_decided": boolean;
+};
+
+export type LoanCharge = {
+  "id": number;
+  "subject_type": string;
+  "subject_id": number;
+  "label": string;
+  "amount": string;
+  "currency": string;
+  "status": string;
+  "created_at": string;
+};
+
+export type LoanCharges = {
+  "request_id": number;
+  "currency": string;
+  "pricing_enabled": boolean;
+  "waivers_enabled": boolean;
+  "can_waive": boolean;
+  "charges": Array<LoanCharge>;
+  "waivers": Array<LoanFeeWaiver>;
+  "accountability": Array<LoanAccountabilityRow>;
+};
+
 export type LoanDepositModeEnum = "none" | "fixed" | "per_product";
+
+export type LoanFeeWaiver = {
+  "id": number;
+  "request": number;
+  "components": unknown;
+  "covered": Array<string>;
+  "reason": string;
+  "revokes": number | null;
+  "revoked": boolean;
+  "created_by": number;
+  "created_by_name": string;
+  "created_at": string;
+};
+
+export type LoanFeeWaiverCreate = {
+  "components"?: Array<ComponentsEnum>;
+  "reason": string;
+};
+
+export type LoanFeeWaiverResult = {
+  "waiver": LoanFeeWaiver;
+  "waived_payment_ids": Array<number>;
+  "refund_case_ids": Array<number>;
+};
+
+export type LoanFeeWaiverRevoke = {
+  "reason": string;
+};
 
 export type LoanRenewal = {
   "id": number;
@@ -14895,6 +14991,26 @@ export type PatchedPresentationWrite = {
   "public_card_scopes"?: Array<PublicCardScopesEnum>;
 };
 
+export type PatchedPriceDiscount = {
+  "id"?: number;
+  "name"?: string;
+  "audience"?: PriceDiscountAudienceEnum;
+  "plan"?: number | null;
+  "plan_name"?: string | null;
+  "member"?: number | null;
+  "member_name"?: string | null;
+  "domains"?: Array<PricingDomainEnum>;
+  "components"?: Array<string>;
+  "percent_bps"?: number | null;
+  "amount_off"?: string | null;
+  "starts_at"?: string | null;
+  "ends_at"?: string | null;
+  "is_active"?: boolean;
+  "archived_at"?: string | null;
+  "created_at"?: string;
+  "updated_at"?: string;
+};
+
 export type PatchedPrinterPoolVisibility = {
   "is_public"?: boolean;
 };
@@ -16172,6 +16288,239 @@ export type PreviewSkipped = {
   "subject_id": number;
   "people": number;
   "reason": string;
+};
+
+export type PriceDiscount = {
+  "id": number;
+  "name": string;
+  "audience": PriceDiscountAudienceEnum;
+  "plan"?: number | null;
+  "plan_name": string | null;
+  "member"?: number | null;
+  "member_name": string | null;
+  "domains"?: Array<PricingDomainEnum>;
+  "components"?: Array<string>;
+  "percent_bps"?: number | null;
+  "amount_off"?: string | null;
+  "starts_at"?: string | null;
+  "ends_at"?: string | null;
+  "is_active"?: boolean;
+  "archived_at": string | null;
+  "created_at": string;
+  "updated_at": string;
+};
+
+export type PriceDiscountAudienceEnum = "all_members" | "plan" | "member";
+
+export type PriceOverrideCard = {
+  "target_type": PriceOverrideCardTargetTypeEnum;
+  "target_id": number;
+  "label": string;
+  "domain": string;
+  "currency": string;
+  "editable": boolean;
+  "enabled": boolean;
+  "components": Array<PriceOverrideComponent>;
+};
+
+export type PriceOverrideCardTargetTypeEnum = "inventory_product" | "machine" | "consumable_pool" | "bookable_space";
+
+export type PriceOverrideComponent = {
+  "component": string;
+  "label": string;
+  "unit": string;
+  "has_cap": boolean;
+  "mode": PriceOverrideModeEnum;
+  "amount": string | null;
+  "cap": string | null;
+  "effective_amount": string;
+  "effective_source": string;
+  "default_amount": string;
+};
+
+export type PriceOverrideModeEnum = "inherit" | "free" | "custom";
+
+export type PriceOverrideWrite = {
+  "component": string;
+  "mode": PriceOverrideModeEnum;
+  "amount"?: string | null;
+  "cap"?: string | null;
+};
+
+export type PricingCurrency = {
+  "default_currency": string;
+};
+
+export type PricingDefault = {
+  "domain": PricingDomainEnum;
+  "label": string;
+  "enabled": boolean;
+  "currency": string;
+  "mode": PricingModeEnum;
+  "stored": boolean;
+  "editable": boolean;
+  "via": string | null;
+  "locked": boolean;
+  "refusal": string | null;
+  "rental_timing": RentalTimingEnum | NullEnum | null;
+  "rental_timing_editable": boolean;
+  "failed_job_charge": FailedJobChargeEnum | NullEnum | null;
+  "lines": Array<PricingRateLine>;
+  "lending": PricingLending | null;
+};
+
+export type PricingDefaultWrite = {
+  "mode"?: PricingModeEnum;
+  "lines"?: Array<PricingRateLine>;
+  "lending"?: PricingLending;
+  "failed_job_charge"?: FailedJobChargeEnum;
+};
+
+export type PricingDomainEnum = "loans" | "machines" | "bookings" | "events" | "membership";
+
+export type PricingImpact = {
+  "domain": string;
+  "currency": string;
+  "items_checked": number;
+  "changed": number;
+  "truncated": boolean;
+  "changes": Array<PricingImpactChange>;
+};
+
+export type PricingImpactChange = {
+  "target_type": string;
+  "target_id": number;
+  "label": string;
+  "component": string;
+  "before": string;
+  "after": string;
+  "source": string;
+};
+
+export type PricingLending = {
+  "deposit_mode"?: DepositModeEnum;
+  "deposit_amount"?: string;
+  "deposit_blocks_issue"?: boolean;
+  "late_per_day"?: string;
+  "late_cap"?: string;
+  "grace_days"?: number;
+};
+
+export type PricingModeEnum = "free" | "paid";
+
+export type PricingPublicQuote = {
+  "quote": PricingQuote;
+  "digest": string;
+  "tax": PricingQuoteTax;
+  "members_total": string | null;
+  "member_price_applied": boolean;
+  "deposit": PricingQuoteDeposit | null;
+  "policy": PricingQuotePolicy | null;
+  "refund_summary": string | null;
+};
+
+export type PricingQuote = {
+  "domain": string;
+  "currency": string;
+  "mode": string;
+  "lines": Array<PricingQuoteLine>;
+  "subtotal": string;
+  "discount_total": string;
+  "total": string;
+  "discount": PricingQuoteDiscount | null;
+  "waiver": unknown | null;
+  "notes": Array<string>;
+  "digest": string;
+};
+
+export type PricingQuoteDeposit = {
+  "amount": string;
+  "refundable": boolean;
+};
+
+export type PricingQuoteDiscount = {
+  "id": number;
+  "name": string;
+  "audience": string;
+  "saving": string;
+};
+
+export type PricingQuoteItem = {
+  "product_id": number;
+  "quantity": number;
+};
+
+export type PricingQuoteLine = {
+  "component": string;
+  "label": string;
+  "subject_type": string | null;
+  "quantity": string;
+  "unit_amount": string;
+  "gross": string;
+  "discount": string;
+  "net": string;
+  "source": string;
+  "cap_applied": boolean;
+  "target": unknown | null;
+  "detail": unknown;
+};
+
+export type PricingQuotePolicy = {
+  "late_per_day": string;
+  "late_cap": string | null;
+  "grace_days": number;
+  "damage_default": string;
+  "lost_default": string;
+  "damage_lost_text": string;
+};
+
+export type PricingQuoteRequest = {
+  "domain": PricingDomainEnum;
+  "items"?: Array<PricingQuoteItem>;
+  "days"?: number;
+  "request_id"?: number;
+  "space_id"?: number;
+  "space_token"?: string;
+  "starts_at"?: string;
+  "ends_at"?: string;
+  "machine_id"?: number;
+  "machine_type_id"?: number;
+  "pool_id"?: number;
+  "minutes"?: number;
+  "quantity"?: string;
+  "event_id"?: number;
+  "event_token"?: string;
+  "ticket_type_id"?: number;
+  "plan_id"?: number;
+  "joining"?: boolean;
+};
+
+export type PricingQuoteTax = {
+  "net": string;
+  "tax": string;
+  "gross": string;
+  "inclusive": boolean;
+  "mode": string;
+};
+
+export type PricingRateLine = {
+  "component": string;
+  "label": string;
+  "unit": string;
+  "has_cap": boolean;
+  "has_grace": boolean;
+  "has_increment": boolean;
+  "has_minimum": boolean;
+  "discountable": boolean;
+  "staff_set": boolean;
+  "prefill_only": boolean;
+  "read_only": boolean;
+  "amount": string;
+  "cap"?: string | null;
+  "grace_units"?: number;
+  "billing_increment"?: number;
+  "minimum"?: number;
+  "source": string;
 };
 
 export type PrintAccepted = {
@@ -18539,7 +18888,7 @@ export type RefundCasePayment = {
   "member_name": string;
 };
 
-export type RefundCaseReasonCodeEnum = "event_cancelled" | "registration_cancelled" | "booking_cancelled" | "staff_cancelled" | "membership_cancelled" | "member_request" | "capture_flagged";
+export type RefundCaseReasonCodeEnum = "event_cancelled" | "registration_cancelled" | "booking_cancelled" | "staff_cancelled" | "membership_cancelled" | "member_request" | "capture_flagged" | "fee_waived";
 
 export type RefundCaseStatusEnum = "open" | "approved" | "approval_failed" | "declined" | "withdrawn" | "void";
 
@@ -18687,6 +19036,15 @@ export type RenewHelp = {
   "claim_uuid": string;
   "claim_generation": number;
 };
+
+export type RentalTiming = {
+  "rental_timing": RentalTimingEnum;
+  "editable": boolean;
+  "via": string | null;
+  "locked": boolean;
+};
+
+export type RentalTimingEnum = "at_checkout" | "at_return";
 
 export type ReopenInput = {
   "operation_id": string;
@@ -21363,7 +21721,7 @@ export type SubjectExportList = {
   "results": Array<SubjectExport>;
 };
 
-export type SubjectTypeEnum = "machine_service_request" | "booking" | "event_registration" | "makerspace_membership" | "membership_term" | "membership_request" | "loan_deposit" | "loan_late_fee";
+export type SubjectTypeEnum = "machine_service_request" | "booking" | "event_registration" | "makerspace_membership" | "membership_term" | "membership_request" | "loan_deposit" | "loan_late_fee" | "loan_rental" | "loan_damage" | "loan_lost";
 
 export type SubmissionIntegrity = {
   "submission_id": number;

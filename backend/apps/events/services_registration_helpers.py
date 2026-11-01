@@ -37,9 +37,12 @@ def _quote(event, member, ticket, invite_code, promo_code, *, actor, admission_l
             resolve_for_account = required("resolve_for_account_locked")
         invite = resolve_for_account(event, member, actor=actor)
     amount = Decimal(ticket.amount if ticket else event.payment_amount)
+    # Lane L15 (A3): the member's one best automatic discount first, then the promo on top.
+    from .service_payments import member_price
+    amount, member_saving = member_price(event, member, amount, ticket)
     promo, discount = redeem_promo(event, promo_code, amount) if promo_code else (None, Decimal("0"))
     return {"registration_audience": event.registration_audience, "ticket_type": ticket, "invite": invite, "promo_code": promo,
-            "quoted_amount": amount - discount, "discount_amount": discount}
+            "quoted_amount": amount - discount, "discount_amount": discount + member_saving}
 
 
 def _existing_registration(event, member, normalized_email, generation, event_hash):

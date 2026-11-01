@@ -58,6 +58,12 @@ EXTRA_SETTING_KEYS = (
     ("events", "reports.event_pdf"),
     ("events", "reports.event_exports"),
     ("events", "event_embed_policy"),
+    # L15: each area's rate card is that module's setting (#101 names the L15 pricing
+    # defaults); rental timing is registered above under the C-11d fixed exception.
+    ("inventory", "pricing.loans"),
+    ("machines", "pricing.machines"),
+    ("bookings", "pricing.bookings"),
+    ("events", "pricing.events"),
 )
 
 

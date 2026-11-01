@@ -36,6 +36,7 @@ import { hasClaimSession, MemberClaimSession } from "./MemberClaimSession";
 import { AdmissionJoinWithPlans } from "./AdmissionJoinWithPlans";
 import { MemberAdmission, MemberVouch } from "./MemberAdmission";
 import { admissionKeys, publicAdmission, ownAdmission, type AdmissionRequest } from "./membershipAdmissionApi";
+import { PricePreview } from "../payments/PricePreview";
 import type { CustomAnswers } from "../forms/customFormTypes";
 import { MemberNotifications } from "../notifications/MemberNotifications";
 import { MemberEventHistoryLink } from "./MemberEventHistoryLink";
@@ -180,6 +181,7 @@ export function MemberArea() {
     {bootstrap.isError ? <section className="desk-panel p-5"><p className="text-sm text-danger" role="alert">{message(bootstrap.error)}</p></section> : null}
     {activeTab === "overview" && policy && canApply && !requested && memberships.isLoading ? <section className="desk-panel p-5 text-sm text-muted">Checking your sign-in status…</section> : null}
     {activeTab === "overview" && policy && canApply && !requested && !memberships.isLoading ? membershipModuleOn ? admission.data ? <AdmissionJoinWithPlans key={resolvedSlug} settings={admission.data} signedIn={Boolean(memberships.data)} pending={request.isPending} error={request.error} slug={resolvedSlug} onJoin={(answers, join) => request.mutate({ answers, ...join })} onSignIn={() => setShowSignIn(true)} /> : <section className="desk-panel p-5"><p className={admission.isError ? "text-sm text-danger" : "text-sm text-muted"} role={admission.isError ? "alert" : undefined}>{admission.error?.message ?? "Loading admission conditions…"}</p></section> : <JoinMembershipCta policy={policy} signedIn={Boolean(memberships.data)} pending={request.isPending} onJoin={() => request.mutate({})} onSignIn={() => setShowSignIn(true)} /> : null}
+    {activeTab === "overview" && policy && canApply && !requested && !memberships.isLoading && membershipModuleOn && admission.data ? <PricePreview makerspaceSlug={resolvedSlug} request={{ domain: "membership", joining: true, plan_id: admission.data.default_plan?.id }} /> : null}
     {activeTab === "overview" && membershipModuleOn && admission.data?.join_mode !== "closed" && admission.isSuccess && resolvedSlug && canApply && !requested && !memberships.isLoading ? <InvitationRequestForm slug={resolvedSlug} /> : null}
     {activeTab === "overview" && (membershipModuleOn && latestApplication?.id ? <MemberAdmission makerspaceId={makerspaceId} request={ownApplication.data?.id === latestApplication.id && ownApplication.data.state === latestApplication.state ? ownApplication.data : latestApplication as AdmissionRequest} /> : requested ? <section className="desk-panel p-5"><h2 className="title-panel">Membership request sent</h2><p className="mt-1 text-sm text-muted">Staff will review your request.</p></section> : null)}
     {activeTab === "overview" && canReadApplication && ownApplication.error ? <p className="text-sm text-danger" role="alert">{ownApplication.error.message}</p> : null}

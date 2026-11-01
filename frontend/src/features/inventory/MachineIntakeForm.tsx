@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { tenantPublicRequest } from "../../lib/api";
+import { PricePreview } from "../payments/PricePreview";
 
 type IntakeField = { key: string; label: string; type: "text" | "number" | "integer" | "choice" | "boolean"; required?: boolean; choices?: string[]; min?: number; max?: number };
 export type TypeIntake = { materials: { id: number | null; name: string; colours: string[] }[]; intake_schema: { version?: number; fields?: IntakeField[] } };
@@ -41,6 +42,7 @@ export function MachineIntakeForm({ slug, machineId, typeId, dialog = false, tra
             return next;
           })} />}
     </label>)}
+    <PricePreview makerspaceSlug={slug} request={{ domain: "machines", machine_id: machineId }} />
     {schema.isPending ? <p role="status">Loading job requirements…</p> : null}
     {schema.error || submit.error ? <p role="alert" className="text-sm text-danger">{(schema.error || submit.error)?.message}</p> : null}
     {submit.isSuccess ? <div role="status" className="grid gap-2"><p>Request submitted for review.</p>

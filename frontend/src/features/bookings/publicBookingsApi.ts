@@ -35,6 +35,8 @@ export type PublicBookingInput = {
   ends_at: string;
   custom_answers?: CustomAnswers | null;
   website?: string;
+  /** The digest of the price preview the member saw (lane L15); 409 `price_changed` if it moved. */
+  quote_digest?: string;
 };
 
 export type PublicBookingResult = { status: "pending" | "confirmed"; public_token?: string; confirmation_available?: boolean };

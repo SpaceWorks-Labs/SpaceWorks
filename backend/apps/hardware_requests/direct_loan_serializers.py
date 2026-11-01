@@ -80,6 +80,8 @@ class DirectLoanReturnItemSerializer(serializers.Serializer):
 
 class DirectLoanSerializer(PublicToolLoanSerializer):
     id = serializers.IntegerField(read_only=True)
+    # Lane L15: the loan's request, which every loan-charge route is addressed by.
+    request_id = serializers.IntegerField(read_only=True)
     target_type = serializers.CharField(read_only=True)
     target_label = serializers.CharField(read_only=True)
     container_id = serializers.IntegerField(read_only=True)

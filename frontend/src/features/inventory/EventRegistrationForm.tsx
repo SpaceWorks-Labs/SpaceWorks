@@ -8,6 +8,8 @@ import { EventTicketPicker } from "../events/EventTicketPicker";
 import type { EventTicket } from "../events/eventTicketTypes";
 import { StructuredApiError, tenantPublicRequest } from "../../lib/api";
 import { CustomFormFields } from "../forms/CustomFormFields";
+import { PricePreview } from "../payments/PricePreview";
+import { isPriceChanged, PriceChangedNotice } from "../payments/PriceChangedNotice";
 import {
   customAnswerErrors,
   validateCustomAnswers,
@@ -58,13 +60,14 @@ export function EventRegistrationForm({ makerspaceSlug, publicToken, waitlist, a
   const [inviteCode, setInviteCode] = useState("");
   const [promoCode, setPromoCode] = useState("");
   const [ticketId, setTicketId] = useState<number | null>(null);
+  const [quoteDigest, setQuoteDigest] = useState("");
   const [website, setWebsite] = useState("");
   const [answers, setAnswers] = useState<CustomAnswers>({});
   const [clientErrors, setClientErrors] = useState<Record<string, string>>({});
   const successRef = useRef<HTMLDivElement>(null);
   const registration = useMutation({
     mutationFn: async () => {
-      const rawTransportBody = { ...(hostWaiver ? { host_waiver_id: hostWaiver.id, host_waiver_version: hostWaiver.version, host_waiver_accepted: waiverAccepted } : {}), ...(phone.trim() ? { phone: phone.trim() } : {}), ...(email.trim() ? { email: email.trim() } : {}), website, custom_answers: answers, ...(inviteCode ? { invite_code: inviteCode } : {}), ...(promoCode ? { promo_code: promoCode } : {}), ...(ticketId !== null ? { ticket_type_id: ticketId } : {}) };
+      const rawTransportBody = { ...(hostWaiver ? { host_waiver_id: hostWaiver.id, host_waiver_version: hostWaiver.version, host_waiver_accepted: waiverAccepted } : {}), ...(phone.trim() ? { phone: phone.trim() } : {}), ...(email.trim() ? { email: email.trim() } : {}), website, custom_answers: answers, ...(inviteCode ? { invite_code: inviteCode } : {}), ...(promoCode ? { promo_code: promoCode } : {}), ...(ticketId !== null ? { ticket_type_id: ticketId } : {}), ...(quoteDigest ? { quote_digest: quoteDigest } : {}) };
       return tenantPublicRequest<RegistrationResult>(makerspaceSlug, registerPath(makerspaceSlug, publicToken), {
         method: "POST", body: JSON.stringify(rawTransportBody),
       });
@@ -125,7 +128,9 @@ export function EventRegistrationForm({ makerspaceSlug, publicToken, waitlist, a
     {promoEnabled ? <label className="grid gap-1 text-sm">Promo code (optional)<input className="desk-input" maxLength={128} autoComplete="off" value={promoCode} onChange={(e) => setPromoCode(e.target.value)} /></label> : null}
     {clientErrors.ticket || clientErrors.invite ? <p className="text-sm text-danger" role="alert">{clientErrors.ticket || clientErrors.invite}</p> : null}
     <CustomFormFields schema={customForm} answers={answers} onChange={setAnswers} errors={{ ...serverErrors, ...clientErrors }} />
-    {registration.error ? <p className="text-sm text-danger" role="alert">{failureMessage(apiError)}</p> : null}
+    {!tickets.length || ticketId !== null ? <PricePreview makerspaceSlug={makerspaceSlug} request={{ domain: "events", event_token: publicToken, ticket_type_id: ticketId ?? undefined }} onDigest={setQuoteDigest} /> : null}
+    {isPriceChanged(registration.error) ? <PriceChangedNotice makerspaceSlug={makerspaceSlug} error={registration.error} />
+      : registration.error ? <p className="text-sm text-danger" role="alert">{failureMessage(apiError)}</p> : null}
     <button className="desk-button-brand" type="submit" disabled={registration.isPending}>
       {registration.isPending ? "Submitting..." : approvalRequired ? "Apply" : waitlist ? "Join waitlist" : "Register"}
     </button>

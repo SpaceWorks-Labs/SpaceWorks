@@ -24,6 +24,8 @@ import { MakerspaceLocationSettings } from "./MakerspaceLocationSettings";
 import { MakerspaceProfileSettings } from "./MakerspaceProfileSettings";
 import { BillingDocumentsSettings } from "./BillingDocumentsSettings";
 import { TaxSettings } from "../finance/TaxSettings";
+import { PricingSettings } from "./pricing/PricingSettings";
+import { capabilityOn } from "../../lib/features";
 import { SpacePacksPanel } from "./SpacePacksPanel";
 import { MakerspaceMembershipSettings } from "./MakerspaceMembershipSettings";
 import { MakerspacePaymentSettings } from "./MakerspacePaymentSettings";
@@ -181,6 +183,9 @@ export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMak
       {canManageMakerspace ? <BillingDocumentsSettings key={makerspace.id} makerspaceId={makerspace.id} /> : null}
       {canManageMakerspace ? <TaxSettings key={`tax-${makerspace.id}`} makerspaceId={makerspace.id} /> : null}
     </> },
+    ...(capabilityOn(settings.data ?? makerspace, "charges.pricing") ? [{ id: "pricing", title: "Pricing",
+      description: "Free or paid per area, the rates, member discounts and the currency new charges use.",
+      rows: <PricingSettings key={makerspace.id} makerspace={settings.data ?? makerspace} canManageMakerspace={canManageMakerspace} /> }] : []),
     { id: "notifications", title: "Notifications", rows: <>{staffEmail}
       {canManageMakerspace && enabledModules.includes("notifications") ? <NotificationTimingSettings key={makerspace.id} makerspaceId={makerspace.id} /> : null}
       <NotificationMuteMatrix makerspaceId={makerspace.id} /><NotificationRecipientPicker makerspaceId={makerspace.id} />

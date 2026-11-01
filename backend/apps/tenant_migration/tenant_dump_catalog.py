@@ -71,8 +71,9 @@ class TenantDumpCatalogError(AssertionError):
 # lane/r2-s0: accounts/0051-0053 passkeys, login risk and IP access; makerspaces/0118 (re-chained
 # after L4's 0117) per-space security policy; re-pinned.
 # lane/r2-u-d: tenant_migration/0014 grant_staff_roles on import identity decisions; re-pinned.
+# lane/r2-l15c: payments/0033-0034 pricing kernel and guards, bookings/0021 requested price; re-pinned.
 # Orchestrator re-pins the live catalog after final schema/migration verification.
-CATALOG_SCHEMA_SHA256 = "f12a193455e2e1c05e311ccc74a8feb21dd719322b4c2eab27d0e3dfd7fe276d"
+CATALOG_SCHEMA_SHA256 = "f00f76aae8420c0e55d91a97737282d5698df2b640490aecfe99648864911b38"
 
 
 def catalog_models(apps_registry=apps):

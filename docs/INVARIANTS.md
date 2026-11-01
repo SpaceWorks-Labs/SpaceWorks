@@ -2833,6 +2833,52 @@ Owner decisions #62, #66, #74, #110c, #111 Q9-Q11, #128 C-1/C-2 and #135 Q-A1-Q-
   `GET/PUT …/locks` (Space Manager), `GET …/effective` (what the caller may edit, per module and
   key; only modules the caller manages).
 
+## Pricing: paid and free everywhere (release 2, lane L15; #84, #85)
+
+- **One resolver.** Every chargeable seam and every price preview calls
+  `apps.payments.pricing.quote()`; no module computes a price on its own (L12, L6, L22 call it and
+  add their component to `pricing/components.py`). Preview = charge: a submit that carries the digest
+  it was shown is refused with 409 `price_changed` and the new quote when the price moved
+  (`pricing.verify_digest`); never charge more than was shown.
+- **The quote is frozen.** The charge stores it once in `Payment.pricing_snapshot` (net of tax; L5
+  freezes tax on top). A booking awaiting approval freezes its quote at request
+  (`Booking.pricing_snapshot`, insert-only) and approval charges exactly that (#159); only a
+  pre-#159 request falls back to the approval-day quote, audited `booking.price_quoted_at_approval`. The model refuses a change and a Postgres trigger backs it. Ids inside the
+  snapshot are source-local history, never live references.
+- **No second ledger.** The pricing tables (`PricingDefault`, `PricingDefaultLine`, `PriceOverride`,
+  `PriceDiscount`, `LoanFeeWaiver`) hold configuration and waivers only; money owed is one `Payment`
+  per charge through `create_payment`. A total of 0 raises NO `Payment`; a priced charge that came to
+  0 is audited `charge.free_by_pricing`.
+- **The free default.** With nothing configured every new component is free and the release-1
+  price columns still apply, so `charges.pricing` on with an empty rate card charges exactly what
+  release 1 charged; off, only those columns apply. 0 or empty on an item means inherit (A13).
+- **Precedence per component:** the item's own price column above 0, then a `PriceOverride` (Free or
+  Custom; inherit is no row), then the machine type's price row (machines), then the space rate card
+  (a Free area resolves to 0). A custom deposit or room price is written to the item's own column, so
+  the item form and its price card can never disagree. Overrides are four real FKs (CASCADE with the
+  item), never a polymorphic id.
+- **Discounts:** one best automatic rule (all members, a plan's members by their ACTIVE plan, or one
+  member), then an event promo code; nothing else stacks, no line below 0, rounding half-up per line
+  after the cap. Deposit, late, damage and lost are never discounted unless a rule names them. Rules
+  are archived, never deleted (model + trigger); Space Manager only.
+- **Waivers never move money.** A waiver is append-only (model + trigger) and undone only by a
+  revocation row. Pending covered charges become `waived` through `reconciliation.waive`; a PAID one
+  is never reversed -- it opens a `fee_waived` refund case for staff approval (#59). The deposit is
+  never waivable. A switched-off `loans.fee_waivers` hides the tool; written waivers keep applying.
+- **Damage/lost charges need the return photo:** an amount above 0 requires the `ReturnEvent` whose
+  evidence recorded the accountability row (`return_photo_required`); one charge per row ever
+  (`charge_exists`); `return_request` authority (handover roles included).
+- **Rental timing sticks to the loan.** Read at issue; an `at_return` loan records
+  `loan.rental_deferred` on its audit trail and is charged at close for the actual days. A timing
+  change applies only to loans issued after it. Every issue path (reviewed, direct, kiosk,
+  self-checkout) runs `loan_payments.on_request_issued` post-commit; a deposit never blocks a direct or
+  kiosk handout.
+- **Authority:** area rate cards through `assert_setting_write` (`pricing.<domain>` keys; the SM or the
+  module manager with its grant); rental timing also the Inventory Manager's without a grant (C-11d,
+  SM lock applies); discounts and the currency are finance settings (SM only); per-item prices
+  belong to whoever edits the item (machine scope included). The public quote reads only publicly
+  shown items and never returns hidden counts, storage, box, QR or requester data.
+
 ## Folded modules: maintenance, To-Buy, warranty and repairs per parent (#97, #128 C-9/C-8/C-10)
 
 - **The `maintenance` and `procurement` module keys are retired.** Their surfaces, and warranty,

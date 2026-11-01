@@ -238,6 +238,11 @@ the Auth module** — forgetting this is a cross-tenant data leak, not just a bu
   on and off (data kept); limit-gated installs on the managed platform and every purge stay
   superadmin-only. Full rules: **Settings authority** and **Folded modules** in
   `docs/INVARIANTS.md`.
+- **Money owed is priced through the pricing kernel** (#84, #85): every charge seam asks it for
+  the amount, never a stored constant. A fee waiver never reverses a paid charge without a
+  staff-approved `RefundCase`; a price that moved since the quote returns 409 `price_changed`;
+  a booking awaiting approval keeps the price quoted at request. Full rules: **Pricing** in
+  `docs/INVARIANTS.md`.
 
 > The machine-scoping program (`MANAGE_MACHINES` per person by machine type, the Machines console, procurement and dashboard
 > narrowing) is documentation of an invariant, not a workflow rule, and lives under **Machine scoping** in
@@ -463,6 +468,7 @@ because none are quoted here — this index is a router, not a summary.
 | **Login security** | `accounts/login_security_contract.py` and `login_security_settings.py`, `login_codes.py`, passkeys, login risk, alerts, IP access, the staff MFA grace, `MakerspaceSecurityPolicy` storage and per-person strictest resolution |
 | **Settings authority** | `makerspaces/settings_authority*.py`, `domain_settings.py`, any module-setting write, grants, locks, the rental-timing exception |
 | **Folded modules** | `machines.maintenance`/`*.tobuy`/`*.warranty` and the reserved repairs keys, `folded_capabilities.py`, capability purge, module switches, report sources |
+| **Pricing** | `payments/pricing/`, rate cards, item prices, member discounts, loan fee waivers, every charge seam, quotes and `price_changed`, bookings' requested price |
 | **Handover roles and the retired Guest Admin** | built-in Handover and combined role sets, `rbac.HANDOUT_ACTIONS`, `is_handout_only`, the retired `guest_admin`/`print_manager` enum members and their migrations |
 | **Separability and tombstoning** | `apps/separability/`, `TOMBSTONED_APPS`, `SEPARABLE_APPS`, retention vs runtime registries, adding a PII-holding model |
 | **Machine scoping** | `MANAGE_MACHINES`, `machines/role_scope.py`, the Machines console, machine-service surfaces, procurement narrowing, dashboard scoping, delegated recipient rules |

@@ -6,6 +6,7 @@ import { opsQueryState, opsStatusLabel } from "./opsPresentation";
 import { BookingDecisionDialog } from "./BookingDecisionDialog";
 import { useBookingQueue, type QueueStatus } from "./bookingQueueApi";
 import { useBookingAction, type Booking } from "./bookingsApi";
+import { RequestedPrice } from "./pricing/RequestedPrice";
 
 const STATUS_OPTIONS: { value: QueueStatus; label: string }[] = [
   { value: "pending", label: "Awaiting review" }, { value: "confirmed", label: "Confirmed" },
@@ -47,7 +48,8 @@ export function BookingQueuePanel({ makerspaceId, status, onStatus, onOpenBookin
             <li key={booking.id}>
               <ListRow title={booking.name} identity={{ kind: "date", date: booking.starts_at }}
                 meta={<>{booking.space_name ?? "Space"} · {when(booking)}
-                  {booking.decision_reason ? <span className="mt-1 block">Reason: {booking.decision_reason}</span> : null}</>}
+                  {booking.decision_reason ? <span className="mt-1 block">Reason: {booking.decision_reason}</span> : null}
+                  <RequestedPrice booking={booking} /></>}
                 onClick={() => onOpenBooking(booking)}
                 right={<div className="flex flex-wrap items-center justify-end gap-2">
                   <StatusBadge status={booking.status} label={opsStatusLabel(booking.status)} />

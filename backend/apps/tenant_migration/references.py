@@ -88,6 +88,10 @@ PAYMENT_SUBJECT_REFERENCES = {
     "membership_request": "makerspaces.MembershipRequest",
     "loan_deposit": "hardware_requests.HardwareRequest",
     "loan_late_fee": "hardware_requests.HardwareRequest",
+    # Lane L15: rental is per loan; damage and lost are per accountability row.
+    "loan_rental": "hardware_requests.HardwareRequest",
+    "loan_damage": "hardware_requests.RequesterAccountability",
+    "loan_lost": "hardware_requests.RequesterAccountability",
 }
 
 NOTIFICATION_URL_ROUTES = (

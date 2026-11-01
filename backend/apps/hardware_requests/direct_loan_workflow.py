@@ -210,6 +210,10 @@ def issue_direct_loan(
                 request=request,
             )
         record_item_logs(actor, "admin_direct.checked_out", makerspace, request, loan)
+        # Lane L15 (A10): direct and kiosk handouts are charged like reviewed loans --
+        # deposit (never blocking) and rental at checkout, after the handout commits.
+        from apps.hardware_requests import loan_payments
+        transaction.on_commit(lambda: loan_payments.on_request_issued(request.pk, actor))
         return loan
 
 

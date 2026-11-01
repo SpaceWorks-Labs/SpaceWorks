@@ -18,8 +18,16 @@ class Payment(models.Model):
         # the one-per-subject constraint gives one deposit and one late fee per loan.
         LOAN_DEPOSIT = "loan_deposit", "Loan deposit"
         LOAN_LATE_FEE = "loan_late_fee", "Loan late fee"
+        # Lane L15 (#84/#85). Rental is one per loan (subject_id = HardwareRequest id);
+        # damage and lost are one per RequesterAccountability row (subject_id = its id).
+        LOAN_RENTAL = "loan_rental", "Loan rental"
+        LOAN_DAMAGE = "loan_damage", "Loan damage charge"
+        LOAN_LOST = "loan_lost", "Lost item charge"
 
-    LOAN_SUBJECT_TYPES = ("loan_deposit", "loan_late_fee")
+    #: Subjects whose subject_id is the HardwareRequest id.
+    LOAN_SUBJECT_TYPES = ("loan_deposit", "loan_late_fee", "loan_rental")
+    #: Subjects whose subject_id is a RequesterAccountability row of a loan.
+    LOAN_ACCOUNTABILITY_SUBJECT_TYPES = ("loan_damage", "loan_lost")
 
     class Status(models.TextChoices):
         PENDING = "pending", "Pending"
@@ -105,6 +113,9 @@ class Payment(models.Model):
     # rewritten: the snapshot is insert-only and the label fills once, from blank.
     tax_snapshot = models.JSONField(null=True, blank=True, default=None)
     method_label = models.CharField(max_length=64, blank=True, default="")
+    # Lane L15. The frozen quote (lines, discount, waiver, sources, digest) the amount was
+    # computed from; `{}` for charges raised without the pricing kernel. Insert-only.
+    pricing_snapshot = models.JSONField(default=dict, blank=True)
     created_by = models.ForeignKey("accounts.User", on_delete=models.PROTECT, related_name="created_payments")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -170,10 +181,12 @@ class Payment(models.Model):
         if self.pk:
             original = type(self).objects.filter(pk=self.pk).values(
                 "status", "amount", "provider", "stripe_provider", "stripe_connected_account_id", "stripe_application_fee_amount", "online_rail", "due_at",
-                "tax_snapshot", "method_label",
+                "tax_snapshot", "method_label", "pricing_snapshot",
             ).first()
             if original and original["tax_snapshot"] != self.tax_snapshot:
                 raise ValidationError("A charge's tax snapshot is immutable.")
+            if original and original["pricing_snapshot"] != self.pricing_snapshot:
+                raise ValidationError("A charge's pricing snapshot is immutable.")
             if original and original["method_label"] and original["method_label"] != self.method_label:
                 raise ValidationError("A payment method label is set once.")
             if original and original["due_at"] != self.due_at:

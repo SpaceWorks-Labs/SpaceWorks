@@ -7,6 +7,7 @@ import { ImageUploader } from "../ImageUploader";
 import { KitDefinitionEditor } from "../../inventory/KitChecklist";
 import { ChainOfCustodyBlock } from "./LoanTimeline";
 import { InventoryItemFields } from "./InventoryItemFields";
+import { PriceOverrideCard } from "../pricing/PriceOverrideCard";
 import { IndividualAssets, InventoryAvailability, LendingHistory, QrHistory, QuantityAdjust } from "./InventoryPanelParts";
 import { formFromProduct, type AdjustmentForm, type AdminProduct, type ItemForm } from "./InventoryPanelShared";
 import type { Category, Makerspace } from "./shared";
@@ -32,6 +33,7 @@ export function InventoryItemDetail({ product, makerspace, canViewAudit, kitEnab
       {active === "details" ? <><InventoryItemFields form={form} setForm={setForm} categories={categories} error={error}>
         {kitEnabled ? <KitDefinitionEditor value={form.kit_components ?? []} onChange={value => setForm(current => ({ ...current, kit_components: value }))} /> : null}
         <ImageUploader endpoint={`/admin/inventory/${product.id}/image`} currentUrl={product.image_url} label="Item photo" onChanged={invalidate} />
+        <PriceOverrideCard makerspaceId={makerspace.id} targetType="inventory_product" targetId={product.id} />
       </InventoryItemFields>{dirty ? <SettingsActions onDiscard={() => setForm(original)} onSave={onSave} pending={pending} disabled={!form.name.trim()} /> : null}</> : null}
       {active === "stock" ? <div className="@container grid gap-6"><div className="grid grid-cols-2 gap-3 @xl:grid-cols-3">{[
         ["Total", product.total_quantity], ["Available", product.available_quantity], ["Issued", product.issued_quantity], ["Damaged", product.damaged_quantity], ["Lost", product.lost_quantity],

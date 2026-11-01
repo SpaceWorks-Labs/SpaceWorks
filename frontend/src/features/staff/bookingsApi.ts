@@ -76,6 +76,8 @@ export type Booking = {
   departed_at?: string | null;
   departures?: BookingDeparture[];
   open_issue_id?: number | null;
+  /** L15 (#159): the price frozen when a booking awaiting approval was requested. */
+  requested_price?: { total?: string | null; currency?: string | null; discount_total?: string | null } | null;
 };
 
 export type Paginated<T> = { count: number; next: string | null; previous: string | null; results: T[] };

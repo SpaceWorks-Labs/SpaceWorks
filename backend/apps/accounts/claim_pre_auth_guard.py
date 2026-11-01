@@ -26,6 +26,8 @@ POLICY_OVERRIDE_ALLOWLIST = {
     # Release 2 L5: claim and pay-link throttles only declare a scope; DRF owns every hook.
     "apps.payments.throttles_l5.PaymentClaimThrottle": set(),
     "apps.payments.throttles_l5.PayLinkThrottle": set(),
+    # Release 2 L15: the price-preview throttle only declares a scope.
+    "apps.payments.views_pricing_quote.PricingQuoteThrottle": set(),
     "apps.bookings.views_passes.BookingPassRenderThrottle": set(),
     "apps.bookings.views_confirmation.BookingConfirmationThrottle": set(),
     "apps.bookings.throttles_feed.BookingFeedTokenThrottle": {"get_cache_key"},

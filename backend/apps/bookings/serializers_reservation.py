@@ -19,6 +19,17 @@ class BookingAdminSerializer(PaymentSummaryMixin, serializers.ModelSerializer):
     departed_at = serializers.DateTimeField(read_only=True, allow_null=True)
     departures = serializers.SerializerMethodField()
     open_issue_id = serializers.SerializerMethodField()
+    requested_price = serializers.SerializerMethodField()
+
+    @extend_schema_field(serializers.DictField(allow_null=True, help_text=(
+        "L15 (#159): {total, currency, discount_total} frozen when a booking awaiting approval was "
+        "requested; approval charges exactly this. Null for instant or legacy bookings.")))
+    def get_requested_price(self, obj):
+        snapshot = obj.pricing_snapshot or {}
+        if not snapshot:
+            return None
+        return {"total": snapshot.get("total"), "currency": snapshot.get("currency"),
+                "discount_total": snapshot.get("discount_total")}
 
     @extend_schema_field(BookingDepartureSerializer(many=True))
     def get_departures(self, obj):
@@ -64,6 +75,7 @@ class BookingAdminSerializer(PaymentSummaryMixin, serializers.ModelSerializer):
             'created_at',
             'payment',
             'space_name', 'decision_reason', 'departed_at', 'departures', 'open_issue_id',
+            'requested_price',
         )
         read_only_fields = fields
 

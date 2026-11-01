@@ -9,6 +9,7 @@ import { invalidatePublicInventory } from "../staff/queryInvalidation";
 import { PublicToolScanPanel } from "./PublicToolScanPanel";
 import { useRequestDraft, type RequestDraft } from "./useRequestDraft";
 import { useContactRequest } from "./useContactRequest";
+import { PricePreview } from "../payments/PricePreview";
 
 export type ActiveTab = "borrow" | "scan";
 
@@ -134,6 +135,7 @@ export function PublicRequestPanel({
                   onWebsiteChange={setWebsite}
                   contact={contact.details}
                 />
+                <PricePreview className="mt-4" makerspaceSlug={makerspaceSlug} request={{ domain: "loans", items: items.map(item => ({ product_id: item.productId, quantity: item.quantity })) }} />
               </div>
             ) : null}
 

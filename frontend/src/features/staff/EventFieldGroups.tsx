@@ -3,6 +3,7 @@ import { CustomFormBuilder } from "../forms/CustomFormBuilder";
 import { AudienceOptions } from "./EventAudienceOptions";
 import type { EventFormValues } from "./EventFormFields";
 import { EventDeliveryFields, EventVisibilityFields } from "./eventPublishing/EventSurfaceFields";
+import { EventPriceNote } from "./pricing/PricingNote";
 
 export type EventFieldGroupProps = {
   values: EventFormValues; setValues: (values: EventFormValues) => void; settings: boolean;
@@ -40,6 +41,7 @@ export function EventMoreFields({ values, setValues, settings, details, price, a
     <EventField label="Description" settings={settings} wide><textarea className="desk-input w-full min-h-24" value={values.description} onChange={(e) => set("description", e.target.value)} disabled={details} /></EventField>
     <EventField label="Tags (comma separated)" settings={settings}><input className="desk-input w-full" value={(values.tags ?? []).join(",")} disabled={details} onChange={(e) => set("tags", e.target.value.split(","))} /></EventField>
     <EventField label="Registration price" settings={settings} helper="Charged only when a place is confirmed."><input className="desk-input w-full" type="number" min="0" step="0.01" value={values.payment_amount} onChange={(e) => set("payment_amount", e.target.value)} disabled={price} /></EventField>
+    <EventPriceNote settings={settings} />
     <EventField label="Member cancellation closes hours before" settings={settings} helper="Leave blank to allow cancellation until the event starts. Settled refunds are handled by staff."><input className="desk-input w-full" type="number" min="0" max="8760" value={values.cancellation_cutoff_hours ?? ""} onChange={(e) => set("cancellation_cutoff_hours", e.target.value === "" ? null : Number(e.target.value))} disabled={details} /></EventField>
     <EventField label="Registration cutoff" settings={settings}><select className="desk-input w-full" value={cutoffMode} disabled={details} onChange={(e) => { const mode = e.target.value; setValues({ ...values, registration_cutoff_at: mode === "absolute" ? (values.starts_at || "") : null, registration_cutoff_lead_minutes: mode === "lead" ? 0 : null }); }}><option value="none">No cutoff</option><option value="absolute">At a date and time</option><option value="lead">Before the event starts</option></select></EventField>
     {cutoffMode === "absolute" ? <EventField label="Cutoff time" settings={settings}><input className="desk-input w-full min-w-0" type="datetime-local" value={values.registration_cutoff_at ?? ""} onChange={(e) => set("registration_cutoff_at", e.target.value)} disabled={details} required /></EventField> : null}

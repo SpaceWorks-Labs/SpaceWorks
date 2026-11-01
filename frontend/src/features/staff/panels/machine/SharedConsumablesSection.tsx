@@ -6,6 +6,7 @@ import type { PrinterPool } from "../../../../generated/api";
 import { staffRequest } from "../../../../lib/api";
 import { blankPool, ConsumablePoolCreateForm } from "./ConsumablePoolCreateForm";
 import { poolLabel, poolQueryKey } from "./servicePools";
+import { PriceOverrideCard } from "../../pricing/PriceOverrideCard";
 
 type Props = {
   visible?: boolean;
@@ -178,6 +179,7 @@ export function ConsumablePoolList({ makerspaceId, pools, visible = true, draft,
                     Adjust stock
                   </button>
                 )}
+                <PriceOverrideCard makerspaceId={makerspaceId} targetType="consumable_pool" targetId={pool.id} compact />
               </div>
             </article>
           );

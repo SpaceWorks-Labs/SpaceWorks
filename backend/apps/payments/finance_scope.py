@@ -39,6 +39,9 @@ PAYMENT_DOMAINS = {
     "membership_request": "membership",
     "loan_deposit": "loans",
     "loan_late_fee": "loans",
+    "loan_rental": "loans",
+    "loan_damage": "loans",
+    "loan_lost": "loans",
 }
 
 

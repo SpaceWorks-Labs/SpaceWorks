@@ -117,6 +117,10 @@ def _delete_object_graph(makerspace):
         PublicToolLoan.objects.filter(makerspace=makerspace).delete()
         RequesterAccountability.objects.filter(makerspace=makerspace).delete()
         ReturnEvent.objects.filter(makerspace=makerspace).delete()
+        # Loan fee waivers PROTECT their loan (and a revocation its waiver): revocations first.
+        from apps.payments.models import LoanFeeWaiver
+        LoanFeeWaiver.objects.filter(makerspace=makerspace, revokes__isnull=False).delete()
+        LoanFeeWaiver.objects.filter(makerspace=makerspace).delete()
         HardwareRequest.objects.filter(makerspace=makerspace).delete()
         # Both photo sidecars are PROTECT: delete them explicitly first. FK-free
         # abandoned-upload receipts are deliberately left to keep reconciling.

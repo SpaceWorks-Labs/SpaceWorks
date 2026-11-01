@@ -25,6 +25,11 @@ SUBJECT_ACTIONS = {
     # whoever may take a return settles the late fee.
     Payment.SubjectType.LOAN_DEPOSIT: rbac.Action.ISSUE_REQUEST,
     Payment.SubjectType.LOAN_LATE_FEE: rbac.Action.RETURN_REQUEST,
+    # Lane L15: rental, damage and lost are settled or waived by whoever takes returns,
+    # the same authority that raises damage/lost charges and waives loan fees (A14).
+    Payment.SubjectType.LOAN_RENTAL: rbac.Action.RETURN_REQUEST,
+    Payment.SubjectType.LOAN_DAMAGE: rbac.Action.RETURN_REQUEST,
+    Payment.SubjectType.LOAN_LOST: rbac.Action.RETURN_REQUEST,
 }
 
 

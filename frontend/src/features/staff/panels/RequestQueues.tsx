@@ -31,6 +31,7 @@ import {
   type ReturnRequestValues,
 } from "./QueuesModals";
 import { AcceptRequestModal } from "./QueuesAcceptModal";
+import { DamageChargeDialog, needsDamageCharges } from "../loanCharges/DamageChargeStep";
 
 export type RequestItem = {
   id: number;
@@ -80,6 +81,7 @@ export function Queues({ makerspace, guestOnly, canViewAudit = false, recovery, 
   const [rejectRow, setRejectRow] = useState<HardwareRequest | null>(null);
   const [assignIssueRow, setAssignIssueRow] = useState<HardwareRequest | null>(null);
   const [returnRow, setReturnRow] = useState<HardwareRequest | null>(null);
+  const [chargeRequestId, setChargeRequestId] = useState<number | null>(null);
   const [modalError, setModalError] = useState("");
   const [defaultLoanDays, setDefaultLoanDays] = useState(String(makerspace.default_loan_days ?? 7));
   const location = useLocation();
@@ -136,7 +138,7 @@ export function Queues({ makerspace, guestOnly, canViewAudit = false, recovery, 
     if (rejectRow) void runAction(`/admin/requests/${rejectRow.id}/reject`, { reason: values.reason });
   };
   const submitReturn = (values: ReturnRequestValues) => {
-    if (returnRow) void runAction(`/admin/requests/${returnRow.id}/return`, { evidence_id: values.evidenceId, box_code: values.boxCode, remark: values.remark, resolutions: values.resolutions, kit_checklist: values.kitChecklist ?? [] });
+    if (returnRow) void runAction(`/admin/requests/${returnRow.id}/return`, { evidence_id: values.evidenceId, box_code: values.boxCode, remark: values.remark, resolutions: values.resolutions, kit_checklist: values.kitChecklist ?? [] }, () => { closeModals(); if (needsDamageCharges(makerspace, values.resolutions)) setChargeRequestId(returnRow.id); });
   };
   const submitAssignIssue = async (values: AssignIssueValues) => {
     if (!assignIssueRow) return;
@@ -224,6 +226,7 @@ export function Queues({ makerspace, guestOnly, canViewAudit = false, recovery, 
       <RejectRequestModal row={rejectRow} open={Boolean(rejectRow)} pending={action.isPending} error={modalError} onClose={closeModals} onSubmit={submitReject} />
       <AssignIssueModal row={assignIssueRow} open={Boolean(assignIssueRow)} pending={action.isPending} error={modalError} onClose={closeModals} onSubmit={submitAssignIssue} makerspaceId={makerspace.id} kitEnabled={featureEnabled(makerspace.enabled_features ?? [], "loans.kit_checklist")} />
       <ReturnRequestModal row={returnRow} open={Boolean(returnRow)} pending={action.isPending} error={modalError} onClose={closeModals} onSubmit={submitReturn} makerspaceId={makerspace.id} />
+      {chargeRequestId ? <DamageChargeDialog key={chargeRequestId} makerspaceId={makerspace.id} requestId={chargeRequestId} onClose={() => setChargeRequestId(null)} /> : null}
       </>} />
   </div>;
 }

@@ -217,3 +217,80 @@ spending; finance staff with `view_finance` + `record_payment` record anywhere. 
 `?format=csv`). Reports: `income-spending`, `finance-inventory|machines|bookings|events`,
 `event-finance`, `receipts-payments`, `subscription-income` and `money-methods` (provider and
 method splits with the failed-online rate).
+
+## Pricing: paid and free everywhere
+
+Release 2, lane L15 (decisions #84 and #85, answers A1-A14). One pattern for every area: **rate
+card -> item price -> loan waiver -> member discount -> frozen quote -> `Payment`**. There is no
+second ledger: pricing decides the amount, the existing `create_payment` records the debt, and
+L5's tax is frozen on top of the net amount (A6).
+
+**One resolver.** `apps.payments.pricing.quote(makerspace, domain, target, member, params)`
+prices every chargeable seam and every preview, so the price a member is shown is the price they
+are charged (A8). Areas and components (`payments/pricing/components.py`):
+
+| Area | Components | Notes |
+|---|---|---|
+| Lending | rental per loan, rental per day (cap per unit of each item line), refundable deposit, late fee per day (cap, grace), damage, lost | Deposit and late fee keep their release-1 columns on the payment settings; damage and lost are staff-set with a suggestion |
+| Machines | time per hour (billing increment, minimum), material per unit, per job | Time AND material together; the machine type's price row is the middle level |
+| Bookings | per booking (the room's own price), per hour (rounded up to the increment, capped per day) | |
+| Events | per registration | The space default only prefills new events; a published event keeps its own price |
+| Membership | dues, joining fee | Read-only here: plans own their prices (L4); a cheaper tier is a cheaper plan (A4) |
+
+**Resolution per component**, most specific first: the item's own price field above 0 (a room's
+price, an item's deposit); a per-item price (`PriceOverride`: Free or Custom, on a product,
+machine, material pool or room); the machine type's price row (machines); the space rate card,
+where a **Free** area resolves to 0. 0 or empty on an item means "inherit the default" (A13); set
+the item to Free to keep it free under a paid default. Before a default is saved, the impact
+preview lists every item whose price would move.
+
+**Bookings awaiting approval keep the requested price** (#159): the quote is frozen on the
+booking (`Booking.pricing_snapshot`, insert-only) when it is requested, and approval raises the
+`Payment` from that snapshot, never re-quoting. Staff see the frozen price beside Approve. A
+request from before this rule has no snapshot and is charged the approval-day price, audited as
+`booking.price_quoted_at_approval`. Instant confirmations are quoted and charged at once.
+
+**Rounding** is half-up to two decimals per line, the total is the sum of the lines, and a cap
+applies before any discount (A7).
+
+**Discounts** (`charges.discounts`, off by default): the single best automatic rule -- all
+members, the members on a plan (their active plan; display titles are never tiers), or one member
+-- then an event promo code on top. Nothing else stacks and no line goes below 0 (A3). Deposits,
+late, damage and lost fees are never discounted unless a rule names them. Rules are archived,
+never deleted. Space Manager only (a finance setting).
+
+**A total of 0 raises no `Payment`.** A priced charge that came to 0 (waived, discounted, a free
+failed job) is audited as `charge.free_by_pricing`.
+
+**Loans.** Rental timing is a per-space setting (A1): **at checkout** charges the planned days at
+issue, **at return** charges the actual days at close; the choice made when a loan is issued sticks
+to that loan. The late fee is per loan at the highest late rate among its items (A2) and applies
+on top. An early return refunds nothing automatically and renewals are not charged. Direct,
+kiosk and self-checkout handouts are charged like reviewed loans; a deposit never blocks them
+(A10). Damage and lost charges are entered by staff (handover roles included) at return or later,
+one per damage/lost row, and an amount above 0 needs the return photo that recorded the item (A5).
+
+**Waivers** (`loans.fee_waivers`): staff with `return_request` waive a loan's rental, late, damage
+or lost fees with a required reason (A14). Pending charges become `waived`; a charge already paid
+is never reversed -- it opens a refund case (`fee_waived`) that a staff member approves. The
+deposit is never waived. A waiver is append-only and undone only by a revocation row, which
+affects charges not yet raised.
+
+**Who edits what** (#101, A9): each area's rate card is that module's setting (the Space Manager,
+or the module manager holding its settings grant); rental timing is also the Inventory Manager's
+without a grant (#128 C-11d) unless the Space Manager locked it; per-item prices belong to whoever
+edits the item; discounts and the currency are the Space Manager's.
+
+**Machines: failed jobs.** Free by default (A11). `machines.service_payments.create_for_failed_request`
+charges a failed job as none, material only or full; lane L12 calls it with the per-type, per-fault
+choice of #142 OQ-8.
+
+Routes (staff): `admin/makerspace/<id>/pricing/<domain>` (+ `/impact`), `pricing/loans/rental-timing`,
+`pricing/currency`, `pricing/overrides/<target_type>/<target_id>`, `pricing/discounts` (+ `/<id>`,
+`/<id>/archive`), `requests/<rid>/charges`, `requests/<rid>/fee-waivers` (+ `/<wid>/revoke`),
+`requests/<rid>/accountability/<aid>/charge` (amount 0 records "no charge" as
+`loan.accountability_not_charged`). Public: `public/<slug>/pricing/quote` (anonymous allowed,
+`THROTTLE_PRICING_QUOTE`; rooms and events by id or public token), which never returns hidden
+counts, storage, box, QR or requester data. The public booking and event registration submits
+take an optional `quote_digest`: a moved price is refused with 409 `price_changed` and the new
+quote before anything is written.

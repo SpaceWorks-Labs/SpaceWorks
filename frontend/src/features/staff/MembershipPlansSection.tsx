@@ -17,6 +17,7 @@ import {
 } from "./membershipPlansApi";
 import { formatMoney } from "./paymentsApi";
 import { Panel } from "./panels/shared";
+import { PlanPriceNote } from "./pricing/PricingNote";
 import { MembershipRenewalFields, emptyRenewal, planRenewal, renewalInput, validateRenewal } from "./MembershipRenewalFields";
 import { MembershipPlanRulesFields, emptyRules, rulesFromPlan, rulesInput, validateRules } from "./MembershipPlanRulesFields";
 
@@ -125,6 +126,7 @@ export function MembershipPlansSection({ makerspaceId, features = [] }: { makers
       <p className="mb-3 text-sm text-muted">
         Plans price a membership term. Members are put on a plan from the roster ("Terms"); a plan with terms cannot be deleted, only deactivated.
       </p>
+      <PlanPriceNote makerspaceId={makerspaceId} />
       {plans.isLoading ? <p className="text-sm text-muted">Loading plans…</p> : null}
       {plans.isError ? <p className="text-sm text-danger" role="alert">{planErrorText(plans.error, "Could not load plans.")}</p> : null}
       {plans.data?.length === 0 ? <EmptyState message="No plans yet. Add your first membership plan below." /> : null}

@@ -27,6 +27,12 @@ def annotate_restore_history(queryset):
 
 
 @transaction.atomic
+def _priced(booking):
+    # Lane L15: the booking's price comes from the pricing kernel (per booking + per hour).
+    from .service_payments import charged_quote
+    return charged_quote(booking, None).total > 0
+
+
 def restore_booking(booking, *, actor):
     space, locked = _locked_booking(booking)
     locked.member = lock_obligation_owner(locked.member)
@@ -42,7 +48,7 @@ def restore_booking(booking, *, actor):
             subject_id=locked.pk,
         ).exists(),
         would_charge=bool(admitted == Booking.Status.CONFIRMED
-                          and locked.member_id and space.payment_amount > 0
+                          and locked.member_id and _priced(locked)
                           and charge_tracking_enabled(space.makerspace, "bookings")),
     )
     if locked.member_id is None:

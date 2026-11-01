@@ -16,6 +16,7 @@ import { fetchPrintQueues, fetchPublicConsumablePools, fetchPrintStatus, presign
 import { PrintStatusPanel } from "./PublicPrintRequestPanels";
 import { uploadPrintFilesBounded } from "./PublicPrintUploads";
 import { statusRefetchInterval } from "../machine-service/types";
+import { PricePreview } from "../payments/PricePreview";
 
 export function PublicPrintRequestPage() {
   const queryClient = useQueryClient();
@@ -64,10 +65,11 @@ export function PublicPrintRequestPage() {
     <PublicDetailLayout state={state} title={`Send a print job to ${displayName}`}
       chips={[{ label: "3D printing", tone: "accent" }]} sections={[{ id: "your-print", label: "Your print", content:
         submitted ? <Callout size="panel" tone="success" lead="Request sent." body="We'll update this page as it moves." action={{ label: "Send another request", onClick: () => setSubmitted(false) }} />
-          : enabled ? <PrintDetailsForm catalogue={catalogueQuery.data} form={form} updateField={updateField} poolsQuery={poolsQuery}
+          : enabled ? <><PrintDetailsForm catalogue={catalogueQuery.data} form={form} updateField={updateField} poolsQuery={poolsQuery}
             modelFiles={modelFiles} setModelFiles={setModelFiles} screenshotFiles={screenshotFiles} setScreenshotFiles={setScreenshotFiles}
             submitPending={submitMutation.isPending} submitError={submitMutation.error} uploadProgress={uploadProgress} website={website} onWebsiteChange={setWebsite}
             onSubmit={(event: FormEvent<HTMLFormElement>) => { event.preventDefault(); if (form.title.trim()) submitMutation.mutate(); }} />
+            <PricePreview className="mt-4" makerspaceSlug={makerspaceSlug} request={{ domain: "machines", machine_type_id: queuesQuery.data?.[0]?.machine_type_id, pool_id: form.consumablePoolId ? Number(form.consumablePoolId) : undefined, quantity: Number(form.estimatedFilamentGrams) > 0 ? form.estimatedFilamentGrams.trim() : undefined }} /></>
           : <EmptyState message="3D printing isn't open for requests right now." action={{ label: "Back to catalogue", href: tenantPath() }} /> } ]}
       actionCard={{ title: "Track your job", state: "open", summary: !activeStatusToken ? "After you send it, you'll get a private link to follow progress here." : undefined,
         form: <div ref={trackerRef} id="print-tracker"><PrintStatusPanel submitted={submitted} tokenStatus={statusQuery.data} tokenStatusPending={Boolean(activeStatusToken) && statusQuery.isPending} tokenStatusError={statusQuery.error} trackingHref={activeStatusToken ? trackingUrl.href : undefined} onRetry={() => { void statusQuery.refetch(); }} publicToken={activeStatusToken || undefined} makerspaceSlug={makerspaceSlug} /></div>,

@@ -5,26 +5,61 @@ import logging
 from django.db import IntegrityError, transaction
 
 from apps.payments.availability import charge_tracking_enabled, online_payments_enabled
-from apps.payments.models import MakerspacePaymentSettings, Payment
+from apps.payments.models import Payment
 from apps.payments.refund_cancellation import cancel_or_hold
 from apps.payments.services import create_checkout, create_payment
 
 logger = logging.getLogger(__name__)
 
 
-def create_for_confirmed_booking(booking, actor):
+def booking_quote(booking, member=None):
+    """Lane L15: per booking + per hour x booked time (rounded up), capped per day."""
+    from apps.payments.pricing import quote
+
+    return quote(booking.space.makerspace, "bookings", booking.space, member=member or booking.member,
+                 params={"starts_at": booking.starts_at, "ends_at": booking.ends_at})
+
+
+def requested_snapshot(booking):
+    """#159: the quote frozen on a booking that waits for approval ({} when nothing is tracked)."""
+    if booking.member is None or not charge_tracking_enabled(booking.space.makerspace, "bookings"):
+        return {}
+    return booking_quote(booking).to_snapshot(frozen_at="request")
+
+
+def charged_quote(booking, actor, *, approval=False):
+    """The requested price when one was frozen; else today's quote (audited on approval)."""
+    from apps.payments.pricing.quotes import FrozenQuote
+
+    if booking.pricing_snapshot:
+        return FrozenQuote(booking.pricing_snapshot)
+    if approval:
+        from apps.audit import services as audit
+        audit.record(actor, "booking.price_quoted_at_approval", makerspace=booking.space.makerspace,
+                     target=booking, meta={"booking_id": booking.pk})
+    return booking_quote(booking)
+
+
+def create_for_confirmed_booking(booking, actor, *, approval=False):
     space = booking.space
     makerspace = space.makerspace
     member = booking.member
-    if (
-        member is None
-        or space.payment_amount <= 0
-        or not charge_tracking_enabled(makerspace, "bookings")
-    ):
+    if member is None or not charge_tracking_enabled(makerspace, "bookings"):
         return None
+    existing = Payment.objects.filter(makerspace=makerspace, subject_type=Payment.SubjectType.BOOKING,
+                                      subject_id=booking.pk).first()
+    priced = None
+    if existing is None:
+        priced = charged_quote(booking, actor or member, approval=approval)
+        if priced.total <= 0:
+            if priced.lines:
+                from apps.payments.pricing.charging import record_free
+                record_free(priced, actor=actor or member, makerspace=makerspace, target=booking,
+                            subject_type=Payment.SubjectType.BOOKING, subject_id=booking.pk)
+            return None
     # The caller's atomic booking transaction must also commit its required debt.
     # Only the optional provider rail may fail after this local ledger write.
-    payment = _get_or_create(booking, actor or member)
+    payment = _get_or_create(booking, actor or member, priced)
     try:
         if payment.status == Payment.Status.PENDING and online_payments_enabled(
             makerspace, "bookings"
@@ -35,7 +70,9 @@ def create_for_confirmed_booking(booking, actor):
     return payment
 
 
-def _get_or_create(booking, created_by):
+def _get_or_create(booking, created_by, priced=None):
+    from apps.payments.pricing.charging import raise_priced
+
     lookup = {
         "makerspace": booking.space.makerspace,
         "subject_type": Payment.SubjectType.BOOKING,
@@ -44,19 +81,12 @@ def _get_or_create(booking, created_by):
     existing = Payment.objects.filter(**lookup).first()
     if existing is not None:
         return existing
-    currency = MakerspacePaymentSettings.for_makerspace(
-        booking.space.makerspace
-    ).default_currency
+    priced = priced or booking_quote(booking)
     try:
         with transaction.atomic():
-            return create_payment(
-                **lookup,
-                member=booking.member,
-                amount=booking.space.payment_amount,
-                currency=currency,
-                created_by=created_by,
-                subject_label=booking.space.name,
-                due_at=booking.starts_at,
+            return raise_priced(
+                priced, **lookup, member=booking.member, created_by=created_by, target=booking,
+                subject_label=booking.space.name, due_at=booking.starts_at, create=create_payment,
             )
     except IntegrityError:
         return Payment.objects.get(**lookup)

@@ -165,6 +165,9 @@ class PublicBookingSubmissionView(APIView):
 
         serializer = PublicBookingInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        from apps.payments.pricing.submit_guard import check_submitted_digest  # L15 (A8): 409 price_changed
+        check_submitted_digest(request, makerspace, "bookings", space, {
+            "starts_at": serializer.validated_data.get("starts_at"), "ends_at": serializer.validated_data.get("ends_at")})
         booking = services_bookings.create_booking(
             space,
             member=request.user,

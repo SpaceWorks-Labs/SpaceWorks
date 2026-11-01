@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 @transaction.atomic
 def create_payment(
     *, makerspace, subject_type, subject_id, member, amount, currency, created_by,
-    via_makerspace=None, subject_label="", due_at=None,
+    via_makerspace=None, subject_label="", due_at=None, pricing_snapshot=None,
 ):
     # A missing source is NOT fatal any more. Recording what a member owes is separate
     # from being able to collect it online: a space that takes cash still needs the debt
@@ -79,6 +79,8 @@ def create_payment(
         stripe_connected_account_id=connected_account_id,
         stripe_application_fee_amount=fee_amount,
         tax_snapshot=tax_snapshot,
+        # Lane L15: the frozen net quote this amount came from (insert-only).
+        pricing_snapshot=pricing_snapshot or {},
     )
     # Raising a charge is when a member incurs a debt; the log previously recorded
     # only its settlement.
@@ -94,6 +96,9 @@ def create_payment(
             "amount": str(amount),
             "currency": payment.currency,
             "via_makerspace_id": via_makerspace.pk if via_makerspace else None,
+            # Lane L15: the automatic discount this raise applied, if any.
+            "discount_id": _discount(pricing_snapshot).get("id"),
+            "discount_saving": _discount(pricing_snapshot).get("saving"),
         },
     )
     from apps.payments.notifications import notify_payment
@@ -108,6 +113,11 @@ def create_payment(
             "payment_id": payment.pk, "failure_type": type(exc).__name__,
         })
     return payment
+
+
+def _discount(snapshot):
+    """Lane L15: the discount a raise applied, named in its audit entry."""
+    return (snapshot or {}).get("discount") or {}
 
 
 from apps.payments.reconciliation import mark_offline, waive  # noqa: E402,F401

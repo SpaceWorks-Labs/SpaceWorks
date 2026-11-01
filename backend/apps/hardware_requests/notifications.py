@@ -68,6 +68,11 @@ def notify_loan_charge(request, event, payment):
     return notify_charge(request, event, payment)
 
 
+def notify_loan_fees_waived(request, waiver):
+    from .notifications_p2_requests import notify_waiver
+    return notify_waiver(request, waiver)
+
+
 def notify_return_due(request):
     result = _notify(
         request,

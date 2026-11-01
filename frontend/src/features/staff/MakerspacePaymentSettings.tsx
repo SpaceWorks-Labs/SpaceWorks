@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { Field, SettingsRow, StatusPill } from "../../components/ui";
 import { staffRequest } from "../../lib/api";
-import { featureEnabled } from "../../lib/features";
+import { capabilityOn, featureEnabled } from "../../lib/features";
 import { MakerspaceLoanSettings } from "./MakerspaceLoanSettings";
 import { PaymentCredentialFields, type CredentialDraft, type PaymentSettings, type Provider } from "./PaymentCredentialFields";
 import { SettingsEditorActions } from "./SettingsEditorActions";
@@ -57,7 +57,7 @@ function PaymentSettingsEditor({ makerspace }: { makerspace: Makerspace }) {
 
   // Loan tracking remains available even when the online rail is tombstoned.
   const loans = featureEnabled(makerspace.enabled_features ?? [], "charges.loans")
-    ? <MakerspaceLoanSettings makerspaceId={makerspace.id} /> : null;
+    ? <MakerspaceLoanSettings makerspaceId={makerspace.id} pricingOn={capabilityOn(makerspace, "charges.pricing")} /> : null;
   if ((settings.error as { status?: number } | null)?.status === 404) return loans;
 
   return <>

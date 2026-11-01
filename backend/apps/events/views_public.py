@@ -141,6 +141,10 @@ class PublicEventRegistrationView(APIView):
         )
         serializer.is_valid(raise_exception=True)
         registration_data = dict(serializer.validated_data)
+        from apps.payments.pricing.submit_guard import check_submitted_digest  # L15 (A8): 409 price_changed
+        from apps.events.models import EventTicketType
+        ticket = EventTicketType.objects.filter(event=event, pk=registration_data.get("ticket_type_id")).first()
+        check_submitted_digest(request, event.makerspace, "events", event, {"ticket": ticket})
         if 'form_payload' not in registration_data:
             registration_data['custom_answers'] = request.data.get('custom_answers')
         try:

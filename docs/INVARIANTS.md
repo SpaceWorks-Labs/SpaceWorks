@@ -151,8 +151,8 @@ grants, with `tracks`; `superadmin_actions`; `mfa_grace_ends_at` (null until S-A
 one release as a deprecated alias (`member` = person); `staff_makerspace` is gone.
 
 **Cookies.** Exactly two refresh cookies: the person's (`AUTH_REFRESH_COOKIE`) and
-`refresh_token_platform`. Refresh/logout `context` is `person` (default; `member` accepted for
-one release) or `platform`. A person's refresh passes the member origin policy (which includes
+`refresh_token_platform`. Refresh/logout `context` is `person` (default; the release-1 names
+`member` and `staff:<slug>` are accepted for one release and mean person) or `platform`. A person's refresh passes the member origin policy (which includes
 every staff console origin); the platform's passes the staff origin policy. For one release,
 logout and logout-all also expire every `refresh_token_staff_<slug>` cookie the browser sends;
 nothing reads them. All cookies still share `AUTH_COOKIE_PATH`.

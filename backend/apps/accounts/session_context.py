@@ -16,10 +16,11 @@ LEGACY_STAFF_COOKIE_PREFIX = "refresh_token_staff_"
 
 
 class SessionContextSerializer(serializers.Serializer):
-    context = serializers.ChoiceField(
-        choices=(PERSON, "member", PLATFORM), default=PERSON,
-        help_text="Which browser session: person (default) or platform (the superadmin). "
-                  "`member` is the release-1 name of person, accepted for one release.",
+    context = serializers.RegexField(
+        r"\A(?:person|member|platform|staff:[-a-zA-Z0-9_]+)\Z", max_length=156, default=PERSON,
+        help_text="Which browser session: person (default) or platform (the superadmin). For one "
+                  "release the release-1 names `member` and `staff:<slug>` are accepted and both "
+                  "mean person (a staff role is a person's, so there is no per-space session).",
     )
 
 

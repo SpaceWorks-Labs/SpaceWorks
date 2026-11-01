@@ -14,6 +14,7 @@ from apps.accounts.services_device_tokens import (
     assert_mobile_grant_creation_enabled, issue_device_token_pair,
 )
 from apps.accounts.session_issuance import lock_session_user
+from apps.accounts.staff_identity import is_person, is_platform
 
 
 logger = logging.getLogger(__name__)
@@ -31,7 +32,7 @@ class DeviceSuperadminNotSupported(PermissionDenied):
 
 
 def assert_grant_user_allowed(user):
-    if user.account_kind == User.AccountKind.PLATFORM or user.is_superuser or user.role == User.Role.SUPERADMIN:
+    if is_platform(user) or user.is_superuser or user.role == User.Role.SUPERADMIN:
         raise DeviceSuperadminNotSupported(user)
 
 
@@ -46,24 +47,31 @@ def audit_grant_refusal(exc):
     })
 
 
-def authority_for_login(user, *, login_method):
-    # Provenance comes from the issuer or server-owned MFA context, never request data.
+def authority_for_login(user, *, login_method, staff_makerspace_id=None):
+    """Member authority for any person; staff authority is a step-up (Q12): a fixed
+    makerspace where the person holds a staff role, proven with a real second factor
+    under ``require_staff_mfa``, after any primary login method. Provenance comes from
+    the issuer or the server-owned MFA context, never from request data."""
     assert_grant_user_allowed(user)
-    if user.account_kind == User.AccountKind.STAFF:
-        from apps.accounts.mfa_policy import VERIFIED, source_for
-        if login_method != "password" or source_for(user) != VERIFIED:
-            raise AuthenticationFailed("Native staff sessions require password and MFA.")
-        return DeviceGrant.Authority.STAFF
-    if user.account_kind != User.AccountKind.MEMBER:
+    if not is_person(user):
         raise AuthenticationFailed("Invalid device authorization.")
-    return DeviceGrant.Authority.MEMBER
+    if staff_makerspace_id is None:
+        return DeviceGrant.Authority.MEMBER
+    from apps.accounts.mfa_policy import VERIFIED, source_for
+    from apps.accounts.staff_identity import has_staff_role, require_staff_mfa
+    if not has_staff_role(user, staff_makerspace_id):
+        raise AuthenticationFailed("Staff access is required for this makerspace.")
+    if source_for(user) != VERIFIED:
+        raise AuthenticationFailed("Native staff sessions require a verified second factor.")
+    require_staff_mfa(user, None)
+    return DeviceGrant.Authority.STAFF
 
 
 class DeviceGrantCreationRetryRequired(Exception):
     """The consumed first-factor and attestation inputs must be replaced."""
 
 
-def issue_first_device_session(user, challenge, verified_attestation, *, login_method):
+def issue_first_device_session(user, challenge, verified_attestation, *, login_method, staff_makerspace_id=None):
     """Create a new grant atomically, after one-time proof consumption has committed."""
     if challenge is None or verified_attestation is None:
         raise DeviceGrantCreationRetryRequired
@@ -72,7 +80,8 @@ def issue_first_device_session(user, challenge, verified_attestation, *, login_m
         with transaction.atomic():
             user = lock_session_user(user)
             grant = create_device_grant(user, challenge, metadata=verified_attestation.metadata,
-                subject_hash=audit_events.fingerprint(verified_attestation.subject), login_method=login_method)
+                subject_hash=audit_events.fingerprint(verified_attestation.subject), login_method=login_method,
+                staff_makerspace_id=staff_makerspace_id)
             access, refresh, _family = issue_device_token_pair(user, grant)
             audit_events.record_auth_event(
                 user, "auth.device_login_succeeded", target=user,
@@ -86,11 +95,11 @@ def issue_first_device_session(user, challenge, verified_attestation, *, login_m
     return access, refresh, grant
 
 
-def create_device_grant(user, challenge, *, metadata, subject_hash, login_method):
+def create_device_grant(user, challenge, *, metadata, subject_hash, login_method, staff_makerspace_id=None):
     """Caller holds User; every first grant uses this registration/provenance policy."""
     now = timezone.now()
     assert_grant_user_allowed(user)
-    authority = authority_for_login(user, login_method=login_method)
+    authority = authority_for_login(user, login_method=login_method, staff_makerspace_id=staff_makerspace_id)
     registration = (
         NativeAppRegistration.objects.select_for_update()
         .filter(
@@ -101,14 +110,14 @@ def create_device_grant(user, challenge, *, metadata, subject_hash, login_method
         )
         .first()
     )
-    if (registration is None or user.account_kind == "staff"
-            and registration.makerspace_id not in (None, user.staff_makerspace_id)):
+    if (registration is None or authority == DeviceGrant.Authority.STAFF
+            and registration.makerspace_id not in (None, staff_makerspace_id)):
         raise AuthenticationFailed("Device registration is no longer approved.")
-    return DeviceGrant.objects.create(
+    grant = DeviceGrant.objects.create(
         registration=registration,
         user=user,
         authority=authority,
-        staff_makerspace_id=user.staff_makerspace_id,
+        staff_makerspace_id=staff_makerspace_id if authority == DeviceGrant.Authority.STAFF else None,
         credential_generation=user.credential_generation,
         login_method=login_method,
         platform=challenge.platform,
@@ -121,3 +130,7 @@ def create_device_grant(user, challenge, *, metadata, subject_hash, login_method
         attested_at=now,
         last_used_at=now,
     )
+    if authority == DeviceGrant.Authority.STAFF:
+        from apps.accounts.services_staff_grants import audit_issued
+        audit_issued(user, grant)
+    return grant

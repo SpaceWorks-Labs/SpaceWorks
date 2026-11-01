@@ -16,4 +16,7 @@ class AccountsConfig(AppConfig):
         from apps.accounts.saved_details.fields import install_core_profile_fields
         install_core_profile_fields()
         register_transition_revocation()
+        # A lost staff role revokes that makerspace's native staff grants (U-A2).
+        from apps.accounts.services_staff_grants import connect_signals
+        connect_signals()
         user_logged_in.connect(stamp_password_session, dispatch_uid="accounts.control_mfa.password_session")

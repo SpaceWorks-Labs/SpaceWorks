@@ -1088,6 +1088,18 @@ if bool(TURNSTILE_SITE_KEY) != bool(TURNSTILE_SECRET_KEY):
 if not WEBAUTHN_RP_NAME.strip() or len(WEBAUTHN_RP_NAME) > 64:
     raise ImproperlyConfigured("WEBAUTHN_RP_NAME must be 1 to 64 characters.")
 # --- end S0 ----------------------------------------------------------------------------
+# --- Release 2 / U-A2: minimum native app version (#128 C-6a) ---------------------------
+# Semver x.y.z per platform, compared numerically; empty = no minimum. Device sign-in and
+# refresh refuse an older (or unversioned) app with 426 native_app_update_required.
+MIN_NATIVE_APP_VERSION_IOS = env("MIN_NATIVE_APP_VERSION_IOS", default="").strip()
+MIN_NATIVE_APP_VERSION_ANDROID = env("MIN_NATIVE_APP_VERSION_ANDROID", default="").strip()
+import re as _re  # noqa: E402 -- local to this check
+for _name in ("MIN_NATIVE_APP_VERSION_IOS", "MIN_NATIVE_APP_VERSION_ANDROID"):
+    if globals()[_name] and not _re.fullmatch(r"(0|[1-9][0-9]{0,8})\.(0|[1-9][0-9]{0,8})\.(0|[1-9][0-9]{0,8})",
+                                             globals()[_name]):
+        raise ImproperlyConfigured(f"{_name} must be a version like 1.4.0 (x.y.z), or empty.")
+del _name, _re
+# --- end U-A2 --------------------------------------------------------------------------
 ACCOUNT_SAVED_ASSET_BUDGET_BYTES = env.int("ACCOUNT_SAVED_ASSET_BUDGET_BYTES", default=50 * 1024**2)
 ACCOUNT_SAVED_RESUME_SCAN_REQUIRED = env.bool("ACCOUNT_SAVED_RESUME_SCAN_REQUIRED", default=False)
 ACCOUNT_SAVED_RESUME_SCANNER = env("ACCOUNT_SAVED_RESUME_SCANNER", default="")

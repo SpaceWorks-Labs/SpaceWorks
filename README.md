@@ -1,16 +1,14 @@
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/readme/banner-dark.png" />
+  <source media="(prefers-color-scheme: light)" srcset="docs/readme/banner.png" />
+  <img src="docs/readme/banner.png" width="100%" alt="Space Works. Every tool, machine and event. Accounted for. Free, self-hosted software to run your makerspace. Patch, the Space Works mascot, peeks in from the corner." />
+</picture>
+
 <div align="center">
 
-<!--
-  BANNER PLACEHOLDER — filled in the final phase of release 2, once the tree is finished.
-  Add a <picture> here with docs/readme/banner-dark.png for (prefers-color-scheme: dark) and
-  docs/readme/banner.png for light (also the <img> fallback, width="100%"), then drop the
-  <h1> below if the banner carries the name. Do not add the tag before the images exist.
--->
+<h3>Run your whole makerspace from one place.</h3>
 
-<h1>Space Works</h1>
-
-<p><strong>A place for shared work.</strong> Tools, loans, machines, events and bookings in one
-self-hosted home for your makerspace.</p>
+<p>Tools, machines, members, events, bookings and money, with a trail behind every handover.</p>
 
 <p>
   <a href="https://github.com/SpaceWorks-Labs/SpaceWorks/actions/workflows/checks.yml"><img src="https://img.shields.io/github/actions/workflow/status/SpaceWorks-Labs/SpaceWorks/checks.yml?branch=dev&style=flat-square&label=checks&labelColor=142C2A" alt="Checks workflow status" /></a>
@@ -26,6 +24,7 @@ self-hosted home for your makerspace.</p>
   <a href="docs/README.md">Docs</a> ·
   <a href="docs/install-and-update.md">Install</a> ·
   <a href="docs/MODULES.md">Modules</a> ·
+  <a href="#integrations">Integrations</a> ·
   <a href="#api">API</a> ·
   <a href="CHANGELOG.md">Changelog</a> ·
   <a href=".github/SECURITY.md">Security</a>
@@ -34,7 +33,7 @@ self-hosted home for your makerspace.</p>
 </div>
 
 **Space Works is free, open-source software for running a makerspace.** It shows what equipment
-exists, who has borrowed it, what is available, and how every loan, print job, event and booking
+exists, who has borrowed it, what is available, and how every loan, machine job, event and booking
 moves from request to completion. Every physical handover leaves evidence (a QR scan, a photo, a
 remark and an audit entry), so tools stay traceable to people. One self-hosted deployment can run
 **many makerspaces**, each with its own inventory, public URL, staff, chat rooms, QR namespace and
@@ -74,10 +73,14 @@ Grouped the way a space actually works. The full list lives in [Features](docs/F
 - Asset units, containers, stock transfers between spaces, printable QR sheets, stocktakes and a
   "to buy" list, each a module you can leave out.
 
-### Run machines and 3D printing
+### Run any machine
 
-- A machine registry with a **service and print queue**: public print requests, printers, spools,
-  filament usage and slicer estimates.
+- **Any machine your space owns.** 3D printers, laser cutters, CNC mills and routers, vinyl cutters and
+  PCB mills come built in, and a space can add **its own machine types**: an embroidery machine, a
+  lathe, a resin printer, a kiln, a soldering station. Each type sets how use is measured (minutes,
+  weight, volume, length or count) and which materials and colours it takes.
+- One **service queue** for every type: members request work, staff review, run and hand back the job,
+  with consumables drawn from tracked spools and stock.
 - **Maintenance**, warranty and usage records, and optional **certification** per machine type before
   a member can book or request work.
 - Per-person machine-type scope, so a Machine Manager sees only their machines.
@@ -111,6 +114,22 @@ Grouped the way a space actually works. The full list lives in [Features](docs/F
 - Live staff queues over Server-Sent Events, full-text search with typo tolerance, request IDs across
   logs and a token-protected Prometheus endpoint.
 - Platform backups, single-space restore points, and an encrypted export to move a space onto its own server.
+
+## Integrations
+
+Space Works talks to the tools your space already uses. Every integration is optional and set up per
+makerspace; leave one out and nothing else changes.
+
+| Area | Works with |
+| --- | --- |
+| **Phone apps** | The API and registrations for your own branded Android and iOS apps, for members and staff, with push notifications and staff access as a verified step-up ([mobile integration](docs/mobile-integration.md)) |
+| **Connected machines** | Printers and label printers on your own network, enrolled with a signed device identity; jobs report back through the normal workflow ([device protocol](docs/device-protocol.md)) |
+| **Messages** | Email, in-app inbox, Telegram, Slack, Mattermost, Discord, SMS and WhatsApp (Twilio or Meta), routed to the [rooms and people](docs/notification-routing.md) you choose |
+| **Sign-in** | Password, Google, Apple, GitHub, your own OIDC provider and phone codes ([sign-in methods](docs/sign-in-and-borrowing.md)) |
+| **Payments** | Stripe and Razorpay checkout, UPI QR codes, offline receipts, and India GST invoices ([payments and billing](docs/payment-billing.md)) |
+| **Calendars** | iCal feeds for events and maintenance that open in Google Calendar, Outlook or Apple Calendar |
+| **Your own systems** | Signed [webhooks](docs/webhooks-v2.md), scoped and signed [API clients](docs/api-client-protocol.md), and CSV/XLSX import and export |
+| **Storage** | Any S3-compatible bucket: the bundled Silo store, AWS S3, Cloudflare R2 or MinIO |
 
 ## Modules
 
@@ -251,15 +270,15 @@ scope are covered in [Roles & access](docs/README-HOSTING.md#roles--access).
 Space Works follows the [Space Works brand v1](docs/brand/): neutral first, accent second, and one bold
 moment per layout.
 
-| Colour | Hex | Used for |
-| --- | --- | --- |
-| Deep Ink | `#142C2A` | Text, structure and depth |
-| Warm Cream | `#FFF4E8` | Canvas and breathing room |
-| Maker Teal | `#006E63` | Primary actions, links and focus |
-| Workshop Orange | `#FF7447` | Emphasis, with an ink label; never text |
-| Citron | `#DFFF8F` | Fresh fields and short tags |
-| Sky Blue | `#B5CDFF` | Supporting information |
-| Warm Yellow | `#FFD447` | Small highlights |
+| | Colour | Hex | Used for |
+| --- | --- | --- | --- |
+| <img src="docs/readme/swatch-deep-ink.svg" width="48" height="24" alt="" /> | Deep Ink | `#142C2A` | Text, structure and depth |
+| <img src="docs/readme/swatch-warm-cream.svg" width="48" height="24" alt="" /> | Warm Cream | `#FFF4E8` | Canvas and breathing room |
+| <img src="docs/readme/swatch-maker-teal.svg" width="48" height="24" alt="" /> | Maker Teal | `#006E63` | Primary actions, links and focus |
+| <img src="docs/readme/swatch-workshop-orange.svg" width="48" height="24" alt="" /> | Workshop Orange | `#FF7447` | Emphasis, with an ink label; never text |
+| <img src="docs/readme/swatch-citron.svg" width="48" height="24" alt="" /> | Citron | `#DFFF8F` | Fresh fields and short tags |
+| <img src="docs/readme/swatch-sky-blue.svg" width="48" height="24" alt="" /> | Sky Blue | `#B5CDFF` | Supporting information |
+| <img src="docs/readme/swatch-warm-yellow.svg" width="48" height="24" alt="" /> | Warm Yellow | `#FFD447` | Small highlights |
 
 - **Type.** Gilroy for text and headings; Unbounded for one short accent per layout. GitHub controls
   Markdown body fonts here; the app loads the approved fonts.
@@ -298,19 +317,7 @@ welcome**: code, docs, translations, or just running it at your space and report
 
 Read the [contributing guide](.github/CONTRIBUTING.md) and the [code of conduct](.github/CODE_OF_CONDUCT.md)
 before your first pull request. **No CLA is required**: by opening a pull request you agree your
-contribution is offered under the project's AGPL-3.0-or-later licence (inbound = outbound); merged
-contributors are credited in [CONTRIBUTORS.md](.github/CONTRIBUTORS.md).
-
-## Contributors
-
-Thanks to **everyone** who has contributed to Space Works: code, docs, bug reports, or running it at their
-space. The wall below is pulled live from this repository's
-[GitHub contributor graph](https://github.com/SpaceWorks-Labs/SpaceWorks/graphs/contributors) and
-shows **all** contributors, bots and automation included, with no filtering:
-
-[![Contributors](https://contrib.rocks/image?repo=SpaceWorks-Labs/SpaceWorks&max=100)](https://github.com/SpaceWorks-Labs/SpaceWorks/graphs/contributors)
-
-<sub>Contributor image by [contrib.rocks](https://contrib.rocks).</sub>
+contribution is offered under the project's AGPL-3.0-or-later licence (inbound = outbound).
 
 ## Licence
 

@@ -5,6 +5,7 @@ import hmac
 from rest_framework.exceptions import AuthenticationFailed
 
 from apps.accounts.models import User
+from apps.accounts.staff_identity import context_label
 
 
 def validate_session_generation(user, token):
@@ -27,8 +28,8 @@ def lock_session_user(authenticated):
         or user.retired_at is not None
         or user.deletion_requested_at is not None
         or user.access_status != User.AccessStatus.ACTIVE
-        or user.account_kind != authenticated.account_kind
-        or user.staff_makerspace_id != authenticated.staff_makerspace_id
+        or context_label(user) != context_label(authenticated)
+        or user.merged_into_id is not None
         or user.credential_generation != authenticated.credential_generation
         or not hmac.compare_digest(user.password, authenticated.password)
         or user.account_restored_at != authenticated.account_restored_at

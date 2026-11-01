@@ -35,7 +35,6 @@ from apps.accounts.services_social_login import assert_staff_authority, issue_so
 from apps.accounts.social_jwt import SocialProviderUnavailable, SocialTokenError
 from apps.accounts.social_oidc import verify_oidc_token
 from apps.hardware_requests.exceptions import ErrorSerializer
-from apps.makerspaces.origin_scope import NO_STAFF_ORIGIN_SCOPE, staff_origin_scope
 
 
 def _error(code, status_code):
@@ -141,14 +140,12 @@ class OidcBrowserCallbackView(APIView):
                 staff_validator=(lambda user: assert_staff_authority(user, request))
                 if attempt.surface == SocialSurface.STAFF else None,
             )
-            scope = staff_origin_scope(request)
-            staff_scope = None if scope is NO_STAFF_ORIGIN_SCOPE else str(scope)
             from apps.accounts.mfa_policy import needs_challenge
             from apps.accounts.mfa_challenges import start
             from apps.accounts.mfa_sessions import context
             if needs_challenge(user):
                 response = Response(start(user, context=context(
-                    request, surface=attempt.surface, staff_scope=staff_scope,
+                    request, surface=attempt.surface,
                 )))
                 response["Cache-Control"] = "no-store"
                 return response
@@ -157,7 +154,6 @@ class OidcBrowserCallbackView(APIView):
                 surface=attempt.surface,
                 delivery="web",
                 nonce_row=attempt,
-                staff_scope=staff_scope,
             )
         except OidcAttemptRejected:
             return _error("social_invalid", 401)

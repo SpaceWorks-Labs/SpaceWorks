@@ -14,19 +14,13 @@ from apps.accounts.org_payload import (
 )
 from apps.accounts.payload_tracks import mfa_grace_ends_at, session_rows, staff_role_entries
 from apps.accounts.staff_identity import has_elevated_authority, has_staff_role, is_person, is_platform
+from apps.accounts.surface_policy import token_kind
 
 
 VERIFICATION_ONLY_SURFACE = "verification_only"
 DEVICE_REFRESH_CLAIMS = ("device_grant_id", "device_family_id")
-PERSON_KIND = "person"
-PLATFORM_KIND = "platform"
-
-
-def payload_kind(user):
-    """``person`` or ``platform``; an inert shell has no session and no payload kind."""
-    if is_person(user):
-        return PERSON_KIND
-    return PLATFORM_KIND if is_platform(user) else None
+# ``person`` or ``platform``; an inert shell has no session and no payload kind.
+payload_kind = token_kind
 
 
 def user_payload(user, request=None, *, session_authority=None):

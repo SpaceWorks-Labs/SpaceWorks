@@ -16,11 +16,12 @@ from apps.makerspaces.origin_scope import (
     NO_STAFF_ORIGIN_SCOPE,
     staff_origin_scope,
 )
+from apps.accounts.staff_identity import is_person
 
 
 def assert_social_user_active(user):
     if (
-        user.account_kind != "member"
+        not is_person(user)
         or user.is_tenant_dump_stub
         or not user.is_active
         or user.retired_at is not None
@@ -68,7 +69,7 @@ class SocialDeviceGrantRetryRequired(Exception):
 
 @transaction.atomic
 def issue_social_session(
-    user, *, surface, delivery, nonce_row, staff_scope=None,
+    user, *, surface, delivery, nonce_row,
     verified_attestation=None,
 ):
     if surface != SocialSurface.MEMBER:

@@ -48,7 +48,6 @@ from apps.accounts.social_nonces import (
 from apps.openapi_errors import errors
 from apps.hardware_requests.exceptions import ErrorSerializer
 from apps.makerspaces.import_adoption import adopt_pending_memberships_for_user
-from apps.makerspaces.origin_scope import NO_STAFF_ORIGIN_SCOPE, staff_origin_scope
 
 
 from apps.accounts.views_social_helpers import _error, _audit_failure
@@ -142,14 +141,11 @@ class SocialLoginView(APIView):
             ):
                 raise SocialResolutionError("access_denied", 403)
             adopt_pending_memberships_for_user(user)
-            scope = staff_origin_scope(request)
-            staff_scope = None if scope is NO_STAFF_ORIGIN_SCOPE else str(scope)
             tokens = issue_social_session(
                 user,
                 surface=data["surface"],
                 delivery=data["delivery"],
                 nonce_row=nonce_row,
-                staff_scope=staff_scope,
                 verified_attestation=verified_attestation,
             )
             if data["delivery"] == "device":

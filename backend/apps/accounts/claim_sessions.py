@@ -10,6 +10,7 @@ from django.utils import timezone
 from apps.accounts.models_claim import MemberClaimCode
 from apps.accounts.models_devices import DeviceGrant
 from apps.accounts.models_social import SocialIdentity
+from apps.accounts.staff_identity import person_q
 
 
 @dataclass(frozen=True, slots=True)
@@ -29,7 +30,7 @@ class ClaimSessionInvalid(Exception):
 
 def validated_claim_session(token, *, for_update=False):
     """Return the session with membership/user loaded using exactly one query."""
-    if token.get("kind") != "member":
+    if token.get("kind") != "person":
         raise ClaimSessionInvalid()
     social = SocialIdentity.objects.filter(user_id=OuterRef("membership__user_id"))
     grants = DeviceGrant.objects.filter(
@@ -43,12 +44,12 @@ def validated_claim_session(token, *, for_update=False):
         rows = rows.select_for_update(of=("self",))
     now = timezone.now()
     rows = rows.filter(
+        person_q("membership__user__"),
         session_id=token.get("claim_session_id"),
         consumed_at__isnull=False,
         revoked_at__isnull=True,
         absolute_expires_at__gt=now,
         membership__status="active",
-        membership__user__account_kind="member",
         membership__user__is_tenant_dump_stub=False,
         membership__user__is_active=True,
         membership__user__access_status="active",

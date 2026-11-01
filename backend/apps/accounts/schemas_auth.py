@@ -105,22 +105,19 @@ UserPayloadSerializer = AuthUserPayload()
 LoginRequestSerializer = inline_serializer(
     name="LoginRequest",
     fields={
-        "username": serializers.CharField(),
-        "password": serializers.CharField(write_only=True),
-        "context": serializers.ChoiceField(choices=("member", "staff", "platform"), required=False),
-        "makerspace": serializers.SlugField(required=False, max_length=150),
-        "surface": serializers.ChoiceField(
-            choices=("member", "staff", "delegated"), required=False
+        "username": serializers.CharField(
+            help_text="A person's username or email (a converted staff account whose email was held signs in "
+                      "with its username). The platform superadmin signs in by username only from a platform "
+                      "origin. Release 2 removed context, makerspace and surface: one account per person.",
         ),
+        "password": serializers.CharField(write_only=True),
     },
 )
 LoginResponseSerializer = inline_serializer(
     name="LoginResponse",
     fields={
         "access": serializers.CharField(),
-        "surface": serializers.ChoiceField(
-            choices=("member", "staff", "staff_api", "delegated", "platform", "verification_only")
-        ),
+        "surface": serializers.ChoiceField(choices=("member", "platform", "verification_only")),
         "user": UserPayloadSerializer,
     },
 )

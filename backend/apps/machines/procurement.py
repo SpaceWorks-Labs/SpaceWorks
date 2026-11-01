@@ -10,11 +10,12 @@ from apps.makerspaces import limits
 from apps.makerspaces.guards import require_module_locked
 
 
-def move_received_printing(makerspace, actor, *, target, data, machine_type=None):
+def move_received_printing(makerspace, actor, *, target, data, machine_type=None, source_pool=None):
     if target == "printer":
         return _create_printer(makerspace, actor, data, machine_type)
     if target == "spool":
-        return _create_pool(makerspace, actor, data, machine_type)
+        return _create_pool(makerspace, actor, _origin_defaults(data, source_pool), machine_type,
+                            source_pool=source_pool)
     raise ValidationError({"target": "Use spool or printer."})
 
 
@@ -40,7 +41,20 @@ def _create_printer(makerspace, actor, data, machine_type):
     return Machine.objects.create(makerspace=makerspace, machine_type=printer_type, name=name, notes=str(data.get("notes") or ""), status=status, is_active=data.get("is_active", True), type_payload={"model": model}, created_by=actor)
 
 
-def _create_pool(makerspace, actor, data, machine_type):
+def _origin_defaults(data, source_pool):
+    """A restock of a low pool refills that pool's line (MI-40): the new spool keeps the
+    origin's material, colour, brand and machine unless the receiver says otherwise."""
+    if source_pool is None:
+        return data
+    printer = source_pool.machine_id if (
+        source_pool.machine_id and source_pool.machine.machine_type.slug == PRINTER_SLUG) else None
+    merged = {"material": source_pool.material, "color": source_pool.color,
+              "brand": source_pool.brand, "printer": printer}
+    merged.update({key: value for key, value in dict(data).items() if value not in (None, "")})
+    return merged
+
+
+def _create_pool(makerspace, actor, data, machine_type, *, source_pool=None):
     material = str(data.get("material") or "").strip()
     if not material:
         raise ValidationError({"material": "This field is required."})
@@ -67,6 +81,8 @@ def _create_pool(makerspace, actor, data, machine_type):
             raise ValidationError(
                 {"machine_type": "This item cannot create a pool for another machine type."}
             )
+    if machine is None and source_pool is not None and source_pool.machine_type_id:
+        machine_type = source_pool.machine_type
     pool = MachineConsumablePool.objects.create(
         makerspace=makerspace,
         machine=machine,
@@ -77,7 +93,10 @@ def _create_pool(makerspace, actor, data, machine_type):
         lot_code=str(data.get("lot_code") or "").strip(),
         initial_grams=initial,
         remaining_grams=remaining,
-        low_threshold_grams=makerspace.filament_low_stock_threshold_grams or None,
+        unit=source_pool.unit if source_pool is not None else MachineConsumablePool._meta.get_field("unit").default,
+        color_hex=source_pool.color_hex if source_pool is not None else "",
+        low_threshold_grams=(source_pool.low_threshold_grams if source_pool is not None else None)
+        or makerspace.filament_low_stock_threshold_grams or None,
         is_active=data.get("is_active", True),
         opened_at=data.get("opened_at"),
         created_by=actor,

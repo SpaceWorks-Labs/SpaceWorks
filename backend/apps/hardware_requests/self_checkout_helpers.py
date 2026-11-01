@@ -134,6 +134,8 @@ def _eligible_product(pk, makerspace, *, require_public=True):
     product = InventoryProduct.objects.select_for_update().filter(pk=pk, makerspace=makerspace).first()
     if product is None or product.is_archived:
         raise RequestValidationError("Tool is not enabled for public self-checkout.")
+    if product.is_consumable:
+        raise RequestValidationError("Consumables are logged as used, not lent.")
     if require_public and (
         not product.is_public or not product.public_self_checkout_enabled
     ):

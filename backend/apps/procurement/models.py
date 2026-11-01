@@ -99,6 +99,16 @@ class ToBuyItem(models.Model):
         "inventory.InventoryProduct", null=True, blank=True,
         on_delete=models.SET_NULL, related_name="reorder_drafts",
     )
+    # A per-machine grams consumable whose low threshold raised this item; a received
+    # item refills that same consumable exactly once (moved_to_inventory_at).
+    source_consumable = models.ForeignKey(
+        "machines.MachineConsumable", null=True, blank=True,
+        on_delete=models.SET_NULL, related_name="low_stock_to_buy_items",
+    )
+    # The saved supplier (L12 vendor records); `vendor_name` stays the free-text label.
+    vendor = models.ForeignKey(
+        "procurement.Vendor", null=True, blank=True, on_delete=models.SET_NULL, related_name="to_buy_items",
+    )
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         null=True,
@@ -140,3 +150,6 @@ class ToBuyReceipt(models.Model):
 
     def __str__(self):
         return f"Receipt for {self.to_buy_item}"
+
+
+from .models_vendors import Vendor  # noqa: E402,F401

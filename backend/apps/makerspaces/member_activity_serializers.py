@@ -86,6 +86,7 @@ class MemberLoanHistorySerializer(serializers.Serializer):
 
 
 class MemberRequestHistorySerializer(serializers.Serializer):
+    id = serializers.IntegerField()  # the member's own request: lets them withdraw it (L12)
     status = serializers.CharField()
     created_at = serializers.DateTimeField()
     item_count = serializers.IntegerField()

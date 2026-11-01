@@ -173,6 +173,8 @@ class RequestHistoryView(generics.ListAPIView):
                     HardwareRequest.Status.RETURNED,
                     HardwareRequest.Status.REJECTED,
                     HardwareRequest.Status.CLOSED_WITH_ISSUE,
+                    HardwareRequest.Status.CANCELLED,
+                    HardwareRequest.Status.EXPIRED,
                 ],
             )
             .order_by("-updated_at", "-created_at")
@@ -180,7 +182,7 @@ class RequestHistoryView(generics.ListAPIView):
 
     @extend_schema(
         tags=["Admin requests"],
-        summary="List terminal request history (returned / rejected / closed with issue)",
+        summary="List terminal request history (returned / rejected / closed with issue / cancelled / expired)",
         responses={200: AdminRequestSerializer(many=True), 400: ERROR_400, 401: ERROR_401, **ADMIN_LIST_ERROR_RESPONSES},
     )
     def get(self, request, *args, **kwargs):

@@ -138,6 +138,9 @@ class RequestSubmitView(APIView):
             audit_actor=actor,
             account_less_marker=marker,
             contact_key=key,
+            pickup_from=data.get("pickup_from"),
+            pickup_until=data.get("pickup_until"),
+            waitlist_entry_id=None if contact else data.get("waitlist_entry_id"),
         )
         return Response(
             RequestSubmitResponseSerializer(hardware_request).data,
@@ -174,6 +177,7 @@ def _requestable_products(product_ids, makerspace):
             makerspace=makerspace,
             is_public=True,
             is_archived=False,
+            is_consumable=False,
         )
     }
 

@@ -25,6 +25,10 @@ class RequestSubmitSerializer(serializers.Serializer):
         allow_empty=False,
         max_length=20,
     )
+    # Lane L12 (loans.reservations / loans.waitlist).
+    pickup_from = serializers.DateTimeField(required=False, allow_null=True, default=None)
+    pickup_until = serializers.DateTimeField(required=False, allow_null=True, default=None)
+    waitlist_entry_id = serializers.IntegerField(required=False, allow_null=True, default=None, min_value=1)
 
     def validate(self, attrs):
         attrs["website"] = attrs.get("website", "")
@@ -84,6 +88,8 @@ class PublicRequestStatusSerializer(serializers.Serializer):
     # not need their own identity echoed back to learn a request's status.
     status = serializers.CharField(read_only=True)
     created_at = serializers.DateTimeField(read_only=True)
+    pickup_from = serializers.DateTimeField(read_only=True, allow_null=True)
+    pickup_until = serializers.DateTimeField(read_only=True, allow_null=True)
     items = PublicRequestItemStatusSerializer(many=True, read_only=True)
 
 
@@ -162,6 +168,8 @@ class AdminRequestSerializer(serializers.Serializer):
     return_due_at = serializers.DateTimeField(read_only=True)
     return_reminder_sent_at = serializers.DateTimeField(read_only=True)
     renewal_count = serializers.IntegerField(read_only=True)
+    pickup_from = serializers.DateTimeField(read_only=True, allow_null=True)
+    pickup_until = serializers.DateTimeField(read_only=True, allow_null=True)
     closed_at = serializers.DateTimeField(read_only=True)
     created_at = serializers.DateTimeField(read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)

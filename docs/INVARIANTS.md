@@ -260,13 +260,11 @@ Signed STOP/opt-out, START/consent renewal and inbound-window facts lock and upd
 bindings of that configuration/digest atomically. Account unlink affects only that account;
 delivery callbacks remain delivery-ID-bound. Preferences and recipient envelopes remain account-keyed.
 
-**Transport, retirement and rollout (D11/D12, V4/V5/V9/V11).** Staff travel with their tenant in
-PORTABLE and sovereign Lane D exports as new target staff identities, preserving active status,
-built-in roles, remapped machine scopes and staff notification preferences. Never link an existing
-target account. Passwords, MFA, sessions, device grants, chat endpoints and invitations do not
-travel: target staff start with unusable passwords and `must_change_password`; a target admin
-issues credentials. Member memberships remain Member; platform attribution is inert provenance.
-Full contract: [account-split-portability.md](account-split-portability.md).
+**Transport, retirement and rollout (D11/D12, V4/V5/V9/V11).** SUPERSEDED for transport by U-D:
+staff roles travel as staff-track rows with their person, credentials travel to created people,
+and linked people get staff roles only by explicit grant -- see **One account per person in
+backup, restore, tenant migration and export** under "Backup, restore and tenant migration" and
+[account-portability.md](account-portability.md).
 
 Tenant purge retires staff before removing the tenant: scrub name/email/phone/avatar, allocate
 `retired-<uuid>` username, revoke credentials, remove MFA secrets, set inactive + `retired_at`, and
@@ -5142,7 +5140,8 @@ responsibility; local purges never delete shared global organizations or foreign
 ### Per-space backup and restore (P1b B2, owner decisions #110d, #111 Q1-Q6/Q15/Q16, #113)
 
 **A one-space archive is the lossless raw tenant slice, never the PORTABLE tenant-migration envelope.**
-`BackupArchive(scope="makerspace", format="tenant_slice_v1")` carries `archive_payload._tenant_payload`:
+`BackupArchive(scope="makerspace", format="tenant_slice_v2")` (both membership tracks; a
+`tenant_slice_v1` archive converts on read, see the U-D section below) carries `archive_payload._tenant_payload`:
 every `SLICE_ROW_SPECS` dataset row exactly as stored (real primary keys, PII still sealed under the
 space's own DEKs, which never leave the database), the captured object bytes and the manifest. The
 PORTABLE format resets authority, drops secrets and regenerates identities for a cross-deployment move;
@@ -5177,10 +5176,11 @@ PORTABLE/Lane D path.
   space's anonymous principal; an account erased since the restore point is scrubbed again in this space
   (`account_purge_scrub.scrub_tenant`) so its personal data never comes back. An archived membership
   of an account since retired (or of a platform account) is skipped with everything that depends on it,
-  by `on_delete` (`space_restore_skips.py`). A live staff account whose one required membership the
-  archive does not carry (staff added after the restore point) blocks the restore
-  (`staff_after_restore_point`): retire it first. Staff memberships are replaced inside the exact-tenant
-  context (`app.account_retirement_makerspace_id`), the only context the account guards admit.
+  by `on_delete` (`space_restore_skips.py`). An active staff-track row the archive does not carry
+  (a staff role granted after the restore point, #144c) blocks the restore
+  (`staff_after_restore_point`): the superadmin revokes it first. Staff-track rows are replaced inside
+  the exact-tenant context (`app.account_retirement_makerspace_id`), the only context the account
+  guards admit.
 - **References into removed rows (#113).** `space_restore_graph.resolve` walks every concrete FK into a
   row the restore removes (a live row the archive does not carry). A row of this space or a global
   dependent follows Django's `on_delete` (CASCADE deletes it, SET_NULL clears the reference). A row of
@@ -5222,6 +5222,36 @@ PORTABLE/Lane D path.
 - **Maintenance window.** The apply transaction holds row locks across the space's tables and the source
   gate refuses its writers until it ends; schedule large restores accordingly.
 
+### One account per person in backup, restore, tenant migration and export (U-D)
+
+Full contract: [account-portability.md](account-portability.md). The rules that bite:
+
+- **Whole-tenant code never reads a filtered default manager.** `MakerspaceMembership.objects`
+  is community-only; generic `model.objects` loops dropped every staff-track row from per-space
+  archives, tenant dumps and exports, and a restore then deleted the live staff. Code in
+  `backup`, `tenant_migration`, `data_export` and `separability` reads a model it did not name
+  through `backup/capture_managers.every_row` (all tracks for memberships, the default manager
+  elsewhere so custom querysets keep their guards). A new filtered default manager must be
+  declared in `FILTERED_DEFAULT_MANAGERS`; `tests/backup/test_capture_manager_guard.py` refuses
+  an undeclared one, a generic `.objects`/`_default_manager` read and a reverse membership read.
+- **Per-space archives are `tenant_slice_v2`;** `tenant_slice_v1` converts one version back (a
+  pre-unification roster takes its track from its primary role); others are refused. Staff
+  granted after the restore point block it. A pre-unification whole-platform backup is
+  extracted only with `--account-unification-ack` set to its scratch copy's plan.
+- **C-17:** archived rows of a person merged since the restore point follow `merged_into` to
+  the survivor (listed in the preview); a UNIQUE_RESOLVE slot the survivor already holds in the
+  archive keeps the merged row on the shell, a membership there coming back revoked.
+- **PORTABLE format 2:** staff-track rows travel with their person; a linked person's staff rows
+  arrive revoked unless `ImportIdentityDecision.grant_staff_roles` (tenant_migration 0014,
+  audited `tenant_migration.staff_roles_granted`); shells travel PII-free and re-alias under
+  `app.account_shell_import_job_id`; format 1 converts.
+- **C-18 credential block:** `global/credentials.json` carries every closure person's password
+  hash, authenticator secret and recovery digests, and passkeys, as AES-GCM ciphertext under
+  the space's active DEK (never plaintext). Created people get them; linked people keep the
+  target's; passkeys install only for a target host; sessions and devices never travel.
+- **Lane D:** a person travels in full when every membership is in the space or they hold an
+  active staff role there; shells and platform accounts become PII-free stubs.
+
 ### The SHAPE a projected model must have (catalog-driven, 2026-09-03)
 
 Being classified is not the same as being importable. Two shapes break a tenant move
@@ -5254,8 +5284,9 @@ with a reason in `NON_OBJECT_KEY_FIELDS`.
 
 ### Lane D tenant-exclusive identity and payment closure (D6, 2026-08-23)
 
-The account-kind extension (D11/V5) in [account-split-portability.md](account-split-portability.md)
-preserves tenant staff authority without credentials; platform actors remain inert provenance.
+Since one account per person (U-D, [account-portability.md](account-portability.md)), a full
+user is a person whose staff roles are staff-track rows; platform actors and merged shells remain
+inert provenance.
 
 **Lane D does not use the older per-identity `DisclosureClosureApproval` policy.** That
 path remains for the older PORTABLE data-export/API contract, but a sovereign tenant

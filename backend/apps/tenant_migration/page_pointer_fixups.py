@@ -7,6 +7,7 @@ draft pointers may be assigned after dependent reference rows have been inserted
 from django.apps import apps
 from django.db import connection
 from .insertion_errors import ImportVerificationError
+from apps.backup.capture_managers import every_row
 
 PAGE_POINTERS = {
     ("makerspaces.MakerspacePublicPage", "draft_revision"): "makerspaces.MakerspacePublicPageRevision",
@@ -41,21 +42,21 @@ def apply_page_pointer_fixups(archive, pk_map):
             value = source.get("draft_revision_id")
             if value:
                 draft = pk_map.lookup(revision_model, value)
-                if not revision_model.objects.filter(pk=draft, page_id=target_pk).exists():
+                if not every_row(revision_model).filter(pk=draft, page_id=target_pk).exists():
                     raise ImportVerificationError(f"Wrong-owner or missing draft for {label}.")
             else:
-                existing = model.objects.get(pk=target_pk)
+                existing = every_row(model).get(pk=target_pk)
                 draft = existing.draft_revision_id if legacy_archive(archive) and label == "events.EventPage" else None
-                if draft is None and revision_model.objects.filter(page_id=target_pk).exists():
+                if draft is None and every_row(revision_model).filter(page_id=target_pk).exists():
                     raise ImportVerificationError(f"Saved {label} has no exact archived draft pointer.")
                 if draft is None and label == "events.EventPage" and (existing.sections.exists() or existing.sessions.exists()):
                     raise ImportVerificationError("A nonempty modern website has no archived draft pointer.")
             changes = {"draft_revision_id": draft, "published_revision_id": None}
             if label == "events.EventPage":
                 changes["released"] = False
-            if model.objects.filter(pk=target_pk).update(**changes) != 1:
+            if every_row(model).filter(pk=target_pk).update(**changes) != 1:
                 raise ImportVerificationError("Page shell is missing during pointer fixup.")
-            actual = model.objects.get(pk=target_pk)
+            actual = every_row(model).get(pk=target_pk)
             if actual.draft_revision_id != draft or actual.published_revision_id is not None:
                 raise ImportVerificationError("Page pointer fixup did not persist exactly.")
             if label == "events.EventPage":

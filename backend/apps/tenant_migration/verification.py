@@ -8,6 +8,7 @@ from apps.encryption import services
 from apps.encryption.blind_index import active_generation
 from apps.encryption.crypto import decrypt_with_key_loader
 from apps.encryption.models import PiiBlindIndex
+from apps.backup.capture_managers import every_row
 from apps.encryption.registry import all_fields
 
 from .blind_indexes import verify_event_hashes
@@ -57,7 +58,7 @@ def _verify_mapped_round_trips(target):
         model = apps.get_model(mapped.model_label)
         tenant_lookup = mapped.makerspace_path.replace(".", "__")
         field = model._meta.get_field(mapped.field_name)
-        rows = model.objects.filter(**{tenant_lookup: target.pk}).only(
+        rows = every_row(model).filter(**{tenant_lookup: target.pk}).only(
             model._meta.pk.name, mapped.field_name
         )
         for instance in rows.iterator(chunk_size=500):
@@ -94,7 +95,7 @@ def _verify_blind_index_generation(target):
             continue
         model = apps.get_model(mapped.model_label)
         lookup = mapped.makerspace_path.replace(".", "__")
-        expected += model.objects.filter(
+        expected += every_row(model).filter(
             **{lookup: target.pk}, **{f"{mapped.field_name}__isnull": False}
         ).exclude(**{mapped.field_name: ""}).count()
     if PiiBlindIndex.objects.filter(makerspace=target).count() != expected:

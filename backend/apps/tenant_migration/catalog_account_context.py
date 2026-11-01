@@ -1,4 +1,9 @@
-"""D11/V5 account identity travels; source credential generations never do."""
+"""Account identity travels with people; source credential generations never do.
+
+One account per person (U-D): a full user row is a person, whose staff roles are
+staff-track memberships; merged shells, platform accounts and foreign provenance become
+inert member stubs. ``staff_makerspace`` is empty for every account since the unification.
+"""
 
 from .tenant_dump_types import AuthorityDisposition as D, authority
 
@@ -11,28 +16,28 @@ AUTHORITY_ENTRIES = (
         D.DROP, 'Initial-password role/scope/generation proofs are deployment-local and never travel.',
     )) for field in ('role_snapshot', 'machine_scope_snapshot', 'credential_generation')),
     *((('notifications.NotificationPreference', field), authority(
-        D.PRESERVE, 'Carried staff category/channel choices do not carry provider endpoints or proof.',
+        D.PRESERVE, "Staff-track holders' category/channel choices travel without provider endpoints or proof.",
     )) for field in ('makerspace', 'user', 'category', 'channels', 'email_fallback')),
     *((('makerspaces.MakerspaceMembership', field), authority(
         (D.PRESERVE, D.RESET),
         'Tenant staff roles and notification choices travel; member authority resets to Member.',
     )) for field in ('role', 'assigned_role', 'receives_notifications')),
     *((('makerspaces.MembershipAdditionalRole', field), authority(
-        D.PRESERVE, 'Carried tenant staff roles resolve by protected slug to target-seeded roles.',
+        D.PRESERVE, 'Carried staff-track roles resolve by protected slug to target-seeded roles.',
     )) for field in ('membership', 'role', 'assigned_by', 'assigned_at')),
     *((('machines.MembershipMachineTypeScope', field), authority(
-        D.PRESERVE, 'Carried staff machine reach follows its membership and remapped machine type.',
+        D.PRESERVE, 'Carried staff-track machine reach follows its membership and remapped machine type.',
     )) for field in ('membership', 'machine_type')),
     (("accounts.User", "account_kind"), authority(
         (D.PRESERVE, D.RESET),
-        "Keep tenant member/staff identity; replace foreign/platform provenance with an inert member stub.",
+        "Keep people; shells and foreign/platform provenance become inert member stubs.",
     )),
     (("accounts.User", "staff_makerspace"), authority(
         (D.PRESERVE, D.RESET),
-        "A full staff account belongs to the exiting tenant; foreign provenance stubs carry no staff owner.",
+        "Empty since one account per person; legacy split-format values reset with stubs.",
     )),
     (("accounts.User", "retired_at"), authority(
-        D.RESET, "Retired shells never travel as live tenant identities; stubs have no retirement authority.",
+        D.RESET, "Retired and merged shells never travel as live identities; stubs have no retirement authority.",
     )),
     (("accounts.User", "credential_generation"), authority(
         D.RESET, "Credential and invitation generations are source-local proof state, never target credentials.",

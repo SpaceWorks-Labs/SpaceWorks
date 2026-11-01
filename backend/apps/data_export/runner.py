@@ -22,8 +22,8 @@ from .runner_queries import after_keyset, is_statement_timeout, key_value, selec
 from .reference_provenance import ReferenceProvenanceWriter
 from .references import SEMANTIC_REFERENCES, USER_EDGES, require_raw_user
 from .types import Fidelity, SemanticUserRef
-from .runner_users import _read_users
-from .user_lifecycle import write_user_lifecycle
+from .runner_users import _read_users, staff_track_user_ids, write_user_sidecars
+from apps.backup.capture_managers import every_row
 
 logger = logging.getLogger(__name__)
 
@@ -77,11 +77,9 @@ def build_archive(
                 cursor.execute("SELECT transaction_timestamp()")
                 snapshot_at = cursor.fetchone()[0]
 
-            from apps.accounts.models import User
             from apps.operations.cloud_jobs.admission import assert_export
             assert_export(job)
-            closure.update(User.objects.filter(account_kind="staff", staff_makerspace_id=job.makerspace_id,
-                                               retired_at__isnull=True).values_list("pk", flat=True))
+            closure.update(staff_track_user_ids(job.makerspace_id))
             datasets = [
                 dataset for dataset in DATASETS.values()
                 if dataset.fidelity is fidelity and dataset.model != "accounts.User"
@@ -120,7 +118,7 @@ def build_archive(
                 user_rows = [row for row in user_rows if row.pk in approved_ids]
                 user_count = len(user_rows)
             if fidelity is Fidelity.PORTABLE:
-                write_user_lifecycle(root, user_rows)
+                write_user_sidecars(root, user_rows)
                 # Re-read one dataset at a time inside the same repeatable-read
                 # snapshot. Approval must see the complete closure before any PII is
                 # written, but retaining every tenant row in memory would be unbounded.
@@ -198,7 +196,7 @@ def _read_dataset(dataset, tenant_id, closure, page_size, deadline, monotonic):
     if dataset.fidelity is Fidelity.REDACTED and dataset.model in PORTABLE_MODELS:
         return [], 0
     model = apps.get_model(dataset.model)
-    queryset = model.objects.filter(dataset.predicate.as_q(tenant_id))
+    queryset = every_row(model).filter(dataset.predicate.as_q(tenant_id))
     queryset = select_declared_relations(queryset, dataset)
     cursor_values, rows, count = None, [], 0
     while True:
@@ -240,7 +238,7 @@ def _collect_user_ids(dataset, rows, closure):
                 candidates.add(int(value))
                 row_values.append((row, field_name, edge, int(value)))
         _collect_semantic_user(dataset, row, candidates, row_values)
-    existing = set(user_model.objects.filter(pk__in=candidates).values_list("pk", flat=True))
+    existing = set(every_row(user_model).filter(pk__in=candidates).values_list("pk", flat=True))
     dangling = set()
     for row, field_name, edge, value in row_values:
         if edge.raw:

@@ -22,6 +22,7 @@ from apps.makerspaces.models import Makerspace
 from .blind_indexes import rebuild_blind_indexes, verify_event_hashes
 from .target_state import IMPORTING
 from .tenant_dump_errors import TenantDumpTargetError
+from apps.backup.capture_managers import every_row
 
 
 @dataclass(frozen=True)
@@ -180,7 +181,7 @@ def _authenticated_samples(makerspace):
         tenant_lookup = mapped.makerspace_path.replace(".", "__")
         field = model._meta.get_field(mapped.field_name)
         instance = (
-            model.objects.filter(**{tenant_lookup: makerspace.pk})
+            every_row(model).filter(**{tenant_lookup: makerspace.pk})
             .exclude(**{f"{mapped.field_name}__isnull": True})
             .exclude(**{mapped.field_name: ""})
             .only(model._meta.pk.name, mapped.field_name)

@@ -42,10 +42,10 @@ def apply_space_restore(makerspace, archive):
     blocked = staff_without_restored_membership(makerspace, archive)
     if blocked:
         raise SpaceRestoreError("staff_after_restore_point",
-                                "Staff accounts created after the restore point must be retired first.")
+                                "Staff roles granted after the restore point must be revoked first.")
     labels = restorable_labels()
     models = topologically_sort_models([apps.get_model(label) for label in (*labels, *KEPT_LIVE)])
-    users = UserRemap(makerspace)
+    users = UserRemap(makerspace, archive)
     report = {"replaced": {}, "restored": {}, "kept_live": {}}
     # Ownership predicates join through parents (a registration through its event), so
     # every live set is read, and every reference into a removed row resolved, BEFORE any
@@ -69,6 +69,7 @@ def apply_space_restore(makerspace, archive):
     report["accounts_rescrubbed"] = rescrub_deleted_accounts(makerspace, users.referenced)
     report["users_reattributed"] = users.reattributed
     report["merges_followed"] = users.followed_merges
+    report["merged_rows_kept_on_shells"] = users.merges.kept_on_shell
     _rebuild_blind_indexes(makerspace)
     try:
         with connection.cursor() as cursor:
@@ -81,12 +82,19 @@ def apply_space_restore(makerspace, archive):
 
 
 def staff_without_restored_membership(makerspace, archive):
-    """Live staff of this space whose one required membership the archive does not carry."""
-    from apps.accounts.models import User
+    """People holding an ACTIVE staff-track row here that the archive does not carry.
 
-    archived = {int(row["fields"]["user"]) for row in archive.rows("makerspaces.MakerspaceMembership")}
-    return list(User.objects.filter(account_kind="staff", staff_makerspace=makerspace, retired_at__isnull=True)
-                .exclude(pk__in=archived).order_by("pk").values_list("pk", "username"))
+    Staff added after the restore point block the restore until the superadmin revokes
+    their role (#144c, no auto-retire): the restore would otherwise delete the row. An
+    archive written before staff-track rows were captured carries none, so it blocks
+    instead of silently removing the space's staff.
+    """
+    from apps.makerspaces.models import MakerspaceMembership
+
+    archived = archive.pks("makerspaces.MakerspaceMembership")
+    return list(MakerspaceMembership.staff_tracks.filter(makerspace=makerspace, status="active")
+                .exclude(pk__in=archived).order_by("user_id")
+                .values_list("user_id", "user__username").distinct())
 
 
 def _insert(model, archive, users, skips):

@@ -38,6 +38,10 @@ class ClosureIdentitySerializer(serializers.Serializer):
     display_name = serializers.CharField(allow_blank=True)
     phone = serializers.CharField(allow_blank=True)
     date_joined = serializers.DateTimeField()
+    account_kind = serializers.CharField(
+        required=False, help_text="member (a person), platform, or staff (an inert merged shell).")
+    holds_staff_roles = serializers.BooleanField(
+        required=False, help_text="Import review only: the person holds staff-track roles in the archived space.")
     pii_masked = serializers.BooleanField(read_only=True, required=False)
 
     def to_representation(self, instance):
@@ -176,6 +180,11 @@ class ImportIdentityDecisionSerializer(serializers.Serializer):
         choices=ImportIdentityDecision.MembershipDisposition.choices
     )
     target_user_id = serializers.IntegerField(required=False, allow_null=True)
+    grant_staff_roles = serializers.BooleanField(
+        required=False, default=False,
+        help_text="link_existing only: keep the person's staff-track roles ACTIVE. Without it a "
+                  "linked person's staff roles arrive revoked (audited tenant_migration.staff_roles_granted).",
+    )
 
     def validate(self, attrs):
         target = attrs.get("target_user_id")
@@ -183,6 +192,10 @@ class ImportIdentityDecisionSerializer(serializers.Serializer):
         if linked != (target is not None):
             raise serializers.ValidationError(
                 {"target_user_id": "Required only for link_existing decisions."}
+            )
+        if attrs.get("grant_staff_roles") and not linked:
+            raise serializers.ValidationError(
+                {"grant_staff_roles": "Only a linked person's staff roles take an explicit grant."}
             )
         return attrs
 

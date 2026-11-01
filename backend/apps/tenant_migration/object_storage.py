@@ -10,6 +10,7 @@ from django.conf import settings
 
 from apps.backup.storage import client
 from apps.object_storage import delete_all_versions
+from apps.backup.capture_managers import every_row
 
 
 CHUNK_SIZE = 1024 * 1024
@@ -129,7 +130,7 @@ def _receipt_reserved(bucket_kind, key):
         predicate = Q(pk__in=[])
         for field in fields:
             predicate |= Q(**{field: key})
-        if model.objects.filter(predicate).exists():
+        if every_row(model).filter(predicate).exists():
             return True
     return False
 
@@ -139,7 +140,7 @@ def _occupied(bucket_kind, key):
         return True
     # A pending or repairing page cleanup will delete this exact key (private page
     # bytes, or a public event cover), so an import must never be handed it.
-    if apps.get_model("makerspaces.PublicPageObjectCleanup").objects.filter(object_key=key).exists():
+    if every_row(apps.get_model("makerspaces.PublicPageObjectCleanup")).filter(object_key=key).exists():
         return True
     if bucket_kind == "private":
         # A row reserves its unique key even when its bytes are missing. Allocate
@@ -151,7 +152,7 @@ def _occupied(bucket_kind, key):
                 model = apps.get_model(label)
             except LookupError:
                 continue
-            if model.objects.filter(object_key=key).exists():
+            if every_row(model).filter(object_key=key).exists():
                 return True
     return object_exists(bucket_kind, key)
 

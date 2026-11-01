@@ -19,6 +19,13 @@ PORTABLE_DATASETS = {
 }
 
 
+# label -> (columns the previous format lacks, columns only the previous format has).
+PREVIOUS_FORMAT_DRIFT = {
+    "accounts.User": (frozenset(), frozenset({"staff_makerspace_id"})),
+    "makerspaces.MakerspaceMembership": (frozenset({"track"}), frozenset()),
+}
+
+
 class PortableArchive:
     def __init__(self, root):
         self.root = Path(root)
@@ -47,19 +54,35 @@ class PortableArchive:
             reader = csv.DictReader(handle)
             expected = {column.name for column in dataset.columns}
             actual = set(reader.fieldnames or ())
-            if actual != expected:
+            if actual != expected and not self._previous_format_columns(model_label, expected, actual):
                 from .public_page_legacy import missing_columns_allowed
                 if actual - expected or not missing_columns_allowed(self, model_label, expected - actual):
                     raise ArchiveFormatError(
                         f"Archive columns drifted for {model_label}; "
                         f"missing={sorted(expected - actual)}, extra={sorted(actual - expected)}."
                     )
+            missing = {name: "" for name in expected - actual}
             if model_label == "accounts.User":
                 from .archive_user_lifecycle import lifecycle_rows
 
-                yield from lifecycle_rows(self, reader)
+                yield from ({**missing, **row} for row in lifecycle_rows(self, reader))
             else:
-                yield from reader
+                yield from ({**missing, **row} for row in reader)
+
+    def format_version(self):
+        if not hasattr(self, "_format_version"):
+            path = self.root / "migration-manifest.json"
+            self._format_version = (self.json("migration-manifest.json").get("format_version")
+                                    if path.is_file() else None)
+        return self._format_version
+
+    def _previous_format_columns(self, model_label, expected, actual):
+        """Format 1 (one version back, Q11): before one account per person the user rows
+        named a staff tenant and the roster had no track; portable_staff converts them."""
+        drift = PREVIOUS_FORMAT_DRIFT.get(model_label)
+        if drift is None or self.format_version() != 1:
+            return False
+        return expected - actual <= drift[0] and actual - expected <= drift[1]
 
     def json(self, relative_path):
         path = self.root / relative_path

@@ -8,6 +8,7 @@ from apps.tenant_migration.gate_policy import (
     TASK_TENANT_RESOLVERS,
 )
 from apps.tenant_migration.gate_runtime import boundary_tenant_write
+from apps.backup.capture_managers import every_row
 
 
 class TenantGateTask(Task):
@@ -69,8 +70,7 @@ def _resolve_makerspace_id(resolver, args, kwargs, *, task_name=None):
     if object_id is None:
         return None
     return (
-        apps.get_model(model_label)
-        .objects.filter(pk=object_id)
+        every_row(apps.get_model(model_label)).filter(pk=object_id)
         .values_list(field, flat=True)
         .first()
     )

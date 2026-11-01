@@ -17,8 +17,7 @@ from django.apps import apps
 
 from .raw_projection import canonical_owner_q
 from .slice_rows import SLICE_ROW_SPECS
-
-FORMAT = "tenant_slice_v1"
+from .space_restore_formats import FORMAT, READABLE_FORMATS, convert_rows  # noqa: F401 -- FORMAT re-exported
 
 # Accounts are untouched by a space restore; the live audit trail is kept and the
 # archive's audit rows are never re-imported.
@@ -64,12 +63,16 @@ class SpaceArchive:
         if self.manifest.get("scope") != "makerspace":
             raise SpaceRestoreError("wrong_scope", "This archive is not a one-space archive.")
         self.makerspace_id = int(self.manifest["makerspace_id"])
+        # A test-built or v2 archive reads as stored; v1 converts one version back.
+        self.payload_format = self.manifest.get("payload_format", FORMAT)
         self._rows = {}
 
     def rows(self, label):
         if label not in self._rows:
             path = self.root / "tenant" / file_name(label)
-            self._rows[label] = self._load(path, list) if path.exists() else []
+            rows = self._load(path, list) if path.exists() else []
+            roles = self.rows("makerspaces.MakerspaceRole") if label == "makerspaces.MakerspaceMembership" else ()
+            self._rows[label] = convert_rows(self.payload_format, label, rows, roles)
         return self._rows[label]
 
     def pks(self, label):

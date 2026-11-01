@@ -5,6 +5,7 @@ from django.conf import settings
 
 from apps.backup import storage
 from apps.data_export.datasets import DATASET_SPECS
+from .capture_managers import every_row
 
 
 OBJECT_FIELD_NAMES = frozenset({
@@ -99,6 +100,9 @@ NON_OBJECT_KEY_FIELDS = frozenset({
     ("events.EventFormRevision", "form_key"),
     ("events.EventHelpRequest", "dedup_key"),
     ("events.SubmissionIntegrityFlag", "rule_key"),
+    # Login security (S0): an IP/network block key and a passkey's COSE public key bytes.
+    ("accounts.IPAutoBlock", "ip_key"),
+    ("accounts.WebAuthnCredential", "public_key"),
 })
 
 
@@ -110,7 +114,7 @@ def object_closure():
         if model._meta.label in {"evidence.EvidenceAbandonedUploadReceipt", "accounts.AccountPurgeObject",
                                   "backup.ManagedStagedObject"}:
             continue
-        collect_model_objects(model._default_manager.all(), model, result)
+        collect_model_objects(every_row(model).all(), model, result)
     return result
 
 

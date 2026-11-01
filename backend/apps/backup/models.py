@@ -51,8 +51,9 @@ class BackupArchive(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     scope = models.CharField(max_length=16, choices=Scope.choices)
-    # What the payload is: "tenant_slice_v1" is the per-space raw slice a space restore
-    # reads; deployment archives keep their manifest format and leave this blank.
+    # What the payload is: "tenant_slice_v2" (both membership tracks; "tenant_slice_v1" still
+    # converts on read) is the per-space raw slice a space restore reads; deployment
+    # archives keep their manifest format and leave this blank.
     format = models.CharField(max_length=32, blank=True, default="")
     trigger = models.CharField(max_length=16, choices=Trigger.choices, default=Trigger.ON_DEMAND)
     makerspace = models.ForeignKey(

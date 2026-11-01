@@ -1,3 +1,4 @@
+from apps.backup.capture_managers import every_row
 """Lane L5 rows in the capture-bound money fingerprint.
 
 Anything that can still move or explain money after a capture participates: open
@@ -11,7 +12,7 @@ space that uses none of this keeps its existing fingerprint.
 
 def _rows(model, using, values, **lookup):
     return [{key: str(value) for key, value in row.items()}
-            for row in model.objects.using(using).filter(**lookup).order_by("pk").values(*values)]
+            for row in every_row(model).using(using).filter(**lookup).order_by("pk").values(*values)]
 
 
 def l5_money_rows(makerspace_id, using="default"):

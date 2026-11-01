@@ -71,7 +71,7 @@ Every guide in this repository, grouped by what you are trying to do. Start with
 - [Supabase PostgreSQL](supabase-deployment.md) — using Supabase as the database.
 - [Single-tenant branded frontend](single-tenant-frontend.md) — running the frontend for one makerspace.
 - [Database recovery after an update](update-recovery.md) — restoring dumps and inspecting failed deployments.
-- [Account split portability](account-split-portability.md) — what travels when a space moves to another deployment.
+- [Account portability](account-portability.md) — what travels when a space is backed up, restored or moved to another deployment: people, staff roles and credentials.
 - [Environment reference](environment-reference.md), [delivery settings](environment-reference-delivery.md) and [operations settings](environment-operations.md) — every environment variable.
 - [Monitoring and private web analytics](monitoring-and-analytics.md) — storage, metrics and analytics.
 - [Platform monitoring and tenant usage](platform-monitoring.md) — the superadmin platform dashboard.

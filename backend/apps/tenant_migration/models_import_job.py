@@ -105,6 +105,11 @@ class ImportIdentityDecision(models.Model):
         on_delete=models.SET_NULL,
         related_name="tenant_import_identity_decisions",
     )
+    # One account per person: a source person's staff-track rows travel with them. Linked
+    # to an existing target person they arrive REVOKED unless the superadmin grants them
+    # here, explicitly (audited tenant_migration.staff_roles_granted). Created people keep
+    # the source status.
+    grant_staff_roles = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -133,4 +138,8 @@ class ImportIdentityDecision(models.Model):
         ):
             raise ValidationError(
                 {"target_user": "A walk-in decision cannot name an existing account."}
+            )
+        if self.grant_staff_roles and self.identity_resolution != self.IdentityResolution.LINK_EXISTING:
+            raise ValidationError(
+                {"grant_staff_roles": "Only a linked person's staff roles need an explicit grant."}
             )

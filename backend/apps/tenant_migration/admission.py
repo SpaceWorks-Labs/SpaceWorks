@@ -18,6 +18,7 @@ from .models_protocol import DisclosureClosureApproval
 from .protocol_errors import ClosureAdmissionError, ClosureChangedError
 from .row_conditions import condition_matches
 from .target_projection import ROW_POLICIES, RowDisposition
+from apps.backup.capture_managers import every_row
 
 
 def export_row_policy(model_label, row):
@@ -56,7 +57,7 @@ def canonical_identities(user_rows):
     for user in sorted(user_rows, key=lambda item: str(item.pk)):
         identity = {}
         for name in sorted(names):
-            # A foreign key (staff_makerspace) is compared by its column value, never the related object.
+            # A foreign key would be compared by its column value, never the related object.
             value = getattr(user, user._meta.get_field(name).attname)
             identity[name] = value.isoformat() if hasattr(value, "isoformat") else value
         identities.append(identity)
@@ -72,19 +73,20 @@ def closure_digest(identities):
 
 def compute_pending_closure(makerspace):
     """Compute the exact projected identity list shown to the source superadmin."""
-    closure = set(User.objects.filter(account_kind="staff", staff_makerspace=makerspace,
-                                      retired_at__isnull=True).values_list("pk", flat=True))
+    from apps.data_export.runner_users import staff_track_user_ids
+    closure = staff_track_user_ids(makerspace.pk)
     for dataset in DATASETS.values():
         if dataset.fidelity is not Fidelity.PORTABLE or dataset.model == "accounts.User":
             continue
         model = apps.get_model(dataset.model)
-        rows = model.objects.filter(dataset.predicate.as_q(makerspace.pk))
+        rows = every_row(model).filter(dataset.predicate.as_q(makerspace.pk))
         for row in rows.iterator(chunk_size=500):
             emit, contributes = export_row_policy(dataset.model, row)
             if emit and contributes:
                 closure.update(_row_user_ids(dataset.model, row))
-    users = apps.get_model("accounts.User").objects.filter(pk__in=closure, retired_at__isnull=True)
-    identities = canonical_identities(users)
+    from apps.data_export.runner_users import scrub_shell_identities
+    users = every_row(apps.get_model("accounts.User")).filter(pk__in=closure, retired_at__isnull=True)
+    identities = canonical_identities(scrub_shell_identities(list(users)))
     return {"digest": closure_digest(identities), "identities": identities}
 
 

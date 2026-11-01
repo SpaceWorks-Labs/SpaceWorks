@@ -183,7 +183,7 @@ shapes are:
   defaults remain unchanged; managed/free is explicit and subject to release acceptance gates.
 - **A tenant on a neighbour's instance**, then an approved, encrypted export onto your own server when
   you are ready. See [moving a makerspace](docs/README-HOSTING.md#moving-a-makerspace-onto-its-own-server)
-  and the [staff portability contract](docs/account-split-portability.md).
+  and the [account portability contract](docs/account-portability.md).
 
 Keep a scheduler: production uses Celery beat, while the cloud profile uses cron. The retired
 all-in-one image is unsupported. [Recovery](docs/update-recovery.md) is separate from updates. The

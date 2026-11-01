@@ -19,6 +19,9 @@ class Command(BaseCommand):
         parser.add_argument("--username", required=True, help="The platform superadmin recorded as the actor.")
         parser.add_argument("--source", required=True, help="The decrypted whole-platform archive directory.")
         parser.add_argument("--makerspace", required=True, help="The makerspace id or slug to extract.")
+        parser.add_argument("--account-unification-ack", default="",
+                            help="For a backup taken before one account per person: the plan_sha256 the "
+                                 "first refusal printed, after reviewing the staff it converts.")
 
     def handle(self, *args, **options):
         actor = User.objects.filter(username=options["username"]).first()
@@ -28,7 +31,8 @@ class Command(BaseCommand):
         if actor is None or makerspace is None:
             raise CommandError("Unknown superadmin or makerspace.")
         try:
-            archive = extract_space_restore_point(actor, options["source"], makerspace)
+            archive = extract_space_restore_point(actor, options["source"], makerspace,
+                                                  unification_ack=options["account_unification_ack"])
         except SpaceRestoreError as exc:
             raise CommandError(f"[{exc.code}] {exc}") from None
         self.stdout.write(f"Restore point {archive.pk} is ready for {makerspace.slug}; "

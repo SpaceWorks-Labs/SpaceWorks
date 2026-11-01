@@ -236,12 +236,12 @@ def stage_import_job(job_id, *, actor_id):
         with decrypted_archive(job.archive_path) as (root, _carried):
             portable = PortableArchive(root)
             manifest = portable.json("migration-manifest.json")
-            from .archive_envelope import FORMAT, FORMAT_VERSION
+            from .archive_envelope import FORMAT, READABLE_FORMAT_VERSIONS
             from .pairing import _validated_identity
 
             if (
                 manifest.get("format") != FORMAT
-                or manifest.get("format_version") != FORMAT_VERSION
+                or manifest.get("format_version") not in READABLE_FORMAT_VERSIONS
             ):
                 raise ValidationError({"detail": "The tenant migration format is unsupported."})
             source = manifest.get("source", {}).get("makerspace", {})

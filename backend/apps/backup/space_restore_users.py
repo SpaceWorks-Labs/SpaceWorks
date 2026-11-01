@@ -3,14 +3,16 @@
 Archived rows keep pointing at the same account ids. An account row that no longer exists
 is re-attributed to the space's anonymous principal. An account deleted since the
 restore point (its tenant data already scrubbed) is scrubbed again in this space, so the
-restore cannot bring its personal data back. An account merged since then (#128 C-17, once
-``User.merged_into`` exists) is followed to its survivor: a merge is never undone and a
-shell is never re-activated.
+restore cannot bring its personal data back. An account merged since then (#128 C-17) is
+followed to its survivor (``space_restore_merges``): a merge is never undone and a shell is
+never re-activated.
 """
 
 from functools import lru_cache
 
 from apps.accounts.models import User
+
+from .space_restore_merges import MergeFollow
 
 
 @lru_cache(maxsize=None)
@@ -22,13 +24,17 @@ def user_fk_names(model):
 
 
 class UserRemap:
-    def __init__(self, makerspace):
+    def __init__(self, makerspace, archive=None):
         self.makerspace = makerspace
         self.referenced = set()
         self.reattributed = 0
-        self.followed_merges = 0
+        self.merges = MergeFollow(archive)
         self._known = {}
         self._anonymous = None
+
+    @property
+    def followed_merges(self):
+        return self.merges.followed
 
     def remap(self, model, record):
         names = user_fk_names(model)
@@ -39,7 +45,10 @@ class UserRemap:
             value = fields.get(name)
             if value in (None, ""):
                 continue
-            user_id = self._survivor(int(value))
+            source = int(value)
+            user_id = self.merges.survivor(source)
+            if user_id != source:
+                user_id = self.merges.resolve(model, name, fields, source, user_id)
             if self._exists(user_id):
                 self.referenced.add(user_id)
                 fields[name] = user_id
@@ -47,19 +56,6 @@ class UserRemap:
             fields[name] = self._anonymous_id()
             self.reattributed += 1
         return {**record, "fields": fields}
-
-    def _survivor(self, user_id):
-        if not any(field.name == "merged_into" for field in User._meta.concrete_fields):
-            return user_id
-        seen = set()
-        while user_id not in seen:
-            seen.add(user_id)
-            following = User.objects.filter(pk=user_id).values_list("merged_into_id", flat=True).first()
-            if following is None:
-                return user_id
-            self.followed_merges += 1
-            user_id = following
-        return user_id
 
     def _exists(self, user_id):
         if user_id not in self._known:

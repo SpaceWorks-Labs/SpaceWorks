@@ -31,9 +31,9 @@ def apply_user_closure(rows, closure):
                 deletion_username="",
                 is_tenant_dump_stub=False,
             )
-            if source.get("account_kind") == "staff":
-                values.update(password="!tenant-import-staff", must_change_password=True,
-                              credential_generation=0)
+            # One account per person: a full row is a person (staff roles are their
+            # staff-track rows), so it keeps its password hash like any member; the
+            # dump stays sealed to the one-shot recipients (#128 C-18).
         rewritten.append(MappingProxyType(values))
     result["accounts.User"] = tuple(rewritten)
     result["makerspaces.MembershipRequest"] = tuple(
@@ -114,6 +114,9 @@ def _stub_values(ref):
         "account_kind": "member",
         "staff_makerspace_id": None,
         "retired_at": None,
+        # A merged shell becomes a plain stub: the alias is deployment-local.
+        "merged_into_id": None,
+        "merged_at": None,
         "credential_generation": 0,
         "username": f"__tenant_stub__{ref}",
         "password": f"!tenant-dump-stub-v{STUB_SCHEMA_VERSION}:{ref}",

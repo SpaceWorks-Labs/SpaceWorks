@@ -10,6 +10,7 @@ from django.apps import apps
 from django.db import connection
 from .catalog_public_pages import EXPORTED_FIELDS
 from .insertion_errors import ImportVerificationError
+from apps.backup.capture_managers import every_row
 
 LEGACY_ADDITIONS = {
     "makerspaces.PublicHandle": {"makerspace_id": None, "organization_id": None},
@@ -111,7 +112,7 @@ def verify_reconstruction(archive):
             for label, pk, page_id in batch:
                 model = apps.get_model(label)
                 path = "revision__page_id" if label.endswith(("RevisionAsset", "RevisionMember")) else "page_id"
-                if not model.objects.filter(pk=pk, **{path: page_id}).exists():
+                if not every_row(model).filter(pk=pk, **{path: page_id}).exists():
                     raise ImportVerificationError("Legacy page reconstruction lost ownership or an expected row.")
                 actual[label] = actual.get(label, 0) + 1
             after = (batch[-1][0], batch[-1][1])

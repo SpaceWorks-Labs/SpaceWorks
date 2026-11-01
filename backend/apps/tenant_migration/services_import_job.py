@@ -58,6 +58,7 @@ def submit_identity_decisions(*, actor, job, decisions):
                     identity_resolution=item["identity_resolution"],
                     membership_disposition=item["membership_disposition"],
                     target_user_id=item.get("target_user_id"),
+                    grant_staff_roles=bool(item.get("grant_staff_roles")),
                 )
             )
         ImportIdentityDecision.objects.bulk_create(rows)
@@ -97,13 +98,14 @@ def claim_import_job(*, actor, job, target_identity=None):
 
 def _require_superadmin(actor):
     from apps.accounts.models import User
+    from apps.accounts.staff_identity import is_platform
 
     # Workers reload the requester before this check: retained platform flags
     # must not authorize archive I/O after deactivation or loss of standing.
     if not (
         getattr(actor, "is_authenticated", False)
         and getattr(actor, "is_active", False)
-        and getattr(actor, "account_kind", None) == User.AccountKind.PLATFORM
+        and is_platform(actor)
         and getattr(actor, "is_superuser", False)
         and getattr(actor, "role", None) == User.Role.SUPERADMIN
         and getattr(actor, "access_status", None) == User.AccessStatus.ACTIVE

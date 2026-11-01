@@ -26,6 +26,7 @@ from .tenant_dump_user_rows import (
     apply_user_closure,
     excluded_stub_profile_object_keys,
 )
+from apps.backup.capture_managers import every_row
 
 
 class TenantDumpProjectionError(RuntimeError):
@@ -55,7 +56,7 @@ def project_makerspace_source(makerspace_id, *, using="default", capture_id=None
             if rule.disposition is ModelDisposition.DROP:
                 continue
             model = apps.get_model(label)
-            queryset = model._default_manager.using(using).filter(
+            queryset = every_row(model).using(using).filter(
                 predicate.as_q(makerspace_id)
             ).order_by(model._meta.pk.name)
             records = raw_records(queryset, model)
@@ -69,13 +70,13 @@ def project_makerspace_source(makerspace_id, *, using="default", capture_id=None
         _close_conditional_rows(projected)
         user_ids = _referenced_user_ids(projected)
         User = apps.get_model("accounts.User")
-        user_ids.update(User._base_manager.using(using).filter(
-            account_kind="staff", staff_makerspace_id=makerspace_id, retired_at__isnull=True,
-        ).values_list("pk", flat=True))
+        # Every person holding a staff-track row here (their roster rows name them too).
+        user_ids.update(row["user_id"] for row in projected.get("makerspaces.MakerspaceMembership", ())
+                        if row.get("track") == "staff")
         projected["accounts.User"] = tuple(
             MappingProxyType(dict(row))
             for row in raw_records(
-                User._default_manager.using(using).filter(pk__in=user_ids).order_by(
+                every_row(User).using(using).filter(pk__in=user_ids).order_by(
                     User._meta.pk.name
                 ),
                 User,

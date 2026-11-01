@@ -29,6 +29,7 @@ from .slice_rows import SLICE_ROW_SPECS as DATASET_SPECS
 
 
 from cloud_contracts.continuity import CONTINUITY_KEYS
+from .capture_managers import every_row
 
 
 
@@ -136,7 +137,7 @@ def _tenant_payload(makerspace_id, root, *, using="default"):
         external_references = []
         for label, (_path, predicate) in sorted(DATASET_SPECS.items()):
             model = apps.get_model(label)
-            queryset = model.objects.using(using).filter(canonical_owner_q(predicate, makerspace_id)).order_by(
+            queryset = every_row(model).using(using).filter(canonical_owner_q(predicate, makerspace_id)).order_by(
                 model._meta.pk.name
             )
             records = raw_records(queryset, model)

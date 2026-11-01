@@ -23,6 +23,14 @@ USER_REF_DOMAIN = b"lane-d-user-v1\0"
 SEMANTIC_USER_REWRITE_HANDLERS = {}
 
 
+def person_annotation():
+    from django.db.models import BooleanField, Case, Value, When
+
+    from apps.accounts.staff_identity import person_q
+    return Case(When(person_q(), then=Value(True)), default=Value(False), output_field=BooleanField())
+
+
+
 def _sealed_member_edges(row):
     """A sealed submission roster names each member's account ID in a JSON list."""
     members = row.get("sealed_member_ids") or []
@@ -73,7 +81,7 @@ def build_user_closure(rows, makerspace_id, capture_id, *, using="default"):
     user_ids = set(references)
     User = apps.get_model("accounts.User")
     identities = {row["id"]: row for row in User._base_manager.using(using).filter(pk__in=user_ids)
-                  .values("id", "account_kind", "staff_makerspace_id", "retired_at")}
+                  .annotate(person=person_annotation()).values("id", "person", "retired_at", "merged_into_id")}
     existing_user_ids = set(identities)
     missing = sorted(user_ids - existing_user_ids, key=str)
     if missing:
@@ -88,19 +96,23 @@ def build_user_closure(rows, makerspace_id, capture_id, *, using="default"):
             closure=closure,
         )
 
-    memberships = defaultdict(set)
+    memberships, staff_here = defaultdict(set), set()
     Membership = apps.get_model("makerspaces.MakerspaceMembership")
     for row in Membership._base_manager.using(using).filter(
         user_id__in=user_ids
-    ).values("user_id", "makerspace_id"):
+    ).values("user_id", "makerspace_id", "track", "status"):
         memberships[row["user_id"]].add(row["makerspace_id"])
+        if row["makerspace_id"] == int(makerspace_id) and row["track"] == "staff" and row["status"] == "active":
+            staff_here.add(row["user_id"])
 
     included, stubbed = [], []
     for pk in sorted(user_ids, key=str):
         identity = identities[pk]
-        exclusive = (identity["retired_at"] is None and (
-            identity["account_kind"] == "staff" and identity["staff_makerspace_id"] == int(makerspace_id)
-            or identity["account_kind"] == "member" and memberships[pk] == {int(makerspace_id)}))
+        # A person travels in full when every membership is in this space, or when they
+        # hold an active staff role here (#128 C-18: staff sign in on the target). Shells
+        # and platform accounts are always PII-free stubs.
+        live_person = identity["person"] and identity["retired_at"] is None and identity["merged_into_id"] is None
+        exclusive = live_person and (memberships[pk] == {int(makerspace_id)} or pk in staff_here)
         if exclusive:
             included.append(
                 _entry(capture_id, pk, "tenant_exclusive", references[pk], emitted=pk)
@@ -165,9 +177,6 @@ def _referencing_edges(rows):
                 references[int(value)].append(
                     (label, row[model._meta.pk.attname], field_name)
                 )
-    for row in rows.get("accounts.User", ()):
-        if row.get("account_kind") == "staff" and row.get("staff_makerspace_id") is not None:
-            references[int(row["id"])].append(("accounts.User", row["id"], "staff_makerspace"))
     _semantic_edges(rows, references)
     return {pk: tuple(sorted(edges, key=_edge_key)) for pk, edges in references.items()}
 

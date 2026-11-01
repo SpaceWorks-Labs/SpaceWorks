@@ -13,6 +13,7 @@ from .closure_references import (
 )
 from .row_conditions import condition_matches
 from .target_projection import ROW_POLICIES, RowDisposition, SEEDED_RESOLUTIONS
+from apps.backup.capture_managers import every_row
 
 
 @dataclass
@@ -177,7 +178,7 @@ def _seeded_target_pk(label, row, target):
         if row.get("makerspace") or row.get("makerspace_id"):
             return None
         lookup["makerspace_id"] = None
-    match = model.objects.filter(**lookup).first()
+    match = every_row(model).filter(**lookup).first()
     if match is None:
         return None
     for name in resolution.definition_fingerprint_fields:

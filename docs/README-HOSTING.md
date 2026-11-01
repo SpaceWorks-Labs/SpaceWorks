@@ -178,12 +178,14 @@ Three things are deliberate, because this moves real accountability records:
 
 Both sides are driven from the staff console; nothing here needs a shell.
 
-Tenant staff travel as new accounts of the imported makerspace with built-in roles, remapped machine
-types, active/deactivated status and staff notification preferences. They never adopt an existing
-target member or staff identity, even with the same email. Passwords, MFA, sessions, device grants,
-chat endpoints and invitations are omitted: a target administrator issues passwords and each chat
-connection proves ownership again. Platform audit actors remain inert provenance. See the permanent
-[account-split portability contract](account-split-portability.md) for PORTABLE, sovereign Lane D,
-purge retirement and the separate sealed-slice deployment-backup rules.
+People travel with their staff roles (staff-track memberships with built-in roles, remapped machine
+types and their notification preferences). A person created on the target arrives with their
+travelled sign-in credentials -- password, authenticator and same-domain passkeys, sealed under the
+space's key -- so staff and members can sign in without a reset; a person linked to an existing
+target account keeps that account's credentials and gets staff roles only when the superadmin
+grants them. Sessions, device grants, chat endpoints and invitations never travel. Merged accounts
+travel as inert, PII-free shells and platform audit actors remain inert provenance. See the
+[account portability contract](account-portability.md) for PORTABLE, sovereign Lane D, per-space
+restore and data export.
 
 Cloud integration: [hosting choices and operational contracts](deploy/cloud-overview.md). Full host defaults remain unchanged; managed/free is explicit and subject to release acceptance gates.

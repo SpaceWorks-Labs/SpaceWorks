@@ -12,6 +12,7 @@ from django.apps import apps
 from django.utils.dateparse import parse_datetime
 
 from .space_restore_graph import inbound_edges, resolve, foreign_pks
+from .space_restore_merges import MergeFollow
 from .space_restore_plan import KEPT_LIVE, MONEY_LABELS, live_queryset, restorable_labels
 from .space_restore_users import user_fk_names
 
@@ -41,7 +42,7 @@ def compute_preview(makerspace, archive):
         relinked += _foreign_inbound(makerspace.pk, label, archived & live)
     outcome = resolve(makerspace.pk, gone, apply=False)
     from .space_restore_apply import staff_without_restored_membership
-    outcome.blocked.extend({"model": "accounts.User", "pk": str(pk), "field": "staff_makerspace",
+    outcome.blocked.extend({"model": "accounts.User", "pk": str(pk), "field": "track",
                             "references": "makerspaces.MakerspaceMembership", "reason": "staff_after_restore_point",
                             "username": username}
                            for pk, username in staff_without_restored_membership(makerspace, archive))
@@ -89,7 +90,13 @@ def _accounts(archive):
             referenced.update(int(row["fields"][name]) for name in names if row["fields"].get(name))
     existing = set(User.objects.filter(pk__in=referenced).values_list("pk", flat=True))
     erased = User.objects.filter(pk__in=existing, deletion_requested_at__isnull=False).count()
-    return {"referenced": len(referenced), "reattributed": len(referenced - existing), "erased_since": erased}
+    # People merged since the restore point: their rows follow to the survivor (C-17).
+    follow = MergeFollow(archive)
+    merged = sorted((pk, follow.survivor(pk)) for pk in User._base_manager.filter(
+        pk__in=existing, merged_into__isnull=False).values_list("pk", flat=True))
+    return {"referenced": len(referenced), "reattributed": len(referenced - existing), "erased_since": erased,
+            "merged_since": len(merged),
+            "merged_followed": [{"account": str(pk), "survivor": str(to)} for pk, to in merged[:MONEY_LISTED]]}
 
 
 def rows_after_restore_point(makerspace, labels, snapshot_at):

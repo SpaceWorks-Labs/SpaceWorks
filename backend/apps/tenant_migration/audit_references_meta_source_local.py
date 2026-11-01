@@ -82,6 +82,9 @@ SOURCE_LOCAL_AUDIT_EDGES = frozenset(
         ("tenant_migration.identity_decisions_submitted", "import_id"),
         ("tenant_migration.identity_decisions_read", "import_id"),
         ("tenant_migration.import_completed", "import_id"),
+        # One account per person: the import job and the person's source-deployment id.
+        ("tenant_migration.staff_roles_granted", "import_id"),
+        ("tenant_migration.staff_roles_granted", "source_user_id"),
         ("tenant_migration.verification_read", "import_id"),
         # Lane E compound-artifact rows are deployment-operational and never travel.
         ("backup.archive_exclusion_activated", "artifact_id"),

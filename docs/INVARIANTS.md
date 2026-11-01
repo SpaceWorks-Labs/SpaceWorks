@@ -28,9 +28,10 @@ Documentation is not rollout sign-off.
 Owner decisions #63/#65/#66 reverse the account split (D1–D12): **one account per person**;
 staff roles are granted to that person; the superadmin stays a separate platform account.
 U-A1 ships the model, the database guards, the conversion and the identity/RBAC seams below.
-The login/session surface (U-A2, below), the staff-roles API and console (U-B), interactive merges and
-deletion (U-C) and portability (U-D) land in later lanes; until each lands, the split-account
-text kept under "Split-account surfaces awaiting their lanes" still describes that code.
+The login/session surface (U-A2, below), interactive merges and deletion (U-C, "Account merge" below
+and "Account deletion") and portability (U-D) have landed; the staff-roles API and console (U-B) land
+next. Until it does, the split-account text kept under "Split-account surfaces awaiting their lanes"
+still describes the staff lifecycle code.
 
 **Kinds.** `User.account_kind` stays non-null. `member` IS the person (shown as `person` in the
 API); `platform` is the superadmin (`is_superuser` + `role=superadmin`); `staff` survives only
@@ -81,7 +82,11 @@ matters. A community revocation refuses a staff row (the staff-roles service rev
 **RBAC.** `resolve_scope`/`scope_by_makerspace` union both tracks (a person sees the spaces they
 belong to and the ones they staff); `_membership_for`, `membership_role`,
 `makerspaces_for_action`, `is_space_manager_identity` and machine scopes read staff rows only;
-community rows never confer actions. Organization authority belongs to the person. Staff quota
+community rows never confer actions. Organization authority belongs to the person. **Session
+authority (#162(2)):** a native MEMBER grant and a claim session see NO staff-track row in RBAC, and a
+native STAFF grant sees only its fixed tenant's (`accounts/session_authority.py`, set by authentication,
+applied by `rbac_memberships._staff_rows`, cleared per request), so a member route calling `rbac.can`
+never finds staff actions there; browser sessions and background work are unlimited. Staff quota
 counts staff-track rows. Only the superadmin grants, changes, revokes or restores the Space
 Manager role (`role_membership_writes.assert_space_manager_change_allowed`, code
 `space_manager_superadmin_only`; #110, #111 Q14). `makerspaces/staff_role_grants.grant_staff_role`
@@ -110,7 +115,8 @@ once completed except the account purge's PII scrub (`app.account_purge_user_id`
 **Merge registry.** `accounts/merge_registry.py` classifies every relation to `accounts.User`
 and every integer `*user_id`/`*actor_id` column as REPOINT, KEEP_ON_SHELL or UNIQUE_RESOLVE
 (rows in `merge_registry_rows_*.py`, a hot file: append rows only). System check
-`accounts.E003` refuses an unclassified or stale entry. U-C's engine walks it.
+`accounts.E003` refuses an unclassified or stale entry. U-C's engine walks it (read-only) and refuses
+to merge while any reference is unclassified.
 
 **Native devices and recovery.** A device grant's principal is a person; a staff grant needs an
 active staff-track row in its fixed `staff_makerspace_id`, an enabled factor and attestation,
@@ -174,6 +180,61 @@ staff step-up and refresh, before anything rotates.
 
 **Recovery** is person (`member` envelope context) or platform only; the staff context and its
 makerspace slug are gone. `control_mfa` is unchanged.
+
+### Account merge (release 2, lane U-C; #65, #66, Q3/Q15–Q17, #128 C-1/C-17)
+
+**Nothing merges on email alone.** A merge links a SOURCE into the SURVIVOR, the person signed in (a
+browser or native member session; never a claim session). The source is an account whose unification
+decision was `converted` (a former staff account), still a live person, never merged; converted ->
+converted is allowed, member -> member is not (Q15). Refused on either side: platform accounts, shells,
+tenant-dump stubs, walk-ins, a space's anonymous requester, deletion-requested, inactive or restricted
+accounts, source == survivor; a gated tenant of either account refuses the confirm (`tenant_gated`).
+There is no deadline (#66); `merge_suggested` in the auth payload marks a converted account that has
+not linked another account yet (Q17), and U-B renders the nudge.
+
+**Proof (`account_merge_proofs`).** `credentials`: the source's password AND its authenticator (a TOTP
+or recovery code; passkey proof arrives with S-A), unavailable when the source has no factor
+(`factor_enrolment_required`, said only after the password matched). `email_codes`: two fresh 6-digit
+codes, one to the survivor's email and one to the source's current or held email, both required, two
+separate codes even when both go to one mailbox (Q16). Codes are stored only as
+`login_codes.digest(code, purpose, intent)`; an intent lives 10 minutes, allows five failed proofs in
+total, its codes work once and a resend replaces both (at most three). `start` answers identically for
+an identifier that names no eligible account (the intent then has no source and the survivor's own code
+is still sent), throttled per person (`account_merge_start`/`account_merge_prove`) and behind the login
+IP guard flag. Audits: `account.merge_started`, `account.merge_proof_failed`, `account.merge_cancelled`,
+`account.merged`; never a code, an identifier or an address. Abandoned intents are deleted by the
+challenge purge task after 30 days.
+
+**Preview and confirm.** The preview lists the staff roles gained per makerspace, the duplicate staff
+rows (both are staff there: the survivor's roles win, the source's row stays on the shell, revoked),
+rows that move or stay per disposition, the UNIQUE_RESOLVE conflicts and whether the staff-MFA grace
+opens; confirm carries its `preview_sha256` and refuses `preview_stale` when anything changed. Confirm
+needs recent re-authentication (`recent_reauth_required`) and `require_staff_mfa` when the survivor
+already holds elevated authority. The source's factor never moves (Q3). When the survivor becomes staff
+with no factor and has never had a grace, the merge completes and opens their one 3-day
+`StaffMfaGrace` (`source=merge`, #128 C-1); a grace the source held moves instead (one per person, ever).
+
+**Engine (`account_merge.py`, one atomic transaction per pair).** Lock order: Makerspaces ascending
+(tenant gates held) -> survivor -> source -> reset envelopes; every source credential is revoked first.
+It walks `merge_registry` through each model's base manager (both tracks): REPOINT rows move,
+KEEP_ON_SHELL rows stay (`actor_ids_for` reads them as the person's), UNIQUE_RESOLVE rows move unless
+the survivor already holds the unique slot (a unique field set containing the user column, with its
+condition); the loser stays on the shell, revoked where the model has `status=revoked`, `revoked_at` or
+an active flag. A merged shell holds only revoked memberships (DB-enforced). The source becomes an inert
+shell under `app.account_unification_run_id`: `staff_retirement.shell_values` with a `merged-<uuid>`
+username, `merged_into` the survivor, unusable password. One immutable
+`AccountMergeRecord(decision=merged, state=completed)` keeps the source's original identity as
+ciphertext under the survivor's per-account key (the deployment key when account keys are not
+configured), the roles gained and the counts; `uniq_merge_record_completed_merge` and the shell state
+make a repeat impossible (`already_merged`). Old audit rows are untouched (the row MAC covers
+`actor_id`, which never changes). Both addresses get a platform "accounts linked" email. The engine
+refuses while any `accounts.User` reference is unclassified.
+
+**Merge x per-space restore (#128 C-17).** Rows a per-space restore brings back for a person who merged
+after the restore point follow `merged_into` to the survivor (no un-merge, no role loss) and are listed in
+the restore preview (`merged_since`/`merged_followed`); a UNIQUE_RESOLVE slot the survivor already holds
+keeps the archived row on the shell (a membership there comes back revoked). A shell is never
+re-activated by a restore. Implemented in `backup/space_restore_merges.py` (U-D).
 
 ### Split-account surfaces awaiting their lanes (superseded as each lane lands)
 
@@ -286,11 +347,10 @@ and linked people get staff roles only by explicit grant -- see **One account pe
 backup, restore, tenant migration and export** under "Backup, restore and tenant migration" and
 [account-portability.md](account-portability.md).
 
-Tenant purge retires staff before removing the tenant: scrub name/email/phone/avatar, allocate
-`retired-<uuid>` username, revoke credentials, remove MFA secrets, set inactive + `retired_at`, and
-clear `staff_makerspace` under `app.account_retirement_makerspace_id` for that exact tenant.
-Staff are never hard-deleted. This one-way shell preserves global authentication audit actor IDs,
-MACs and signed batch leaves; shells cannot log in or enter exported identity/list results.
+SUPERSEDED by U-C: a tenant purge retires NOBODY. It sets `app.tenant_purge_makerspace_id` for
+that exact tenant and deletes the tenant's rows on BOTH membership tracks with the graph; people keep
+their accounts, credentials and global authentication history (actor ids, MACs and batch leaves
+unchanged). Legacy `retired-<uuid>` shells from before unification stay as they are.
 
 Readable-main deployment backups use the same PII-free, inactive same-PK staff shells, never null
 AuditLog.actor. Full staff rows and account credential rows reside in sealed tenant slices;
@@ -2937,8 +2997,23 @@ Owner decisions #62, #66, #74, #110c, #111 Q9-Q11, #128 C-1/C-2 and #135 Q-A1-Q-
 
 ## Account deletion
 
-Self-deletion, archive/restore, the 90-day purge and Apple revocation are member-only. Staff
-lifecycle remains administrator-controlled; platform accounts use their separate recovery surface.
+Self-deletion, archive/restore, the 90-day purge and Apple revocation are for persons; a person who
+holds staff roles may delete their account too (one account per person, U-C). Platform accounts use
+their separate recovery surface.
+
+**One account per person (U-C).** The last-manager blocker reads STAFF-track rows (makerspace
+authority lives there); the last-governor rule is unchanged. Obligation blockers count every alias
+(`actor_ids_for`): a charge or loan left on a merged shell still blocks. Stage A revokes BOTH
+membership tracks (staff rows included) through the same self-leave revocation, and restore never brings
+a role back. Discovery and every generic read go through `backup.capture_managers.every_row` (the
+default membership manager is community-only), pinned by `tests/backup/test_capture_manager_guard.py`,
+which also scans `account_purge*`, `account_deletion*` and `lifecycle_purge*`. Stage B processes every
+id in `actor_ids_for`: each tenant scrub also scrubs every merged shell's copies (B2's per-space restore
+re-runs it the same way), the global step deletes what shells still hold (calendar feeds, notification
+endpoints and challenges, messaging deliveries, push devices, inbox rows), scrubs every merge record's
+PII snapshot under `app.account_purge_user_id`, and first erases the saved-details vault and destroys the
+person's account keys (crypto-shred), retrying on a later sweep if that cannot finish. The retained set
+below is unchanged. `account.deletion_requested` and `account.purged` carry an `aliases` count.
 
 **Comeback restores identity only, inside the archive window.** Under the same User
 row lock used by restore, Stage B commits `purge_started_at` before its first tenant

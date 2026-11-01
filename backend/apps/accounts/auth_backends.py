@@ -3,6 +3,7 @@
 from django.contrib.auth.backends import ModelBackend
 from django.contrib.auth import get_user_model
 from django.db.models import Q
+from apps.accounts.staff_identity import platform_q
 
 
 class SpaceWorksModelBackend(ModelBackend):
@@ -13,7 +14,7 @@ class SpaceWorksModelBackend(ModelBackend):
             User = get_user_model()
             value = str(username or "").strip()
             candidates = User.objects.filter(
-                Q(username=value) | Q(email__iexact=value), account_kind="platform",
+                Q(username=value) | Q(email__iexact=value), platform_q(),
                 retired_at__isnull=True, is_active=True,
             ).distinct()
             user = candidates.first() if value and candidates.count() == 1 else None

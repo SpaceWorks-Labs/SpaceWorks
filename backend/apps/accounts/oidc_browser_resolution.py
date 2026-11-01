@@ -16,6 +16,7 @@ from apps.accounts.transition_services import (
 )
 from apps.audit import services as audit
 from apps.makerspaces.models import MakerspaceMembership
+from apps.accounts.staff_identity import is_person, person_q
 
 
 def resolve_browser_identity(attempt, claims, *, allow_user_creation, staff_validator=None):
@@ -56,7 +57,7 @@ def _transition_bound_walk_in(attempt, claims):
             )
             email_users = list(
                 User.objects.select_for_update()
-                .filter(account_kind="member", email__iexact=asserted_email)
+                .filter(person_q(), email__iexact=asserted_email)
                 .exclude(email="")
             ) if asserted_email else []
             current_identity = (
@@ -64,7 +65,7 @@ def _transition_bound_walk_in(attempt, claims):
                 .filter(user=target, provider=attempt.provider)
                 .first()
             )
-            if target.account_kind != "member":
+            if not is_person(target):
                 raise SocialResolutionError("social_invalid", 403)
             if membership is None or not target.is_walk_in:
                 raise SocialResolutionError("identity_conflict", 409)

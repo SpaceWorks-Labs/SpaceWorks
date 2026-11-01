@@ -20,6 +20,7 @@ from apps.audit import services as audit
 from apps.makerspaces.cors import member_origin_is_registered
 from apps.makerspaces.models import MakerspaceMembership
 from apps.makerspaces.servability import servable_queryset
+from apps.accounts.staff_identity import person_q
 
 
 class OidcAttemptRejected(Exception):
@@ -140,10 +141,10 @@ def _transition_binding(request, *, email, makerspace_slug):
         return None, None
     membership = (
         servable_queryset(MakerspaceMembership.objects.filter(
+            person_q("user__"),
             makerspace__slug=slug,
             status="active",
             user__email__iexact=normalized,
-            user__account_kind="member",
             user__is_walk_in=True,
         ), relation="makerspace")
         .select_related("user")

@@ -15,6 +15,7 @@ from apps.accounts.models_mfa import UserMFA
 from apps.accounts.models_reauthentication import ReauthenticationSession
 from apps.accounts.password_reset_crypto import credential_fingerprint
 from apps.accounts.services_mfa import active
+from apps.accounts.staff_identity import context_label, is_person, is_platform
 from apps.accounts.tokens import current_auth_generation
 
 WINDOW = timedelta(minutes=10)
@@ -48,17 +49,16 @@ def binding(request):
                     grant__status="active", grant__revoked_at__isnull=True).first()
             except (ValidationError, ValueError, TypeError) as exc:
                 raise PermissionDenied("A current device session is required.") from exc
+            staff_grant = family is not None and family.grant.authority == "staff"
             if (family is None or not registration_is_eligible(family.grant.registration)
-                    or token.get("surface") not in {"member", "staff_api"}
-                    or family.grant.authority != user.account_kind
+                    or token.get("surface") != "member" or not is_person(user)
                     or family.grant.credential_generation != user.credential_generation
-                    or family.grant.staff_makerspace_id != user.staff_makerspace_id
-                    or user.account_kind == "staff" and (
-                        token.get("mfa_source") != "verified" or family.grant.login_method != "password"
-                        or family.grant.registration.makerspace_id not in (None, user.staff_makerspace_id))):
+                    or staff_grant and (
+                        token.get("mfa_source") != "verified"
+                        or family.grant.registration.makerspace_id not in (None, family.grant.staff_makerspace_id))):
                 raise PermissionDenied("A current device session is required.")
             return "device:" + str(family.pk), token["surface"]
-        if token.get("surface") not in {"staff", "staff_api", "member", "delegated", "platform"}:
+        if token.get("surface") not in {"member", "platform"}:
             raise PermissionDenied("Use a browser session to verify your identity.")
         from apps.accounts.web_sessions import validate_session
         row = validate_session(user, token)
@@ -68,7 +68,7 @@ def binding(request):
     if not getattr(request, "session", None) or not request.session.session_key:
         raise PermissionDenied("A current browser session is required.")
     from apps.accounts.control_mfa import session_verified
-    if user.account_kind != "platform" or not user.is_superuser or not session_verified(request):
+    if not is_platform(user) or not user.is_superuser or not session_verified(request):
         raise PermissionDenied("Complete the control-panel MFA gate first.")
     return "control:" + request.session.session_key, "control"
 
@@ -78,7 +78,7 @@ def versions(user):
     # Linked identities are credentials too. Include row identity so an unlink/
     # relink cannot resurrect a proof made before the credential was revoked.
     identities = list(user.social_identities.order_by("pk").values_list("pk", "provider", "provider_sub"))
-    identity = (str(user.pk), user.account_kind, str(user.staff_makerspace_id), user.credential_generation)
+    identity = (str(user.pk), context_label(user), user.credential_generation)
     phone = [user.phone_e164, str(user.phone_verified_at or "")]
     fingerprint = hashlib.sha256((credential_fingerprint(user, user.email) + "\0"
                                   + json.dumps([identity, identities, phone, str(user.account_restored_at or "")])).encode()).hexdigest()

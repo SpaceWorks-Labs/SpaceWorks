@@ -34,6 +34,7 @@ from apps.accounts.models_phone import PhoneChallengePurpose, PhoneVerificationC
 from apps.accounts.phone_numbers import normalize_or_none
 from apps.integrations.sms import send_sms, sms_configured
 from apps.makerspaces.limits import reserve_platform_otp_sms_quota
+from apps.accounts.staff_identity import is_person, person_q
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +77,7 @@ def _digest(code, phone_e164):
 
 def _issue(user, phone_e164, purpose, *, attestation_challenge=None):
     """Create a challenge and attempt delivery. Returns (challenge, sent)."""
-    if user.account_kind != "member":
+    if not is_person(user):
         raise serializers.ValidationError({"detail": GENERIC_CONFIRM_ERROR})
     now = timezone.now()
     with transaction.atomic():
@@ -160,7 +161,7 @@ def start_link(user, raw_phone):
     if not sms_configured():
         raise SmsUnavailable
     current = User.objects.filter(pk=user.pk).first()
-    if (current is None or current.account_kind != "member"
+    if (current is None or not is_person(current)
             or current.is_walk_in or is_anonymous_requester(current)):
         raise serializers.ValidationError({"detail": GENERIC_CONFIRM_ERROR})
     phone_e164 = normalize_or_none(raw_phone)
@@ -201,7 +202,7 @@ def confirm_link(user, raw_phone, code):
     failure = None
     with transaction.atomic():
         locked_user = User.objects.select_for_update().get(pk=user.pk)
-        if locked_user.account_kind != "member":
+        if not is_person(locked_user):
             raise serializers.ValidationError({"detail": GENERIC_CONFIRM_ERROR})
         challenge = _confirm(
             PhoneVerificationChallenge.objects.filter(
@@ -239,7 +240,7 @@ def confirm_link(user, raw_phone, code):
         # held until the write below, so this stays in the same transaction.
         elif (
             User.objects.select_for_update()
-            .filter(account_kind="member", phone_e164=phone_e164, phone_verified_at__isnull=False)
+            .filter(person_q(), phone_e164=phone_e164, phone_verified_at__isnull=False)
             .exclude(pk=locked_user.pk)
             .exists()
         ):

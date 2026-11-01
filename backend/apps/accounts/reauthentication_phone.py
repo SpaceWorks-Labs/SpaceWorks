@@ -11,6 +11,7 @@ from apps.accounts.models_phone import PhoneChallengePurpose, PhoneVerificationC
 from apps.accounts.reauthentication import stamp
 from apps.accounts.reauthentication_intents import _new, _checked, _trusted_origin
 from apps.accounts.services_phone import _issue, _confirm, ChallengeCooldown
+from apps.accounts.staff_identity import is_person
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +19,7 @@ logger = logging.getLogger(__name__)
 def available(user):
     from apps.accounts.models_mfa import UserMFA
     from apps.integrations.sms import sms_configured
-    return bool(user.account_kind == "member" and user.phone_e164 and user.phone_verified_at and not user.has_usable_password()
+    return bool(is_person(user) and user.phone_e164 and user.phone_verified_at and not user.has_usable_password()
                 and not user.social_identities.exists()
                 and not UserMFA.objects.filter(user=user, enabled_at__isnull=False).exists()
                 and sms_configured())

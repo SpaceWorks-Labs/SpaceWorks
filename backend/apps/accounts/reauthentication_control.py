@@ -12,6 +12,7 @@ from rest_framework.exceptions import APIException
 
 from apps.accounts.reauthentication import require_recent_reauth, verify
 from apps.accounts.views_reauthentication import ReauthenticationThrottle
+from apps.accounts.staff_identity import is_platform
 
 
 CONTROL_AUTHORITY_MODELS = frozenset({
@@ -67,7 +68,7 @@ class RecentReauthenticationAdminMixin:
 @never_cache
 def control_reauthentication(request):
     from apps.accounts.control_mfa import session_verified
-    if request.user.account_kind != "platform" or not request.user.is_superuser or not session_verified(request):
+    if not is_platform(request.user) or not request.user.is_superuser or not session_verified(request):
         return redirect("/mfa/control/")
     destination = request.GET.get("next", "/control/")
     if not url_has_allowed_host_and_scheme(destination, {request.get_host()}, require_https=request.is_secure()):

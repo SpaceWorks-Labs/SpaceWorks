@@ -21,6 +21,7 @@ from apps.accounts.reauthentication import binding, stamp, versions
 from apps.accounts.social_jwt import SocialTokenError, SocialProviderUnavailable
 from apps.accounts.social_nonces import request_origin
 from apps.makerspaces.secrets import encrypt_value
+from apps.accounts.staff_identity import context_label, is_person
 
 
 class ProviderUnavailable(APIException):
@@ -42,8 +43,7 @@ def _new(request, purpose, *, provider="", nonce="", verifier="", redirect_uri="
         credential_fingerprint=versions(request.user)["credential_fingerprint"],
         auth_generation=versions(request.user)["auth_generation"],
         context={"purpose": purpose, "session_id": sid, "surface": surface,
-                 "kind": request.user.account_kind,
-                 "makerspace": str(request.user.staff_makerspace_id) if request.user.staff_makerspace_id else None,
+                 "kind": context_label(request.user),
                  "origin": request_origin(request), "provider": provider,
                  "nonce_digest": _digest(nonce), "redirect_uri": redirect_uri, **(context or {})},
         pending_secret=encrypt_value(verifier) if verifier else "",
@@ -63,8 +63,8 @@ def _checked(request, raw, purpose):
     valid = (row and row.consumed_at is None and row.expires_at > now
              and row.context.get("purpose") == purpose and row.context.get("session_id") == sid
              and row.context.get("surface") == surface and row.context.get("origin") == request_origin(request)
-             and row.context.get("kind") == request.user.account_kind
-             and row.context.get("makerspace") == (str(request.user.staff_makerspace_id) if request.user.staff_makerspace_id else None)
+             and row.context.get("kind") == context_label(request.user)
+             and row.context.get("makerspace") is None
              and row.auth_generation == versions(request.user)["auth_generation"]
              and row.credential_fingerprint == versions(request.user)["credential_fingerprint"]
              and str(row.mfa_version) == (versions(request.user)["mfa_version"] or str(uuid.UUID(int=0))))
@@ -251,5 +251,5 @@ def confirm_email(request, token):
 
 
 def _member(request):
-    if request.user.account_kind != "member":
+    if not is_person(request.user):
         raise AuthenticationFailed("Identity verification failed.")

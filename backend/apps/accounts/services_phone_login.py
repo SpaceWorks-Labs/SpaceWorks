@@ -20,6 +20,7 @@ from .services_phone import (
     _confirm,
     _issue,
 )
+from apps.accounts.staff_identity import is_person, person_q
 
 
 def start_login(raw_phone, *, delivery="web", client_platform="web", challenge=None):
@@ -38,7 +39,7 @@ def start_login(raw_phone, *, delivery="web", client_platform="web", challenge=N
     if phone_e164 is None:
         return None
     user = User.objects.filter(
-        account_kind="member",
+        person_q(),
         phone_e164=phone_e164,
         phone_verified_at__isnull=False,
         is_tenant_dump_stub=False,
@@ -75,7 +76,7 @@ def confirm_login_challenge(raw_phone, code, *, delivery):
     if phone_e164 is None:
         raise serializers.ValidationError({"detail": GENERIC_CONFIRM_ERROR})
     candidates = PhoneVerificationChallenge.objects.filter(
-        purpose=PhoneChallengePurpose.LOGIN, user__account_kind="member",
+        person_q("user__"), purpose=PhoneChallengePurpose.LOGIN,
         attestation_challenge__isnull=(delivery == "web"),
     )
     # Discovery only. Revalidate this exact challenge under User -> challenge
@@ -99,7 +100,7 @@ def confirm_login_challenge(raw_phone, code, *, delivery):
             ),
         )
         if challenge is not None:
-            if (owner.account_kind == "member" and owner.phone_e164 == phone_e164 and owner.phone_verified_at is not None
+            if (is_person(owner) and owner.phone_e164 == phone_e164 and owner.phone_verified_at is not None
                     and not owner.is_tenant_dump_stub and owner.is_active
                     and owner.deletion_requested_at is None
                     and owner.access_status == User.AccessStatus.ACTIVE):

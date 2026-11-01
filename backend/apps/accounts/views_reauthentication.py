@@ -16,6 +16,7 @@ from apps.accounts.serializers_reauthentication import (
     ReauthenticationFactorSerializer, ReauthenticationPhoneStartedSerializer,
 )
 from apps.openapi_errors import errors
+from apps.accounts.staff_identity import is_person
 
 ERRORS = errors(400, 401, 403, 429, 503)
 
@@ -57,7 +58,7 @@ class ReauthenticationView(APIView):
         return response({"verified": verified, "password_available": request.user.has_usable_password(),
                          "mfa_enabled": bool(credential and credential.enabled_at),
                          "providers": list(request.user.social_identities.values_list("provider", flat=True))
-                         if request.user.account_kind == "member" else []})
+                         if is_person(request.user) else []})
 
     @extend_schema(tags=["Reauthentication"], request=ReauthenticationSerializer,
                    responses={200: ReauthenticationResultSerializer, **ERRORS})

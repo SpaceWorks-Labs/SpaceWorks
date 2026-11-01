@@ -4,6 +4,7 @@ import hmac
 
 from apps.accounts.models import PasswordResetEnvelope, PasswordResetEnvelopeStatus, User
 from apps.accounts.password_reset_crypto import fixed_dummy_digest, otp_digest
+from apps.accounts.staff_identity import person_q
 
 
 def locked_proof(normalized, code, *, purpose, now):
@@ -16,7 +17,7 @@ def locked_proof(normalized, code, *, purpose, now):
     # A shared contact is never sufficient ownership. Only the current member
     # account's member-context envelope participates in archive recovery.
     snapshot = PasswordResetEnvelope.objects.filter(
-        user__account_kind="member", user__email__iexact=normalized,
+        person_q("user__"), user__email__iexact=normalized,
         context="member", makerspace__isnull=True, email_normalized=normalized,
     ).first()
     candidate = otp_digest(code, normalized)

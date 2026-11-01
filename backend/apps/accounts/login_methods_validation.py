@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 from apps.accounts.models import User
 from apps.accounts.models_oidc import enabled_providers
 from apps.accounts.models_social import PlatformSocialAuthSettings, SocialProvider
+from apps.accounts.staff_identity import is_person, person_q
 
 
 def available_providers(proposed, *, social_settings=None):
@@ -30,7 +31,7 @@ def _stranded(policy, candidates, *, social_settings=None):
     for user in candidates:
         # Member switches never control privileged password sign-in. Legacy
         # social links cannot count as staff/platform recovery credentials.
-        if user.account_kind != User.AccountKind.MEMBER:
+        if not is_person(user):
             continue
         if policy.password_enabled and user.has_usable_password():
             continue
@@ -49,7 +50,7 @@ def validate_login_methods(proposed, *, current=None, social_settings=None,
     unrelated edit. `current=None` (first install) judges the proposed state alone.
     """
     candidates = list(User.objects.filter(
-        account_kind=User.AccountKind.MEMBER, retired_at__isnull=True,
+        person_q(), retired_at__isnull=True,
         is_active=True, social_identities__isnull=False,
     ).distinct().prefetch_related("social_identities"))
     admins, users = _stranded(proposed, candidates, social_settings=social_settings)

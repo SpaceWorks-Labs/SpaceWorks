@@ -17,8 +17,10 @@ USER_PROJECTIONS = {
             "display_name",
             "phone",
             "date_joined",
+            # person | platform | staff (an inert merged shell, PII-free; its survivor
+            # travels in global/user-aliases.json). No staff tenant since one account per
+            # person: staff roles are staff-track memberships in the roster.
             "account_kind",
-            "staff_makerspace",
             "is_active",
         }
     ),
@@ -216,6 +218,8 @@ for _fidelity in Fidelity:
                 "retired_at": "Retired staff shells are excluded from tenant exports.",
                 "credential_generation": "Source credential fencing is deployment-local.",
                 "account_kind": "Readable identity projection omits account context.",
-                "staff_makerspace": "Readable identity projection omits account context.",
+                "staff_makerspace": "Always empty since one account per person; staff roles travel as staff-track rows.",
+                "merged_into": "A shell's survivor travels as a closure-bounded alias, never as a closure edge.",
+                "merged_at": "Merge time is deployment-local; the target import re-stamps it.",
             }.get(_field.name, "Outside the literal global-user projection."))
         FIELDS[(_fidelity, "accounts.User", _field.name)] = disposition

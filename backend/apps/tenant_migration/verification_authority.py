@@ -1,6 +1,7 @@
 """Target authority checks distinguish carried staff from imported members."""
 
 from apps.accounts.models import User
+from apps.accounts.staff_identity import person_q
 from apps.makerspaces.models import MakerspaceMembership
 from .identity_resolution import linked_authority_fingerprint
 from .insertion_errors import ImportVerificationError, PrimaryKeyMapUnavailable
@@ -9,7 +10,7 @@ def _verify_authority(target, job, pk_map, identity_report):
     member_role = target.roles.get(slug="member")
     # Community rows only (chosen on purpose): a member's community row carries Member alone.
     memberships = MakerspaceMembership.track_manager(MakerspaceMembership.Track.COMMUNITY).filter(
-        makerspace=target, user__account_kind="member")
+        person_q("user__"), makerspace=target)
     if memberships.exclude(
         assigned_role=member_role,
         role=MakerspaceMembership.Role.CUSTOM,

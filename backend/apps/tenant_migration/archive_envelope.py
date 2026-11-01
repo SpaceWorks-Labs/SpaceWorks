@@ -31,7 +31,11 @@ from apps.tenant_migration.protocol_errors import ClosureAdmissionError
 from apps.tenant_migration.source_gate import quiesced_snapshot
 
 FORMAT = "spaceworks-tenant-migration-v1"
-FORMAT_VERSION = 1
+# 2: one account per person -- user rows carry merged_into (not a staff tenant), the roster
+# carries both membership tracks, and a credential block may travel (C-18). Version 1
+# (the split format) is still accepted one version back and converted on import (Q11).
+FORMAT_VERSION = 2
+READABLE_FORMAT_VERSIONS = frozenset({1, 2})
 
 
 class MigrationArchiveError(RuntimeError):
@@ -78,6 +82,8 @@ def build_tenant_migration_archive(
                 existing_snapshot=True,
             )
             try:
+                from .credential_block import write_credential_block
+                write_credential_block(Path(export_root), makerspace, keys)
                 key_payload = _serialize_keys(keys)
                 object_records = capture_tenant_objects(
                     export_root, makerspace, preflight.storage_mode

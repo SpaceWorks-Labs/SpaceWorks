@@ -1,58 +1,77 @@
-"""D11: carried staff are new tenant principals, never linked target identities."""
+"""One account per person: staff-track rows travel WITH their person (U-D).
 
-from apps.accounts.models import User
-from apps.accounts.username_allocation import allocate_staff_username
+There is no staff identity any more. A person's staff-track membership, its additional
+roles and machine-type scopes, and the person's notification choices in this space travel
+with that person under the ordinary link/create decision. Their built-in roles resolve by
+protected slug to the target's seeded roles. A person LINKED to an existing target person
+arrives with every staff-track row REVOKED unless the superadmin granted them explicitly
+(``ImportIdentityDecision.grant_staff_roles``); a created person keeps the source status.
+
+An archive written before one account per person (the split format, Q11) converts one
+version back: its roster has no ``track`` column, and a staff account's rows (built-in
+staff roles only, M4) become staff-track rows of that same person, now a person.
+"""
+
+from django.utils import timezone
+
 from apps.makerspaces.role_catalog import ROLE_BY_SLUG
 
-from .insertion_errors import ArchiveFormatError, IdentityResolutionError
-from .archive_stream import database_value
+from .insertion_errors import ArchiveFormatError
+
+MEMBERSHIP = "makerspaces.MakerspaceMembership"
+STAFF_CHILD_LABELS = frozenset({"makerspaces.MembershipAdditionalRole", "machines.MembershipMachineTypeScope"})
+PREFERENCE_LABELS = frozenset({"notifications.MemberNotificationPreference", "notifications.NotificationPreference"})
+STAFF, COMMUNITY = "staff", "community"
+SPLIT_STAFF_KIND = "staff"
 
 
 def is_staff_row(label, row):
-    if label in {"makerspaces.MembershipAdditionalRole", "machines.MembershipMachineTypeScope"}:
-        user = row.membership.user
-    elif label in {"makerspaces.MakerspaceMembership", "notifications.MemberNotificationPreference", "notifications.NotificationPreference"}:
-        user = row.user
-    else:
-        return False
-    return user.account_kind == "staff" and user.retired_at is None
+    """Source model instance: does this row belong to a staff-track membership?"""
+    from apps.makerspaces.models import MakerspaceMembership
+
+    if label == MEMBERSHIP:
+        return row.track == STAFF
+    if label in STAFF_CHILD_LABELS:
+        return MakerspaceMembership.staff_tracks.filter(pk=row.membership_id).exists()
+    if label in PREFERENCE_LABELS:
+        return MakerspaceMembership.staff_tracks.filter(user_id=row.user_id, makerspace_id=row.makerspace_id).exists()
+    return False
 
 
 class StaffArchiveContext:
     def __init__(self, archive):
-        tenant = next(archive.raw_rows("makerspaces.Makerspace"))["id"]
-        self.users = {}
-        for row in archive.raw_rows("accounts.User"):
-            if row.get("account_kind") != "staff":
-                continue
-            if str(row.get("staff_makerspace_id")) != str(tenant):
-                raise ArchiveFormatError("A staff identity belongs to a different source tenant.")
-            self.users[str(row["id"])] = row
+        tenant = str(next(archive.raw_rows("makerspaces.Makerspace"))["id"])
         self.roles = {
             str(row["id"]): row["slug"] for row in archive.raw_rows("makerspaces.MakerspaceRole")
-            if str(row["makerspace_id"]) == str(tenant)
+            if str(row["makerspace_id"]) == tenant
             and str(row.get("is_default", "")).lower() == "true"
             and str(row.get("is_protected", "")).lower() == "true"
         }
-        self.memberships = {
-            str(row["id"]): str(row["user_id"])
-            for row in archive.raw_rows("makerspaces.MakerspaceMembership")
-            if str(row["user_id"]) in self.users
-        }
+        # Split format only: live staff accounts (a current archive's "staff" rows are shells).
+        self.split_staff = {str(row["id"]) for row in archive.raw_rows("accounts.User")
+                            if row.get("account_kind") == SPLIT_STAFF_KIND and row.get("staff_makerspace_id")}
+        self.memberships = {str(row["id"]): str(row["user_id"]) for row in archive.raw_rows(MEMBERSHIP)
+                            if self._track(row) == STAFF}
+        self.staff_users = set(self.memberships.values())
+
+    def _track(self, row):
+        if row.get("track"):
+            return row["track"]
+        return STAFF if str(row["user_id"]) in self.split_staff else COMMUNITY
 
     def decorate(self, label, row):
-        staff = False
-        role_field = None
+        staff, role_field = False, None
         if label == "accounts.User":
-            staff = str(row["id"]) in self.users
-        elif label == "makerspaces.MakerspaceMembership":
-            staff = str(row["user_id"]) in self.users
-            role_field = "assigned_role_id"
-        elif label in {"makerspaces.MembershipAdditionalRole", "machines.MembershipMachineTypeScope"}:
+            if str(row["id"]) in self.split_staff:
+                row = {**row, "account_kind": "member"}
+        elif label == MEMBERSHIP:
+            row = {**row, "track": self._track(row)}
+            staff, role_field = row["track"] == STAFF, "assigned_role_id"
+        elif label in STAFF_CHILD_LABELS:
             staff = str(row["membership_id"]) in self.memberships
             role_field = "role_id" if label.endswith("MembershipAdditionalRole") else None
-        elif label in {"notifications.MemberNotificationPreference", "notifications.NotificationPreference"}:
-            staff = str(row["user_id"]) in self.users
+        elif label in PREFERENCE_LABELS:
+            staff = str(row["user_id"]) in self.staff_users
         row = {**row, "_staff_account": staff}
         if staff and role_field:
             slug = self.roles.get(str(row[role_field]))
@@ -62,44 +81,35 @@ class StaffArchiveContext:
         return row
 
 
-def validate_staff_decision(source, decision):
-    if (decision.identity_resolution != decision.IdentityResolution.CREATE_WALK_IN
-            or decision.target_user_id is not None
-            or decision.membership_disposition == decision.MembershipDisposition.NO_MEMBERSHIP):
-        raise IdentityResolutionError("Carried staff must create a new account and retain their membership.")
-
-
-def create_staff_identity(source, target_pk, target):
-    def create(username):
-        user = User(pk=target_pk, username=username, account_kind="staff", staff_makerspace=target,
-            email=source.get("email", ""), first_name=source.get("first_name", ""),
-            last_name=source.get("last_name", ""), display_name=source.get("display_name", ""),
-            phone=source.get("phone", ""),
-            date_joined=database_value(User._meta.get_field("date_joined"), source["date_joined"]),
-            must_change_password=True,
-            is_active=database_value(User._meta.get_field("is_active"), source.get("is_active", "true")),
-            is_staff=False, is_superuser=False)
-        user.set_unusable_password()
-        user.save(force_insert=True)
-        return user
-    return allocate_staff_username(source.get("username", "staff"), target.slug, create=create)
-
-
 def create_provenance_stub(source, target_pk):
     from uuid import uuid4
+
+    from apps.accounts.models import User
+
     from .tenant_dump_user_rows import _stub_values
-    values = _stub_values(uuid4().hex)
-    User.objects.create(pk=target_pk, **values)
+    User.objects.create(pk=target_pk, **_stub_values(uuid4().hex))
 
 
-def apply_staff_role(model, source, row, target):
+def apply_staff_role(model, source, row, target, job=None):
+    """Resolve a carried staff row's built-in role; a linked person's row stays revoked."""
     if not source.get("_staff_account"):
         return False
     slug = source.get("_staff_role_slug")
     if slug:
-        field = "assigned_role" if model._meta.label.endswith("MakerspaceMembership") else "role"
+        field = "assigned_role" if model._meta.label == MEMBERSHIP else "role"
         row[model._meta.get_field(field).column] = target.roles.get(
             slug=slug, is_protected=True, is_default=True).pk
         if field == "assigned_role":
             row["role"] = ROLE_BY_SLUG[slug].legacy_role or "custom"
+    if model._meta.label == MEMBERSHIP and job is not None and not staff_roles_kept(job, source["user_id"]):
+        row["status"] = "revoked"
+        row["revoked_at"] = row.get("revoked_at") or timezone.now()
     return True
+
+
+def staff_roles_kept(job, source_user_id):
+    from .identity_resolution import decision_for_source_user
+
+    decision = decision_for_source_user(job, source_user_id)
+    return (decision.identity_resolution != decision.IdentityResolution.LINK_EXISTING
+            or decision.grant_staff_roles)

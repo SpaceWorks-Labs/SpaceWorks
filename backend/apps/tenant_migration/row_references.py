@@ -17,7 +17,7 @@ from .target_projection import FK_POLICIES, ReferenceDisposition
 
 def _remap_foreign_keys(model, source, row, job, pk_map, target, references):
     from .portable_staff import apply_staff_role
-    staff = apply_staff_role(model, source, row, target)
+    staff = apply_staff_role(model, source, row, target, job)
     for field in model._meta.local_concrete_fields:
         if not field.is_relation or field.related_model is None:
             continue

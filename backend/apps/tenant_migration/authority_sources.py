@@ -98,6 +98,10 @@ AUTHORIZATION_SOURCES = (
     APPS_DIR / "machines" / "access_bulk.py",
     APPS_DIR / "machines" / "access_scoping.py",
     APPS_DIR / "bookings" / "booking_authority.py",
+    # One account per person (U-A1): staff authority is read through these seams.
+    APPS_DIR / "accounts" / "staff_identity.py",
+    APPS_DIR / "makerspaces" / "membership_managers.py",
+    APPS_DIR / "makerspaces" / "staff_role_grants.py",
 )
 AUTHORIZATION_SOURCES += tuple(APPS_DIR / path for path in _RECONCILIATION_SOURCES)
 AUTHORIZATION_SOURCES += tuple(APPS_DIR / "presence" / name for name in (

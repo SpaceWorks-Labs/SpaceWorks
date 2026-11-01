@@ -105,15 +105,16 @@ def materialize_tenant(
                         required_identities,
                     )
                 preallocate_walk_in_ids(locked_job, pk_map, required_identities)
-                identities = resolve_identities(
-                    archive, locked_job, pk_map, required_identities
-                )
-                installed_versions = install_carried_deks(target, carried)
                 deks = {
                     int(record["version"]): record["dek"]
                     for record in carried
                     if record.get("insert_at_target", True) is not False
                 }
+                # The credential block (C-18) is sealed under these same carried DEKs.
+                identities = resolve_identities(
+                    archive, locked_job, pk_map, required_identities, deks
+                )
+                installed_versions = install_carried_deks(target, carried)
                 from .semantic_reimbursements import prepare_project_refs, reset_project_refs
                 project_refs = prepare_project_refs(archive, pk_map)
                 try:
@@ -176,6 +177,10 @@ def materialize_tenant(
             locked_job.status = TenantImportJob.Status.FINALIZING
             locked_job.materialization_report = _report_for(result)
             locked_job.materialization_report["public_page_pointer_fixups"] = page_fixups
+            locked_job.materialization_report["accounts"] = {
+                "shells_created": identities.shells_created, "shells_remapped": identities.shells_remapped,
+                "credentials_installed": identities.credentials_installed,
+            }
             locked_job.materialization_report["public_page_reconstruction"] = getattr(archive, "public_page_reconstruction", {})
             locked_job.materialization_report["public_page_warnings"] = getattr(references, "public_page_warnings", [])
             locked_job.save(

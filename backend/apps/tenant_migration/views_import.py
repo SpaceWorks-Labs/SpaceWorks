@@ -133,7 +133,10 @@ class TenantImportIdentityDecisionsView(MigrationAPIView):
             with decrypted_archive(
                 rows_path, require_carried_keys=(str(rows_path) == job.archive_path),
             ) as (root, _carried):
-                rows = list(PortableArchive(root).rows("accounts.User"))
+                archive = PortableArchive(root)
+                rows = list(archive.rows("accounts.User"))
+                staff = archive._staff_context.staff_users
+                rows = [{**row, "holds_staff_roles": str(row["id"]) in staff} for row in rows]
         except Exception as exc:
             return protocol_error(exc)
         audit.record(

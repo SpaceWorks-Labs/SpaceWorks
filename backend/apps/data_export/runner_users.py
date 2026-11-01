@@ -19,7 +19,7 @@ def _read_users(dataset, closure, page_size, deadline, monotonic):
         page = list(page_query.order_by(*dataset.keyset)[:page_size])
         if not page:
             break
-        rows.extend(page)
+        rows.extend(scrub_shell_identities(page))
         cursor_values = tuple(key_value(page[-1], name) for name in dataset.keyset)
         if any(value is None for value in cursor_values):
             raise ExportIntegrityError("global/users.csv contains a null keyset value.")
@@ -35,3 +35,28 @@ def staff_track_user_ids(makerspace_id):
     return set(every_row(MakerspaceMembership).filter(
         person_q("user__"), makerspace_id=makerspace_id, track=MakerspaceMembership.Track.STAFF,
     ).values_list("user_id", flat=True))
+
+
+SHELL_BLANKED = ("email", "first_name", "last_name", "display_name", "phone")
+
+
+def scrub_shell_identities(rows):
+    """A merged shell travels with no personal data: an inert id kept for history."""
+    from apps.accounts.staff_identity import is_shell
+
+    for row in rows:
+        if is_shell(row):
+            for name in SHELL_BLANKED:
+                setattr(row, name, "")
+            row.username = f"merged-account-{row.pk}"
+    return rows
+
+
+def write_user_sidecars(root, user_rows):
+    """PORTABLE side files about the user closure: lifecycle and merged-shell aliases."""
+    from apps.tenant_migration.portable_shells import write_user_aliases
+
+    from .user_lifecycle import write_user_lifecycle
+
+    write_user_lifecycle(root, user_rows)
+    write_user_aliases(root, user_rows)

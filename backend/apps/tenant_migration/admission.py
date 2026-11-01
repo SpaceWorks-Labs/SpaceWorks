@@ -57,7 +57,7 @@ def canonical_identities(user_rows):
     for user in sorted(user_rows, key=lambda item: str(item.pk)):
         identity = {}
         for name in sorted(names):
-            # A foreign key (staff_makerspace) is compared by its column value, never the related object.
+            # A foreign key would be compared by its column value, never the related object.
             value = getattr(user, user._meta.get_field(name).attname)
             identity[name] = value.isoformat() if hasattr(value, "isoformat") else value
         identities.append(identity)
@@ -84,8 +84,9 @@ def compute_pending_closure(makerspace):
             emit, contributes = export_row_policy(dataset.model, row)
             if emit and contributes:
                 closure.update(_row_user_ids(dataset.model, row))
+    from apps.data_export.runner_users import scrub_shell_identities
     users = every_row(apps.get_model("accounts.User")).filter(pk__in=closure, retired_at__isnull=True)
-    identities = canonical_identities(users)
+    identities = canonical_identities(scrub_shell_identities(list(users)))
     return {"digest": closure_digest(identities), "identities": identities}
 
 

@@ -59,8 +59,9 @@ def _commit_completion(job_id, *, actor):
                 "identity_count": (
                     report["identities_linked"] + report["identities_created"]
                 ),
-                **{key: report.get("accounts", {}).get(key, 0)
-                   for key in ("shells_created", "shells_remapped", "credentials_installed")},
+                "shells_created": report.get("accounts", {}).get("shells_created", 0),
+                "shells_remapped": report.get("accounts", {}).get("shells_remapped", 0),
+                "credentials_installed": report.get("accounts", {}).get("credentials_installed", 0),
                 "format_version": 1,
             },
         )

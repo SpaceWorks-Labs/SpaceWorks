@@ -100,6 +100,9 @@ NON_OBJECT_KEY_FIELDS = frozenset({
     ("events.EventFormRevision", "form_key"),
     ("events.EventHelpRequest", "dedup_key"),
     ("events.SubmissionIntegrityFlag", "rule_key"),
+    # Login security (S0): an IP/network block key and a passkey's COSE public key bytes.
+    ("accounts.IPAutoBlock", "ip_key"),
+    ("accounts.WebAuthnCredential", "public_key"),
 })
 
 

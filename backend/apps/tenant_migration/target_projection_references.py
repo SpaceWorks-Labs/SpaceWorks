@@ -34,6 +34,15 @@ FK_POLICIES = {
         ReferenceDisposition.REMAP_RESOLVED,
         "Remap retained application history; vouches for dropped open applications do not travel.",
     ),
+    # Release 2 L4: both point at application history, which is remapped like a vouch's request.
+    ("makerspaces.ImportedMember", "invitation"): ForeignKeyPolicy(
+        ReferenceDisposition.REMAP_RESOLVED,
+        "Remap the retained invitation; an imported member whose open invite was dropped keeps no link.",
+    ),
+    ("makerspaces.MembershipTerm", "admission_request"): ForeignKeyPolicy(
+        ReferenceDisposition.REMAP_RESOLVED,
+        "Remap the retained application the term was sold through.",
+    ),
     ("integrations.NotificationRecipient", "role"): ForeignKeyPolicy(ReferenceDisposition.DROP_ROW, "All explicit recipient rules are dropped."),
     ("machines.Machine", "machine_type"): ForeignKeyPolicy(ReferenceDisposition.REMAP_RESOLVED, "Use the built-in/custom machine type map."),
     ("machines.MachineConsumablePool", "machine_type"): ForeignKeyPolicy(ReferenceDisposition.REMAP_RESOLVED, "Use the built-in/custom machine type map."),

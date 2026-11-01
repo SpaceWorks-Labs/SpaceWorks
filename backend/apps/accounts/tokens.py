@@ -44,12 +44,12 @@ class SpaceWorksRefreshToken(_GenerationBoundToken, RefreshToken):
         from apps.accounts.mfa_policy import assert_verified, credential, source_for
         assert_verified(user)
         token = super().for_user(user)
-        token["kind"] = user.account_kind
+        # One account per person: ``kind`` is person|platform and no token names a
+        # makerspace. Staff authority is resolved per request from the person's roles.
+        from apps.accounts.surface_policy import PLATFORM_KIND, assert_surface, token_kind
+        token["kind"] = token_kind(user)
         token["credential_generation"] = user.credential_generation
-        token["surface"] = {"member": "member", "staff": "staff_api", "platform": "platform"}[user.account_kind]
-        if user.account_kind == "staff":
-            token["makerspace"] = user.staff_makerspace_id
-        from apps.accounts.surface_policy import assert_surface
+        token["surface"] = "platform" if token["kind"] == PLATFORM_KIND else "member"
         assert_surface(user, token["surface"])
         token["mfa_source"] = source_for(user)
         row = credential(user)

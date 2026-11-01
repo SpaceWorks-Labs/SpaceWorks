@@ -1,24 +1,23 @@
 """Finish the original login after MFA without accepting client authority claims."""
 
-from rest_framework.exceptions import AuthenticationFailed, PermissionDenied
+from rest_framework.exceptions import AuthenticationFailed
 
 from apps.accounts.native_app_identity import eligible_registration_q
 from apps.accounts import audit_events
 from apps.accounts.models_devices import DeviceAttestationChallenge, DeviceGrant
 from apps.accounts.serializers_device import DeviceGrantSerializer
 from apps.accounts.services_device_tokens import issue_device_token_pair, assert_mobile_grant_creation_enabled
-from apps.accounts.services_social_login import assert_staff_authority
+from apps.accounts.staff_identity import is_person
 from apps.accounts.tokens import SpaceWorksRefreshToken
 from apps.accounts.session_issuance import lock_session_user
 
 
-def context(request, *, surface, staff_scope=None, device=None):
+def context(request, *, surface, device=None):
     from apps.accounts.social_nonces import request_origin
     origin = request_origin(request) if request is not None else ""
     if surface == "control":
         origin = request.build_absolute_uri("/").rstrip("/")
-    return {"surface": surface, "staff_scope": staff_scope,
-            "origin": origin, **({"device": device} if device else {})}
+    return {"surface": surface, "origin": origin, **({"device": device} if device else {})}
 
 
 def device_context(challenge, verified, grant=None, *, login_method=None):
@@ -39,15 +38,9 @@ def issue_session(user, data, request):
     assert_surface(user, surface, request=request)
     if surface == "control":
         return {"mfa_version": str(user._mfa_verified_version)}
-    if surface in ("staff", "staff_api", "delegated"):
-        from apps.accounts.services_social_identity import SocialResolutionError
-        try:
-            assert_staff_authority(user, request)
-        except SocialResolutionError as exc:
-            raise PermissionDenied("Staff access is required.") from exc
     device = data.get("device")
     if device:
-        if user.account_kind not in {"member", "staff"} or (user.account_kind == "staff" and device.get("login_method") != "password"):
+        if not is_person(user):
             raise AuthenticationFailed("Device authorization is no longer active.")
         from apps.accounts.views_device import _reject_browser_headers
         _reject_browser_headers(request)
@@ -60,12 +53,13 @@ def issue_session(user, data, request):
         else:
             from apps.accounts.services_device_grants import create_device_grant
             attestation = DeviceAttestationChallenge.objects.get(pk=device["attestation_id"])
+            # A staff grant is a step-up: the fixed makerspace was chosen and checked when
+            # the challenge started and is re-checked here, after the factor is proven.
             grant = create_device_grant(user, attestation,
                 metadata=device.get("attestation_metadata", {}),
-                subject_hash=device["subject_hash"], login_method=device.get("login_method"))
+                subject_hash=device["subject_hash"], login_method=device.get("login_method"),
+                staff_makerspace_id=device.get("staff_makerspace_id"))
         if grant is None:
-            raise AuthenticationFailed("Device authorization is no longer active.")
-        if user.account_kind == "staff" and grant.registration.makerspace_id not in (None, user.staff_makerspace_id):
             raise AuthenticationFailed("Device authorization is no longer active.")
         access, refresh, _ = issue_device_token_pair(user, grant)
         surface = "native_staff" if grant.authority == DeviceGrant.Authority.STAFF else "member"
@@ -75,7 +69,5 @@ def issue_session(user, data, request):
                 "user": user_payload(user, request=request, session_authority=surface), "device_grant": DeviceGrantSerializer(grant).data}
     refresh = SpaceWorksRefreshToken.for_user(user)
     refresh["surface"] = surface
-    if surface == "staff":
-        refresh["staff_scope"] = data.get("staff_scope") or "platform"
     return {"access": str(refresh.access_token), "refresh": str(refresh), "surface": surface,
             "user": user_payload(user, request=request, session_authority=surface)}

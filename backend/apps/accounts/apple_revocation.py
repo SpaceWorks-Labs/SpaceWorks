@@ -12,6 +12,7 @@ from apps.accounts.models import User
 from apps.accounts.models_account_purge import AppleRefreshCredential, AppleRevocation
 from apps.audit import services as audit
 from apps.makerspaces.secrets import decrypt_value
+from apps.accounts.staff_identity import person_q
 
 logger = logging.getLogger(__name__)
 
@@ -96,7 +97,7 @@ def revoke_one(pk):
 
 def sweep_revocations(user_id=None):
     # Also recover pre-upgrade Stage A departures that had no work-row code yet.
-    archived = User.objects.filter(account_kind="member", deletion_requested_at__isnull=False, account_purged_at__isnull=True)
+    archived = User.objects.filter(person_q(), deletion_requested_at__isnull=False, account_purged_at__isnull=True)
     if user_id is not None:
         archived = archived.filter(pk=user_id)
     for pk in archived.values_list("pk", flat=True).iterator():

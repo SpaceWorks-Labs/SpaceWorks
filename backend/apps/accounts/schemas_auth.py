@@ -27,11 +27,33 @@ AuthMembershipSerializer = inline_serializer(
         "can_verify": serializers.BooleanField(),
         "verified_at": serializers.DateTimeField(allow_null=True),
         "referrals_enabled": serializers.BooleanField(),
+        "tracks": serializers.ListField(
+            child=serializers.ChoiceField(choices=["community", "staff"]),
+            help_text="The person's rows in this space: community (membership) and/or staff (staff roles). Empty for an organization-derived entry.",
+        ),
+    },
+)
+StaffRoleEntrySerializer = inline_serializer(
+    name="AuthStaffRoleEntry",
+    fields={
+        "makerspace": inline_serializer(name="AuthStaffRoleMakerspace", fields={
+            "id": serializers.IntegerField(), "slug": serializers.CharField(), "name": serializers.CharField(),
+        }),
+        "roles": serializers.ListField(child=inline_serializer(name="AuthStaffRole", fields={
+            "id": serializers.IntegerField(), "slug": serializers.CharField(), "name": serializers.CharField(),
+        })),
+        "actions": serializers.ListField(child=serializers.CharField()),
     },
 )
 class AuthUserPayload(serializers.Serializer):
-    session_authority = serializers.CharField(
-        help_text="Effective session surface: member, native_staff, staff_api, delegated, platform or verification_only. Native staff JWTs carry staff_api plus a fixed-tenant device grant; tenant operations require matching X-Makerspace-Id. Account utilities need no selection.",
+    """Frozen release-2 auth payload (one account per person, #62/#63)."""
+
+    session_authority = serializers.ChoiceField(
+        choices=("member", "native_staff", "platform", "verification_only"),
+        help_text="What this session is: member (a person's browser or native member session; staff routes are "
+                  "admitted per request from the person's staff roles), native_staff (a native staff grant fixed to one "
+                  "makerspace; tenant operations require a matching X-Makerspace-Id), platform (the superadmin) or "
+                  "verification_only (email not yet confirmed).",
     )
     id = serializers.IntegerField()
     username = serializers.CharField()
@@ -42,14 +64,30 @@ class AuthUserPayload(serializers.Serializer):
     role = serializers.CharField()
     is_superuser = serializers.BooleanField()
     must_change_password = serializers.BooleanField()
-    account_kind = serializers.ChoiceField(choices=("member", "staff", "platform"))
-    staff_makerspace = inline_serializer(name="AuthStaffMakerspace", fields={
-        "id": serializers.IntegerField(), "slug": serializers.CharField(), "name": serializers.CharField(),
-    }, allow_null=True)
+    kind = serializers.ChoiceField(choices=("person", "platform"),
+                                   help_text="person: one account per person; platform: the superadmin.")
+    account_kind = serializers.ChoiceField(
+        choices=("member", "platform"),
+        help_text="Deprecated alias of kind for one release (member = person). Read kind instead.",
+    )
+    is_platform = serializers.BooleanField(help_text="True for the platform superadmin account.")
+    has_staff_role = serializers.BooleanField(
+        help_text="The person holds an active staff role in at least one servable makerspace.")
+    has_elevated_authority = serializers.BooleanField(
+        help_text="A staff role, organization authority or a resource grant anywhere; staff MFA keys on it.")
+    staff_roles = serializers.ListField(
+        child=StaffRoleEntrySerializer,
+        help_text="Staff authority THIS session may exercise, per makerspace. Native member grants and claim "
+                  "sessions list none; a native staff grant lists its fixed tenant only.",
+    )
     makerspaces = serializers.ListField(child=AuthMembershipSerializer)
     superadmin_actions = serializers.ListField(
         child=serializers.CharField(),
         help_text="Every action the platform superadmin holds in each servable makerspace (owner decision #115); empty for everyone else.",
+    )
+    mfa_grace_ends_at = serializers.DateTimeField(
+        allow_null=True,
+        help_text="When a person who gained a staff role without a second factor must have enrolled (#128 C-1). Null when no grace applies.",
     )
 
     def get_fields(self):
@@ -67,22 +105,19 @@ UserPayloadSerializer = AuthUserPayload()
 LoginRequestSerializer = inline_serializer(
     name="LoginRequest",
     fields={
-        "username": serializers.CharField(),
-        "password": serializers.CharField(write_only=True),
-        "context": serializers.ChoiceField(choices=("member", "staff", "platform"), required=False),
-        "makerspace": serializers.SlugField(required=False, max_length=150),
-        "surface": serializers.ChoiceField(
-            choices=("member", "staff", "delegated"), required=False
+        "username": serializers.CharField(
+            help_text="A person's username or email (a converted staff account whose email was held signs in "
+                      "with its username). The platform superadmin signs in by username only from a platform "
+                      "origin. Release 2 removed context, makerspace and surface: one account per person.",
         ),
+        "password": serializers.CharField(write_only=True),
     },
 )
 LoginResponseSerializer = inline_serializer(
     name="LoginResponse",
     fields={
         "access": serializers.CharField(),
-        "surface": serializers.ChoiceField(
-            choices=("member", "staff", "staff_api", "delegated", "platform", "verification_only")
-        ),
+        "surface": serializers.ChoiceField(choices=("member", "platform", "verification_only")),
         "user": UserPayloadSerializer,
     },
 )

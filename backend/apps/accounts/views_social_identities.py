@@ -24,6 +24,7 @@ from apps.accounts.social_nonces import (
 from apps.accounts.views_social_helpers import _error
 from apps.audit import services as audit
 from apps.openapi_errors import errors
+from apps.accounts.staff_identity import is_person
 
 
 LINK_DESCRIPTION = (
@@ -49,7 +50,7 @@ class SocialProviderListLinkView(APIView):
     @extend_schema(tags=["Social auth"], request=SocialLinkSerializer, description=LINK_DESCRIPTION,
         responses={200: SocialIdentitySerializer, **errors(400, 401, 403, 404, 409, 429, 503)})
     def post(self, request):
-        if request.user.account_kind != "member":
+        if not is_person(request.user):
             return _error("social_invalid", 403)
         serializer = SocialLinkSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)

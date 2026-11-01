@@ -42,8 +42,8 @@ class MFAStatusView(APIView):
         from rest_framework.exceptions import AuthenticationFailed, PermissionDenied
         mfa_policy.assert_available()
         grant = getattr(request, "device_grant", None)
-        if grant is not None and request.user.account_kind != "member":
-            # Native staff grants already require enrolled MFA at sign-in.
+        if grant is not None and grant.authority == "staff":
+            # A native staff grant is only ever issued behind an enrolled factor.
             raise PermissionDenied({"detail": "Staff enroll an authenticator during device sign-in.",
                                     "code": "native_staff_mfa_managed"})
         if grant is not None:
@@ -61,7 +61,7 @@ class MFAStatusView(APIView):
         device = {"grant_id": str(grant.pk), "login_method": grant.login_method,
                   "purpose": mfa_challenges.SETTINGS_ENROLL} if grant else None
         response = Response(mfa_challenges.start(request.user, context=context(
-            request, surface=token.get("surface"), staff_scope=token.get("staff_scope"), device=device)))
+            request, surface=token.get("surface"), device=device)))
         response["Cache-Control"] = "no-store"
         return response
 

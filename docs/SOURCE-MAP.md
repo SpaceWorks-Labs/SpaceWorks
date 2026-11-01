@@ -836,16 +836,28 @@ projection in `backup/staff_shells.py` (inert since one account per person: no a
 staff tenant, and B1 deleted the guarded reversal and slice merges). Demo account/machine
 fixtures are split into `inventory/management/commands/_seed_demo_fixtures.py`.
 
-Account-kind authentication is enforced in `accounts/login_context.py`, `surface_policy.py`,
-`authentication.py` and `tokens.py`; `session_context.py`/`auth_cookies.py` select refresh contexts.
+Sign-in and sessions (release 2, U-A2): `accounts/login_context.py` resolves the one password
+door (person or, from a platform origin, the superadmin); `surface_policy.py` owns `token_kind`
+(person|platform), the surface check and the per-request staff-route gate (`enforce_request`,
+`_staff_admits`); `authentication.py` validates the device grant before that gate and refuses
+claim sessions on staff routes; `tokens.py` mints person/platform tokens.
+`serializers_payload.py` (+ `payload_tracks.py` for the per-session community/staff rows and
+`staff_roles`) builds the frozen auth payload described in `schemas_auth.py`.
+`session_context.py`/`auth_cookies.py` select the person or platform refresh cookie and expire
+release-1 staff cookies at logout. `services_device_login.py` (password device login, member or
+staff step-up), `views_device_staff.py` (`auth/device/staff-grant`), `services_device_grants.py`
+(authority and grant creation), `services_device_tokens.py` (pair issue and refresh rotation,
+including the auth-generation refusal), `services_staff_grants.py` (staff-grant revocation on a
+lost role, its signal and audits) and `native_app_version.py` (`MIN_NATIVE_APP_VERSION_*`) own
+native authority.
 `delegated_routes.py` exposes the authority-source classification in `delegated_route_catalog.py`;
 `checks.py` fails unclassified staff URLs. `member_identity.py` and `account_kind_guards.py`
 keep member credential/community writers separate. `credential_revocation.py` and
 `credential_revocation_helpers.py` own generation fencing and account-owned credential teardown.
 `models_password_reset.py`, `services_password_reset.py`, `services_password_reset_confirmation.py`,
 `services_password_reset_drain.py` and `password_reset_crypto.py` bind recovery to the exact account
-and member/staff/platform context. `password_reset_context.py` owns trusted-origin/live-tenant policy
-and reset-page destinations; `credential_locks.py` enforces the shared credential-operation lock order. `services_staff_invitations.py`,
+and person (`member`) or platform context. `password_reset_context.py` owns the platform
+trusted-origin policy and the platform reset-page destination; `credential_locks.py` enforces the shared credential-operation lock order. `services_staff_invitations.py`,
 `staff_invitation_acceptance.py` and `staff_invitation_delivery.py` own initial staff password setup.
 `admin_api/urls_staff_accounts.py` and `serializers_staff_accounts.py` define its HTTP contract;
 `accounts/admin_staff_lifecycle.py` and `makerspaces/admin_staff_accounts.py` provide control actions.

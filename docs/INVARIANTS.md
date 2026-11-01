@@ -28,7 +28,7 @@ Documentation is not rollout sign-off.
 Owner decisions #63/#65/#66 reverse the account split (D1–D12): **one account per person**;
 staff roles are granted to that person; the superadmin stays a separate platform account.
 U-A1 ships the model, the database guards, the conversion and the identity/RBAC seams below.
-The login/session surface (U-A2), the staff-roles API and console (U-B), interactive merges and
+The login/session surface (U-A2, below), the staff-roles API and console (U-B), interactive merges and
 deletion (U-C) and portability (U-D) land in later lanes; until each lands, the split-account
 text kept under "Split-account surfaces awaiting their lanes" still describes that code.
 
@@ -118,6 +118,63 @@ and native selection of that space reads the staff row (member grants read commu
 Recovery envelopes are `member` or `platform` context only; legacy staff envelopes may only be
 retired.
 
+### Sign-in, sessions and native grants (release 2, lane U-A2)
+
+**One door, two kinds.** `POST auth/login` takes `username` + `password` only (`context`,
+`makerspace` and `surface` are gone; unknown keys are ignored). A person signs in by username or
+email (a converted staff account whose email was held signs in by username). The superadmin is
+reachable only from `PLATFORM_STAFF_ORIGINS`, by username or by an email no person holds, so a
+person's address never selects the platform account. The member password switch never locks
+out a person who holds a staff role. Every person method (password, social, OIDC, phone, claim,
+device) issues a **person** token: `kind=person`, `surface=member` (or `verification_only`);
+the superadmin's is `kind=platform`, `surface=platform`. No token carries `makerspace`,
+`staff_scope` or a `staff`/`staff_api`/`delegated` surface. `surface_policy.token_kind` is the
+only reader of the kind for tokens and challenge contexts.
+
+**Staff authority per request.** `surface_policy.enforce_request` admits a person to a
+`membership-only` or `delegable` route when `staff_identity.has_staff_role` covers EVERY target
+(any servable space for a target-less route), then calls `require_staff_mfa` (S-A's grace and
+final body live there). An invalid or multi-target route refuses. A verified custom origin pins
+the targets to its space; an ambiguous origin refuses. Delegable routes are still open through
+`_delegated` (organization grants, governance, resource grants). The platform superadmin keeps
+Lane D's `platform_tenant_surface.admits` hook and the `platform_tenant_pii` net. Claim sessions
+are refused on every staff route class in `_authenticate_claim`, and native member grants never
+carry staff authority (route gate here; the payload lists no staff roles for them).
+
+**Payload contract (frozen, `schemas_auth.AuthUserPayload`).** `kind` (person|platform),
+`is_platform`, `has_staff_role`, `has_elevated_authority`, `staff_roles[{makerspace{id,slug,name},
+roles[{id,slug,name}], actions}]` = the staff authority THIS session may exercise (browser: all;
+native staff grant: its tenant; native member grant and claim: none), `makerspaces` = one entry
+per space merging the community row, the staff row (role identity and actions) and organization
+grants, with `tracks`; `superadmin_actions`; `mfa_grace_ends_at` (null until S-A, #128 C-1);
+`session_authority` = member | native_staff | platform | verification_only. `account_kind` stays
+one release as a deprecated alias (`member` = person); `staff_makerspace` is gone.
+
+**Cookies.** Exactly two refresh cookies: the person's (`AUTH_REFRESH_COOKIE`) and
+`refresh_token_platform`. Refresh/logout `context` is `person` (default; the release-1 names
+`member` and `staff:<slug>` are accepted for one release and mean person) or `platform`. A person's refresh passes the member origin policy (which includes
+every staff console origin); the platform's passes the staff origin policy. For one release,
+logout and logout-all also expire every `refresh_token_staff_<slug>` cookie the browser sends;
+nothing reads them. All cookies still share `AUTH_COOKIE_PATH`.
+
+**Native grants.** A grant's principal is a person. Member grants come from any primary method.
+A **staff grant is a step-up** (Q12): device login with `authority=staff` + the makerspace slug,
+or `POST auth/device/staff-grant` from any active device session of the person, always behind a
+real second factor (`source_for == verified` and `require_staff_mfa`), re-attested, fixed to one
+makerspace where the person holds a staff role; its `login_method` is the primary method.
+Staff routes on a staff grant require a matching `X-Makerspace-Id`. Losing the staff role
+revokes that makerspace's staff grants (`services_staff_grants`: the seam U-B calls, a
+membership signal, and a re-check on every request and refresh; an only-unservable space refuses
+without revoking). Audits: `auth.staff_grant_issued` / `auth.staff_grant_revoked`.
+`rotate_device_refresh` refuses and revokes a family minted under an older deployment
+`auth_generation` (401 `session_revoked`), so the A+2 cutover cannot be ridden by an old refresh.
+`MIN_NATIVE_APP_VERSION_IOS`/`_ANDROID` (semver `x.y.z`, numeric, per platform; empty = none)
+refuse an older or unversioned app with 426 `native_app_update_required` at device login, the
+staff step-up and refresh, before anything rotates.
+
+**Recovery** is person (`member` envelope context) or platform only; the staff context and its
+makerspace slug are gone. `control_mfa` is unchanged.
+
 ### Split-account surfaces awaiting their lanes (superseded as each lane lands)
 
 These are the account-split owner decisions D1–D12, including approved amendments V1–V12, as
@@ -150,48 +207,10 @@ transport and retirement text stays current until U-A2/U-B/U-C/U-D replace it.
   person's accounts (M5). Resource event/booking helpers and organization grants/governance stay
   on member accounts (D8); they confer their specific actions, never built-in staff identity.
 
-**Surface policy and simultaneous sessions (D5/D8/D9, V8/V10/V12).**
-
-Staff and platform authentication accepts username/email + password, with local authenticator
-MFA where applicable. Social/OIDC/Google/Apple/GitHub, phone OTP, claims and magic-link methods
-are member-only. Native member grants use those member methods; native staff grants require a
-staff account, password, MFA and attestation and are fixed to its staff tenant. Platform native
-grants are forbidden. Member login-method switches
-cannot strand staff/platform: their password door remains available. `/control/` accepts only
-live platform Django sessions and retains its own MFA/reauth gates and password fallback.
-Platform API sign-in requires `PLATFORM_STAFF_ORIGINS`.
-
-Staff password login explicitly supplies `context=staff` and a makerspace slug; a verified
-custom origin must agree. Wrong kind/tenant has the generic credential failure. Access/refresh
-tokens carry `kind` and, for staff, `makerspace`; kind-less pre-cutover tokens are refused.
-`accounts/surface_policy.py` rechecks the live account on access, refresh, MFA completion,
-reauthentication and device issuance. Staff stay in their own tenant and cannot enter member
-surfaces. Platform accounts reach platform/control operations and authorized staff lifecycle
-actions, and (owner decision #115) every `membership-only` or `delegable` staff route outside
-`/api/v1/auth/` in every servable space -- see "Superadmin console parity" below. Member-only,
-signed-protocol and unknown routes stay closed to them; every kind may use its own classified
-account utilities.
-
-`accounts/delegated_routes.py` and `delegated_route_catalog.py` classify staff routes as
-`membership-only`, `delegable` or `shared-account-utility`. Unknown routes deny; Django URL
-system check `accounts.E001` rejects unclassified/unnamed staff routes. A member reaches a
-delegable route only with a live resource grant, organization action grant or organization
-governance source in the target scope. The route's ordinary action/resource checks still decide
-the operation. A registry entry alone grants nothing, and members cannot enter membership-only
-routes. Shared utilities cover only the actor's own profile/password/MFA/personal connections.
-
-Browser contexts are `member`, `staff:<slug>` and `platform`. Refresh/logout explicitly select
-one context (omission defaults to member) and validate only that context's cookie. Cookie names
-are `refresh_token`, `refresh_token_staff_<slug>` and `refresh_token_platform`; Django control
-sessions remain separate. Frontend token stores, refresh promises/generation fences, QueryClients,
-reauth queues and offline/staff state are partitioned by context. Sign-out affects that context
-only; late responses cannot restore it or replace another account's state. Delegated workspaces
-use the member context with `surface=delegated`.
-
-Current integration limitation: cookie names are tenant-specific, but all refresh cookies use
-`AUTH_COOKIE_PATH` (`/api/v1/auth/`). The approved slug-specific Path requirement needs endpoint
-aliases and matching frontend calls: a slug-specific Path cannot reach the shared refresh/logout
-URLs. Do not describe the current implementation as providing slug-specific cookie paths.
+**Surface policy and simultaneous sessions (D5/D8/D9, V8/V10/V12)** -- SUPERSEDED by
+"Sign-in, sessions and native grants" above (U-A2): one door, person/platform tokens, staff
+routes admitted per request, two refresh cookies. Route classification (`delegated_routes.py`,
+`accounts.E001`, unknown routes deny, a registry entry grants nothing) is unchanged.
 
 **Staff lifecycle and recovery (D2/D4/D6/D7, V2/V6).**
 
@@ -218,6 +237,7 @@ so reset/redemption races cannot install stale credentials. Admin-issued passwor
 are displayed once in a no-store response. Optional authenticator reset consumes pending MFA.
 Without Email, Membership, staff invitations or MFA, admin-set initial passwords still work.
 
+(The staff recovery context below is SUPERSEDED by U-A2: recovery is person or platform only.)
 Self-service email recovery uses separate `member`, `staff` and `platform` contexts. Envelopes bind
 an account, context, staff tenant, trusted request origin and credential generation, never shared-email
 ownership. Member recovery remains independent; legacy UID/token links remain member-only. Staff

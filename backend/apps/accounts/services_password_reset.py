@@ -11,6 +11,7 @@ from apps.accounts.password_reset_crypto import (
     new_dummy_digest,
     normalize_email,
 )
+from apps.accounts.staff_identity import is_person
 from apps.accounts.password_reset_context import (
     lock_recovery_account, resolve_account, recoverable, mail_available, recovery_transaction,
 )
@@ -68,7 +69,7 @@ def request_password_reset(email, *, context="member", makerspace=None, origin="
             user = None
         if context == "member" and user:
             from apps.accounts.account_restore import recovery_eligible, restorable
-            if not (user.account_kind == "member" and recovery_eligible(user)
+            if not (is_person(user) and recovery_eligible(user)
                     and user.email and (restorable(user, now=requested_at)
                     or user.is_active and user.deletion_requested_at is None)):
                 user = None
@@ -91,7 +92,6 @@ def request_password_reset(email, *, context="member", makerspace=None, origin="
             None,
             "auth.password_reset_requested",
             target=envelope,
-            makerspace=envelope.makerspace if envelope and context == "staff" else None,
             meta={
                 "email_hash": audit_events.fingerprint(normalized),
                 "method": "otp",
@@ -118,7 +118,7 @@ def _lock_or_create(user, normalized, requested_at, *, context, origin):
             envelope = PasswordResetEnvelope.objects.create(
                 user=user,
                 context=context,
-                makerspace_id=user.staff_makerspace_id if context == "staff" else None,
+                makerspace_id=None,
                 request_origin=origin,
                 credential_generation=user.credential_generation,
                 email_normalized=normalized,

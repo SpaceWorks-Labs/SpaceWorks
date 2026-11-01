@@ -34,11 +34,9 @@ def start(user, *, context):
     assert_available()
     user = lock_session_user(user)
     active(user)
-    from apps.accounts.surface_policy import assert_surface
+    from apps.accounts.surface_policy import assert_surface, token_kind
     assert_surface(user, context.get("surface"), request=None)
-    context = {**context, "kind": user.account_kind,
-               "makerspace": str(user.staff_makerspace_id) if user.staff_makerspace_id else None,
-               "credential_generation": user.credential_generation}
+    context = {**context, "kind": token_kind(user), "credential_generation": user.credential_generation}
     row, _ = UserMFA.objects.get_or_create(user=user)
     raw = secrets.token_urlsafe(32)
     challenge = MFAChallenge.objects.create(

@@ -10,13 +10,23 @@ class DeviceIdentitySerializer(serializers.Serializer):
     environment = serializers.ChoiceField(choices=DeviceEnvironment.choices)
 
 
+APP_VERSION_HELP = ("The app's own version (x.y.z). Refused with 426 native_app_update_required when it is "
+                    "older than the deployment's minimum for this platform, or missing while a minimum is set.")
+
+
 class DeviceLoginSerializer(DeviceIdentitySerializer):
-    context = serializers.ChoiceField(choices=("member", "staff", "platform"), default="member")
-    makerspace = serializers.SlugField(required=False, max_length=150)
+    authority = serializers.ChoiceField(
+        choices=("member", "staff"), default="member",
+        help_text="member (default) or staff: a step-up fixed to one makerspace where the person holds a "
+                  "staff role. Staff always needs the authenticator (or enrolment) and attestation.",
+    )
+    makerspace = serializers.SlugField(required=False, max_length=150,
+                                       help_text="The staff makerspace's slug; required for authority=staff only.")
     username = serializers.CharField(max_length=254, trim_whitespace=True)
     password = serializers.CharField(max_length=1024, write_only=True, trim_whitespace=False)
     challenge = serializers.CharField(max_length=512, trim_whitespace=False)
     attestation = AttestationPayloadField()
+    app_version = serializers.CharField(max_length=32, required=False, help_text=APP_VERSION_HELP)
 
     def validate_attestation(self, value):
         if not isinstance(value, dict) or not value or len(value) > 16:
@@ -24,15 +34,30 @@ class DeviceLoginSerializer(DeviceIdentitySerializer):
         return value
 
     def validate(self, attrs):
-        if attrs["context"] == "staff" and not attrs.get("makerspace"):
-            raise serializers.ValidationError({"makerspace": "This field is required for staff sign-in."})
-        if attrs["context"] != "staff" and attrs.get("makerspace"):
-            raise serializers.ValidationError({"makerspace": "Use a makerspace only for staff sign-in."})
+        if attrs["authority"] == "staff" and not attrs.get("makerspace"):
+            raise serializers.ValidationError({"makerspace": "This field is required for a staff grant."})
+        if attrs["authority"] != "staff" and attrs.get("makerspace"):
+            raise serializers.ValidationError({"makerspace": "Use a makerspace only for a staff grant."})
         return attrs
+
+
+class DeviceStaffGrantSerializer(serializers.Serializer):
+    """Step up an active device session of this person to a staff grant (Q12)."""
+    makerspace = serializers.SlugField(max_length=150, help_text="The makerspace the staff grant is fixed to.")
+    challenge = serializers.CharField(max_length=512, trim_whitespace=False,
+                                      help_text="A fresh attestation challenge for this device's app.")
+    attestation = AttestationPayloadField()
+    app_version = serializers.CharField(max_length=32, required=False, help_text=APP_VERSION_HELP)
+
+    def validate_attestation(self, value):
+        if not isinstance(value, dict) or not value or len(value) > 16:
+            raise serializers.ValidationError("Invalid attestation payload.")
+        return value
 
 
 class DeviceRefreshSerializer(serializers.Serializer):
     refresh = serializers.CharField(max_length=4096, write_only=True, trim_whitespace=False)
+    app_version = serializers.CharField(max_length=32, required=False, help_text=APP_VERSION_HELP)
 
 
 class DeviceGrantSerializer(serializers.Serializer):

@@ -42,6 +42,7 @@ from apps.accounts.views_oidc_browser import (
     OidcBrowserStartView,
 )
 from apps.accounts.views_claim import ClaimRedemptionView
+from apps.accounts.views_device_staff import DeviceStaffGrantView
 from apps.accounts.views_logout_all import LogoutAllView
 from apps.accounts.views_account_deletion import AccountDeletionView
 from apps.accounts.views_account_restore import (
@@ -85,6 +86,7 @@ urlpatterns = [
     path("device/login", DeviceLoginView.as_view(), name="device-login"),
     path("device/refresh", DeviceRefreshView.as_view(), name="device-refresh"),
     path("device/logout", DeviceLogoutView.as_view(), name="device-logout"),
+    path("device/staff-grant", DeviceStaffGrantView.as_view(), name="device-staff-grant"),
     path("device/grants", DeviceGrantListView.as_view(), name="device-grants"),
     path("device/grants/<uuid:grant_id>", DeviceGrantDetailView.as_view(), name="device-grant-detail"),
     path("phone/login/start", PhoneLoginStartView.as_view(), name="auth-phone-login-start"),

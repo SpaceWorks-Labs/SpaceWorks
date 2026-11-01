@@ -14,6 +14,7 @@ from django.db.models import Exists, OuterRef
 
 from apps.accounts.models import User
 from apps.accounts.models_social import SocialIdentity, SocialProvider
+from apps.accounts.staff_identity import person_q
 
 GOOGLE_FIELDS = ("google_web_client_id", "google_ios_client_id", "google_android_client_id")
 CONFIG_FIELDS = (*GOOGLE_FIELDS, "apple_service_id", "apple_native_app_ids",
@@ -60,7 +61,7 @@ def users_locked_out_by_disabling(provider):
         provider=provider
     )
     candidates = (
-        User.objects.filter(account_kind="member", is_active=True, social_identities__provider=provider)
+        User.objects.filter(person_q(), is_active=True, social_identities__provider=provider)
         .annotate(
             has_other_identity=Exists(other_identity),
             has_staff_identity=Exists(other_identity.exclude(provider=SocialProvider.GITHUB)),

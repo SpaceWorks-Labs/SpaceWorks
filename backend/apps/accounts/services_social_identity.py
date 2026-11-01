@@ -7,6 +7,7 @@ from apps.accounts.models import User
 from apps.accounts.models_social import SocialIdentity, SocialSurface
 from apps.accounts.principal_guards import is_anonymous_requester
 from apps.accounts.social_staff_providers import surviving_identities
+from apps.accounts.staff_identity import PERSON_KIND, is_person, person_q
 
 
 class SocialResolutionError(Exception):
@@ -40,7 +41,7 @@ def resolve_social_identity(
         if explicit_user is not None:
             return _explicit_link(identity, explicit_user, provider, subject)
         if identity is not None:
-            if identity.user.account_kind != "member":
+            if not is_person(identity.user):
                 raise SocialResolutionError("social_invalid", 403)
             if staff_validator is not None:
                 staff_validator(identity.user)
@@ -52,7 +53,7 @@ def resolve_social_identity(
         if email:
             matched = (
                 User.objects.select_for_update()
-                .filter(account_kind="member", email__iexact=email)
+                .filter(person_q(), email__iexact=email)
                 .exclude(email="")
                 .first()
             )
@@ -79,7 +80,7 @@ def resolve_social_identity(
                 raise SocialResolutionError("registration_disabled", 403)
             user = User(
                 username=_available_username(provider, subject),
-                account_kind="member",
+                account_kind=PERSON_KIND,
                 email=email if verified else "",
                 display_name=(apple_name or claims.get("name") or "")[:200],
                 role=User.Role.REQUESTER,
@@ -117,7 +118,7 @@ def _explicit_link(identity, user, provider, subject):
     # Migration 0015 cannot revoke an access token during its 15-minute lifetime.
     # Keep this guard here, rather than at the caller branch, because every explicit
     # social-identity link is created through this function.
-    if user.account_kind != "member":
+    if not is_person(user):
         raise SocialResolutionError("social_invalid", 403)
     if user.is_walk_in:
         raise SocialResolutionError("walk_in_record", 403)

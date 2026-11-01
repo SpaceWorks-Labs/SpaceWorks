@@ -58,9 +58,7 @@ class LogoutAllView(APIView):
             )
         response = Response({"web_sessions": len(sessions) + len(legacy), "devices": len(grants)})
         from apps.accounts.session_context import token_context
-        if request.auth:
-            context = token_context(request.auth)
-        else:
-            context = "staff:" + user.staff_makerspace.slug if user.account_kind == "staff" else user.account_kind
-        clear_refresh_cookies(response, context=context)
+        from apps.accounts.surface_policy import token_kind
+        context = token_context(request.auth) if request.auth else token_kind(user)
+        clear_refresh_cookies(response, context=context, request=request)
         return response

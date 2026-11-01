@@ -60,13 +60,19 @@ name with credential inputs left blank preserves existing encrypted credentials.
 
 ## Reconciled account and notification authority
 
-Native staff sign in with a separate staff-kind account, password, MFA and attestation,
-`context=staff` and their makerspace slug. Grants carry `authority=staff` and the immutable
-`staff_makerspace_id`; selected X-Makerspace-Id must match that tenant and URL/body targets.
-Member grants use member accounts; phone/social/OIDC never grant staff authority. Platform
-native grants are forbidden. Refresh cannot promote a grant. Self-deletion/90-day archive,
-restore, purge and Apple revocation remain member-only. Logout-all revokes sessions/devices
-of that account and clears its context, without affecting another account held by the person.
+Release 2 (one account per person, U-A2): a person signs in once and gets a member grant from
+any primary method (password, Google, Apple, OIDC, phone). Staff authority is a **step-up** on
+that person: device login with `authority=staff` + makerspace slug, or `POST
+auth/device/staff-grant` from any active device session, always behind the authenticator and a
+fresh attestation. The new grant carries `authority=staff` and the immutable
+`staff_makerspace_id`; on staff routes the X-Makerspace-Id header is required and must match that
+makerspace and the URL/body targets. A member grant never carries staff authority; losing the
+staff role revokes the staff grants for that makerspace. Platform native grants are forbidden;
+refresh cannot promote a grant and refuses a family from an older auth generation (401
+`session_revoked`) or an app older than `MIN_NATIVE_APP_VERSION_*` (426
+`native_app_update_required`). The release-1 `context`/`makerspace` login parameters are gone.
+Self-deletion/90-day archive, restore, purge and Apple revocation stay person-only. Logout-all
+revokes every session and device of the account. Full contract: `docs/mobile/MOBILE-APP-PRD.md` §7.
 Accounts 0032 development role reset is not authorized for live authority data.
 
 Personal push uses envelope deliveries with per-device children and optional inbox links;

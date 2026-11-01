@@ -1,6 +1,7 @@
 """Identity providers that can issue staff sessions, shared by lockout guards."""
 
 from django.db.models import Q
+from apps.accounts.staff_identity import is_person
 
 
 def staff_capable_provider_filter():
@@ -12,7 +13,7 @@ def surviving_identities(user, identities):
     from apps.accounts.login_methods_validation import available_providers
     from apps.accounts.models_login_methods import PlatformLoginMethods
 
-    if user.account_kind != "member":
+    if not is_person(user):
         return identities.none()
     identities = identities.filter(provider__in=available_providers(PlatformLoginMethods.load()))
     if user.is_superuser or user.role == "superadmin":

@@ -1,8 +1,10 @@
-"""Attested password login for immutable member and fixed-tenant staff accounts."""
+"""Attested password sign-in for a person: member authority, or a staff step-up fixed to
+one makerspace (``authority=staff`` with that makerspace's slug, always behind MFA)."""
 
 from django.contrib.auth import authenticate
 from django.contrib.auth.signals import user_login_failed
 from django.db import transaction
+from django.db.models import Q
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.response import Response
 
@@ -14,6 +16,7 @@ from apps.accounts.services_device_grants import (
     DeviceGrantCreationRetryRequired, assert_grant_user_allowed, issue_first_device_session,
 )
 from apps.accounts.services_device_tokens import assert_mobile_grant_creation_enabled
+from apps.accounts.staff_identity import has_staff_role, person_q
 
 
 class DevicePasswordRejected(AuthenticationFailed):
@@ -22,17 +25,15 @@ class DevicePasswordRejected(AuthenticationFailed):
         super().__init__("Invalid device credentials or attestation.")
 
 
-def authenticate_native(request, identifier, password, *, context="member", makerspace=None):
-    # Resolve only the explicit account namespace, then lock User alone. Joining
-    # the staff tenant must never acquire its lock after User in an issuance path.
+def authenticate_native(request, identifier, password):
+    # Persons only (the superadmin never holds a device grant); lock User alone. Joining a
+    # makerspace must never acquire its lock after User in an issuance path.
     users = User.objects.select_for_update(of=("self",), no_key=True).filter(
-        account_kind=context, retired_at__isnull=True, is_active=True,
+        person_q(), retired_at__isnull=True, merged_into__isnull=True, is_active=True,
     )
-    if context == "staff":
-        users = users.filter(staff_makerspace__slug=makerspace)
     user = users.filter(username=identifier).first()
     if user is None:
-        user = users.filter(email__iexact=identifier).exclude(email="").first()
+        user = users.filter(Q(email__iexact=identifier) & ~Q(email="")).first()
     if user is None:
         User().set_password(password)
         user_login_failed.send(sender=__name__, credentials={"username": identifier}, request=request)
@@ -41,12 +42,21 @@ def authenticate_native(request, identifier, password, *, context="member", make
     return authenticated if authenticated is not None and authenticated.pk == user.pk else None
 
 
+def staff_makerspace_for(slug):
+    """The servable makerspace a staff step-up names, or None (read before User is locked)."""
+    from apps.makerspaces.models import Makerspace
+    from apps.makerspaces.servability import servable_queryset
+
+    return servable_queryset(Makerspace.objects.filter(slug=slug)).values_list("pk", flat=True).first() if slug else None
+
+
 def password_login(request, data, challenge, verified):
     """Keep User locked from password verification through challenge or token minting."""
     refusal = None
+    staff_space = staff_makerspace_for(data.get("makerspace")) if data["authority"] == "staff" else None
     with transaction.atomic():
         try:
-            result = _password_login_locked(request, data, challenge, verified)
+            result = _password_login_locked(request, data, challenge, verified, staff_space)
         except DevicePasswordRejected as exc:
             # Commit Django/axes failed-password accounting before returning the error.
             refusal = exc
@@ -55,27 +65,31 @@ def password_login(request, data, challenge, verified):
     return result
 
 
-def _password_login_locked(request, data, challenge, verified):
-    user = authenticate_native(request, data["username"], data["password"],
-                               context=data["context"], makerspace=data.get("makerspace"))
+def _password_login_locked(request, data, challenge, verified, staff_space):
+    user = authenticate_native(request, data["username"], data["password"])
     if (not user or user.is_tenant_dump_stub or user.retired_at is not None
             or user.deletion_requested_at is not None or user.access_status != "active"):
         raise DevicePasswordRejected("invalid_credentials")
     assert_grant_user_allowed(user)
-    if user.account_kind == "member" and not password_login_enabled():
+    staff = data["authority"] == "staff"
+    if staff and (staff_space is None or not has_staff_role(user, staff_space)):
+        raise DevicePasswordRejected("staff_access_required")
+    # Staff keep password sign-in when the deployment turned it off for members (#62).
+    if not password_login_enabled() and not has_staff_role(user):
         raise DevicePasswordRejected("password_login_disabled")
     assert_mobile_grant_creation_enabled()
     from apps.accounts.surface_policy import assert_surface
-    surface = "staff_api" if user.account_kind == "staff" else "member"
-    assert_surface(user, surface, request)
-    if user.account_kind == "staff" and challenge.registration.makerspace_id not in (None, user.staff_makerspace_id):
+    assert_surface(user, "member", request)
+    if staff and challenge.registration.makerspace_id not in (None, staff_space):
         raise DevicePasswordRejected("registration_not_approved")
     from apps.accounts.mfa_policy import needs_challenge
     from apps.accounts.mfa_challenges import start
     from apps.accounts.mfa_sessions import context, device_context
-    if user.account_kind == "staff" or needs_challenge(user):
-        response = Response(start(user, context=context(request, surface=surface,
-            device=device_context(challenge, verified, login_method="password"))))
+    if staff or needs_challenge(user):
+        device = device_context(challenge, verified, login_method="password")
+        if staff:
+            device["staff_makerspace_id"] = staff_space
+        response = Response(start(user, context=context(request, surface="member", device=device)))
         response["Cache-Control"] = "no-store"
         return response
     try:
@@ -84,5 +98,5 @@ def _password_login_locked(request, data, challenge, verified):
         raise DevicePasswordRejected("registration_not_approved") from exc
     request.device_grant = grant
     return Response({"access": access, "refresh": refresh,
-        "user": user_payload(user, request=request, session_authority=surface),
+        "user": user_payload(user, request=request, session_authority="member"),
         "device_grant": DeviceGrantSerializer(grant).data})

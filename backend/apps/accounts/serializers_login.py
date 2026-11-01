@@ -1,11 +1,9 @@
-from rest_framework import serializers
 from django.db import transaction
-from rest_framework.exceptions import AuthenticationFailed, PermissionDenied
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenRefreshSerializer
+from rest_framework.exceptions import AuthenticationFailed
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from apps.accounts.models import User
-from apps.accounts.tokens import SpaceWorksRefreshToken, validate_auth_generation
-from apps.accounts.models_social import SocialSurface
+from apps.accounts.tokens import SpaceWorksRefreshToken
 
 
 VERIFICATION_ONLY_SURFACE = "verification_only"
@@ -15,10 +13,13 @@ DEVICE_REFRESH_CLAIMS = ("device_grant_id", "device_family_id")
 from apps.accounts.serializers_payload import user_payload
 
 class LoginSerializer(TokenObtainPairSerializer):
+    """One password door for every person; the superadmin only from a platform origin.
+
+    Release 2 dropped ``context``, ``makerspace`` and ``surface`` (one account per person):
+    the account decides the session, and staff authority is resolved per request.
+    """
+
     token_class = SpaceWorksRefreshToken
-    surface = serializers.ChoiceField(choices=("member", "staff", "delegated"), required=False)
-    context = serializers.ChoiceField(choices=("member", "staff", "platform"), required=False)
-    makerspace = serializers.SlugField(required=False, max_length=150)
 
     def validate(self, attrs):
         # Django/axes records failed password attempts during authenticate(). Commit
@@ -48,7 +49,6 @@ class LoginSerializer(TokenObtainPairSerializer):
         assert_surface(self.user, surface, request)
         from apps.backup.recovery import assert_token_issuance_allowed
         assert_token_issuance_allowed(self.user)
-        staff_scope = str(self.user.staff_makerspace_id) if self.user.account_kind == "staff" else None
         if (
             self.user.self_registered_at is not None
             and self.user.email_verified_at is None
@@ -59,11 +59,9 @@ class LoginSerializer(TokenObtainPairSerializer):
         from apps.accounts.mfa_challenges import start
         from apps.accounts.mfa_sessions import context
         if needs_challenge(self.user):
-            return start(self.user, context=context(request, surface=surface, staff_scope=staff_scope))
+            return start(self.user, context=context(request, surface=surface))
         refresh = self.token_class.for_user(self.user)
         refresh["surface"] = surface
-        if surface == SocialSurface.STAFF:
-            refresh["staff_scope"] = staff_scope
         data["refresh"] = str(refresh)
         data["access"] = str(refresh.access_token)
         data["surface"] = surface

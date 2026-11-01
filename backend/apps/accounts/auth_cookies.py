@@ -46,9 +46,19 @@ def set_refresh_cookies(response, refresh_token, request=None, *, context=None):
     )
 
 
-def clear_refresh_cookies(response, *, context="member"):
-    from apps.accounts.session_context import cookie_name
+def clear_refresh_cookies(response, *, context="person", request=None):
+    """Expire the selected context's cookie; with ``request``, also every release-1
+    ``refresh_token_staff_<slug>`` cookie the browser still holds (one release)."""
+    from apps.accounts.session_context import cookie_name, legacy_staff_cookie_names
     response.delete_cookie(cookie_name(context), path=settings.AUTH_COOKIE_PATH)
+    for name in legacy_staff_cookie_names(request) if request is not None else ():
+        response.delete_cookie(name, path=settings.AUTH_COOKIE_PATH)
+
+
+def csrf_surface(context):
+    """The origin policy for a cookie context: a person's session is refreshed from any
+    first-party origin (member or staff console); the superadmin's from staff origins."""
+    return "staff" if context == "platform" else "member"
 
 
 def _origin_allowed(raw, surface=None):

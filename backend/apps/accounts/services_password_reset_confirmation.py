@@ -34,8 +34,7 @@ def confirm_password_reset(email, code, new_password, *, context="member", maker
     with recovery_transaction(account):
         user = lock_recovery_account(account)
         envelope = PasswordResetEnvelope.objects.select_for_update().filter(
-            user_id=user.pk, context=context,
-            makerspace_id=user.staff_makerspace_id if context == "staff" else None,
+            user_id=user.pk, context=context, makerspace_id=None,
         ).first() if user else None
         stored_digest = (
             envelope.digest if envelope is not None else fixed_dummy_digest(normalized)
@@ -53,7 +52,6 @@ def confirm_password_reset(email, code, new_password, *, context="member", maker
             None,
             "auth.password_reset_confirm_attempted",
             target=envelope,
-            makerspace=envelope.makerspace if envelope and context == "staff" else None,
             meta={"method": "otp"},
         )
 
@@ -98,7 +96,6 @@ def confirm_password_reset(email, code, new_password, *, context="member", maker
                         user,
                         "user.password_reset_via_email",
                         target=user,
-                        makerspace=user.staff_makerspace if context == "staff" else None,
                         meta={"method": "otp"},
                     )
                     confirmed_user = user

@@ -437,6 +437,8 @@ value across those spaces applies. Out-of-range values refuse to start the backe
 | `LOGIN_CODE_TTL_SECONDS` | `600` | Lifetime of an emailed 6-digit login code (60–1800 seconds). |
 | `SECURITY_ALERT_LINK_TTL_DAYS` | `14` | How long the "this wasn't me" link in a security alert email works (1–30 days). |
 | `WEBAUTHN_RP_NAME` | `Space Works` | Name a browser shows when creating a passkey (1–64 characters). The passkey relying-party ID is the site's own host. |
+| `MIN_NATIVE_APP_VERSION_IOS` | empty | Oldest iOS app version (`x.y.z`, compared numerically) allowed to sign in or refresh a device session. Older or unversioned apps get HTTP 426 `native_app_update_required`. Empty = no minimum. |
+| `MIN_NATIVE_APP_VERSION_ANDROID` | empty | The same minimum for the Android app. |
 | `THROTTLE_LOGIN_CODE_RESEND` | `'5/hour'` | Emailed login-code sends per challenge. |
 | `THROTTLE_LOGIN_CODE_IP` | `'30/hour'` | Login-code sends and checks per source address. |
 | `THROTTLE_PASSKEY_OPTIONS` | `'30/min'` | Passkey registration and sign-in option requests. |

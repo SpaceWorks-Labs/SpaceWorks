@@ -22,6 +22,7 @@ from django.db.models import Exists, OuterRef
 
 from apps.accounts.models import PlatformLoginMethods, User
 from apps.accounts.models_social import SocialIdentity
+from apps.accounts.staff_identity import person_q
 
 logger = logging.getLogger(__name__)
 
@@ -113,7 +114,7 @@ def users_stranded_without_social():
     the query narrows to users who hold any social identity -- a bounded set -- and the
     final check runs in Python.
     """
-    candidates = User.objects.filter(is_active=True, account_kind="member", retired_at__isnull=True).filter(
+    candidates = User.objects.filter(person_q(), is_active=True, retired_at__isnull=True).filter(
         Exists(SocialIdentity.objects.filter(user=OuterRef("pk")))
     )
     return [user for user in candidates if not user.has_usable_password()]

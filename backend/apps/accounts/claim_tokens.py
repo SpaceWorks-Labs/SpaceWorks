@@ -8,6 +8,7 @@ from apps.accounts.tokens import SpaceWorksAccessToken, SpaceWorksRefreshToken
 
 from apps.accounts.claim_sessions import attach_claim_context, validated_claim_session
 from apps.accounts.services_refresh_tokens import rotate_refresh_token
+from apps.accounts.staff_identity import is_person
 
 
 class ClaimAccessToken(SpaceWorksAccessToken):
@@ -51,7 +52,7 @@ def claim_user_from_refresh(raw_refresh, *, require_active=True):
 
 
 def _tokens_for_claim(claim):
-    if claim.membership.user.account_kind != "member":
+    if not is_person(claim.membership.user):
         raise TokenError("Invalid claim session.")
     if claim.absolute_expires_at is None or claim.absolute_expires_at <= timezone.now():
         raise TokenError("Claim session has expired.")

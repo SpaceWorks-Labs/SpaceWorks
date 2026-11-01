@@ -89,7 +89,7 @@ def _counts(connection, expected):
 
 def _verify_objects(archive):
     verified = 0
-    for item in archive.objects():
+    for item in archive.manifest.get("storage", {}).get("objects", []):
         if item.get("retention_state") == "expired":
             continue
         path = archive.object_path(item)

@@ -1,0 +1,101 @@
+import { useState, type ReactNode } from "react";
+
+import type { PrinterPool } from "../../../../generated/api";
+import { ConfirmDialog, EmptyState, ErrorBlock, Skeleton, StatusPill } from "../../../../components/ui";
+import { isBuiltinPrinterType, type Machine, type MachineType, type MeteringUnit } from "../../machinesApi";
+import { BatchCompleteDialog, BatchStartDialog } from "./BatchDialogs";
+import { reorderPosition } from "./boardOrder";
+import { JobActionDialog } from "./JobActionDialog";
+import { JobBoardCard, type CardHandlers } from "./JobBoardCard";
+import type { DialogAction } from "./jobActionBody";
+import { machineStatusLabel } from "./machineStatusLabel";
+import { useJobAction, useJobBoard, type StaffJob } from "./machineJobsApi";
+import { poolUnits, unitLabels, usablePools } from "./servicePools";
+
+type Props = {
+  makerspaceId: number; machineType: MachineType; machines: Machine[]; pools: PrinterPool[];
+  batchEnabled: boolean; visible?: boolean;
+};
+
+/** The per-type queue board (#141): machine lanes, the ordered queue, review, waiting on member and ready to collect. */
+export function JobBoard({ makerspaceId, machineType, machines, pools, batchEnabled, visible = true }: Props) {
+  const board = useJobBoard(makerspaceId, machineType.id, visible);
+  const direct = useJobAction(makerspaceId, machineType.id);
+  const [dialog, setDialog] = useState<{ job: StaffJob; action: DialogAction } | null>(null);
+  const [uncollected, setUncollected] = useState<StaffJob | null>(null);
+  const [selected, setSelected] = useState<number[]>([]);
+  const [batching, setBatching] = useState(false);
+  const [completing, setCompleting] = useState<{ batchId: number; jobs: StaffJob[] } | null>(null);
+  if (!visible) return null;
+  const printer = isBuiltinPrinterType(machineType);
+  const metering = (machineType.capability_config?.metering_unit ?? "count") as MeteringUnit;
+  const poolUnit = printer ? "grams" : poolUnits[metering];
+  const unitLabel = printer ? "grams" : unitLabels[metering];
+  const poolsFor = (machineId: string) => usablePools(pools, poolUnit, machineId, machines, makerspaceId);
+  const handlers: CardHandlers = {
+    onDialog: (job, action) => setDialog({ job, action }),
+    onDirect: (job, action, body) => direct.mutate({ id: job.id, action, body }),
+    onUncollected: setUncollected,
+  };
+  if (board.isLoading) return <div role="status" aria-label="Loading queue board" className="grid gap-3"><Skeleton className="h-24 w-full" /><Skeleton className="h-40 w-full" /></div>;
+  if (board.error) return <ErrorBlock error={board.error} resource="queue board" onRetry={() => { void board.refetch(); }} />;
+  const data = board.data;
+  if (!data) return null;
+  const overdue = new Set(data.overdue_pickup_ids);
+  const noShows = new Set(data.no_show_member_ids);
+  const card = (job: StaffJob, column?: StaffJob[]) => <JobBoardCard key={job.id} job={job} {...handlers} pending={direct.isPending}
+    overdue={overdue.has(job.id)} noShow={!!job.requester?.id && noShows.has(job.requester.id)}
+    move={column ? { up: reorderPosition(job, "up", column, data), down: reorderPosition(job, "down", column, data) } : undefined}
+    select={batchEnabled && job.status === "accepted" ? { checked: selected.includes(job.id),
+      onChange: checked => setSelected(current => checked ? [...current, job.id] : current.filter(id => id !== job.id)) } : undefined} />;
+  const waiting = [...data.queue, ...data.lanes.flatMap(lane => lane.assigned)];
+  const chosen = waiting.filter(job => selected.includes(job.id));
+  return <div className="grid gap-6">
+    {direct.error ? <ErrorBlock error={direct.error} /> : null}
+    {batchEnabled ? <div className="flex flex-wrap items-center gap-3 rounded-xl border border-line bg-surface p-3 text-sm">
+      <span>{chosen.length ? `${chosen.length} queued job${chosen.length === 1 ? "" : "s"} selected.` : "Select two or more queued jobs to run them together."}</span>
+      <button type="button" className="desk-button-primary" disabled={chosen.length < 2} onClick={() => setBatching(true)}>Start as batch</button>
+      {chosen.length ? <button type="button" className="desk-button-ghost" onClick={() => setSelected([])}>Clear selection</button> : null}
+    </div> : null}
+    <Column title="Machines" count={data.lanes.length} empty="No active machines of this type in your scope.">
+      {data.lanes.map(lane => <li key={lane.machine_id} className="grid gap-3 rounded-2xl border border-line bg-surface p-3">
+        <div className="flex flex-wrap items-center gap-2"><h4 className="title-section">{lane.machine_name}</h4>
+          <StatusPill tone={lane.status === "idle" ? "success" : lane.status === "running" ? "accent" : "neutral"} label={machineStatusLabel(lane.status)} />
+          {lane.locked_out ? <StatusPill tone="danger" label="Locked out: maintenance overdue" /> : null}</div>
+        <BatchButtons jobs={lane.running} onComplete={setCompleting} />
+        <ul className="grid gap-2" aria-label={`${lane.machine_name} jobs`}>{lane.running.map(job => card(job))}{lane.assigned.map(job => card(job))}</ul>
+        {!lane.running.length && !lane.assigned.length ? <p className="text-sm text-muted">Nothing running or assigned.</p> : null}
+      </li>)}
+    </Column>
+    <div className="grid gap-6 lg:grid-cols-2">
+      <Column title="Queue" count={data.queue.length} empty="No accepted jobs waiting for a machine.">{data.queue.map(job => card(job, data.queue))}</Column>
+      <Column title="To review" count={data.review.length} empty="No new requests to review.">{data.review.map(job => card(job))}</Column>
+      <Column title="Waiting on member" count={data.waiting_on_member.length} empty="No jobs waiting for changes or a quote decision.">{data.waiting_on_member.map(job => card(job))}</Column>
+      <Column title="Ready to collect" count={data.ready.length} empty="Nothing waiting for pickup.">{data.ready.map(job => card(job))}</Column>
+    </div>
+    {dialog ? <JobActionDialog key={`${dialog.job.id}-${dialog.action}`} job={dialog.job} action={dialog.action} makerspaceId={makerspaceId} typeId={machineType.id}
+      machines={machines} pools={poolsFor} unitLabel={unitLabel} hasPool={!!poolUnit} printer={printer} onClose={() => setDialog(null)} /> : null}
+    {batching ? <BatchStartDialog jobs={chosen} makerspaceId={makerspaceId} typeId={machineType.id} machines={machines} pools={poolsFor}
+      unitLabel={unitLabel} hasPool={!!poolUnit} printer={printer} onClose={done => { setBatching(false); if (done) setSelected([]); }} /> : null}
+    {completing ? <BatchCompleteDialog batchId={completing.batchId} jobs={completing.jobs} makerspaceId={makerspaceId} typeId={machineType.id}
+      unitLabel={unitLabel} hasPool={!!poolUnit} onClose={() => setCompleting(null)} /> : null}
+    <ConfirmDialog open={uncollected !== null} title="Mark not collected?" tone="danger" confirmLabel="Mark not collected" pending={direct.isPending}
+      message="The member did not pick this job up within 14 days. It leaves the pickup shelf and the member is told."
+      onCancel={() => setUncollected(null)} onConfirm={() => { if (uncollected) direct.mutate({ id: uncollected.id, action: "uncollected" }, { onSuccess: () => setUncollected(null) }); }} />
+  </div>;
+}
+
+function Column({ title, count, empty, children }: { title: string; count: number; empty: string; children: ReactNode }) {
+  const id = `board-${title.toLowerCase().replace(/\s+/g, "-")}`;
+  return <section aria-labelledby={id} className="grid content-start gap-3">
+    <h3 id={id} className="title-panel">{title} <span className="text-sm font-normal text-muted">({count})</span></h3>
+    {count ? <ul className="grid gap-3">{children}</ul> : <EmptyState message={empty} />}
+  </section>;
+}
+
+function BatchButtons({ jobs, onComplete }: { jobs: StaffJob[]; onComplete: (batch: { batchId: number; jobs: StaffJob[] }) => void }) {
+  const batches = [...new Set(jobs.map(job => job.batch_id).filter((id): id is number => !!id))];
+  return batches.length ? <div className="flex flex-wrap gap-2">{batches.map(batchId => <button key={batchId} type="button" className="desk-button-success"
+    onClick={() => onComplete({ batchId, jobs: jobs.filter(job => job.batch_id === batchId) })}>Complete batch {batchId}</button>)}</div> : null;
+}
+

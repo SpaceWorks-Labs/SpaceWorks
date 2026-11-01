@@ -20,6 +20,7 @@ import { useStaffGet } from "./shared";
 import { ListLayout } from "../../../components/layouts";
 import { opsQueryState } from "../opsPresentation";
 import { DashboardMachineQueue, isDashboardMachineQueue } from "./DashboardMachineQueue";
+import { WorkOrdersScreen } from "./machine/workOrders/WorkOrdersScreen";
 
 type StatusFilter = "all" | MachineStatus;
 
@@ -130,6 +131,13 @@ function MachinesWorkspace({
   const soleType = reachableTypes.length === 1 ? reachableTypes[0] : null;
   const shownType = selectedType ?? (requestedTypeId === null ? soleType : null);
 
+  // Work orders (machines.maintenance) are a screen of their own, reached from the index, a type page or a drawer.
+  const openWorkOrders = () => setParams(new URLSearchParams({ view: "work-orders" }));
+  if (maintenanceEnabled && params.get("view") === "work-orders") {
+    return <WorkOrdersScreen makerspaceId={makerspaceId} machines={allMachines}
+      onBack={() => setParams(current => { const next = new URLSearchParams(current); ["view", "work_order", "wo_status"].forEach(key => next.delete(key)); return next; })} />;
+  }
+
   // Normalise an unknown or unreachable type id back to the index -- the console's existing
   // behaviour for a stale deep link, rather than a dead denial page. `replace` so the bad
   // URL does not sit in history waiting for the back button.
@@ -181,12 +189,13 @@ function MachinesWorkspace({
       draft={draftFor(shownType.id)} setDraft={update => setDraft(shownType.id, update)}
       detail={detail} indexHref={onTypePage ? indexHref : undefined} settings={settings} statusFilter={statusFilter}
       onStatusFilter={setStatusFilter} onRetry={() => { void machines.refetch(); void machineTypes.refetch(); }}
-      poolError={poolQuery.error instanceof Error ? poolQuery.error.message : undefined} onRetryPools={() => { void poolQuery.refetch(); }} /> :
+      poolError={poolQuery.error instanceof Error ? poolQuery.error.message : undefined} onRetryPools={() => { void poolQuery.refetch(); }}
+      onWorkOrders={maintenanceEnabled ? openWorkOrders : undefined} /> :
       <ListLayout header={{ title: "Machines", subtitle: `${plural(allMachines.length, "machine")} across ${plural(reachableTypes.length, "type")}`,
         primary: canConfigureMachineTypes ? { label: "Add machine type", icon: "Plus", onClick: () => {
           const section = document.querySelector<HTMLDetailsElement>("#machine-type-settings");
           if (section) { section.open = true; section.scrollIntoView({ behavior: "smooth", block: "start" }); section.querySelector<HTMLInputElement>("input")?.focus(); }
-        } } : undefined }} state={reachableTypes.length ? { status: "ready" } : opsQueryState(machines.isError ? machines : machineTypes, "machines")}
+        } } : undefined, secondary: maintenanceEnabled ? { label: "Work orders", onClick: openWorkOrders } : undefined }} state={reachableTypes.length ? { status: "ready" } : opsQueryState(machines.isError ? machines : machineTypes, "machines")}
         callout={machineTypes.isError || machines.isError ? { size: "banner", tone: "warn", lead: "Some machine information couldn’t be loaded.", action: { label: "Retry", onClick: () => { void machines.refetch(); void machineTypes.refetch(); } } }
           : poolQuery.isError ? { size: "banner", tone: "warn", lead: "Couldn’t load consumable pools. Try again before starting work.", action: { label: "Retry", onClick: () => { void poolQuery.refetch(); } } } : undefined}
         body={{ kind: "rows", rows: <><MachineTypeCards machineTypes={reachableTypes} machines={allMachines}

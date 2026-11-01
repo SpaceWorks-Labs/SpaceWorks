@@ -9,6 +9,7 @@ import { getBookingMachineTypes } from "./staffBookingApi";
 import { FormPageLayout } from "../../components/layouts";
 import { ErrorBlock, SettingsActions } from "../../components/ui";
 import { BookableSpaceFields } from "./BookableSpaceFields";
+import { BookableSpaceMachine, useMachineTimeBookingOn } from "./BookableSpaceMachine";
 
 type FormValues = BookableSpacePayload;
 
@@ -41,6 +42,7 @@ export function valuesForSpace(space: BookableSpace): FormValues {
     custom_form: space.custom_form,
     requester_notifications_enabled: space.requester_notifications_enabled,
     machine_type: space.machine_type ?? null,
+    machine: space.machine ?? null,
   };
 }
 
@@ -64,7 +66,8 @@ export function BookableSpaceForm({ makerspaceId, initialValues = EMPTY_SPACE_FO
     retry: false,
   });
   const machineTypes = types.data?.results ?? [];
-  const set = <K extends keyof FormValues>(key: K, value: FormValues[K]) => setValues((current) => ({ ...current, [key]: value }));
+  const machineTimeOn = useMachineTimeBookingOn(makerspaceId);
+  const set =<K extends keyof FormValues>(key: K, value: FormValues[K]) => setValues((current) => ({ ...current, [key]: value }));
   const submitPayload = () => {
     const payload: BookableSpacePayload = {
       ...values,
@@ -76,6 +79,9 @@ export function BookableSpaceForm({ makerspaceId, initialValues = EMPTY_SPACE_FO
     // An unchanged link must survive editing while Machines is uninstalled.
     // The server validates machine_type only when the caller actually changes it.
     if (values.machine_type === initialValues.machine_type) delete payload.machine_type;
+    // Only a "Machine time" resource books one machine; leaving that kind clears the link. Unchanged, it is not sent.
+    const machine = values.kind === "machine" ? values.machine ?? null : null;
+    if (machine === (initialValues.machine ?? null)) delete payload.machine; else payload.machine = machine;
     onSubmit(payload);
   };
   const changeAvailability = (checked: boolean) => setValues((current) => ({
@@ -88,7 +94,9 @@ export function BookableSpaceForm({ makerspaceId, initialValues = EMPTY_SPACE_FO
   const fields = <>
     <fieldset className="min-w-0 grid gap-6" disabled={disabled || pending}>
       <BookableSpaceFields values={values} set={set} machineTypes={machineTypes} typesError={types.error?.message}
-        changeAvailability={changeAvailability} pagination={<div className="mt-2 flex flex-wrap gap-2">
+        changeAvailability={changeAvailability}
+        machineTime={{ available: machineTimeOn !== false, picker: pickerId => <BookableSpaceMachine makerspaceId={makerspaceId} id={pickerId}
+          value={values.machine ?? null} onChange={machine => set("machine", machine)} /> }} pagination={<div className="mt-2 flex flex-wrap gap-2">
           <button className="desk-button-ghost" type="button" disabled={!types.data?.previous || types.isFetching} onClick={() => setTypePage(page => page - 1)}>Previous types</button>
           <button className="desk-button-ghost" type="button" disabled={!types.data?.next || types.isFetching} onClick={() => setTypePage(page => page + 1)}>Next types</button>
         </div>} />

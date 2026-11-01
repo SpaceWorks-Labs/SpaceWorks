@@ -13,6 +13,7 @@ import { ConsumablesTab } from "./ConsumablesTab";
 import { DocumentsTab } from "./DocumentsTab";
 import { ErrorsTab } from "./ErrorsTab";
 import { MaintenanceTab } from "./MaintenanceTab";
+import { LockoutBadge } from "./DowntimePanel";
 import { OperatorsTab } from "./OperatorsTab";
 import { OverviewTab } from "./OverviewTab";
 import { UsageTab } from "./UsageTab";
@@ -57,7 +58,7 @@ export function MachineDrawer({
   return <DetailLayout presentation="drawer" open onClose={onClose} drawerWidth={720}
     title={details?.name ?? "Machine details"} state={opsQueryState(machine, "machine")}
     identity={details?.image_url ? { kind: "image", src: details.image_url } : { kind: "icon", icon: "Cog", tone: "accent" }}
-    status={details ? <><StatusBadge status={details.status} label={machineStatusLabel(details.status)} />{!details.is_active ? <StatusPill label="Retired" tone="warn" /> : null}</> : undefined}
+    status={details ? <><StatusBadge status={details.status} label={machineStatusLabel(details.status)} />{!details.is_active ? <StatusPill label="Retired" tone="warn" /> : null}{maintenanceAllowed ? <LockoutBadge machineId={machineId} /> : null}</> : undefined}
     actions={{ primary: details?.can_operate ? { label: details.status === "idle" ? "Mark running" : "Mark idle", pending: changeStatus.isPending, onClick: () => changeStatus.mutate() } : undefined }}
     meta={details ? [details.machine_type.name, plural(Number(details.usage_hours), "total hour")] : undefined}
     /* Phones keep the shared tab bar's single scrolling row (eight tabs wrapped into three ragged

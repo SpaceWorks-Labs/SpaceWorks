@@ -16,7 +16,7 @@ export type MachineServiceStatus = PublicMachineServiceStatus;
 export type OwnerControls = MemberServiceOwner;
 
 /** Statuses after which nothing changes: polling stops and no ETA is shown. */
-export const TERMINAL_SERVICE_STATUSES = new Set(["completed", "collected", "rejected", "failed", "cancelled"]);
+export const TERMINAL_SERVICE_STATUSES = new Set(["completed", "collected", "rejected", "failed", "cancelled", "uncollected", "not_collected"]);
 
 /** Printer transport still says "printing"; every surface treats it as in_progress. */
 export function normalizeServiceStatus(status: string): string {
@@ -32,6 +32,17 @@ export const SERVICE_STATUS_LABELS: Record<string, string> = {
   rejected: "Not approved",
   failed: "Failed",
   cancelled: "Cancelled",
+  // L12 (#141) job flow: staff statuses, then the member labels the job endpoints send.
+  changes_requested: "Needs changes",
+  quoted: "Quote sent",
+  uncollected: "Not collected",
+  submitted: "Submitted",
+  needs_changes: "Needs changes",
+  quote_sent: "Quote sent",
+  awaiting_payment: "Awaiting payment",
+  in_queue: "In the queue",
+  ready_to_collect: "Ready to collect",
+  not_collected: "Not collected",
 };
 
 export function serviceStatusLabel(status: string): string {
@@ -41,10 +52,10 @@ export function serviceStatusLabel(status: string): string {
 
 export function serviceStatusTone(status: string): "success" | "info" | "warn" | "danger" | "neutral" {
   const normalized = normalizeServiceStatus(status);
-  if (normalized === "completed" || normalized === "collected") return "success";
-  if (normalized === "in_progress" || normalized === "accepted") return "info";
+  if (["completed", "collected", "ready_to_collect"].includes(normalized)) return "success";
+  if (["in_progress", "accepted", "in_queue"].includes(normalized)) return "info";
   if (normalized === "failed" || normalized === "rejected") return "danger";
-  if (normalized === "cancelled") return "neutral";
+  if (["cancelled", "uncollected", "not_collected"].includes(normalized)) return "neutral";
   return "warn";
 }
 

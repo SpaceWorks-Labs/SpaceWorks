@@ -26,6 +26,8 @@ export type MaintenanceSchedule = {
   created_at: string;
   updated_at: string;
   overdue: boolean;
+  /** Lock the machine out (no job starts) while this schedule is overdue. */
+  blocks_use?: boolean;
 };
 export type MaintenanceLog = {
   id: number;
@@ -52,6 +54,7 @@ export type ScheduleInput = {
   job_count?: number | null;
   anchor?: "completion" | "calendar";
   next_due: string;
+  blocks_use?: boolean;
 };
 export type LogInput = {
   summary: string;
@@ -112,6 +115,7 @@ function useScheduleInvalidation(makerspaceId: number, machineId: number) {
     await Promise.all([
       client.invalidateQueries({ queryKey: maintenanceKeys.schedules(machineId) }),
       client.invalidateQueries({ queryKey: ["dashboard", makerspaceId] }),
+      client.invalidateQueries({ queryKey: ["machine-lockout", machineId] }),
     ]);
   };
 }
@@ -164,6 +168,8 @@ export function useLogMaintenance(makerspaceId: number, machineId: number) {
         client.invalidateQueries({ queryKey: machineKeys.detail(machineId) }),
         client.invalidateQueries({ queryKey: machineKeys.all }),
         client.invalidateQueries({ queryKey: ["dashboard", makerspaceId] }),
+        client.invalidateQueries({ queryKey: ["machine-lockout", machineId] }),
+        client.invalidateQueries({ queryKey: ["machine-downtime", machineId] }),
       ]);
     },
   });

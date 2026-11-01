@@ -9,9 +9,12 @@ type Props = {
   typesError?: string;
   pagination: ReactNode;
   changeAvailability: (checked: boolean) => void;
+  /** Machine time booking: whether the "Machine time" kind is offered, and the machine picker to show for it. */
+  machineTime?: { available: boolean; picker: (id: string) => ReactNode };
 };
-export function BookableSpaceFields({ values, set, machineTypes, typesError, pagination, changeAvailability }: Props) {
+export function BookableSpaceFields({ values, set, machineTypes, typesError, pagination, changeAvailability, machineTime }: Props) {
   const id = useId();
+  const machineKind = values.kind === "machine";
   const notificationsValue = values.requester_notifications_enabled === null ? "inherit" : values.requester_notifications_enabled ? "on" : "off";
   return <>
     <SettingsSection title="Space details">
@@ -20,17 +23,21 @@ export function BookableSpaceFields({ values, set, machineTypes, typesError, pag
       <SettingsRow label="Space type" htmlFor={id + "-kind"}><select id={id + "-kind"} className="desk-input w-full" required
         value={values.kind} onChange={event => set("kind", event.target.value as BookableSpacePayload["kind"])}>
         <option value="dev_room">Development room</option><option value="bench">Bench</option><option value="meeting">Meeting room</option><option value="other">Other</option>
+        {machineTime?.available || machineKind ? <option value="machine">Machine time</option> : null}
       </select></SettingsRow>
+      {machineKind && machineTime ? <SettingsRow label="Machine" htmlFor={id + "-booked-machine"} helper="Members book time on this machine. Its machine type, and that type's training rules, apply automatically.">
+        {machineTime.picker(id + "-booked-machine")}
+      </SettingsRow> : null}
       <SettingsRow label="Capacity" htmlFor={id + "-capacity"} helper="Use 0 when no capacity is published.">
         <input id={id + "-capacity"} className="desk-input w-full" type="number" min={0} value={values.capacity} onChange={event => set("capacity", Number(event.target.value))} />
       </SettingsRow>
-      <SettingsRow label="Machine type for certification" htmlFor={id + "-machine"} helper="Required booking certifications apply when enabled for this machine type.">
+      {machineKind ? null : <SettingsRow label="Machine type for certification" htmlFor={id + "-machine"} helper="Required booking certifications apply when enabled for this machine type.">
         <select id={id + "-machine"} className="desk-input w-full" value={values.machine_type ?? ""} onChange={event => set("machine_type", event.target.value ? Number(event.target.value) : null)}>
           <option value="">No machine type</option>
           {values.machine_type && !machineTypes.some(type => type.id === values.machine_type) ? <option value={values.machine_type}>Linked machine type #{values.machine_type}</option> : null}
           {machineTypes.map(type => <option key={type.id} value={type.id}>{type.name}</option>)}
         </select>{typesError ? <p className="mt-2 text-sm text-muted">Machine type choices are unavailable: {typesError}</p> : null}{pagination}
-      </SettingsRow>
+      </SettingsRow>}
       <SettingsRow label="Location" htmlFor={id + "-location"}><input id={id + "-location"} className="desk-input w-full" maxLength={255}
         value={values.location} onChange={event => set("location", event.target.value)} /></SettingsRow>
       <SettingsRow label="Description" htmlFor={id + "-description"}><textarea id={id + "-description"} className="desk-input min-h-24 w-full"

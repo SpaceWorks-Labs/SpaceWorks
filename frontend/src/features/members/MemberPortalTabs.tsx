@@ -31,7 +31,8 @@ export function MemberPortalTabs({ modules, active, children, workspace, user }:
   modules: string[]; active: MemberTab; children: ReactNode; workspace?: ShellWorkspace; user: ShellUser;
 }) {
   const location = useLocation();
-  const base = location.pathname.match(/^((?:\/m\/[^/]+)?\/member)(?:\/[^/]+)?\/?$/)?.[1] ?? "/member";
+  // Deeper member pages (member/machine-jobs/12) keep the tenant prefix for the nav links too.
+  const base = location.pathname.match(/^((?:\/m\/[^/]+)?\/member)(?:\/.*)?$/)?.[1] ?? "/member";
   const icons = { overview: Home, loans: Package, bookings: CalendarClock, events: Calendar, payments: Wallet, inbox: Inbox, account: User };
   const items = memberTabs(modules).map(tab => ({ key: tab, label: tab === "overview" ? "Home" : tab[0].toUpperCase() + tab.slice(1),
     href: `${base}/${tab === "account" ? "account-portal" : tab}`, icon: icons[tab] }));

@@ -63,7 +63,12 @@ export function OverviewTab({ machine, makerspaceId, canManageMachines, canEdit,
     }),
     onSuccess: refreshMachine,
   });
-  const setStatusMutation = useMachineStatus(machine.id, makerspaceId, status);
+  // Going down for maintenance or offline opens a downtime period; its reason and expected-back time ride along.
+  const [downReason, setDownReason] = useState("");
+  const [downBack, setDownBack] = useState("");
+  const goingDown = status === "maintenance" || status === "offline";
+  const setStatusMutation = useMachineStatus(machine.id, makerspaceId, status, goingDown
+    ? { reason: downReason.trim() || undefined, expected_back_at: downBack ? new Date(downBack).toISOString() : undefined } : undefined);
   const lifecycle = useMutation({
     mutationFn: (action: "retire" | "unretire") =>
       action === "retire" ? retireMachine(machine.id) : unretireMachine(machine.id),
@@ -101,6 +106,10 @@ export function OverviewTab({ machine, makerspaceId, canManageMachines, canEdit,
           </button>
 
         </div>
+        {goingDown && canOperate && status !== machine.status ? <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          <label className="eyebrow grid gap-1">Reason (optional)<input className="desk-input" maxLength={300} value={downReason} onChange={event => setDownReason(event.target.value)} /></label>
+          <label className="eyebrow grid gap-1">Expected back (optional)<input className="desk-input w-full min-w-0" type="datetime-local" value={downBack} onChange={event => setDownBack(event.target.value)} /></label>
+        </div> : null}
         {setStatusMutation.error instanceof Error ? <p className="mt-2 text-sm text-danger">{setStatusMutation.error.message}</p> : null}
         {lifecycle.error instanceof Error ? <p className="mt-2 text-sm text-danger">{lifecycle.error.message}</p> : null}
       </section>

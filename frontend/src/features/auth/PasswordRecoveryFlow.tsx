@@ -74,7 +74,7 @@ export function PasswordRecoveryFlow({ recoveryContext, signInHref = "/admin", i
     : step === "confirm" ? acknowledgement || "Enter your username or email and the six-digit recovery code from your email."
     : step === "success" ? `Your password has been updated. You can now sign in.${recoveryContext ? " Authenticator verification is still required if enabled for your account." : ""}`
     : "Password recovery is unavailable on this deployment — contact your makerspace staff";
-  return <CenteredCardLayout state={{ status: "ready" }} eyebrow={recoveryContext ? recoveryContext.context === "staff" ? "Staff account access" : "Platform account access" : "Account access"}
+  return <CenteredCardLayout state={{ status: "ready" }} eyebrow={recoveryContext ? "Platform account access" : "Account access"}
     media={{ icon: step === "success" ? "Check" : step === "confirm" ? "Mail" : "KeyRound", tone: step === "success" ? "success" : "accent" }}
     title={titles[step]} body={<p role={step === "unavailable" ? "alert" : undefined}>{body}</p>}
     primary={step === "success" || step === "unavailable" ? { label: step === "success" ? "Go to sign in" : "Back to sign in", href: signInHref } : {

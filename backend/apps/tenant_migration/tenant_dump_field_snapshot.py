@@ -166,3 +166,9 @@ from .catalog_login_security import FIELD_NAMES as S0_FIELDS, EXTRA_FIELDS as S0
 FIRST_PARTY_FIELD_NAMES.update(S0_FIELDS)
 for _label, _names in S0_EXTRA.items():
     FIRST_PARTY_FIELD_NAMES[_label] |= _names
+from .catalog_r2_l10 import FIELD_NAMES as R2_L10_FIELDS  # noqa: E402
+FIRST_PARTY_FIELD_NAMES.update(R2_L10_FIELDS)
+from .catalog_r2_l11 import FIELD_NAMES as R2_L11_FIELDS, EXTRA_FIELDS as R2_L11_EXTRA  # noqa: E402
+FIRST_PARTY_FIELD_NAMES.update(R2_L11_FIELDS)
+for _label, _names in R2_L11_EXTRA.items():
+    FIRST_PARTY_FIELD_NAMES[_label] |= _names

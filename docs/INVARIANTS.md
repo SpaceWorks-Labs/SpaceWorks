@@ -2915,6 +2915,128 @@ Owner decisions #62, #66, #74, #110c, #111 Q9-Q11, #128 C-1/C-2 and #135 Q-A1-Q-
   `resource_limit`) is installed by the superadmin only. Every purge stays superadmin-only. The
   generic makerspace PATCH still refuses `enabled_modules`.
 
+## Machines and loans depth (release 2, lane L12; #76, #77, #94, #140–#142)
+
+### The uniform machine job flow (#140–#142)
+
+- **One intake for every machine type.** `machines/job_intake.py` is the only member intake:
+  the new `public/<slug>/machine-jobs` routes AND the two older routes (the 3D-printer form
+  `machine-service/3d-printer/*` and the generic `machine-service-requests`, kept as aliases) all
+  pass `require_member_job_gate`: `machines.job_requests` on (404 otherwise), the type's
+  `accepts_job_requests` setting, and the presence gate (a member of THIS space, checked in now,
+  waiver signed when waivers are on -- `require_public_machine_requester`). Members only; staff
+  still create jobs for a member from the console. Per-type `max_open_jobs` is counted under the
+  makerspace lock (409 `job_limit_reached`).
+- **Files are checked against `maker_formats`.** A job file is staged with the type's registry
+  groups (`job_policy.file_groups`: printers fab-3dprint + hardware-cad, laser/vinyl fab-2d, CNC
+  fab-cnc + fab-2d + hardware-cad, PCB hardware-pcb; images only as screenshots), presigned to
+  the staging key, and validated with versioned range reads (`job_files.validate_job_object`)
+  before it attaches. At least one non-screenshot file is required. No server-side slicing or
+  geometry parsing (#142 OQ-12).
+- **The lifecycle is still one authority.** New statuses `changes_requested`, `quoted`,
+  `uncollected` join `service_workflow_helpers._ALLOWED`; every edge is taken in `service_workflow*`
+  (review, board, batch, failure, collect modules) with one `machine_service.<event>` audit row and
+  one notice. `MachineServiceRequest.status` stays un-bulk-updatable.
+  pending → accepted | rejected | cancelled | changes_requested | quoted;
+  changes_requested → pending (resubmit) | rejected | cancelled;
+  quoted → accepted (member approves, or a prepaid charge settles) | quoted (re-quote) |
+  changes_requested | rejected | cancelled (declined or expired after 7 days);
+  accepted → in_progress | cancelled | changes_requested; in_progress → completed | failed |
+  cancelled (staff only); completed → collected | uncollected.
+- **Members cancel only before In progress** (`OWNER_CANCELLABLE`); staff may cancel a running job.
+- **Quotes are L15 prices, frozen.** Staff quote with `pricing.quote()` (never a local price); the
+  snapshot and digest are frozen on the job, valid 7 days, reminded on day 5, cancelled unanswered
+  by the sweep. Approval must carry the digest the member saw (409 `price_changed`). Whether a
+  type needs a quote is `quote_mode` (auto = whenever the job is priced, off, above an amount,
+  always) behind `machines.job_quotes`; `accept` answers 409 `quote_required` while one is needed.
+- **Charge the actual, capped at the quote** (`job_charges.charge_completed`): when the actual
+  costs more than the approved quote, the frozen quote is raised instead. Prepay types raise the
+  quoted charge PENDING on approval and the job joins the queue only once it is settled (the
+  sweep or staff "Queue now"); a prepaid job and its re-runs are never charged again. Money never
+  moves automatically: a prepaid job the space does not run opens a staff-approved refund case.
+- **Failure (#142 OQ-8).** `fail` takes a reason code and a fault. A space/machine fault re-runs
+  the job FREE at the FRONT of its queue (the child keeps the original's queue anchor) after
+  commit, at most twice automatically, then staff decide. A member/file fault applies the type's
+  `member_fault_charge` (default none; material only or full) through L15's
+  `create_for_failed_request`. A failure without a fault (a device report) is left to staff.
+- **One queue order everywhere.** `job_order.ordering()`: accepted before pending, urgent first,
+  then the anchor `Coalesce(queued_at, created_at)`, then id -- read by the position, the "You're
+  next" head, the ETA simulator and the board. `queued_at` is empty until the place moves: a
+  staff reorder (an anchor between the new neighbours), a late answer (more than 3 days on a
+  change request or quote moves the anchor to the answer time, OQ-5) or a re-run (inherits).
+- **Batch runs (OQ-9, `machines.batch_start`).** Several queued jobs start on one machine; each
+  keeps its own hold, estimate and audit. The machine frees and the batch closes when its LAST
+  job ends; completing a batch splits time and material by estimate unless staff give the split.
+- **Pickup (OQ-7/OQ-15).** Completion issues a 6-character pickup code and records the pickup
+  place. Collect accepts the code (whoever shows it) or a hand-over to the member in person, and
+  records the collector's name (encrypted, scoped PII). Reminders go on days 3 and 10; from day
+  14 staff (never the sweep) mark Not collected; a third no-show in six months flags the member to
+  staff, never bans. `machines.pay_before_pickup` refuses collect while the charge is pending.
+- **ETA respects opening hours for attended types (OQ-11).** A type `runs_unattended` (default:
+  printers yes, everything else no) or not; attended work is pushed into the space's open hours
+  (`makerspaces/opening_hours.py`), inside the same four-query snapshot budget.
+
+### requires_booking, opening hours and lockout (MI-43, machines D1/D6/D7)
+
+- **Machine time is booked through bookings.** A bookable resource may be one machine's time
+  (`BookableSpace.machine`, kind `machine`, `machines.time_booking`); setting it fixes the space's
+  machine type so certification gating applies. One live resource per machine.
+- **`machines/booking_gate.check(machine, person, purpose=...)` is the one gate** (L23 sessions
+  call it): someone else's live booking refuses everyone (409 `machine_booked`); for
+  `purpose="session"` a type with `requires_booking` needs the person's own live booking (409
+  `booking_required`). Service `start` calls it with `purpose="service"`. Inert while the switch or
+  the bookings app is off.
+- **`makerspaces/opening_hours.py`** (`advance_open`, `next_opening`, `closing_time`) is the one
+  open-hours calculator for ETAs and session auto-stop; a space with no hours is always open.
+- **Lockout.** A maintenance schedule with `blocks_use`, overdue past the type's `grace_days`,
+  refuses `start` with 409 `machine_locked_out` (`machines/lockout.py`; sessions use the same).
+- **Downtime ledger.** `change_status` opens a `MachineDowntime` period when a machine goes to
+  maintenance/offline and closes it when it returns (one open period per machine, DB-enforced);
+  rows are never deleted and a closed row is final. Public machine detail shows only the expected-
+  back DATE, never the reason. Behind `machines.maintenance`.
+- **Work orders are the ONE repair/maintenance job model** (`maintenance.WorkOrder`; L16 builds
+  repairs and room/item maintenance on it). Subject = machine | inventory product | inventory
+  unit | bookable space, each behind its parent's maintenance switch and its manager's action;
+  closing a machine work order writes the immutable `MaintenanceLog`; `takes_machine_down` opens
+  and closes downtime through the machine status.
+
+### Consumables, To-Buy and vendors (MI-40, #94)
+
+- `InventoryProduct.is_consumable` (quantity-tracked only, DB check; `inventory.consumables`):
+  logged as used through `availability.consume_available`, never lent (submit, self-checkout and
+  handout refuse it) and never public. Crossing the reorder point raises ONE system To-Buy draft
+  after commit (`procurement/auto_drafts.py`), fail-safe. Item origins are `hardware` rows
+  (`inventory.tobuy`); every machine origin is a `printing` row (`machines.tobuy`).
+- **Mark bought** (`procurement/services_bought.py`) records the purchase through L5
+  `ledger_api.record_expense` (source `procurement.to_buy` + item id, idempotent; domain
+  `inventory`, or `machines` with the machine type), with the receipt photo/PDF promoted from the
+  staging key, then puts the stock up only through `availability` (an item origin) or the
+  consumable ledger (a machine consumable). Authority: the procurement stream AND
+  `finance_view.may_record(domain, machine_type)` (#94); no threshold; nothing is paid out.
+- **Vendors** (`procurement.Vendor`, `inventory.vendors`) are the space's business records,
+  archived never deleted, linked from To-Buy rows and warranties (SET_NULL).
+
+### Loans depth (inventory D1/D3/D14/D16, #77)
+
+- **Two new terminal request states, both through the workflow module** (`request_lifecycle.py`,
+  re-exported by `workflow.py`): `cancelled` (the requester with `loans.withdrawals`, or staff
+  holding the review action, from pending or accepted) and `expired` (an accepted request not
+  collected by its pickup deadline, `loans.pickup_windows`). Both release the reservation through
+  `availability.release_request_reservation`; nothing was charged before issue.
+- **Pickup windows.** With `loans.reservations` the member picks a window (up to
+  `reservation_max_days_ahead`); the reservation is held from accept as before (no time-ranged
+  availability). The deadline is the window end, else accept + `pickup_window_hours` (0 = never).
+- **Waitlist (`loans.waitlist`).** Strict FIFO per item; when stock rises the head entry is
+  offered and the units are HELD through `availability.hold_for_waitlist` until claimed, left or
+  lapsed (`waitlist_offer_hours`); accepting the claiming request converts the hold into its
+  reservation in one transaction. Holds never drive a bucket below zero (row locks in pk order).
+  Renewal refuses while someone waits.
+- **Expected-back date** (`inventory.expected_back` + the item's opt-in): only the local DATE of
+  the earliest due-back of an unavailable, non-hidden item; never who holds it or how many are out.
+- **#77 standing notes.** The offline (kiosk) queue keeps REFUSING new direct handouts (9c); a
+  direct handout that failed is redone online with fresh evidence (9e). Inductions before a first
+  loan are not built (#96, #128 C-19).
+
 ## Account deletion
 
 Self-deletion, archive/restore, the 90-day purge and Apple revocation are member-only. Staff

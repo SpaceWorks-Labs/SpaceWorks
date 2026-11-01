@@ -736,6 +736,44 @@ identity normalization and production minimum-version comparison. `mobile_associ
   `MembershipAdmissionExtras.tsx`, `refunds/MembershipRefundExtras.tsx`, `members/{MemberAccountLifecycle,
   AdmissionJoinWithPlans}.tsx`, `members/joinPlansApi.ts`, `publicPages/PublicPlanCards.tsx`.
 
+### Release 2 L12 (machines and loans depth)
+
+- Switches: `makerspaces/capability_definitions_r2_l12.py` (12 keys); per-type job settings on
+  `machines/models_policy.py` (`MakerspaceMachineTypePolicy`), read through `machines/job_policy.py`.
+- Machine job flow (#140-#142): `machines/models_job_fields.py` (the job columns, an abstract mixin on
+  `MachineServiceRequest`), `job_intake.py` (the ONE member intake; the printer and generic routes call
+  its gate), `job_files.py` (maker_formats staging + range-read validation), `job_order.py` (the shared
+  queue order and anchors), `job_rules.py` (quote rule, length cap, open-job limit), `job_charges.py`
+  (cap at the quote, prepay, failed-job seam to L15), `job_pickup.py`, `job_sweeps.py` +
+  `tasks_jobs.py` (quotes, prepaid queueing, pickup reminders), `notifications_job_flow.py`.
+  Transitions: `service_workflow_review.py` (needs changes, quotes), `service_workflow_board.py`
+  (reorder, urgent, pre-assign), `service_workflow_batch.py`, `service_workflow_failure.py`, and the
+  edited `service_workflow_{actions,start,cancel,collect,helpers}.py`. Routes: `views_jobs.py`,
+  `views_jobs_member.py`; staff `admin_api/views_machine_jobs.py`, `views_machine_job_board.py`.
+- Gates L23 reuses: `machines/booking_gate.py` (requires_booking), `machines/lockout.py`,
+  `makerspaces/opening_hours.py`; downtime: `machines/models_downtime.py`, `downtime.py`,
+  `admin_api/views_machine_downtime.py`. Machine time booking: `BookableSpace.machine` in
+  `bookings/services_spaces.py`.
+- Work orders (the one repair model L16 builds on): `maintenance/models_work_orders.py`,
+  `work_orders.py`, `views_work_orders.py`; `MaintenanceSchedule.blocks_use`.
+- Consumables / To-Buy: `inventory/consumables.py`, `views_consumables.py`, `procurement/auto_drafts.py`,
+  `services_refill.py`, `services_bought.py` (mark bought -> L5 `record_expense`), vendors
+  `procurement/models_vendors.py`, `services_vendors.py`, `views_vendors.py`.
+- Loans: `hardware_requests/request_lifecycle.py` (cancelled/expired, re-exported by `workflow.py`),
+  `pickup_windows.py`, `waitlist.py`, `models_loans.py`, `notifications_loans.py`, `loan_depth_views.py`,
+  `tasks_loans.py`; `inventory/availability_reservations.py` (reservation release, waitlist holds),
+  `inventory/public_expected_back.py`.
+- Classification: `data_export/classification_l12.py`, `tenant_migration/{catalog,audit_references,
+  unique_values}_l12.py`, `audit/presentation_catalog_l12.py`, `accounts/merge_registry_rows_l12.py`.
+- Frontend, member: `features/machine-jobs/` ("Request a job" flow, `JobRequestPage`; my jobs
+  `MyMachineJobsPage`; one job `MachineJobPage` with quote, changes, pickup cards; `PrintRequestAlias`
+  keeps `/print` working). Loans: `inventory/{PickupWindowFields,WaitlistJoin,ExpectedBack,waitlistApi}`,
+  `members/{MemberWaitlist,MemberRequestWithdraw}.tsx`.
+- Frontend, staff: `staff/panels/machine/JobBoard*.tsx` (per-type queue board), `JobAction*`,
+  `BatchDialogs.tsx`, `JobSettingsEditor.tsx`, `DowntimePanel.tsx` (+ lockout badge), `workOrders/`;
+  `staff/BookableSpaceMachine.tsx`; `staff/panels/{ConsumablesPanel,VendorsPanel,MarkBoughtDialog,
+  ItemWaitlist,RequestCancelDialog,InventoryLendingFlags}.tsx`, `staff/LoanReservationPolicySettings.tsx`.
+
 ## Domain and frontend map
 See [SOURCE-MAP-DOMAINS.md](SOURCE-MAP-DOMAINS.md) for hardware loans, payments,
 printing, events, the frontend directories and connected device monitoring.

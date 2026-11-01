@@ -6,6 +6,16 @@
 
 ## Condensed changelog (newest first — full detail in `git log`)
 
+- **2026-11-02 -- release 2 L12, machines and loans depth (#76, #77, #94, #140-#142).** One "Request a
+  job" flow for every machine type (maker_formats-checked files, checked-in members only) with a visible
+  lifecycle: needs changes, quotes priced by L15 and approved by digest (charged actual, capped at the
+  quote; or prepaid), one queue order with staff reorder and urgent pin, batch runs, failure codes and
+  faults (space faults re-run free at the front, member faults follow the type's failure charge), pickup
+  codes, reminders and Not collected. Machine time booking and the reusable `requires_booking` gate,
+  opening-hours ETAs, maintenance lockout, the downtime ledger and work orders (the one repair model).
+  Consumables with automatic To-Buy, "mark bought" into the finance ledger, vendors; loan withdraw and
+  pickup-deadline expiry, pickup windows, a holding waitlist and public expected-back dates.
+
 - **2026-10-31 -- release 2 L15, paid and free everywhere (#84, #85).** One pricing kernel
   (`payments/pricing`, `quote()`) behind every charge and every preview: per-area rate cards (free or
   paid, caps, grace, billing increments), per-item prices, loan rental at checkout or at return, staff-set

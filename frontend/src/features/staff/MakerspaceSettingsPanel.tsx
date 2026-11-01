@@ -42,6 +42,7 @@ import { NotificationMuteMatrix } from "./NotificationMuteMatrix";
 import { NotificationRecipientPicker } from "./NotificationRecipientPicker";
 import { type Makerspace, useStaffGet } from "./StaffPanels";
 import { MakerspaceLoanPolicySettings } from "./MakerspaceLoanPolicySettings";
+import { LoanReservationPolicySettings } from "./LoanReservationPolicySettings";
 import { SettingsHub } from "./SettingsHub";
 import { staffTabPath } from "./staffTabs";
 import { ChannelSetupPanel } from "../notifications/ChannelSetupPanel";
@@ -163,6 +164,7 @@ export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMak
     { id: "lending", title: "Lending", rows: <>
       {canManageMakerspace && (settings.data?.enabled_features ?? makerspace.enabled_features ?? []).includes("loans.enabled") ? <BorrowRequestAccessSettings makerspaceId={makerspace.id} /> : null}
       {enabledModules.includes("request_workflow") ? <MakerspaceLoanPolicySettings makerspaceId={makerspace.id} /> : null}
+      {enabledModules.includes("request_workflow") && ["loans.pickup_windows", "loans.reservations", "loans.waitlist"].some(key => (settings.data?.enabled_features ?? makerspace.enabled_features ?? []).includes(key)) ? <LoanReservationPolicySettings makerspaceId={makerspace.id} /> : null}
       <MakerspaceReminderSettings {...shared} />
       {canManageMakerspace && (settings.data?.enabled_features ?? []).includes("inventory.kiosk") ? <KioskStationSettings makerspace={makerspace} /> : null}
     </> },

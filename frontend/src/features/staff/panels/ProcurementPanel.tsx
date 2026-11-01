@@ -24,6 +24,10 @@ import { ListLayout } from "../../../components/layouts";
 import { useSearchParams } from "react-router-dom";
 import { inventoryQueryState } from "./inventoryPresentation";
 import { type Makerspace, useStaffGet } from "./shared";
+import { capabilityOn } from "../../../lib/features";
+import { invalidateFinance } from "../../finance/financeApi";
+import { MarkBoughtDialog } from "./MarkBoughtDialog";
+import { VendorsPanel } from "./VendorsPanel";
 
 type StatusFilter = "all" | ToBuyStatus;
 type UpdateVariables = { id: number; payload: { status: ToBuyStatus; vendor_name: string; actual_unit_cost: number | null } };
@@ -63,10 +67,12 @@ export function ProcurementPanel({
 }: ProcurementPanelProps) {
   const queryClient = useQueryClient();
   const [form, setForm] = useState<Form>(emptyForm);
-  const [params] = useSearchParams();
+  const [params, setParams] = useSearchParams();
   const statusFilter = (params.get("status") ?? "requested") as StatusFilter;
   const [addOpen, setAddOpen] = useState(false);
   const [moveTarget, setMoveTarget] = useState<ToBuyItem | null>(null);
+  const [boughtTarget, setBoughtTarget] = useState<ToBuyItem | null>(null);
+  const vendorsEnabled = capabilityOn(makerspace, "inventory.vendors");
   const base = `/procurement/makerspace/${makerspace.id}/to-buy`;
   const statusParam = statusFilter === "all" ? "" : `&status=${statusFilter}`;
   const queryKey = ["procurement", makerspace.id, statusFilter];
@@ -136,7 +142,10 @@ export function ProcurementPanel({
 
   const add = { label: "Add item", onClick: () => setAddOpen(true) };
   const tabHref = (status: string) => { const next = new URLSearchParams(params); next.set("status", status); return `?${next}`; };
+  const showView = (view: string) => setParams(current => { const next = new URLSearchParams(current); if (view) next.set("view", view); else next.delete("view"); return next; });
+  if (vendorsEnabled && params.get("view") === "vendors") return <VendorsPanel makerspaceId={makerspace.id} onBack={() => showView("")} />;
   return <ListLayout header={{ title: "To buy", subtitle: "What the space needs, from request to shelf.", primary: add,
+    secondary: vendorsEnabled ? { label: "Vendors", onClick: () => showView("vendors") } : undefined,
     overflow: [{ label: "Export CSV", pending: exportToBuy.isPending, onClick: () => exportToBuy.mutate("csv") }, { label: "Export Excel", pending: exportToBuy.isPending, onClick: () => exportToBuy.mutate("xlsx") }] }}
     callout={rows.some(item => item.status === "received" && !item.moved_to_inventory_at) ? { size: "banner", tone: "warn", lead: "Received items aren't in inventory yet.", body: "Move a purchase onto the shelves when it's ready.", action: { label: "Move them", onClick: () => setMoveTarget(rows.find(item => item.status === "received" && !item.moved_to_inventory_at)!) } } : undefined}
     state={inventoryQueryState(items, "the list")} isEmpty={!rows.length} filtered={statusFilter !== "all"}
@@ -147,7 +156,7 @@ export function ProcurementPanel({
     body={{ kind: "rows", rows: groupProcurementRows(rows).map(group => <section key={group.key} className="grid gap-3"><h2 className="title-section">{group.label}</h2>
       {group.rows.map(item => <ProcurementRow key={item.id} item={item} makerspaceSlug={makerspace.slug} updatePending={update.isPending && update.variables?.id === item.id} deletePending={remove.isPending && remove.variables === item.id}
         onSave={draft => update.mutate({ id: item.id, payload: { status: draft.status, vendor_name: draft.vendor_name, actual_unit_cost: draft.actual_unit_cost ? Number(draft.actual_unit_cost) : null } })}
-        onDelete={() => remove.mutate(item.id)} onMove={() => setMoveTarget(item)} onReceiptsChanged={invalidate}
+        onDelete={() => remove.mutate(item.id)} onMove={() => setMoveTarget(item)} onReceiptsChanged={invalidate} onMarkBought={() => setBoughtTarget(item)}
         updateError={update.variables?.id === item.id ? update.error?.message : undefined} deleteError={remove.variables === item.id ? remove.error?.message : undefined} />)}</section>) }}
     detail={<>{inventoryTabAvailable ? <ReorderSuggestions makerspaceId={makerspace.id} canProcure /> : null}<Modal open={addOpen} onClose={() => setAddOpen(false)} title="Add item">
       <form className="grid gap-4 sm:grid-cols-2" onSubmit={(event) => { event.preventDefault(); if (form.name.trim() && (!requiresMachineType || form.machine_type)) create.mutate(); }}>
@@ -180,6 +189,9 @@ export function ProcurementPanel({
         <ErrorText message={create.error?.message || machineTypes.error?.message} />
       </Modal><ErrorText message={exportToBuy.error?.message} />
       <ProcurementMoveModal item={moveTarget} makerspace={makerspace} onClose={() => setMoveTarget(null)} onMoved={invalidate} />
+      {boughtTarget ? <MarkBoughtDialog key={boughtTarget.id} item={boughtTarget} makerspaceId={makerspace.id} vendorsEnabled={vendorsEnabled}
+        onClose={() => setBoughtTarget(null)} onDone={() => { setBoughtTarget(null); invalidate(); invalidateFinance(queryClient, makerspace.id);
+          void queryClient.invalidateQueries({ queryKey: ["consumables", makerspace.id] }); }} /> : null}
     </>} />;
 }
 function KindSelect({ value, onChange }: { value: Kind; onChange: (kind: Kind) => void }) {

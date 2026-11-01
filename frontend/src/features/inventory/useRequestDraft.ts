@@ -16,7 +16,10 @@ export function useRequestDraft() {
   const [contactEmail, setContactEmail] = useState("");
   const [contactPhone, setContactPhone] = useState("");
   const [emailCode, setEmailCode] = useState("");
+  // Lane L12: the optional collection window (`loans.reservations`), datetime-local strings.
+  const [pickup, setPickup] = useState({ from: "", until: "" });
   return {
+    pickup, setPickup,
     requestedFor, setRequestedFor,
     submitted, setSubmitted,
     website, setWebsite,

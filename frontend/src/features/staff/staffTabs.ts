@@ -55,6 +55,8 @@ const TAB_FEATURES: Record<string, string[]> = {
   // Lane L5: the finance tab holds the ledger and the money queues, each with its own switch.
   finance: ["finance.ledger", "billing.offline_claims", "billing.maker_checker", "billing.capture_flags",
     "billing.disputes"],
+  // Lane L12 (MI-40): the merged consumables list.
+  consumables: ["inventory.consumables"],
 };
 
 // Tabs whose backing app can be tombstoned out of a deployment but which no module

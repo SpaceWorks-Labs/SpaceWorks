@@ -28,6 +28,9 @@ export type ToBuyItem = {
   resulting_pool: number | null;
   resulting_machine: number | null;
   source_pool: number | null;
+  // Lane L12: the saved vendor and the machine consumable that raised the row (refilled on "Mark bought").
+  vendor?: number | null;
+  source_consumable?: number | null;
   created_by_username: string | null;
   receipts: ToBuyReceipt[];
 };
@@ -62,7 +65,7 @@ export function groupProcurementRows(rows: ToBuyItem[]): ProcurementGroup[] {
   });
 }
 
-export function ProcurementRow({ item, makerspaceSlug, updatePending, deletePending, onSave, onDelete, onMove, onReceiptsChanged, updateError, deleteError }: {
+export function ProcurementRow({ item, makerspaceSlug, updatePending, deletePending, onSave, onDelete, onMove, onReceiptsChanged, updateError, deleteError, onMarkBought }: {
   item: ToBuyItem;
   makerspaceSlug: string;
   updatePending: boolean;
@@ -73,6 +76,7 @@ export function ProcurementRow({ item, makerspaceSlug, updatePending, deletePend
   onReceiptsChanged: () => void;
   updateError?: string;
   deleteError?: string;
+  onMarkBought?: () => void;
 }) {
   const [draft, setDraft] = useState<RowDraft>(() => draftFromItem(item));
 
@@ -95,6 +99,7 @@ export function ProcurementRow({ item, makerspaceSlug, updatePending, deletePend
       right={<div className="flex flex-wrap items-center gap-3"><StatusPill label={labelStatus(item.status)} tone={item.status === "received" ? "success" : "neutral"} />
         {next ? <button className="desk-button-ghost" disabled={updatePending} onClick={advance}>{updatePending ? "Saving…" : nextLabel}</button> : item.status === "received" && !item.moved_to_inventory_at ? <button className="desk-button-ghost" onClick={onMove}>Move to inventory</button> : null}
         <OverflowMenu label={`Actions for ${item.name}`} actions={[{ label: "Edit", onClick: () => setOpen(true) },
+          ...(onMarkBought && next ? [{ label: "Mark bought", onClick: onMarkBought }] : []),
           ...(cancellable ? [{ label: "Cancel request", disabled: updatePending, onClick: () => onSave({ ...draftFromItem(item), status: "cancelled" as const }),
             confirm: { title: `Cancel ${item.name}?`, message: "It moves to Cancelled. You can reopen it from the drawer by changing its status.", confirmLabel: "Cancel request" } }] : []),
           { label: "Delete", confirms: true, tone: "danger", disabled: deletePending, onClick: () => setConfirmDelete(true) }]} />

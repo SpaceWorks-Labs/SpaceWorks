@@ -11,6 +11,8 @@ import type { Product } from "../../types/inventory";
 import { NotifyWhenBack } from "./NotifyWhenBack";
 import { AvailabilityBadge } from "./AvailabilityBadge";
 import { useTenantBootstrap } from "./usePublicInventory";
+import { ExpectedBack } from "./ExpectedBack";
+import { WaitlistJoin } from "./WaitlistJoin";
 
 // The numeric identity is stable even if the optional readable suffix changes.
 export function publicItemId(value: string) {
@@ -54,8 +56,9 @@ export function PublicItemPage() {
         chips={product?.category_name ? [{ label: product.category_name }] : []}
         sections={product ? [{ id: "description", label: "Description", content: <p className="whitespace-pre-wrap leading-7">{product.description || "No description provided."}</p> },
           ...(product.borrowing_terms ? [{ id: "borrowing", label: "Borrowing terms", content: <Card>{product.borrowing_terms}</Card> }] : [])] : []}
-        actionCard={{ title: "Borrow this item", state: "open", summary: product ? <AvailabilityBadge availability={product.availability} /> : null,
-          form: product && bootstrap?.features.includes("inventory.notify_when_back") ? <NotifyWhenBack slug={spaceSlug} productId={product.id} /> : null,
+        actionCard={{ title: "Borrow this item", state: "open", summary: product ? <><AvailabilityBadge availability={product.availability} /><ExpectedBack product={product} className="mt-2" /></> : null,
+          form: product ? <>{bootstrap?.features.includes("inventory.notify_when_back") ? <NotifyWhenBack slug={spaceSlug} productId={product.id} /> : null}
+            <WaitlistJoin makerspaceId={bootstrap?.makerspace.id} product={product} features={bootstrap?.features} /></> : null,
           primary: modules.has("request_workflow") ? { label: "Request from the catalogue", href: tenantPath() } : undefined,
           mobileBar: { summary: product?.name ?? "Item details", label: "Borrow this item" } }} />
     </PublicLayout>

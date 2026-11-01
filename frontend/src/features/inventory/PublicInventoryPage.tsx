@@ -103,7 +103,7 @@ export function PublicInventoryPage({ embedded, resolvedSlug, inheritBranding = 
     </QueryContent>
   </div>;
   const request = <PublicRequestPanel items={selectedItems} makerspaceSlug={makerspaceSlug} onClear={clearCart} disabled={!requestEnabled} requestAccess={bootstrap?.makerspace.request_access}
-    activeTab={requestTab} onActiveTabChange={setRequestTab} draft={requestDraft} />;
+    activeTab={requestTab} onActiveTabChange={setRequestTab} draft={requestDraft} features={bootstrap?.features} />;
   const totalItems = selectedItems.reduce((total, item) => total + item.quantity, 0);
   const aside: PublicActionCardProps = { title: "Your request", form: request, state: "open", mobileBar: { summary: `Request · ${plural(totalItems, "item")}`, label: "Review request", onOpen: () => setRequestTab("borrow"),
     secondary: requestEnabled ? { label: "Scan a tool", onOpen: () => setRequestTab("scan") } : undefined } };
@@ -117,6 +117,7 @@ export function PublicInventoryPage({ embedded, resolvedSlug, inheritBranding = 
         {body}
       </PublicLayout>}
 
-    <ProductQuickViewModal product={selectedProduct} open={Boolean(selectedProduct)} onClose={() => setSelectedProduct(null)} />
+    <ProductQuickViewModal product={selectedProduct} open={Boolean(selectedProduct)} onClose={() => setSelectedProduct(null)}
+      makerspaceId={bootstrap?.makerspace.id} features={bootstrap?.features} />
   </div>;
 }

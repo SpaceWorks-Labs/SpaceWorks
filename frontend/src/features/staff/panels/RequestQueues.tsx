@@ -32,6 +32,7 @@ import {
 } from "./QueuesModals";
 import { AcceptRequestModal } from "./QueuesAcceptModal";
 import { DamageChargeDialog, needsDamageCharges } from "../loanCharges/DamageChargeStep";
+import { RequestCancelDialog } from "./RequestCancelDialog";
 
 export type RequestItem = {
   id: number;
@@ -67,6 +68,9 @@ export type HardwareRequest = {
   // AdminRequestSerializer serializes the assigned container as the flat `assigned_box_label`.
   assigned_box_label?: string | null;
   assigned_box?: { code: string; label: string };
+  // Lane L12: the collection window; an accepted request expires after `pickup_until`.
+  pickup_from?: string | null;
+  pickup_until?: string | null;
 };
 
 export function Queues({ makerspace, guestOnly, canViewAudit = false, recovery, callout }: { makerspace: Makerspace; guestOnly: boolean; canViewAudit?: boolean; recovery?: ReactNode; callout?: CalloutProps }) {
@@ -82,6 +86,7 @@ export function Queues({ makerspace, guestOnly, canViewAudit = false, recovery, 
   const [assignIssueRow, setAssignIssueRow] = useState<HardwareRequest | null>(null);
   const [returnRow, setReturnRow] = useState<HardwareRequest | null>(null);
   const [chargeRequestId, setChargeRequestId] = useState<number | null>(null);
+  const [cancelRow, setCancelRow] = useState<HardwareRequest | null>(null);
   const [modalError, setModalError] = useState("");
   const [defaultLoanDays, setDefaultLoanDays] = useState(String(makerspace.default_loan_days ?? 7));
   const location = useLocation();
@@ -171,6 +176,7 @@ export function Queues({ makerspace, guestOnly, canViewAudit = false, recovery, 
     { label: "Set due", onClick: () => openModal(setDueRow, row), disabled: action.isPending },
     ...(queue === "accepted" ? [{ label: "Assign + issue (quick form)", onClick: () => openModal(setAssignIssueRow, row), disabled: action.isPending }] : []),
     ...(queue === "active" ? [{ label: "Partial return (quick form)", onClick: () => openModal(setReturnRow, row), disabled: action.isPending }] : []),
+    ...((queue === "pending" || queue === "accepted") && can("accept_request") ? [{ label: "Cancel request", tone: "danger" as const, confirms: true, onClick: () => openModal(setCancelRow, row) }] : []),
   ];
   const messages: Record<RequestView, string> = {
     all: "No requests in any queue yet. New requests land in Pending review.",
@@ -226,6 +232,7 @@ export function Queues({ makerspace, guestOnly, canViewAudit = false, recovery, 
       <RejectRequestModal row={rejectRow} open={Boolean(rejectRow)} pending={action.isPending} error={modalError} onClose={closeModals} onSubmit={submitReject} />
       <AssignIssueModal row={assignIssueRow} open={Boolean(assignIssueRow)} pending={action.isPending} error={modalError} onClose={closeModals} onSubmit={submitAssignIssue} makerspaceId={makerspace.id} kitEnabled={featureEnabled(makerspace.enabled_features ?? [], "loans.kit_checklist")} />
       <ReturnRequestModal row={returnRow} open={Boolean(returnRow)} pending={action.isPending} error={modalError} onClose={closeModals} onSubmit={submitReturn} makerspaceId={makerspace.id} />
+      {cancelRow ? <RequestCancelDialog key={cancelRow.id} row={cancelRow} makerspaceId={makerspace.id} onClose={() => setCancelRow(null)} /> : null}
       {chargeRequestId ? <DamageChargeDialog key={chargeRequestId} makerspaceId={makerspace.id} requestId={chargeRequestId} onClose={() => setChargeRequestId(null)} /> : null}
       </>} />
   </div>;

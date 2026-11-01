@@ -477,6 +477,7 @@ export const openApiPaths = [
   "/api/v1/admin/ledger",
   "/api/v1/admin/ledger/export",
   "/api/v1/admin/machine-service-report",
+  "/api/v1/admin/machine-service/batches/{id}/complete",
   "/api/v1/admin/machine-service/consumable-pools/{id}",
   "/api/v1/admin/machine-service/consumable-pools/{id}/adjustments",
   "/api/v1/admin/machine-service/files/{id}",
@@ -485,15 +486,22 @@ export const openApiPaths = [
   "/api/v1/admin/machine-service/payments/{id}/waive",
   "/api/v1/admin/machine-service/requests/{id}",
   "/api/v1/admin/machine-service/requests/{id}/accept",
+  "/api/v1/admin/machine-service/requests/{id}/assign",
   "/api/v1/admin/machine-service/requests/{id}/cancel",
   "/api/v1/admin/machine-service/requests/{id}/collect",
   "/api/v1/admin/machine-service/requests/{id}/complete",
   "/api/v1/admin/machine-service/requests/{id}/fail",
   "/api/v1/admin/machine-service/requests/{id}/files/finalize",
   "/api/v1/admin/machine-service/requests/{id}/files/presign",
+  "/api/v1/admin/machine-service/requests/{id}/queue-now",
+  "/api/v1/admin/machine-service/requests/{id}/quote",
   "/api/v1/admin/machine-service/requests/{id}/reject",
+  "/api/v1/admin/machine-service/requests/{id}/reorder",
   "/api/v1/admin/machine-service/requests/{id}/reprint",
+  "/api/v1/admin/machine-service/requests/{id}/request-changes",
   "/api/v1/admin/machine-service/requests/{id}/start",
+  "/api/v1/admin/machine-service/requests/{id}/uncollected",
+  "/api/v1/admin/machine-service/requests/{id}/urgent",
   "/api/v1/admin/machines/documents/{id}",
   "/api/v1/admin/machines/documents/{id}/url",
   "/api/v1/admin/machines/{id}",
@@ -503,8 +511,10 @@ export const openApiPaths = [
   "/api/v1/admin/machines/{id}/consumables/{cid}/log",
   "/api/v1/admin/machines/{id}/documents",
   "/api/v1/admin/machines/{id}/documents/presign",
+  "/api/v1/admin/machines/{id}/downtime",
   "/api/v1/admin/machines/{id}/error-logs",
   "/api/v1/admin/machines/{id}/image",
+  "/api/v1/admin/machines/{id}/lockout",
   "/api/v1/admin/machines/{id}/operator-candidates",
   "/api/v1/admin/machines/{id}/operators",
   "/api/v1/admin/machines/{id}/operators/{user_pk}",
@@ -560,6 +570,8 @@ export const openApiPaths = [
   "/api/v1/admin/makerspace/{makerspace_id}/capture-flags/{flag_id}/resolve",
   "/api/v1/admin/makerspace/{makerspace_id}/categories",
   "/api/v1/admin/makerspace/{makerspace_id}/certification-types",
+  "/api/v1/admin/makerspace/{makerspace_id}/consumables",
+  "/api/v1/admin/makerspace/{makerspace_id}/consumables/{id}/use",
   "/api/v1/admin/makerspace/{makerspace_id}/containers",
   "/api/v1/admin/makerspace/{makerspace_id}/cover",
   "/api/v1/admin/makerspace/{makerspace_id}/dashboard",
@@ -606,6 +618,7 @@ export const openApiPaths = [
   "/api/v1/admin/makerspace/{makerspace_id}/kit-checklist-preview",
   "/api/v1/admin/makerspace/{makerspace_id}/ledger",
   "/api/v1/admin/makerspace/{makerspace_id}/ledger/export",
+  "/api/v1/admin/makerspace/{makerspace_id}/loan-reservation-policy",
   "/api/v1/admin/makerspace/{makerspace_id}/loans/{id}/renew",
   "/api/v1/admin/makerspace/{makerspace_id}/logo",
   "/api/v1/admin/makerspace/{makerspace_id}/machine-service-report",
@@ -675,6 +688,7 @@ export const openApiPaths = [
   "/api/v1/admin/makerspace/{makerspace_id}/reports/catalog",
   "/api/v1/admin/makerspace/{makerspace_id}/reports/{report_key}/export",
   "/api/v1/admin/makerspace/{makerspace_id}/request-history",
+  "/api/v1/admin/makerspace/{makerspace_id}/requests/{id}/cancel",
   "/api/v1/admin/makerspace/{makerspace_id}/requests/{request_id}/accountability/{accountability_id}/charge",
   "/api/v1/admin/makerspace/{makerspace_id}/requests/{request_id}/charges",
   "/api/v1/admin/makerspace/{makerspace_id}/requests/{request_id}/fee-waivers",
@@ -706,6 +720,7 @@ export const openApiPaths = [
   "/api/v1/admin/makerspace/{makerspace_id}/tenant-migration/pairings/{pairing_id}/recover",
   "/api/v1/admin/makerspace/{makerspace_id}/usage",
   "/api/v1/admin/makerspace/{makerspace_id}/verify-domain",
+  "/api/v1/admin/makerspace/{makerspace_id}/waitlist",
   "/api/v1/admin/makerspace/{makerspace_id}/warranties",
   "/api/v1/admin/makerspace/{makerspace_id}/whatsapp-templates",
   "/api/v1/admin/makerspace/{makerspace_id}/whatsapp-templates/catalog",
@@ -765,10 +780,13 @@ export const openApiPaths = [
   "/api/v1/admin/makerspaces/{makerspace_id}/join-requests/bulk-decide",
   "/api/v1/admin/makerspaces/{makerspace_id}/machine-materials",
   "/api/v1/admin/makerspaces/{makerspace_id}/machine-materials/{id}",
+  "/api/v1/admin/makerspaces/{makerspace_id}/machine-service/batches",
+  "/api/v1/admin/makerspaces/{makerspace_id}/machine-service/board",
   "/api/v1/admin/makerspaces/{makerspace_id}/machine-service/consumable-pools",
   "/api/v1/admin/makerspaces/{makerspace_id}/machine-service/requests",
   "/api/v1/admin/makerspaces/{makerspace_id}/machine-service/typed-manual-usage",
   "/api/v1/admin/makerspaces/{makerspace_id}/machine-types/{type_id}/intake",
+  "/api/v1/admin/makerspaces/{makerspace_id}/machine-types/{type_id}/job-settings",
   "/api/v1/admin/makerspaces/{makerspace_id}/machines/{machine_id}/maintenance/logs/",
   "/api/v1/admin/makerspaces/{makerspace_id}/machines/{machine_id}/maintenance/schedules/",
   "/api/v1/admin/makerspaces/{makerspace_id}/maintenance/feed",
@@ -820,6 +838,7 @@ export const openApiPaths = [
   "/api/v1/admin/makerspaces/{makerspace_id}/waiver",
   "/api/v1/admin/makerspaces/{makerspace_id}/walk-in-members",
   "/api/v1/admin/makerspaces/{makerspace_id}/website-embed-origins/",
+  "/api/v1/admin/makerspaces/{makerspace_id}/work-orders",
   "/api/v1/admin/member-cards/{id}/print.pdf",
   "/api/v1/admin/member-cards/{id}/reissue",
   "/api/v1/admin/member-cards/{id}/revoke",
@@ -988,6 +1007,8 @@ export const openApiPaths = [
   "/api/v1/admin/warranty/documents/{id}/url",
   "/api/v1/admin/warranty/{id}/documents",
   "/api/v1/admin/warranty/{id}/documents/presign",
+  "/api/v1/admin/work-orders/{id}/assign",
+  "/api/v1/admin/work-orders/{id}/status",
   "/api/v1/auth/account/deletion",
   "/api/v1/auth/account/restore/email",
   "/api/v1/auth/account/restore/phone",
@@ -1133,6 +1154,11 @@ export const openApiPaths = [
   "/api/v1/member/event-payouts/{obligation_id}/payee/",
   "/api/v1/member/event-payouts/{obligation_id}/payee/reveal/",
   "/api/v1/member/event-speaker-claims/",
+  "/api/v1/member/machine-jobs",
+  "/api/v1/member/machine-jobs/{id}",
+  "/api/v1/member/machine-jobs/{id}/approve-quote",
+  "/api/v1/member/machine-jobs/{id}/decline-quote",
+  "/api/v1/member/machine-jobs/{id}/resubmit",
   "/api/v1/member/machine-service/requests/by-token/{public_token}/owner",
   "/api/v1/member/machine-service/requests/{id}/cancel",
   "/api/v1/member/makerspaces/{makerspace_id}/account/cancel",
@@ -1275,7 +1301,10 @@ export const openApiPaths = [
   "/api/v1/member/makerspaces/{makerspace_id}/profile/timeline/{id}",
   "/api/v1/member/makerspaces/{makerspace_id}/referrals",
   "/api/v1/member/makerspaces/{makerspace_id}/refund-requests/{case_id}/withdraw",
+  "/api/v1/member/makerspaces/{makerspace_id}/requests/{id}/withdraw",
   "/api/v1/member/makerspaces/{makerspace_id}/verification",
+  "/api/v1/member/makerspaces/{makerspace_id}/waitlist",
+  "/api/v1/member/makerspaces/{makerspace_id}/waitlist/{id}/leave",
   "/api/v1/member/makerspaces/{makerspace_id}/waiver",
   "/api/v1/member/makerspaces/{makerspace_id}/waiver/accept",
   "/api/v1/member/organizations/",
@@ -1319,13 +1348,17 @@ export const openApiPaths = [
   "/api/v1/procurement/makerspace/{makerspace_id}/to-buy",
   "/api/v1/procurement/makerspace/{makerspace_id}/to-buy/export",
   "/api/v1/procurement/makerspace/{makerspace_id}/to-buy/machine-types",
+  "/api/v1/procurement/makerspace/{makerspace_id}/vendors",
+  "/api/v1/procurement/makerspace/{makerspace_id}/vendors/{id}",
   "/api/v1/procurement/to-buy/receipts/{id}",
   "/api/v1/procurement/to-buy/receipts/{id}/url",
   "/api/v1/procurement/to-buy/{id}",
+  "/api/v1/procurement/to-buy/{id}/mark-bought",
   "/api/v1/procurement/to-buy/{id}/move-to-inventory",
   "/api/v1/procurement/to-buy/{id}/move-to-printing",
   "/api/v1/procurement/to-buy/{id}/receipts",
   "/api/v1/procurement/to-buy/{id}/receipts/presign",
+  "/api/v1/procurement/to-buy/{id}/refill-consumable",
   "/api/v1/public/event-certificates/{verification_id}/verify/",
   "/api/v1/public/event-codes/{code}/",
   "/api/v1/public/event-codes/{public_token}/",
@@ -1381,6 +1414,9 @@ export const openApiPaths = [
   "/api/v1/public/{makerspace_slug}/inventory/{id}/",
   "/api/v1/public/{makerspace_slug}/inventory/{id}/watch/",
   "/api/v1/public/{makerspace_slug}/invitation-requests",
+  "/api/v1/public/{makerspace_slug}/machine-jobs",
+  "/api/v1/public/{makerspace_slug}/machine-jobs/types",
+  "/api/v1/public/{makerspace_slug}/machine-jobs/uploads",
   "/api/v1/public/{makerspace_slug}/machine-service-requests",
   "/api/v1/public/{makerspace_slug}/machine-service/3d-printer/consumable-pools",
   "/api/v1/public/{makerspace_slug}/machine-service/3d-printer/queues",
@@ -1759,6 +1795,8 @@ export type AdminRequest = {
   "return_due_at": string;
   "return_reminder_sent_at": string;
   "renewal_count": number;
+  "pickup_from": string | null;
+  "pickup_until": string | null;
   "closed_at": string;
   "created_at": string;
   "updated_at": string;
@@ -1911,7 +1949,7 @@ export type AdmissionSettings = {
   "voucher_pending_limit"?: number;
   "vouch_expiry_days"?: number;
   "vouch_replaces_approval"?: boolean;
-  "payment_timing"?: PaymentTimingEnum;
+  "payment_timing"?: PaymentTimingD5fEnum;
   "application_schema"?: Array<{
   "id": string;
   "label": string;
@@ -2320,6 +2358,10 @@ export type ApprovalResult = {
   "unavailable": number;
 };
 
+export type ApproveQuote = {
+  "digest": string;
+};
+
 export type ApproveRequest = {
   "role_id": number;
   "plan_id"?: number | null;
@@ -2461,6 +2503,10 @@ export type AssetUploadInput = {
 export type AssetUploadResult = {
   "asset": Asset;
   "state": EditorState;
+};
+
+export type Assign = {
+  "machine_id": number | null;
 };
 
 export type AssignableMachineType = {
@@ -2988,6 +3034,15 @@ export type Batch = {
   "failures": Array<BatchFailure>;
 };
 
+export type BatchComplete = {
+  "actual_minutes": number;
+  "actual_quantity"?: string | null;
+  "splits"?: {
+  [key: string]: unknown;
+};
+  "pickup_location"?: string;
+};
+
 export type BatchFailure = {
   "id": number;
   "error_code": string;
@@ -2997,6 +3052,22 @@ export type BatchInput = {
   "operation_id": string;
   "expected_version": number;
   "batch_id": number;
+};
+
+export type BatchResponse = {
+  "batch_id": number;
+  "jobs": Array<MachineServiceRequest>;
+};
+
+export type BatchStart = {
+  "job_ids": Array<number>;
+  "machine_id": number;
+  "plans"?: {
+  [key: string]: {
+  [key: string]: unknown;
+};
+};
+  "note"?: string;
 };
 
 export type BatchStateEnum = "queued" | "running" | "completed" | "failed";
@@ -3060,6 +3131,26 @@ export type BlankEnum = "";
 
 export type BlockedActionsEnum = "rsvp" | "check_in" | "claim_submit";
 
+export type Board = {
+  "machine_type_id": number;
+  "lanes": Array<BoardLane>;
+  "queue": Array<MachineServiceRequest>;
+  "review": Array<MachineServiceRequest>;
+  "waiting_on_member": Array<MachineServiceRequest>;
+  "ready": Array<MachineServiceRequest>;
+  "overdue_pickup_ids": Array<number>;
+  "no_show_member_ids": Array<number>;
+};
+
+export type BoardLane = {
+  "machine_id": number;
+  "machine_name": string;
+  "status": string;
+  "locked_out": boolean;
+  "running": Array<MachineServiceRequest>;
+  "assigned": Array<MachineServiceRequest>;
+};
+
 export type BodyRenderingEnum = "restricted_v1" | "legacy_literal_v1";
 
 export type BookableSpaceAdmin = {
@@ -3080,7 +3171,7 @@ export type BookableSpaceAdmin = {
   "public_token": string;
   "makerspace_id": number;
   "name": string;
-  "kind": Kind3bfEnum;
+  "kind": Kind1c7Enum;
   "description": string;
   "capacity": number;
   "location": string;
@@ -3100,6 +3191,7 @@ export type BookableSpaceAdmin = {
   "requester_notifications_enabled": boolean | null;
   "payment_amount": string;
   "machine_type": number | null;
+  "machine": number | null;
   "effective_requester_notifications_enabled": boolean;
   "is_active": boolean;
   "created_by_id": number | null;
@@ -3127,7 +3219,7 @@ export type BookableSpaceListResponse = {
 
 export type BookableSpaceWrite = {
   "name": string;
-  "kind"?: Kind3bfEnum;
+  "kind"?: Kind1c7Enum;
   "description"?: string;
   "capacity"?: number;
   "location"?: string;
@@ -3238,6 +3330,7 @@ export type BookableSpaceWrite = {
   "requester_notifications_enabled"?: boolean | null;
   "payment_amount"?: string;
   "machine_type"?: number | null;
+  "machine"?: number | null;
 };
 
 export type Booking = {
@@ -4029,6 +4122,10 @@ export type CallbackURLs = {
   "webhook_url"?: string;
 };
 
+export type CancelRequest = {
+  "reason"?: string;
+};
+
 export type CancelStageAssignmentCommand = {
   "operation_id": string;
   "expected_version": number;
@@ -4382,6 +4479,13 @@ export type ChangePasswordResponse = {
   "detail": string;
 };
 
+export type Changes = {
+  "code": ChangesCodeEnum;
+  "message": string;
+};
+
+export type ChangesCodeEnum = "file_problem" | "wrong_format" | "too_large" | "split_needed" | "material_mismatch" | "missing_details" | "other";
+
 export type Channel06eEnum = "sms" | "whatsapp";
 
 export type Channel292Enum = "in_app" | "email" | "telegram" | "slack" | "mattermost" | "discord" | "webhook" | "native_push" | "sms" | "whatsapp";
@@ -4600,6 +4704,12 @@ export type ClientTypeEnum = "browser" | "server";
 export type ClosedNotice = {
   "public_closed_notice": string;
   "public_reopens_on"?: string | null;
+};
+
+export type ClosedRequest = {
+  "id": number;
+  "status": string;
+  "closed_at": string | null;
 };
 
 export type ClosureApproval = {
@@ -5023,6 +5133,28 @@ export type ConsumableCandidate = {
   "id": number;
   "name": string;
   "available": number;
+};
+
+export type ConsumableRow = {
+  "source": ConsumableRowSourceEnum;
+  "id": number;
+  "name": string;
+  "machine_id": number | null;
+  "machine_name": string;
+  "unit": string;
+  "remaining": string;
+  "threshold": string | null;
+  "status": ConsumableRowStatusEnum;
+  "open_to_buy_id": number | null;
+};
+
+export type ConsumableRowSourceEnum = "item" | "machine" | "pool";
+
+export type ConsumableRowStatusEnum = "ok" | "low";
+
+export type ConsumableUse = {
+  "quantity": number;
+  "note"?: string;
 };
 
 export type Consumption = {
@@ -6118,6 +6250,29 @@ export type DomainVerificationResponse = {
 export type DownloadGrant = {
   "url": string;
   "expires_in": number;
+};
+
+export type Downtime = {
+  "summary": DowntimeSummary;
+  "periods": Array<DowntimeRow>;
+};
+
+export type DowntimeRow = {
+  "id": number;
+  "kind": DowntimeRowKindEnum;
+  "reason"?: string;
+  "expected_back_at"?: string | null;
+  "started_at": string;
+  "ended_at"?: string | null;
+};
+
+export type DowntimeRowKindEnum = "maintenance" | "offline";
+
+export type DowntimeSummary = {
+  "days": number;
+  "uptime_percent": number;
+  "periods": number;
+  "mean_hours_to_repair": number | null;
 };
 
 export type DrillStatusEnum = "verified" | "failed" | "never" | "unknown";
@@ -7363,6 +7518,8 @@ export type FailureCodeEnum = "deadline_exceeded" | "integrity_error" | "storage
 
 export type FamilyEnum = "inventory" | "events" | "bookings" | "machines" | "membership";
 
+export type FaultEnum = "space" | "member";
+
 export type Feature4d1Enum = "hardware_requests" | "printing" | "events" | "bookings" | "maintenance" | "members" | "api_access" | "devices" | "payments" | "stock" | "certifications" | "presence";
 
 export type Feature977Enum = "hardware_requests" | "printing" | "events" | "bookings" | "maintenance" | "members" | "api_access" | "devices" | "payments" | "stock" | "certifications" | "presence";
@@ -7479,6 +7636,8 @@ export type FileCreated = {
   "state": string;
   "upload"?: PayoutUploadDescriptor;
 };
+
+export type FileGroupsEnum = "fab-2d" | "fab-3dprint" | "fab-cnc" | "hardware-cad" | "hardware-pcb" | "embroidery";
 
 export type FilesStateEnum = "available" | "expired" | "withdrawn";
 
@@ -8885,6 +9044,8 @@ export type InventoryProductAdmin = {
   "supplier"?: string;
   "reorder_point"?: number;
   "reorder_quantity"?: number;
+  "is_consumable"?: boolean;
+  "public_show_expected_back"?: boolean;
   "kit_components"?: Array<KitComponent>;
   "description"?: string;
   "unit_cost"?: string | null;
@@ -8926,6 +9087,8 @@ export type InventoryProductAdminCreate = {
   "supplier"?: string;
   "reorder_point"?: number;
   "reorder_quantity"?: number;
+  "is_consumable"?: boolean;
+  "public_show_expected_back"?: boolean;
   "kit_components"?: Array<KitComponent>;
   "description"?: string;
   "unit_cost"?: string | null;
@@ -8967,6 +9130,8 @@ export type InventoryProductAdminUpdate = {
   "supplier"?: string;
   "reorder_point"?: number;
   "reorder_quantity"?: number;
+  "is_consumable"?: boolean;
+  "public_show_expected_back"?: boolean;
   "kit_components"?: Array<KitComponent>;
   "description"?: string;
   "unit_cost"?: string | null;
@@ -9159,9 +9324,104 @@ export type JobCreate = {
   "external_job_id": string;
 };
 
+export type JobCreated = {
+  "id": number;
+  "public_token": string;
+  "status": string;
+};
+
 export type JobOutcomeEnum = "completed" | "failed";
 
+export type JobQuote = {
+  "total": string;
+  "currency": string;
+  "lines": Array<JobQuoteLine>;
+  "digest": string;
+};
+
+export type JobQuoteLine = {
+  "label": string;
+  "net": string;
+};
+
+export type JobQuoteRequest = {
+  "estimated_minutes": number;
+  "quantity"?: string | null;
+  "consumable_pool_id"?: number | null;
+  "note"?: string;
+};
+
+export type JobSettings = {
+  "accepts_job_requests"?: boolean;
+  "max_open_jobs"?: number | null;
+  "max_job_minutes"?: number | null;
+  "runs_unattended"?: boolean | null;
+  "file_groups"?: Array<FileGroupsEnum>;
+  "quote_mode"?: QuoteModeEnum;
+  "quote_above_amount"?: string | null;
+  "payment_timing"?: JobSettingsPaymentTimingEnum;
+  "member_fault_charge"?: MemberFaultChargeEnum;
+};
+
+export type JobSettingsPaymentTimingEnum = "completion" | "prepay";
+
 export type JobStateEnum = "awaiting" | "reported" | "applied" | "needs_review" | "cancelled";
+
+export type JobSubmit = {
+  "queue_id": number;
+  "title": string;
+  "description"?: string;
+  "source_link"?: string;
+  "file_ids": Array<number>;
+  "copies"?: number;
+  "needed_by"?: string | null;
+  "own_material"?: boolean;
+  "material_note"?: string;
+  "member_estimate_minutes"?: number | null;
+  "capability_payload"?: unknown;
+  "material"?: string;
+  "color"?: string;
+  "consumable_pool_id"?: number | null;
+  "estimated_filament_grams"?: string | null;
+  "preferred_settings"?: unknown;
+  "acknowledgements": {
+  [key: string]: boolean;
+};
+};
+
+export type JobType = {
+  "queue_id": number;
+  "name": string;
+  "machine_type_id": number;
+  "machine_type_name": string;
+  "machine_type_slug": string;
+  "is_printer": boolean;
+  "file_groups": Array<string>;
+  "accepted_extensions": Array<string>;
+  "quotes": QuotesEnum;
+  "prepay": boolean;
+  "runs_unattended": boolean;
+  "max_open_jobs": number | null;
+};
+
+export type JobUpload = {
+  "queue_id": number;
+  "filename": string;
+  "content_type": string;
+  "kind"?: JobUploadKindEnum;
+};
+
+export type JobUploadKindEnum = "model" | "screenshot";
+
+export type JobUploadResponse = {
+  "file_id": number;
+  "upload": {
+  [key: string]: unknown;
+};
+  "group": string;
+  "max_bytes": number;
+  "preview": string;
+};
 
 export type JoinModeEnum = "open" | "approval" | "invite_only" | "vouch" | "closed";
 
@@ -9190,11 +9450,11 @@ export type Key4d1Enum = "hardware_requests" | "printing" | "events" | "bookings
 
 export type Kind181Enum = "receipt" | "expense";
 
+export type Kind1c7Enum = "dev_room" | "bench" | "meeting" | "other" | "machine";
+
 export type Kind274Enum = "badge" | "certificate";
 
 export type Kind33cEnum = "makerspace" | "organization";
-
-export type Kind3bfEnum = "dev_room" | "bench" | "meeting" | "other";
 
 export type Kind429Enum = "intro" | "logo" | "speaker" | "track" | "room" | "sponsor" | "faq" | "resource" | "highlight" | "prizes" | "judges" | "mentors" | "project_gallery" | "results";
 
@@ -9841,6 +10101,17 @@ export type Lock = {
   "created_at": string;
 };
 
+export type Lockout = {
+  "locked": boolean;
+  "schedules": Array<LockoutSchedule>;
+};
+
+export type LockoutSchedule = {
+  "id": number;
+  "description": string;
+  "next_due": string;
+};
+
 export type LockUpdate = {
   "setting_key": string;
   "locked": boolean;
@@ -10116,9 +10387,38 @@ export type MachineServiceRequest = {
   "files": Array<ServiceFile>;
   "consumptions": Array<ServiceConsumption>;
   "eta": ServiceRequestEta | null;
+  "queued_at": string | null;
+  "urgent": boolean;
+  "urgent_reason": string;
+  "needed_by": string | null;
+  "copies": number;
+  "own_material": boolean;
+  "material_note": string;
+  "member_estimate_minutes": number | null;
+  "preassigned_machine_id": number | null;
+  "batch_id": number | null;
+  "changes_requested_at": string | null;
+  "changes_code": string;
+  "changes_message": string;
+  "member_note": string;
+  "reject_code": string;
+  "quote_snapshot": unknown | null;
+  "quoted_at": string | null;
+  "quote_expires_at": string | null;
+  "quote_approved_at": string | null;
+  "prepay": boolean;
+  "fail_code": string;
+  "fail_fault": string;
+  "failure_outcome": string;
+  "auto_requeue_count": number;
+  "pickup_location": string;
+  "pickup_reminders_sent": number;
+  "uncollected_at": string | null;
+  "collected_by_name": string;
+  "reprint_of_id": number | null;
 };
 
-export type MachineServiceRequestStatusEnum = "pending" | "accepted" | "in_progress" | "completed" | "collected" | "rejected" | "failed" | "cancelled";
+export type MachineServiceRequestStatusEnum = "pending" | "changes_requested" | "quoted" | "accepted" | "in_progress" | "completed" | "collected" | "uncollected" | "rejected" | "failed" | "cancelled";
 
 export type MachineServiceStatusTotals = {
   "makerspace_id"?: number;
@@ -10395,6 +10695,7 @@ export type MaintenanceSchedule = {
   "usage_hours": string | null;
   "job_count": number | null;
   "meter_started_at": string;
+  "blocks_use": boolean;
   "is_active": boolean;
   "created_by_id": number | null;
   "created_at": string;
@@ -10419,6 +10720,7 @@ export type MaintenanceScheduleWrite = {
   "usage_hours"?: string | null;
   "job_count"?: number | null;
   "anchor"?: AnchorEnum;
+  "blocks_use"?: boolean;
 };
 
 export type MaintenanceScheduleWriteTriggerEnum = "days" | "usage" | "both";
@@ -10705,6 +11007,18 @@ export type ManualSettlement = {
   "received_at": string;
 };
 
+export type MarkBought = {
+  "amount": string;
+  "currency"?: string;
+  "method": MethodA66Enum;
+  "reference"?: string;
+  "receipt_id"?: number | null;
+  "vendor_id"?: number | null;
+  "vendor_name"?: string;
+  "refill_amount"?: string | null;
+  "entry_date"?: string | null;
+};
+
 export type MaskedPayoutBatchDetail = {
   "id": string;
   "expires_at": string;
@@ -10982,6 +11296,8 @@ export type MemberEventUsage = {
   "chart": MemberUsageSeries;
 };
 
+export type MemberFaultChargeEnum = "none" | "material_only" | "full";
+
 export type MemberHelpPage = {
   "count": number;
   "next": string | null;
@@ -11033,6 +11349,34 @@ export type MemberImportUpload = {
   "mapping"?: string;
   "record_only_rows"?: string;
   "skip_rows"?: string;
+};
+
+export type MemberJob = {
+  "id": number;
+  "public_token": string;
+  "makerspace_id": number;
+  "queue_id": number | null;
+  "title": string;
+  "status": string;
+  "label": string;
+  "can_cancel": boolean;
+  "machine_type_name": string;
+  "machine_name": string;
+  "position": number | null;
+  "eta": ServiceRequestEta | null;
+  "timeline": Array<TimelineStep>;
+  "changes_message": string;
+  "quote": JobQuote | null;
+  "quote_expires_at": string | null;
+  "awaiting_payment": boolean;
+  "reason": string;
+  "fail_code": string;
+  "failure_outcome": string;
+  "pickup_code": string;
+  "pickup_location": string;
+  "copies": number;
+  "needed_by": string | null;
+  "created_at": string;
 };
 
 export type MemberKitPreviewInput = {
@@ -11113,7 +11457,7 @@ export type MemberNotice = {
 
 export type MemberPayment = {
   "id": number;
-  "subject_type": SubjectTypeEnum;
+  "subject_type": SubjectTypeB27Enum;
   "subject_label": string;
   "status"?: Status66aEnum;
   "amount": string;
@@ -11231,6 +11575,7 @@ export type MemberRegistrationCancelResponse = {
 export type MemberRegistrationCancelResponseStatusEnum = "cancelled";
 
 export type MemberRequestHistory = {
+  "id": number;
   "status": string;
   "created_at": string;
   "item_count": number;
@@ -11391,7 +11736,7 @@ export type MembershipPlan = {
   "joining_fee"?: string | null;
   "rejoin_rule"?: RejoinRuleEnum | BlankEnum | NullEnum | null;
   "rejoin_after_days"?: number | null;
-  "payment_timing"?: PaymentTimingEnum | BlankEnum | NullEnum | null;
+  "payment_timing"?: PaymentTimingD5fEnum | BlankEnum | NullEnum | null;
   "join_mode"?: JoinModeEnum | BlankEnum | NullEnum | null;
   "application_schema"?: Array<{
   "id": string;
@@ -13001,7 +13346,7 @@ export type PackMakerspaceMembershipSettings = {
   "voucher_pending_limit": number;
   "vouch_expiry_days": number;
   "vouch_replaces_approval": boolean;
-  "payment_timing": PaymentTimingEnum;
+  "payment_timing": PaymentTimingD5fEnum;
   "application_schema": unknown | null;
   "default_plan": string | null;
   "joining_fee": string;
@@ -13556,7 +13901,7 @@ export type PatchedAdmissionSettings = {
   "voucher_pending_limit"?: number;
   "vouch_expiry_days"?: number;
   "vouch_replaces_approval"?: boolean;
-  "payment_timing"?: PaymentTimingEnum;
+  "payment_timing"?: PaymentTimingD5fEnum;
   "application_schema"?: Array<{
   "id": string;
   "label": string;
@@ -13814,7 +14159,7 @@ export type PatchedBookableSpaceBookingRules = {
 
 export type PatchedBookableSpaceWrite = {
   "name"?: string;
-  "kind"?: Kind3bfEnum;
+  "kind"?: Kind1c7Enum;
   "description"?: string;
   "capacity"?: number;
   "location"?: string;
@@ -13925,6 +14270,7 @@ export type PatchedBookableSpaceWrite = {
   "requester_notifications_enabled"?: boolean | null;
   "payment_amount"?: string;
   "machine_type"?: number | null;
+  "machine"?: number | null;
 };
 
 export type PatchedBookingDetailsInput = {
@@ -14051,6 +14397,11 @@ export type PatchedDomainSettingsUpdate = {
   [key: string]: boolean;
 };
   "settings"?: DomainSettingValues;
+};
+
+export type PatchedDowntimeUpdate = {
+  "reason"?: string;
+  "expected_back_at"?: string | null;
 };
 
 export type PatchedEmailTemplateUpdate = {
@@ -14359,6 +14710,8 @@ export type PatchedInventoryProductAdminUpdate = {
   "supplier"?: string;
   "reorder_point"?: number;
   "reorder_quantity"?: number;
+  "is_consumable"?: boolean;
+  "public_show_expected_back"?: boolean;
   "kit_components"?: Array<KitComponent>;
   "description"?: string;
   "unit_cost"?: string | null;
@@ -14443,6 +14796,7 @@ export type PatchedMaintenanceScheduleWrite = {
   "usage_hours"?: string | null;
   "job_count"?: number | null;
   "anchor"?: AnchorEnum;
+  "blocks_use"?: boolean;
 };
 
 export type PatchedMakerspace = {
@@ -14695,7 +15049,7 @@ export type PatchedMembershipPlan = {
   "joining_fee"?: string | null;
   "rejoin_rule"?: RejoinRuleEnum | BlankEnum | NullEnum | null;
   "rejoin_after_days"?: number | null;
-  "payment_timing"?: PaymentTimingEnum | BlankEnum | NullEnum | null;
+  "payment_timing"?: PaymentTimingD5fEnum | BlankEnum | NullEnum | null;
   "join_mode"?: JoinModeEnum | BlankEnum | NullEnum | null;
   "application_schema"?: Array<{
   "id": string;
@@ -15395,6 +15749,8 @@ export type PatchedToBuyItem = {
   "resulting_machine"?: number | null;
   "source_pool"?: number | null;
   "source_product"?: number | null;
+  "source_consumable"?: number | null;
+  "vendor"?: number | null;
   "receipts"?: Array<ToBuyReceipt>;
   "created_by"?: number | null;
   "created_by_username"?: string;
@@ -15417,6 +15773,19 @@ export type PatchedTrackInput = {
   [key: string]: Array<string>;
 };
   "order"?: number;
+};
+
+export type PatchedVendor = {
+  "id"?: number;
+  "name"?: string;
+  "contact_name"?: string;
+  "email"?: string;
+  "phone"?: string;
+  "website"?: string;
+  "notes"?: string;
+  "is_archived"?: boolean;
+  "created_at"?: string;
+  "updated_at"?: string;
 };
 
 export type PatchedWhatsAppBinding = {
@@ -15604,7 +15973,7 @@ export type PaymentProviderConflictCodeEnum = "payment_provider_conflict";
 
 export type PaymentReconciliation = {
   "id": number;
-  "subject_type": SubjectTypeEnum;
+  "subject_type": SubjectTypeB27Enum;
   "subject_id": number;
   "subject_label": string;
   "status": Status66aEnum;
@@ -15662,7 +16031,7 @@ export type PaymentsLedgerReport = {
   "typed_rows": Array<LedgerLine>;
 };
 
-export type PaymentTimingEnum = "after_activation" | "before_activation";
+export type PaymentTimingD5fEnum = "after_activation" | "before_activation";
 
 export type PayoutAmendCommand = {
   "operation_id": string;
@@ -16633,6 +17002,8 @@ export type PrinterServiceReportRow = {
   "payment_paid": string;
 };
 
+export type PriorityEnum = "low" | "normal" | "high" | "urgent";
+
 export type PrivateRequestDetail = {
   "id": number;
   "uuid": string;
@@ -17167,7 +17538,7 @@ export type PublicAwardRead = {
 export type PublicBookableSpace = {
   "public_token": string;
   "name": string;
-  "kind": Kind3bfEnum;
+  "kind": Kind1c7Enum;
   "description": string;
   "capacity": number;
   "location": string;
@@ -17189,7 +17560,7 @@ export type PublicBookingInput = {
 export type PublicBookingResource = {
   "public_token": string;
   "name": string;
-  "kind": Kind3bfEnum;
+  "kind": Kind1c7Enum;
   "description": string;
   "capacity": number;
   "location": string;
@@ -17525,6 +17896,7 @@ export type PublicMachineDetail = {
   "id": number;
   "status_since": string;
   "training_required": boolean | null;
+  "expected_back_on": string | null;
   "queue": PublicQueueEstimate | null;
 };
 
@@ -17917,6 +18289,7 @@ export type PublicProduct = {
   "count"?: number;
 } | null;
   "image_url": string | null;
+  "expected_back_on": string | null;
 };
 
 export type PublicProfile = {
@@ -17958,6 +18331,8 @@ export type PublicRequestItemStatus = {
 export type PublicRequestStatus = {
   "status": string;
   "created_at": string;
+  "pickup_from": string | null;
+  "pickup_until": string | null;
   "items": Array<PublicRequestItemStatus>;
 };
 
@@ -17965,6 +18340,9 @@ export type PublicRequestSubmitSchema = {
   "website"?: string;
   "requested_for"?: string;
   "items": Array<RequestItemInput>;
+  "pickup_from"?: string | null;
+  "pickup_until"?: string | null;
+  "waitlist_entry_id"?: number | null;
   "contact_name"?: string;
   "contact_email"?: string;
   "contact_phone"?: string;
@@ -18412,6 +18790,10 @@ export type Quote = {
   "currency": string;
 };
 
+export type QuoteModeEnum = "auto" | "off" | "above" | "always";
+
+export type QuotesEnum = "auto" | "off" | "above" | "always";
+
 export type RailEnum = "online" | "offline" | "unallocated";
 
 export type RankInput = {
@@ -18816,6 +19198,10 @@ export type ReferralOutcome = {
   "state": string;
 };
 
+export type RefillConsumableRequest = {
+  "amount": string;
+};
+
 export type RefreshResponse = {
   "access": string;
   "user": AuthUserPayload;
@@ -19052,6 +19438,10 @@ export type ReopenInput = {
   "reason": string;
 };
 
+export type Reorder = {
+  "position": number;
+};
+
 export type ReorderDraft = {
   "product_id": number;
 };
@@ -19286,7 +19676,7 @@ export type ReportScheduleFilters = {
   "end"?: string;
   "window_days"?: number;
   "status"?: Status66aEnum;
-  "subject_type"?: SubjectTypeEnum;
+  "subject_type"?: SubjectTypeB27Enum;
   "months"?: number;
   "subject_kind"?: string;
   "subject_id"?: number;
@@ -19394,6 +19784,12 @@ export type RequirementOverride = {
   "reason": string;
 };
 
+export type ReservationPolicy = {
+  "pickup_window_hours"?: number;
+  "reservation_max_days_ahead"?: number;
+  "waitlist_offer_hours"?: number;
+};
+
 export type ResetPasswordConfirmError = PasswordResetFailure | PasswordValidationFailure;
 
 export type ResetPasswordConfirmRequest = OtpResetPasswordConfirm | LegacyResetPasswordConfirm;
@@ -19462,6 +19858,11 @@ export type RestrictUser = {
 };
 
 export type RestrictUserStatusEnum = "restricted" | "suspended";
+
+export type Resubmit = {
+  "note"?: string;
+  "file_ids"?: Array<number>;
+};
 
 export type Result = {
   "operation_id": string;
@@ -20307,6 +20708,7 @@ export type ServiceAccept = {
   "estimated_minutes"?: number;
   "planned_grams"?: string;
   "note"?: string;
+  "override_length"?: boolean;
 };
 
 export type ServiceCancel = {
@@ -20314,7 +20716,13 @@ export type ServiceCancel = {
   "consumed_quantity"?: string | null;
 };
 
+export type ServiceCollect = {
+  "pickup_code"?: string;
+  "collector_name"?: string;
+};
+
 export type ServiceComplete = {
+  "pickup_location"?: string;
   "actual_minutes": number;
   "actual_grams"?: string;
   "actual_quantity"?: string;
@@ -20338,13 +20746,18 @@ export type ServiceConsumptionInput = {
 };
 
 export type ServiceFail = {
+  "pickup_location"?: string;
   "actual_minutes": number;
   "actual_grams"?: string;
   "actual_quantity"?: string;
   "consumptions"?: Array<ServiceConsumptionInput>;
   "reason": string;
   "percent_complete": number;
+  "code"?: ServiceFailCodeEnum | BlankEnum;
+  "fault"?: FaultEnum | BlankEnum;
 };
+
+export type ServiceFailCodeEnum = "adhesion" | "nozzle_jam" | "material_ran_out" | "machine_fault" | "power_cut" | "operator_error" | "file_problem" | "material_defect" | "other";
 
 export type ServiceFile = {
   "id": number;
@@ -20415,7 +20828,10 @@ export type ServiceQueueTimesRow = {
 
 export type ServiceReject = {
   "reason": string;
+  "code"?: ServiceRejectCodeEnum | BlankEnum;
 };
+
+export type ServiceRejectCodeEnum = "not_allowed_content" | "ip_concern" | "not_eligible" | "for_someone_else" | "better_made_another_way" | "too_large" | "other";
 
 export type ServiceRequester = {
   "id": number;
@@ -20451,6 +20867,8 @@ export type SessionContext = {
 
 export type SetStatus = {
   "status": string;
+  "reason"?: string;
+  "expected_back_at"?: string | null;
 };
 
 export type SettingPermission = {
@@ -21072,7 +21490,7 @@ export type StaffMembership = {
 
 export type StaffPayment = {
   "id": number;
-  "subject_type": SubjectTypeEnum;
+  "subject_type": SubjectTypeB27Enum;
   "subject_label": string;
   "status"?: Status66aEnum;
   "amount": string;
@@ -21119,6 +21537,19 @@ export type StaffSettlement = {
   "received_at": string;
   "recorded_at": string;
   "corrected": boolean;
+};
+
+export type StaffWaitlistEntry = {
+  "id": number;
+  "product": number;
+  "product_name": string;
+  "quantity": number;
+  "status": Status5beEnum;
+  "position": number | null;
+  "offered_at": string | null;
+  "offer_expires_at": string | null;
+  "created_at": string;
+  "member_name": string;
 };
 
 export type Stage466Enum = "application" | "shortlisted" | "accepted_rsvp" | "pre_event" | "post_event";
@@ -21521,6 +21952,8 @@ export type Status37fEnum = "active" | "revoked";
 
 export type Status568Enum = "submitted" | "awaiting_confirmation" | "confirmed" | "rejected";
 
+export type Status5beEnum = "waiting" | "offered" | "claimed" | "fulfilled" | "lapsed" | "cancelled";
+
 export type Status66aEnum = "pending" | "paid_online" | "paid_offline" | "waived" | "canceled";
 
 export type Status83eEnum = "ok" | "warn" | "error" | "unknown";
@@ -21721,7 +22154,9 @@ export type SubjectExportList = {
   "results": Array<SubjectExport>;
 };
 
-export type SubjectTypeEnum = "machine_service_request" | "booking" | "event_registration" | "makerspace_membership" | "membership_term" | "membership_request" | "loan_deposit" | "loan_late_fee" | "loan_rental" | "loan_damage" | "loan_lost";
+export type SubjectType0b3Enum = "machine" | "inventory_product" | "inventory_asset" | "bookable_space";
+
+export type SubjectTypeB27Enum = "machine_service_request" | "booking" | "event_registration" | "makerspace_membership" | "membership_term" | "membership_request" | "loan_deposit" | "loan_late_fee" | "loan_rental" | "loan_damage" | "loan_lost";
 
 export type SubmissionIntegrity = {
   "submission_id": number;
@@ -22155,6 +22590,11 @@ export type TimelinePage = {
   "results": Array<TimelineWrite>;
 };
 
+export type TimelineStep = {
+  "step": string;
+  "at": string;
+};
+
 export type TimelineWrite = {
   "id": number;
   "kind": TimelineWriteKindEnum;
@@ -22220,6 +22660,8 @@ export type ToBuyItem = {
   "resulting_machine": number | null;
   "source_pool": number | null;
   "source_product": number | null;
+  "source_consumable": number | null;
+  "vendor": number | null;
   "receipts": Array<ToBuyReceipt>;
   "created_by": number | null;
   "created_by_username": string;
@@ -22473,6 +22915,11 @@ export type UploadResponse = {
   "upload"?: UploadDescriptor;
 };
 
+export type Urgent = {
+  "urgent": boolean;
+  "reason"?: string;
+};
+
 export type UsageResource = {
   "key": string;
   "label": string;
@@ -22518,6 +22965,19 @@ export type User = {
 };
 
 export type UserRoleEnum = "superadmin" | "space_manager" | "requester";
+
+export type Vendor = {
+  "id": number;
+  "name": string;
+  "contact_name"?: string;
+  "email"?: string;
+  "phone"?: string;
+  "website"?: string;
+  "notes"?: string;
+  "is_archived"?: boolean;
+  "created_at": string;
+  "updated_at": string;
+};
 
 export type VenueHost = {
   "name": string;
@@ -22663,6 +23123,23 @@ export type WaitlistConversion = {
   "conversion_percent": number | null;
 };
 
+export type WaitlistEntry = {
+  "id": number;
+  "product": number;
+  "product_name": string;
+  "quantity": number;
+  "status": Status5beEnum;
+  "position": number | null;
+  "offered_at": string | null;
+  "offer_expires_at": string | null;
+  "created_at": string;
+};
+
+export type WaitlistJoin = {
+  "product_id": number;
+  "quantity"?: number;
+};
+
 export type WaiverAcceptance = {
   "id": number;
   "version": string;
@@ -22712,6 +23189,7 @@ export type Warranty = {
   "warranty_expires_on": string | null;
   "vendor_name": string;
   "vendor_contact": string;
+  "vendor_id": number | null;
   "status": string;
   "documents": Array<WarrantyDocument>;
 };
@@ -22778,6 +23256,7 @@ export type WarrantyUpsert = {
   "warranty_expires_on"?: string | null;
   "vendor_name"?: string;
   "vendor_contact"?: string;
+  "vendor_id"?: number | null;
 };
 
 export type WatchResponse = {
@@ -23018,6 +23497,52 @@ export type WorklistRow = {
   [key: string]: unknown;
 };
 };
+
+export type WorkOrder = {
+  "id": number;
+  "subject_type": SubjectType0b3Enum;
+  "subject_id": number;
+  "subject_label": string;
+  "title": string;
+  "description": string;
+  "priority": PriorityEnum;
+  "status": WorkOrderStatusEnum;
+  "takes_machine_down": boolean;
+  "due_on": string | null;
+  "assignee_id": number | null;
+  "resolution": string;
+  "schedule_id": number | null;
+  "log_id": number | null;
+  "created_at": string;
+  "updated_at": string;
+  "started_at": string | null;
+  "closed_at": string | null;
+};
+
+export type WorkOrderAssign = {
+  "assignee_id": number | null;
+};
+
+export type WorkOrderCreate = {
+  "subject_type": SubjectType0b3Enum;
+  "subject_id": number;
+  "title": string;
+  "description"?: string;
+  "priority"?: PriorityEnum;
+  "due_on"?: string | null;
+  "takes_machine_down"?: boolean;
+};
+
+export type WorkOrderMove = {
+  "status": WorkOrderMoveStatusEnum;
+  "resolution"?: string;
+  "cost"?: string | null;
+  "parts_note"?: string;
+};
+
+export type WorkOrderMoveStatusEnum = "in_progress" | "on_hold" | "done" | "cancelled";
+
+export type WorkOrderStatusEnum = "open" | "in_progress" | "on_hold" | "done" | "cancelled";
 
 export type Zone = {
   "table"?: string;

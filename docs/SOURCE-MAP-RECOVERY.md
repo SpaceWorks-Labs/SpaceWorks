@@ -41,13 +41,21 @@ Update it with code moves; the repository tree remains authoritative.
   console). `space_extract.py` + `management/commands/extract_space_restore_point.py` turn one space of a
   host-decrypted whole-platform backup into a restore point (#144). The host marker (`host_marker.py`) is v3
   without readiness lists.
+  **Release 2 L11:** `models_keys.py` + `platform_key_rotation.py` (record a rotation, retired keys refused,
+  stale archives), `archive_reencrypt.py` (re-encrypt or purge), `management/commands/backup_keys.py`;
+  `models_drill.py` + `restore_drill.py` + `restore_drill_checks.py` (isolated, throwaway restore drills);
+  `operator_notice.py` (superadmin platform mail, the signed "archive ready" link); `station_revocation.py`
+  (station credentials revoked by quarantine and per-space restore); `admin_keys.py` (the `/control/` page).
 
 - `backend/apps/tenant_migration/` — per-makerspace migration, managed → self-host (Phase 5B), in
   `SEPARABLE_APPS`. `source_gate.py` + `gate_locks.py`/`gate_runtime.py`/`gate_policy.py`/`middleware.py`/
   `task_gate.py` (the write-drain lock protocol and its AST coverage guards in `source_gate_guards.py`, with
 the lifecycle/object-mutation half in `source_gate_object_guards.py`);
   `archive_envelope.py` + `object_export.py` (streamed into `age`); `admission.py` (the source-superadmin
-  closure approval); `materialization.py` (+ `materialization_rows.py`) + `raw_repository.py` + `row_planning.py`
+  closure approval); the self-host move (release 2 L11): `models_selfhost_move.py`, `selfhost_move.py`
+  (request, decide, export), `selfhost_move_import.py` + `management/commands/import_portable_tenant_dump.py`
+  (target import), `views_selfhost_move.py` (Space Manager request + status), `admin_selfhost_move.py`,
+  `selfhost_move_notifications.py`; `materialization.py` (+ `materialization_rows.py`) + `raw_repository.py` + `row_planning.py`
   (+ `row_values.py`, `row_references.py`)/`row_dispositions.py` (one-shot insertion); `services_import_job.py` re-exports `services_import_run.py`
   (requester checks and attempt-fenced execution) with `import_run_lock.py` holding the dedicated
   advisory-lock connection; `target_projection.py` (barrel over `target_projection_{types,fields,rows,references}.py`)

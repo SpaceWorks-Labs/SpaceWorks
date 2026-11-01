@@ -738,6 +738,52 @@ re-encrypts it to the platform key and the server's restore key, and adds it to 
 directory, an age identity left in it, an archive that does not cover the space, a partial legacy archive,
 or one made by a newer release. Then restore it in the app as above.
 
+### Rotate a backup key
+
+To replace the platform key (for example after a suspected compromise), generate a new age key pair on a
+trusted machine, put its public key in `BACKUP_AGE_RECIPIENT` and restart the stack. To replace this server's
+restore key, set a new `TENANT_MIGRATION_AGE_RECIPIENT` and `TENANT_MIGRATION_AGE_IDENTITY_FILE` (keep the old
+identity file until re-encryption is done). Then record the rotation, in `/control/` (Backup keys, drills and
+notices) or on the host:
+
+```bash
+scripts/spaceworks-compose.sh bundled run --rm backend --role management   python manage.py backup_keys rotate --kind platform --actor-id <superadmin id>   # or --kind server
+scripts/spaceworks-compose.sh bundled run --rm backend --role management   python manage.py backup_keys status                                              # archives on a retired key
+scripts/spaceworks-compose.sh bundled run --rm -v "$PWD/old-server.key:/old.key:ro" backend --role management   python manage.py backup_keys reencrypt --actor-id <id> [--old-identity-file /old.key]
+```
+
+Recording retires every earlier key of that kind; backups refuse a retired key from then on, so it is never
+used again. One-space archives are re-encrypted to the current keys on the server (`--old-identity-file` is
+only needed after a server-key rotation and is read in place for that run). Whole-platform archives are
+encrypted to the platform key alone, which never lives on the server: keep them until they expire, or purge
+them (`backup_keys purge --archive <id>` or the Purge button). Every step is audited.
+
+### Restore drills
+
+Every hour the server drills one space whose last drill is older than the configured interval (default 7 days;
+0 turns drills off, in `/control/` under Backup keys, drills and notices). A drill restores the space's latest
+backup into a throwaway database with a throwaway key, checks every row and object, then destroys both; the
+live database, bucket and keys are never written. A failed drill emails the superadmins. The same page turns
+on the optional "archive ready" email: a link to the archive's control-plane page, never the file.
+
+### Move a space to this server (self-host move)
+
+A Space Manager asks the platform operator to move their space (Backup and restore, "Move to your own
+server"). On the source, the superadmin approves the request in `/control/` (Self-host move requests) and runs
+the export with **this server's** `TENANT_MIGRATION_AGE_RECIPIENT` as the one-shot key. Copy the encrypted file
+and its SHA-256 here, then import it as this server's superadmin:
+
+```bash
+scripts/spaceworks-compose.sh bundled run --rm -v "$PWD/move.tar.age:/move.tar.age:ro" backend --role management   python manage.py import_portable_tenant_dump --archive /move.tar.age --sha256 <digest> --actor-id <superadmin id>   [--slug <new-slug>] [--decisions decisions.json] [--no-activate]
+```
+
+It runs the ordinary import (admission, staging, identity decisions, materialization) and activates the
+space. Every person is created: staff keep their roles, and staff and members keep their password,
+authenticator and recovery codes (passkeys only when this server answers on the same domain); sessions and
+devices never travel, so everyone signs in again. If an email already exists here, the import refuses: pass a
+`--decisions` file that links that person instead. Re-issue kiosk station URLs and PINs afterwards. Archive
+the space on the source once the move is confirmed.
+
 ## Tenant Frontends
 
 One backend can serve **many makerspaces**. A makerspace without its own server can be hosted as an

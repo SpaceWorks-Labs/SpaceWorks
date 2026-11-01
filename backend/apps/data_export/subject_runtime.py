@@ -20,26 +20,29 @@ RUNTIME_FIELDS = {
 
 
 def runtime_subject_query(model, user, makerspace_id):
+    from apps.accounts.staff_identity import actor_ids_for
+
     label = model._meta.label
+    ids = actor_ids_for(user)  # the person and every shell merged into them
     if label == "integrations.NotificationEnvelope":
-        return every_row(model).filter(recipient=user, makerspace_id=makerspace_id)
+        return every_row(model).filter(recipient__in=ids, makerspace_id=makerspace_id)
     if label == "integrations.NotificationDelivery":
-        return every_row(model).filter(envelope__recipient=user, makerspace_id=makerspace_id,
+        return every_row(model).filter(envelope__recipient__in=ids, makerspace_id=makerspace_id,
                                     envelope__makerspace_id=makerspace_id)
     if label == "integrations.NotificationEndpoint":
-        return every_row(model).filter(user=user, makerspace_id=makerspace_id)
+        return every_row(model).filter(user__in=ids, makerspace_id=makerspace_id)
     if label == "integrations.MessagingDelivery":
-        return every_row(model).filter(user=user, makerspace_id=makerspace_id)
+        return every_row(model).filter(user__in=ids, makerspace_id=makerspace_id)
     if label == "accounts.DeviceActivityDay":
-        return every_row(model).filter(grant__user=user).filter(
+        return every_row(model).filter(grant__user__in=ids).filter(
             Q(makerspace_id=makerspace_id) | Q(makerspace__isnull=True),
         )
     if label == "notifications.MemberPushDelivery":
-        return every_row(model).filter(envelope_delivery__envelope__recipient=user,
+        return every_row(model).filter(envelope_delivery__envelope__recipient__in=ids,
                                     envelope_delivery__makerspace_id=makerspace_id,
                                     envelope_delivery__envelope__makerspace_id=makerspace_id)
     if label == "integrations.PushDeliveryAttempt":
-        return every_row(model).filter(recipient=user, delivery_log__makerspace_id=makerspace_id)
+        return every_row(model).filter(recipient__in=ids, delivery_log__makerspace_id=makerspace_id)
     return every_row(model).none()
 
 

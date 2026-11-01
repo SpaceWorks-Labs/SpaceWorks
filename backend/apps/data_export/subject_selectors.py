@@ -9,6 +9,7 @@ from django.apps import apps
 from django.db.models import Q
 
 from apps.accounts import rbac
+from apps.accounts.staff_identity import actor_ids_for
 from apps.backup.capture_managers import every_row
 
 from .datasets import DATASET_SPECS
@@ -80,13 +81,15 @@ def subject_query(model, user, makerspace_id):
         return runtime_subject_query(model, user, makerspace_id)
     if label == "accounts.User":
         return every_row(model).filter(pk=user.pk, retired_at__isnull=True)
+    # History recorded against a shell merged into this person is theirs too.
+    ids = actor_ids_for(user)
     if label == "audit.AuditLog":
-        own = Q(actor_id=user.pk) | Q(
-            target_type="accounts.user", target_id=str(user.pk),
+        own = Q(actor_id__in=ids) | Q(
+            target_type="accounts.user", target_id__in=[str(pk) for pk in ids],
         )
         # Both tracks: a person's staff role in this space is their own record too.
         memberships = rbac.scope_by_makerspace(
-            user, every_row(apps.get_model("makerspaces.MakerspaceMembership")).filter(user=user),
+            user, every_row(apps.get_model("makerspaces.MakerspaceMembership")).filter(user_id__in=ids),
         ).filter(makerspace_id=makerspace_id)
         own |= Q(
             target_type="makerspaces.makerspacemembership",
@@ -98,7 +101,7 @@ def subject_query(model, user, makerspace_id):
             return every_row(model).none()
         own = Q()
         for path in paths:
-            own |= Q(**{f"{path}_id": user.pk})
+            own |= Q(**{f"{path}_id__in": ids})
     predicate = DATASET_SPECS[label][1]
     query = every_row(model).filter(own).filter(predicate.as_q(makerspace_id))
     # An explicit tenant intersection remains required even for a superadmin.

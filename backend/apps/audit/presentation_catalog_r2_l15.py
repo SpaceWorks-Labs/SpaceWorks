@@ -27,6 +27,7 @@ ENTRIES = (
       ("request_id", "waiver_id", "components", "payment_ids", "refund_case_ids"), request_refs=("request_id",)),
     P("loan.fee_waiver_revoked", "Loan fee waiver revoked",
       ("request_id", "waiver_id", "revocation_id", "components"), request_refs=("request_id",)),
+    P("booking.price_quoted_at_approval", "Booking charged at the approval-day price (no price frozen at request)"),
     P("charge.free_by_pricing", "Nothing charged (free under pricing)",
       ("subject_type", "subject_id", "domain", "outcome", "waiver_id", "discount_id")),
 )

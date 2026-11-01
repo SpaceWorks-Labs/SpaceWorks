@@ -123,6 +123,10 @@ def create_booking(
     )
     require_module_locked(locked_space.makerspace, 'bookings')
     limits.check_quota(locked_space.makerspace, 'bookings', adding=1)
+    if status == Booking.Status.PENDING:
+        # L15 (#159): approval charges the price quoted now, never a re-quote.
+        from apps.bookings.service_payments import requested_snapshot
+        booking.pricing_snapshot = requested_snapshot(booking)
     booking.save()
     _audit(
         locked_space,
@@ -187,7 +191,7 @@ def approve_booking(booking, *, actor):
     notifications.notify_booking_status(locked, 'confirmed')
     from apps.bookings.service_payments import create_for_confirmed_booking
 
-    create_for_confirmed_booking(locked, actor)
+    create_for_confirmed_booking(locked, actor, approval=True)
     return _refresh(locked)
 
 

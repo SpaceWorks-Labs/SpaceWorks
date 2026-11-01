@@ -235,6 +235,12 @@ where a **Free** area resolves to 0. 0 or empty on an item means "inherit the de
 the item to Free to keep it free under a paid default. Before a default is saved, the impact
 preview lists every item whose price would move.
 
+**Bookings awaiting approval keep the requested price** (#159): the quote is frozen on the
+booking (`Booking.pricing_snapshot`, insert-only) when it is requested, and approval raises the
+`Payment` from that snapshot, never re-quoting. Staff see the frozen price beside Approve. A
+request from before this rule has no snapshot and is charged the approval-day price, audited as
+`booking.price_quoted_at_approval`. Instant confirmations are quoted and charged at once.
+
 **Rounding** is half-up to two decimals per line, the total is the sum of the lines, and a cap
 applies before any discount (A7).
 

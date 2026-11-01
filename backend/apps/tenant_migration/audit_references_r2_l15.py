@@ -32,6 +32,7 @@ EDGES = {
              ("payment.created", "discount_id")),
     **_remap("makerspaces.MembershipPlan", ("pricing.discount_created", "plan_id"),
              ("pricing.discount_updated", "plan_id")),
+    ("booking.price_quoted_at_approval", "booking_id"): AuditReference(R, "bookings.Booking"),
     ("pricing.discount_created", "member_id"): AuditReference(S, "accounts.User"),
     ("pricing.discount_updated", "member_id"): AuditReference(S, "accounts.User"),
     ("pricing.override_set", "target_id"): _S,

@@ -29,8 +29,8 @@ def annotate_restore_history(queryset):
 @transaction.atomic
 def _priced(booking):
     # Lane L15: the booking's price comes from the pricing kernel (per booking + per hour).
-    from .service_payments import booking_quote
-    return booking_quote(booking).total > 0
+    from .service_payments import charged_quote
+    return charged_quote(booking, None).total > 0
 
 
 def restore_booking(booking, *, actor):

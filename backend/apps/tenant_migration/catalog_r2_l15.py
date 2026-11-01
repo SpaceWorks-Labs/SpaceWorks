@@ -22,6 +22,7 @@ FIELD_NAMES = {
 }
 EXTRA_FIELDS = {
     "payments.Payment": frozenset({"pricing_snapshot"}),
+    "bookings.Booking": frozenset({"pricing_snapshot"}),
 }
 PROJECTED_LABELS = frozenset(FIELD_NAMES)
 
@@ -34,6 +35,8 @@ def authority_entries(authority, disposition):
     return (
         *same("payments.Payment", "pricing_snapshot", keep,
               "The frozen quote is the charge's own history; never recomputed."),
+        *same("bookings.Booking", "pricing_snapshot", keep,
+              "The price quoted when the booking was requested; approval charges exactly this (#159)."),
         *same("payments.PricingDefault", "domain mode rental_timing failed_job_charge updated_at", keep,
               "A rate card is the space's own pricing configuration."),
         *same("payments.PricingDefaultLine", "component amount cap grace_units billing_increment minimum", keep,

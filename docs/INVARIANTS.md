@@ -2660,7 +2660,9 @@ Owner decisions #110c/#110e and #111 Q9-Q13 (P1b, superadmin always on).
   it was shown is refused with 409 `price_changed` and the new quote when the price moved
   (`pricing.verify_digest`); never charge more than was shown.
 - **The quote is frozen.** The charge stores it once in `Payment.pricing_snapshot` (net of tax; L5
-  freezes tax on top). The model refuses a change and a Postgres trigger backs it. Ids inside the
+  freezes tax on top). A booking awaiting approval freezes its quote at request
+  (`Booking.pricing_snapshot`, insert-only) and approval charges exactly that (#159); only a
+  pre-#159 request falls back to the approval-day quote, audited `booking.price_quoted_at_approval`. The model refuses a change and a Postgres trigger backs it. Ids inside the
   snapshot are source-local history, never live references.
 - **No second ledger.** The pricing tables (`PricingDefault`, `PricingDefaultLine`, `PriceOverride`,
   `PriceDiscount`, `LoanFeeWaiver`) hold configuration and waivers only; money owed is one `Payment`

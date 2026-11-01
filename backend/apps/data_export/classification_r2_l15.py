@@ -22,6 +22,7 @@ EXPORTED_FIELDS = {
 }
 EXTRA_FIELDS = {
     "payments.Payment": "pricing_snapshot",
+    "bookings.Booking": "pricing_snapshot",
 }
 DATASET_SPECS = {
     "payments.PricingDefault": ("payments/pricing_defaults.csv", P(("makerspace",))),
@@ -40,6 +41,7 @@ RELATIONAL_USER_FIELDS = frozenset({
 # Discount scopes and frozen quotes: area and component names, prices, rule/waiver ids.
 JSON_FIELDS = frozenset({
     ("payments.Payment", "pricing_snapshot"),
+    ("bookings.Booking", "pricing_snapshot"),
     ("payments.PriceDiscount", "domains"),
     ("payments.PriceDiscount", "components"),
     ("payments.LoanFeeWaiver", "components"),

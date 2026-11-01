@@ -121,3 +121,49 @@ def line(component, *, currency, quantity, unit_amount, rate_source, cap=None, t
         quantity=quantity, unit_amount=money(unit_amount, currency), gross=money(capped, currency),
         source=rate_source, cap_applied=capped != raw, target=target, detail=detail or {},
     )
+
+
+@dataclass(frozen=True)
+class FrozenQuote:
+    """A quote read back from a stored snapshot (#159): charged as frozen, never re-priced."""
+
+    snapshot: dict
+
+    @property
+    def total(self):
+        return Decimal(self.snapshot.get("total") or "0")
+
+    @property
+    def subtotal(self):
+        return Decimal(self.snapshot.get("subtotal") or "0")
+
+    @property
+    def currency(self):
+        return self.snapshot.get("currency", "")
+
+    @property
+    def domain(self):
+        return self.snapshot.get("domain", "")
+
+    @property
+    def lines(self):
+        return tuple(self.snapshot.get("lines") or ())
+
+    @property
+    def notes(self):
+        return tuple(self.snapshot.get("notes") or ())
+
+    @property
+    def waiver(self):
+        return self.snapshot.get("waiver")
+
+    @property
+    def discount(self):
+        return self.snapshot.get("discount")
+
+    @property
+    def digest(self):
+        return self.snapshot.get("digest", "")
+
+    def to_snapshot(self, **extra):
+        return {**self.snapshot, **extra}

@@ -20,7 +20,27 @@ def booking_quote(booking, member=None):
                  params={"starts_at": booking.starts_at, "ends_at": booking.ends_at})
 
 
-def create_for_confirmed_booking(booking, actor):
+def requested_snapshot(booking):
+    """#159: the quote frozen on a booking that waits for approval ({} when nothing is tracked)."""
+    if booking.member is None or not charge_tracking_enabled(booking.space.makerspace, "bookings"):
+        return {}
+    return booking_quote(booking).to_snapshot(frozen_at="request")
+
+
+def charged_quote(booking, actor, *, approval=False):
+    """The requested price when one was frozen; else today's quote (audited on approval)."""
+    from apps.payments.pricing.quotes import FrozenQuote
+
+    if booking.pricing_snapshot:
+        return FrozenQuote(booking.pricing_snapshot)
+    if approval:
+        from apps.audit import services as audit
+        audit.record(actor, "booking.price_quoted_at_approval", makerspace=booking.space.makerspace,
+                     target=booking, meta={"booking_id": booking.pk})
+    return booking_quote(booking)
+
+
+def create_for_confirmed_booking(booking, actor, *, approval=False):
     space = booking.space
     makerspace = space.makerspace
     member = booking.member
@@ -30,7 +50,7 @@ def create_for_confirmed_booking(booking, actor):
                                       subject_id=booking.pk).first()
     priced = None
     if existing is None:
-        priced = booking_quote(booking)
+        priced = charged_quote(booking, actor or member, approval=approval)
         if priced.total <= 0:
             if priced.lines:
                 from apps.payments.pricing.charging import record_free

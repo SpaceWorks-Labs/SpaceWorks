@@ -5319,7 +5319,9 @@ PORTABLE/Lane D path.
   `manage.py import_portable_tenant_dump` runs the ordinary admission/staging/identity/materialization
   pipeline and then activates the space with the cutover's own verification gates (no pairing receipt:
   the file is handed over offline). An email the target already holds refuses the import (#160(3)).
-  `SelfHostMoveRequest` is platform coordination and travels with nothing.
+  `SelfHostMoveRequest` is platform coordination and travels with nothing, and so do its
+  `selfhost_move.*` audit rows (like `tenant_migration.*`, `admission.export_row_policy`), so the
+  approving superadmin never enters the space's identity closure.
 - **Restore drills (BK-10/BK-91, C-22).** Hourly, one due space (default every 7 days per space,
   0 = off) is drilled: a throwaway age identity is generated; the live server identity is only READ by
   `age --decrypt` (never copied, written or re-wrapped) while the plaintext streams into a

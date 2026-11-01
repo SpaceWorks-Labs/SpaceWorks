@@ -64,6 +64,18 @@ EXTRA_SETTING_KEYS = (
     ("machines", "pricing.machines"),
     ("bookings", "pricing.bookings"),
     ("events", "pricing.events"),
+    # L12: loan pickup windows and the waitlist offer (inventory module settings).
+    ("inventory", "pickup_window_hours"),
+    ("inventory", "reservation_max_days_ahead"),
+    ("inventory", "waitlist_offer_hours"),
+    # L12: per-machine-type job settings (#140/#142); the `charges.*` ones are finance (SM only).
+    ("machines", "job_requests.accepts"),
+    ("machines", "job_requests.limits"),
+    ("machines", "job_requests.unattended"),
+    ("machines", "job_requests.file_formats"),
+    ("machines", "charges.machines_quotes"),
+    ("machines", "charges.machines_payment_timing"),
+    ("machines", "charges.machines_failure"),
 )
 
 

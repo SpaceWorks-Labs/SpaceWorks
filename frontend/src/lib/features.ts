@@ -137,6 +137,19 @@ export const FEATURE_DEFINITIONS: readonly FeatureDefinition[] = [
   { key: "charges.pricing", parent_module: null, label: "Price lists" },
   { key: "charges.discounts", parent_module: null, label: "Member discounts" },
   { key: "loans.fee_waivers", parent_module: "request_workflow", label: "Waive loan fees" },
+  // L12 (#76, #94, #140-#142): machines and loans depth.
+  { key: "inventory.consumables", parent_module: null, label: "Consumables" },
+  { key: "inventory.vendors", parent_module: null, label: "Vendors" },
+  { key: "inventory.expected_back", parent_module: "public_inventory", label: "Expected-back dates" },
+  { key: "loans.reservations", parent_module: "request_workflow", label: "Loan reservations" },
+  { key: "loans.pickup_windows", parent_module: "request_workflow", label: "Pickup windows" },
+  { key: "loans.waitlist", parent_module: "request_workflow", label: "Loan waitlist" },
+  { key: "loans.withdrawals", parent_module: "request_workflow", label: "Withdraw requests" },
+  { key: "machines.job_requests", parent_module: "machine_service", label: "Machine job requests" },
+  { key: "machines.job_quotes", parent_module: "machine_service", label: "Job quotes" },
+  { key: "machines.batch_start", parent_module: "machine_service", label: "Batch start" },
+  { key: "machines.pay_before_pickup", parent_module: "machine_service", label: "Pay before pickup" },
+  { key: "machines.time_booking", parent_module: "machines", label: "Machine time booking" },
 ];
 
 export function featureEnabled(features: Iterable<string>, key: string) {

@@ -99,6 +99,9 @@ LEGACY_ENTRIES = (
     ("notification-destination-health", "apps.integrations.destination_health.disable_dead_destinations_task", 60),
     # Lane L5: read-only provider poll of open attempts and pending refunds.
     ("payment-gateway-poll", "apps.payments.tasks.run_gateway_poll_task", 5),
+    # Lane L12: loan pickup expiry + waitlist lapses; machine job quotes, pickups, prepay.
+    ("loan-pickups", "apps.hardware_requests.tasks_loans.sweep_loan_pickups_task", 15),
+    ("machine-job-flow", "apps.machines.tasks_jobs.sweep_job_flow_task", 15),
 )
 _RETAINED = frozenset({
     "evidence-object-expiry", "evidence-abandoned-upload-cleanup",

@@ -226,6 +226,8 @@ from .classification_login_security import DATASET_SPECS as S0_DATASETS  # noqa:
 DATASET_SPECS.update(S0_DATASETS)
 from .classification_r2_l15 import DATASET_SPECS as R2_L15_DATASETS  # noqa: E402
 DATASET_SPECS.update(R2_L15_DATASETS)
+from .classification_l12 import DATASET_SPECS as L12_DATASETS  # noqa: E402
+DATASET_SPECS.update(L12_DATASETS)
 for _fidelity in Fidelity:
     for _label, (_path, _predicate) in DATASET_SPECS.items():
         _columns_for_dataset, _omissions = _columns(_fidelity, _label)

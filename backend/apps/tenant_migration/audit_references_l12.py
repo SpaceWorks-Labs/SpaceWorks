@@ -28,8 +28,8 @@ EDGES = {
              ("inventory.waitlist_offered", "entry_id"), ("inventory.waitlist_claimed", "entry_id"),
              ("inventory.waitlist_lapsed", "entry_id"), ("inventory.waitlist_left", "entry_id")),
     **_remap("hardware_requests.HardwareRequest", ("inventory.waitlist_claimed", "request_id")),
-    **_remap("machines.MachineDowntime", ("machine.downtime_started", "downtime_id"),
-             ("machine.downtime_ended", "downtime_id"), ("machine.downtime_updated", "downtime_id")),
+    **_remap("machines.MachineDowntime", ("machine_downtime.started", "downtime_id"),
+             ("machine_downtime.ended", "downtime_id"), ("machine_downtime.updated", "downtime_id")),
     **_remap("machines.MachineType", ("machine_type.job_settings_updated", "machine_type_id")),
     **_remap("maintenance.WorkOrder", *((f"work_order.{event}", "work_order_id") for event in (
         "created", "started", "held", "closed", "cancelled", "assigned"))),

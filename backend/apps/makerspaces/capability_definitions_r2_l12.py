@@ -55,7 +55,7 @@ def definitions(feature):
             "machines.job_requests", "machine_service", "Machine job requests",
             "One request form for every machine type that accepts jobs: files, material and notes, "
             "a live queue position and ETA, pickup codes, and the full job timeline.",
-            default_enabled=True, requires_modules=("machines",),
+            default_enabled=True,
         ),
         feature(
             "machines.job_quotes", "machine_service", "Job quotes",

@@ -40,6 +40,10 @@ FIELD_ADDITIONS = {
     "bookings.BookableSpace": "machine",
 }
 OMITTED_MODELS = {}
+# The digest of the frozen quote the member saw; it authenticates nothing.
+NON_CREDENTIAL = {
+    ("machines.MachineServiceRequest", "quote_digest"): "Integrity digest of the job's frozen price quote, not a secret.",
+}
 DATASET_SPECS = {
     "procurement.Vendor": ("procurement/vendors.csv", P(("makerspace",))),
     "hardware_requests.LoanReservationPolicy": ("lending/reservation_policy.csv", P(("makerspace",))),

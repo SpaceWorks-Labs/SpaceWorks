@@ -27,14 +27,14 @@ def track(machine, previous, status, *, actor=None, reason="", expected_back_at=
     if open_row is not None and (status not in DOWN or open_row.kind != status):
         open_row.ended_at, open_row.ended_by = timezone.now(), actor
         open_row.save(update_fields=["ended_at", "ended_by"])
-        record(actor, "machine.downtime_ended", makerspace=machine.makerspace, target=machine,
+        record(actor, "machine_downtime.ended", makerspace=machine.makerspace, target=machine,
                meta={"downtime_id": open_row.pk, "kind": open_row.kind})
         open_row = None
     if status in DOWN and open_row is None:
         row = MachineDowntime.objects.create(
             makerspace_id=machine.makerspace_id, machine=machine, kind=status, reason=str(reason or "")[:300],
             expected_back_at=expected_back_at, started_by=actor)
-        record(actor, "machine.downtime_started", makerspace=machine.makerspace, target=machine,
+        record(actor, "machine_downtime.started", makerspace=machine.makerspace, target=machine,
                meta={"downtime_id": row.pk, "kind": status})
         return row
     return open_row
@@ -53,7 +53,7 @@ def update_open(machine, actor, *, reason=None, expected_back_at=None):
     if expected_back_at is not None:
         row.expected_back_at = expected_back_at
     row.save(update_fields=["reason", "expected_back_at"])
-    record(actor, "machine.downtime_updated", makerspace=machine.makerspace, target=machine,
+    record(actor, "machine_downtime.updated", makerspace=machine.makerspace, target=machine,
            meta={"downtime_id": row.pk})
     return row
 

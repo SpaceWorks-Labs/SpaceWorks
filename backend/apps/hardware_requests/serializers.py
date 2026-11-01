@@ -88,8 +88,6 @@ class PublicRequestStatusSerializer(serializers.Serializer):
     # not need their own identity echoed back to learn a request's status.
     status = serializers.CharField(read_only=True)
     created_at = serializers.DateTimeField(read_only=True)
-    pickup_from = serializers.DateTimeField(read_only=True, allow_null=True)
-    pickup_until = serializers.DateTimeField(read_only=True, allow_null=True)
     items = PublicRequestItemStatusSerializer(many=True, read_only=True)
 
 

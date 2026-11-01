@@ -29,12 +29,8 @@ def finalize_file(service_request, *, file_id, actor):
     # concurrent finalize can never delete the live object a committed record points at.
     if file.service_request_id is not None or file.attached_at is not None:
         raise ValidationError({"file_id": "Attachment is unavailable for this request."}, code="invalid_attachment")
-    policy = base.policy_for_file(file)
     try:
-        size = base.finalize_upload(file.object_key, policy.max_bytes)
-        if size is None or not 1 <= size <= policy.max_bytes:
-            raise ValidationError({"file_id": "Uploaded attachment is invalid."}, code="invalid_attachment")
-        result = base.validate_service_object(file, policy)
+        result = _validated(file)
         with transaction.atomic():
             locked_request = MachineServiceRequest.objects.select_for_update(of=("self",)).select_related(
                 "bucket__machine__makerspace", "queue__makerspace"
@@ -67,6 +63,18 @@ def finalize_file(service_request, *, file_id, actor):
         ).exists():
             base.cleanup_upload(file.object_key)
         raise
+
+
+def _validated(file):
+    """Size and content checks: the job flow's maker_formats files, else the legacy policy."""
+    from apps.machines.job_files import POLICY_NAME, validate_job_object
+    if file.file_policy_name == POLICY_NAME:
+        return validate_job_object(file)
+    policy = base.policy_for_file(file)
+    size = base.finalize_upload(file.object_key, policy.max_bytes)
+    if size is None or not 1 <= size <= policy.max_bytes:
+        raise ValidationError({"file_id": "Uploaded attachment is invalid."}, code="invalid_attachment")
+    return base.validate_service_object(file, policy)
 
 
 def delete_staged_file(file, *, actor):

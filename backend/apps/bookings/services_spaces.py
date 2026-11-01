@@ -19,7 +19,7 @@ SPACE_FIELDS = frozenset(
         'name', 'kind', 'description', 'capacity', 'location', 'is_public',
         'show_public_availability', 'show_public_booker_names',
         'custom_form', 'requester_notifications_enabled', 'payment_amount',
-        'machine_type',
+        'machine_type', 'machine',
     }
 )
 
@@ -43,6 +43,28 @@ def _machine_type(makerspace, value):
     if machine_type is None:
         raise serializers.ValidationError({'machine_type': 'Unknown machine type.'})
     return machine_type
+
+
+def _machine(makerspace, value, current_space_id=None):
+    """Machine time booking (`machines.time_booking`, MI-43): this resource IS one machine.
+
+    Setting it needs the switch (clearing never does), one live resource per machine, and
+    the machine's type becomes the space's certification link.
+    """
+    if value is None:
+        return None
+    from apps.machines.models import Machine
+    from apps.makerspaces.guards import require_feature
+
+    require_feature(makerspace, 'machines.time_booking')
+    machine = Machine.objects.filter(makerspace=makerspace, is_active=True, pk=value).select_related(
+        'machine_type').first()
+    if machine is None:
+        raise serializers.ValidationError({'machine': 'Unknown machine.'})
+    taken = BookableSpace.objects.filter(machine=machine, is_active=True).exclude(pk=current_space_id)
+    if taken.exists():
+        raise serializers.ValidationError({'machine': 'This machine already has a bookable resource.'})
+    return machine
 
 
 def _canonical_form(value):
@@ -84,12 +106,13 @@ def create_space(
     audit_service, show_public_availability=False,
     show_public_booker_names=False,
     approval_mode=BookableSpace.ApprovalMode.INSTANT, custom_form=None,
-    requester_notifications_enabled=None, payment_amount=0, machine_type=None,
+    requester_notifications_enabled=None, payment_amount=0, machine_type=None, machine=None,
 ):
     locked_makerspace = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
     from .booking_authority import require_tenant
     require_tenant(actor, locked_makerspace)
-    machine_type = _machine_type(locked_makerspace, machine_type)
+    machine = _machine(locked_makerspace, machine)
+    machine_type = machine.machine_type if machine else _machine_type(locked_makerspace, machine_type)
     space = BookableSpace(
         makerspace=locked_makerspace,
         created_by=actor,
@@ -106,6 +129,7 @@ def create_space(
         requester_notifications_enabled=requester_notifications_enabled,
         payment_amount=payment_amount,
         machine_type=machine_type,
+        machine=machine,
         is_active=True,
     )
     _validate_public_visibility(space)
@@ -141,6 +165,10 @@ def update_space(space, *, actor, audit_service, **changes):
         changes['custom_form'] = _canonical_form(changes['custom_form'])
     if 'machine_type' in changes:
         changes['machine_type'] = _machine_type(locked.makerspace, changes['machine_type'])
+    if 'machine' in changes:
+        changes['machine'] = _machine(locked.makerspace, changes['machine'], locked.pk)
+        if changes['machine'] is not None:
+            changes['machine_type'] = changes['machine'].machine_type
     for field, value in changes.items():
         setattr(locked, field, value)
     _validate_public_visibility(locked)

@@ -52,6 +52,8 @@ class JobRecord:
     minutes: int | None
     started_at: object = None
     machine_id: int | None = None
+    # A batch run (#142 OQ-9): jobs sharing one machine run end together.
+    batch_id: int | None = None
 
 
 @dataclass

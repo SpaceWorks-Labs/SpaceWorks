@@ -10,6 +10,7 @@ from django.db.models import Q
 
 from apps.encryption.mappers import ScopedPiiModelMixin, ScopedPiiQuerySet
 from apps.machines.metering import MeteringUnit
+from apps.machines.models_job_fields import JobFlowFields
 
 
 class ServiceQueue(models.Model):
@@ -108,13 +109,19 @@ def get_or_create_default_bucket(machine, *, makerspace=None):
         return bucket
 
 
-class MachineServiceRequest(ScopedPiiModelMixin, models.Model):
+class MachineServiceRequest(ScopedPiiModelMixin, JobFlowFields, models.Model):
     class Status(models.TextChoices):
         PENDING = "pending", "Pending"
+        # #141: staff asked the member for a new file or notes.
+        CHANGES_REQUESTED = "changes_requested", "Needs changes"
+        # #141: a quote waits for the member's approval (or, when prepaid, the payment).
+        QUOTED = "quoted", "Quote sent"
         ACCEPTED = "accepted", "Accepted"
         IN_PROGRESS = "in_progress", "In progress"
         COMPLETED = "completed", "Completed"
         COLLECTED = "collected", "Collected"
+        # #142 OQ-7: never picked up; the item is the space's, any charge stays owed.
+        UNCOLLECTED = "uncollected", "Not collected"
         REJECTED = "rejected", "Rejected"
         FAILED = "failed", "Failed"
         CANCELLED = "cancelled", "Cancelled"

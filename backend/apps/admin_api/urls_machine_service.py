@@ -31,6 +31,7 @@ from apps.machines.service_reports_views import (
 )
 
 from .urls_utils import _separable
+from apps.admin_api import views_machine_jobs as jobs, views_machine_job_board as job_board
 
 
 urlpatterns = [
@@ -130,4 +131,16 @@ urlpatterns = [
         MachineServiceFileDeleteView.as_view(),
         name="admin-machine-service-file-detail",
     ),
+    # Lane L12: the uniform job flow (#141/#142).
+    path("machine-service/requests/<int:pk>/request-changes", jobs.RequestChangesView.as_view(), name="admin-machine-job-request-changes"),
+    path("machine-service/requests/<int:pk>/quote", jobs.SendQuoteView.as_view(), name="admin-machine-job-quote"),
+    path("machine-service/requests/<int:pk>/queue-now", jobs.QueueNowView.as_view(), name="admin-machine-job-queue-now"),
+    path("machine-service/requests/<int:pk>/reorder", jobs.ReorderView.as_view(), name="admin-machine-job-reorder"),
+    path("machine-service/requests/<int:pk>/urgent", jobs.UrgentView.as_view(), name="admin-machine-job-urgent"),
+    path("machine-service/requests/<int:pk>/assign", jobs.AssignView.as_view(), name="admin-machine-job-assign"),
+    path("machine-service/requests/<int:pk>/uncollected", jobs.UncollectedView.as_view(), name="admin-machine-job-uncollected"),
+    path("makerspaces/<int:makerspace_id>/machine-service/batches", jobs.BatchStartView.as_view(), name="admin-machine-job-batch-start"),
+    path("machine-service/batches/<int:pk>/complete", jobs.BatchCompleteView.as_view(), name="admin-machine-job-batch-complete"),
+    path("makerspaces/<int:makerspace_id>/machine-service/board", job_board.JobBoardView.as_view(), name="admin-machine-job-board"),
+    path("makerspaces/<int:makerspace_id>/machine-types/<int:type_id>/job-settings", job_board.JobSettingsView.as_view(), name="admin-machine-type-job-settings"),
 ]

@@ -86,15 +86,19 @@ def submit(bucket_or_machine, requester, *, requester_name, contact_email, conta
         return service_request
 
 
-def accept(service_request, actor, *, estimated_minutes=None, planned_grams=None, note=""):
+def accept(service_request, actor, *, estimated_minutes=None, planned_grams=None, note="", override_length=False):
     with transaction.atomic():
         _assert_request_write_allowed(service_request)
         locked = _locked_request(service_request)
         _require_module(locked.makerspace)
         _require_edge(locked, MachineServiceRequest.Status.ACCEPTED)
+        if locked.status == MachineServiceRequest.Status.QUOTED:
+            raise ServiceInvalidTransition("A quoted job enters the queue when the member approves it.")
         _lock_scope(locked)
         if estimated_minutes is not None:
             locked.estimated_minutes = _minutes(estimated_minutes, "estimated_minutes")
+        from apps.machines.job_rules import require_acceptable
+        require_acceptable(locked, planned_grams=planned_grams, override_length=override_length)
         if planned_grams is not None:
             grams = _decimal(planned_grams, "planned_grams")
             if grams < 0:
@@ -116,7 +120,7 @@ def accept(service_request, actor, *, estimated_minutes=None, planned_grams=None
         return locked
 
 
-def reject(service_request, actor, *, reason):
+def reject(service_request, actor, *, reason, code=""):
     with transaction.atomic():
         _assert_request_write_allowed(service_request)
         if not str(reason or "").strip():
@@ -128,14 +132,15 @@ def reject(service_request, actor, *, reason):
         locked.refresh_from_db()  # fresh hold fields/relations under the lock
         released = _release_hold(locked, actor, reason=str(reason).strip())
         locked.status, locked.handled_by, locked.reason = MachineServiceRequest.Status.REJECTED, actor, str(reason).strip()
-        locked.save(update_fields=["status", "handled_by", "reason", "updated_at"])
-        _audit_transition(actor, locked, "rejected", extra={"released_hold": released} if released else None)
+        locked.reject_code = str(code or "")[:32]
+        locked.save(update_fields=["status", "handled_by", "reason", "reject_code", "updated_at"])
+        _audit_transition(actor, locked, "rejected", extra={"released_hold": released, "code": locked.reject_code})
         reevaluate_head(locked, initiator=initiator_for(actor))
         _notify_after_commit(locked, "rejected")
         return locked
 
 
-def complete(service_request, actor, *, actual_minutes, consumptions, actual_grams=None, actual_quantity=None, initiator=None):
+def complete(service_request, actor, *, actual_minutes, consumptions, actual_grams=None, actual_quantity=None, initiator=None, pickup_location=""):
     with transaction.atomic():
         _assert_request_write_allowed(service_request)
         locked = _locked_request(service_request)
@@ -151,19 +156,22 @@ def complete(service_request, actor, *, actual_minutes, consumptions, actual_gra
             locked.refresh_from_db()
             locked.actual_minutes = _minutes(actual_minutes, "actual_minutes")
         locked.status, locked.handled_by, locked.completed_at = MachineServiceRequest.Status.COMPLETED, actor, timezone.now()
-        locked.save(update_fields=["status", "handled_by", "actual_minutes", "completed_at", "updated_at"])
+        from apps.machines.job_pickup import new_pickup_code
+        locked.pickup_code, locked.pickup_location = new_pickup_code(), str(pickup_location or "").strip()[:120]
+        locked.save(update_fields=["status", "handled_by", "actual_minutes", "completed_at", "pickup_code",
+                                   "pickup_location", "updated_at"])
         from .consumable_costs import record_service_cost
         record_service_cost(locked, actor)
         _release_queue_machine(locked, actor)
         _audit_transition(actor, locked, "completed")
         reserve_milestone(locked, "completed", initiator=initiator or initiator_for(actor))
         _notify_after_commit(locked, "completed")
-        from apps.machines.service_payments import create_for_completed_request
-        create_for_completed_request(locked, actor)
+        from apps.machines.job_charges import charge_completed
+        charge_completed(locked, actor)
         return locked
 
 
-def fail(service_request, actor, *, reason, percent_complete, actual_minutes, consumptions, actual_grams=None, actual_quantity=None):
+def fail(service_request, actor, *, reason, percent_complete, actual_minutes, consumptions, actual_grams=None, actual_quantity=None, code="", fault=""):
     with transaction.atomic():
         _assert_request_write_allowed(service_request)
         if not str(reason or "").strip():
@@ -190,13 +198,17 @@ def fail(service_request, actor, *, reason, percent_complete, actual_minutes, co
             locked.fail_percent_complete = _percent(percent_complete)
             locked.reason = str(reason).strip()
             locked.failed_at = timezone.now()
+        from apps.machines.service_workflow_failure import after_fail, validate_failure
+        locked.fail_code, locked.fail_fault = validate_failure(code, fault)
         locked.status, locked.handled_by = MachineServiceRequest.Status.FAILED, actor
-        locked.save(update_fields=["status", "handled_by", "actual_minutes", "fail_percent_complete", "reason", "failed_at", "updated_at"])
+        locked.save(update_fields=["status", "handled_by", "actual_minutes", "fail_percent_complete", "reason", "failed_at",
+                                   "fail_code", "fail_fault", "updated_at"])
         from .consumable_costs import record_service_cost
         record_service_cost(locked, actor)
         _release_queue_machine(locked, actor)
-        _audit_transition(actor, locked, "failed")
+        _audit_transition(actor, locked, "failed", extra={"code": locked.fail_code, "fault": locked.fail_fault})
         _notify_after_commit(locked, "failed")
+        after_fail(locked, actor)
         return locked
 
 
@@ -222,6 +234,10 @@ def create_reprint(service_request, actor):
             assigned_machine=original.assigned_machine if original.bucket_id else None, accepted_by=actor,
             accepted_at=timezone.now(), estimated_minutes=original.estimated_minutes, planned_grams=original.planned_grams,
             reprint_of=root,
+            # A re-run keeps the original's place (#142: reprints keep their place) and,
+            # when prepaid, is covered by the original's charge.
+            queued_at=original.queued_at or original.created_at, urgent=original.urgent, prepay=original.prepay,
+            copies=original.copies, own_material=original.own_material, material_note=original.material_note,
         )
         _audit_transition(actor, child, "reprint_created", extra={"reprint_of_id": root.pk})
         reevaluate_head(child, initiator=initiator_for(actor))

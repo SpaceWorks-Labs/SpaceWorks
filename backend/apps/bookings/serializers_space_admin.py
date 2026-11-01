@@ -137,6 +137,7 @@ class BookableSpaceAdminSerializer(serializers.ModelSerializer):
             'requester_notifications_enabled',
             'payment_amount',
             'machine_type',
+            'machine',
             'effective_requester_notifications_enabled',
             'is_active',
             'created_by_id',

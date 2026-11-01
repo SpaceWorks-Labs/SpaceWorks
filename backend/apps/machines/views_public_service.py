@@ -79,6 +79,11 @@ class PublicMachineServiceSubmitView(APIView):
             Machine.objects.filter(makerspace=makerspace, is_active=True),
             pk=data["machine_id"],
         )
+        # One intake for every type (#140): the same switch, per-type setting and limit.
+        from apps.machines.job_intake import require_member_job_gate
+        from apps.machines.job_rules import require_open_job_limit
+        require_member_job_gate(makerspace, request.user, machine.machine_type)
+        require_open_job_limit(makerspace, request.user, machine.machine_type)
         service_request = service_workflow.submit(
             machine,
             request.user,

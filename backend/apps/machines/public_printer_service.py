@@ -140,7 +140,12 @@ def _kernel_payload(queue, data):
 def submit_request(makerspace, data, actor, *, compatibility=False):
     """Submit a kernel request and charge print quota exactly once."""
     queue = resolve_queue(makerspace, data.get("queue_id"), compatibility=compatibility)
+    # The 3D-printer form is an alias of the uniform job intake (#140): same gate and limit.
+    from apps.machines.job_intake import require_member_job_gate
+    require_member_job_gate(makerspace, actor, queue.machine_type)
     with transaction.atomic():
+        from apps.machines.job_rules import require_open_job_limit
+        require_open_job_limit(makerspace, actor, queue.machine_type)
         limits.check_quota(makerspace, "print", adding=1)
         row = submit(queue, actor, member=actor, actor=actor, requester_name=actor.display_name or "", contact_email=actor.email or "", contact_phone=actor.phone or "", title=data["title"], description=data.get("description", ""), source_link=data.get("source_link", ""), capability_payload=_kernel_payload(queue, data), certification_override_reason=data.get("certification_override_reason", ""))
         ids = data.get("file_ids") or []

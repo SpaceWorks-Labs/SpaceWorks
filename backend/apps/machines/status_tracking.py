@@ -7,7 +7,7 @@ from .models_tracking import MachineStatusEvent
 
 
 @transaction.atomic
-def change_status(machine, status, *, source, actor=None, extra_fields=()):
+def change_status(machine, status, *, source, actor=None, extra_fields=(), reason="", expected_back_at=None):
     previous = machine.status
     machine.status = status
     machine.save(update_fields=["status", "updated_at", *extra_fields])
@@ -18,3 +18,5 @@ def change_status(machine, status, *, source, actor=None, extra_fields=()):
         )
         record(actor, "machine.status_changed", makerspace=machine.makerspace, target=machine,
                meta={"old": previous, "new": status, "source": source})
+        from .downtime import track
+        track(machine, previous, status, actor=actor, reason=reason, expected_back_at=expected_back_at)

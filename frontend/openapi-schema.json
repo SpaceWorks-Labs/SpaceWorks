@@ -111846,7 +111846,7 @@
         "/api/v1/auth/device/login": {
             "post": {
                 "operationId": "api_v1_auth_device_login_create",
-                "description": "Attested password sign-in in an explicit account context (member by default). Staff must supply context=staff and their makerspace slug; password and authenticator MFA bind the resulting grant to that fixed tenant. Platform grants are refused with device_superadmin_not_supported (403). Challenges require an approved deployment-global registration and snapshot its signing identities. Play Integrity accepts any registered distribution signer and grants retain the matched digest. External verifiers receive only the first signing identity. Submit the returned challenge with the device login attestation payload: Android {\"type\":\"play_integrity\",\"token\":\"...\"} uses Standard requestHash = base64url(SHA-256(challenge UTF-8)), without padding. iOS {\"type\":\"app_attest\",\"key_id\":\"<base64>\",\"attestation\":\"<base64 CBOR>\"} uses a fresh key and clientDataHash = SHA-256(challenge UTF-8). Development-insecure mode accepts {\"type\":\"development\"} for development registrations only. External verifiers retain their deployment-specific payload format. Verifier outages return attestation_unavailable (503); restart with a new challenge.",
+                "description": "Attested password sign-in for a person (one account per person; there is no account context). authority=member (default) issues a member grant. authority=staff with a makerspace slug is a step-up fixed to that makerspace: the person must hold a staff role there and always passes the authenticator (or enrols), and the grant is attested. A platform account is refused with device_superadmin_not_supported (403). An app older than MIN_NATIVE_APP_VERSION_* is refused with 426 native_app_update_required. Challenges require an approved deployment-global registration and snapshot its signing identities. Play Integrity accepts any registered distribution signer and grants retain the matched digest. External verifiers receive only the first signing identity. Submit the returned challenge with the device login attestation payload: Android {\"type\":\"play_integrity\",\"token\":\"...\"} uses Standard requestHash = base64url(SHA-256(challenge UTF-8)), without padding. iOS {\"type\":\"app_attest\",\"key_id\":\"<base64>\",\"attestation\":\"<base64 CBOR>\"} uses a fresh key and clientDataHash = SHA-256(challenge UTF-8). Development-insecure mode accepts {\"type\":\"development\"} for development registrations only. External verifiers retain their deployment-specific payload format. Verifier outages return attestation_unavailable (503); restart with a new challenge.",
                 "tags": [
                     "Device auth"
                 ],
@@ -111900,6 +111900,16 @@
                             }
                         },
                         "description": ""
+                    },
+                    "426": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "native_app_update_required"
                     },
                     "503": {
                         "content": {
@@ -111962,6 +111972,7 @@
         "/api/v1/auth/device/refresh": {
             "post": {
                 "operationId": "api_v1_auth_device_refresh_create",
+                "description": "Rotate a device refresh token. A family minted before the deployment's current authentication generation (for example before the release-2 account cutover) is revoked and refused with 401 session_revoked. An app older than MIN_NATIVE_APP_VERSION_* is refused with 426 native_app_update_required before anything rotates. A staff grant whose staff role is gone is revoked.",
                 "tags": [
                     "Device auth"
                 ],
@@ -112014,7 +112025,17 @@
                                 }
                             }
                         },
-                        "description": ""
+                        "description": "Invalid, replayed or revoked refresh; session_revoked after a generation change."
+                    },
+                    "426": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "native_app_update_required"
                     },
                     "429": {
                         "content": {
@@ -112025,6 +112046,103 @@
                             }
                         },
                         "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/device/staff-grant": {
+            "post": {
+                "operationId": "api_v1_auth_device_staff_grant_create",
+                "description": "A staff grant is a step-up on a person, never a separate account: an active device session of the person (from ANY primary login method -- password, social or phone) names one makerspace where they hold a staff role, re-attests the app, and proves their second factor. The MFA challenge this returns finishes through the ordinary ``auth/mfa/verify`` (or enrolment) routes and yields a NEW grant with authority ``staff`` fixed to that makerspace; the member grant it started from keeps working. Challenges require an approved deployment-global registration and snapshot its signing identities. Play Integrity accepts any registered distribution signer and grants retain the matched digest. External verifiers receive only the first signing identity. Submit the returned challenge with the device login attestation payload: Android {\"type\":\"play_integrity\",\"token\":\"...\"} uses Standard requestHash = base64url(SHA-256(challenge UTF-8)), without padding. iOS {\"type\":\"app_attest\",\"key_id\":\"<base64>\",\"attestation\":\"<base64 CBOR>\"} uses a fresh key and clientDataHash = SHA-256(challenge UTF-8). Development-insecure mode accepts {\"type\":\"development\"} for development registrations only. External verifiers retain their deployment-specific payload format. Verifier outages return attestation_unavailable (503); restart with a new challenge.",
+                "summary": "Step a device session up to a staff grant fixed to one makerspace",
+                "tags": [
+                    "Device auth"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/DeviceStaffGrant"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/DeviceStaffGrant"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/DeviceStaffGrant"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MFAChallengeResponse"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Invalid attestation or device session."
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "staff_access_required, or a browser transport."
+                    },
+                    "426": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "native_app_update_required"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "attestation_unavailable"
                     }
                 }
             }
@@ -112126,7 +112244,7 @@
         "/api/v1/auth/forgot-password": {
             "post": {
                 "operationId": "api_v1_auth_forgot_password_create",
-                "description": "Select member, staff (with makerspace slug) or platform. Unknown and unavailable accounts receive the same acknowledgement. Staff/platform require a trusted origin and Platform Email. Eligible archived members receive a single-use, 24-hour restore link instead of a reset code.",
+                "description": "Select person (default) or platform; there is no staff context any more (one account per person). Unknown and unavailable accounts receive the same acknowledgement. Platform recovery requires a trusted platform origin and Platform Email. Eligible archived people receive a single-use, 24-hour restore link instead of a reset code.",
                 "summary": "Request a context-bound emailed recovery proof",
                 "tags": [
                     "Auth"
@@ -112196,13 +112314,12 @@
                                 "$ref": "#/components/schemas/LoginRequest"
                             },
                             "examples": {
-                                "StaffLogin": {
+                                "PersonLogin": {
                                     "value": {
-                                        "username": "admin",
-                                        "password": "secret-password",
-                                        "surface": "staff"
+                                        "username": "ada",
+                                        "password": "secret-password"
                                     },
-                                    "summary": "Staff login"
+                                    "summary": "Person login"
                                 }
                             }
                         },
@@ -112276,7 +112393,7 @@
                 },
                 "responses": {
                     "204": {
-                        "description": "Logged out of the selected account context."
+                        "description": "Logged out of the selected session (person or platform); any release-1 refresh_token_staff_* cookie is expired too."
                     },
                     "401": {
                         "description": "Invalid account context; selected cookie cleared."
@@ -167137,11 +167254,10 @@
             "AccountKindEnum": {
                 "enum": [
                     "member",
-                    "staff",
                     "platform"
                 ],
                 "type": "string",
-                "description": "* `member` - member\n* `staff` - staff\n* `platform` - platform"
+                "description": "* `member` - member\n* `platform` - platform"
             },
             "AccountProfile": {
                 "type": "object",
@@ -172482,6 +172598,13 @@
                     },
                     "referrals_enabled": {
                         "type": "boolean"
+                    },
+                    "tracks": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/TracksEnum"
+                        },
+                        "description": "The person's rows in this space: community (membership) and/or staff (staff roles). Empty for an organization-derived entry."
                     }
                 },
                 "required": [
@@ -172501,6 +172624,7 @@
                     "role_slugs",
                     "slug",
                     "source",
+                    "tracks",
                     "verified_at"
                 ]
             },
@@ -172512,7 +172636,51 @@
                 "type": "string",
                 "description": "* `membership` - membership\n* `organization` - organization"
             },
-            "AuthStaffMakerspace": {
+            "AuthStaffRole": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "slug": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "name",
+                    "slug"
+                ]
+            },
+            "AuthStaffRoleEntry": {
+                "type": "object",
+                "properties": {
+                    "makerspace": {
+                        "$ref": "#/components/schemas/AuthStaffRoleMakerspace"
+                    },
+                    "roles": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AuthStaffRole"
+                        }
+                    },
+                    "actions": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "required": [
+                    "actions",
+                    "makerspace",
+                    "roles"
+                ]
+            },
+            "AuthStaffRoleMakerspace": {
                 "type": "object",
                 "properties": {
                     "id": {
@@ -172533,10 +172701,15 @@
             },
             "AuthUserPayload": {
                 "type": "object",
+                "description": "Frozen release-2 auth payload (one account per person, #62/#63).",
                 "properties": {
                     "session_authority": {
-                        "type": "string",
-                        "description": "Effective session surface: member, native_staff, staff_api, delegated, platform or verification_only. Native staff JWTs carry staff_api plus a fixed-tenant device grant; tenant operations require matching X-Makerspace-Id. Account utilities need no selection."
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/SessionAuthorityEnum"
+                            }
+                        ],
+                        "description": "What this session is: member (a person's browser or native member session; staff routes are admitted per request from the person's staff roles), native_staff (a native staff grant fixed to one makerspace; tenant operations require a matching X-Makerspace-Id), platform (the superadmin) or verification_only (email not yet confirmed).\n\n* `member` - member\n* `native_staff` - native_staff\n* `platform` - platform\n* `verification_only` - verification_only"
                     },
                     "id": {
                         "type": "integer"
@@ -172566,16 +172739,40 @@
                     "must_change_password": {
                         "type": "boolean"
                     },
-                    "account_kind": {
-                        "$ref": "#/components/schemas/AccountKindEnum"
-                    },
-                    "staff_makerspace": {
+                    "kind": {
                         "allOf": [
                             {
-                                "$ref": "#/components/schemas/AuthStaffMakerspace"
+                                "$ref": "#/components/schemas/AuthUserPayloadKindEnum"
                             }
                         ],
-                        "nullable": true
+                        "description": "person: one account per person; platform: the superadmin.\n\n* `person` - person\n* `platform` - platform"
+                    },
+                    "account_kind": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/AccountKindEnum"
+                            }
+                        ],
+                        "description": "Deprecated alias of kind for one release (member = person). Read kind instead.\n\n* `member` - member\n* `platform` - platform"
+                    },
+                    "is_platform": {
+                        "type": "boolean",
+                        "description": "True for the platform superadmin account."
+                    },
+                    "has_staff_role": {
+                        "type": "boolean",
+                        "description": "The person holds an active staff role in at least one servable makerspace."
+                    },
+                    "has_elevated_authority": {
+                        "type": "boolean",
+                        "description": "A staff role, organization authority or a resource grant anywhere; staff MFA keys on it."
+                    },
+                    "staff_roles": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AuthStaffRoleEntry"
+                        },
+                        "description": "Staff authority THIS session may exercise, per makerspace. Native member grants and claim sessions list none; a native staff grant lists its fixed tenant only."
                     },
                     "makerspaces": {
                         "type": "array",
@@ -172589,6 +172786,12 @@
                             "type": "string"
                         },
                         "description": "Every action the platform superadmin holds in each servable makerspace (owner decision #115); empty for everyone else."
+                    },
+                    "mfa_grace_ends_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true,
+                        "description": "When a person who gained a staff role without a second factor must have enrolled (#128 C-1). Null when no grace applies."
                     },
                     "event_grants": {
                         "type": "array",
@@ -172608,17 +172811,30 @@
                     "display_name",
                     "email",
                     "email_verified",
+                    "has_elevated_authority",
+                    "has_staff_role",
                     "id",
+                    "is_platform",
                     "is_superuser",
+                    "kind",
                     "makerspaces",
+                    "mfa_grace_ends_at",
                     "must_change_password",
                     "phone",
                     "role",
                     "session_authority",
-                    "staff_makerspace",
+                    "staff_roles",
                     "superadmin_actions",
                     "username"
                 ]
+            },
+            "AuthUserPayloadKindEnum": {
+                "enum": [
+                    "person",
+                    "platform"
+                ],
+                "type": "string",
+                "description": "* `person` - person\n* `platform` - platform"
             },
             "AuthorityEnum": {
                 "enum": [
@@ -182906,14 +183122,14 @@
                     "saved_details"
                 ]
             },
-            "Context396Enum": {
+            "Context2dfEnum": {
                 "enum": [
+                    "person",
                     "member",
-                    "staff",
                     "platform"
                 ],
                 "type": "string",
-                "description": "* `member` - member\n* `staff` - staff\n* `platform` - platform"
+                "description": "* `person` - person\n* `member` - member\n* `platform` - platform"
             },
             "ContextEligibility": {
                 "type": "object",
@@ -185823,16 +186039,18 @@
                     "environment": {
                         "$ref": "#/components/schemas/EnvironmentEnum"
                     },
-                    "context": {
+                    "authority": {
                         "allOf": [
                             {
-                                "$ref": "#/components/schemas/Context396Enum"
+                                "$ref": "#/components/schemas/AuthorityEnum"
                             }
                         ],
-                        "default": "member"
+                        "default": "member",
+                        "description": "member (default) or staff: a step-up fixed to one makerspace where the person holds a staff role. Staff always needs the authenticator (or enrolment) and attestation.\n\n* `member` - member\n* `staff` - staff"
                     },
                     "makerspace": {
                         "type": "string",
+                        "description": "The staff makerspace's slug; required for authority=staff only.",
                         "maxLength": 150,
                         "pattern": "^[-a-zA-Z0-9_]+$"
                     },
@@ -185851,6 +186069,11 @@
                     },
                     "attestation": {
                         "$ref": "#/components/schemas/DeviceAttestationPayload"
+                    },
+                    "app_version": {
+                        "type": "string",
+                        "description": "The app's own version (x.y.z). Refused with 426 native_app_update_required when it is older than the deployment's minimum for this platform, or missing while a minimum is set.",
+                        "maxLength": 32
                     }
                 },
                 "required": [
@@ -185899,6 +186122,11 @@
                         "type": "string",
                         "writeOnly": true,
                         "maxLength": 4096
+                    },
+                    "app_version": {
+                        "type": "string",
+                        "description": "The app's own version (x.y.z). Refused with 426 native_app_update_required when it is older than the deployment's minimum for this platform, or missing while a minimum is set.",
+                        "maxLength": 32
                     }
                 },
                 "required": [
@@ -185922,6 +186150,36 @@
                     "access",
                     "device_grant",
                     "refresh"
+                ]
+            },
+            "DeviceStaffGrant": {
+                "type": "object",
+                "description": "Step up an active device session of this person to a staff grant (Q12).",
+                "properties": {
+                    "makerspace": {
+                        "type": "string",
+                        "description": "The makerspace the staff grant is fixed to.",
+                        "maxLength": 150,
+                        "pattern": "^[-a-zA-Z0-9_]+$"
+                    },
+                    "challenge": {
+                        "type": "string",
+                        "description": "A fresh attestation challenge for this device's app.",
+                        "maxLength": 512
+                    },
+                    "attestation": {
+                        "$ref": "#/components/schemas/DeviceAttestationPayload"
+                    },
+                    "app_version": {
+                        "type": "string",
+                        "description": "The app's own version (x.y.z). Refused with 426 native_app_update_required when it is older than the deployment's minimum for this platform, or missing while a minimum is set.",
+                        "maxLength": 32
+                    }
+                },
+                "required": [
+                    "attestation",
+                    "challenge",
+                    "makerspace"
                 ]
             },
             "DeviceStatusEnum": {
@@ -194394,19 +194652,15 @@
             },
             "ForgotPasswordRequest": {
                 "type": "object",
+                "description": "Recovery is for a person or the platform superadmin only (one account per person).\n\n``person`` is the default; ``member`` is its release-1 name, accepted for one release.\nThe release-1 ``staff`` context and its ``makerspace`` slug are gone.",
                 "properties": {
                     "context": {
                         "allOf": [
                             {
-                                "$ref": "#/components/schemas/Context396Enum"
+                                "$ref": "#/components/schemas/Context2dfEnum"
                             }
                         ],
-                        "default": "member"
-                    },
-                    "makerspace": {
-                        "type": "string",
-                        "maxLength": 80,
-                        "pattern": "^[-a-zA-Z0-9_]+$"
+                        "default": "person"
                     },
                     "email": {
                         "type": "string",
@@ -204730,37 +204984,18 @@
                 "type": "object",
                 "properties": {
                     "username": {
-                        "type": "string"
+                        "type": "string",
+                        "description": "A person's username or email (a converted staff account whose email was held signs in with its username). The platform superadmin signs in by username only from a platform origin. Release 2 removed context, makerspace and surface: one account per person."
                     },
                     "password": {
                         "type": "string",
                         "writeOnly": true
-                    },
-                    "context": {
-                        "$ref": "#/components/schemas/Context396Enum"
-                    },
-                    "makerspace": {
-                        "type": "string",
-                        "maxLength": 150,
-                        "pattern": "^[-a-zA-Z0-9_]+$"
-                    },
-                    "surface": {
-                        "$ref": "#/components/schemas/LoginRequestSurfaceEnum"
                     }
                 },
                 "required": [
                     "password",
                     "username"
                 ]
-            },
-            "LoginRequestSurfaceEnum": {
-                "enum": [
-                    "member",
-                    "staff",
-                    "delegated"
-                ],
-                "type": "string",
-                "description": "* `member` - member\n* `staff` - staff\n* `delegated` - delegated"
             },
             "LoginResponse": {
                 "type": "object",
@@ -204784,14 +205019,11 @@
             "LoginResponseSurfaceEnum": {
                 "enum": [
                     "member",
-                    "staff",
-                    "staff_api",
-                    "delegated",
                     "platform",
                     "verification_only"
                 ],
                 "type": "string",
-                "description": "* `member` - member\n* `staff` - staff\n* `staff_api` - staff_api\n* `delegated` - delegated\n* `platform` - platform\n* `verification_only` - verification_only"
+                "description": "* `member` - member\n* `platform` - platform\n* `verification_only` - verification_only"
             },
             "LogoutAllResponse": {
                 "type": "object",
@@ -217473,19 +217705,15 @@
             },
             "OtpResetPasswordConfirm": {
                 "type": "object",
+                "description": "Recovery is for a person or the platform superadmin only (one account per person).\n\n``person`` is the default; ``member`` is its release-1 name, accepted for one release.\nThe release-1 ``staff`` context and its ``makerspace`` slug are gone.",
                 "properties": {
                     "context": {
                         "allOf": [
                             {
-                                "$ref": "#/components/schemas/Context396Enum"
+                                "$ref": "#/components/schemas/Context2dfEnum"
                             }
                         ],
-                        "default": "member"
-                    },
-                    "makerspace": {
-                        "type": "string",
-                        "maxLength": 80,
-                        "pattern": "^[-a-zA-Z0-9_]+$"
+                        "default": "person"
                     },
                     "email": {
                         "type": "string",
@@ -249869,14 +250097,25 @@
                     }
                 }
             },
+            "SessionAuthorityEnum": {
+                "enum": [
+                    "member",
+                    "native_staff",
+                    "platform",
+                    "verification_only"
+                ],
+                "type": "string",
+                "description": "* `member` - member\n* `native_staff` - native_staff\n* `platform` - platform\n* `verification_only` - verification_only"
+            },
             "SessionContext": {
                 "type": "object",
                 "properties": {
                     "context": {
                         "type": "string",
-                        "default": "member",
+                        "default": "person",
+                        "description": "Which browser session: person (default) or platform (the superadmin). For one release the release-1 names `member` and `staff:<slug>` are accepted and both mean person (a staff role is a person's, so there is no per-space session).",
                         "maxLength": 156,
-                        "pattern": "^(?:member|platform|staff:[-a-zA-Z0-9_]+)$"
+                        "pattern": "^(?:person|member|platform|staff:[-a-zA-Z0-9_]+)$"
                     }
                 }
             },
@@ -257476,6 +257715,14 @@
                 "type": "string",
                 "description": "* `quantity` - Quantity\n* `individual` - Individual"
             },
+            "TracksEnum": {
+                "enum": [
+                    "community",
+                    "staff"
+                ],
+                "type": "string",
+                "description": "* `community` - community\n* `staff` - staff"
+            },
             "Triage": {
                 "type": "object",
                 "properties": {
@@ -260358,7 +260605,7 @@
                 "type": "http",
                 "scheme": "bearer",
                 "bearerFormat": "JWT",
-                "description": "Native staff sessions require a live device grant with staff authority. On non-member APIs, X-Makerspace-Id is mandatory and must select an active, servable local membership matching all URL/body targets. Member APIs may omit the header. Personal notification inbox, preferences and announcements accept member sessions; broadcasts and the makerspace-wide notification feed require staff authority."
+                "description": "One account per person: a person's token reaches staff routes only where they hold a staff role (in every targeted makerspace), with staff MFA. Native member grants never carry staff authority; a native staff grant is fixed to one makerspace and its staff routes require a matching X-Makerspace-Id. Member APIs may omit the header. Personal notification inbox, preferences and announcements accept member sessions; broadcasts and the makerspace-wide feed need staff authority."
             }
         }
     },

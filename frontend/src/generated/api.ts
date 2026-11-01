@@ -988,6 +988,7 @@ export const openApiPaths = [
   "/api/v1/auth/device/login",
   "/api/v1/auth/device/logout",
   "/api/v1/auth/device/refresh",
+  "/api/v1/auth/device/staff-grant",
   "/api/v1/auth/email-verification/confirm",
   "/api/v1/auth/email-verification/resend",
   "/api/v1/auth/forgot-password",
@@ -1527,7 +1528,7 @@ export type AccountingJournalReport = {
   "typed_rows": Array<JournalLine>;
 };
 
-export type AccountKindEnum = "member" | "staff" | "platform";
+export type AccountKindEnum = "member" | "platform";
 
 export type AccountProfile = {
   "display_name"?: string;
@@ -2708,20 +2709,33 @@ export type AuthMembership = {
   "can_verify": boolean;
   "verified_at": string | null;
   "referrals_enabled": boolean;
+  "tracks": Array<TracksEnum>;
 };
 
 export type AuthMembershipSourceEnum = "membership" | "organization";
 
 export type AuthorityEnum = "member" | "staff";
 
-export type AuthStaffMakerspace = {
+export type AuthStaffRole = {
+  "id": number;
+  "slug": string;
+  "name": string;
+};
+
+export type AuthStaffRoleEntry = {
+  "makerspace": AuthStaffRoleMakerspace;
+  "roles": Array<AuthStaffRole>;
+  "actions": Array<string>;
+};
+
+export type AuthStaffRoleMakerspace = {
   "id": number;
   "slug": string;
   "name": string;
 };
 
 export type AuthUserPayload = {
-  "session_authority": string;
+  "session_authority": SessionAuthorityEnum;
   "id": number;
   "username": string;
   "email": string;
@@ -2731,13 +2745,20 @@ export type AuthUserPayload = {
   "role": string;
   "is_superuser": boolean;
   "must_change_password": boolean;
+  "kind": AuthUserPayloadKindEnum;
   "account_kind": AccountKindEnum;
-  "staff_makerspace": AuthStaffMakerspace | null;
+  "is_platform": boolean;
+  "has_staff_role": boolean;
+  "has_elevated_authority": boolean;
+  "staff_roles": Array<AuthStaffRoleEntry>;
   "makerspaces": Array<AuthMembership>;
   "superadmin_actions": Array<string>;
+  "mfa_grace_ends_at": string | null;
   "event_grants"?: Array<GrantedEventEntry>;
   "booking_grants"?: Array<GrantedBookingEntry>;
 };
+
+export type AuthUserPayloadKindEnum = "person" | "platform";
 
 export type AvailabilityEnum = "Available" | "Limited" | "Full";
 
@@ -5088,7 +5109,7 @@ export type Context = {
   "routes": ContextRoutes;
 };
 
-export type Context396Enum = "member" | "staff" | "platform";
+export type Context2dfEnum = "person" | "member" | "platform";
 
 export type ContextEligibility = {
   "eligible": boolean;
@@ -5805,12 +5826,13 @@ export type DeviceLogin = {
   "platform": DevicePlatformEnum;
   "app_id": string;
   "environment": EnvironmentEnum;
-  "context"?: Context396Enum;
+  "authority"?: AuthorityEnum;
   "makerspace"?: string;
   "username": string;
   "password": string;
   "challenge": string;
   "attestation": DeviceAttestationPayload;
+  "app_version"?: string;
 };
 
 export type DeviceLoginResult = DeviceTokenResponse | MFAChallengeResponse;
@@ -5823,12 +5845,20 @@ export type DevicePlatformEnum = "apple" | "android";
 
 export type DeviceRefresh = {
   "refresh": string;
+  "app_version"?: string;
 };
 
 export type DeviceRefreshResponse = {
   "access": string;
   "refresh": string;
   "device_grant": DeviceGrant;
+};
+
+export type DeviceStaffGrant = {
+  "makerspace": string;
+  "challenge": string;
+  "attestation": DeviceAttestationPayload;
+  "app_version"?: string;
 };
 
 export type DeviceStatusEnum = "pending" | "active" | "revoked";
@@ -7581,8 +7611,7 @@ export type FontWeightEnum = 400 | 500 | 600 | 700;
 export type ForeignCurrencyEnum = "no_gst" | "export_lut";
 
 export type ForgotPasswordRequest = {
-  "context"?: Context396Enum;
-  "makerspace"?: string;
+  "context"?: Context2dfEnum;
   "email": string;
 };
 
@@ -9756,12 +9785,7 @@ export type LogError = {
 export type LoginRequest = {
   "username": string;
   "password": string;
-  "context"?: Context396Enum;
-  "makerspace"?: string;
-  "surface"?: LoginRequestSurfaceEnum;
 };
-
-export type LoginRequestSurfaceEnum = "member" | "staff" | "delegated";
 
 export type LoginResponse = {
   "user": AuthUserPayload;
@@ -9769,7 +9793,7 @@ export type LoginResponse = {
   "surface": LoginResponseSurfaceEnum;
 };
 
-export type LoginResponseSurfaceEnum = "member" | "staff" | "staff_api" | "delegated" | "platform" | "verification_only";
+export type LoginResponseSurfaceEnum = "member" | "platform" | "verification_only";
 
 export type LogMachineConsumption = {
   "quantity": string;
@@ -12683,8 +12707,7 @@ export type OrganizerTeamPage = {
 export type OrientationEnum = "portrait" | "landscape";
 
 export type OtpResetPasswordConfirm = {
-  "context"?: Context396Enum;
-  "makerspace"?: string;
+  "context"?: Context2dfEnum;
   "email": string;
   "code": string;
   "new_password": string;
@@ -20084,6 +20107,8 @@ export type ServiceStart = {
   "planned_quantity"?: string;
 };
 
+export type SessionAuthorityEnum = "member" | "native_staff" | "platform" | "verification_only";
+
 export type SessionContext = {
   "context"?: string;
 };
@@ -21965,6 +21990,8 @@ export type TrackReadPage = {
   "previous": string | null;
   "results": Array<TrackRead>;
 };
+
+export type TracksEnum = "community" | "staff";
 
 export type Triage = {
   "operation_id": string;

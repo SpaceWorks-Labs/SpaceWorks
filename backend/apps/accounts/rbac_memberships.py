@@ -9,9 +9,16 @@ from apps.makerspaces.models import MakerspaceMembership
 
 
 def _staff_rows(actor):
+    """The actor's staff-track rows, narrowed to what THIS session may exercise (#162(2)):
+    none for a native member grant or a claim session, one tenant for a native staff grant."""
     if getattr(actor, "pk", None) is None:
         return MakerspaceMembership.staff_tracks.none()
-    return MakerspaceMembership.staff_tracks.filter(user_id=actor.pk)
+    rows = MakerspaceMembership.staff_tracks.filter(user_id=actor.pk)
+    from apps.accounts.session_authority import staff_authority_limit
+    limit = staff_authority_limit(actor)
+    if limit is None:
+        return rows
+    return rows.filter(makerspace_id__in=limit) if limit else rows.none()
 
 
 def _scope_ids(actor):

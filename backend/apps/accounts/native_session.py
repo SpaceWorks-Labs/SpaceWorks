@@ -26,14 +26,19 @@ def is_native_session(actor):
 
 
 class NativeSessionContextMiddleware:
-    """Clear the marker after every request so a worker thread never carries it over."""
+    """Clear the markers (and the staff-authority limit) after every request so a worker
+    thread never carries them over."""
 
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
+        from apps.accounts import session_authority
+
         token = _NATIVE_USER_ID.set(None)
+        limit = session_authority.reset()
         try:
             return self.get_response(request)
         finally:
+            session_authority.restore(limit)
             _NATIVE_USER_ID.reset(token)

@@ -30,21 +30,22 @@ apps never compute availability, permissions or money.
 | User | In the app |
 |---|---|
 | **Member** | Browse inventory, request hardware, see loans and due dates, renew, bookings, events (register, ticket QR), membership card, payments (pay dues/charges), notification inbox, profile |
-| **Staff** (fixed built-in staff roles) | Separate staff account for one makerspace; review, issue/return, direct handout, booking approvals, event check-in and dashboards only when current actions allow |
+| **Staff** (fixed built-in staff roles) | The SAME person account holding a staff role in a makerspace (release 2); after a staff step-up grant fixed to that makerspace: review, issue/return, direct handout, booking approvals, event check-in and dashboards only when current actions allow |
 | **Platform / superadmin** | No native grants. Show "Use the web console" on refusal |
 
-One app supports separate member and staff sign-ins. `account_kind` is immutable and is
-`member`, `staff` or `platform`; the same person/email can have accounts in different
-namespaces. A member never gains staff tools from role assignment, social login or refresh.
-Staff use password + authenticator MFA + attestation; the grant is fixed to `staff_makerspace`.
-A member can participate in several spaces and has a makerspace switcher. Staff stay in their
-one tenant and use their separate member account for community activity. Switching accounts
-clears tokens, private caches, pending navigation and prior-account push registrations.
+**Release 2: one account per person (clean break, see §7 "Release 2 clean break").** Every
+person has ONE account (`kind: "person"`); staff roles are granted to it per makerspace. The
+superadmin is a separate `platform` account with no native grants. A person signs in once
+(member grant) and, to use staff tools, **steps up** to a staff grant fixed to one makerspace
+where they hold a staff role (authenticator + fresh attestation). A member grant never carries
+staff authority. A person can participate in several spaces and has a makerspace switcher.
+Switching accounts clears tokens, private caches, pending navigation and prior-account push
+registrations.
 
-Drive staff UI from `account_kind=staff`, `session_authority=native_staff`, grant
-`authority=staff` and the current action list. The API rechecks every permission; handle 403.
-Resource helpers and organization delegates remain member accounts and gain no native staff
-or organization-derived authority.
+Drive staff UI from `session_authority=native_staff`, grant `authority=staff`, the payload's
+`staff_roles` (only the grant's makerspace) and the current action list. The API rechecks every
+permission; handle 403. Organization delegates gain no native staff or organization-derived
+authority.
 
 ## 3. What you get, and what you do not
 
@@ -142,6 +143,27 @@ developer has no Mac, CI is the compiler: no iOS phase is done until CI is green
 Base URL = server URL + `/api/v1/` (a few public catalogue routes are under `/api/`). The schema file
 is authoritative. These are the rules the schema cannot express:
 
+**Release 2 clean break (one account per person, #63; U-A2)** -- apps built for release 1 must
+update:
+- Removed: the `context` and `makerspace` parameters of password and device login (device login
+  now takes `authority` + `makerspace` for a staff grant), the `staff` recovery context, the
+  `refresh_token_staff_<slug>` browser cookies, payload `staff_makerspace`.
+- Tokens: `kind` is `person` or `platform`; no token carries `makerspace`. Payload: `kind`,
+  `is_platform`, `has_staff_role`, `has_elevated_authority`, `staff_roles`, `mfa_grace_ends_at`
+  (item 10); `account_kind` survives one release as a deprecated alias.
+- Staff grants are step-ups on the person (item 6): `POST /auth/device/staff-grant`.
+- Every device grant was revoked at the cutover, member grants included (#66): every user signs
+  in again; an old refresh gets 401 `session_revoked`.
+- Account merges (a person proving a former staff account): `auth-account-merge-start`, `-prove`,
+  `-resend`, `-preview`, `-confirm`, `-cancel` (U-C ships them; the route names are fixed).
+- `MIN_NATIVE_APP_VERSION_IOS` / `_ANDROID` (x.y.z, numeric per platform): 426
+  `native_app_update_required` at device login, the staff step-up and refresh; send `app_version`.
+
+### Watch-friendly notifications
+
+(Placeholder: lane L19 fills the #116 push contract here -- thread ids, the Open and Mark seen
+actions, Apple Watch and Wear OS presentation.)
+
 **Transport**
 - HTTPS only (allow `http://10.0.2.2` / `localhost` in debug builds only).
 - **Never send `Cookie`, `Origin` or `Referer` headers.** Device routes reject them. iOS: set
@@ -178,14 +200,14 @@ is authoritative. These are the rules the schema cannot express:
    `{id_token,nonce,surface:"member",delivery:"device",client_platform,challenge,attestation,
    authorization_code?,apple_name?}` -> device tokens `{access,refresh,user,device_grant,outcome}`.
    Social sign-in never returns an MFA challenge: the provider's own authentication is the
-   proof (social sign-in is member-only, and staff use password + MFA + attestation).
+   proof. Social sign-in issues a member grant; staff tools need the staff step-up (item 6).
    OIDC provider keys use `oidc:{slug}` in the nonce request.
    Apple must use the configured native bundle audience. Supply the authorization code when
    available so the server can revoke Apple credentials on account deletion.
 5. Phone OTP is available: `POST /auth/phone/login/start` with
    `{phone, delivery:"device", client_platform:"android"|"ios", challenge}` → `{detail}`;
    `/auth/phone/login/confirm` takes those fields plus six-digit `code` and `attestation`.
-   Success is a device-token response or an MFA challenge. Phone sign-in is member-only.
+   Success is a device-token response or an MFA challenge. Phone sign-in issues a member grant.
    `GET /config` publishes `native: {min_app_version:{android:string|null, ios:string|null},
    providers:{password:boolean, phone:boolean, google:{android_client_id,ios_client_id}|null,
    apple:{enabled:boolean}|null, oidc:[{key,display_name,client_id,issuer}]}}`.
@@ -202,32 +224,44 @@ is authoritative. These are the rules the schema cannot express:
    the public contract never includes credentials or verifier configuration keys.
    Read it on launch, show only enabled methods, and require an update below the platform minimum
    (compare dotted numeric components, not strings). Null means no minimum.
-6. Staff password sign-in MUST send `context:"staff"` and `makerspace:"<slug>"` to
-   `/auth/device/login`, with username/password, platform/app/environment, challenge and attestation.
-   It selects only staff accounts in that tenant and always requires MFA (including enrollment
-   when requested). Member password sign-in sends `context:"member"` (default) with no makerspace.
-   Phone, Google, Apple and OIDC are member-only; they never issue staff grants. Platform sign-in
-   cannot issue a device grant. Wrong namespace/tenant returns generic credential failure.
-7. `POST /auth/device/refresh` rotates tokens. **Refresh is single-flight**: if two requests 401 at
-   once, only one refresh runs and the others wait for it. **Re-using an old refresh token revokes the
-   whole device session** (security feature). Persist the new pair atomically before retrying.
+6. **Staff grant = a step-up on the person** (release 2). Either sign in with
+   `/auth/device/login` sending `authority:"staff"` and `makerspace:"<slug>"` (password +
+   authenticator, always an MFA challenge, enrolment when requested), or, from ANY active device
+   session (password, Google, Apple, OIDC or phone), call `POST /auth/device/staff-grant` with
+   `{makerspace:"<slug>", challenge, attestation, app_version}` (a fresh attestation challenge) and
+   finish the returned MFA challenge with `POST /auth/mfa/verify` (no Authorization header). The
+   result is a NEW grant with `authority:"staff"` fixed to that makerspace; keep the member grant
+   for member screens or sign it out. No staff role there: 403 `staff_access_required` (step-up)
+   or a generic 401 (login). Losing the staff role revokes the staff grant (the next call or
+   refresh returns 401). Platform accounts cannot hold device grants.
+7. `POST /auth/device/refresh` rotates tokens; send `{refresh, app_version}`. **Refresh is
+   single-flight**: if two requests 401 at once, only one refresh runs and the others wait for it.
+   **Re-using an old refresh token revokes the whole device session** (security feature). Persist the
+   new pair atomically before retrying. 401 `session_revoked` means the server's authentication
+   generation changed (for example the release-2 cutover): sign in again. 426
+   `native_app_update_required` (body has `minimum_version`) means this app is older than
+   `MIN_NATIVE_APP_VERSION_IOS`/`_ANDROID`: show the update screen; nothing was rotated.
 8. `POST /auth/device/logout` on sign-out. `GET /auth/device/grants` lists devices;
    `DELETE /auth/device/grants/{grant_id}` revokes one.
 9. Superadmin accounts are refused (`code: device_superadmin_not_supported`): show
    "Use the web console".
-10. `GET /auth/me` = the user payload: identity + per-makerspace memberships with `actions`. Drive the
-   makerspace switcher and all staff-tool visibility from it, and refetch on app foreground.
-   The payload includes `session_authority`. Show staff tools only when it is
-   `native_staff`, account is `staff`, grant is `staff` and local membership has the action.
-   Payload includes `account_kind` and `staff_makerspace:{id,slug,name}|null`. Refresh never
-   changes account kind, grant authority or the fixed staff tenant.
+10. `GET /auth/me` = the user payload: `kind:"person"|"platform"`, `is_platform`, `has_staff_role`,
+   `has_elevated_authority`, `staff_roles:[{makerspace:{id,slug,name},roles:[{id,slug,name}],actions}]`
+   (what THIS session may use: none on a member grant, the fixed makerspace on a staff grant),
+   `makerspaces` (one entry per space with `actions` and `tracks: ["community","staff"]`),
+   `superadmin_actions`, `mfa_grace_ends_at` and `session_authority` (`member` | `native_staff`).
+   Drive the switcher and staff-tool visibility from it, and refetch on app foreground. Show staff
+   tools only when `session_authority` is `native_staff` and the action is listed. `account_kind`
+   is a deprecated alias for one release; `staff_makerspace` is gone. Use `has_staff_role` to offer
+   the step-up. Refresh never changes grant authority or the fixed staff makerspace.
 11. On staff screens, `X-Makerspace-Id` is **mandatory** and must equal any makerspace
     id in the URL. Without it, staff calls are refused.
 
 Device request/response details: the attestation challenge takes
 `{platform:"android"|"apple", app_id, environment:"development"|"production"}`.
 Password login takes the same fields plus `{username,password,challenge,attestation,
-context:"member"|"staff",makerspace?:slug}` (makerspace required only for staff);
+authority?:"member"|"staff",makerspace?:slug,app_version?}` (makerspace required only for staff;
+`context` was removed in release 2);
 success is `{access,refresh,user,device_grant}`. The grant is
 `{id:UUID,platform,app_id,environment,status,authority:"member"|"staff",
 staff_makerspace_id:number|null,login_method,attested_at,last_used_at,created_at}`.
@@ -256,8 +290,8 @@ on this device) returns `{challenge,...}`. Then `POST /auth/mfa/enroll {challeng
 starting enrollment invalidates the current tokens, and the challenge is the credential, as on the
 web. The result is issued only on the grant that started it, and only to a native caller. Success returns
 `{access,refresh,device_grant,user,recovery_codes}` on the **same** grant id; replace the stored
-token pair at once. Every other browser session and device is signed out, as on the web. Staff
-get 403 `native_staff_mfa_managed` (they enroll during device sign-in). Regenerating recovery codes
+token pair at once. Every other browser session and device is signed out, as on the web. A staff
+grant gets 403 `native_staff_mfa_managed` (it is only ever issued behind an enrolled factor). Regenerating recovery codes
 or turning MFA off still signs this device out; sign in again afterwards.
 
 **Linking a sign-in provider (members).** Get recent reauth first (`/auth/reauth*`, ten minutes).
@@ -346,7 +380,8 @@ Paths below are relative to `/api/v1`. Core personal APIs are independent of mem
 optional inbox installation; the account still needs a current tenant tie: membership or owned
 loan/request, booking, event registration, machine-service request or charge. Revoked membership
 wins over old ownership; restricted, inactive, deleting/retired accounts are refused. Staff use
-their separate staff account and fixed tenant. No preference grants staff authority. Native
+their person account; staff pushes reach a staff grant only for its fixed makerspace. No
+preference grants staff authority. Native
 `X-Makerspace-Id` selection currently requires active local membership: do not invent a bypass
 for account-only personal APIs if refused. Request a backend update for that app flow.
 
@@ -677,5 +712,5 @@ For later phases, reuse the same prompt with the phase name, e.g. "Implement **p
 ## 11. Out of scope (v1)
 
 Superadmin/control-plane features, organization-derived native staff authority (staff use a
-separate fixed-tenant account with active local staff membership), kiosk and printer device protocols, offline mode beyond showing cached data read-only,
+staff step-up grant of their own person account, fixed to one makerspace where they hold a staff role), kiosk and printer device protocols, offline mode beyond showing cached data read-only,
 tablets-specific layouts, GitHub sign-in.

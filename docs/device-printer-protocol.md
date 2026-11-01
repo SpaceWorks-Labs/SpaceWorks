@@ -103,3 +103,74 @@ machine-adapter purge nulls live targets while retaining device history. Missing
 or apply. Free-text printer failure notes use scoped encryption; adapter audit metadata contains only
 typed identifiers and outcomes. The existing workflow's reason fields retain their existing storage
 contract.
+
+## Machine integrations (release 2; integration schema 1; foundation only)
+
+The integration itself (an on-device agent, a vendor adapter, fleet scheduling, live controls,
+camera, shelf pointer) is **deferred** (owner decision #76). These routes are the server side a future
+agent would use. They are **off by default**: unless the makerspace has the `machines.integrations`
+capability (which needs `devices`, `machines` and `machine_service`), every route below answers
+**404**, for staff and devices alike. The signature protocol is unchanged (v1); there is no second,
+shared bearer token.
+
+A device reaches them only as an **active printer** whose enabled printer binding names an active
+machine whose type has an **enabled `printer_agent` integration** in the same makerspace. Staff
+manage those per-type bindings (`MANAGE_DEVICES` plus a machine scope covering the type):
+
+- `GET|POST /api/v1/admin/makerspace/{makerspace_id}/machine-types/{type_id}/integrations` —
+  `{"kind":"printer_agent","enabled":false,"config_schema_version":1}`; created **disabled** by
+  default; `printer_agent` binds only the built-in 3D printer type (`400 integration_kind_unsupported`);
+  a second binding of the same kind is `409 integration_exists`.
+- `GET|PATCH|DELETE /api/v1/admin/machine-type-integrations/{id}` — only `enabled` and
+  `config_schema_version` change. Bind, change and removal are audited
+  (`devices.integration_bound|updated|unbound`).
+- `GET /api/v1/admin/makerspace/{makerspace_id}/machine-types/{type_id}/integration-status` —
+  read-only: each bound printer of the type, its last-seen time and latest snapshot.
+
+### Status snapshot on the heartbeat
+
+`POST /api/v1/device/heartbeat` may carry a body (an empty body behaves exactly as before):
+
+```json
+{"status_snapshot": {"schema_version": 1, "observed_at": 1760000000, "state": "printing",
+  "progress_percent": 42, "layer_current": 10, "layer_total": 200,
+  "temperatures": {"nozzle": 215.4, "bed": 60, "chamber": null},
+  "spools": [{"slot": 0, "material": "PLA", "colour": "Black", "remaining_percent": 80}],
+  "clear_token": "bed-ok-1"}}
+```
+
+`state` is one of `idle`, `preparing`, `printing`, `paused`, `finished`, `failed`, `error`. Numbers
+must be finite; out-of-range values are **clamped** (progress and spool remaining 0–100, layers
+0–100000, nozzle −40–400 °C, bed −40–200 °C, chamber −40–120 °C). At most 16 spools, one per slot
+(0–63); `material` ≤ 24 and `colour` ≤ 16 characters; `clear_token` 1–64 of `A-Z a-z 0-9 - _`.
+Unknown fields, wrong kinds and sizes answer 400. The response adds `status_snapshot`:
+`stored`, `stale` (not newer than the stored `observed_at`, so a retry is harmless), `throttled`
+(within 5 seconds of the last stored one) or `not_integrated` (nothing stored). An `observed_at` more
+than 5 minutes ahead is refused. One snapshot row is kept per device, overwritten in place; it is
+advisory and never changes `Machine.status`, a request, consumption or money.
+
+### Queue pull
+
+`GET /api/v1/device/integrations/queue` (signed; sign the exact target and an empty body) returns
+the machine and type it is bound to and up to 50 jobs: requests **accepted** for that machine type
+(or that machine's legacy bucket) and the request **in progress** on that machine, oldest accepted
+first. Each job carries `service_request_id`, `status`, `on_this_machine`, `estimated_minutes`,
+`planned_grams`, `accepted_at`, `started_at` and the device's live `printer_job_id`, never a
+requester, a title, a file or a storage location.
+
+### Job reports
+
+`POST /api/v1/device/integrations/jobs/{service_request_id}/report`:
+
+- `{"event":"started","external_job_id":"agent-run-1"}` attaches the device to a request **staff
+  already started** on its bound machine (starting chooses the material pool, a staff decision;
+  otherwise `409 job_not_started`) and creates the acknowledged printer job. Repeating it is a no-op;
+  another run on that request is `409 job_conflict`.
+- `{"event":"completed"|"failed", "external_job_id", "operation_id", "actual_minutes",
+  "consumptions", ...}` is the terminal report above (same fields, `event` in place of `outcome`;
+  report the start first, else `409 job_not_reported_started`). A **failure is always held** for
+  staff review (`needs_review`) whatever the binding's auto-apply policy; a completion follows
+  `auto_apply_terminal`. Repeating the same operation is a no-op; changing it is 409. Staff apply a
+  held report with `POST /api/v1/admin/printer-jobs/{id}/apply`; the effect runs through the
+  machine-service workflow and its cost seam. Every report is audited
+  (`machine_service.agent_report_applied|refused`).

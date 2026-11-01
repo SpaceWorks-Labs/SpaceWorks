@@ -783,6 +783,7 @@ its parent module is off.
 | `charges.discounts` | standalone core ledger (needs `charges.pricing`) | | Automatic member discounts for all members, a plan's members or one member; the single best one applies, then an event promo code | Everyone pays the list price; rules are kept |
 | `loans.fee_waivers` | `request_workflow` | ● | Staff waive a loan's rental, late, damage or lost fees with a recorded reason; a fee already paid opens a refund case for approval; the deposit is never waived | No waive tool; waivers already written keep their loans free |
 | `charges.machines` | `machines` (needs `machine_service`) | ● | Record a charge when a priced machine job completes | Machine jobs are free |
+| `machines.integrations` | `machines` (needs `devices`, `machine_service`) | | **Foundation only; the integration is deferred (#76).** An enrolled printer device bound to a machine whose type has an enabled printer-agent binding may pull its approved jobs, report start/completion/failure through the machine-service workflow (failures held for staff) and send a bounded status snapshot. Superadmin `/control/` only; no console screen | Every integration route answers 404; bindings and snapshots are kept |
 | `charges.bookings` | `bookings` | ● | Record a charge when a paid booking is confirmed | Bookings are free |
 | `charges.events` | `events` | ● | Record a charge when a registration for a paid event is confirmed | Registration is free |
 | `charges.membership` | `membership` | ● | Record dues and renewal charges | Dues are not recorded |

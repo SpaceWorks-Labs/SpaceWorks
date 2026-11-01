@@ -203,6 +203,13 @@ Continuation of [SOURCE-MAP.md](SOURCE-MAP.md).
   Labels reuse `services_commands.py` lease/ack/backoff and the operations ZIP renderer;
   `*_7c.py` siblings compose the shared catalogs. The first send freezes a QR batch.
   The full contract and invariants live in [device-label-commands.md](device-label-commands.md).
+  Release 2 L10 (machine-integration foundations, off by default, #76): `models_integrations.py`
+  (`MachineTypeIntegration`, `PrinterStatusSnapshot`), `integration_access.py` (the 404 gate and the
+  device -> binding -> machine -> type chain), `serializers_integrations.py` (bounded, clamped payloads),
+  `services_integration_status.py` (heartbeat snapshot), `services_integration_reports.py` (queue pull
+  and job reports onto the printer adapter), `services_integration_bindings.py` (staff bindings and the
+  status list), `views_integrations.py` + `urls_r2.py` + `route_registry_r2.py`. Contract:
+  [device-printer-protocol.md](device-printer-protocol.md#machine-integrations-release-2-integration-schema-1-foundation-only).
 - `backend/apps/data_export/` — Space-Manager data export (Phase 4). Per-fidelity (`REDACTED`/`PORTABLE`)
   disposition registry over models, fields, datasets, traversals and the global-user reference closure, with
   **drift guards that refuse an unclassified model or field**. `classification.py` and `references.py`

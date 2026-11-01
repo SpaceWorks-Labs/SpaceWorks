@@ -110,7 +110,7 @@ def token_payload_for_context(context, user_id):
         "claim_makerspace_id": context.makerspace_id,
         "absolute_expires_at": int(context.absolute_expires_at.timestamp()),
         "user_id": user_id,
-        "kind": "member",
+        "kind": "person",
         "credential_generation": context.credential_generation,
     }
 

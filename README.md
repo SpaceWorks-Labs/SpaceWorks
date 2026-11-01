@@ -1,14 +1,14 @@
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/readme/banner-dark.png" />
   <source media="(prefers-color-scheme: light)" srcset="docs/readme/banner.png" />
-  <img src="docs/readme/banner.png" width="100%" alt="Space Works. Every tool, machine and event. Accounted for. Free, self-hosted software to run your makerspace. Patch, the Space Works mascot, peeks in from the corner." />
+  <img src="docs/readme/banner.png" width="100%" alt="Space Works: open-source makerspace management. Run the space, not the spreadsheet. Tools, machines, members and events. Every handover accounted for. Patch, the Space Works mascot, peeks in from the corner." />
 </picture>
 
 <div align="center">
 
-<h3>Run your whole makerspace from one place.</h3>
+<h3>Run the space, not the spreadsheet.</h3>
 
-<p>Tools, machines, members, events, bookings and money, with a trail behind every handover.</p>
+<p>Open-source makerspace management: tools, machines, members, events, bookings and money in one place, with a trail behind every handover.</p>
 
 <p>
   <a href="https://github.com/SpaceWorks-Labs/SpaceWorks/actions/workflows/checks.yml"><img src="https://img.shields.io/github/actions/workflow/status/SpaceWorks-Labs/SpaceWorks/checks.yml?branch=dev&style=flat-square&label=checks&labelColor=142C2A" alt="Checks workflow status" /></a>

@@ -18331,8 +18331,6 @@ export type PublicRequestItemStatus = {
 export type PublicRequestStatus = {
   "status": string;
   "created_at": string;
-  "pickup_from": string | null;
-  "pickup_until": string | null;
   "items": Array<PublicRequestItemStatus>;
 };
 

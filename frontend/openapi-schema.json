@@ -131315,7 +131315,7 @@
         "/api/v1/member/machine-service/requests/{id}/cancel": {
             "post": {
                 "operationId": "api_v1_member_machine_service_requests_cancel_create",
-                "description": "Owner-only. Pending, accepted and in-progress jobs can be cancelled; any held consumables are released with no charge (a running job may confirm `consumed_quantity`, which is costed but never charged). Repeating a successful cancel returns the same result.",
+                "description": "Owner-only. A job can be cancelled until staff start it (submitted, needs changes, quoted or queued); a running job is the staff's to stop (403). Any held consumables are released with no charge. Repeating a successful cancel returns the same result.",
                 "summary": "Cancel your own machine-service job",
                 "parameters": [
                     {
@@ -247893,18 +247893,6 @@
                         "format": "date-time",
                         "readOnly": true
                     },
-                    "pickup_from": {
-                        "type": "string",
-                        "format": "date-time",
-                        "readOnly": true,
-                        "nullable": true
-                    },
-                    "pickup_until": {
-                        "type": "string",
-                        "format": "date-time",
-                        "readOnly": true,
-                        "nullable": true
-                    },
                     "items": {
                         "type": "array",
                         "items": {
@@ -247916,8 +247904,6 @@
                 "required": [
                     "created_at",
                     "items",
-                    "pickup_from",
-                    "pickup_until",
                     "status"
                 ]
             },

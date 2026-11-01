@@ -494,6 +494,7 @@ export const openApiPaths = [
   "/api/v1/admin/machine-service/requests/{id}/reject",
   "/api/v1/admin/machine-service/requests/{id}/reprint",
   "/api/v1/admin/machine-service/requests/{id}/start",
+  "/api/v1/admin/machine-type-integrations/{id}",
   "/api/v1/admin/machines/documents/{id}",
   "/api/v1/admin/machines/documents/{id}/url",
   "/api/v1/admin/machines/{id}",
@@ -614,6 +615,8 @@ export const openApiPaths = [
   "/api/v1/admin/makerspace/{makerspace_id}/machine-types",
   "/api/v1/admin/makerspace/{makerspace_id}/machine-types/{id}",
   "/api/v1/admin/makerspace/{makerspace_id}/machine-types/{machine_type_id}/policy",
+  "/api/v1/admin/makerspace/{makerspace_id}/machine-types/{type_id}/integration-status",
+  "/api/v1/admin/makerspace/{makerspace_id}/machine-types/{type_id}/integrations",
   "/api/v1/admin/makerspace/{makerspace_id}/machines",
   "/api/v1/admin/makerspace/{makerspace_id}/maintenance-overdue",
   "/api/v1/admin/makerspace/{makerspace_id}/membership-invitations",
@@ -681,6 +684,7 @@ export const openApiPaths = [
   "/api/v1/admin/makerspace/{makerspace_id}/requests/{request_id}/fee-waivers/{waiver_id}/revoke",
   "/api/v1/admin/makerspace/{makerspace_id}/restores",
   "/api/v1/admin/makerspace/{makerspace_id}/return-policy",
+  "/api/v1/admin/makerspace/{makerspace_id}/selfhost-move-request",
   "/api/v1/admin/makerspace/{makerspace_id}/settings-authority/effective",
   "/api/v1/admin/makerspace/{makerspace_id}/settings-authority/grants",
   "/api/v1/admin/makerspace/{makerspace_id}/settings-authority/locks",
@@ -1057,6 +1061,8 @@ export const openApiPaths = [
   "/api/v1/device/enrollments/{id}/challenge",
   "/api/v1/device/enrollments/{id}/complete",
   "/api/v1/device/heartbeat",
+  "/api/v1/device/integrations/jobs/{id}/report",
+  "/api/v1/device/integrations/queue",
   "/api/v1/device/label-commands/{id}/content",
   "/api/v1/device/label-commands/{id}/result",
   "/api/v1/device/printer-jobs/{id}/result",
@@ -5818,6 +5824,19 @@ export type DeviceGrantPage = {
   "results": Array<DeviceGrant>;
 };
 
+export type DeviceHeartbeatRequest = {
+  "status_snapshot"?: StatusSnapshot;
+};
+
+export type DeviceHeartbeatResponse = {
+  "device_id": string;
+  "makerspace_id": number;
+  "status": string;
+  "key_version": number;
+  "last_seen_at": string | null;
+  "status_snapshot"?: StatusSnapshotEnum;
+};
+
 export type DeviceIdentity = {
   "platform": DevicePlatformEnum;
   "app_id": string;
@@ -6774,6 +6793,8 @@ export type EventEligibleMember = {
   "member_id": number;
   "display_name": string;
 };
+
+export type EventEnum = "started" | "completed" | "failed";
 
 export type EventFeedbackReport = {
   "rows": Array<Array<unknown>>;
@@ -8814,6 +8835,15 @@ export type IntegrationParticipantPage = {
   "results": Array<IntegrationParticipant>;
 };
 
+export type IntegrationStatus = {
+  "device_id": string;
+  "device_name": string;
+  "machine_id": number;
+  "machine_name": string;
+  "last_seen_at": string | null;
+  "snapshot": Snapshot | null;
+};
+
 export type IntegrationWorkerHealth = {
   "status"?: Status83eEnum;
   "detail"?: string;
@@ -9161,6 +9191,18 @@ export type JobCreate = {
 
 export type JobOutcomeEnum = "completed" | "failed";
 
+export type JobReport = {
+  "event": EventEnum;
+  "external_job_id": string;
+  "operation_id"?: string;
+  "actual_minutes"?: number;
+  "consumptions"?: Array<Consumption>;
+  "failure_reason"?: string;
+  "percent_complete"?: number | null;
+  "actual_grams"?: string | null;
+  "actual_quantity"?: string | null;
+};
+
 export type JobStateEnum = "awaiting" | "reported" | "applied" | "needs_review" | "cancelled";
 
 export type JoinModeEnum = "open" | "approval" | "invite_only" | "vouch" | "closed";
@@ -9209,6 +9251,8 @@ export type KindAf4Enum = "rules" | "amenity" | "faq" | "link" | "sponsor" | "ga
 export type KindB02Enum = "rollback_in_place" | "disaster";
 
 export type KindDa9Enum = "archive";
+
+export type KindDb6Enum = "printer_agent";
 
 export type KindE45Enum = "printer" | "label_printer" | "generic";
 
@@ -12031,6 +12075,11 @@ export type MostLentReportRow = {
   "product_name": string;
   "times_lent": number;
   "total_quantity_lent": number;
+};
+
+export type MoveError = {
+  "detail": string;
+  "code"?: string;
 };
 
 export type MoveToInventoryRequest = {
@@ -15419,6 +15468,11 @@ export type PatchedTrackInput = {
   "order"?: number;
 };
 
+export type PatchedTypeIntegrationUpdate = {
+  "enabled"?: boolean;
+  "config_schema_version"?: number;
+};
+
 export type PatchedWhatsAppBinding = {
   "id"?: number;
   "feature"?: string;
@@ -18406,6 +18460,27 @@ export type QuantityChainSummary = {
   "active_quantity": number;
 };
 
+export type Queue = {
+  "machine_id": number;
+  "machine_type_id": number;
+  "integration_kind": string;
+  "config_schema_version": number;
+  "jobs": Array<QueueJob>;
+};
+
+export type QueueJob = {
+  "service_request_id": number;
+  "status": QueueJobStatusEnum;
+  "on_this_machine": boolean;
+  "estimated_minutes": number | null;
+  "planned_grams": string | null;
+  "accepted_at": string | null;
+  "started_at": string | null;
+  "printer_job_id": string | null;
+};
+
+export type QueueJobStatusEnum = "accepted" | "in_progress";
+
 export type Quote = {
   "amount": string;
   "discount_amount": string;
@@ -20105,6 +20180,8 @@ export type Schedule = {
   "is_active"?: boolean;
 };
 
+export type SchemaVersionEnum = 1;
+
 export type SchemeEnum = "regular" | "composition";
 
 export type ScopeModeEnum = "machine" | "full" | "handover";
@@ -20246,6 +20323,27 @@ export type SegmentChoice = {
 };
 
 export type SegmentSourceEnum = "billed" | "estimated" | "not_applicable";
+
+export type SelfHostMoveCreate = {
+  "note"?: string;
+};
+
+export type SelfHostMoveRequest = {
+  "id": string;
+  "status": SelfHostMoveRequestStatusEnum;
+  "status_label": string;
+  "note": string;
+  "requested_at": string;
+  "decided_at": string | null;
+  "decision_note": string;
+  "exported_at": string | null;
+};
+
+export type SelfHostMoveRequestStatusEnum = "requested" | "approved" | "exporting" | "exported" | "rejected" | "failed" | "cancelled";
+
+export type SelfHostMoveStatus = {
+  "request": SelfHostMoveRequest | null;
+};
 
 export type SentToEmailEnum = "active" | "expired" | "revoked" | "redeemed";
 
@@ -20579,6 +20677,21 @@ export type SkipInput = {
   "notes"?: string;
 };
 
+export type Snapshot = {
+  "schema_version": number;
+  "state": StateE91Enum;
+  "progress_percent": number | null;
+  "layer_current": number | null;
+  "layer_total": number | null;
+  "nozzle_temp_c": string | null;
+  "bed_temp_c": string | null;
+  "chamber_temp_c": string | null;
+  "spools": unknown;
+  "clear_token": string;
+  "observed_at": string;
+  "received_at": string;
+};
+
 export type SocialIdentity = {
   "provider": string;
   "created_at": string;
@@ -20843,6 +20956,13 @@ export type SponsorSubmissionRead = {
 };
 
 export type SponsorTierEnum = "platinum" | "gold" | "silver" | "partner" | "community_partner";
+
+export type Spool = {
+  "slot": number;
+  "material"?: string;
+  "colour"?: string;
+  "remaining_percent"?: string | null;
+};
 
 export type StaffAccount = {
   "id": number;
@@ -21473,6 +21593,8 @@ export type State9efEnum = "requested" | "invited" | "awaiting_vouches" | "await
 
 export type StateE8dEnum = "draft" | "published" | "retired";
 
+export type StateE91Enum = "idle" | "preparing" | "printing" | "paused" | "finished" | "failed" | "error";
+
 export type StateFf1Enum = "open" | "closed";
 
 export type StationPin = {
@@ -21554,6 +21676,20 @@ export type StatusesDf6Enum = "pending_approval" | "registered" | "waitlisted" |
 export type StatusF93Enum = "open" | "under_review" | "won" | "lost" | "closed";
 
 export type StatusFbbEnum = "draft" | "published" | "cancelled" | "completed";
+
+export type StatusSnapshot = {
+  "schema_version": SchemaVersionEnum;
+  "observed_at": number;
+  "state": StateE91Enum;
+  "progress_percent"?: string | null;
+  "layer_current"?: string | null;
+  "layer_total"?: string | null;
+  "temperatures"?: Temperatures;
+  "spools"?: Array<Spool>;
+  "clear_token"?: string;
+};
+
+export type StatusSnapshotEnum = "stored" | "stale" | "throttled" | "not_integrated";
 
 export type StockEnum = "a6-portrait" | "4x6" | "3x4" | "4x3" | "cr80-portrait" | "cr80-landscape";
 
@@ -21919,6 +22055,12 @@ export type Telemetry = {
 };
 
 export type TelemetryStateEnum = "idle" | "running" | "paused";
+
+export type Temperatures = {
+  "nozzle"?: string | null;
+  "bed"?: string | null;
+  "chamber"?: string | null;
+};
 
 export type TemplateEnum = "quick_pulse" | "event_review" | "session_speaker";
 
@@ -22416,6 +22558,23 @@ export type TypeE4fEnum = "gallery";
 export type TypeF4fEnum = "location";
 
 export type TypeF8eEnum = "membership_plans";
+
+export type TypeIntegration = {
+  "id": string;
+  "makerspace": number;
+  "machine_type": number;
+  "kind": KindDb6Enum;
+  "enabled": boolean;
+  "config_schema_version": number;
+  "created_at": string;
+  "updated_at": string;
+};
+
+export type TypeIntegrationCreate = {
+  "kind": KindDb6Enum;
+  "enabled"?: boolean;
+  "config_schema_version"?: number;
+};
 
 export type UnsubscribeResult = {
   "detail": string;

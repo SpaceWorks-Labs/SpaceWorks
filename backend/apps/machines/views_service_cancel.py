@@ -80,10 +80,9 @@ class MemberMachineServiceCancelView(APIView):
 
     @extend_schema(
         tags=["Member machine service"], summary="Cancel your own machine-service job",
-        description=("Owner-only. Pending, accepted and in-progress jobs can be cancelled; any held "
-                     "consumables are released with no charge (a running job may confirm "
-                     "`consumed_quantity`, which is costed but never charged). Repeating a successful "
-                     "cancel returns the same result."),
+        description=("Owner-only. A job can be cancelled until staff start it (submitted, needs changes, "
+                     "quoted or queued); a running job is the staff's to stop (403). Any held consumables "
+                     "are released with no charge. Repeating a successful cancel returns the same result."),
         request=MemberServiceCancelSerializer,
         responses={200: PublicMachineServiceStatusSerializer, **OWNER_ERRORS},
     )

@@ -183,7 +183,7 @@ def promote_prepaid(service_request, *, actor=None):
         if locked.status != Status.QUOTED or not locked.prepay or not job_charges.settled(payment):
             return None
         _lock_scope(locked)
-        _enter_queue(locked, locked.quoted_at, actor, now=payment.paid_at or timezone.now())
+        _enter_queue(locked, locked.quoted_at, actor, now=timezone.now())
         _audit_transition(actor, locked, "prepaid_queued", extra={"payment_id": payment.pk})
         _notify(locked, "quote_approved")
         return locked

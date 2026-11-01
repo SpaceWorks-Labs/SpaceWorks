@@ -47,6 +47,10 @@ from .route_registry_7c import label_routes
 
 DEVICE_ROUTES.update(label_routes(DeviceRoute, DEVICE_SIGNATURE))
 
+from .route_registry_r2 import integration_routes
+
+DEVICE_ROUTES.update(integration_routes(DeviceRoute, DEVICE_SIGNATURE))
+
 
 def entry_for(request):
     match = getattr(request, "resolver_match", None)

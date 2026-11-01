@@ -44,6 +44,7 @@ from apps.data_export.views import (
     DataExportDownloadUrlView,
     DataExportListCreateView,
 )
+from apps.tenant_migration.views_selfhost_move import SelfHostMoveRequestView
 from apps.tenant_migration.views import (
     DeploymentIdentityView,
     DisclosureApprovalListCreateView,
@@ -157,6 +158,7 @@ urlpatterns = [
         path("makerspace/<int:makerspace_id>/tenant-migration/exports/<uuid:job_id>/quiesce", SourceQuiesceView.as_view(), name="tenant-migration-source-quiesce"),
         path("makerspace/<int:makerspace_id>/tenant-migration/pairings/<uuid:pairing_id>/archive-source", SourceArchiveView.as_view(), name="tenant-migration-source-archive"),
         path("makerspace/<int:makerspace_id>/tenant-migration/pairings/<uuid:pairing_id>/recover", SourceRecoverView.as_view(), name="tenant-migration-source-recover"),
+        path("makerspace/<int:makerspace_id>/selfhost-move-request", SelfHostMoveRequestView.as_view(), name="admin-makerspace-selfhost-move-request"),
     ),
     # Module install/uninstall. NOT wrapped in _separable: the registry is core, and a
     # console that could not list modules on a deployment with one app tombstoned would

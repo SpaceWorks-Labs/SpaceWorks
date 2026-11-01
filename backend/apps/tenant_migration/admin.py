@@ -53,3 +53,7 @@ if not app_is_tombstoned("tenant_migration"):
     admin.site.register(DisclosureClosureApproval, DisclosureClosureApprovalAdmin)
     admin.site.register(TenantMigrationExportJob, TenantMigrationExportJobAdmin)
     admin.site.register(TenantDumpCapture, TenantDumpCaptureAdmin)
+    from .admin_selfhost_move import SelfHostMoveRequestAdmin
+    from .models_selfhost_move import SelfHostMoveRequest
+
+    admin.site.register(SelfHostMoveRequest, SelfHostMoveRequestAdmin)

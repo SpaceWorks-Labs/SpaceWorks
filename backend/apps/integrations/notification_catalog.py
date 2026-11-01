@@ -73,6 +73,8 @@ FEATURE_EVENTS[F.EVENTS] += ("invitation",)
 FEATURE_EVENTS[F.BOOKINGS] += ("invitation",)
 # Release 2 L4 (X29): the member's per-space erasure decision.
 FEATURE_EVENTS[F.MEMBERS] += ("erasure_approved", "erasure_rejected")
+# Release 2 L11: a self-host move's status, told to the space's Space Managers.
+FEATURE_EVENTS[F.API_ACCESS] += ("selfhost_move_status",)
 
 # Exact default on/off per (feature, channel). Preserves today's behavior: hardware/printing
 # email + hardware Telegram on; bookings email (Part J seam) + bookings Telegram on; Slack/

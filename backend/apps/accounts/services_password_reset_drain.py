@@ -15,6 +15,7 @@ from django.db.models import Q
 from django.utils import timezone
 
 from apps.accounts.models import PasswordResetEnvelope, PasswordResetEnvelopeStatus, User
+from apps.accounts.staff_identity import context_label, is_person
 from apps.accounts.password_reset_context import (
     lock_recovery_account, recoverable, reset_destination, recovery_transaction,
 )
@@ -167,13 +168,13 @@ def prepare_delivery(claim, *, now=None):
         if envelope.email_normalized != claim.email_normalized or envelope.user_id != user.pk:
             return None
         slug = envelope.makerspace.slug if envelope.makerspace_id else None
-        archived = bool(envelope.context == "member" and user.account_kind == "member"
+        archived = bool(envelope.context == "member" and is_person(user)
                         and restorable(user, now=issued_at))
         if (not archived and (not recoverable(user, context=envelope.context, makerspace=slug,
                                              origin=envelope.request_origin)
                               or user.deletion_requested_at is not None)
-                or envelope.context != user.account_kind
-                or envelope.makerspace_id != (user.staff_makerspace_id if user.account_kind == "staff" else None)
+                or envelope.context != context_label(user)
+                or envelope.makerspace_id is not None
                 or user.email.strip().lower() != envelope.email_normalized
                 or user.credential_generation != envelope.credential_generation
                 or user.account_restored_at and envelope.requested_at <= user.account_restored_at):

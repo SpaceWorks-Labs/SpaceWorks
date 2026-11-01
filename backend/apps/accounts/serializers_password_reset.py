@@ -9,15 +9,18 @@ class ChangePasswordSerializer(serializers.Serializer):
 
 
 class RecoveryContextSerializer(serializers.Serializer):
-    context = serializers.ChoiceField(choices=["member", "staff", "platform"], default="member")
-    makerspace = serializers.SlugField(required=False, max_length=80)
+    """Recovery is for a person or the platform superadmin only (one account per person).
+
+    ``person`` is the default; ``member`` is its release-1 name, accepted for one release.
+    The release-1 ``staff`` context and its ``makerspace`` slug are gone.
+    """
+
+    context = serializers.ChoiceField(choices=["person", "member", "platform"], default="person")
     email = serializers.CharField(max_length=254)
 
     def validate(self, attrs):
-        if attrs["context"] == "staff" and not attrs.get("makerspace"):
-            raise serializers.ValidationError({"makerspace": "Required for staff recovery."})
-        if attrs["context"] != "staff" and attrs.get("makerspace"):
-            raise serializers.ValidationError({"makerspace": "Only staff recovery uses a makerspace."})
+        # The stored envelope context keeps the account kind's name: member | platform.
+        attrs["context"] = "platform" if attrs["context"] == "platform" else "member"
         if attrs["context"] == "member" and "email" in attrs:
             attrs["email"] = serializers.EmailField().run_validation(attrs["email"])
         return attrs

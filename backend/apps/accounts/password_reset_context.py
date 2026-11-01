@@ -1,4 +1,4 @@
-"""Live recovery namespaces and trusted destinations, independent of member login policy."""
+"""Live recovery namespaces (a person or the platform superadmin) and trusted destinations."""
 
 from contextlib import contextmanager
 from django.conf import settings
@@ -7,7 +7,7 @@ from django.db import transaction
 from django.db.models import Q
 
 from apps.accounts.models import User
-from apps.makerspaces.models import Makerspace, MakerspaceMembership
+from apps.accounts.staff_identity import context_label, person_q, platform_q
 
 
 def recovery_origin(request):
@@ -35,29 +35,27 @@ def lock_recovery_account(account):
 
 @contextmanager
 def recovery_transaction(user):
-    """Drain with migration writers before taking tenant/account row locks."""
+    """Recovery is account-level (a person or the superadmin); no tenant gate is drained."""
     with transaction.atomic():
-        if user and user.staff_makerspace_id:
-            from apps.tenant_migration.gate_locks import acquire_shared
-            acquire_shared(user.staff_makerspace_id)
         yield
 
 
 def resolve_account(identifier, *, context="member", makerspace=None):
-    rows = User.objects.filter(account_kind=context)
-    if context == "staff":
-        rows = rows.filter(staff_makerspace__slug=makerspace)
-    elif context not in {"member", "platform"} or makerspace:
+    """``member`` = a person (by email); ``platform`` = the superadmin (username or email).
+    The release-1 ``staff`` context resolves nothing."""
+    if makerspace or context not in {"member", "platform"}:
         return None
+    rows = User.objects.filter(person_q() if context == "member" else platform_q())
     if context == "member":
-        return rows.filter(email__iexact=identifier).first()
+        return rows.filter(email__iexact=identifier).exclude(email="").first()
     return (rows.filter(username=identifier).first()
             or rows.filter(Q(email__iexact=identifier) & ~Q(email="")).first())
 
 
 def recoverable(user, *, context, makerspace=None, origin=""):
-    if not (user and user.account_kind == context and user.is_active
-            and user.retired_at is None and not user.is_tenant_dump_stub
+    if not (user and context_label(user) == context and context in {"member", "platform"}
+            and user.is_active and user.retired_at is None and not user.is_tenant_dump_stub
+            and getattr(user, "merged_into_id", None) is None
             and user.access_status == User.AccessStatus.ACTIVE
             and not user.is_walk_in and user.email):
         return False
@@ -68,28 +66,7 @@ def recoverable(user, *, context, makerspace=None, origin=""):
         return not (user.is_superuser or user.role == User.Role.SUPERADMIN)
     if not isinstance(origin, str) or len(origin) > 512:
         return False
-    if context == "platform":
-        return origin in settings.PLATFORM_STAFF_ORIGINS
-    if context != "staff" or not user.staff_makerspace_id:
-        return False
-    from apps.accounts import rbac
-    if user.staff_makerspace_id not in rbac.resolve_scope(user):
-        return False
-    space = Makerspace.objects.filter(pk=user.staff_makerspace_id, slug=makerspace).first()
-    if space is None:
-        return False
-    from apps.makerspaces.servability import is_servable
-    from apps.tenant_migration.models_source_gate import SourceMigrationGate
-    from apps.makerspaces.platform import makerspace_staff_origins
-    # A verified tenant origin or a configured central staff origin must agree with
-    # the explicit slug. An arbitrary browser Origin never becomes a recovery door.
-    if not is_servable(space) or origin not in makerspace_staff_origins(space):
-        return False
-    if SourceMigrationGate.objects.filter(makerspace_id=space.pk).exclude(state="open").exists():
-        return False
-    return MakerspaceMembership.objects.filter(
-        user=user, makerspace=space, status="active",
-    ).exists()
+    return origin in settings.PLATFORM_STAFF_ORIGINS
 
 
 def mail_available(context):
@@ -98,10 +75,6 @@ def mail_available(context):
 
 
 def reset_destination(user):
+    """Where the platform superadmin's emailed recovery points (people use the member flow)."""
     base = (settings.PUBLIC_APP_BASE_URL or "").rstrip("/")
-    if user.account_kind == "platform":
-        return f"{base}/admin/reset-password?context=platform", "platform administration"
-    space = user.staff_makerspace
-    if space.frontend_domain and space.frontend_domain_status == Makerspace.DomainStatus.VERIFIED:
-        return f"https://{space.frontend_domain}/admin/reset-password", space.name
-    return f"{base}/m/{space.slug}/admin/reset-password", space.name
+    return f"{base}/admin/reset-password?context=platform", "platform administration"

@@ -127,7 +127,7 @@ makerspace; leave one out and nothing else changes.
 | **Messages** | Email, in-app inbox, Telegram, Slack, Mattermost, Discord, SMS and WhatsApp (Twilio or Meta), routed to the [rooms and people](docs/notification-routing.md) you choose |
 | **Sign-in** | Password, Google, Apple, GitHub, your own OIDC provider and phone codes ([sign-in methods](docs/sign-in-and-borrowing.md)) |
 | **Payments** | Stripe and Razorpay checkout, UPI QR codes, offline receipts, and India GST invoices ([payments and billing](docs/payment-billing.md)) |
-| **Calendars** | iCal feeds for events and maintenance that open in Google Calendar, Outlook or Apple Calendar |
+| **Calendars** | Google Calendar, Apple Calendar and Outlook: one-click "Add to Google Calendar", `.ics` downloads on every event and booking confirmation, and subscribable iCal feeds for events, bookings and maintenance |
 | **Your own systems** | Signed [webhooks](docs/webhooks-v2.md), scoped and signed [API clients](docs/api-client-protocol.md), and CSV/XLSX import and export |
 | **Storage** | Any S3-compatible bucket: the bundled Silo store, AWS S3, Cloudflare R2 or MinIO |
 

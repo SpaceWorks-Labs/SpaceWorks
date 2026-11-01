@@ -89,6 +89,10 @@ class AuthUserPayload(serializers.Serializer):
         allow_null=True,
         help_text="When a person who gained a staff role without a second factor must have enrolled (#128 C-1). Null when no grace applies.",
     )
+    merge_suggested = serializers.BooleanField(
+        help_text="A former staff account that has not linked another account yet: show the \"Link your "
+                  "accounts\" nudge (Q17). There is no deadline.",
+    )
 
     def get_fields(self):
         from apps.makerspaces.resource_grant_sources import registered_sources

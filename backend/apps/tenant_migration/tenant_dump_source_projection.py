@@ -70,9 +70,9 @@ def project_makerspace_source(makerspace_id, *, using="default", capture_id=None
         _close_conditional_rows(projected)
         user_ids = _referenced_user_ids(projected)
         User = apps.get_model("accounts.User")
-        user_ids.update(User._base_manager.using(using).filter(
-            account_kind="staff", staff_makerspace_id=makerspace_id, retired_at__isnull=True,
-        ).values_list("pk", flat=True))
+        # Every person holding a staff-track row here (their roster rows name them too).
+        user_ids.update(row["user_id"] for row in projected.get("makerspaces.MakerspaceMembership", ())
+                        if row.get("track") == "staff")
         projected["accounts.User"] = tuple(
             MappingProxyType(dict(row))
             for row in raw_records(

@@ -135,10 +135,6 @@ def _selected_disposition(model, field, source, rule, selector):
                 f"Invalid conditional disposition for {model._meta.label}.{field.name}."
             )
         return selected
-    if (model._meta.label == "accounts.User"
-            and source.get("account_kind") == "staff"
-            and field.name in {"password", "must_change_password"}):
-        return AuthorityDisposition.RESET
     from .target_projection import TARGET_FIELD_PROJECTION
 
     target = TARGET_FIELD_PROJECTION.get((model._meta.label, field.name))

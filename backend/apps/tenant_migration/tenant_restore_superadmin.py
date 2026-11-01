@@ -34,9 +34,11 @@ def create_target_superadmin(
         run_id=run_uuid, artifact_sha256=artifact_sha256, email=email
     )
     username = f"lane_d_admin_{run_uuid.hex}"
+    from apps.accounts.staff_identity import is_platform, platform_q
+
     User = get_user_model()
     existing_named = User.objects.using(using).filter(username=username).first()
-    email_owners = User.objects.using(using).filter(account_kind="platform", email__iexact=email)
+    email_owners = User.objects.using(using).filter(platform_q(), email__iexact=email)
     if existing_named is not None:
         email_owners = email_owners.exclude(pk=existing_named.pk)
     if email_owners.exists():
@@ -52,7 +54,7 @@ def create_target_superadmin(
     password = delivery["secret"]
     with transaction.atomic(using=using):
         email_owner = (
-            User.objects.using(using).select_for_update().filter(account_kind="platform", email__iexact=email).first()
+            User.objects.using(using).select_for_update().filter(platform_q(), email__iexact=email).first()
         )
         existing = (
             User.objects.using(using).select_for_update().filter(username=username).first()
@@ -65,7 +67,7 @@ def create_target_superadmin(
             )
         if existing is not None:
             if (
-                existing.account_kind != "platform"
+                not is_platform(existing)
                 or existing.email.lower() != email
                 or not existing.is_superuser
                 or not existing.is_staff

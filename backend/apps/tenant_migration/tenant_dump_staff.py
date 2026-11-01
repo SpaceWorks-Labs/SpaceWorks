@@ -1,4 +1,4 @@
-"""Frozen-image staff authority closure and target-seeded role resolution (D11/V5)."""
+"""Frozen-image staff-track rows and target-seeded role resolution (one account per person)."""
 
 from types import MappingProxyType
 
@@ -15,12 +15,14 @@ STAFF_CHILD_LABELS = (
 
 
 def prepare_staff_rows(rows, makerspace_id, *, using):
-    """Classify from the immutable database, before adding any carried user edges."""
+    """Mark staff-track rows from the immutable database, before adding user edges.
+
+    One account per person: a staff role is a staff-track membership of a person, so the
+    track -- never the account -- decides which rows carry built-in staff roles. Their
+    additional roles and machine scopes travel with them; the person's notification
+    choices here travel only when they hold a staff-track row (member choices stay local).
+    """
     result = dict(rows)
-    User = apps.get_model('accounts.User')
-    staff_ids = set(User._base_manager.using(using).filter(
-        account_kind='staff', staff_makerspace_id=makerspace_id, retired_at__isnull=True,
-    ).values_list('pk', flat=True))
     Role = apps.get_model('makerspaces.MakerspaceRole')
     roles = dict(Role._base_manager.using(using).filter(
         makerspace_id=makerspace_id, is_protected=True,
@@ -33,11 +35,12 @@ def prepare_staff_rows(rows, makerspace_id, *, using):
         return MappingProxyType({**row, '_staff_role_slug': slug, '_staff_account': True})
 
     members = []
-    staff_memberships = set()
+    staff_memberships, staff_holders = set(), set()
     for row in result.get('makerspaces.MakerspaceMembership', ()):
-        if row['user_id'] in staff_ids:
+        if row.get('track') == 'staff':
             members.append(with_role(row, 'assigned_role_id'))
             staff_memberships.add(row['id'])
+            staff_holders.add(row['user_id'])
         else:
             members.append(row)
     result['makerspaces.MakerspaceMembership'] = tuple(members)
@@ -45,7 +48,7 @@ def prepare_staff_rows(rows, makerspace_id, *, using):
         kept = (row for row in result.get(label, ()) if row['membership_id'] in staff_memberships)
         result[label] = tuple(with_role(row, 'role_id') for row in kept) if label.endswith('MembershipAdditionalRole') else tuple(kept)
     for label in ('notifications.MemberNotificationPreference', 'notifications.NotificationPreference'):
-        result[label] = tuple(row for row in result.get(label, ()) if row['user_id'] in staff_ids)
+        result[label] = tuple(row for row in result.get(label, ()) if row['user_id'] in staff_holders)
     return result
 
 

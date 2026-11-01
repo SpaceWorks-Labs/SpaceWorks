@@ -875,6 +875,15 @@ CELERY_BEAT_SCHEDULE["payment-gateway-poll"] = {
     "task": "apps.payments.tasks.run_gateway_poll_task", "schedule": crontab(minute="*/5"),
 }
 # --- end lane L5
+# --- lanes L10/L11 (release 2): restore drills (one due space per hourly tick, 7-day default
+# cadence per space, #128 C-22) and a requested re-encryption to rotated keys (BK-68).
+CELERY_BEAT_SCHEDULE["restore-drill"] = {
+    "task": "apps.backup.tasks.run_restore_drill_task", "schedule": crontab(minute=20),
+}
+CELERY_BEAT_SCHEDULE["reencrypt-backup-archives"] = {
+    "task": "apps.backup.tasks.reencrypt_archives_task", "schedule": crontab(minute="*/10"),
+}
+# --- end lanes L10/L11
 
 if "tenant_migration" in TOMBSTONED_APPS:
     CELERY_BEAT_SCHEDULE = {

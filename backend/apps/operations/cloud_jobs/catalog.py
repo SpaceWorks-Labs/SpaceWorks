@@ -99,6 +99,9 @@ LEGACY_ENTRIES = (
     ("notification-destination-health", "apps.integrations.destination_health.disable_dead_destinations_task", 60),
     # Lane L5: read-only provider poll of open attempts and pending refunds.
     ("payment-gateway-poll", "apps.payments.tasks.run_gateway_poll_task", 5),
+    # Release 2 L11: one due restore drill per tick; a bounded batch of requested re-encryption.
+    ("restore-drill", "apps.backup.tasks.run_restore_drill_task", 60),
+    ("reencrypt-backup-archives", "apps.backup.tasks.reencrypt_archives_task", 10),
 )
 _RETAINED = frozenset({
     "evidence-object-expiry", "evidence-abandoned-upload-cleanup",
@@ -120,6 +123,7 @@ _HEAVY = frozenset({
     "resume-space-restores",
     "reconcile-backup-artifacts", "push-offsite-backups",
     "resume-expired-tenant-import-finalizations", "finalize-report-rollups",
+    "restore-drill", "reencrypt-backup-archives",
 })
 _CRITICAL = frozenset({
     "reminder-sweep", "notification-contract-outbox", "drain-password-reset-envelopes",

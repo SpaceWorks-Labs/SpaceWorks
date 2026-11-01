@@ -106,4 +106,7 @@ def selection_for(archive) -> list[dict]:
     selected = [platform_recipient()]
     if archive.scope == "makerspace" and (server := server_recipient()) is not None:
         selected.append(server)
+    # A key rotated out (release 2 L11, BK-68) is never used again.
+    from .platform_key_rotation import assert_not_retired
+    assert_not_retired(selected)
     return selected

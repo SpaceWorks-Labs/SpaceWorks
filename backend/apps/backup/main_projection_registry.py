@@ -71,6 +71,7 @@ PROJECT_GLOBAL_BOUNDARIES = frozenset({
     ("operations.CloudEmailReservation", "log"),
     ("backup.RestoreRollbackObject", "makerspace"),  # (MakerspaceRestoreOperation: NOT NULL, drops)
     ("tenant_migration.TenantImportJob", "target_makerspace"),
+    ("backup.RestoreDrillReport", "makerspace"),  # release 2 L11: nullable, a platform drill report
 })
 
 # Auto-created M2M models are physical tables even though they have no project

@@ -1,0 +1,50 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<h2>Keys</h2>
+<p>Rotate a key on the host first (a new <code>BACKUP_AGE_RECIPIENT</code>, or a new
+<code>TENANT_MIGRATION_AGE_RECIPIENT</code> with its identity file), then record the rotation here.
+Recording retires every earlier key of that kind; a retired key is refused for every later backup.</p>
+<table><thead><tr><th scope="col">Key</th><th scope="col">Current fingerprint</th></tr></thead><tbody>
+{% for label, fingerprint in current.items %}<tr><td>{{ label }}</td><td><code>{{ fingerprint|default:"not configured" }}</code></td></tr>{% endfor %}
+</tbody></table>
+<form method="post">{% csrf_token %}
+  <button type="submit" name="action" value="rotate_platform">Record platform key rotation</button>
+  <button type="submit" name="action" value="rotate_server">Record server restore key rotation</button>
+</form>
+<h3>Retired keys</h3>
+<ul>{% for row in retired %}<li>{{ row.get_kind_display }} <code>{{ row.fingerprint }}</code>, retired {{ row.retired_at }}</li>
+{% empty %}<li>None.</li>{% endfor %}</ul>
+
+<h2>Archives still encrypted to a retired key</h2>
+<p>A one-space archive this server can open is re-encrypted to today's keys. A whole-platform archive is
+encrypted to the platform key alone, which never lives on the server: keep it until it expires or purge it.</p>
+<form method="post">{% csrf_token %}
+  {% if settings_row.reencrypt_requested_at %}<button type="submit" name="action" value="reencrypt_stop">Stop background re-encryption</button>
+  (running since {{ settings_row.reencrypt_requested_at }})
+  {% else %}<button type="submit" name="action" value="reencrypt_all">Re-encrypt all in the background</button>{% endif %}
+</form>
+<table><thead><tr><th scope="col">Taken</th><th scope="col">Scope</th><th scope="col">Space</th><th scope="col">Actions</th></tr></thead><tbody>
+{% for item in stale %}<tr><td>{{ item.archive.completed_at }}</td><td>{{ item.archive.get_scope_display }}</td>
+<td>{{ item.archive.makerspace|default:"" }}</td><td><form method="post">{% csrf_token %}
+<input type="hidden" name="archive_id" value="{{ item.archive.pk }}">
+{% if item.reencryptable %}<button type="submit" name="action" value="reencrypt">Re-encrypt</button>{% endif %}
+<button type="submit" name="action" value="purge">Purge</button></form></td></tr>
+{% empty %}<tr><td colspan="4">No archive is encrypted to a retired key.</td></tr>{% endfor %}
+</tbody></table>
+
+<h2>Restore drills and notices</h2>
+<form method="post">{% csrf_token %}
+  <label for="drill-days">Drill each space every (days, 0 = off)</label>
+  <input id="drill-days" type="number" min="0" max="365" name="restore_drill_interval_days" value="{{ settings_row.restore_drill_interval_days }}">
+  <label><input type="checkbox" name="archive_ready_notice_enabled" {% if settings_row.archive_ready_notice_enabled %}checked{% endif %}>
+  Email the superadmins an "archive ready" notice with a signed control-plane link (never the file)</label>
+  <button type="submit" name="action" value="settings">Save</button>
+</form>
+<p>A drill restores a space's latest backup into a throwaway database with a throwaway key and destroys both;
+the live server is never touched.</p>
+<table><thead><tr><th scope="col">Started</th><th scope="col">Space</th><th scope="col">Outcome</th><th scope="col">Rows</th></tr></thead><tbody>
+{% for row in drills %}<tr><td><a href="{% url 'admin:backup_restoredrillreport_change' row.pk %}">{{ row.started_at }}</a></td>
+<td>{{ row.makerspace|default:row.makerspace_id_snapshot }}</td><td>{{ row.get_outcome_display }} {{ row.error_code }}</td><td>{{ row.checks.row_total|default:"" }}</td></tr>
+{% empty %}<tr><td colspan="4">No drills yet.</td></tr>{% endfor %}
+</tbody></table>
+{% endblock %}

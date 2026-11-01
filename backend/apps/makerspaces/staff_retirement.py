@@ -1,13 +1,12 @@
-"""Retain staff primary keys for immutable audit provenance, without an identity."""
+"""Inert-shell identity values: keep a primary key for immutable history, without an identity.
+
+Used for legacy retired-staff shells in backup projections and, with a ``merged-<uuid>``
+username, by the account-merge engine. Since one account per person, a tenant purge
+retires nobody: people keep their accounts and only the tenant's rows go.
+"""
 
 from datetime import UTC, datetime
 from uuid import NAMESPACE_URL, uuid5
-
-from django.db import connections
-from django.utils import timezone
-
-from apps.accounts.credential_revocation import revoke_all_credentials
-from apps.accounts.models import User, UserMFA
 
 
 def shell_values(user_id, retired_at):
@@ -24,19 +23,3 @@ def shell_values(user_id, retired_at):
         "is_tenant_dump_stub": False, "role": "requester", "access_status": "suspended",
         "must_change_password": True, "staff_makerspace_id": None, "retired_at": retired_at,
     }
-
-
-def retire_staff_accounts(makerspace, *, actor=None):
-    """Caller owns the tenant lock and transaction; revoke before locking User."""
-    using = makerspace._state.db or "default"
-    users = User.objects.using(using).filter(
-        account_kind=User.AccountKind.STAFF, staff_makerspace=makerspace,
-        retired_at__isnull=True,
-    ).order_by("pk")
-    with connections[using].cursor() as cursor:
-        cursor.execute("SELECT set_config('app.account_retirement_makerspace_id', %s, true)",
-                       [str(makerspace.pk)])
-    for user in users:
-        revoke_all_credentials(user, reason="makerspace_purge", actor=actor)
-        UserMFA.objects.using(using).filter(user=user).delete()
-        User.objects.using(using).filter(pk=user.pk).update(**shell_values(user.pk, timezone.now()))

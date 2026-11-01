@@ -109,6 +109,8 @@ def enter_quarantine(restore, reason):
             public_api_key=generate_publishable_key()
         )
     _reset_device_authority(now)
+    from .station_revocation import revoke_station_credentials
+    revoke_station_credentials(actor=restore.requested_by, now=now)
     PasswordResetEnvelope.objects.update(
         status=PasswordResetEnvelopeStatus.DISCARDED,
         digest_is_live=False,

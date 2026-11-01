@@ -180951,6 +180951,14 @@
                         "type": "string",
                         "format": "date-time"
                     },
+                    "account_kind": {
+                        "type": "string",
+                        "description": "member (a person), platform, or staff (an inert merged shell)."
+                    },
+                    "holds_staff_roles": {
+                        "type": "boolean",
+                        "description": "Import review only: the person holds staff-track roles in the archived space."
+                    },
                     "pii_masked": {
                         "type": "boolean",
                         "readOnly": true
@@ -199593,6 +199601,11 @@
                     "target_user_id": {
                         "type": "integer",
                         "nullable": true
+                    },
+                    "grant_staff_roles": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "link_existing only: keep the person's staff-track roles ACTIVE. Without it a linked person's staff roles arrive revoked (audited tenant_migration.staff_roles_granted)."
                     }
                 },
                 "required": [

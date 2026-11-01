@@ -4608,6 +4608,8 @@ export type ClosureIdentity = {
   "display_name": string;
   "phone": string;
   "date_joined": string;
+  "account_kind"?: string;
+  "holds_staff_roles"?: boolean;
   "pii_masked": boolean;
 };
 
@@ -8537,6 +8539,7 @@ export type ImportIdentityDecision = {
   "identity_resolution": IdentityResolutionEnum;
   "membership_disposition": MembershipDispositionEnum;
   "target_user_id"?: number | null;
+  "grant_staff_roles"?: boolean;
 };
 
 export type ImportJob = {

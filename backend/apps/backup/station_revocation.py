@@ -9,11 +9,13 @@ afterwards (rotate in the kiosk settings). The station rows themselves are kept.
 """
 import uuid
 
+from django.db import transaction
 from django.utils import timezone
 
 from apps.audit import services as audit
 
 
+@transaction.atomic
 def revoke_station_credentials(*, makerspace=None, actor=None, now=None):
     from apps.makerspaces.models_station_leases import StationOperatorLease
     from apps.makerspaces.models_stations import StationCredential

@@ -28,10 +28,10 @@ def export_row_policy(model_label, row):
         # this before the user closure too, so a dropped application's voucher
         # cannot introduce an unrelated global identity into the portable archive.
         return export_row_policy("makerspaces.MembershipRequest", row.request)
-    if model_label == "audit.AuditLog" and row.action.startswith("tenant_migration."):
-        # Migration coordination audit remains append-only on the source deployment,
-        # but carrying it would make the act of reviewing/approving a closure change
-        # that same closure through the audit actor edge.
+    if model_label == "audit.AuditLog" and row.action.startswith(("tenant_migration.", "selfhost_move.")):
+        # Migration coordination audit (and the self-host move's, release 2 L11) remains
+        # append-only on the source deployment, but carrying it would make the act of
+        # reviewing/approving a closure change that same closure through the audit actor edge.
         return False, False
     policy = ROW_POLICIES.get(model_label)
     if policy is None or not condition_matches(policy.condition, row):

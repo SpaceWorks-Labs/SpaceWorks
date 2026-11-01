@@ -94,7 +94,7 @@ def run_drill(archive, *, actor=None):
                     checks = reconstruct(space_archive, workdir)
     except Exception as exc:  # every failure is a typed report, never a crash of the tick
         error = exc if isinstance(exc, SpaceRestoreError) else SpaceRestoreError(
-            getattr(exc, "code", "drill_failed"), "The drill could not complete.")
+            getattr(exc, "code", "drill_failed"), f"The drill could not complete ({type(exc).__name__}).")
         logger.warning("restore_drill_failed", extra={"archive_id": str(archive.pk), "error_code": error.code})
     return _record(archive, started, checks, error, actor)
 

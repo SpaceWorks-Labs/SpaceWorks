@@ -18,7 +18,7 @@ from pathlib import Path
 from django.apps import apps
 from django.db import DatabaseError, connections
 
-from .projection_databases import _client, _run, temporary_database
+from .projection_databases import _client, _run as _raw_run, temporary_database
 from .slice_rows import SLICE_ROW_SPECS
 from .space_restore_plan import SpaceRestoreError, prepared_record
 
@@ -41,6 +41,19 @@ def reconstruct(archive, workdir):
     objects = _verify_objects(archive)
     return {"rows": counts, "row_total": sum(counts.values()), "labels": len(counts),
             "objects_verified": objects, "database_isolated": True}
+
+
+def _run(command):
+    """The scratch database tools, with the client's own complaint kept for the drill report."""
+    try:
+        return _raw_run(command)
+    except Exception as exc:
+        cause = exc.__context__
+        while cause is not None and not getattr(cause, "stderr", None):
+            cause = cause.__context__
+        tail = (getattr(cause, "stderr", b"") or b"")[-240:].decode("utf-8", "replace").strip()
+        raise SpaceRestoreError("drill_database_failed",
+                                f"{command[0].rsplit('/', 1)[-1]} failed: {tail or 'no detail'}") from None
 
 
 def _insert_all(archive, connection):
@@ -70,9 +83,8 @@ def _post_data(schema, workdir, name):
     try:
         _run([_client("pg_restore"), "--section=post-data", "--no-owner", "--no-acl", f"--use-list={selected}",
               f"--dbname={name}", str(schema)])
-    except Exception:
-        raise SpaceRestoreError("drill_keys_invalid",
-                                "The restored rows break a primary key or unique rule.") from None
+    except SpaceRestoreError as exc:
+        raise SpaceRestoreError("drill_keys_invalid", f"The restored rows break a key or index rule: {exc}") from None
 
 
 def _counts(connection, expected):

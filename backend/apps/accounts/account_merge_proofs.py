@@ -26,7 +26,7 @@ from apps.accounts.account_merge_eligibility import (
     FACTOR_ENROLMENT_REQUIRED, PROOF_EXPIRED, PROOF_FAILED, MergeRefused, identifier_digest,
     require_survivor, resolve_source, source_email,
 )
-from apps.accounts.audit_events import record_auth_event
+from apps.audit import services as audit
 from apps.accounts.models_account_merge import AccountMergeIntent as Intent
 
 logger = logging.getLogger(__name__)
@@ -49,7 +49,7 @@ def start(survivor, identifier, method):
             survivor=survivor, source=resolve_source(identifier, survivor), method=method,
             identifier_digest=identifier_digest(identifier), expires_at=now + TTL)
         codes = _issue(intent, now) if method == Intent.Method.EMAIL_CODES else None
-        record_auth_event(survivor, "account.merge_started", target=survivor, meta={"method": method})
+        audit.record(survivor, "account.merge_started", target=survivor, meta={"method": method})
     if codes:
         _send(intent, codes)
     return intent
@@ -123,7 +123,7 @@ def prove(survivor, intent_id, data):
             if login_codes.attempts_exhausted(intent.attempts):
                 _close(intent, Intent.State.EXPIRED, now)
             intent.save(update_fields=["attempts"])
-            record_auth_event(survivor, "account.merge_proof_failed", target=survivor,
+            audit.record(survivor, "account.merge_proof_failed", target=survivor,
                               meta={"method": intent.method, "attempts": intent.attempts})
     raise MergeRefused(*failure)
 
@@ -184,5 +184,5 @@ def cancel(survivor, intent_id):
         intent = locked_intent(survivor, intent_id)
         if intent.state in OPEN:
             _close(intent, Intent.State.CANCELLED, now)
-            record_auth_event(survivor, "account.merge_cancelled", target=survivor, meta={"method": intent.method})
+            audit.record(survivor, "account.merge_cancelled", target=survivor, meta={"method": intent.method})
     return intent

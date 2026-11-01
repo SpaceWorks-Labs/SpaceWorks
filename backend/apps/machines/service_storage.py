@@ -5,8 +5,6 @@ import uuid
 
 from botocore.exceptions import BotoCoreError, ClientError
 from django.conf import settings
-from django.db import transaction
-from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from apps.audit import services as audit
@@ -19,9 +17,9 @@ from apps.maker_file_formats import (
     sniff_pdf_or_image,
 )
 from apps.machines import storage as machine_storage
-from apps.machines.models import Machine, MachineServiceRequest, ServiceRequestFile
+from apps.machines.models import Machine, ServiceRequestFile
 from apps.machines.service_file_policies import get_policy, policy_for_machine, policy_for_queue
-from apps.makerspaces import limits
+from apps.makerspaces import limits  # noqa: F401  (patched here by tests; used by the attach module)
 from apps.object_storage import delete_all_versions
 
 logger = logging.getLogger(__name__)
@@ -221,75 +219,6 @@ def validate_service_object(file, policy):
     return ServiceObjectValidationResult(size=size, content_type=content_type)
 
 
-def finalize_file(service_request, *, file_id, actor):
-    try:
-        file = ServiceRequestFile.objects.select_related(
-            "makerspace", "machine__makerspace", "queue__makerspace"
-        ).get(pk=file_id, owner_user_id=actor.pk)
-    except ServiceRequestFile.DoesNotExist as exc:
-        raise ValidationError(
-            {"file_id": "Attachment is unavailable for this request."},
-            code="invalid_attachment",
-        ) from exc
-    # Refuse an already-attached file before touching object storage so a retry or
-    # concurrent finalize can never delete the live object a committed record points at.
-    if file.service_request_id is not None or file.attached_at is not None:
-        raise ValidationError({"file_id": "Attachment is unavailable for this request."}, code="invalid_attachment")
-    policy = policy_for_file(file)
-    try:
-        size = finalize_upload(file.object_key, policy.max_bytes)
-        if size is None or not 1 <= size <= policy.max_bytes:
-            raise ValidationError({"file_id": "Uploaded attachment is invalid."}, code="invalid_attachment")
-        result = validate_service_object(file, policy)
-        with transaction.atomic():
-            locked_request = MachineServiceRequest.objects.select_for_update(of=("self",)).select_related(
-                "bucket__machine__makerspace", "queue__makerspace"
-            ).get(pk=service_request.pk)
-            locked_file = ServiceRequestFile.objects.select_for_update().get(pk=file.pk)
-            if (
-                locked_file.owner_user_id != actor.pk
-                or locked_file.service_request_id is not None
-                or locked_file.makerspace_id != locked_request.makerspace_id
-                or (locked_request.queue_id and locked_file.queue_id != locked_request.queue_id)
-                or (locked_request.bucket_id and locked_file.machine_id != locked_request.bucket.machine_id)
-            ):
-                raise ValidationError({"file_id": "Attachment is unavailable for this request."}, code="invalid_attachment")
-            limits.add_storage(locked_request.makerspace, result.size)
-            locked_file.service_request = locked_request
-            locked_file.attached_at = timezone.now()
-            locked_file.size_bytes = result.size
-            locked_file.content_type = result.content_type
-            locked_file.save(update_fields=["service_request", "attached_at", "size_bytes", "content_type"])
-            audit.record(
-                actor, "machine_service.file_attached", makerspace=locked_request.makerspace,
-                target=locked_file, meta={"request_id": locked_request.pk, "file_id": locked_file.pk, "size_bytes": result.size},
-            )
-            return locked_file
-    except Exception:
-        # Only compensate a still-staged upload; if a concurrent finalize won the
-        # race and attached this file, leave its object intact.
-        if ServiceRequestFile.objects.filter(
-            pk=file.pk, service_request__isnull=True, attached_at__isnull=True
-        ).exists():
-            cleanup_upload(file.object_key)
-        raise
-
-
-def delete_staged_file(file, *, actor):
-    with transaction.atomic():
-        locked = ServiceRequestFile.objects.select_for_update().select_related("makerspace").get(pk=file.pk)
-        if locked.service_request_id is not None or locked.attached_at is not None:
-            raise ValidationError({"file_id": "Attached files cannot be deleted."}, code="invalid_attachment")
-        audit.record(
-            actor, "machine_service.file_deleted", makerspace=locked.makerspace,
-            target=locked, meta={"file_id": locked.pk, "size_bytes": locked.size_bytes},
-        )
-        limits.free_storage(locked.makerspace, locked.size_bytes)
-        object_key = locked.object_key
-        locked.delete()
-    cleanup_upload(object_key)
-
-
 def presigned_get_url(object_key):
     try:
         return _public_client().generate_presigned_url(
@@ -298,3 +227,7 @@ def presigned_get_url(object_key):
         )
     except (BotoCoreError, ClientError) as exc:
         raise StorageUnavailable from exc
+
+
+# Attach/delete live in a sibling module; re-exported so existing imports keep resolving.
+from apps.machines.service_storage_attach import delete_staged_file, finalize_file  # noqa: E402,F401

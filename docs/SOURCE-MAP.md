@@ -815,8 +815,8 @@ own staff lifecycle authority, onboarding, deactivation and administrator passwo
 `membership_context.py` shares the object/SQL account-validity rules used by RBAC.
 `backup/main_projection_catalog.py` owns the physical-table check re-exported by
 `main_projection_registry.py`; the staff inert-shell boundary is declared there, with
-projection in `backup/staff_shells.py` and guarded reversal in `staff_shell_fences.py`,
-`staff_reconstruction.py`, `main_projection_inverse.py` and `slice_merge_*`. Demo account/machine
+projection in `backup/staff_shells.py` (inert since one account per person: no account names a
+staff tenant, and B1 deleted the guarded reversal and slice merges). Demo account/machine
 fixtures are split into `inventory/management/commands/_seed_demo_fixtures.py`.
 
 Account-kind authentication is enforced in `accounts/login_context.py`, `surface_policy.py`,
@@ -833,16 +833,21 @@ and reset-page destinations; `credential_locks.py` enforces the shared credentia
 `admin_api/urls_staff_accounts.py` and `serializers_staff_accounts.py` define its HTTP contract;
 `accounts/admin_staff_lifecycle.py` and `makerspaces/admin_staff_accounts.py` provide control actions.
 
-Staff transport is in `tenant_migration/portable_staff.py`, `tenant_dump_staff.py`,
-`tenant_dump_user_closure.py`, `staff_postconditions.py` and `catalog_account_context.py`;
-`data_export/runner_users.py` and `subject_selectors.py` include tenant staff without retired shells.
+Person and staff-role transport (U-D): `tenant_migration/portable_staff.py` (staff-track rows travel
+with their person; split-format conversion), `portable_people.py` (created people, with travelled
+credentials), `portable_shells.py` (PII-free merged shells and their aliases), `credential_block.py`
+(the C-18 credential block), `tenant_dump_staff.py`, `tenant_dump_user_closure.py`,
+`staff_postconditions.py` and `catalog_account_context.py`; `data_export/runner_users.py` (staff-track
+closure, shell scrub, sidecars) and `subject_selectors.py`/`subject_runtime.py` (`actor_ids_for`).
+`backup/capture_managers.py` is the every-row manager whole-tenant code reads through;
+`backup/space_restore_formats.py` (tenant_slice_v2, v1 conversion) and `space_restore_merges.py` (C-17).
 `makerspaces/staff_retirement.py` performs the purge retirement step from `lifecycle_purge.py`.
 `makerspaces/lifecycle_purge_graph.py` owns the ordered whole-tenant deletion graph.
 `admin_governance.py` and `admin_lifecycle_review.py` provide the slim hidden-tenant lifecycle list
 and pending archive-request review; ordinary tenant object pages remain scoped.
 Shared chat destination facts use `integrations/notification_destination_events.py`;
 `notification_proofs.py` keeps proof and unlink account-bound. Transport/backup policy:
-[account-split-portability.md](account-split-portability.md).
+[account-portability.md](account-portability.md).
 
 Frontend `lib/api/sessionContext.ts` selects member, staff:<slug> or platform;
 `sessionTokens.ts`, `client.ts`, `requests.ts` and `reauthentication.ts` isolate tokens, refresh

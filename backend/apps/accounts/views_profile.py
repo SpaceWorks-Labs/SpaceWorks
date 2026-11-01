@@ -11,6 +11,7 @@ from apps.accounts import audit_events
 from apps.accounts.auth_cookies import (
     assert_csrf,
     clear_refresh_cookies,
+    csrf_surface,
 )
 from apps.accounts.schemas_auth import UserPayloadSerializer
 from apps.accounts.serializers import user_payload
@@ -27,7 +28,7 @@ class LogoutView(APIView):
         auth=[],
         request=SessionContextSerializer,
         responses={
-            204: OpenApiResponse(description="Logged out of the selected account context."),
+            204: OpenApiResponse(description="Logged out of the selected session (person or platform); any release-1 refresh_token_staff_* cookie is expired too."),
             401: OpenApiResponse(description="Invalid account context; selected cookie cleared."),
             403: OpenApiResponse(description="CSRF check failed."),
         },
@@ -37,7 +38,7 @@ class LogoutView(APIView):
         cookie = request.COOKIES.get(cookie_name(context))
         # An expired/blacklisted cookie cannot tell us which origin policy to
         # use. The explicit namespace keeps that policy stable after revocation.
-        assert_csrf(request, surface="member" if context == "member" else "staff")
+        assert_csrf(request, surface=csrf_surface(context))
         actor = None
         response = Response(status=204)
         if cookie:
@@ -56,7 +57,8 @@ class LogoutView(APIView):
             target=actor,
             meta={"had_refresh_cookie": bool(cookie)},
         )
-        clear_refresh_cookies(response, context=context)
+        # One release: also expire the release-1 per-makerspace staff cookies.
+        clear_refresh_cookies(response, context=context, request=request)
         return response
 
 

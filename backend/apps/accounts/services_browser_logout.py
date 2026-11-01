@@ -4,25 +4,21 @@ from django.db import transaction
 
 from apps.accounts.models import User
 from apps.accounts.session_context import decode_cookie
-from apps.accounts.surface_policy import assert_surface, validate_account_token
+from apps.accounts.surface_policy import assert_surface, token_kind, validate_account_token
 from apps.accounts.web_sessions import revoke_session
 
 
 @transaction.atomic
 def revoke_browser_cookie(raw, context, request):
     token = decode_cookie(raw, context)
-    actor = User.objects.select_for_update(no_key=True).filter(
-        pk=token.get("user_id"), account_kind=token.get("kind"),
-    ).first()
-    if actor is None:
+    actor = User.objects.select_for_update(no_key=True).filter(pk=token.get("user_id")).first()
+    if actor is None or token_kind(actor) != token.get("kind"):
         return None
     # Revocation may have committed while we waited for User. Recheck the
     # blacklist inside the lock before modifying either token or session marker.
     token = decode_cookie(raw, context)
     validate_account_token(actor, token)
     assert_surface(actor, token.get("surface"), request)
-    from apps.accounts.views_refresh import _assert_staff_refresh_scope
-    _assert_staff_refresh_scope(request, raw)
     token.blacklist()
     if token.get("sid"):
         revoke_session(actor, token["sid"])

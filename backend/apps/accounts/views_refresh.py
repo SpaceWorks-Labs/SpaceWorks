@@ -11,6 +11,7 @@ from apps.accounts import audit_events
 from apps.accounts.auth_cookies import (
     assert_csrf,
     clear_refresh_cookies,
+    csrf_surface,
     set_refresh_cookies,
 )
 from apps.accounts.models import User
@@ -43,49 +44,6 @@ def _refresh_user_is_active(token_str):
     )
 
 
-def _refresh_surface(token_str):
-    # A claim refresh is its own token type, so it must be decoded as one before the
-    # generic path -- otherwise its surface reads as None and the CSRF check picks the
-    # wrong exact-origin rule.
-    try:
-        if ClaimRefreshToken(token_str).get("surface") == "member":
-            return "member"
-    except TokenError:
-        pass
-    try:
-        surface = SpaceWorksRefreshToken(token_str).get("surface")
-        # Verification-only and legacy surface-less browser sessions use the member
-        # origin policy. Neither may inherit staff-origin trust while refreshing.
-        return "staff" if surface in {"staff", "staff_api", "platform"} else "member"
-    except TokenError:
-        return None
-
-
-def _assert_staff_refresh_scope(request, token_str):
-    try:
-        token = SpaceWorksRefreshToken(token_str)
-    except TokenError:
-        return
-    if token.get("surface") != "staff":
-        return
-    from rest_framework.exceptions import PermissionDenied
-
-    from apps.makerspaces.origin_scope import (
-        AMBIGUOUS_STAFF_ORIGIN_SCOPE,
-        NO_STAFF_ORIGIN_SCOPE,
-        staff_origin_scope,
-    )
-
-    actual = staff_origin_scope(request)
-    expected = str(token.get("staff_scope") or "")
-    if actual is AMBIGUOUS_STAFF_ORIGIN_SCOPE:
-        raise PermissionDenied("Staff origin is ambiguous.")
-    if expected == "platform" and actual is NO_STAFF_ORIGIN_SCOPE:
-        return
-    if str(actual) != expected:
-        raise PermissionDenied("Staff session origin does not match.")
-
-
 class RefreshView(TokenRefreshView):
     serializer_class = SpaceWorksTokenRefreshSerializer
     @extend_schema(
@@ -103,19 +61,15 @@ class RefreshView(TokenRefreshView):
         context = request_context(request)
         cookie = request.COOKIES.get(cookie_name(context))
         try:
-            assert_csrf(
-                request, surface=_refresh_surface(cookie) if cookie else None
-            )
+            assert_csrf(request, surface=csrf_surface(context))
             if cookie:
                 token = decode_cookie(cookie, context)
-                if token.get("kind") in {"staff", "platform"}:
-                    from apps.accounts.models import User
+                if token.get("kind") == "platform":
                     from apps.accounts.surface_policy import assert_surface
                     actor = User.objects.filter(pk=token.get("user_id")).first()
                     if actor is None:
                         raise AuthenticationFailed("Account is not available.")
                     assert_surface(actor, token.get("surface"), request)
-                _assert_staff_refresh_scope(request, cookie)
         except TokenError as exc:
             audit_events.record_refresh_rejected(cookie, "invalid_token")
             raise InvalidToken("Invalid refresh cookie.") from exc

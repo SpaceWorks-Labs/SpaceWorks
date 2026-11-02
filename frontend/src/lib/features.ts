@@ -150,6 +150,8 @@ export const FEATURE_DEFINITIONS: readonly FeatureDefinition[] = [
   { key: "machines.batch_start", parent_module: "machine_service", label: "Batch start" },
   { key: "machines.pay_before_pickup", parent_module: "machine_service", label: "Pay before pickup" },
   { key: "machines.time_booking", parent_module: "machines", label: "Machine time booking" },
+  // L23 (#158): metered machine sessions.
+  { key: "machines.sessions", parent_module: "machines", label: "Machine sessions" },
 ];
 
 export function featureEnabled(features: Iterable<string>, key: string) {

@@ -21,6 +21,7 @@ import { ListLayout } from "../../../components/layouts";
 import { opsQueryState } from "../opsPresentation";
 import { DashboardMachineQueue, isDashboardMachineQueue } from "./DashboardMachineQueue";
 import { WorkOrdersScreen } from "./machine/workOrders/WorkOrdersScreen";
+import { SessionsScreen } from "./machine/sessions/SessionsScreen";
 
 type StatusFilter = "all" | MachineStatus;
 
@@ -133,6 +134,13 @@ function MachinesWorkspace({
 
   // Work orders (machines.maintenance) are a screen of their own, reached from the index, a type page or a drawer.
   const openWorkOrders = () => setParams(new URLSearchParams({ view: "work-orders" }));
+  // Machine sessions (L23, machines.sessions): live, to check and closed, from the index.
+  const sessionsEnabled = enabledFeatures.includes("machines.sessions");
+  const openSessions = () => setParams(new URLSearchParams({ view: "sessions" }));
+  if (sessionsEnabled && params.get("view") === "sessions") {
+    return <SessionsScreen makerspaceId={makerspaceId} machines={allMachines}
+      onBack={() => setParams(current => { const next = new URLSearchParams(current); ["view", "session_status"].forEach(key => next.delete(key)); return next; })} />;
+  }
   if (maintenanceEnabled && params.get("view") === "work-orders") {
     return <WorkOrdersScreen makerspaceId={makerspaceId} machines={allMachines}
       onBack={() => setParams(current => { const next = new URLSearchParams(current); ["view", "work_order", "wo_status"].forEach(key => next.delete(key)); return next; })} />;
@@ -174,7 +182,7 @@ function MachinesWorkspace({
     {canManage && settingsVisible ? <DomainSettingsDisclosure makerspaceId={makerspaceId} domain="machines" /> : null}
     {canManage && machineServiceEnabled ? <SharedConsumablesSection visible={settingsVisible} makerspaceId={makerspaceId} pools={sharedPools} existingPools={pools} poolError={poolQuery.error} open={sharedOpen} onToggle={() => setSharedOpen(current => !current)} /> : null}
   </> : null;
-  const detail = selectedId !== null ? <MachineDrawer enabledFeatures={enabledFeatures} key={selectedId} machineId={selectedId} makerspaceId={makerspaceId} canManageMachines={canManage} maintenanceEnabled={maintenanceEnabled} onClose={closeSelection} /> : null;
+  const detail = selectedId !== null ? <MachineDrawer enabledFeatures={enabledFeatures} publicBase={singleTenantLocked || !makerspaceSlug ? "" : `/m/${makerspaceSlug}`} key={selectedId} machineId={selectedId} makerspaceId={makerspaceId} canManageMachines={canManage} maintenanceEnabled={maintenanceEnabled} onClose={closeSelection} /> : null;
   return <div onClickCapture={event => {
     if (event.button || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
     const link = (event.target as HTMLElement).closest<HTMLAnchorElement>('a[href^="/"]');
@@ -195,7 +203,10 @@ function MachinesWorkspace({
         primary: canConfigureMachineTypes ? { label: "Add machine type", icon: "Plus", onClick: () => {
           const section = document.querySelector<HTMLDetailsElement>("#machine-type-settings");
           if (section) { section.open = true; section.scrollIntoView({ behavior: "smooth", block: "start" }); section.querySelector<HTMLInputElement>("input")?.focus(); }
-        } } : undefined, secondary: maintenanceEnabled ? { label: "Work orders", onClick: openWorkOrders } : undefined }} state={reachableTypes.length ? { status: "ready" } : opsQueryState(machines.isError ? machines : machineTypes, "machines")}
+        } } : undefined, secondary: maintenanceEnabled && sessionsEnabled
+          ? { label: "Views", menu: [{ label: "Work orders", onClick: openWorkOrders }, { label: "Sessions", onClick: openSessions }] }
+          : maintenanceEnabled ? { label: "Work orders", onClick: openWorkOrders }
+          : sessionsEnabled ? { label: "Sessions", onClick: openSessions } : undefined }} state={reachableTypes.length ? { status: "ready" } : opsQueryState(machines.isError ? machines : machineTypes, "machines")}
         callout={machineTypes.isError || machines.isError ? { size: "banner", tone: "warn", lead: "Some machine information couldn’t be loaded.", action: { label: "Retry", onClick: () => { void machines.refetch(); void machineTypes.refetch(); } } }
           : poolQuery.isError ? { size: "banner", tone: "warn", lead: "Couldn’t load consumable pools. Try again before starting work.", action: { label: "Retry", onClick: () => { void poolQuery.refetch(); } } } : undefined}
         body={{ kind: "rows", rows: <><MachineTypeCards machineTypes={reachableTypes} machines={allMachines}

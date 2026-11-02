@@ -6,7 +6,7 @@ from django.utils import timezone
 
 from apps.integrations.push import send_device_push
 from apps.integrations.push_fcm import PushProviderError
-from apps.integrations.push_payload import push_data
+from apps.integrations.push_payload import push_data, short_body, short_title
 from .envelope_push_leases import MAX_ATTEMPTS, complete
 from .member_push_policy import device_allowed, recipient_allowed
 
@@ -24,9 +24,11 @@ def send_child(envelope, rendered, settings_row, device, inbox, target, token, e
     try:
         data = push_data(event_id=event_key, makerspace_id=envelope.makerspace_id,
                          feature=envelope.feature, event=envelope.event,
-                         inbox_row_id=inbox.pk if inbox else None, link=rendered.get("link", ""))
-        sent = send_device_push(settings_row, device, envelope.makerspace.name[:64],
-                                str(rendered.get("text", ""))[:178], data)
+                         inbox_row_id=inbox.pk if inbox else None, link=rendered.get("link", ""),
+                         makerspace=envelope.makerspace)
+        # v3 (#116): the notice's own subject is the title; the space is the iOS thread.
+        title = short_title(rendered.get("subject") or envelope.makerspace.name)
+        sent = send_device_push(settings_row, device, title, short_body(rendered.get("text", "")), data)
         complete(target, token, status="sent" if sent else "skipped",
                  error="" if sent else "provider_not_configured")
     except Exception as exc:

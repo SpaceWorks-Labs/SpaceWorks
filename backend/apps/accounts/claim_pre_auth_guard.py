@@ -35,6 +35,8 @@ POLICY_OVERRIDE_ALLOWLIST = {
     "apps.accounts.throttles_mfa.MFAChallengeThrottle": {"get_cache_key"},
     "apps.accounts.throttles_mfa.MFAUserThrottle": {"get_cache_key"},
     "apps.accounts.views_reauthentication.ReauthenticationThrottle": {"get_cache_key"},
+    "apps.accounts.views_account_merge.AccountMergeStartThrottle": {"get_cache_key"},  # U-C, keyed per person
+    "apps.accounts.views_account_merge.AccountMergeProveThrottle": {"get_cache_key"},  # U-C, keyed per person
     "apps.organizations.views_self_service.OrganizationCreationThrottle": {"get_cache_key"},
     "apps.organizations.views_self_service.OrganizationCreationIpThrottle": {"get_cache_key"},
     "apps.admin_api.permissions.IsActiveStaff": {"has_permission", "has_object_permission"},

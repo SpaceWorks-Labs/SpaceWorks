@@ -21,6 +21,14 @@ form/Saved details and runtime/retention adapters at `f1ef7736`. It includes inc
 provider installation explicitly; see the [closure ledger](events/integration-status.md)
 before interpreting a mounted route as an enabled/accepted workflow.
 
+The public stats page (#170, L26): `inventory/public_stats.py` assembles it from
+`public_stats_period.py` (fixed period, small-number suppression), `public_stats_events.py`,
+`public_stats_community.py`, `public_stats_activity.py` (period figures) and the legacy
+`public_stats_hardware.py`; `public_stats_cache.py` fronts it and `public_stats_serializers.py` is its
+schema. The Settings › Public stats group is `makerspaces/public_stats_settings.py` (+ `_views.py`).
+Frontend: `features/stats/` (`PublicStatsPage`, `PublicStatsTvPage` at `/stats/tv`, `StatsBody`,
+`StatsMetrics`, `StatsSectionsMore`) and `features/stats/settings/` (the settings panel).
+
 Public-image POST/PUT presigns live in `inventory/public_image_storage.py` and
 `bookings/storage.py`; both delegate bounded validation and conditional, write-once promotion
 to `inventory/public_image_promotion.py`. Membership owner mail is classified as staff/account

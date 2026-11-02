@@ -867,6 +867,29 @@ matching `charges.<area>` switch records: with `charges.<area>` off, turning `pa
 nothing and offers nothing (the two are deliberately independent switches, the A6 rule). `inventory.self_checkout` and `presence.geofence`
 belong to no module: they are standalone capabilities that apply whenever you enable them.
 
+## The public stats page (not a module)
+
+`/m/<slug>/stats` (and the full-screen `/m/<slug>/stats/tv`) is a public-site setting, not a
+module or capability (#97, #170): the Space Manager sets it up in **Settings › Public stats** —
+page on/off, which sections and in what order, one fixed period (this month, this year, all time
+or this financial year), up to four headline numbers, and TV mode with its refresh (default 60
+seconds, at least 30). Only the Space Manager and the superadmin change it, through the settings
+authority (module `public_site`, audited as `settings.changed`).
+
+Each section also follows its module; a module that is off hides its section and keeps its data:
+
+| Section | Needs | Shows |
+|---|---|---|
+| Events | `events` | upcoming listed public events (cards only), events held and checked-in attendees in the period |
+| Machines | `machines` | machine hours all time and in the period (public, active machines) |
+| Printing | `machine_service` + `printing` | the printer kernel figures, print hours and prints completed in the period |
+| Lending & inventory | `public_inventory` and the catalogue switch | the public library, current loans, loans in the period |
+| Community | `membership`, `bookings`, `presence` (each count on its own) | active and new members, bookings, check-ins |
+
+Counts never carry a name and any count below 3 shows as "fewer than 3". New spaces start with
+machines, printing and lending on, events and community off, and the page itself off. The page
+builder's own "Public stats" section (Settings › Public page) is separate and unchanged.
+
 ## Editions
 
 [Read about editions](MODULES-LIFECYCLE.md#editions).

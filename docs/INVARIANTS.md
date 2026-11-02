@@ -2913,6 +2913,41 @@ Owner decisions #62, #66, #74, #110c, #111 Q9-Q11, #128 C-1/C-2 and #135 Q-A1-Q-
   `GET/PUT …/locks` (Space Manager), `GET …/effective` (what the caller may edit, per module and
   key; only modules the caller manages).
 
+## Public stats page (release 2, lane L26; #170)
+
+- **One builder, one projection.** `inventory/public_stats.build_public_stats` assembles the page
+  from the Settings › Public stats group (`makerspaces/public_stats_settings.read_config`); the
+  view serves it from a 60-second per-space cache (`inventory/public_stats_cache.py`) whose key
+  fingerprints every switch the payload depends on, and saving the group also deletes the key.
+  The legacy keys (`machines`, `printing`, `hardware`, `current_loans`) keep their shapes and
+  are `null` while their section is hidden. The page 404s while `public_stats_enabled` or
+  `public_site_enabled` is off, **or when no section is left to show** — so a space whose modules
+  and editions hide every chosen section still has no page, exactly as before #170.
+- **Every section follows its module and its edition surface** (`public_surface_available`):
+  events → `events`; machines → `machines`; printing → `machine_service` + `printing`; lending
+  → `public_inventory` + `public_inventory_enabled`; community → each of `membership`,
+  `bookings`, `presence` gates its own count, and the section hides when all three are off. Off
+  hides; data is kept.
+- **Events come only through the listing gate.** `events.website_visibility.listed_q` (public,
+  page live, LISTED) and never `registration_audience=invite`; drafts and cancelled events never
+  count. The upcoming list carries the public card fields only (token, title, dates, cover URL).
+  Attendees are checked-in (`ATTENDED`) registrations of those listed events, as a count.
+- **Counts are suppressed below 3, zero included.** `public_stats_period.suppressed` returns
+  `{"value": null, "suppressed": true}` for 0–2 so "fewer than 3" never tells 0 from 1 or 2.
+  Every count in the events, community and period figures and in the headline goes through it;
+  hours are not counts. The legacy section payloads are unchanged.
+- **Names never appear,** except the pre-existing Space Manager opt-in for borrower names in
+  `current_loans` (#80, "Publishing a borrower's NAME is opt-in" above), which #170 leaves as it
+  was: every new section is counts only.
+- **The period is fixed by the space** (no visitor parameter): month, year, all or fy, on the
+  space's own wall clock; `fy` uses `makerspaces.financial_year.fy_bounds`. Counts of things that
+  happened (events held, bookings, check-ins, loans, hours) stop at now.
+- **Settings authority.** Module `public_site` has no module manager, so every key
+  (`public_stats.enabled|sections|period|headline|tv_mode_enabled|tv_refresh_seconds`) is
+  Space-Manager-only (superadmin parity, #115); other staff read the group with `can_edit=false`
+  and a write is refused `setting_not_delegated` even when nothing would change. Each changed key
+  is audited `settings.changed`.
+
 ## Pricing: paid and free everywhere (release 2, lane L15; #84, #85)
 
 - **One resolver.** Every chargeable seam and every price preview calls

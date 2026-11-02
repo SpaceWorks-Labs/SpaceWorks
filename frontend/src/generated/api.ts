@@ -992,6 +992,12 @@ export const openApiPaths = [
   "/api/v1/admin/warranty/documents/{id}/url",
   "/api/v1/admin/warranty/{id}/documents",
   "/api/v1/admin/warranty/{id}/documents/presign",
+  "/api/v1/auth/account-merge/start",
+  "/api/v1/auth/account-merge/{intent_id}/cancel",
+  "/api/v1/auth/account-merge/{intent_id}/confirm",
+  "/api/v1/auth/account-merge/{intent_id}/preview",
+  "/api/v1/auth/account-merge/{intent_id}/prove",
+  "/api/v1/auth/account-merge/{intent_id}/resend",
   "/api/v1/auth/account/deletion",
   "/api/v1/auth/account/restore/email",
   "/api/v1/auth/account/restore/phone",
@@ -1456,16 +1462,67 @@ export type ApiPath = (typeof openApiPaths)[number];
 
 // Schema types generated from the same OpenAPI contract as the route constants.
 // Use these at API boundaries so console code cannot silently drift from DRF serializers.
+export type _Conflict = {
+  "model": string;
+  "field": string;
+  "kept_on_shell": number;
+};
+
+export type _Counts = {
+  "repointed": number;
+  "kept_on_shell": number;
+  "unique_moved": number;
+  "unique_kept": number;
+  "revoked": number;
+};
+
+export type _Makerspace = {
+  "id": number;
+  "slug": string;
+  "name": string;
+};
+
 export type _MakerspaceRef = {
   "id": number;
   "slug": string;
   "name": string;
 };
 
+export type _Moves = {
+  "repoint": _Rows;
+  "keep_on_shell": _Rows;
+  "unique_resolve": _UniqueRows;
+};
+
+export type _PrivilegeDiff = {
+  "roles_gained": Array<_RoleEntry>;
+  "duplicate_staff_rows": Array<_RoleEntry>;
+};
+
+export type _RoleEntry = {
+  "makerspace": _Makerspace;
+  "roles": Array<string>;
+};
+
+export type _Rows = {
+  "rows": number;
+};
+
+export type _Source = {
+  "id": number;
+  "username": string;
+  "display_name": string;
+};
+
 export type _StationRef = {
   "id": number;
   "name": string;
   "kind": string;
+};
+
+export type _UniqueRows = {
+  "rows": number;
+  "kept_on_shell": number;
 };
 
 export type About = {
@@ -2774,6 +2831,7 @@ export type AuthUserPayload = {
   "makerspaces": Array<AuthMembership>;
   "superadmin_actions": Array<string>;
   "mfa_grace_ends_at": string | null;
+  "merge_suggested": boolean;
   "event_grants"?: Array<GrantedEventEntry>;
   "booking_grants"?: Array<GrantedBookingEntry>;
 };
@@ -11847,6 +11905,56 @@ export type MentorTeamAssignmentPage = {
   "results": Array<AssignmentMapping>;
 };
 
+export type MergeConfirmRequest = {
+  "preview_sha256": string;
+};
+
+export type MergeConfirmResponse = {
+  "merged": boolean;
+  "record_id": string;
+  "roles_gained": Array<_RoleEntry>;
+  "grace_opened": boolean;
+  "counts": _Counts;
+};
+
+export type MergeError = {
+  "code": MergeErrorCodeEnum;
+  "detail": string;
+};
+
+export type MergeErrorCodeEnum = "merge_not_allowed" | "proof_failed" | "proof_expired" | "factor_enrolment_required" | "tenant_gated" | "already_merged" | "preview_stale" | "recent_reauth_required";
+
+export type MergeIntent = {
+  "intent_id": string;
+  "method": Method652Enum;
+  "state": MergeIntentStateEnum;
+  "expires_at": string;
+};
+
+export type MergeIntentStateEnum = "started" | "proved" | "consumed" | "cancelled" | "expired";
+
+export type MergePreview = {
+  "source": _Source;
+  "privilege_diff": _PrivilegeDiff;
+  "grace_opens": boolean;
+  "moves": _Moves;
+  "conflicts": Array<_Conflict>;
+  "preview_sha256": string;
+  "expires_at": string;
+};
+
+export type MergeProveRequest = {
+  "password"?: string;
+  "otp"?: string;
+  "survivor_code"?: string;
+  "source_code"?: string;
+};
+
+export type MergeStartRequest = {
+  "identifier": string;
+  "method": Method652Enum;
+};
+
 export type MessageStatusEnum = "accepted" | "queued" | "sending" | "sent" | "delivered" | "read" | "failed" | "undelivered" | "canceled";
 
 export type MessagingCatalogEntry = {
@@ -11975,6 +12083,8 @@ export type MetaWebhookResult = {
 export type Method119Enum = "upi" | "bank_transfer";
 
 export type Method2edEnum = "cash" | "upi" | "bank_transfer" | "card_machine" | "cheque" | "other";
+
+export type Method652Enum = "credentials" | "email_codes";
 
 export type MethodA66Enum = "cash" | "upi" | "bank_transfer" | "card" | "cheque" | "online" | "other";
 

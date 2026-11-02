@@ -113283,6 +113283,430 @@
                 }
             }
         },
+        "/api/v1/auth/account-merge/{intent_id}/cancel": {
+            "post": {
+                "operationId": "api_v1_auth_account_merge_cancel_create",
+                "description": "Abandon a link request; its codes stop working.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "intent_id",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Accounts"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MergeIntent"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/account-merge/{intent_id}/confirm": {
+            "post": {
+                "operationId": "api_v1_auth_account_merge_confirm_create",
+                "description": "Link the proved account into this one, exactly as previewed. Needs re-authentication within ten minutes (`recent_reauth_required`). Cannot be undone.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "intent_id",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Accounts"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/MergeConfirmRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/MergeConfirmRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/MergeConfirmRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MergeConfirmResponse"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MergeError"
+                                }
+                            }
+                        },
+                        "description": "Typed refusal: see `code`."
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MergeError"
+                                }
+                            }
+                        },
+                        "description": "Typed refusal: see `code`."
+                    },
+                    "410": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MergeError"
+                                }
+                            }
+                        },
+                        "description": "Typed refusal: see `code`."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/account-merge/{intent_id}/preview": {
+            "get": {
+                "operationId": "api_v1_auth_account_merge_preview_retrieve",
+                "description": "What linking will do: staff roles gained per makerspace, records that move or stay, one-per-person conflicts and whether the staff two-step grace opens.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "intent_id",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Accounts"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MergePreview"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MergeError"
+                                }
+                            }
+                        },
+                        "description": "Typed refusal: see `code`."
+                    },
+                    "410": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MergeError"
+                                }
+                            }
+                        },
+                        "description": "Typed refusal: see `code`."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/account-merge/{intent_id}/prove": {
+            "post": {
+                "operationId": "api_v1_auth_account_merge_prove_create",
+                "description": "Prove the other account: its password and authenticator code (`credentials`), or both emailed codes (`email_codes`). Codes work once; five wrong tries end the request.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "intent_id",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Accounts"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/MergeProveRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/MergeProveRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/MergeProveRequest"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MergeIntent"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MergeError"
+                                }
+                            }
+                        },
+                        "description": "Typed refusal: see `code`."
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MergeError"
+                                }
+                            }
+                        },
+                        "description": "Typed refusal: see `code`."
+                    },
+                    "410": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MergeError"
+                                }
+                            }
+                        },
+                        "description": "Typed refusal: see `code`."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/account-merge/{intent_id}/resend": {
+            "post": {
+                "operationId": "api_v1_auth_account_merge_resend_create",
+                "description": "Send two new codes (email_codes only); the old codes stop working.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "intent_id",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Accounts"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MergeIntent"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "410": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MergeError"
+                                }
+                            }
+                        },
+                        "description": "Typed refusal: see `code`."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/account-merge/start": {
+            "post": {
+                "operationId": "api_v1_auth_account_merge_start_create",
+                "description": "Start linking another account into this one. The answer is the same whether or not the identifier names an account. `email_codes` sends one code to this account's email and one to the other account's email (two codes even when it is the same mailbox); `credentials` sends nothing.",
+                "tags": [
+                    "Accounts"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/MergeStartRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/MergeStartRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/MergeStartRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MergeIntent"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MergeError"
+                                }
+                            }
+                        },
+                        "description": "Typed refusal: see `code`."
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
+                    }
+                }
+            }
+        },
         "/api/v1/auth/account/deletion": {
             "get": {
                 "operationId": "api_v1_auth_account_deletion_retrieve",
@@ -175154,6 +175578,10 @@
                         "nullable": true,
                         "description": "When a person who gained a staff role without a second factor must have enrolled (#128 C-1). Null when no grace applies."
                     },
+                    "merge_suggested": {
+                        "type": "boolean",
+                        "description": "A former staff account that has not linked another account yet: show the \"Link your accounts\" nudge (Q17). There is no deadline."
+                    },
                     "event_grants": {
                         "type": "array",
                         "items": {
@@ -175179,6 +175607,7 @@
                     "is_superuser",
                     "kind",
                     "makerspaces",
+                    "merge_suggested",
                     "mfa_grace_ends_at",
                     "must_change_password",
                     "phone",
@@ -216752,6 +217181,198 @@
                     "results"
                 ]
             },
+            "MergeConfirmRequest": {
+                "type": "object",
+                "properties": {
+                    "preview_sha256": {
+                        "type": "string",
+                        "maxLength": 64,
+                        "minLength": 64
+                    }
+                },
+                "required": [
+                    "preview_sha256"
+                ]
+            },
+            "MergeConfirmResponse": {
+                "type": "object",
+                "properties": {
+                    "merged": {
+                        "type": "boolean"
+                    },
+                    "record_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "roles_gained": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/_RoleEntry"
+                        }
+                    },
+                    "grace_opened": {
+                        "type": "boolean"
+                    },
+                    "counts": {
+                        "$ref": "#/components/schemas/_Counts"
+                    }
+                },
+                "required": [
+                    "counts",
+                    "grace_opened",
+                    "merged",
+                    "record_id",
+                    "roles_gained"
+                ]
+            },
+            "MergeError": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "$ref": "#/components/schemas/MergeErrorCodeEnum"
+                    },
+                    "detail": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "code",
+                    "detail"
+                ]
+            },
+            "MergeErrorCodeEnum": {
+                "enum": [
+                    "merge_not_allowed",
+                    "proof_failed",
+                    "proof_expired",
+                    "factor_enrolment_required",
+                    "tenant_gated",
+                    "already_merged",
+                    "preview_stale",
+                    "recent_reauth_required"
+                ],
+                "type": "string",
+                "description": "* `merge_not_allowed` - merge_not_allowed\n* `proof_failed` - proof_failed\n* `proof_expired` - proof_expired\n* `factor_enrolment_required` - factor_enrolment_required\n* `tenant_gated` - tenant_gated\n* `already_merged` - already_merged\n* `preview_stale` - preview_stale\n* `recent_reauth_required` - recent_reauth_required"
+            },
+            "MergeIntent": {
+                "type": "object",
+                "properties": {
+                    "intent_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "method": {
+                        "$ref": "#/components/schemas/Method652Enum"
+                    },
+                    "state": {
+                        "$ref": "#/components/schemas/MergeIntentStateEnum"
+                    },
+                    "expires_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "expires_at",
+                    "intent_id",
+                    "method",
+                    "state"
+                ]
+            },
+            "MergeIntentStateEnum": {
+                "enum": [
+                    "started",
+                    "proved",
+                    "consumed",
+                    "cancelled",
+                    "expired"
+                ],
+                "type": "string",
+                "description": "* `started` - Started\n* `proved` - Proved\n* `consumed` - Consumed\n* `cancelled` - Cancelled\n* `expired` - Expired"
+            },
+            "MergePreview": {
+                "type": "object",
+                "properties": {
+                    "source": {
+                        "$ref": "#/components/schemas/_Source"
+                    },
+                    "privilege_diff": {
+                        "$ref": "#/components/schemas/_PrivilegeDiff"
+                    },
+                    "grace_opens": {
+                        "type": "boolean",
+                        "description": "This account becomes staff without a second factor: a 3-day grace to enrol starts at confirm (#128 C-1)."
+                    },
+                    "moves": {
+                        "$ref": "#/components/schemas/_Moves"
+                    },
+                    "conflicts": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/_Conflict"
+                        }
+                    },
+                    "preview_sha256": {
+                        "type": "string",
+                        "description": "Send back to confirm exactly what you reviewed."
+                    },
+                    "expires_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "conflicts",
+                    "expires_at",
+                    "grace_opens",
+                    "moves",
+                    "preview_sha256",
+                    "privilege_diff",
+                    "source"
+                ]
+            },
+            "MergeProveRequest": {
+                "type": "object",
+                "properties": {
+                    "password": {
+                        "type": "string",
+                        "description": "credentials: the other account's password.",
+                        "maxLength": 4096
+                    },
+                    "otp": {
+                        "type": "string",
+                        "description": "credentials: a code from the other account's authenticator, or one of its recovery codes. Passkey proof arrives with lane S-A.",
+                        "maxLength": 64
+                    },
+                    "survivor_code": {
+                        "type": "string",
+                        "description": "email_codes: the code sent to this account's email.",
+                        "maxLength": 16
+                    },
+                    "source_code": {
+                        "type": "string",
+                        "description": "email_codes: the code sent to the other account's email.",
+                        "maxLength": 16
+                    }
+                }
+            },
+            "MergeStartRequest": {
+                "type": "object",
+                "properties": {
+                    "identifier": {
+                        "type": "string",
+                        "description": "The other account's username, email or held email.",
+                        "maxLength": 254
+                    },
+                    "method": {
+                        "$ref": "#/components/schemas/Method652Enum"
+                    }
+                },
+                "required": [
+                    "identifier",
+                    "method"
+                ]
+            },
             "MessageStatusEnum": {
                 "enum": [
                     "accepted",
@@ -217229,6 +217850,14 @@
                 ],
                 "type": "string",
                 "description": "* `cash` - Cash\n* `upi` - UPI\n* `bank_transfer` - Bank transfer\n* `card_machine` - Card machine\n* `cheque` - Cheque\n* `other` - Other"
+            },
+            "Method652Enum": {
+                "enum": [
+                    "credentials",
+                    "email_codes"
+                ],
+                "type": "string",
+                "description": "* `credentials` - Password and second factor\n* `email_codes` - Two emailed codes"
             },
             "MethodA66Enum": {
                 "enum": [
@@ -265028,6 +265657,71 @@
                     }
                 }
             },
+            "_Conflict": {
+                "type": "object",
+                "properties": {
+                    "model": {
+                        "type": "string"
+                    },
+                    "field": {
+                        "type": "string"
+                    },
+                    "kept_on_shell": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "field",
+                    "kept_on_shell",
+                    "model"
+                ]
+            },
+            "_Counts": {
+                "type": "object",
+                "properties": {
+                    "repointed": {
+                        "type": "integer"
+                    },
+                    "kept_on_shell": {
+                        "type": "integer"
+                    },
+                    "unique_moved": {
+                        "type": "integer"
+                    },
+                    "unique_kept": {
+                        "type": "integer"
+                    },
+                    "revoked": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "kept_on_shell",
+                    "repointed",
+                    "revoked",
+                    "unique_kept",
+                    "unique_moved"
+                ]
+            },
+            "_Makerspace": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "slug": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "name",
+                    "slug"
+                ]
+            },
             "_MakerspaceRef": {
                 "type": "object",
                 "properties": {
@@ -265047,6 +265741,111 @@
                     "slug"
                 ]
             },
+            "_Moves": {
+                "type": "object",
+                "properties": {
+                    "repoint": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/_Rows"
+                            }
+                        ],
+                        "description": "Records that move to this account."
+                    },
+                    "keep_on_shell": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/_Rows"
+                            }
+                        ],
+                        "description": "History that stays on the linked account's id (still shown as yours)."
+                    },
+                    "unique_resolve": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/_UniqueRows"
+                            }
+                        ],
+                        "description": "One-per-person records: they move unless this account already has one."
+                    }
+                },
+                "required": [
+                    "keep_on_shell",
+                    "repoint",
+                    "unique_resolve"
+                ]
+            },
+            "_PrivilegeDiff": {
+                "type": "object",
+                "properties": {
+                    "roles_gained": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/_RoleEntry"
+                        },
+                        "description": "Staff roles this account gains, per makerspace."
+                    },
+                    "duplicate_staff_rows": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/_RoleEntry"
+                        },
+                        "description": "Spaces where both accounts are staff: this account's roles win; the other account's stay behind, revoked."
+                    }
+                },
+                "required": [
+                    "duplicate_staff_rows",
+                    "roles_gained"
+                ]
+            },
+            "_RoleEntry": {
+                "type": "object",
+                "properties": {
+                    "makerspace": {
+                        "$ref": "#/components/schemas/_Makerspace"
+                    },
+                    "roles": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "required": [
+                    "makerspace",
+                    "roles"
+                ]
+            },
+            "_Rows": {
+                "type": "object",
+                "properties": {
+                    "rows": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "rows"
+                ]
+            },
+            "_Source": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "username": {
+                        "type": "string"
+                    },
+                    "display_name": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "display_name",
+                    "id",
+                    "username"
+                ]
+            },
             "_StationRef": {
                 "type": "object",
                 "properties": {
@@ -265064,6 +265863,21 @@
                     "id",
                     "kind",
                     "name"
+                ]
+            },
+            "_UniqueRows": {
+                "type": "object",
+                "properties": {
+                    "rows": {
+                        "type": "integer"
+                    },
+                    "kept_on_shell": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "kept_on_shell",
+                    "rows"
                 ]
             }
         },

@@ -104,8 +104,10 @@ class MemberSessionPreviewView(_MemberView):
                 "digest": rate.digest if rate is not None else "",
                 "max_minutes": policy_for(machine.makerspace, machine.machine_type).session_max_minutes,
                 "closes_at": closing_time(machine.makerspace, timezone.now()), "can_start": problem is None,
-                "refusal": problem, "live_session": _render(live) if live is not None else None}
-        response = Response(SessionPreviewSerializer(data).data)
+                "refusal": problem, "live_session": None}
+        body = SessionPreviewSerializer(data).data
+        body["live_session"] = _render(live) if live is not None else None
+        response = Response(body)
         response["Cache-Control"] = "no-store"
         return response
 

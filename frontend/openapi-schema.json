@@ -52282,6 +52282,275 @@
                 }
             }
         },
+        "/api/v1/admin/machine-type-integrations/{id}": {
+            "get": {
+                "operationId": "api_v1_admin_machine_type_integrations_retrieve",
+                "summary": "Read one integration binding",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Devices"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TypeIntegration"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeviceError"
+                                }
+                            }
+                        },
+                        "description": "Invalid payload or integration_kind_unsupported."
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeviceError"
+                                }
+                            }
+                        },
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeviceError"
+                                }
+                            }
+                        },
+                        "description": "Missing MANAGE_DEVICES or the machine type is outside your scope."
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeviceError"
+                                }
+                            }
+                        },
+                        "description": "Not found: the `machines.integrations` capability is off (the default), or the target is outside scope."
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeviceError"
+                                }
+                            }
+                        },
+                        "description": "integration_exists: the type already has this integration."
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "api_v1_admin_machine_type_integrations_partial_update",
+                "summary": "Enable, disable or re-version an integration binding",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Devices"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedTypeIntegrationUpdate"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedTypeIntegrationUpdate"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedTypeIntegrationUpdate"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TypeIntegration"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeviceError"
+                                }
+                            }
+                        },
+                        "description": "Invalid payload or integration_kind_unsupported."
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeviceError"
+                                }
+                            }
+                        },
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeviceError"
+                                }
+                            }
+                        },
+                        "description": "Missing MANAGE_DEVICES or the machine type is outside your scope."
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeviceError"
+                                }
+                            }
+                        },
+                        "description": "Not found: the `machines.integrations` capability is off (the default), or the target is outside scope."
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeviceError"
+                                }
+                            }
+                        },
+                        "description": "integration_exists: the type already has this integration."
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "api_v1_admin_machine_type_integrations_destroy",
+                "summary": "Remove an integration binding",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Devices"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No response body"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeviceError"
+                                }
+                            }
+                        },
+                        "description": "Invalid payload or integration_kind_unsupported."
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeviceError"
+                                }
+                            }
+                        },
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeviceError"
+                                }
+                            }
+                        },
+                        "description": "Missing MANAGE_DEVICES or the machine type is outside your scope."
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeviceError"
+                                }
+                            }
+                        },
+                        "description": "Not found: the `machines.integrations` capability is off (the default), or the target is outside scope."
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeviceError"
+                                }
+                            }
+                        },
+                        "description": "integration_exists: the type already has this integration."
+                    }
+                }
+            }
+        },
         "/api/v1/admin/machines/{id}": {
             "get": {
                 "operationId": "api_v1_admin_machines_retrieve",
@@ -65596,6 +65865,312 @@
                 }
             }
         },
+        "/api/v1/admin/makerspace/{makerspace_id}/machine-types/{type_id}/integration-status": {
+            "get": {
+                "operationId": "api_v1_admin_makerspace_machine_types_integration_status_list",
+                "summary": "Read-only status of the printers bound to this machine type",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "type_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Devices"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/IntegrationStatus"
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeviceError"
+                                }
+                            }
+                        },
+                        "description": "Invalid payload or integration_kind_unsupported."
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeviceError"
+                                }
+                            }
+                        },
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeviceError"
+                                }
+                            }
+                        },
+                        "description": "Missing MANAGE_DEVICES or the machine type is outside your scope."
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeviceError"
+                                }
+                            }
+                        },
+                        "description": "Not found: the `machines.integrations` capability is off (the default), or the target is outside scope."
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeviceError"
+                                }
+                            }
+                        },
+                        "description": "integration_exists: the type already has this integration."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/makerspace/{makerspace_id}/machine-types/{type_id}/integrations": {
+            "get": {
+                "operationId": "api_v1_admin_makerspace_machine_types_integrations_list",
+                "summary": "List a machine type's integration bindings",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "type_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Devices"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/TypeIntegration"
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeviceError"
+                                }
+                            }
+                        },
+                        "description": "Invalid payload or integration_kind_unsupported."
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeviceError"
+                                }
+                            }
+                        },
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeviceError"
+                                }
+                            }
+                        },
+                        "description": "Missing MANAGE_DEVICES or the machine type is outside your scope."
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeviceError"
+                                }
+                            }
+                        },
+                        "description": "Not found: the `machines.integrations` capability is off (the default), or the target is outside scope."
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeviceError"
+                                }
+                            }
+                        },
+                        "description": "integration_exists: the type already has this integration."
+                    }
+                }
+            },
+            "post": {
+                "operationId": "api_v1_admin_makerspace_machine_types_integrations_create",
+                "summary": "Bind an integration kind to a machine type (created disabled)",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "type_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Devices"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TypeIntegrationCreate"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TypeIntegrationCreate"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TypeIntegrationCreate"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TypeIntegration"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeviceError"
+                                }
+                            }
+                        },
+                        "description": "Invalid payload or integration_kind_unsupported."
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeviceError"
+                                }
+                            }
+                        },
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeviceError"
+                                }
+                            }
+                        },
+                        "description": "Missing MANAGE_DEVICES or the machine type is outside your scope."
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeviceError"
+                                }
+                            }
+                        },
+                        "description": "Not found: the `machines.integrations` capability is off (the default), or the target is outside scope."
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeviceError"
+                                }
+                            }
+                        },
+                        "description": "integration_exists: the type already has this integration."
+                    }
+                }
+            }
+        },
         "/api/v1/admin/makerspace/{makerspace_id}/machines": {
             "get": {
                 "operationId": "api_v1_admin_makerspace_machines_retrieve",
@@ -73059,6 +73634,175 @@
                             }
                         },
                         "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/makerspace/{makerspace_id}/selfhost-move-request": {
+            "get": {
+                "operationId": "api_v1_admin_makerspace_selfhost_move_request_retrieve",
+                "summary": "Read this space's self-host move request status",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Tenant migration"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SelfHostMoveStatus"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MoveError"
+                                }
+                            }
+                        },
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MoveError"
+                                }
+                            }
+                        },
+                        "description": "Only the space's Space Manager (or the superadmin)."
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MoveError"
+                                }
+                            }
+                        },
+                        "description": "No such makerspace."
+                    }
+                }
+            },
+            "post": {
+                "operationId": "api_v1_admin_makerspace_selfhost_move_request_create",
+                "summary": "Ask the platform operator to move this space to its own server",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Tenant migration"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SelfHostMoveCreate"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SelfHostMoveCreate"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SelfHostMoveCreate"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SelfHostMoveStatus"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MoveError"
+                                }
+                            }
+                        },
+                        "description": "Invalid note."
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MoveError"
+                                }
+                            }
+                        },
+                        "description": "move_request_exists: one is already open."
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MoveError"
+                                }
+                            }
+                        },
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MoveError"
+                                }
+                            }
+                        },
+                        "description": "Only the space's Space Manager (or the superadmin)."
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MoveError"
+                                }
+                            }
+                        },
+                        "description": "No such makerspace."
                     }
                 }
             }
@@ -117536,6 +118280,25 @@
                 "tags": [
                     "Device protocol"
                 ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/DeviceHeartbeatRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/DeviceHeartbeatRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/DeviceHeartbeatRequest"
+                            }
+                        }
+                    }
+                },
                 "security": [
                     {
                         "DeviceSignature": []
@@ -117546,7 +118309,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ConnectedDeviceIdentity"
+                                    "$ref": "#/components/schemas/DeviceHeartbeatResponse"
                                 }
                             }
                         },
@@ -117560,7 +118323,7 @@
                                 }
                             }
                         },
-                        "description": "Module disabled."
+                        "description": "Module disabled, or an invalid status snapshot (sizes, kinds, unknown fields)."
                     },
                     "401": {
                         "content": {
@@ -117581,6 +118344,208 @@
                             }
                         },
                         "description": "Device not allowed on this route, revoked or tenant unavailable."
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeviceError"
+                                }
+                            }
+                        },
+                        "description": "Tenant frozen for migration."
+                    }
+                }
+            }
+        },
+        "/api/v1/device/integrations/jobs/{id}/report": {
+            "post": {
+                "operationId": "api_v1_device_integrations_jobs_report_create",
+                "summary": "Report a job started, completed or failed (signed)",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Device protocol"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/JobReport"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/JobReport"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/JobReport"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "DeviceSignature": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Job"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeviceError"
+                                }
+                            }
+                        },
+                        "description": "Invalid payload."
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeviceError"
+                                }
+                            }
+                        },
+                        "description": "Authentication/signature/replay refused."
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeviceError"
+                                }
+                            }
+                        },
+                        "description": "Device revoked or tenant unavailable."
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeviceError"
+                                }
+                            }
+                        },
+                        "description": "Not found: the `machines.integrations` capability is off (the default), or the target is outside scope. Also: the device is not an active printer bound to a machine whose type has an enabled printer agent."
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeviceError"
+                                }
+                            }
+                        },
+                        "description": "Report conflicts with the job: job_unknown, job_conflict, job_not_started, job_not_reported_started, or an immutable terminal report changed."
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeviceError"
+                                }
+                            }
+                        },
+                        "description": "Tenant frozen for migration."
+                    }
+                }
+            }
+        },
+        "/api/v1/device/integrations/queue": {
+            "get": {
+                "operationId": "api_v1_device_integrations_queue_retrieve",
+                "summary": "Pull approved jobs for the device's machine type (signed)",
+                "tags": [
+                    "Device protocol"
+                ],
+                "security": [
+                    {
+                        "DeviceSignature": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Queue"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeviceError"
+                                }
+                            }
+                        },
+                        "description": "Invalid payload."
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeviceError"
+                                }
+                            }
+                        },
+                        "description": "Authentication/signature/replay refused."
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeviceError"
+                                }
+                            }
+                        },
+                        "description": "Device revoked or tenant unavailable."
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeviceError"
+                                }
+                            }
+                        },
+                        "description": "Not found: the `machines.integrations` capability is off (the default), or the target is outside scope. Also: the device is not an active printer bound to a machine whose type has an enabled printer agent."
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeviceError"
+                                }
+                            }
+                        },
+                        "description": "Report conflicts with the job: job_unknown, job_conflict, job_not_started, job_not_reported_started, or an immutable terminal report changed."
                     },
                     "423": {
                         "content": {
@@ -187435,6 +188400,52 @@
                     "results"
                 ]
             },
+            "DeviceHeartbeatRequest": {
+                "type": "object",
+                "properties": {
+                    "status_snapshot": {
+                        "$ref": "#/components/schemas/StatusSnapshot"
+                    }
+                }
+            },
+            "DeviceHeartbeatResponse": {
+                "type": "object",
+                "properties": {
+                    "device_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "makerspace_id": {
+                        "type": "integer"
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "key_version": {
+                        "type": "integer"
+                    },
+                    "last_seen_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "status_snapshot": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/StatusSnapshotEnum"
+                            }
+                        ],
+                        "description": "Present only when a snapshot was sent. `not_integrated`: the integration is off or this device is not bound to an integrated machine type; nothing was stored.\n\n* `stored` - stored\n* `stale` - stale\n* `throttled` - throttled\n* `not_integrated` - not_integrated"
+                    }
+                },
+                "required": [
+                    "device_id",
+                    "key_version",
+                    "last_seen_at",
+                    "makerspace_id",
+                    "status"
+                ]
+            },
             "DeviceIdentity": {
                 "type": "object",
                 "properties": {
@@ -192125,6 +193136,15 @@
                     "display_name",
                     "member_id"
                 ]
+            },
+            "EventEnum": {
+                "enum": [
+                    "started",
+                    "completed",
+                    "failed"
+                ],
+                "type": "string",
+                "description": "* `started` - started\n* `completed` - completed\n* `failed` - failed"
             },
             "EventFeedbackReport": {
                 "type": "object",
@@ -202326,6 +203346,45 @@
                     "results"
                 ]
             },
+            "IntegrationStatus": {
+                "type": "object",
+                "properties": {
+                    "device_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "device_name": {
+                        "type": "string"
+                    },
+                    "machine_id": {
+                        "type": "integer"
+                    },
+                    "machine_name": {
+                        "type": "string"
+                    },
+                    "last_seen_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "snapshot": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/Snapshot"
+                            }
+                        ],
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "device_id",
+                    "device_name",
+                    "last_seen_at",
+                    "machine_id",
+                    "machine_name",
+                    "snapshot"
+                ]
+            },
             "IntegrationWorkerHealth": {
                 "type": "object",
                 "properties": {
@@ -203854,6 +204913,60 @@
                 "type": "string",
                 "description": "* `completed` - Completed\n* `failed` - Failed"
             },
+            "JobReport": {
+                "type": "object",
+                "description": "`started` names the run; `completed`/`failed` carry the existing terminal report.",
+                "properties": {
+                    "event": {
+                        "$ref": "#/components/schemas/EventEnum"
+                    },
+                    "external_job_id": {
+                        "type": "string",
+                        "maxLength": 120
+                    },
+                    "operation_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "actual_minutes": {
+                        "type": "integer",
+                        "maximum": 2147483647,
+                        "minimum": 0
+                    },
+                    "consumptions": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Consumption"
+                        }
+                    },
+                    "failure_reason": {
+                        "type": "string",
+                        "maxLength": 1000
+                    },
+                    "percent_complete": {
+                        "type": "integer",
+                        "maximum": 100,
+                        "minimum": 0,
+                        "nullable": true
+                    },
+                    "actual_grams": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
+                        "nullable": true
+                    },
+                    "actual_quantity": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "event",
+                    "external_job_id"
+                ]
+            },
             "JobStateEnum": {
                 "enum": [
                     "awaiting",
@@ -204089,6 +205202,13 @@
                 ],
                 "type": "string",
                 "description": "* `archive` - archive"
+            },
+            "KindDb6Enum": {
+                "enum": [
+                    "printer_agent"
+                ],
+                "type": "string",
+                "description": "* `printer_agent` - Printer agent"
             },
             "KindE45Enum": {
                 "enum": [
@@ -216440,6 +217560,20 @@
                     "product_name",
                     "times_lent",
                     "total_quantity_lent"
+                ]
+            },
+            "MoveError": {
+                "type": "object",
+                "properties": {
+                    "detail": {
+                        "type": "string"
+                    },
+                    "code": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "detail"
                 ]
             },
             "MoveToInventoryRequest": {
@@ -232566,6 +233700,19 @@
                     }
                 }
             },
+            "PatchedTypeIntegrationUpdate": {
+                "type": "object",
+                "properties": {
+                    "enabled": {
+                        "type": "boolean"
+                    },
+                    "config_schema_version": {
+                        "type": "integer",
+                        "maximum": 1,
+                        "minimum": 1
+                    }
+                }
+            },
             "PatchedWhatsAppBinding": {
                 "type": "object",
                 "properties": {
@@ -244778,6 +245925,93 @@
                     "returned_quantity"
                 ]
             },
+            "Queue": {
+                "type": "object",
+                "properties": {
+                    "machine_id": {
+                        "type": "integer"
+                    },
+                    "machine_type_id": {
+                        "type": "integer"
+                    },
+                    "integration_kind": {
+                        "type": "string"
+                    },
+                    "config_schema_version": {
+                        "type": "integer"
+                    },
+                    "jobs": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/QueueJob"
+                        }
+                    }
+                },
+                "required": [
+                    "config_schema_version",
+                    "integration_kind",
+                    "jobs",
+                    "machine_id",
+                    "machine_type_id"
+                ]
+            },
+            "QueueJob": {
+                "type": "object",
+                "properties": {
+                    "service_request_id": {
+                        "type": "integer"
+                    },
+                    "status": {
+                        "$ref": "#/components/schemas/QueueJobStatusEnum"
+                    },
+                    "on_this_machine": {
+                        "type": "boolean"
+                    },
+                    "estimated_minutes": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "planned_grams": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
+                        "nullable": true
+                    },
+                    "accepted_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "started_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "printer_job_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "accepted_at",
+                    "estimated_minutes",
+                    "on_this_machine",
+                    "planned_grams",
+                    "printer_job_id",
+                    "service_request_id",
+                    "started_at",
+                    "status"
+                ]
+            },
+            "QueueJobStatusEnum": {
+                "enum": [
+                    "accepted",
+                    "in_progress"
+                ],
+                "type": "string",
+                "description": "* `accepted` - accepted\n* `in_progress` - in_progress"
+            },
             "Quote": {
                 "type": "object",
                 "properties": {
@@ -251640,6 +252874,13 @@
                     "next_due"
                 ]
             },
+            "SchemaVersionEnum": {
+                "enum": [
+                    1
+                ],
+                "type": "integer",
+                "description": "* `1` - 1"
+            },
             "SchemeEnum": {
                 "enum": [
                     "regular",
@@ -252191,6 +253432,103 @@
                 ],
                 "type": "string",
                 "description": "* `billed` - billed\n* `estimated` - estimated\n* `not_applicable` - not_applicable"
+            },
+            "SelfHostMoveCreate": {
+                "type": "object",
+                "properties": {
+                    "note": {
+                        "type": "string",
+                        "default": "",
+                        "maxLength": 2000
+                    }
+                }
+            },
+            "SelfHostMoveRequest": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "readOnly": true
+                    },
+                    "status": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/SelfHostMoveRequestStatusEnum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "status_label": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "note": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "requested_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "decided_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "decision_note": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "exported_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "decided_at",
+                    "decision_note",
+                    "exported_at",
+                    "id",
+                    "note",
+                    "requested_at",
+                    "status",
+                    "status_label"
+                ]
+            },
+            "SelfHostMoveRequestStatusEnum": {
+                "enum": [
+                    "requested",
+                    "approved",
+                    "exporting",
+                    "exported",
+                    "rejected",
+                    "failed",
+                    "cancelled"
+                ],
+                "type": "string",
+                "description": "* `requested` - Requested\n* `approved` - Approved\n* `exporting` - Exporting\n* `exported` - Exported\n* `rejected` - Rejected\n* `failed` - Export failed\n* `cancelled` - Cancelled"
+            },
+            "SelfHostMoveStatus": {
+                "type": "object",
+                "properties": {
+                    "request": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/SelfHostMoveRequest"
+                            }
+                        ],
+                        "nullable": true,
+                        "description": "The latest request, or null."
+                    }
+                },
+                "required": [
+                    "request"
+                ]
             },
             "SentToEmailEnum": {
                 "enum": [
@@ -253499,6 +254837,90 @@
                     "operation_id"
                 ]
             },
+            "Snapshot": {
+                "type": "object",
+                "properties": {
+                    "schema_version": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "state": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/StateE91Enum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "progress_percent": {
+                        "type": "integer",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "layer_current": {
+                        "type": "integer",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "layer_total": {
+                        "type": "integer",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "nozzle_temp_c": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,4}(?:\\.\\d{0,1})?$",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "bed_temp_c": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,4}(?:\\.\\d{0,1})?$",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "chamber_temp_c": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,4}(?:\\.\\d{0,1})?$",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "spools": {
+                        "readOnly": true
+                    },
+                    "clear_token": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "observed_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "received_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "bed_temp_c",
+                    "chamber_temp_c",
+                    "clear_token",
+                    "layer_current",
+                    "layer_total",
+                    "nozzle_temp_c",
+                    "observed_at",
+                    "progress_percent",
+                    "received_at",
+                    "schema_version",
+                    "spools",
+                    "state"
+                ]
+            },
             "SocialIdentity": {
                 "type": "object",
                 "properties": {
@@ -254522,6 +255944,33 @@
                 ],
                 "type": "string",
                 "description": "* `platinum` - platinum\n* `gold` - gold\n* `silver` - silver\n* `partner` - partner\n* `community_partner` - community_partner"
+            },
+            "Spool": {
+                "type": "object",
+                "properties": {
+                    "slot": {
+                        "type": "integer",
+                        "maximum": 63,
+                        "minimum": 0
+                    },
+                    "material": {
+                        "type": "string",
+                        "default": "",
+                        "maxLength": 24
+                    },
+                    "colour": {
+                        "type": "string",
+                        "default": "",
+                        "maxLength": 16
+                    },
+                    "remaining_percent": {
+                        "type": "string",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "slot"
+                ]
             },
             "StaffAccount": {
                 "type": "object",
@@ -257073,6 +258522,19 @@
                 "type": "string",
                 "description": "* `draft` - draft\n* `published` - published\n* `retired` - retired"
             },
+            "StateE91Enum": {
+                "enum": [
+                    "idle",
+                    "preparing",
+                    "printing",
+                    "paused",
+                    "finished",
+                    "failed",
+                    "error"
+                ],
+                "type": "string",
+                "description": "* `idle` - Idle\n* `preparing` - Preparing\n* `printing` - Printing\n* `paused` - Paused\n* `finished` - Finished\n* `failed` - Failed\n* `error` - Error"
+            },
             "StateFf1Enum": {
                 "enum": [
                     "open",
@@ -257393,6 +258855,65 @@
                 ],
                 "type": "string",
                 "description": "* `draft` - Draft\n* `published` - Published\n* `cancelled` - Cancelled\n* `completed` - Completed"
+            },
+            "StatusSnapshot": {
+                "type": "object",
+                "properties": {
+                    "schema_version": {
+                        "$ref": "#/components/schemas/SchemaVersionEnum"
+                    },
+                    "observed_at": {
+                        "type": "integer",
+                        "maximum": 4102444800,
+                        "minimum": 1,
+                        "format": "int64",
+                        "description": "Unix seconds when the printer state was read."
+                    },
+                    "state": {
+                        "$ref": "#/components/schemas/StateE91Enum"
+                    },
+                    "progress_percent": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "layer_current": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "layer_total": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "temperatures": {
+                        "$ref": "#/components/schemas/Temperatures"
+                    },
+                    "spools": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Spool"
+                        }
+                    },
+                    "clear_token": {
+                        "type": "string",
+                        "default": "",
+                        "maxLength": 64
+                    }
+                },
+                "required": [
+                    "observed_at",
+                    "schema_version",
+                    "state"
+                ]
+            },
+            "StatusSnapshotEnum": {
+                "enum": [
+                    "stored",
+                    "stale",
+                    "throttled",
+                    "not_integrated"
+                ],
+                "type": "string",
+                "description": "* `stored` - stored\n* `stale` - stale\n* `throttled` - throttled\n* `not_integrated` - not_integrated"
             },
             "Statuses219Enum": {
                 "enum": [
@@ -258873,6 +260394,23 @@
                 ],
                 "type": "string",
                 "description": "* `idle` - idle\n* `running` - running\n* `paused` - paused"
+            },
+            "Temperatures": {
+                "type": "object",
+                "properties": {
+                    "nozzle": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "bed": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "chamber": {
+                        "type": "string",
+                        "nullable": true
+                    }
+                }
             },
             "TemplateEnum": {
                 "enum": [
@@ -260756,6 +262294,81 @@
                 ],
                 "type": "string",
                 "description": "* `membership_plans` - membership_plans"
+            },
+            "TypeIntegration": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "readOnly": true
+                    },
+                    "makerspace": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "machine_type": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "kind": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/KindDb6Enum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "enabled": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "config_schema_version": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "config_schema_version",
+                    "created_at",
+                    "enabled",
+                    "id",
+                    "kind",
+                    "machine_type",
+                    "makerspace",
+                    "updated_at"
+                ]
+            },
+            "TypeIntegrationCreate": {
+                "type": "object",
+                "properties": {
+                    "kind": {
+                        "$ref": "#/components/schemas/KindDb6Enum"
+                    },
+                    "enabled": {
+                        "type": "boolean",
+                        "default": false
+                    },
+                    "config_schema_version": {
+                        "type": "integer",
+                        "maximum": 1,
+                        "minimum": 1,
+                        "default": 1
+                    }
+                },
+                "required": [
+                    "kind"
+                ]
             },
             "TypedError": {
                 "type": "object",

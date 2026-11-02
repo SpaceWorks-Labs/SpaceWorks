@@ -1,4 +1,8 @@
-"""Stage B: one tenant boundary per scrub, platform identity last."""
+"""Stage B: one tenant boundary per scrub, platform identity last.
+
+Every step covers every alias of the person (``actor_ids_for``: shells merged into
+them), see ``account_purge_aliases``.
+"""
 
 from apps.integrations.notification_cutover import guarded
 
@@ -8,11 +12,13 @@ from uuid import uuid4
 from django.db import transaction
 from django.utils import timezone
 
-from apps.accounts.account_deletion_discovery import tenant_ids
+from apps.accounts.account_deletion_discovery import _model, alias_tenant_ids
+from apps.accounts.account_purge_aliases import purge_alias_globals, shred_account_keys
 from apps.accounts.account_purge_scrub import scrub_email_logs, scrub_tenant
 from apps.accounts.models import User
 from apps.accounts.models_account_purge import AccountPurgeObject, AccountPurgeProgress, AppleRevocation
 from apps.audit import services as audit
+from apps.backup.capture_managers import every_row
 from apps.makerspaces.models import Makerspace
 from apps.makerspaces.secrets import decrypt_value
 from apps.tenant_migration.gate_runtime import fanout_tenant_write
@@ -44,7 +50,7 @@ def purge_account(user_id, counts):
         if not user.deletion_username:
             user.deletion_username = "deleted_" + uuid4().hex
             user.save(update_fields=["deletion_username"])
-    expected = tenant_ids(user) | set(AccountPurgeProgress.objects.filter(user=user)
+    expected = alias_tenant_ids(user) | set(AccountPurgeProgress.objects.filter(user=user)
                                     .values_list("makerspace_id", flat=True))
     for tenant in sorted(expected):
         try:
@@ -88,18 +94,30 @@ def _finish_tenant(user_id, tenant):
         audit.record(None, "account.tenant_purged", makerspace=space, target=user)
 
 
+def _ready(user, expected):
+    if user.account_kind != "member" or not user.deletion_requested_at or user.account_purged_at:
+        return False
+    done = set(AccountPurgeProgress.objects.filter(user=user, done_at__isnull=False)
+               .values_list("makerspace_id", flat=True))
+    if not (expected | alias_tenant_ids(user)).issubset(done):
+        return False
+    return not AppleRevocation.objects.filter(user=user, done_at__isnull=True).exists()
+
+
 def _finish_global(user_id, expected, counts):
+    if not _ready(User.objects.get(pk=user_id), expected):
+        return
+    # Destroying the account keys takes its own fences, so it runs before the final
+    # transaction; restore is already fenced by purge_started_at.
+    if not shred_account_keys(User.objects.get(pk=user_id)):
+        counts["failed"] += 1
+        return
     with transaction.atomic():
         user = User.objects.select_for_update(no_key=True).get(pk=user_id)
-        if user.account_kind != "member" or not user.deletion_requested_at or user.account_purged_at:
-            return
-        done = set(AccountPurgeProgress.objects.filter(user=user, done_at__isnull=False)
-                   .values_list("makerspace_id", flat=True))
-        if not (expected | tenant_ids(user)).issubset(done):
-            return
-        if AppleRevocation.objects.filter(user=user, done_at__isnull=True).exists():
+        if not _ready(user, expected):
             return
         _global_rows(user)
+        aliases = purge_alias_globals(user, _global_rows)
         values = dict.fromkeys(("email", "phone", "phone_e164", "first_name", "last_name",
                                "telegram_user_id", "deletion_email_ciphertext",
                                "deletion_username", "restriction_reason"), "")
@@ -109,7 +127,7 @@ def _finish_global(user_id, expected, counts):
         for key, value in values.items():
             setattr(user, key, value)
         user.save(update_fields=list(values))
-        audit.record(None, "account.purged", target=user)
+        audit.record(None, "account.purged", target=user, meta={"aliases": aliases})
         counts["purged"] += 1
 
 
@@ -129,11 +147,10 @@ def _global_rows(user):
     DeviceActivityDay.objects.filter(grant__user=user).delete()
     # Platform-addressed logs have no tenant gate. Tenant logs were scrubbed above.
     scrub_email_logs(user, None, address)
-    from apps.accounts.account_deletion_discovery import _model
     for label in ("integrations.PushDevice", "notifications.NotificationInboxRow"):
         model = _model(label)
         if model is not None:
-            model.objects.filter(user=user, makerspace__isnull=True).delete()
+            every_row(model).filter(user=user, makerspace__isnull=True).delete()
 
 
 def purge_deleted_accounts():

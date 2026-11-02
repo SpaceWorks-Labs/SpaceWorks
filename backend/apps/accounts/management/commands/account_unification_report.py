@@ -4,6 +4,8 @@ Run it BEFORE ``migrate``: it reads only pre-unification columns. The migration 
 to convert live staff accounts until ``ACCOUNT_UNIFICATION_ACK`` equals the
 ``plan_sha256`` printed here, so every deployment reviews its own plan first. Open PII
 windows and security locks are listed for information only; they are not in the digest.
+Once migrated, it also reports merge progress (converted, merged, held emails, staff
+without a second factor); that is informational too and never changes ``plan_sha256``.
 """
 
 import json
@@ -12,6 +14,7 @@ from django.core.management.base import BaseCommand
 from django.db import DEFAULT_DB_ALIAS, connections
 
 from apps.accounts.unification_plan import build_plan
+from apps.accounts.unification_progress import merge_progress
 from apps.accounts.unification_report_context import security_context
 
 
@@ -26,6 +29,7 @@ class Command(BaseCommand):
         connection = connections[options["database"]]
         plan = build_plan(connection)
         plan["informational"] = security_context(connection)
+        plan["informational"]["merge_progress"] = merge_progress(connection)
         if options["format"] == "json":
             self.stdout.write(json.dumps(plan, indent=2, sort_keys=True, default=str))
             return
@@ -52,6 +56,7 @@ class Command(BaseCommand):
             for pair in plan["candidate_pairs"]:
                 write(f"    staff #{pair['staff_id']} and person #{pair['person_id']} share an email")
         self._security(plan["informational"])
+        self._progress(plan["informational"]["merge_progress"])
         write("Every converted account signs in with its username; held addresses stop "
               "working for sign-in and reset until the person verifies or merges.")
         write(f"plan_sha256: {plan['plan_sha256']}")
@@ -64,3 +69,12 @@ class Command(BaseCommand):
         for row in context["security_locks"]:
             write(f"Security locks in space {row['makerspace_id']}: {', '.join(row['keys'])} "
                   "(informational; unchanged)")
+
+    def _progress(self, progress):
+        if progress is None:
+            return
+        self.stdout.write(
+            f"Merge progress (informational): {progress['converted']} converted, {progress['merged']} merged, "
+            f"{progress['converted_not_merged']} converted accounts not merged away, "
+            f"{progress['held_emails']} with a held email, "
+            f"{progress['unenrolled_staff']} staff without a second factor")

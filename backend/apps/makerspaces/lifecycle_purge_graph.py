@@ -174,7 +174,9 @@ def _delete_object_graph(makerspace):
         membership_delete(makerspace, cursor)
         from apps.presence.purge import delete as presence_delete
         presence_delete(makerspace, cursor)
-        MakerspaceMembership.objects.filter(makerspace=makerspace).delete()
+        # Both tracks: the default manager is community-only (one account per person).
+        from apps.backup.capture_managers import every_row
+        every_row(MakerspaceMembership).filter(makerspace=makerspace).delete()
         # AuditBatchLeaf.audit_log PROTECTs the audit rows deleted just below, and the
         # batch FK PROTECTs the makerspace itself, so both must go first. Attestation is
         # deployment-local state about rows that are being destroyed anyway.

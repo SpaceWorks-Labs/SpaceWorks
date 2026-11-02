@@ -15,7 +15,9 @@ def end_owned_presence(user, spaces, now):
         return
     from apps.presence.services import _end
 
-    rows = model.objects.select_for_update().filter(
+    from apps.backup.capture_managers import every_row
+
+    rows = every_row(model).select_for_update().filter(
         account=user, makerspace_id__in=[space.pk for space in spaces], ended_at__isnull=True,
     ).order_by("makerspace_id", "pk")
     for row in rows:

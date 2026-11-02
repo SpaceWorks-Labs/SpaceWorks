@@ -1,4 +1,8 @@
-"""The shared preview/locked account-deletion predicates; no module enablement gates."""
+"""The shared preview/locked account-deletion predicates; no module enablement gates.
+
+A person holding staff roles may delete their account (one account per person); the
+last-manager rule reads STAFF-track rows, where makerspace authority lives.
+"""
 
 from collections import Counter
 from decimal import Decimal
@@ -10,6 +14,7 @@ from django.utils import timezone
 from apps.accounts import rbac
 from apps.accounts.models import User
 from apps.accounts.rbac_roles import additional_roles_prefetch
+from apps.backup.capture_managers import every_row
 from apps.makerspaces.models import MakerspaceMembership
 from apps.organizations.models import Organization, OrganizationMembership
 from apps.organizations.services_console import OrganizationConflict
@@ -34,14 +39,16 @@ def _counts(label, user, filters, tenant="makerspace_id", owner="member", owners
         model = apps.get_model(label)
     except LookupError:
         return Counter()
-    rows = model.objects.filter(ownership if ownership is not None else Q(**{owner: user}), **filters)
+    # ``user`` is the person's alias ids: obligations kept on a merged shell still block.
+    rows = every_row(model).filter(ownership if ownership is not None else Q(**{f"{owner}__in": user}), **filters)
     return Counter(rows.values_list(tenant, flat=True))
 
 
 def collect(user, *, now=None, gated=(), organizations=None):
     """Caller holds all domain locks for Stage A, or an atomic preview transaction."""
+    from apps.accounts.staff_identity import actor_ids_for
     now = now or timezone.now()
-    result = []
+    result, ids = [], sorted(actor_ids_for(user))
     predicates = (
         ("unpaid_charges", "payments.Payment", {"status": "pending"}, "makerspace_id", "member",
          "Settle all outstanding charges."),
@@ -66,19 +73,19 @@ def collect(user, *, now=None, gated=(), organizations=None):
     )
     totals, details = Counter(), {}
     for code, label, filters, tenant, owner, detail in predicates:
-        for tenant_id, count in _counts(label, user, filters, tenant, owner).items():
+        for tenant_id, count in _counts(label, ids, filters, tenant, owner).items():
             totals[code, tenant_id] += count
             details[code] = detail
     for (code, tenant_id), count in totals.items():
         result.append(blocker(code, makerspace_id=tenant_id, count=count, detail=details[code]))
-    jobs = _counts("machines.MachineServiceRequest", user,
+    jobs = _counts("machines.MachineServiceRequest", ids,
                    {"status__in": ("pending", "accepted", "in_progress", "completed")},
-                   ownership=Q(member=user) | Q(member__isnull=True, requester=user))
+                   ownership=Q(member__in=ids) | Q(member__isnull=True, requester__in=ids))
     for tenant_id, count in jobs.items():
         result.append(blocker("open_service_jobs", makerspace_id=tenant_id, count=count,
                               detail="Finish and collect outstanding machine service jobs."))
     deposits = Counter()
-    for payment in Payment.objects.filter(member=user, subject_type="loan_deposit",
+    for payment in Payment.objects.filter(member__in=ids, subject_type="loan_deposit",
                                           status__in=("paid_online", "paid_offline")):
         returned = Refund.objects.filter(payment=payment, status="succeeded", amended_by__isnull=True)
         total = returned.aggregate(total=Sum("amount"))["total"] or Decimal("0")
@@ -100,12 +107,13 @@ def collect(user, *, now=None, gated=(), organizations=None):
 
 def _manager_blockers(user):
     # Exactly the leave_makerspace action-holder rule, including active account,
-    # restriction and dump-stub filters for replacement managers.
-    memberships = MakerspaceMembership.objects.filter(user=user, status="active").select_related("assigned_role")
+    # restriction and dump-stub filters for replacement managers. Makerspace authority
+    # is held on staff-track rows only; community rows never confer it.
+    memberships = MakerspaceMembership.staff_tracks.filter(user=user, status="active").select_related("assigned_role")
     for membership in memberships.prefetch_related(additional_roles_prefetch()):
         if rbac.Action.MANAGE_MAKERSPACE not in rbac.actions_for_membership(membership):
             continue
-        others = MakerspaceMembership.objects.filter(
+        others = MakerspaceMembership.staff_tracks.filter(
             makerspace_id=membership.makerspace_id, status="active", user__is_active=True,
             user__access_status="active", user__is_tenant_dump_stub=False,
         ).exclude(pk=membership.pk).select_related("assigned_role").prefetch_related(additional_roles_prefetch())
@@ -119,7 +127,7 @@ def _governor_blockers(user, organizations):
         ids = OrganizationMembership.objects.filter(user=user).values("organization_id")
         organizations = Organization.objects.filter(pk__in=ids).order_by("pk")
     for organization in organizations:
-        target = organization.memberships.filter(user=user).first()
+        target = OrganizationMembership.objects.filter(organization=organization, user=user).first()
         if target is None:
             continue
         try:

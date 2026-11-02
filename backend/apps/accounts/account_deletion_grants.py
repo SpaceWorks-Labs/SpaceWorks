@@ -2,6 +2,7 @@
 
 from apps.accounts.account_deletion_discovery import _model
 from apps.audit import services as audit
+from apps.backup.capture_managers import every_row
 
 
 def revoke_resource_grants(user, now):
@@ -15,7 +16,7 @@ def revoke_resource_grants(user, now):
         model = _model(label)
         if model is None:
             continue
-        for row in model.objects.select_for_update().filter(
+        for row in every_row(model).select_for_update().filter(
             user=user, revoked_at__isnull=True,
         ).order_by("makerspace_id", "pk"):
             row.revoked_at, row.revoked_by = now, user

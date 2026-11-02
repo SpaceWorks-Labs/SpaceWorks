@@ -444,3 +444,5 @@ value across those spaces applies. Out-of-range values refuse to start the backe
 | `THROTTLE_PASSKEY_OPTIONS` | `'30/min'` | Passkey registration and sign-in option requests. |
 | `THROTTLE_PASSKEY_VERIFY` | `'10/min'` | Passkey verification attempts. |
 | `THROTTLE_SECURITY_ALERT_ACTION` | `'10/hour'` | Uses of a security alert's "this wasn't me" link. |
+| `THROTTLE_ACCOUNT_MERGE_START` | `'10/hour'` | Account-link requests and code resends per person (`auth/account-merge/start`, `.../resend`). |
+| `THROTTLE_ACCOUNT_MERGE_PROVE` | `'30/hour'` | Account-link proofs, previews, confirmations and cancels per person. |

@@ -57,6 +57,9 @@ class SpaceWorksJWTAuthentication(JWTAuthentication):
             if not token.get("device_family_id"):
                 raise AuthenticationFailed("Invalid device authorization.")
             grant = validated_device_grant(user, token)
+            # #162(2): a member grant carries no staff authority, a staff grant only its tenant's.
+            from apps.accounts.session_authority import limit_staff_authority
+            limit_staff_authority(user, [grant.staff_makerspace_id] if grant.authority == "staff" else ())
         from apps.accounts.surface_policy import enforce_request
         enforce_request(user, token, request, grant=grant)
         from apps.accounts.mfa_policy import assert_verified
@@ -147,6 +150,8 @@ class SpaceWorksJWTAuthentication(JWTAuthentication):
         ):
             raise PermissionDenied("Claim session is not valid for this makerspace.")
         user = attach_claim_context(claim.membership.user, claim)
+        from apps.accounts.session_authority import limit_staff_authority
+        limit_staff_authority(user)  # #162(2): a claim session never carries staff authority.
         if user.is_tenant_dump_stub or user.deletion_requested_at is not None:
             raise AuthenticationFailed("Claim identity is not available.")
         from apps.backup.recovery import assert_principal_allowed

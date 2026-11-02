@@ -1296,6 +1296,9 @@ REST_FRAMEWORK = {
         "passkey_options": env("THROTTLE_PASSKEY_OPTIONS", default="30/min"),
         "passkey_verify": env("THROTTLE_PASSKEY_VERIFY", default="10/min"),
         "security_alert_action": env("THROTTLE_SECURITY_ALERT_ACTION", default="10/hour"),
+        # --- release 2 lane U-C: account merge (start/resend, proofs/preview/confirm) ---
+        "account_merge_start": env("THROTTLE_ACCOUNT_MERGE_START", default="10/hour"),
+        "account_merge_prove": env("THROTTLE_ACCOUNT_MERGE_PROVE", default="30/hour"),
     },
     # Proxy-aware client IP for throttling. Production must declare its topology at
     # settings import above; direct DEBUG development defaults to zero trusted proxies.

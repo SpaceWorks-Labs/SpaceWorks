@@ -53,6 +53,7 @@ from apps.organizations.views_redeem import OrganizationInvitationRedeemView
 from apps.organizations.views_self_service import OrganizationSelfServiceView
 
 from apps.accounts.urls_security import auth_urlpatterns
+from apps.accounts.urls_account_merge import account_merge_urlpatterns
 
 urlpatterns = [
     path("account/restore/email", AccountRestoreEmailView.as_view(), name="auth-account-restore-email"),
@@ -62,6 +63,7 @@ urlpatterns = [
     path("account/deletion", AccountDeletionView.as_view(), name="auth-account-deletion"),
     path("organizations/self-service/", OrganizationSelfServiceView.as_view(), name="auth-organizations-self-service"),
     *auth_urlpatterns,
+    *account_merge_urlpatterns,
     path("social/nonce", SocialNonceView.as_view(), name="social-nonce"),
     path("social/google", GoogleSocialLoginView.as_view(), name="social-google"),
     path("social/apple", AppleSocialLoginView.as_view(), name="social-apple"),

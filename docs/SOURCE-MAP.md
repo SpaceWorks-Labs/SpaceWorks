@@ -34,8 +34,9 @@ reactivation), `account_restore_email.py` (reset-queue restore links), `account_
 `serializers_account_restore.py` expose their anonymous, throttled confirmation contracts.
 The web restore-link landing page is `features/auth/AccountRestorePage.tsx`.
 
-Member-account deletion Stage B lives in `accounts/account_purge.py` (tenant orchestration and
-global identity finalization), `account_purge_scrub.py` (mutable tenant copies), and
+Account deletion Stage B lives in `accounts/account_purge.py` (tenant orchestration and
+global identity finalization), `account_purge_scrub.py` (mutable tenant copies, the person and every
+merged shell), `account_purge_aliases.py` (shell leftovers, merge-record PII scrub, account-key shred) and
 `account_purge_objects.py` (committed object deletion followed by quota release).
 `models_account_purge.py` defines tenant progress, object cleanup and Apple credential/
 revocation work. `apple_credentials.py` exchanges sign-in authorization codes;
@@ -465,7 +466,7 @@ Frontend account controls live in `features/members/MemberAccount*.tsx` with
 and all account MFA settings, independently of membership self-service.
 See [member-account-renewals.md](member-account-renewals.md) for policy and limits.
 
-Member-account deletion lives in the `accounts/account_deletion*` service modules
+Account deletion (any person, staff roles included) lives in the `accounts/account_deletion*` service modules
 and `accounts/views_account_deletion.py` / `serializers_account_deletion.py`. Stage A archives identity,
 revokes session authority and coordinates existing membership/application services.
 `organizations/services_governance.py:self_departure` owns organization departure
@@ -812,6 +813,15 @@ shell predicates, `has_staff_role`, `actor_ids_for`, `require_staff_mfa`);
 `accounts/models_account_merge.py` holds `AccountMergeRecord`/`AccountMergeIntent`;
 `accounts/merge_registry.py` (+ `merge_registry_types.py`, `merge_registry_rows_*.py`) classifies
 every `accounts.User` reference for merges, checked by `accounts.E003` in `checks.py`.
+Interactive merges (U-C): `accounts/account_merge_eligibility.py` (refusals, source resolution,
+`merge_suggested`), `account_merge_proofs.py` (start/prove/resend/cancel over `login_codes`),
+`account_merge_mail.py` (platform mail), `account_merge_walk.py` (reads the registry: row lookup,
+unique-slot conflicts, loser revocation), `account_merge_preview.py`, `account_merge_shell.py` (the merge
+record and the inert shell) and the engine
+`account_merge.py`; the API is `views_account_merge.py` / `serializers_account_merge.py` /
+`urls_account_merge.py`. `accounts/unification_progress.py` adds merge progress to the report.
+`accounts/session_authority.py` limits staff-track authority per request for native member/staff
+grants and claim sessions (`rbac_memberships._staff_rows` applies it).
 `accounts/unification_plan.py` computes the conversion plan and its `plan_sha256` for
 `management/commands/account_unification_report.py` (+ `unification_report_context.py`) and
 the frozen conversion in `accounts/migrations/_0050_conversion.py`; the unified triggers are
@@ -870,7 +880,8 @@ credentials), `portable_shells.py` (PII-free merged shells and their aliases), `
 closure, shell scrub, sidecars) and `subject_selectors.py`/`subject_runtime.py` (`actor_ids_for`).
 `backup/capture_managers.py` is the every-row manager whole-tenant code reads through;
 `backup/space_restore_formats.py` (tenant_slice_v2, v1 conversion) and `space_restore_merges.py` (C-17).
-`makerspaces/staff_retirement.py` performs the purge retirement step from `lifecycle_purge.py`.
+`makerspaces/staff_retirement.py` holds the inert-shell identity values (`shell_values`) used by
+backup projections and the merge engine; a tenant purge retires nobody.
 `makerspaces/lifecycle_purge_graph.py` owns the ordered whole-tenant deletion graph.
 `admin_governance.py` and `admin_lifecycle_review.py` provide the slim hidden-tenant lifecycle list
 and pending archive-request review; ordinary tenant object pages remain scoped.

@@ -92,6 +92,16 @@ def purge_spent_challenges(*, retention=RETENTION):
     except Exception:
         logger.exception("auth_challenge_purge_failed", extra={"model": label})
         deleted[label] = 0
+    # Account-merge intents (U-C): an abandoned or finished intent is spent proof state.
+    # The durable outcome is the AccountMergeRecord, which never points at an intent.
+    from apps.accounts.models_account_merge import AccountMergeIntent
+    label = AccountMergeIntent._meta.label
+    try:
+        count, _ = bounded.delete(AccountMergeIntent.objects.filter(expires_at__lt=cutoff), label)
+        deleted[label] = count
+    except Exception:
+        logger.exception("auth_challenge_purge_failed", extra={"model": label})
+        deleted[label] = 0
     from apps.accounts.models_reauthentication import ReauthenticationSession
     # Step-up proof is platform session state, never tenant-owned retention.
     label = ReauthenticationSession._meta.label

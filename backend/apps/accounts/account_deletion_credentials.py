@@ -5,6 +5,7 @@ from django.apps import apps
 from apps.accounts.models_password_reset import PasswordResetEnvelope
 from apps.accounts.models_mfa import UserMFA
 from apps.accounts.models_reauthentication import ReauthenticationSession
+from apps.backup.capture_managers import every_row
 
 
 def revoke(user, now):
@@ -22,11 +23,11 @@ def revoke(user, now):
     # Deployments using DRF personal API tokens must invalidate those too. Tenant
     # HMAC ApiClients are application credentials, not personal account tokens.
     if apps.is_installed("rest_framework.authtoken"):
-        apps.get_model("authtoken.Token").objects.filter(user=user).delete()
+        every_row(apps.get_model("authtoken.Token")).filter(user=user).delete()
     try:
         push = apps.get_model("integrations.PushDevice")
     except LookupError:
         push = None
     if push is not None:
-        push.objects.filter(user=user, active=True).update(active=False, invalidated_at=now)
+        every_row(push).filter(user=user, active=True).update(active=False, invalidated_at=now)
     UserMFA.objects.filter(user=user).delete()

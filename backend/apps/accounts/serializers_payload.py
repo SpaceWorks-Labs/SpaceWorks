@@ -111,7 +111,13 @@ def user_payload(user, request=None, *, session_authority=None):
         # A platform account has no memberships; the console reads its per-space actions here.
         "superadmin_actions": sorted(rbac.ROLE_GRANTABLE_ACTIONS) if is_superadmin else [],
         "mfa_grace_ends_at": mfa_grace_ends_at(user),
+        "merge_suggested": person and claim_context is None and _merge_suggested(user),
     }
+
+
+def _merge_suggested(user):
+    from apps.accounts.account_merge_eligibility import merge_suggested
+    return merge_suggested(user)
 
 
 def _session_authority(user, request, issued_surface):

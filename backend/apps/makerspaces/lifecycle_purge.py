@@ -29,8 +29,11 @@ def purge(makerspace, actor):
         enqueue_tenant_pages(locked)
         public_image_keys = _collect_public_image_keys(locked)
         audit.record(actor, "makerspace.purge_started", makerspace=None, target=None, meta=meta)
-        from .staff_retirement import retire_staff_accounts
-        retire_staff_accounts(locked, actor=actor)
+        # One account per person: nobody is retired. People keep their accounts; the
+        # tenant's rows on BOTH membership tracks go with the graph, under the exact
+        # tenant-purge GUC the staff-track delete guard admits.
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT set_config('app.tenant_purge_makerspace_id', %s, true)", [str(locked.pk)])
         _delete_object_graph(locked)
         # A bulk admin action can purge several tenants inside one transaction.
         # Evaluate this tenant's deferred deletion guards before the next GUC.

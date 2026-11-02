@@ -2,11 +2,16 @@
 
 The subject is always the authenticated account. Applying staff RBAC here would
 miss account-only participation and historical rows in revoked/archived spaces.
+Every model is read through ``backup.capture_managers.every_row``: the default
+``MakerspaceMembership`` manager is community-only, so a generic ``.objects`` read here
+would miss the spaces a person staffs (one account per person). ``alias_tenant_ids``
+widens discovery to every shell merged into the person (Stage B purges them too).
 """
 
 from django.apps import apps
 from django.db.models import Q
 
+from apps.backup.capture_managers import every_row
 from apps.data_export.datasets import DATASET_SPECS
 from apps.data_export.subject_runtime import RUNTIME_FIELDS
 from apps.data_export.subject_selectors import SUBJECT_PATHS
@@ -34,7 +39,7 @@ def tenant_ids(user):
         for path in paths:
             own |= Q(**{f"{path}_id": user.pk})
         predicate = DATASET_SPECS[label][1]
-        rows = model.objects.filter(own)
+        rows = every_row(model).filter(own)
         for path in (*predicate.any_paths, *predicate.local_or_global_paths):
             result.update(rows.values_list(path, flat=True))
     # These global/personal tables are intentionally not subject-export datasets.
@@ -65,10 +70,10 @@ def tenant_ids(user):
     ):
         model = _model(label)
         if model is not None:
-            result.update(model.objects.filter(**{owner: user}).values_list(tenant, flat=True))
+            result.update(every_row(model).filter(**{owner: user}).values_list(tenant, flat=True))
     model = _model("machines.MachineServiceRequest")
     if model is not None:
-        result.update(model.objects.filter(member__isnull=True, requester=user)
+        result.update(every_row(model).filter(member__isnull=True, requester=user)
                       .values_list("makerspace_id", flat=True))
     # Address-only delivery rows predate recipient FKs. Mapped PII must be read
     # through the model boundary; SQL equality would compare ciphertext.
@@ -80,7 +85,7 @@ def tenant_ids(user):
     from apps.accounts.models import User
     exclusive = address and not User.objects.exclude(pk=user.pk).filter(email__iexact=address).exists()
     if email_log is not None and exclusive:
-        for row in email_log.objects.filter(recipient__isnull=True).exclude(makerspace__isnull=True).only(
+        for row in every_row(email_log).filter(recipient__isnull=True).exclude(makerspace__isnull=True).only(
             "makerspace_id", "to_email",
         ).iterator():
             if row.to_email.strip().lower() == address:
@@ -93,3 +98,20 @@ def tenant_ids(user):
 def organization_ids(user):
     from apps.organizations.models import OrganizationMembership
     return set(OrganizationMembership.objects.filter(user=user).values_list("organization_id", flat=True))
+
+
+def aliases(user):
+    """The person first, then every shell merged into them (``staff_identity.actor_ids_for``)."""
+    from apps.accounts.models import User
+    from apps.accounts.staff_identity import actor_ids_for
+
+    shells = sorted(actor_ids_for(user) - {user.pk})
+    return [user, *User._base_manager.filter(pk__in=shells).order_by("pk")]
+
+
+def alias_tenant_ids(user):
+    """Tenants holding rows of the person or of any shell merged into them."""
+    result = set()
+    for account in aliases(user):
+        result |= tenant_ids(account)
+    return result

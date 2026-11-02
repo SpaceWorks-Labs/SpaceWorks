@@ -1,4 +1,9 @@
-"""Stage A: one locked, retried platform departure; identity purge is a later stage."""
+"""Stage A: one locked, retried platform departure; identity purge is a later stage.
+
+One account per person: a person who holds staff roles may delete their account too
+(blocked only as the last manager or governor). Departure revokes BOTH membership tracks;
+restore never brings a role back.
+"""
 
 from apps.integrations.notification_cutover import guarded
 
@@ -145,8 +150,10 @@ def _attempt(request):
         user.save(update_fields=["is_active", "password", "deletion_requested_at", "deletion_purge_after",
                                  "deletion_email_ciphertext", "deletion_username"])
         schedule_revocations(user)
+        from apps.accounts.staff_identity import actor_ids_for
         audit.record(user, "account.deletion_requested", target=user,
-                     meta={"purge_after": user.deletion_purge_after.isoformat()})
+                     meta={"purge_after": user.deletion_purge_after.isoformat(),
+                           "aliases": len(actor_ids_for(user)) - 1})
         return {"deleted_at": now, "purge_after": user.deletion_purge_after}
 
 
@@ -165,9 +172,10 @@ def _depart(user, spaces, organizations, now):
     ).order_by("makerspace_id", "pk"):
         close_admission(user, row)
     by_id = {space.pk: space for space in spaces}
-    for membership in MakerspaceMembership.objects.select_for_update().filter(user=user).exclude(
+    from apps.backup.capture_managers import every_row
+    for membership in every_row(MakerspaceMembership).select_for_update().filter(user=user).exclude(
         status="revoked",
-    ).order_by("makerspace_id", "pk"):
+    ).order_by("makerspace_id", "track", "pk"):
         membership.renewal_cancelled_at = membership.renewal_cancelled_at or now
         _revoke_locked(user, membership, by_id[membership.makerspace_id], "Account deletion", self_leave=True)
     for organization in organizations:

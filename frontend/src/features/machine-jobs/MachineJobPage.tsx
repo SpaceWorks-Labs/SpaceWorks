@@ -59,7 +59,7 @@ function JobDetail({ id, context }: { id: number; context: MemberJobsContext }) 
         <h2 id="job-timeline-title" className="title-panel">Timeline</h2>
         <JobTimeline timeline={job.timeline} />
       </section>
-      {job.machine_name && context.features.includes("machines.issue_reporting") ? <div className="justify-self-start">
+      {job.machine_name && (context.features ?? []).includes("machines.issue_reporting") ? <div className="justify-self-start">
         <ReportProblem source={{ makerspace_id: job.makerspace_id, machine_job_id: job.id }} label="Report a problem with the machine" /></div> : null}
       {job.can_cancel ? <div className="justify-self-start"><ServiceCancelButton title={job.title} onCancel={() => cancelOwnServiceRequest(job.id)}
         invalidate={[jobKeys.detail(id), jobKeys.all, activityKey]} /></div> : null}

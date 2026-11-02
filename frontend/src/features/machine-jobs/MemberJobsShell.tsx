@@ -14,7 +14,7 @@ import { useMemberIdentity } from "./useMemberIdentity";
 
 export type MemberJobsContext = {
   slug: string; makerspaceId: number | undefined; path: (part?: string) => string; ready: boolean; bootstrapError: boolean;
-  features: string[];
+  features?: string[];
 };
 
 /**

@@ -31,6 +31,7 @@ from ._showcase_machines import seed_machines
 from ._showcase_membership_l4 import seed_membership_lifecycle
 from ._showcase_pricing import seed_pricing
 from ._showcase_l12 import seed_l12
+from ._showcase_l16 import seed_l16
 from ._showcase_people import create_members, create_space, create_staff, member_account, restrict
 from ._showcase_requests import RequestSeeder
 
@@ -89,6 +90,7 @@ class Command(BaseCommand):
         seed_pricing(space, staff.manager, plan)
         seed_bookings(space, staff.manager, members)
         seed_l12(space, staff.manager, staff.inventory, staff.machines, members)
+        seed_l16(space, root, staff.manager, password)
         seed_notices(space, staff.manager)
         seed_hackathon(space, staff.manager, members)
         seed_events(space, staff.manager)

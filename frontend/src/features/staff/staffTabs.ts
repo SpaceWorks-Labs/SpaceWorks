@@ -57,6 +57,9 @@ const TAB_FEATURES: Record<string, string[]> = {
     "billing.disputes"],
   // Lane L12 (MI-40): the merged consumables list.
   consumables: ["inventory.consumables"],
+  // Lane L16: repairs, issue reporting and item/room maintenance, under each parent.
+  repairs: ["machines.repairs", "machines.issue_reporting", "inventory.repairs", "inventory.issue_reporting",
+    "bookings.room_repairs", "bookings.issue_reporting", "inventory.maintenance", "bookings.room_maintenance"],
 };
 
 // Tabs whose backing app can be tombstoned out of a deployment but which no module

@@ -4,7 +4,7 @@ import {
   Upload, Cog, Monitor, Users, Calendar, CalendarClock, CreditCard, ChartNoAxesCombined,
   ScrollText, CircleAlert, Building2, Network, Settings, Mail, KeyRound, Download,
   DatabaseBackup, Gauge, Puzzle, MoveRight, Globe, CalendarCheck, Undo2, Lock, Landmark, type LucideIcon,
-  PackageMinus,
+  PackageMinus, HardHat,
 } from "lucide-react";
 import type { ShellItem, ShellSection } from "../../components/shell";
 import { TAB_LABELS } from "./staffAccess";
@@ -15,7 +15,7 @@ export const SIDEBAR_SECTIONS: readonly Definition[] = [
   { key: "home", tabs: ["dashboard", "notifications", "channels"] },
   { key: "desk", label: "Front desk", tabs: ["requests", "direct", "handover", "payments", "refunds", "finance"] },
   { key: "inventory", label: "Inventory", tabs: ["inventory", "ledger", "scanner", "needsfix", "stocktake", "transfers", "tobuy", "consumables"], more: ["categories", "containers", "warranty", "qr", "bulk"] },
-  { key: "machines", label: "Machines", tabs: ["machines", "devices"] },
+  { key: "machines", label: "Machines", tabs: ["machines", "devices", "repairs"] },
   { key: "community", label: "Community", tabs: ["members", "events", "bookings", "granted"], more: ["cards"] },
   { key: "insights", label: "Insights", tabs: ["reports", "audit", "accountability"] },
   { key: "organizations", label: "Organizations", caption: "Across venues", tabs: ["organizations", "organized", "organization-analytics"] },
@@ -37,7 +37,7 @@ const ICONS: Record<string, LucideIcon> = {
   "organization-analytics": Network, settings: Settings, security: Lock, users: Users, emailtemplates: Mail,
   "email-logs": Mail, api: KeyRound, exports: Download, backups: DatabaseBackup, usage: Gauge,
   modules: Puzzle, migration: MoveRight, "platform-dashboard": Globe, platform: Settings,
-  consumables: PackageMinus,
+  consumables: PackageMinus, repairs: HardHat,
 };
 
 /**
@@ -52,7 +52,7 @@ export const SPACE_MANAGER_SECTIONS: readonly Definition[] = [
   { key: "people", label: "People", tabs: ["users", "members", "cards"], more: ["organizations", "organization-analytics"] },
   { key: "inventory", label: "Inventory & loans", tabs: ["inventory", "accountability", "needsfix", "tobuy", "consumables", "scanner"],
     more: ["ledger", "stocktake", "transfers", "categories", "containers", "warranty", "qr", "bulk"] },
-  { key: "machines", label: "Machines", tabs: ["machines", "devices"] },
+  { key: "machines", label: "Machines", tabs: ["machines", "devices", "repairs"] },
   { key: "events", label: "Events", tabs: ["events", "granted"], more: ["organized"] },
   { key: "bookings", label: "Bookings", tabs: ["bookings"] },
   { key: "money", label: "Money", tabs: ["payments", "refunds", "finance", "reports"] },

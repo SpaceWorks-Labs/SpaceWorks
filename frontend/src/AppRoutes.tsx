@@ -38,6 +38,7 @@ const MemberAccountPage = lazy(() => import("./features/members/MemberAccountPag
 const PublicPrintRequestPage = lazy(() => import("./features/machine-jobs/PrintRequestAlias").then((m) => ({ default: m.PrintRequestAlias })));
 const PublicMachineServiceStatusPage = lazy(() => import("./features/machine-service/PublicMachineServiceStatusPage").then((m) => ({ default: m.PublicMachineServiceStatusPage })));
 const JobRequestPage = lazy(() => import("./features/machine-jobs/JobRequestPage").then((m) => ({ default: m.JobRequestPage })));
+const TechnicianOptInPage = lazy(() => import("./features/repairs/TechnicianOptInPage").then((m) => ({ default: m.TechnicianOptInPage })));
 const MyMachineJobsPage = lazy(() => import("./features/machine-jobs/MyMachineJobsPage").then((m) => ({ default: m.MyMachineJobsPage })));
 const MachineJobPage = lazy(() => import("./features/machine-jobs/MachineJobPage").then((m) => ({ default: m.MachineJobPage })));
 const PublicOrganizationPage = lazy(() => import("./features/organizations/PublicOrganizationPage").then((m) => ({ default: m.PublicOrganizationPage })));
@@ -174,6 +175,7 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
       <Route path="/print" element={<PublicPrintRequestPage />} />
       <Route path="/machine-service/requests/:publicToken" element={<PublicMachineServiceStatusPage />} />
       <Route path="/machine-jobs/new" element={<JobRequestPage />} />
+      <Route path="/technician-opt-in/:token" element={<TechnicianOptInPage />} />
       <Route path="/member/machine-jobs" element={<MyMachineJobsPage />} />
       <Route path="/member/machine-jobs/:jobId" element={<MachineJobPage />} />
       <Route path="/member" element={<MemberArea />} />
@@ -217,6 +219,7 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
       <Route path="/m/:slug/print" element={<PublicPrintRequestPage />} />
       <Route path="/m/:slug/machine-service/requests/:publicToken" element={<PublicMachineServiceStatusPage />} />
       <Route path="/m/:slug/machine-jobs/new" element={<JobRequestPage />} />
+      <Route path="/m/:slug/technician-opt-in/:token" element={<TechnicianOptInPage />} />
       <Route path="/m/:slug/member/machine-jobs" element={<MyMachineJobsPage />} />
       <Route path="/m/:slug/member/machine-jobs/:jobId" element={<MachineJobPage />} />
       <Route path="/m/:slug/member" element={<MemberArea />} />

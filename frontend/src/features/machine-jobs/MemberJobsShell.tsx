@@ -14,6 +14,7 @@ import { useMemberIdentity } from "./useMemberIdentity";
 
 export type MemberJobsContext = {
   slug: string; makerspaceId: number | undefined; path: (part?: string) => string; ready: boolean; bootstrapError: boolean;
+  features: string[];
 };
 
 /**
@@ -42,7 +43,7 @@ export function MemberJobsShell({ children }: { children: (context: MemberJobsCo
       user={{ name: member.identity.data?.username || "Your account", menu: [{ label: "Account & two-step sign-in", href: "/mfa" }],
         onSignOut: () => { void logout("member").catch(() => undefined).finally(() => { forgetOfflineMemberData(); client.clear(); window.location.assign(memberHome); }); } }}>
       {children({ slug: makerspaceSlug, makerspaceId: bootstrap?.makerspace.id, path, ready: !member.loading && Boolean(bootstrap),
-        bootstrapError: bootstrapQuery.isError })}
+        bootstrapError: bootstrapQuery.isError, features: bootstrap?.features ?? [] })}
     </MemberPortalTabs>
   </div>;
 }

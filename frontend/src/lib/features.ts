@@ -150,6 +150,15 @@ export const FEATURE_DEFINITIONS: readonly FeatureDefinition[] = [
   { key: "machines.batch_start", parent_module: "machine_service", label: "Batch start" },
   { key: "machines.pay_before_pickup", parent_module: "machine_service", label: "Pay before pickup" },
   { key: "machines.time_booking", parent_module: "machines", label: "Machine time booking" },
+  // L16 (#128 C-3/C-9): repairs, issue reporting and maintenance under each parent.
+  { key: "machines.repairs", parent_module: "machines", label: "Machine repairs & technicians" },
+  { key: "machines.issue_reporting", parent_module: "machines", label: "Machine issue reporting" },
+  { key: "inventory.maintenance", parent_module: null, label: "Inventory maintenance" },
+  { key: "inventory.repairs", parent_module: null, label: "Inventory repairs & technicians" },
+  { key: "inventory.issue_reporting", parent_module: null, label: "Inventory issue reporting" },
+  { key: "bookings.room_maintenance", parent_module: "bookings", label: "Room maintenance" },
+  { key: "bookings.room_repairs", parent_module: "bookings", label: "Room repairs" },
+  { key: "bookings.issue_reporting", parent_module: "bookings", label: "Room issue reporting" },
 ];
 
 export function featureEnabled(features: Iterable<string>, key: string) {

@@ -10,6 +10,7 @@ import { MemberEventCancel } from "./MemberEventCancel";
 import { MemberCalendarActions } from "./MemberCalendarActions";
 import { OfflineLoansControl } from "./memberCard/OfflineLoansControl";
 import { MemberServiceRequestRows, type MemberServiceRequest } from "../machine-service/MemberServiceRequestRows";
+import { ReportProblem } from "../repairs/ReportProblem";
 
 type Loan = { request_id?: number; can_renew?: boolean; renewal_count?: number; renewal_refusal?: string | null; label: string; checked_out_at: string; due_at: string | null; overdue: boolean };
 type MachineServiceRequest = MemberServiceRequest;
@@ -137,8 +138,8 @@ function Empty({ children = "Nothing here yet. Check back after your next visit.
 const REGISTRATION_LABELS: Record<string, string> = { pending_approval: "Awaiting approval", registered: "Confirmed", waitlisted: "Waitlisted", rejected: "Not approved", cancelled: "Cancelled", attended: "Attended" };
 const statusTone = (status: string) => ["registered", "confirmed", "attended", "completed"].includes(status) ? "success" as const : ["cancelled", "rejected"].includes(status) ? "neutral" as const : "warn" as const;
 
-export function MemberActivityPanel({ activity, makerspaceId, makerspaceSlug, makerspaceName, modules, section = "all", eventPeriod }: {
-  modules: string[]; section?: "all" | "overview" | "loans" | "bookings" | "events"; eventPeriod?: "going" | "past";
+export function MemberActivityPanel({ activity, makerspaceId, makerspaceSlug, makerspaceName, modules, features = [], section = "all", eventPeriod }: {
+  modules: string[]; features?: string[]; section?: "all" | "overview" | "loans" | "bookings" | "events"; eventPeriod?: "going" | "past";
   activity: MemberActivity; makerspaceId: number; makerspaceSlug: string;
   /** Printed on event tickets; the hosting makerspace, not the platform. */
   makerspaceName: string;
@@ -156,7 +157,8 @@ export function MemberActivityPanel({ activity, makerspaceId, makerspaceSlug, ma
     {(section === "all" || section === "loans") && modules.includes("request_workflow") ? <Section title="Active hardware loans">{activity.active_hardware_loans.length ? activity.active_hardware_loans.map(loan => <ListRow key={`${loan.label}-${loan.checked_out_at}`} title={loan.label}
       identity={loan.due_at ? { kind: "date", date: loan.due_at } : { kind: "icon", icon: "Wrench", tone: "info" }}
       meta={loan.due_at ? <>Due <RelativeTime date={loan.due_at} /></> : "No due date"}
-      right={<div className="flex flex-wrap items-center gap-3"><StatusPill label={loan.overdue ? "Overdue" : "On loan"} tone={loan.overdue ? "danger" : "info"} />{loan.can_renew && loan.request_id ? <MemberLoanRenew key={loan.due_at} makerspaceId={makerspaceId} makerspaceSlug={makerspaceSlug} requestId={loan.request_id} /> : null}</div>} />) : <EmptyState message="Nothing out right now. Browse the catalogue to borrow something." action={{ label: "Browse catalogue", href: `/m/${makerspaceSlug}` }} />}</Section> : null}
+      right={<div className="flex flex-wrap items-center gap-3"><StatusPill label={loan.overdue ? "Overdue" : "On loan"} tone={loan.overdue ? "danger" : "info"} />{loan.can_renew && loan.request_id ? <MemberLoanRenew key={loan.due_at} makerspaceId={makerspaceId} makerspaceSlug={makerspaceSlug} requestId={loan.request_id} /> : null}
+        {loan.request_id && features.includes("inventory.issue_reporting") ? <ReportProblem source={{ makerspace_id: makerspaceId, loan_id: loan.request_id }} /> : null}</div>} />) : <EmptyState message="Nothing out right now. Browse the catalogue to borrow something." action={{ label: "Browse catalogue", href: `/m/${makerspaceSlug}` }} />}</Section> : null}
     {(section === "all" || section === "overview") && modules.includes("machines") && activity.machine_service_requests ? <><Section title="3D print requests">{requestRows(printerRequests)}</Section>{otherServiceRequests.length ? <Section title="Machine-service requests">{requestRows(otherServiceRequests)}</Section> : null}<Link className="desk-button justify-self-start" to={tenantPath("member/machine-jobs")}>All my machine jobs</Link></> : null}
     {(section === "all" || section === "bookings") && modules.includes("bookings") && activity.bookings ? <Section title="Bookings">{(["upcoming", "past"] as const).map(period => <div key={period} className="grid gap-3"><h3 className="title-section">{period === "upcoming" ? "Upcoming" : "Past"}</h3>{activity.bookings![period].length ? activity.bookings![period].map((item, index) => <ListRow key={index} title={item.space_name} identity={{ kind: "date", date: item.starts_at }} meta={`${new Date(item.starts_at).toLocaleString()} – ${new Date(item.ends_at).toLocaleTimeString()}`} right={<StatusPill label={item.status.replace(/_/g, " ")} tone={statusTone(item.status)} />} />) : <Empty />}</div>)}</Section> : null}
     {(section === "all" || section === "events") && modules.includes("events") && activity.event_registrations ? <Section title="Event registrations"><MemberCalendarActions makerspaceId={makerspaceId} makerspaceSlug={makerspaceSlug} />{registrations.length ? registrations.map(item => <ListRow key={item.registration_id} title={item.event_title} identity={{ kind: "date", date: item.starts_at }}

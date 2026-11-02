@@ -3,7 +3,7 @@ const ALL_TABS = [
   "dashboard", "notifications", "channels", "requests", "direct", "handover", "inventory", "needsfix", "categories", "machines", "events", "organized", "granted", "bookings", "members", "cards", "tobuy", "transfers",
   "stocktake", "containers", "ledger", "reports", "accountability", "warranty", "bulk", "qr", "scanner", "api", "settings", "security", "emailtemplates", "users", "platform", "audit",
   "devices", "email-logs", "payments", "refunds", "finance", "organizations", "organization-analytics", "modules", "exports", "backups", "migration",
-  "consumables",
+  "consumables", "repairs",
 ] as const;
 
 export const STAFF_TAB_KEYS: readonly string[] = ALL_TABS;
@@ -42,6 +42,7 @@ export const TAB_LABELS: Record<string, string> = {
   cards: "Member cards",
   tobuy: "To Buy",
   consumables: "Consumables",
+  repairs: "Repairs",
   reports: "Reports",
   "organization-analytics": "Organization analytics",
   organizations: "Organizations",
@@ -67,7 +68,7 @@ export const TAB_LABELS: Record<string, string> = {
 export const TAB_GROUPS: { label: string; tabs: string[] }[] = [
   { label: "Operate", tabs: ["dashboard", "notifications", "channels", "requests", "direct", "handover", "payments", "refunds", "finance", "ledger", "transfers", "stocktake", "tobuy", "consumables"] },
   { label: "Inventory", tabs: ["inventory", "categories", "needsfix", "containers", "bulk", "qr", "scanner"] },
-  { label: "Machines", tabs: ["machines", "devices"] },
+  { label: "Machines", tabs: ["machines", "devices", "repairs"] },
   { label: "Events", tabs: ["events", "organized", "granted"] },
   { label: "Bookings", tabs: ["bookings"] },
   { label: "Members", tabs: ["members", "cards"] },
@@ -176,6 +177,9 @@ export function getStaffAccess(
     // keeps limit-gated installs on the managed platform for the superadmin.
     if (tabName === "modules") return canManageMakerspace;
     if (tabName === "devices") return has("manage_devices");
+    // L16: the area managers (#102) and the Technician (#128 C-3); the server narrows every row.
+    if (tabName === "repairs") return canEditInventory || canManageMachines || canManageBookings || canManageMakerspace
+      || ["work_repairs", "run_maintenance", "set_service_state"].some(has);
     if (tabName === "machines") return canManageMachines;
     if (tabName === "events") return canManageEvents;
     // Organizer authority is per event and cross-venue; selected-space actions cannot

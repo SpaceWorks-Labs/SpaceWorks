@@ -8,6 +8,7 @@ import { BookingCalendar } from "./BookingCalendar";
 import { memberRequest } from "../../lib/api";
 import { personalRecipientKey } from "../notifications/personalQueryKeys";
 import { DepartureForm, OUTCOME_LABELS, type DepartureInput, type DepartureOutcome } from "./DepartureForm";
+import { ReportProblem } from "../repairs/ReportProblem";
 
 export type MemberBooking = {
   public_token: string;
@@ -31,12 +32,12 @@ function dateLabel(value: string, timezone: string) {
   return new Intl.DateTimeFormat(undefined, { timeZone: timezone, dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
 }
 
-export function MyBookings({ slug }: { slug: string }) {
+export function MyBookings({ slug, canReport = false }: { slug: string; canReport?: boolean }) {
   const recipient = personalRecipientKey();
-  return <OwnBookings key={`${slug}:${recipient}`} slug={slug} recipient={recipient} />;
+  return <OwnBookings key={`${slug}:${recipient}`} slug={slug} recipient={recipient} canReport={canReport} />;
 }
 
-function OwnBookings({ slug, recipient }: { slug: string; recipient: number | "signed-out" }) {
+function OwnBookings({ slug, recipient, canReport }: { slug: string; recipient: number | "signed-out"; canReport: boolean }) {
   const [period, setPeriod] = useState<"upcoming" | "past">("upcoming");
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<MemberBooking | null>(null);
@@ -82,6 +83,7 @@ function OwnBookings({ slug, recipient }: { slug: string; recipient: number | "s
         right={<div className="flex flex-wrap items-center gap-3"><StatusPill label={booking.status.replace(/_/g, " ")} tone={booking.status === "confirmed" ? "success" : "neutral"} />
           {booking.confirmation_available ? <button type="button" className="desk-button" onClick={() => setConfirmation(booking.public_token)}>View confirmation</button> : null}
           {booking.can_checkout ? <button type="button" className="desk-button" onClick={() => { checkout.reset(); setCheckingOut(booking); }}>Check out</button> : null}
+          {canReport && ["confirmed", "completed", "no_show"].includes(booking.status) ? <ReportProblem source={{ makerspace_slug: slug, booking_token: booking.public_token }} /> : null}
           {booking.can_cancel ? <><button type="button" className="desk-button" disabled={cancel.isPending} onClick={() => { setSelected(null); setMoving(booking); }}>Reschedule booking</button>
           <OverflowMenu label="Booking actions" actions={[{ label: "Cancel booking", tone: "danger", onClick: () => { cancel.reset(); setMoving(null); setSelected(booking); } }]} /></> : null}</div>} /></li>)}
     </ul>

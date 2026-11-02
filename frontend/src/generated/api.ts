@@ -18,6 +18,7 @@ export const openApiTags = [
   "Admin kiosk recovery",
   "Admin kiosk stations",
   "Admin machine service",
+  "Admin machine sessions",
   "Admin machines",
   "Admin maintenance",
   "Admin makerspaces",
@@ -91,6 +92,7 @@ export const openApiTags = [
   "Member communication",
   "Member events",
   "Member machine service",
+  "Member machine sessions",
   "Member organizations",
   "Member profile",
   "Memberships",
@@ -502,6 +504,10 @@ export const openApiPaths = [
   "/api/v1/admin/machine-service/requests/{id}/start",
   "/api/v1/admin/machine-service/requests/{id}/uncollected",
   "/api/v1/admin/machine-service/requests/{id}/urgent",
+  "/api/v1/admin/machine-sessions/{id}/amend",
+  "/api/v1/admin/machine-sessions/{id}/assign",
+  "/api/v1/admin/machine-sessions/{id}/confirm",
+  "/api/v1/admin/machine-sessions/{id}/stop",
   "/api/v1/admin/machine-type-integrations/{id}",
   "/api/v1/admin/machines/documents/{id}",
   "/api/v1/admin/machines/documents/{id}/url",
@@ -789,8 +795,10 @@ export const openApiPaths = [
   "/api/v1/admin/makerspaces/{makerspace_id}/machine-service/consumable-pools",
   "/api/v1/admin/makerspaces/{makerspace_id}/machine-service/requests",
   "/api/v1/admin/makerspaces/{makerspace_id}/machine-service/typed-manual-usage",
+  "/api/v1/admin/makerspaces/{makerspace_id}/machine-sessions",
   "/api/v1/admin/makerspaces/{makerspace_id}/machine-types/{type_id}/intake",
   "/api/v1/admin/makerspaces/{makerspace_id}/machine-types/{type_id}/job-settings",
+  "/api/v1/admin/makerspaces/{makerspace_id}/machine-types/{type_id}/session-settings",
   "/api/v1/admin/makerspaces/{makerspace_id}/machines/{machine_id}/maintenance/logs/",
   "/api/v1/admin/makerspaces/{makerspace_id}/machines/{machine_id}/maintenance/schedules/",
   "/api/v1/admin/makerspaces/{makerspace_id}/maintenance/feed",
@@ -1174,6 +1182,10 @@ export const openApiPaths = [
   "/api/v1/member/machine-jobs/{id}/resubmit",
   "/api/v1/member/machine-service/requests/by-token/{public_token}/owner",
   "/api/v1/member/machine-service/requests/{id}/cancel",
+  "/api/v1/member/machine-sessions",
+  "/api/v1/member/machine-sessions/{id}/stop",
+  "/api/v1/member/machines/{machine_id}/session",
+  "/api/v1/member/machines/{machine_id}/sessions/start",
   "/api/v1/member/makerspaces/{makerspace_id}/account/cancel",
   "/api/v1/member/makerspaces/{makerspace_id}/account/exports",
   "/api/v1/member/makerspaces/{makerspace_id}/account/exports/{job_id}",
@@ -10690,7 +10702,7 @@ export type MachineUsageEntry = {
   "created_at": string;
 };
 
-export type MachineUsageEntrySourceEnum = "manual" | "typed_manual";
+export type MachineUsageEntrySourceEnum = "manual" | "typed_manual" | "session";
 
 export type MachineUsageHeatmapReport = {
   "rows": Array<Array<unknown>>;
@@ -11583,7 +11595,7 @@ export type MemberNotice = {
 
 export type MemberPayment = {
   "id": number;
-  "subject_type": SubjectTypeB27Enum;
+  "subject_type": SubjectType61eEnum;
   "subject_label": string;
   "status"?: Status66aEnum;
   "amount": string;
@@ -11753,6 +11765,25 @@ export type MemberServiceCancel = {
 export type MemberServiceOwner = {
   "request_id": number;
   "can_cancel": boolean;
+};
+
+export type MemberSession = {
+  "id": number;
+  "makerspace_id": number;
+  "machine_id": number;
+  "machine_name": string;
+  "machine_type_name": string;
+  "source": SourceEd5Enum;
+  "status": string;
+  "started_at": string;
+  "ended_at": string | null;
+  "minutes": number;
+  "stop_reason": StopReasonEnum;
+  "flagged": boolean;
+  "charge_state": string;
+  "rate": SessionRate | null;
+  "amount": string | null;
+  "payment": SessionPayment | null;
 };
 
 export type MemberSettlement = {
@@ -16160,7 +16191,7 @@ export type PaymentProviderConflictCodeEnum = "payment_provider_conflict";
 
 export type PaymentReconciliation = {
   "id": number;
-  "subject_type": SubjectTypeB27Enum;
+  "subject_type": SubjectType61eEnum;
   "subject_id": number;
   "subject_label": string;
   "status": Status66aEnum;
@@ -19853,7 +19884,7 @@ export type ReportError = {
   "code"?: string;
 };
 
-export type ReportKeyEnum = "payment-cash-book" | "taken-items" | "active-loans" | "returns" | "damaged-missing" | "top-borrowers" | "recently-added" | "event-attendance" | "booking-utilization" | "member-activity" | "printer-service" | "fablab-health" | "payment-reconciliation" | "evidence-compliance" | "import-quality" | "communications-health" | "community-engagement" | "certification-coverage" | "audit-trail" | "membership-growth" | "member-retention" | "membership-revenue" | "membership-renewals" | "membership-bridge" | "membership-breakdown" | "membership-expiry-calendar" | "membership-applications-funnel" | "membership-win-back" | "member-register" | "membership-monthly-summary" | "payments-ledger" | "revenue-over-time" | "cash-book" | "payments-ageing" | "accounting-journal" | "refunds" | "income-spending" | "finance-inventory" | "finance-machines" | "finance-bookings" | "finance-events" | "event-finance" | "receipts-payments" | "subscription-income" | "money-methods" | "gstr1" | "gstr3b" | "tax-summary" | "documents-register" | "event-registrations" | "event-feedback" | "event-attendance-pdf" | "booking-resource-utilization" | "booking-resource-utilization-pdf" | "booking-reservations" | "booking-answers" | "mobile-devices" | "mobile-auth" | "booking-occupancy" | "booking-lead-time" | "booking-top-members" | "event-signups" | "event-revenue" | "event-funnel" | "event-checkin-times" | "event-feedback-scores" | "most-lent" | "asset-usage" | "loan-throughput" | "inventory-utilisation" | "overdue-loans" | "damaged-lost" | "longest-loans" | "stock-health" | "request-funnel" | "problem-reports" | "inventory-watch-demand" | "summary" | "qr-scans" | "qr-scan-actors" | "inventory-control" | "consumable-usage" | "consumable-pools" | "procurement-performance" | "stock-transfers" | "stocktake-variance" | "machine-usage" | "machine-usage-members" | "machine-usage-heatmap" | "machine-downtime" | "maintenance-activity" | "machine-service" | "service-queue-times" | "printer-jobs" | "machine-errors" | "warranty-expiry" | "device-health" | "presence-activity" | "presence-top-visitors" | "presence-activity-hours" | "audit-activity" | "audit-top-actors" | "audit-activity-hours" | "organization-membership" | "module-operational-health" | "platform-services" | "platform-usage";
+export type ReportKeyEnum = "payment-cash-book" | "taken-items" | "active-loans" | "returns" | "damaged-missing" | "top-borrowers" | "recently-added" | "event-attendance" | "booking-utilization" | "member-activity" | "printer-service" | "fablab-health" | "payment-reconciliation" | "evidence-compliance" | "import-quality" | "communications-health" | "community-engagement" | "certification-coverage" | "audit-trail" | "membership-growth" | "member-retention" | "membership-revenue" | "membership-renewals" | "membership-bridge" | "membership-breakdown" | "membership-expiry-calendar" | "membership-applications-funnel" | "membership-win-back" | "member-register" | "membership-monthly-summary" | "payments-ledger" | "revenue-over-time" | "cash-book" | "payments-ageing" | "accounting-journal" | "refunds" | "income-spending" | "finance-inventory" | "finance-machines" | "finance-bookings" | "finance-events" | "event-finance" | "receipts-payments" | "subscription-income" | "money-methods" | "gstr1" | "gstr3b" | "tax-summary" | "documents-register" | "event-registrations" | "event-feedback" | "event-attendance-pdf" | "booking-resource-utilization" | "booking-resource-utilization-pdf" | "booking-reservations" | "booking-answers" | "mobile-devices" | "mobile-auth" | "booking-occupancy" | "booking-lead-time" | "booking-top-members" | "event-signups" | "event-revenue" | "event-funnel" | "event-checkin-times" | "event-feedback-scores" | "most-lent" | "asset-usage" | "loan-throughput" | "inventory-utilisation" | "overdue-loans" | "damaged-lost" | "longest-loans" | "stock-health" | "request-funnel" | "problem-reports" | "inventory-watch-demand" | "summary" | "qr-scans" | "qr-scan-actors" | "inventory-control" | "consumable-usage" | "consumable-pools" | "procurement-performance" | "stock-transfers" | "stocktake-variance" | "machine-usage" | "machine-usage-members" | "machine-usage-heatmap" | "machine-downtime" | "maintenance-activity" | "machine-service" | "service-queue-times" | "printer-jobs" | "machine-errors" | "warranty-expiry" | "machine-sessions" | "machine-session-utilisation" | "machine-session-busiest" | "machine-session-idle" | "machine-session-flagged" | "device-health" | "presence-activity" | "presence-top-visitors" | "presence-activity-hours" | "audit-activity" | "audit-top-actors" | "audit-activity-hours" | "organization-membership" | "module-operational-health" | "platform-services" | "platform-usage";
 
 export type ReportSchedule = {
   "id": number;
@@ -19882,7 +19913,7 @@ export type ReportScheduleFilters = {
   "end"?: string;
   "window_days"?: number;
   "status"?: Status66aEnum;
-  "subject_type"?: SubjectTypeB27Enum;
+  "subject_type"?: SubjectType61eEnum;
   "months"?: number;
   "subject_kind"?: string;
   "subject_id"?: number;
@@ -21090,10 +21121,76 @@ export type ServiceStart = {
   "planned_quantity"?: string;
 };
 
+export type SessionAmend = {
+  "minutes": number;
+  "reason": string;
+};
+
+export type SessionAmendment = {
+  "id": number;
+  "kind": SessionAmendmentKindEnum;
+  "minutes": number | null;
+  "member_id": number | null;
+  "reason": string;
+  "actor_name": string;
+  "created_at": string;
+};
+
+export type SessionAmendmentKindEnum = "correct" | "assign" | "confirm";
+
+export type SessionAssign = {
+  "member_id": number;
+  "reason": string;
+};
+
 export type SessionAuthorityEnum = "member" | "native_staff" | "platform" | "verification_only";
 
 export type SessionContext = {
   "context"?: string;
+};
+
+export type SessionPayment = {
+  "id": number;
+  "amount": string;
+  "currency": string;
+  "status": string;
+};
+
+export type SessionPreview = {
+  "machine_id": number;
+  "machine_name": string;
+  "machine_type_name": string;
+  "machine_status": string;
+  "billing": boolean;
+  "rate": SessionRate | null;
+  "digest": string;
+  "max_minutes": number;
+  "closes_at": string | null;
+  "can_start": boolean;
+  "refusal": SessionRefusal | null;
+  "live_session": MemberSession | null;
+};
+
+export type SessionRate = {
+  "unit_amount": string;
+  "currency": string;
+  "increment": number;
+  "minimum": number;
+  "discount_name": string;
+};
+
+export type SessionRefusal = {
+  "code": string;
+  "detail": string;
+  "certifications"?: Array<string>;
+};
+
+export type SessionSettings = {
+  "session_max_minutes": number;
+};
+
+export type SessionStart = {
+  "digest"?: string;
 };
 
 export type SetStatus = {
@@ -21303,6 +21400,8 @@ export type Source = {
 };
 
 export type Source04fEnum = "makerspace_public" | "entered";
+
+export type SourceEd5Enum = "member_qr" | "staff" | "device";
 
 export type SpaceCard = {
   "name": string;
@@ -21743,7 +21842,7 @@ export type StaffMembership = {
 
 export type StaffPayment = {
   "id": number;
-  "subject_type": SubjectTypeB27Enum;
+  "subject_type": SubjectType61eEnum;
   "subject_label": string;
   "status"?: Status66aEnum;
   "amount": string;
@@ -21781,6 +21880,38 @@ export type StaffRsvpInput = {
   "expected_version": number;
   "decision": Decision25cEnum;
   "reason_code": string;
+};
+
+export type StaffSession = {
+  "id": number;
+  "makerspace_id": number;
+  "machine_id": number;
+  "machine_name": string;
+  "machine_type_name": string;
+  "source": SourceEd5Enum;
+  "status": string;
+  "started_at": string;
+  "ended_at": string | null;
+  "minutes": number;
+  "stop_reason": StopReasonEnum;
+  "flagged": boolean;
+  "charge_state": string;
+  "rate": SessionRate | null;
+  "amount": string | null;
+  "payment": SessionPayment | null;
+  "member_id": number | null;
+  "member_name": string;
+  "needs_review": boolean;
+  "service_request_id": number | null;
+  "duration_minutes": number;
+  "started_by_id": number | null;
+  "stopped_by_id": number | null;
+  "amendments": Array<SessionAmendment>;
+};
+
+export type StaffSessionStart = {
+  "machine_id": number;
+  "member_id": number;
 };
 
 export type StaffSettlement = {
@@ -22368,6 +22499,8 @@ export type StockTransferLineInput = {
 
 export type StockTransferStatusEnum = "applied" | "cancelled";
 
+export type StopReasonEnum = "member" | "staff" | "max_length" | "check_out" | "closing" | "device";
+
 export type StorageGuarantee = {
   "label": string;
   "upload": UploadEnum;
@@ -22425,7 +22558,7 @@ export type SubjectExportList = {
 
 export type SubjectType0b3Enum = "machine" | "inventory_product" | "inventory_asset" | "bookable_space";
 
-export type SubjectTypeB27Enum = "machine_service_request" | "booking" | "event_registration" | "makerspace_membership" | "membership_term" | "membership_request" | "loan_deposit" | "loan_late_fee" | "loan_rental" | "loan_damage" | "loan_lost";
+export type SubjectType61eEnum = "machine_service_request" | "booking" | "event_registration" | "makerspace_membership" | "membership_term" | "membership_request" | "loan_deposit" | "loan_late_fee" | "loan_rental" | "loan_damage" | "loan_lost" | "machine_session";
 
 export type SubmissionIntegrity = {
   "submission_id": number;

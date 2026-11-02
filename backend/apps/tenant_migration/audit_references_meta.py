@@ -293,3 +293,6 @@ AUDIT_META_REFERENCES.update(R2_L10_AUDIT_EDGES)
 
 from .audit_references_l12 import EDGES as L12_AUDIT_EDGES  # noqa: E402
 AUDIT_META_REFERENCES.update(L12_AUDIT_EDGES)
+
+from .audit_references_l23 import EDGES as L23_AUDIT_EDGES  # noqa: E402
+AUDIT_META_REFERENCES.update(L23_AUDIT_EDGES)

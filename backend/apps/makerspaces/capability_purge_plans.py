@@ -124,6 +124,20 @@ def _warranty(host):
     return delete, preview, keys
 
 
+def _sessions_delete(space, cursor):
+    """L23: sessions and their amendments. Charges stay in the ledger; usage entries stay."""
+    from apps.machines.models import MachineSession, MachineSessionAmendment
+    amendments, amendment_labels = _delete(MachineSessionAmendment.objects.filter(makerspace=space))
+    sessions, session_labels = _delete(MachineSession.objects.filter(makerspace=space))
+    return _counts(model_labels=amendment_labels | session_labels, sessions=sessions, amendments=amendments)
+
+
+def _sessions_preview(space):
+    from apps.machines.models import MachineSession, MachineSessionAmendment
+    return {"sessions": MachineSession.objects.filter(makerspace=space).count(),
+            "amendments": MachineSessionAmendment.objects.filter(makerspace=space).count()}
+
+
 _machine_tobuy, _inventory_tobuy = _tobuy("printing"), _tobuy("hardware")
 _machine_warranty, _inventory_warranty = _warranty("machine"), _warranty("asset")
 
@@ -149,6 +163,11 @@ PLANS = (
     CapabilityPurgePlan(
         "inventory.warranty", "Warranty records and documents on inventory assets. Machine warranties stay.",
         _inventory_warranty[0], _inventory_warranty[1], _inventory_warranty[2],
+    ),
+    CapabilityPurgePlan(
+        "machines.sessions", "Machine sessions and their staff corrections. Charges they raised stay in the "
+        "ledger, and the machine-usage entries they wrote stay with the machine.",
+        _sessions_delete, _sessions_preview,
     ),
 )
 BY_KEY = {plan.key: plan for plan in PLANS}

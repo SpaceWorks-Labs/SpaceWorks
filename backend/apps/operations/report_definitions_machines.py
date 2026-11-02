@@ -58,6 +58,9 @@ MACHINE_REPORT_DEFINITIONS = (
     _definition("warranty-expiry", "reports_machine_health.build_warranty_expiry", WARRANTY_FIELDS, ("machines",), "table",
                 _chart("machine_name", (("days_until_expiry", "days"),), ("machine_id",), time=False, negatives="allow")),
 )
+# Lane L23: machine-session reports ride the machine family (actor forwarded, machine scope).
+from .report_definitions_machine_sessions import SESSION_REPORT_DEFINITIONS  # noqa: E402
+MACHINE_REPORT_DEFINITIONS += SESSION_REPORT_DEFINITIONS
 MACHINE_REPORT_KEYS = frozenset(d.key for d in MACHINE_REPORT_DEFINITIONS)
 
 for _key, _combine in COMBINERS.items():

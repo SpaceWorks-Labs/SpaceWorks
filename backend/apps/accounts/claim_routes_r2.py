@@ -1,5 +1,5 @@
 """Claim policies for release-2 routes on claim-reachable prefixes: U-C's account merge and
-L12's machine jobs, loan waitlist and request withdrawal.
+L12's machine jobs, loan waitlist and request withdrawal; L23's machine sessions.
 
 A claim session (a walk-in claiming an account at a kiosk) never merges accounts, never
 acts on a member's own job, waitlist or request, and never submits a job; the public job
@@ -19,6 +19,10 @@ _REFUSED = (
         ("member-machine-job-approve-quote", ("POST",)), ("member-machine-job-decline-quote", ("POST",)),
         ("member-machine-job-resubmit", ("POST",)),
         ("public-machine-job-upload", ("POST",)), ("public-machine-job-submit", ("POST",)),
+    )),
+    ("claim sessions cannot start, stop or read machine sessions", (
+        ("member-machine-session-preview", ("GET", "HEAD")), ("member-machine-session-start", ("POST",)),
+        ("member-machine-sessions", ("GET", "HEAD")), ("member-machine-session-stop", ("POST",)),
     )),
     ("claim sessions cannot manage loan waitlists or withdraw requests", (
         ("hardware_requests:member-loan-waitlist", ("GET", "HEAD", "POST")),

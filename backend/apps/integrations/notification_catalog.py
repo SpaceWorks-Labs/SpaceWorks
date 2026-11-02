@@ -36,6 +36,8 @@ FEATURE_EVENTS = {
         # Lane L12, the uniform job flow (#141): review, quotes, re-queue, pickup.
         "changes_requested", "resubmitted", "quoted", "quote_reminder", "quote_approved", "quote_declined",
         "quote_expired", "requeued", "pickup_reminder", "uncollected", "no_show_flagged",
+        # Lane L23: a machine session stopped itself (max length, check-out, closing).
+        "session_auto_stopped",
     ),
     F.EVENTS: (
         "published", "cancelled", "completed", "registration_created",

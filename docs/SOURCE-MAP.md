@@ -898,7 +898,8 @@ staff step-up), `views_device_staff.py` (`auth/device/staff-grant`), `services_d
 including the auth-generation refusal), `services_staff_grants.py` (staff-grant revocation on a
 lost role, its signal and audits) and `native_app_version.py` (`MIN_NATIVE_APP_VERSION_*`) own
 native authority.
-`delegated_routes.py` exposes the authority-source classification in `delegated_route_catalog.py`;
+`delegated_routes.py` exposes the authority-source classification in `delegated_route_catalog.py`
+(release-2 lane rows in its `delegated_route_catalog_r2.py` sibling);
 `checks.py` fails unclassified staff URLs. `member_identity.py` and `account_kind_guards.py`
 keep member credential/community writers separate. `credential_revocation.py` and
 `credential_revocation_helpers.py` own generation fencing and account-owned credential teardown.

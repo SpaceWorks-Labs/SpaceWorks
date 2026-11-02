@@ -129259,6 +129259,7 @@
         "/api/v1/integrations/push/devices": {
             "post": {
                 "operationId": "api_v1_integrations_push_devices_create",
+                "description": "Register this device's push token for the selected makerspace. Pushes then carry payload v3 (#116): string `data` with `v`=\"3\", `event_id`, `makerspace_id`, `feature`, `event`, optional `inbox_row_id` and `link` (all as in v2), plus `channel` (Android channel id, e.g. `sw_loans`) and an optional `category`: `sw.open` (Open), `sw.inbox` (Open, Mark seen) or `sw.inbox.snooze` (Open, Mark seen, Snooze). Mark seen calls `POST /notifications/inbox/{makerspace_id}/{inbox_row_id}/read`; Snooze calls `.../snooze`. Titles are at most 40 characters and bodies 120. Money and evidence notices carry no category; no push action approves, pays, refunds or hands anything over. iOS `thread-id` is the makerspace id (events: `<id>.events`). See docs/mobile/MOBILE-APP-PRD.md.",
                 "tags": [
                     "Native push"
                 ],

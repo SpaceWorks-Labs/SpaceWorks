@@ -11,9 +11,9 @@ from apps.integrations.push_payload import short_body, short_title
 
 def aps_payload(title, body, data):
     """The `aps` dictionary: watch-sized text, the space thread and the safe action set."""
-    channel = data.get("channel", "")
-    aps = {"alert": {"title": short_title(title), "body": short_body(body)},
-           "thread-id": thread_id(data["makerspace_id"], channel)}
+    aps = {"alert": {"title": short_title(title), "body": short_body(body)}}
+    if data.get("makerspace_id"):
+        aps["thread-id"] = thread_id(data["makerspace_id"], data.get("channel", ""))
     if data.get("category"):
         aps["category"] = data["category"]
     return aps

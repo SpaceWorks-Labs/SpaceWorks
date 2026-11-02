@@ -143,3 +143,5 @@ from .origin_scope_routes_r2_l10 import MODEL_LOOKUPS as R2_L10_LOOKUPS
 MODEL_LOOKUPS.update(R2_L10_LOOKUPS)
 from .origin_scope_routes_r2_l12 import MODEL_LOOKUPS as R2_L12_LOOKUPS
 MODEL_LOOKUPS.update(R2_L12_LOOKUPS)
+from .origin_scope_routes_r2_l16 import MODEL_LOOKUPS as R2_L16_LOOKUPS
+MODEL_LOOKUPS.update(R2_L16_LOOKUPS)

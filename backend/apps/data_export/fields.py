@@ -195,6 +195,8 @@ ALWAYS_OMITTED.update({
 })
 from apps.tenant_migration.catalog_events_programme_fields import OMITTED_FIELDS as PROGRAMME_OMITTED_FIELDS
 ALWAYS_OMITTED.update(PROGRAMME_OMITTED_FIELDS)
+from .classification_l16 import OMITTED_FIELDS as L16_OMITTED_FIELDS  # noqa: E402
+ALWAYS_OMITTED.update(L16_OMITTED_FIELDS)
 FIELDS = {}
 for _fidelity in Fidelity:
     for _label, _names in EXPORTED_MODEL_FIELDS.items():

@@ -170,6 +170,11 @@ _ROUTE_DEFINITIONS += (
     ("public-machine-job-types", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, True),
     ("public-machine-job-upload", _WRITE, PUBLIC_WRITE_SCOPES, TARGET_TENANT_SLUG, False, True),
     ("public-machine-job-submit", _WRITE, PUBLIC_WRITE_SCOPES, TARGET_TENANT_SLUG, False, True),
+    # Lane L16: account-less issue reports (email-code verified); the technician opt-in page is a
+    # human consent step, so no API-client scope admits it (like pay links).
+    ("public-issue-report", _WRITE, PUBLIC_WRITE_SCOPES, TARGET_TENANT_SLUG, False, False),
+    ("public-issue-photo-upload", _WRITE, PUBLIC_WRITE_SCOPES, TARGET_TENANT_SLUG, False, False),
+    ("public-technician-opt-in", ("GET", "HEAD", "POST"), frozenset(), TARGET_GLOBAL, False, False),
 )
 
 

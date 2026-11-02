@@ -47,7 +47,7 @@ def log_maintenance(
     parts_note="", set_idle=False,
 ):
     machine = lock_machine(machine, actor)
-    prepare_machine(machine, actor, manage=False)
+    prepare_machine(machine, actor, manage=False, technician=True)
     ensure_idle_transition(machine, set_idle)
     values = validate_log_values(
         summary=summary, performed_at=performed_at, cost=cost,
@@ -93,7 +93,7 @@ def create_schedule(machine, *, actor, description, interval_days, next_due, anc
 @transaction.atomic
 def update_schedule(schedule, *, actor, **changes):
     machine = lock_machine(schedule.machine, actor)
-    prepare_machine(machine, actor, manage=True)
+    prepare_machine(machine, actor, manage=True, technician=True)
     schedule = rbac.scope_by_makerspace(
         actor, MaintenanceSchedule.objects.select_for_update(), makerspace_field="machine__makerspace_id",
     ).get(

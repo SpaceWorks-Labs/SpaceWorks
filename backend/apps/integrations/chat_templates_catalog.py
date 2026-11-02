@@ -28,6 +28,10 @@ EVENTS = {
     ("hardware_requests", "cancelled"): ("request.id", "request.status"),
     ("hardware_requests", "expired"): ("request.id", "request.status"),
     ("stock", "to_buy_created"): (),
+    # Lane L16: issue reports and repair quotes (ids only; never a reporter's details).
+    **{(feature, event): ("issue_id",) for feature in ("hardware_requests", "bookings", "maintenance")
+       for event in ("issue_reported", "repair_quote_pending")},
+    ("maintenance", "repair_dispatched"): (),
     **{("printing", event): () for event in (
         "changes_requested", "resubmitted", "quoted", "quote_approved", "quote_declined", "quote_expired",
         "requeued", "uncollected", "no_show_flagged")},

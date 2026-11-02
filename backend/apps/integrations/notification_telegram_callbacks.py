@@ -71,6 +71,7 @@ def handle_start(request):
         expires_at__gt=timezone.now(), attempts__lt=5,
     ).first()
     if challenge is None:
+        _technician_opt_in(parsed)
         return
     config = challenge.configuration
     try:
@@ -82,3 +83,18 @@ def handle_start(request):
         # Expired/replayed proofs and closed tenant gates are terminal for this update.
         # Acknowledge so Telegram does not retry it; the browser can start a new challenge.
         logger.info("telegram_endpoint_proof_refused", extra={"configuration_id": config.pk})
+
+
+def _technician_opt_in(parsed):
+    """L16 (#128 C-4): a repair technician's one-time opt-in code records their private chat.
+
+    Same proof bar as an account link: verified secret, private human chat, not forwarded.
+    """
+    from apps.separability.registry import runtime_active
+    if not runtime_active("maintenance"):
+        return
+    from apps.maintenance.repairs.optin import telegram_start
+    try:
+        telegram_start(parsed[0], parsed[1])
+    except SourceMigrationGateError:
+        logger.info("telegram_technician_opt_in_refused")

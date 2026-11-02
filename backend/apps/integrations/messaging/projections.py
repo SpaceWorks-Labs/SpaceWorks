@@ -47,6 +47,8 @@ INBOX_ONLY_PROJECTIONS.update({
     ("hardware_requests", event, "staff"): ("makerspace.name", "request.id")
     for event in ("rental_raised", "damage_charged", "lost_charged", "fees_waived")
 })
+# Lane L16: the technician send binds an approved WhatsApp template naming the space only.
+INBOX_ONLY_PROJECTIONS[("maintenance", "repair_dispatched", "staff")] = ("makerspace.name",)
 INBOX_ONLY_PROJECTIONS.update({
     ("hardware_requests", "back_available", "member"): ("makerspace.name",),
     ("api_access", "api_key_request_resolved", "member"): ("makerspace.name", "api_key_request.id", "api_key_request.status"),

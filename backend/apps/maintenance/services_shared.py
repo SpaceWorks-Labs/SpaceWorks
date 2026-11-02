@@ -24,7 +24,7 @@ def lock_machine(machine, actor):
     return row
 
 
-def prepare_machine(machine, actor, *, manage):
+def prepare_machine(machine, actor, *, manage, technician=False):
     require_capability(machine.makerspace, MACHINES_MAINTENANCE)
     # Archived makerspaces are soft-deleted for everyone; reject after the row lock
     # reloads the makerspace so a per-machine operator can't complete an in-flight
@@ -38,6 +38,10 @@ def prepare_machine(machine, actor, *, manage):
         if manage
         else access.can_operate_machine(actor, machine)
     )
+    if not allowed and technician:
+        # L16: a covering Technician logs and completes maintenance, never edits schedules.
+        from apps.maintenance.repairs.authority import technician_on_machine
+        allowed = technician_on_machine(actor, machine)
     if not allowed:
         raise PermissionDenied()
 

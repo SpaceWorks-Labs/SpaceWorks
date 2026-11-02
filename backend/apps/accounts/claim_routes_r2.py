@@ -20,6 +20,12 @@ _REFUSED = (
         ("member-machine-job-resubmit", ("POST",)),
         ("public-machine-job-upload", ("POST",)), ("public-machine-job-submit", ("POST",)),
     )),
+    ("claim sessions cannot report problems or read reports (L16)", (
+        ("member-issues", ("GET", "HEAD", "POST")), ("member-issue-photo-upload", ("POST",)),
+        ("member-issue-loan-items", ("GET", "HEAD")),
+        ("public-issue-report", ("POST",)), ("public-issue-photo-upload", ("POST",)),
+        ("public-technician-opt-in", ("GET", "HEAD", "POST")),
+    )),
     ("claim sessions cannot manage loan waitlists or withdraw requests", (
         ("hardware_requests:member-loan-waitlist", ("GET", "HEAD", "POST")),
         ("hardware_requests:member-loan-waitlist-leave", ("POST",)),

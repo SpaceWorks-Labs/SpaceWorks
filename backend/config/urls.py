@@ -179,6 +179,8 @@ urlpatterns = [
     # belt-and-braces rather than load-bearing.
     *separable("warranty", "api/v1/admin/", "apps.warranty.urls"),
     *separable("maintenance", "api/v1/admin/", "apps.maintenance.urls"),
+    # Lane L16: member and account-less issue reports, and the technician opt-in page.
+    *separable("maintenance", "api/v1/", "apps.maintenance.repairs.urls_public"),
     *separable("presence", "api/v1/admin/", "apps.presence.urls_admin"),
     *separable("events", "api/v1/admin/", "apps.events.urls_admin"),
     *separable("events", "api/v1/member/", "apps.events.urls_member"),

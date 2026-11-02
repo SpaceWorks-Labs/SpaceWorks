@@ -75,3 +75,8 @@ urlpatterns = [
         name="admin-maintenance-log-document-detail",
     ),
 ]
+
+# Release 2 L16: issues, repairs, technicians and item/room maintenance (same admin prefix).
+from .repairs.urls_staff import urlpatterns as _repairs_urlpatterns  # noqa: E402
+
+urlpatterns += _repairs_urlpatterns

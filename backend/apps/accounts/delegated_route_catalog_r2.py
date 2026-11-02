@@ -56,3 +56,12 @@ MEMBERSHIP_ROUTES |= frozenset("""admin-machine-job-request-changes admin-machin
 admin-machine-job-reorder admin-machine-job-urgent admin-machine-job-assign admin-machine-job-uncollected
 admin-machine-job-batch-start admin-machine-job-batch-complete admin-machine-job-board admin-machine-type-job-settings
 admin-machine-downtime admin-machine-lockout admin-work-orders admin-work-order-status admin-work-order-assign""".split())
+# Release-2 lane L16: issues, repairs, technicians, service state and item/room maintenance.
+# Per-makerspace staff authority only (the Technician actions are never organization-grantable);
+# every service re-checks the area manager's action or the Technician's assignment/coverage.
+MEMBERSHIP_ROUTES |= frozenset("""admin-issues admin-issue-photo-upload admin-my-repair-jobs admin-service-state
+admin-technicians admin-technician-candidates admin-technician-defaults admin-subject-maintenance admin-my-maintenance admin-room-outages
+admin-issue-detail admin-issue-triage admin-issue-reject admin-issue-assign admin-issue-unassign admin-issue-dispatch
+admin-issue-start admin-issue-work-log admin-issue-parts admin-issue-quote admin-issue-approve admin-issue-payout
+admin-issue-fix admin-issue-close admin-technician-detail admin-technician-opt-in-link admin-technician-consent
+admin-subject-maintenance-detail admin-subject-maintenance-run admin-machine-maintenance-run""".split())

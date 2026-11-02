@@ -12,18 +12,14 @@ Rooms get no To-Buy or warranty switch in release 2 (#137 Q-C3). The Django apps
 internal and separable: `app_label` names the app each switch gates, so a tombstoned app
 reads as off whatever the stored switch says.
 
-Repairs, issue reporting and the inventory/room maintenance schedules are RESERVED here
-for L12/L16, which build their surfaces. Until then they have nothing to switch, so they
-stay out of the frontend (`frontend_exposed=False`) and are reachable only in /control/.
+Repairs, issue reporting and the inventory/room maintenance schedules were reserved here
+and are built by lane L16 (the `maintenance.repairs` package): each `*.repairs` switch
+needs its parent's maintenance switch, because a repair job is L12's work order, which
+lives under maintenance; reporting works on its own (notify only, #93).
 """
 
-RESERVED = "Reserved for release 2 repairs and issue reporting; no effect yet."
-# Switches with no surface yet: install bundles and profiles never tick them.
-RESERVED_KEYS = frozenset({
-    "machines.repairs", "machines.issue_reporting", "inventory.maintenance",
-    "inventory.repairs", "inventory.issue_reporting", "bookings.room_maintenance",
-    "bookings.room_repairs", "bookings.issue_reporting",
-})
+# L16 consumed every reserved switch; nothing here is surface-less any more.
+RESERVED_KEYS = frozenset()
 # What the retired module keys used to switch, per profile that installed them.
 FOLDED_KEYS = ("machines.maintenance", "machines.tobuy", "machines.warranty",
                "inventory.tobuy", "inventory.warranty")
@@ -47,14 +43,17 @@ def definitions(feature):
             "Warranty records and documents on machines.",
             app_label="warranty",
         ),
-        feature("machines.repairs", "machines", "Machine repairs & technicians", RESERVED,
-                frontend_exposed=False),
-        feature("machines.issue_reporting", "machines", "Machine issue reporting", RESERVED,
-                frontend_exposed=False),
+        feature("machines.repairs", "machines", "Machine repairs & technicians",
+                "Repair jobs on machines: triage reported issues, send them to technicians by email or "
+                "chat, log visits, parts and quotes, and record payouts in the finance ledger.",
+                requires_features=("machines.maintenance",), app_label="maintenance"),
+        feature("machines.issue_reporting", "machines", "Machine issue reporting",
+                "Members report a problem from their own machine job; the Machine Manager and the "
+                "Space Manager are notified.", app_label="maintenance"),
         feature(
             "inventory.maintenance", None, "Inventory maintenance",
-            "Maintenance schedules on inventory products and assets. " + RESERVED,
-            frontend_exposed=False, app_label="maintenance",
+            "Maintenance schedules and logs on inventory items and units, and their work orders.",
+            app_label="maintenance",
         ),
         feature(
             "inventory.tobuy", None, "Inventory To-Buy",
@@ -66,17 +65,23 @@ def definitions(feature):
             "Warranty records and documents on inventory assets.",
             app_label="warranty",
         ),
-        feature("inventory.repairs", None, "Inventory repairs & technicians", RESERVED,
-                frontend_exposed=False),
-        feature("inventory.issue_reporting", None, "Inventory issue reporting", RESERVED,
-                frontend_exposed=False),
+        feature("inventory.repairs", None, "Inventory repairs & technicians",
+                "Repair jobs on items and units: triage, technicians, parts, quotes and payouts.",
+                requires_features=("inventory.maintenance",), app_label="maintenance"),
+        feature("inventory.issue_reporting", None, "Inventory issue reporting",
+                "Borrowers report a problem with an item from their own loan (account-less borrowers by "
+                "their verified email); the Inventory Manager and the Space Manager are notified.",
+                app_label="maintenance"),
         feature(
             "bookings.room_maintenance", "bookings", "Room maintenance",
-            "Maintenance schedules on bookable spaces. " + RESERVED,
-            frontend_exposed=False, app_label="maintenance",
+            "Maintenance schedules and logs on bookable rooms, and their work orders.",
+            app_label="maintenance",
         ),
-        feature("bookings.room_repairs", "bookings", "Room repairs", RESERVED,
-                frontend_exposed=False),
-        feature("bookings.issue_reporting", "bookings", "Room issue reporting", RESERVED,
-                frontend_exposed=False),
+        feature("bookings.room_repairs", "bookings", "Room repairs",
+                "Repair jobs on rooms: technicians, quotes and payouts, and taking a room out of "
+                "service (block or warn new bookings).",
+                requires_features=("bookings.room_maintenance",), app_label="maintenance"),
+        feature("bookings.issue_reporting", "bookings", "Room issue reporting",
+                "Bookers report a problem from their own booking; the Booking Manager and the Space "
+                "Manager are notified.", app_label="maintenance"),
     )

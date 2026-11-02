@@ -68,6 +68,8 @@ SUBJECT_DOMAINS = {
     "loan_rental": "loans",
     "loan_damage": "loans",
     "loan_lost": "loans",
+    # Lane L23: a metered machine session is machine money.
+    "machine_session": "machines",
 }
 
 

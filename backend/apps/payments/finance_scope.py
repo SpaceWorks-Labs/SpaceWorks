@@ -42,6 +42,7 @@ PAYMENT_DOMAINS = {
     "loan_rental": "loans",
     "loan_damage": "loans",
     "loan_lost": "loans",
+    "machine_session": "machines",
 }
 
 

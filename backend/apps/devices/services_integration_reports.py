@@ -66,6 +66,10 @@ def report_job(principal, request_id, serializer):
         _audit_refused(principal, request_id, data["event"], getattr(exc, "default_code", "refused"))
         raise
     _audit_applied(principal, request_id, data["event"], job)
+    # Lane L23: the same report opens or closes the machine's device session (inert
+    # unless `machines.sessions` is on; never raises into the report).
+    from apps.machines.sessions_device import on_agent_report
+    on_agent_report(job, data["event"])
     return job
 
 

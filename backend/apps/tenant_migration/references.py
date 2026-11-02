@@ -92,6 +92,8 @@ PAYMENT_SUBJECT_REFERENCES = {
     "loan_rental": "hardware_requests.HardwareRequest",
     "loan_damage": "hardware_requests.RequesterAccountability",
     "loan_lost": "hardware_requests.RequesterAccountability",
+    # Lane L23: one metered machine session.
+    "machine_session": "machines.MachineSession",
 }
 
 NOTIFICATION_URL_ROUTES = (

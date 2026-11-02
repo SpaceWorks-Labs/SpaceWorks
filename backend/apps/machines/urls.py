@@ -16,6 +16,7 @@ from .views_service_cancel import MemberMachineServiceCancelView, MemberMachineS
 from .views_materials import MaterialListView, MaterialDetailView, PublicTypeIntakeView
 from .views_intake import MachineTypeIntakeView
 from . import views_jobs as jobs, views_jobs_member as job_actions
+from . import views_sessions_member as sessions
 
 urlpatterns = [
     # Lane L12: the uniform job flow (#140/#141).
@@ -52,4 +53,9 @@ urlpatterns = [
     path('public/machine-service/requests/<uuid:public_token>/status', PublicMachineServiceStatusView.as_view(), name='public-machine-service-status'),
     path('member/machine-service/requests/<int:pk>/cancel', MemberMachineServiceCancelView.as_view(), name='member-machine-service-cancel'),
     path('member/machine-service/requests/by-token/<uuid:public_token>/owner', MemberMachineServiceOwnerView.as_view(), name='member-machine-service-owner'),
+    # Lane L23: metered machine sessions (#158), behind `machines.sessions`.
+    path("member/machines/<int:machine_id>/session", sessions.MemberSessionPreviewView.as_view(), name="member-machine-session-preview"),
+    path("member/machines/<int:machine_id>/sessions/start", sessions.MemberSessionStartView.as_view(), name="member-machine-session-start"),
+    path("member/machine-sessions", sessions.MemberSessionListView.as_view(), name="member-machine-sessions"),
+    path("member/machine-sessions/<int:pk>/stop", sessions.MemberSessionStopView.as_view(), name="member-machine-session-stop"),
 ]

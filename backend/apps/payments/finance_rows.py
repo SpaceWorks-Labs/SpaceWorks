@@ -51,6 +51,15 @@ def _machine_types(payment_subjects):
     return {pk: next((value for value in types if value), None) for pk, *types in rows}
 
 
+def _session_types(session_ids):
+    """Lane L23: machine type id per machine session id (frozen on the session)."""
+    if not session_ids:
+        return {}
+    from apps.machines.models import MachineSession
+
+    return dict(MachineSession.objects.filter(pk__in=session_ids).values_list("pk", "machine_type_id"))
+
+
 def _event_ids(registration_ids):
     if not registration_ids:
         return {}
@@ -79,6 +88,7 @@ def money_rows(space, date_range=None):
     payments = {pk: (subject_type, subject_id) for pk, subject_type, subject_id in Payment.objects.filter(
         pk__in=subjects).values_list("pk", "subject_type", "subject_id")}
     machine = _machine_types([sid for kind, sid in payments.values() if kind == "machine_service_request"])
+    sessions = _session_types([sid for kind, sid in payments.values() if kind == "machine_session"])
     events = _event_ids([sid for kind, sid in payments.values() if kind == "event_registration"])
     for row, column, amount_key in [*((r, "income", "collected_amount") for r in collected),
                                     *((r, "refunds", "refunded_amount") for r in refunded)]:
@@ -87,7 +97,8 @@ def money_rows(space, date_range=None):
         yield MoneyRow(
             at=row["date"], column=column, domain=PAYMENT_DOMAINS.get(subject_type, "general"),
             currency=row["currency"], amount=Decimal(row[amount_key]),
-            machine_type_id=machine.get(subject_id) if subject_type == "machine_service_request" else None,
+            machine_type_id=(machine.get(subject_id) if subject_type == "machine_service_request"
+                             else sessions.get(subject_id) if subject_type == "machine_session" else None),
             event_id=events.get(subject_id) if subject_type == "event_registration" else None,
             category=subject_type, account=_account(method),
             provider=method if row["row_kind"] in ("online_settlement", "refund") and method in ONLINE else "",

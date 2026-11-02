@@ -167,3 +167,22 @@ urlpatterns = [
         name='admin-machine-error-logs',
     ),
 ]
+
+# Lane L23: metered machine sessions (#158), behind `machines.sessions`.
+from apps.admin_api.views_machine_session_settings import MachineTypeSessionSettingsView  # noqa: E402
+from apps.admin_api.views_machine_sessions import (  # noqa: E402
+    MachineSessionAmendView, MachineSessionAssignView, MachineSessionConfirmView, MachineSessionListView,
+    MachineSessionStopView,
+)
+
+urlpatterns += [
+    path('makerspaces/<int:makerspace_id>/machine-sessions', MachineSessionListView.as_view(),
+         name='admin-machine-sessions'),
+    path('machine-sessions/<int:pk>/stop', MachineSessionStopView.as_view(), name='admin-machine-session-stop'),
+    path('machine-sessions/<int:pk>/amend', MachineSessionAmendView.as_view(), name='admin-machine-session-amend'),
+    path('machine-sessions/<int:pk>/assign', MachineSessionAssignView.as_view(), name='admin-machine-session-assign'),
+    path('machine-sessions/<int:pk>/confirm', MachineSessionConfirmView.as_view(),
+         name='admin-machine-session-confirm'),
+    path('makerspaces/<int:makerspace_id>/machine-types/<int:type_id>/session-settings',
+         MachineTypeSessionSettingsView.as_view(), name='admin-machine-type-session-settings'),
+]

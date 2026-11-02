@@ -48,6 +48,8 @@ class MakerspaceMachineTypePolicy(models.Model):
     runs_unattended = models.BooleanField(null=True, blank=True)
     # #142 OQ-12: maker_formats groups accepted; empty = the type's built-in default.
     file_groups = models.JSONField(default=list, blank=True)
+    # Lane L23 (#158.5): a live session stops itself after this many minutes (flagged).
+    session_max_minutes = models.PositiveIntegerField(default=240)
 
     class Meta:
         constraints = [models.UniqueConstraint(

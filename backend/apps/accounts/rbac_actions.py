@@ -47,6 +47,13 @@ class Action:
     TRANSFER_STOCK = "transfer_stock"        # superadmin only
     MANAGE_STAFF = "manage_staff"            # superadmin only
     MANAGE_MAKERSPACE = "manage_makerspace"  # superadmin only
+    # Release 2 L16 (#128 C-3): the built-in Technician role holds exactly these three.
+    # WORK_REPAIRS works the repair jobs assigned to the holder; RUN_MAINTENANCE logs
+    # scheduled maintenance and SET_SERVICE_STATE takes a subject in or out of service,
+    # both only within the machine types / items / rooms the person's coverage names.
+    WORK_REPAIRS = "work_repairs"
+    RUN_MAINTENANCE = "run_maintenance"
+    SET_SERVICE_STATE = "set_service_state"
 
 
 IMPLIED_ACTIONS = {
@@ -140,6 +147,8 @@ ROLE_FORBIDDEN_ACTIONS = frozenset({
 ROLE_GRANTABLE_ACTIONS = frozenset(ALL_ACTIONS - ROLE_FORBIDDEN_ACTIONS)
 ORGANIZATION_GRANTABLE_ACTIONS = frozenset(
     ROLE_GRANTABLE_ACTIONS - {Action.MANAGE_MACHINES, Action.MANAGE_DEVICES}
+    # L16: repair work is physical trust inside ONE space, like a device key.
+    - {Action.WORK_REPAIRS, Action.RUN_MAINTENANCE, Action.SET_SERVICE_STATE}
 )
 ROLE_SUPERADMIN_ASSIGNABLE_ACTIONS = frozenset({Action.MANAGE_MAKERSPACE})
 # What counts as handover-only work: taking an accepted request or a finished machine job

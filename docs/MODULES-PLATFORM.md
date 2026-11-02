@@ -144,8 +144,10 @@ Requires `member_accounts`.
 
 - **What it is** — the native-app substrate: attested device sessions, native push and the in-app
   payment sheet.
-- **What it adds** — device registration and revocation, push delivery (feature `mobile.push`), and
-  PaymentSheet when `payments` is also on.
+- **What it adds** — device registration and revocation, push delivery (feature `mobile.push`),
+  watch-friendly push buttons (feature `mobile.watch_actions`, on by default: Open and Mark seen,
+  plus Snooze with inbox snooze; never money or evidence actions), and PaymentSheet when
+  `payments` is also on.
   Canonical push uses per-device children beneath an envelope delivery, independently of inbox
   creation or the inbox module. Current source-tied member/requester accounts qualify under
   recipient policy; device registration still requires active native local selection. Staff

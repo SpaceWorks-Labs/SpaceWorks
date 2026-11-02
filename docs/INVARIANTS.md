@@ -2288,10 +2288,26 @@ never mute a makerspace. Deliberately the opposite of the *access* rules, which 
   parent/device uniqueness. Untouched pending rows are canceled, attempted pending/sending/expired
   work is held, and terminal history stays inert; conversion never sends. Sending activation and
   destructive retirement remain separate operator checkpoints after replay and reconciliation.
-- **Native push payload v2** uses string data `v=2`, `event_id`, `makerspace_id`, `feature`, `event`,
-  optional `inbox_row_id` and an allowlisted local `link`. Canonical event identity is
+- **Native push payload v3** (release 2, L19, #116) keeps every v2 key with its v2 meaning --
+  string data `event_id`, `makerspace_id`, `feature`, `event`, optional `inbox_row_id` and an
+  allowlisted local `link` -- with `v=3`, and only ADDS `channel` (always) and `category`
+  (optional). A v2 app that ignores unknown keys must keep working: never rename, retype or drop a
+  v2 key, never set FCM `click_action` (a v2 app without the intent filter would open nothing on
+  tap), and keep the FCM `notification` block. Canonical event identity is
   `uuid5(NAMESPACE_URL, envelope.dedup_key)`. Content is rendered for the personal recipient,
-  never copied from a room body. Titles name the makerspace; APNs uses its thread ID. Local links
+  never copied from a room body. Titles are the personal notice's subject (staff room alerts keep
+  the space name), at most 40 characters; bodies at most 120, cut at a word boundary. APNs
+  `thread-id` is the makerspace id (`<id>.events` for the events subthread).
+- **Push actions are never decisions (#116, #128 C-27).** `integrations/push_categories.py` owns
+  the action sets: `open`, `mark_seen` (the person's own `POST .../inbox/{ms}/{id}/read`) and
+  `snooze` (`.../snooze`, only while `notifications.inbox_snooze` is on). No push action may
+  approve, reject, pay, refund, issue, return or hand over anything, and money and evidence
+  events carry no `category` at all: every `payments` event, the declared loan/membership
+  charge events, and the handover events whose records carry evidence. Only catalogued events
+  are actionable, and an uncatalogued or money/evidence-sounding event name fails closed. Adding
+  a notification event therefore needs no registry change unless it is money or evidence, which
+  must be declared there. `mobile.watch_actions` (default on) only decides whether `category` is
+  sent; it declares no `requires_features` so switching `mobile.push` off never fails validation. Local links
   must pass both the inbox sanitizer and native link contract. Retained legacy staff matrix legs
   keep their existing stable event/log identifiers and are deliberately pre-skipped in matching
   envelopes. Apps deduplicate and refetch source APIs on tap/foreground. Unsupported links fall

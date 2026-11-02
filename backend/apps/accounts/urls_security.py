@@ -8,6 +8,7 @@ from apps.accounts.views_reauthentication import (
     ReauthenticationEnrollmentEmailView, ReauthenticationEnrollmentConfirmView,
     ReauthenticationSocialFactorView, ReauthenticationPhoneStartView, ReauthenticationPhoneConfirmView,
 )
+from apps.accounts.views_mfa_reset import StaffMfaResetView
 from apps.accounts.views_staff_invitations import (
     StaffInvitationAcceptView, StaffInvitationListView, StaffInvitationResendView, StaffInvitationRevokeView,
 )
@@ -34,4 +35,7 @@ admin_urlpatterns = [
     path("makerspaces/<int:makerspace_id>/staff-invitations", StaffInvitationListView.as_view(), name="admin-staff-invitations"),
     path("makerspaces/<int:makerspace_id>/staff-invitations/<int:invitation_id>/revoke", StaffInvitationRevokeView.as_view(), name="admin-staff-invitation-revoke"),
     path("makerspaces/<int:makerspace_id>/staff-invitations/<int:invitation_id>/resend", StaffInvitationResendView.as_view(), name="admin-staff-invitation-resend"),
+    # S-A: the MFA-reset rule (U-A1 fixed the name; U-B's staff-roles API owns the rest).
+    path("makerspaces/<int:makerspace_id>/staff-roles/<int:membership_id>/mfa-reset", StaffMfaResetView.as_view(),
+         name="admin-staff-roles-mfa-reset"),
 ]

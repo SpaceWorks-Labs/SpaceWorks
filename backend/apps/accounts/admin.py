@@ -15,6 +15,7 @@ from unfold.forms import AdminPasswordChangeForm
 from .admin_account_forms import AccountUserChangeForm, PlatformUserCreationForm
 from .admin_membership_inlines import MakerspaceMembershipInline, StaffTrackMembershipInline
 from .admin_staff_lifecycle import StaffLifecycleAdminMixin
+from .admin_mfa_reset import MfaResetAdminMixin
 from .admin_pii_access import PersonPiiRevealAdminMixin, PlatformPiiAccessGrantAdmin  # noqa: F401 (registers)
 from .admin_pii_masking import PiiMaskingAdminMixin
 from rest_framework.exceptions import APIException
@@ -49,9 +50,9 @@ class RestrictAccessForm(forms.Form):
 
 
 @admin.register(User)
-class UserAdmin(PersonPiiRevealAdminMixin, PiiMaskingAdminMixin, StaffLifecycleAdminMixin, SuperuserOnlyModelAdmin,
-                DjangoUserAdmin, ModelAdmin):
-    actions = ["restrict_access", "restore_access", "reset_password_selected",
+class UserAdmin(PersonPiiRevealAdminMixin, PiiMaskingAdminMixin, StaffLifecycleAdminMixin, MfaResetAdminMixin,
+                SuperuserOnlyModelAdmin, DjangoUserAdmin, ModelAdmin):
+    actions = ["restrict_access", "restore_access", "reset_password_selected", "reset_two_step",
                "set_staff_password", "deactivate_staff_account", "reactivate_staff_account"]
     form = AccountUserChangeForm
     add_form = PlatformUserCreationForm

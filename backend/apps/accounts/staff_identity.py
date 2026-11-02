@@ -15,7 +15,6 @@ mandatory MFA keys on it, with the superadmin exempt (login-security §2).
 """
 
 from django.db.models import Exists, OuterRef, Q
-from rest_framework.exceptions import AuthenticationFailed
 
 PERSON_KIND = "member"
 PLATFORM_KIND = "platform"
@@ -130,15 +129,29 @@ def actor_ids_for(user):
     raise RuntimeError("Merged-account alias chain is deeper than expected.")
 
 
-def require_staff_mfa(user, claims):
-    """Hook for staff routes and staff device grants (interim body; S-A fills the final).
+def require_staff_mfa(user, claims, *, route=None):
+    """The staff gate: every staff route and staff device grant (login-security S-A).
 
-    Provider-asserted proof (social/OIDC) never satisfies an elevated person; then the
-    ordinary MFA floor applies. U-A2 calls it from the staff surface and device grants.
+    Passes only on VERIFIED proof by ``totp``, ``recovery`` or ``passkey`` bound to the
+    live ``UserMFA.version`` (provider, emailed-code, none and bypass proof never pass),
+    or while an unenrolled person's 3-day grace is open (#128 C-1) on a route outside
+    ``mfa_grace.STRICT_ROUTES`` (#135 Q-A3). A browser session past its staff session
+    length or idle timeout is refused too. Refusals are 403s, so the member session
+    itself keeps working.
     """
-    from apps.accounts import mfa_policy
+    from rest_framework.exceptions import PermissionDenied
 
-    source = claims.get("mfa_source") if claims is not None else mfa_policy.source_for(user)
-    if source == mfa_policy.PROVIDER and has_elevated_authority(user):
-        raise AuthenticationFailed("Verify with your authenticator to continue.", code="mfa_required")
-    mfa_policy.assert_verified(user, claims)
+    from apps.accounts import mfa_grace, mfa_policy
+    from apps.accounts.login_security_contract import MFA_ENROLLMENT_REQUIRED, MFA_REQUIRED
+    from apps.accounts.staff_session_policy import assert_staff_session
+
+    assert_staff_session(user, claims)
+    if not mfa_policy.required(user) or mfa_policy.verified_staff_proof(user, claims):
+        return
+    if mfa_policy.staff_factor_enrolled(user):
+        raise PermissionDenied({"detail": "Verify with your second factor to use staff screens.",
+                                "code": MFA_REQUIRED})
+    if route not in mfa_grace.STRICT_ROUTES and mfa_grace.is_open(user):
+        return
+    raise PermissionDenied({"detail": "Set up two-step sign-in to use staff screens.",
+                            "code": MFA_ENROLLMENT_REQUIRED})

@@ -87,7 +87,12 @@ class AuthUserPayload(serializers.Serializer):
     )
     mfa_grace_ends_at = serializers.DateTimeField(
         allow_null=True,
-        help_text="When a person who gained a staff role without a second factor must have enrolled (#128 C-1). Null when no grace applies.",
+        help_text="When a person who gained a staff role without a second factor must have enrolled (#128 C-1). "
+                  "Null when no grace applies. In the past means staff screens refuse with "
+                  "mfa_enrollment_required until they enrol; member features keep working.",
+    )
+    mfa_enrolment_due = serializers.BooleanField(
+        help_text="The person holds elevated authority and has no second factor (authenticator or passkey) yet.",
     )
 
     def get_fields(self):

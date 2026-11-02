@@ -12,7 +12,7 @@ from apps.accounts.org_payload import (
     membership_makerspace_entry,
     organization_makerspace_entries,
 )
-from apps.accounts.payload_tracks import mfa_grace_ends_at, session_rows, staff_role_entries
+from apps.accounts.payload_tracks import mfa_enrolment_due, mfa_grace_ends_at, session_rows, staff_role_entries
 from apps.accounts.staff_identity import has_elevated_authority, has_staff_role, is_person, is_platform
 from apps.accounts.surface_policy import token_kind
 
@@ -111,6 +111,7 @@ def user_payload(user, request=None, *, session_authority=None):
         # A platform account has no memberships; the console reads its per-space actions here.
         "superadmin_actions": sorted(rbac.ROLE_GRANTABLE_ACTIONS) if is_superadmin else [],
         "mfa_grace_ends_at": mfa_grace_ends_at(user),
+        "mfa_enrolment_due": mfa_enrolment_due(user),
     }
 
 

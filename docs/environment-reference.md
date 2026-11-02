@@ -273,15 +273,18 @@ later changes; the command validates the full state and records an audit event i
 
 ## Two-step sign-in
 
-Superadmins sign in with a password and may opt in to TOTP; staff enrollment is required
-when a space enables `security.staff_mfa_required` in its Security settings (the Space Manager or a
-superadmin changes it, with a fresh identity check; a superadmin can lock it on). No setting or key is needed. Members can opt in at `/mfa`. Secrets use the
-existing `API_CLIENT_ENC_KEY` encryption; recovery codes are hashed. No separate key is needed.
+Superadmins sign in with a password and may opt in to TOTP. Every staff role in every space
+must have two-step sign-in (an authenticator app or a passkey; release 2, #62): it is a platform rule
+with no setting, and newly appointed staff get three days to set it up. Members can opt in at `/mfa`.
+Secrets use the existing `API_CLIENT_ENC_KEY` encryption; recovery codes are hashed. No separate key is
+needed.
 
 `Platform login methods` in `/control/` shows `mfa_enabled` read-only (existing deployments
-default on). Setup chooses it at install; change it later with `manage.py set_login_methods --mfa on|off`. Turning it off overrides staff-MFA-required spaces, pauses challenges,
-enrollment and recovery-code regeneration, and keeps existing authenticators; disable remains
-available. Sessions issued while bypassing required/enrolled MFA cannot continue after re-enabling,
+default on) and the `passkeys_enabled` switch (default on; passkeys are offered, never required).
+Setup chooses `mfa_enabled` at install ("Let members turn on two-step sign-in too?"); change it later
+with `manage.py set_login_methods --mfa on|off`. It governs MEMBER opt-in only: turning it off pauses
+member challenges, enrollment and recovery-code regeneration and keeps existing authenticators; it
+never pauses staff MFA. Disable remains available. Sessions issued while bypassing required/enrolled MFA cannot continue after re-enabling,
 even after refresh rotation. Identity-provider sign-ins skip local TOTP by owner decision and
 carry provider proof; credential resets/disable still revoke them. Django control sessions also
 carry source and credential version, so host recovery requires a fresh password login.

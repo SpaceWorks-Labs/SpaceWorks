@@ -4,12 +4,13 @@ import type { MachineServiceRequest } from "../../../../generated/api";
 
 // "Active" (everything not yet finished) is the default so running and ready jobs are never hidden
 // behind an empty Pending tab — the pre-revamp console listed every job at once.
-const ACTIVE = new Set(["pending", "accepted", "in_progress", "completed", "failed"]);
+const ACTIVE = new Set(["pending", "changes_requested", "quoted", "accepted", "in_progress", "completed", "failed"]);
 const statuses = [
-  { key: "active", label: "Active" }, { key: "pending", label: "Pending" }, { key: "accepted", label: "Accepted" },
+  { key: "active", label: "Active" }, { key: "pending", label: "Pending" },
+  { key: "changes_requested", label: "Needs changes" }, { key: "quoted", label: "Quote sent" }, { key: "accepted", label: "Accepted" },
   { key: "in_progress", label: "In progress" }, { key: "completed", label: "Ready" },
-  { key: "collected", label: "Collected" }, { key: "failed", label: "Failed" }, { key: "rejected", label: "Rejected" },
-  { key: "cancelled", label: "Cancelled" }, { key: "all", label: "All jobs" },
+  { key: "collected", label: "Collected" }, { key: "uncollected", label: "Not collected" }, { key: "failed", label: "Failed" },
+  { key: "rejected", label: "Rejected" }, { key: "cancelled", label: "Cancelled" }, { key: "all", label: "All jobs" },
 ];
 /** Status keys a `?job_status=` deep link may open (dashboard work queues link straight to one). */
 export const serviceQueueStatusKeys = statuses.map(item => item.key);

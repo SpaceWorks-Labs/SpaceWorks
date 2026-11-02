@@ -37,8 +37,9 @@ class MachineTypeAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
     formfield_overrides = {
         models.JSONField: {
             "help_text": (
-                "requires_booking is not yet enforced. Machine time bookings are "
-                "not available; this flag does not block service requests or job starts."
+                "requires_booking: with Machine time booking on, a person using a machine of "
+                "this type must hold a live booking on it, and nobody may start a job while "
+                "someone else holds it."
             ),
         },
     }

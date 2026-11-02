@@ -23,6 +23,7 @@ export function MemberServiceRequestRows({ rows, makerspaceSlug }: { rows: Membe
       : item.queue_position ? `Queue ${item.queue_position}` : undefined}
     right={<div className="grid justify-items-start gap-2">
       <StatusPill label={serviceStatusLabel(item.status)} tone={serviceStatusTone(item.status)} />
+      {item.request_id ? <Link className="desk-button-ghost" to={tenantPath(`member/machine-jobs/${item.request_id}`)}>Open job</Link> : null}
       {item.public_token ? <Link className="desk-button-ghost" to={tenantPath(`machine-service/requests/${item.public_token}`)}>Track job</Link> : null}
       {item.can_cancel && item.request_id ? <ServiceCancelButton title={item.title}
         onCancel={() => cancelOwnServiceRequest(item.request_id!)}

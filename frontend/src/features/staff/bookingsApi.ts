@@ -26,7 +26,7 @@ export type BookableSpace = {
   public_token: string;
   makerspace_id: number;
   name: string;
-  kind: "dev_room" | "bench" | "meeting" | "other";
+  kind: "dev_room" | "bench" | "meeting" | "other" | "machine";
   description: string;
   capacity: number;
   location: string;
@@ -39,6 +39,8 @@ export type BookableSpace = {
   custom_form: CustomFormSchema;
   requester_notifications_enabled: boolean | null;
   machine_type?: number | null;
+  /** Machine time booking (`machines.time_booking`): this resource is one machine's time. */
+  machine?: number | null;
   effective_requester_notifications_enabled: boolean;
   is_active: boolean;
   created_by_id: number | null;
@@ -49,7 +51,7 @@ export type BookableSpace = {
 export type BookableSpacePayload = Pick<BookableSpace,
   "name" | "kind" | "description" | "capacity" | "location" | "is_public" |
   "show_public_availability" | "show_public_booker_names" |
-  "custom_form" | "requester_notifications_enabled" | "payment_amount" | "machine_type"
+  "custom_form" | "requester_notifications_enabled" | "payment_amount" | "machine_type" | "machine"
 >;
 
 export type Booking = {

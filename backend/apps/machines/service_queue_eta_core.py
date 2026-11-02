@@ -85,8 +85,17 @@ class Timeline:
             lane = self.lanes[machine.id] = _Lane()
             jobs = per_machine.get(machine.id, [])
             lane.length = len(jobs)
-            if len(jobs) > 1:
+            batches = {job.batch_id for job in jobs}
+            if len(jobs) > 1 and (len(batches) > 1 or None in batches):
                 lane.known, lane.reasons = False, {UNKNOWN_RUN}
+            elif len(jobs) > 1:
+                # One batch run (#142 OQ-9): the machine frees when its longest job ends.
+                released = [_release(self.now, job) for job in jobs]
+                if any(remaining is None for remaining, _ in released):
+                    lane.known, lane.reasons = False, set().union(*(reasons for _, reasons in released))
+                else:
+                    lane.free = max(remaining for remaining, _ in released)
+                    lane.reasons = set().union(*(reasons for _, reasons in released))
             elif jobs:
                 # A coherent running row governs availability whatever the machine flag says.
                 remaining, reasons = _release(self.now, jobs[0])
@@ -157,6 +166,9 @@ class Timeline:
         reasons = set()
         if any(self.lanes[mid].scopes - {scope.key} for mid in eligible):
             reasons.add(COMPETING)
+        if job.machine_id in eligible:
+            # A job staff pre-assigned to a machine binds to that lane (#141 board).
+            eligible = [job.machine_id]
         known = [mid for mid in eligible if self.lanes[mid].known]
         unknown = [mid for mid in eligible if not self.lanes[mid].known]
         best = min(known, key=lambda mid: (self.lanes[mid].free, mid)) if known else None

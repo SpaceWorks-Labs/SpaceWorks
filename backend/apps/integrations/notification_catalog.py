@@ -27,10 +27,15 @@ FEATURE_EVENTS = {
         # Lane L15: rental, damage and lost charges, and staff fee waivers.
         "rental_raised", "damage_charged", "lost_charged", "fees_waived",
         "overdue_escalated", "back_available", "problem_report.filed",
+        # Lane L12: withdrawn and expired requests, and a waitlist offer.
+        "cancelled", "expired", "waitlist_offer",
     ),
     F.PRINTING: (
         "submitted", "accepted", "started", "rejected", "completed", "failed",
         "collected", "reprinted", "next", "cancelled",
+        # Lane L12, the uniform job flow (#141): review, quotes, re-queue, pickup.
+        "changes_requested", "resubmitted", "quoted", "quote_reminder", "quote_approved", "quote_declined",
+        "quote_expired", "requeued", "pickup_reminder", "uncollected", "no_show_flagged",
     ),
     F.EVENTS: (
         "published", "cancelled", "completed", "registration_created",
@@ -63,7 +68,7 @@ FEATURE_EVENTS = {
                  "refund_request_declined", "paid_claim_received", "paid_claim_confirmed",
                  "paid_claim_rejected", "settlement_awaiting_confirmation", "capture_flagged",
                  "dispute_opened"),
-    F.STOCK: ("low_stock", "procurement_received", "scheduled", "completed"),
+    F.STOCK: ("low_stock", "procurement_received", "scheduled", "completed", "to_buy_created"),
     F.CERTIFICATIONS: ("granted", "revoked", "expiring", "expired"),
 }
 from .notification_catalog_events_programme import PROGRAMME_EVENTS

@@ -18,11 +18,12 @@ import { InventoryItemDetail } from "./InventoryItemDetail";
 import { ListViewControls } from "../ListViewControls";
 import { plural } from "../../../lib/plural";
 import { KitDefinitionEditor } from "../../inventory/KitChecklist";
-import { featureEnabled } from "../../../lib/features";
+import { capabilityOn, featureEnabled } from "../../../lib/features";
 import { useReorderSuggestions } from "./ReorderSuggestions";
 import { invalidateInventoryViews } from "../queryInvalidation";
 import { useDomainSettingsDialog } from "../useDomainSettingsDialog";
 import { MakerspaceLoanPolicySettings } from "../MakerspaceLoanPolicySettings";
+import { LoanReservationPolicySettings } from "../LoanReservationPolicySettings";
 import { categoryResults, type CategoryListResponse, type Makerspace, useStaffGet } from "./shared";
 import {
   adjustPayload,
@@ -56,7 +57,8 @@ export function Inventory({ makerspace, canViewAudit = false, canUseToBuy = fals
   const [addOpen, setAddOpen] = useState(false);
   // The loan policy (loan period, renewals, limits) belongs to the Inventory Manager, not only the Space Manager.
   const domainSettings = useDomainSettingsDialog(makerspace.id, "inventory", canEditInventory,
-    (makerspace.enabled_modules ?? []).includes("request_workflow") ? <MakerspaceLoanPolicySettings makerspaceId={makerspace.id} /> : undefined);
+    (makerspace.enabled_modules ?? []).includes("request_workflow") ? <><MakerspaceLoanPolicySettings makerspaceId={makerspace.id} />
+      {["loans.pickup_windows", "loans.reservations", "loans.waitlist"].some(key => capabilityOn(makerspace, key)) ? <LoanReservationPolicySettings makerspaceId={makerspace.id} /> : null}</> : undefined);
   useQuickCreate("item", () => { setForm(emptyForm); setAddOpen(true); });
   const [fixTarget, setFixTarget] = useState<AdminProduct | null>(null);
   const [assetFixTarget, setAssetFixTarget] = useState<AdminProduct | null>(null);
@@ -213,7 +215,7 @@ export function Inventory({ makerspace, canViewAudit = false, canUseToBuy = fals
   const addItem = { label: "Add item", onClick: () => { setForm(emptyForm); setAddOpen(true); } };
   const href = (archived: string, low: string, out: string) => { const next = new URLSearchParams(params); next.set("archived", archived); next.set("low_stock", low); next.set("out_of_stock", out); next.delete("page"); return `?${next}`; };
   const activeTab = showArchived ? "archived" : outOfStock ? "out" : showLowStock ? "low" : "all";
-  if (addOpen) return <ItemModal title="Add item" open onClose={() => setAddOpen(false)} form={form} setForm={setForm} categories={categoryRows} includeQuantities pending={create.isPending} error={create.error?.message} onSubmit={() => create.mutate()}>
+  if (addOpen) return <ItemModal title="Add item" open onClose={() => setAddOpen(false)} form={form} setForm={setForm} categories={categoryRows} makerspace={makerspace} includeQuantities pending={create.isPending} error={create.error?.message} onSubmit={() => create.mutate()}>
     {kitEnabled ? <KitDefinitionEditor value={form.kit_components ?? []} onChange={value => setForm(current => ({ ...current, kit_components: value }))} /> : null}
   </ItemModal>;
   return (

@@ -29,6 +29,7 @@ class WarrantySerializer(serializers.ModelSerializer):
     machine_name = serializers.SerializerMethodField()
     status = serializers.SerializerMethodField()
     documents = WarrantyDocumentSerializer(many=True, read_only=True)
+    vendor_id = serializers.IntegerField(read_only=True, allow_null=True)
 
     class Meta:
         model = Warranty
@@ -46,6 +47,7 @@ class WarrantySerializer(serializers.ModelSerializer):
             "warranty_expires_on",
             "vendor_name",
             "vendor_contact",
+            "vendor_id",
             "status",
             "documents",
         ]
@@ -92,6 +94,8 @@ class WarrantyUpsertSerializer(serializers.Serializer):
     warranty_expires_on = serializers.DateField(allow_null=True, required=False)
     vendor_name = serializers.CharField(max_length=200, allow_blank=True, required=False)
     vendor_contact = serializers.CharField(max_length=200, allow_blank=True, required=False)
+    vendor_id = serializers.IntegerField(allow_null=True, required=False, min_value=1,
+                                         help_text="A saved vendor of this makerspace (inventory.vendors).")
 
 
 class WarrantyDocumentPresignSerializer(serializers.Serializer):

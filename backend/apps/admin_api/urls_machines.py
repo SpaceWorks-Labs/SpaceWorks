@@ -1,5 +1,7 @@
 from django.urls import path
 
+from apps.admin_api.views_machine_downtime import MachineDowntimeView, MachineLockoutView
+
 from apps.admin_api.views_machine_candidates import MachineOperatorCandidatesView
 from apps.admin_api.views_machine_consumables import (
     MachineConsumableCandidatesView,
@@ -86,6 +88,9 @@ urlpatterns = [
         MachineSetStatusView.as_view(),
         name='admin-machine-set-status',
     ),
+    # Lane L12: the downtime ledger and maintenance lockout (machines.maintenance).
+    path('machines/<int:pk>/downtime', MachineDowntimeView.as_view(), name='admin-machine-downtime'),
+    path('machines/<int:pk>/lockout', MachineLockoutView.as_view(), name='admin-machine-lockout'),
     path(
         'machines/<int:pk>/retire',
         MachineRetireView.as_view(),

@@ -29,7 +29,7 @@ export function BookingDiscoverPage() {
     <div className="grid gap-5">
       <form aria-label="Find resources" className="desk-panel flex flex-wrap items-end gap-3 p-4" onSubmit={(e) => { e.preventDefault(); setFilters(draft); setPage(1); }}>
         <label className={`${field} basis-full sm:basis-64 sm:flex-1`}>Search resources<input className="desk-input w-full" maxLength={200} value={draft.q} onChange={(e) => setDraft({ ...draft, q: e.target.value })} /></label>
-        <label className={field}>Kind<select className="desk-input w-full" value={draft.kind} onChange={(e) => setDraft({ ...draft, kind: e.target.value })}><option value="">All resources</option><option value="dev_room">Development room</option><option value="meeting">Meeting room</option><option value="bench">Bench</option><option value="other">Other</option></select></label>
+        <label className={field}>Kind<select className="desk-input w-full" value={draft.kind} onChange={(e) => setDraft({ ...draft, kind: e.target.value })}><option value="">All resources</option><option value="dev_room">Development room</option><option value="meeting">Meeting room</option><option value="bench">Bench</option><option value="other">Other</option><option value="machine">Machine time</option></select></label>
         <label className={field}>Location<input className="desk-input w-full" maxLength={255} value={draft.location} onChange={(e) => setDraft({ ...draft, location: e.target.value })} /></label>
         <button type="submit" className="desk-button-primary w-full sm:w-auto">Search</button>
       </form>

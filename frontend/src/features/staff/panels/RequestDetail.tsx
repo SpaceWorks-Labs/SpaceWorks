@@ -29,7 +29,8 @@ export function RequestDetail({ row, canViewAudit, primary, secondary, menu, ext
       row.return_due_at ? <span>Due <RelativeTime date={row.return_due_at} /></span> : "No due date set"]}
     actions={{ overflow: menu }} tabs={tabs} activeTab={active} state={{ status: "ready" }}
     main={active === "evidence" ? <RequestEvidence row={row} /> : active === "timeline" ? <RequestTimelineBlock requestId={row.id} /> : <div className="grid gap-6">
-      <StatusStepper status={row.status} />
+      {row.status === "cancelled" || row.status === "expired" ? <p className="rounded-xl border border-line p-4 text-sm text-muted">{row.status === "expired"
+        ? "Expired: it was not collected before the pickup deadline, so its items went back on the shelf." : "Cancelled before it was handed over."}</p> : <StatusStepper status={row.status} />}
       <section aria-label="Items"><h2 className="title-panel mb-3">Items</h2><div className="grid gap-3">{row.items.map(item => <ListRow key={item.id} title={item.product_name}
         meta={<>{item.storage_location ? `Shelf: ${item.storage_location} · ` : ""}{item.requires_asset_qr ? "QR-tracked" : "Quantity-tracked"}</>}
         right={<span className="tabular-nums">{row.status === "pending_approval" ? item.requested_quantity : row.status === "accepted" ? item.accepted_quantity : item.issued_quantity} / {item.requested_quantity}</span>} />)}</div></section>
@@ -46,6 +47,8 @@ export function RequestDetail({ row, canViewAudit, primary, secondary, menu, ext
       ...(actors.accepted_by ? [{ label: "Accepted by", value: formatActor(actors.accepted_by) }] : []),
       ...(actors.issued_by ? [{ label: "Issued by", value: formatActor(actors.issued_by) }] : []),
       ...(row.return_reminder_sent_at ? [{ label: "Reminder sent", value: <RelativeTime date={row.return_reminder_sent_at} /> }] : []),
+      ...(row.pickup_from ? [{ label: "Collect from", value: new Date(row.pickup_from).toLocaleString() }] : []),
+      ...(row.pickup_until ? [{ label: "Pickup deadline", value: new Date(row.pickup_until).toLocaleString() }] : []),
     ]} /> : undefined}
     footer={{ primary, secondary: secondary ? [secondary] : [] }} />
   </div>;

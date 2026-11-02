@@ -14,3 +14,5 @@ class MachinesConfig(AppConfig):
         register_certifications()
         register_maintenance()
         register_stock()
+        from .notifications_job_flow import register as register_job_flow
+        register_job_flow()

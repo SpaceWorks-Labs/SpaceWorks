@@ -11,6 +11,8 @@ import { PriceOverrideCard } from "../pricing/PriceOverrideCard";
 import { IndividualAssets, InventoryAvailability, LendingHistory, QrHistory, QuantityAdjust } from "./InventoryPanelParts";
 import { formFromProduct, type AdjustmentForm, type AdminProduct, type ItemForm } from "./InventoryPanelShared";
 import type { Category, Makerspace } from "./shared";
+import { capabilityOn } from "../../../lib/features";
+import { ItemWaitlist } from "./ItemWaitlist";
 export function InventoryItemDetail({ product, makerspace, canViewAudit, kitEnabled, form, setForm, categories, onClose, pending, error, onSave, onArchive,
   adjustForm, setAdjustForm, adjustPending, adjustError, onAdjust, invalidate }: {
   product: AdminProduct; makerspace: Makerspace; canViewAudit: boolean; kitEnabled: boolean; form: ItemForm; setForm: Dispatch<SetStateAction<ItemForm>>;
@@ -30,7 +32,7 @@ export function InventoryItemDetail({ product, makerspace, canViewAudit, kitEnab
     actions={product.is_public ? { secondary: { label: "View public page ↗", href: `/m/${makerspace.slug}/items/${product.id}`, external: true } } : undefined}
     tabs={allowed.map(key => ({ key, label: ({ details: "Details", stock: "Stock", qr: "QR & assets", history: "History", custody: "Custody" } as Record<string, string>)[key], href: href(key) }))} activeTab={active}
     main={<>
-      {active === "details" ? <><InventoryItemFields form={form} setForm={setForm} categories={categories} error={error}>
+      {active === "details" ? <><InventoryItemFields form={form} setForm={setForm} categories={categories} error={error} makerspace={makerspace}>
         {kitEnabled ? <KitDefinitionEditor value={form.kit_components ?? []} onChange={value => setForm(current => ({ ...current, kit_components: value }))} /> : null}
         <ImageUploader endpoint={`/admin/inventory/${product.id}/image`} currentUrl={product.image_url} label="Item photo" onChanged={invalidate} />
         <PriceOverrideCard makerspaceId={makerspace.id} targetType="inventory_product" targetId={product.id} />
@@ -39,7 +41,8 @@ export function InventoryItemDetail({ product, makerspace, canViewAudit, kitEnab
         ["Total", product.total_quantity], ["Available", product.available_quantity], ["Issued", product.issued_quantity], ["Damaged", product.damaged_quantity], ["Lost", product.lost_quantity],
       ].map(([label, value]) => <StatCard key={label} label={String(label)} value={value} />)}</div>
         <QuantityAdjust product={product} form={adjustForm} setForm={setAdjustForm} pending={adjustPending} error={adjustError} onSubmit={onAdjust} />
-        {product.tracking_mode === "individual" ? <IndividualAssets productId={product.id} makerspaceId={makerspace.id} refreshInventory={invalidate} /> : null}</div> : null}
+        {product.tracking_mode === "individual" ? <IndividualAssets productId={product.id} makerspaceId={makerspace.id} refreshInventory={invalidate} /> : null}
+        {capabilityOn(makerspace, "loans.waitlist") ? <ItemWaitlist makerspaceId={makerspace.id} productId={product.id} /> : null}</div> : null}
       {active === "qr" ? <><QrHistory defaultOpen title="Product QR history" queryKey={["product-qr-history", product.id]} path={`/admin/inventory/${product.id}/qr-history`} />{product.tracking_mode === "individual" ? <IndividualAssets productId={product.id} makerspaceId={makerspace.id} refreshInventory={invalidate} /> : null}</> : null}
       {active === "history" && canViewAudit ? <LendingHistory productId={product.id} /> : null}
       {active === "custody" && canViewAudit ? <ChainOfCustodyBlock productId={product.id} /> : null}

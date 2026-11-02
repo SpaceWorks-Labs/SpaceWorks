@@ -29,6 +29,20 @@ class PublicMachineDetailSerializer(PublicMachineSerializer):
         return {"id": machine.machine_type_id, "name": machine.machine_type.name, "icon": machine.machine_type.icon}
     status_since = serializers.DateTimeField(read_only=True)
     training_required = serializers.SerializerMethodField()
+    expected_back_on = serializers.SerializerMethodField()
+
+    @extend_schema_field(serializers.DateField(allow_null=True))
+    def get_expected_back_on(self, machine):
+        """While out of service: the DATE staff expect it back (downtime ledger). No reason text."""
+        if machine.status not in ("maintenance", "offline"):
+            return None
+        from .models import MachineDowntime
+        row = MachineDowntime.objects.filter(machine=machine, ended_at__isnull=True,
+                                             expected_back_at__isnull=False).first()
+        if row is None:
+            return None
+        from apps.makerspaces.local_time import to_local
+        return to_local(machine.makerspace, row.expected_back_at).date()
     queue = serializers.SerializerMethodField()
 
     @extend_schema_field(serializers.BooleanField(allow_null=True))

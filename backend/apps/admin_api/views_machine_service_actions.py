@@ -10,6 +10,7 @@ from apps.admin_api.serializers_machine_service import (
     MachineServiceRequestSerializer,
     ServiceAcceptSerializer,
     ServiceCancelSerializer,
+    ServiceCollectSerializer,
     ServiceCompleteSerializer,
     ServiceFailSerializer,
     ServiceRejectSerializer,
@@ -54,7 +55,7 @@ class _MachineServiceActionView(APIView):
         elif self.operation == "fail":
             row = service_workflow.fail(row, request.user, **data)
         elif self.operation == "collect":
-            row = service_workflow.collect(row, request.user)
+            row = service_workflow.collect(row, request.user, **data)
         elif self.operation == "reprint":
             row = service_workflow.create_reprint(row, request.user)
         elif self.operation == "cancel":
@@ -106,10 +107,13 @@ class MachineServiceFailView(_MachineServiceActionView):
 
 
 class MachineServiceCollectView(_MachineServiceActionView):
-    operation = "collect"
+    input_serializer, operation = ServiceCollectSerializer, "collect"
     collect_partition = True
 
-    @extend_schema(tags=["Admin machine service"], summary="Mark a machine service request collected", request=EmptyServiceActionSerializer, responses={200: MachineServiceRequestSerializer, **SERVICE_ERRORS})
+    @extend_schema(tags=["Admin machine service"], summary="Mark a machine service request collected",
+                   description="Whoever collects shows the job's pickup code (typed or scanned); without it, "
+                               "staff hand over to the member in person. The collector's name is recorded.",
+                   request=ServiceCollectSerializer, responses={200: MachineServiceRequestSerializer, **SERVICE_ERRORS})
     def post(self, request, pk, *args, **kwargs):
         return super().post(request, pk, *args, **kwargs)
 

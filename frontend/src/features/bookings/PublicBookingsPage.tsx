@@ -24,6 +24,7 @@ const KIND_LABELS: Record<PublicBookableSpace["kind"], string> = {
   bench: "Bench",
   meeting: "Meeting room",
   other: "Other",
+  machine: "Machine time",
 };
 
 export function PublicBookingsPage() {

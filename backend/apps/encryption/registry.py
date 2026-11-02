@@ -42,7 +42,7 @@ SOURCE_FIELDS = (
     *_fields("makerspaces.InvitationRequest", ("name", "email", "phone"), "makerspace_id", "source", ((200, 254, 32), ("none", "none", "none"))),
     *_fields("makerspaces.MembershipRequest", ("application_answers",), "makerspace_id", "source", ((None,), ("none",))),
     *_fields("bookings.Booking", ("name", "email", "phone", "note"), "space.makerspace_id", "source", ((200, 254, 32, None), ("none", "none", "none", "none"))),
-    *_fields("machines.MachineServiceRequest", ("requester_name", "contact_email", "contact_phone"), "makerspace_id", "source", ((None, None, None), ("bloom", "bloom_exact", "none"))),
+    *_fields("machines.MachineServiceRequest", ("requester_name", "contact_email", "contact_phone", "collected_by_name"), "makerspace_id", "source", ((None, None, None, None), ("bloom", "bloom_exact", "none", "none"))),
     *_fields("machines.MachineUsageEntry", ("requester_name", "contact_email", "contact_phone", "note"), "machine.makerspace_id", "source", ((120, 254, 40, None), ("bloom", "bloom_exact", "none", "none"))),
 )
 

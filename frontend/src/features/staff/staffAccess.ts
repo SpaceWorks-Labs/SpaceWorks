@@ -3,6 +3,7 @@ const ALL_TABS = [
   "dashboard", "notifications", "channels", "requests", "direct", "handover", "inventory", "needsfix", "categories", "machines", "events", "organized", "granted", "bookings", "members", "cards", "tobuy", "transfers",
   "stocktake", "containers", "ledger", "reports", "accountability", "warranty", "bulk", "qr", "scanner", "api", "settings", "security", "emailtemplates", "users", "platform", "audit",
   "devices", "email-logs", "payments", "refunds", "finance", "organizations", "organization-analytics", "modules", "exports", "backups", "migration",
+  "consumables",
 ] as const;
 
 export const STAFF_TAB_KEYS: readonly string[] = ALL_TABS;
@@ -40,6 +41,7 @@ export const TAB_LABELS: Record<string, string> = {
   members: "Members",
   cards: "Member cards",
   tobuy: "To Buy",
+  consumables: "Consumables",
   reports: "Reports",
   "organization-analytics": "Organization analytics",
   organizations: "Organizations",
@@ -63,7 +65,7 @@ export const TAB_LABELS: Record<string, string> = {
 };
 
 export const TAB_GROUPS: { label: string; tabs: string[] }[] = [
-  { label: "Operate", tabs: ["dashboard", "notifications", "channels", "requests", "direct", "handover", "payments", "refunds", "finance", "ledger", "transfers", "stocktake", "tobuy"] },
+  { label: "Operate", tabs: ["dashboard", "notifications", "channels", "requests", "direct", "handover", "payments", "refunds", "finance", "ledger", "transfers", "stocktake", "tobuy", "consumables"] },
   { label: "Inventory", tabs: ["inventory", "categories", "needsfix", "containers", "bulk", "qr", "scanner"] },
   { label: "Machines", tabs: ["machines", "devices"] },
   { label: "Events", tabs: ["events", "organized", "granted"] },
@@ -145,6 +147,8 @@ export function getStaffAccess(
     // Personal delivery channels belong to a staff account, not to the space.
     if (tabName === "channels") return !isSuperadmin && actions.length > 0;
     if (tabName === "tobuy") return canUseToBuy;
+    // The merged list reads items (view_inventory) and machine/pool rows (machine scope).
+    if (tabName === "consumables") return canViewInventory || canSeePrinting;
     if (tabName === "needsfix") return canEditInventory;
     if (tabName === "categories") return canEditInventory;
     if (tabName === "bulk") return canEditInventory;

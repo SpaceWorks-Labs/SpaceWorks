@@ -155,3 +155,5 @@ def register():
     register_source("hardware.fee_waiver", NotificationSource(eligible_waiver))
     from .notifications_p2_contact import register_source as register_contact
     register_contact()
+    from .notifications_loans import register as register_loans
+    register_loans()

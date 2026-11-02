@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { RequestCartItem } from "../../types/inventory";
 import { ContactFields, type ContactDetails } from "./ContactFields";
 
@@ -18,6 +19,8 @@ type BorrowRequestCardProps = {
   onWebsiteChange?: (value: string) => void;
   // Present only for a makerspace without member accounts: the borrower has no account.
   contact?: ContactDetails;
+  /** Extra request fields (the collection window), placed before the purpose. */
+  extraFields?: ReactNode;
 };
 
 export function BorrowRequestCard({
@@ -34,6 +37,7 @@ export function BorrowRequestCard({
   website = "",
   onWebsiteChange,
   contact,
+  extraFields,
 }: BorrowRequestCardProps) {
   return (
     <div className="min-w-0">
@@ -73,6 +77,7 @@ export function BorrowRequestCard({
 
       <div className="mt-5 space-y-3">
         {contact ? <ContactFields contact={contact} /> : null}
+        {extraFields}
         <label
           aria-hidden="true"
           className="absolute left-[-10000px] top-auto h-px w-px overflow-hidden"

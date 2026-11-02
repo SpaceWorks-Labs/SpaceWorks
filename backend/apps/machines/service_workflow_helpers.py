@@ -9,12 +9,16 @@ from apps.machines.service_errors import ServiceConsumptionInvalid, ServiceInval
 from apps.machines.printer_capabilities import is_printer_type, validate_service_payload
 
 
-_CANCELLED = MachineServiceRequest.Status.CANCELLED
+_S = MachineServiceRequest.Status
+_CANCELLED = _S.CANCELLED
+# The job lifecycle (#141): every edge is taken here and nowhere else.
 _ALLOWED = {
-    MachineServiceRequest.Status.PENDING: {MachineServiceRequest.Status.ACCEPTED, MachineServiceRequest.Status.REJECTED, _CANCELLED},
-    MachineServiceRequest.Status.ACCEPTED: {MachineServiceRequest.Status.IN_PROGRESS, _CANCELLED},
-    MachineServiceRequest.Status.IN_PROGRESS: {MachineServiceRequest.Status.COMPLETED, MachineServiceRequest.Status.FAILED, _CANCELLED},
-    MachineServiceRequest.Status.COMPLETED: {MachineServiceRequest.Status.COLLECTED},
+    _S.PENDING: {_S.ACCEPTED, _S.REJECTED, _CANCELLED, _S.CHANGES_REQUESTED, _S.QUOTED},
+    _S.CHANGES_REQUESTED: {_S.PENDING, _S.REJECTED, _CANCELLED},
+    _S.QUOTED: {_S.ACCEPTED, _S.QUOTED, _S.CHANGES_REQUESTED, _S.REJECTED, _CANCELLED},
+    _S.ACCEPTED: {_S.IN_PROGRESS, _CANCELLED, _S.CHANGES_REQUESTED},
+    _S.IN_PROGRESS: {_S.COMPLETED, _S.FAILED, _CANCELLED},
+    _S.COMPLETED: {_S.COLLECTED, _S.UNCOLLECTED},
 }
 
 
@@ -120,7 +124,16 @@ def _release_hold(service_request, actor, *, reason, consumed=None):
 def _release_queue_machine(service_request, actor=None):
     if service_request.assigned_machine_id:
         machine = Machine.objects.select_for_update(no_key=True).get(pk=service_request.assigned_machine_id)
-        if machine.status == Machine.Status.RUNNING:
+        # A batch run (#142 OQ-9) holds the machine until its LAST job ends.
+        still_running = MachineServiceRequest.objects.filter(
+            assigned_machine_id=machine.pk, status=MachineServiceRequest.Status.IN_PROGRESS,
+        ).exclude(pk=service_request.pk).exists()
+        if service_request.batch_id and not still_running:
+            from .models import MachineJobBatch
+            from django.utils import timezone
+            MachineJobBatch.objects.filter(pk=service_request.batch_id, ended_at__isnull=True).update(
+                ended_at=timezone.now())
+        if machine.status == Machine.Status.RUNNING and not still_running:
             from .status_tracking import change_status
             change_status(machine, Machine.Status.IDLE, source="service_release", actor=actor)
 

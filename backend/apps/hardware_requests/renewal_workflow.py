@@ -64,7 +64,8 @@ def check_renewal(loan, policy, *, actor=None, staff=False):
         makerspace_id=loan.makerspace_id,
         items__product_id__in=[product.pk for product in products],
     ).exclude(requester=borrower)
-    if waiting.exists():
+    from apps.hardware_requests.waitlist import someone_waiting
+    if waiting.exists() or someone_waiting(product.pk for product in products):
         _refuse("request_waiting", "Another borrower is waiting for an item in this loan.")
 
 

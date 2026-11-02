@@ -884,6 +884,15 @@ CELERY_BEAT_SCHEDULE["reencrypt-backup-archives"] = {
     "task": "apps.backup.tasks.reencrypt_archives_task", "schedule": crontab(minute="*/10"),
 }
 # --- end lanes L10/L11
+# --- lane L12 (release 2): loan pickup expiry and waitlist lapses; machine job quotes,
+# pickup reminders, uncollected flags and prepaid jobs entering the queue. Bounded sweeps.
+CELERY_BEAT_SCHEDULE["loan-pickups"] = {
+    "task": "apps.hardware_requests.tasks_loans.sweep_loan_pickups_task", "schedule": crontab(minute="*/15"),
+}
+CELERY_BEAT_SCHEDULE["machine-job-flow"] = {
+    "task": "apps.machines.tasks_jobs.sweep_job_flow_task", "schedule": crontab(minute="*/15"),
+}
+# --- end lane L12
 
 if "tenant_migration" in TOMBSTONED_APPS:
     CELERY_BEAT_SCHEDULE = {

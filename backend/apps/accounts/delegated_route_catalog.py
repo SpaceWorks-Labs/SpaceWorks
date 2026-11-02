@@ -293,3 +293,11 @@ MEMBERSHIP_ROUTES |= {
     "admin-machine-type-integration-list", "admin-machine-type-integration-detail",
     "admin-machine-type-integration-status", "admin-makerspace-selfhost-move-request",
 }
+# Release-2 lane L12: loans, consumables and To-Buy (delegable); machine jobs, downtime and work orders
+# keep their machine partition / per-subject checks. Every route re-checks its own action.
+DELEGABLE_ROUTES |= frozenset("""admin-consumables admin-consumable-use to-buy-refill-consumable to-buy-mark-bought
+procurement-vendors procurement-vendor-detail staff-request-cancel staff-loan-waitlist admin-loan-reservation-policy""".split())
+MEMBERSHIP_ROUTES |= frozenset("""admin-machine-job-request-changes admin-machine-job-quote admin-machine-job-queue-now
+admin-machine-job-reorder admin-machine-job-urgent admin-machine-job-assign admin-machine-job-uncollected
+admin-machine-job-batch-start admin-machine-job-batch-complete admin-machine-job-board admin-machine-type-job-settings
+admin-machine-downtime admin-machine-lockout admin-work-orders admin-work-order-status admin-work-order-assign""".split())

@@ -47,6 +47,8 @@ class BookableSpaceWriteSerializer(serializers.Serializer):
     # members then need that type's certification to book it. Settable only while
     # `machines` is installed; null clears it.
     machine_type = serializers.IntegerField(allow_null=True, min_value=1, required=False)
+    # Machine time booking (`machines.time_booking`): this resource is one machine's time.
+    machine = serializers.IntegerField(allow_null=True, min_value=1, required=False)
 
     def to_internal_value(self, data):
         # Keep DRF's established read-only behavior for these server-owned

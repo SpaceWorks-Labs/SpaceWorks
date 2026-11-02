@@ -102,6 +102,9 @@ LEGACY_ENTRIES = (
     # Release 2 L11: one due restore drill per tick; a bounded batch of requested re-encryption.
     ("restore-drill", "apps.backup.tasks.run_restore_drill_task", 60),
     ("reencrypt-backup-archives", "apps.backup.tasks.reencrypt_archives_task", 10),
+    # Lane L12: loan pickup expiry + waitlist lapses; machine job quotes, pickups, prepay.
+    ("loan-pickups", "apps.hardware_requests.tasks_loans.sweep_loan_pickups_task", 15),
+    ("machine-job-flow", "apps.machines.tasks_jobs.sweep_job_flow_task", 15),
 )
 _RETAINED = frozenset({
     "evidence-object-expiry", "evidence-abandoned-upload-cleanup",

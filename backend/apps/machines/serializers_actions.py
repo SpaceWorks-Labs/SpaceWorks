@@ -12,6 +12,9 @@ class MachineListResponseSerializer(serializers.Serializer):
 
 class SetStatusSerializer(serializers.Serializer):
     status = serializers.CharField(max_length=20)
+    # The downtime ledger (machines.maintenance): why it is down and when it should be back.
+    reason = serializers.CharField(required=False, allow_blank=True, max_length=300, default="")
+    expected_back_at = serializers.DateTimeField(required=False, allow_null=True, default=None)
 
 
 class MachinePublicitySerializer(serializers.Serializer):

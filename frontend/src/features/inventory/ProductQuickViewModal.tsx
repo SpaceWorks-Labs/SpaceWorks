@@ -2,8 +2,12 @@ import { DetailLayout } from "../../components/layouts";
 import { StatusPill } from "../../components/ui";
 import type { Product } from "../../types/inventory";
 import { AvailabilityBadge } from "./AvailabilityBadge";
+import { ExpectedBack } from "./ExpectedBack";
+import { WaitlistJoin } from "./WaitlistJoin";
 
-type ProductQuickViewModalProps = { product: Product | null; open: boolean; onClose: () => void };
+type ProductQuickViewModalProps = { product: Product | null; open: boolean; onClose: () => void;
+  /** Lane L12: the space's id and switches, for "Join the waitlist" on an item that is out. */
+  makerspaceId?: number; features?: readonly string[] };
 
 function trackingLabel(product: Product) {
   if (product.tracking_mode === "individual") return "Serialized";
@@ -11,7 +15,7 @@ function trackingLabel(product: Product) {
   return "Catalog item";
 }
 
-export function ProductQuickViewModal({ product, open, onClose }: ProductQuickViewModalProps) {
+export function ProductQuickViewModal({ product, open, onClose, makerspaceId, features }: ProductQuickViewModalProps) {
   if (!product) return null;
   return <DetailLayout presentation="drawer" open={open} onClose={onClose} drawerWidth={720}
     title={product.name} state={{ status: "ready" }} status={<AvailabilityBadge availability={product.availability} />}
@@ -21,6 +25,8 @@ export function ProductQuickViewModal({ product, open, onClose }: ProductQuickVi
         : <div aria-hidden="true" className="flex h-24 items-center rounded-xl border border-line bg-surface px-4">
           <span className="grid h-14 w-14 place-items-center rounded-control border border-line bg-panel font-display text-xl font-semibold uppercase text-muted">{product.name.slice(0, 2)}</span></div>}
       {product.category_name ? <div><StatusPill label={product.category_name} /></div> : null}
+      <ExpectedBack product={product} />
+      <WaitlistJoin key={product.id} makerspaceId={makerspaceId} product={product} features={features} />
       <section aria-label="Description"><h2 className="title-panel">Description</h2>
         <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-7">{product.description.trim() || "No description provided."}</p>
       </section>

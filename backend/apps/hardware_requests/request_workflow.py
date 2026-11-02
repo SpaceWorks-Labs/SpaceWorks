@@ -47,6 +47,9 @@ def submit_request(
     audit_actor,
     account_less_marker="",
     contact_key="",
+    pickup_from=None,
+    pickup_until=None,
+    waitlist_entry_id=None,
 ):
     require_member_account(requester_principal)
     with transaction.atomic():
@@ -60,8 +63,16 @@ def submit_request(
 
         requester_principal = lock_obligation_owner(requester_principal)
         require_feature(makerspace, "loans.enabled")
+        if any(getattr(item["product"], "is_consumable", False) for item in items):
+            raise RequestValidationError("Consumables are logged as used, not lent.")
         availability.enforce_submission_borrow_limits(makerspace, requester_principal, items,
                                                       contact_key=contact_key)
+        from apps.hardware_requests.pickup_windows import validate_window
+        pickup_from, pickup_until = validate_window(makerspace, pickup_from, pickup_until)
+        entry = None
+        if waitlist_entry_id is not None:
+            from apps.hardware_requests import waitlist
+            entry = waitlist.claim(waitlist_entry_id, requester_principal, items)
         request = HardwareRequest.objects.create(
             makerspace=makerspace,
             requester=requester_principal,
@@ -75,6 +86,8 @@ def submit_request(
             anonymous_payload_fingerprint=contact_key,
             status=HardwareRequest.Status.PENDING_APPROVAL,
             requested_for=requested_for,
+            pickup_from=pickup_from,
+            pickup_until=pickup_until,
         )
         HardwareRequestItem.objects.bulk_create(
             [
@@ -93,6 +106,9 @@ def submit_request(
             target=request,
             meta={"account_less": bool(account_less_marker)},
         )
+        if entry is not None:
+            from apps.hardware_requests import waitlist
+            waitlist.bind_claim(entry, request)
         notifications.notify_request_submitted(request)
         emit_notification(
             makerspace,
@@ -141,15 +157,21 @@ def accept_request(actor, request, accepted=None):
                 "Accept at least one unit, or reject the request instead."
             )
 
+        # A claimed waitlist offer's held units become this reservation in the same
+        # transaction (release then reserve under the same product lock).
+        from apps.hardware_requests import waitlist
+        waitlist.convert_claim(locked)
         # reserve_for_request now runs the individual-asset guard under its own
         # product row lock, so the check and the reservation can't race apart.
         availability.reserve_for_request(locked)
 
+        from apps.hardware_requests.pickup_windows import deadline_at_accept
         locked.status = HardwareRequest.Status.ACCEPTED
         locked.accepted_by = actor
         locked.accepted_at = timezone.now()
+        locked.pickup_until = deadline_at_accept(locked, now=locked.accepted_at)
         locked.save(
-            update_fields=["status", "accepted_by", "accepted_at", "updated_at"]
+            update_fields=["status", "accepted_by", "accepted_at", "pickup_until", "updated_at"]
         )
         audit.record(
             actor,
@@ -174,6 +196,8 @@ def reject_request(actor, request, reason):
                 f"Cannot reject hardware request with status {locked.status}."
             )
 
+        from apps.hardware_requests import waitlist
+        waitlist.release_claim(locked)
         locked.status = HardwareRequest.Status.REJECTED
         locked.rejection_reason = reason
         locked.save(update_fields=["status", "rejection_reason", "updated_at"])

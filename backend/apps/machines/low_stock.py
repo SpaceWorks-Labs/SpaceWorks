@@ -13,6 +13,8 @@ from apps.makerspaces.folded_capabilities import (
 )
 
 logger = logging.getLogger(__name__)
+# Neutral wording per pool unit (CO3): a resin pool is not a filament spool.
+_RESTOCK = {"grams": "Filament", "milliliters": "Resin"}
 OPEN_STATUSES = (ToBuyItem.Status.REQUESTED, ToBuyItem.Status.APPROVED, ToBuyItem.Status.ORDERED)
 
 
@@ -41,7 +43,7 @@ def maybe_flag_low_stock(actor, pool):
             threshold = locked.low_threshold_grams
             if threshold is None or threshold <= 0 or not locked.is_active or locked.remaining_grams > threshold:
                 return None
-            name = f"Filament restock: {locked.material} {locked.color}".strip()
+            name = f"{_RESTOCK.get(locked.unit, 'Material')} restock: {locked.material} {locked.color}".strip()
             name_key = zlib.crc32(name.encode("utf-8"))
             if name_key >= 2 ** 31:
                 name_key -= 2 ** 32

@@ -47,6 +47,28 @@ def _maintenance_preview(space):
     }
 
 
+def _machine_work(space):
+    """L12: machine work orders and the downtime ledger ride `machines.maintenance` too."""
+    from apps.machines.models import MachineDowntime
+    from apps.maintenance.models import WorkOrder
+    return (WorkOrder.objects.filter(makerspace=space, subject_type="machine"),
+            MachineDowntime.objects.filter(makerspace=space))
+
+
+def _maintenance_delete(space, cursor):
+    orders, downtimes = _machine_work(space)
+    order_count, order_labels = _delete(orders)
+    downtime_count, downtime_labels = _delete(downtimes)
+    counts = maintenance_delete(space, cursor)
+    return _counts(model_labels=counts.model_labels | order_labels | downtime_labels,
+                   work_orders=order_count, downtime_periods=downtime_count, **counts)
+
+
+def _maintenance_preview_all(space):
+    orders, downtimes = _machine_work(space)
+    return {**_maintenance_preview(space), "work_orders": orders.count(), "downtime_periods": downtimes.count()}
+
+
 def _tobuy_items(space, kind):
     from apps.procurement.models import ToBuyItem
     return ToBuyItem.objects.filter(makerspace=space, kind=kind)
@@ -107,8 +129,9 @@ _machine_warranty, _inventory_warranty = _warranty("machine"), _warranty("asset"
 
 PLANS = (
     CapabilityPurgePlan(
-        "machines.maintenance", "Machine maintenance schedules, logs, log documents and calendar feeds.",
-        maintenance_delete, _maintenance_preview, maintenance_private_keys,
+        "machines.maintenance", "Machine maintenance schedules, logs, log documents, calendar feeds, machine "
+        "work orders and the downtime ledger.",
+        _maintenance_delete, _maintenance_preview_all, maintenance_private_keys,
         maintenance_private_key_sizes, rollback_module="maintenance",
     ),
     CapabilityPurgePlan(

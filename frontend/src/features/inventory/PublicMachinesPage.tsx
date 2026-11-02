@@ -3,7 +3,7 @@ import { publicPageChrome } from "./PublicPageChrome";
 import { useTenantBranding } from "../../lib/useTenantBranding";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 
 import { CollapsibleSection, ListRow, StatusPill, RelativeTime, EmptyState } from "../../components/ui";
 import { publicErrorState } from "./publicErrorState";
@@ -15,6 +15,7 @@ import { useTenantBootstrap } from "./usePublicInventory";
 import { MachineIntakeForm } from "./MachineIntakeForm";
 import { QueueSummary } from "../machine-service/QueueSummary";
 import type { MachineQueueSummary } from "../machine-service/types";
+import { fetchJobTypes, jobKeys } from "../machine-jobs/api";
 import { Pagination } from "../../components/ui/Pagination";
 
 type PublicMachine = {
@@ -80,6 +81,11 @@ export function PublicMachinesPage() {
     return [...byType.entries()].map(([name, group]) => ({ name, ...group }));
   }, [machines.data]);
 
+  // Types taking job requests go through the one "Request a job" form (#140), not the per-machine dialog.
+  const jobsOn = Boolean(bootstrap?.features.includes("machines.job_requests"));
+  const jobTypes = useQuery({ queryKey: jobKeys.types(makerspaceSlug), queryFn: () => fetchJobTypes(makerspaceSlug), enabled: jobsOn && Boolean(makerspaceSlug), retry: false });
+  const jobTypeIds = new Set((jobsOn ? jobTypes.data ?? [] : []).map(type => type.machine_type_id));
+
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
   const toggleGroup = (name: string) => setCollapsed((current) => {
     const next = new Set(current);
@@ -91,7 +97,9 @@ export function PublicMachinesPage() {
   const displayName = bootstrap?.branding.display_name || bootstrap?.makerspace.name || formatSlug(makerspaceSlug) || "Makerspace";
   return <div style={brandStyle}>
     <PublicLayout {...publicPageChrome(makerspaceSlug, displayName, tenantPath, bootstrap)}
-      header={{ title: "Machines", subtitle: `What you can use at ${displayName}`, primary: { label: "Member area", href: tenantPath("member") } }}
+      header={{ title: "Machines", subtitle: `What you can use at ${displayName}`, ...(jobTypeIds.size
+        ? { primary: { label: "Request a job", href: tenantPath("machine-jobs/new") }, secondary: { label: "Member area", href: tenantPath("member") } }
+        : { primary: { label: "Member area", href: tenantPath("member") } }) }}
       state={machines.isLoading ? { status: "loading" } : machines.error ? publicErrorState(machines.error, { noun: "Machines" }, () => { void machines.refetch(); }) : { status: "ready" }}
       isEmpty={!groups.length} empty={{ message: "No machines listed yet. Check back soon." }}>
       <div className="mb-6 flex flex-wrap gap-2" role="group" aria-label="Filter machines">
@@ -108,7 +116,8 @@ export function PublicMachinesPage() {
               {machine.training_required != null ? <span className="mt-1 block">{machine.training_required ? "Training required" : "No service training required"}</span> : null}
               {machine.queue ? <span className="mt-1 block"><QueueSummary summary={machine.queue} /></span> : null}</>}
             right={<StatusPill label={MACHINE_STATUS[machine.status] ?? machine.status} tone={machine.status === "idle" ? "success" : machine.status === "maintenance" || machine.status === "offline" ? "warn" : "info"} />} />
-          {bootstrap?.features.includes("machines.structured_intake") && machine.id && machine.machine_type.id ? <MachineIntakeForm key={machine.id} slug={makerspaceSlug} machineId={machine.id} typeId={machine.machine_type.id} dialog trackingPath={token => tenantPath(`machine-service/requests/${token}`)} /> : null}
+          {machine.machine_type.id && jobTypeIds.has(machine.machine_type.id) ? <Link className="desk-button mt-3" to={tenantPath(`machine-jobs/new?type=${machine.machine_type.id}`)}>Request a job</Link>
+            : bootstrap?.features.includes("machines.structured_intake") && machine.id && machine.machine_type.id ? <MachineIntakeForm key={machine.id} slug={makerspaceSlug} machineId={machine.id} typeId={machine.machine_type.id} dialog trackingPath={token => tenantPath(`machine-service/requests/${token}`)} /> : null}
         </div>)}</div>
       </CollapsibleSection>)}</div>
       <Pagination page={page} onChange={setPage} totalPages={Math.max(1, Math.ceil((machines.data?.count ?? 0) / 24))} count={machines.data?.count} pageSize={24} disabled={machines.isFetching} />

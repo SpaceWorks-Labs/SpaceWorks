@@ -10,6 +10,7 @@ import { PublicToolScanPanel } from "./PublicToolScanPanel";
 import { useRequestDraft, type RequestDraft } from "./useRequestDraft";
 import { useContactRequest } from "./useContactRequest";
 import { PricePreview } from "../payments/PricePreview";
+import { PickupWindowFields, pickupWindowPayload, pickupWindowProblem } from "./PickupWindowFields";
 
 export type ActiveTab = "borrow" | "scan";
 
@@ -25,6 +26,8 @@ type PublicRequestPanelProps = {
   onActiveTabChange?: (tab: ActiveTab) => void;
   /** The page owns the draft so it survives the phone sheet unmounting this panel. Own state when omitted. */
   draft?: RequestDraft;
+  /** The space's effective switches (bootstrap `features`); `loans.reservations` adds the collection window. */
+  features?: readonly string[];
 };
 
 export function PublicRequestPanel({
@@ -36,6 +39,7 @@ export function PublicRequestPanel({
   activeTab: controlledTab,
   onActiveTabChange,
   draft: draftProp,
+  features,
 }: PublicRequestPanelProps) {
   const queryClient = useQueryClient();
   const [ownTab, setOwnTab] = useState<ActiveTab>("borrow");
@@ -43,7 +47,8 @@ export function PublicRequestPanel({
   const setActiveTab = (tab: ActiveTab) => { setOwnTab(tab); onActiveTabChange?.(tab); };
   const ownDraft = useRequestDraft();
   const draft = draftProp ?? ownDraft;
-  const { requestedFor, setRequestedFor, submitted, setSubmitted, website, setWebsite } = draft;
+  const { requestedFor, setRequestedFor, submitted, setSubmitted, website, setWebsite, pickup, setPickup } = draft;
+  const reservations = Boolean(features?.includes("loans.reservations"));
   const contactMode = requestAccess === "contact";
   const contact = useContactRequest(makerspaceSlug, draft, contactMode);
   const totalItems = useMemo(
@@ -62,6 +67,7 @@ export function PublicRequestPanel({
             quantity: item.quantity,
           })),
           website,
+          ...(reservations ? pickupWindowPayload(pickup) : {}),
           ...contact.payload,
         },
       ),
@@ -73,6 +79,7 @@ export function PublicRequestPanel({
       onClear();
       setRequestedFor("");
       setWebsite("");
+      setPickup({ from: "", until: "" });
       contact.clear();
     },
   });
@@ -81,6 +88,7 @@ export function PublicRequestPanel({
     requestedFor.trim().length > 0 &&
     items.length > 0 &&
     contact.ready &&
+    !(reservations && pickupWindowProblem(pickup)) &&
     !submitMutation.isPending;
 
   // No cards inside this panel: its host already frames it (the public "Your request" card, the
@@ -134,6 +142,7 @@ export function PublicRequestPanel({
                   website={website}
                   onWebsiteChange={setWebsite}
                   contact={contact.details}
+                  extraFields={reservations ? <PickupWindowFields value={pickup} onChange={setPickup} /> : null}
                 />
                 <PricePreview className="mt-4" makerspaceSlug={makerspaceSlug} request={{ domain: "loans", items: items.map(item => ({ product_id: item.productId, quantity: item.quantity })) }} />
               </div>

@@ -60,6 +60,8 @@ from .unique_values_r2_l4 import RULES as R2_L4_UNIQUE_RULES  # noqa: E402
 DEPLOYMENT_GLOBAL_UNIQUE_RULES.update(R2_L4_UNIQUE_RULES)
 from .unique_values_r2_l15 import RULES as R2_L15_UNIQUE_RULES  # noqa: E402
 DEPLOYMENT_GLOBAL_UNIQUE_RULES.update(R2_L15_UNIQUE_RULES)
+from .unique_values_l12 import RULES as L12_UNIQUE_RULES  # noqa: E402
+DEPLOYMENT_GLOBAL_UNIQUE_RULES.update(L12_UNIQUE_RULES)
 
 
 def collision_policy(model_label, field_name):

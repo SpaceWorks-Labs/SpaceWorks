@@ -17,6 +17,8 @@ export type Product = {
   tracking_mode?: "quantity" | "individual";
   availability: Availability;
   image_url?: string | null;
+  // Lane L12: when the item is out and its expected-back date is published ("YYYY-MM-DD").
+  expected_back_on?: string | null;
 };
 
 export type PublicCategory = {

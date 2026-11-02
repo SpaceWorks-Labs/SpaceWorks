@@ -150,6 +150,7 @@ BASE_MODEL_LOOKUPS = {
     'to-buy-detail': ('procurement.ToBuyItem', 'makerspace_id'),
     'to-buy-move-to-inventory': ('procurement.ToBuyItem', 'makerspace_id'),
     'to-buy-move-to-printing': ('procurement.ToBuyItem', 'makerspace_id'),
+    'to-buy-refill-consumable': ('procurement.ToBuyItem', 'makerspace_id'),
     'to-buy-receipt-presign': ('procurement.ToBuyItem', 'makerspace_id'),
     'to-buy-receipt-list': ('procurement.ToBuyItem', 'makerspace_id'),
     'to-buy-receipt-url': ('procurement.ToBuyReceipt', 'to_buy_item__makerspace_id'),

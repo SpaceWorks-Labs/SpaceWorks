@@ -111,6 +111,7 @@ def move_to_printing(actor, item, *, target, data):
             target=target,
             data=data,
             machine_type=locked.machine_type,
+            source_pool=locked.source_pool,
         )
         if target == PrintingTarget.SPOOL:
             locked.resulting_pool = result
@@ -176,6 +177,12 @@ def _create_inventory_product(
 
 
 def _topup_product(item, product_id):
+    # A reorder or auto To-Buy refills its origin product (MI-40): the origin is the
+    # default target and no other product may be credited with it.
+    if item.source_product_id:
+        if product_id and int(product_id) != item.source_product_id:
+            raise ValidationError({"product_id": "This item restocks its source product."})
+        product_id = item.source_product_id
     if not product_id:
         raise ValidationError({"product_id": "This field is required for topup."})
     try:

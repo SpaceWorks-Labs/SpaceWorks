@@ -1,4 +1,5 @@
 import { AvailabilityBadge } from "./AvailabilityBadge";
+import { ExpectedBack } from "./ExpectedBack";
 import type { Product } from "../../types/inventory";
 import { Link } from "react-router-dom";
 
@@ -66,6 +67,7 @@ export function ProductCard({
         <p className="mt-2 line-clamp-2 text-sm leading-6 text-muted">
           {product.description || "No description provided."}
         </p>
+        <ExpectedBack product={product} className="mt-2" />
         {product.category_name ? (
           <div className="mt-3 flex flex-wrap gap-2">
             <span className="chip">{product.category_name}</span>

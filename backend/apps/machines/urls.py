@@ -15,8 +15,18 @@ from .views_service_cancel import MemberMachineServiceCancelView, MemberMachineS
 
 from .views_materials import MaterialListView, MaterialDetailView, PublicTypeIntakeView
 from .views_intake import MachineTypeIntakeView
+from . import views_jobs as jobs, views_jobs_member as job_actions
 
 urlpatterns = [
+    # Lane L12: the uniform job flow (#140/#141).
+    path("public/<slug:makerspace_slug>/machine-jobs/types", jobs.PublicJobTypesView.as_view(), name="public-machine-job-types"),
+    path("public/<slug:makerspace_slug>/machine-jobs/uploads", jobs.PublicJobUploadView.as_view(), name="public-machine-job-upload"),
+    path("public/<slug:makerspace_slug>/machine-jobs", jobs.PublicJobSubmitView.as_view(), name="public-machine-job-submit"),
+    path("member/machine-jobs", jobs.MemberJobListView.as_view(), name="member-machine-jobs"),
+    path("member/machine-jobs/<int:pk>", jobs.MemberJobDetailView.as_view(), name="member-machine-job-detail"),
+    path("member/machine-jobs/<int:pk>/approve-quote", job_actions.MemberApproveQuoteView.as_view(), name="member-machine-job-approve-quote"),
+    path("member/machine-jobs/<int:pk>/decline-quote", job_actions.MemberDeclineQuoteView.as_view(), name="member-machine-job-decline-quote"),
+    path("member/machine-jobs/<int:pk>/resubmit", job_actions.MemberResubmitView.as_view(), name="member-machine-job-resubmit"),
     path("public/<slug:makerspace_slug>/machine-types/<int:type_id>/intake", PublicTypeIntakeView.as_view(), name="public-machine-intake"),
     path("admin/makerspaces/<int:makerspace_id>/machine-materials", MaterialListView.as_view(), name="machine-materials"),
     path("admin/makerspaces/<int:makerspace_id>/machine-materials/<int:pk>", MaterialDetailView.as_view(), name="machine-material-detail"),

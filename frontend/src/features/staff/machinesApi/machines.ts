@@ -66,9 +66,10 @@ export function machineImageEndpoint(machineId: number) {
   return `/admin/machines/${machineId}/image`;
 }
 
-export function setMachineStatus(machineId: number, status: MachineStatus) {
+/** `downtime` (reason, expected back) is recorded on the downtime period a maintenance/offline status opens. */
+export function setMachineStatus(machineId: number, status: MachineStatus, downtime?: { reason?: string; expected_back_at?: string | null }) {
   return staffRequest<Machine>(`/admin/machines/${machineId}/set-status`, {
-    method: "POST", body: JSON.stringify({ status }),
+    method: "POST", body: JSON.stringify({ status, ...downtime }),
   });
 }
 

@@ -8,7 +8,7 @@ import type { GalleryPhoto } from "../../components/ui/Gallery";
 export type PublicBookableSpace = {
   public_token: string;
   name: string;
-  kind: "dev_room" | "bench" | "meeting" | "other";
+  kind: "dev_room" | "bench" | "meeting" | "other" | "machine";
   description: string;
   capacity: number;
   location: string;

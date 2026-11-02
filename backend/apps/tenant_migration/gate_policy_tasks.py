@@ -133,6 +133,8 @@ TASK_INTERNAL_PARTICIPANTS = {
     "apps.payments.tasks.issue_missing_bills_task": "Bill recovery gates each tenant before discovering or issuing documents.",
     "apps.payments.tasks.rebuild_refund_cases_task": "Refund-case rebuild gates each tenant before discovering or opening cases.",
     "apps.payments.tasks.run_gateway_poll_task": "Gateway poll gates each tenant before reading providers or settling a capture.",
+    "apps.hardware_requests.tasks_loans.sweep_loan_pickups_task": "Each pickup expiry and waitlist lapse runs inside its own skip-and-count tenant boundary.",
+    "apps.machines.tasks_jobs.sweep_job_flow_task": "Each job quote, pickup and prepay step runs inside its own skip-and-count tenant boundary.",
     "apps.integrations.tasks_messaging.deliver_messaging_task": "Worker acquires sender lock first and holds tenant_write during claims and fenced completion.",
     "apps.integrations.tasks_messaging.sweep_messaging_task": "Replays durable signed ingress receipts through notification_ingress.process, which holds the cutover/tenant boundary per receipt; sender protections and retired-verifier retention are deployment-local.",
     "apps.integrations.tasks_messaging.canonical_retention_task": (

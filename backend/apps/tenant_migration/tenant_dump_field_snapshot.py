@@ -49,6 +49,10 @@ from .catalog_r2_l15 import FIELD_NAMES as R2_L15_FIELDS, EXTRA_FIELDS as R2_L15
 FIRST_PARTY_FIELD_NAMES.update(R2_L15_FIELDS)
 for _label, _names in R2_L15_EXTRA.items():
     FIRST_PARTY_FIELD_NAMES[_label] |= _names
+from .catalog_l12 import FIELD_NAMES as L12_FIELDS, EXTRA_FIELDS as L12_EXTRA  # noqa: E402
+FIRST_PARTY_FIELD_NAMES.update(L12_FIELDS)
+for _label, _names in L12_EXTRA.items():
+    FIRST_PARTY_FIELD_NAMES[_label] |= _names
 
 AUTO_CREATED_FIELD_NAMES = {
     'auth.Group_permissions': frozenset('group id permission'.split()),

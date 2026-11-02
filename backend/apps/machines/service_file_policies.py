@@ -38,12 +38,26 @@ def _printer_policy():
     )
 
 
+def _maker_formats_policy():
+    """The job flow's per-file registry policy (#142 OQ-12); `job_files` checks each file
+    against its own registry entry, so this envelope only names the outer bounds."""
+    from apps.maker_formats.registry import REGISTRY
+    specs = list(REGISTRY.values())
+    return ServiceFilePolicy(
+        name="maker_formats", version=1,
+        allowed_extensions=tuple(sorted({spec.extension for spec in specs})),
+        allowed_mimes=tuple(sorted({spec.canonical_mime for spec in specs})),
+        max_bytes=max(spec.max_bytes for spec in specs),
+    )
+
+
 def default_service_file_policy():
     return {"name": "documents", "version": 1}
 
 
 def get_policy(name: str, version: int) -> ServiceFilePolicy:
-    policies = {_documents_policy().name: _documents_policy(), _printer_policy().name: _printer_policy()}
+    policies = {_documents_policy().name: _documents_policy(), _printer_policy().name: _printer_policy(),
+                "maker_formats": _maker_formats_policy()}
     policy = policies.get(name)
     if policy is None or version != policy.version:
         raise ValidationError("Unknown machine service file policy.")

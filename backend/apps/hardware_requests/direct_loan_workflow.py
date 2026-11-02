@@ -271,4 +271,6 @@ def _manual_product(makerspace, product_id):
         raise RequestValidationError(
             "Individual-tracked products require scanned asset QR codes for handout."
         )
+    if product.is_consumable:
+        raise RequestValidationError("Consumables are logged as used, not lent.")
     return product

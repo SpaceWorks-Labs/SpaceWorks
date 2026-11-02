@@ -8,6 +8,7 @@ from apps.accounts.views_reauthentication import (
     ReauthenticationEnrollmentEmailView, ReauthenticationEnrollmentConfirmView,
     ReauthenticationSocialFactorView, ReauthenticationPhoneStartView, ReauthenticationPhoneConfirmView,
 )
+from apps.accounts.passkeys.urls import urlpatterns as passkey_urlpatterns
 from apps.accounts.views_mfa_reset import StaffMfaResetView
 from apps.accounts.views_staff_invitations import (
     StaffInvitationAcceptView, StaffInvitationListView, StaffInvitationResendView, StaffInvitationRevokeView,
@@ -29,6 +30,7 @@ auth_urlpatterns = [
     path("mfa/recovery", MFARecoveryView.as_view(), name="auth-mfa-recovery"),
     path("mfa/disable", MFADisableView.as_view(), name="auth-mfa-disable"),
     path("staff-invitations/accept", StaffInvitationAcceptView.as_view(), name="auth-staff-invitation-accept"),
+    *passkey_urlpatterns,
 ]
 
 admin_urlpatterns = [

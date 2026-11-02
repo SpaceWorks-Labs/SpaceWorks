@@ -96,4 +96,14 @@ AUTH_CLAIM_ROUTES = {
     ),
     **_refused("auth-email-verification-resend", ("POST",), "walk-ins cannot verify email"),
     **_refused("auth-email-verification-confirm", ("POST",), "walk-ins cannot verify email"),
+    # Release 2 S-A: passkeys belong to a person's own web session, never a claim session.
+    **_refused("auth-passkeys", ("GET", "HEAD"), "claim sessions cannot manage passkeys"),
+    **_refused("auth-passkey-detail", ("PATCH", "DELETE"), "claim sessions cannot manage passkeys"),
+    **_refused("auth-passkeys-register-options", ("POST",), "claim sessions cannot add passkeys"),
+    **_refused("auth-passkeys-register-verify", ("POST",), "claim sessions cannot add passkeys"),
+    **_refused("auth-passkeys-authenticate-options", ("POST",), "claim sessions do not authenticate"),
+    **_refused("auth-passkeys-authenticate-verify", ("POST",), "claim sessions do not authenticate"),
+    **_refused("auth-mfa-passkey-options", ("POST",), "claim sessions cannot exchange credentials"),
+    **_refused("auth-reauth-passkey-options", ("POST",), "claim sessions cannot reauthenticate"),
+    **_refused("auth-reauth-passkey", ("POST",), "claim sessions cannot reauthenticate"),
 }

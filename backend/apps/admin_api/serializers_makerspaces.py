@@ -104,6 +104,7 @@ class MakerspaceSerializer(
     logo_url = serializers.SerializerMethodField()
     cover_image_url = serializers.SerializerMethodField()
     domain_verification_record = serializers.SerializerMethodField()
+    passkey_only_accounts = serializers.SerializerMethodField()
     platform_hosting = serializers.SerializerMethodField()
     is_platform_subdomain = serializers.SerializerMethodField()
     public_display_name = serializers.CharField(
@@ -166,6 +167,7 @@ class MakerspaceSerializer(
             "domain_verified_at",
             "domain_verification_token",
             "domain_verification_record",
+            "passkey_only_accounts",
             "platform_hosting",
             "is_platform_subdomain",
             "hidden_from_central_directory",
@@ -219,6 +221,7 @@ class MakerspaceSerializer(
             "domain_verified_at",
             "domain_verification_token",
             "domain_verification_record",
+            "passkey_only_accounts",
             "platform_hosting",
             "is_platform_subdomain",
             "telegram_bot_token_set",

@@ -22,4 +22,5 @@ class AccountsConfig(AppConfig):
         # A staff role gained without a second factor starts the 3-day grace (#128 C-1).
         from apps.accounts.mfa_grace import connect_signals as connect_grace_signals
         connect_grace_signals()
+        from apps.accounts.passkeys import checks as passkey_checks  # noqa: F401 -- RP ID system check
         user_logged_in.connect(stamp_password_session, dispatch_uid="accounts.control_mfa.password_session")

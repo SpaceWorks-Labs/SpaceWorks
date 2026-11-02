@@ -73,6 +73,27 @@ def resolves_to_origin(makerspace) -> bool:
         return False
 
 
+def passkey_only_accounts(makerspace) -> int:
+    """People whose only second factor is a passkey on this space's custom-domain RP ID.
+
+    A domain change strands their passkey sign-in on the old address (passkeys are bound
+    to it); the passkey still counts as their factor, so nobody is downgraded to "no
+    factor", but they need their password and recovery codes, or another factor, on the
+    new address. Shown before a change so the operator can warn them first.
+    """
+    if not makerspace.frontend_domain:
+        return 0
+    from apps.accounts.models import User
+    from apps.accounts.models_mfa import UserMFA
+    from apps.accounts.models_webauthn import WebAuthnCredential
+    from apps.accounts.passkeys.rp_id import rp_id_for_host
+    rp_id = rp_id_for_host(canonical_host(makerspace.frontend_domain))
+    on_domain = WebAuthnCredential.objects.filter(rp_id=rp_id).values("user_id")
+    elsewhere = WebAuthnCredential.objects.exclude(rp_id=rp_id).values("user_id")
+    totp = UserMFA.objects.filter(enabled_at__isnull=False).values("user_id")
+    return User.objects.filter(pk__in=on_domain).exclude(pk__in=elsewhere).exclude(pk__in=totp).count()
+
+
 def domain_change_cooldown_active(makerspace, normalized_domain) -> bool:
     cooldown_seconds = settings.DOMAIN_CHANGE_COOLDOWN_SECONDS
     return bool(

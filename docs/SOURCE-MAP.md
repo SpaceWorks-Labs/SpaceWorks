@@ -775,6 +775,33 @@ identity normalization and production minimum-version comparison. `mobile_associ
   `staff/BookableSpaceMachine.tsx`; `staff/panels/{ConsumablesPanel,VendorsPanel,MarkBoughtDialog,
   ItemWaitlist,RequestCancelDialog,InventoryLendingFlags}.tsx`, `staff/LoanReservationPolicySettings.tsx`.
 
+### Release 2 L16 (Technician role, issue reporting, repairs, per-parent maintenance)
+
+- Role: `technician` row in `makerspaces/role_catalog.py`, `accounts/rbac_actions.py`
+  (`WORK_REPAIRS`, `RUN_MAINTENANCE`, `SET_SERVICE_STATE`), migrations `makerspaces/0119`/`0120`.
+- Package `maintenance/repairs/` (models via `maintenance/models.py`, migration `maintenance/0005`):
+  `models_contacts.py` (directory, coverage, defaults), `models_issues.py` (`IssueReport`,
+  `IssueAssignment`), `models_records.py` (append-only history, photos, sends, parts),
+  `models_service.py` (room outages, item/room schedules and logs); `areas.py` (switches and
+  managers per area), `authority.py` (Technician scope, the two seams), `reporting.py` (who may
+  report), `services_issues.py` (lifecycle), `services_work.py` (visits, parts, quote, payout),
+  `dispatch.py` + `channels.py` + `optin.py` (sends and consent), `service_state.py` +
+  `room_outages.py`, `maintenance_subjects.py`, `photos.py` + `storage.py` (staging-key photos),
+  `notify.py`; routes `urls_staff.py` (admin prefix) and `urls_public.py` (member/public), views
+  `views_{issues,staff,contacts,maintenance,member,public}.py`.
+- Seams outside the package: `maintenance/work_orders.may_manage`, `maintenance/services_shared.
+  prepare_machine(technician=)`, `bookings/admission._refuse_room_outage`,
+  `integrations/notification_telegram_callbacks._technician_opt_in`.
+- Switches: `makerspaces/capability_definitions_r2_l17.py` (the 8 keys), purge plans
+  `makerspaces/capability_purge_plans_l16.py`.
+- Classification: `data_export/classification_l16.py`, `tenant_migration/{catalog,audit_references,
+  unique_values}_l16.py`, `audit/presentation_catalog_l16.py`, `accounts/merge_registry_rows_l16.py`,
+  `encryption/registry_r2_l16.py`, `makerspaces/origin_scope_routes_r2_l16.py`.
+- Frontend: staff `features/staff/repairs/` (the Repairs tab: queue, My jobs, issue detail,
+  dispatch, service state, maintenance) and `features/staff/technicians/`; member
+  `features/repairs/ReportProblem.tsx` (on loans, bookings and machine jobs) and the public
+  `TechnicianOptInPage.tsx`.
+
 ## Domain and frontend map
 See [SOURCE-MAP-DOMAINS.md](SOURCE-MAP-DOMAINS.md) for hardware loans, payments,
 printing, events, the frontend directories and connected device monitoring.

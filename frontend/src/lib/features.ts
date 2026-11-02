@@ -137,6 +137,7 @@ export const FEATURE_DEFINITIONS: readonly FeatureDefinition[] = [
   { key: "charges.pricing", parent_module: null, label: "Price lists" },
   { key: "charges.discounts", parent_module: null, label: "Member discounts" },
   { key: "loans.fee_waivers", parent_module: "request_workflow", label: "Waive loan fees" },
+  { key: "mobile.watch_actions", parent_module: "mobile", label: "Watch-friendly push actions" },
 ];
 
 export function featureEnabled(features: Iterable<string>, key: string) {

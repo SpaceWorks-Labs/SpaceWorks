@@ -31,7 +31,7 @@ def digest(raw):
 
 @transaction.atomic
 def start(user, *, context):
-    assert_available()
+    assert_available(user)  # S-A: staff MFA is never paused by the platform switch
     user = lock_session_user(user)
     active(user)
     from apps.accounts.surface_policy import assert_surface, token_kind
@@ -120,8 +120,8 @@ def _locked(raw, request):
 
 @transaction.atomic
 def enroll(raw, request):
-    assert_available()
     challenge, user, row = _locked(raw, request)
+    assert_available(user)
     if row.enabled_at:
         raise AuthenticationFailed("MFA is already enrolled.")
     if not challenge.pending_secret:
@@ -149,11 +149,11 @@ def finish(raw, code, request, *, enrolling=False):
 
 
 def _finish(raw, code, request, *, enrolling):
-    assert_available()
     refusal = False
     result = None
     with transaction.atomic():
         challenge, user, row = _locked(raw, request)
+        assert_available(user)
         codes = None
         if enrolling and not row.enabled_at and challenge.pending_secret:
             # Settings enrollment on a device keeps that grant and re-issues its tokens.

@@ -33,6 +33,22 @@ class BackupArchiveAdmin(ReadOnlyBackupAdmin):
     list_filter = ("scope", "makerspace", "status", "created_at")
     readonly_fields = tuple(field.name for field in BackupArchive._meta.fields)
 
+    def get_urls(self):
+        from django.urls import path
+        return [path("notice/<str:token>/", self.admin_site.admin_view(self.notice_view),
+                     name="backup_backuparchive_notice"), *super().get_urls()]
+
+    def notice_view(self, request, token):
+        """The signed link of the optional "archive ready" notice (#128 C-24): page only."""
+        from django.core.exceptions import PermissionDenied
+        from django.shortcuts import redirect
+        from django.urls import reverse
+        from .operator_notice import archive_from_token
+        archive_id = archive_from_token(token)
+        if archive_id is None or not self.has_view_permission(request):
+            raise PermissionDenied()
+        return redirect(reverse("admin:backup_backuparchive_change", args=[archive_id]))
+
 
 @admin.register(RestoreOperation)
 class RestoreOperationAdmin(ReadOnlyBackupAdmin):
@@ -57,3 +73,4 @@ for model in (
 from apps.backup import admin_offsite  # noqa: E402,F401  (registers the offsite admins)
 
 from . import admin_deployment  # noqa: E402,F401
+from . import admin_keys  # noqa: E402,F401  (keys, drills and notices)

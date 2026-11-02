@@ -109,6 +109,9 @@ def _apply_and_restore_objects(op):
                 money = rows_after_restore_point(locked, MONEY_LABELS, op.snapshot_at)
                 keys_before = referenced_keys(space.pk)
                 report = apply_space_restore(locked, archive)
+                from .station_revocation import revoke_station_credentials
+                report["station_credentials_revoked"] = revoke_station_credentials(
+                    makerspace=locked, actor=op.confirmed_by)
         finally:
             # Reopen only the gate THIS restore closed, never another migration's.
             from apps.tenant_migration.models_source_gate import SourceMigrationGate

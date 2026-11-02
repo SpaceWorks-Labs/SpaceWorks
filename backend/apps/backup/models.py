@@ -19,6 +19,13 @@ class PlatformBackupSettings(models.Model):
     last_scheduled_at = models.DateTimeField(null=True, blank=True)
     last_success_at = models.DateTimeField(null=True, blank=True)
     last_error = models.CharField(max_length=500, blank=True)
+    # Release 2 L11: a restore drill per space every N days (0 = off), the optional
+    # "archive ready" operator notice (off by default, #128 C-24) and a pending
+    # re-encryption of archives still encrypted to a retired key (cleared to cancel).
+    restore_drill_interval_days = models.PositiveSmallIntegerField(
+        default=7, validators=(MaxValueValidator(365),))
+    archive_ready_notice_enabled = models.BooleanField(default=False)
+    reencrypt_requested_at = models.DateTimeField(null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     @classmethod
@@ -114,6 +121,8 @@ from .models_artifact_ledger import BackupArtifactComponent, BackupArtifactLedge
 from .models_runs import BackupRun, BackupRunCoverage  # noqa: E402,F401
 from .models_offsite import BackupDestination, BackupDestinationUpload  # noqa: E402,F401
 from .models_space_restore import MakerspaceRestoreOperation  # noqa: E402,F401
+from .models_keys import BackupKeyFingerprint  # noqa: E402,F401
+from .models_drill import RestoreDrillReport  # noqa: E402,F401
 
 from .managed.models import ManagedDeploymentState, ManagedCaptureState, ManagedWriterBoundary  # noqa: F401,E402
 from .managed.models_staging import ManagedStagedObject, ManagedPresignLease  # noqa: F401,E402

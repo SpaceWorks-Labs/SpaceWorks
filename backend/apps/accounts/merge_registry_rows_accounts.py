@@ -79,4 +79,9 @@ ROWS = (
                                           "survivor that has none, so a merge never grants a second one."),
     (K, "#encryption.PiiGlobalWriteFence", "actor_id", "Write-fence actor of record; never rewritten by a merge."),
     (K, "#encryption.PiiMakerspaceWriteFence", "actor_id", "Write-fence actor of record; never rewritten by a merge."),
+    # Release 2 L10/L11: a deferred integration binding's creator, the superadmin who
+    # retired a backup key, and the people on a self-host move request.
+    (R, "devices.MachineTypeIntegration", "created_by", "Mutable ownership or attribution; moves to the survivor."),
+    (K, "backup.BackupKeyFingerprint", "retired_by", "Platform or deployment operation record; never rewritten by a merge."),
+    (R, "tenant_migration.SelfHostMoveRequest", "decided_by requested_by", "Mutable ownership or attribution; moves to the survivor."),
 )

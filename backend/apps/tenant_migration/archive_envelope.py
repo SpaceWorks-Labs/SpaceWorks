@@ -207,7 +207,10 @@ def _stream_age_archive(root, key_payload, manifest_payload, output, recipient):
     # plaintext ZIP until finally-cleanup. A hard kill could preserve it. That
     # packaging path is deliberately bypassed here, and DEKs exist only in this
     # in-memory member before tar bytes flow directly into age.
-    command = ["age", "-r", recipient, "-o", str(output)]
+    # One recipient, or several (the self-host move: a one-shot target key plus the
+    # platform key, #111 Q7); age lets any one of them open the archive.
+    recipients = [recipient] if isinstance(recipient, str) else list(recipient)
+    command = ["age", *[arg for value in recipients for arg in ("-r", value)], "-o", str(output)]
     process = None
     try:
         process = subprocess.Popen(

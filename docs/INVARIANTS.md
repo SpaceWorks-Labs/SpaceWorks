@@ -3305,6 +3305,32 @@ not module keys** (one app can own several keys — `printing`/`machines`/`machi
   after re-enrollment. Device purge deletes printer rows first; adapter purge nulls live links and
   retains device history.
 
+**Machine-integration foundations (release 2 L10; the integration itself is DEFERRED, #76).**
+
+- **No second bearer-token agent API.** A future printer agent is an ordinary enrolled printer Device
+  speaking signed protocol v1; the reference guide's shared `AGENT_API_TOKEN` is not adopted. The two
+  integration device routes (`device/integrations/queue`, `device/integrations/jobs/<id>/report`) are
+  in the device route registry (`route_registry_r2.py`) with an EMPTY module tuple on purpose: the
+  view answers 404 for the whole `machines.integrations` chain, so a space with it off reveals nothing.
+- **Off by default.** `machines.integrations` (parent `machines`, requires `devices` and
+  `machine_service`, `frontend_exposed=False`, `app_label="devices"`) gates every integration route
+  (404 when off, staff and device alike). A device additionally needs an enabled
+  `MachineTypeIntegration(kind=printer_agent)` for its bound machine's type; the kind binds only the
+  built-in printer type and is created disabled. Nothing is scheduled for it.
+- **Reports go through the workflow.** `started` only attaches the device to a request staff already
+  started on its bound machine (starting picks the material pool, a staff decision) and creates the
+  acknowledged `PrinterJob`; `completed`/`failed` are the existing immutable terminal report
+  (`claim_result` -> `apply_report` -> `service_workflow_actions.complete/fail` -> `record_service_cost`).
+  A failure is ALWAYS held for staff review (`claim_result(hold=True)`); a completion follows the
+  binding's `auto_apply_terminal` (off by default). Repeats are no-ops; changes conflict. Applied and
+  refused reports are audited `machine_service.agent_report_applied|refused` with `actor=None`.
+- **The status snapshot is advisory.** It rides the signed heartbeat (`{"status_snapshot": {...}}`,
+  schema 1): finite numbers clamped to fixed ranges, at most 16 spools, unknown fields refused, a
+  bounded `clear_token`; stored as ONE `PrinterStatusSnapshot` row per device (overwritten), ignored
+  when not newer (`stale`), dropped within 5 s of the last (`throttled`), never changing
+  `Machine.status`, a request, consumption or money. Both new models are omitted from exports and
+  tenant dumps (a moved device re-enrolls and is re-bound).
+
 ## Machine scoping — `MANAGE_MACHINES` is per person by type, and fails CLOSED
 
 - **Tier 1 is per-person, type-only scope.** `machines/role_scope.py` resolves
@@ -5287,6 +5313,47 @@ PORTABLE/Lane D path.
   restore itself is the ordinary preview/confirm/apply.
 - **Maintenance window.** The apply transaction holds row locks across the space's tables and the source
   gate refuses its writers until it ends; schedule large restores accordingly.
+
+### Key rotation, self-host moves, restore drills and station credentials (release 2 L11)
+
+- **Platform key rotation (BK-68).** The operator changes `BACKUP_AGE_RECIPIENT` (or the server's
+  `TENANT_MIGRATION_AGE_RECIPIENT` + identity) on the host, then records it (`/control/` Backup keys
+  page behind re-authentication, or `manage.py backup_keys rotate`). Recording retires every earlier
+  fingerprint of that kind (`BackupKeyFingerprint`), and `age_recipients.selection_for` refuses a
+  retired key for every later build, so a rotated-out key is never reused. Archives still encrypted to
+  a retired key are listed. Only a ONE-SPACE archive can be re-encrypted on the server (it is also
+  encrypted to the server key; the previous server identity may be handed to the host command for
+  one run); a whole-platform archive is platform-key-only, whose private half never lives on the
+  server (#144b): keep it until it expires or purge it. Re-encryption never changes an archive's id,
+  expiry or restore point (the expiry trigger stays untouched); new bytes go to a new key, are read
+  back and verified before the row switches, and the old object is deleted after commit.
+- **No archive by email (C-24).** Spaces get no backup email. The optional "archive ready" notice (off
+  by default) goes to the superadmins over platform mail with a SIGNED `/control/` link that opens the
+  archive page for a signed-in superadmin only: never the file, an attachment or a download bearer.
+- **Self-host move (BK-90, C-23).** A Space Manager only requests (note) and reads the status
+  (`/admin/makerspace/<id>/selfhost-move-request`); no download surface (#111 Q2). The superadmin
+  approves and runs the PORTABLE export (format 2) in `/control/` with a one-shot target recipient plus
+  the platform key (#111 Q7), approving the space's full identity closure in the same act. The PORTABLE
+  path carries U-D's credential block (#160), so on the target every created person keeps their
+  password, authenticator and recovery codes, and staff keep their roles ACTIVE (C-18, #137 Q-B1).
+  `manage.py import_portable_tenant_dump` runs the ordinary admission/staging/identity/materialization
+  pipeline and then activates the space with the cutover's own verification gates (no pairing receipt:
+  the file is handed over offline). An email the target already holds refuses the import (#160(3)).
+  `SelfHostMoveRequest` is platform coordination and travels with nothing, and so do its
+  `selfhost_move.*` audit rows (like `tenant_migration.*`, `admission.export_row_policy`), so the
+  approving superadmin never enters the space's identity closure.
+- **Restore drills (BK-10/BK-91, C-22).** Hourly, one due space (default every 7 days per space,
+  0 = off) is drilled: a throwaway age identity is generated; the live server identity is only READ by
+  `age --decrypt` (never copied, written or re-wrapped) while the plaintext streams into a
+  re-encryption to the throwaway key; B2's staging opens that copy with the throwaway identity; every
+  archived row is rebuilt in an isolated scratch database (schema-only copy, never live rows) and every
+  object's bytes are verified locally; nothing is uploaded. The scratch database and the temporary
+  directory are destroyed either way; a `RestoreDrillReport` keeps counts and a typed outcome, and a
+  failure notifies the superadmins.
+- **Station credentials (#77 C#6).** Entering deployment quarantine revokes EVERY `StationCredential`,
+  and a per-space restore revokes that space's inside its apply transaction: disabled, a fresh public
+  token (the old station URL stops resolving) and operator leases revoked, audited
+  `station_credentials.revoked_on_restore`. Staff re-issue station URLs and PINs afterwards.
 
 ### One account per person in backup, restore, tenant migration and export (U-D)
 

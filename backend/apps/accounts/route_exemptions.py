@@ -30,6 +30,9 @@ PUBLIC_ROUTES = frozenset("""
 website-discover public-config health readiness announcement-feed one-click-unsubscribe api-redoc-ui
 """.split())
 
+# Release 2 L10: signed device-protocol routes of the (off-by-default) machine-integration foundation.
+NON_ACCOUNT_ROUTES |= {"device-integration-queue", "device-integration-job-report"}
+
 NON_STAFF_ROUTES = PROVIDER_ONLY_ROUTES | NON_ACCOUNT_ROUTES | PUBLIC_ROUTES
 
 

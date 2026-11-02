@@ -55,3 +55,11 @@ def run_import_job_task(job_id, actor_id, target_identity=None):
 def stage_import_job_task(job_id, actor_id):
     job = stage_import_job(job_id, actor_id=actor_id)
     return job.status if job is not None else None
+
+
+@shared_task(name="apps.tenant_migration.tasks.run_selfhost_move_export_task")
+def run_selfhost_move_export_task(move_id, recipient, actor_id):
+    """Release 2 L11: the superadmin-run PORTABLE export of a self-host move (#128 C-23)."""
+    from apps.tenant_migration.selfhost_move import run_export
+
+    return str(run_export(move_id, recipient, actor_id).status)

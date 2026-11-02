@@ -49,3 +49,7 @@ urlpatterns += printer_urlpatterns
 from .urls_7c import label_urlpatterns
 
 urlpatterns += label_urlpatterns
+
+from .urls_r2 import integration_urlpatterns
+
+urlpatterns += integration_urlpatterns

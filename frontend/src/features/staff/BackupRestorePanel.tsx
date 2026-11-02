@@ -30,6 +30,7 @@ import { SpaceBackupSection } from "./SpaceBackupSection";
 import { BackupScheduleView } from "./BackupScheduleView";
 import { getBackupSchedule } from "./spaceRestoreApi";
 import { DeploymentNotices } from "../deployment/DeploymentNotices";
+import { SelfHostMoveCard } from "./SelfHostMoveCard";
 
 export function BackupRestorePanel({ makerspaceId, isSuperadmin }: { makerspaceId: number; isSuperadmin: boolean }) {
   const runtime = useQuery({ queryKey: ["platform-dashboard"], queryFn: getPlatformDashboard, enabled: isSuperadmin });
@@ -65,6 +66,7 @@ export function BackupRestorePanel({ makerspaceId, isSuperadmin }: { makerspaceI
           <BackupStatusCard makerspaceId={makerspaceId} />
           <p className="text-sm text-muted">The platform backs up and restores this space. For your own copy of its data, use Data export.</p>
         </div> }] : []),
+        ...(!isSuperadmin ? [{ id: "self-host-move", title: "Move to your own server", rows: <SelfHostMoveCard makerspaceId={makerspaceId} /> }] : []),
         ...(isSuperadmin ? [{ id: "scope", title: "What to back up or restore", rows: <label className="grid gap-2 text-sm">Scope
           <select className="desk-input max-w-full" value={String(scope)} onChange={event => setScope(event.target.value === "platform" ? "platform" : Number(event.target.value))}>
             <option value="platform">Whole platform</option>

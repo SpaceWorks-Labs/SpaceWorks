@@ -286,3 +286,10 @@ MEMBERSHIP_ROUTES |= {
     "pricing-discount", "pricing-discount-archive", "pricing-override", "loan-charges", "loan-fee-waivers",
     "loan-fee-waiver-revoke", "loan-accountability-charge",
 }
+
+# Release 2 L10/L11: machine-integration bindings (MANAGE_DEVICES + machine-type scope) and
+# the Space Manager's self-host move request (MANAGE_MAKERSPACE). Each view keeps its check.
+MEMBERSHIP_ROUTES |= {
+    "admin-machine-type-integration-list", "admin-machine-type-integration-detail",
+    "admin-machine-type-integration-status", "admin-makerspace-selfhost-move-request",
+}

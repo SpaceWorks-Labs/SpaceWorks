@@ -30,6 +30,7 @@ import { SpacePacksPanel } from "./SpacePacksPanel";
 import { MakerspaceMembershipSettings } from "./MakerspaceMembershipSettings";
 import { MakerspacePaymentSettings } from "./MakerspacePaymentSettings";
 import { MakerspacePublicStatsSettings } from "./MakerspacePublicStatsSettings";
+import { PublicStatsSettingsPanel } from "../stats/settings/PublicStatsSettingsPanel";
 import { MakerspaceSubdomainSettings } from "./MakerspaceSubdomainSettings";
 import { MakerspaceWebhookSettings } from "./MakerspaceWebhookSettings";
 import { MakerspaceArchiveRequestPanel } from "./MakerspaceArchiveRequestPanel";
@@ -151,9 +152,14 @@ export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMak
       {canManageMakerspace ? <MakerspaceProfileSettings makerspaceId={makerspace.id} /> : null}
     </> },
     { id: "branding", title: "Branding & public site", rows: <>
-      <MakerspaceBrandingSettings {...shared} /><MakerspacePublicStatsSettings {...shared} />{printRecovery}
+      <MakerspaceBrandingSettings {...shared} />{printRecovery}
       {settings.data?.platform_hosting === true ? <MakerspaceSubdomainSettings makerspace={makerspace} settings={settings.data} /> : null}
       <MakerspaceCustomDomainSettings {...shared} />
+    </> },
+    // #170: Settings › Public stats; read-only for everyone but the Space Manager.
+    { id: "public-stats", title: "Public stats", rows: <>
+      <PublicStatsSettingsPanel key={makerspace.id} makerspaceId={makerspace.id} slug={makerspace.slug} />
+      <MakerspacePublicStatsSettings {...shared} />
     </> },
     { id: "features", title: "Features", rows: <>
       <MakerspaceFeatureSettings {...shared} />

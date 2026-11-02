@@ -3117,6 +3117,61 @@ Owner decisions #62, #66, #74, #110c, #111 Q9-Q11, #128 C-1/C-2 and #135 Q-A1-Q-
   direct handout that failed is redone online with fresh evidence (9e). Inductions before a first
   loan are not built (#96, #128 C-19).
 
+## Machine sessions (release 2, lane L23; #158)
+
+- **One switch, one authority.** `machines.sessions` (parent `machines`, off by default, nothing
+  else required). Off: every session route answers 404 (member, staff, settings), the sweep skips
+  the space, the device hook is inert and the session reports refuse; sessions, amendments and
+  charges are kept, and the manual-hours usage log is unchanged. `machines/sessions_service.py` is
+  the only writer of `MachineSession` for every source (`member_qr`, `staff`, `device`).
+- **Who may start** (`machines/sessions_rules.py`, typed codes, in this order): `member_restricted`
+  (403), `membership_required` / `waiver_acceptance_required` (403), `presence_required` (409, the
+  presence guard; it lapses only when presence is off or tombstoned), `certification_required`
+  (403: every active certification of the type flagged for service OR booking, under
+  `machines.certifications`), `machine_unavailable` (inactive, maintenance or offline),
+  `machine_locked_out` (L12 lockout), `machine_booked` / `booking_required` (L12 `booking_gate`
+  with `purpose="session"`), `machine_in_use` / `session_already_live` (a live session or an
+  in-progress job on the machine). Staff starting for a member run exactly these checks; there is
+  no override.
+- **One live session per machine** (and per member and machine), DB-enforced by partial unique
+  constraints; the start holds the machine row lock.
+- **Closed is final.** The `machines_session_guard` trigger lets a live row be closed once and
+  refuses every UPDATE of a closed row, any change of id, space, machine, source or start, and every
+  DELETE outside the `app.allow_immutable_delete` fence. Corrections, the assignment of an
+  unattributed device session and the staff confirmation are append-only `MachineSessionAmendment`
+  rows (trigger-guarded); the effective minutes and member are derived (`sessions_state.py`).
+- **The price is frozen at START.** The machine's `time` component is quoted through
+  `pricing.quote()` for one hour, the member's best automatic discount applied, and the snapshot and
+  digest stored on the session; Start may carry the digest the member was shown (409
+  `price_changed`). The charge is rebuilt from the snapshot alone (rate, increment, minimum,
+  discount), so a later price change never touches a running session. Minutes round to the nearest
+  minute, then bill up to the increment with the minimum as a floor; 0 minutes bill nothing.
+- **Money.** Only while `charges.enabled` + `charges.machines` are on at start AND when the charge
+  is raised. A member- or staff-stopped session is final at once: ONE `MachineUsageEntry` (source
+  `session`) and a PENDING `Payment` (subject `machine_session`, `pricing_snapshot` with the start
+  digest) that staff settle or waive through the L5 path. Money never moves here and no checkout
+  is created automatically. A device session that runs an L12 job is billed through the job only.
+- **Forgot to stop** (`sessions_sweep.py`, beat every 5 minutes, bounded, tenant-gated): a live
+  member or staff session ends at the earliest of the type's `session_max_minutes` (default 240),
+  the member's check-out (their presence session ended or expired) and the space's closing time
+  (`opening_hours.closing_time` of the start), AT that moment. Auto-stopped sessions are FLAGGED,
+  notified to the member and staff, and held: no usage entry and no charge until staff confirm,
+  optionally after an audited correction with a reason. A final session cannot be amended (409
+  `session_final`).
+- **Device source.** The L10 agent-report seam (`devices/services_integration_reports.report_job`)
+  calls `machines/sessions_device.on_agent_report` after a report is applied: `started` opens a
+  session on the bound machine, `completed` / `failed` close it with the machine's `actual_minutes`.
+  It attributes to the job's member when they are an active member of the space; otherwise the
+  session is UNATTRIBUTED and held for staff to assign, never charged to a guess. The hook never
+  raises into the report, and there is no new device route.
+- **Scope.** Staff routes need `MANAGE_MACHINES` narrowed by machine scope (lists filter to covered
+  machines; actions need `can_manage_machine`). Reconciling a session charge follows the session's
+  machine (`reconciliation_authority._require_session_scope`); an orphaned charge only for
+  scope-exempt actors. Members see only their own sessions, in spaces they belong to; a stranger
+  scanning a machine id gets 404.
+- **Purge** (`machines.sessions` capability purge): sessions and amendments only. Charges stay in the
+  ledger and usage entries stay with the machine.
+
 ## Account deletion
 
 Self-deletion, archive/restore, the 90-day purge and Apple revocation are for persons; a person who

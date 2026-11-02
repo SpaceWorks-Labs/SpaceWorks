@@ -250,6 +250,13 @@ booking (`Booking.pricing_snapshot`, insert-only) when it is requested, and appr
 request from before this rule has no snapshot and is charged the approval-day price, audited as
 `booking.price_quoted_at_approval`. Instant confirmations are quoted and charged at once.
 
+**Machine sessions keep the price shown at Start** (L23, #158): a metered session freezes the
+machine's hourly `time` rate (with its billing increment, minimum and the member's best discount)
+when it starts; at stop the charge is rebuilt from that snapshot for the session's minutes and
+raised PENDING as a `machine_session` charge. An auto-stopped session is held until staff check
+and confirm it (a duration correction first is an audited amendment). Sessions that run an L12 job
+are billed through the job only.
+
 **Rounding** is half-up to two decimals per line, the total is the sum of the lines, and a cap
 applies before any discount (A7).
 

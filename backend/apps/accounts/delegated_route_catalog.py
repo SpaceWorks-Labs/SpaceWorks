@@ -293,3 +293,5 @@ MEMBERSHIP_ROUTES |= {
     "admin-machine-type-integration-list", "admin-machine-type-integration-detail",
     "admin-machine-type-integration-status", "admin-makerspace-selfhost-move-request",
 }
+# Release 2 L26 (#170): Settings › Public stats, a Space-Manager-only settings group.
+DELEGABLE_ROUTES |= {"admin-makerspace-public-stats-settings"}

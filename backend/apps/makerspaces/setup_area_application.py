@@ -43,7 +43,8 @@ def validate_answers(answers):
     if any(not isinstance(value, dict) for key, value in settings.items() if key != "currency"):
         raise ValidationError({"settings": "Settings sections must be objects."})
     overrides = settings.get("features", {})
-    if any(key not in {"inventory.self_checkout", "inventory.kiosk", "machines.certifications", "security.staff_mfa_required"}
+    # Staff MFA is a platform rule since release 2 (#62); the old switch is no setup answer.
+    if any(key not in {"inventory.self_checkout", "inventory.kiosk", "machines.certifications"}
            or type(value) is not bool for key, value in overrides.items()):
         raise ValidationError({"features": "Use supported boolean setup feature switches."})
     for key in overrides:
@@ -133,7 +134,6 @@ def apply_areas(actor, space, answers):
             preserved -= {key for key, definition in FEATURES.items()
                           if definition.parent_module in AREAS["inventory"]}
             preserved -= INVENTORY_FEATURES | {"payments.loans"}
-        preserved.add("security.staff_mfa_required")
         if "inventory" in areas - configuring:
             preserved |= INVENTORY_FEATURES
         features = (features - preserved) | (previous_features & preserved)

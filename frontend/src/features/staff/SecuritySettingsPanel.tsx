@@ -23,8 +23,8 @@ export function SecuritySettingsPanel({ makerspace }: { makerspace: Makerspace }
   const settle = (data: SecuritySettings) => queryClient.setQueryData(key, data);
   const update = useMutation({ mutationFn: ({ setting, value }: { setting: string; value: unknown }) =>
     updateSecuritySettings(makerspace.id, { [setting]: value }), onSuccess: settle });
-  const lock = useMutation({ mutationFn: ({ setting, note }: { setting: string; note: string }) =>
-    lockSecuritySetting(makerspace.id, setting, true, note), onSuccess: settle });
+  const lock = useMutation({ mutationFn: ({ setting, floor, note }: { setting: string; floor: unknown; note: string }) =>
+    lockSecuritySetting(makerspace.id, setting, floor, note), onSuccess: settle });
   const unlock = useMutation({ mutationFn: (setting: string) => unlockSecuritySetting(makerspace.id, setting),
     onSuccess: settle });
   const data = query.data;
@@ -39,9 +39,13 @@ export function SecuritySettingsPanel({ makerspace }: { makerspace: Makerspace }
         description: data?.can_lock ? "You can lock a setting so this space cannot turn it off. Only a platform superadmin removes a lock."
           : "A setting locked by the platform cannot be loosened here.",
         rows: data ? <>
+          <SettingsRow label="Staff MFA" helper="Every staff role needs two-step sign-in (an authenticator app or a passkey). New staff get three days to set it up; member features never need it.">
+            <p className="text-sm text-ink">Required for every staff role (platform rule)</p>
+          </SettingsRow>
           {data.settings.map(setting => <SecurityRow key={setting.key} setting={setting} data={data} pending={pending}
             onChange={value => update.mutate({ setting: setting.key, value })}
-            onLock={note => lock.mutate({ setting: setting.key, note })} onUnlock={() => unlock.mutate(setting.key)} />)}
+            onLock={note => lock.mutate({ setting: setting.key, floor: setting.strict_value ?? true, note })}
+            onUnlock={() => unlock.mutate(setting.key)} />)}
           {error ? <ErrorText message={error.message} /> : null}
         </> : null },
       { id: "pii", title: "Platform access to personal data",
@@ -56,7 +60,9 @@ type RowProps = { setting: SecuritySetting; data: SecuritySettings; pending: boo
 function SecurityRow({ setting, data, pending, onChange, onLock, onUnlock }: RowProps) {
   const id = useId();
   const [note, setNote] = useState("");
-  const forcedOn = setting.kind === "bool" && setting.lock?.floor === true;
+  // A lock forces the stricter value (on for most switches, off for an "allowed" one).
+  const forced = setting.kind === "bool" && setting.lock != null && setting.value === setting.lock.floor;
+  const strict = setting.strict_value ?? true;
   const on = setting.value === true;
   if (setting.kind !== "bool") {
     return <SettingsRow label={setting.label} helper={setting.description}><p className="text-sm text-ink">{String(setting.value)}</p></SettingsRow>;
@@ -65,8 +71,8 @@ function SecurityRow({ setting, data, pending, onChange, onLock, onUnlock }: Row
     <div className="grid gap-3">
       <label className="flex min-h-11 items-center gap-3 text-sm text-ink">
         <input id={id} className="h-4 w-4" type="checkbox" checked={on}
-          disabled={!data.can_edit || pending || (forcedOn && on)} onChange={event => onChange(event.target.checked)} />
-        <span>{on ? "Required" : "Not required"}</span>
+          disabled={!data.can_edit || pending || forced} onChange={event => onChange(event.target.checked)} />
+        <span>{on ? "On" : "Off"}</span>
       </label>
       {setting.lock ? <StatusPill tone="info" icon="Lock"
         label={`Locked by platform${setting.lock.note ? `: ${setting.lock.note}` : ""}`} /> : null}
@@ -78,7 +84,7 @@ function SecurityRow({ setting, data, pending, onChange, onLock, onUnlock }: Row
             <input className="min-h-11 rounded-lg border border-line bg-panel px-3" value={note} maxLength={200}
               onChange={event => setNote(event.target.value)} />
           </label>
-          <button className="desk-button" type="submit" disabled={pending}>Lock on</button>
+          <button className="desk-button" type="submit" disabled={pending}>{strict ? "Lock on" : "Lock off"}</button>
         </form>) : null}
     </div>
   </SettingsRow>;

@@ -119,12 +119,17 @@ class SecuritySetting:
         return floor
 
 
+# Release 2 retired ``security.staff_mfa_required``: staff MFA is mandatory everywhere
+# (#62), so it is a fixed platform rule, not a setting. The login-security rows are
+# appended here by the lane whose door honours them (accounts.login_security_settings).
+from apps.accounts.login_security_settings import (  # noqa: E402 -- after SecuritySetting exists
+    PASSKEYS_ALLOWED, STAFF_IDLE_TIMEOUT_MINUTES, STAFF_SESSION_MAX_HOURS,
+)
+
 REGISTRY = (
-    SecuritySetting(
-        "security.staff_mfa_required", "Require MFA for staff", BOOL, False, bool_stricter,
-        storage=FEATURE,
-        description="Staff with actions in this space must enroll in an authenticator (TOTP) app.",
-    ),
+    PASSKEYS_ALLOWED,  # S-A: passkey ceremonies and the staff factor
+    STAFF_SESSION_MAX_HOURS,  # S-A: staff routes (staff_session_policy)
+    STAFF_IDLE_TIMEOUT_MINUTES,  # S-A: staff routes (staff_session_policy)
 )
 BY_KEY = {setting.key: setting for setting in REGISTRY}
 FEATURE_KEYS = frozenset(setting.key for setting in REGISTRY if setting.storage == FEATURE)

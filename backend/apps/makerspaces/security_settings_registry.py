@@ -80,4 +80,6 @@ def policy_value(setting, values):
 
 
 def is_security_feature(key):
-    return key in FEATURE_KEYS
+    """Any ``security.*`` key: only the security service writes it, and it is never a
+    module setting, a setup answer or a delegable grant (#111 Q10/Q11)."""
+    return key in BY_KEY or str(key).startswith("security.")

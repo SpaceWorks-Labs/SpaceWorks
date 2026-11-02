@@ -104,7 +104,6 @@ AUDIT_ACTIONS = {
     "auth.staff_mfa_grace_started": "Staff two-step grace started",
     # S-A
     "auth.mfa_reset": "Two-step sign-in reset",
-    "makerspace.capability_retired": "Retired setting removed",
 }
 
 # --- Retention (registered here; purge lands in S-B/S-C via services_challenge_purge) ---

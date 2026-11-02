@@ -1,22 +1,29 @@
+import json
+
 from django.http import Http404
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
+from rest_framework.utils.encoders import JSONEncoder
 from rest_framework.views import APIView
 
 from apps.apiclients.throttling import ClientTierRateThrottle
 from apps.inventory.public_stats import build_public_stats
-from apps.inventory.serializers import PublicStatsSerializer
-from apps.makerspaces.editions import public_surface_available
+from apps.inventory.public_stats_cache import cached
+from apps.inventory.public_stats_serializers import PublicStatsPageSerializer
 from apps.makerspaces.lookup import get_public_makerspace
-from apps.makerspaces.platform import module_enabled
 from apps.openapi import PUBLIC_API_AUTH_PARAMETERS
 
 
 @extend_schema(
     tags=["Public inventory"],
     summary="Get public makerspace stats",
-    description="Get public activity stats for a public makerspace.",
+    description=(
+        "Get public activity stats for a public makerspace: the sections, order, fixed period, headline "
+        "numbers and TV refresh its Space Manager chose in Settings › Public stats. A section whose module "
+        "is off is left out; 404 while the page is off or no section is left to show. Counts below 3 are "
+        "published as suppressed. Served from a short per-space cache."
+    ),
     parameters=[
         *PUBLIC_API_AUTH_PARAMETERS,
         OpenApiParameter(
@@ -26,7 +33,7 @@ from apps.openapi import PUBLIC_API_AUTH_PARAMETERS
             description="Public makerspace code (for example TSEL) or slug.",
         ),
     ],
-    responses=PublicStatsSerializer,
+    responses=PublicStatsPageSerializer,
 )
 class PublicMakerspaceStatsView(APIView):
     permission_classes = [AllowAny]
@@ -35,18 +42,15 @@ class PublicMakerspaceStatsView(APIView):
 
     def get(self, request, makerspace_slug):
         makerspace = get_public_makerspace(makerspace_slug)
-        if (
-            # Every section (loans, machines, printing) belongs to a module the
-            # events/bookings editions hide, so the page is hidden with them.
-            not public_surface_available("public_inventory")
-            or not makerspace.public_inventory_enabled
-            or not makerspace.public_stats_enabled
-            or not module_enabled(
-                makerspace,
-                "public_inventory",
-            )
-        ):
+        if not (makerspace.public_stats_enabled and makerspace.public_site_enabled):
             raise Http404
+        data = cached(makerspace, lambda: _plain(PublicStatsPageSerializer(build_public_stats(makerspace)).data))
+        # Every section gated off (modules, editions, the catalogue switch) is no page at all.
+        if not data["sections"]:
+            raise Http404
+        return Response(data)
 
-        serializer = PublicStatsSerializer(build_public_stats(makerspace))
-        return Response(serializer.data)
+
+def _plain(data):
+    """Serializer output as plain JSON values: what the cache stores and every hit returns."""
+    return json.loads(json.dumps(data, cls=JSONEncoder))

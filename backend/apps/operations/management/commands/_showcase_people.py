@@ -72,13 +72,21 @@ def create_space(root):
     # not ship would otherwise make the whole capability write refuse.
     features, _unsupported = prune_features(
         [key for key in FEATURES if key not in FEATURES_LEFT_OFF], space.enabled_modules)
-    return save_space(root, space, {
+    space = save_space(root, space, {
         "enabled_features": features,
         "public_site_enabled": True,
         "public_stats_enabled": True,
         "public_display_name": data.NAME,
         "membership_dues_amount": "25.00",
     })
+    # L26 (#170): every stats section, a headline row and the lobby TV board.
+    from apps.makerspaces.public_stats_settings import save_config
+    save_config(root, space, {
+        "sections": ["events", "machines", "printing", "lending", "community"],
+        "headline": ["community.active_members", "events.attendees", "printing.hours", "lending.loans"],
+        "tv_mode_enabled": True,
+    })
+    return space
 
 
 def create_staff(space, root, password):

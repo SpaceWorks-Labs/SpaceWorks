@@ -37,7 +37,7 @@ export function TechnicianOptInPage() {
           {channel === "whatsapp" ? "WhatsApp" : "SMS"}{data.consent[channel] ? " (agreed)" : ""}</label>)}
       </fieldset> : <p className="text-sm text-muted">The space has no phone number for you, so only Telegram and email are possible.</p>}
       <p className="text-sm">For Telegram, send <span className="font-mono">{data.telegram_start}</span> to the space's Telegram bot{data.consent.telegram ? " (done)" : ""}.</p>
-      {agreed.length ? <p role="status" className="text-sm text-success">Thanks, you agreed to {agreed.join(" and ")}.</p> : null}
+      {agreed.length ? <p role="status" className="text-sm text-success-ink">Thanks, you agreed to {agreed.join(" and ")}.</p> : null}
       {accept.error ? <p role="alert" className="text-sm text-danger">{accept.error.message}</p> : null}
     </div> : null}
     primary={{ label: "I agree", pending: accept.isPending, disabled: !data?.has_phone || !channels.some(channel => !data?.consent[channel]),

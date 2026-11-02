@@ -21,7 +21,7 @@ export function IssueRecord({ issue }: { issue: IssueDetail }) {
     {issue.photos.length ? <section aria-label="Photos" className="flex flex-wrap gap-3">
       {issue.photos.map(photo => photo.url ? <a key={photo.id} href={photo.url} target="_blank" rel="noreferrer">
         <img src={photo.url} alt={`Photo taken ${photo.stage === "reported" ? "with the report" : photo.stage === "fixed" ? "with the fix" : "during the work"}`}
-          className="h-24 w-24 rounded-xl border border-line object-cover" /></a> : null)}
+          loading="lazy" className="h-24 w-24 rounded-xl border border-line object-cover" /></a> : null)}
     </section> : null}
     <KeyValueCard title="Record" items={[
       { label: "Working on it", value: issue.assignees.map(row => row.name).join(", ") || "Nobody yet" },

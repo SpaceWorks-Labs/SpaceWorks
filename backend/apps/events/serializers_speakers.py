@@ -119,7 +119,9 @@ class EventHistorySerializer(serializers.Serializer):
 class TicketPatchSerializer(serializers.ModelSerializer):
     class Meta:
         model = EventTicketType
-        fields = ("name", "amount", "audience", "capacity", "sales_start_at", "sales_end_at", "is_active")
+        fields = ("name", "amount", "audience", "capacity", "sales_start_at", "sales_end_at", "is_active",
+                  # Release 2 L6 (G29): order fields.
+                  "tier_group", "tier_rank", "pricing_mode", "min_amount", "seats_per_ticket", "is_hidden", "min_quantity", "per_order_limit")
         extra_kwargs = {field: {"required": False} for field in fields}
 
 

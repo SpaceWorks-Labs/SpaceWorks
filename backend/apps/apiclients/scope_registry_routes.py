@@ -176,6 +176,9 @@ _ROUTE_DEFINITIONS += (
     ("public-machine-job-types", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, True),
     ("public-machine-job-upload", _WRITE, PUBLIC_WRITE_SCOPES, TARGET_TENANT_SLUG, False, True),
     ("public-machine-job-submit", _WRITE, PUBLIC_WRITE_SCOPES, TARGET_TENANT_SLUG, False, True),
+    # Lane L6: the public ticket shop reads only what the event page already shows.
+    ("public-event-ticket-shop", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False),
+    ("public-event-ticket-shop", _WRITE, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False),
 )
 
 

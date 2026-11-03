@@ -79,4 +79,6 @@ urlpatterns = [
     ),
     # Owner stage forms, responses and stage-file uploads (staged_forms/urls_member.py).
     path("makerspaces/<int:makerspace_id>/events/<int:pk>/", include("apps.events.staged_forms.urls_member")),
+    # Release 2 L6: ticket orders, seat claims, transfers, type changes and series passes.
+    path("", include("apps.events.urls_ticketing_member")),
 ]

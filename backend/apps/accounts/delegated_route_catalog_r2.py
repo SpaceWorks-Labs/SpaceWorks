@@ -76,3 +76,12 @@ admin-id-programme-import admin-id-programme-card-jobs admin-id-programme-card a
 admin-id-programme-card-email admin-id-programme-card-photo-request admin-event-card-designs
 admin-event-card-settings admin-event-id-cards admin-event-id-card-extras admin-event-card-jobs
 admin-event-card-scan admin-event-id-card admin-event-id-card-revoke admin-event-id-card-download""".split())
+# Release-2 lane L6, paid ticketing v2: add-ons, sales rules, the order list, desk collection and
+# the guest pay link are run by every organiser holding the event's registration grant (each view
+# re-checks it). The refund override, venue fees and series pass prices are money policy: a staff
+# role in the target space (`manage_events`) only.
+DELEGABLE_ROUTES |= frozenset("""admin-event-addons admin-event-addon-detail admin-event-sales-settings
+admin-event-orders admin-event-order-detail admin-event-registration-collect-payment
+admin-event-registration-pay-link""".split())
+MEMBERSHIP_ROUTES |= frozenset("""admin-event-refund-policy admin-event-venue-fee admin-event-venue-fee-charge
+admin-event-series-pass-types admin-event-pass-type-detail""".split())

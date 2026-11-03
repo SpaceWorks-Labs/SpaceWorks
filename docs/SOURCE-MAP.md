@@ -386,8 +386,13 @@ registered fan-out, current source/device gates, fenced claims and transport. Th
 member_push_leases helper remains for legacy staff matrix use. `notifications/tasks.py`
 re-enters canonical envelope delivery for five-minute recovery; old enqueue IDs are inert.
 `notifications/inbox_scope.py` validates persisted requester-selection subjects.
-`integrations/push.py` shares one-device provider sending; `push_payload.py` builds v2
-data through the existing `mobile_link_contract.py` routing contract.
+`integrations/push.py` shares one-device provider sending; `push_payload.py` builds v3
+data (v2 keys unchanged, plus `channel`/`category`, 40/120-character title/body) through the
+existing `mobile_link_contract.py` routing contract. `push_categories.py` is the single source of
+truth for the watch-friendly presentation (L19, #116): feature -> Android channel and iOS
+(sub)thread, the three safe action sets, and the money/evidence events that never get buttons.
+`push_apns.py`/`push_fcm.py` place them on the wire (`aps.category`/`thread-id`; FCM
+`android.notification.channel_id`/`tag`, never `click_action`).
 `payments/failure_notifications.py` handles verified failed attempts without closing debt.
 `payments/services_mobile.py` coordinates native rail locks and vendor dispatch;
 `services_mobile_razorpay.py` validates and recovers native Orders through
@@ -737,6 +742,44 @@ identity normalization and production minimum-version comparison. `mobile_associ
   `MembershipAdmissionExtras.tsx`, `refunds/MembershipRefundExtras.tsx`, `members/{MemberAccountLifecycle,
   AdmissionJoinWithPlans}.tsx`, `members/joinPlansApi.ts`, `publicPages/PublicPlanCards.tsx`.
 
+### Release 2 L12 (machines and loans depth)
+
+- Switches: `makerspaces/capability_definitions_r2_l12.py` (12 keys); per-type job settings on
+  `machines/models_policy.py` (`MakerspaceMachineTypePolicy`), read through `machines/job_policy.py`.
+- Machine job flow (#140-#142): `machines/models_job_fields.py` (the job columns, an abstract mixin on
+  `MachineServiceRequest`), `job_intake.py` (the ONE member intake; the printer and generic routes call
+  its gate), `job_files.py` (maker_formats staging + range-read validation), `job_order.py` (the shared
+  queue order and anchors), `job_rules.py` (quote rule, length cap, open-job limit), `job_charges.py`
+  (cap at the quote, prepay, failed-job seam to L15), `job_pickup.py`, `job_sweeps.py` +
+  `tasks_jobs.py` (quotes, prepaid queueing, pickup reminders), `notifications_job_flow.py`.
+  Transitions: `service_workflow_review.py` (needs changes, quotes), `service_workflow_board.py`
+  (reorder, urgent, pre-assign), `service_workflow_batch.py`, `service_workflow_failure.py`, and the
+  edited `service_workflow_{actions,start,cancel,collect,helpers}.py`. Routes: `views_jobs.py`,
+  `views_jobs_member.py`; staff `admin_api/views_machine_jobs.py`, `views_machine_job_board.py`.
+- Gates L23 reuses: `machines/booking_gate.py` (requires_booking), `machines/lockout.py`,
+  `makerspaces/opening_hours.py`; downtime: `machines/models_downtime.py`, `downtime.py`,
+  `admin_api/views_machine_downtime.py`. Machine time booking: `BookableSpace.machine` in
+  `bookings/services_spaces.py`.
+- Work orders (the one repair model L16 builds on): `maintenance/models_work_orders.py`,
+  `work_orders.py`, `views_work_orders.py`; `MaintenanceSchedule.blocks_use`.
+- Consumables / To-Buy: `inventory/consumables.py`, `views_consumables.py`, `procurement/auto_drafts.py`,
+  `services_refill.py`, `services_bought.py` (mark bought -> L5 `record_expense`), vendors
+  `procurement/models_vendors.py`, `services_vendors.py`, `views_vendors.py`.
+- Loans: `hardware_requests/request_lifecycle.py` (cancelled/expired, re-exported by `workflow.py`),
+  `pickup_windows.py`, `waitlist.py`, `models_loans.py`, `notifications_loans.py`, `loan_depth_views.py`,
+  `tasks_loans.py`; `inventory/availability_reservations.py` (reservation release, waitlist holds),
+  `inventory/public_expected_back.py`.
+- Classification: `data_export/classification_l12.py`, `tenant_migration/{catalog,audit_references,
+  unique_values}_l12.py`, `audit/presentation_catalog_l12.py`, `accounts/merge_registry_rows_l12.py`.
+- Frontend, member: `features/machine-jobs/` ("Request a job" flow, `JobRequestPage`; my jobs
+  `MyMachineJobsPage`; one job `MachineJobPage` with quote, changes, pickup cards; `PrintRequestAlias`
+  keeps `/print` working). Loans: `inventory/{PickupWindowFields,WaitlistJoin,ExpectedBack,waitlistApi}`,
+  `members/{MemberWaitlist,MemberRequestWithdraw}.tsx`.
+- Frontend, staff: `staff/panels/machine/JobBoard*.tsx` (per-type queue board), `JobAction*`,
+  `BatchDialogs.tsx`, `JobSettingsEditor.tsx`, `DowntimePanel.tsx` (+ lockout badge), `workOrders/`;
+  `staff/BookableSpaceMachine.tsx`; `staff/panels/{ConsumablesPanel,VendorsPanel,MarkBoughtDialog,
+  ItemWaitlist,RequestCancelDialog,InventoryLendingFlags}.tsx`, `staff/LoanReservationPolicySettings.tsx`.
+
 ## Domain and frontend map
 See [SOURCE-MAP-DOMAINS.md](SOURCE-MAP-DOMAINS.md) for hardware loans, payments,
 printing, events, the frontend directories and connected device monitoring.
@@ -841,6 +884,13 @@ proof claims), `staff_identity.require_staff_mfa` the staff gate, `mfa_grace.py`
 `security_signals.py` the `mfa_changed` signal, and `accounts/passkeys/` the WebAuthn backend (`rp_id`,
 `ceremonies`, `services`, `assertion`, `policy`, `views`, `urls`, `checks`; routes classified in
 `passkey_route_catalog.py`). `makerspaces/migration_support/retire_staff_mfa.py` backs makerspaces 0119.
+Login security S-C: `accounts/ip_rules.py` (platform allow/deny rules, 60 s cache, `AXES_WHITELIST_CALLABLE`),
+`ip_guard.py` (client source, HMAC keys, failure counters, automatic blocks, the local `sw_device` reader),
+`ip_guard_signals.py` (what counts as a failure), `ip_guard_middleware.py` (`LoginIPGuardMiddleware` on
+`login_ip_guard` views), `ip_guard_schema.py` (the OpenAPI hook), `turnstile.py` (Cloudflare Turnstile),
+`password_breach.py` (the HIBP validator), `staff_network.py` (the per-space staff IP allow-list at the staff
+surface check), `admin_ip_access.py` (the `/control/` *IP rules* and *Automatic blocks* screens),
+`login_methods_status.py`, `tasks_login_security.py` (retention) and `management/commands/login_security.py`.
 Staff roles on people (U-B): `staff_account_policy.py` is the one authority policy (superadmin-only
 Space Manager rule, no-self, last manager, tenant gate and quota codes, `StaffRoleRefused`);
 `staff_account_services.py` grants (to community members) and changes roles and machine scopes over
@@ -870,7 +920,8 @@ staff step-up), `views_device_staff.py` (`auth/device/staff-grant`), `services_d
 including the auth-generation refusal), `services_staff_grants.py` (staff-grant revocation on a
 lost role, its signal and audits) and `native_app_version.py` (`MIN_NATIVE_APP_VERSION_*`) own
 native authority.
-`delegated_routes.py` exposes the authority-source classification in `delegated_route_catalog.py`;
+`delegated_routes.py` exposes the authority-source classification in `delegated_route_catalog.py`
+(release-2 lane rows in its `delegated_route_catalog_r2.py` sibling);
 `checks.py` fails unclassified staff URLs. `member_identity.py` and `account_kind_guards.py`
 keep member credential/community writers separate. `credential_revocation.py` and
 `credential_revocation_helpers.py` own generation fencing and account-owned credential teardown.

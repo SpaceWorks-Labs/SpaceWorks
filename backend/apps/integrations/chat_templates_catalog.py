@@ -24,6 +24,13 @@ EVENTS = {
     # Machine-service cancellation fans out to staff and rooms (notify_service); the
     # requester leg is an owner self-notice, so only the bounded summary is offered.
     ("printing", "cancelled"): (),
+    # Lane L12: loan withdrawals/expiry, automatic To-Buy, and the machine job flow.
+    ("hardware_requests", "cancelled"): ("request.id", "request.status"),
+    ("hardware_requests", "expired"): ("request.id", "request.status"),
+    ("stock", "to_buy_created"): (),
+    **{("printing", event): () for event in (
+        "changes_requested", "resubmitted", "quoted", "quote_approved", "quote_declined", "quote_expired",
+        "requeued", "uncollected", "no_show_flagged")},
 }
 
 # These producers explicitly disable staff/room fan-out. Their personal content
@@ -36,6 +43,9 @@ PERSONAL_ONLY_EVENTS = frozenset({
     # Queue-head "next" is an owner self-notice only (service_queue_notices); it never
     # reaches staff or rooms.
     ("printing", "next"),
+    # Lane L12: owner reminders and the waitlist offer never reach staff or rooms.
+    ("printing", "quote_reminder"), ("printing", "pickup_reminder"),
+    ("hardware_requests", "waitlist_offer"),
 })
 # Events programme notices are addressed to the applicant, team member or certificate
 # subject; none has a staff room body.

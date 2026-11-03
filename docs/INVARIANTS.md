@@ -2306,10 +2306,26 @@ never mute a makerspace. Deliberately the opposite of the *access* rules, which 
   parent/device uniqueness. Untouched pending rows are canceled, attempted pending/sending/expired
   work is held, and terminal history stays inert; conversion never sends. Sending activation and
   destructive retirement remain separate operator checkpoints after replay and reconciliation.
-- **Native push payload v2** uses string data `v=2`, `event_id`, `makerspace_id`, `feature`, `event`,
-  optional `inbox_row_id` and an allowlisted local `link`. Canonical event identity is
+- **Native push payload v3** (release 2, L19, #116) keeps every v2 key with its v2 meaning --
+  string data `event_id`, `makerspace_id`, `feature`, `event`, optional `inbox_row_id` and an
+  allowlisted local `link` -- with `v=3`, and only ADDS `channel` (always) and `category`
+  (optional). A v2 app that ignores unknown keys must keep working: never rename, retype or drop a
+  v2 key, never set FCM `click_action` (a v2 app without the intent filter would open nothing on
+  tap), and keep the FCM `notification` block. Canonical event identity is
   `uuid5(NAMESPACE_URL, envelope.dedup_key)`. Content is rendered for the personal recipient,
-  never copied from a room body. Titles name the makerspace; APNs uses its thread ID. Local links
+  never copied from a room body. Titles are the personal notice's subject (staff room alerts keep
+  the space name), at most 40 characters; bodies at most 120, cut at a word boundary. APNs
+  `thread-id` is the makerspace id (`<id>.events` for the events subthread).
+- **Push actions are never decisions (#116, #128 C-27).** `integrations/push_categories.py` owns
+  the action sets: `open`, `mark_seen` (the person's own `POST .../inbox/{ms}/{id}/read`) and
+  `snooze` (`.../snooze`, only while `notifications.inbox_snooze` is on). No push action may
+  approve, reject, pay, refund, issue, return or hand over anything, and money and evidence
+  events carry no `category` at all: every `payments` event, the declared loan/membership
+  charge events, and the handover events whose records carry evidence. Only catalogued events
+  are actionable, and an uncatalogued or money/evidence-sounding event name fails closed. Adding
+  a notification event therefore needs no registry change unless it is money or evidence, which
+  must be declared there. `mobile.watch_actions` (default on) only decides whether `category` is
+  sent; it declares no `requires_features` so switching `mobile.push` off never fails validation. Local links
   must pass both the inbox sanitizer and native link contract. Retained legacy staff matrix legs
   keep their existing stable event/log identifiers and are deliberately pre-skipped in matching
   envelopes. Apps deduplicate and refetch source APIs on tap/foreground. Unsupported links fall
@@ -2938,7 +2954,70 @@ Owner decisions #62, #66, #74, #110c, #111 Q9-Q11, #128 C-1/C-2 and #135 Q-A1-Q-
 
 ### Security alerts and "this wasn't me" (S-B fills)
 
-### IP blocking, allow/deny rules and CAPTCHA (S-C fills)
+### IP blocking, allow/deny rules and CAPTCHA (S-C)
+
+- **Automatic blocks: one source, many accounts (#62, #157; `accounts/ip_guard.py`).** A failed sign-in
+  counts once per (source, account) pair inside `LOGIN_IP_BLOCK_WINDOW_SECONDS` (900); when one source has
+  failed against `LOGIN_IP_BLOCK_DISTINCT_ACCOUNTS` (10) different accounts it gets an `IPAutoBlock` for
+  exactly `LOGIN_IP_BLOCK_SECONDS` (3600). The source is the IPv4 address (/32) or the IPv6 /64. One fixed
+  length: an active block is never extended, no escalation, no decay. One person mistyping, however often,
+  never blocks a space's shared NAT. Failures are Django's `user_login_failed` (every `authenticate`
+  failure, the password door's unknown identifiers, the native door) and S-B's `security_signals.
+  login_refused` once it exists (`ip_guard_signals.py` connects it automatically). A block reached inside a
+  transaction is written by the middleware after the response, so a rolled-back sign-in cannot undo it.
+- **Never counted:** an unparsable address, loopback, private (RFC 1918, carrier-grade NAT, IPv6
+  unique-local; not `ipaddress.is_private`, which also swallows the public documentation ranges), link-local, a proxy hop (`REMOTE_ADDR` and the X-Forwarded-For entries the proxy count marks as proxies),
+  and any request whose X-Forwarded-For chain is shorter than `TRUSTED_PROXY_COUNT`; the last logs
+  `security.proxy_count_exceeds_hops` once per process. System check `accounts.W002` warns when
+  `BEHIND_TRUSTED_PROXY` is on with `TRUSTED_PROXY_COUNT=0`. The client is resolved exactly as DRF
+  throttles and axes resolve it (`config/client_ip.get_throttle_client_ip`).
+- **Privacy.** Counters, audit metadata and `IPAutoBlock.ip_key` are keyed HMACs; the raw network lives only
+  on the block row (for the superadmin's list) and is deleted 7 days after the block ends with the row
+  (`tasks_login_security`, daily; django-axes rows after 30 days). Auto-blocks never email anyone (Q14).
+- **Rules (`accounts/ip_rules.py`).** Platform-global `IPAccessRule`s, edited only by the superadmin in
+  `/control/` (*IP rules*, behind the control step-up; both models are in `GLOBAL_ADMIN_MODELS` and
+  `CONTROL_AUTHORITY_MODELS`). ALLOW beats every DENY and every automatic block; DENY always applies, even
+  to a remembered device. Rules are cached 60 s and the cache is dropped on every save and delete; a cache
+  outage reads them from the database, so deny rules never fail open (the counters do). The form refuses a
+  deny rule that covers the editor's own address unless an allow rule also covers it.
+  `AXES_WHITELIST_CALLABLE` exempts only the platform superadmin's username from an ALLOW-listed address.
+- **The guard (`LoginIPGuardMiddleware`, before `AxesMiddleware`).** It acts only on views with
+  `login_ip_guard = True` (password, MFA verify/enrol, sign-up, reset, phone and social doors, OIDC and
+  GitHub browser flows, the native device door, staff-invitation accept, account restore, merge start) plus
+  `GUARDED_ROUTES` (the passkey sign-in routes and `admin:login`), never OPTIONS. Deny or auto-block →
+  429 `ip_blocked` with `Retry-After` when the block ends; a new sign-in view must carry the flag.
+- **Remembered devices (Q12).** A valid signed `sw_device` cookie matching a live, unrevoked `KnownDevice`
+  bypasses AUTOMATIC blocks only; its own failures count per device and 10 in the window suspend the
+  bypass. The reader in `ip_guard.known_device_hmac` is local until S-B swaps it for `device_memory.lookup`.
+- **Turnstile (`accounts/turnstile.py`; off until both keys).** Active for a request only when its `Origin`
+  is one the deployment verifiably serves (`passkeys.rp_id.is_trusted_origin`) and that host is in
+  `TURNSTILE_HOSTNAMES` (empty: the origin's own host). On the CAPTCHA routes (password sign-in, sign-up,
+  password reset, emailed-code requests) a token (`X-Turnstile-Token` header, or `cf-turnstile-response`)
+  is required after `TURNSTILE_AFTER_FAILURES` failures from the source or for the account, always on a
+  space's verified domain set to `always`, and instead of the 429 for an auto-blocked source (a deny rule
+  is never unlocked by a CAPTCHA). Server-side `siteverify` (3 s) checks `success`, `action` and `hostname`;
+  refusals are 400 `captcha_required` / `captcha_failed` carrying `turnstile_site_key` and
+  `turnstile_action`; `auth.captcha_failed` is audited once per source per window. Cloudflare unreachable:
+  `TURNSTILE_FAIL_MODE=open` (default) lets it through. Native device doors are never asked (attestation is
+  their proof). `/api/v1/config` publishes `turnstile_site_key` only when configured, and the SPA's CSP
+  (`frontend/docker-entrypoint.d/40-web-analytics.sh`) adds `https://challenges.cloudflare.com` only when
+  the frontend container has `TURNSTILE_SITE_KEY`.
+- **Per-space rows (#128 C-2).** `security.captcha_on_sign_in` (off < after_failures < always) applies on
+  the space's VERIFIED custom domain only and can only tighten the platform rule. `security.staff_ip_allowlist`
+  applies at the staff surface check (`surface_policy._staff_admits` → `staff_network.assert_staff_network`),
+  never at the shared sign-in door (one account per person; member features are never blocked): a route
+  targeting spaces needs the client inside each targeted space's non-empty list, a space-less staff route
+  inside every non-empty list across the person's staff spaces. Refusal is 403 `staff_network_refused`.
+  The superadmin never reaches it (#110). Platform deny rules and auto-blocks stay global.
+- **Breached passwords (#66; `accounts/password_breach.py`).** `BreachedPasswordValidator` is last in
+  `AUTH_PASSWORD_VALIDATORS`, so every `validate_password` caller runs it (sign-up, change, reset and
+  restore confirmation, invitation accept, admin-set passwords, the `/control/` reset form). Only the first
+  five hex characters of the SHA-1 leave the server (`range/<prefix>`, `Add-Padding: true`, httpx,
+  `PASSWORD_BREACH_CHECK_TIMEOUT_SECONDS`); padding rows (count 0) never match. Timeout, network error or a
+  non-200 answer lets the password through. A refusal is the field's messages plus `code: password_breached`
+  (`error_body`) and an `auth.password_breach_rejected` row naming the account, never an actor.
+- **Host recovery.** `manage.py login_security --list | --allow <cidr> | --unblock <ip|all>` beside
+  `axes_reset_ip` (an axes lockout) and `recover_superadmin --reset-mfa`.
 
 ### Passkeys and the relying-party ID (S-A)
 
@@ -3106,6 +3185,128 @@ Owner decisions #62, #66, #74, #110c, #111 Q9-Q11, #128 C-1/C-2 and #135 Q-A1-Q-
   closure carries a fair-use limit (`module_switch_authority.LIMIT_GATED_MODULES` with a non-null
   `resource_limit`) is installed by the superadmin only. Every purge stays superadmin-only. The
   generic makerspace PATCH still refuses `enabled_modules`.
+
+## Machines and loans depth (release 2, lane L12; #76, #77, #94, #140–#142)
+
+### The uniform machine job flow (#140–#142)
+
+- **One intake for every machine type.** `machines/job_intake.py` is the only member intake:
+  the new `public/<slug>/machine-jobs` routes AND the two older routes (the 3D-printer form
+  `machine-service/3d-printer/*` and the generic `machine-service-requests`, kept as aliases) all
+  pass `require_member_job_gate`: `machines.job_requests` on (404 otherwise), the type's
+  `accepts_job_requests` setting, and the presence gate (a member of THIS space, checked in now,
+  waiver signed when waivers are on -- `require_public_machine_requester`). Members only; staff
+  still create jobs for a member from the console. Per-type `max_open_jobs` is counted under the
+  makerspace lock (409 `job_limit_reached`).
+- **Files are checked against `maker_formats`.** A job file is staged with the type's registry
+  groups (`job_policy.file_groups`: printers fab-3dprint + hardware-cad, laser/vinyl fab-2d, CNC
+  fab-cnc + fab-2d + hardware-cad, PCB hardware-pcb; images only as screenshots), presigned to
+  the staging key, and validated with versioned range reads (`job_files.validate_job_object`)
+  before it attaches. At least one non-screenshot file is required. No server-side slicing or
+  geometry parsing (#142 OQ-12).
+- **The lifecycle is still one authority.** New statuses `changes_requested`, `quoted`,
+  `uncollected` join `service_workflow_helpers._ALLOWED`; every edge is taken in `service_workflow*`
+  (review, board, batch, failure, collect modules) with one `machine_service.<event>` audit row and
+  one notice. `MachineServiceRequest.status` stays un-bulk-updatable.
+  pending → accepted | rejected | cancelled | changes_requested | quoted;
+  changes_requested → pending (resubmit) | rejected | cancelled;
+  quoted → accepted (member approves, or a prepaid charge settles) | quoted (re-quote) |
+  changes_requested | rejected | cancelled (declined or expired after 7 days);
+  accepted → in_progress | cancelled | changes_requested; in_progress → completed | failed |
+  cancelled (staff only); completed → collected | uncollected.
+- **Members cancel only before In progress** (`OWNER_CANCELLABLE`); staff may cancel a running job.
+- **Quotes are L15 prices, frozen.** Staff quote with `pricing.quote()` (never a local price); the
+  snapshot and digest are frozen on the job, valid 7 days, reminded on day 5, cancelled unanswered
+  by the sweep. Approval must carry the digest the member saw (409 `price_changed`). Whether a
+  type needs a quote is `quote_mode` (auto = whenever the job is priced, off, above an amount,
+  always) behind `machines.job_quotes`; `accept` answers 409 `quote_required` while one is needed.
+- **Charge the actual, capped at the quote** (`job_charges.charge_completed`): when the actual
+  costs more than the approved quote, the frozen quote is raised instead. Prepay types raise the
+  quoted charge PENDING on approval and the job joins the queue only once it is settled (the
+  sweep or staff "Queue now"); a prepaid job and its re-runs are never charged again. Money never
+  moves automatically: a prepaid job the space does not run opens a staff-approved refund case.
+- **Failure (#142 OQ-8).** `fail` takes a reason code and a fault. A space/machine fault re-runs
+  the job FREE at the FRONT of its queue (the child keeps the original's queue anchor) after
+  commit, at most twice automatically, then staff decide. A member/file fault applies the type's
+  `member_fault_charge` (default none; material only or full) through L15's
+  `create_for_failed_request`. A failure without a fault (a device report) is left to staff.
+- **One queue order everywhere.** `job_order.ordering()`: accepted before pending, urgent first,
+  then the anchor `Coalesce(queued_at, created_at)`, then id -- read by the position, the "You're
+  next" head, the ETA simulator and the board. `queued_at` is empty until the place moves: a
+  staff reorder (an anchor between the new neighbours), a late answer (more than 3 days on a
+  change request or quote moves the anchor to the answer time, OQ-5) or a re-run (inherits).
+- **Batch runs (OQ-9, `machines.batch_start`).** Several queued jobs start on one machine; each
+  keeps its own hold, estimate and audit. The machine frees and the batch closes when its LAST
+  job ends; completing a batch splits time and material by estimate unless staff give the split.
+- **Pickup (OQ-7/OQ-15).** Completion issues a 6-character pickup code and records the pickup
+  place. Collect accepts the code (whoever shows it) or a hand-over to the member in person, and
+  records the collector's name (encrypted, scoped PII). Reminders go on days 3 and 10; from day
+  14 staff (never the sweep) mark Not collected; a third no-show in six months flags the member to
+  staff, never bans. `machines.pay_before_pickup` refuses collect while the charge is pending.
+- **ETA respects opening hours for attended types (OQ-11).** A type `runs_unattended` (default:
+  printers yes, everything else no) or not; attended work is pushed into the space's open hours
+  (`makerspaces/opening_hours.py`), inside the same four-query snapshot budget.
+
+### requires_booking, opening hours and lockout (MI-43, machines D1/D6/D7)
+
+- **Machine time is booked through bookings.** A bookable resource may be one machine's time
+  (`BookableSpace.machine`, kind `machine`, `machines.time_booking`); setting it fixes the space's
+  machine type so certification gating applies. One live resource per machine.
+- **`machines/booking_gate.check(machine, person, purpose=...)` is the one gate** (L23 sessions
+  call it): someone else's live booking refuses everyone (409 `machine_booked`); for
+  `purpose="session"` a type with `requires_booking` needs the person's own live booking (409
+  `booking_required`). Service `start` calls it with `purpose="service"`. Inert while the switch or
+  the bookings app is off.
+- **`makerspaces/opening_hours.py`** (`advance_open`, `next_opening`, `closing_time`) is the one
+  open-hours calculator for ETAs and session auto-stop; a space with no hours is always open.
+- **Lockout.** A maintenance schedule with `blocks_use`, overdue past the type's `grace_days`,
+  refuses `start` with 409 `machine_locked_out` (`machines/lockout.py`; sessions use the same).
+- **Downtime ledger.** `change_status` opens a `MachineDowntime` period when a machine goes to
+  maintenance/offline and closes it when it returns (one open period per machine, DB-enforced);
+  rows are never deleted and a closed row is final. Public machine detail shows only the expected-
+  back DATE, never the reason. Behind `machines.maintenance`.
+- **Work orders are the ONE repair/maintenance job model** (`maintenance.WorkOrder`; L16 builds
+  repairs and room/item maintenance on it). Subject = machine | inventory product | inventory
+  unit | bookable space, each behind its parent's maintenance switch and its manager's action;
+  closing a machine work order writes the immutable `MaintenanceLog`; `takes_machine_down` opens
+  and closes downtime through the machine status.
+
+### Consumables, To-Buy and vendors (MI-40, #94)
+
+- `InventoryProduct.is_consumable` (quantity-tracked only, DB check; `inventory.consumables`):
+  logged as used through `availability.consume_available`, never lent (submit, self-checkout and
+  handout refuse it) and never public. Crossing the reorder point raises ONE system To-Buy draft
+  after commit (`procurement/auto_drafts.py`), fail-safe. Item origins are `hardware` rows
+  (`inventory.tobuy`); every machine origin is a `printing` row (`machines.tobuy`).
+- **Mark bought** (`procurement/services_bought.py`) records the purchase through L5
+  `ledger_api.record_expense` (source `procurement.to_buy` + item id, idempotent; domain
+  `inventory`, or `machines` with the machine type), with the receipt photo/PDF promoted from the
+  staging key, then puts the stock up only through `availability` (an item origin) or the
+  consumable ledger (a machine consumable). Authority: the procurement stream AND
+  `finance_view.may_record(domain, machine_type)` (#94); no threshold; nothing is paid out.
+- **Vendors** (`procurement.Vendor`, `inventory.vendors`) are the space's business records,
+  archived never deleted, linked from To-Buy rows and warranties (SET_NULL).
+
+### Loans depth (inventory D1/D3/D14/D16, #77)
+
+- **Two new terminal request states, both through the workflow module** (`request_lifecycle.py`,
+  re-exported by `workflow.py`): `cancelled` (the requester with `loans.withdrawals`, or staff
+  holding the review action, from pending or accepted) and `expired` (an accepted request not
+  collected by its pickup deadline, `loans.pickup_windows`). Both release the reservation through
+  `availability.release_request_reservation`; nothing was charged before issue.
+- **Pickup windows.** With `loans.reservations` the member picks a window (up to
+  `reservation_max_days_ahead`); the reservation is held from accept as before (no time-ranged
+  availability). The deadline is the window end, else accept + `pickup_window_hours` (0 = never).
+- **Waitlist (`loans.waitlist`).** Strict FIFO per item; when stock rises the head entry is
+  offered and the units are HELD through `availability.hold_for_waitlist` until claimed, left or
+  lapsed (`waitlist_offer_hours`); accepting the claiming request converts the hold into its
+  reservation in one transaction. Holds never drive a bucket below zero (row locks in pk order).
+  Renewal refuses while someone waits.
+- **Expected-back date** (`inventory.expected_back` + the item's opt-in): only the local DATE of
+  the earliest due-back of an unavailable, non-hidden item; never who holds it or how many are out.
+- **#77 standing notes.** The offline (kiosk) queue keeps REFUSING new direct handouts (9c); a
+  direct handout that failed is redone online with fresh evidence (9e). Inductions before a first
+  loan are not built (#96, #128 C-19).
 
 ## Account deletion
 

@@ -294,7 +294,5 @@ TASK_INTERNAL_PARTICIPANTS["apps.makerspaces.tasks.cleanup_public_page_assets_ta
 FANOUT_GATE_PARTICIPANTS["apps.makerspaces.public_page_asset_cleanup.sweep"] = "Typed private-page byte cleanup."
 from .source_gate_reimbursements import gate_tasks as gate_reimbursement_tasks
 gate_reimbursement_tasks(TASK_INTERNAL_PARTICIPANTS)
-from .gate_policy_r2_l2 import gate_tasks as gate_r2_l2_tasks
-gate_r2_l2_tasks(TASK_INTERNAL_PARTICIPANTS, FANOUT_GATE_PARTICIPANTS)
-from .gate_policy_r2_l11 import gate_tasks as gate_r2_l11_tasks  # noqa: E402
-gate_r2_l11_tasks(TASK_EXEMPTIONS)
+from .gate_policy_r2 import gate_tasks as gate_r2_tasks  # noqa: E402
+gate_r2_tasks(TASK_EXEMPTIONS, TASK_INTERNAL_PARTICIPANTS, FANOUT_GATE_PARTICIPANTS)

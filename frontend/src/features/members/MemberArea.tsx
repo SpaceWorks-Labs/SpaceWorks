@@ -21,6 +21,7 @@ import { usePresenceCurrent } from "../presence/api";
 import { MemberCertifications } from "./MemberCertifications";
 import { MemberActivityPanel, type MemberActivity } from "./MemberActivity";
 import { MemberDues, MemberHistory, MemberNotices, MemberTerm } from "./MemberDashboardSections";
+import { MemberWaitlist } from "./MemberWaitlist";
 import { PartnerEvents } from "./PartnerEvents";
 import { MemberDirectory } from "./MemberDirectory";
 import { MakerspaceDiscovery } from "./MakerspaceDiscovery";
@@ -203,10 +204,12 @@ export function MemberArea() {
       {activeTab === "overview" && memberActivity ? <MemberTerm term={memberActivity.membership_term} /> : null}
       {activeTab === "overview" && membershipModuleOn && membership.membership_status === "active" ? <MemberCardPanel compact cardHref={`${slug ? `/m/${slug}/member` : "/member"}/account-portal?section=card`} makerspaceId={makerspaceId} spaceName={membership.makerspace.name} /> : null}
       {activeTab === "payments" && memberActivity ? <MemberDues dues={memberActivity.membership_dues} /> : null}
-      {activeTab === "loans" && section === "history" && memberActivity ? <MemberHistory loans={memberActivity.loan_history} requests={memberActivity.request_history} /> : null}
+      {activeTab === "loans" && section === "history" && memberActivity ? <MemberHistory loans={memberActivity.loan_history} requests={memberActivity.request_history}
+        withdraw={bootstrap.data?.features?.includes("loans.withdrawals") ? { makerspaceId, makerspaceSlug: resolvedSlug } : undefined} /> : null}
       {activeTab === "events" && bootstrap.data?.modules.includes("events") && membership?.membership_status === "active" ? <div hidden={section !== "partners"}><PartnerEvents makerspaceId={makerspaceId} slug={resolvedSlug} onAvailable={setHasPartnerEvents} visible={section === "partners"} /></div> : null}
       {activeTab === "account" && membership.membership_status === "active" && makerspaceId >= 0 && membershipModuleOn ? <>{section === "profile" ? <MemberProfilePanel makerspaceId={makerspaceId} /> : section === "card" ? <MemberCardPanel makerspaceId={makerspaceId} spaceName={membership.makerspace.name} /> : section === "community" ? <MemberDirectory makerspaceId={makerspaceId} /> : null}</> : null}</> : null}
     {activeTab === "overview" && memberAccess && makerspaceId >= 0 ? <MemberUsagePanel key={makerspaceId} makerspaceId={makerspaceId} /> : null}
+    {activeTab === "loans" && section !== "history" && memberAccess && makerspaceId >= 0 && bootstrap.data?.features?.includes("loans.waitlist") ? <MemberWaitlist key={makerspaceId} makerspaceId={makerspaceId} makerspaceSlug={resolvedSlug} /> : null}
     {activeTab === "account" && section === "channels" && messagingAllowed ? <MyNotificationSettings key={makerspaceId} makerspaceId={makerspaceId} member /> : null}
     {activeTab === "account" && messagingEnabled && messaging.isLoading ? <p role="status">Checking notification access…</p> : null}
     {activeTab === "account" && messagingEnabled && messaging.error ? <div role="alert"><p>{message(messaging.error)}</p><button className="desk-button" onClick={() => void messaging.refetch()}>Retry notification access</button></div> : null}

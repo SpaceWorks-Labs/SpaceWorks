@@ -33,7 +33,10 @@ from apps.machines.service_workflow_helpers import (
 )
 
 Status = MachineServiceRequest.Status
-CANCELLABLE = frozenset({Status.PENDING, Status.ACCEPTED, Status.IN_PROGRESS})
+CANCELLABLE = frozenset({Status.PENDING, Status.CHANGES_REQUESTED, Status.QUOTED, Status.ACCEPTED,
+                         Status.IN_PROGRESS})
+# #141/#142: a member cancels only BEFORE the job is in progress; staff may cancel a running job.
+OWNER_CANCELLABLE = CANCELLABLE - {Status.IN_PROGRESS}
 
 
 def owner_may_cancel(row, user, *, service_enabled=None):
@@ -45,7 +48,7 @@ def owner_may_cancel(row, user, *, service_enabled=None):
         from apps.makerspaces.platform import module_enabled
         service_enabled = module_enabled(row.makerspace, "machine_service")
     return bool(
-        service_enabled and row.status in CANCELLABLE and user is not None
+        service_enabled and row.status in OWNER_CANCELLABLE and user is not None
         and row.member_id == getattr(user, "pk", None)
         and getattr(user, "_claim_audit_context", None) is None
         and user.is_active and user.access_status == "active"
@@ -62,6 +65,8 @@ def _assert_authority(locked, actor, by_owner):
             raise CancelRefused("Only the request owner can cancel this job.")
         if not (actor.is_active and actor.access_status == "active"):
             raise CancelRefused("Only an active account can cancel this job.")
+        if locked.status == Status.IN_PROGRESS:
+            raise CancelRefused("This job is already running; ask the staff to stop it.")
         return
     if not rbac.can(actor, rbac.Action.MANAGE_MACHINES, locked.makerspace_id):
         raise CancelRefused("Machine management permission is required.")
@@ -118,6 +123,11 @@ def cancel(service_request, actor, *, reason="", by_owner=False, consumed_quanti
                 record_service_cost(locked, actor)
             # Only the cancelled RUNNING job frees its machine; maintenance/offline stay put.
             _release_queue_machine(locked, actor)
+        if locked.prepay and not by_owner:
+            # The space is not running a job the member paid for: a refund case opens for
+            # staff to approve (#59); nothing is paid back automatically.
+            from apps.machines.job_charges import open_refund_due
+            open_refund_due(locked, actor)
         _audit_transition(actor, locked, "cancelled", extra={
             "previous_status": previous, "reason": reason,
             "cancelled_by": "owner" if by_owner else "staff",

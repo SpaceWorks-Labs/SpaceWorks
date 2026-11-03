@@ -26,4 +26,7 @@ class AccountsConfig(AppConfig):
         from apps.accounts.staff_role_notices import register as register_staff_role_notices
         register_staff_role_notices()
         from apps.accounts.passkeys import checks as passkey_checks  # noqa: F401 -- RP ID system check
+        # Failed sign-ins feed the automatic IP block; rule edits drop the rule cache (S-C).
+        from apps.accounts.ip_guard_signals import connect_signals as connect_ip_guard_signals
+        connect_ip_guard_signals()
         user_logged_in.connect(stamp_password_session, dispatch_uid="accounts.control_mfa.password_session")

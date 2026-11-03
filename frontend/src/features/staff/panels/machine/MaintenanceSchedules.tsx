@@ -83,6 +83,10 @@ export function MaintenanceSchedules({
           required
         />
       </label>
+      <label className="flex min-h-11 items-center gap-2 text-sm sm:col-span-3">
+        <input type="checkbox" checked={value.blocks_use ?? false} onChange={(event) => change({ ...value, blocks_use: event.target.checked })} />
+        Lock the machine out when overdue
+      </label>
     </>
   );
 
@@ -123,6 +127,7 @@ export function MaintenanceSchedules({
             <ListRow title={schedule.description} meta={<span>
                   {schedule.trigger !== "days" && schedule.trigger ? `Usage: ${[schedule.usage_hours && `${schedule.usage_hours} hours`, schedule.job_count && `${schedule.job_count} jobs`].filter(Boolean).join(" or ")}. ` : ""}
                   {schedule.trigger !== "usage" ? `Every ${schedule.interval_days} days (${schedule.anchor === "calendar" ? "fixed calendar" : "from completion"}) · ${formatDate(schedule.next_due)}` : "Resets when maintenance is completed."}
+                  {schedule.blocks_use ? " · Locks the machine when overdue" : ""}
                 </span>}
               right={<div className="flex flex-wrap items-center gap-2"><StatusPill
                 label={schedule.overdue ? "Maintenance due" : schedule.is_active ? schedule.trigger === "usage" ? "Within usage threshold" : "Due as scheduled" : "Inactive"}
@@ -142,6 +147,7 @@ export function MaintenanceSchedules({
                         interval_days: schedule.interval_days,
                         anchor: schedule.anchor ?? "completion",
                         next_due: schedule.next_due,
+                        blocks_use: schedule.blocks_use ?? false,
                       });
                       setEditing(schedule.id);
                     }}

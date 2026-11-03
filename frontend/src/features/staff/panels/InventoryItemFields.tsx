@@ -4,9 +4,10 @@ import { ProductMasterFields } from "./ProductMasterFields";
 import type { Category } from "./shared";
 import type { ItemForm } from "./InventoryPanelShared";
 import { publicPreviewAvailability } from "./InventoryPublicPreview";
-export function InventoryItemFields({ form, setForm, categories, includeQuantities = false, error, children }: {
+import { InventoryLendingFlags, type LendingFlagSpace } from "./InventoryLendingFlags";
+export function InventoryItemFields({ form, setForm, categories, includeQuantities = false, error, children, makerspace }: {
  form: ItemForm; setForm: (updater: (current: ItemForm) => ItemForm) => void; categories: Category[];
- includeQuantities?: boolean; error?: string; children?: ReactNode;
+ includeQuantities?: boolean; error?: string; children?: ReactNode; makerspace?: LendingFlagSpace;
 }) {
  const availability = publicPreviewAvailability(form);
  const preview = !form.is_public ? "Not in the public catalogue" : availability === null ? "Availability hidden" : availability.mode === "exact_count" ? `${availability.count} available` : availability.label ?? "Available";
@@ -17,12 +18,13 @@ export function InventoryItemFields({ form, setForm, categories, includeQuantiti
    </div></SettingsRow>
    <SettingsRow label="Category and tracking"><div className="grid gap-4">
      <Field label="Category"><select className="desk-input" value={form.category} onChange={e => setForm(c => ({ ...c, category: e.target.value }))}><option value="">Uncategorized</option>{categories.map(category => <option key={category.id} value={category.id}>{category.name}</option>)}</select></Field>
-     <Field label="Tracking mode"><select className="desk-input" value={form.tracking_mode} onChange={e => setForm(c => ({ ...c, tracking_mode: e.target.value }))}><option value="quantity">Quantity</option><option value="individual">Individual</option></select></Field>
+     <Field label="Tracking mode"><select className="desk-input" value={form.tracking_mode} onChange={e => setForm(c => ({ ...c, tracking_mode: e.target.value, ...(e.target.value !== "quantity" && c.is_consumable ? { is_consumable: false } : {}) }))}><option value="quantity">Quantity</option><option value="individual">Individual</option></select></Field>
    </div></SettingsRow>
    <SettingsRow label="Storage and ordering" helper="Storage locations stay private to staff."><div className="grid gap-4">
      <Field label="Storage location"><input className="desk-input" placeholder="e.g. Shelf B3" value={form.storage_location} onChange={e => setForm(c => ({ ...c, storage_location: e.target.value }))} /></Field>
      <ProductMasterFields form={form} setForm={setForm} />
    </div></SettingsRow>
+   <InventoryLendingFlags form={form} setForm={setForm} makerspace={makerspace} />
    <SettingsRow label="Borrowing terms"><Field label="Public borrowing terms"><textarea className="desk-input min-h-24" maxLength={2000} placeholder="For example: return clean; bring required accessories." value={form.borrowing_terms} onChange={e => setForm(c => ({ ...c, borrowing_terms: e.target.value }))} /></Field></SettingsRow>
    {includeQuantities ? <SettingsRow label="Starting stock"><div className="grid gap-4">
      <Field label="Total quantity"><input className="desk-input" type="number" min="0" value={form.total_quantity} onChange={e => setForm(c => ({ ...c, total_quantity: e.target.value }))} /></Field>

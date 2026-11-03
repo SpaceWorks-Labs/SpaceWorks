@@ -114,13 +114,17 @@ verified private account-link proofs, never workflow decisions. Two architectura
 ## Request State Machine
 
 ```
-draft → pending_approval → {rejected | accepted}
+draft → pending_approval → {rejected | accepted | cancelled}
 accepted → issued → {partially_returned | returned | closed_with_issue}
+accepted → {cancelled | expired}
 ```
 
 The workflow module enforces *allowed* transitions only. `closed_with_issue` and the
 accountability/access-restriction flow (PRD §6.5) are how lost/damaged hardware ties back to a requester's
-`access_status`.
+`access_status`. `cancelled` (the requester with `loans.withdrawals`, or staff) and `expired` (an accepted
+request not collected by its pickup deadline, `loans.pickup_windows`) are terminal and release the
+reservation through `inventory/availability.py` (release 2, L12; #77). Machine jobs have their own
+lifecycle in `machines/service_workflow*` -- see **Machines and loans depth** in `docs/INVARIANTS.md`.
 
 ## Multi-Tenancy (Makerspace Scoping)
 
@@ -475,6 +479,7 @@ because none are quoted here — this index is a router, not a summary.
 | **Handover roles and the retired Guest Admin** | built-in Handover and combined role sets, `rbac.HANDOUT_ACTIONS`, `is_handout_only`, the retired `guest_admin`/`print_manager` enum members and their migrations |
 | **Separability and tombstoning** | `apps/separability/`, `TOMBSTONED_APPS`, `SEPARABLE_APPS`, retention vs runtime registries, adding a PII-holding model |
 | **Machine scoping** | `MANAGE_MACHINES`, `machines/role_scope.py`, the Machines console, machine-service surfaces, procurement narrowing, dashboard scoping, delegated recipient rules |
+| **Machines and loans depth** | the uniform machine job flow (`machines/job_*`, `service_workflow_review|board|batch|failure`), quotes and job charges, `booking_gate`, `lockout`, the downtime ledger, work orders, `makerspaces/opening_hours.py`, consumables and auto To-Buy, mark bought and vendors, loan cancel/expiry, pickup windows, the waitlist, expected-back dates |
 | **Events program invariants** | `apps/events/`, registration vs presence, member history and provenance, collaborative events, host waivers, QR check-in |
 | **Backup, restore and tenant migration** | `apps/backup/` (platform-key-only deployment archives, the single-component deployment manifest, no recipients/custody/`backup` module; per-space backup and restore: nightly one-space raw slices, preview/confirm/apply with identity ids, the safety backup, the `/control/` console), `apps/data_export/`, `apps/tenant_migration/` (one-shot `--recipient` tenant exit), the deployment recovery gate, the source gate lock protocol, archive projection |
 | **Organization accounts and organization-derived authority** | `apps/organizations/`, `OrganizationMembership`, the rbac org branch, `resolve_scope` vs `scope_by_action`, the auth payload `source` field, `EventOrganizer`, org purge scoping |

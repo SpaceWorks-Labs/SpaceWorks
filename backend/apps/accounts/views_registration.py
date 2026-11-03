@@ -30,6 +30,7 @@ GenericAckSerializer = inline_serializer(
 
 class MemberSignUpView(APIView):
     permission_classes = [AllowAny]
+    login_ip_guard = True  # S-C: platform IP rules, automatic blocks, Turnstile
     throttle_classes = [ScopedRateThrottle, MemberSignUpEmailThrottle]
     throttle_scope = "member_sign_up"
 
@@ -67,6 +68,7 @@ class MemberSignUpView(APIView):
 
 class EmailVerificationResendView(APIView):
     permission_classes = [IsAuthenticated]
+    login_ip_guard = True  # S-C: platform IP rules, automatic blocks, Turnstile
     throttle_classes = [ScopedRateThrottle, MemberVerificationEmailThrottle]
     throttle_scope = "email_verification_resend"
 
@@ -90,6 +92,7 @@ class EmailVerificationResendView(APIView):
 
 class EmailVerificationConfirmView(APIView):
     permission_classes = [IsAuthenticated]
+    login_ip_guard = True  # S-C: platform IP rules, automatic blocks, Turnstile
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "email_verification_confirm"
 

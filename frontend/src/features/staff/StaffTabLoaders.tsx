@@ -50,4 +50,5 @@ export const HandoverConsole = lazy(() => import("./panels/machine/HandoverConso
 export const DataExportsPanel = lazy(() => import("./DataExportsPanel").then((m) => ({ default: m.DataExportsPanel })));
 export const BackupRestorePanel = lazy(() => import("./BackupRestorePanel").then((m) => ({ default: m.BackupRestorePanel })));
 export const TenantMigrationPanel = lazy(() => import("./TenantMigrationPanel").then((m) => ({ default: m.TenantMigrationPanel })));
+export const ConsumablesPanel = lazy(() => import("./panels/ConsumablesPanel").then((m) => ({ default: m.ConsumablesPanel })));
 

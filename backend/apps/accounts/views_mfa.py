@@ -69,6 +69,7 @@ class MFAStatusView(APIView):
 class MFAEnrollmentView(APIView):
     # Presented claim credentials still go through the central refusal registry.
     permission_classes = [AllowAny]
+    login_ip_guard = True  # S-C: platform IP rules, automatic blocks, Turnstile
     throttle_classes = [ScopedRateThrottle, MFAChallengeThrottle, MFAUserThrottle]
     throttle_scope = "mfa_verify"
 

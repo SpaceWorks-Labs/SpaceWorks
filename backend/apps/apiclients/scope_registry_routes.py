@@ -166,6 +166,10 @@ _ROUTE_DEFINITIONS += (
     ("pay-link", ("GET", "HEAD"), frozenset(), TARGET_GLOBAL, False, False),
     ("pay-link-claim", _WRITE, frozenset(), TARGET_GLOBAL, False, False),
     ("pay-link-checkout", _WRITE, frozenset(), TARGET_GLOBAL, False, False),
+    # Lane L12: the uniform "Request a job" form, same scopes as the 3D-printer routes.
+    ("public-machine-job-types", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, True),
+    ("public-machine-job-upload", _WRITE, PUBLIC_WRITE_SCOPES, TARGET_TENANT_SLUG, False, True),
+    ("public-machine-job-submit", _WRITE, PUBLIC_WRITE_SCOPES, TARGET_TENANT_SLUG, False, True),
 )
 
 

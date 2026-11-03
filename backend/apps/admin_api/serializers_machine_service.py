@@ -47,7 +47,22 @@ class ServiceConsumptionSerializer(serializers.Serializer):
     created_at = serializers.DateTimeField(read_only=True)
 
 
+# The uniform job flow's staff-visible columns (#140-#142). The pickup code is NOT here:
+# staff type or scan what the collector shows.
+JOB_FIELDS = (
+    "queued_at", "urgent", "urgent_reason", "needed_by", "copies", "own_material", "material_note",
+    "member_estimate_minutes", "preassigned_machine_id", "batch_id", "changes_requested_at", "changes_code",
+    "changes_message", "member_note", "reject_code", "quote_snapshot", "quoted_at", "quote_expires_at",
+    "quote_approved_at", "prepay", "fail_code", "fail_fault", "failure_outcome", "auto_requeue_count",
+    "pickup_location", "pickup_reminders_sent", "uncollected_at", "collected_by_name", "reprint_of_id",
+)
+
+
 class MachineServiceRequestSerializer(serializers.ModelSerializer):
+    preassigned_machine_id = serializers.IntegerField(read_only=True, allow_null=True)
+    batch_id = serializers.IntegerField(read_only=True, allow_null=True)
+    reprint_of_id = serializers.IntegerField(read_only=True, allow_null=True)
+    quote_snapshot = serializers.JSONField(read_only=True, allow_null=True)
     machine = ServiceMachineSerializer(source="bucket.machine", read_only=True)
     assigned_machine = ServiceMachineSerializer(read_only=True)
     requester = ServiceRequesterSerializer(read_only=True)
@@ -77,6 +92,7 @@ class MachineServiceRequestSerializer(serializers.ModelSerializer):
             "actual_minutes", "fail_percent_complete", "accepted_at", "started_at",
             "completed_at", "failed_at", "collected_at", "cancelled_at", "created_at", "updated_at",
             "capability_payload", "metering_unit", "planned_quantity", "reserved_quantity", "actual_consumed_quantity", "planned_grams", "reserved_grams", "actual_consumed_grams", "payment", "run_machine_model", "files", "consumptions", "eta",
+            *JOB_FIELDS,
         )
         read_only_fields = fields
 
@@ -140,10 +156,19 @@ class ServiceAcceptSerializer(serializers.Serializer):
     estimated_minutes = serializers.IntegerField(required=False, min_value=0)
     planned_grams = serializers.DecimalField(required=False, max_digits=12, decimal_places=2, min_value=Decimal("0"))
     note = serializers.CharField(required=False, allow_blank=True)
+    override_length = serializers.BooleanField(required=False, default=False,
+                                               help_text="Accept a job longer than the type allows.")
+
+
+REJECT_CODES = ("not_allowed_content", "ip_concern", "not_eligible", "for_someone_else",
+                "better_made_another_way", "too_large", "other")
+FAIL_CODES = ("adhesion", "nozzle_jam", "material_ran_out", "machine_fault", "power_cut", "operator_error",
+              "file_problem", "material_defect", "other")
 
 
 class ServiceRejectSerializer(serializers.Serializer):
     reason = serializers.CharField(allow_blank=False, trim_whitespace=True)
+    code = serializers.ChoiceField(required=False, allow_blank=True, default="", choices=REJECT_CODES)
 
 
 class ServiceCancelSerializer(serializers.Serializer):
@@ -174,6 +199,7 @@ class ServiceConsumptionInputSerializer(serializers.Serializer):
 
 
 class ServiceCompleteSerializer(serializers.Serializer):
+    pickup_location = serializers.CharField(required=False, allow_blank=True, max_length=120, default="")
     actual_minutes = serializers.IntegerField(min_value=0)
     actual_grams = serializers.DecimalField(required=False, max_digits=12, decimal_places=2, min_value=Decimal("0"))
     actual_quantity = serializers.DecimalField(required=False, max_digits=12, decimal_places=2, min_value=Decimal("0"))
@@ -183,6 +209,19 @@ class ServiceCompleteSerializer(serializers.Serializer):
 class ServiceFailSerializer(ServiceCompleteSerializer):
     reason = serializers.CharField(allow_blank=False, trim_whitespace=True)
     percent_complete = serializers.IntegerField(min_value=0, max_value=100)
+    code = serializers.ChoiceField(required=False, allow_blank=True, default="", choices=FAIL_CODES)
+    fault = serializers.ChoiceField(required=False, allow_blank=True, default="", choices=("space", "member"),
+                                    help_text="space: re-run free at the front; member: the type's failure "
+                                              "charge applies.")
+
+    def validate(self, attrs):
+        attrs.pop("pickup_location", None)
+        return attrs
+
+
+class ServiceCollectSerializer(serializers.Serializer):
+    pickup_code = serializers.CharField(required=False, allow_blank=True, max_length=16, default="")
+    collector_name = serializers.CharField(required=False, allow_blank=True, max_length=120, default="")
 
 
 class EmptyServiceActionSerializer(serializers.Serializer):

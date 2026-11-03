@@ -79,6 +79,10 @@ export async function submitPublicRequest(
     contact_phone?: string;
     contact_email?: string;
     email_code?: string;
+    // Lane L12: optional collection window (ISO datetimes) and a claimed waitlist offer.
+    pickup_from?: string;
+    pickup_until?: string;
+    waitlist_entry_id?: number;
   },
 ): Promise<RequestSubmitResponse> {
   return tenantPublicRequest<RequestSubmitResponse>(

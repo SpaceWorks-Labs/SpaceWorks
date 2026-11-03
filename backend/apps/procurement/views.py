@@ -11,6 +11,7 @@ from apps.procurement.views_items_export import ToBuyExportView
 from apps.procurement.views_move import (
     ToBuyMoveToInventoryView,
     ToBuyMoveToPrintingView,
+    ToBuyRefillConsumableView,
 )
 from apps.procurement.views_machine_types import ToBuyMachineTypeOptionsView
 from apps.procurement.views_receipts import (
@@ -30,6 +31,7 @@ __all__ = [
     "ToBuyMachineTypeOptionsView",
     "ToBuyMoveToInventoryView",
     "ToBuyMoveToPrintingView",
+    "ToBuyRefillConsumableView",
     "ToBuyReceiptDeleteView",
     "ToBuyReceiptListCreateView",
     "ToBuyReceiptPresignView",

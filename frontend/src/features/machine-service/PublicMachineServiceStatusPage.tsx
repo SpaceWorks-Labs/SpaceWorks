@@ -9,7 +9,7 @@ import { formatSlug } from "../inventory/PublicInventoryParts";
 import { publicPageChrome } from "../inventory/PublicPageChrome";
 import { useTenantBootstrap } from "../inventory/usePublicInventory";
 import { fetchServiceStatus, serviceKeys } from "./api";
-import { OwnerCancel } from "./OwnerCancel";
+import { OwnerCancel, OwnerJobLink } from "./OwnerCancel";
 import { ServiceRequestEta } from "./ServiceRequestEta";
 import { normalizeServiceStatus, serviceStatusLabel, serviceStatusTone, statusRefetchInterval } from "./types";
 
@@ -20,6 +20,9 @@ function terminalMessage(status: string): string {
   if (status === "collected") return "This job is finished and has been collected.";
   if (status === "rejected") return "This request wasn't approved, so it won't be run. Contact the makerspace if you have questions.";
   if (status === "failed") return "This job couldn't be completed. Contact the makerspace about next steps.";
+  if (status === "changes_requested") return "Staff need changes from you before this job can go ahead. Open it in your member area to reply.";
+  if (status === "quoted") return "There is a quote waiting for you. Open the job in your member area to approve or decline it.";
+  if (status === "uncollected") return "This job wasn't collected within 14 days, so it now belongs to the space.";
   return "There is no estimate for this job right now.";
 }
 
@@ -50,6 +53,7 @@ export function PublicMachineServiceStatusPage() {
         <p className="text-sm text-muted">Requested <RelativeTime date={job.created_at} /></p>
         {job.eta ? <ServiceRequestEta eta={job.eta} status={job.status} /> : <EmptyState message={terminalMessage(status)} />}
         {job.queue_position != null ? <p className="text-sm text-muted">Position {job.queue_position} in this queue.</p> : null}
+        <OwnerJobLink token={publicToken} path={tenantPath} />
         <OwnerCancel token={publicToken} title={job.title} makerspaceSlug={makerspaceSlug} />
       </div> : null }]}
       actionCard={{ title: "Your job", state: "open",

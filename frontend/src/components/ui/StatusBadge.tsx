@@ -14,6 +14,7 @@ export const statusToneMap: Record<string, StatusBadgeTone> = {
   waived: "info", canceled: "neutral", succeeded: "success", failed: "danger", idle: "success",
   running: "accent", offline: "neutral", in_progress: "accent", collected: "neutral",
   rendering: "info", active: "success", revoked: "neutral",
+  changes_requested: "warn", quoted: "info", uncollected: "danger",
 };
 
 export type StatusBadgeProps = {

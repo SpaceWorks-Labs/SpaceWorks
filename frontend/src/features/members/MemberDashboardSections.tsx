@@ -1,5 +1,6 @@
 import { EmptyState, ListRow, StatusPill, StatCard } from "../../components/ui";
 import type { MemberActivity } from "./MemberActivity";
+import { MemberRequestWithdraw, WITHDRAWABLE } from "./MemberRequestWithdraw";
 
 /** The member dashboard's history, money and notices (D8).
  *
@@ -60,15 +61,19 @@ export function MemberDues({ dues }: { dues: MemberActivity["membership_dues"] }
 export function MemberHistory({
   loans,
   requests,
+  withdraw,
 }: {
   loans: MemberActivity["loan_history"];
   requests: MemberActivity["request_history"];
+  /** Set when `loans.withdrawals` is on: pending and accepted requests get a Withdraw button. */
+  withdraw?: { makerspaceId: number; makerspaceSlug: string };
 }) {
   if (!loans?.length && !requests?.length) return <EmptyState message="No returned items yet. Your borrowing history will appear here." />;
   return <section className="grid gap-4"><h2 className="title-panel">Your history</h2>
     {requests?.length ? <><h3 className="title-section">Requests</h3>{requests.map((row, index) => <ListRow key={`${row.created_at}-${index}`} title={`${row.item_count} ${row.item_count === 1 ? "item" : "items"} requested`} identity={{ kind: "date", date: row.created_at }}
       meta={<>{row.returned_quantity} returned{row.damaged_quantity || row.missing_quantity ? <span className="block text-danger">{row.damaged_quantity} damaged, {row.missing_quantity} missing</span> : null}</>}
-      right={<StatusPill label={row.status.replace(/_/g, " ")} />} />)}</> : null}
+      right={<div className="grid justify-items-start gap-2"><StatusPill label={row.status.replace(/_/g, " ")} />
+        {withdraw && row.id && WITHDRAWABLE.includes(row.status) ? <MemberRequestWithdraw {...withdraw} requestId={row.id} /> : null}</div>} />)}</> : null}
     {loans?.length ? <><h3 className="title-section">Returned items</h3>{loans.map((row, index) => <ListRow key={`${row.label}-${index}`} title={row.label} identity={row.returned_at ? { kind: "date", date: row.returned_at } : undefined}
       meta={row.returned_at ? `Returned ${new Date(row.returned_at).toLocaleDateString()}` : undefined} right={row.returned_late ? <StatusPill label="Returned late" tone="warn" /> : <StatusPill label="Returned" tone="success" />} />)}</> : null}
   </section>;

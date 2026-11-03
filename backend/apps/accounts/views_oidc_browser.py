@@ -55,6 +55,7 @@ def _error(code, status_code):
 
 class OidcBrowserStartView(APIView):
     permission_classes = [AllowAny]
+    login_ip_guard = True  # S-C: platform IP rules, automatic blocks, Turnstile
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "social_nonce"
 
@@ -96,6 +97,7 @@ class OidcBrowserStartView(APIView):
 
 class OidcBrowserCallbackView(APIView):
     permission_classes = [AllowAny]
+    login_ip_guard = True  # S-C: platform IP rules, automatic blocks, Turnstile
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "social_login"
 

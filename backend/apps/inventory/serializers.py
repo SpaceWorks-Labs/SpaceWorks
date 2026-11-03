@@ -45,6 +45,12 @@ class PublicProductSerializer(serializers.Serializer):
     borrowing_terms = serializers.SerializerMethodField()
     availability = serializers.SerializerMethodField()
     image_url = serializers.SerializerMethodField()
+    expected_back_on = serializers.SerializerMethodField()
+
+    @extend_schema_field({"type": "string", "format": "date", "nullable": True})
+    def get_expected_back_on(self, product):
+        from .public_expected_back import expected_back_on
+        return expected_back_on(product, self.context.setdefault("_expected_back", {}))
 
     @extend_schema_field(serializers.CharField())
     def get_borrowing_terms(self, product):

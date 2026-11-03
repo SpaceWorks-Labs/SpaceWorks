@@ -35,6 +35,8 @@ class MaintenanceScheduleWriteSerializer(StrictFieldsSerializer):
     usage_hours = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0.01"), allow_null=True, required=False)
     job_count = serializers.IntegerField(min_value=1, allow_null=True, required=False)
     anchor = serializers.ChoiceField(choices=MaintenanceSchedule.Anchor.choices, required=False)
+    blocks_use = serializers.BooleanField(required=False, help_text="Lock the machine out once this schedule is "
+                                                                      "overdue past the type's grace days.")
 
 
 class MaintenanceScheduleSerializer(serializers.ModelSerializer):
@@ -45,7 +47,7 @@ class MaintenanceScheduleSerializer(serializers.ModelSerializer):
     class Meta:
         model = MaintenanceSchedule
         fields = (
-            "id", "machine_id", "description", "interval_days", "next_due", "anchor", "trigger", "usage_hours", "job_count", "meter_started_at",
+            "id", "machine_id", "description", "interval_days", "next_due", "anchor", "trigger", "usage_hours", "job_count", "meter_started_at", "blocks_use",
             "is_active", "created_by_id", "created_at", "updated_at", "overdue",
         )
         read_only_fields = fields

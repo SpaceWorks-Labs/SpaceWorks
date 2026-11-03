@@ -116,3 +116,5 @@ JSON_REFERENCE_FIELDS |= _S0_JSON_FIELDS
 # Release 2 L15: frozen quotes and discount/waiver scopes (names, prices, rule ids only).
 from .classification_r2_l15 import JSON_FIELDS as _R2_L15_JSON  # noqa: E402
 JSON_REFERENCE_FIELDS |= _R2_L15_JSON
+from .classification_l12 import JSON_FIELDS as _L12_JSON  # noqa: E402
+JSON_REFERENCE_FIELDS |= _L12_JSON

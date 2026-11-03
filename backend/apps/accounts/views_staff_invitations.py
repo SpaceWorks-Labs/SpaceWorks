@@ -81,6 +81,7 @@ class StaffInvitationResendView(StaffInvitationRevokeView):
 
 class StaffInvitationAcceptView(GenericAPIView):
     permission_classes = [IsAuthenticated]
+    login_ip_guard = True  # S-C: platform IP rules, automatic blocks, Turnstile
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "staff_invite_accept"
     serializer_class = StaffInvitationAcceptSerializer

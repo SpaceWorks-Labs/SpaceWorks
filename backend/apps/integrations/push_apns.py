@@ -4,7 +4,19 @@ import httpx
 import jwt
 from cryptography.fernet import InvalidToken
 
+from apps.integrations.push_categories import thread_id
 from apps.integrations.push_fcm import PushProviderError
+from apps.integrations.push_payload import short_body, short_title
+
+
+def aps_payload(title, body, data):
+    """The `aps` dictionary: watch-sized text, the space thread and the safe action set."""
+    aps = {"alert": {"title": short_title(title), "body": short_body(body)}}
+    if data.get("makerspace_id"):
+        aps["thread-id"] = thread_id(data["makerspace_id"], data.get("channel", ""))
+    if data.get("category"):
+        aps["category"] = data["category"]
+    return aps
 
 
 def send_apns(settings_row, token, environment, title, body, data):
@@ -30,8 +42,7 @@ def send_apns(settings_row, token, environment, title, body, data):
                     "apns-topic": settings_row.apns_topic,
                     "apns-push-type": "alert",
                 },
-                json={"aps": {"alert": {"title": title, "body": body},
-                              "thread-id": str(data["makerspace_id"])}, "data": data},
+                json={"aps": aps_payload(title, body, data), "data": data},
             )
     except httpx.HTTPError as exc:
         raise PushProviderError("APNs request failed.") from exc

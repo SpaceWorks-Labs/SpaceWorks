@@ -20,6 +20,7 @@ export function BookingDetailsEditor({ space, pending, onSubmit }: {
         <Field label="Name"><input className="desk-input w-full" required maxLength={200} value={name} onChange={(event) => setName(event.target.value)} /></Field>
         <Field label="Type"><select className="desk-input w-full" value={kind} onChange={(event) => setKind(event.target.value as BookableSpace["kind"])}>
           <option value="dev_room">Development room</option><option value="bench">Bench</option><option value="meeting">Meeting room</option><option value="other">Other</option>
+          {space.kind === "machine" ? <option value="machine">Machine time</option> : null}
         </select></Field>
         <Field label="Description" className="sm:col-span-2"><textarea className="desk-input min-h-24 w-full" value={description} onChange={(event) => setDescription(event.target.value)} /></Field>
         <Field label="Location"><input className="desk-input w-full" maxLength={255} value={location} onChange={(event) => setLocation(event.target.value)} /></Field>

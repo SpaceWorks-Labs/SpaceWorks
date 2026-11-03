@@ -4,6 +4,8 @@ import { useState } from "react";
 import { EmptyState, Skeleton, ErrorBlock, ListRow, RelativeTime } from "../../../../components/ui";
 import { MaintenanceDocuments } from "./MaintenanceDocuments";
 import { MaintenanceSchedules } from "./MaintenanceSchedules";
+import { DowntimePanel, LockoutNotice } from "./DowntimePanel";
+import { MachineWorkOrders } from "./workOrders/MachineWorkOrders";
 import {
   useLogMaintenance,
   useMaintenanceLogs,
@@ -49,7 +51,10 @@ export function MaintenanceTab({
 
   return (
     <div className="grid gap-5">
+      <LockoutNotice machineId={machineId} />
       {feedEnabled ? <MaintenanceFeedControl makerspaceId={makerspaceId} /> : null}
+      <MachineWorkOrders makerspaceId={makerspaceId} machineId={machineId} canCreate={canOperate && !retired} />
+      <DowntimePanel machineId={machineId} canEdit={canEdit} />
       <MaintenanceSchedules
         metersEnabled={metersEnabled}
         makerspaceId={makerspaceId}

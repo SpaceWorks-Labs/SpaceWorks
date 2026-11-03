@@ -16,7 +16,6 @@ for pooled work, the bucket's ``Machine`` row for bucket work -- so the head it 
 stable for the transaction. Reads never call into this module.
 """
 
-from django.db.models import Case, Value, When
 from django.utils import timezone
 
 from apps.integrations.notification_outbox import emit
@@ -41,11 +40,11 @@ def valid_owner(row):
 
 
 def head_queryset(row):
+    from .job_order import ordering
     scope = {"queue_id": row.queue_id} if row.queue_id else {"bucket_id": row.bucket_id}
-    priority = Case(When(status=MachineServiceRequest.Status.ACCEPTED, then=Value(0)), default=Value(1))
     return MachineServiceRequest.objects.filter(
         makerspace_id=row.makerspace_id, status__in=WAITING, **scope,
-    ).order_by(priority, "created_at", "id")
+    ).order_by(*ordering())
 
 
 def _context(row, initiator):

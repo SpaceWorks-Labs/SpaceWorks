@@ -62,6 +62,19 @@ def _locked_warranty(actor, warranty_pk):
     )
 
 
+def _vendor(makerspace_id, vendor_id):
+    """The saved supplier link (L12): a live vendor of this space, behind `inventory.vendors`."""
+    if vendor_id is None:
+        return None
+    from apps.makerspaces.folded_capabilities import require_capability
+    from apps.procurement.models import Vendor
+    require_capability(makerspace_id, "inventory.vendors")
+    vendor = Vendor.objects.filter(pk=vendor_id, makerspace_id=makerspace_id, is_archived=False).first()
+    if vendor is None:
+        raise ValidationError({"vendor_id": "Choose a vendor of this makerspace."})
+    return vendor
+
+
 @transaction.atomic
 def upsert_warranty(actor, *, data, asset=None, machine=None):
     hosts = [(kind, host) for kind, host in (("asset", asset), ("machine", machine)) if host is not None]
@@ -76,6 +89,8 @@ def upsert_warranty(actor, *, data, asset=None, machine=None):
     for field in ("purchased_on", "warranty_expires_on", "vendor_name", "vendor_contact"):
         if field in data:
             setattr(warranty, field, data[field])
+    if "vendor_id" in data:
+        warranty.vendor = _vendor(host.makerspace_id, data["vendor_id"])
     try:
         warranty.full_clean()
     except DjangoValidationError as exc:

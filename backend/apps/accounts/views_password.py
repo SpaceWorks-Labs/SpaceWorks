@@ -20,6 +20,7 @@ from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from apps.accounts.models import User
+from apps.accounts.password_breach import error_body
 from apps.accounts.principal_guards import is_anonymous_requester
 from apps.accounts.password_reset_crypto import normalize_email
 from apps.accounts.password_reset_context import recovery_origin
@@ -114,9 +115,7 @@ class ChangePasswordView(APIView):
         try:
             validate_password(new_password, user=user)
         except DjangoValidationError as exc:
-            raise serializers.ValidationError(
-                {"new_password": list(exc.messages)}
-            ) from exc
+            raise serializers.ValidationError(error_body("new_password", exc)) from exc
 
         with transaction.atomic():
             revoke_sessions_only(user, reason="account.password_changed", actor=user)
@@ -138,6 +137,7 @@ class ChangePasswordView(APIView):
 
 class ForgotPasswordView(APIView):
     permission_classes = [AllowAny]
+    login_ip_guard = True  # S-C: platform IP rules, automatic blocks, Turnstile
     throttle_classes = [ScopedRateThrottle, PasswordResetEmailThrottle]
     throttle_scope = "password_reset_request"
 
@@ -175,6 +175,7 @@ class ForgotPasswordView(APIView):
 
 class ResetPasswordConfirmView(APIView):
     permission_classes = [AllowAny]
+    login_ip_guard = True  # S-C: platform IP rules, automatic blocks, Turnstile
     throttle_classes = [ScopedRateThrottle, PasswordResetConfirmEmailThrottle]
     throttle_scope = "password_reset_confirm"
 
@@ -225,9 +226,7 @@ def _confirm_legacy_link(uid, token, new_password):
             try:
                 validate_recovery_password(new_password, locked)
             except DjangoValidationError as exc:
-                password_failure = serializers.ValidationError(
-                    {"new_password": list(exc.messages)}
-                )
+                password_failure = serializers.ValidationError(error_body("new_password", exc))
             else:
                 locked.set_password(new_password)
                 locked.must_change_password = False

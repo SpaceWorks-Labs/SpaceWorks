@@ -34,8 +34,12 @@ const PublicSelfCheckoutPage = lazy(() => import("./features/inventory/PublicSel
 const ArchivedPayments = lazy(() => import("./features/members/ArchivedPayments").then((m) => ({ default: m.ArchivedPayments })));
 const MemberArea = lazy(() => import("./features/members/MemberArea").then((m) => ({ default: m.MemberArea })));
 const MemberAccountPage = lazy(() => import("./features/members/MemberAccountPage").then((m) => ({ default: m.MemberAccountPage })));
-const PublicPrintRequestPage = lazy(() => import("./features/printing/PublicPrintRequestPage").then((m) => ({ default: m.PublicPrintRequestPage })));
+// `/print` is an alias now: tracking links open the status page, new requests the uniform job form (#140).
+const PublicPrintRequestPage = lazy(() => import("./features/machine-jobs/PrintRequestAlias").then((m) => ({ default: m.PrintRequestAlias })));
 const PublicMachineServiceStatusPage = lazy(() => import("./features/machine-service/PublicMachineServiceStatusPage").then((m) => ({ default: m.PublicMachineServiceStatusPage })));
+const JobRequestPage = lazy(() => import("./features/machine-jobs/JobRequestPage").then((m) => ({ default: m.JobRequestPage })));
+const MyMachineJobsPage = lazy(() => import("./features/machine-jobs/MyMachineJobsPage").then((m) => ({ default: m.MyMachineJobsPage })));
+const MachineJobPage = lazy(() => import("./features/machine-jobs/MachineJobPage").then((m) => ({ default: m.MachineJobPage })));
 const PublicOrganizationPage = lazy(() => import("./features/organizations/PublicOrganizationPage").then((m) => ({ default: m.PublicOrganizationPage })));
 const OrganizationInvitationRedeemPage = lazy(() => import("./features/organizations/OrganizationInvitationRedeemPage").then((m) => ({ default: m.OrganizationInvitationRedeemPage })));
 const ResetPasswordPage = lazy(() => import("./features/staff/ResetPasswordPage").then((m) => ({ default: m.ResetPasswordPage })));
@@ -169,6 +173,9 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
       <Route path="/m/:slug/bookings/:resourceToken" element={<PublicBookingResourcePage />} />
       <Route path="/print" element={<PublicPrintRequestPage />} />
       <Route path="/machine-service/requests/:publicToken" element={<PublicMachineServiceStatusPage />} />
+      <Route path="/machine-jobs/new" element={<JobRequestPage />} />
+      <Route path="/member/machine-jobs" element={<MyMachineJobsPage />} />
+      <Route path="/member/machine-jobs/:jobId" element={<MachineJobPage />} />
       <Route path="/member" element={<MemberArea />} />
       <Route path="/member/account" element={<MemberAccountPage />} />
       <Route path="/member/events/:registrationId/ticket" element={<MemberEventTicketPage />} />
@@ -209,6 +216,9 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
       <Route path="/m/:slug/admin/*" element={<StaffApp />} />
       <Route path="/m/:slug/print" element={<PublicPrintRequestPage />} />
       <Route path="/m/:slug/machine-service/requests/:publicToken" element={<PublicMachineServiceStatusPage />} />
+      <Route path="/m/:slug/machine-jobs/new" element={<JobRequestPage />} />
+      <Route path="/m/:slug/member/machine-jobs" element={<MyMachineJobsPage />} />
+      <Route path="/m/:slug/member/machine-jobs/:jobId" element={<MachineJobPage />} />
       <Route path="/m/:slug/member" element={<MemberArea />} />
       <Route path="/m/:slug/member/account" element={<MemberAccountPage />} />
       <Route path="/m/:slug/member/events/:registrationId/ticket" element={<MemberEventTicketPage />} />

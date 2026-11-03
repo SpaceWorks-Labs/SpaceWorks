@@ -25,6 +25,9 @@ from apps.inventory.availability_requests import (
     scrap_from_needs_fix,
 )
 from apps.inventory.availability_types import InsufficientStock
+from apps.inventory.availability_reservations import (
+    hold_for_waitlist, release_request_reservation, release_waitlist_hold,
+)
 from apps.inventory.availability_loan_limits import (
     enforce_borrow_limits, enforce_request_borrow_limits,
     enforce_product_borrow_limits, enforce_submission_borrow_limits,

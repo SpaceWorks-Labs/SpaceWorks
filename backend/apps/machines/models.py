@@ -65,3 +65,5 @@ __all__ = [
 ]
 
 from .models_tracking import MachineStatusEvent, ConsumableCostRecord  # noqa: F401
+from .models_job_batch import MachineJobBatch  # noqa: F401,E402
+from .models_downtime import MachineDowntime  # noqa: F401,E402

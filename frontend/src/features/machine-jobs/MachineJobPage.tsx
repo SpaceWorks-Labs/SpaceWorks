@@ -1,0 +1,78 @@
+import { useParams } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+
+import { DetailLayout } from "../../components/layouts";
+import { KeyValueCard, StatusPill, type CalloutProps } from "../../components/ui";
+import { StructuredApiError } from "../../lib/api";
+import { cancelOwnServiceRequest } from "../machine-service/api";
+import { ServiceCancelButton } from "../machine-service/ServiceCancelButton";
+import { fetchMyJob, jobKeys } from "./api";
+import { JobChangesPanel } from "./JobChangesPanel";
+import { JobPickupCard } from "./JobPickupCard";
+import { JobQueueStatus } from "./JobQueueStatus";
+import { JobQuoteCard } from "./JobQuoteCard";
+import { JobTimeline } from "./JobTimeline";
+import { MemberJobsShell, type MemberJobsContext } from "./MemberJobsShell";
+import { failureText, jobLabel, jobRefetchInterval, type MemberJob } from "./types";
+
+const day = (iso: string) => new Date(iso.length === 10 ? `${iso}T12:00:00` : iso).toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
+
+function outcomeBanner(job: MemberJob): CalloutProps | undefined {
+  if (job.label === "failed") return { size: "banner", tone: "danger", lead: failureText(job), body: job.reason || undefined };
+  if (job.label === "rejected") return { size: "banner", tone: "danger", lead: "This job wasn't approved.", body: job.reason || "Contact the space if you have questions." };
+  if (job.label === "not_collected") return { size: "banner", tone: "warn", lead: "Not collected in time.", body: "It wasn't picked up within 14 days, so it now belongs to the space." };
+  // A failed run that was re-queued is back in line; the member still sees what happened.
+  if (job.fail_code && job.failure_outcome && !["collected", "cancelled"].includes(job.label)) return { size: "banner", tone: "warn", lead: failureText(job) };
+  return undefined;
+}
+
+function JobDetail({ id, context }: { id: number; context: MemberJobsContext }) {
+  const queryClient = useQueryClient();
+  const query = useQuery({ queryKey: jobKeys.detail(id), queryFn: () => fetchMyJob(id), enabled: context.ready && id > 0, retry: false,
+    refetchInterval: current => jobRefetchInterval(current.state.data) });
+  const job = query.data;
+  const activityKey = ["member", context.slug, "activity"];
+  const updated = (next: MemberJob) => {
+    queryClient.setQueryData(jobKeys.detail(id), next);
+    void queryClient.invalidateQueries({ queryKey: jobKeys.all });
+    void queryClient.invalidateQueries({ queryKey: activityKey });
+  };
+  const missing = query.error instanceof StructuredApiError && [403, 404].includes(query.error.status);
+  const label = job ? jobLabel(job.label) : undefined;
+  return <DetailLayout back={{ label: "My machine jobs", href: context.path("member/machine-jobs") }}
+    state={context.bootstrapError ? { status: "error", error: "Couldn't load this makerspace. Try again." }
+      : !context.ready || query.isPending && id > 0 ? { status: "loading" } : query.isError && !missing
+      ? { status: "error", error: "Couldn't load this job. Try again.", onRetry: () => { void query.refetch(); } } : { status: "ready" }}
+    isEmpty={missing || id <= 0} empty={{ message: "We couldn't find that job in your account.", action: { label: "My machine jobs", href: context.path("member/machine-jobs") } }}
+    title={job?.title ?? "Machine job"} identity={{ kind: "icon", icon: "Wrench", tone: "info" }}
+    status={label ? <StatusPill label={label.text} tone={label.tone} /> : undefined}
+    meta={job ? [job.machine_type_name, `${job.copies} cop${job.copies === 1 ? "y" : "ies"}`, ...(job.needed_by ? [`Needed by ${day(job.needed_by)}`] : [])] : undefined}
+    banner={job ? outcomeBanner(job) : undefined}
+    main={job ? <div className="grid gap-5">
+      <JobPickupCard job={job} />
+      <JobQuoteCard job={job} paymentsHref={context.path("member/payments")} onUpdated={updated} />
+      <JobChangesPanel job={job} slug={context.slug} onUpdated={updated} />
+      {job.label === "in_queue" || job.label === "in_progress" ? <section className="desk-panel p-5" aria-label="Queue and estimate"><JobQueueStatus job={job} /></section> : null}
+      {job.label === "submitted" ? <p className="text-sm text-muted">Staff will review your job. You'll see a quote here if it needs one.</p> : null}
+      <section className="desk-panel grid gap-3 p-5" aria-labelledby="job-timeline-title">
+        <h2 id="job-timeline-title" className="title-panel">Timeline</h2>
+        <JobTimeline timeline={job.timeline} />
+      </section>
+      {job.can_cancel ? <div className="justify-self-start"><ServiceCancelButton title={job.title} onCancel={() => cancelOwnServiceRequest(job.id)}
+        invalidate={[jobKeys.detail(id), jobKeys.all, activityKey]} /></div> : null}
+    </div> : null}
+    aside={job ? <KeyValueCard items={[
+      { label: "Status", value: label?.text ?? "" },
+      { label: "Machine type", value: job.machine_type_name },
+      ...(job.machine_name ? [{ label: "Machine", value: job.machine_name }] : []),
+      { label: "Requested", value: day(job.created_at) },
+      ...(job.pickup_location && job.label === "ready_to_collect" ? [{ label: "Pickup", value: job.pickup_location }] : []),
+    ]} /> : undefined} />;
+}
+
+/** `member/machine-jobs/:jobId`: one of the member's own jobs, from request to pickup. */
+export function MachineJobPage() {
+  const { jobId = "" } = useParams();
+  const id = /^\d+$/.test(jobId) ? Number(jobId) : 0;
+  return <MemberJobsShell>{context => <JobDetail id={id} context={context} />}</MemberJobsShell>;
+}

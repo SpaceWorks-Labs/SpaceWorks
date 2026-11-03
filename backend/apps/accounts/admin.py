@@ -275,6 +275,7 @@ admin.site.unregister(Group)
 
 from apps.accounts import admin_claim, admin_social, admin_tokens  # noqa: E402,F401
 from apps.accounts import admin_password_reset, admin_attestation  # noqa: E402,F401
+from apps.accounts import admin_ip_access  # noqa: E402,F401 -- IP rules and automatic blocks (S-C)
 from apps.accounts.admin_native_apps import NativeAppRegistrationAdmin  # noqa: E402,F401
 
 

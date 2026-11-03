@@ -59,6 +59,7 @@ export function RequestList({ rows, canViewAudit = false, actions, primary, menu
           {row.requested_for ? <span className="mt-1 block break-words">{row.requested_for}</span> : null}
           {shelf.length ? <span className="mt-1 block break-words">Shelf: {shelf.join(", ")}</span> : null}
           {row.rejection_reason ? <span className="mt-1 block break-words">Rejected: {row.rejection_reason}</span> : null}
+          {row.status === "accepted" && row.pickup_until ? <span className="mt-1 block">Collect by <RelativeTime date={row.pickup_until} /></span> : null}
           {row.return_due_at ? <span className="mt-1 block">{new Date(row.return_due_at).getTime() < Date.now() ? "Overdue · " : "Due "}<RelativeTime date={row.return_due_at} /></span> : null}</>}
         right={<div className="flex flex-wrap items-center gap-2"><StatusBadge status={row.status} />
           {flags ? <StatusPill tone="danger" label={flags} /> : null}

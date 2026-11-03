@@ -255,43 +255,10 @@ ACCOUNT_MERGE_ROUTES = frozenset({
     "auth-account-merge-start", "auth-account-merge-prove", "auth-account-merge-resend",
     "auth-account-merge-preview", "auth-account-merge-confirm", "auth-account-merge-cancel",
 })
-# Release 2 L4, the membership lifecycle: per-makerspace membership authority only.
-# Each view keeps its own action check.
-MEMBERSHIP_ROUTES |= {
-    "admin-financial-year", "admin-membership-plan-archive", "admin-membership-titles",
-    "admin-membership-title-detail", "admin-membership-invite-links", "admin-membership-invite-link-revoke",
-    "admin-membership-renewal-worklist", "admin-membership-renewal-reminders",
-    "admin-membership-join-requests-bulk-decide", "admin-member-import-preview", "admin-member-import-apply",
-    "admin-member-imported", "admin-membership-erasure-requests", "admin-membership-erasure-approve",
-    "admin-membership-erasure-reject", "admin-member-register", "admin-membership-summary",
-    "admin-refund-case-membership-suggestion", "admin-membership-extend", "admin-membership-record",
-    "admin-membership-title-assignments", "admin-membership-title-unassign", "admin-membership-consents",
-    "admin-membership-history",
-}
-# Release 2 L5, money, tax and the finance ledger: each view re-checks its own action
-# (view_finance, record_payment or the area manager's action through `finance_scope`).
-MEMBERSHIP_ROUTES |= {
-    "billing-tax", "billing-tax-gstin", "billing-tax-preview", "billing-tax-gstr1-json",
-    "paid-claim-list", "paid-claim-confirm", "paid-claim-reject",
-    "settlement-confirmations", "settlement-confirm", "settlement-reject",
-    "capture-flag-list", "capture-flag-resolve", "dispute-list", "dispute-detail", "payment-pay-link",
-    "finance-access", "finance-summary", "finance-entries", "finance-entry", "finance-entry-void",
-    "finance-entry-receipt", "finance-receipt-upload", "finance-opening-balances", "finance-event",
-    "finance-event-budget",
-}
 
-# Release 2 L15, pricing: each view re-checks its own authority -- the settings layer for
-# rate cards, the item's own edit action for per-item prices, the Space Manager for
-# discounts and the currency, return_request for loan charges and fee waivers.
-MEMBERSHIP_ROUTES |= {
-    "pricing-default", "pricing-impact", "pricing-currency", "pricing-rental-timing", "pricing-discounts",
-    "pricing-discount", "pricing-discount-archive", "pricing-override", "loan-charges", "loan-fee-waivers",
-    "loan-fee-waiver-revoke", "loan-accountability-charge",
-}
-
-# Release 2 L10/L11: machine-integration bindings (MANAGE_DEVICES + machine-type scope) and
-# the Space Manager's self-host move request (MANAGE_MAKERSPACE). Each view keeps its check.
-MEMBERSHIP_ROUTES |= {
-    "admin-machine-type-integration-list", "admin-machine-type-integration-detail",
-    "admin-machine-type-integration-status", "admin-makerspace-selfhost-move-request",
-}
+# Release 2 lanes L4, L5, L15, L10/L11 and L12 live in delegated_route_catalog_r2.py.
+from .delegated_route_catalog_r2 import (  # noqa: E402
+    DELEGABLE_ROUTES as _R2_DELEGABLE_ROUTES, MEMBERSHIP_ROUTES as _R2_MEMBERSHIP_ROUTES,
+)
+MEMBERSHIP_ROUTES |= _R2_MEMBERSHIP_ROUTES
+DELEGABLE_ROUTES |= _R2_DELEGABLE_ROUTES

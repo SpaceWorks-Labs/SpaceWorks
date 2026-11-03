@@ -9,6 +9,7 @@ import { QrImage } from "./QrImage";
 import { AssetEditForm } from "./AssetEditForm";
 import { FormPageLayout } from "../../../components/layouts";
 import { InventoryItemFields } from "./InventoryItemFields";
+import type { LendingFlagSpace } from "./InventoryLendingFlags";
 import { type Category, useStaffGet } from "./shared";
 import {
   formatActor,
@@ -25,6 +26,7 @@ import {
 export function ItemModal({ title, open, onClose, pending, onSubmit, ...fields }: {
   title: string; open: boolean; onClose: () => void; form: ItemForm; setForm: (updater: (current: ItemForm) => ItemForm) => void; categories: Category[];
   includeQuantities?: boolean; pending: boolean; error?: string; onSubmit: () => void; children?: ReactNode;
+  makerspace?: LendingFlagSpace;
 }) {
   if (!open) return null;
   return <FormPageLayout header={{ title, subtitle: "Add a part to your Space Works catalogue." }} state={{ status: "ready" }}

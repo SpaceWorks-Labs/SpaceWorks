@@ -72,7 +72,8 @@ def confirm_password_reset(email, code, new_password, *, context="member", maker
                 try:
                     validate_recovery_password(new_password, user)
                 except DjangoValidationError as exc:
-                    password_failure = {"new_password": list(exc.messages)}
+                    from apps.accounts.password_breach import error_body
+                    password_failure = error_body("new_password", exc)
                 else:
                     user.set_password(new_password)
                     user.must_change_password = False

@@ -290,3 +290,8 @@ from .audit_references_r2_l15 import EDGES as R2_L15_AUDIT_EDGES  # noqa: E402
 AUDIT_META_REFERENCES.update(R2_L15_AUDIT_EDGES)
 from .audit_references_r2_l10 import EDGES as R2_L10_AUDIT_EDGES  # noqa: E402
 AUDIT_META_REFERENCES.update(R2_L10_AUDIT_EDGES)
+
+from .audit_references_l12 import EDGES as L12_AUDIT_EDGES  # noqa: E402
+AUDIT_META_REFERENCES.update(L12_AUDIT_EDGES)
+from .audit_references_account_merge import EDGES as ACCOUNT_MERGE_AUDIT_EDGES  # noqa: E402
+AUDIT_META_REFERENCES.update(ACCOUNT_MERGE_AUDIT_EDGES)

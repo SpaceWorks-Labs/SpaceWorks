@@ -54,7 +54,24 @@ def _choose_machine(locked, queue, candidate_scope, machine_id):
     ).first()
 
 
-def start(service_request, actor, machine_scope, *, machine_id=None, estimated_minutes=None, consumable_pool_id=None, planned_grams=None, planned_quantity=None):
+def _require_machine_free(locked, machine, batch):
+    """One running job per machine, except the jobs of ONE batch run (#142 OQ-9)."""
+    others = MachineServiceRequest.objects.filter(
+        assigned_machine_id=machine.pk, status=MachineServiceRequest.Status.IN_PROGRESS,
+    ).exclude(pk=locked.pk)
+    if batch is None:
+        _require_available(machine)
+        if others.exists():
+            # C8: a coherent in-progress row governs availability whatever the flag says.
+            raise ServiceMachineUnavailable("Machine is not available for service requests.")
+        return
+    if not machine.is_active or batch.machine_id != machine.pk or others.exclude(batch_id=batch.pk).exists():
+        raise ServiceMachineUnavailable("Machine is not available for this batch.")
+    if machine.status != Machine.Status.RUNNING:
+        _require_available(machine)
+
+
+def start(service_request, actor, machine_scope, *, machine_id=None, estimated_minutes=None, consumable_pool_id=None, planned_grams=None, planned_quantity=None, batch=None):
     with transaction.atomic():
         _assert_request_write_allowed(service_request)
         locked = _locked_request(service_request)
@@ -74,17 +91,18 @@ def start(service_request, actor, machine_scope, *, machine_id=None, estimated_m
             machine_id_paths=("pk",),
             type_id_paths=("machine_type_id",),
         )
+        if machine_id is None and locked.preassigned_machine_id:
+            machine_id = locked.preassigned_machine_id
         machine = _choose_machine(locked, queue, candidate_scope, machine_id)
         if machine is None or machine.makerspace_id != locked.makerspace_id:
             raise ServiceMachineUnavailable("Machine is not available for this service request.")
         if locked.queue_id and machine.machine_type_id != queue.machine_type_id:
             raise ServiceMachineUnavailable("Machine is not compatible with this service queue.")
-        _require_available(machine)
-        if MachineServiceRequest.objects.filter(
-            assigned_machine_id=machine.pk, status=MachineServiceRequest.Status.IN_PROGRESS,
-        ).exclude(pk=locked.pk).exists():
-            # C8: a coherent in-progress row governs availability whatever the flag says.
-            raise ServiceMachineUnavailable("Machine is not available for service requests.")
+        _require_machine_free(locked, machine, batch)
+        from apps.machines.booking_gate import check as booking_check
+        from apps.machines.lockout import require_not_locked_out
+        require_not_locked_out(machine)
+        booking_check(machine, locked.member_id or locked.requester_id, purpose="service")
         if estimated_minutes is not None:
             locked.estimated_minutes = _minutes(estimated_minutes, "estimated_minutes")
         _require_printer_start_inputs(locked, machine, consumable_pool_id, planned_grams)
@@ -97,6 +115,7 @@ def start(service_request, actor, machine_scope, *, machine_id=None, estimated_m
                                 planned_grams=planned_grams, planned_quantity=planned_quantity, machine=machine)
             locked.refresh_from_db()
         locked.assigned_machine, locked.status, locked.handled_by, locked.started_at = machine, MachineServiceRequest.Status.IN_PROGRESS, actor, timezone.now()
+        locked.batch = batch
         locked.run_machine_name = machine.name
         locked.run_machine_model = str((machine.type_payload or {}).get("model", ""))
         locked.run_estimated_minutes = locked.estimated_minutes
@@ -104,9 +123,10 @@ def start(service_request, actor, machine_scope, *, machine_id=None, estimated_m
         if locked.run_consumable_pool_id:
             pool = locked.run_consumable_pool
             locked.run_consumable_label, locked.run_consumable_material, locked.run_consumable_color = pool.label, pool.material, pool.color
-        locked.save(update_fields=["assigned_machine", "status", "handled_by", "started_at", "estimated_minutes", "run_machine_name", "run_machine_model", "run_consumable_label", "run_consumable_material", "run_consumable_color", "run_estimated_minutes", "run_planned_grams", "updated_at"])
-        from apps.machines.status_tracking import change_status
-        change_status(machine, Machine.Status.RUNNING, source="service_start", actor=actor)
+        locked.save(update_fields=["assigned_machine", "batch", "status", "handled_by", "started_at", "estimated_minutes", "run_machine_name", "run_machine_model", "run_consumable_label", "run_consumable_material", "run_consumable_color", "run_estimated_minutes", "run_planned_grams", "updated_at"])
+        if machine.status != Machine.Status.RUNNING:
+            from apps.machines.status_tracking import change_status
+            change_status(machine, Machine.Status.RUNNING, source="service_start", actor=actor)
         _audit_transition(actor, locked, "assigned", extra={"machine_id": machine.pk})
         _audit_transition(actor, locked, "started")
         from apps.machines.service_queue_notices import initiator_for, reevaluate_head, reserve_milestone

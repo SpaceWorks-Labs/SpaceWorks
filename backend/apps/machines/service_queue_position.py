@@ -2,8 +2,9 @@
 
 from collections import defaultdict
 
-from django.db.models import Case, Q, Value, When
+from django.db.models import Q
 
+from apps.machines.job_order import ordering
 from apps.machines.models import MachineServiceRequest
 
 
@@ -58,15 +59,8 @@ def _waiting_rows(keys):
     bucket_ids = [value for field, value in keys if field == "bucket"]
     rows = MachineServiceRequest.objects.filter(status__in=WAITING_STATUSES).filter(
         Q(queue_id__in=queue_ids) | Q(bucket_id__in=bucket_ids),
-    ).only("id", "status", "queue_id", "bucket_id", "created_at").order_by(_priority(), "created_at", "id")
+    ).only("id", "status", "queue_id", "bucket_id", "created_at", "queued_at", "urgent").order_by(*ordering())
     grouped = defaultdict(list)
     for row in rows:
         grouped[_scope_key(row)].append(row)
     return grouped
-
-
-def _priority():
-    return Case(
-        When(status=MachineServiceRequest.Status.ACCEPTED, then=Value(0)),
-        default=Value(1),
-    )

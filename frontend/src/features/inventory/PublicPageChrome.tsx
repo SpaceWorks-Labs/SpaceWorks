@@ -11,7 +11,9 @@ export function publicPageChrome(slug: string, name: string, path: (part?: strin
   if (modules.has("events")) nav.push({ label: "Events", href: path("events") });
   if (modules.has("machines")) nav.push({ label: "Machines", href: path("machines") });
   if (modules.has("bookings")) nav.push({ label: "Book a space", href: path("bookings") });
-  if (modules.has("printing")) nav.push({ label: "Request a 3D print", href: path("print") });
+  // One "Request a job" flow for every machine type (#140); the 3D-print link survives only where it is off.
+  if (modules.has("machine_service") && bootstrap?.features?.includes("machines.job_requests")) nav.push({ label: "Request a job", href: path("machine-jobs/new") });
+  else if (modules.has("printing")) nav.push({ label: "Request a 3D print", href: path("print") });
   if (bootstrap?.makerspace.public_stats_enabled) nav.push({ label: "Stats", href: path("stats") });
   const support: { label: string; href: string; external?: boolean }[] = [];
   const email = bootstrap?.branding.support_email;

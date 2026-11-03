@@ -27,11 +27,11 @@ govern sign-in availability. Membership adds plans, vouching, renewals and the m
 
 | Area | Modules | Features |
 | --- | --- | --- |
-| Inventory & lending | `public_inventory`, `request_workflow`, `staff_admin`, `scanner`, `evidence_uploads`, `qr_management` (core); `guest_handover`, `asset_units`, `containers`, `bulk_import`, `stock_transfers`, `qr_print_batches`, `stocktake`, `devices` | `loans.enabled`, `loans.limits`, `loans.renewals`, `loans.kit_checklist`, `inventory.notify_when_back`, `inventory.tobuy`, `inventory.warranty`, `inventory.self_checkout`, `inventory.contact_self_checkout`, `inventory.kiosk`, `stocktake.discipline`, `packs.import`, `charges.loans`; `payments.loans` with Online payments |
-| Machines | `machines`, `machine_service`, `printing` | `machines.maintenance`, `machines.tobuy`, `machines.warranty`, `machines.certifications`, `machines.certification_reminders`, `machines.public_detail`, `machines.material_catalogue`, `machines.structured_intake`, `maintenance.reminders`, `maintenance.meters`, `maintenance.calendar_feed`, `charges.machines`, `notifications.delegated_recipients`; `payments.machines` with Online payments |
+| Inventory & lending | `public_inventory`, `request_workflow`, `staff_admin`, `scanner`, `evidence_uploads`, `qr_management` (core); `guest_handover`, `asset_units`, `containers`, `bulk_import`, `stock_transfers`, `qr_print_batches`, `stocktake`, `devices` | `loans.enabled`, `loans.limits`, `loans.renewals`, `loans.kit_checklist`, `loans.reservations`, `loans.pickup_windows`, `loans.waitlist`, `loans.withdrawals`, `inventory.notify_when_back`, `inventory.expected_back`, `inventory.consumables`, `inventory.vendors`, `inventory.tobuy`, `inventory.warranty`, `inventory.self_checkout`, `inventory.contact_self_checkout`, `inventory.kiosk`, `stocktake.discipline`, `packs.import`, `charges.loans`; `payments.loans` with Online payments |
+| Machines | `machines`, `machine_service`, `printing` | `machines.job_requests`, `machines.job_quotes`, `machines.batch_start`, `machines.pay_before_pickup`, `machines.time_booking`, `machines.maintenance`, `machines.tobuy`, `machines.warranty`, `machines.certifications`, `machines.certification_reminders`, `machines.public_detail`, `machines.material_catalogue`, `machines.structured_intake`, `maintenance.reminders`, `maintenance.meters`, `maintenance.calendar_feed`, `charges.machines`, `notifications.delegated_recipients`; `payments.machines` with Online payments |
 | Events | `events` | `events.api_read`, `events.certificate_designer`, `events.website`, `events.embed`, `events.short_links`, `events.online_delivery`, `events.anonymous_feedback`; `events.broadcasts` with Notifications and Email; `events.organization_audience`, `events.offline_checkin`, `events.invites`, `events.account_registration`, `events.ticket_types`, `events.promo_codes`, `charges.events`; `payments.events` with Online payments |
 | Bookings | `bookings` | `bookings.recurring`, `bookings.staff_grants`, `bookings.clone`, `bookings.staff_tools`, `bookings.confirmations`, `bookings.checkin`, `bookings.passes`, `bookings.api_read`, `bookings.website`, `bookings.embed`, `charges.bookings`; `bookings.broadcasts` with Notifications and Email; `bookings.analytics`, `bookings.utilization_pdf`, `bookings.exports` with Reports; `payments.bookings` with Online payments |
-| Membership | `membership`, `mobile` | `membership.auto_renew`, `membership.lifecycle_mail`, `membership.self_service`, `membership.self_export`, `membership.vouching`, `membership.application_form`, `membership.broadcasts`, the 14 release-2 lifecycle switches (`membership.plan_rules` … `membership.monthly_summary`), `mobile.push`, `charges.membership`; `payments.membership` with Online payments |
+| Membership | `membership`, `mobile` | `membership.auto_renew`, `membership.lifecycle_mail`, `membership.self_service`, `membership.self_export`, `membership.vouching`, `membership.application_form`, `membership.broadcasts`, the 14 release-2 lifecycle switches (`membership.plan_rules` … `membership.monthly_summary`), `mobile.push`, `mobile.watch_actions`, `charges.membership`; `payments.membership` with Online payments |
 | Online payments | `payments` | `payments.enabled` plus the online-payment feature of each selected domain |
 | Reports | `reports` | `reports.saved_views`; `reports.event_pdf`, `reports.event_exports` with Events |
 | Chat alerts | `telegram`, `slack`, `mattermost`, `discord`, `webhook` | Idle until URLs/tokens are configured |
@@ -194,6 +194,17 @@ A capability now: `inventory.tobuy` and `machines.tobuy`, see
 Finalized consumable costs accompany their service sources and are removed with them
 during module purge; independent manual pool usage and its recorded costs remain.
 
+**One "Request a job" flow for every machine type (release 2, L12; #140–#142).** Members of the
+space who are checked in pick a machine type that takes jobs, upload files in the formats that
+type accepts, add material and notes and confirm the pickup, failure and ownership terms. Every
+type shares the same queue (live "#N in queue", "You're next", an ETA that respects opening
+hours for attended machines), quotes the member approves (`machines.job_quotes`, per type),
+payment at completion or before queueing, failure outcomes (a space fault re-runs free at the
+front; a member fault follows the type's failure charge), pickup codes, reminders and a staff
+"Not collected" from day 14. Staff work a per-type queue board (reorder, urgent pin, assign,
+start, batch start with `machines.batch_start`, finish, collect). The 3D-printer form is an alias
+of the same flow. Off (`machines.job_requests`): no member submits a job; staff keep every job.
+
 ### printing
 
 [Read the printing module reference](MODULES-WORKSHOPS.md#printing).
@@ -215,13 +226,13 @@ The Django apps stay internal and separable (`TOMBSTONED_APPS` still removes the
 
 | Capability | Parent | Default | What it switches |
 |---|---|:--:|---|
-| `machines.maintenance` | `machines` | | Machine maintenance schedules, logs, documents, overdue list, calendar feed, reminders and the dashboard/report sections |
+| `machines.maintenance` | `machines` | | Machine maintenance schedules, logs, documents, overdue list, calendar feed, reminders and the dashboard/report sections; machine work orders, the downtime ledger and maintenance lockout (L12) |
 | `machines.tobuy` | `machines` | | To-Buy rows for machine consumables (the `printing` stream) and automatic filament low-stock drafts |
 | `machines.warranty` | `machines` | | Warranty records and documents on machines |
 | `inventory.tobuy` | — (Inventory) | | To-Buy rows for inventory items (the `hardware` stream), reorder drafts and, later, the shop |
 | `inventory.warranty` | — (Inventory) | | Warranty records and documents on inventory assets |
 | `machines.repairs`, `machines.issue_reporting` | `machines` | | Reserved for repairs and issue reporting (L16); no effect yet |
-| `inventory.maintenance`, `inventory.repairs`, `inventory.issue_reporting` | — (Inventory) | | Reserved (L12/L16); no effect yet |
+| `inventory.maintenance`, `inventory.repairs`, `inventory.issue_reporting` | — (Inventory) | | Reserved (L16); the work-order model already accepts item subjects behind `inventory.maintenance` |
 | `bookings.room_maintenance`, `bookings.room_repairs`, `bookings.issue_reporting` | `bookings` | | Reserved (L16); no effect yet |
 
 `maintenance.meters`, `maintenance.calendar_feed`, `maintenance.reminders` and
@@ -782,6 +793,18 @@ its parent module is off.
 | `finance.ledger` | standalone core ledger | ● | Finance ledger screens and reports: income vs spending by month, area and machine type, expenses with receipts, opening balances, receipts-and-payments and subscription income per FY, per-event money ([finance ledger](payment-billing.md#finance-ledger)) | Screens and reports hidden; spending and receipts are still recorded (#128 C-15) |
 | `charges.pricing` | standalone core ledger | ● | Price lists ([pricing](payment-billing.md#pricing-paid-and-free-everywhere)): free or paid per area with rates, caps, grace and billing increments; per-item prices (Inherit / Free / Custom); loan rental (per loan and per day, charged at checkout or at return), staff-set damage and lost charges; machine time AND material; hourly rooms; the member price preview. With nothing configured every new component is free | Only the release-1 price fields apply (deposit, late fee, room/event/plan prices, the machine-type price); the pricing screens and APIs are gone; rate cards and item prices are kept |
 | `charges.discounts` | standalone core ledger (needs `charges.pricing`) | | Automatic member discounts for all members, a plan's members or one member; the single best one applies, then an event promo code | Everyone pays the list price; rules are kept |
+| `inventory.consumables` | — (Inventory) | | Take-and-go items (screws, glue) logged as used, never lent; one staff list of item, machine and pool consumables; an automatic To-Buy draft at the reorder point | No consumable flag or list; flagged items stay unlendable |
+| `inventory.vendors` | — (Inventory) | | Saved suppliers for To-Buy purchases and warranties | Supplier stays free text; vendors kept |
+| `inventory.expected_back` | `public_inventory` | | Opted-in items show the earliest date a borrowed-out unit is due back (date only) | No date shown |
+| `loans.reservations` | `request_workflow` | | Members choose when they will collect, up to N days ahead | No pickup time on requests |
+| `loans.pickup_windows` | `request_workflow` | | An accepted request not collected in time expires and its items are free again | Accepted requests wait until handed over or cancelled |
+| `loans.waitlist` | `request_workflow` (needs `notifications`) | | Queue for an item that is out; the next unit is held for the first in line for a set time | No waitlist; places kept |
+| `loans.withdrawals` | `request_workflow` | | Members withdraw their own pending or accepted request | Only staff cancel requests |
+| `machines.job_requests` | `machine_service` | ● | One "Request a job" form for every machine type that takes jobs, with files, the queue, ETA, quotes and pickup codes | No member submits a job; staff keep every job |
+| `machines.job_quotes` | `machine_service` (needs `machines.job_requests`) | ● | Staff send a quote the member approves before the job queues, per machine type | No type asks for a quote |
+| `machines.batch_start` | `machine_service` (needs `machines.job_requests`) | | Start several queued jobs on one machine run; time and material split across them | One job per machine run |
+| `machines.pay_before_pickup` | `machine_service` (needs `machines.job_requests`) | | A finished job is handed over only once its charge is settled | Pickup never waits on payment |
+| `machines.time_booking` | `machines` (needs `bookings`) | | Book a machine's time through bookings; types that require a booking can then only be used by the booker, and nobody starts a job while someone else holds it | Nothing is enforced; machine resources are kept |
 | `loans.fee_waivers` | `request_workflow` | ● | Staff waive a loan's rental, late, damage or lost fees with a recorded reason; a fee already paid opens a refund case for approval; the deposit is never waived | No waive tool; waivers already written keep their loans free |
 | `charges.machines` | `machines` (needs `machine_service`) | ● | Record a charge when a priced machine job completes | Machine jobs are free |
 | `machines.integrations` | `machines` (needs `devices`, `machine_service`) | | **Foundation only; the integration is deferred (#76).** An enrolled printer device bound to a machine whose type has an enabled printer-agent binding may pull its approved jobs, report start/completion/failure through the machine-service workflow (failures held for staff) and send a bounded status snapshot. Superadmin `/control/` only; no console screen | Every integration route answers 404; bindings and snapshots are kept |
@@ -815,6 +838,7 @@ its parent module is off.
 | `payments.membership` | `membership` | | Card rail for dues | Dues are still recorded and settled offline |
 | `payments.loans` | `payments` | | Card rail for loan deposits and late fees | Loan charges are still recorded and settled offline |
 | `mobile.push` | `mobile` | ● | Native push notifications | Apps rely on in-app/inbox notifications |
+| `mobile.watch_actions` | `mobile` | ● | Open, Mark seen (and Snooze with inbox snooze) buttons on phone and watch notifications; never money, evidence, approval or handover actions | Pushes still arrive, without buttons |
 | `events.short_links` | `events` | | Short `/e/<code>` links with a daily visit count | Only the long event address; existing codes are kept and 404 |
 | `events.online_delivery` | `events` | | Online/hybrid events and the confirmed-only join link | Every event reads as in person; join links are kept, never shown |
 | `events.broadcast_templates` | `events` | `events.broadcasts` feature | 13 starter templates and the accent-band, photo-header and letter designs | Blank composer with the classic, bold and minimal designs; saved campaigns keep rendering |

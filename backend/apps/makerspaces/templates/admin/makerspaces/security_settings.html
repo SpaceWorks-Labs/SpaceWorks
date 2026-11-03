@@ -10,13 +10,19 @@
   {% for row in settings %}
     <tr>
       <td><strong>{{ row.label }}</strong><br><small>{{ row.description }}</small></td>
-      <td>{% if row.value %}On{% else %}Off{% endif %}</td>
-      <td>{% if row.lock %}Locked at {{ row.lock.floor }}{% if row.lock.note %}: {{ row.lock.note }}{% endif %}{% else %}Not locked{% endif %}</td>
+      <td>{% if row.kind == "bool" %}{% if row.value %}On{% else %}Off{% endif %}{% elif row.kind == "list" %}{{ row.value|join:", "|default:"(empty: any)" }}{% else %}{{ row.value }}{% endif %}</td>
+      <td>{% if row.lock %}Locked at {% if row.kind == "list" %}{{ row.lock.floor|join:", "|default:"(empty)" }}{% else %}{{ row.lock.floor }}{% endif %}{% if row.lock.note %}: {{ row.lock.note }}{% endif %}{% else %}Not locked{% endif %}</td>
       <td>
         <form method="post">{% csrf_token %}
           <input type="hidden" name="action" value="set"><input type="hidden" name="key" value="{{ row.key }}">
+          {% if row.kind == "bool" %}
           {% if not row.value %}<input type="hidden" name="enabled" value="on">{% endif %}
           <button type="submit">{% if row.value %}Turn off{% else %}Turn on{% endif %}</button>
+          {% else %}
+          <label>{% if row.kind == "choice" %}One of {{ row.choices|join:", " }}{% elif row.kind == "list" %}Comma-separated networks{% else %}Number{% endif %}
+            <input type="text" name="value" value="{% if row.kind == "list" %}{{ row.value|join:", " }}{% else %}{{ row.value }}{% endif %}"></label>
+          <button type="submit">Save</button>
+          {% endif %}
         </form>
         {% if row.lock %}
         <form method="post">{% csrf_token %}
@@ -26,8 +32,9 @@
         {% else %}
         <form method="post">{% csrf_token %}
           <input type="hidden" name="action" value="lock"><input type="hidden" name="key" value="{{ row.key }}">
+          {% if row.kind != "bool" %}<label>Lock at <input type="text" name="value"></label>{% endif %}
           <label>Note for the space <input type="text" name="note" maxlength="200"></label>
-          <button type="submit">Lock on</button>
+          <button type="submit">{% if row.kind == "bool" %}Lock{% if row.strict_value %} on{% else %} off{% endif %}{% else %}Lock{% endif %}</button>
         </form>
         {% endif %}
       </td>

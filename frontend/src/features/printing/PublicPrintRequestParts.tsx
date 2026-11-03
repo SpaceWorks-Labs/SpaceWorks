@@ -3,7 +3,7 @@ import type { ChangeEvent, Dispatch, SetStateAction } from "react";
 import { EmptyState, ErrorBlock, Field, ListRow, ProgressBar, RelativeTime, Skeleton, StatusPill } from "../../components/ui";
 import type { PrintStatus } from "./publicApi";
 import { ServiceRequestEta } from "../machine-service/ServiceRequestEta";
-import { normalizeServiceStatus } from "../machine-service/types";
+import { normalizeServiceStatus, serviceStatusLabel } from "../machine-service/types";
 
 export type TextInputProps = {
   label: string;
@@ -82,8 +82,10 @@ function queuePositionDetail(status: PrintStatus): string {
 
 export function StatusStepper({ status }: { status: PrintStatus }) {
   const current = normalizeServiceStatus(status.status);
-  const currentIndex = steps.findIndex(step => step.key === current);
+  // A job waiting on the member (changes asked for, quote to approve) is still before "Accepted".
+  const currentIndex = steps.findIndex(step => step.key === (current === "changes_requested" || current === "quoted" ? "pending" : current));
   if (current === "cancelled") return <StatusPill tone="neutral" label={`${status.title} was cancelled. Nothing was charged.`} />;
+  if (current === "uncollected") return <StatusPill tone="neutral" label={`${status.title} wasn't collected within 14 days.`} />;
   if (current === "rejected" || current === "failed") return <StatusPill tone="danger" label={`${status.title} is ${current}.`} />;
   return <div className="grid gap-4">
     <ProgressBar value={Math.max(0, currentIndex) / (steps.length - 1)} label="Print progress" />
@@ -92,7 +94,7 @@ export function StatusStepper({ status }: { status: PrintStatus }) {
     </li>)}</ol>
     {status.queue_position != null ? <ListRow title={`#${status.queue_position} in the queue`} meta={queuePositionDetail(status)} /> : null}
     <ServiceRequestEta eta={status.eta} status={current} showLine={false} />
-    <p className="text-sm text-muted">Current status: <span className="font-semibold text-ink">{current.replace(/_/g, " ")}</span></p>
+    <p className="text-sm text-muted">Current status: <span className="font-semibold text-ink">{["changes_requested", "quoted", "uncollected"].includes(current) ? serviceStatusLabel(current) : current.replace(/_/g, " ")}</span></p>
   </div>;
 }
 

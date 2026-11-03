@@ -22,8 +22,13 @@ from apps.maintenance.views import (
 )
 
 from .views_feed import MaintenanceFeedView, MaintenanceFeedCalendarView
+from .views_work_orders import WorkOrderAssignView, WorkOrderListView, WorkOrderMoveView
 
 urlpatterns = [
+    # Lane L12: work orders, the one repair/maintenance job model (L16 builds on it).
+    path("makerspaces/<int:makerspace_id>/work-orders", WorkOrderListView.as_view(), name="admin-work-orders"),
+    path("work-orders/<int:pk>/status", WorkOrderMoveView.as_view(), name="admin-work-order-status"),
+    path("work-orders/<int:pk>/assign", WorkOrderAssignView.as_view(), name="admin-work-order-assign"),
     path("makerspaces/<int:makerspace_id>/maintenance/feed", MaintenanceFeedView.as_view(), name="maintenance-feed"),
     path("makerspaces/<int:makerspace_id>/maintenance/feed/<str:raw_token>.ics", MaintenanceFeedCalendarView.as_view(), name="maintenance-feed-calendar"),
     path("makerspace/<int:makerspace_id>/maintenance-overdue", OverdueMaintenanceListView.as_view(), name="admin-maintenance-overdue"),

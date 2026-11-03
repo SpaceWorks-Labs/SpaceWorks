@@ -28,14 +28,14 @@ def _audit(machine, actor, action, meta=None):
 
 
 @transaction.atomic
-def set_status(machine, actor, status):
+def set_status(machine, actor, status, *, reason="", expected_back_at=None):
     if status not in Machine.Status.values:
         raise ValidationError({"status": "Invalid machine status."})
     _retired(machine)
     machine = Machine.objects.select_for_update().get(pk=machine.pk)
     _retired(machine)
     from .status_tracking import change_status
-    change_status(machine, status, source="manual", actor=actor)
+    change_status(machine, status, source="manual", actor=actor, reason=reason, expected_back_at=expected_back_at)
     return machine
 
 

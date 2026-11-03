@@ -65,7 +65,7 @@ def request_history(makerspace_id, member):
     """
     rows = (
         HardwareRequest.objects.filter(makerspace_id=makerspace_id, requester=member)
-        .only("status", "created_at")
+        .only("id", "status", "created_at")
         .prefetch_related("items")
         .order_by("-created_at")[:HISTORY_LIMIT]
     )
@@ -74,6 +74,7 @@ def request_history(makerspace_id, member):
         items = list(row.items.all())
         history.append(
             {
+                "id": row.pk,
                 "status": row.status,
                 "created_at": row.created_at,
                 "item_count": len(items),

@@ -13,11 +13,13 @@ it across requests and never reuse one built before a mutation.
 """
 
 from collections import defaultdict
+from types import SimpleNamespace
 
 from django.db.models import Q
 from django.utils import timezone
 
 from apps.accounts import rbac
+from apps.machines.job_order import order_key
 from apps.machines.models import Machine, MachineServiceRequest, ServiceQueue
 from apps.machines.service_queue_eta_core import (
     INACTIVE, Forecast, JobRecord, MachineRecord, ScopeRecord, Timeline, UNAVAILABLE, lane_summary, project,
@@ -26,6 +28,40 @@ from apps.machines.service_queue_eta_core import (
 WAITING = (MachineServiceRequest.Status.PENDING, MachineServiceRequest.Status.ACCEPTED)
 RUNNING = MachineServiceRequest.Status.IN_PROGRESS
 LIVE = frozenset((*WAITING, RUNNING))
+
+
+def _unattended():
+    from django.db.models import OuterRef, Subquery
+
+    from apps.machines.models import MakerspaceMachineTypePolicy
+    return Subquery(MakerspaceMachineTypePolicy.objects.filter(
+        makerspace_id=OuterRef("makerspace_id"), machine_type_id=OuterRef("machine_type_id"),
+    ).values("runs_unattended")[:1])
+
+
+def _runs_unattended(slug, stored):
+    from apps.machines.job_policy import UNATTENDED_SLUGS
+    return slug in UNATTENDED_SLUGS if stored is None else bool(stored)
+
+
+def _on_the_calendar(tenant, job, payload):
+    """Attended work only happens while the space is open: push start/finish into open hours."""
+    from apps.makerspaces.opening_hours import advance_open, has_hours
+    group = tenant.timeline.scopes.get(job.scope)
+    if (tenant.calendar is None or group is None or group.group[1] not in tenant.attended
+            or not has_hours(tenant.calendar) or payload["finish_in_minutes"] is None):
+        return payload
+    now = payload["calculated_at"]
+    started = payload["estimated_start_at"] is not None and payload["estimated_start_at"] < now
+    start = payload["estimated_start_at"] if started else advance_open(tenant.calendar, now,
+                                                                       payload["start_in_minutes"])
+    finish = advance_open(tenant.calendar, now, payload["finish_in_minutes"])
+    if start is None or finish is None:
+        return {**payload, "estimated_start_at": None, "estimated_finish_at": None, "start_in_minutes": None,
+                "finish_in_minutes": None, "confidence": UNAVAILABLE}
+    minutes = lambda at: max(0, round((at - now).total_seconds() / 60))  # noqa: E731
+    return {**payload, "estimated_start_at": start, "estimated_finish_at": finish,
+            "start_in_minutes": minutes(start), "finish_in_minutes": minutes(finish)}
 
 
 def _now():
@@ -42,8 +78,15 @@ class _TenantSnapshot:
         self.makerspace_id = makerspace_id
         queues = list(rbac.scope_verified_tenant(ServiceQueue.objects.all(), makerspace_id).values_list(
             "id", "machine_type_id", "is_active", "capacity"))
-        machines = list(rbac.scope_verified_tenant(Machine.objects.all(), makerspace_id).values_list(
-            "id", "machine_type_id", "is_active", "status", "service_buckets__id", "service_buckets__is_active"))
+        # The opening-hours calendar and each type's attended flag ride on this same SELECT
+        # (#142 OQ-11), so the four-query budget holds.
+        rows = list(rbac.scope_verified_tenant(Machine.objects.all(), makerspace_id).annotate(
+            unattended=_unattended()).values_list(
+            "id", "machine_type_id", "is_active", "status", "service_buckets__id", "service_buckets__is_active",
+            "machine_type__slug", "unattended", "makerspace__opening_hours", "makerspace__timezone"))
+        machines = [row[:6] for row in rows]
+        self.calendar = SimpleNamespace(opening_hours=rows[0][8], timezone=rows[0][9]) if rows else None
+        self.attended = {row[1] for row in rows if not _runs_unattended(row[6], row[7])}
         queue_type = {row[0]: row[1] for row in queues}
         machine_type = {row[0]: row[1] for row in machines}
         bucket_machine = {row[4]: row[0] for row in machines if row[4] is not None}
@@ -78,16 +121,21 @@ class _TenantSnapshot:
         rows = rbac.scope_verified_tenant(MachineServiceRequest.objects.all(), self.makerspace_id)
         typed = Q(queue__machine_type_id__in=types) | Q(bucket__machine__machine_type_id__in=types)
         running = rows.filter(typed | Q(assigned_machine__machine_type_id__in=types), status=RUNNING)
-        for pk, qid, bid, mid, started, run_minutes, minutes, created in running.values_list(
+        for pk, qid, bid, mid, started, run_minutes, minutes, created, batch in running.values_list(
                 "id", "queue_id", "bucket_id", "assigned_machine_id", "started_at",
-                "run_estimated_minutes", "estimated_minutes", "created_at"):
+                "run_estimated_minutes", "estimated_minutes", "created_at", "batch_id"):
             scope = ("bucket", bid) if bid else ("queue", qid)
-            self.running.append(JobRecord(pk, scope, RUNNING, created, _minutes(run_minutes, minutes),
-                                          started_at=started, machine_id=mid))
-        for pk, status, qid, bid, minutes, created in rows.filter(typed, status__in=WAITING).values_list(
-                "id", "status", "queue_id", "bucket_id", "estimated_minutes", "created_at"):
+            self.running.append(JobRecord(pk, scope, RUNNING, order_key(False, None, created),
+                                          _minutes(run_minutes, minutes), started_at=started, machine_id=mid,
+                                          batch_id=batch))
+        for pk, status, qid, bid, minutes, created, queued, urgent, preassigned in rows.filter(
+                typed, status__in=WAITING).values_list(
+                "id", "status", "queue_id", "bucket_id", "estimated_minutes", "created_at", "queued_at", "urgent",
+                "preassigned_machine_id"):
             scope = ("bucket", bid) if bid else ("queue", qid)
-            self.waiting.append(JobRecord(pk, scope, status, created, _minutes(minutes)))
+            # `created_at` carries the queue order key (#142 OQ-6): urgent first, then the anchor.
+            self.waiting.append(JobRecord(pk, scope, status, order_key(urgent, queued, created), _minutes(minutes),
+                                          machine_id=preassigned))
 
 
 class QueueSnapshot:
@@ -115,7 +163,7 @@ class QueueSnapshot:
                     "reasons": [INACTIVE], "approved_ahead": 0, "awaiting_review_ahead": 0,
                     "active_machine_count": 0, "missing_estimate_count": 0}
         forecast = tenant.timeline.forecasts.get(job.id) or Forecast(reasons={INACTIVE})
-        payload = project(self.now, forecast)
+        payload = _on_the_calendar(tenant, job, project(self.now, forecast))
         facts = tenant.timeline.facts(job)
         payload.update({key: facts[key] for key in (
             "approved_ahead", "awaiting_review_ahead", "active_machine_count", "missing_estimate_count")})

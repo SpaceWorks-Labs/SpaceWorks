@@ -280,6 +280,8 @@ services:
       WEB_ANALYTICS_COLLECT_URL: ${WEB_ANALYTICS_COLLECT_URL:-}
       WEB_ANALYTICS_DOMAIN: ${WEB_ANALYTICS_DOMAIN:-}
       WEB_ANALYTICS_EXTRA_CONNECT_ORIGINS: ${WEB_ANALYTICS_EXTRA_CONNECT_ORIGINS:-}
+      # Public site key only: it lets the SPA's CSP load Cloudflare Turnstile (S-C).
+      TURNSTILE_SITE_KEY: ${TURNSTILE_SITE_KEY:-}
     logging: *default-logging
     ports:
       - "${FRONTEND_PORT:-8080}:80"

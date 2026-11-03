@@ -42,6 +42,9 @@ PAYMENT_DOMAINS = {
     "loan_rental": "loans",
     "loan_damage": "loans",
     "loan_lost": "loans",
+    # Lane L6: ticket orders and venue fees are events income.
+    "event_order": "events",
+    "event_venue_fee": "events",
 }
 
 

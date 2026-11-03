@@ -92,6 +92,9 @@ PAYMENT_SUBJECT_REFERENCES = {
     "loan_rental": "hardware_requests.HardwareRequest",
     "loan_damage": "hardware_requests.RequesterAccountability",
     "loan_lost": "hardware_requests.RequesterAccountability",
+    # Lane L6: one order of several tickets; one hosting fee per event.
+    "event_order": "events.EventOrder",
+    "event_venue_fee": "events.EventVenueFee",
 }
 
 NOTIFICATION_URL_ROUTES = (

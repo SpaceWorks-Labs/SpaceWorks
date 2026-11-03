@@ -30,6 +30,19 @@ def validate_loan_accountability(payment, identity_unchanged):
         raise ValidationError({"member": "Payment member must be the borrower."})
 
 
+def validate_event_money(payment, identity_unchanged):
+    """Lane L6: an order is the buyer's; a venue fee is its payer's. Both belong to this space."""
+    from apps.events.models import EventOrder, EventVenueFee
+
+    model, owner = ((EventOrder, "buyer_id") if payment.subject_type == "event_order"
+                    else (EventVenueFee, "payer_id"))
+    row = model.objects.filter(pk=payment.subject_id, makerspace_id=payment.makerspace_id).values(owner).first()
+    if row is None and not identity_unchanged:
+        raise ValidationError({"subject_id": "Payment subject must belong to the payment makerspace."})
+    if row is not None and payment.member_id != row[owner]:
+        raise ValidationError({"member": "Payment member must be the payer."})
+
+
 def validate_subject(payment, identity_unchanged):
     """Every subject must belong to the payment's makerspace (and its member)."""
     from apps.payments.models_payment import Payment
@@ -78,6 +91,8 @@ def validate_subject(payment, identity_unchanged):
             raise ValidationError({"subject_id": "Payment subject must belong to the payment makerspace."})
     if payment.subject_type in Payment.LOAN_ACCOUNTABILITY_SUBJECT_TYPES and payment.subject_id:
         validate_loan_accountability(payment, identity_unchanged)
+    if payment.subject_type in ("event_order", "event_venue_fee") and payment.subject_id:
+        validate_event_money(payment, identity_unchanged)
     if payment.subject_type == Payment.SubjectType.MEMBERSHIP_TERM and payment.subject_id:
         from apps.makerspaces.models import MembershipTerm
 

@@ -156,6 +156,15 @@ export const FEATURE_DEFINITIONS: readonly FeatureDefinition[] = [
   { key: "events.id_cards", parent_module: "events", label: "Event ID cards" },
   { key: "events.ticket_designs", parent_module: "events", label: "Ticket designs" },
   { key: "events.wallet_passes", parent_module: "events", label: "Wallet passes for event cards" },
+  // L6 (#69, #71, #128 C-20): paid ticketing v2 and venue fees.
+  { key: "events.orders", parent_module: "events", label: "Ticket orders" },
+  { key: "events.seat_holds", parent_module: "events", label: "Checkout seat holds" },
+  { key: "events.addons", parent_module: "events", label: "Ticket add-ons" },
+  { key: "events.series_passes", parent_module: "events", label: "Series passes" },
+  { key: "events.transfers", parent_module: "events", label: "Ticket transfers and type changes" },
+  { key: "events.desk_collect", parent_module: "events", label: "Collect payment at the desk" },
+  { key: "events.refund_override", parent_module: "events", label: "Per-event refund policy" },
+  { key: "events.venue_fees", parent_module: "events", label: "Venue fees for hosting" },
 ];
 
 export function featureEnabled(features: Iterable<string>, key: string) {

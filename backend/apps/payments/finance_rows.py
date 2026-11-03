@@ -80,6 +80,8 @@ def money_rows(space, date_range=None):
         pk__in=subjects).values_list("pk", "subject_type", "subject_id")}
     machine = _machine_types([sid for kind, sid in payments.values() if kind == "machine_service_request"])
     events = _event_ids([sid for kind, sid in payments.values() if kind == "event_registration"])
+    from apps.events.orders_finance import subject_event_ids  # lane L6: orders and venue fees
+    event_money = subject_event_ids(payments.values())
     for row, column, amount_key in [*((r, "income", "collected_amount") for r in collected),
                                     *((r, "refunds", "refunded_amount") for r in refunded)]:
         subject_type, subject_id = payments.get(row["payment_id"], (row["subject_type"], None))
@@ -88,7 +90,8 @@ def money_rows(space, date_range=None):
             at=row["date"], column=column, domain=PAYMENT_DOMAINS.get(subject_type, "general"),
             currency=row["currency"], amount=Decimal(row[amount_key]),
             machine_type_id=machine.get(subject_id) if subject_type == "machine_service_request" else None,
-            event_id=events.get(subject_id) if subject_type == "event_registration" else None,
+            event_id=(events.get(subject_id) if subject_type == "event_registration"
+                      else event_money.get((subject_type, subject_id))),
             category=subject_type, account=_account(method),
             provider=method if row["row_kind"] in ("online_settlement", "refund") and method in ONLINE else "",
             method=method, subject_type=subject_type, row_id=f"{row['row_kind']}:{row['row_id']}")

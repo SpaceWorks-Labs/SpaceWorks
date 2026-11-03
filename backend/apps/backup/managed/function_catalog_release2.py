@@ -17,4 +17,7 @@ RELEASE2_FUNCTIONS = frozenset({
     "events_short_link_host",
     "payments_payment_l5_guard",
     "payments_l5_append_only",
+    # Lane L6: the frozen order quote and append-only order dues.
+    "events_order_l6_guard",
+    "events_orderdue_l6_guard",
 })

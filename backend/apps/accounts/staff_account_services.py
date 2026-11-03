@@ -91,7 +91,7 @@ def change(actor, space_id, membership_id, *, roles=None, machine_type_ids=None)
         require_authority(actor, space, target=row.user, roles=new_roles)
         if row.status != "active":
             raise ValidationError({"detail": "Restore this staff row before changing it."})
-        before = {"roles": role_keys(row), "machine_type_ids": current_scope(row)}
+        roles_before, scopes_before = role_keys(row), current_scope(row)
         before_actions = set(actions_for_membership(row))
         if new_roles is not None:
             # set_membership_roles keeps the last Space Manager (protect_last_manager).
@@ -101,9 +101,9 @@ def change(actor, space_id, membership_id, *, roles=None, machine_type_ids=None)
             if MACHINE_MANAGER in role_keys(row):
                 set_member_machine_scope(makerspace=space, actor=actor, membership=row, machine_type_ids=scopes)
         row = target_row(space, row.pk)
-        after = {"roles": role_keys(row), "machine_type_ids": current_scope(row)}
         record(actor, "staff_role.changed", makerspace=space, target=row.user,
-               meta={"membership_id": row.pk, "before": before, "after": after})
+               meta={"membership_id": row.pk, "roles_before": roles_before, "roles_after": role_keys(row),
+                     "machine_type_ids_before": scopes_before, "machine_type_ids_after": current_scope(row)})
         if _demoted(before_actions, row):
             revoke_staff_grants(row.user, space.pk, reason="staff_role.changed", actor=actor)
     return row

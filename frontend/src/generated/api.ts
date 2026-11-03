@@ -104,6 +104,7 @@ export const openApiTags = [
   "Organizations",
   "PII access",
   "Page editor",
+  "Passkeys",
   "Payments",
   "Personal notification contract",
   "Personal notifications",
@@ -136,9 +137,9 @@ export const openApiTags = [
   "Server bookings",
   "Server events",
   "Social auth",
-  "Staff accounts",
   "Staff invitations",
   "Staff lists",
+  "Staff roles",
   "Stock transfers",
   "Stocktake",
   "Telegram",
@@ -810,16 +811,14 @@ export const openApiPaths = [
   "/api/v1/admin/makerspaces/{makerspace_id}/security-settings",
   "/api/v1/admin/makerspaces/{makerspace_id}/security-settings/{key}/lock",
   "/api/v1/admin/makerspaces/{makerspace_id}/spaces/",
-  "/api/v1/admin/makerspaces/{makerspace_id}/staff-accounts/",
-  "/api/v1/admin/makerspaces/{makerspace_id}/staff-accounts/policy",
-  "/api/v1/admin/makerspaces/{makerspace_id}/staff-accounts/{user_id}/",
-  "/api/v1/admin/makerspaces/{makerspace_id}/staff-accounts/{user_id}/deactivate/",
-  "/api/v1/admin/makerspaces/{makerspace_id}/staff-accounts/{user_id}/reactivate/",
-  "/api/v1/admin/makerspaces/{makerspace_id}/staff-accounts/{user_id}/resend-invite/",
-  "/api/v1/admin/makerspaces/{makerspace_id}/staff-accounts/{user_id}/set-password/",
   "/api/v1/admin/makerspaces/{makerspace_id}/staff-invitations",
   "/api/v1/admin/makerspaces/{makerspace_id}/staff-invitations/{invitation_id}/resend",
   "/api/v1/admin/makerspaces/{makerspace_id}/staff-invitations/{invitation_id}/revoke",
+  "/api/v1/admin/makerspaces/{makerspace_id}/staff-roles/",
+  "/api/v1/admin/makerspaces/{makerspace_id}/staff-roles/{membership_id}/",
+  "/api/v1/admin/makerspaces/{makerspace_id}/staff-roles/{membership_id}/mfa-reset",
+  "/api/v1/admin/makerspaces/{makerspace_id}/staff-roles/{membership_id}/restore/",
+  "/api/v1/admin/makerspaces/{makerspace_id}/staff-roles/{membership_id}/revoke/",
   "/api/v1/admin/makerspaces/{makerspace_id}/uploads/evidence-url",
   "/api/v1/admin/makerspaces/{makerspace_id}/waiver",
   "/api/v1/admin/makerspaces/{makerspace_id}/walk-in-members",
@@ -1024,10 +1023,17 @@ export const openApiPaths = [
   "/api/v1/auth/mfa/confirm",
   "/api/v1/auth/mfa/disable",
   "/api/v1/auth/mfa/enroll",
+  "/api/v1/auth/mfa/passkey/options",
   "/api/v1/auth/mfa/recovery",
   "/api/v1/auth/mfa/verify",
   "/api/v1/auth/organization-invitations/redeem/",
   "/api/v1/auth/organizations/self-service/",
+  "/api/v1/auth/passkeys",
+  "/api/v1/auth/passkeys/authenticate/options",
+  "/api/v1/auth/passkeys/authenticate/verify",
+  "/api/v1/auth/passkeys/register/options",
+  "/api/v1/auth/passkeys/register/verify",
+  "/api/v1/auth/passkeys/{passkey_id}",
   "/api/v1/auth/phone",
   "/api/v1/auth/phone/link/confirm",
   "/api/v1/auth/phone/link/start",
@@ -1036,6 +1042,8 @@ export const openApiPaths = [
   "/api/v1/auth/reauth",
   "/api/v1/auth/reauth/enrollment/confirm",
   "/api/v1/auth/reauth/enrollment/email",
+  "/api/v1/auth/reauth/passkey",
+  "/api/v1/auth/reauth/passkey/options",
   "/api/v1/auth/reauth/phone/confirm",
   "/api/v1/auth/reauth/phone/start",
   "/api/v1/auth/reauth/social/complete",
@@ -1534,6 +1542,12 @@ export type AccentChoiceEnum = "inherit" | "maker_teal" | "workshop_orange" | "c
 
 export type AccentPresetEnum = "maker_teal" | "workshop_orange" | "citron" | "sky_blue" | "warm_yellow";
 
+export type AcceptedMakerspace = {
+  "id": number;
+  "slug": string;
+  "name": string;
+};
+
 export type AcceptInput = {
   "operation_id": string;
   "expected_version": number;
@@ -1604,8 +1618,6 @@ export type AccountingJournalReport = {
   "rows": Array<Array<unknown>>;
   "typed_rows": Array<JournalLine>;
 };
-
-export type AccountKindEnum = "member" | "platform";
 
 export type AccountProfile = {
   "display_name"?: string;
@@ -2823,7 +2835,6 @@ export type AuthUserPayload = {
   "is_superuser": boolean;
   "must_change_password": boolean;
   "kind": AuthUserPayloadKindEnum;
-  "account_kind": AccountKindEnum;
   "is_platform": boolean;
   "has_staff_role": boolean;
   "has_elevated_authority": boolean;
@@ -2831,6 +2842,7 @@ export type AuthUserPayload = {
   "makerspaces": Array<AuthMembership>;
   "superadmin_actions": Array<string>;
   "mfa_grace_ends_at": string | null;
+  "mfa_enrolment_due": boolean;
   "merge_suggested": boolean;
   "event_grants"?: Array<GrantedEventEntry>;
   "booking_grants"?: Array<GrantedBookingEntry>;
@@ -5439,7 +5451,6 @@ export type CreateToolQr = {
 };
 
 export type CreationInviteDelivery = {
-  "accept_url": string;
   "delivery_status": string;
 };
 
@@ -7684,7 +7695,6 @@ export type Finder = {
 };
 
 export type FirstStaffInvite = {
-  "name"?: string;
   "email": string;
   "role_slug": RoleSlugEnum;
 };
@@ -10635,6 +10645,7 @@ export type Makerspace = {
   "type"?: string;
   "value"?: string;
 } | null;
+  "passkey_only_accounts": number;
   "platform_hosting": boolean;
   "is_platform_subdomain": boolean;
   "hidden_from_central_directory"?: boolean;
@@ -13508,13 +13519,6 @@ export type PaginatedScheduleList = {
   "results": Array<Schedule>;
 };
 
-export type PaginatedStaffAccountList = {
-  "count": number;
-  "next"?: string | null;
-  "previous"?: string | null;
-  "results": Array<StaffAccount>;
-};
-
 export type PaginatedStaffInvitationList = {
   "count": number;
   "next"?: string | null;
@@ -13691,6 +13695,71 @@ export type Parts = {
 
 export type PartsResponse = {
   "parts": Array<PartResponse>;
+};
+
+export type Passkey = {
+  "id": number;
+  "name": string;
+  "rp_id": string;
+  "transports": unknown;
+  "backed_up": boolean;
+  "created_at": string;
+  "last_used_at": string | null;
+  "usable_here": boolean;
+};
+
+export type PasskeyList = {
+  "passkeys": Array<Passkey>;
+  "passkeys_allowed": boolean;
+  "rp_id": string | null;
+};
+
+export type PasskeyLogin = {
+  "access": string;
+  "surface": PasskeyLoginSurfaceEnum;
+  "user": AuthUserPayload;
+};
+
+export type PasskeyLoginSurfaceEnum = "member" | "verification_only";
+
+export type PasskeyMfaOptionsRequest = {
+  "challenge": string;
+};
+
+export type PasskeyOptions = {
+  "ceremony": string;
+  "options": unknown;
+};
+
+export type PasskeyReauthenticated = {
+  "verified": boolean;
+  "expires_in": number;
+};
+
+export type PasskeyRegistered = {
+  "passkey": Passkey;
+  "recovery_codes": Array<string> | null;
+  "access": string;
+  "surface": string;
+  "user": AuthUserPayload;
+};
+
+export type PasskeyRegisterRequest = {
+  "ceremony": string;
+  "credential": unknown;
+  "name"?: string;
+};
+
+export type PasskeyRemoved = {
+  "signed_out": boolean;
+  "access"?: string;
+  "surface"?: string;
+  "user"?: AuthUserPayload;
+};
+
+export type PasskeyVerifyRequest = {
+  "ceremony": string;
+  "credential": unknown;
 };
 
 export type PasswordLoginResult = LoginResponse | MFAChallengeResponse;
@@ -14713,6 +14782,7 @@ export type PatchedMakerspace = {
   "type"?: string;
   "value"?: string;
 } | null;
+  "passkey_only_accounts"?: number;
   "platform_hosting"?: boolean;
   "is_platform_subdomain"?: boolean;
   "hidden_from_central_directory"?: boolean;
@@ -15060,6 +15130,10 @@ export type PatchedOrganizationProfileUpdate = {
   "website"?: string;
   "public_profile_enabled"?: boolean;
   "is_discoverable"?: boolean;
+};
+
+export type PatchedPasskeyRename = {
+  "name"?: string;
 };
 
 export type PatchedPlatformBackupSettings = {
@@ -15494,14 +15568,14 @@ export type PatchedSpacePhotoUpdate = {
   "caption"?: string;
 };
 
-export type PatchedStaffAccountChange = {
-  "roles"?: Array<string>;
-  "machine_type_ids"?: Array<number>;
-};
-
 export type PatchedStaffGrantUpdate = {
   "permissions"?: Array<PermissionsAbdEnum>;
   "role_label"?: RoleLabelEnum | BlankEnum;
+};
+
+export type PatchedStaffRoleChange = {
+  "roles"?: Array<string>;
+  "machine_type_ids"?: Array<number>;
 };
 
 export type PatchedStageConfigurationCommand = {
@@ -17424,6 +17498,7 @@ export type PublicConfig = {
   "hosting_requests"?: {
   [key: string]: unknown;
 };
+  "passkeys_enabled": boolean;
   "native"?: NativeConfig;
 };
 
@@ -18762,6 +18837,7 @@ export type ReauthenticationStatus = {
   "verified": boolean;
   "password_available": boolean;
   "mfa_enabled": boolean;
+  "passkey_available": boolean;
   "providers": Array<string>;
 };
 
@@ -20102,6 +20178,8 @@ export type RsvpInput = {
   "decision": Decision25cEnum;
 };
 
+export type RuleEnum = "superadmin" | "space_manager";
+
 export type SavedReadiness = {
   "readiness": ReadinessEnum;
 };
@@ -20393,6 +20471,7 @@ export type SecuritySetting = {
   "default": unknown;
   "choices": Array<unknown>;
   "value": unknown;
+  "strict_value": boolean | null;
   "lock": SecurityLock | null;
 };
 
@@ -21099,70 +21178,6 @@ export type Spool = {
   "remaining_percent"?: string | null;
 };
 
-export type StaffAccount = {
-  "id": number;
-  "username": string;
-  "display_name"?: string;
-  "email"?: string;
-  "roles": Array<string>;
-  "machine_type_ids": Array<number>;
-  "is_active"?: boolean;
-  "must_change_password"?: boolean;
-  "mfa_enabled": boolean;
-  "last_login"?: string | null;
-  "created_at": string;
-  "invitation_pending": boolean;
-  "can": StaffAccountCapabilities;
-  "pii_masked": boolean;
-};
-
-export type StaffAccountCapabilities = {
-  "change_roles": boolean;
-  "set_password": boolean;
-  "deactivate": boolean;
-  "reactivate": boolean;
-  "resend_invite": boolean;
-};
-
-export type StaffAccountCreate = {
-  "display_name": string;
-  "email"?: string;
-  "username"?: string;
-  "roles": Array<string>;
-  "machine_type_ids"?: Array<number>;
-};
-
-export type StaffAccountCreated = {
-  "account": StaffAccount;
-  "invitation_sent": boolean;
-};
-
-export type StaffAccountDeactivate = {
-  "reason"?: string;
-};
-
-export type StaffAccountInvitationResult = {
-  "invitation_sent": boolean;
-};
-
-export type StaffAccountPassword = {
-  "password"?: string;
-  "generate"?: boolean;
-  "reset_mfa"?: boolean;
-};
-
-export type StaffAccountPasswordResult = {
-  "generated_password": string | null;
-};
-
-export type StaffAccountPolicy = {
-  "creatable_roles": Array<string>;
-  "can_manage_space_managers": boolean;
-  "email_onboarding_available": boolean;
-  "machine_types": Array<StaffMachineTypeChoice>;
-  "roles": Array<Role>;
-};
-
 export type StaffBookingInput = {
   "certification_override_reason"?: string;
   "starts_at": string;
@@ -21274,27 +21289,25 @@ export type StaffInvitation = {
   "makerspace": number;
   "role": number;
   "role_name": string;
+  "roles": Array<string>;
+  "machine_type_ids": Array<number>;
   "expires_at": string;
   "accepted_at"?: string | null;
   "revoked_at"?: string | null;
   "created_at": string;
+  "pii_masked": boolean;
 };
 
 export type StaffInvitationAccept = {
   "token": string;
   "makerspace_slug": string;
-  "password": string;
   "code"?: string;
 };
 
 export type StaffInvitationAccepted = {
   "detail": string;
-};
-
-export type StaffInvitationCreate = {
-  "email": string;
-  "role_id": number;
-  "expires_in_days"?: number;
+  "challenge_required": boolean;
+  "makerspace"?: AcceptedMakerspace;
 };
 
 export type StaffInvitationDelivery = {
@@ -21303,11 +21316,13 @@ export type StaffInvitationDelivery = {
   "makerspace": number;
   "role": number;
   "role_name": string;
+  "roles": Array<string>;
+  "machine_type_ids": Array<number>;
   "expires_at": string;
   "accepted_at"?: string | null;
   "revoked_at"?: string | null;
   "created_at": string;
-  "accept_url": string;
+  "pii_masked": boolean;
   "delivery_status": string;
 };
 
@@ -21323,6 +21338,15 @@ export type StaffMembership = {
   "makerspace_slug": string;
   "role"?: RoleCddEnum;
   "created_at": string;
+};
+
+export type StaffMfaResetRequest = {
+  "reason": string;
+};
+
+export type StaffMfaResetResult = {
+  "reset": boolean;
+  "rule": RuleEnum;
 };
 
 export type StaffPayment = {
@@ -21358,6 +21382,72 @@ export type StaffPresenceStart = {
   "longitude"?: number;
   "accuracy"?: number;
   "account_id": number;
+};
+
+export type StaffRole = {
+  "id": number;
+  "user_id": number;
+  "username": string;
+  "display_name": string;
+  "email": string;
+  "roles": Array<string>;
+  "machine_type_ids": Array<number>;
+  "status"?: Status37fEnum;
+  "mfa_enabled": boolean;
+  "granted_at": string;
+  "revoked_at"?: string | null;
+  "revocation_reason"?: string;
+  "can": StaffRoleCapabilities;
+  "pii_masked": boolean;
+};
+
+export type StaffRoleCapabilities = {
+  "change_roles": boolean;
+  "revoke": boolean;
+  "restore": boolean;
+  "reset_mfa": boolean;
+};
+
+export type StaffRoleChoice = {
+  "slug": string;
+  "name": string;
+  "combinable": boolean;
+};
+
+export type StaffRoleCreate = {
+  "user_id"?: number;
+  "email"?: string;
+  "roles": Array<string>;
+  "machine_type_ids"?: Array<number>;
+  "expires_in_days"?: number;
+};
+
+export type StaffRoleCreated = {
+  "kind": StaffRoleCreatedKindEnum;
+  "staff_role": StaffRole | null;
+  "invitation_id": number | null;
+  "delivery_status": string | null;
+};
+
+export type StaffRoleCreatedKindEnum = "granted" | "invited";
+
+export type StaffRoleList = {
+  "count": number;
+  "next": string | null;
+  "previous": string | null;
+  "results": Array<StaffRole>;
+  "policy": StaffRolePolicy;
+};
+
+export type StaffRolePolicy = {
+  "grantable_roles": Array<StaffRoleChoice>;
+  "can_manage_space_managers": boolean;
+  "email_invites_available": boolean;
+  "machine_types": Array<StaffMachineTypeChoice>;
+};
+
+export type StaffRoleRevoke = {
+  "reason"?: string;
 };
 
 export type StaffRsvpInput = {

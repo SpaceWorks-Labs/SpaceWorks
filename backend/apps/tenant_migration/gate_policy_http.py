@@ -117,6 +117,9 @@ HTTP_ANONYMOUS_EXEMPTIONS = {
     "apps.accounts.views_login.LoginView.post": "Global user session state.",
     "apps.accounts.views_profile.LogoutView.post": "Global user session state.",
     "apps.accounts.views_mfa.MFAEnrollmentView.post": "Global MFA enrollment challenge state.",
+    # Login security S-A: anonymous passkey ceremonies touch only global challenge and session state.
+    **{f"apps.accounts.passkeys.views.{view}.post": "Global passkey challenge and session state."
+       for view in ("PasskeyAuthenticateOptionsView", "PasskeyAuthenticateVerifyView", "PasskeyMfaOptionsView")},
     "apps.accounts.views_social_login.SocialNonceView.post": "Global social-login nonce state.",
     "apps.accounts.views_social_login.SocialLoginView.post": "Global social identity and session state.",
     "apps.payments_rail.views_connect.StripeConnectWebhookView.post": "Platform Connect routing state.",

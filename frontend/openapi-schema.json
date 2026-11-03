@@ -1238,6 +1238,7 @@
                                 "loan_lost",
                                 "loan_rental",
                                 "machine_service_request",
+                                "machine_session",
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term"
@@ -52943,6 +52944,335 @@
                 }
             }
         },
+        "/api/v1/admin/machine-sessions/{id}/amend": {
+            "post": {
+                "operationId": "api_v1_admin_machine_sessions_amend_create",
+                "summary": "Correct an auto-stopped session's duration (before confirming)",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Admin machine sessions"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SessionAmend"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SessionAmend"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SessionAmend"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StaffSession"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Invalid input."
+                    },
+                    "401": {
+                        "description": "Authentication required."
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Machine management permission required, or the member may not use the machine (typed code)."
+                    },
+                    "404": {
+                        "description": "Not found, or sessions are off in this space."
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "A typed session conflict (machine_in_use, session_closed, session_final, session_live, session_unattributed, ...)."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/machine-sessions/{id}/assign": {
+            "post": {
+                "operationId": "api_v1_admin_machine_sessions_assign_create",
+                "summary": "Assign an unattributed device session to a member",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Admin machine sessions"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SessionAssign"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SessionAssign"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SessionAssign"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StaffSession"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Invalid input."
+                    },
+                    "401": {
+                        "description": "Authentication required."
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Machine management permission required, or the member may not use the machine (typed code)."
+                    },
+                    "404": {
+                        "description": "Not found, or sessions are off in this space."
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "A typed session conflict (machine_in_use, session_closed, session_final, session_live, session_unattributed, ...)."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/machine-sessions/{id}/confirm": {
+            "post": {
+                "operationId": "api_v1_admin_machine_sessions_confirm_create",
+                "description": "The charge is a PENDING ledger entry at the rate frozen when the session started; staff settle or waive it through the usual payment path.",
+                "summary": "Confirm a session under review: it becomes final and its charge is raised",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Admin machine sessions"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StaffSession"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Invalid input."
+                    },
+                    "401": {
+                        "description": "Authentication required."
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Machine management permission required, or the member may not use the machine (typed code)."
+                    },
+                    "404": {
+                        "description": "Not found, or sessions are off in this space."
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "A typed session conflict (machine_in_use, session_closed, session_final, session_live, session_unattributed, ...)."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/machine-sessions/{id}/stop": {
+            "post": {
+                "operationId": "api_v1_admin_machine_sessions_stop_create",
+                "summary": "Stop a live session",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Admin machine sessions"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StaffSession"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Invalid input."
+                    },
+                    "401": {
+                        "description": "Authentication required."
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Machine management permission required, or the member may not use the machine (typed code)."
+                    },
+                    "404": {
+                        "description": "Not found, or sessions are off in this space."
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "A typed session conflict (machine_in_use, session_closed, session_final, session_live, session_unattributed, ...)."
+                    }
+                }
+            }
+        },
         "/api/v1/admin/machine-type-integrations/{id}": {
             "get": {
                 "operationId": "api_v1_admin_machine_type_integrations_retrieve",
@@ -56004,6 +56334,7 @@
                                 "loan_lost",
                                 "loan_rental",
                                 "machine_service_request",
+                                "machine_session",
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term"
@@ -56173,6 +56504,7 @@
                                 "loan_lost",
                                 "loan_rental",
                                 "machine_service_request",
+                                "machine_session",
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term"
@@ -56342,6 +56674,7 @@
                                 "loan_lost",
                                 "loan_rental",
                                 "machine_service_request",
+                                "machine_session",
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term"
@@ -56511,6 +56844,7 @@
                                 "loan_lost",
                                 "loan_rental",
                                 "machine_service_request",
+                                "machine_session",
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term"
@@ -56680,6 +57014,7 @@
                                 "loan_lost",
                                 "loan_rental",
                                 "machine_service_request",
+                                "machine_session",
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term"
@@ -56849,6 +57184,7 @@
                                 "loan_lost",
                                 "loan_rental",
                                 "machine_service_request",
+                                "machine_session",
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term"
@@ -57018,6 +57354,7 @@
                                 "loan_lost",
                                 "loan_rental",
                                 "machine_service_request",
+                                "machine_session",
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term"
@@ -57187,6 +57524,7 @@
                                 "loan_lost",
                                 "loan_rental",
                                 "machine_service_request",
+                                "machine_session",
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term"
@@ -57356,6 +57694,7 @@
                                 "loan_lost",
                                 "loan_rental",
                                 "machine_service_request",
+                                "machine_session",
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term"
@@ -57525,6 +57864,7 @@
                                 "loan_lost",
                                 "loan_rental",
                                 "machine_service_request",
+                                "machine_session",
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term"
@@ -57694,6 +58034,7 @@
                                 "loan_lost",
                                 "loan_rental",
                                 "machine_service_request",
+                                "machine_session",
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term"
@@ -57863,6 +58204,7 @@
                                 "loan_lost",
                                 "loan_rental",
                                 "machine_service_request",
+                                "machine_session",
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term"
@@ -58032,6 +58374,7 @@
                                 "loan_lost",
                                 "loan_rental",
                                 "machine_service_request",
+                                "machine_session",
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term"
@@ -58201,6 +58544,7 @@
                                 "loan_lost",
                                 "loan_rental",
                                 "machine_service_request",
+                                "machine_session",
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term"
@@ -58370,6 +58714,7 @@
                                 "loan_lost",
                                 "loan_rental",
                                 "machine_service_request",
+                                "machine_session",
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term"
@@ -58539,6 +58884,7 @@
                                 "loan_lost",
                                 "loan_rental",
                                 "machine_service_request",
+                                "machine_session",
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term"
@@ -58708,6 +59054,7 @@
                                 "loan_lost",
                                 "loan_rental",
                                 "machine_service_request",
+                                "machine_session",
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term"
@@ -58877,6 +59224,7 @@
                                 "loan_lost",
                                 "loan_rental",
                                 "machine_service_request",
+                                "machine_session",
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term"
@@ -69402,6 +69750,7 @@
                                 "loan_lost",
                                 "loan_rental",
                                 "machine_service_request",
+                                "machine_session",
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term"
@@ -73841,6 +74190,11 @@
                                 "machine-downtime",
                                 "machine-errors",
                                 "machine-service",
+                                "machine-session-busiest",
+                                "machine-session-flagged",
+                                "machine-session-idle",
+                                "machine-session-utilisation",
+                                "machine-sessions",
                                 "machine-usage",
                                 "machine-usage-heatmap",
                                 "machine-usage-members",
@@ -73950,6 +74304,7 @@
                                 "loan_lost",
                                 "loan_rental",
                                 "machine_service_request",
+                                "machine_session",
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term"
@@ -86832,6 +87187,226 @@
                 }
             }
         },
+        "/api/v1/admin/makerspaces/{makerspace_id}/machine-sessions": {
+            "get": {
+                "operationId": "api_v1_admin_makerspaces_machine_sessions_list",
+                "summary": "Machine sessions in this space (live, to review, closed)",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "machine",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "query",
+                        "name": "member",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "since",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "ISO date (local), inclusive."
+                    },
+                    {
+                        "in": "query",
+                        "name": "source",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "device",
+                                "member_qr",
+                                "staff"
+                            ]
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "status",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "closed",
+                                "live",
+                                "review"
+                            ]
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "until",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "ISO date (local), inclusive."
+                    }
+                ],
+                "tags": [
+                    "Admin machine sessions"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/StaffSession"
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Invalid input."
+                    },
+                    "401": {
+                        "description": "Authentication required."
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Machine management permission required, or the member may not use the machine (typed code)."
+                    },
+                    "404": {
+                        "description": "Not found, or sessions are off in this space."
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "A typed session conflict (machine_in_use, session_closed, session_final, session_live, session_unattributed, ...)."
+                    }
+                }
+            },
+            "post": {
+                "operationId": "api_v1_admin_makerspaces_machine_sessions_create",
+                "description": "The member must be checked in and certified exactly as when they start it themself.",
+                "summary": "Start a session for a member",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Admin machine sessions"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffSessionStart"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffSessionStart"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffSessionStart"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StaffSession"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Invalid input."
+                    },
+                    "401": {
+                        "description": "Authentication required."
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Machine management permission required, or the member may not use the machine (typed code)."
+                    },
+                    "404": {
+                        "description": "Not found, or sessions are off in this space."
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "A typed session conflict (machine_in_use, session_closed, session_final, session_live, session_unattributed, ...)."
+                    }
+                }
+            }
+        },
         "/api/v1/admin/makerspaces/{makerspace_id}/machine-types/{type_id}/intake": {
             "get": {
                 "operationId": "api_v1_admin_makerspaces_machine_types_intake_retrieve",
@@ -87238,6 +87813,185 @@
                             }
                         },
                         "description": "Service workflow conflict."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/makerspaces/{makerspace_id}/machine-types/{type_id}/session-settings": {
+            "get": {
+                "operationId": "api_v1_admin_makerspaces_machine_types_session_settings_retrieve",
+                "summary": "Session settings for one machine type",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "type_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Admin machine sessions"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SessionSettings"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Invalid input."
+                    },
+                    "401": {
+                        "description": "Authentication required."
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Machine management permission required, or the member may not use the machine (typed code)."
+                    },
+                    "404": {
+                        "description": "Not found, or sessions are off in this space."
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "A typed session conflict (machine_in_use, session_closed, session_final, session_live, session_unattributed, ...)."
+                    }
+                }
+            },
+            "put": {
+                "operationId": "api_v1_admin_makerspaces_machine_types_session_settings_update",
+                "description": "Sessions still live stop at the new maximum on the next sweep.",
+                "summary": "Change the maximum session length for one machine type",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "type_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Admin machine sessions"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SessionSettings"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SessionSettings"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SessionSettings"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SessionSettings"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Invalid input."
+                    },
+                    "401": {
+                        "description": "Authentication required."
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Machine management permission required, or the member may not use the machine (typed code)."
+                    },
+                    "404": {
+                        "description": "Not found, or sessions are off in this space."
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "A typed session conflict (machine_in_use, session_closed, session_final, session_live, session_unattributed, ...)."
                     }
                 }
             }
@@ -100099,6 +100853,7 @@
                                 "loan_lost",
                                 "loan_rental",
                                 "machine_service_request",
+                                "machine_session",
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term"
@@ -102924,6 +103679,7 @@
                                 "loan_lost",
                                 "loan_rental",
                                 "machine_service_request",
+                                "machine_session",
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term"
@@ -103173,6 +103929,11 @@
                                 "machine-downtime",
                                 "machine-errors",
                                 "machine-service",
+                                "machine-session-busiest",
+                                "machine-session-flagged",
+                                "machine-session-idle",
+                                "machine-session-utilisation",
+                                "machine-sessions",
                                 "machine-usage",
                                 "machine-usage-heatmap",
                                 "machine-usage-members",
@@ -103282,6 +104043,7 @@
                                 "loan_lost",
                                 "loan_rental",
                                 "machine_service_request",
+                                "machine_session",
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term"
@@ -108050,6 +108812,7 @@
                                 "loan_lost",
                                 "loan_rental",
                                 "machine_service_request",
+                                "machine_session",
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term"
@@ -133576,6 +134339,323 @@
                             }
                         },
                         "description": "Rate limit exceeded."
+                    }
+                }
+            }
+        },
+        "/api/v1/member/machine-sessions": {
+            "get": {
+                "operationId": "api_v1_member_machine_sessions_list",
+                "summary": "My machine sessions, newest first",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "live",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "makerspace",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "tags": [
+                    "Member machine sessions"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/MemberSession"
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Invalid input."
+                    },
+                    "401": {
+                        "description": "Sign in first."
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "member_restricted, membership_required, waiver_acceptance_required or certification_required."
+                    },
+                    "404": {
+                        "description": "No such machine or session, or sessions are off in this space."
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "presence_required, machine_unavailable, machine_locked_out, machine_booked, booking_required, machine_in_use, session_already_live, session_closed or price_changed."
+                    }
+                }
+            }
+        },
+        "/api/v1/member/machine-sessions/{id}/stop": {
+            "post": {
+                "operationId": "api_v1_member_machine_sessions_stop_create",
+                "summary": "Stop my session",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Member machine sessions"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MemberSession"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Invalid input."
+                    },
+                    "401": {
+                        "description": "Sign in first."
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "member_restricted, membership_required, waiver_acceptance_required or certification_required."
+                    },
+                    "404": {
+                        "description": "No such machine or session, or sessions are off in this space."
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "presence_required, machine_unavailable, machine_locked_out, machine_booked, booking_required, machine_in_use, session_already_live, session_closed or price_changed."
+                    }
+                }
+            }
+        },
+        "/api/v1/member/machines/{machine_id}/session": {
+            "get": {
+                "operationId": "api_v1_member_machines_session_retrieve",
+                "description": "The frozen hourly rate, minimum and maximum length, closing time, and whether I may start now (with the typed refusal when not).",
+                "summary": "What starting a session on this machine means for me",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "machine_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Member machine sessions"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SessionPreview"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Invalid input."
+                    },
+                    "401": {
+                        "description": "Sign in first."
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "member_restricted, membership_required, waiver_acceptance_required or certification_required."
+                    },
+                    "404": {
+                        "description": "No such machine or session, or sessions are off in this space."
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "presence_required, machine_unavailable, machine_locked_out, machine_booked, booking_required, machine_in_use, session_already_live, session_closed or price_changed."
+                    }
+                }
+            }
+        },
+        "/api/v1/member/machines/{machine_id}/sessions/start": {
+            "post": {
+                "operationId": "api_v1_member_machines_sessions_start_create",
+                "summary": "Start a session on this machine",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "machine_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Member machine sessions"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SessionStart"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SessionStart"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SessionStart"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MemberSession"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Invalid input."
+                    },
+                    "401": {
+                        "description": "Sign in first."
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "member_restricted, membership_required, waiver_acceptance_required or certification_required."
+                    },
+                    "404": {
+                        "description": "No such machine or session, or sessions are off in this space."
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "presence_required, machine_unavailable, machine_locked_out, machine_booked, booking_required, machine_in_use, session_already_live, session_closed or price_changed."
                     }
                 }
             }
@@ -215773,10 +216853,11 @@
             "MachineUsageEntrySourceEnum": {
                 "enum": [
                     "manual",
-                    "typed_manual"
+                    "typed_manual",
+                    "session"
                 ],
                 "type": "string",
-                "description": "* `manual` - Manual hours\n* `typed_manual` - Typed manual service"
+                "description": "* `manual` - Manual hours\n* `typed_manual` - Typed manual service\n* `session` - Machine session"
             },
             "MachineUsageHeatmapReport": {
                 "type": "object",
@@ -219588,7 +220669,7 @@
                         "readOnly": true
                     },
                     "subject_type": {
-                        "$ref": "#/components/schemas/SubjectTypeB27Enum"
+                        "$ref": "#/components/schemas/SubjectType61eEnum"
                     },
                     "subject_label": {
                         "type": "string",
@@ -220299,6 +221380,116 @@
                 "required": [
                     "can_cancel",
                     "request_id"
+                ]
+            },
+            "MemberSession": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "makerspace_id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "machine_id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "machine_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "machine_type_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "source": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/SourceEd5Enum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "status": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "started_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "ended_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "minutes": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "stop_reason": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/StopReasonEnum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "flagged": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "charge_state": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "rate": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/SessionRate"
+                            }
+                        ],
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "amount": {
+                        "type": "string",
+                        "nullable": true,
+                        "description": "The charge raised, or the running / proposed amount at the frozen rate.",
+                        "readOnly": true
+                    },
+                    "payment": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/SessionPayment"
+                            }
+                        ],
+                        "nullable": true,
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "amount",
+                    "charge_state",
+                    "ended_at",
+                    "flagged",
+                    "id",
+                    "machine_id",
+                    "machine_name",
+                    "machine_type_name",
+                    "makerspace_id",
+                    "minutes",
+                    "payment",
+                    "rate",
+                    "source",
+                    "started_at",
+                    "status",
+                    "stop_reason"
                 ]
             },
             "MemberSettlement": {
@@ -241099,7 +242290,7 @@
                     "subject_type": {
                         "allOf": [
                             {
-                                "$ref": "#/components/schemas/SubjectTypeB27Enum"
+                                "$ref": "#/components/schemas/SubjectType61eEnum"
                             }
                         ],
                         "readOnly": true
@@ -256429,6 +257620,11 @@
                     "printer-jobs",
                     "machine-errors",
                     "warranty-expiry",
+                    "machine-sessions",
+                    "machine-session-utilisation",
+                    "machine-session-busiest",
+                    "machine-session-idle",
+                    "machine-session-flagged",
                     "device-health",
                     "presence-activity",
                     "presence-top-visitors",
@@ -256442,7 +257638,7 @@
                     "platform-usage"
                 ],
                 "type": "string",
-                "description": "* `payment-cash-book` - payment-cash-book\n* `taken-items` - taken-items\n* `active-loans` - active-loans\n* `returns` - returns\n* `damaged-missing` - damaged-missing\n* `top-borrowers` - top-borrowers\n* `recently-added` - recently-added\n* `event-attendance` - event-attendance\n* `booking-utilization` - booking-utilization\n* `member-activity` - member-activity\n* `printer-service` - printer-service\n* `fablab-health` - fablab-health\n* `payment-reconciliation` - payment-reconciliation\n* `evidence-compliance` - evidence-compliance\n* `import-quality` - import-quality\n* `communications-health` - communications-health\n* `community-engagement` - community-engagement\n* `certification-coverage` - certification-coverage\n* `audit-trail` - audit-trail\n* `membership-growth` - membership-growth\n* `member-retention` - member-retention\n* `membership-revenue` - membership-revenue\n* `membership-renewals` - membership-renewals\n* `membership-bridge` - membership-bridge\n* `membership-breakdown` - membership-breakdown\n* `membership-expiry-calendar` - membership-expiry-calendar\n* `membership-applications-funnel` - membership-applications-funnel\n* `membership-win-back` - membership-win-back\n* `member-register` - member-register\n* `membership-monthly-summary` - membership-monthly-summary\n* `payments-ledger` - payments-ledger\n* `revenue-over-time` - revenue-over-time\n* `cash-book` - cash-book\n* `payments-ageing` - payments-ageing\n* `accounting-journal` - accounting-journal\n* `refunds` - refunds\n* `income-spending` - income-spending\n* `finance-inventory` - finance-inventory\n* `finance-machines` - finance-machines\n* `finance-bookings` - finance-bookings\n* `finance-events` - finance-events\n* `event-finance` - event-finance\n* `receipts-payments` - receipts-payments\n* `subscription-income` - subscription-income\n* `money-methods` - money-methods\n* `gstr1` - gstr1\n* `gstr3b` - gstr3b\n* `tax-summary` - tax-summary\n* `documents-register` - documents-register\n* `event-registrations` - event-registrations\n* `event-feedback` - event-feedback\n* `event-attendance-pdf` - event-attendance-pdf\n* `booking-resource-utilization` - booking-resource-utilization\n* `booking-resource-utilization-pdf` - booking-resource-utilization-pdf\n* `booking-reservations` - booking-reservations\n* `booking-answers` - booking-answers\n* `mobile-devices` - mobile-devices\n* `mobile-auth` - mobile-auth\n* `booking-occupancy` - booking-occupancy\n* `booking-lead-time` - booking-lead-time\n* `booking-top-members` - booking-top-members\n* `event-signups` - event-signups\n* `event-revenue` - event-revenue\n* `event-funnel` - event-funnel\n* `event-checkin-times` - event-checkin-times\n* `event-feedback-scores` - event-feedback-scores\n* `most-lent` - most-lent\n* `asset-usage` - asset-usage\n* `loan-throughput` - loan-throughput\n* `inventory-utilisation` - inventory-utilisation\n* `overdue-loans` - overdue-loans\n* `damaged-lost` - damaged-lost\n* `longest-loans` - longest-loans\n* `stock-health` - stock-health\n* `request-funnel` - request-funnel\n* `problem-reports` - problem-reports\n* `inventory-watch-demand` - inventory-watch-demand\n* `summary` - summary\n* `qr-scans` - qr-scans\n* `qr-scan-actors` - qr-scan-actors\n* `inventory-control` - inventory-control\n* `consumable-usage` - consumable-usage\n* `consumable-pools` - consumable-pools\n* `procurement-performance` - procurement-performance\n* `stock-transfers` - stock-transfers\n* `stocktake-variance` - stocktake-variance\n* `machine-usage` - machine-usage\n* `machine-usage-members` - machine-usage-members\n* `machine-usage-heatmap` - machine-usage-heatmap\n* `machine-downtime` - machine-downtime\n* `maintenance-activity` - maintenance-activity\n* `machine-service` - machine-service\n* `service-queue-times` - service-queue-times\n* `printer-jobs` - printer-jobs\n* `machine-errors` - machine-errors\n* `warranty-expiry` - warranty-expiry\n* `device-health` - device-health\n* `presence-activity` - presence-activity\n* `presence-top-visitors` - presence-top-visitors\n* `presence-activity-hours` - presence-activity-hours\n* `audit-activity` - audit-activity\n* `audit-top-actors` - audit-top-actors\n* `audit-activity-hours` - audit-activity-hours\n* `organization-membership` - organization-membership\n* `module-operational-health` - module-operational-health\n* `platform-services` - platform-services\n* `platform-usage` - platform-usage"
+                "description": "* `payment-cash-book` - payment-cash-book\n* `taken-items` - taken-items\n* `active-loans` - active-loans\n* `returns` - returns\n* `damaged-missing` - damaged-missing\n* `top-borrowers` - top-borrowers\n* `recently-added` - recently-added\n* `event-attendance` - event-attendance\n* `booking-utilization` - booking-utilization\n* `member-activity` - member-activity\n* `printer-service` - printer-service\n* `fablab-health` - fablab-health\n* `payment-reconciliation` - payment-reconciliation\n* `evidence-compliance` - evidence-compliance\n* `import-quality` - import-quality\n* `communications-health` - communications-health\n* `community-engagement` - community-engagement\n* `certification-coverage` - certification-coverage\n* `audit-trail` - audit-trail\n* `membership-growth` - membership-growth\n* `member-retention` - member-retention\n* `membership-revenue` - membership-revenue\n* `membership-renewals` - membership-renewals\n* `membership-bridge` - membership-bridge\n* `membership-breakdown` - membership-breakdown\n* `membership-expiry-calendar` - membership-expiry-calendar\n* `membership-applications-funnel` - membership-applications-funnel\n* `membership-win-back` - membership-win-back\n* `member-register` - member-register\n* `membership-monthly-summary` - membership-monthly-summary\n* `payments-ledger` - payments-ledger\n* `revenue-over-time` - revenue-over-time\n* `cash-book` - cash-book\n* `payments-ageing` - payments-ageing\n* `accounting-journal` - accounting-journal\n* `refunds` - refunds\n* `income-spending` - income-spending\n* `finance-inventory` - finance-inventory\n* `finance-machines` - finance-machines\n* `finance-bookings` - finance-bookings\n* `finance-events` - finance-events\n* `event-finance` - event-finance\n* `receipts-payments` - receipts-payments\n* `subscription-income` - subscription-income\n* `money-methods` - money-methods\n* `gstr1` - gstr1\n* `gstr3b` - gstr3b\n* `tax-summary` - tax-summary\n* `documents-register` - documents-register\n* `event-registrations` - event-registrations\n* `event-feedback` - event-feedback\n* `event-attendance-pdf` - event-attendance-pdf\n* `booking-resource-utilization` - booking-resource-utilization\n* `booking-resource-utilization-pdf` - booking-resource-utilization-pdf\n* `booking-reservations` - booking-reservations\n* `booking-answers` - booking-answers\n* `mobile-devices` - mobile-devices\n* `mobile-auth` - mobile-auth\n* `booking-occupancy` - booking-occupancy\n* `booking-lead-time` - booking-lead-time\n* `booking-top-members` - booking-top-members\n* `event-signups` - event-signups\n* `event-revenue` - event-revenue\n* `event-funnel` - event-funnel\n* `event-checkin-times` - event-checkin-times\n* `event-feedback-scores` - event-feedback-scores\n* `most-lent` - most-lent\n* `asset-usage` - asset-usage\n* `loan-throughput` - loan-throughput\n* `inventory-utilisation` - inventory-utilisation\n* `overdue-loans` - overdue-loans\n* `damaged-lost` - damaged-lost\n* `longest-loans` - longest-loans\n* `stock-health` - stock-health\n* `request-funnel` - request-funnel\n* `problem-reports` - problem-reports\n* `inventory-watch-demand` - inventory-watch-demand\n* `summary` - summary\n* `qr-scans` - qr-scans\n* `qr-scan-actors` - qr-scan-actors\n* `inventory-control` - inventory-control\n* `consumable-usage` - consumable-usage\n* `consumable-pools` - consumable-pools\n* `procurement-performance` - procurement-performance\n* `stock-transfers` - stock-transfers\n* `stocktake-variance` - stocktake-variance\n* `machine-usage` - machine-usage\n* `machine-usage-members` - machine-usage-members\n* `machine-usage-heatmap` - machine-usage-heatmap\n* `machine-downtime` - machine-downtime\n* `maintenance-activity` - maintenance-activity\n* `machine-service` - machine-service\n* `service-queue-times` - service-queue-times\n* `printer-jobs` - printer-jobs\n* `machine-errors` - machine-errors\n* `warranty-expiry` - warranty-expiry\n* `machine-sessions` - machine-sessions\n* `machine-session-utilisation` - machine-session-utilisation\n* `machine-session-busiest` - machine-session-busiest\n* `machine-session-idle` - machine-session-idle\n* `machine-session-flagged` - machine-session-flagged\n* `device-health` - device-health\n* `presence-activity` - presence-activity\n* `presence-top-visitors` - presence-top-visitors\n* `presence-activity-hours` - presence-activity-hours\n* `audit-activity` - audit-activity\n* `audit-top-actors` - audit-top-actors\n* `audit-activity-hours` - audit-activity-hours\n* `organization-membership` - organization-membership\n* `module-operational-health` - module-operational-health\n* `platform-services` - platform-services\n* `platform-usage` - platform-usage"
             },
             "ReportSchedule": {
                 "type": "object",
@@ -256572,7 +257768,7 @@
                         "$ref": "#/components/schemas/Status66aEnum"
                     },
                     "subject_type": {
-                        "$ref": "#/components/schemas/SubjectTypeB27Enum"
+                        "$ref": "#/components/schemas/SubjectType61eEnum"
                     },
                     "months": {
                         "type": "integer",
@@ -261220,6 +262416,99 @@
                     }
                 }
             },
+            "SessionAmend": {
+                "type": "object",
+                "properties": {
+                    "minutes": {
+                        "type": "integer",
+                        "maximum": 1440,
+                        "minimum": 0
+                    },
+                    "reason": {
+                        "type": "string",
+                        "maxLength": 500
+                    }
+                },
+                "required": [
+                    "minutes",
+                    "reason"
+                ]
+            },
+            "SessionAmendment": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "kind": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/SessionAmendmentKindEnum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "minutes": {
+                        "type": "integer",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "member_id": {
+                        "type": "integer",
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "reason": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "actor_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "actor_name",
+                    "created_at",
+                    "id",
+                    "kind",
+                    "member_id",
+                    "minutes",
+                    "reason"
+                ]
+            },
+            "SessionAmendmentKindEnum": {
+                "enum": [
+                    "correct",
+                    "assign",
+                    "confirm"
+                ],
+                "type": "string",
+                "description": "* `correct` - Duration corrected\n* `assign` - Assigned to a member\n* `confirm` - Confirmed by staff"
+            },
+            "SessionAssign": {
+                "type": "object",
+                "properties": {
+                    "member_id": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "reason": {
+                        "type": "string",
+                        "maxLength": 500
+                    }
+                },
+                "required": [
+                    "member_id",
+                    "reason"
+                ]
+            },
             "SessionAuthorityEnum": {
                 "enum": [
                     "member",
@@ -261239,6 +262528,177 @@
                         "description": "Which browser session: person (default) or platform (the superadmin). For one release the release-1 names `member` and `staff:<slug>` are accepted and both mean person (a staff role is a person's, so there is no per-space session).",
                         "maxLength": 156,
                         "pattern": "^(?:person|member|platform|staff:[-a-zA-Z0-9_]+)$"
+                    }
+                }
+            },
+            "SessionPayment": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "amount": {
+                        "type": "string"
+                    },
+                    "currency": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "amount",
+                    "currency",
+                    "id",
+                    "status"
+                ]
+            },
+            "SessionPreview": {
+                "type": "object",
+                "properties": {
+                    "machine_id": {
+                        "type": "integer"
+                    },
+                    "machine_name": {
+                        "type": "string"
+                    },
+                    "machine_type_name": {
+                        "type": "string"
+                    },
+                    "machine_status": {
+                        "type": "string"
+                    },
+                    "billing": {
+                        "type": "boolean",
+                        "description": "Whether a session here is charged."
+                    },
+                    "rate": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/SessionRate"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "digest": {
+                        "type": "string",
+                        "description": "Send it back with Start; a changed price answers 409 price_changed."
+                    },
+                    "max_minutes": {
+                        "type": "integer"
+                    },
+                    "closes_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "can_start": {
+                        "type": "boolean"
+                    },
+                    "refusal": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/SessionRefusal"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "live_session": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/MemberSession"
+                            }
+                        ],
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "billing",
+                    "can_start",
+                    "closes_at",
+                    "digest",
+                    "live_session",
+                    "machine_id",
+                    "machine_name",
+                    "machine_status",
+                    "machine_type_name",
+                    "max_minutes",
+                    "rate",
+                    "refusal"
+                ]
+            },
+            "SessionRate": {
+                "type": "object",
+                "properties": {
+                    "unit_amount": {
+                        "type": "string",
+                        "description": "Price per hour, frozen when the session started."
+                    },
+                    "currency": {
+                        "type": "string"
+                    },
+                    "increment": {
+                        "type": "integer",
+                        "description": "Billing increment in minutes (0 = per minute)."
+                    },
+                    "minimum": {
+                        "type": "integer",
+                        "description": "Minimum billed minutes."
+                    },
+                    "discount_name": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "currency",
+                    "discount_name",
+                    "increment",
+                    "minimum",
+                    "unit_amount"
+                ]
+            },
+            "SessionRefusal": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "detail": {
+                        "type": "string"
+                    },
+                    "certifications": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "required": [
+                    "code",
+                    "detail"
+                ]
+            },
+            "SessionSettings": {
+                "type": "object",
+                "properties": {
+                    "session_max_minutes": {
+                        "type": "integer",
+                        "maximum": 1440,
+                        "minimum": 5
+                    }
+                },
+                "required": [
+                    "session_max_minutes"
+                ]
+            },
+            "SessionStart": {
+                "type": "object",
+                "properties": {
+                    "digest": {
+                        "type": "string",
+                        "default": "",
+                        "maxLength": 64
                     }
                 }
             },
@@ -262072,6 +263532,15 @@
                 ],
                 "type": "string",
                 "description": "* `makerspace_public` - makerspace_public\n* `entered` - entered"
+            },
+            "SourceEd5Enum": {
+                "enum": [
+                    "member_qr",
+                    "staff",
+                    "device"
+                ],
+                "type": "string",
+                "description": "* `member_qr` - Member (machine QR)\n* `staff` - Staff\n* `device` - Device report"
             },
             "SpaceCard": {
                 "type": "object",
@@ -263953,7 +265422,7 @@
                         "readOnly": true
                     },
                     "subject_type": {
-                        "$ref": "#/components/schemas/SubjectTypeB27Enum"
+                        "$ref": "#/components/schemas/SubjectType61eEnum"
                     },
                     "subject_label": {
                         "type": "string",
@@ -264123,6 +265592,181 @@
                     "expected_version",
                     "operation_id",
                     "reason_code"
+                ]
+            },
+            "StaffSession": {
+                "type": "object",
+                "description": "Mask registry PII (and declared account fields) for a superadmin without a window.\n\n``pii_account_fields`` names representation keys that carry an account's email, phone\nor name. Override ``get_pii_makerspace_id`` when the row reaches its space differently,\nor ``get_pii_subject`` when the row is about one person.",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "makerspace_id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "machine_id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "machine_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "machine_type_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "source": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/SourceEd5Enum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "status": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "started_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "ended_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "minutes": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "stop_reason": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/StopReasonEnum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "flagged": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "charge_state": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "rate": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/SessionRate"
+                            }
+                        ],
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "amount": {
+                        "type": "string",
+                        "nullable": true,
+                        "description": "The charge raised, or the running / proposed amount at the frozen rate.",
+                        "readOnly": true
+                    },
+                    "payment": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/SessionPayment"
+                            }
+                        ],
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "member_id": {
+                        "type": "integer",
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "member_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "needs_review": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "service_request_id": {
+                        "type": "integer",
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "duration_minutes": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "started_by_id": {
+                        "type": "integer",
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "stopped_by_id": {
+                        "type": "integer",
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "amendments": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/SessionAmendment"
+                        },
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "amendments",
+                    "amount",
+                    "charge_state",
+                    "duration_minutes",
+                    "ended_at",
+                    "flagged",
+                    "id",
+                    "machine_id",
+                    "machine_name",
+                    "machine_type_name",
+                    "makerspace_id",
+                    "member_id",
+                    "member_name",
+                    "minutes",
+                    "needs_review",
+                    "payment",
+                    "rate",
+                    "service_request_id",
+                    "source",
+                    "started_at",
+                    "started_by_id",
+                    "status",
+                    "stop_reason",
+                    "stopped_by_id"
+                ]
+            },
+            "StaffSessionStart": {
+                "type": "object",
+                "properties": {
+                    "machine_id": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "member_id": {
+                        "type": "integer",
+                        "minimum": 1
+                    }
+                },
+                "required": [
+                    "machine_id",
+                    "member_id"
                 ]
             },
             "StaffSettlement": {
@@ -266388,6 +268032,18 @@
                 "type": "string",
                 "description": "* `draft` - Draft\n* `counting` - Counting\n* `completed` - Completed\n* `approved` - Approved\n* `applied` - Applied\n* `cancelled` - Cancelled"
             },
+            "StopReasonEnum": {
+                "enum": [
+                    "member",
+                    "staff",
+                    "max_length",
+                    "check_out",
+                    "closing",
+                    "device"
+                ],
+                "type": "string",
+                "description": "* `member` - Stopped by the member\n* `staff` - Stopped by staff\n* `max_length` - Reached the maximum length\n* `check_out` - The member checked out\n* `closing` - The space closed\n* `device` - The machine reported the end"
+            },
             "StorageGuarantee": {
                 "type": "object",
                 "properties": {
@@ -266634,7 +268290,7 @@
                 "type": "string",
                 "description": "* `machine` - Machine\n* `inventory_product` - Inventory item\n* `inventory_asset` - Inventory unit\n* `bookable_space` - Bookable space"
             },
-            "SubjectTypeB27Enum": {
+            "SubjectType61eEnum": {
                 "enum": [
                     "machine_service_request",
                     "booking",
@@ -266646,10 +268302,11 @@
                     "loan_late_fee",
                     "loan_rental",
                     "loan_damage",
-                    "loan_lost"
+                    "loan_lost",
+                    "machine_session"
                 ],
                 "type": "string",
-                "description": "* `machine_service_request` - Machine service request\n* `booking` - Booking\n* `event_registration` - Event registration\n* `makerspace_membership` - Makerspace membership\n* `membership_term` - Membership renewal\n* `membership_request` - Membership admission\n* `loan_deposit` - Loan deposit\n* `loan_late_fee` - Loan late fee\n* `loan_rental` - Loan rental\n* `loan_damage` - Loan damage charge\n* `loan_lost` - Lost item charge"
+                "description": "* `machine_service_request` - Machine service request\n* `booking` - Booking\n* `event_registration` - Event registration\n* `makerspace_membership` - Makerspace membership\n* `membership_term` - Membership renewal\n* `membership_request` - Membership admission\n* `loan_deposit` - Loan deposit\n* `loan_late_fee` - Loan late fee\n* `loan_rental` - Loan rental\n* `loan_damage` - Loan damage charge\n* `loan_lost` - Lost item charge\n* `machine_session` - Machine session"
             },
             "SubmissionIntegrity": {
                 "type": "object",

@@ -76,8 +76,10 @@ class TenantDumpCatalogError(AssertionError):
 # tenant_migration/0015 self-host move request; re-pinned.
 # lane/r2-l12c: inventory/0017, procurement/0009, warranty/0004, hardware_requests/0030,
 # machines/0031, maintenance/0004, bookings/0022 machines and loans depth; re-pinned.
+# lane/r2-s-a: makerspaces/0119 retires security.staff_mfa_required (catalog unchanged).
+# lane/r2-l23: machines/0032 and payments/0035 metered machine sessions; re-pinned.
 # Orchestrator re-pins the live catalog after final schema/migration verification.
-CATALOG_SCHEMA_SHA256 = "7933e9a6204599d846e5b65b95fa078a10e540009662dca11b6c4f3374e54206"
+CATALOG_SCHEMA_SHA256 = "94ad5acf8aaa2b19e960bffa8721bf4ffbee2cb07fbd1379ed8ee732d4d07567"
 
 
 def catalog_models(apps_registry=apps):

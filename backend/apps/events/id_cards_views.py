@@ -14,6 +14,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.accounts.pii_presentation import PiiMaskingSerializerMixin
 from apps.openapi_errors import errors
 
 from . import id_cards
@@ -39,7 +40,9 @@ def organiser_card(actor, pk):
     return card
 
 
-class EventIdCardSerializer(serializers.ModelSerializer):
+class EventIdCardSerializer(PiiMaskingSerializerMixin, serializers.ModelSerializer):
+    """Printed names and revoke reasons are scoped PII: masked for a superadmin without a window."""
+
     photo_set = serializers.SerializerMethodField()
 
     class Meta:
@@ -85,7 +88,7 @@ class EventIdCardListView(APIView):
     def get(self, request, pk):
         event = organiser_event(request.user, pk)
         rows = EventIdCard.objects.filter(event=event).order_by("-issued_at")[:1000]
-        return Response(EventIdCardSerializer(rows, many=True).data)
+        return Response(EventIdCardSerializer(rows, many=True, context={"request": request}).data)
 
     @extend_schema(tags=TAGS, summary="Issue cards now to every confirmed registrant", request=None,
                    responses={200: OpenApiTypes.OBJECT, **errors(401, 403, 404)})
@@ -104,7 +107,7 @@ class EventIdCardRevokeView(APIView):
                    responses={200: EventIdCardSerializer, **errors(400, 401, 403, 404)})
     def post(self, request, pk):
         card = id_cards.revoke(request.user, organiser_card(request.user, pk), str(request.data.get("reason", "")))
-        return Response(EventIdCardSerializer(card).data)
+        return Response(EventIdCardSerializer(card, context={"request": request}).data)
 
 
 class EventIdCardDetailView(APIView):
@@ -114,7 +117,7 @@ class EventIdCardDetailView(APIView):
                    request=OpenApiTypes.OBJECT, responses={200: EventIdCardSerializer, **errors(400, 401, 403, 404)})
     def patch(self, request, pk):
         card = id_cards.set_role(request.user, organiser_card(request.user, pk), request.data.get("role"))
-        return Response(EventIdCardSerializer(card).data)
+        return Response(EventIdCardSerializer(card, context={"request": request}).data)
 
 
 class EventIdCardDownloadView(APIView):

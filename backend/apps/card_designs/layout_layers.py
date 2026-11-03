@@ -103,6 +103,8 @@ def normalize_layer(value, width, height, stock):
     if not isinstance(value, dict) or value.get("kind") not in KINDS:
         raise ValidationError({"layers": "Unknown layer kind."})
     kind = value["kind"]
+    if kind == "band":  # early drafts stored shape keys on bands; they carry no meaning there
+        value = {key: item for key, item in value.items() if key not in ("shape", "stroke", "stroke_mm")}
     if set(value) - (COMMON | EXTRA[kind]):
         raise ValidationError({"layers": f"Unknown properties on a {kind} layer."})
     name = value.get("name", "")
@@ -133,14 +135,16 @@ def normalize_layer(value, width, height, stock):
         if min(row["w_mm"], row["h_mm"]) < minimum - 0.01 or row["opacity"] != 100 or row["rotation"] % 90:
             raise ValidationError({"layers": f"QR codes need {minimum:g} mm, full opacity and a right-angle turn."})
     elif kind in ("shape", "band"):
-        row["shape"] = value.get("shape", "rect") if kind == "shape" else "rect"
-        if row["shape"] not in ("rect", "ellipse", "line"):
-            raise ValidationError({"layers": "Shapes are rectangles, ellipses or lines."})
+        # A band carries only its own keys (fill, radius), so a normalised band normalises again.
         row["fill"] = _hex(value.get("fill", "#006E63" if kind == "band" else None), "fill", nullable=True)
-        row["stroke"] = _hex(value.get("stroke"), "stroke", nullable=True) if kind == "shape" else None
-        row["stroke_mm"] = _number(value.get("stroke_mm", 0.3), 0, 5, "stroke_mm") if kind == "shape" else 0
         row["radius_mm"] = _number(value.get("radius_mm", 0), 0, 20, "radius_mm")
-        if row["fill"] is None and row["stroke"] is None:
+        if kind == "shape":
+            row["shape"] = value.get("shape", "rect")
+            if row["shape"] not in ("rect", "ellipse", "line"):
+                raise ValidationError({"layers": "Shapes are rectangles, ellipses or lines."})
+            row["stroke"] = _hex(value.get("stroke"), "stroke", nullable=True)
+            row["stroke_mm"] = _number(value.get("stroke_mm", 0.3), 0, 5, "stroke_mm")
+        if row["fill"] is None and row.get("stroke") is None:
             raise ValidationError({"layers": "A shape needs a fill or an outline."})
     elif kind == "perforation":
         row["colour"] = _hex(value.get("colour", "#D5D0C6"), "colour")

@@ -11,7 +11,7 @@ from apps.operations.notifications_p2 import body, fanout, revision, safe_notifi
 logger = logging.getLogger(__name__)
 CARD_SOURCE, DESIGN_SOURCE, PHOTO_SOURCE, JOB_SOURCE = (
     "card_designs.card_notice", "card_designs.design", "card_designs.photo_request", "card_designs.job")
-FEATURE = {"member_card": "members", "programme_card": "members", "event_card": "events"}
+FEATURE = {"member_card": "members", "programme_card": "members", "event_card": "members"}  # one "cards" preference
 
 
 def _member_link(space):

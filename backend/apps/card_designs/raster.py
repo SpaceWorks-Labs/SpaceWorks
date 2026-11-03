@@ -11,8 +11,13 @@ def pdf_page_to_png(pdf_bytes, index=0, *, dpi=300):
     try:
         page = document[index]
         try:
+            width_pt, height_pt = page.get_size()
             bitmap = page.render(scale=dpi / 72, fill_color=(255, 255, 255, 255))
             image = bitmap.to_pil().convert("RGB")
+            # PDFium rounds the bitmap up; trim to the exact pixel size of the stock at this dpi.
+            exact = (round(width_pt * dpi / 72), round(height_pt * dpi / 72))
+            if image.size != exact:
+                image = image.crop((0, 0, min(exact[0], image.width), min(exact[1], image.height)))
         finally:
             page.close()
     finally:

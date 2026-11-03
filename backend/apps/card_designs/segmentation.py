@@ -49,8 +49,8 @@ def remove_background(image_bytes):
     """-> PNG bytes of the subject on a white background."""
     import numpy as np
     from PIL import Image
-    with Image.open(BytesIO(image_bytes)) as source:
-        image = source.convert("RGB")
+    with Image.open(BytesIO(image_bytes)) as opened:
+        image = opened.convert("RGB")
     small = np.asarray(image.resize((SIZE, SIZE), Image.LANCZOS), dtype=np.float32) / 255.0
     small = (small - np.array([0.485, 0.456, 0.406], dtype=np.float32)) / np.array([0.229, 0.224, 0.225],
                                                                                     dtype=np.float32)

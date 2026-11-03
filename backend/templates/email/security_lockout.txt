@@ -1,0 +1,11 @@
+{% autoescape off %}Hello {{ user.display_name|default:user.username }},
+
+Your Space Works account was locked for a while after too many failed sign-ins.
+
+When: {{ alert.sent_at|date:'j M Y, H:i e' }}
+
+If these attempts were not yours, someone may be guessing your password.
+
+Wasn't you? Open this link to sign out everywhere, turn off your current password and get a reset code by email (it works once, for {{ expires_days }} days):
+{{ link }}
+{% endautoescape %}

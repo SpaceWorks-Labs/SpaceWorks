@@ -12,6 +12,13 @@ EMAIL_MODULE_EXEMPT = frozenset({
     ("account", "password_reset"),
     ("account", "email_verification"),
     ("hardware", "return_reminder"),
+    # Login security (S-B, #62): security alerts and the unusual-sign-in code are platform
+    # mail nobody may opt out of -- an alert you can switch off protects nobody.
+    ("account", "security_login_new_device"),
+    ("account", "security_password_changed"),
+    ("account", "security_mfa_changed"),
+    ("account", "security_account_locked"),
+    ("account", "security_login_code"),
 })
 
 

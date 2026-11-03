@@ -70,6 +70,10 @@ HTTP_EXEMPTIONS = {
         "auth-passkeys-authenticate-options", "auth-passkeys-authenticate-verify", "auth-mfa-passkey-options",
         "auth-reauth-passkey-options", "auth-reauth-passkey",
     ), "Global passkey credential and session state is excluded from tenant quiescence."),
+    # Login security S-B: remembered devices, the unusual-login code and "this wasn't me".
+    **dict.fromkeys((
+        "auth-devices", "auth-device-detail", "auth-login-code-resend", "auth-security-alerts-not-me",
+    ), "Global sign-in risk state and account-wide revocation are excluded from tenant quiescence."),
     "control-mfa": "Global MFA credential and control-session state is excluded from tenant quiescence.",
     "auth-refresh": "Global user session state is excluded from tenant quiescence.",
     "auth-logout": "Global user session state is excluded from tenant quiescence.",

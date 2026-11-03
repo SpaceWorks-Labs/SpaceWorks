@@ -1,0 +1,11 @@
+{% autoescape off %}Hello {{ user.display_name|default:user.username }},
+
+Someone signed in to your Space Works account with its password from a device or network it does not know. To finish, enter this code:
+
+{{ code }}
+
+It expires in {{ minutes }} minutes and works once.
+
+If this wasn't you, your password is known to someone else. Reset it now: {{ reset_link }}
+Never share this code.
+{% endautoescape %}

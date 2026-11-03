@@ -19,6 +19,7 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
+from apps.accounts import device_memory, security_alerts
 from apps.accounts.models import User
 from apps.accounts.password_breach import error_body
 from apps.accounts.principal_guards import is_anonymous_requester
@@ -45,6 +46,7 @@ from apps.accounts.services_password_reset import (
     request_password_reset,
     validate_recovery_password,
 )
+from apps.accounts.services_password_reset_confirmation import alert_reset
 from apps.accounts.credential_revocation import revoke_sessions_only
 from apps.accounts.throttles import (
     PasswordResetConfirmEmailThrottle,
@@ -117,6 +119,7 @@ class ChangePasswordView(APIView):
         except DjangoValidationError as exc:
             raise serializers.ValidationError(error_body("new_password", exc)) from exc
 
+        current_device = device_memory.lookup(request, user)  # S-B: the device that made the change stays
         with transaction.atomic():
             revoke_sessions_only(user, reason="account.password_changed", actor=user)
             locked = User.objects.select_for_update().get(pk=user.pk)
@@ -132,6 +135,8 @@ class ChangePasswordView(APIView):
             locked.must_change_password = False
             locked.save(update_fields=["password", "must_change_password"])
             audit.record(locked, "user.password_changed", target=locked)
+            device_memory.restore(current_device)
+            security_alerts.password_changed(locked)
         return Response({"detail": "Password updated."})
 
 
@@ -238,6 +243,7 @@ def _confirm_legacy_link(uid, token, new_password):
                     target=locked,
                     meta={"method": "link"},
                 )
+                alert_reset(locked)
 
     if failure is not None:
         raise failure

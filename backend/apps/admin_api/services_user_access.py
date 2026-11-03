@@ -80,6 +80,8 @@ def reset_user_password(actor, target_pk, password=None, data=None):
         target=target,
         meta={"by_superadmin": is_superadmin},
     )
+    from apps.accounts import security_alerts
+    security_alerts.password_changed(target)  # S-B: the person learns their password was set
     return PasswordResetResult(user=target, temporary_password=temporary_password)
 
 

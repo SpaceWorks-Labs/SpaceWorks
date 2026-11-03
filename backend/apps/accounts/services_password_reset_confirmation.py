@@ -99,6 +99,7 @@ def confirm_password_reset(email, code, new_password, *, context="member", maker
                         target=user,
                         meta={"method": "otp"},
                     )
+                    alert_reset(user)
                     confirmed_user = user
 
     if password_failure is not None:
@@ -147,3 +148,11 @@ def _discard_locked(envelope, now, *, superseded=False):
             "superseded_at",
         ]
     )
+
+
+def alert_reset(user):
+    """S-B: a completed reset expires every outstanding alert link, then alerts afresh."""
+    from apps.accounts import security_alerts
+    from apps.accounts.security_not_me import expire_outstanding
+    expire_outstanding(user)
+    security_alerts.password_changed(user)

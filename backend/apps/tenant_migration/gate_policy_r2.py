@@ -14,4 +14,4 @@ def gate_tasks(exemptions, internal, fanout):
     l2_tasks(internal, fanout)
     l11_tasks(exemptions)
     l12_tasks(internal, fanout)
-    l23_tasks(internal)
+    l23_tasks(internal, fanout)

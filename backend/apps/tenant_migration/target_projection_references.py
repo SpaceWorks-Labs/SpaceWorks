@@ -69,3 +69,6 @@ from .projection_wp4 import FK_POLICIES as WP4_FK_POLICIES
 FK_POLICIES.update(WP4_FK_POLICIES)
 from .catalog_r2_l5 import fk_policies as _r2_l5_fk_policies  # noqa: E402
 FK_POLICIES.update(_r2_l5_fk_policies(ForeignKeyPolicy, ReferenceDisposition))
+# Release 2 L23: a machine session's type resolves through the built-in/custom type map.
+FK_POLICIES[("machines.MachineSession", "machine_type")] = ForeignKeyPolicy(
+    ReferenceDisposition.REMAP_RESOLVED, "Use the built-in/custom machine type map.")

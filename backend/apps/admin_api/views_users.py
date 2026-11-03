@@ -22,8 +22,8 @@ from apps.audit.models import AuditLog
 from apps.hardware_requests.exceptions import ErrorSerializer
 from apps.makerspaces.models import MakerspaceMembership
 
-# Compatibility listings keep their existing non-manager role scope. Lifecycle
-# creation and D7 manager-to-manager administration use staff-accounts instead.
+# Compatibility listings keep their existing non-manager role scope. Granting and
+# changing staff roles go through the staff-roles API instead.
 _SM_DELEGABLE_ROLES = (
     MakerspaceMembership.Role.INVENTORY_MANAGER,
     MakerspaceMembership.Role.MACHINE_MANAGER,
@@ -59,7 +59,7 @@ class StaffListCreateView(RecentReauthenticationMixin, generics.ListCreateAPIVie
         return queryset.none()
 
     @extend_schema(
-        description="Retired writer. Use the staff-accounts API to create a separate staff account.",
+        description="Retired writer. Grant staff roles through `admin/makerspaces/<id>/staff-roles/`.",
         deprecated=True,
         request=StaffCreateSerializer,
         responses={**{
@@ -72,24 +72,24 @@ class StaffListCreateView(RecentReauthenticationMixin, generics.ListCreateAPIVie
         data = serializer.validated_data
         if not rbac.can(request.user, rbac.Action.MANAGE_MAKERSPACE, data["makerspace_id"]):
             raise PermissionDenied()
-        raise ValidationError({"detail": "Use the staff-accounts lifecycle API to create staff."})
+        raise ValidationError({"detail": "Grant staff roles through the staff-roles API."})
 
 
-@extend_schema(tags=["Admin users"], summary="Deactivate a staff account", responses={204: None})
+@extend_schema(tags=["Admin users"], summary="Revoke a staff row (legacy route)", responses={204: None})
 class MembershipRevokeView(RecentReauthenticationMixin, APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(responses={204: None, **{code: ErrorSerializer for code in (400, 401, 403, 404, 423, 503)}})
     def delete(self, request, pk):
         from django.shortcuts import get_object_or_404
-        from apps.accounts.staff_account_lifecycle import deactivate
+        from apps.accounts.staff_account_lifecycle import revoke
 
         membership = get_object_or_404(rbac.scope_by_action(
             request.user, rbac.Action.MANAGE_MAKERSPACE, MakerspaceMembership.both_tracks()), pk=pk)
         if membership.track != MakerspaceMembership.Track.STAFF:
             raise ValidationError({"detail": "Use the community membership revocation workflow."})
-        deactivate(request.user, membership.makerspace_id, membership.user_id,
-                   reason="Removed through legacy staff console")
+        revoke(request.user, membership.makerspace_id, membership.pk,
+               reason="Removed through legacy staff console")
         return Response(status=204)
 
 

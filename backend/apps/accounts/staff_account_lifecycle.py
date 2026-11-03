@@ -1,102 +1,135 @@
-"""Transactional staff deactivation, reactivation and administrator password issue."""
+"""Revoke and restore a staff row; disable or re-enable an account from /control/ (Q8).
 
-import secrets
+A Space Manager no longer sets passwords, reactivates accounts or resets factors (#66,
+Q9): the person signs in with their own account, an MFA reset follows S-A's rule
+(``mfa_reset``), and turning a whole ACCOUNT off is a superadmin ``/control/`` action
+(``disable_account``) behind control step-up. Revoking a staff row ends only that staff
+authority: the person's member features keep working, and their staff device grants in
+that space are revoked (``services_staff_grants``).
+"""
 
-from django.contrib.auth.password_validation import validate_password
-from django.core.exceptions import ValidationError as DjangoValidationError
+from django.db import transaction
 from django.utils import timezone
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import PermissionDenied, ValidationError
 
-from apps.accounts.credential_revocation import revoke_all_credentials, revoke_sessions_only
-from apps.accounts.credential_locks import lock_credentials
 from apps.accounts.models import User
 from apps.accounts.staff_account_policy import (
-    protect_last_manager, require_authority, scoped_space, target_account,
+    check_staff_quota, protect_last_manager, require_authority, scoped_space, staff_write, target_row,
 )
 from apps.audit.services import record
-from apps.makerspaces import limits
 from apps.makerspaces.models import MakerspaceMembership
-from apps.tenant_migration.gate_runtime import tenant_write
 
 
-def deactivate(actor, space_id, user_id, *, reason=""):
+def _reason(reason, default):
     if not isinstance(reason, str) or len(reason) > 200:
         raise ValidationError({"reason": "Use at most 200 characters."})
-    with tenant_write(space_id):
+    return reason.strip() or default
+
+
+def _revoke_row(actor, space, row, reason):
+    from apps.accounts.services_staff_grants import revoke_staff_grants
+
+    row.status, row.revoked_at, row.revoked_by = "revoked", timezone.now(), actor
+    row.revocation_reason = reason
+    row.save(update_fields=["status", "revoked_at", "revoked_by", "revocation_reason"])
+    revoke_staff_grants(row.user, space.pk, reason="staff_role.revoked", actor=actor)
+    record(actor, "staff_role.revoked", makerspace=space, target=row.user,
+           meta={"membership_id": row.pk, "reason": reason})
+
+
+def revoke(actor, space_id, membership_id, *, reason=""):
+    reason = _reason(reason, "Staff role revoked")
+    with staff_write(space_id):
         space, actor = scoped_space(actor, space_id, lock=True)
-        target = target_account(space, user_id)
-        require_authority(actor, space, target=target)
-        membership = MakerspaceMembership.objects.get(user=target, makerspace=space)
-        protect_last_manager(space, membership)
-        # Revocation takes Invitations -> User -> Envelopes under our tenant lock.
-        revoke_all_credentials(target, reason="staff_account.deactivated", actor=actor)
-        target = lock_credentials(target)
-        target.is_active = False
-        target.must_change_password = True
-        target.set_unusable_password()
-        target.save(update_fields=["is_active", "must_change_password", "password"])
-        membership.status, membership.revoked_at = "revoked", timezone.now()
-        membership.revoked_by = actor
-        membership.revocation_reason = reason.strip() or "Staff account deactivated"
-        membership.can_refer = membership.can_verify = False
-        membership.save(update_fields=["status", "revoked_at", "revoked_by", "revocation_reason",
-                                       "can_refer", "can_verify"])
-        record(actor, "staff.membership_revoked", makerspace=space, target=target,
-               meta={"membership_role": membership.role})
-        record(actor, "staff_account.deactivated", makerspace=space, target=target)
-    return target
+        row = target_row(space, membership_id, lock=True)
+        require_authority(actor, space, target=row.user)
+        if row.status != "active":
+            raise ValidationError({"detail": "This staff row is already revoked."})
+        protect_last_manager(space, row)
+        _revoke_row(actor, space, row, reason)
+    return target_row(space, row.pk)
 
 
-def reactivate(actor, space_id, user_id):
-    with tenant_write(space_id):
+def restore(actor, space_id, membership_id):
+    with staff_write(space_id):
         space, actor = scoped_space(actor, space_id, lock=True)
-        target = target_account(space, user_id)
-        require_authority(actor, space, target=target)
-        target = lock_credentials(target)
-        membership = MakerspaceMembership.objects.select_for_update().get(user=target, makerspace=space)
-        if target.is_active and membership.status == "active":
-            raise ValidationError({"detail": "This staff account is already active."})
-        if not target.is_active and target.access_status == User.AccessStatus.ACTIVE:
-            limits.check_quota(space, "staff", adding=1)
-        target.is_active, target.must_change_password = True, True
-        target.set_unusable_password()
-        target.save(update_fields=["is_active", "must_change_password", "password"])
-        membership.status = "active"
-        membership.revoked_at = membership.revoked_by = None
-        membership.revocation_reason = ""
-        membership.save(update_fields=["status", "revoked_at", "revoked_by", "revocation_reason"])
-        record(actor, "staff_account.reactivated", makerspace=space, target=target)
-    return target
+        row = target_row(space, membership_id, lock=True)
+        require_authority(actor, space, target=row.user)
+        if row.status == "active":
+            raise ValidationError({"detail": "This staff row is already active."})
+        user = row.user
+        if not user.is_active or user.access_status != User.AccessStatus.ACTIVE:
+            raise ValidationError({"detail": "This account is disabled or restricted."})
+        check_staff_quota(space)
+        row.status, row.revoked_at, row.revoked_by, row.revocation_reason = "active", None, None, ""
+        row.save(update_fields=["status", "revoked_at", "revoked_by", "revocation_reason"])
+        record(actor, "staff_role.restored", makerspace=space, target=user, meta={"membership_id": row.pk})
+    from apps.accounts.staff_role_notices import notify_granted
+    notify_granted(row)
+    return target_row(space, row.pk)
 
 
-def set_password(actor, space_id, user_id, *, password=None, generate=False, reset_mfa=False):
-    if (type(generate) is not bool or type(reset_mfa) is not bool
-            or bool(password) == generate or (password is not None and
-            (not isinstance(password, str) or len(password) > 1024))):
-        raise ValidationError({"password": "Provide a password or generate=true, exclusively."})
-    with tenant_write(space_id):
-        space, actor = scoped_space(actor, space_id, lock=True)
-        target = target_account(space, user_id)
-        require_authority(actor, space, target=target)
-        if not target.is_active:
-            raise ValidationError({"detail": "Reactivate this account before setting a password."})
-        candidate = secrets.token_urlsafe(24) if generate else password
+def _require_superadmin(actor, target):
+    from apps.accounts.platform_authority import is_platform_superadmin
+    from apps.accounts.staff_identity import is_person
+
+    if not is_platform_superadmin(actor):
+        raise PermissionDenied("Only the platform administrator disables accounts.")
+    if not is_person(target):
+        raise PermissionDenied("Only a personal account is disabled here.")
+
+
+def disable_account(actor, user_id, *, reason=""):
+    """Superadmin only: the account stops signing in everywhere; nothing is deleted.
+
+    Every session and device grant is revoked and every active staff row is revoked
+    (audited per space). Community memberships, history and money stay as they are.
+    Superadmin authority outranks the last-manager rule: a space left without a manager
+    is still managed by the superadmin (#110).
+    """
+    reason = _reason(reason, "Account disabled by the platform administrator")
+    from apps.accounts.credential_revocation import revoke_all_credentials
+    from apps.accounts.credential_locks import lock_credentials
+
+    from apps.accounts.staff_account_policy import TENANT_GATED, StaffRoleRefused
+    from apps.tenant_migration.gate_errors import SourceMigrationGateError
+    from apps.tenant_migration.gate_runtime import assert_write_allowed
+
+    target = User.objects.get(pk=user_id)
+    _require_superadmin(actor, target)
+    with transaction.atomic():
+        spaces = MakerspaceMembership.staff_tracks.filter(user=target, status="active").values_list(
+            "makerspace_id", flat=True)
         try:
-            validate_password(candidate, user=target)
-        except DjangoValidationError as exc:
-            raise ValidationError({"password": exc.messages}) from exc
-        revoke_sessions_only(target, reason="staff_account.password_reset", actor=actor)
+            for space_id in sorted(set(spaces)):
+                assert_write_allowed(space_id)
+        except SourceMigrationGateError:
+            raise StaffRoleRefused(TENANT_GATED, "A makerspace of this person is temporarily read-only.") from None
+        revoke_all_credentials(target, reason="account.disabled", actor=actor)
         target = lock_credentials(target)
-        target.set_password(candidate)
-        target.must_change_password = True
-        target.save(update_fields=["password", "must_change_password"])
-        if reset_mfa:
-            from apps.accounts.models_mfa import UserMFA
-            # Deleting the factor also deletes its secret and recovery hashes; outstanding
-            # MFA challenges are consumed so they cannot complete against a new factor.
-            from apps.accounts.models import MFAChallenge
-            MFAChallenge.objects.filter(user=target, consumed_at__isnull=True).update(consumed_at=timezone.now())
-            UserMFA.objects.filter(user=target).delete()
-        record(actor, "staff_account.password_reset", makerspace=space, target=target,
-               meta={"reset_mfa": reset_mfa})
-    return {"generated_password": candidate if generate else None}
+        if not target.is_active:
+            raise ValidationError({"detail": "This account is already disabled."})
+        target.is_active = False
+        target.save(update_fields=["is_active"])
+        rows = MakerspaceMembership.staff_tracks.select_related("makerspace").filter(user=target, status="active")
+        for row in rows.order_by("makerspace_id"):
+            _revoke_row(actor, row.makerspace, row, reason)
+        record(actor, "account.disabled", target=target, meta={"reason": reason})
+    return target
+
+
+def enable_account(actor, user_id):
+    """Superadmin only: undo ``disable_account``. Staff rows stay revoked (restore them
+    per space); the person signs in again with their own credentials."""
+    from apps.accounts.credential_locks import lock_credentials
+
+    target = User.objects.get(pk=user_id)
+    _require_superadmin(actor, target)
+    with transaction.atomic():
+        target = lock_credentials(target)
+        if target.is_active:
+            raise ValidationError({"detail": "This account is already enabled."})
+        target.is_active = True
+        target.save(update_fields=["is_active"])
+        record(actor, "account.enabled", target=target)
+    return target

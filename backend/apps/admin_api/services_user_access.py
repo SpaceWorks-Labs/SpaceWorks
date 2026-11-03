@@ -10,6 +10,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from apps.accounts import rbac
 from apps.accounts.models import User
 from apps.accounts.principal_guards import refuse_anonymous_requester_credential
+from apps.accounts.staff_identity import has_elevated_authority, is_person
 from apps.audit import services as audit
 from apps.makerspaces.models import MakerspaceMembership
 
@@ -23,8 +24,14 @@ class PasswordResetResult:
 def reset_user_password(actor, target_pk, password=None, data=None):
     is_superadmin = actor.is_superuser or actor.role == User.Role.SUPERADMIN
     target = _target_for_reset(actor, target_pk, is_superadmin)
-    if target.account_kind == "staff":
-        raise PermissionDenied("Use the staff account set-password workflow.")
+    if not is_person(target):
+        raise PermissionDenied("Only a personal account's password is reset here.")
+    # One account per person (#66): Space Managers no longer set staff passwords. A person
+    # holding staff roles or other elevated authority resets their own password; only the
+    # superadmin may reset it for them.
+    if not is_superadmin and has_elevated_authority(target):
+        raise PermissionDenied("This person holds staff authority. They reset their own password "
+                               "(Forgot password), or the platform administrator resets it.")
     if target.is_superuser or target.role == User.Role.SUPERADMIN:
         raise PermissionDenied("Cannot reset a superadmin's password here.")
     refuse_anonymous_requester_credential(target)

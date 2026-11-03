@@ -68,7 +68,7 @@ def legacy_request_membership(user, makerspace):
 
 def invite_membership(actor, makerspace, invite_email, assigned_role):
     if assigned_role.slug != "member":
-        raise ValidationError({"role_id": "Use a separate staff account for staff roles."})
+        raise ValidationError({"role_id": "Grant staff roles through the staff roles screen."})
     email = normalized_email(invite_email)
     if not email:
         raise ValidationError({"invite_email": "An email address is required."})
@@ -182,7 +182,7 @@ def legacy_approve_request(actor, request, assigned_role, plan=None):
 
 def _approve_request(actor, request, assigned_role):
     if assigned_role.slug != "member":
-        raise ValidationError({"role_id": "Use a separate staff account for staff roles."})
+        raise ValidationError({"role_id": "Grant staff roles through the staff roles screen."})
     request = MembershipRequest.objects.select_related("makerspace", "user").get(pk=request.pk)
     with transaction.atomic():
         makerspace = Makerspace.objects.select_for_update().get(pk=request.makerspace_id)

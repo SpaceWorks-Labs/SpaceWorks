@@ -96,7 +96,6 @@ class PublicIssueReportView(APIView):
 
 class TechnicianOptInView(APIView):
     permission_classes = [AllowAny]
-    authentication_classes = []
     throttle_classes = THROTTLES
 
     @extend_schema(tags=TAGS, summary="What a technician's opt-in link is for", auth=[],

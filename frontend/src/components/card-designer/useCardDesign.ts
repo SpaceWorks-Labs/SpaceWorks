@@ -80,29 +80,27 @@ export function useCardDesign(design: CardDesign, canEdit: boolean) {
     setRedo([]);
   }, []);
 
+  // Stacks are read from state but changed outside the setState updaters, so React's
+  // StrictMode double-invocation cannot push a snapshot twice.
   const undo = useCallback(() => {
-    setUndo((stack) => {
-      const previous = stack[stack.length - 1];
-      if (!previous) return stack;
-      setRedo((redo) => [...redo, latest.current]);
-      latest.current = previous;
-      setDocument(previous);
-      schedule();
-      return stack.slice(0, -1);
-    });
-  }, [schedule]);
+    const previous = undoStack[undoStack.length - 1];
+    if (!previous) return;
+    setUndo(undoStack.slice(0, -1));
+    setRedo([...redoStack, latest.current]);
+    latest.current = previous;
+    setDocument(previous);
+    schedule();
+  }, [undoStack, redoStack, schedule]);
 
   const redo = useCallback(() => {
-    setRedo((stack) => {
-      const next = stack[stack.length - 1];
-      if (!next) return stack;
-      setUndo((undoStack) => [...undoStack, latest.current]);
-      latest.current = next;
-      setDocument(next);
-      schedule();
-      return stack.slice(0, -1);
-    });
-  }, [schedule]);
+    const next = redoStack[redoStack.length - 1];
+    if (!next) return;
+    setRedo(redoStack.slice(0, -1));
+    setUndo([...undoStack, latest.current]);
+    latest.current = next;
+    setDocument(next);
+    schedule();
+  }, [undoStack, redoStack, schedule]);
 
   const reload = useCallback(async () => {
     await client.invalidateQueries({ queryKey: designKey(design.id) });

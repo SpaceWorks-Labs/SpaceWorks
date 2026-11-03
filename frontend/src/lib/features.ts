@@ -156,6 +156,9 @@ export const FEATURE_DEFINITIONS: readonly FeatureDefinition[] = [
   { key: "events.id_cards", parent_module: "events", label: "Event ID cards" },
   { key: "events.ticket_designs", parent_module: "events", label: "Ticket designs" },
   { key: "events.wallet_passes", parent_module: "events", label: "Wallet passes for event cards" },
+  // L13 (#74, #128 C-12/C-13): a public Google Sheet as an import source.
+  { key: "membership.import_sheets", parent_module: "membership", label: "Member import from Google Sheets" },
+  { key: "membership.id_programmes_import_sheets", parent_module: "membership", label: "ID-programme import from Google Sheets" },
 ];
 
 export function featureEnabled(features: Iterable<string>, key: string) {

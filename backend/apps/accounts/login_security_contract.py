@@ -29,11 +29,13 @@ LAST_FACTOR = "last_factor"
 STAFF_SESSION_EXPIRED = "staff_session_expired"
 PASSKEYS_UNAVAILABLE = "passkeys_unavailable"
 PASSKEY_REQUIRED = "passkey_required"  # re-authentication: a passkey-only account confirms with it
+# S-C: a staff route of a space whose staff IP allow-list does not cover the client (403).
+STAFF_NETWORK_REFUSED = "staff_network_refused"
 ERROR_CODES = (
     CAPTCHA_REQUIRED, CAPTCHA_FAILED, IP_BLOCKED, PASSWORD_BREACHED, LOGIN_CODE_REQUIRED,
     LOGIN_CODE_INVALID, PASSKEY_FAILED, SECURITY_ALERT_USED, MFA_ENROLLMENT_REQUIRED,
     MFA_REQUIRED, RP_ID_UNAVAILABLE, MFA_RESET_NOT_ALLOWED, LAST_FACTOR, STAFF_SESSION_EXPIRED,
-    PASSKEYS_UNAVAILABLE, PASSKEY_REQUIRED,
+    PASSKEYS_UNAVAILABLE, PASSKEY_REQUIRED, STAFF_NETWORK_REFUSED,
 )
 
 # --- Second-factor vocabulary --------------------------------------------------------

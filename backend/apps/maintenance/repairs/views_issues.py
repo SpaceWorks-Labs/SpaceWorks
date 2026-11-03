@@ -18,7 +18,7 @@ from apps.admin_api.permissions import IsActiveStaff
 from . import areas, authority, dispatch as dispatching, photos, services_issues as svc, services_work as work
 from .serializers_actions import (
     IssueAssignSerializer, IssueDispatchRequestSerializer, IssueNoteSerializer, IssueOpenSerializer,
-    IssueRejectSerializer, IssueTriageSerializer, IssueUnassignSerializer, RepairFixSerializer,
+    IssueReportRejectSerializer, IssueTriageSerializer, IssueUnassignSerializer, RepairFixSerializer,
     RepairPartWriteSerializer, RepairPayoutSerializer, RepairQuoteDecisionSerializer, RepairQuoteSerializer,
     RepairWorkLogSerializer,
 )
@@ -99,7 +99,7 @@ def _owner(request):
 
 IssueTriageView = step_view("IssueTriageView", IssueTriageSerializer, "Triage a reported issue",
                             lambda r, i, d: svc.triage(r.user, i, priority=d.get("priority"), note=d["note"]))
-IssueRejectView = step_view("IssueRejectView", IssueRejectSerializer, "Reject an issue with a reason",
+IssueRejectView = step_view("IssueRejectView", IssueReportRejectSerializer, "Reject an issue with a reason",
                             lambda r, i, d: svc.reject(r.user, i, reason=d["reason"]))
 IssueCloseView = step_view("IssueCloseView", IssueNoteSerializer, "Close a fixed issue",
                            lambda r, i, d: svc.close(r.user, i, note=d["note"]))

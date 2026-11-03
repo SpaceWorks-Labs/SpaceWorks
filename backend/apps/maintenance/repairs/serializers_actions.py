@@ -65,7 +65,7 @@ class IssueTriageSerializer(serializers.Serializer):
     note = serializers.CharField(required=False, allow_blank=True, max_length=2000, default="")
 
 
-class IssueRejectSerializer(serializers.Serializer):
+class IssueReportRejectSerializer(serializers.Serializer):
     reason = serializers.CharField(max_length=2000)
 
 

@@ -78,6 +78,8 @@ FEATURE_EVENTS[F.EVENTS] += ("invitation",)
 FEATURE_EVENTS[F.BOOKINGS] += ("invitation",)
 # Release 2 L4 (X29): the member's per-space erasure decision.
 FEATURE_EVENTS[F.MEMBERS] += ("erasure_approved", "erasure_rejected")
+# Release 2 L8 (#120, C-26): an emergency re-key, told to the space's Space Managers.
+FEATURE_EVENTS[F.API_ACCESS] += ("emergency_rekey_started", "emergency_rekey_completed", "emergency_rekey_failed")
 # Release 2 L11: a self-host move's status, told to the space's Space Managers.
 FEATURE_EVENTS[F.API_ACCESS] += ("selfhost_move_status",)
 

@@ -9,7 +9,7 @@ export function WaitlistJoin({ makerspaceId, product, features }: {
   makerspaceId?: number; product: Pick<Product, "id" | "name" | "availability">; features?: readonly string[];
 }) {
   const out = product.availability?.label === "Unavailable";
-  if (!makerspaceId || !out || !features?.includes("loans.waitlist") || !getAccessToken("member")) return null;
+  if (!makerspaceId || !out || !features?.includes("loans.waitlist") || !getAccessToken("person")) return null;
   return <JoinButton makerspaceId={makerspaceId} product={product} />;
 }
 

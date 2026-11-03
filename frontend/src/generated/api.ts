@@ -139,7 +139,6 @@ export const openApiTags = [
   "Server bookings",
   "Server events",
   "Social auth",
-  "Staff accounts",
   "Staff invitations",
   "Staff lists",
   "Staff roles",
@@ -839,17 +838,14 @@ export const openApiPaths = [
   "/api/v1/admin/makerspaces/{makerspace_id}/security-settings",
   "/api/v1/admin/makerspaces/{makerspace_id}/security-settings/{key}/lock",
   "/api/v1/admin/makerspaces/{makerspace_id}/spaces/",
-  "/api/v1/admin/makerspaces/{makerspace_id}/staff-accounts/",
-  "/api/v1/admin/makerspaces/{makerspace_id}/staff-accounts/policy",
-  "/api/v1/admin/makerspaces/{makerspace_id}/staff-accounts/{user_id}/",
-  "/api/v1/admin/makerspaces/{makerspace_id}/staff-accounts/{user_id}/deactivate/",
-  "/api/v1/admin/makerspaces/{makerspace_id}/staff-accounts/{user_id}/reactivate/",
-  "/api/v1/admin/makerspaces/{makerspace_id}/staff-accounts/{user_id}/resend-invite/",
-  "/api/v1/admin/makerspaces/{makerspace_id}/staff-accounts/{user_id}/set-password/",
   "/api/v1/admin/makerspaces/{makerspace_id}/staff-invitations",
   "/api/v1/admin/makerspaces/{makerspace_id}/staff-invitations/{invitation_id}/resend",
   "/api/v1/admin/makerspaces/{makerspace_id}/staff-invitations/{invitation_id}/revoke",
+  "/api/v1/admin/makerspaces/{makerspace_id}/staff-roles/",
+  "/api/v1/admin/makerspaces/{makerspace_id}/staff-roles/{membership_id}/",
   "/api/v1/admin/makerspaces/{makerspace_id}/staff-roles/{membership_id}/mfa-reset",
+  "/api/v1/admin/makerspaces/{makerspace_id}/staff-roles/{membership_id}/restore/",
+  "/api/v1/admin/makerspaces/{makerspace_id}/staff-roles/{membership_id}/revoke/",
   "/api/v1/admin/makerspaces/{makerspace_id}/uploads/evidence-url",
   "/api/v1/admin/makerspaces/{makerspace_id}/waiver",
   "/api/v1/admin/makerspaces/{makerspace_id}/walk-in-members",
@@ -1615,6 +1611,12 @@ export type AccentChoiceEnum = "inherit" | "maker_teal" | "workshop_orange" | "c
 
 export type AccentPresetEnum = "maker_teal" | "workshop_orange" | "citron" | "sky_blue" | "warm_yellow";
 
+export type AcceptedMakerspace = {
+  "id": number;
+  "slug": string;
+  "name": string;
+};
+
 export type AcceptInput = {
   "operation_id": string;
   "expected_version": number;
@@ -1685,8 +1687,6 @@ export type AccountingJournalReport = {
   "rows": Array<Array<unknown>>;
   "typed_rows": Array<JournalLine>;
 };
-
-export type AccountKindEnum = "member" | "platform";
 
 export type AccountProfile = {
   "display_name"?: string;
@@ -2914,7 +2914,6 @@ export type AuthUserPayload = {
   "is_superuser": boolean;
   "must_change_password": boolean;
   "kind": AuthUserPayloadKindEnum;
-  "account_kind": AccountKindEnum;
   "is_platform": boolean;
   "has_staff_role": boolean;
   "has_elevated_authority": boolean;
@@ -5617,7 +5616,6 @@ export type CreateToolQr = {
 };
 
 export type CreationInviteDelivery = {
-  "accept_url": string;
   "delivery_status": string;
 };
 
@@ -7889,7 +7887,6 @@ export type Finder = {
 };
 
 export type FirstStaffInvite = {
-  "name"?: string;
   "email": string;
   "role_slug": RoleSlugEnum;
 };
@@ -13928,13 +13925,6 @@ export type PaginatedScheduleList = {
   "results": Array<Schedule>;
 };
 
-export type PaginatedStaffAccountList = {
-  "count": number;
-  "next"?: string | null;
-  "previous"?: string | null;
-  "results": Array<StaffAccount>;
-};
-
 export type PaginatedStaffInvitationList = {
   "count": number;
   "next"?: string | null;
@@ -15994,14 +15984,14 @@ export type PatchedSpacePhotoUpdate = {
   "caption"?: string;
 };
 
-export type PatchedStaffAccountChange = {
-  "roles"?: Array<string>;
-  "machine_type_ids"?: Array<number>;
-};
-
 export type PatchedStaffGrantUpdate = {
   "permissions"?: Array<PermissionsAbdEnum>;
   "role_label"?: RoleLabelEnum | BlankEnum;
+};
+
+export type PatchedStaffRoleChange = {
+  "roles"?: Array<string>;
+  "machine_type_ids"?: Array<number>;
 };
 
 export type PatchedStageConfigurationCommand = {
@@ -21809,70 +21799,6 @@ export type Spool = {
   "remaining_percent"?: string | null;
 };
 
-export type StaffAccount = {
-  "id": number;
-  "username": string;
-  "display_name"?: string;
-  "email"?: string;
-  "roles": Array<string>;
-  "machine_type_ids": Array<number>;
-  "is_active"?: boolean;
-  "must_change_password"?: boolean;
-  "mfa_enabled": boolean;
-  "last_login"?: string | null;
-  "created_at": string;
-  "invitation_pending": boolean;
-  "can": StaffAccountCapabilities;
-  "pii_masked": boolean;
-};
-
-export type StaffAccountCapabilities = {
-  "change_roles": boolean;
-  "set_password": boolean;
-  "deactivate": boolean;
-  "reactivate": boolean;
-  "resend_invite": boolean;
-};
-
-export type StaffAccountCreate = {
-  "display_name": string;
-  "email"?: string;
-  "username"?: string;
-  "roles": Array<string>;
-  "machine_type_ids"?: Array<number>;
-};
-
-export type StaffAccountCreated = {
-  "account": StaffAccount;
-  "invitation_sent": boolean;
-};
-
-export type StaffAccountDeactivate = {
-  "reason"?: string;
-};
-
-export type StaffAccountInvitationResult = {
-  "invitation_sent": boolean;
-};
-
-export type StaffAccountPassword = {
-  "password"?: string;
-  "generate"?: boolean;
-  "reset_mfa"?: boolean;
-};
-
-export type StaffAccountPasswordResult = {
-  "generated_password": string | null;
-};
-
-export type StaffAccountPolicy = {
-  "creatable_roles": Array<string>;
-  "can_manage_space_managers": boolean;
-  "email_onboarding_available": boolean;
-  "machine_types": Array<StaffMachineTypeChoice>;
-  "roles": Array<Role>;
-};
-
 export type StaffBookingInput = {
   "certification_override_reason"?: string;
   "starts_at": string;
@@ -21984,27 +21910,25 @@ export type StaffInvitation = {
   "makerspace": number;
   "role": number;
   "role_name": string;
+  "roles": Array<string>;
+  "machine_type_ids": Array<number>;
   "expires_at": string;
   "accepted_at"?: string | null;
   "revoked_at"?: string | null;
   "created_at": string;
+  "pii_masked": boolean;
 };
 
 export type StaffInvitationAccept = {
   "token": string;
   "makerspace_slug": string;
-  "password": string;
   "code"?: string;
 };
 
 export type StaffInvitationAccepted = {
   "detail": string;
-};
-
-export type StaffInvitationCreate = {
-  "email": string;
-  "role_id": number;
-  "expires_in_days"?: number;
+  "challenge_required": boolean;
+  "makerspace"?: AcceptedMakerspace;
 };
 
 export type StaffInvitationDelivery = {
@@ -22013,11 +21937,13 @@ export type StaffInvitationDelivery = {
   "makerspace": number;
   "role": number;
   "role_name": string;
+  "roles": Array<string>;
+  "machine_type_ids": Array<number>;
   "expires_at": string;
   "accepted_at"?: string | null;
   "revoked_at"?: string | null;
   "created_at": string;
-  "accept_url": string;
+  "pii_masked": boolean;
   "delivery_status": string;
 };
 
@@ -22077,6 +22003,72 @@ export type StaffPresenceStart = {
   "longitude"?: number;
   "accuracy"?: number;
   "account_id": number;
+};
+
+export type StaffRole = {
+  "id": number;
+  "user_id": number;
+  "username": string;
+  "display_name": string;
+  "email": string;
+  "roles": Array<string>;
+  "machine_type_ids": Array<number>;
+  "status"?: Status37fEnum;
+  "mfa_enabled": boolean;
+  "granted_at": string;
+  "revoked_at"?: string | null;
+  "revocation_reason"?: string;
+  "can": StaffRoleCapabilities;
+  "pii_masked": boolean;
+};
+
+export type StaffRoleCapabilities = {
+  "change_roles": boolean;
+  "revoke": boolean;
+  "restore": boolean;
+  "reset_mfa": boolean;
+};
+
+export type StaffRoleChoice = {
+  "slug": string;
+  "name": string;
+  "combinable": boolean;
+};
+
+export type StaffRoleCreate = {
+  "user_id"?: number;
+  "email"?: string;
+  "roles": Array<string>;
+  "machine_type_ids"?: Array<number>;
+  "expires_in_days"?: number;
+};
+
+export type StaffRoleCreated = {
+  "kind": StaffRoleCreatedKindEnum;
+  "staff_role": StaffRole | null;
+  "invitation_id": number | null;
+  "delivery_status": string | null;
+};
+
+export type StaffRoleCreatedKindEnum = "granted" | "invited";
+
+export type StaffRoleList = {
+  "count": number;
+  "next": string | null;
+  "previous": string | null;
+  "results": Array<StaffRole>;
+  "policy": StaffRolePolicy;
+};
+
+export type StaffRolePolicy = {
+  "grantable_roles": Array<StaffRoleChoice>;
+  "can_manage_space_managers": boolean;
+  "email_invites_available": boolean;
+  "machine_types": Array<StaffMachineTypeChoice>;
+};
+
+export type StaffRoleRevoke = {
+  "reason"?: string;
 };
 
 export type StaffRsvpInput = {

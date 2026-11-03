@@ -83,34 +83,37 @@ def _grant_probe(cursor):
 
 
 def _savepoint(db, cursor, report, key, function, *args):
+    """One table per transaction (a savepoint when nested), so locks never pile up."""
     try:
         with transaction.atomic(using=db.alias):
             function(cursor, *args)
         return True
     except Exception as exc:
-        report.failed[key] = exc.__class__.__name__
+        report.failed[key] = f"{exc.__class__.__name__}: {str(exc).strip()[:160]}"
         logger.warning("tenant_rls_sync_failed", extra={"table": key, "error": exc.__class__.__name__})
         return False
 
 
-def sync(using="default"):
+def sync(using="default", *, tables=None):
+    """Apply every generated policy (or only ``tables``); never raises for one table."""
     db = connections[using]
     report = SyncReport()
     if db.vendor != "postgresql":
         return report
     plans, report.unresolvable = build_plans()
-    with transaction.atomic(using=using), db.cursor() as cursor:
+    with db.cursor() as cursor:
         cursor.execute("SELECT to_regclass('tenant_rls_fixedrolescope') IS NOT NULL")
         if not cursor.fetchone()[0]:
             return report  # tenant_rls is not migrated on this database (yet)
         from .pg_tools import is_scratch_database
         if is_scratch_database(cursor):
             return report
-        for statement in FUNCTIONS:
-            cursor.execute(statement)
+        with transaction.atomic(using=using):
+            for statement in FUNCTIONS:
+                cursor.execute(statement)
         fixed = fixed_role_exists(cursor)
         live = live_state(cursor)
-        wanted = {plan.table: plan for plan in plans.values()}
+        wanted = {plan.table: plan for plan in plans.values() if tables is None or plan.table in tables}
         for table, plan in sorted(wanted.items()):
             state = live.get(table)
             if state is None:
@@ -120,9 +123,11 @@ def sync(using="default"):
                 report.unchanged += 1
             elif _savepoint(db, cursor, report, table, _apply, plan, fixed):
                 report.applied.append(table)
+        known = {plan.table for plan in plans.values()}
         for table, (enabled, _forced, comment, has_fixed, other) in sorted(live.items()):
             ours = (comment or "").startswith("spaceworks-rls:") or has_fixed
-            if table not in wanted and ours and _savepoint(db, cursor, report, table, _remove, table, other):
+            if tables is None and table not in known and ours and _savepoint(
+                    db, cursor, report, table, _remove, table, other):
                 report.removed.append(table)
         _savepoint(db, cursor, report, "probe-role", _grant_probe)
     return report

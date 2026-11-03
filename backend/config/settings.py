@@ -917,6 +917,12 @@ CELERY_BEAT_SCHEDULE["card-photo-reminders"] = {
 }
 # --- end lane L3
 
+# --- lane L6 (release 2): expired checkout holds, missed order settlements, one payment reminder.
+CELERY_BEAT_SCHEDULE["event-order-checkouts"] = {
+    "task": "apps.events.reminders_payments.sweep_order_checkouts_task", "schedule": crontab(minute="*"),
+}
+# --- end lane L6
+
 if "tenant_migration" in TOMBSTONED_APPS:
     CELERY_BEAT_SCHEDULE = {
         name: entry

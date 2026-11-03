@@ -144,3 +144,6 @@ def register_event_sources():
     register_source("event.stage_warning", WARNING_NOTICE_SOURCE)
     register_source("event.stage_milestone", MILESTONE_NOTICE_SOURCE)
     register_source("events.rsvp_deadline", RSVP_NOTICE_SOURCE)
+    # Release 2 L6: ticket orders (confirmation, reminders, type changes, pass occurrences, venue fees).
+    from .notices_r2_l6 import register as register_order_notices
+    register_order_notices()

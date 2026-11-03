@@ -73,3 +73,5 @@ from apps.events.tasks_assets import (  # noqa: E402,F401
     reconcile_asset_obligations_task,
 )
 from apps.events.tasks_recovery import sweep_judging_notices_task, sweep_print_cleanup_task  # noqa: E402,F401
+from apps.events.reminders_payments import sweep_order_checkouts_task  # noqa: E402,F401  (lane L6)
+from apps.events.tasks_invites import send_invite_updates_task  # noqa: E402,F401  (lane L6)

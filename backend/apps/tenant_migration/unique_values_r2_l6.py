@@ -18,5 +18,4 @@ RULES = {
     ("events.EventOrderSeat", "field:claim_token_digest"): _policy(FRESH, _TOKEN),
     ("events.EventTicketTransfer", "field:token_digest"): _policy(FRESH, _TOKEN),
     ("events.EventTicketTransfer", "event_ticket_transfer_one_pending"): _policy(REMAP, _FOLLOW),
-    ("events.EventAddonVariant", "event_addon_variant_unique_label"): _policy(REMAP, _FOLLOW),
 }

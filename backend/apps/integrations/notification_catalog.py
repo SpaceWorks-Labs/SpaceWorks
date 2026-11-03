@@ -84,6 +84,10 @@ FEATURE_EVENTS[F.API_ACCESS] += ("selfhost_move_status",)
 # a "photo needs update" request, a finished card job, and ID-programme decisions.
 FEATURE_EVENTS[F.MEMBERS] += ("card_issued", "card_design_pending", "card_photo_requested", "card_job_finished",
                               "programme_card_decided", "event_card_issued")
+# Release 2 L6: ticket orders, seat claims, transfers, type changes, pass occurrences, venue fees.
+FEATURE_EVENTS[F.EVENTS] += ("order_confirmed", "order_payment_reminder", "order_abandoned", "ticket_type_changed",
+                             "pass_occurrence_cancelled", "ticket_claim_invite", "ticket_transfer_received",
+                             "registration_updated", "ticket_pay_link")
 
 # Exact default on/off per (feature, channel). Preserves today's behavior: hardware/printing
 # email + hardware Telegram on; bookings email (Part J seam) + bookings Telegram on; Slack/

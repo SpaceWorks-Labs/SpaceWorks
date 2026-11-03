@@ -148,3 +148,45 @@ def mark_attended_locked(event, locked, *, actor, source=EventCheckInEvent.Sourc
 def mark_attended(registration, **kwargs):
     updated, _check_in = mark_attended_with_event(registration, **kwargs)
     return updated
+
+
+def pending_ticket_charge(registration):
+    """Lane L6 (G33): the pending charge a ticket still owes -- its own, or its order's."""
+    from apps.payments.models import Payment
+    seat = getattr(registration, "order_seat", None)
+    subject = ("event_order", seat.order_id) if seat is not None else ("event_registration", registration.pk)
+    return Payment.objects.filter(makerspace_id=registration.event.makerspace_id, subject_type=subject[0],
+                                  subject_id=subject[1], status=Payment.Status.PENDING).first()
+
+
+def collect_at_desk(registration, *, actor, method="", reference="", received_at=None, terminal=False):
+    """Take a pending ticket payment at the door: a receipt for cash/card, or a pay-now checkout.
+
+    Money is recorded through the ledger's own seam (`reconcile_payments` writes the
+    ManualSettlement receipt; the maker-checker rule still applies), so the desk needs
+    RECORD_PAYMENT or Event Manager authority, like any settlement.
+    """
+    from apps.audit.services import record
+    from apps.payments.models import Payment
+    from apps.payments.reconciliation import reconcile_payments
+    from .event_authority import require
+    from .feature_gates import require_feature
+    from .orders_errors import OrderRefused
+    event = registration.event
+    require(actor, event, "check_in")
+    require_feature(event, "events.desk_collect")
+    payment = pending_ticket_charge(registration)
+    if payment is None:
+        raise OrderRefused("nothing_to_collect", "This ticket has nothing left to pay.")
+    if terminal:
+        from apps.payments.services import create_checkout_url
+        url = create_checkout_url(payment.pk, actor=actor)
+        record(actor, "event.payment_collected_at_desk", makerspace=event.makerspace, target=registration,
+               meta={"registration_id": registration.pk, "payment_id": payment.pk, "terminal": True, "method": ""})
+        return {"payment": payment, "checkout_url": url}
+    settlement = {"method": method, "reference": reference or "", "received_at": received_at or timezone.now()}
+    result = reconcile_payments(actor=actor, makerspace_id=event.makerspace_id, payment_ids=[payment.pk],
+                                target_status=Payment.Status.PAID_OFFLINE, settlement=settlement)[0]
+    record(actor, "event.payment_collected_at_desk", makerspace=event.makerspace, target=registration,
+           meta={"registration_id": registration.pk, "payment_id": payment.pk, "terminal": False, "method": method})
+    return {"payment": result, "checkout_url": ""}

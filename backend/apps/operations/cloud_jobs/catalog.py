@@ -111,6 +111,8 @@ LEGACY_ENTRIES = (
     ("card-wallet-refresh", "apps.card_designs.tasks.refresh_wallet_passes", 30),
     ("card-photo-reminders", "apps.card_designs.tasks.remind_photo_requests", 60),
     ("event-id-cards", "apps.events.tasks_id_cards.reconcile_event_id_cards_task", 15),
+    # Lane L6: expired checkout holds, missed order settlements and one payment reminder.
+    ("event-order-checkouts", "apps.events.reminders_payments.sweep_order_checkouts_task", 1),
 )
 _RETAINED = frozenset({
     "evidence-object-expiry", "evidence-abandoned-upload-cleanup",

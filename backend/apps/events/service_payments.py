@@ -21,6 +21,10 @@ def member_price(event, member, amount, ticket=None):
 
     from apps.payments.pricing import quote
 
+    from .orders_context import current_seat
+    if current_seat() is not None and current_seat().event_id == event.pk:
+        # Lane L6: the order's Payment holds this seat's money; the registration owes nothing.
+        return Decimal("0"), Decimal("0")
     if member is None or not getattr(member, "is_authenticated", False) or Decimal(amount) <= 0:
         return Decimal(amount), Decimal("0")
     priced = quote(event.makerspace, "events", event, member=member, params={"ticket": ticket})

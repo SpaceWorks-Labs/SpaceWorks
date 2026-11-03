@@ -1,4 +1,4 @@
-"""Release-2 lane route classifications (L4, L5, L15, L10/L11, L12).
+"""Release-2 lane route classifications (L4, L5, L15, L10/L11, L12, L26).
 
 Split out of `delegated_route_catalog.py` when it crossed the 300-line ceiling; the catalog
 unions both sets into its own MEMBERSHIP_ROUTES and DELEGABLE_ROUTES, so these routes keep
@@ -60,3 +60,5 @@ admin-machine-downtime admin-machine-lockout admin-work-orders admin-work-order-
 # actor's machine scope; the type setting goes through the settings-authority layer.
 MEMBERSHIP_ROUTES |= frozenset("""admin-machine-sessions admin-machine-session-stop admin-machine-session-amend
 admin-machine-session-assign admin-machine-session-confirm admin-machine-type-session-settings""".split())
+# Release 2 L26 (#170): Settings › Public stats, a Space-Manager-only settings group.
+DELEGABLE_ROUTES |= {"admin-makerspace-public-stats-settings"}

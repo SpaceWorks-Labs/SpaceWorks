@@ -254,7 +254,7 @@ ACCOUNT_MERGE_ROUTES = frozenset({
     "auth-account-merge-preview", "auth-account-merge-confirm", "auth-account-merge-cancel",
 })
 
-# Release 2 lanes L4, L5, L15, L10/L11 and L12 live in delegated_route_catalog_r2.py.
+# Release 2 lanes L4, L5, L15, L10/L11, L12 and L26 live in delegated_route_catalog_r2.py.
 from .delegated_route_catalog_r2 import (  # noqa: E402
     DELEGABLE_ROUTES as _R2_DELEGABLE_ROUTES, MEMBERSHIP_ROUTES as _R2_MEMBERSHIP_ROUTES,
 )

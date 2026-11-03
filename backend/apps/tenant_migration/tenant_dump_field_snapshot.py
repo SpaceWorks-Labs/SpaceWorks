@@ -180,3 +180,6 @@ from .catalog_r2_l11 import FIELD_NAMES as R2_L11_FIELDS, EXTRA_FIELDS as R2_L11
 FIRST_PARTY_FIELD_NAMES.update(R2_L11_FIELDS)
 for _label, _names in R2_L11_EXTRA.items():
     FIRST_PARTY_FIELD_NAMES[_label] |= _names
+from .catalog_r2_l26 import EXTRA_FIELDS as R2_L26_EXTRA  # noqa: E402
+for _label, _names in R2_L26_EXTRA.items():
+    FIRST_PARTY_FIELD_NAMES[_label] |= _names

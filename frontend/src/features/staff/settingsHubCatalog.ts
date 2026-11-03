@@ -7,7 +7,8 @@ export type HubEntry = { id: string; title: string; description: string; keyword
 const SECTION_ENTRIES: HubEntry[] = [
   ["public-page", "Public page", "Arrange sections, claim a handle and publish your page.", "public page builder profile handle share qr gallery team story publish palette cover"],
   ["general", "General", "Name, address and public profile.", "name address location map profile description about"],
-  ["branding", "Branding & public site", "Logo, colours, public stats and your web address.", "logo cover colour color theme brand public site stats subdomain custom domain print status lookup"],
+  ["branding", "Branding & public site", "Logo, colours and your web address.", "logo cover colour color theme brand public site subdomain custom domain print status lookup"],
+  ["public-stats", "Public stats", "The stats page: sections, order, period, headline numbers and TV mode.", "public stats numbers page sections period headline tv kiosk screen lobby borrower names"],
   ["features", "Features", "Switch optional features on or off.", "feature switches toggles packs import capabilities"],
   ["lending", "Lending & loan policy", "Loan period, renewals, borrow limits and reminders.", "loan days default return window renewals borrow limits reminders kiosk station anonymous requests overdue escalation"],
   ["membership", "Membership", "Joining policy, dues and the check-in area.", "members join policy dues fee referrals geofence check in presence gps location radius"],

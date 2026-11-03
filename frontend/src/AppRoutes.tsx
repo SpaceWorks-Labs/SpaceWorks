@@ -50,6 +50,7 @@ const AccountRestorePage = lazy(() => import("./features/auth/AccountRestorePage
 const EventCheckInStationPage = lazy(() => import("./features/events/EventCheckInStationPage").then((m) => ({ default: m.EventCheckInStationPage })));
 const KioskStationPage = lazy(() => import("./features/kiosk/KioskStationPage").then((m) => ({ default: m.KioskStationPage })));
 const PublicStatsPage = lazy(() => import("./features/stats/PublicStatsPage").then((m) => ({ default: m.PublicStatsPage })));
+const PublicStatsTvPage = lazy(() => import("./features/stats/PublicStatsTvPage").then((m) => ({ default: m.PublicStatsTvPage })));
 const PublicHandlePage = lazy(() => import("./features/publicPages/PublicHandlePage").then((m) => ({ default: m.PublicHandlePage })));
 const PublicEventCodePage = lazy(() => import("./features/events/PublicEventCodePage").then((m) => ({ default: m.PublicEventCodePage })));
 const PayLinkPage = lazy(() => import("./features/finance/PayLinkPage").then((m) => ({ default: m.PayLinkPage })));
@@ -187,6 +188,7 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
       <Route path="/member/speaker-claim" element={<SpeakerClaimPage />} />
       <Route path="/member/:memberTab" element={<MemberTabRoute />} />
       <Route path="/stats" element={<PublicStatsPage />} />
+      <Route path="/stats/tv" element={<PublicStatsTvPage />} />
       <Route path="/now" element={<PresenceNowPage />} />
       <Route path="/about" element={<AboutPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
@@ -236,6 +238,7 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
       <Route path="/m/:slug/member/:memberTab" element={<MemberTabRoute />} />
       <Route path="/member/:memberTab" element={<MemberTabRoute />} />
       <Route path="/m/:slug/stats" element={<PublicStatsPage />} />
+      <Route path="/m/:slug/stats/tv" element={<PublicStatsTvPage />} />
       <Route path="/m/:slug/now" element={<PresenceNowPage />} />
       <Route path="/m/:slug/kiosk/:stationToken" element={<KioskStationPage />} />
       <Route path="/m/:slug/scanner" element={<ScannerPage />} />

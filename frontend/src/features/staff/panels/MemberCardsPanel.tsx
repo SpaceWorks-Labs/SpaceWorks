@@ -2,66 +2,70 @@ import { useState } from "react";
 
 import { ListLayout } from "../../../components/layouts";
 import { ErrorBlock, SegmentedControl } from "../../../components/ui";
+import { featureEnabled } from "../../../lib/features";
+import { CardJobList, JOB_LABELS, useStartCardJob, type CardJobKind } from "../../cards/cardJobs";
+import { ProgrammesTab } from "../../organizations/idProgrammes/ProgrammesTab";
 import { opsQueryState, useOpsTabs } from "../opsPresentation";
-import {
-  useMemberCards,
-  useCardMemberships,
-  usePrintCard,
-  usePrintSheet,
-  useReissueCard,
-  useRevokeCard,
-} from "./memberCards/api";
+import { useMemberCards, useCardMemberships, usePrintCard, usePrintSheet } from "./memberCards/api";
+import { memberCardJobsPath, useMemberCardSettings } from "./memberCards/apiCards";
 import { CardsTable } from "./memberCards/CardsTable";
-import { CardTemplateForm } from "./memberCards/CardTemplateForm";
-import { ReissueCardDialog, RevokeCardDialog } from "./memberCards/CardDialogs";
+import { useCardRowActions } from "./memberCards/CardsRowDialogs";
+import { DesignTab } from "./memberCards/DesignTab";
 import { IssueRoster } from "./memberCards/IssueRoster";
-import { useCardTemplateDraft } from "./memberCards/useCardTemplateDraft";
 import { ScanCardBox } from "./memberCards/ScanCardBox";
-import type { CardStatus, MemberCard, ReissueReason } from "./memberCards/types";
+import { SettingsTab } from "./memberCards/SettingsTab";
+import type { CardStatus } from "./memberCards/types";
 
-
-/** Member ID cards: issue, print, reissue, revoke, plus the front-desk scan lookup.
+/** Member ID cards: issue, print, download, email, bulk jobs, the door scan, the card
+ *  design and settings, and (when switched on) the ID programmes this space hosts.
  *
  *  Gated by the `membership` module in staffTabs.TAB_MODULES — a card belongs to a
  *  membership, so without that module every endpoint here 404s.
  */
-export function MemberCardsPanel({ makerspaceId }: { makerspaceId: number }) {
+export function MemberCardsPanel({ makerspaceId, enabledFeatures = [] }: { makerspaceId: number; enabledFeatures?: string[] }) {
   const [status, setStatus] = useState<CardStatus>("active");
   const [selected, setSelected] = useState<number[]>([]);
-  const [reissueTarget, setReissueTarget] = useState<MemberCard | null>(null);
-  const [reissueReason, setReissueReason] = useState<ReissueReason>("lost");
-  const [revokeTarget, setRevokeTarget] = useState<MemberCard | null>(null);
-  const [revokeReason, setRevokeReason] = useState("");
-
   const memberships = useCardMemberships(makerspaceId);
-  const editor = useCardTemplateDraft(makerspaceId);
   const [issueNames, setIssueNames] = useState<Record<number, string>>({});
   const cards = useMemberCards(makerspaceId, status);
   const activeCards = useMemberCards(makerspaceId, "active");
+  const settings = useMemberCardSettings(makerspaceId);
   const printCard = usePrintCard();
   const printSheet = usePrintSheet(makerspaceId);
-  const reissue = useReissueCard(makerspaceId);
-  const revoke = useRevokeCard(makerspaceId);
+  const jobsPath = memberCardJobsPath(makerspaceId);
+  const startJob = useStartCardJob(jobsPath);
+  const row = useCardRowActions(makerspaceId, Boolean(settings.data?.email_available));
+  const programmesOn = featureEnabled(enabledFeatures, "membership.id_programmes");
 
   const rows = cards.data?.results ?? [];
   const cardedMembershipIds = (activeCards.data?.results ?? [])
     .map((card) => card.membership_id)
     .filter((id): id is number => id !== null);
-  const printError = printCard.error ?? printSheet.error;
-  const withoutCard = memberships.data && activeCards.data ? memberships.data.filter(row => !cardedMembershipIds.includes(row.id)).length : "—";
+  const printError = printCard.error ?? printSheet.error ?? startJob.error;
+  const withoutCard = memberships.data && activeCards.data ? memberships.data.filter(item => !cardedMembershipIds.includes(item.id)).length : "—";
   const tabs = useOpsTabs("cardsTab", [
     { key: "cards", label: "Cards", count: cards.data?.count },
-    { key: "issue", label: "Issue" }, { key: "scan", label: "Scan" }, { key: "layout", label: "Card layout" },
+    { key: "issue", label: "Issue" }, { key: "scan", label: "Scan" }, { key: "design", label: "Card design" },
+    { key: "settings", label: "Settings" }, ...(programmesOn ? [{ key: "programmes", label: "ID programmes" }] : []),
   ], "cards");
+  // Bulk outputs run as server jobs; a selection narrows them, otherwise every active card.
+  const bulk = (kind: CardJobKind) => ({ label: JOB_LABELS[kind], onClick: () => startJob.mutate({
+    kind, status: "active", ...(selected.length ? { card_ids: selected } : {}) }) });
 
-  if (tabs.active === "layout") return <div onClickCapture={tabs.onClickCapture}>
-    <CardTemplateForm editor={editor} tabs={tabs.tabs} activeTab={tabs.active} />
-  </div>;
+  if (tabs.active === "design" || tabs.active === "settings" || tabs.active === "programmes") {
+    return <div onClickCapture={tabs.onClickCapture}>
+      <ListLayout width={tabs.active === "design" ? "wide" : "default"} header={{ title: "Member cards" }}
+        tabs={tabs.tabs} activeTab={tabs.active} state={{ status: "ready" }} isEmpty={false} empty={{ message: "" }}
+        body={{ kind: "rows", rows: tabs.active === "design" ? <DesignTab makerspaceId={makerspaceId} />
+          : tabs.active === "settings" ? <SettingsTab makerspaceId={makerspaceId} /> : <ProgrammesTab makerspaceId={makerspaceId} /> }} />
+    </div>;
+  }
   return <div onClickCapture={tabs.onClickCapture}>
-    <ListLayout header={{ title: "Member cards", subtitle: "Printable cards that open the member area at the desk.",
+    <ListLayout header={{ title: "Member cards", subtitle: "Cards that open the member area at the desk and prove membership.",
       primary: { label: selected.length ? "Print sheet (" + selected.length + " selected)" : "Print all active",
         onClick: () => printSheet.mutate(selected), pending: printSheet.isPending, pendingLabel: "Preparing…" },
-      secondary: { label: "Scan a card", onClick: () => tabs.select("scan") } }}
+      secondary: { label: "All cards", menu: [bulk("bulk_sheet"), bulk("zip"),
+        ...(settings.data?.email_available ? [bulk("email")] : [])] } }}
       tabs={tabs.tabs} activeTab={tabs.active} stats={[{ label: "Active cards on this page", value: activeCards.data?.results.length ?? 0 },
         { label: "Members without a card", value: withoutCard, href: tabs.href("issue") }]}
       state={tabs.active === "cards" ? opsQueryState(cards, "member cards") : { status: "ready" }}
@@ -72,59 +76,12 @@ export function MemberCardsPanel({ makerspaceId }: { makerspaceId: number }) {
         options={[{ value: "active", label: "Active" }, { value: "revoked", label: "Revoked" }]}
         onChange={value => { setStatus(value as CardStatus); setSelected([]); }} /> } : undefined}
       body={tabs.active === "cards" ? { kind: "table", table: <>
-        <CardsTable
-          cards={rows}
-          status={status}
-          loading={cards.isLoading}
-          selectedIds={selected}
-          onSelectionChange={setSelected}
-          printingCardId={printCard.isPending ? (printCard.variables?.id ?? null) : null}
-          onPrint={(card) => printCard.mutate(card)}
-          onReissue={(card) => {
-            setReissueReason("lost");
-            setReissueTarget(card);
-          }}
-          onRevoke={(card) => {
-            setRevokeReason("");
-            setRevokeTarget(card);
-          }}
-        />
-
-
+        <CardJobList listPath={jobsPath} />
+        <CardsTable cards={rows} status={status} loading={cards.isLoading} selectedIds={selected}
+          onSelectionChange={setSelected} printingCardId={printCard.isPending ? (printCard.variables?.id ?? null) : null}
+          onPrint={(card) => printCard.mutate(card)} onReissue={row.onReissue} onRevoke={row.onRevoke} rowActions={row.rowActions} />
         </> } : { kind: "rows", rows: tabs.active === "scan" ? <ScanCardBox makerspaceId={makerspaceId} />
           : <IssueRoster makerspaceId={makerspaceId} cardedMembershipIds={cardedMembershipIds} memberships={memberships} names={issueNames} setNames={setIssueNames} /> }}
-      detail={<>{printError ? <ErrorBlock error={printError} /> : null}
-      <ReissueCardDialog
-        card={reissueTarget}
-        reason={reissueReason}
-        pending={reissue.isPending}
-        error={reissue.error instanceof Error ? reissue.error.message : undefined}
-        onReasonChange={setReissueReason}
-        onClose={() => setReissueTarget(null)}
-        onSubmit={() => {
-          if (!reissueTarget) return;
-          reissue.mutate(
-            { cardId: reissueTarget.id, reason: reissueReason },
-            { onSuccess: () => setReissueTarget(null) },
-          );
-        }}
-      />
-      <RevokeCardDialog
-        card={revokeTarget}
-        reason={revokeReason}
-        pending={revoke.isPending}
-        error={revoke.error instanceof Error ? revoke.error.message : undefined}
-        onReasonChange={setRevokeReason}
-        onClose={() => setRevokeTarget(null)}
-        onSubmit={() => {
-          if (!revokeTarget) return;
-          revoke.mutate(
-            { cardId: revokeTarget.id, reason: revokeReason.trim() || undefined },
-            { onSuccess: () => setRevokeTarget(null) },
-          );
-        }}
-      />
-
-      </>} />
+      detail={<>{printError ? <ErrorBlock error={printError} /> : null}{row.dialogs}</>} />
   </div>;
 }

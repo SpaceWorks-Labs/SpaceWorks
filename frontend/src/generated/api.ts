@@ -10302,6 +10302,13 @@ export type LogError = {
   "message": string;
 };
 
+export type LoginGuardError = {
+  "detail": string;
+  "code": "ip_blocked" | "captcha_required" | "captcha_failed";
+  "turnstile_site_key"?: string;
+  "turnstile_action"?: string;
+};
+
 export type LoginRequest = {
   "username": string;
   "password": string;
@@ -14187,6 +14194,7 @@ export type PasswordUpdated = {
 
 export type PasswordValidationFailure = {
   "new_password": Array<string>;
+  "code"?: string;
 };
 
 export type PatchedAccountProfile = {
@@ -17934,6 +17942,7 @@ export type PublicConfig = {
   [key: string]: unknown;
 };
   "passkeys_enabled": boolean;
+  "turnstile_site_key"?: string;
   "native"?: NativeConfig;
 };
 

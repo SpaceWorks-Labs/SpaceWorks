@@ -116928,13 +116928,27 @@
                         "description": "Typed refusal: see `code`."
                     },
                     "400": {
-                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                        "description": "Validation failed, or the makerspace module this route belongs to is off. `captcha_required` / `captcha_failed`: Cloudflare Turnstile is on for this origin and needs a token in the `X-Turnstile-Token` header (after failed sign-ins, a space's `always` setting, or instead of an automatic block).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LoginGuardError"
+                                }
+                            }
+                        }
                     },
                     "401": {
                         "description": "Not signed in."
                     },
                     "429": {
-                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After. `ip_blocked`: a platform deny rule or an automatic block (many accounts failing from one address) covers this client; `Retry-After` gives the seconds left when the block ends.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LoginGuardError"
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -117101,7 +117115,14 @@
                         "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
                     },
                     "429": {
-                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After. `ip_blocked`: a platform deny rule or an automatic block (many accounts failing from one address) covers this client; `Retry-After` gives the seconds left when the block ends.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LoginGuardError"
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -117157,7 +117178,14 @@
                         "description": "Conflicts with the current state."
                     },
                     "429": {
-                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After. `ip_blocked`: a platform deny rule or an automatic block (many accounts failing from one address) covers this client; `Retry-After` gives the seconds left when the block ends.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LoginGuardError"
+                                }
+                            }
+                        }
                     },
                     "503": {
                         "description": "A required dependency is unavailable."
@@ -117213,7 +117241,14 @@
                         "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
                     },
                     "429": {
-                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After. `ip_blocked`: a platform deny rule or an automatic block (many accounts failing from one address) covers this client; `Retry-After` gives the seconds left when the block ends.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LoginGuardError"
+                                }
+                            }
+                        }
                     },
                     "503": {
                         "description": "A required dependency is unavailable."
@@ -117269,7 +117304,14 @@
                         "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
                     },
                     "429": {
-                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After. `ip_blocked`: a platform deny rule or an automatic block (many accounts failing from one address) covers this client; `Retry-After` gives the seconds left when the block ends.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LoginGuardError"
+                                }
+                            }
+                        }
                     },
                     "503": {
                         "description": "A required dependency is unavailable."
@@ -117321,7 +117363,7 @@
                         "description": ""
                     },
                     "400": {
-                        "description": "Password validation failed."
+                        "description": "Password validation failed. `code: password_breached`: the new password appears in a known data breach."
                     },
                     "401": {
                         "description": "Authentication credentials were not provided."
@@ -117628,6 +117670,16 @@
                             }
                         },
                         "description": ""
+                    },
+                    "429": {
+                        "description": "`ip_blocked`: a platform deny rule or an automatic block (many accounts failing from one address) covers this client; `Retry-After` gives the seconds left when the block ends.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LoginGuardError"
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -117907,7 +117959,14 @@
                         "description": "Permission denied."
                     },
                     "429": {
-                        "description": "Request throttled."
+                        "description": "Request throttled. `ip_blocked`: a platform deny rule or an automatic block (many accounts failing from one address) covers this client; `Retry-After` gives the seconds left when the block ends.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LoginGuardError"
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -117935,7 +117994,14 @@
                         "description": ""
                     },
                     "400": {
-                        "description": "Invalid request."
+                        "description": "Invalid request. `captcha_required` / `captcha_failed`: Cloudflare Turnstile is on for this origin and needs a token in the `X-Turnstile-Token` header (after failed sign-ins, a space's `always` setting, or instead of an automatic block).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LoginGuardError"
+                                }
+                            }
+                        }
                     },
                     "401": {
                         "description": "Authentication credentials were not provided."
@@ -117944,7 +118010,14 @@
                         "description": "Permission denied."
                     },
                     "429": {
-                        "description": "Request throttled."
+                        "description": "Request throttled. `ip_blocked`: a platform deny rule or an automatic block (many accounts failing from one address) covers this client; `Retry-After` gives the seconds left when the block ends.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LoginGuardError"
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -117989,10 +118062,24 @@
                         "description": ""
                     },
                     "400": {
-                        "description": "Invalid request."
+                        "description": "Invalid request. `captcha_required` / `captcha_failed`: Cloudflare Turnstile is on for this origin and needs a token in the `X-Turnstile-Token` header (after failed sign-ins, a space's `always` setting, or instead of an automatic block).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LoginGuardError"
+                                }
+                            }
+                        }
                     },
                     "429": {
-                        "description": "Request throttled."
+                        "description": "Request throttled. `ip_blocked`: a platform deny rule or an automatic block (many accounts failing from one address) covers this client; `Retry-After` gives the seconds left when the block ends.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LoginGuardError"
+                                }
+                            }
+                        }
                     },
                     "503": {
                         "content": {
@@ -118056,7 +118143,14 @@
                         "description": ""
                     },
                     "400": {
-                        "description": "Invalid request."
+                        "description": "Invalid request. `captcha_required` / `captcha_failed`: Cloudflare Turnstile is on for this origin and needs a token in the `X-Turnstile-Token` header (after failed sign-ins, a space's `always` setting, or instead of an automatic block).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LoginGuardError"
+                                }
+                            }
+                        }
                     },
                     "401": {
                         "description": "Invalid credentials or inactive account."
@@ -118065,7 +118159,14 @@
                         "description": "Account access is restricted."
                     },
                     "429": {
-                        "description": "Request throttled."
+                        "description": "Request throttled. `ip_blocked`: a platform deny rule or an automatic block (many accounts failing from one address) covers this client; `Retry-After` gives the seconds left when the block ends.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LoginGuardError"
+                                }
+                            }
+                        }
                     },
                     "503": {
                         "description": "Authentication write boundary unavailable."
@@ -118234,7 +118335,14 @@
                         "description": ""
                     },
                     "400": {
-                        "description": "Invalid details."
+                        "description": "Invalid details. `captcha_required` / `captcha_failed`: Cloudflare Turnstile is on for this origin and needs a token in the `X-Turnstile-Token` header (after failed sign-ins, a space's `always` setting, or instead of an automatic block). `code: password_breached`: the new password appears in a known data breach.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LoginGuardError"
+                                }
+                            }
+                        }
                     },
                     "401": {
                         "description": "Authentication failed."
@@ -118243,7 +118351,14 @@
                         "description": "Permission denied."
                     },
                     "429": {
-                        "description": "Request throttled."
+                        "description": "Request throttled. `ip_blocked`: a platform deny rule or an automatic block (many accounts failing from one address) covers this client; `Retry-After` gives the seconds left when the block ends.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LoginGuardError"
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -118387,7 +118502,14 @@
                         "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
                     },
                     "429": {
-                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After. `ip_blocked`: a platform deny rule or an automatic block (many accounts failing from one address) covers this client; `Retry-After` gives the seconds left when the block ends.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LoginGuardError"
+                                }
+                            }
+                        }
                     },
                     "503": {
                         "description": "A required dependency is unavailable."
@@ -118502,7 +118624,14 @@
                         "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
                     },
                     "429": {
-                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After. `ip_blocked`: a platform deny rule or an automatic block (many accounts failing from one address) covers this client; `Retry-After` gives the seconds left when the block ends.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LoginGuardError"
+                                }
+                            }
+                        }
                     },
                     "503": {
                         "description": "A required dependency is unavailable."
@@ -118556,7 +118685,14 @@
                         "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
                     },
                     "429": {
-                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After. `ip_blocked`: a platform deny rule or an automatic block (many accounts failing from one address) covers this client; `Retry-After` gives the seconds left when the block ends.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LoginGuardError"
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -118669,7 +118805,14 @@
                         "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
                     },
                     "429": {
-                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After. `ip_blocked`: a platform deny rule or an automatic block (many accounts failing from one address) covers this client; `Retry-After` gives the seconds left when the block ends.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LoginGuardError"
+                                }
+                            }
+                        }
                     },
                     "503": {
                         "description": "A required dependency is unavailable."
@@ -119174,7 +119317,14 @@
                         "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
                     },
                     "429": {
-                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After. `ip_blocked`: a platform deny rule or an automatic block (many accounts failing from one address) covers this client; `Retry-After` gives the seconds left when the block ends.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LoginGuardError"
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -119224,7 +119374,14 @@
                         "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
                     },
                     "429": {
-                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After. `ip_blocked`: a platform deny rule or an automatic block (many accounts failing from one address) covers this client; `Retry-After` gives the seconds left when the block ends.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LoginGuardError"
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -119537,7 +119694,14 @@
                         "description": "phone_device_restart_required: restart with new one-time inputs."
                     },
                     "429": {
-                        "description": "Request throttled."
+                        "description": "Request throttled. `ip_blocked`: a platform deny rule or an automatic block (many accounts failing from one address) covers this client; `Retry-After` gives the seconds left when the block ends.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LoginGuardError"
+                                }
+                            }
+                        }
                     },
                     "503": {
                         "content": {
@@ -119592,13 +119756,27 @@
                         "description": ""
                     },
                     "400": {
-                        "description": "Invalid request."
+                        "description": "Invalid request. `captcha_required` / `captcha_failed`: Cloudflare Turnstile is on for this origin and needs a token in the `X-Turnstile-Token` header (after failed sign-ins, a space's `always` setting, or instead of an automatic block).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LoginGuardError"
+                                }
+                            }
+                        }
                     },
                     "404": {
                         "description": "Phone sign-in is not configured."
                     },
                     "429": {
-                        "description": "Request throttled."
+                        "description": "Request throttled. `ip_blocked`: a platform deny rule or an automatic block (many accounts failing from one address) covers this client; `Retry-After` gives the seconds left when the block ends.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LoginGuardError"
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -120268,10 +120446,17 @@
                                 }
                             }
                         },
-                        "description": ""
+                        "description": "`captcha_required` / `captcha_failed`: Cloudflare Turnstile is on for this origin and needs a token in the `X-Turnstile-Token` header (after failed sign-ins, a space's `always` setting, or instead of an automatic block). `code: password_breached`: the new password appears in a known data breach."
                     },
                     "429": {
-                        "description": "Request throttled."
+                        "description": "Request throttled. `ip_blocked`: a platform deny rule or an automatic block (many accounts failing from one address) covers this client; `Retry-After` gives the seconds left when the block ends.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LoginGuardError"
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -120337,7 +120522,14 @@
                         "description": "Includes `social_device_restart_required` when burned pre-grant inputs must be replaced."
                     },
                     "429": {
-                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After. `ip_blocked`: a platform deny rule or an automatic block (many accounts failing from one address) covers this client; `Retry-After` gives the seconds left when the block ends.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LoginGuardError"
+                                }
+                            }
+                        }
                     },
                     "503": {
                         "description": "A required dependency is unavailable."
@@ -120389,7 +120581,14 @@
                         "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
                     },
                     "429": {
-                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After. `ip_blocked`: a platform deny rule or an automatic block (many accounts failing from one address) covers this client; `Retry-After` gives the seconds left when the block ends.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LoginGuardError"
+                                }
+                            }
+                        }
                     },
                     "503": {
                         "description": "A required dependency is unavailable."
@@ -120447,7 +120646,14 @@
                         "description": "Conflicts with the current state."
                     },
                     "429": {
-                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After. `ip_blocked`: a platform deny rule or an automatic block (many accounts failing from one address) covers this client; `Retry-After` gives the seconds left when the block ends.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LoginGuardError"
+                                }
+                            }
+                        }
                     },
                     "503": {
                         "description": "A required dependency is unavailable."
@@ -120516,7 +120722,14 @@
                         "description": "Includes `social_device_restart_required` when burned pre-grant inputs must be replaced."
                     },
                     "429": {
-                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After. `ip_blocked`: a platform deny rule or an automatic block (many accounts failing from one address) covers this client; `Retry-After` gives the seconds left when the block ends.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LoginGuardError"
+                                }
+                            }
+                        }
                     },
                     "503": {
                         "description": "A required dependency is unavailable."
@@ -120571,7 +120784,14 @@
                         "description": "Not found, not visible to this actor, or the surface is not enabled here."
                     },
                     "429": {
-                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After. `ip_blocked`: a platform deny rule or an automatic block (many accounts failing from one address) covers this client; `Retry-After` gives the seconds left when the block ends.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LoginGuardError"
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -120647,7 +120867,14 @@
                         "description": "Includes `social_device_restart_required` when burned pre-grant inputs must be replaced."
                     },
                     "429": {
-                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After. `ip_blocked`: a platform deny rule or an automatic block (many accounts failing from one address) covers this client; `Retry-After` gives the seconds left when the block ends.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LoginGuardError"
+                                }
+                            }
+                        }
                     },
                     "503": {
                         "description": "A required dependency is unavailable."
@@ -120743,7 +120970,14 @@
                         "description": ""
                     },
                     "429": {
-                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After. `ip_blocked`: a platform deny rule or an automatic block (many accounts failing from one address) covers this client; `Retry-After` gives the seconds left when the block ends.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LoginGuardError"
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -120836,7 +121070,14 @@
                         "description": ""
                     },
                     "429": {
-                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After. `ip_blocked`: a platform deny rule or an automatic block (many accounts failing from one address) covers this client; `Retry-After` gives the seconds left when the block ends.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LoginGuardError"
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -121018,7 +121259,7 @@
                         "description": ""
                     },
                     "400": {
-                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                        "description": "Validation failed, or the makerspace module this route belongs to is off. `code: password_breached`: the new password appears in a known data breach."
                     },
                     "401": {
                         "description": "Not signed in."
@@ -121027,7 +121268,14 @@
                         "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
                     },
                     "429": {
-                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After. `ip_blocked`: a platform deny rule or an automatic block (many accounts failing from one address) covers this client; `Retry-After` gives the seconds left when the block ends.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LoginGuardError"
+                                }
+                            }
+                        }
                     },
                     "423": {
                         "description": "Makerspace writes are frozen for tenant migration."
@@ -231750,6 +231998,10 @@
                         "items": {
                             "type": "string"
                         }
+                    },
+                    "code": {
+                        "type": "string",
+                        "description": "`password_breached` when the password appears in a known data breach (Have I Been Pwned)."
                     }
                 },
                 "required": [
@@ -248964,6 +249216,10 @@
                     "passkeys_enabled": {
                         "type": "boolean",
                         "description": "Passkey sign-in and registration are offered (the platform switch; a person's staff spaces may still turn them off for that person). Passkeys are never required."
+                    },
+                    "turnstile_site_key": {
+                        "type": "string",
+                        "description": "Cloudflare Turnstile site key; present only when Turnstile is configured. Show the widget when a sign-in answers captcha_required."
                     },
                     "native": {
                         "$ref": "#/components/schemas/NativeConfig"
@@ -274989,6 +275245,34 @@
                 "required": [
                     "kept_on_shell",
                     "rows"
+                ]
+            },
+            "LoginGuardError": {
+                "type": "object",
+                "properties": {
+                    "detail": {
+                        "type": "string"
+                    },
+                    "code": {
+                        "type": "string",
+                        "enum": [
+                            "ip_blocked",
+                            "captcha_required",
+                            "captcha_failed"
+                        ]
+                    },
+                    "turnstile_site_key": {
+                        "type": "string",
+                        "description": "Captcha refusals only: the widget's site key."
+                    },
+                    "turnstile_action": {
+                        "type": "string",
+                        "description": "Captcha refusals only: the widget action to use."
+                    }
+                },
+                "required": [
+                    "detail",
+                    "code"
                 ]
             }
         },

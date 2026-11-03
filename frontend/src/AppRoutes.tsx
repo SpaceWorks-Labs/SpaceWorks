@@ -40,6 +40,8 @@ const PublicMachineServiceStatusPage = lazy(() => import("./features/machine-ser
 const JobRequestPage = lazy(() => import("./features/machine-jobs/JobRequestPage").then((m) => ({ default: m.JobRequestPage })));
 const MyMachineJobsPage = lazy(() => import("./features/machine-jobs/MyMachineJobsPage").then((m) => ({ default: m.MyMachineJobsPage })));
 const MachineJobPage = lazy(() => import("./features/machine-jobs/MachineJobPage").then((m) => ({ default: m.MachineJobPage })));
+const UseMachinePage = lazy(() => import("./features/machine-sessions/UseMachinePage").then((m) => ({ default: m.UseMachinePage })));
+const MySessionsPage = lazy(() => import("./features/machine-sessions/MySessionsPage").then((m) => ({ default: m.MySessionsPage })));
 const PublicOrganizationPage = lazy(() => import("./features/organizations/PublicOrganizationPage").then((m) => ({ default: m.PublicOrganizationPage })));
 const OrganizationInvitationRedeemPage = lazy(() => import("./features/organizations/OrganizationInvitationRedeemPage").then((m) => ({ default: m.OrganizationInvitationRedeemPage })));
 const ResetPasswordPage = lazy(() => import("./features/staff/ResetPasswordPage").then((m) => ({ default: m.ResetPasswordPage })));
@@ -176,6 +178,8 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
       <Route path="/machine-jobs/new" element={<JobRequestPage />} />
       <Route path="/member/machine-jobs" element={<MyMachineJobsPage />} />
       <Route path="/member/machine-jobs/:jobId" element={<MachineJobPage />} />
+      <Route path="/machines/:machineId/use" element={<UseMachinePage />} />
+      <Route path="/member/machine-sessions" element={<MySessionsPage />} />
       <Route path="/member" element={<MemberArea />} />
       <Route path="/member/account" element={<MemberAccountPage />} />
       <Route path="/member/events/:registrationId/ticket" element={<MemberEventTicketPage />} />
@@ -219,6 +223,8 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
       <Route path="/m/:slug/machine-jobs/new" element={<JobRequestPage />} />
       <Route path="/m/:slug/member/machine-jobs" element={<MyMachineJobsPage />} />
       <Route path="/m/:slug/member/machine-jobs/:jobId" element={<MachineJobPage />} />
+      <Route path="/m/:slug/machines/:machineId/use" element={<UseMachinePage />} />
+      <Route path="/m/:slug/member/machine-sessions" element={<MySessionsPage />} />
       <Route path="/m/:slug/member" element={<MemberArea />} />
       <Route path="/m/:slug/member/account" element={<MemberAccountPage />} />
       <Route path="/m/:slug/member/events/:registrationId/ticket" element={<MemberEventTicketPage />} />

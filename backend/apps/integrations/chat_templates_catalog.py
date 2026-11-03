@@ -31,6 +31,8 @@ EVENTS = {
     **{("printing", event): () for event in (
         "changes_requested", "resubmitted", "quoted", "quote_approved", "quote_declined", "quote_expired",
         "requeued", "uncollected", "no_show_flagged")},
+    # Lane L23: an auto-stopped machine session (owner and staff legs; no room broadcast).
+    ("printing", "session_auto_stopped"): (),
 }
 
 # These producers explicitly disable staff/room fan-out. Their personal content

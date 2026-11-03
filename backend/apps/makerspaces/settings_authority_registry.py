@@ -76,6 +76,8 @@ EXTRA_SETTING_KEYS = (
     ("machines", "charges.machines_quotes"),
     ("machines", "charges.machines_payment_timing"),
     ("machines", "charges.machines_failure"),
+    # L23: the per-type maximum machine-session length (#158.5).
+    ("machines", "sessions.max_minutes"),
 )
 
 

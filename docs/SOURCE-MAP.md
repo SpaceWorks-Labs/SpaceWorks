@@ -742,6 +742,30 @@ identity normalization and production minimum-version comparison. `mobile_associ
   `MembershipAdmissionExtras.tsx`, `refunds/MembershipRefundExtras.tsx`, `members/{MemberAccountLifecycle,
   AdmissionJoinWithPlans}.tsx`, `members/joinPlansApi.ts`, `publicPages/PublicPlanCards.tsx`.
 
+### Release 2 L23 (metered machine sessions, #158)
+
+- Switch: `makerspaces/capability_definitions_r2_l23.py` (`machines.sessions`); per-type
+  `session_max_minutes` on `machines/models_policy.py`, edited by
+  `admin_api/views_machine_session_settings.py` (settings-authority key `sessions.max_minutes`).
+- Models: `machines/models_sessions.py` (`MachineSession`, `MachineSessionAmendment`; the trigger in
+  `machines/migrations/0032_l23_machine_sessions.py`); `MachineUsageEntry.Source.SESSION`;
+  `Payment.SubjectType.MACHINE_SESSION`.
+- Workflow: `machines/sessions_service.py` (start, stop, amend, assign, confirm), `sessions_rules.py`
+  (typed start refusals), `sessions_billing.py` (frozen rate, final charge), `sessions_state.py`
+  (derived state), `sessions_device.py` (the agent-report hook), `sessions_sweep.py` +
+  `tasks_sessions.py` (auto-stop), `notifications_sessions.py`.
+- Routes: member `machines/views_sessions_member.py`; staff `admin_api/views_machine_sessions.py`;
+  serializers `machines/serializers_sessions.py`. Reports: `operations/reports_machine_sessions.py`,
+  `operations/report_definitions_machine_sessions.py`.
+- Classification: `data_export/classification_l23.py`, `tenant_migration/{catalog,audit_references,
+  unique_values,gate_policy_r2}_l23.py`, `tenant_migration/tenant_dump_authority_r2.py` (lane
+  authority composition), `audit/presentation_catalog_l23.py`, `accounts/merge_registry_rows_l23.py`,
+  `makerspaces/origin_scope_routes_r2_l23.py`.
+- Frontend: member `features/machine-sessions/` (`UseMachinePage` is the QR landing "Use this
+  machine" sheet with `SessionTimerCard`; `MySessionsPage`); staff `staff/panels/machine/sessions/`
+  (`SessionsScreen` = Machines › Sessions, `StaffSessionCard`, `SessionQrCard`,
+  `SessionSettingsEditor`).
+
 ### Release 2 L12 (machines and loans depth)
 
 - Switches: `makerspaces/capability_definitions_r2_l12.py` (12 keys); per-type job settings on

@@ -76,6 +76,13 @@ def validate_subject(payment, identity_unchanged):
             makerspace_id=payment.makerspace_id,
         ).exists():
             raise ValidationError({"subject_id": "Payment subject must belong to the payment makerspace."})
+    if payment.subject_type == Payment.SubjectType.MACHINE_SESSION and payment.subject_id:
+        from apps.machines.models import MachineSession
+
+        if not identity_unchanged and not MachineSession.objects.filter(
+            pk=payment.subject_id, makerspace_id=payment.makerspace_id,
+        ).exists():
+            raise ValidationError({"subject_id": "Payment subject must belong to the payment makerspace."})
     if payment.subject_type in Payment.LOAN_ACCOUNTABILITY_SUBJECT_TYPES and payment.subject_id:
         validate_loan_accountability(payment, identity_unchanged)
     if payment.subject_type == Payment.SubjectType.MEMBERSHIP_TERM and payment.subject_id:

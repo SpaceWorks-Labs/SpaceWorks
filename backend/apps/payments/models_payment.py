@@ -23,6 +23,8 @@ class Payment(models.Model):
         LOAN_RENTAL = "loan_rental", "Loan rental"
         LOAN_DAMAGE = "loan_damage", "Loan damage charge"
         LOAN_LOST = "loan_lost", "Lost item charge"
+        # Lane L23 (#158): one metered machine session; subject_id is the MachineSession id.
+        MACHINE_SESSION = "machine_session", "Machine session"
 
     #: Subjects whose subject_id is the HardwareRequest id.
     LOAN_SUBJECT_TYPES = ("loan_deposit", "loan_late_fee", "loan_rental")

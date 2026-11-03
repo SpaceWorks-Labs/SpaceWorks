@@ -28,7 +28,7 @@ govern sign-in availability. Membership adds plans, vouching, renewals and the m
 | Area | Modules | Features |
 | --- | --- | --- |
 | Inventory & lending | `public_inventory`, `request_workflow`, `staff_admin`, `scanner`, `evidence_uploads`, `qr_management` (core); `guest_handover`, `asset_units`, `containers`, `bulk_import`, `stock_transfers`, `qr_print_batches`, `stocktake`, `devices` | `loans.enabled`, `loans.limits`, `loans.renewals`, `loans.kit_checklist`, `loans.reservations`, `loans.pickup_windows`, `loans.waitlist`, `loans.withdrawals`, `inventory.notify_when_back`, `inventory.expected_back`, `inventory.consumables`, `inventory.vendors`, `inventory.tobuy`, `inventory.warranty`, `inventory.self_checkout`, `inventory.contact_self_checkout`, `inventory.kiosk`, `stocktake.discipline`, `packs.import`, `charges.loans`; `payments.loans` with Online payments |
-| Machines | `machines`, `machine_service`, `printing` | `machines.job_requests`, `machines.job_quotes`, `machines.batch_start`, `machines.pay_before_pickup`, `machines.time_booking`, `machines.maintenance`, `machines.tobuy`, `machines.warranty`, `machines.certifications`, `machines.certification_reminders`, `machines.public_detail`, `machines.material_catalogue`, `machines.structured_intake`, `maintenance.reminders`, `maintenance.meters`, `maintenance.calendar_feed`, `charges.machines`, `notifications.delegated_recipients`; `payments.machines` with Online payments |
+| Machines | `machines`, `machine_service`, `printing` | `machines.job_requests`, `machines.job_quotes`, `machines.batch_start`, `machines.pay_before_pickup`, `machines.time_booking`, `machines.sessions`, `machines.maintenance`, `machines.tobuy`, `machines.warranty`, `machines.certifications`, `machines.certification_reminders`, `machines.public_detail`, `machines.material_catalogue`, `machines.structured_intake`, `maintenance.reminders`, `maintenance.meters`, `maintenance.calendar_feed`, `charges.machines`, `notifications.delegated_recipients`; `payments.machines` with Online payments |
 | Events | `events` | `events.api_read`, `events.certificate_designer`, `events.website`, `events.embed`, `events.short_links`, `events.online_delivery`, `events.anonymous_feedback`; `events.broadcasts` with Notifications and Email; `events.organization_audience`, `events.offline_checkin`, `events.invites`, `events.account_registration`, `events.ticket_types`, `events.promo_codes`, `charges.events`; `payments.events` with Online payments |
 | Bookings | `bookings` | `bookings.recurring`, `bookings.staff_grants`, `bookings.clone`, `bookings.staff_tools`, `bookings.confirmations`, `bookings.checkin`, `bookings.passes`, `bookings.api_read`, `bookings.website`, `bookings.embed`, `charges.bookings`; `bookings.broadcasts` with Notifications and Email; `bookings.analytics`, `bookings.utilization_pdf`, `bookings.exports` with Reports; `payments.bookings` with Online payments |
 | Membership | `membership`, `mobile` | `membership.auto_renew`, `membership.lifecycle_mail`, `membership.self_service`, `membership.self_export`, `membership.vouching`, `membership.application_form`, `membership.broadcasts`, the 14 release-2 lifecycle switches (`membership.plan_rules` … `membership.monthly_summary`), `mobile.push`, `mobile.watch_actions`, `charges.membership`; `payments.membership` with Online payments |
@@ -204,6 +204,19 @@ front; a member fault follows the type's failure charge), pickup codes, reminder
 "Not collected" from day 14. Staff work a per-type queue board (reorder, urgent pin, assign,
 start, batch start with `machines.batch_start`, finish, collect). The 3D-printer form is an alias
 of the same flow. Off (`machines.job_requests`): no member submits a job; staff keep every job.
+
+**Metered machine sessions (release 2, L23; #158).** With `machines.sessions` on, every machine has
+a session QR (Machines › a machine › Sessions). A member who is checked in, certified for the type
+and not blocked by a booking, lockout or downtime scans it, sees the hourly rate, minimum and
+longest session, taps Start and later Stop; staff start, stop and check sessions for members from
+Machines › Sessions, and an integrated machine's own job reports open and close one. A forgotten
+session stops itself at the type's longest session (type Settings, default 4 hours), at check-out
+or at closing time and waits for a staff check, where the time can be corrected with a reason
+before it is confirmed. The charge follows the machine type's hourly rate on the rate card, frozen
+when the session started, as a pending charge staff settle. Reports: sessions by member and
+machine, utilisation, busiest days and hours, idle machines and flagged sessions. Off: no session
+screen, route or sweep; everything recorded is kept. A purge deletes sessions and their
+corrections only.
 
 ### printing
 
@@ -805,6 +818,7 @@ its parent module is off.
 | `machines.batch_start` | `machine_service` (needs `machines.job_requests`) | | Start several queued jobs on one machine run; time and material split across them | One job per machine run |
 | `machines.pay_before_pickup` | `machine_service` (needs `machines.job_requests`) | | A finished job is handed over only once its charge is settled | Pickup never waits on payment |
 | `machines.time_booking` | `machines` (needs `bookings`) | | Book a machine's time through bookings; types that require a booking can then only be used by the booker, and nobody starts a job while someone else holds it | Nothing is enforced; machine resources are kept |
+| `machines.sessions` | `machines` | | Metered machine sessions: a checked-in, certified member scans the machine's QR, sees the rate, starts and stops; staff start, stop, correct and confirm; integrated machines report their own. Forgotten sessions stop at the type's maximum length, check-out or closing (flagged for a staff check). Bills the type's hourly rate, frozen at start, only while `charges.machines` is on. A purge deletes sessions and their corrections; charges and usage entries stay | Every session route answers 404 and no sweep runs; the manual-hours usage log is unchanged; sessions are kept |
 | `loans.fee_waivers` | `request_workflow` | ● | Staff waive a loan's rental, late, damage or lost fees with a recorded reason; a fee already paid opens a refund case for approval; the deposit is never waived | No waive tool; waivers already written keep their loans free |
 | `charges.machines` | `machines` (needs `machine_service`) | ● | Record a charge when a priced machine job completes | Machine jobs are free |
 | `machines.integrations` | `machines` (needs `devices`, `machine_service`) | | **Foundation only; the integration is deferred (#76).** An enrolled printer device bound to a machine whose type has an enabled printer-agent binding may pull its approved jobs, report start/completion/failure through the machine-service workflow (failures held for staff) and send a bounded status snapshot. Superadmin `/control/` only; no console screen | Every integration route answers 404; bindings and snapshots are kept |

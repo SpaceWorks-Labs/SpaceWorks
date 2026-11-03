@@ -105,6 +105,8 @@ LEGACY_ENTRIES = (
     # Lane L12: loan pickup expiry + waitlist lapses; machine job quotes, pickups, prepay.
     ("loan-pickups", "apps.hardware_requests.tasks_loans.sweep_loan_pickups_task", 15),
     ("machine-job-flow", "apps.machines.tasks_jobs.sweep_job_flow_task", 15),
+    # Lane L23: machine sessions that reached their max length, check-out or closing time.
+    ("machine-sessions", "apps.machines.tasks_sessions.sweep_machine_sessions_task", 5),
 )
 _RETAINED = frozenset({
     "evidence-object-expiry", "evidence-abandoned-upload-cleanup",

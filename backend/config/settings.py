@@ -893,6 +893,12 @@ CELERY_BEAT_SCHEDULE["machine-job-flow"] = {
     "task": "apps.machines.tasks_jobs.sweep_job_flow_task", "schedule": crontab(minute="*/15"),
 }
 # --- end lane L12
+# --- lane L23 (release 2): machine sessions that reached their max length, the member's
+# check-out or closing time stop themselves (flagged for staff). Bounded sweep.
+CELERY_BEAT_SCHEDULE["machine-sessions"] = {
+    "task": "apps.machines.tasks_sessions.sweep_machine_sessions_task", "schedule": crontab(minute="*/5"),
+}
+# --- end lane L23
 
 if "tenant_migration" in TOMBSTONED_APPS:
     CELERY_BEAT_SCHEDULE = {

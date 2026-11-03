@@ -29,6 +29,8 @@ def visible_cases(actor, makerspace_id):
         rows = rbac.scope_by_action(actor, action, base.filter(payment__subject_type=subject_type), field=FIELD)
         if subject_type == Payment.SubjectType.MACHINE_SERVICE_REQUEST:
             rows = rows.filter(payment__subject_id__in=_covered_jobs(actor, makerspace_id))
+        if subject_type == Payment.SubjectType.MACHINE_SESSION:
+            rows = rows.filter(payment__subject_id__in=_covered_sessions(actor, makerspace_id))
         allowed |= Q(pk__in=rows.values("pk"))
     return base.filter(allowed)
 
@@ -39,6 +41,16 @@ def _covered_jobs(actor, makerspace_id):
 
     jobs = MachineServiceRequest.objects.filter(makerspace_id=makerspace_id)
     return scoped_service_requests(actor, jobs, {makerspace_id}).values("pk")
+
+
+def _covered_sessions(actor, makerspace_id):
+    """Lane L23: sessions on the machines this actor's role scope covers."""
+    from apps.machines.models import MachineSession
+    from apps.machines.role_scope import manage_scope_for, scope_q_for
+
+    scope = scope_q_for(manage_scope_for(actor, makerspace_id), machine_id_paths=("machine_id",),
+                        type_id_paths=("machine_type_id",))
+    return MachineSession.objects.filter(scope, makerspace_id=makerspace_id).values("pk")
 
 
 def may_read_queue(actor, makerspace_id):

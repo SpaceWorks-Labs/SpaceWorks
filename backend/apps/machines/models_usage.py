@@ -22,6 +22,8 @@ class MachineUsageEntry(ScopedPiiModelMixin, models.Model):
     class Source(models.TextChoices):
         MANUAL = "manual", "Manual hours"
         TYPED_MANUAL = "typed_manual", "Typed manual service"
+        # Lane L23: one entry per finished machine session (minutes).
+        SESSION = "session", "Machine session"
 
     machine = models.ForeignKey(
         Machine, on_delete=models.CASCADE, related_name="usage_entries"

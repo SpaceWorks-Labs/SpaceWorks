@@ -2,7 +2,7 @@
 
 L7 guards pairwise comparisons, their invalidations and cursors (events 0060); L1 guards
 event short links and their host (events 0061); L5 guards payments and keeps its ledger
-rows append-only (payments 0032).
+rows append-only (payments 0032); L23 keeps closed machine sessions final (machines 0032).
 """
 
 RELEASE2_FUNCTIONS = frozenset({
@@ -17,4 +17,6 @@ RELEASE2_FUNCTIONS = frozenset({
     "events_short_link_host",
     "payments_payment_l5_guard",
     "payments_l5_append_only",
+    # L23: a closed machine session is final (machines 0032).
+    "machines_session_guard",
 })

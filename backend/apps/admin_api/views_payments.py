@@ -18,6 +18,14 @@ from apps.payments.serializers_reconciliation import PaymentOfflineSerializer
 
 def _manageable_payment(actor, pk):
     payment = get_object_or_404(rbac.scope_by_action(actor, rbac.Action.MANAGE_MACHINES, Payment.objects.select_related("makerspace"), field="makerspace_id"), pk=pk)
+    if payment.subject_type == Payment.SubjectType.MACHINE_SESSION:
+        # Lane L23: a session charge follows its machine's scope, like a job's.
+        from apps.machines.models import MachineSession
+        session = MachineSession.objects.select_related("machine").filter(
+            pk=payment.subject_id, makerspace_id=payment.makerspace_id).first()
+        if session is None or not role_scope.covers_machine(actor, session.machine):
+            raise Http404()
+        return payment
     if payment.subject_type != Payment.SubjectType.MACHINE_SERVICE_REQUEST:
         raise PermissionDenied()
     # A charge carries what the job cost and who owed it, so it follows the same machine

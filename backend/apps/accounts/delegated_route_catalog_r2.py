@@ -56,3 +56,7 @@ MEMBERSHIP_ROUTES |= frozenset("""admin-machine-job-request-changes admin-machin
 admin-machine-job-reorder admin-machine-job-urgent admin-machine-job-assign admin-machine-job-uncollected
 admin-machine-job-batch-start admin-machine-job-batch-complete admin-machine-job-board admin-machine-type-job-settings
 admin-machine-downtime admin-machine-lockout admin-work-orders admin-work-order-status admin-work-order-assign""".split())
+# Release-2 lane L23: metered machine sessions. Each view re-checks MANAGE_MACHINES and the
+# actor's machine scope; the type setting goes through the settings-authority layer.
+MEMBERSHIP_ROUTES |= frozenset("""admin-machine-sessions admin-machine-session-stop admin-machine-session-amend
+admin-machine-session-assign admin-machine-session-confirm admin-machine-type-session-settings""".split())

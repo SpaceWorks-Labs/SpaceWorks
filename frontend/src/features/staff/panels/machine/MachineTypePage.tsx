@@ -6,6 +6,7 @@ import { CertificationsPanel } from "./CertificationsPanel";
 import { MachineReminderPolicy } from "./MachineReminderPolicy";
 import { JobBoard } from "./JobBoard";
 import { JobSettingsEditor } from "./JobSettingsEditor";
+import { SessionSettingsEditor } from "./sessions/SessionSettingsEditor";
 import { EmptyState, StatusBadge, Tabs, DataTable } from "../../../../components/ui";
 import { ImageThumbnail } from "../../../../components/ui/ImageThumbnail";
 import { DetailLayout, FlowLayout } from "../../../../components/layouts";
@@ -104,7 +105,8 @@ export function MachineTypePage({ enabledFeatures = [], makerspaceId, canManage,
     <>
       {canConfigureMachineTypes && (enabledFeatures.includes("machines.material_catalogue") || enabledFeatures.includes("machines.structured_intake")) ? <MaterialCataloguePanel visible={view.active === "settings"} makerspaceId={makerspaceId} typeId={machineType.id} custom={machineType.makerspace !== null} materialsEnabled={enabledFeatures.includes("machines.material_catalogue")} intakeEnabled={enabledFeatures.includes("machines.structured_intake")} /> : null}
       {canConfigureMachineTypes ? <MachineReminderPolicy visible={view.active === "settings"} makerspaceId={makerspaceId} machineTypeId={machineType.id} /> : null}
-      {canConfigureMachineTypes && machineServiceEnabled ? <JobSettingsEditor visible={view.active === "settings"} makerspaceId={makerspaceId} machineTypeId={machineType.id} /> : null}{settings}
+      {canConfigureMachineTypes && machineServiceEnabled ? <JobSettingsEditor visible={view.active === "settings"} makerspaceId={makerspaceId} machineTypeId={machineType.id} /> : null}
+      {canConfigureMachineTypes && enabledFeatures.includes("machines.sessions") ? <SessionSettingsEditor visible={view.active === "settings"} makerspaceId={makerspaceId} machineTypeId={machineType.id} /> : null}{settings}
     </>
     {creating ? <FlowLayout presentation="dialog" open title="Add machine" steps={[]} current="create" state={{ status: "ready" }} onCancel={() => { setCreating(false); setCreatedMachineId(null); }}
       work={<MachineCreateForm makerspaceId={makerspaceId} machineType={machineType} hideSubmit onCreated={setCreatedMachineId}

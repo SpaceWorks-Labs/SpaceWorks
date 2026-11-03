@@ -18,12 +18,14 @@ import { OperatorsTab } from "./OperatorsTab";
 import { OverviewTab } from "./OverviewTab";
 import { UsageTab } from "./UsageTab";
 import { WarrantyTab } from "./WarrantyTab";
+import { SessionList } from "./sessions/SessionsScreen";
+import { SessionQrCard } from "./sessions/SessionQrCard";
 
 const BASE_TABS = ["Overview", "Operators", "Consumables", "Usage", "Documents", "Errors"] as const;
-type MachineTab = (typeof BASE_TABS)[number] | "Maintenance" | "Warranty";
+type MachineTab = (typeof BASE_TABS)[number] | "Maintenance" | "Warranty" | "Sessions";
 
 export function MachineDrawer({
-  machineId, makerspaceId, canManageMachines, maintenanceEnabled, onClose, enabledFeatures = [],
+  machineId, makerspaceId, canManageMachines, maintenanceEnabled, onClose, enabledFeatures = [], publicBase = "",
 }: {
   machineId: number;
   enabledFeatures?: string[];
@@ -31,6 +33,8 @@ export function MachineDrawer({
   canManageMachines: boolean;
   maintenanceEnabled: boolean;
   onClose: () => void;
+  /** Member-site path prefix for the session QR (`/m/<slug>`, or "" on a single-space site). */
+  publicBase?: string;
 }) {
   const [params] = useSearchParams();
   const [activeTab, setActiveTab] = useState<MachineTab>(params.get("detail_tab") === "Maintenance" && maintenanceEnabled ? "Maintenance" : "Overview");
@@ -53,6 +57,8 @@ export function MachineDrawer({
     ...BASE_TABS.slice(4),
     // The machines parent's own warranty switch (#97, C-9).
     ...(details?.can_edit && enabledFeatures.includes("machines.warranty") ? ["Warranty" as const] : []),
+    // Machine sessions (L23): this machine's live and finished sessions.
+    ...(canManageMachines && enabledFeatures.includes("machines.sessions") ? ["Sessions" as const] : []),
   ];
 
   return <DetailLayout presentation="drawer" open onClose={onClose} drawerWidth={720}
@@ -107,6 +113,12 @@ export function MachineDrawer({
             {activeTab === "Errors" ? (
               <ErrorsTab machineId={machineId} canOperate={details.can_operate} />
             ) : null}
+            {activeTab === "Sessions" ? <div className="grid gap-4">
+              <SessionQrCard machineId={machineId} machineName={details.name} basePath={publicBase} />
+              {(["live", "review", "closed"] as const).map(status => <section key={status} className="grid gap-2" aria-label={`${status} sessions`}>
+                <h3 className="title-section">{status === "live" ? "Live" : status === "review" ? "To check" : "Closed"}</h3>
+                <SessionList makerspaceId={makerspaceId} machineId={machineId} status={status} /></section>)}
+            </div> : null}
             {activeTab === "Warranty" && details.can_edit ? (
               <WarrantyTab machineId={machineId} />
             ) : null}</Tabs>

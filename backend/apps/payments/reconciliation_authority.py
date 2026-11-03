@@ -30,6 +30,8 @@ SUBJECT_ACTIONS = {
     Payment.SubjectType.LOAN_RENTAL: rbac.Action.RETURN_REQUEST,
     Payment.SubjectType.LOAN_DAMAGE: rbac.Action.RETURN_REQUEST,
     Payment.SubjectType.LOAN_LOST: rbac.Action.RETURN_REQUEST,
+    # Lane L23: a machine session is settled by whoever manages that machine's type.
+    Payment.SubjectType.MACHINE_SESSION: rbac.Action.MANAGE_MACHINES,
 }
 
 
@@ -86,6 +88,8 @@ def _require_subject_authority(actor, payments):
             raise PermissionDenied("Payment action is not permitted.")
         if subject_type == Payment.SubjectType.MACHINE_SERVICE_REQUEST:
             _require_machine_scope(actor, payments)
+        if subject_type == Payment.SubjectType.MACHINE_SESSION:
+            _require_session_scope(actor, payments)
     if any(payment.subject_type not in SUBJECT_ACTIONS for payment in payments):
         raise PermissionDenied("Payment subject type is not supported.")
 
@@ -139,3 +143,28 @@ def _require_machine_scope(actor, payments):
     scopes = manage_scopes_for(actor, orphan_makerspace_ids)
     if any(scopes.get(ms_id) is not EXEMPT for ms_id in orphan_makerspace_ids):
         raise PermissionDenied("Payment action is not permitted.")
+
+
+def _require_session_scope(actor, payments):
+    """Lane L23: a session charge follows its machine's type scope, like a job's.
+
+    A charge whose session was purged is actionable only by an actor machine scoping
+    already exempts (the same fail-closed rule as an orphaned job charge above).
+    """
+    from apps.machines.models import MachineSession
+    from apps.machines.role_scope import EXEMPT, manage_scopes_for, scope_covers_machine
+
+    rows = [payment for payment in payments if payment.subject_type == Payment.SubjectType.MACHINE_SESSION]
+    if not rows:
+        return
+    sessions = {row.pk: row for row in MachineSession.objects.select_related("machine").filter(
+        pk__in={payment.subject_id for payment in rows})}
+    scopes = manage_scopes_for(actor, {payment.makerspace_id for payment in rows})
+    for payment in rows:
+        scope = scopes.get(payment.makerspace_id)
+        session = sessions.get(payment.subject_id)
+        if session is None or session.makerspace_id != payment.makerspace_id:
+            if scope is not EXEMPT:
+                raise PermissionDenied("Payment action is not permitted.")
+        elif scope is None or not scope_covers_machine(scope, session.machine):
+            raise PermissionDenied("Payment action is not permitted.")

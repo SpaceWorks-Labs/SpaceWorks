@@ -287,14 +287,6 @@ SUPPLEMENTAL_AUTHORITY_ENTRIES = (
     *DEVICE_AUTHORITY_ENTRIES,
     *LABEL_AUTHORITY_ENTRIES,
 )
-from .catalog_r2_l1 import authority_entries as _r2_l1_authority  # noqa: E402
-SUPPLEMENTAL_AUTHORITY_ENTRIES += _r2_l1_authority(authority, D)
-from .catalog_r2_l2 import authority_entries as _r2_l2_authority  # noqa: E402
-SUPPLEMENTAL_AUTHORITY_ENTRIES += _r2_l2_authority(authority, D)
-from .catalog_r2_l5 import authority_entries as _r2_l5_authority  # noqa: E402
-SUPPLEMENTAL_AUTHORITY_ENTRIES += _r2_l5_authority(authority, D)
-from .catalog_login_security import authority_entries as _s0_authority  # noqa: E402
-SUPPLEMENTAL_AUTHORITY_ENTRIES += _s0_authority(authority, D)
-from .catalog_r2_l15 import authority_entries as _r2_l15_authority  # noqa: E402
-SUPPLEMENTAL_AUTHORITY_ENTRIES += _r2_l15_authority(authority, D)
-from .catalog_l12 import authority_entries as _l12; SUPPLEMENTAL_AUTHORITY_ENTRIES += _l12(authority, D)  # noqa: E402,E702
+# Release-2 lanes compose their authority entries in `tenant_dump_authority_r2.py`.
+from .tenant_dump_authority_r2 import lane_entries as _r2_lane_entries  # noqa: E402
+SUPPLEMENTAL_AUTHORITY_ENTRIES += _r2_lane_entries(authority, D)

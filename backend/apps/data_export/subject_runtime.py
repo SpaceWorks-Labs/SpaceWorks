@@ -17,6 +17,9 @@ RUNTIME_FIELDS = {
     "notifications.MemberPushDelivery": ("id", "platform", "provider_source", "status", "attempts", "sent_at", "created_at"),
     "integrations.PushDeliveryAttempt": ("id", "platform", "provider_source", "status", "attempts", "sent_at", "created_at"),
 }
+# Release-2 login security (S-B): the person's own sign-in memory, platform-wide (no space).
+from .subject_runtime_security import FIELDS as _SECURITY_FIELDS, security_subject_query  # noqa: E402
+RUNTIME_FIELDS.update(_SECURITY_FIELDS)
 
 
 def runtime_subject_query(model, user, makerspace_id):
@@ -24,6 +27,8 @@ def runtime_subject_query(model, user, makerspace_id):
 
     label = model._meta.label
     ids = actor_ids_for(user)  # the person and every shell merged into them
+    if label in _SECURITY_FIELDS:
+        return security_subject_query(model, user)
     if label == "integrations.NotificationEnvelope":
         return every_row(model).filter(recipient__in=ids, makerspace_id=makerspace_id)
     if label == "integrations.NotificationDelivery":

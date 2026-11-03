@@ -116,5 +116,8 @@ def purge_spent_challenges(*, retention=RETENTION):
     except Exception:
         logger.exception("auth_challenge_purge_failed", extra={"model": label})
         deleted[label] = 0
+    # S-B: remembered devices, familiar networks, alert links and passkey ceremonies.
+    from apps.accounts.login_risk_retention import purge_login_risk_state
+    deleted.update(purge_login_risk_state(now))
     logger.info("auth_challenge_purge_complete", extra={"deleted": deleted})
     return deleted

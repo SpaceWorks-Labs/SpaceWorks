@@ -46,7 +46,7 @@ class MakerspaceKeyEventsView(ListAPIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        tags=["security"], summary="Key rotation and re-key history of one makerspace",
+        tags=["Security settings"], summary="Key rotation and re-key history of one makerspace",
         description="Read-only. Visible to the space's managers (MANAGE_MAKERSPACE) and the superadmin. "
                     "Starting a rotation is a /control/ superadmin action; no key material is returned.",
         responses={200: KeyEventSerializer(many=True), 403: OpenApiResponse(description="Not a manager of this space."),

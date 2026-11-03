@@ -47,10 +47,12 @@ def fixed_role_exists(cursor):
     return cursor.fetchone()[0]
 
 
-def _apply(cursor, plan, fixed):
+def _apply(cursor, plan, fixed, enabled=False, forced=False):
     table = q(plan.table)
-    cursor.execute(f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY")
-    cursor.execute(f"ALTER TABLE {table} FORCE ROW LEVEL SECURITY")
+    if not enabled:
+        cursor.execute(f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY")
+    if not forced:
+        cursor.execute(f"ALTER TABLE {table} FORCE ROW LEVEL SECURITY")
     cursor.execute(f"DROP POLICY IF EXISTS {TENANT_POLICY} ON {table}")
     cursor.execute(f"CREATE POLICY {TENANT_POLICY} ON {table} AS PERMISSIVE FOR ALL TO PUBLIC "
                    f"USING ({plan.tenant_sql}) WITH CHECK ({plan.tenant_sql})")
@@ -121,7 +123,7 @@ def sync(using="default", *, tables=None):
             enabled, forced, comment, has_fixed, _other = state
             if enabled and forced and comment == plan.fingerprint(fixed=fixed) and has_fixed == fixed:
                 report.unchanged += 1
-            elif _savepoint(db, cursor, report, table, _apply, plan, fixed):
+            elif _savepoint(db, cursor, report, table, _apply, plan, fixed, enabled, forced):
                 report.applied.append(table)
         known = {plan.table for plan in plans.values()}
         for table, (enabled, _forced, comment, has_fixed, other) in sorted(live.items()):

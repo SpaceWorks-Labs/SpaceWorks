@@ -176,9 +176,26 @@ class MemberCardSheetView(APIView):
         for card in cards:
             document = document_for("member_card", card)
             rendered.append((document, context_for("member_card", card, document)))
-        pdf = render_sheets(rendered, title="Member cards")
+        page = member_card_templates.template_for(makerspace).get("page", "a4")
+        if serializer.validated_data["preset"] == "single" or page == "cr80":
+            pdf = _card_size_pages(rendered)  # card-sized pages, for card printers
+        else:
+            pdf = render_sheets(rendered, paper=page, title="Member cards")
         member_card_services.record_print(request.user, cards)
         return _pdf_response(pdf, "member-cards.pdf")
+
+
+def _card_size_pages(rendered):
+    from io import BytesIO
+    from pypdf import PdfReader, PdfWriter
+    from apps.card_designs.rendering import render_pdf
+    writer = PdfWriter()
+    for document, context in rendered:
+        for pdf_page in PdfReader(BytesIO(render_pdf(document, context, title="Member card"))).pages:
+            writer.add_page(pdf_page)
+    buffer = BytesIO()
+    writer.write(buffer)
+    return buffer.getvalue()
 
 
 class MemberCardResolveThrottle(ScopedRateThrottle):

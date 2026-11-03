@@ -98,7 +98,7 @@ class PlatformLoginMethodsAdmin(AuditedControlChangeMixin, SuperuserOnlyModelAdm
     audit_action = "platform.login_methods_updated"
     """Which ways in this deployment offers. Platform-scoped, never a tenant feature."""
 
-    readonly_fields = ("mfa_enabled", "google_enabled", "apple_enabled", "github_enabled")
+    readonly_fields = ("mfa_enabled", "google_enabled", "apple_enabled", "github_enabled", "sign_in_protection")
     form = PlatformLoginMethodsForm
     list_display = (
         "__str__", "password_enabled", "social_enabled", "phone_enabled",
@@ -113,7 +113,16 @@ class PlatformLoginMethodsAdmin(AuditedControlChangeMixin, SuperuserOnlyModelAdm
             "The two-step switch governs MEMBER opt-in only: every staff role always needs two-step "
             "sign-in (an authenticator app or a passkey), whatever it says. Passkeys are offered, never "
             "required; turning them off keeps every passkey but stops their use.")}),
+        ("Sign-in protection", {"fields": ("sign_in_protection",), "description": (
+            "Deployment settings (environment), shown for reference. IP rules and automatic blocks "
+            "are under Accounts.")}),
     )
+
+    @admin.display(description="CAPTCHA and breached passwords")
+    def sign_in_protection(self, obj):
+        from apps.accounts.login_methods_status import protection_summary
+
+        return protection_summary()
 
     def has_add_permission(self, request):
         return not PlatformLoginMethods.objects.exists()

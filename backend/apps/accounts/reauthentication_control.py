@@ -21,6 +21,7 @@ CONTROL_AUTHORITY_MODELS = frozenset({
     "bookings.bookingspacestaffgrant", "bookings.bookingspacestaffgrantinvite",
     "apiclients.apiclient", "apiclients.apikeyrequest", "organizations.organizationmembership",
     "organizations.organizationmakerspace",
+    "accounts.ipaccessrule", "accounts.ipautoblock",
 })
 
 

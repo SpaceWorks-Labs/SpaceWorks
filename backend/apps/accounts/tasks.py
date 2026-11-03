@@ -3,6 +3,7 @@ from apps.accounts.saved_details.tasks import process_saved_details  # noqa: F40
 
 from apps.accounts.services_challenge_purge import purge_spent_challenges
 from apps.accounts.services_password_reset_drain import drain_password_reset_envelopes
+from apps.accounts.tasks_login_security import purge_login_security_task  # noqa: F401 -- S-C retention
 
 
 @shared_task(name="apps.accounts.tasks.purge_auth_challenges_task")

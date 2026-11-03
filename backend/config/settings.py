@@ -898,6 +898,11 @@ CELERY_BEAT_SCHEDULE["machine-job-flow"] = {
     "task": "apps.machines.tasks_jobs.sweep_job_flow_task", "schedule": crontab(minute="*/15"),
 }
 # --- end lane L12
+# --- lane S-C (release 2): IP auto-block rows 7 d after they end, axes rows after 30 d.
+CELERY_BEAT_SCHEDULE["purge-login-security"] = {
+    "task": "apps.accounts.tasks_login_security.purge_login_security_task", "schedule": crontab(hour=3, minute=40),
+}
+# --- end lane S-C
 
 if "tenant_migration" in TOMBSTONED_APPS:
     CELERY_BEAT_SCHEDULE = {

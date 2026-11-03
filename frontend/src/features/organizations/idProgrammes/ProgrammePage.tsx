@@ -11,7 +11,9 @@ import { programmeJobsPath, useProgramme, useProgrammeDesign } from "./api";
 
 type TabKey = "members" | "import" | "design" | "settings";
 
-export function ProgrammePage({ programmeId, onBack }: { programmeId: number; onBack: () => void }) {
+export function ProgrammePage({ programmeId, onBack, sheetImport = false }: {
+  programmeId: number; onBack: () => void; sheetImport?: boolean;
+}) {
   const programme = useProgramme(programmeId);
   const [tab, setTab] = useState<TabKey>("members");
   if (programme.isLoading) return <Skeleton className="h-64 w-full" />;
@@ -36,7 +38,7 @@ export function ProgrammePage({ programmeId, onBack }: { programmeId: number; on
     </div>
     <Tabs tabs={tabs} activeKey={tab} label="Programme" onChange={(key) => setTab(key as TabKey)} />
     {tab === "members" ? <><CardJobList listPath={programmeJobsPath(row.id)} /><ProgrammeMembers programme={row} /></> : null}
-    {tab === "import" ? <ProgrammeImport programme={row} onDone={() => setTab("members")} /> : null}
+    {tab === "import" ? <ProgrammeImport programme={row} onDone={() => setTab("members")} sheetImport={sheetImport} /> : null}
     {tab === "design" ? <ProgrammeDesign programmeId={row.id} /> : null}
     {tab === "settings" ? <ProgrammeSettings programme={row} /> : null}
   </div>;

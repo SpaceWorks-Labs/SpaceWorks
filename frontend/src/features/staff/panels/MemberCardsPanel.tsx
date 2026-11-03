@@ -57,7 +57,8 @@ export function MemberCardsPanel({ makerspaceId, enabledFeatures = [] }: { maker
       <ListLayout width={tabs.active === "design" ? "wide" : "default"} header={{ title: "Member cards" }}
         tabs={tabs.tabs} activeTab={tabs.active} state={{ status: "ready" }} isEmpty={false} empty={{ message: "" }}
         body={{ kind: "rows", rows: tabs.active === "design" ? <DesignTab makerspaceId={makerspaceId} />
-          : tabs.active === "settings" ? <SettingsTab makerspaceId={makerspaceId} /> : <ProgrammesTab makerspaceId={makerspaceId} /> }} />
+          : tabs.active === "settings" ? <SettingsTab makerspaceId={makerspaceId} /> : <ProgrammesTab makerspaceId={makerspaceId}
+            sheetImport={featureEnabled(enabledFeatures, "membership.id_programmes_import_sheets")} /> }} />
     </div>;
   }
   return <div onClickCapture={tabs.onClickCapture}>

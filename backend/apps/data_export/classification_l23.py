@@ -21,6 +21,10 @@ FIELD_ADDITIONS = {
     "machines.MakerspaceMachineTypePolicy": "session_max_minutes",
 }
 OMITTED_MODELS = {}
+# The digest of the frozen rate the member was shown at Start; it authenticates nothing.
+NON_CREDENTIAL = {
+    ("machines.MachineSession", "quote_digest"): "Integrity digest of the session's frozen rate, not a secret.",
+}
 DATASET_SPECS = {
     "machines.MachineSession": ("machines/sessions.csv", P(("makerspace",))),
     "machines.MachineSessionAmendment": ("machines/session_amendments.csv", P(("makerspace",))),

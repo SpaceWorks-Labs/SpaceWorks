@@ -1,5 +1,17 @@
 # Account deletion privacy note
 
+## Sign-in memory (devices, networks, alerts)
+
+To notice unusual sign-ins, Space Works remembers which devices and networks you signed in from. A device
+is a random value in a cookie (or your app's storage); the server keeps only a keyed fingerprint of it and a
+coarse label such as "Firefox on Windows". A network is your address's /24 (IPv6: /64) block, stored only as
+a keyed fingerprint. Networks are forgotten 90 days after you last used them, devices 180 days after their
+last sign-in; you can forget a device yourself in your account. A security alert keeps the network and
+device label only until the email is sent; its "this wasn't me" link works for 14 days and the alert row is
+deleted 30 days after that. Your data export lists your devices, passkeys and networks (labels and dates
+only); deleting your account deletes all of it.
+
+
 Self-service deletion/archive/restore/purge and Apple revocation apply only to member accounts.
 Staff/platform accounts use administrator lifecycle services; separate accounts sharing email/phone
 are never deleted or restored together.

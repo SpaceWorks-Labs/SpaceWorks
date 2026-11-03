@@ -6,6 +6,17 @@
 
 ## Condensed changelog (newest first — full detail in `git log`)
 
+- **2026-11-04 -- release 2 S-B, login doors, unusual sign-ins and security alerts (#62, #66, #128 C-2,
+  #157, #162(3)).** Staff signing in with Google, Apple, GitHub or OIDC still pass their factor (web and
+  device); provider proof is members-only. `mfa/verify` takes `factor` (totp, recovery, passkey with
+  `webauthn`, email_code) and challenges report `purpose` and `factors[]`; re-authentication intents never
+  complete a sign-in. The unusual-sign-in check (new device, new /24 or /64 network, three failures in an
+  hour) steps password sign-ins up with the person's factor or an emailed code (never VERIFIED; fail-open
+  without mail); remembered devices (`sw_device` cookie, native `device_trust`), `auth/devices`. Security
+  alerts (new device, password change, factor change, lockout) with a single-use fragment-token "this
+  wasn't me" that signs out everywhere and disables the password, keeping factors. `app_version` on the
+  social and phone native completions; retention, deletion and the subject export for the new rows.
+
 - **2026-11-03 -- release 2 S-C, IP blocking, Turnstile and breached passwords (#62, #66, #110c,
   #128 C-2, #157).** `LoginIPGuardMiddleware` on every sign-in view: superadmin allow/deny rules (allow
   wins, cached 60 s, deny-self guard) and automatic blocks of one source failing against many accounts

@@ -44,9 +44,30 @@ export type TenantBootstrap = {
   };
 };
 
+/** One makerspace where THIS session holds staff authority (U-A2 payload, frozen). */
+export type StaffRoleEntry = {
+  makerspace: { id: number; slug: string; name: string };
+  roles: { id: number; slug: string; name: string }[];
+  actions: string[];
+};
+
+/** The auth payload (`/auth/me`, sign-in, refresh). One account per person (#62/#63). */
 export type StaffAuthUser = {
-  account_kind?: "member" | "staff" | "platform";
-  staff_makerspace?: { id: number; slug: string; name: string } | null;
+  id?: number;
+  /** person: everyone except the superadmin; platform: the superadmin's separate account. */
+  kind?: "person" | "platform";
+  is_platform?: boolean;
+  has_staff_role?: boolean;
+  has_elevated_authority?: boolean;
+  staff_roles?: StaffRoleEntry[];
+  session_authority?: "member" | "native_staff" | "platform" | "verification_only";
+  /** #128 C-1: when an unenrolled staff person's 3-day two-step grace ends; null otherwise. */
+  mfa_grace_ends_at?: string | null;
+  mfa_enrolment_due?: boolean;
+  /** U-C: the person may hold a second account to link (the "Link your staff account" flow). */
+  merge_suggested?: boolean;
+  email?: string;
+  display_name?: string;
   username: string;
   email_verified: boolean;
   role: string;
@@ -80,6 +101,8 @@ export type StaffAuthUser = {
     can_verify: boolean;
     verified_at: string | null;
     referrals_enabled: boolean;
+    /** Which membership rows the person holds here. */
+    tracks?: ("community" | "staff")[];
   }[];
 };
 

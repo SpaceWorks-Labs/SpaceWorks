@@ -101,8 +101,6 @@ def user_payload(user, request=None, *, session_authority=None):
         "is_superuser": user.is_superuser,
         "must_change_password": user.must_change_password,
         "kind": payload_kind(user),
-        # Deprecated alias of ``kind`` for one release (``member`` = person); U-B removes it.
-        "account_kind": "member" if person else payload_kind(user),
         "is_platform": is_platform(user),
         "has_staff_role": person and has_staff_role(user),
         "has_elevated_authority": person and has_elevated_authority(user),

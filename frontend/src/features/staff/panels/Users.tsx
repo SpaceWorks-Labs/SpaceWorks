@@ -5,7 +5,7 @@ import type { Makerspace } from "./shared";
 import { ListLayout } from "../../../components/layouts";
 import { CreateMakerspaceModal, type MakerspaceForm } from "./UsersModals";
 import { emptyMakerspaceForm, makerspacePayload } from "./users/forms";
-import { StaffAccountsPanel } from "./staffAccounts/StaffAccountsPanel";
+import { StaffRolesPanel } from "./staffRoles/StaffRolesPanel";
 
 /** Both the tenant console and React platform console use the same lifecycle API. */
 export function Users({ makerspaces, isSuperadmin, currentUser, onAuthRefresh }: {
@@ -31,8 +31,8 @@ export function Users({ makerspaces, isSuperadmin, currentUser, onAuthRefresh }:
     void client.invalidateQueries({ queryKey: ["organizations"] });
   } });
   return <>
-    {space ? <StaffAccountsPanel key={space.id} space={space.id} onAuthRefresh={onAuthRefresh}
-      canManageRoles={canManageRoles} initialCreateRoles={createdSpace?.id === space.id ? ["space_manager"] : undefined}
+    {space ? <StaffRolesPanel key={space.id} space={space.id} onAuthRefresh={onAuthRefresh}
+      canManageRoles={canManageRoles}
       secondary={isSuperadmin ? { label: "Create makerspace", onClick: () => { create.reset(); setCreateOpen(true); } } : undefined}
       toolbar={<>
         {spaces.length > 1 ? <label className="grid gap-2 text-sm font-semibold">Makerspace<select className="desk-input" value={space.id} onChange={e => { setSelected(Number(e.target.value)); setCreatedSpace(undefined); }}>

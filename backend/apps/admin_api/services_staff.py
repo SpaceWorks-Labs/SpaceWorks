@@ -48,8 +48,9 @@ def attach_staff_membership(
         makerspace = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
         existing_user = User.objects.select_for_update().filter(username=username).first()
         if any(item.slug != "member" for item in roles):
-            raise ValidationError({"roles": "Use the staff-accounts lifecycle API to create staff."})
-        if existing_user is not None and existing_user.account_kind != "member":
+            raise ValidationError({"roles": "Grant staff roles through the staff-roles API."})
+        from apps.accounts.staff_identity import is_person
+        if existing_user is not None and not is_person(existing_user):
             raise ValidationError({"username": "Community memberships require a member account."})
         from apps.makerspaces.membership_admission_settings import ensure_join_allowed, settings_for
         policy = settings_for(makerspace)

@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
-import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useLocation, useParams, useSearchParams } from "react-router-dom";
 
 import { KioskLayout } from "../../components/layouts";
 import { Callout } from "../../components/ui";
-import { currentSessionContext } from "../../lib/api/sessionContext";
 import { KioskOnlineHandover } from "./KioskOnlineHandover";
 import { KioskOnlineScanner } from "./KioskOnlineScanner";
 import {
@@ -23,7 +22,6 @@ import { KioskReplayCorrection } from "./KioskReplayCorrection";
 export function KioskStationPage() {
   const { slug, stationToken = "" } = useParams();
   const location = useLocation();
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const recoveryId = searchParams.get("recovery");
   const [session, setSession] = useState<KioskBootstrap | null>(() => {
@@ -41,21 +39,8 @@ export function KioskStationPage() {
   const activeLease = lease ?? offline.queue?.lease ?? null;
   const queueMode = Boolean(offline.queue && (!offline.online || offline.restored || continuing));
   const hasCommands = Boolean(offline.queue?.commands.length);
-  const contextReady = Boolean(slug) || Boolean(activeSession
-    && currentSessionContext() === `staff:${activeSession.makerspace.slug}`);
-
-  useEffect(() => {
-    if (!activeSession || slug) return;
-    const context = `staff:${activeSession.makerspace.slug}`;
-    if (searchParams.get("context") === context) return;
-    const params = new URLSearchParams(searchParams);
-    params.set("context", context);
-    // Preserve the PIN bootstrap across the context boundary's cache remount.
-    // It grants no human authority: the server still checks the cookie and JWT.
-    navigate({ pathname: location.pathname, search: `?${params}` }, {
-      replace: true, state: { kiosk: { token: stationToken, session: activeSession } },
-    });
-  }, [activeSession, slug, searchParams, navigate, location.pathname, stationToken]);
+  // One account per person: the station runs in the operator's own (person) session.
+  const contextReady = Boolean(slug) || Boolean(activeSession);
 
   useEffect(() => {
     if (offline.restored && !offline.queue) { setSession(null); setLease(null); }

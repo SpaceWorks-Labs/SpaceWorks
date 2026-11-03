@@ -1,5 +1,4 @@
 from django.contrib import admin
-from django.db.models import Q
 from django.http import Http404
 from unfold.admin import ModelAdmin
 
@@ -39,12 +38,10 @@ class PasswordResetEnvelopeAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
     readonly_fields = fields
 
     def get_queryset(self, request):
-        from config.admin_account_scope import visible_staff_spaces
+        from apps.accounts.staff_identity import shell_q
 
-        return super().get_queryset(request).filter(
-            ~Q(user__account_kind="staff")
-            | Q(user__staff_makerspace__in=visible_staff_spaces(), user__retired_at__isnull=True)
-        )
+        # One account per person: an inert shell's envelopes are history, never listed.
+        return super().get_queryset(request).exclude(shell_q("user__"))
 
     def _obj_in_hidden(self, obj):
         from config.admin_account_scope import staff_account_hidden

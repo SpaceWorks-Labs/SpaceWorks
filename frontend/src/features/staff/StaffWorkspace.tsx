@@ -1,5 +1,6 @@
 import { consoleSessionHref } from "../../lib/api/sessionContext";
 import { Link, Navigate, useLocation } from "react-router-dom";
+import type { ReactNode } from "react";
 
 import { StaffShell } from "./StaffShell";
 import { Callout, PageHeader } from "../../components/ui";
@@ -36,6 +37,7 @@ export function StaffWorkspace({
   singleTenantLocked,
   lockedMakerspaceId,
   user,
+  notice,
 }: {
   activeMakerspace?: Makerspace;
   actions: readonly string[];
@@ -52,6 +54,8 @@ export function StaffWorkspace({
   singleTenantLocked: boolean;
   lockedMakerspaceId?: number;
   user: StaffAuthUser;
+  /** A console-wide notice above the page, e.g. the staff two-step grace banner (#128 C-1). */
+  notice?: ReactNode;
 }) {
   const location = useLocation();
   const {
@@ -125,6 +129,7 @@ export function StaffWorkspace({
         guestOnly={guestOnly} singleTenantLocked={singleTenantLocked} handoutOnly={handoutOnly} grantOnly={grantOnly} user={user}
         roleName={activeRoleName} isSuperadmin={isSuperadmin} makerspaces={makerspaces} setSelected={setSelected}
         setTab={setTab} signOut={signOut} actions={actions}>
+        {notice}
         {/* #115: say plainly whose space this is; Lane C's PII banner is the action that opens or
             closes the window (the Users tab already renders it, so it is not shown twice there). */}
         {isSuperadmin && activeMakerspace && actions.length > 0 ? <div className="mb-4 grid gap-3"><Callout size="inline" tone="warn"

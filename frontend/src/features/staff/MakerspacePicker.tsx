@@ -24,7 +24,10 @@ export function MakerspacePicker({
   username,
   onSelect,
   onSignOut,
+  person = false,
 }: {
+  /** A person with staff roles in several spaces (one account per person) rather than the superadmin. */
+  person?: boolean;
   makerspaces: Makerspace[];
   loading: boolean;
   username: string;
@@ -37,12 +40,12 @@ export function MakerspacePicker({
   const matches = makerspaces.filter(space => `${space.name} ${space.public_code} ${space.slug}`.toLocaleLowerCase().includes(search.toLocaleLowerCase()));
   return <DashboardLayout standalone
     state={{ status: loading ? "loading" : "ready" }}
-    header={{ eyebrow: `Super Admin · ${greeting}, ${username} · ${now.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" })}`, title: "Choose a makerspace to operate",
+    header={{ eyebrow: `${person ? "" : "Super Admin · "}${greeting}, ${username} · ${now.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" })}`, title: person ? "Choose a makerspace" : "Choose a makerspace to operate",
       subtitle: "Choose a space to work in.",
       meta: <div className="flex items-center gap-3"><SpaceWorksBadge /><ThemeToggle /></div>,
       secondary: { label: "Sign out", onClick: onSignOut } }}
     stats={[]} progress={<label className="grid gap-2 text-sm font-semibold">Find a makerspace<input className="desk-input" aria-label="Name, code or slug" placeholder="Name, code or slug" value={search} onChange={event => setSearch(event.target.value)} /></label>}
-    main={[{ title: "Your makerspaces", isEmpty: !matches.length, empty: { message: makerspaces.length ? "No spaces match. Try another name, code or slug." : "No makerspaces exist yet. Create one from the Django control plane.", action: makerspaces.length ? undefined : { label: "Open control plane", href: controlPlaneUrl() } }, content: <div className="grid gap-3 sm:grid-cols-2">{matches.map(space => <ListRow key={space.id} title={space.name}
+    main={[{ title: "Your makerspaces", isEmpty: !matches.length, empty: { message: makerspaces.length ? "No spaces match. Try another name, code or slug." : person ? "You don't hold a staff role in any makerspace yet." : "No makerspaces exist yet. Create one from the Django control plane.", action: makerspaces.length || person ? undefined : { label: "Open control plane", href: controlPlaneUrl() } }, content: <div className="grid gap-3 sm:grid-cols-2">{matches.map(space => <ListRow key={space.id} title={space.name}
       identity={{ kind: "icon", icon: "Building2", tone: "accent" }}
       meta={<>{space.public_code ?? space.slug} · Operate this makerspace →</>}
       onClick={() => onSelect(space.id)} />)}</div> }]} />;

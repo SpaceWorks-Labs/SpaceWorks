@@ -21,7 +21,7 @@ export function OwnerCancel({ token, title, makerspaceSlug, extraKeys = [] }: {
 }
 
 function useOwner(token: string) {
-  const signedIn = Boolean(getAccessToken("member"));
+  const signedIn = Boolean(getAccessToken("person"));
   return useQuery({ queryKey: serviceKeys.owner(token), queryFn: () => fetchOwnerControls(token),
     enabled: signedIn && Boolean(token), retry: false, staleTime: 0 });
 }

@@ -20,11 +20,20 @@ Machine Manager reach is assigned per person by type; combining roles unions act
 widening that machine reach.
 
 Actors holding only `manage_members` (for example via organization authority) may assign only Member
-and cannot replace staff grants. Staff account provisioning and role-set changes, makerspace
+and cannot replace staff grants. Granting, changing and revoking staff roles, makerspace
 settings, membership plan definitions/prices and waiver publishing require `manage_makerspace`.
 Membership-only roster responses do not include payment summaries. Community-only actors cannot
 approve or cancel staff invitations by substituting a community role. Verification and term controls
 remain available on staff roster rows; changing/revoking staff roles requires makerspace administration.
+
+**Who may grant a staff role (one account per person, U-B).** A staff role is a row on the person's
+own account. In a makerspace, its Space Manager grants, changes, revokes and restores every staff role
+except the Space Manager role; only the platform superadmin grants, changes or revokes the Space
+Manager role or a Space Manager's row, in every space. A role is granted to an active community member
+of the space, or by an email invitation the invitee accepts signed in to the account with that
+address (after a fresh emailed code). Nobody changes their own staff row, and the last active Space
+Manager stays. Organization authority and resource grants never grant staff roles. Disabling a whole
+account is a superadmin `/control/` action.
 
 The roster uses `view_finance` for money visibility, `record_payment` for cash recording,
 and the existing membership-subject authority for waiving a debt. A read-only finance

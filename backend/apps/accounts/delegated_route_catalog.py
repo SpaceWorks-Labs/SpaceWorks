@@ -161,7 +161,7 @@ analytics-damaged-missing analytics-event-attendance analytics-fablab-health ana
 analytics-machine-usage analytics-maintenance-activity analytics-member-activity analytics-most-lent
 analytics-payment-reconciliation analytics-qr-scans analytics-recently-added analytics-returns
 analytics-summary analytics-taken-items analytics-top-borrowers asset-generate asset-qr
-auth-organization-invitation-redeem auth-organizations-self-service auth-staff-invitation-accept
+auth-organization-invitation-redeem auth-organizations-self-service
 booking-staff-invite-redeem broadcast-create container-contents container-detail container-history
 container-move containers contract-channel contract-channels contract-test data-export-detail
 data-export-download-url data-export-list-create delivery-log-list delivery-log-retry delivery-test
@@ -249,6 +249,8 @@ STAFF_ROLE_ROUTES = frozenset({
     "admin-staff-roles", "admin-staff-roles-detail", "admin-staff-roles-revoke",
     "admin-staff-roles-restore", "admin-staff-roles-mfa-reset",
 })
+# U-B: a person redeems their own staff invitation (signed in, before any staff role).
+MEMBER_ROUTES |= {"auth-staff-invitation-accept"}
 ACCOUNT_MERGE_ROUTES = frozenset({
     "auth-account-merge-start", "auth-account-merge-prove", "auth-account-merge-resend",
     "auth-account-merge-preview", "auth-account-merge-confirm", "auth-account-merge-cancel",

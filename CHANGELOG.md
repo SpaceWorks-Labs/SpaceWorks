@@ -13,6 +13,15 @@ carries the design rule each change introduced.
 
 ## Unreleased
 
+- **Staff roles on people (one account per person, U-B)** — `admin/makerspaces/<id>/staff-roles/`
+  (list, grant to a community member, invite by email, change roles and machine scopes, revoke,
+  restore) replaces the staff-account routes. **Removed:** `admin/makerspaces/<id>/staff-accounts/`
+  and its `policy`, `<user>/`, `deactivate/`, `reactivate/`, `set-password/` and `resend-invite/`
+  routes, and the `POST admin/makerspaces/<id>/staff-invitations` writer. Staff invitations are
+  accepted signed in with a fresh emailed code; no response returns `accept_url` any more. The auth
+  payload drops `account_kind` (read `kind`) and refresh/logout accept only the `person` and `platform`
+  contexts. Disabling an account is a superadmin `/control/` action. The console uses the one person
+  sign-in; "Link your staff account" merges a second account from the member account page.
 - **Space Works design system** — brand v1 colours, approved Gilroy text and headings,
   Unbounded accents and supplied logo masters; a sidebar shell and shared page layouts replace
   the header/dock UI. The restoration pass restores existing workflow controls across consoles.

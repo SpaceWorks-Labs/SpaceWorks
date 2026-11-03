@@ -13,7 +13,6 @@ export function ScannerPage() {
   const online = useStationConnection();
   const context = currentSessionContext();
   const resolve = useMutation({ mutationFn: (payload: string) => {
-    if (!context.startsWith("staff:")) throw new Error("Open the scanner for your makerspace from its staff console.");
     return staffRequest<ResolveResult>("/admin/qr/resolve", {
       method: "POST", body: JSON.stringify({ payload: payload.trim() }),
     }, context);
@@ -22,7 +21,7 @@ export function ScannerPage() {
   const title = target ? String(target.name ?? target.label ?? target.product ?? "Label resolved") : "Scan a label";
   return <KioskLayout context={{ title: "Scanner", subtitle: "Scan a label or paste its code." }} connection={{ online }}
     mode="work" headerActions={[]} state={{ status: "ready" }}
-    work={{ capture: <ScanWorkbench searchLabel="QR payload" helper="Scan or paste QR payload. Only labels available to your staff account can be resolved."
+    work={{ capture: <ScanWorkbench searchLabel="QR payload" helper="Scan or paste QR payload. Only labels your staff role in this makerspace can see are resolved."
       onFind={payload => resolve.mutate(payload)} onScan={payload => resolve.mutate(payload)} findPending={resolve.isPending}
       result={resolve.isError ? { tone: "danger", title: "Couldn't resolve this label", summary: resolve.error.message,
         next: { label: "Try again", onClick: () => { if (resolve.variables) resolve.mutate(resolve.variables); } } } : target ? {

@@ -43,7 +43,7 @@ export function setAccessToken(token: string, context = currentSessionContext())
   state.owner = owner;
   notifySessionCleared(context);
   void wipeOfflineScopes(offlineSessionPrefix(context)).catch(() => undefined);
-  if (context === "member") rememberOfflineCardOwner(token);
+  if (context === "person") rememberOfflineCardOwner(token);
   state.token = token;
   cleanupLegacyAccessToken();
 }
@@ -55,7 +55,7 @@ export function clearAccessToken(context = currentSessionContext()) {
   state.owner = undefined;
   state.refresh = null;
   clearJobs(context); clearToasts(context);
-  if (context === "member") clearOfflineCards();
+  if (context === "person") clearOfflineCards();
   const cleanup = wipeOfflineScopes(offlineSessionPrefix(context)).catch(() => undefined);
   notifySessionCleared(context);
   cleanupLegacyAccessToken();
@@ -73,8 +73,8 @@ export function expireStaffAuthSession(context = currentSessionContext()) {
   return cleanup;
 }
 
-/** A principal may have both member and delegated browser contexts. Never clear
- * another account merely because it shares an email or the same browser. */
+/** Clear this account's session (person or platform). Never clear another account merely
+ * because it shares an email or the same browser. */
 export async function clearAccountSessions(context = currentSessionContext()) {
   const owner = session(context).owner;
   const contexts = [...sessions.keys()].filter(key => key === context || (owner && session(key).owner === owner));
@@ -108,7 +108,7 @@ export function refreshAccessToken(context = currentSessionContext()): Promise<b
     // Rotation keeps the generation: concurrent requests from this session can retry.
     state.token = body.access;
     state.owner = owner;
-    if (context === "member") rememberOfflineCardOwner(body.access);
+    if (context === "person") rememberOfflineCardOwner(body.access);
     return true;
   })().finally(() => { if (state.refresh === pending) state.refresh = null; });
   state.refresh = pending;

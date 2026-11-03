@@ -12,16 +12,16 @@ function OwnerExport({ actorId }: { actorId: number }) {
   const operationId = useRef(crypto.randomUUID()), mounted = useRef(true);
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   const create = useMutation({ mutationFn: async () => {
-    const session = getSessionGeneration("member"), job = await requestExport(operationId.current);
-    if (!mounted.current || session !== getSessionGeneration("member")) throw new DOMException("The account changed.", "AbortError");
+    const session = getSessionGeneration("person"), job = await requestExport(operationId.current);
+    if (!mounted.current || session !== getSessionGeneration("person")) throw new DOMException("The account changed.", "AbortError");
     return job;
   }, onSuccess: job => { setJobId(job.job_id); operationId.current = crypto.randomUUID(); } });
   const status = useQuery({ queryKey: [...savedDetailsKey(actorId), "export", jobId], queryFn: () => exportStatus(jobId!), enabled: Boolean(jobId), gcTime: 0, retry: false,
     refetchInterval: query => ["queued", "building"].includes(query.state.data?.state || "") && document.visibilityState === "visible" ? 3000 : false });
   const download = useMutation({ mutationFn: async () => {
     if (!jobId) return;
-    const session = getSessionGeneration("member"), blob = await downloadExport(jobId);
-    if (mounted.current && session === getSessionGeneration("member")) saveBlob(blob, "saved-details.zip");
+    const session = getSessionGeneration("person"), blob = await downloadExport(jobId);
+    if (mounted.current && session === getSessionGeneration("person")) saveBlob(blob, "saved-details.zip");
   } });
   const error = create.error || status.error || download.error;
   const awaiting = Boolean(jobId) && (!status.data || ["queued", "building"].includes(status.data.state));

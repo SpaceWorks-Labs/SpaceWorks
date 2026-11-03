@@ -27,7 +27,7 @@ const SECTION_ENTRIES: HubEntry[] = [
 /** Settings that live on their own pages (or in a domain console's settings dialog). */
 const TAB_ENTRIES: HubEntry[] = [
   ["security", "Security", "Staff sign-in rules, platform locks and platform access to personal data.", "security mfa two-step authenticator totp sign in lock platform pii personal data privacy superadmin"],
-  ["users", "Staff & roles", "Create staff accounts, assign roles and machine types.", "staff team people appoint roles users accounts invite machine manager event manager booking manager inventory manager handover"],
+  ["users", "Staff & roles", "Give people staff roles, invite by email, choose machine types.", "staff team people appoint roles users accounts invite machine manager event manager booking manager inventory manager handover"],
   ["emailtemplates", "Email templates", "Edit the emails this space sends.", "email templates messages wording"],
   ["email-logs", "Email delivery log", "Every email sent, failed or skipped.", "email log delivery failed bounced sent"],
   ["api", "API access", "API clients and keys.", "api clients keys tokens integrations developers"],

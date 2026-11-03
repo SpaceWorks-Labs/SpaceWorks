@@ -29,9 +29,8 @@ Owner decisions #63/#65/#66 reverse the account split (D1–D12): **one account 
 staff roles are granted to that person; the superadmin stays a separate platform account.
 U-A1 ships the model, the database guards, the conversion and the identity/RBAC seams below.
 The login/session surface (U-A2, below), interactive merges and deletion (U-C, "Account merge" below
-and "Account deletion") and portability (U-D) have landed; the staff-roles API and console (U-B) land
-next. Until it does, the split-account text kept under "Split-account surfaces awaiting their lanes"
-still describes the staff lifecycle code.
+and "Account deletion") and portability (U-D) have landed, and so have the staff-roles API, staff
+invitations and the one-session console (U-B, "Staff roles on people" below).
 
 **Kinds.** `User.account_kind` stays non-null. `member` IS the person (shown as `person` in the
 API); `platform` is the superadmin (`is_superuser` + `role=superadmin`); `staff` survives only
@@ -273,30 +272,49 @@ transport and retirement text stays current until U-A2/U-B/U-C/U-D replace it.
 routes admitted per request, two refresh cookies. Route classification (`delegated_routes.py`,
 `accounts.E001`, unknown routes deny, a registry entry grants nothing) is unchanged.
 
-**Staff lifecycle and recovery (D2/D4/D6/D7, V2/V6).**
+**Staff roles on people (U-B; replaces the D2/D4/D6/D7 staff-account lifecycle).**
 
-Only a local Space Manager or the platform superadmin creates staff accounts. Only the
-superadmin manages Space Managers, in every makerspace (owner decisions #110, #111 Q14); local
-Space Managers manage all other staff. No lifecycle action may target self.
-Deactivation and demotion lock the tenant and its Space Manager memberships and refuse removal
-of the last active Space Manager, including concurrent removals. Removal deactivates and keeps
-history; staff membership deletion/self-service leave and member-to-staff attachment are refused.
+There are no staff accounts to create. A staff role is a STAFF-TRACK `MakerspaceMembership` row on
+a person, managed through `admin/makerspaces/<id>/staff-roles/` (routes `admin-staff-roles*`, all
+membership-only, recent re-authentication on reads too, and in `mfa_grace.STRICT_ROUTES`):
+`GET` rows plus the viewer's policy, `POST {user_id}` grants to an ACTIVE COMMUNITY MEMBER of the
+space (`not_community_member` otherwise), `POST {email}` always sends an invitation, `PATCH` roles
+and machine scopes, `POST .../revoke` and `.../restore`. One policy (`accounts/staff_account_policy.py`)
+decides for the API, invitations and `/control/`:
 
-The lifecycle API under `admin/makerspaces/<id>/staff-accounts/` and `/control/` actions share
-services, recent server-owned reauthentication, tenant write gates, quotas and append-only audits.
-Generic admin account fields/password/bulk/delete and legacy membership/reset writers cannot
-bypass them. There is no application break-glass reset; the operator's server-side management
-command remains the platform break-glass recovery surface.
+- the platform superadmin acts in every space (Lane D's surface admits it to the same routes); a
+  Space Manager of the space acts on every staff row EXCEPT a Space Manager's: only the superadmin
+  grants, changes or revokes the Space Manager role or a Space Manager row
+  (`space_manager_superadmin_only`; #110, #111 Q14);
+- nobody changes their own staff row (`self_change`); the last active Space Manager cannot be revoked
+  or demoted (`last_manager`, under the tenant lock and the space's manager-row locks);
+- every writer runs inside the tenant gate (`tenant_gated`, 423) and the staff quota
+  (`quota_exceeded`); refusals are `{code, detail}` (`StaffRoleRefused`);
+- revoking or demoting a row revokes that space's staff device grants
+  (`services_staff_grants.revoke_staff_grants`); the person's member features keep working;
+- audited `staff_role.granted|changed|revoked|restored`; a grant, restore or accepted invitation sends
+  the person a private "you were granted a staff role" notice (stream `account`).
 
-Email onboarding initializes the already-created staff account, never links by email or creates
-one on redemption. Invitations bind account ID, full role/machine-scope snapshot and
-`credential_generation`. Under locks redemption rechecks the inviter's live authority, matching
-snapshots/generation, expiry, active status and unusable password. Resend revokes the old bearer.
-Admin password issue and deactivation increment generation and revoke open invitations atomically,
-so reset/redemption races cannot install stale credentials. Admin-issued passwords set
-`must_change_password`, revoke sessions/grants and are never logged/emailed; generated passwords
-are displayed once in a no-store response. Optional authenticator reset consumes pending MFA.
-Without Email, Membership, staff invitations or MFA, admin-set initial passwords still work.
+Space Managers no longer set staff passwords, reactivate accounts or reset factors (Q9, #66): an MFA
+reset follows S-A's rule (`mfa_reset.rule_for`, `admin-staff-roles-mfa-reset`), and
+`admin_api.services_user_access.reset_user_password` refuses a person with elevated authority unless
+the caller is the superadmin. Turning a whole ACCOUNT off is the superadmin's `/control/` "Disable
+account" action (`staff_account_lifecycle.disable_account`, control step-up and a reason): every
+session and device grant and every staff row is revoked, audited `account.disabled`; it outranks
+the last-manager rule. "Re-enable account" undoes it; staff rows stay revoked until restored.
+
+**Staff invitations by email.** An invitation binds an address (encrypted), a role snapshot and a
+machine-scope snapshot, and never creates or binds an account (`StaffInvitation.account` stays null).
+The link goes to the invitee only: email, plus their own chat channels when the address belongs to a
+verified account (X37, `integrations.invite_chat`); staff rooms hear only that an invitation was sent.
+No response ever returns `accept_url` (staff-roles, invitation resend, makerspace creation setup).
+Redemption is `POST auth/staff-invitations/accept` twice, signed in to the person's own account (a
+member route): the account email must equal the invitation address (`invite_email_mismatch`), then a
+fresh 6-digit code emailed to it (10 minutes, 5 failures per invitation, HMAC digest bound to the
+invitation and the person, stored as an `EmailVerificationChallenge` keyed `staff-invite:<id>` so it
+never touches the account's own email verification) grants the role under the inviter's
+re-checked authority and opens the person's staff MFA grace (`open_grace(user, "invite")`). It does
+not stamp `email_verified_at`. Resend revokes the old link; revoke ends it.
 
 (The staff recovery context below is SUPERSEDED by U-A2: recovery is person or platform only.)
 Self-service email recovery uses separate `member`, `staff` and `platform` contexts. Envelopes bind

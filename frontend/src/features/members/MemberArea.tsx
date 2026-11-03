@@ -67,7 +67,7 @@ export function MemberArea() {
   const [hasPartnerEvents, setHasPartnerEvents] = useState(false);
   const [claimSession, setClaimSession] = useState(hasClaimSession);
   useEffect(() => {
-    refreshAccessToken("member").then(() => { setClaimSession(hasClaimSession()); return client.invalidateQueries({ queryKey: ["member"] }); }).finally(() => setRestoring(false));
+    refreshAccessToken("person").then(() => { setClaimSession(hasClaimSession()); return client.invalidateQueries({ queryKey: ["member"] }); }).finally(() => setRestoring(false));
   }, [client]);
   const bootstrap = useQuery({ queryKey: ["member", slug, "bootstrap"], queryFn: () => bootstrapTenant({ slug: slug || undefined }), retry: false });
   const brandStyle = useTenantBranding(bootstrap.data);
@@ -169,7 +169,7 @@ export function MemberArea() {
       // A signed-out visitor gets a way in, not "Your account" and "Sign out".
       user={unauthenticated ? { name: "Not signed in", menu: [{ label: "Sign in", onClick: () => setShowSignIn(true) }] }
         : { name: profile.data?.username || "Your account", menu: [{ label: "Account & two-step sign-in", href: "/mfa" }, { label: "Delete account", href: `${slug ? `/m/${encodeURIComponent(slug)}` : ""}/member/account?section=deletion` }],
-        onSignOut: () => { void logout("member").catch(() => undefined).finally(() => { forgetOfflineMemberData(); client.clear(); window.location.assign(slug ? `/m/${slug}/member` : "/member"); }); } }}>
+        onSignOut: () => { void logout("person").catch(() => undefined).finally(() => { forgetOfflineMemberData(); client.clear(); window.location.assign(slug ? `/m/${slug}/member` : "/member"); }); } }}>
     <MemberSectionNavigation><MemberScreenLayout tab={activeTab} section={section} hasPartnerEvents={hasPartnerEvents} accountSections={accountSections} accountSelfService={accountSelfService} canRefer={Boolean(membershipModuleOn && membership?.membership_status === "active" && membership.can_refer && membership.referrals_enabled)} member={membership?.membership_status === "active"} status={membership?.membership_status} requested={requested}
       name={bootstrap.data?.makerspace.name || "Space Works"} slug={resolvedSlug} modules={bootstrap.data?.modules ?? []}
       activity={memberActivity} state={bootstrap.isLoading ? { status: "loading" } : bootstrapBlocked ? { status: "error", error: "Couldn't load your makerspace. Try again.", onRetry: () => void bootstrap.refetch() } : { status: "ready" }}

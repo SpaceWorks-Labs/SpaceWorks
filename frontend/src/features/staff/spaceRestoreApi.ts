@@ -9,7 +9,9 @@ export type SpaceRestorePreview = {
   models: Array<{ label: string; live: number; archived: number; removed: number; added: number }>;
   totals: { archived_rows: number; live_rows: number; removed_rows: number; added_rows: number };
   memberships: { removed: number; restored: number };
-  accounts: { referenced: number; reattributed: number; erased_since: number };
+  accounts: { referenced: number; reattributed: number; erased_since: number;
+    /** U-D: accounts merged into another since the archive, and where their rows now point. */
+    merged_since: number; merged_followed: { account: string; survivor: string }[] };
   money_after_restore_point: FlaggedMoney[];
   evidence_after_restore_point: number;
   objects: { count: number; bytes: number };

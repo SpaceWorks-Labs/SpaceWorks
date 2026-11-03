@@ -3117,6 +3117,9 @@ Owner decisions #62, #66, #74, #110c, #111 Q9-Q11, #128 C-1/C-2 and #135 Q-A1-Q-
   waiver signed when waivers are on -- `require_public_machine_requester`). Members only; staff
   still create jobs for a member from the console. Per-type `max_open_jobs` is counted under the
   makerspace lock (409 `job_limit_reached`).
+- **A claim session never submits or acts on a job (#174).** Job requests come from checked-in
+  members (#140); a walk-in goes through staff. `accounts/claim_routes_r2.py` refuses the job
+  upload, submit and every member job route to a claim session.
 - **Files are checked against `maker_formats`.** A job file is staged with the type's registry
   groups (`job_policy.file_groups`: printers fab-3dprint + hardware-cad, laser/vinyl fab-2d, CNC
   fab-cnc + fab-2d + hardware-cad, PCB hardware-pcb; images only as screenshots), presigned to

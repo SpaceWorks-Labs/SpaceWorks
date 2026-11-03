@@ -14,7 +14,11 @@ export type StaffTicket = {
   /** Registrations that used this type; once any exist, price and audience are fixed. */
   registration_count?: number;
 };
-export type StaffTicketPatch = Partial<Pick<StaffTicket, "name" | "amount" | "audience" | "capacity" | "sales_start_at" | "sales_end_at" | "is_active">>;
+/** Release 2 L6 (G29): order options on a ticket type. */
+export type TicketOrderFields = { tier_group: string; tier_rank: number; pricing_mode: "fixed" | "pwyw"; min_amount: string;
+  seats_per_ticket: number; is_hidden: boolean; min_quantity: number; per_order_limit: number };
+export type StaffTicketPatch = Partial<Pick<StaffTicket, "name" | "amount" | "audience" | "capacity" | "sales_start_at" | "sales_end_at" | "is_active">>
+  & Partial<TicketOrderFields>;
 
 type TicketingKind = "invites" | "promo-codes" | "ticket-types";
 

@@ -88,7 +88,7 @@ export function PublicEventDetailPage({ resolvedSlug, resolvedToken, canonicalUr
           </div> : null,
           form: event ? <PublicProgrammeEntry publicToken={event.public_token} slug={makerspaceSlug} features={bootstrap?.features} versionedForm={Boolean(event.custom_form && !Array.isArray(event.custom_form))}>
             {event && organizationAudience ? <OrganizationEventAdmission key={`${makerspaceSlug}:${event.public_token}`} event={event} makerspaceSlug={makerspaceSlug} organisation={name} />
-            : event?.registration_open ? <EventRegistrationEntry key={`${makerspaceSlug}:${event.public_token}`} event={event} makerspaceSlug={makerspaceSlug} organisation={name} /> : null}</PublicProgrammeEntry> : null,
+            : event?.registration_open ? <EventRegistrationEntry key={`${makerspaceSlug}:${event.public_token}`} event={event} makerspaceSlug={makerspaceSlug} organisation={name} ordersEnabled={Boolean(bootstrap?.features.includes("events.orders"))} /> : null}</PublicProgrammeEntry> : null,
           secondary: event ? [{ label: "Add to calendar", pending: calendar.isPending, onClick: () => calendar.mutate(event) }, { label: "Share event", onClick: async () => {
             setShareError(""); try { if (navigator.share) await navigator.share({ title: event.title, url: canonicalUrl ?? window.location.href }); else await navigator.clipboard.writeText(canonicalUrl ?? window.location.href); } catch { setShareError("Could not share this event."); }
           } }] : [],

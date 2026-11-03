@@ -35,7 +35,7 @@ def lock_session_user(authenticated):
         or user.account_restored_at != authenticated.account_restored_at
     ):
         raise AuthenticationFailed("Account or credentials are no longer available. Sign in again.")
-    for attr in ("_mfa_verified_version", "_mfa_provider_verified", "_mfa_source"):
+    for attr in ("_mfa_verified_version", "_mfa_provider_verified", "_mfa_source", "_mfa_method"):
         if hasattr(authenticated, attr):
             setattr(user, attr, getattr(authenticated, attr))
     return user

@@ -18,6 +18,9 @@ class ReauthenticationStatusSerializer(serializers.Serializer):
     verified = serializers.BooleanField()
     password_available = serializers.BooleanField()
     mfa_enabled = serializers.BooleanField()
+    passkey_available = serializers.BooleanField(
+        help_text="The person may re-authenticate with a passkey (reauth/passkey); with passkeys and no "
+                  "authenticator, a password alone no longer re-authenticates.")
     providers = serializers.ListField(child=serializers.CharField())
 
 

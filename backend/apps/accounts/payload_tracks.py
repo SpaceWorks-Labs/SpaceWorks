@@ -75,5 +75,14 @@ def staff_role_entries(staff_rows):
 
 
 def mfa_grace_ends_at(user):
-    """#128 C-1 seam: when this person's staff-MFA grace ends. Null until S-A fills it."""
-    return None
+    """#128 C-1: when this person's staff two-step grace ends (past or future), for the
+    banner shown at each sign-in; null for anyone who has a factor or needs none. The
+    first sign-in of an unenrolled elevated person starts it (Q-A1)."""
+    from apps.accounts.mfa_grace import grace_ends_at
+    return grace_ends_at(user)
+
+
+def mfa_enrolment_due(user):
+    """True for an elevated person with no second factor (staff MFA is mandatory, #62)."""
+    from apps.accounts import mfa_policy
+    return mfa_policy.required(user) and not mfa_policy.is_enrolled(user)

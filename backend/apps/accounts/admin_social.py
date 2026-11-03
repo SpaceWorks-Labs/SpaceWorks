@@ -109,7 +109,10 @@ class PlatformLoginMethodsAdmin(AuditedControlChangeMixin, SuperuserOnlyModelAdm
             "password_enabled", "social_enabled", "phone_enabled", "self_registration_enabled",
         )}),
         ("Installed providers", {"fields": ("google_enabled", "apple_enabled", "github_enabled")}),
-        ("Two-step sign-in", {"fields": ("mfa_enabled",)}),
+        ("Two-step sign-in", {"fields": ("mfa_enabled", "passkeys_enabled"), "description": (
+            "The two-step switch governs MEMBER opt-in only: every staff role always needs two-step "
+            "sign-in (an authenticator app or a passkey), whatever it says. Passkeys are offered, never "
+            "required; turning them off keeps every passkey but stops their use.")}),
     )
 
     def has_add_permission(self, request):

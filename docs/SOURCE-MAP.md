@@ -834,6 +834,13 @@ the schema (accounts 0051-0053; 0051's device-trigger body is in `_0051_passkey_
 `makerspaces/security_policy_store.py` stores `policy`-backed security values in
 `MakerspaceSecurityPolicy` (`models_security.py`) and `security_settings_person.py` resolves a
 value per space or per person (strictest across their staff spaces).
+Login security S-A: `accounts/mfa_policy.py` is the MFA floor (mandatory staff MFA, `is_enrolled`,
+proof claims), `staff_identity.require_staff_mfa` the staff gate, `mfa_grace.py` the 3-day grace,
+`staff_session_policy.py` the staff session clock, `mfa_reset.py` (+ `views_mfa_reset.py`,
+`admin_mfa_reset.py`, `management/commands/reset_mfa.py`, `staff_mfa_readiness.py`) the MFA-reset rule,
+`security_signals.py` the `mfa_changed` signal, and `accounts/passkeys/` the WebAuthn backend (`rp_id`,
+`ceremonies`, `services`, `assertion`, `policy`, `views`, `urls`, `checks`; routes classified in
+`passkey_route_catalog.py`). `makerspaces/migration_support/retire_staff_mfa.py` backs makerspaces 0119.
 `staff_accounts.py` atomically creates a tenant staff principal and its roles/type scopes;
 `staff_account_policy.py`, `staff_account_services.py` and `staff_account_lifecycle.py`
 own staff lifecycle authority, onboarding, deactivation and administrator password issue.

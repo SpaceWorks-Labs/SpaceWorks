@@ -50,8 +50,8 @@ never deletes a shell. New accounts are people or platform (`UserManager` refuse
 (active, valid staff-track rows in servable spaces), `staff_holder_q`, `has_elevated_authority`
 (staff role, organization authority or a resource grant; the superadmin is exempt),
 `actor_ids_for` (the person plus every shell merged into them, transitively: read history
-with it) and `require_staff_mfa(user, claims)` (interim: provider-asserted proof never
-satisfies an elevated person, then the ordinary MFA floor; S-A fills the final body). The
+with it) and `require_staff_mfa(user, claims, route=None)` (the staff gate: VERIFIED factor proof,
+the 3-day grace, the staff session clock; see **Mandatory staff MFA** under Login security). The
 remaining raw readers are model/constraint/guard code, creation writes, `DeviceGrant` columns,
 the `/control/` session-binding key and the files of U-A2/U-B/U-C/U-D.
 
@@ -152,7 +152,7 @@ carry staff authority (route gate here; the payload lists no staff roles for the
 roles[{id,slug,name}], actions}]` = the staff authority THIS session may exercise (browser: all;
 native staff grant: its tenant; native member grant and claim: none), `makerspaces` = one entry
 per space merging the community row, the staff row (role identity and actions) and organization
-grants, with `tracks`; `superadmin_actions`; `mfa_grace_ends_at` (null until S-A, #128 C-1);
+grants, with `tracks`; `superadmin_actions`; `mfa_grace_ends_at` and `mfa_enrolment_due` (S-A, #128 C-1);
 `session_authority` = member | native_staff | platform | verification_only. `account_kind` stays
 one release as a deprecated alias (`member` = person); `staff_makerspace` is gone.
 
@@ -2752,9 +2752,12 @@ Owner decisions #110c/#110e and #111 Q9-Q13 (P1b, superadmin always on).
 
 - **One registry.** `makerspaces/security_settings_registry.py` lists every per-space security setting
   (key, label, kind `bool|int|choice|list`, default, `stricter(a, b)`, storage `feature|policy`). Release 1
-  registers only `security.staff_mfa_required` (storage `feature`: presence in `enabled_features`).
-  Release 2 login-security adds its keys here with storage `policy` (the table exists since lane S0, see
-  **Login security** below); do not add a second registry or panel.
+  registered `security.staff_mfa_required` (storage `feature`); release 2 retired it (makerspaces 0119,
+  staff MFA is a platform rule, #62), so no `feature` row is left. Release 2 login-security adds its keys
+  here with storage `policy` as each door honours them (S-A: `passkeys_allowed`,
+  `staff_session_max_hours`, `staff_idle_timeout_minutes`; see **Login security** below); do not add a
+  second registry or panel. The staff panel shows a fixed read-only "Staff MFA: required for every staff
+  role" row above the registry rows, and each on/off row carries `strict_value` (what a lock forces).
 - **One writer.** `makerspaces/security_settings.py` (`set_setting`, `set_settings`, `lock`, `unlock`,
   `effective`) is the only path that changes a security key. It holds the makerspace row lock, checks
   authority, checks the lock floor and records `makerspace.security_setting_changed` (key, from, to,
@@ -2778,8 +2781,8 @@ Owner decisions #110c/#110e and #111 Q9-Q13 (P1b, superadmin always on).
   one. A service write below a lock's floor raises `SecuritySettingLocked` (`security_setting_locked`,
   a 400 on the API and a Django `ValidationError` elsewhere). A queryset `.update(enabled_features=...)`
   bypasses the receiver; a local AST test keeps that pattern out of `backend/apps`.
-- **Readers are unchanged.** `accounts/mfa_policy.py` still reads `enabled_features__contains`; the lock
-  works by keeping the stored value at or above the floor.
+- **Readers.** Per-person rows resolve through `security_settings_person` (strictest across the person's
+  staff spaces); the lock works by keeping the stored value at or above the floor.
 - **Superadmin PII view (#110e, Q12).** Everything is visible to the superadmin, but personal data is
   MASKED until they open a window. PII means the scoped-encryption registry's fields plus an account's
   email, phone and name. `PlatformPiiAccessGrant(id, actor, makerspace | subject, reason 10-300, opened_at,
@@ -2859,13 +2862,104 @@ Owner decisions #62, #66, #74, #110c, #111 Q9-Q11, #128 C-1/C-2 and #135 Q-A1-Q-
   (HMAC-SHA256 under a key derived from `SECRET_KEY` and the purpose); `verify` is constant time; TTL is
   `LOGIN_CODE_TTL_SECONDS`, the attempt cap 5.
 
+### Mandatory staff MFA, the 3-day grace and the reset rule (S-A)
+
+- **Required, never switchable (#62).** `mfa_policy.required(user)` = not the superadmin AND
+  `has_elevated_authority` (a staff role, organization authority or a resource grant), independent of the
+  platform `mfa_enabled` switch and of enrolment; that switch governs member opt-in only
+  (`available(user)` = switch OR required). `source_for` never returns `bypass` for a required person.
+  A factor is an enabled authenticator OR at least one passkey (`is_enrolled`); for STAFF purposes a
+  passkey counts only while `security.passkeys_allowed` lets this person use passkeys
+  (`staff_factor_enrolled`). Removing the last factor of a required person is refused (`last_factor`);
+  disabling TOTP keeps the recovery codes when a passkey remains.
+- **Sign-in never forces enrolment; staff routes do.** An enrolled account proves its factor at every
+  sign-in (`needs_challenge` = available AND enrolled). An elevated person with no factor still signs in
+  with a member session: member features are never blocked (#128 C-1). Tokens carry `mfa_source`,
+  `mfa_version` and, for VERIFIED proof, `mfa_method` (`totp|recovery|passkey`); `assert_verified`
+  accepts provider proof only for people MFA is not mandatory for and treats `email_code` like none.
+- **The staff gate** is `staff_identity.require_staff_mfa(user, claims, route=None)`, called by
+  `surface_policy` for every membership-only and delegable staff route (delegated organization and
+  resource-grant routes included) and by the native staff step-up. It passes on VERIFIED proof with a
+  known `mfa_method` bound to the live `UserMFA.version`; provider, `email_code`, none and bypass proof
+  never pass. Refusals are 403s (`mfa_required` when a factor exists, `mfa_enrollment_required` when not)
+  so the member session keeps working.
+- **The grace (`accounts/mfa_grace.py`; #135 Q-A1-Q-A3).** One `StaffMfaGrace` per person, ever: three
+  days from when they gained elevated authority without a factor. A staff-track row becoming active opens
+  it (`source=grant`, membership signal on commit); invitation and merge flows may call
+  `open_grace(user, "invite"|"merge")`; anyone else elevated and unenrolled (existing staff after the
+  release-2 upgrade) gets `source=upgrade` the first time the payload or a staff route looks. During the
+  grace staff routes accept a session without a factor EXCEPT `mfa_grace.STRICT_ROUTES` (security
+  settings, PII windows, data exports, credential resets, role changes), which always need real proof.
+  Space Managers get the grace too. Enrolling (TOTP or a passkey) closes it; an MFA reset closes it, or
+  records it as used, so the person enrols before staff screens open again. Audited
+  `auth.staff_mfa_grace_started`. The payload carries `mfa_grace_ends_at` (past or future; null when no
+  grace applies) and `mfa_enrolment_due` for the SPA banner.
+- **Staff session length and idle timeout (`accounts/staff_session_policy.py`; #157).** Browser tokens
+  stamp `auth_time` at sign-in; for a person with a staff role every mint and rotation stamps
+  `staff_until` = `auth_time` + the strictest `security.staff_session_max_hours` (default 168), pulled to
+  the refresh time when the gap since the previous refresh exceeds the strictest
+  `security.staff_idle_timeout_minutes` (default 0 = off); it never moves later. Past it, staff routes
+  refuse with `staff_session_expired` and the member session continues; signing in again starts a new
+  clock. Idle time is measured between refreshes (about one access-token lifetime of precision). Native
+  device grants carry no clock (attested, role-bound grants with their own lifecycle).
+- **The MFA-reset rule (#66, #110; `accounts/mfa_reset.py`).** `reset(actor, person, reason, makerspace)`
+  clears the authenticator, every passkey and the recovery codes, bumps `UserMFA.version`, consumes open
+  challenges and ceremonies and revokes every session and device grant. Allowed for the platform
+  superadmin always (the `/control/` user action "Reset two-step sign-in" behind the control step-up,
+  Lane D's console surface, the host command `manage.py reset_mfa <user> --reason ...`), and for a Space
+  Manager of the space ONLY when every elevated authority the person holds is in that space (no staff
+  role elsewhere, no organization authority, no resource grant elsewhere) and the person is not a Space
+  Manager. Otherwise `mfa_reset_not_allowed`. API: `POST admin/makerspaces/<id>/staff-roles/<membership>/
+  mfa-reset {reason}` (route `admin-staff-roles-mfa-reset`, recent re-authentication, a strict route).
+  Audited `auth.mfa_reset` (rule, reason, passkeys removed); `security_signals.mfa_changed(user, change)`
+  fires after commit for every factor change (S-B connects the alert email).
+  `manage.py staff_mfa_readiness` lists unenrolled elevated people per space with their grace end and
+  reset path; nothing is revoked at deploy.
+
 ### Login risk and remembered devices (S-B fills)
 
 ### Security alerts and "this wasn't me" (S-B fills)
 
 ### IP blocking, allow/deny rules and CAPTCHA (S-C fills)
 
-### Passkeys and the relying-party ID (S-A fills)
+### Passkeys and the relying-party ID (S-A)
+
+- **Library.** py_webauthn (`webauthn==3.0.1`) with pinned `pyOpenSSL`, `pyasn1` and `pyasn1-modules`;
+  `tldextract==5.4.0` reads only its bundled Public Suffix List snapshot (`suffix_list_urls=()`, no
+  cache directory, never the network). Versions and licences are in `NOTICE`.
+- **RP ID only from a verified origin (`accounts/passkeys/rp_id.py`).** A ceremony's origin is the
+  request's `Origin` header and must equal `PUBLIC_APP_BASE_URL`, an entry of `PLATFORM_STAFF_ORIGINS`, or
+  `https://<frontend_domain>` of a space whose custom domain is VERIFIED; anything else is
+  `rp_id_unavailable`. The RP ID is that host, or `PLATFORM_DOMAIN_SUFFIX` without its dot for hosts under
+  the suffix. An IP address or a public suffix (private PSL domains included) is never an RP ID: system
+  check `accounts.E010` fails on a public-suffix configuration (`accounts.W010` warns for an IP).
+- **Ceremonies (`passkeys/ceremonies.py`).** One `WebAuthnCeremony` per options call: 32 random bytes,
+  the exact origin and RP ID, 5 minutes; consumed in its own transaction before verification, so a
+  response is never replayed. Registration, sign-in and re-authentication require user verification; the
+  second factor after a password prefers it. Attestation is `none`. Only credentials whose `rp_id` is the
+  request's RP ID are offered or accepted; a sign-count regression fails like any other check. The user
+  handle is opaque (no name, email or phone) and is not used for lookup (credential ids are unique).
+- **Using them (`passkeys/services.py`, `assertion.py`; web only, Q10).** Add, rename and remove need a
+  person's own browser session with recent re-authentication (never a platform account, a native app or a
+  verification-only session); at most 10. Adding or removing bumps `UserMFA.version` and ends every
+  session; the calling browser gets a fresh one (a new passkey proves itself), recovery codes are created
+  when the account had none, and adding closes the staff grace. Passwordless sign-in (discoverable
+  credentials, conditional UI) yields VERIFIED + `mfa_method=passkey`; staff are never locked out by the
+  member-account switch. `begin_mfa`/`verify_mfa` serve the second factor of a password login (S-B's
+  `mfa/verify factor=passkey` calls `verify_mfa`). `reauth/passkey` stamps the ten-minute window; a person
+  with passkeys and no authenticator can no longer re-authenticate with a password alone
+  (`passkey_required`). `begin_proof`/`verify_proof` let U-C's account-merge `credentials` method accept
+  the source account's passkey (call them only after the source password matched).
+- **Who may use them.** `PlatformLoginMethods.passkeys_enabled` (fail-open read, default on) and the
+  per-space `security.passkeys_allowed` (strictest across the person's staff spaces; off is stricter and a
+  lock forces it off, #157) can only take passkeys away; a failed policy read refuses. Turning them off
+  never deletes a passkey. `/api/v1/config` publishes `passkeys_enabled`.
+- **Domain change.** Passkeys are bound to the RP ID they were created on. A credential on an RP ID the
+  deployment no longer serves still counts for `is_enrolled` (no downgrade to "no factor") but is not
+  offered. The makerspace admin payload carries `passkey_only_accounts` (people whose only factor is a
+  passkey on the space's custom-domain RP ID) so the operator can warn them before changing the domain.
+- **Audit.** `auth.passkey_registered|renamed|removed|login_succeeded|login_failed`; no key material,
+  ids or labels in metadata.
 
 ## Settings authority (release 2, lane L17; #101, #128 C-11)
 

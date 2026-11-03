@@ -77,6 +77,11 @@ def mfa_login_enabled():
     return bool(_switches().mfa_enabled)
 
 
+def passkeys_enabled():
+    """Passkeys may be added and used (fail-open like every read here; default on, #74)."""
+    return bool(_switches().passkeys_enabled)
+
+
 def social_login_enabled():
     """Covers the built-ins AND every configured OIDC provider.
 

@@ -20,6 +20,9 @@ class PublicConfigSerializer(serializers.Serializer):
     self_registration = serializers.DictField(required=False)
     member_accounts = serializers.DictField(required=False)
     hosting_requests = serializers.DictField(required=False)
+    passkeys_enabled = serializers.BooleanField(
+        help_text="Passkey sign-in and registration are offered (the platform switch; a person's staff spaces "
+                  "may still turn them off for that person). Passkeys are never required.")
     native = NativeConfigSerializer(required=False)
 
 
@@ -35,9 +38,11 @@ class PublicConfigView(APIView):
         responses={200: PublicConfigSerializer, **errors(400, 503)},
     )
     def get(self, request, *args, **kwargs):
+        from apps.accounts.login_methods import passkeys_enabled
         payload = {
             "email_enabled": email_enabled(),
             "public_image_max_bytes": settings.PUBLIC_IMAGE_MAX_BYTES,
+            "passkeys_enabled": passkeys_enabled(),
         }
         from apps.accounts.login_methods import (
             password_login_enabled,

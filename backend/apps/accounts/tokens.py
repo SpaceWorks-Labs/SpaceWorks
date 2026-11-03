@@ -41,7 +41,7 @@ class SpaceWorksRefreshToken(_GenerationBoundToken, RefreshToken):
         # credential's version between these reads without proving its factor.
         from apps.accounts.session_issuance import lock_session_user
         user = lock_session_user(user)
-        from apps.accounts.mfa_policy import assert_verified, credential, source_for
+        from apps.accounts.mfa_policy import assert_verified, stamp_claims
         assert_verified(user)
         token = super().for_user(user)
         # One account per person: ``kind`` is person|platform and no token names a
@@ -51,10 +51,9 @@ class SpaceWorksRefreshToken(_GenerationBoundToken, RefreshToken):
         token["credential_generation"] = user.credential_generation
         token["surface"] = "platform" if token["kind"] == PLATFORM_KIND else "member"
         assert_surface(user, token["surface"])
-        token["mfa_source"] = source_for(user)
-        row = credential(user)
-        if row:
-            token["mfa_version"] = str(row.version)
+        stamp_claims(user, token)  # mfa_source, mfa_version and the mfa_method factor
+        from apps.accounts.staff_session_policy import stamp_new
+        stamp_new(user, token)  # auth_time, and staff_until for a person with a staff role
         token["auth_generation"] = current_auth_generation()
         if web_session:
             from apps.accounts.web_sessions import create_session

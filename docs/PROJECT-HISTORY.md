@@ -6,6 +6,15 @@
 
 ## Condensed changelog (newest first — full detail in `git log`)
 
+- **2026-11-02 -- release 2 S-A, mandatory staff MFA and passkeys (#62, #66, #74, #128 C-1/C-2,
+  #135 Q-A1-Q-A3, #157).** Two-step sign-in is required for every staff role, independent of the platform
+  switch (now member opt-in only); `security.staff_mfa_required` retired (makerspaces 0119). A 3-day grace
+  per person, ever, with strict routes that still need a factor; staff session length and idle timeout per
+  space; the MFA-reset rule (superadmin always, a Space Manager only inside the rule; `/control/` action,
+  `reset_mfa` host command, API); `staff_mfa_readiness`. Passkeys backend on py_webauthn 3.0.1:
+  registration, passwordless sign-in, second factor, re-authentication, RP ID only from a verified origin,
+  `security.passkeys_allowed`.
+
 - **2026-10-31 -- release 2 L15, paid and free everywhere (#84, #85).** One pricing kernel
   (`payments/pricing`, `quote()`) behind every charge and every preview: per-area rate cards (free or
   paid, caps, grace, billing increments), per-item prices, loan rental at checkout or at return, staff-set

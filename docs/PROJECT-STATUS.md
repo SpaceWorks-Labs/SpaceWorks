@@ -65,15 +65,20 @@ a `pip-audit` CI job. The global CSP `script-src` omits `'unsafe-eval'`; a tiny
 origin to `img-src` **only for `/control/` responses** (django-unfold ships eval-requiring Alpine.js; the
 JSON API + public docs stay on the strict policy).
 
-**Staff MFA and invitations (Wave 1).** TOTP is optional for superadmins (password-only
-until they enroll; changed 2026-10-16), required for staff when a makerspace enables
-`security.staff_mfa_required` (set in the space's Security panel by its Space Manager or a superadmin, who
-can lock it on; see **Per-space security settings** in `docs/INVARIANTS.md`), and optional for members.
-When MFA is available, enrolled password, phone and native password sign-ins return an
+**Staff MFA and invitations.** Since release 2 (lane S-A, owner decision #62) two-step sign-in is
+**mandatory for every staff role in every space** (an authenticator app or a passkey); it is a platform
+rule, not a setting, and the old `security.staff_mfa_required` switch is retired (makerspaces 0119). A
+person who gains a staff role without a factor gets a 3-day grace, then staff screens refuse
+(`mfa_enrollment_required`) until they enrol; member features never block (#128 C-1). The superadmin
+stays optional (password-only until they enroll) and members opt in. Passkeys (WebAuthn, web only)
+sign people in and count as the staff factor. The MFA-reset rule, `staff_mfa_readiness` and the details
+are in **Login security** in `docs/INVARIANTS.md`.
+When MFA applies, enrolled password, phone and native password sign-ins return an
 opaque five-minute challenge before issuing tokens. Identity-provider sign-ins (Google,
-Apple and configured OIDC) skip local TOTP by owner decision and carry provider proof.
-The platform login-method setting `mfa_enabled` defaults on; switching it off overrides
-staff requirements and pauses enrollment/recovery regeneration without clearing credentials.
+Apple and configured OIDC) skip local TOTP for members only and carry provider proof, which never
+satisfies a staff route. The platform login-method setting `mfa_enabled` defaults on and governs
+MEMBER opt-in only: switching it off pauses member enrollment/recovery regeneration without clearing
+credentials, and never pauses staff MFA.
 Sessions minted while bypassing a challenge are refused when MFA is re-enabled, including
 rotated native sessions and Django control sessions; verified and provider sessions retain
 credential-version revocation. A locked credential

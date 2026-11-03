@@ -24,7 +24,7 @@ class PublicStatsMetricSerializer(serializers.Serializer):
 
 
 class PublicStatsPeriodSerializer(serializers.Serializer):
-    key = serializers.ChoiceField(choices=["month", "year", "all", "fy"])
+    key = serializers.CharField(help_text="month, year, all or fy.")
     label = serializers.CharField()
     start = serializers.DateTimeField(allow_null=True)
     end = serializers.DateTimeField(allow_null=True)

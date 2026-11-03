@@ -30,12 +30,18 @@ class PublicStatsSettingsSerializer(serializers.Serializer):
     enabled = serializers.BooleanField(help_text="The public stats page is published.")
     sections = _KeyListField(group.SECTIONS, len(group.SECTIONS),
                              help_text="Shown sections in page order; a section left out is off.")
-    period = serializers.ChoiceField(choices=list(group.PERIODS),
-                                     help_text="The one period every period count uses; visitors cannot change it.")
+    # A CharField, not a ChoiceField: a second `period` enum would rename the existing PeriodEnum.
+    period = serializers.CharField(help_text="month, year, all or fy: the one period every period count uses; "
+                                             "visitors cannot change it.")
     headline = _KeyListField(group.METRICS, group.MAX_HEADLINE,
                              help_text="Up to four metric keys shown first; a hidden section's metric is skipped.")
     tv_mode_enabled = serializers.BooleanField(help_text="Serve the full-screen TV page at /stats/tv.")
     tv_refresh_seconds = serializers.IntegerField(min_value=group.TV_REFRESH_MIN, max_value=group.TV_REFRESH_MAX)
+
+    def validate_period(self, value):
+        if value not in group.PERIODS:
+            raise serializers.ValidationError(f"Choose one of: {', '.join(group.PERIODS)}.")
+        return value
 
 
 class _ChoiceSerializer(serializers.Serializer):

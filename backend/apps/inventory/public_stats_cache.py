@@ -1,7 +1,7 @@
 """A short per-space cache in front of the public stats builder (#170).
 
-The key carries a fingerprint of every switch the payload depends on (modules, features,
-publication flags and the Settings › Public stats group), so a change to any of them is a
+The key carries a fingerprint of every switch the payload depends on (the edition, modules,
+features, publication flags and the Settings › Public stats group), so a change to any of them is a
 new key at once; saving the settings group also deletes the current key. The TTL only
 bounds how stale ACTIVITY counts may be.
 """
@@ -26,7 +26,10 @@ def _pointer(makerspace_id):
 
 
 def _key(makerspace):
-    parts = [repr(getattr(makerspace, name, None)) for name in _FIELDS]
+    from apps.makerspaces.editions import current_edition
+
+    # The deployment edition hides whole sections, so it is part of the key too.
+    parts = [current_edition().key, *(repr(getattr(makerspace, name, None)) for name in _FIELDS)]
     parts += [",".join(sorted(makerspace.enabled_modules or [])), ",".join(sorted(makerspace.enabled_features or []))]
     digest = hashlib.sha256("|".join(parts).encode()).hexdigest()[:16]
     return f"{_pointer(makerspace.pk)}:{digest}"

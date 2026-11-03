@@ -51,4 +51,6 @@ RESERVED_SEGMENTS = frozenset({
     'stats',
     'superadmin',
     'sw.js',
+    # Release 2 L3: the public card check (/verify/c/:token).
+    'verify',
 })

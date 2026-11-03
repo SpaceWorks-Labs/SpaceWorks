@@ -111,3 +111,7 @@ from .models_r2_l2 import (  # noqa: E402
     MentorAlertRoute, SubmissionIntegrityCheck, SubmissionStorageCleanupReceipt,
 )
 __all__ += ["MentorAlertRoute", "SubmissionIntegrityCheck", "SubmissionStorageCleanupReceipt"]
+
+# Release 2 L3: event ID cards (one live card per confirmed registration).
+from .models_id_cards import EventCardSettings, EventIdCard  # noqa: E402
+__all__ += ["EventCardSettings", "EventIdCard"]

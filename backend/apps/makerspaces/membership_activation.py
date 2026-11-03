@@ -154,4 +154,17 @@ def _activate_membership(actor, makerspace, user, role, *, request=None, source,
                 finish_direct_admission(actor, direct_request, membership)
             elif not skip_dues:
                 create_for_active_membership(membership, actor)
+        if adding:
+            # Release 2 L3: auto-issue the member card after commit, when the space asks for it.
+            # Its own transaction: a card failure never undoes or blocks the activation.
+            transaction.on_commit(lambda pk=membership.pk: _auto_issue_card(pk), robust=True)
         return membership
+
+
+def _auto_issue_card(membership_id):
+    import logging
+    try:
+        from apps.makerspaces.member_card_services import auto_issue
+        auto_issue(membership_id)
+    except Exception:
+        logging.getLogger(__name__).warning("member_card_auto_issue_failed", extra={"membership_id": membership_id})

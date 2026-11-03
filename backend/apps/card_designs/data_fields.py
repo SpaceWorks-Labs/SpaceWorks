@@ -1,0 +1,76 @@
+"""Merge tags a card design may place, and the sample values the designer previews.
+
+Values come from a frozen snapshot assembled at render time by the holder adapter
+(`holders.py`); a design never names a model field. `field:<key>` places a programme
+or event answer. The two sensitive tags render only when the holder opted in (§3.4).
+"""
+import re
+
+from rest_framework.exceptions import ValidationError
+
+TAGS = (
+    "name", "number", "plan", "valid_until", "member_since", "role", "title", "team", "track",
+    "event", "space", "organisation", "programme", "issued_on", "verify_url", "certifications",
+)
+SENSITIVE_TAGS = ("blood_group", "emergency_contact")
+ANSWER_PREFIX = "field:"
+_ANSWER_KEY = re.compile(r"^[a-z0-9_]{1,40}$")
+_TAG = re.compile(r"{{\s*([^{}]*?)\s*}}")
+
+SAMPLE_SHORT = {
+    "name": "Priya Raman", "number": "TNK-0042", "plan": "Monthly", "valid_until": "31 Dec 2026",
+    "member_since": "Mar 2024", "role": "Member", "title": "Treasurer", "team": "Night Owls",
+    "track": "Hardware", "event": "Spring Build Night", "space": "Tinkerspace",
+    "organisation": "Makers Guild", "programme": "Student ID", "issued_on": "2 Nov 2026",
+    "verify_url": "example.org/verify/c/…", "certifications": "Laser induction", "blood_group": "O+", "emergency_contact": "Arjun · 98765 43210",
+}
+SAMPLE_LONG = {
+    **SAMPLE_SHORT,
+    "name": "Alexandra Montgomery-Fitzgerald", "plan": "Annual supporting member (concession)",
+    "title": "Senior Community Partnerships Lead", "team": "The Midnight Debugging Collective",
+    "track": "Assistive technology and accessibility", "event": "Community Hardware Hackathon 2026",
+    "space": "Thiruvananthapuram Community Makerspace", "organisation": "International Federation of Community Builders",
+    "programme": "Volunteer and mentor identification", "emergency_contact": "Ramachandran Pillai · +91 98765 43210",
+}
+
+
+def valid_tag(tag):
+    if tag in TAGS or tag in SENSITIVE_TAGS:
+        return True
+    return tag.startswith(ANSWER_PREFIX) and bool(_ANSWER_KEY.match(tag[len(ANSWER_PREFIX):]))
+
+
+def tags_in(text):
+    return [match.strip() for match in _TAG.findall(text)]
+
+
+def validate_text(text, *, limit=500):
+    if not isinstance(text, str) or len(text) > limit:
+        raise ValidationError({"text": f"Use at most {limit} characters."})
+    for tag in tags_in(text):
+        if not valid_tag(tag):
+            raise ValidationError({"text": f"Unknown data field {{{{{tag}}}}}."})
+    if re.search(r"[{}]", _TAG.sub("", text)):
+        raise ValidationError({"text": "Braces are only used around a data field, like {{name}}."})
+    return text
+
+
+def merge(text, values, *, allow_sensitive=False):
+    """Replace each tag with its value; an unknown or withheld tag renders empty."""
+    def replace(match):
+        tag = match.group(1).strip()
+        if tag in SENSITIVE_TAGS and not allow_sensitive:
+            return ""
+        value = values.get(tag)
+        return "" if value is None else str(value)
+
+    return _TAG.sub(replace, text)
+
+
+def uses_sensitive(document):
+    for side in ("front", "back"):
+        for layer in document.get(side, {}).get("layers", ()):
+            text = layer.get("text") or ""
+            if any(tag in SENSITIVE_TAGS for tag in tags_in(text)):
+                return True
+    return False

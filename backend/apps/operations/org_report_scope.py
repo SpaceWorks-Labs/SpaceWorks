@@ -101,6 +101,9 @@ EXCLUDED_ORGANIZATION_REPORT_KEYS = EXCLUDED_ORGANIZATION_REPORT_KEYS - {"machin
 # Release 2 L4: tenant-local membership insights and the two person lists (register, win-back).
 from apps.operations.report_definitions_membership_l4 import L4_MEMBERSHIP_REPORT_KEYS  # noqa: E402
 EXCLUDED_ORGANIZATION_REPORT_KEYS = EXCLUDED_ORGANIZATION_REPORT_KEYS | L4_MEMBERSHIP_REPORT_KEYS
+# Release 2 L3: the member-card issuance tile is tenant-local.
+from apps.operations.report_definitions_cards import CARD_REPORT_KEYS  # noqa: E402
+EXCLUDED_ORGANIZATION_REPORT_KEYS = EXCLUDED_ORGANIZATION_REPORT_KEYS | CARD_REPORT_KEYS
 
 
 # Phase 1f F/G adds explicit local-period strategies and exposed denominators.

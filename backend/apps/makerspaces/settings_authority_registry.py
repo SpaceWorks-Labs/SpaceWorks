@@ -76,6 +76,14 @@ EXTRA_SETTING_KEYS = (
     ("machines", "charges.machines_quotes"),
     ("machines", "charges.machines_payment_timing"),
     ("machines", "charges.machines_failure"),
+    # L3: member-card settings and the card-design approval switch at the space level
+    # (#128 C-28, #136); event card approval sits under events (the Event Manager's grant).
+    ("membership", "member_cards.auto_issue"),
+    ("membership", "member_cards.email_on_issue"),
+    ("membership", "member_cards.public_verify"),
+    ("membership", "member_cards.verify_show_plan"),
+    ("membership", "card_designs.approval"),
+    ("events", "card_designs.approval"),
 )
 
 

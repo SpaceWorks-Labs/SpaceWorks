@@ -6,8 +6,9 @@ from .tenant_dump_types import ModelDisposition, ModelRule, TableRule
 
 
 FIRST_PARTY_APP_LABELS = frozenset(
-    """accounts admin_api apiclients audit backup bookings boxes data_export devices
-    encryption event_reimbursements events evidence hardware_requests hosting_requests integrations inventory machines
+    """accounts admin_api apiclients audit backup bookings boxes card_designs data_export devices
+    encryption event_reimbursements events evidence hardware_requests hosting_requests id_programmes integrations
+    inventory machines
     maintenance makerspaces notifications operations organizations payments payments_rail
     presence
     printing procurement roadmap separability tenant_migration warranty""".split()
@@ -105,6 +106,8 @@ from .catalog_r2_l15 import PROJECTED_LABELS as R2_L15_PROJECTED  # noqa: E402
 PROJECTED_MODEL_LABELS |= R2_L15_PROJECTED
 from .catalog_l12 import PROJECTED_LABELS as L12_PROJECTED  # noqa: E402
 PROJECTED_MODEL_LABELS |= L12_PROJECTED
+from .catalog_l3 import PROJECTED_LABELS as L3_PROJECTED  # noqa: E402
+PROJECTED_MODEL_LABELS |= L3_PROJECTED
 
 from .catalog_profiles import EXPORTED_FIELDS as PROFILE_FIELDS
 PROJECTED_MODEL_LABELS |= PROFILE_FIELDS.keys()

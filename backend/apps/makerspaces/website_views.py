@@ -136,6 +136,6 @@ class WebsiteRobotsView(WebsitePublicView):
     @extend_schema(tags=["Public websites"], auth=[], responses={200: OpenApiResponse(str, description="Public crawler policy and origin sitemap."), **ERRORS})
     def get(self, request):
         sitemap_spaces(request)  # Same known-origin policy, never trust an arbitrary Host.
-        body = "User-agent: *\nDisallow: /admin\nDisallow: /member\nDisallow: /share/\nDisallow: /embed/\n"
+        body = "User-agent: *\nDisallow: /admin\nDisallow: /member\nDisallow: /share/\nDisallow: /embed/\nDisallow: /verify/\n"
         body += f"Sitemap: {request.build_absolute_uri('/sitemap.xml')}\n"
         return HttpResponse(body, content_type="text/plain")

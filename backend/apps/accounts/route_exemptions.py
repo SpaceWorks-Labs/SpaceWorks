@@ -32,6 +32,8 @@ website-discover public-config health readiness announcement-feed one-click-unsu
 
 # Release 2 L10: signed device-protocol routes of the (off-by-default) machine-integration foundation.
 NON_ACCOUNT_ROUTES |= {"device-integration-queue", "device-integration-job-report"}
+# Release 2 L3: Apple's pass web service, authenticated by the pass's own token (PassKit protocol).
+NON_ACCOUNT_ROUTES |= {"wallet-apple-registration", "wallet-apple-serials", "wallet-apple-pass", "wallet-apple-log"}
 
 NON_STAFF_ROUTES = PROVIDER_ONLY_ROUTES | NON_ACCOUNT_ROUTES | PUBLIC_ROUTES
 

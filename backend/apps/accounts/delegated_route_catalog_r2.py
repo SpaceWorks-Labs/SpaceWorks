@@ -56,3 +56,23 @@ MEMBERSHIP_ROUTES |= frozenset("""admin-machine-job-request-changes admin-machin
 admin-machine-job-reorder admin-machine-job-urgent admin-machine-job-assign admin-machine-job-uncollected
 admin-machine-job-batch-start admin-machine-job-batch-complete admin-machine-job-board admin-machine-type-job-settings
 admin-machine-downtime admin-machine-lockout admin-work-orders admin-work-order-status admin-work-order-assign""".split())
+# Release-2 lane L3, ID cards: card designs, their designer resources and card jobs are reached
+# by member-card staff, ID-programme managers (organisation branch) and event organisers alike,
+# so they are delegable; every view re-checks the design's own authority (card_designs.authority)
+# or the job's requester. Member-card routes stay a staff role in the target space.
+DELEGABLE_ROUTES |= frozenset("""admin-card-design admin-card-design-templates admin-card-design-publish
+admin-card-design-submit admin-card-design-approve admin-card-design-reject admin-card-design-reset
+admin-card-design-export admin-card-design-import admin-card-design-preview admin-card-design-assets
+admin-card-design-asset-finalize admin-card-design-asset admin-card-design-fonts admin-card-design-font-prepare
+admin-card-design-font-file admin-card-job admin-card-job-cancel admin-card-job-result""".split())
+MEMBERSHIP_ROUTES |= frozenset("""admin-member-card-settings admin-card-designs admin-member-card-jobs
+admin-member-card-download admin-member-card-email admin-member-card-photo-request admin-member-card-presence""".split())
+# Release-2 lane L3, ID programmes and event cards: programme routes are reached by the host
+# space's programme managers and by organisation governors (organisation branch); event card
+# routes by every organiser of the event. Each view re-checks its own authority.
+DELEGABLE_ROUTES |= frozenset("""admin-organization-id-programmes admin-id-programme admin-id-programme-design
+admin-id-programme-approval admin-id-programme-cards admin-id-programme-decide admin-id-programme-import-preview
+admin-id-programme-import admin-id-programme-card-jobs admin-id-programme-card admin-id-programme-card-download
+admin-id-programme-card-email admin-id-programme-card-photo-request admin-event-card-designs
+admin-event-card-settings admin-event-id-cards admin-event-id-card-extras admin-event-card-jobs
+admin-event-card-scan admin-event-id-card admin-event-id-card-revoke admin-event-id-card-download""".split())

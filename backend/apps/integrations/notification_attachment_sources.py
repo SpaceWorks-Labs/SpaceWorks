@@ -20,7 +20,7 @@ class AttachmentReference:
     revision: str
 
     def __post_init__(self):
-        if (self.source_kind not in {"payments.document", "events.certificate"}
+        if (self.source_kind not in {"payments.document", "events.certificate", "card_designs.card"}
                 or type(self.document_id) is not int or self.document_id < 1
                 or not isinstance(self.kind, str) or not 1 <= len(self.kind) <= 32
                 or not isinstance(self.revision, str) or not 1 <= len(self.revision) <= 64):
@@ -32,8 +32,9 @@ class AttachmentSource:
     references: Callable
     authorize: Callable
     render: Callable
-    # Strict FK field on NotificationMediaGrant, never a content-type/object ID.
-    media_field: str
+    # Strict FK field on NotificationMediaGrant, never a content-type/object ID. None marks
+    # an EMAIL-ONLY source (release 2 L3 card PDFs): it never mints a provider media grant.
+    media_field: str | None
     tenant_ids: Callable | None = None
 
 
@@ -41,8 +42,8 @@ _SOURCES = {}
 
 
 def register_source(kind, source):
-    expected = {"payments.document": "document", "events.certificate": "certificate"}
-    if not isinstance(source, AttachmentSource) or expected.get(kind) != source.media_field:
+    expected = {"payments.document": "document", "events.certificate": "certificate", "card_designs.card": None}
+    if not isinstance(source, AttachmentSource) or kind not in expected or expected[kind] != source.media_field:
         raise ValueError("Use a typed attachment media subject.")
     if kind in _SOURCES and _SOURCES[kind] != source:
         raise ValueError("Duplicate attachment source.")
@@ -95,6 +96,14 @@ def source_for(reference):
     if not isinstance(reference, AttachmentReference) or reference.source_kind not in _SOURCES:
         raise DocumentDeliveryError("document_not_authorized")
     return _SOURCES[reference.source_kind]
+
+
+def media_source_for(reference):
+    """Provider (chat) media retrieval: email-only sources are refused here."""
+    source = source_for(reference)
+    if source.media_field is None:
+        raise DocumentDeliveryError("document_not_authorized")
+    return source
 
 
 def attachment_references(envelope):

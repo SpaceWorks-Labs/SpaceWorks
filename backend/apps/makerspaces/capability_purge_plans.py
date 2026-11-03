@@ -151,4 +151,6 @@ PLANS = (
         _inventory_warranty[0], _inventory_warranty[1], _inventory_warranty[2],
     ),
 )
+from .capability_purge_plans_l3 import plans as _l3_plans  # noqa: E402
+PLANS += _l3_plans(CapabilityPurgePlan)
 BY_KEY = {plan.key: plan for plan in PLANS}

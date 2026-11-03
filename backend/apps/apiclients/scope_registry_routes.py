@@ -165,6 +165,12 @@ _ROUTE_DEFINITIONS += (
     ("pricing-quote", _WRITE, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False),
     ("pay-link", ("GET", "HEAD"), frozenset(), TARGET_GLOBAL, False, False),
     ("pay-link-claim", _WRITE, frozenset(), TARGET_GLOBAL, False, False),
+    # L3: the public card check is a bearer-token read that no API client scope widens.
+    ("public-card-verification", _READ, frozenset(), TARGET_GLOBAL, False, False),
+    ("public-organization-id-programmes", _READ, PUBLIC_READ_SCOPES, TARGET_GLOBAL, False, False),
+    ("public-id-programme", _READ, PUBLIC_READ_SCOPES, TARGET_GLOBAL, False, False),
+    ("public-id-programme-join", _WRITE, frozenset(), TARGET_GLOBAL, False, False),
+    ("public-id-programme-join-photo", _WRITE, frozenset(), TARGET_GLOBAL, False, False),
     ("pay-link-checkout", _WRITE, frozenset(), TARGET_GLOBAL, False, False),
     # Lane L12: the uniform "Request a job" form, same scopes as the 3D-printer routes.
     ("public-machine-job-types", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, True),

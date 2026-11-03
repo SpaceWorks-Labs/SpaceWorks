@@ -59,3 +59,8 @@ fonttools>=4.60,<5
 regex>=2025.9.18
 # PDF glyph/extraction regression checks (alongside pytest above).
 pypdf>=6,<7
+# Release 2 L3 (ID cards): card PNGs are the PDF page rasterised by pdfium, so the two
+# never disagree (Apache-2.0 / BSD-3-Clause; NOTICE). The photo background clean-up runs a
+# small local model through onnxruntime (MIT), never a hosted API (Q-I3).
+pypdfium2==5.14.0
+onnxruntime==1.31.0

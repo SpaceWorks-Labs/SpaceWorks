@@ -5,11 +5,13 @@ its own `gate_policy_r2_<lane>.py` and this function applies them to the shared 
 """
 
 
-def gate_tasks(exemptions, internal, fanout):
+def gate_tasks(exemptions, internal, fanout, resolvers=None):
     from .gate_policy_r2_l2 import gate_tasks as l2_tasks
     from .gate_policy_r2_l11 import gate_tasks as l11_tasks
     from .gate_policy_r2_l12 import gate_tasks as l12_tasks
+    from .gate_policy_r2_l3 import gate_tasks as l3_tasks
 
     l2_tasks(internal, fanout)
     l11_tasks(exemptions)
     l12_tasks(internal)
+    l3_tasks(internal, exemptions, resolvers if resolvers is not None else {})

@@ -56,6 +56,10 @@ def issue_card(actor, membership, *, printed_name=""):
     # (new number, new QR), and the revoked one stays as the redacted record.
     if MemberCard.objects.filter(membership=membership, revoked_at__isnull=True).exists():
         raise PermissionDenied("This membership already holds a card; reissue it instead.")
+    return _issue_locked(actor, membership, printed_name)
+
+
+def _issue_locked(actor, membership, printed_name, *, automatic=False):
     card = MemberCard.objects.create(
         makerspace_id=membership.makerspace_id,
         membership=membership,
@@ -68,8 +72,34 @@ def issue_card(actor, membership, *, printed_name=""):
         target_id=card.pk,
         created_by=actor,
     )
+    from apps.card_designs.lifecycle import on_issue
+    on_issue("member_card", card)
     audit.record(actor, "member_card.created", makerspace=membership.makerspace, target=card, meta={"card_id": card.pk, "card_number": card.card_number})
-    audit.record(actor, "member_card.issued", makerspace=membership.makerspace, target=card, meta={"card_id": card.pk, "card_number": card.card_number})
+    if automatic:
+        audit.record(actor, "member_card.auto_issued", makerspace=membership.makerspace, target=card, meta={"card_id": card.pk, "card_number": card.card_number})
+    else:
+        audit.record(actor, "member_card.issued", makerspace=membership.makerspace, target=card, meta={"card_id": card.pk, "card_number": card.card_number})
+    return card
+
+
+@transaction.atomic
+def auto_issue(membership_id):
+    """Release 2 L3: issue on activation when the space turned auto-issue on (idempotent).
+
+    Renewals and re-activations keep an existing live card and its QR. Runs after the
+    activation commits, as the system; a failure here never undoes the activation.
+    """
+    from apps.makerspaces.models import MemberCardSettings
+    from apps.makerspaces.platform import module_enabled
+    membership = MakerspaceMembership.objects.select_for_update().select_related("makerspace", "user").filter(
+        pk=membership_id).first()
+    if (membership is None or membership.status != "active" or not module_enabled(membership.makerspace, "membership")
+            or not MemberCardSettings.objects.filter(makerspace_id=membership.makerspace_id, auto_issue=True).exists()
+            or MemberCard.objects.filter(membership=membership, revoked_at__isnull=True).exists()):
+        return None
+    card = _issue_locked(None, membership, "", automatic=True)
+    from apps.card_designs.notifications import card_issued
+    transaction.on_commit(lambda: card_issued("member_card", card.pk), robust=True)
     return card
 
 
@@ -95,6 +125,8 @@ def reissue_card(actor, card, *, reason):
     card.template_version_at_issue += 1
     card.issued_at = timezone.now()
     card.save(update_fields=["template_version_at_issue", "issued_at", "updated_at"])
+    from apps.card_designs.lifecycle import on_reissue
+    on_reissue("member_card", card)
     audit.record(actor, "member_card.reissued", makerspace=card.makerspace, target=card, meta={"card_id": card.pk, "card_number": card.card_number, "reason": reason})
     return card
 
@@ -118,9 +150,9 @@ def redact(card):
 
 
 @transaction.atomic
-def revoke_card(actor, card, *, reason="revoked"):
+def revoke_card(actor, card, *, reason="revoked", note=""):
     _require(actor, rbac.Action.MANAGE_MEMBER_CARDS, card.makerspace_id)
-    return _revoke(actor, card, reason=reason)
+    return _revoke(actor, card, reason=reason, note=note)
 
 
 def revoke_for_membership(actor, membership):
@@ -135,7 +167,7 @@ def revoke_for_membership(actor, membership):
         _revoke(actor, card, reason="membership_revoked")
 
 
-def _revoke(actor, card, *, reason):
+def _revoke(actor, card, *, reason, note=""):
     card = MemberCard.objects.select_for_update().get(pk=card.pk)
     if card.revoked_at is not None:
         return card
@@ -144,8 +176,12 @@ def _revoke(actor, card, *, reason):
         revoke_qr_code(actor, qr)
     card.revoked_at = timezone.now()
     card.revoked_reason = reason[:32]
-    card.save(update_fields=["revoked_at", "revoked_reason", "updated_at"])
+    # The free-text reason is scoped PII on the row, never audit meta.
+    card.revoked_note = (note or "")[:500]
+    card.save(update_fields=["revoked_at", "revoked_reason", "revoked_note", "updated_at"])
     redact(card)
+    from apps.card_designs.lifecycle import on_revoke
+    on_revoke("member_card", card)
     audit.record(actor, "member_card.revoked", makerspace=card.makerspace, target=card, meta={"card_id": card.pk, "card_number": card.card_number, "reason": reason})
     return card
 
@@ -163,6 +199,10 @@ def record_print(actor, cards):
 def resolve(actor, makerspace, payload):
     """Identify a member from a scanned card. Records the lookup even when it is refused."""
     _require(actor, rbac.Action.SCAN_MEMBER_CARDS, makerspace.pk)
+    from apps.card_designs.scan import desk_payload_for
+    # Release 2 L3: a scanned check link resolves to the same card's desk QR, so a card that
+    # carries only a check QR still works at the desk. The public page never sees staff fields.
+    payload = desk_payload_for(makerspace, payload)
     qr = QrCode.objects.filter(
         payload=payload, makerspace=makerspace, target_type=QrCode.TargetType.MEMBER_CARD
     ).first()

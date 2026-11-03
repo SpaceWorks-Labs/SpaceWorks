@@ -80,6 +80,11 @@ FEATURE_EVENTS[F.BOOKINGS] += ("invitation",)
 FEATURE_EVENTS[F.MEMBERS] += ("erasure_approved", "erasure_rejected")
 # Release 2 L11: a self-host move's status, told to the space's Space Managers.
 FEATURE_EVENTS[F.API_ACCESS] += ("selfhost_move_status",)
+# Release 2 L3: cards issued, a design awaiting approval, a "photo needs update" request,
+# a finished card job, and ID-programme decisions; event ID cards under events.
+FEATURE_EVENTS[F.MEMBERS] += ("card_issued", "card_design_pending", "card_photo_requested", "card_job_finished",
+                              "programme_card_decided")
+FEATURE_EVENTS[F.EVENTS] += ("event_card_issued",)
 
 # Exact default on/off per (feature, channel). Preserves today's behavior: hardware/printing
 # email + hardware Telegram on; bookings email (Part J seam) + bookings Telegram on; Slack/

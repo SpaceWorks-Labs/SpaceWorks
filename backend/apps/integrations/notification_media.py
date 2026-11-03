@@ -14,7 +14,7 @@ from django.utils import timezone
 from apps.accounts import rbac
 from apps.audit import services as audit
 from .notification_attachment_sources import (
-    DocumentDeliveryError, attachment_references, authorized_attachment, render_attachment, source_for,
+    DocumentDeliveryError, attachment_references, authorized_attachment, media_source_for, render_attachment, source_for,
     attachment_tenant_ids,
 )
 from apps.tenant_migration.gate_errors import SourceMigrationGateError
@@ -56,7 +56,7 @@ def media_source_targets(token):
 
 
 def _matches(grant, reference):
-    media_field = source_for(reference).media_field
+    media_field = media_source_for(reference).media_field
     return (getattr(grant, media_field + "_id") == reference.document_id
             and grant.storage_makerspace_id is not None
             and grant.source_revision == reference.revision
@@ -99,7 +99,7 @@ def issue_grant(delivery):
         document = authorized_attachment(reference, makerspace_id=current.makerspace_id,
                                        recipient_id=current.envelope.recipient_id)
         token = secrets.token_urlsafe(32)
-        media_field = source_for(reference).media_field
+        media_field = media_source_for(reference).media_field
         grant = NotificationMediaGrant.objects.create(delivery=current,
             **{media_field + "_id": reference.document_id}, source_revision=reference.revision,
             storage_makerspace_id=getattr(document, "storage_makerspace_id", document.makerspace_id),
@@ -145,7 +145,7 @@ def _consume_locked_sources(seed, expected_reference, scopes, space_id):
         reference, current_scopes = _discover(grant.delivery)
         if reference != expected_reference or current_scopes != scopes:
             return None
-        media_field = source_for(reference).media_field
+        media_field = media_source_for(reference).media_field
         if not _matches(grant, reference):
             return None
         authorized_attachment(reference, makerspace_id=space_id,

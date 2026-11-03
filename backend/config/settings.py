@@ -189,6 +189,10 @@ INSTALLED_APPS = [
     "apps.devices",
     # Managed-platform hosting requests; inert on self-host.
     "apps.hosting_requests",
+    # Release 2 L3: the shared card engine (designs, rendering, jobs, verify, wallet); core.
+    "apps.card_designs",
+    # Release 2 L3: organisation ID programmes; separable, switched by membership.id_programmes.
+    "apps.id_programmes",
     # Must stay LAST. Django calls ready() in this order, so being last is what
     # guarantees every other app has registered before finalize() freezes the
     # separability registries.
@@ -893,6 +897,25 @@ CELERY_BEAT_SCHEDULE["machine-job-flow"] = {
     "task": "apps.machines.tasks_jobs.sweep_job_flow_task", "schedule": crontab(minute="*/15"),
 }
 # --- end lane L12
+
+# --- lane L3 (release 2): card jobs resume (free tick + broker loss), 7-day result purge,
+# wallet-pass refresh after renewals/expiry, and the single "photo needs update" reminder.
+CELERY_BEAT_SCHEDULE["card-jobs"] = {
+    "task": "apps.card_designs.tasks.resume_card_jobs", "schedule": crontab(minute="*"),
+}
+CELERY_BEAT_SCHEDULE["card-job-results"] = {
+    "task": "apps.card_designs.tasks.purge_expired_card_job_results", "schedule": crontab(minute="7"),
+}
+CELERY_BEAT_SCHEDULE["card-wallet-refresh"] = {
+    "task": "apps.card_designs.tasks.refresh_wallet_passes", "schedule": crontab(minute="*/30"),
+}
+CELERY_BEAT_SCHEDULE["event-id-cards"] = {
+    "task": "apps.events.tasks_id_cards.reconcile_event_id_cards_task", "schedule": crontab(minute="*/15"),
+}
+CELERY_BEAT_SCHEDULE["card-photo-reminders"] = {
+    "task": "apps.card_designs.tasks.remind_photo_requests", "schedule": crontab(minute="17"),
+}
+# --- end lane L3
 
 if "tenant_migration" in TOMBSTONED_APPS:
     CELERY_BEAT_SCHEDULE = {
@@ -1678,3 +1701,24 @@ SPECTACULAR_SETTINGS["ENUM_NAME_OVERRIDES"].update({
     "PriceOverrideModeEnum": [("inherit", "Use the space default"), ("free", "Free"), ("custom", "Custom price")],
 })
 # --- end lane L15
+
+# --- lane L3 (release 2): card verify, scan and join throttles; the card font library;
+# photo clean-up model; platform wallet-pass credentials (Q-I11, superadmin/operator only).
+REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"].update({
+    "card_verify": env("THROTTLE_CARD_VERIFY", default="30/min"),
+    "member_card_resolve": env("THROTTLE_MEMBER_CARD_RESOLVE", default="60/min"),
+    "id_join": env("THROTTLE_ID_JOIN", default="10/min"),
+    "id_join_upload": env("THROTTLE_ID_JOIN_UPLOAD", default="12/hour"),
+})
+CARD_FONT_DOWNLOADS_ENABLED = env.bool("CARD_FONT_DOWNLOADS_ENABLED", default=True)
+CARD_FONT_SOURCE_URL = env("CARD_FONT_SOURCE_URL", default="https://fonts.googleapis.com/css2")
+CARD_FONT_CACHE_DIR = env("CARD_FONT_CACHE_DIR", default="")
+CARD_PHOTO_MODEL_PATH = env("CARD_PHOTO_MODEL_PATH", default="")
+WALLET_APPLE_PASS_TYPE_ID = env("WALLET_APPLE_PASS_TYPE_ID", default="")
+WALLET_APPLE_TEAM_ID = env("WALLET_APPLE_TEAM_ID", default="")
+WALLET_APPLE_CERT_FILE = env("WALLET_APPLE_CERT_FILE", default="")
+WALLET_APPLE_KEY_FILE = env("WALLET_APPLE_KEY_FILE", default="")
+WALLET_APPLE_WWDR_FILE = env("WALLET_APPLE_WWDR_FILE", default="")
+WALLET_GOOGLE_ISSUER_ID = env("WALLET_GOOGLE_ISSUER_ID", default="")
+WALLET_GOOGLE_SERVICE_ACCOUNT_FILE = env("WALLET_GOOGLE_SERVICE_ACCOUNT_FILE", default="")
+# --- end lane L3

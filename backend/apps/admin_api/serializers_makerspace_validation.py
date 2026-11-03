@@ -72,6 +72,11 @@ class MakerspaceValidationMixin:
     def get_domain_verification_record(self, obj):
         return domain_verification.expected_record(obj)
 
+    @extend_schema_field({"type": "integer", "description": "People whose only second factor is a passkey on "
+                          "this custom domain: a domain change ends their passkey sign-in there."})
+    def get_passkey_only_accounts(self, obj) -> int:
+        return domain_verification.passkey_only_accounts(obj)
+
     @extend_schema_field({"type": "boolean"})
     def get_platform_hosting(self, obj) -> bool:
         return not domain_verification.is_self_host()

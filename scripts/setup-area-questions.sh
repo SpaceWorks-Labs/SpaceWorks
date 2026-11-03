@@ -131,11 +131,6 @@ ask_always_settings() {
   if area_yes "$AREA_notifications_daily_digest_default"; then
     area_question notifications digest_at string 'Daily digest delivery time (HH:MM)' 08:00 clock || return 1
   fi
-  AREA_features_security_staff_mfa_required=N
-  if area_yes "${SETUP_MFA_ENABLED:-Y}"; then
-    echo 'Two-step sign-in requires staff with actions to enrol an authenticator.'
-    area_bool features security.staff_mfa_required 'Require two-step sign-in (MFA) for staff?' N || return 1
-  fi
 }
 
 derive_setup_edition() {

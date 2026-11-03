@@ -64,6 +64,12 @@ HTTP_EXEMPTIONS = {
     "auth-mfa-verify": "Global MFA verification and session state is excluded from tenant quiescence.",
     "auth-mfa-recovery": "Global MFA recovery credentials are excluded from tenant quiescence.",
     "auth-mfa-disable": "Global MFA credential state is excluded from tenant quiescence.",
+    # Login security S-A: passkeys are a person's global credentials (web only).
+    **dict.fromkeys((
+        "auth-passkey-detail", "auth-passkeys-register-options", "auth-passkeys-register-verify",
+        "auth-passkeys-authenticate-options", "auth-passkeys-authenticate-verify", "auth-mfa-passkey-options",
+        "auth-reauth-passkey-options", "auth-reauth-passkey",
+    ), "Global passkey credential and session state is excluded from tenant quiescence."),
     "control-mfa": "Global MFA credential and control-session state is excluded from tenant quiescence.",
     "auth-refresh": "Global user session state is excluded from tenant quiescence.",
     "auth-logout": "Global user session state is excluded from tenant quiescence.",

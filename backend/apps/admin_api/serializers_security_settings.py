@@ -17,6 +17,8 @@ class SecuritySettingSerializer(serializers.Serializer):
     default = serializers.JSONField()
     choices = serializers.ListField(child=serializers.JSONField())
     value = serializers.JSONField()
+    strict_value = serializers.BooleanField(
+        allow_null=True, help_text="For an on/off setting, the stricter value a platform lock forces; null otherwise.")
     lock = SecurityLockSerializer(allow_null=True)
 
 
@@ -31,7 +33,8 @@ class SecuritySettingsSerializer(serializers.Serializer):
 class SecuritySettingsUpdateSerializer(serializers.Serializer):
     values = serializers.DictField(
         child=serializers.JSONField(),
-        help_text="Setting key -> new value, e.g. {\"security.staff_mfa_required\": true}. Applied atomically.",
+        help_text="Setting key -> new value, e.g. {\"security.staff_session_max_hours\": 24}. Applied atomically. "
+                  "Staff MFA is not a setting: it is required for every staff role (platform rule, #62).",
     )
 
 

@@ -20,9 +20,20 @@ PASSKEY_FAILED = "passkey_failed"
 SECURITY_ALERT_USED = "security_alert_used"
 # Existing code, named here so the grace expiry (S-A) reuses it rather than inventing one.
 MFA_ENROLLMENT_REQUIRED = "mfa_enrollment_required"
+# S-A: staff proof missing or stale, the relying-party ID cannot be derived, the MFA-reset
+# rule refused, the last factor of a required account, and an ended staff session.
+MFA_REQUIRED = "mfa_required"
+RP_ID_UNAVAILABLE = "rp_id_unavailable"
+MFA_RESET_NOT_ALLOWED = "mfa_reset_not_allowed"
+LAST_FACTOR = "last_factor"
+STAFF_SESSION_EXPIRED = "staff_session_expired"
+PASSKEYS_UNAVAILABLE = "passkeys_unavailable"
+PASSKEY_REQUIRED = "passkey_required"  # re-authentication: a passkey-only account confirms with it
 ERROR_CODES = (
     CAPTCHA_REQUIRED, CAPTCHA_FAILED, IP_BLOCKED, PASSWORD_BREACHED, LOGIN_CODE_REQUIRED,
     LOGIN_CODE_INVALID, PASSKEY_FAILED, SECURITY_ALERT_USED, MFA_ENROLLMENT_REQUIRED,
+    MFA_REQUIRED, RP_ID_UNAVAILABLE, MFA_RESET_NOT_ALLOWED, LAST_FACTOR, STAFF_SESSION_EXPIRED,
+    PASSKEYS_UNAVAILABLE, PASSKEY_REQUIRED,
 )
 
 # --- Second-factor vocabulary --------------------------------------------------------
@@ -80,6 +91,7 @@ AUDIT_ACTIONS = {
     "auth.device_remembered": "Device remembered",
     "auth.device_forgotten": "Device forgotten",
     "auth.passkey_registered": "Passkey added",
+    "auth.passkey_renamed": "Passkey renamed",
     "auth.passkey_removed": "Passkey removed",
     "auth.passkey_login_succeeded": "Signed in with a passkey",
     "auth.passkey_login_failed": "Passkey sign-in failed",
@@ -90,6 +102,8 @@ AUDIT_ACTIONS = {
     "auth.captcha_failed": "CAPTCHA failed",
     "auth.password_breach_rejected": "Breached password refused",
     "auth.staff_mfa_grace_started": "Staff two-step grace started",
+    # S-A
+    "auth.mfa_reset": "Two-step sign-in reset",
 }
 
 # --- Retention (registered here; purge lands in S-B/S-C via services_challenge_purge) ---

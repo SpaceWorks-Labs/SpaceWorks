@@ -382,9 +382,12 @@ its two gates, the U-SEC security posture (axes, throttles, CSP), the non-techni
 implementation status. Read it to find out whether something already exists and how it is wired; the rules
 those areas impose are in `docs/INVARIANTS.md`.
 
-Two facts from it that bite outside their own area: the Django admin is at **`/control/`**, not `/admin/`
-(that is the React staff console SPA route), and superadmin operations are admin **actions routed through
-the existing services** — never direct status mutation.
+Three facts from it that bite outside their own area: the Django admin is at **`/control/`**, not `/admin/`
+(that is the React staff console SPA route); superadmin operations are admin **actions routed through
+the existing services** — never direct status mutation; and since release 2 **two-step sign-in is
+mandatory for every staff role** (an authenticator or a passkey, a platform rule with a 3-day grace, never a
+per-space switch) — staff routes go through `staff_identity.require_staff_mfa`, see **Login security** in
+`docs/INVARIANTS.md`.
 
 Stack (in use):
 

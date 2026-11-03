@@ -138,6 +138,12 @@ def verify(request, *, password="", code=""):
         binding(request)
         row = UserMFA.objects.select_for_update().filter(user=user).first()
         mfa = bool(row and row.enabled_at)
+        if not mfa and mfa_policy.has_passkey(user):
+            from apps.accounts.passkeys.policy import passkeys_usable
+            if passkeys_usable(user):
+                # A second factor exists: a password alone is not a step-up (reauth/passkey).
+                from apps.accounts.login_security_contract import PASSKEY_REQUIRED
+                raise PermissionDenied({"detail": "Confirm with your passkey.", "code": PASSKEY_REQUIRED})
         proof = current(request)
         social = bool(mfa and proof and proof.social_verified_at and
                       timezone.now() - timedelta(minutes=5) <= proof.social_verified_at <= timezone.now())

@@ -31,10 +31,10 @@ from apps.organizations.models import Organization
 
 from . import _showcase_data as data
 
-# Requiring TOTP enrolment would stop every showcase staff login at the MFA wall.
 # The two-person check (L5) would park every seeded desk receipt waiting for a second
-# person; the showcase demonstrates settled dues, so it stays off like staff MFA.
-FEATURES_LEFT_OFF = frozenset({"security.staff_mfa_required", "billing.maker_checker"})
+# person; the showcase demonstrates settled dues, so it stays off. (Staff MFA is no longer
+# a switch: showcase staff get the 3-day staff-MFA grace from their first sign-in.)
+FEATURES_LEFT_OFF = frozenset({"billing.maker_checker"})
 
 
 def member_account(username, display_name, password, kind="member", **flags):

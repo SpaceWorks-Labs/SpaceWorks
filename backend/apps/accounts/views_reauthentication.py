@@ -21,6 +21,11 @@ from apps.accounts.staff_identity import is_person
 ERRORS = errors(400, 401, 403, 429, 503)
 
 
+def _passkey_available(user):
+    from apps.accounts.passkeys.policy import passkeys_usable
+    return bool(is_person(user) and mfa_policy.has_passkey(user) and passkeys_usable(user))
+
+
 class ReauthenticationThrottle(SimpleRateThrottle):
     scope = "recent_reauthentication"
     rate = "6/min"
@@ -57,6 +62,7 @@ class ReauthenticationView(APIView):
         credential = mfa_policy.credential(request.user)
         return response({"verified": verified, "password_available": request.user.has_usable_password(),
                          "mfa_enabled": bool(credential and credential.enabled_at),
+                         "passkey_available": _passkey_available(request.user),
                          "providers": list(request.user.social_identities.values_list("provider", flat=True))
                          if is_person(request.user) else []})
 

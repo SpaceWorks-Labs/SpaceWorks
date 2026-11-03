@@ -24,7 +24,7 @@ deny rules and automatic blocks stay global in ``/control/``.
 
 import ipaddress
 
-from apps.makerspaces.security_settings_registry import (
+from apps.makerspaces.security_setting_types import (
     BOOL, CHOICE, INT, LIST, POLICY, SPACE, STAFF_STRICTEST, SecuritySetting,
     bool_off_stricter, bool_stricter, choice_stricter, lower_is_stricter, zero_off_lower_stricter,
 )

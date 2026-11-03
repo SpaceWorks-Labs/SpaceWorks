@@ -136,7 +136,7 @@ def _staff_admits(user, token, request, targets, *, grant):
         targets = {pin}
     if not (all(has_staff_role(user, target) for target in targets) if targets else has_staff_role(user)):
         return False
-    require_staff_mfa(user, token)
+    require_staff_mfa(user, token, route=getattr(getattr(request, "resolver_match", None), "url_name", None))
     if len(targets) == 1 and getattr(request, "selected_makerspace_id", None) is None:
         request.selected_makerspace_id = next(iter(targets))
     return True
@@ -190,6 +190,8 @@ def enforce_request(user, token, request, *, grant=None):
                 user, token, request, set(targets), grant=staff_grant):
             return
         if classification == DELEGABLE and _delegated(user, targets, name, native=native):
+            # Organization and resource-grant authority is elevated authority too (#62).
+            require_staff_mfa(user, token, route=name)
             return
         raise PermissionDenied("A staff role in this makerspace is required.")
     raise PermissionDenied("A delegated authority source is required.")

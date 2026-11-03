@@ -86,9 +86,11 @@ def requester_content(row, event, context):
     message = render(row.space.makerspace, "bookings", "requester", event, context)
     reasoned = event in ("rejected", "cancelled") and bool(row.decision_reason)
     # With a reason the plain-text body carries it; the authored HTML would silently omit it.
-    return {"subject": message["subject"], "text": _with_reason(message["text_body"], row, event),
-            "html": "" if reasoned else message["html_body"],
-            "link": local_link(row.space.makerspace, "member", "bookings")}
+    content = {"subject": message["subject"], "text": _with_reason(message["text_body"], row, event),
+               "html": "" if reasoned else message["html_body"],
+               "link": local_link(row.space.makerspace, "member", "bookings")}
+    from .confirmation_invites import with_links  # #169 (lane L6): add-to-calendar links
+    return with_links(content, row, event)
 
 
 def staff_content(row, event, context):

@@ -114,9 +114,13 @@ def _deliver(log):
             apply_org_sender(log, msg)
         if rendered.attachments:
             from apps.payments.document_delivery import render_attachment
+            from .inline_attachments import InlineAttachment
             from .notification_attachment_sources import AttachmentReference
             from .notification_attachment_sources import render_attachment as render_typed
             for reference in rendered.attachments:
+                if isinstance(reference, InlineAttachment):  # release 2 L6 (#169): a calendar invite
+                    msg.attach(reference.filename, reference.content, reference.mimetype)
+                    continue
                 # Typed references (release 2 L3 card PDFs) resolve through the source registry.
                 renderer = render_typed if isinstance(reference, AttachmentReference) else render_attachment
                 msg.attach(*renderer(reference, makerspace_id=log.makerspace_id, recipient_id=log.recipient_id))

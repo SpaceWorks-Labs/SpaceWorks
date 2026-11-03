@@ -20,6 +20,9 @@ class EventsConfig(AppConfig):
             # Release 2 L3: the event_card holder kind for the shared card engine.
             from .id_cards_holder import register as register_event_cards
             register_event_cards()
+            # Release 2 L6 (#169): invites and ticket PDFs on registration confirmation emails.
+            from .registration_invites import register as register_invites
+            register_invites()
             from .website_adapter import register_website
             register_website()
             from .broadcasts import register_broadcasts

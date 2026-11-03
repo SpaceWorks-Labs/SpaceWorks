@@ -26,6 +26,9 @@ class BookingsConfig(AppConfig):
             register_notification_sources()
             from .notification_owner_mailbox import register_owner_mailbox
             register_owner_mailbox()
+            # Release 2 L6 (#169): the calendar invite on booking confirmation emails.
+            from .confirmation_invites import register as register_invites
+            register_invites()
             from apps.makerspaces.resource_grant_sources import ResourceGrantSource, register
             from .staff_payload import granted_booking_entries, has_grant_authority
             from .serializers_staff_grants import GrantedBookingEntrySerializer

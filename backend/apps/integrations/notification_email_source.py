@@ -47,7 +47,8 @@ def register_email_source():
 
 def _attachments(envelope):
     from apps.payments.document_delivery import attachment_references
-    return attachment_references(envelope)
+    from .inline_attachments import confirmation_attachments  # #169: invites and ticket PDFs (lane L6)
+    return tuple(attachment_references(envelope)) + confirmation_attachments(envelope)
 
 
 def finished(log):

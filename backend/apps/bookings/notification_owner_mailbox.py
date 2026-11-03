@@ -99,8 +99,9 @@ def prepare(log):
     content = render(envelope)
     from apps.integrations.notification_links import external_links
     content = external_links(envelope.makerspace, content)
+    from apps.integrations.inline_attachments import confirmation_attachments  # #169 (lane L6)
     set_content(log, to_email=log.to_email, subject=content["subject"], text_body=content["text"],
-                html_body=content.get("html", ""))
+                html_body=content.get("html", ""), attachments=confirmation_attachments(envelope))
     return True
 
 

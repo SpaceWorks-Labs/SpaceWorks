@@ -86,6 +86,10 @@ class DeviceTokenResponseSerializer(serializers.Serializer):
     refresh = serializers.CharField()
     user = serializers.DictField()
     device_grant = DeviceGrantSerializer()
+    device_trust = serializers.CharField(
+        required=False, allow_null=True,
+        help_text="Keep it and send it back in the `X-Device-Trust` header on later sign-ins, so this "
+                  "device is recognised by the unusual-sign-in check (S-B).")
 
 
 class DeviceChallengeResponseSerializer(serializers.Serializer):

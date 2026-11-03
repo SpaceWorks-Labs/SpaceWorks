@@ -12,7 +12,8 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.accounts import audit_events
+from apps.accounts import audit_events, device_memory
+from apps.accounts.login_risk import record_success
 from apps.openapi_errors import errors
 from apps.hardware_requests.exceptions import ErrorSerializer
 from apps.accounts.auth_cookies import set_refresh_cookies
@@ -157,7 +158,7 @@ class PhoneLoginConfirmView(APIView):
         from apps.accounts.mfa_challenges import start
         from apps.accounts.mfa_sessions import context
         if needs_challenge(user):
-            response = Response(start(user, context=context(request, surface="member")))
+            response = Response(start(user, context=context(request, surface="member", login_method="phone")))
             response["Cache-Control"] = "no-store"
             return response
         refresh = SpaceWorksRefreshToken.for_user(user)
@@ -177,6 +178,9 @@ class PhoneLoginConfirmView(APIView):
             }
         )
         set_refresh_cookies(response, str(refresh), request)
+        # S-B: a phone code is not stepped up (Q4) but the device is remembered.
+        record_success(request, user, method="phone", web=True)
+        device_memory.attach(response, request)
         return response
 
 

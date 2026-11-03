@@ -9,7 +9,7 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from apps.accounts import audit_events
+from apps.accounts import audit_events, device_memory
 from apps.accounts.auth_cookies import (
     clear_refresh_cookies,
     set_refresh_cookies,
@@ -75,6 +75,7 @@ class LoginView(TokenObtainPairView):
         )
         response = Response({"access": data["access"], "surface": data["surface"], "user": data["user"]})
         set_refresh_cookies(response, refresh, request)
+        device_memory.attach(response, request)  # S-B: the remembered-device cookie
         return response
 
 

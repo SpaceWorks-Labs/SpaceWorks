@@ -59,7 +59,14 @@ class LoginSerializer(TokenObtainPairSerializer):
         from apps.accounts.mfa_challenges import start
         from apps.accounts.mfa_sessions import context
         if needs_challenge(self.user):
-            return start(self.user, context=context(request, surface=surface))
+            return start(self.user, context=context(request, surface=surface, login_method="password"))
+        # S-B: an unusual sign-in by someone without a factor proves the mailbox first.
+        from apps.accounts.login_risk import record_success, step_up
+        risk = step_up(request, self.user, method="password",
+                       context=context(request, surface=surface, login_method="password"))
+        if risk is not None:
+            return risk
+        record_success(request, self.user, method="password", web=True)
         refresh = self.token_class.for_user(self.user)
         refresh["surface"] = surface
         data["refresh"] = str(refresh)

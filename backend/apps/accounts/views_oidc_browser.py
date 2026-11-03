@@ -6,7 +6,8 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
-from apps.accounts import audit_events
+from apps.accounts import audit_events, device_memory
+from apps.accounts.login_risk import record_success
 from apps.accounts.auth_cookies import set_refresh_cookies
 from apps.accounts.login_methods import self_registration_enabled, social_login_enabled
 from apps.accounts.models_oidc import provider_for_slug, slug_from_provider_key
@@ -147,7 +148,7 @@ class OidcBrowserCallbackView(APIView):
             from apps.accounts.mfa_sessions import context
             if needs_challenge(user):
                 response = Response(start(user, context=context(
-                    request, surface=attempt.surface,
+                    request, surface=attempt.surface, login_method="social",
                 )))
                 response["Cache-Control"] = "no-store"
                 return response
@@ -160,16 +161,16 @@ class OidcBrowserCallbackView(APIView):
         except OidcAttemptRejected:
             return _error("social_invalid", 401)
         except OidcTokenRejected:
-            _audit_failure(attempt, "token_rejected")
+            _audit_failure(attempt, "token_rejected", request)
             return _error("social_invalid", 401)
         except (OidcProviderUnavailable, SocialProviderUnavailable):
             _audit_failure(attempt, "provider_unavailable")
             return _error("social_unavailable", 503)
         except SocialTokenError:
-            _audit_failure(attempt, "invalid_token")
+            _audit_failure(attempt, "invalid_token", request)
             return _error("social_invalid", 401)
         except SocialResolutionError as exc:
-            _audit_failure(attempt, exc.code)
+            _audit_failure(attempt, exc.code, request)
             return _error(exc.code, exc.status_code)
         audit_events.record_auth_event(
             user,
@@ -185,10 +186,12 @@ class OidcBrowserCallbackView(APIView):
             }
         )
         set_refresh_cookies(response, tokens["refresh"], request)
+        record_success(request, user, method="social", web=True)  # Q4: recorded, never stepped up
+        device_memory.attach(response, request)
         return response
 
 
-def _audit_failure(attempt, reason):
+def _audit_failure(attempt, reason, request=None):
     audit_events.record_auth_event(
         None,
         "auth.social_login_failed",
@@ -197,3 +200,6 @@ def _audit_failure(attempt, reason):
             "reason": reason,
         },
     )
+    if request is not None:  # S-B: feeds the failure counters
+        from apps.accounts.security_signals import send_login_refused
+        send_login_refused(request, "", f"social_{reason}")

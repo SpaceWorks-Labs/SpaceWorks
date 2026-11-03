@@ -63,14 +63,16 @@ def finish(job):
         return
     job.retained_versions = _retire_old_versions(job)
     _close(job, KeyRotationJob.Status.COMPLETED)
-    action = ("encryption.emergency_rekey_completed" if job.kind == Kind.EMERGENCY_REKEY
-              else "encryption.key_rotation_completed")
-    audit.record(None, action, makerspace=makerspace, target=job, meta={
-        "job_id": job.pk, "to_version": job.to_version, "rows": job.rows_done,
-        "skipped": job.rows_skipped, "retained_versions": job.retained_versions})
     if job.kind == Kind.EMERGENCY_REKEY:
+        audit.record(None, "encryption.emergency_rekey_completed", makerspace=makerspace, target=job, meta={
+            "job_id": job.pk, "to_version": job.to_version, "rows": job.rows_done,
+            "skipped": job.rows_skipped, "retained_versions": job.retained_versions})
         from .key_notifications import notify
         notify(job)
+        return
+    audit.record(None, "encryption.key_rotation_completed", makerspace=makerspace, target=job, meta={
+        "job_id": job.pk, "to_version": job.to_version, "rows": job.rows_done,
+        "skipped": job.rows_skipped, "retained_versions": job.retained_versions})
 
 
 def fail(job):

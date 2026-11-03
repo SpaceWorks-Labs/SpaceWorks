@@ -37,60 +37,65 @@ def _unlock(job_id):
 
 
 def advance(job, budget=BATCH):
-    """Process up to ``budget`` rows; return True when the job is finished."""
-    from apps.tenant_migration.gate_runtime import fanout_tenant_write
-
+    """Process up to ``budget`` rows inside the caller's tenant boundary; True when all are done."""
     labels = labels_for(job.kind)
     position = dict(job.cursor or {})
     index, after = position.get("i", 0), position.get("after")
-    counts = {}
-    with fanout_tenant_write(job.makerspace_id, operation="encryption.key_job", counts=counts) as admitted:
-        if not admitted:
-            return False  # the space is frozen for migration; try again next tick
-        while budget > 0 and index < len(labels):
-            label = labels[index]
-            model = apps.get_model(label)
-            rows = queryset_for(label, job.makerspace_id)
-            if after is not None:
-                rows = rows.filter(pk__gt=after)
-            ids = list(rows.order_by("pk").values_list("pk", flat=True)[:budget])
-            if not ids:
-                index, after = index + 1, None
-                continue
-            work = reindex_rows if job.kind == KeyRotationJob.Kind.SEARCH_REINDEX else reencrypt_rows
-            done, skipped = work(job, model, ids)
-            job.rows_done += done
-            job.rows_skipped += skipped
-            after = ids[-1] if isinstance(ids[-1], int) else str(ids[-1])
-            budget -= len(ids)
+    while budget > 0 and index < len(labels):
+        label = labels[index]
+        model = apps.get_model(label)
+        rows = queryset_for(label, job.makerspace_id)
+        if after is not None:
+            rows = rows.filter(pk__gt=after)
+        ids = list(rows.order_by("pk").values_list("pk", flat=True)[:budget])
+        if not ids:
+            index, after = index + 1, None
+            continue
+        work = reindex_rows if job.kind == KeyRotationJob.Kind.SEARCH_REINDEX else reencrypt_rows
+        done, skipped = work(job, model, ids)
+        job.rows_done += done
+        job.rows_skipped += skipped
+        after = ids[-1] if isinstance(ids[-1], int) else str(ids[-1])
+        budget -= len(ids)
     job.cursor = {"i": index, "after": after}
     job.save(update_fields=["cursor", "rows_done", "rows_skipped", "updated_at"])
-    if index >= len(labels):
-        finish(job)
-        return True
-    return False
+    return index >= len(labels)
+
+
+def _record_failure(job, exc):
+    logger.exception("encryption_key_job_chunk_failed", extra={"job_id": job.pk})
+    job.refresh_from_db()
+    job.attempts += 1
+    job.error_code = exc.__class__.__name__[:64]
+    job.save(update_fields=["attempts", "error_code", "updated_at"])
+    if job.attempts >= MAX_ATTEMPTS:
+        fail(job)
+        return False
+    return True
 
 
 def advance_running(limit=JOBS_PER_TICK, budget=BATCH):
-    """Advance a bounded number of running jobs; return how many still have work."""
-    remaining = 0
+    """Advance a bounded number of running jobs, each inside its tenant's source-gate boundary
+    (a frozen space is skipped and resumed on a later tick); return how many still have work."""
+    from apps.tenant_migration.gate_runtime import fanout_tenant_write
+
+    remaining, counts = 0, {}
     for job in KeyRotationJob.objects.filter(status=KeyRotationJob.Status.RUNNING).order_by("started_at")[:limit]:
         if not _locked(job.pk):
             continue
         try:
             job.refresh_from_db()
-            if job.status == KeyRotationJob.Status.RUNNING and not advance(job, budget):
+            finished = False
+            with fanout_tenant_write(job.makerspace_id, operation="encryption.key_job", counts=counts) as admitted:
+                if not admitted:
+                    continue
+                finished = job.status == KeyRotationJob.Status.RUNNING and advance(job, budget)
+            if finished:
+                finish(job)
+            elif job.status == KeyRotationJob.Status.RUNNING:
                 remaining += 1
         except Exception as exc:  # retried next tick, then failed
-            logger.exception("encryption_key_job_chunk_failed", extra={"job_id": job.pk})
-            job.refresh_from_db()
-            job.attempts += 1
-            job.error_code = exc.__class__.__name__[:64]
-            job.save(update_fields=["attempts", "error_code", "updated_at"])
-            if job.attempts >= MAX_ATTEMPTS:
-                fail(job)
-            else:
-                remaining += 1
+            remaining += _record_failure(job, exc)
         finally:
             _unlock(job.pk)
     return remaining

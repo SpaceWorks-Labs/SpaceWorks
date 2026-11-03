@@ -1,7 +1,7 @@
 """Release 2 L8: source-gate declaration for the per-space key jobs."""
 
 FANOUT = {
-    "apps.encryption.rekey_tasks.advance": "One key job chunk of one space, inside its skip-and-count tenant boundary.",
+    "apps.encryption.rekey_tasks.advance_running": "One key job chunk of one space, inside its skip-and-count tenant boundary.",
 }
 
 

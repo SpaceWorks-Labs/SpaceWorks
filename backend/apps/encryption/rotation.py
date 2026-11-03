@@ -71,9 +71,12 @@ def start_dek_rotation(actor, makerspace, *, emergency=False):
         except PiiUnavailable as exc:
             raise ValidationError("Encryption is not available on this deployment; nothing to rotate.") from exc
         job = _create_job(makerspace, kind=kind, from_version=current.version, to_version=new.version)
-        action = "encryption.emergency_rekey_started" if emergency else "encryption.key_rotated"
-        audit.record(actor, action, makerspace=makerspace, target=job,
-                     meta={"job_id": job.pk, "from_version": current.version, "to_version": new.version})
+        if emergency:
+            audit.record(actor, "encryption.emergency_rekey_started", makerspace=makerspace, target=job,
+                         meta={"job_id": job.pk, "from_version": current.version, "to_version": new.version})
+        else:
+            audit.record(actor, "encryption.key_rotated", makerspace=makerspace, target=job,
+                         meta={"job_id": job.pk, "from_version": current.version, "to_version": new.version})
     if emergency:
         from .key_notifications import notify
         notify(job)

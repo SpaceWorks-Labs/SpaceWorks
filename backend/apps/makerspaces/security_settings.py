@@ -70,6 +70,8 @@ def effective(space):
             "key": setting.key, "label": setting.label, "description": setting.description,
             "kind": setting.kind, "default": setting.default, "choices": list(setting.choices),
             "value": value,
+            # What a lock on an on/off setting forces (on for most, off for an "..._allowed").
+            "strict_value": setting.stricter(True, False) if setting.kind == registry.BOOL else None,
             "lock": None if lock is None else {"floor": lock.floor, "note": lock.note,
                                                "locked_at": lock.locked_at},
         })

@@ -121,7 +121,8 @@ ask_setup_questions() {
   question ORG_NAME 'Organization name' '' org_name || return 1
   question MSNAME 'Name of your makerspace' 'My Makerspace' name || return 1
   [[ "$HOSTING_MODEL" != 3 ]] || question MS_SUBDOMAIN 'First makerspace subdomain' makerspace slug || return 1
-  question SETUP_MFA_ENABLED 'Turn on two-step sign-in (authenticator app)?' Y choices:Y,y,yes,YES,N,n,no,NO || return 1
+  echo 'Staff always need two-step sign-in (an authenticator app or a passkey); this answer is for members.'
+  question SETUP_MFA_ENABLED 'Let members turn on two-step sign-in too?' Y choices:Y,y,yes,YES,N,n,no,NO || return 1
   question SETUP_SOCIAL_PROVIDERS 'Which sign-in options besides email + password? Google, Apple, GitHub — comma list, or none' google providers || return 1
   ask_setup_areas || return 1
   ask_setup_scanner || return $?

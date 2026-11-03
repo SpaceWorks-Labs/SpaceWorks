@@ -19,7 +19,8 @@ and Reports default to yes; the other five default to no. An existing events/boo
 area plus Membership, Online payments and Reports, preserving plans, checkout and reporting;
 Inventory and Machines are off. Areas enable every child feature supported by the selected
 modules and its feature prerequisites. Follow-up answers may turn off self-checkout, kiosk or
-certification gating. Staff MFA is a separate question.
+certification gating. Staff MFA is not a question: since release 2 it is required for every staff role
+(platform rule; the old `security.staff_mfa_required` switch is retired).
 The per-person accounts module (self sign-up, password/Google/Apple/GitHub/phone sign-in and the member
 area) is always installed by setup; platform login-method switches and the provider selection still
 govern sign-in availability. Membership adds plans, vouching, renewals and the mobile app.
@@ -43,7 +44,7 @@ receipts and offline settlement work without Online payments. See the
 
 The change menu shows on/partial/off: numbers toggle, `a` selects all and `n` selects none. It asks
 follow-ups only for newly enabled areas. `--all-modules` enables all eight areas and every supported
-feature, keeping existing settings and staff MFA unchanged. Newly enabled areas get defaults;
+feature, keeping existing settings and security settings unchanged. Newly enabled areas get defaults;
 `--without` exclusions still apply, and unavailable modules are reported rather than installed. Automation
 can use `--areas=inventory,machines` (empty selects core and always-on services only), `--all-modules`,
 `--without=key1,key2`, `--makerspace`, `--all-makerspaces`, and `--confirm-removals`.

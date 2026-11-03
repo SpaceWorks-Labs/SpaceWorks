@@ -104,6 +104,7 @@ export const openApiTags = [
   "Organizations",
   "PII access",
   "Page editor",
+  "Passkeys",
   "Payments",
   "Personal notification contract",
   "Personal notifications",
@@ -139,6 +140,7 @@ export const openApiTags = [
   "Staff accounts",
   "Staff invitations",
   "Staff lists",
+  "Staff roles",
   "Stock transfers",
   "Stocktake",
   "Telegram",
@@ -838,6 +840,7 @@ export const openApiPaths = [
   "/api/v1/admin/makerspaces/{makerspace_id}/staff-invitations",
   "/api/v1/admin/makerspaces/{makerspace_id}/staff-invitations/{invitation_id}/resend",
   "/api/v1/admin/makerspaces/{makerspace_id}/staff-invitations/{invitation_id}/revoke",
+  "/api/v1/admin/makerspaces/{makerspace_id}/staff-roles/{membership_id}/mfa-reset",
   "/api/v1/admin/makerspaces/{makerspace_id}/uploads/evidence-url",
   "/api/v1/admin/makerspaces/{makerspace_id}/waiver",
   "/api/v1/admin/makerspaces/{makerspace_id}/walk-in-members",
@@ -1045,10 +1048,17 @@ export const openApiPaths = [
   "/api/v1/auth/mfa/confirm",
   "/api/v1/auth/mfa/disable",
   "/api/v1/auth/mfa/enroll",
+  "/api/v1/auth/mfa/passkey/options",
   "/api/v1/auth/mfa/recovery",
   "/api/v1/auth/mfa/verify",
   "/api/v1/auth/organization-invitations/redeem/",
   "/api/v1/auth/organizations/self-service/",
+  "/api/v1/auth/passkeys",
+  "/api/v1/auth/passkeys/authenticate/options",
+  "/api/v1/auth/passkeys/authenticate/verify",
+  "/api/v1/auth/passkeys/register/options",
+  "/api/v1/auth/passkeys/register/verify",
+  "/api/v1/auth/passkeys/{passkey_id}",
   "/api/v1/auth/phone",
   "/api/v1/auth/phone/link/confirm",
   "/api/v1/auth/phone/link/start",
@@ -1057,6 +1067,8 @@ export const openApiPaths = [
   "/api/v1/auth/reauth",
   "/api/v1/auth/reauth/enrollment/confirm",
   "/api/v1/auth/reauth/enrollment/email",
+  "/api/v1/auth/reauth/passkey",
+  "/api/v1/auth/reauth/passkey/options",
   "/api/v1/auth/reauth/phone/confirm",
   "/api/v1/auth/reauth/phone/start",
   "/api/v1/auth/reauth/social/complete",
@@ -2878,6 +2890,7 @@ export type AuthUserPayload = {
   "superadmin_actions": Array<string>;
   "mfa_grace_ends_at": string | null;
   "merge_suggested": boolean;
+  "mfa_enrolment_due": boolean;
   "event_grants"?: Array<GrantedEventEntry>;
   "booking_grants"?: Array<GrantedBookingEntry>;
 };
@@ -10937,6 +10950,7 @@ export type Makerspace = {
   "type"?: string;
   "value"?: string;
 } | null;
+  "passkey_only_accounts": number;
   "platform_hosting": boolean;
   "is_platform_subdomain": boolean;
   "hidden_from_central_directory"?: boolean;
@@ -14038,6 +14052,71 @@ export type PartsResponse = {
   "parts": Array<PartResponse>;
 };
 
+export type Passkey = {
+  "id": number;
+  "name": string;
+  "rp_id": string;
+  "transports": unknown;
+  "backed_up": boolean;
+  "created_at": string;
+  "last_used_at": string | null;
+  "usable_here": boolean;
+};
+
+export type PasskeyList = {
+  "passkeys": Array<Passkey>;
+  "passkeys_allowed": boolean;
+  "rp_id": string | null;
+};
+
+export type PasskeyLogin = {
+  "access": string;
+  "surface": PasskeyLoginSurfaceEnum;
+  "user": AuthUserPayload;
+};
+
+export type PasskeyLoginSurfaceEnum = "member" | "verification_only";
+
+export type PasskeyMfaOptionsRequest = {
+  "challenge": string;
+};
+
+export type PasskeyOptions = {
+  "ceremony": string;
+  "options": unknown;
+};
+
+export type PasskeyReauthenticated = {
+  "verified": boolean;
+  "expires_in": number;
+};
+
+export type PasskeyRegistered = {
+  "passkey": Passkey;
+  "recovery_codes": Array<string> | null;
+  "access": string;
+  "surface": string;
+  "user": AuthUserPayload;
+};
+
+export type PasskeyRegisterRequest = {
+  "ceremony": string;
+  "credential": unknown;
+  "name"?: string;
+};
+
+export type PasskeyRemoved = {
+  "signed_out": boolean;
+  "access"?: string;
+  "surface"?: string;
+  "user"?: AuthUserPayload;
+};
+
+export type PasskeyVerifyRequest = {
+  "ceremony": string;
+  "credential": unknown;
+};
+
 export type PasswordLoginResult = LoginResponse | MFAChallengeResponse;
 
 export type PasswordResetAcknowledgement = {
@@ -15067,6 +15146,7 @@ export type PatchedMakerspace = {
   "type"?: string;
   "value"?: string;
 } | null;
+  "passkey_only_accounts"?: number;
   "platform_hosting"?: boolean;
   "is_platform_subdomain"?: boolean;
   "hidden_from_central_directory"?: boolean;
@@ -15414,6 +15494,10 @@ export type PatchedOrganizationProfileUpdate = {
   "website"?: string;
   "public_profile_enabled"?: boolean;
   "is_discoverable"?: boolean;
+};
+
+export type PatchedPasskeyRename = {
+  "name"?: string;
 };
 
 export type PatchedPlatformBackupSettings = {
@@ -17795,6 +17879,7 @@ export type PublicConfig = {
   "hosting_requests"?: {
   [key: string]: unknown;
 };
+  "passkeys_enabled": boolean;
   "native"?: NativeConfig;
 };
 
@@ -19142,6 +19227,7 @@ export type ReauthenticationStatus = {
   "verified": boolean;
   "password_available": boolean;
   "mfa_enabled": boolean;
+  "passkey_available": boolean;
   "providers": Array<string>;
 };
 
@@ -20501,6 +20587,8 @@ export type RsvpInput = {
   "decision": Decision25cEnum;
 };
 
+export type RuleEnum = "superadmin" | "space_manager";
+
 export type SavedReadiness = {
   "readiness": ReadinessEnum;
 };
@@ -20792,6 +20880,7 @@ export type SecuritySetting = {
   "default": unknown;
   "choices": Array<unknown>;
   "value": unknown;
+  "strict_value": boolean | null;
   "lock": SecurityLock | null;
 };
 
@@ -21739,6 +21828,15 @@ export type StaffMembership = {
   "makerspace_slug": string;
   "role"?: RoleCddEnum;
   "created_at": string;
+};
+
+export type StaffMfaResetRequest = {
+  "reason": string;
+};
+
+export type StaffMfaResetResult = {
+  "reset": boolean;
+  "rule": RuleEnum;
 };
 
 export type StaffPayment = {

@@ -7,9 +7,11 @@ from django.utils import timezone
 from rest_framework.exceptions import AuthenticationFailed, PermissionDenied
 from django.contrib.auth.hashers import check_password
 
-from apps.accounts import audit_events
+from apps.accounts import audit_events, security_signals
+from apps.accounts.login_security_contract import LAST_FACTOR
 from apps.accounts.mfa_crypto import matching_step, recovery_codes
-from apps.accounts.mfa_policy import assert_available, required, stamp
+from apps.accounts.mfa_policy import assert_available, has_passkey, required, stamp
+from apps.accounts.passkeys.policy import passkeys_usable
 from apps.accounts.models import User
 from apps.accounts.models_mfa import UserMFA
 from apps.accounts.services_tokens import blacklist_outstanding_tokens
@@ -57,28 +59,41 @@ def enable(user, row, secret, code, *, keep_grant=None):
     meta = {"delivery": "device", "grant_hash": audit_events.fingerprint(keep_grant.pk)} if keep_grant else None
     audit_events.record_auth_event(user, "auth.mfa_enabled", target=user, meta=meta)
     stamp(user, row)
+    from apps.accounts.mfa_grace import close_grace
+    close_grace(user)
+    security_signals.send_mfa_changed(user, security_signals.TOTP_ENABLED)
     return codes
 
 
 @transaction.atomic
 def change(user, password, *, disable=False):
-    if not disable:
-        assert_available()
     user = User.objects.select_for_update().get(pk=user.pk)
+    if not disable:
+        assert_available(user)
     active(user)
     if not user.check_password(password):
         raise AuthenticationFailed("Password verification failed.")
     row = UserMFA.objects.select_for_update().get(user=user)
-    if not row.enabled_at:
+    passkeys = has_passkey(user)
+    # Recovery codes back a passkey too, so a passkey-only account may regenerate them.
+    if not (row.enabled_at or (passkeys and not disable)):
         raise PermissionDenied("MFA is not enrolled.")
-    if disable and required(user):
-        raise PermissionDenied("MFA is required for this account.")
+    if disable and required(user) and not (passkeys and passkeys_usable(user)):
+        # Staff MFA is mandatory (#62): a passkey may replace the authenticator, never nothing.
+        raise PermissionDenied({"detail": "Staff need a second factor. Add a passkey before removing "
+                                          "the authenticator.", "code": LAST_FACTOR})
     row.version = uuid.uuid4()
-    codes, row.recovery_digests = ([], []) if disable else recovery_codes()
     if disable:
+        codes = []
         row.secret, row.enabled_at, row.last_step = "", None, -1
+        if not passkeys:
+            row.recovery_digests = []
+    else:
+        codes, row.recovery_digests = recovery_codes()
     row.save()
     blacklist_outstanding_tokens(user)
     audit_events.record_auth_event(user, "auth.mfa_disabled" if disable else "auth.mfa_recovery_regenerated",
                                    target=user)
+    security_signals.send_mfa_changed(
+        user, security_signals.TOTP_DISABLED if disable else security_signals.RECOVERY_REGENERATED)
     return codes

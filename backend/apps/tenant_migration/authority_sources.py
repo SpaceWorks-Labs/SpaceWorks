@@ -93,6 +93,9 @@ AUTHORIZATION_SOURCES = (
     APPS_DIR / "makerspaces" / "role_authority.py",
     APPS_DIR / "makerspaces" / "role_assignments.py",
     APPS_DIR / "accounts" / "mfa_policy.py",
+    # Login security S-A: the staff grace and the MFA-reset rule read staff authority.
+    APPS_DIR / "accounts" / "mfa_grace.py",
+    APPS_DIR / "accounts" / "mfa_reset.py",
     APPS_DIR / "machines" / "access.py",
     APPS_DIR / "machines" / "access_core.py",
     APPS_DIR / "machines" / "access_bulk.py",

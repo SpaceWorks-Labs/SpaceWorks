@@ -28,8 +28,21 @@ segno
 djangorestframework-simplejwt>=5.5
 # >=50 closes GHSA-g6cj-pr64-35w5, GHSA-jwv3-5hgf-82ww and GHSA-m2h6-j472-rp4c.
 cryptography>=50
-# App Attest's CBOR attestation object and COSE credential key.
+# App Attest's CBOR attestation object and COSE credential key (also passkeys).
 cbor2==6.1.5
+# Passkeys (WebAuthn, release 2 S-A): py_webauthn and its verification stack, exact pins.
+# pyasn1 0.6.5 is younger than two weeks: it fixes GHSA-2qm8-x737-gmw5 and three more
+# advisories open on 0.6.4, so pip-audit wins over the age rule here.
+webauthn==3.0.1
+pyOpenSSL==26.4.0
+pyasn1==0.6.5
+pyasn1-modules==0.4.2
+# Relying-party ID safety: tldextract's bundled Public Suffix List snapshot, never fetched
+# (accounts/passkeys/rp_id.py passes suffix_list_urls=()). filelock 4.2.4 is the oldest
+# release past the 4.1-4.2.0 advisories.
+tldextract==5.4.0
+filelock==4.2.4
+requests-file==3.0.1
 django-storages[s3]>=1.14,<2
 boto3>=1.43.6,<2
 requests>=2.32,<3

@@ -78,8 +78,6 @@ FEATURE_DEFINITIONS = (
     FeatureDefinition("ui.easter_eggs", None, "Easter eggs",
                       "Hidden playful moments; never on scanner, kiosk or payment screens.",
                       default_enabled=True),
-    FeatureDefinition("security.staff_mfa_required", None, "Require MFA for staff",
-                      "Require staff with actions in this space to enroll in TOTP MFA."),
     FeatureDefinition("membership.vouching", "membership", "Membership vouching",
                       "Require eligible members to vouch before admission."),
     FeatureDefinition("membership.application_form", "membership", "Membership application form",

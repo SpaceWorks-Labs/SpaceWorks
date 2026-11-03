@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
-from apps.accounts import mfa_challenges, mfa_policy
+from apps.accounts import device_memory, mfa_challenges, mfa_policy
 from apps.accounts.attestation import AttestationUnavailable
 from apps.accounts.auth_cookies import set_refresh_cookies
 from apps.accounts.mfa_sessions import context
@@ -86,18 +86,20 @@ class MFAVerifyView(MFAEnrollmentView):
     enrolling = False
 
     @extend_schema(tags=["MFA"], auth=[], request=MFAVerifySerializer,
-                   description="Complete the server-owned login context. Native staff authority requires a staff account, its fixed tenant, password, authenticator MFA and approved app attestation. Consumer login methods remain member-only. Platform device grants return device_superadmin_not_supported (403). Attestation outages return attestation_unavailable (503).",
+                   description="Complete the server-owned login context. `factor` picks totp, recovery, passkey (with `webauthn` from `auth/mfa/passkey/options`) or email_code (a `purpose: risk` challenge; wrong code: `login_code_invalid`, 400; a failed passkey: `passkey_failed`, 400). Native completions return `device_trust`. Native staff authority requires a staff account, its fixed tenant, password, authenticator MFA and approved app attestation. Consumer login methods remain member-only. Platform device grants return device_superadmin_not_supported (403). Attestation outages return attestation_unavailable (503).",
                    responses={200: MFACompletedSerializer, **errors(400, 401, 403, 429, 503)})
     def post(self, request):
         data = _validated(MFAVerifySerializer, request)
         try:
-            result = mfa_challenges.finish(data["challenge"], data["code"], request, enrolling=self.enrolling)
+            result = mfa_challenges.finish(data["challenge"], data.get("code", ""), request, enrolling=self.enrolling,
+                                           factor=data.get("factor"), webauthn=data.get("webauthn"))
         except AttestationUnavailable:
             return Response({"detail": "Device attestation is unavailable.", "code": "attestation_unavailable"}, status=503)
         raw = result.pop("refresh") if "device_grant" not in result else None
         response = Response(result)
         if raw:
             set_refresh_cookies(response, raw, request)
+            device_memory.attach(response, request)  # S-B: the remembered-device cookie
         response["Cache-Control"] = "no-store"
         return response
 

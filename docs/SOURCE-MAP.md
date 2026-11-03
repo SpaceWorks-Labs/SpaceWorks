@@ -726,7 +726,9 @@ identity normalization and production minimum-version comparison. `mobile_associ
   `membership_import_accept.py`, `membership_admission_settings_l4.py`, `membership_refund_suggestion.py`,
   `notifications_l4.py`, `public_page_plans.py`, `views_public_plans.py`, `views_membership_member_l4.py`.
 - Staff API: `admin_api/urls_membership_lifecycle.py` -> `views_membership_{desk,records,erasure_import,
-  plan_archive,refunds,register,summary}.py`; import planning/apply in `bulk_import_members{,_apply}.py`.
+  plan_archive,refunds,register,summary}.py`; import planning/apply in `bulk_import_members{,_apply}.py`;
+  the import source (upload or public Google Sheet, L13) in `import_sources.py` + `import_sources_sheets.py`
+  (the only Google Sheets fetch), shared with `id_programmes/imports.py`; keys in `capability_definitions_r2_l13.py`.
 - Refunds: `payments/refund_policy_membership.py` (FY/fixed pro rata, lifetime band, `term_for_payment`),
   `payments/refund_membership_term.py` (X21 term end after approval commits).
 - Reports: `operations/reports_membership_l4_{terms,lists}.py`, `reports_membership_summary.py`,

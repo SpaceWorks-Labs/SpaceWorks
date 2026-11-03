@@ -1517,6 +1517,7 @@ default, 404 their routes when off and keep their rows (#95, #128 C-8). These ho
 - **Imports never link accounts (#128 C-13).** An imported row is an `ImportedMember` bound to an INVITE
   `MembershipRequest` with no user; only `claim_invitation` by a signed-in person whose VERIFIED email
   equals the invitation's activates it. Record-only rows get no invitation.
+- **A Google Sheet is a SOURCE, never a second importer (L13).** See **Google Sheets import source** below.
 - **Titles grant nothing.** No rbac reader may read `MembershipTitle`; authority stays in roles.
 - **Erasure keeps money and audit.** Approving a per-space erasure ends the membership as a voluntary
   departure and blanks this space's record, titles, profile, application answers and imported details;
@@ -6996,3 +6997,27 @@ reconciliation may release it. Full never consults free accounting caps or free 
   membership (Q-I7); a "new photo" request keeps the card valid with one reminder after 7 days (Q-I4).
 - **Tokens, wallet passes, extras, jobs and fonts are omitted from exports and tenant moves**; tokens
   re-mint after a move. Designs, cards and programmes travel.
+
+### Google Sheets import source (release 2 L13)
+
+- **Read-only, public-only outbound fetch.** `admin_api/import_sources_sheets.py` is the only code that
+  contacts Google Sheets. It accepts `https://docs.google.com/spreadsheets/...` links only, rewrites them
+  to the CSV export, and follows a redirect only to `docs.google.com` or `*.googleusercontent.com` over
+  HTTPS on 443; a redirect to `accounts.google.com` is `sheet_not_public`, any other host is refused.
+  No OAuth, no Google credential, no cookies (cleared every hop), no proxy or netrc (`trust_env=False`).
+- **SSRF guard with a pinned connection.** Every hop's host is resolved and refused unless every answer
+  is a global address (loopback, private, link-local, reserved and IPv4-mapped private all refuse); the
+  request then goes to the checked IP with the real `Host` and SNI, so TLS still verifies the name.
+- **Bounded.** Connect 5 s, read 15 s, 30 s overall, at most 5 redirects; the byte cap is the
+  importer's upload cap (members 5 MB, ID programmes 2 MB) and the row cap its row cap (5000 / 2000).
+  Every failure is a typed error (`sheet_url_invalid`, `sheet_not_public`, `sheet_too_large`,
+  `sheet_changed` as 400; `sheet_unreachable` as 502) and a structured log line WITHOUT the link — a
+  sheet id is a capability.
+- **Same pipeline, same rules.** The fetched bytes go through the importer's own parser, mapping,
+  preview, de-dup and apply unchanged, so sheet rows follow #128 C-13 exactly like CSV rows. Nothing is
+  stored: the bytes live for the request. The apply re-fetches and, given the preview's
+  `sheet_sha256`, refuses a sheet edited since (`sheet_changed`). Audit entries carry
+  `source=google_sheet|file`, never the URL; a member batch is named "Google Sheet".
+- **Switches.** `membership.import_sheets` (needs `membership.import`) and
+  `membership.id_programmes_import_sheets` (needs `membership.id_programmes`), both off by default; off
+  answers 404 to a sheet request and leaves file uploads unchanged.

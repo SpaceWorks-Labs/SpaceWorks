@@ -94610,6 +94610,111 @@
                 }
             }
         },
+        "/api/v1/admin/makerspaces/{makerspace_id}/staff-roles/{membership_id}/mfa-reset": {
+            "post": {
+                "operationId": "api_v1_admin_makerspaces_staff_roles_mfa_reset_create",
+                "description": "Clears the person's authenticator, every passkey and their recovery codes, and ends every session. Allowed for a platform superadmin, or for this space's Space Manager only when all of the person's elevated authority is in this space and they are not a Space Manager (mfa_reset_not_allowed otherwise). Needs recent re-authentication.",
+                "summary": "Reset a staff member's two-step sign-in",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "membership_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Staff roles"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffMfaResetRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffMfaResetRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffMfaResetRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StaffMfaResetResult"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/v1/admin/makerspaces/{makerspace_id}/uploads/evidence-url": {
             "post": {
                 "operationId": "api_v1_admin_makerspaces_uploads_evidence_url_create",
@@ -117470,6 +117575,57 @@
                 }
             }
         },
+        "/api/v1/auth/mfa/passkey/options": {
+            "post": {
+                "operationId": "api_v1_auth_mfa_passkey_options_create",
+                "description": "Answer with mfa/verify (factor=passkey). The challenge is not consumed here.",
+                "summary": "Passkey options for a pending second-factor challenge",
+                "tags": [
+                    "Passkeys"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PasskeyMfaOptionsRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PasskeyMfaOptionsRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PasskeyMfaOptionsRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PasskeyOptions"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
+                    }
+                }
+            }
+        },
         "/api/v1/auth/mfa/recovery": {
             "post": {
                 "operationId": "api_v1_auth_mfa_recovery_create",
@@ -117907,6 +118063,329 @@
                                 }
                             }
                         },
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/passkeys": {
+            "get": {
+                "operationId": "api_v1_auth_passkeys_retrieve",
+                "summary": "List my passkeys",
+                "tags": [
+                    "Passkeys"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PasskeyList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/passkeys/{passkey_id}": {
+            "patch": {
+                "operationId": "api_v1_auth_passkeys_partial_update",
+                "summary": "Rename a passkey (recent re-authentication)",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "passkey_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Passkeys"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedPasskeyRename"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedPasskeyRename"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedPasskeyRename"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Passkey"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "api_v1_auth_passkeys_destroy",
+                "description": "Ends every session. The calling browser gets a new one unless the removed factor was its only proof. Refuses last_factor for staff.",
+                "summary": "Remove a passkey (recent re-authentication)",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "passkey_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Passkeys"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PasskeyRemoved"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/passkeys/authenticate/options": {
+            "post": {
+                "operationId": "api_v1_auth_passkeys_authenticate_options_create",
+                "summary": "Start a passkey sign-in (discoverable, conditional UI)",
+                "tags": [
+                    "Passkeys"
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PasskeyOptions"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/passkeys/authenticate/verify": {
+            "post": {
+                "operationId": "api_v1_auth_passkeys_authenticate_verify_create",
+                "summary": "Sign in with a passkey",
+                "tags": [
+                    "Passkeys"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PasskeyVerifyRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PasskeyVerifyRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PasskeyVerifyRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PasskeyLogin"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/passkeys/register/options": {
+            "post": {
+                "operationId": "api_v1_auth_passkeys_register_options_create",
+                "summary": "Start adding a passkey (recent re-authentication)",
+                "tags": [
+                    "Passkeys"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PasskeyOptions"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/passkeys/register/verify": {
+            "post": {
+                "operationId": "api_v1_auth_passkeys_register_verify_create",
+                "description": "Ends every other session and returns a fresh one proved by the new passkey.",
+                "summary": "Finish adding a passkey",
+                "tags": [
+                    "Passkeys"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PasskeyRegisterRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PasskeyRegisterRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PasskeyRegisterRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PasskeyRegistered"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "429": {
                         "description": "Rate limit exceeded; retry after the interval in Retry-After."
                     }
                 }
@@ -118382,6 +118861,102 @@
                     },
                     "503": {
                         "description": "A required dependency is unavailable."
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/reauth/passkey": {
+            "post": {
+                "operationId": "api_v1_auth_reauth_passkey_create",
+                "summary": "Re-authenticate with a passkey",
+                "tags": [
+                    "Reauthentication"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PasskeyVerifyRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PasskeyVerifyRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PasskeyVerifyRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PasskeyReauthenticated"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/reauth/passkey/options": {
+            "post": {
+                "operationId": "api_v1_auth_reauth_passkey_options_create",
+                "summary": "Start a passkey re-authentication",
+                "tags": [
+                    "Reauthentication"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PasskeyOptions"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
                     }
                 }
             }
@@ -179429,7 +180004,11 @@
                         "type": "string",
                         "format": "date-time",
                         "nullable": true,
-                        "description": "When a person who gained a staff role without a second factor must have enrolled (#128 C-1). Null when no grace applies."
+                        "description": "When a person who gained a staff role without a second factor must have enrolled (#128 C-1). Null when no grace applies. In the past means staff screens refuse with mfa_enrollment_required until they enrol; member features keep working."
+                    },
+                    "mfa_enrolment_due": {
+                        "type": "boolean",
+                        "description": "The person holds elevated authority and has no second factor (authenticator or passkey) yet."
                     },
                     "merge_suggested": {
                         "type": "boolean",
@@ -179461,6 +180040,7 @@
                     "kind",
                     "makerspaces",
                     "merge_suggested",
+                    "mfa_enrolment_due",
                     "mfa_grace_ends_at",
                     "must_change_password",
                     "phone",
@@ -216318,6 +216898,11 @@
                         },
                         "readOnly": true
                     },
+                    "passkey_only_accounts": {
+                        "type": "integer",
+                        "description": "People whose only second factor is a passkey on this custom domain: a domain change ends their passkey sign-in there.",
+                        "readOnly": true
+                    },
                     "platform_hosting": {
                         "type": "boolean",
                         "readOnly": true
@@ -216524,6 +217109,7 @@
                     "mattermost_webhook_url_set",
                     "name",
                     "opening_hours",
+                    "passkey_only_accounts",
                     "platform_hosting",
                     "public_api_key",
                     "request_access",
@@ -229494,6 +230080,244 @@
                     "parts"
                 ]
             },
+            "Passkey": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "rp_id": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "transports": {
+                        "readOnly": true
+                    },
+                    "backed_up": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "last_used_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "usable_here": {
+                        "type": "boolean",
+                        "readOnly": true,
+                        "description": "Registered on this address's relying-party ID; others still count as a factor but only work on the address they were created on."
+                    }
+                },
+                "required": [
+                    "backed_up",
+                    "created_at",
+                    "id",
+                    "last_used_at",
+                    "name",
+                    "rp_id",
+                    "transports",
+                    "usable_here"
+                ]
+            },
+            "PasskeyList": {
+                "type": "object",
+                "properties": {
+                    "passkeys": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Passkey"
+                        }
+                    },
+                    "passkeys_allowed": {
+                        "type": "boolean",
+                        "description": "False when the platform switch or a staff space's security.passkeys_allowed turns them off."
+                    },
+                    "rp_id": {
+                        "type": "string",
+                        "nullable": true,
+                        "description": "This address's relying-party ID, if it has one."
+                    }
+                },
+                "required": [
+                    "passkeys",
+                    "passkeys_allowed",
+                    "rp_id"
+                ]
+            },
+            "PasskeyLogin": {
+                "type": "object",
+                "properties": {
+                    "access": {
+                        "type": "string"
+                    },
+                    "surface": {
+                        "$ref": "#/components/schemas/PasskeyLoginSurfaceEnum"
+                    },
+                    "user": {
+                        "$ref": "#/components/schemas/AuthUserPayload"
+                    }
+                },
+                "required": [
+                    "access",
+                    "surface",
+                    "user"
+                ]
+            },
+            "PasskeyLoginSurfaceEnum": {
+                "enum": [
+                    "member",
+                    "verification_only"
+                ],
+                "type": "string",
+                "description": "* `member` - member\n* `verification_only` - verification_only"
+            },
+            "PasskeyMfaOptionsRequest": {
+                "type": "object",
+                "properties": {
+                    "challenge": {
+                        "type": "string",
+                        "description": "The MFA challenge from the login response.",
+                        "maxLength": 128
+                    }
+                },
+                "required": [
+                    "challenge"
+                ]
+            },
+            "PasskeyOptions": {
+                "type": "object",
+                "properties": {
+                    "ceremony": {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Send back with the browser's answer; valid once, for 5 minutes."
+                    },
+                    "options": {
+                        "description": "publicKey options for navigator.credentials.create()/get()."
+                    }
+                },
+                "required": [
+                    "ceremony",
+                    "options"
+                ]
+            },
+            "PasskeyReauthenticated": {
+                "type": "object",
+                "properties": {
+                    "verified": {
+                        "type": "boolean"
+                    },
+                    "expires_in": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "expires_in",
+                    "verified"
+                ]
+            },
+            "PasskeyRegisterRequest": {
+                "type": "object",
+                "properties": {
+                    "ceremony": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "credential": {
+                        "description": "The PublicKeyCredential as JSON, exactly as the browser returned it (base64url binary fields, e.g. from @simplewebauthn/browser)."
+                    },
+                    "name": {
+                        "type": "string",
+                        "default": "",
+                        "maxLength": 64
+                    }
+                },
+                "required": [
+                    "ceremony",
+                    "credential"
+                ]
+            },
+            "PasskeyRegistered": {
+                "type": "object",
+                "properties": {
+                    "passkey": {
+                        "$ref": "#/components/schemas/Passkey"
+                    },
+                    "recovery_codes": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "nullable": true,
+                        "description": "Shown once when the account had no recovery codes yet; null otherwise."
+                    },
+                    "access": {
+                        "type": "string",
+                        "description": "A fresh session: every other session ended with this change."
+                    },
+                    "surface": {
+                        "type": "string"
+                    },
+                    "user": {
+                        "$ref": "#/components/schemas/AuthUserPayload"
+                    }
+                },
+                "required": [
+                    "access",
+                    "passkey",
+                    "recovery_codes",
+                    "surface",
+                    "user"
+                ]
+            },
+            "PasskeyRemoved": {
+                "type": "object",
+                "properties": {
+                    "signed_out": {
+                        "type": "boolean",
+                        "description": "True when this session's proof was the removed factor: sign in again."
+                    },
+                    "access": {
+                        "type": "string"
+                    },
+                    "surface": {
+                        "type": "string"
+                    },
+                    "user": {
+                        "$ref": "#/components/schemas/AuthUserPayload"
+                    }
+                },
+                "required": [
+                    "signed_out"
+                ]
+            },
+            "PasskeyVerifyRequest": {
+                "type": "object",
+                "properties": {
+                    "ceremony": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "credential": {
+                        "description": "The PublicKeyCredential as JSON, exactly as the browser returned it (base64url binary fields, e.g. from @simplewebauthn/browser)."
+                    }
+                },
+                "required": [
+                    "ceremony",
+                    "credential"
+                ]
+            },
             "PasswordLoginResult": {
                 "oneOf": [
                     {
@@ -235542,6 +236366,11 @@
                         },
                         "readOnly": true
                     },
+                    "passkey_only_accounts": {
+                        "type": "integer",
+                        "description": "People whose only second factor is a passkey on this custom domain: a domain change ends their passkey sign-in there.",
+                        "readOnly": true
+                    },
                     "platform_hosting": {
                         "type": "boolean",
                         "readOnly": true
@@ -237521,6 +238350,15 @@
                     }
                 }
             },
+            "PatchedPasskeyRename": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "maxLength": 64
+                    }
+                }
+            },
             "PatchedPlatformBackupSettings": {
                 "type": "object",
                 "properties": {
@@ -238947,7 +239785,7 @@
                     "values": {
                         "type": "object",
                         "additionalProperties": {},
-                        "description": "Setting key -> new value, e.g. {\"security.staff_mfa_required\": true}. Applied atomically."
+                        "description": "Setting key -> new value, e.g. {\"security.staff_session_max_hours\": 24}. Applied atomically. Staff MFA is not a setting: it is required for every staff role (platform rule, #62)."
                     }
                 }
             },
@@ -246742,12 +247580,17 @@
                         "type": "object",
                         "additionalProperties": {}
                     },
+                    "passkeys_enabled": {
+                        "type": "boolean",
+                        "description": "Passkey sign-in and registration are offered (the platform switch; a person's staff spaces may still turn them off for that person). Passkeys are never required."
+                    },
                     "native": {
                         "$ref": "#/components/schemas/NativeConfig"
                     }
                 },
                 "required": [
                     "email_enabled",
+                    "passkeys_enabled",
                     "public_image_max_bytes"
                 ]
             },
@@ -252486,6 +253329,10 @@
                     "mfa_enabled": {
                         "type": "boolean"
                     },
+                    "passkey_available": {
+                        "type": "boolean",
+                        "description": "The person may re-authenticate with a passkey (reauth/passkey); with passkeys and no authenticator, a password alone no longer re-authenticates."
+                    },
                     "providers": {
                         "type": "array",
                         "items": {
@@ -252495,6 +253342,7 @@
                 },
                 "required": [
                     "mfa_enabled",
+                    "passkey_available",
                     "password_available",
                     "providers",
                     "verified"
@@ -258096,6 +258944,14 @@
                     "operation_id"
                 ]
             },
+            "RuleEnum": {
+                "enum": [
+                    "superadmin",
+                    "space_manager"
+                ],
+                "type": "string",
+                "description": "* `superadmin` - superadmin\n* `space_manager` - space_manager"
+            },
             "SaveInput": {
                 "type": "object",
                 "properties": {
@@ -259122,6 +259978,11 @@
                         "items": {}
                     },
                     "value": {},
+                    "strict_value": {
+                        "type": "boolean",
+                        "nullable": true,
+                        "description": "For an on/off setting, the stricter value a platform lock forces; null otherwise."
+                    },
                     "lock": {
                         "allOf": [
                             {
@@ -259139,6 +260000,7 @@
                     "kind",
                     "label",
                     "lock",
+                    "strict_value",
                     "value"
                 ]
             },
@@ -263052,6 +263914,35 @@
                     "makerspace_id",
                     "makerspace_slug",
                     "user"
+                ]
+            },
+            "StaffMfaResetRequest": {
+                "type": "object",
+                "properties": {
+                    "reason": {
+                        "type": "string",
+                        "description": "Why the person's factors are being cleared (audited).",
+                        "maxLength": 300,
+                        "minLength": 3
+                    }
+                },
+                "required": [
+                    "reason"
+                ]
+            },
+            "StaffMfaResetResult": {
+                "type": "object",
+                "properties": {
+                    "reset": {
+                        "type": "boolean"
+                    },
+                    "rule": {
+                        "$ref": "#/components/schemas/RuleEnum"
+                    }
+                },
+                "required": [
+                    "reset",
+                    "rule"
                 ]
             },
             "StaffPayment": {

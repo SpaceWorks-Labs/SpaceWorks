@@ -105,6 +105,8 @@ LEGACY_ENTRIES = (
     # Lane L12: loan pickup expiry + waitlist lapses; machine job quotes, pickups, prepay.
     ("loan-pickups", "apps.hardware_requests.tasks_loans.sweep_loan_pickups_task", 15),
     ("machine-job-flow", "apps.machines.tasks_jobs.sweep_job_flow_task", 15),
+    # Lane L8: one bounded chunk of each running per-space key rotation, re-key or re-index.
+    ("advance-key-jobs", "apps.encryption.rekey_tasks.advance_key_jobs_task", 1),
 )
 _RETAINED = frozenset({
     "evidence-object-expiry", "evidence-abandoned-upload-cleanup",
@@ -126,7 +128,7 @@ _HEAVY = frozenset({
     "resume-space-restores",
     "reconcile-backup-artifacts", "push-offsite-backups",
     "resume-expired-tenant-import-finalizations", "finalize-report-rollups",
-    "restore-drill", "reencrypt-backup-archives",
+    "restore-drill", "reencrypt-backup-archives", "advance-key-jobs",
 })
 _CRITICAL = frozenset({
     "reminder-sweep", "notification-contract-outbox", "drain-password-reset-envelopes",

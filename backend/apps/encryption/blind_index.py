@@ -50,26 +50,26 @@ def active_generation() -> SearchKeyGeneration:
     return generation
 
 
-def _mac(purpose: str, generation: int, makerspace_id: int, model_label: str, field_name: str, value: str) -> bytes:
+def _mac(purpose: str, generation: int, makerspace_id: int, model_label: str, field_name: str, value: str, key=None) -> bytes:
     payload = f"{purpose}:g{generation}:{makerspace_id}:{model_label}:{field_name}:{value}".encode("utf-8")
-    return hmac.new(search_key(), payload, hashlib.sha256).digest()
+    return hmac.new(search_key() if key is None else key, payload, hashlib.sha256).digest()
 
 
-def bloom_bits(value: str, *, generation: int, makerspace_id: int, model_label: str, field_name: str) -> bytes:
+def bloom_bits(value: str, *, generation: int, makerspace_id: int, model_label: str, field_name: str, key=None) -> bytes:
     normalized = normalized_name(value)
     result = bytearray(256)
     if len(normalized) < 3:
         return bytes(result)
     for offset in range(len(normalized) - 2):
-        digest = _mac("bloom:v1", generation, makerspace_id, model_label, field_name, normalized[offset:offset + 3])
+        digest = _mac("bloom:v1", generation, makerspace_id, model_label, field_name, normalized[offset:offset + 3], key)
         for part in range(6):
             position = int.from_bytes(digest[part * 2:part * 2 + 2], "big") % _BITS
             result[position // 8] |= 1 << (position % 8)
     return bytes(result)
 
 
-def exact_hash(value: str, *, generation: int, makerspace_id: int, model_label: str, field_name: str) -> bytes:
-    return _mac("exact:v1", generation, makerspace_id, model_label, field_name, canonical_email(value))
+def exact_hash(value: str, *, generation: int, makerspace_id: int, model_label: str, field_name: str, key=None) -> bytes:
+    return _mac("exact:v1", generation, makerspace_id, model_label, field_name, canonical_email(value), key)
 
 
 def event_email_hash(value: str, *, generation: int, makerspace_id: int, event_id: int) -> bytes:
@@ -77,8 +77,11 @@ def event_email_hash(value: str, *, generation: int, makerspace_id: int, event_i
     return hmac.new(search_key(), payload, hashlib.sha256).digest()
 
 
-def upsert_index(instance, field, plaintext, generation=None):
-    """Write only registry-approved generic rows, after source encryption succeeded."""
+def upsert_index(instance, field, plaintext, generation=None, space_key=None):
+    """Write only registry-approved generic rows, after source encryption succeeded.
+
+    ``space_key`` is (version, key) from ``search_keys.write_key``; omitted, it is looked up.
+    """
     if field.index_kind not in {"bloom", "bloom_exact"}:
         return
     generation = generation or active_generation()
@@ -87,11 +90,16 @@ def upsert_index(instance, field, plaintext, generation=None):
     if not plaintext:
         PiiBlindIndex.objects.filter(**lookup).delete()
         return
+    from .search_keys import write_key
+    version, key = space_key or write_key(makerspace_id)
+    common = {"generation": generation.generation, "makerspace_id": makerspace_id,
+              "model_label": field.model_label, "field_name": field.field_name, "key": key}
     defaults = {
         "search_generation": generation,
-        "bloom_bits": bloom_bits(plaintext, generation=generation.generation, makerspace_id=makerspace_id, model_label=field.model_label, field_name=field.field_name),
-        "exact_hash": exact_hash(plaintext, generation=generation.generation, makerspace_id=makerspace_id, model_label=field.model_label, field_name=field.field_name) if field.index_kind == "bloom_exact" else None,
+        "bloom_bits": bloom_bits(plaintext, **common),
+        "exact_hash": exact_hash(plaintext, **common) if field.index_kind == "bloom_exact" else None,
         "algorithm_version": 1,
+        "space_key_version": version,
     }
     PiiBlindIndex.objects.update_or_create(**lookup, defaults=defaults)
 

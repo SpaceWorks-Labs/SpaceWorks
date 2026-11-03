@@ -9,7 +9,9 @@ def gate_tasks(exemptions, internal, fanout):
     from .gate_policy_r2_l2 import gate_tasks as l2_tasks
     from .gate_policy_r2_l11 import gate_tasks as l11_tasks
     from .gate_policy_r2_l12 import gate_tasks as l12_tasks
+    from .gate_policy_r2_l8 import gate_tasks as l8_tasks
 
     l2_tasks(internal, fanout)
     l11_tasks(exemptions)
     l12_tasks(internal, fanout)
+    l8_tasks(internal, fanout)

@@ -55,7 +55,7 @@ ENTRIES = (
     P("id_programme.cards_revoked", "ID cards revoked", ("programme_id", "count")),
     P("id_programme.cards_reinstated", "ID cards reinstated", ("programme_id", "count")),
     P("id_programme.cards_renewed", "ID cards renewed", ("programme_id", "count")),
-    P("id_programme.cards_imported", "ID cards imported", ("programme_id", "import_id", "count")),
+    P("id_programme.cards_imported", "ID cards imported", ("programme_id", "import_id", "count", "source")),
     P("event_card.issued", "Event ID card issued", ("card_id", "event_id", "registration_id")),
     P("event_card.revoked", "Event ID card revoked", ("card_id", "event_id")),
     P("event_card.role_changed", "Event ID card role changed", ("card_id", "event_id", "role")),

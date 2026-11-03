@@ -32,7 +32,7 @@ ENTRIES = (
     P("membership.invite_link_redeemed", "Membership invite link used", ("link_id", "uses")),
     P("membership.bulk_decided", "Join requests decided in bulk", ("decision", "request_ids", "refused")),
     P("membership.imported", "Members imported",
-      ("batch_id", "created", "updated", "skipped", "invited", "record_only")),
+      ("batch_id", "created", "updated", "skipped", "invited", "record_only", "source")),
     P("membership.import_accepted", "Imported membership accepted", ("membership_id", "imported_member_id", "term_id")),
     P("membership.summary_opted_out", "Opted out of the monthly membership summary", ("user_id",)),
     P("membership.summary_opted_in", "Opted back in to the monthly membership summary", ("user_id",)),

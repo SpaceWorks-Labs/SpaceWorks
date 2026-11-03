@@ -1,8 +1,9 @@
 """Staff routes for erasure requests (X29) and the member import (G18, #128 C-13).
 
 `manage_members` in the space; each route 404s when its switch is off. The import reads
-the uploaded file on the server (CSV, TSV or .xlsx, #123); the preview is a dry run that
-writes nothing, the apply writes the whole file in one transaction.
+the uploaded file on the server (CSV, TSV or .xlsx, #123) or, under
+`membership.import_sheets` (L13), a public Google Sheet's CSV export; the preview is a
+dry run that writes nothing, the apply writes the whole file in one transaction.
 """
 import json
 
@@ -14,8 +15,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.admin_api import bulk_import_members as planner
+from apps.admin_api import import_sources
 from apps.admin_api.bulk_import_members_apply import apply_members
-from apps.admin_api.bulk_import_parsers import rows_from_upload
+from apps.admin_api.bulk_import_parsers import MAX_IMPORT_ROWS, MAX_IMPORT_UPLOAD_BYTES, rows_from_upload
 from apps.admin_api.permissions import IsActiveStaff
 from apps.admin_api.serializers_membership_l4 import (
     ErasureDecisionInputSerializer, ImportedMemberSerializer, StaffErasureSerializer,
@@ -29,14 +31,15 @@ TAGS = ["Admin memberships"]
 _PREVIEW = inline_serializer("MemberImportPreview", {
     "headers": serializers.ListField(child=serializers.CharField()), "mapping": serializers.DictField(),
     "suggested_mapping": serializers.DictField(), "counts": serializers.DictField(),
-    "rows": serializers.ListField(child=serializers.DictField()), "total_rows": serializers.IntegerField()})
+    "rows": serializers.ListField(child=serializers.DictField()), "total_rows": serializers.IntegerField(),
+    "source": serializers.CharField(required=False), "sheet_sha256": serializers.CharField(required=False)})
 _RESULT = inline_serializer("MemberImportResult", {
     "batch_id": serializers.IntegerField(), "counts": serializers.DictField(),
     "rows": serializers.ListField(child=serializers.DictField())})
 
 
-class MemberImportUploadSerializer(serializers.Serializer):
-    file = serializers.FileField()
+class MemberImportUploadSerializer(import_sources.ImportSourceSerializer):
+    file = serializers.FileField(required=False, help_text="With source `file` (the default): CSV, TSV or .xlsx.")
     # JSON objects in multipart form fields: {field: column} and the staff row choices.
     mapping = serializers.CharField(required=False, allow_blank=True)
     record_only_rows = serializers.CharField(required=False, allow_blank=True)
@@ -52,10 +55,12 @@ def _json(raw, default):
         raise ValidationError({"detail": "Mapping and row choices must be JSON."}) from exc
 
 
-def _read(request):
+def _read(request, space):
     data = MemberImportUploadSerializer(data=request.data)
     data.is_valid(raise_exception=True)
-    upload = data.validated_data["file"]
+    sheet = import_sources.read_source(data.validated_data, space, import_sources.MEMBER_SHEETS,
+                                       max_bytes=MAX_IMPORT_UPLOAD_BYTES, max_rows=MAX_IMPORT_ROWS)
+    upload = sheet.as_upload() if sheet else data.validated_data["file"]
     try:
         rows = rows_from_upload(upload)
     except ValueError as exc:
@@ -64,7 +69,7 @@ def _read(request):
     mapping = _json(data.validated_data.get("mapping"), None) or planner.suggest_mapping(headers)
     if not isinstance(mapping, dict) or "email" not in mapping:
         raise ValidationError({"mapping": "Choose which column holds the email address."})
-    return upload, rows, headers, mapping, data.validated_data
+    return upload, rows, headers, mapping, data.validated_data, sheet
 
 
 class MemberImportPreviewView(APIView):
@@ -74,13 +79,16 @@ class MemberImportPreviewView(APIView):
     @extend_schema(tags=TAGS, summary="Preview a member import (dry run)",
                    description="Maps columns (a mapping is suggested), normalises rows and reports what would "
                                "be created, updated or skipped and why. Writes nothing. CSV, TSV or .xlsx, "
-                               "parsed on the server.",
-                   request={"multipart/form-data": MemberImportUploadSerializer}, responses={200: _PREVIEW, **ERRORS})
+                               "parsed on the server, or a public Google Sheet (`source=google_sheet`, `url`; "
+                               "the response then carries `source` and `sheet_sha256`).",
+                   request={"multipart/form-data": MemberImportUploadSerializer},
+                   responses={200: _PREVIEW, **ERRORS, **import_sources.SHEET_ERRORS})
     def post(self, request, makerspace_id):
         space = staff_space(request.user, makerspace_id, "import")
-        _upload, rows, headers, mapping, _data = _read(request)
+        _upload, rows, headers, mapping, _data, sheet = _read(request, space)
         planned = planner.plan_rows(space, rows, mapping, existing=planner.existing_state(space))
-        return Response(planner.preview_payload(headers, mapping, planned))
+        return Response({**planner.preview_payload(headers, mapping, planned),
+                         **(sheet.response_fields() if sheet else {})})
 
 
 class MemberImportApplyView(APIView):
@@ -90,15 +98,19 @@ class MemberImportApplyView(APIView):
     @extend_schema(tags=TAGS, summary="Apply a member import",
                    description="Creates pending memberships. Each is emailed an invitation unless marked "
                                "record only; nothing links to an account until the person signs in with "
-                               "that verified email and accepts. Audited as membership.imported.",
-                   request={"multipart/form-data": MemberImportUploadSerializer}, responses={200: _RESULT, **ERRORS})
+                               "that verified email and accepts. Audited as membership.imported. A Google "
+                               "Sheet source is fetched again and refused with `sheet_changed` if it no "
+                               "longer matches the preview's `sheet_sha256`.",
+                   request={"multipart/form-data": MemberImportUploadSerializer},
+                   responses={200: _RESULT, **ERRORS, **import_sources.SHEET_ERRORS})
     def post(self, request, makerspace_id):
         space = staff_space(request.user, makerspace_id, "import")
-        upload, rows, _headers, mapping, data = _read(request)
+        upload, rows, _headers, mapping, data, sheet = _read(request, space)
         batch, results = apply_members(
             request.user, space, rows, mapping,
             record_only_rows=_json(data.get("record_only_rows"), []), skip_rows=_json(data.get("skip_rows"), []),
-            file_name=getattr(upload, "name", ""), file_kind="xlsx" if upload.name.lower().endswith(".xlsx") else "csv")
+            file_name="Google Sheet" if sheet else getattr(upload, "name", ""),
+            file_kind="xlsx" if upload.name.lower().endswith(".xlsx") else "csv", source=import_sources.source_of(sheet))
         return Response({"batch_id": batch.pk, "counts": batch.counts, "rows": results})
 
 

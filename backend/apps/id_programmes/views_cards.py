@@ -11,6 +11,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.admin_api.import_sources import SHEET_ERRORS, source_of
 from apps.openapi_errors import errors
 
 from . import cards, imports
@@ -108,27 +109,31 @@ class ProgrammeDecisionView(APIView):
 class ProgrammeImportPreviewView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(tags=TAGS, summary="Preview a CSV import: headers, 20 rows, automatic mapping, counts",
-                   request=ImportPreviewSerializer, responses={200: OpenApiTypes.OBJECT, **errors(400, 401, 403, 404)})
+    @extend_schema(tags=TAGS, summary="Preview a CSV or public Google Sheet import: headers, 20 rows, mapping, counts",
+                   request=ImportPreviewSerializer,
+                   responses={200: OpenApiTypes.OBJECT, **errors(400, 401, 403, 404), **SHEET_ERRORS})
     def post(self, request, pk):
         programme = programme_for(request.user, pk, MANAGE)
         data = ImportPreviewSerializer(data=request.data)
         data.is_valid(raise_exception=True)
-        return Response(imports.preview(programme, data.validated_data["content"]))
+        raw, sheet = imports.read(programme, data.validated_data)
+        return Response({**imports.preview(programme, raw), **(sheet.response_fields() if sheet else {})})
 
 
 class ProgrammeImportView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(tags=TAGS, summary="Import with the confirmed mapping (dry run available)",
-                   request=ImportCommitSerializer, responses={200: OpenApiTypes.OBJECT, **errors(400, 401, 403, 404)})
+                   request=ImportCommitSerializer,
+                   responses={200: OpenApiTypes.OBJECT, **errors(400, 401, 403, 404), **SHEET_ERRORS})
     def post(self, request, pk):
         programme = programme_for(request.user, pk, MANAGE)
         data = ImportCommitSerializer(data=request.data)
         data.is_valid(raise_exception=True)
         values = data.validated_data
-        return Response(imports.commit(request.user, programme, values["content"], values["mapping"],
-                                       approve=values["approve"], dry_run=values["dry_run"]))
+        raw, sheet = imports.read(programme, values)
+        return Response(imports.commit(request.user, programme, raw, values["mapping"], approve=values["approve"],
+                                       dry_run=values["dry_run"], source=source_of(sheet)))
 
 
 class ProgrammeCardDownloadView(APIView):

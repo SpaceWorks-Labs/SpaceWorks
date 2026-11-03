@@ -4,6 +4,7 @@ from rest_framework import serializers
 
 from apps.accounts import rbac
 from apps.accounts.pii_presentation import PiiMaskingSerializerMixin
+from apps.admin_api.import_sources import ImportSourceSerializer
 
 from .models import IdProgramme, IdProgrammeCard
 
@@ -93,8 +94,10 @@ class DecisionSerializer(serializers.Serializer):
     reason = serializers.CharField(max_length=300, required=False, allow_blank=True)
 
 
-class ImportPreviewSerializer(serializers.Serializer):
-    content = serializers.CharField(help_text="The CSV file's text (UTF-8, up to 2 MB).")
+class ImportPreviewSerializer(ImportSourceSerializer):
+    upload_field = "content"
+    content = serializers.CharField(required=False, help_text="With source `file` (the default): the CSV file's "
+                                                              "text (UTF-8, up to 2 MB).")
 
 
 class ImportCommitSerializer(ImportPreviewSerializer):

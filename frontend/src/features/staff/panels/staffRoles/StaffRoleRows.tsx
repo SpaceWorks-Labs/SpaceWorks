@@ -37,7 +37,7 @@ export function StaffRevokeDialog({ row, reason, onReason, pending, error, onClo
     <form className="grid gap-4" onSubmit={e => { e.preventDefault(); if (!pending) onConfirm(); }}>
       <p className="text-sm text-muted">{`Revoke ${name}'s staff roles here? Their own account and member features keep working. You can restore the roles later.`}</p>
       <label className="grid gap-2 text-sm font-semibold text-ink">Reason (optional)
-        <textarea className="desk-input" maxLength={300} disabled={pending} value={reason} onChange={e => onReason(e.target.value)} />
+        <textarea className="desk-input" maxLength={200} disabled={pending} value={reason} onChange={e => onReason(e.target.value)} />
       </label>
       {error ? <ErrorText message={error} /> : null}
       <div className="flex flex-wrap justify-end gap-2">

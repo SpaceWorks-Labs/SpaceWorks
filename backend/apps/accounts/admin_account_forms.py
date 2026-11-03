@@ -4,6 +4,7 @@ from django import forms
 from unfold.forms import UserChangeForm, UserCreationForm
 
 from .models import User
+from .staff_identity import PLATFORM_KIND, is_platform
 
 
 class PlatformUserCreationForm(UserCreationForm):
@@ -12,7 +13,7 @@ class PlatformUserCreationForm(UserCreationForm):
 
     def clean(self):
         cleaned = super().clean()
-        self.instance.account_kind = "platform"
+        self.instance.account_kind = PLATFORM_KIND
         self.instance.is_superuser = True
         self.instance.is_staff = True
         self.instance.role = User.Role.SUPERADMIN
@@ -28,7 +29,7 @@ class AccountUserChangeForm(UserChangeForm):
         original = User.objects.get(pk=self.instance.pk)
         is_superuser = cleaned.get("is_superuser", original.is_superuser)
         role = cleaned.get("role", original.role)
-        platform = original.account_kind == "platform"
+        platform = is_platform(original)
         if is_superuser != platform or (role == User.Role.SUPERADMIN) != platform:
             raise forms.ValidationError("Create a separate platform account; account kinds cannot be changed.")
         return cleaned

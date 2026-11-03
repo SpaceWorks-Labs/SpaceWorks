@@ -53,7 +53,7 @@ class RestrictAccessForm(forms.Form):
 class UserAdmin(PersonPiiRevealAdminMixin, PiiMaskingAdminMixin, StaffLifecycleAdminMixin, MfaResetAdminMixin,
                 SuperuserOnlyModelAdmin, DjangoUserAdmin, ModelAdmin):
     actions = ["restrict_access", "restore_access", "reset_password_selected", "reset_two_step",
-               "set_staff_password", "deactivate_staff_account", "reactivate_staff_account"]
+               "disable_account", "enable_account"]
     form = AccountUserChangeForm
     add_form = PlatformUserCreationForm
     change_password_form = AdminPasswordChangeForm

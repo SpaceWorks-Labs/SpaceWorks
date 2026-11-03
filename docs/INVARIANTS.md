@@ -2883,6 +2883,107 @@ Owner decisions #62, #66, #74, #110c, #111 Q9-Q11, #128 C-1/C-2 and #135 Q-A1-Q-
 
 ### Passkeys and the relying-party ID (S-A fills)
 
+## Row-level security backstop (release 2, lane L8; #75d, #120, #128 C-25, #163B)
+
+**Postgres RLS is the backstop; Auth-module scoping stays mandatory.** Views keep scoping every query
+through `rbac` (`scope_by_makerspace`, `scope_by_action`, ...). RLS exists for the query that forgets its
+filter: inside a context bound to a makerspace, the database itself refuses to read or write another
+makerspace's rows. Code lives in `apps/tenant_rls/`.
+
+- **Which tables (generated, never a hand list).** Every model with an ownership predicate in
+  `backup.slice_rows.SLICE_ROW_SPECS` (all data_export datasets plus the staff credentials a lossless slice
+  carries), plus every other model with a concrete foreign key to `makerspaces.Makerspace`.
+  `tenant_rls.scope_registry.EXEMPT` is the closed list of deliberate exceptions, each with a reason: the
+  `Makerspace` root itself (directory, servability and lifecycle are read platform-wide) and the L25
+  fixed-role map. **A lane that adds a classified model needs nothing else**: the next `migrate` polices it.
+- **How.** `ENABLE` + `FORCE ROW LEVEL SECURITY` and one permissive policy `spaceworks_rls_tenant` per table
+  (`FOR ALL TO PUBLIC`, same `USING` and `WITH CHECK`), compiled by `tenant_rls.policies` from the predicate:
+  a one-hop path compares the column, a longer path is an `EXISTS` join to the makerspace column; a row whose
+  every owner path is NULL is a platform row and stays visible. Applied by an idempotent `post_migrate` step
+  (`tenant_rls.sync`, also `manage.py rls_sync`); each policy carries a fingerprint comment, so unchanged tables
+  cost one catalog read. A table the migrating role cannot alter is reported, never fatal. Lane D scratch
+  databases (`spaceworks_dump_*`, or holding `spaceworks_scratch_identity`) are not policed: their data-only
+  restore COPYs as the owner, which FORCE would refuse.
+- **The GUC contract** (`tenant_rls/sql.py`), set per statement and transaction-locally only:
+  `app.rls_bound` (`on` when bound; anything else is OPEN and admits every row), `app.makerspace_id`
+  (comma-separated bound ids), `app.rls_capability` (a registered capability name; admits every row),
+  `app.rls_mode` (`enforce` | `report`). Every bound statement is sent as one string whose first statement is
+  `SELECT set_config(..., true)` for the four names (`tenant_rls/wrapper.py`), so nothing is ever left on a
+  pooled server connection: safe under `CONN_MAX_AGE > 0` and transaction-mode poolers. Leaving a binding inside
+  an open transaction resets the four values; a failed reset closes the connection (or marks `atomic` for
+  rollback). Transaction-control statements are never prefixed; server-side cursors get a separate statement
+  (session-level under autocommit) that is reset when the binding ends.
+- **Where bindings come from** (`tenant_rls/boundary.py`; the innermost wins). HTTP
+  (`TenantRlsBoundaryMiddleware`, LAST in `MIDDLEWARE`, bound in `process_view`): `/control/` binds
+  `platform_console`; a URL name in `ROUTE_CAPABILITIES` binds its capability; a route that
+  `origin_scope_routes.authoritative_route_resolution` maps to its makerspace(s) binds that tenant scope;
+  anything else stays open (rollout stage 1). Celery: `TASK_CAPABILITIES` by task name, else a `makerspace_id`
+  argument binds that tenant, else open. Scheduled sweeps: every `tenant_migration.gate_runtime.fanout_tenant_write`
+  tenant is bound to that tenant. Code may bind explicitly with `tenant_context(ids)` / `capability_context(name)`.
+- **Capabilities are a closed registry** (`tenant_rls/capabilities.py`): `public_directory`, `platform_console`,
+  `platform_reports` (Lane D platform-wide pages), `backup`, `per_space_restore` (B2 re-links other spaces'
+  inbound rows, #113), `notification_fanout`, `tenant_migration`, `collaboration` (cross-space event and series
+  co-hosting). Each is attached to exact route names or task names only; every use is audited as
+  `rls.capability_used` (sampled: first per capability and path per process, then 1 in 500; path and actor kind
+  only); `tests/tenant_rls/test_cross_tenant_paths.py` pins all three tables. Adding one is a reviewed act.
+- **PostgreSQL client tools.** `backup.postgres_client.run_client` sends every data `pg_dump`
+  `--enable-row-security` (pg_dump otherwise refuses policed tables); a tool session is never bound, so the dump
+  is complete. No `PGOPTIONS` is sent (managed transports refuse inherited startup options).
+- **A0 role contract and modes (C-25; the app always starts, #41/#42).** `tenant_rls/role_contract.py` reads the
+  runtime role: superuser or BYPASSRLS gives `inactive` (Postgres never applies a policy); owning policed tables
+  gives `report` (every row stays visible; the first out-of-scope row per transaction raises a NOTICE that becomes
+  a sampled `rls.report_only_violation` audit row); otherwise `enforce`. `TENANT_RLS_MODE` = `auto` (default),
+  `enforce`, `report` or `off`. `inactive` and `off` send nothing at all, so a superuser test run behaves exactly
+  as before. `/control/` > Row-level security shows the mode, the contract, coverage and the registry; checks
+  `tenant_rls.W001` (missing or stale policies) and `W002` (not enforced) are warnings, never errors.
+- **Guards.** `tenant_rls.E001` (static, every run) fails when a scoped model's predicate cannot be compiled.
+  `manage.py rls_status --strict` exits non-zero unless every scoped table is policed and the mode is `enforce`.
+- **Forcing it on in tests and the release regression.** `TENANT_RLS_PROBE_ROLE=<role>` makes every bound
+  statement `SET LOCAL ROLE` to that narrow role (created and granted by `rls_sync`), so a superuser test run
+  enforces. Never set it in production. The full regression with it set runs once, in the release phase.
+- **L25 seam (#163B, per-space read-only analytics login).** Never rely on GUCs for a login that runs its own
+  SQL: it could `SET` them. Make the login a member of the NOLOGIN group role `spaceworks_rls_fixed`, add a
+  `tenant_rls.FixedRoleScope(role_name, makerspace)` row and rerun `rls_sync`: every table then also gets the
+  RESTRICTIVE policy `spaceworks_rls_fixed TO spaceworks_rls_fixed`, which limits members to their fixed space
+  (platform rows excluded) whatever settings they send, read through the SECURITY DEFINER
+  `spaceworks_rls_fixed_scope(current_user)`. Grant it EXECUTE on the `spaceworks_rls_*` functions (managed
+  installs revoke function EXECUTE from PUBLIC). The login must own nothing and hold no BYPASSRLS.
+- **Rollout.** Stage 1 (L8) binds tenant-addressed routes, per-tenant tasks and sweeps, and the registered
+  paths. Narrowing the open remainder (actor-scope binding for non-addressed authenticated routes) is a later
+  stage, and each step needs the forced-on regression first.
+
+## Per-space key rotation (release 2, lane L8; #120, #128 C-26, #77)
+
+- **From `/control/` only** (Makerspace > Keys): superadmin, recent re-auth, audited in the space so its managers
+  see it; `GET admin/makerspaces/<id>/security/key-events` (MANAGE_MAKERSPACE, read-only) lists the jobs. There
+  is no Space-Manager key API and no sovereign broker: the platform key always works.
+- **Rotation and emergency re-key** (`encryption/rotation.py`): `rotate_dek` makes a NEW DEK version the write key
+  at once (every process reads the ACTIVE row before encrypting), then a `KeyRotationJob` re-encrypts the space's
+  envelopes to it in the background and disables each old version once nothing references it
+  (`rekey_finish.version_referenced`). Immutable programme history (`IMMUTABLE_LABELS`), birth-date source
+  evidence and any guarded column are never rewritten: that version is *retained* (still unwrappable), never
+  disabled, and listed on the job. The emergency form also tells the space's Space Managers (console notice and
+  `api_access` email: `emergency_rekey_started|completed|failed`). Archives stay readable: each carries its own
+  wrapped copy of every DEK version under the platform key.
+- **Background work** (`encryption/rekey_tasks.py`, beat `advance-key-jobs` every minute, heavy, X-7): bounded
+  chunks inside `fanout_tenant_write` (source gate and RLS scope), idempotent (rows already on the target version
+  are skipped), retried, failed after 5 attempts (`encryption.key_job_failed`), one running job per space
+  (DB-enforced), progress on the job row.
+- **Per-space search key** (`encryption/search_keys.py`): HMAC(`PII_SEARCH_HASH_KEY`, space, version, salt). A
+  space without one keeps the deployment key (rows have `space_key_version = NULL`). Rotation makes a BUILDING
+  key that writes use at once; search consults building and active (and the deployment key until the first
+  activation); the job re-indexes the space, then activates it and retires the previous one
+  (`encryption.search_reindexed`). Event registration email hashes and account email lookups stay on the
+  deployment key.
+- **`public_api_key` rotation** (`encryption/publishable_keys.py`): a new key at once; the previous one is accepted
+  for `PUBLISHABLE_KEY_ROTATION_GRACE_HOURS` (72) through `RetiredPublishableKey`, then refused. Audited with key
+  fingerprints only.
+- **Audit actions:** `encryption.key_rotated`, `encryption.key_rotation_completed`,
+  `encryption.emergency_rekey_started|completed`, `encryption.search_key_rotation_started`,
+  `encryption.search_reindexed`, `encryption.key_job_failed`, `makerspace.public_api_key_rotated`,
+  `rls.capability_used`, `rls.report_only_violation`. None of the new rows (jobs, salts, retired browser keys,
+  fixed roles) travels in a dump or an export.
+
 ## Settings authority (release 2, lane L17; #101, #128 C-11)
 
 - **One write gate.** Every module setting is written through
@@ -6532,6 +6633,8 @@ because it does not widen the admitted role set, then restores runtime writes; w
 only after writable grants. This ordering and the grant
 boundary cover raw SQL and `docker exec` paths that never execute the image entrypoint. A topology whose
 provider cannot establish and probe this split is unsupported, not degraded to an advisory process check.
+
+That same split is the row-level security contract (lane L8): the runtime role must own no table, hold no BYPASSRLS and not be a superuser, or RLS runs report-only or inactive with a `/control/` warning and the app still starts (#128 C-25). `scripts/bundled-database-url.py` refuses a static env whose runtime user equals the maintenance owner. See "Row-level security backstop".
 
 **Readiness remains reachable in quarantine and is bound to the host marker.** The readiness route is in
 the recovery allowlist and verifies the live database name/OID and that no Django migration is pending.

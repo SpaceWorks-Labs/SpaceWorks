@@ -131,7 +131,10 @@ lifecycle in `machines/service_workflow*` -- see **Machines and loans depth** in
 Every domain entity is scoped to a `makerspace_id`. A makerspace owns its inventory, public URL, Space
 Managers, Inventory Managers, its seven built-in role instances, Telegram group chat ID, QR
 namespace, and audit-log scope. **Any list/query for makerspace-scoped staff actors must be scoped through
-the Auth module** — forgetting this is a cross-tenant data leak, not just a bug.
+the Auth module** — forgetting this is a cross-tenant data leak, not just a bug. **Postgres RLS is the
+backstop; Auth-module scoping stays mandatory**: generated policies (`apps/tenant_rls/`) refuse another space's
+rows inside a request or job bound to a makerspace, but views must still scope every query through `rbac`
+(**Row-level security backstop** in `docs/INVARIANTS.md`).
 
 ## Hard Rules Baked Into Workflows (don't regress these)
 
@@ -478,6 +481,7 @@ because none are quoted here — this index is a router, not a summary.
 | **Machine scoping** | `MANAGE_MACHINES`, `machines/role_scope.py`, the Machines console, machine-service surfaces, procurement narrowing, dashboard scoping, delegated recipient rules |
 | **Machines and loans depth** | the uniform machine job flow (`machines/job_*`, `service_workflow_review|board|batch|failure`), quotes and job charges, `booking_gate`, `lockout`, the downtime ledger, work orders, `makerspaces/opening_hours.py`, consumables and auto To-Buy, mark bought and vendors, loan cancel/expiry, pickup windows, the waitlist, expected-back dates |
 | **Events program invariants** | `apps/events/`, registration vs presence, member history and provenance, collaborative events, host waivers, QR check-in |
+| **Row-level security backstop** and **Per-space key rotation** | `apps/tenant_rls/`, the RLS GUCs and capabilities, the runtime-role contract, `encryption/rotation.py`, search keys, publishable-key rotation |
 | **Backup, restore and tenant migration** | `apps/backup/` (platform-key-only deployment archives, the single-component deployment manifest, no recipients/custody/`backup` module; per-space backup and restore: nightly one-space raw slices, preview/confirm/apply with identity ids, the safety backup, the `/control/` console), `apps/data_export/`, `apps/tenant_migration/` (one-shot `--recipient` tenant exit), the deployment recovery gate, the source gate lock protocol, archive projection |
 | **Organization accounts and organization-derived authority** | `apps/organizations/`, `OrganizationMembership`, the rbac org branch, `resolve_scope` vs `scope_by_action`, the auth payload `source` field, `EventOrganizer`, org purge scoping |
 | **API client scopes and the protected-route registry** | `apps/apiclients/scope_registry*.py`, `legacy:v1`, unknown-route denial, target resolution, the system check, the HMAC signed message and nonce namespace. The client-facing protocol is written up in `docs/api-client-protocol.md` |

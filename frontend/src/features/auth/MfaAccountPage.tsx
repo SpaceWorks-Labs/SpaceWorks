@@ -16,10 +16,12 @@ import { SignOutEverywhere } from "./SignOutEverywhere";
 export function MfaAccountPage() {
   const context = currentSessionContext();
   const tenant = useOptionalTenant();
-  const signInHref = context.startsWith("staff:") && tenant?.mode !== "single"
-    ? `/m/${encodeURIComponent(context.slice(6))}/admin` : context === "member" ? "/member"
-    // A single-tenant /admin would resolve to that tenant's staff context; keep platform explicit.
-    : context === "platform" ? "/admin?context=platform" : "/admin";
+  // One account per person (U-B): a staff console may send people here with ?return= to
+  // come back after enrolling; otherwise a person returns to their account.
+  const back = new URLSearchParams(window.location.search).get("return");
+  const signInHref = context === "platform" ? "/admin?context=platform"
+    : back && back.startsWith("/") && !back.startsWith("//") ? back
+    : tenant?.mode === "single" ? "/member/account" : "/member";
   const [confirmDisable, setConfirmDisable] = useState(false);
   const [ready, setReady] = useState(false);
   const [password, setPassword] = useState("");
@@ -61,7 +63,7 @@ export function MfaAccountPage() {
             : !enabled ? <PasswordlessMfaProof />
             : <p className="text-sm text-muted">Your existing MFA-management operations require a current password. Contact your administrator if you cannot supply one.</p>}</> : null}
         {codes ? <MfaRecoveryCodes codes={codes} /> : null}
-        {ready ? <SignOutEverywhere signInHref={context === "member" ? "/member/account" : signInHref} onSignedOut={() => setReady(false)} /> : null}
+        {ready ? <SignOutEverywhere signInHref={context === "person" ? "/member/account" : signInHref} onSignedOut={() => setReady(false)} /> : null}
         {enroll.error || change.error ? <ErrorBlock error={(enroll.error ?? change.error)!} /> : null}
       </div>}
       primary={codes ? { label: "I've saved my codes", onClick: () => { setCodes(undefined); setNotice("Your recovery codes are saved. Sign in again to continue."); } } : !ready || !available ? { label: "Sign in", href: signInHref } : {

@@ -1,31 +1,23 @@
-export type SessionContext = "member" | "platform" | `staff:${string}`;
+/**
+ * Which browser session a route uses: the PERSON's (everyone, members and staff alike: one
+ * account per person) or the separate PLATFORM superadmin's. A staff role is a person's, so
+ * the staff console, the member area, kiosks and scanners all share the person session; the
+ * server decides what that session may do in each makerspace.
+ */
+export type SessionContext = "person" | "platform";
 
 let routeContext: SessionContext | undefined;
 const listeners = new Set<(context: SessionContext) => void>();
 
-/** Delegation chooses credentials, never permissions; the API checks the grant. */
-export function contextForRoute(pathname: string, search = "", tenantSlug = ""): SessionContext {
-  const staffTool = /^\/m\/([^/]+)\/(?:kiosk\/[^/]+|scanner)\/?$/.exec(pathname);
-  if (staffTool) return `staff:${staffTool[1]}`;
-  if (/^\/scanner\/?$/.test(pathname) || /^\/kiosk\/[^/]+\/?$/.test(pathname)) {
-    if (tenantSlug) return `staff:${tenantSlug}`;
-    const explicit = new URLSearchParams(search).get("context");
-    if (explicit && /^staff:[a-zA-Z0-9_-]+$/.test(explicit)) return explicit as SessionContext;
-  }
-  const scoped = /^\/m\/([^/]+)\/(?:admin|guest-admin)(?:\/|$)/.exec(pathname);
-  const consoleRoute = Boolean(scoped) || /^\/(?:admin|guest-admin)(?:\/|$)/.test(pathname);
-  if (consoleRoute && !scoped && new URLSearchParams(search).get("context") === "platform") return "platform";
-  const delegated = new URLSearchParams(search).get("surface") === "delegated"
-    || /\/admin\/(?:organizations|assigned-events|organized-events|organization-analytics)(?:\/|$)/.test(pathname);
-  if (consoleRoute && delegated) return "member";
-  if (scoped) return `staff:${scoped[1]}`;
-  if (consoleRoute) return tenantSlug ? `staff:${tenantSlug}` : "platform";
+const CONSOLE = /^\/(?:admin|guest-admin)(?:\/|$)/;
+
+/** Credentials only, never permissions; the API checks every grant. */
+export function contextForRoute(pathname: string, search = ""): SessionContext {
+  const platformParam = new URLSearchParams(search).get("context") === "platform";
   if (pathname === "/superadmin" || pathname.startsWith("/control/")) return "platform";
-  // Account utilities opened from the console retain an explicit context in their URL.
-  const context = new URLSearchParams(search).get("context");
-  if (/^\/(?:mfa|reauth)(?:\/|$)/.test(pathname) && context
-      && (context === "platform" || /^staff:[a-zA-Z0-9_-]+$/.test(context))) return context as SessionContext;
-  return "member";
+  // The superadmin's console and the account utilities it opens carry ?context=platform.
+  if (platformParam && (CONSOLE.test(pathname) || /^\/(?:mfa|reauth)(?:\/|$)/.test(pathname))) return "platform";
+  return "person";
 }
 
 export function currentSessionContext(): SessionContext {
@@ -45,13 +37,11 @@ export function notifySessionCleared(context: SessionContext) {
 
 export const offlineSessionPrefix = (context = currentSessionContext()) => `session:${context}:`;
 
+/** A console link that keeps the session it was opened in (the platform one says so in the URL). */
 export function consoleSessionHref(path: string, context = currentSessionContext()) {
-  if (context.startsWith("staff:")) return path;
+  if (context === "person") return path;
   const url = new URL(path, window.location.origin);
-  if (context === "member") url.searchParams.set("surface", "delegated");
-  else {
-    url.pathname = url.pathname.replace(/^\/m\/[^/]+\/admin(?=\/|$)/, "/admin");
-    url.searchParams.set("context", "platform");
-  }
+  url.pathname = url.pathname.replace(/^\/m\/[^/]+\/admin(?=\/|$)/, "/admin");
+  url.searchParams.set("context", "platform");
   return url.pathname + url.search + url.hash;
 }

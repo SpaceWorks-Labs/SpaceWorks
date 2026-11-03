@@ -16,5 +16,5 @@ export function queryClientForContext(context: SessionContext) {
   if (!clients.has(context)) clients.set(context, createClient());
   return clients.get(context)!;
 }
-export const queryClient = queryClientForContext("member");
+export const queryClient = queryClientForContext("person");
 onSessionCleared(context => clients.get(context)?.clear());

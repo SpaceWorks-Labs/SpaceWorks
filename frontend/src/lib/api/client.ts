@@ -1,6 +1,7 @@
 import { browserSessionIdentity, requestReauthentication } from "./reauthentication";
 import { configuredApiUrl } from "../runtimeConfig";
 import { currentSessionContext, type SessionContext } from "./sessionContext";
+import { notifyMfaEnrollmentRequired, requiresMfaEnrollment } from "./mfaEnrollment";
 import { authHeaders, getAccessToken, getSessionGeneration, refreshAccessToken, expireStaffAuthSession } from "./sessionTokens";
 export { authHeaders, getAccessToken, setAccessToken, clearAccessToken, cleanupLegacyAccessToken,
   refreshAccessToken, logout, addAuthExpiredListener, expireStaffAuthSession } from "./sessionTokens";
@@ -48,6 +49,8 @@ export function getTenantPublishableKey(slug: string) {
 
 async function canRefreshAfterUnauthorized(path: string, response: Response) {
   if (["/auth/login", "/auth/refresh", "/auth/logout"].includes(path)) return false;
+  // Enrolment is required, not a dead session: never sign the person out for it.
+  if (await requiresMfaEnrollment(response)) return false;
   const factorRoute = path.startsWith("/auth/reauth") || /^\/auth\/mfa(?:\/|$)/.test(path);
   if (!factorRoute) return true;
   // SimpleJWT rejects expired access tokens before the factor handler runs.
@@ -95,6 +98,7 @@ export async function staffFetch(
       if (generation === getSessionGeneration(context)) expireStaffAuthSession(context);
     }
   }
+  if (await requiresMfaEnrollment(response)) notifyMfaEnrollmentRequired();
   if (response.status === 403 && !path.startsWith("/auth/reauth")) {
     const body = await response.clone().json().catch(() => ({})) as { code?: string };
     const identity = browserSessionIdentity(getAccessToken(context));

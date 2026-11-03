@@ -42,7 +42,7 @@ async function publicV1Json<T>(path: string, options: RequestInit, publishableKe
     headers: {
       "Content-Type": "application/json",
       ...(await publicHeaders(publishableKey)),
-      ...authHeaders("member"),
+      ...authHeaders("person"),
       ...(options.headers ?? {}),
     },
   });
@@ -54,8 +54,8 @@ async function publicV1Json<T>(path: string, options: RequestInit, publishableKe
   return (await response.json()) as T;
 }
 
-export async function fetchMe(context = currentSessionContext(), surface?: "delegated"): Promise<StaffAuthUser> {
-  return staffRequest<StaffAuthUser>(`/auth/me${surface ? `?surface=${surface}` : ""}`, {}, context);
+export async function fetchMe(context = currentSessionContext()): Promise<StaffAuthUser> {
+  return staffRequest<StaffAuthUser>("/auth/me", {}, context);
 }
 
 /** Fetch a binary/non-JSON authenticated resource as a Blob.
@@ -96,7 +96,7 @@ export async function memberRequest<T>(
   path: string,
   options: RequestInit = {},
 ): Promise<T> {
-  const response = await staffFetch(path, options, true, "member");
+  const response = await staffFetch(path, options, true, "person");
   if (!response.ok) {
     throw apiError(response.status, await response.json().catch(() => ({})));
   }
@@ -105,7 +105,7 @@ export async function memberRequest<T>(
 }
 
 export async function memberRequestBlob(path: string): Promise<Blob> {
-  const response = await staffFetch(path, {}, true, "member");
+  const response = await staffFetch(path, {}, true, "person");
   if (!response.ok) throw apiError(response.status, await response.json().catch(() => ({})));
   return response.blob();
 }

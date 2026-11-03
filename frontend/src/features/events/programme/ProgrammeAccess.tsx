@@ -16,9 +16,9 @@ import { clearUploadSessions } from '../hackathonSubmissions/upload'
 export function ProgrammeAccess({ slug = '', children }: { slug?: string; children: (user: User) => ReactNode }) {
   const [generation, setGeneration] = useState(0)
   useEffect(() => onSessionCleared(context => {
-    if (context === 'member') { clearUploadSessions(); setGeneration(value => value + 1) }
+    if (context === 'person') { clearUploadSessions(); setGeneration(value => value + 1) }
   }), [])
-  const identity = `${generation}:${browserSessionIdentity(getAccessToken('member'))}`
+  const identity = `${generation}:${browserSessionIdentity(getAccessToken('person'))}`
   return <PrivateSession key={`${slug}:${identity}`} slug={slug} onAuthenticated={() => setGeneration(value => value + 1)}>{children}</PrivateSession>
 }
 function PrivateSession({ slug, children, onAuthenticated }: { slug: string; children: (user: User) => ReactNode; onAuthenticated: () => void }) {
@@ -28,7 +28,7 @@ function PrivateSession({ slug, children, onAuthenticated }: { slug: string; chi
 }
 function AccountScreen({ slug, children, onAuthenticated }: { slug: string; children: (user: User) => ReactNode; onAuthenticated: () => void }) {
   const account = useQuery({ queryKey: ['programme-account', window.location.host], queryFn: () => memberRequest<User>('/auth/me') })
-  const denied = (account.error instanceof StructuredApiError && account.error.status === 401) || Boolean(account.data && account.data.account_kind !== 'member')
+  const denied = (account.error instanceof StructuredApiError && account.error.status === 401) || Boolean(account.data && account.data.kind !== 'person')
   const home = slug ? `/m/${encodeURIComponent(slug)}` : ''
   return <AppShell variant="member" compactNav="drawer" activeKey="programme" nav={[{ key: 'events', items: [
     { key: 'programme', label: 'Events', href: `${home}/events`, icon: CalendarDays },

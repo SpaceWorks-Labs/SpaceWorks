@@ -42,9 +42,9 @@ export type KioskWorkPackage = {
 const STATION_HEADERS = { "Content-Type": "application/json", "X-Station-CSRF": "1" };
 
 function operatorRequest<T>(path: string, options: RequestInit) {
-  const context = currentSessionContext();
-  if (!context.startsWith("staff:")) return Promise.reject(new Error("Open this Station in its tenant staff context."));
-  return staffRequest<T>(path, { ...options, credentials: "include", cache: "no-store" }, context);
+  // One account per person: the operator's own session; the server checks the station
+  // cookie and the operator's staff role in the station's makerspace.
+  return staffRequest<T>(path, { ...options, credentials: "include", cache: "no-store" }, currentSessionContext());
 }
 
 function stationPath(token: string, suffix: string) {

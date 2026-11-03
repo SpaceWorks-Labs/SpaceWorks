@@ -12,7 +12,7 @@ import { ServiceCancelButton } from "./ServiceCancelButton";
 export function OwnerCancel({ token, title, makerspaceSlug, extraKeys = [] }: {
   token: string; title: string; makerspaceSlug: string; extraKeys?: QueryKey[];
 }) {
-  const signedIn = Boolean(getAccessToken("member"));
+  const signedIn = Boolean(getAccessToken("person"));
   const owner = useQuery({ queryKey: serviceKeys.owner(token), queryFn: () => fetchOwnerControls(token),
     enabled: signedIn && Boolean(token), retry: false, staleTime: 0 });
   if (!owner.data?.can_cancel) return null;

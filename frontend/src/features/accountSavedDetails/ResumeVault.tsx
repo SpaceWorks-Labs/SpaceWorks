@@ -24,7 +24,7 @@ function OwnerResumeVault({ actorId, saved }: { actorId: number; saved?: SavedFi
   const saveCommand = useRef<{ assetId: number; command: SavedCommand } | null>(null);
   const deleteCommands = useRef(new Map<number, { asset: ResumeAsset; id: string }>());
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; work.current?.abort.abort(); }; }, []);
-  const active = (attempt: Attempt) => mounted.current && attempt.epoch === epoch.current && attempt.session === getSessionGeneration("member") && !attempt.abort.signal.aborted;
+  const active = (attempt: Attempt) => mounted.current && attempt.epoch === epoch.current && attempt.session === getSessionGeneration("person") && !attempt.abort.signal.aborted;
   const guard = (attempt: Attempt) => { if (!active(attempt)) throw new DOMException("The file or account changed.", "AbortError"); };
   const savedId = saved?.value && typeof saved.value === "object" && "asset_id" in saved.value ? saved.value.asset_id : undefined;
   const assetId = asset?.asset_id || savedId;
@@ -42,14 +42,14 @@ function OwnerResumeVault({ actorId, saved }: { actorId: number; saved?: SavedFi
   };
   const upload = useMutation({ mutationFn: async () => {
     if (!file || file.size < 1 || file.size > 10 * 1024 ** 2 || !file.name.toLowerCase().endsWith(".pdf")) throw new Error("Choose a PDF of at most 10 MiB.");
-    const attempt: Attempt = work.current ?? { file, epoch: epoch.current, session: getSessionGeneration("member"), createId: crypto.randomUUID(), completeId: crypto.randomUUID(), uploaded: false, abort: new AbortController() };
+    const attempt: Attempt = work.current ?? { file, epoch: epoch.current, session: getSessionGeneration("person"), createId: crypto.randomUUID(), completeId: crypto.randomUUID(), uploaded: false, abort: new AbortController() };
     work.current = attempt;
     guard(attempt);
     // A retry before byte completion replays create to refresh an expired presign.
     if (!attempt.asset || (!attempt.uploaded && attempt.asset.state === "uploading")) {
       const created = await createResume(attempt.file, attempt.createId);
       attempt.asset = created;
-      if (!active(attempt) && mounted.current && attempt.session === getSessionGeneration("member")) setRetired(items => [...items.filter(item => item.asset_id !== created.asset_id), { ...created, filename: attempt.file.name }]);
+      if (!active(attempt) && mounted.current && attempt.session === getSessionGeneration("person")) setRetired(items => [...items.filter(item => item.asset_id !== created.asset_id), { ...created, filename: attempt.file.name }]);
       await publish(attempt, created);
     }
     guard(attempt);
@@ -69,11 +69,11 @@ function OwnerResumeVault({ actorId, saved }: { actorId: number; saved?: SavedFi
     return saveDetail("resume", { asset_id: current.asset_id, sha256: current.sha256 }, saveCommand.current.command);
   }, onSuccess: () => { if (mounted.current) { saveCommand.current = null; return refresh(); } } });
   const remove = useMutation({ mutationFn: async (target: ResumeAsset) => {
-    const session = getSessionGeneration("member");
+    const session = getSessionGeneration("person");
     let command = deleteCommands.current.get(target.asset_id);
     if (!command) {
       const latest = await resumeStatus(target.asset_id);
-      if (!mounted.current || session !== getSessionGeneration("member")) throw new DOMException("The account changed.", "AbortError");
+      if (!mounted.current || session !== getSessionGeneration("person")) throw new DOMException("The account changed.", "AbortError");
       command = { asset: latest, id: crypto.randomUUID() }; deleteCommands.current.set(target.asset_id, command);
     }
     await deleteResume(command.asset, command.id);
@@ -86,8 +86,8 @@ function OwnerResumeVault({ actorId, saved }: { actorId: number; saved?: SavedFi
   } });
   const download = useMutation({ mutationFn: async () => {
     if (!current) return;
-    const session = getSessionGeneration("member"), blob = await downloadResume(current.asset_id);
-    if (mounted.current && session === getSessionGeneration("member")) saveBlob(blob, "resume.pdf");
+    const session = getSessionGeneration("person"), blob = await downloadResume(current.asset_id);
+    if (mounted.current && session === getSessionGeneration("person")) saveBlob(blob, "resume.pdf");
   } });
   const chooseFile = (next: File | null) => {
     epoch.current += 1; work.current?.abort.abort();

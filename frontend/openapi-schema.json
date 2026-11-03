@@ -754,7 +754,7 @@
         "/api/public/{makerspace_slug}/stats/": {
             "get": {
                 "operationId": "api_public_stats_retrieve",
-                "description": "Get public activity stats for a public makerspace.",
+                "description": "Get public activity stats for a public makerspace: the sections, order, fixed period, headline numbers and TV refresh its Space Manager chose in Settings › Public stats. A section whose module is off is left out; 404 while the page is off or no section is left to show. Counts below 3 are published as suppressed. Served from a short per-space cache.",
                 "summary": "Get public makerspace stats",
                 "parameters": [
                     {
@@ -797,7 +797,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/PublicStats"
+                                    "$ref": "#/components/schemas/PublicStatsPage"
                                 }
                             }
                         },
@@ -71404,6 +71404,178 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ClosedNotice"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/makerspace/{makerspace_id}/public-stats-settings": {
+            "get": {
+                "operationId": "api_v1_admin_makerspace_public_stats_settings_retrieve",
+                "description": "Staff of the space read the group; only the Space Manager (or the superadmin) may change it, which `can_edit` reports.",
+                "summary": "Read the public stats settings",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Admin makerspaces"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PublicStatsSettingsResponse"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "put": {
+                "operationId": "api_v1_admin_makerspace_public_stats_settings_update",
+                "description": "Each changed key is written through the settings authority (module `public_site`, Space Manager only) and audited as `settings.changed`. 403 `setting_not_delegated` for anyone else.",
+                "summary": "Save the public stats settings",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Admin makerspaces"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PublicStatsSettings"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PublicStatsSettings"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PublicStatsSettings"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PublicStatsSettingsResponse"
                                 }
                             }
                         },
@@ -165755,7 +165927,7 @@
         "/api/v1/public/{makerspace_slug}/stats/": {
             "get": {
                 "operationId": "api_v1_public_stats_retrieve",
-                "description": "Get public activity stats for a public makerspace.",
+                "description": "Get public activity stats for a public makerspace: the sections, order, fixed period, headline numbers and TV refresh its Space Manager chose in Settings › Public stats. A section whose module is off is left out; 404 while the page is off or no section is left to show. Counts below 3 are published as suppressed. Served from a short per-space cache.",
                 "summary": "Get public makerspace stats",
                 "parameters": [
                     {
@@ -165798,7 +165970,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/PublicStats"
+                                    "$ref": "#/components/schemas/PublicStatsPage"
                                 }
                             }
                         },
@@ -201476,6 +201648,24 @@
                     "code",
                     "detail"
                 ]
+            },
+            "HeadlineEnum": {
+                "enum": [
+                    "events.upcoming",
+                    "events.held",
+                    "events.attendees",
+                    "machines.hours",
+                    "printing.hours",
+                    "printing.jobs",
+                    "lending.loans",
+                    "lending.library",
+                    "community.active_members",
+                    "community.new_members",
+                    "community.bookings",
+                    "community.checkins"
+                ],
+                "type": "string",
+                "description": "* `events.upcoming` - events.upcoming\n* `events.held` - events.held\n* `events.attendees` - events.attendees\n* `machines.hours` - machines.hours\n* `printing.hours` - printing.hours\n* `printing.jobs` - printing.jobs\n* `lending.loans` - lending.loans\n* `lending.library` - lending.library\n* `community.active_members` - community.active_members\n* `community.new_members` - community.new_members\n* `community.bookings` - community.bookings\n* `community.checkins` - community.checkins"
             },
             "Health": {
                 "type": "object",
@@ -241536,6 +241726,24 @@
                     "public_image_max_bytes"
                 ]
             },
+            "PublicCount": {
+                "type": "object",
+                "properties": {
+                    "value": {
+                        "type": "integer",
+                        "nullable": true,
+                        "description": "Null while suppressed."
+                    },
+                    "suppressed": {
+                        "type": "boolean",
+                        "description": "True: below 3, shown as \"fewer than 3\"."
+                    }
+                },
+                "required": [
+                    "suppressed",
+                    "value"
+                ]
+            },
             "PublicEvent": {
                 "type": "object",
                 "properties": {
@@ -244823,50 +245031,6 @@
                     "url"
                 ]
             },
-            "PublicStats": {
-                "type": "object",
-                "properties": {
-                    "machines": {
-                        "allOf": [
-                            {
-                                "$ref": "#/components/schemas/PublicStatsMachines"
-                            }
-                        ],
-                        "readOnly": true,
-                        "nullable": true
-                    },
-                    "printing": {
-                        "allOf": [
-                            {
-                                "$ref": "#/components/schemas/PublicStatsPrinting"
-                            }
-                        ],
-                        "readOnly": true,
-                        "nullable": true
-                    },
-                    "hardware": {
-                        "allOf": [
-                            {
-                                "$ref": "#/components/schemas/PublicStatsHardware"
-                            }
-                        ],
-                        "readOnly": true
-                    },
-                    "current_loans": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/PublicStatsCurrentLoan"
-                        },
-                        "readOnly": true
-                    }
-                },
-                "required": [
-                    "current_loans",
-                    "hardware",
-                    "machines",
-                    "printing"
-                ]
-            },
             "PublicStatsBrand": {
                 "type": "object",
                 "properties": {
@@ -244920,6 +245084,49 @@
                     "name"
                 ]
             },
+            "PublicStatsCommunity": {
+                "type": "object",
+                "properties": {
+                    "active_members": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/PublicCount"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "new_members": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/PublicCount"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "bookings": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/PublicCount"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "checkins": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/PublicCount"
+                            }
+                        ],
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "active_members",
+                    "bookings",
+                    "checkins",
+                    "new_members"
+                ]
+            },
             "PublicStatsCurrentLoan": {
                 "type": "object",
                 "properties": {
@@ -244949,6 +245156,74 @@
                     "holder_name",
                     "item_name",
                     "since"
+                ]
+            },
+            "PublicStatsEventCard": {
+                "type": "object",
+                "properties": {
+                    "public_token": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "starts_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "ends_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "image_url": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "ends_at",
+                    "image_url",
+                    "public_token",
+                    "starts_at",
+                    "title"
+                ]
+            },
+            "PublicStatsEvents": {
+                "type": "object",
+                "properties": {
+                    "upcoming": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PublicStatsEventCard"
+                        }
+                    },
+                    "upcoming_count": {
+                        "$ref": "#/components/schemas/PublicCount"
+                    },
+                    "held": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/PublicCount"
+                            }
+                        ],
+                        "description": "Listed public events that started in the period."
+                    },
+                    "attendees": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/PublicCount"
+                            }
+                        ],
+                        "description": "Checked-in attendees of those events."
+                    }
+                },
+                "required": [
+                    "attendees",
+                    "held",
+                    "upcoming",
+                    "upcoming_count"
                 ]
             },
             "PublicStatsFilamentTrend": {
@@ -245072,6 +245347,184 @@
                 },
                 "required": [
                     "usage_hours"
+                ]
+            },
+            "PublicStatsMetric": {
+                "type": "object",
+                "properties": {
+                    "key": {
+                        "type": "string"
+                    },
+                    "section": {
+                        "type": "string"
+                    },
+                    "label": {
+                        "type": "string"
+                    },
+                    "kind": {
+                        "$ref": "#/components/schemas/PublicStatsMetricKindEnum"
+                    },
+                    "value": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
+                    },
+                    "suppressed": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "key",
+                    "kind",
+                    "label",
+                    "section",
+                    "suppressed",
+                    "value"
+                ]
+            },
+            "PublicStatsMetricKindEnum": {
+                "enum": [
+                    "count",
+                    "hours"
+                ],
+                "type": "string",
+                "description": "* `count` - count\n* `hours` - hours"
+            },
+            "PublicStatsPage": {
+                "type": "object",
+                "properties": {
+                    "machines": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/PublicStatsMachines"
+                            }
+                        ],
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "printing": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/PublicStatsPrinting"
+                            }
+                        ],
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "hardware": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/PublicStatsHardware"
+                            }
+                        ],
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "current_loans": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PublicStatsCurrentLoan"
+                        },
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "events": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/PublicStatsEvents"
+                            }
+                        ],
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "community": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/PublicStatsCommunity"
+                            }
+                        ],
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "sections": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "readOnly": true,
+                        "description": "Shown sections in the Space Manager's order."
+                    },
+                    "period": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/PublicStatsPeriod"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "headline": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PublicStatsMetric"
+                        },
+                        "readOnly": true
+                    },
+                    "metrics": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PublicStatsMetric"
+                        },
+                        "readOnly": true
+                    },
+                    "tv": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/PublicStatsTv"
+                            }
+                        ],
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "community",
+                    "current_loans",
+                    "events",
+                    "hardware",
+                    "headline",
+                    "machines",
+                    "metrics",
+                    "period",
+                    "printing",
+                    "sections",
+                    "tv"
+                ]
+            },
+            "PublicStatsPeriod": {
+                "type": "object",
+                "properties": {
+                    "key": {
+                        "type": "string",
+                        "description": "month, year, all or fy."
+                    },
+                    "label": {
+                        "type": "string"
+                    },
+                    "start": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "end": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "end",
+                    "key",
+                    "label",
+                    "start"
                 ]
             },
             "PublicStatsPopularHardware": {
@@ -245269,6 +245722,72 @@
                     "type"
                 ]
             },
+            "PublicStatsSettings": {
+                "type": "object",
+                "properties": {
+                    "enabled": {
+                        "type": "boolean",
+                        "description": "The public stats page is published."
+                    },
+                    "sections": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/SectionsEnum"
+                        },
+                        "description": "Shown sections in page order; a section left out is off.",
+                        "maxItems": 5
+                    },
+                    "period": {
+                        "type": "string",
+                        "description": "month, year, all or fy: the one period every period count uses; visitors cannot change it."
+                    },
+                    "headline": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/HeadlineEnum"
+                        },
+                        "description": "Up to four metric keys shown first; a hidden section's metric is skipped.",
+                        "maxItems": 4
+                    },
+                    "tv_mode_enabled": {
+                        "type": "boolean",
+                        "description": "Serve the full-screen TV page at /stats/tv."
+                    },
+                    "tv_refresh_seconds": {
+                        "type": "integer",
+                        "maximum": 3600,
+                        "minimum": 30
+                    }
+                },
+                "required": [
+                    "enabled",
+                    "headline",
+                    "period",
+                    "sections",
+                    "tv_mode_enabled",
+                    "tv_refresh_seconds"
+                ]
+            },
+            "PublicStatsSettingsResponse": {
+                "type": "object",
+                "properties": {
+                    "settings": {
+                        "$ref": "#/components/schemas/PublicStatsSettings"
+                    },
+                    "can_edit": {
+                        "type": "boolean",
+                        "description": "False: read-only for this actor (Space Manager only)."
+                    },
+                    "choices": {
+                        "$ref": "#/components/schemas/_Choices"
+                    }
+                },
+                "required": [
+                    "can_edit",
+                    "choices",
+                    "settings"
+                ]
+            },
             "PublicStatsStatusCounts": {
                 "type": "object",
                 "properties": {
@@ -245331,6 +245850,21 @@
                 "required": [
                     "name",
                     "quantity_out"
+                ]
+            },
+            "PublicStatsTv": {
+                "type": "object",
+                "properties": {
+                    "enabled": {
+                        "type": "boolean"
+                    },
+                    "refresh_seconds": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "enabled",
+                    "refresh_seconds"
                 ]
             },
             "PublicTeam": {
@@ -253678,6 +254212,17 @@
                 ],
                 "type": "string",
                 "description": "* `about` - about\n* `gallery` - gallery\n* `team` - team\n* `testimonials` - testimonials\n* `links` - links\n* `stats` - stats\n* `location` - location\n* `upcoming_events` - upcoming_events\n* `linked_makerspaces` - linked_makerspaces\n* `organization_events` - organization_events\n* `functional_content` - functional_content\n* `membership_plans` - membership_plans"
+            },
+            "SectionsEnum": {
+                "enum": [
+                    "events",
+                    "machines",
+                    "printing",
+                    "lending",
+                    "community"
+                ],
+                "type": "string",
+                "description": "* `events` - events\n* `machines` - machines\n* `printing` - printing\n* `lending` - lending\n* `community` - community"
             },
             "SecurityActivity": {
                 "type": "object",
@@ -265657,6 +266202,61 @@
                     }
                 }
             },
+            "_Choice": {
+                "type": "object",
+                "properties": {
+                    "key": {
+                        "type": "string"
+                    },
+                    "label": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "key",
+                    "label"
+                ]
+            },
+            "_Choices": {
+                "type": "object",
+                "properties": {
+                    "sections": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/_Choice"
+                        }
+                    },
+                    "periods": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/_Choice"
+                        }
+                    },
+                    "metrics": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/_MetricChoice"
+                        }
+                    },
+                    "max_headline": {
+                        "type": "integer"
+                    },
+                    "tv_refresh_min": {
+                        "type": "integer"
+                    },
+                    "tv_refresh_max": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "max_headline",
+                    "metrics",
+                    "periods",
+                    "sections",
+                    "tv_refresh_max",
+                    "tv_refresh_min"
+                ]
+            },
             "_Conflict": {
                 "type": "object",
                 "properties": {
@@ -265739,6 +266339,25 @@
                     "id",
                     "name",
                     "slug"
+                ]
+            },
+            "_MetricChoice": {
+                "type": "object",
+                "properties": {
+                    "key": {
+                        "type": "string"
+                    },
+                    "label": {
+                        "type": "string"
+                    },
+                    "section": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "key",
+                    "label",
+                    "section"
                 ]
             },
             "_Moves": {

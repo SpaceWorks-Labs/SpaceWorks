@@ -667,6 +667,7 @@ export const openApiPaths = [
   "/api/v1/admin/makerspace/{makerspace_id}/profile",
   "/api/v1/admin/makerspace/{makerspace_id}/provision-subdomain",
   "/api/v1/admin/makerspace/{makerspace_id}/public-closed-notice",
+  "/api/v1/admin/makerspace/{makerspace_id}/public-stats-settings",
   "/api/v1/admin/makerspace/{makerspace_id}/qr-print-batches",
   "/api/v1/admin/makerspace/{makerspace_id}/refund-cases",
   "/api/v1/admin/makerspace/{makerspace_id}/refund-cases/{case_id}",
@@ -1462,6 +1463,20 @@ export type ApiPath = (typeof openApiPaths)[number];
 
 // Schema types generated from the same OpenAPI contract as the route constants.
 // Use these at API boundaries so console code cannot silently drift from DRF serializers.
+export type _Choice = {
+  "key": string;
+  "label": string;
+};
+
+export type _Choices = {
+  "sections": Array<_Choice>;
+  "periods": Array<_Choice>;
+  "metrics": Array<_MetricChoice>;
+  "max_headline": number;
+  "tv_refresh_min": number;
+  "tv_refresh_max": number;
+};
+
 export type _Conflict = {
   "model": string;
   "field": string;
@@ -1486,6 +1501,12 @@ export type _MakerspaceRef = {
   "id": number;
   "slug": string;
   "name": string;
+};
+
+export type _MetricChoice = {
+  "key": string;
+  "label": string;
+  "section": string;
 };
 
 export type _Moves = {
@@ -8355,6 +8376,8 @@ export type HardwareRequestError = {
   "detail": string;
   "code": string;
 };
+
+export type HeadlineEnum = "events.upcoming" | "events.held" | "events.attendees" | "machines.hours" | "printing.hours" | "printing.jobs" | "lending.loans" | "lending.library" | "community.active_members" | "community.new_members" | "community.bookings" | "community.checkins";
 
 export type Health = {
   "status": string;
@@ -17427,6 +17450,11 @@ export type PublicConfig = {
   "native"?: NativeConfig;
 };
 
+export type PublicCount = {
+  "value": number | null;
+  "suppressed": boolean;
+};
+
 export type PublicEvent = {
   "participating_organizations": Array<ParticipatingOrganization>;
   "audience_label": string | null;
@@ -18180,13 +18208,6 @@ export type PublicSpacePhoto = {
   "caption": string;
 };
 
-export type PublicStats = {
-  "machines": PublicStatsMachines | null;
-  "printing": PublicStatsPrinting | null;
-  "hardware": PublicStatsHardware;
-  "current_loans": Array<PublicStatsCurrentLoan>;
-};
-
 export type PublicStatsBrand = {
   "brand": string;
   "grams": number;
@@ -18200,11 +18221,33 @@ export type PublicStatsBusiestPrinter = {
   "image_url": string | null;
 };
 
+export type PublicStatsCommunity = {
+  "active_members": PublicCount | null;
+  "new_members": PublicCount | null;
+  "bookings": PublicCount | null;
+  "checkins": PublicCount | null;
+};
+
 export type PublicStatsCurrentLoan = {
   "item_name": string;
   "holder_name": string;
   "due": string | null;
   "since": string | null;
+};
+
+export type PublicStatsEventCard = {
+  "public_token": string;
+  "title": string;
+  "starts_at": string;
+  "ends_at": string;
+  "image_url": string | null;
+};
+
+export type PublicStatsEvents = {
+  "upcoming": Array<PublicStatsEventCard>;
+  "upcoming_count": PublicCount;
+  "held": PublicCount;
+  "attendees": PublicCount;
 };
 
 export type PublicStatsFilamentTrend = {
@@ -18233,6 +18276,38 @@ export type PublicStatsLibrary = {
 
 export type PublicStatsMachines = {
   "usage_hours": number;
+};
+
+export type PublicStatsMetric = {
+  "key": string;
+  "section": string;
+  "label": string;
+  "kind": PublicStatsMetricKindEnum;
+  "value": number | null;
+  "suppressed": boolean;
+};
+
+export type PublicStatsMetricKindEnum = "count" | "hours";
+
+export type PublicStatsPage = {
+  "machines": PublicStatsMachines | null;
+  "printing": PublicStatsPrinting | null;
+  "hardware": PublicStatsHardware | null;
+  "current_loans": Array<PublicStatsCurrentLoan> | null;
+  "events": PublicStatsEvents | null;
+  "community": PublicStatsCommunity | null;
+  "sections": Array<string>;
+  "period": PublicStatsPeriod;
+  "headline": Array<PublicStatsMetric>;
+  "metrics": Array<PublicStatsMetric>;
+  "tv": PublicStatsTv;
+};
+
+export type PublicStatsPeriod = {
+  "key": string;
+  "label": string;
+  "start": string | null;
+  "end": string | null;
 };
 
 export type PublicStatsPopularHardware = {
@@ -18279,6 +18354,21 @@ export type PublicStatsSection = {
   "payload": PublicPageStats;
 };
 
+export type PublicStatsSettings = {
+  "enabled": boolean;
+  "sections": Array<SectionsEnum>;
+  "period": string;
+  "headline": Array<HeadlineEnum>;
+  "tv_mode_enabled": boolean;
+  "tv_refresh_seconds": number;
+};
+
+export type PublicStatsSettingsResponse = {
+  "settings": PublicStatsSettings;
+  "can_edit": boolean;
+  "choices": _Choices;
+};
+
 export type PublicStatsStatusCounts = {
   "pending": number;
   "accepted": number;
@@ -18293,6 +18383,11 @@ export type PublicStatsStatusCounts = {
 export type PublicStatsToolsOut = {
   "name": string;
   "quantity_out": number;
+};
+
+export type PublicStatsTv = {
+  "enabled": boolean;
+  "refresh_seconds": number;
 };
 
 export type PublicTeam = {
@@ -20354,6 +20449,8 @@ export type SearchOutput = {
 };
 
 export type SectionOrderEnum = "HERO" | "ABOUT" | "HIGHLIGHTS" | "SCHEDULE" | "SPEAKERS" | "SPONSORS" | "VENUE" | "FAQ" | "RESOURCES" | "EDITORIAL";
+
+export type SectionsEnum = "events" | "machines" | "printing" | "lending" | "community";
 
 export type SectionTypesEnum = "about" | "gallery" | "team" | "testimonials" | "links" | "stats" | "location" | "upcoming_events" | "linked_makerspaces" | "organization_events" | "functional_content" | "membership_plans";
 

@@ -35,9 +35,6 @@ def _locked_session(session):
         "makerspace", "machine", "machine_type").get(pk=session.pk)
 
 
-def _audit(actor, action, session, **meta):
-    audit.record(actor, action, makerspace=session.makerspace, target=session,
-                 meta={"session_id": session.pk, "machine_id": session.machine_id, **meta})
 
 
 def start(machine, member, *, actor, source, digest=None, now=None):
@@ -64,8 +61,9 @@ def start(machine, member, *, actor, source, digest=None, now=None):
                     quote_digest=rate.digest if rate is not None else "")
         except IntegrityError:
             raise SessionRefused("machine_in_use", "Someone is using this machine right now.")
-        _audit(actor, "machine_session.started", session, source=source, billable=session.billable,
-               member_id=getattr(member, "pk", None))
+        audit.record(actor, "machine_session.started", makerspace=session.makerspace, target=session, meta={
+            "session_id": session.pk, "machine_id": session.machine_id, "source": source, "billable": session.billable,
+            "member_id": getattr(member, "pk", None)})
     return session
 
 
@@ -99,8 +97,12 @@ def stop(session, *, actor, reason, at=None, minutes=None):
         session.flagged = reason in Session.AUTO_STOP_REASONS
         session.duration_minutes = max(int(minutes if minutes is not None else elapsed), 0)
         session.save(update_fields=["ended_at", "stop_reason", "stopped_by", "flagged", "duration_minutes"])
-        action = "machine_session.auto_stopped" if session.flagged else "machine_session.stopped"
-        _audit(actor, action, session, reason=reason, minutes=session.duration_minutes)
+        if session.flagged:
+            audit.record(actor, "machine_session.auto_stopped", makerspace=session.makerspace, target=session, meta={
+                "session_id": session.pk, "machine_id": session.machine_id, "reason": reason, "minutes": session.duration_minutes})
+        else:
+            audit.record(actor, "machine_session.stopped", makerspace=session.makerspace, target=session, meta={
+                "session_id": session.pk, "machine_id": session.machine_id, "reason": reason, "minutes": session.duration_minutes})
         if not state.needs_review(session):
             _finalize(session, actor)
         if session.flagged:
@@ -128,7 +130,8 @@ def amend(session, actor, *, minutes, reason):
         before = state.effective_minutes(session)
         Amendment.objects.create(makerspace=session.makerspace, session=session, kind="correct", minutes=minutes,
                                  reason=reason, actor=actor)
-        _audit(actor, "machine_session.amended", session, minutes_before=before, minutes_after=minutes)
+        audit.record(actor, "machine_session.amended", makerspace=session.makerspace, target=session, meta={
+            "session_id": session.pk, "machine_id": session.machine_id, "minutes_before": before, "minutes_after": minutes})
     return session
 
 
@@ -142,7 +145,8 @@ def assign(session, actor, *, member, reason):
             raise SessionRefused("session_attributed", "This session already belongs to a member.")
         Amendment.objects.create(makerspace=session.makerspace, session=session, kind="assign", member=member,
                                  reason=reason, actor=actor)
-        _audit(actor, "machine_session.assigned", session, member_id=member.pk)
+        audit.record(actor, "machine_session.assigned", makerspace=session.makerspace, target=session, meta={
+            "session_id": session.pk, "machine_id": session.machine_id, "member_id": member.pk})
     return session
 
 
@@ -157,7 +161,8 @@ def confirm(session, actor):
         minutes = state.effective_minutes(session)
         Amendment.objects.create(makerspace=session.makerspace, session=session, kind="confirm", minutes=minutes,
                                  actor=actor)
-        _audit(actor, "machine_session.confirmed", session, minutes=minutes)
+        audit.record(actor, "machine_session.confirmed", makerspace=session.makerspace, target=session, meta={
+            "session_id": session.pk, "machine_id": session.machine_id, "minutes": minutes})
         session = _locked_session(session)
         _finalize(session, actor)
     return session

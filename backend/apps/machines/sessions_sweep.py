@@ -75,7 +75,9 @@ def run_session_sweep(*, now=None):
     counts = {"skipped": 0, "auto_stopped": 0}
     for row in bounded.page(_rows(), LABEL):
         with fanout_tenant_write(row.makerspace_id, operation="auto_stop", counts=counts) as go:
-            if not go or not sessions_on(row.makerspace):
+            if not go:
+                continue
+            if not sessions_on(row.makerspace):
                 continue
             try:
                 due = due_stop(row, now)

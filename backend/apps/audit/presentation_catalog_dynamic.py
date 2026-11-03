@@ -160,7 +160,6 @@ WRAPPER_SITE_PREFIXES = {
     "machines/service_workflow_helpers.py": ("machine_service.",),
     "machines/services.py": ("machine.",),
     "machines/services_consumables.py": ("machine.",),
-    "machines/sessions_service.py": ("machine_session.",),  # L23: `_audit` takes the action
     "makerspaces/admin_images.py": ("makerspace.logo_", "makerspace.cover_",),
     "makerspaces/membership_verification.py": ("membership.can_",),
     "makerspaces/resource_grants_services.py": ("event.staff_grant_",),

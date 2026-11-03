@@ -31,6 +31,7 @@ def _restored():
 class RestoreView(APIView):
     authentication_classes = [SpaceWorksJWTAuthentication]
     permission_classes = [AllowAny]
+    login_ip_guard = True  # S-C: platform IP rules, automatic blocks, Turnstile
 
 
 class AccountRestoreEmailView(RestoreView):

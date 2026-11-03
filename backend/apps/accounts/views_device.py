@@ -99,6 +99,7 @@ def _consume_challenge(data):
 
 class DeviceLoginView(APIView):
     permission_classes = [AllowAny]
+    login_ip_guard = True  # S-C: platform IP rules, automatic blocks, Turnstile
     throttle_classes = [DeviceLoginThrottle, DeviceLoginUserThrottle]
 
     @extend_schema(tags=["Device auth"], auth=[], request=DeviceLoginSerializer,

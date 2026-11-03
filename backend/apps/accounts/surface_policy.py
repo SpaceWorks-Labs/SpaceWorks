@@ -136,6 +136,8 @@ def _staff_admits(user, token, request, targets, *, grant):
         targets = {pin}
     if not (all(has_staff_role(user, target) for target in targets) if targets else has_staff_role(user)):
         return False
+    from apps.accounts.staff_network import assert_staff_network  # per-space staff IP allow-list (S-C)
+    assert_staff_network(request, user, targets)
     require_staff_mfa(user, token, route=getattr(getattr(request, "resolver_match", None), "url_name", None))
     if len(targets) == 1 and getattr(request, "selected_makerspace_id", None) is None:
         request.selected_makerspace_id = next(iter(targets))

@@ -85,6 +85,8 @@ GLOBAL_ADMIN_MODELS = {
     # Platform-level hosting requests have no tenant (a nullable inviter makerspace is
     # provenance, not ownership); the review admin is superadmin-only.
     "hosting_requests.hostingrequest",
+    # Platform IP allow/deny rules and automatic blocks are global (#128 C-2; S-C).
+    "accounts.ipaccessrule", "accounts.ipautoblock",
 }
 
 # No tenant can inspect deployment claims, account totals, or bucket identities.

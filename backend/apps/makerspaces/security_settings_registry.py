@@ -31,13 +31,16 @@ from .security_setting_types import (  # noqa: F401 -- re-exported
 # (#62), so it is a fixed platform rule, not a setting. The login-security rows are
 # appended here by the lane whose door honours them (accounts.login_security_settings).
 from apps.accounts.login_security_settings import (
-    PASSKEYS_ALLOWED, STAFF_IDLE_TIMEOUT_MINUTES, STAFF_SESSION_MAX_HOURS,
+    CAPTCHA_ON_SIGN_IN, PASSKEYS_ALLOWED, STAFF_IDLE_TIMEOUT_MINUTES, STAFF_IP_ALLOWLIST,
+    STAFF_SESSION_MAX_HOURS,
 )
 
 REGISTRY = (
     PASSKEYS_ALLOWED,  # S-A: passkey ceremonies and the staff factor
     STAFF_SESSION_MAX_HOURS,  # S-A: staff routes (staff_session_policy)
     STAFF_IDLE_TIMEOUT_MINUTES,  # S-A: staff routes (staff_session_policy)
+    CAPTCHA_ON_SIGN_IN,  # S-C: Turnstile on the space's verified domain (accounts.turnstile)
+    STAFF_IP_ALLOWLIST,  # S-C: the space's staff routes (accounts.staff_network)
 )
 BY_KEY = {setting.key: setting for setting in REGISTRY}
 FEATURE_KEYS = frozenset(setting.key for setting in REGISTRY if setting.storage == FEATURE)

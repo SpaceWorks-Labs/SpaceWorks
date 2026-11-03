@@ -231,6 +231,9 @@ MIDDLEWARE = [
     "config.admin_access.AdminSuperuserOnlyMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    # Platform IP rules, automatic blocks and Turnstile on sign-in views only (S-C); before
+    # axes so a refused request never reaches a credential check.
+    "apps.accounts.ip_guard_middleware.LoginIPGuardMiddleware",
     "axes.middleware.AxesMiddleware",
     # Masks tenant PII for a superadmin inside a space's staff routes (owner decision #115).
     "apps.accounts.platform_tenant_pii.PlatformTenantPiiMiddleware",
@@ -302,6 +305,10 @@ AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
+    # Last, so the cheap local checks run first: HIBP k-anonymity, fail-open (S-C).
+    {
+        "NAME": "apps.accounts.password_breach.BreachedPasswordValidator",
+    },
 ]
 
 LANGUAGE_CODE = "en-us"
@@ -338,6 +345,8 @@ AXES_ENABLED = env.bool("AXES_ENABLED", default=True)
 # cannot interpret an X-Forwarded-For chain differently.
 AXES_IPWARE_PROXY_COUNT = TRUSTED_PROXY_COUNT
 AXES_CLIENT_IP_CALLABLE = "config.client_ip.get_throttle_client_ip"
+# Only the platform superadmin's own username from an ALLOW-listed address is exempt (S-C).
+AXES_WHITELIST_CALLABLE = "apps.accounts.ip_rules.axes_whitelisted"
 
 AWS_ACCESS_KEY_ID = env("AWS_ACCESS_KEY_ID", default="")
 AWS_SECRET_ACCESS_KEY = env("AWS_SECRET_ACCESS_KEY", default="")
@@ -899,6 +908,11 @@ CELERY_BEAT_SCHEDULE["machine-sessions"] = {
     "task": "apps.machines.tasks_sessions.sweep_machine_sessions_task", "schedule": crontab(minute="*/5"),
 }
 # --- end lane L23
+# --- lane S-C (release 2): IP auto-block rows 7 d after they end, axes rows after 30 d.
+CELERY_BEAT_SCHEDULE["purge-login-security"] = {
+    "task": "apps.accounts.tasks_login_security.purge_login_security_task", "schedule": crontab(hour=3, minute=40),
+}
+# --- end lane S-C
 
 if "tenant_migration" in TOMBSTONED_APPS:
     CELERY_BEAT_SCHEDULE = {
@@ -1684,3 +1698,12 @@ SPECTACULAR_SETTINGS["ENUM_NAME_OVERRIDES"].update({
     "PriceOverrideModeEnum": [("inherit", "Use the space default"), ("free", "Free"), ("custom", "Custom price")],
 })
 # --- end lane L15
+# --- Release 2 / S-C: IP blocking, Turnstile and breached passwords (#62, #66) ----------
+# The middleware, validator, axes and beat lines sit beside their neighbours above.
+# Sign-in routes document 429 ip_blocked, 400 captcha_required/captcha_failed and
+# password_breached without each view repeating them.
+SPECTACULAR_SETTINGS["POSTPROCESSING_HOOKS"] = [
+    *SPECTACULAR_SETTINGS.get("POSTPROCESSING_HOOKS", ["drf_spectacular.hooks.postprocess_schema_enums"]),
+    "apps.accounts.ip_guard_schema.document_login_guard_errors",
+]
+# --- end S-C ---------------------------------------------------------------------------

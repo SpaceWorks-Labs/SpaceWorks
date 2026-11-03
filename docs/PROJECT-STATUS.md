@@ -64,6 +64,14 @@ a `pip-audit` CI job. The global CSP `script-src` omits `'unsafe-eval'`; a tiny
 `config.admin_access.AdminCspEvalMiddleware` appends `'unsafe-eval'` to `script-src` **and** the S3 public
 origin to `img-src` **only for `/control/` responses** (django-unfold ships eval-requiring Alpine.js; the
 JSON API + public docs stay on the strict policy).
+Release 2 (lane S-C, #62/#66) adds sign-in protection: automatic IP blocking against credential stuffing
+(one address failing against 10 different accounts in 15 minutes is blocked for an hour), superadmin
+allow/deny rules and the automatic-block list in `/control/`, the Have I Been Pwned breached-password
+check (k-anonymity, fail-open) on every password a person or admin sets, optional Cloudflare Turnstile
+after failed sign-ins (off until keys; the SPA CSP allows `challenges.cloudflare.com` only then), and the
+per-space staff IP allow-list and CAPTCHA settings. Host recovery: `manage.py login_security --list |
+--allow <cidr> | --unblock <ip|all>` beside `axes_reset_ip` and `recover_superadmin --reset-mfa`. Rules
+are under **IP blocking, allow/deny rules and CAPTCHA** in `docs/INVARIANTS.md`.
 
 **Staff MFA and invitations.** Since release 2 (lane S-A, owner decision #62) two-step sign-in is
 **mandatory for every staff role in every space** (an authenticator app or a passkey); it is a platform

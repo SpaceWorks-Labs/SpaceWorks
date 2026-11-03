@@ -107,6 +107,8 @@ LEGACY_ENTRIES = (
     ("machine-job-flow", "apps.machines.tasks_jobs.sweep_job_flow_task", 15),
     # Lane L23: machine sessions that reached their max length, check-out or closing time.
     ("machine-sessions", "apps.machines.tasks_sessions.sweep_machine_sessions_task", 5),
+    # Release 2 S-C: IP auto-block rows 7 d after they end; axes rows after 30 d.
+    ("purge-login-security", "apps.accounts.tasks_login_security.purge_login_security_task", 1440),
 )
 _RETAINED = frozenset({
     "evidence-object-expiry", "evidence-abandoned-upload-cleanup",

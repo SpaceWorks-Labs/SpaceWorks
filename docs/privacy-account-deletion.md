@@ -62,5 +62,14 @@ unavailable or revocation keeps failing through day 80, that outcome is audited 
 identity purge can complete. You can also remove Space Works under **Sign in with Apple**
 in your [Apple Account settings](https://account.apple.com/account/manage).
 
+Sign-in protection keeps very little about addresses. Failed sign-ins are counted under a
+keyed hash of the address, never the address itself; an address that fails against many
+accounts is blocked for an hour, and its network is kept only on that block, deleted seven
+days after the block ends. django-axes lockout records (username and address) are deleted
+after 30 days. When the optional Cloudflare Turnstile CAPTCHA is configured, a person asked to
+solve it (after failed sign-ins, or always on a space that chose that) loads Cloudflare's
+widget, so Cloudflare sees their address and browser. The breached-password check sends
+Have I Been Pwned only the first five characters of the password's SHA-1 hash.
+
 Operators should include these facts and their configured retention periods in the
 deployment's published privacy notice.

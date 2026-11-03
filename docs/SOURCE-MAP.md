@@ -916,6 +916,13 @@ proof claims), `staff_identity.require_staff_mfa` the staff gate, `mfa_grace.py`
 `security_signals.py` the `mfa_changed` signal, and `accounts/passkeys/` the WebAuthn backend (`rp_id`,
 `ceremonies`, `services`, `assertion`, `policy`, `views`, `urls`, `checks`; routes classified in
 `passkey_route_catalog.py`). `makerspaces/migration_support/retire_staff_mfa.py` backs makerspaces 0119.
+Login security S-C: `accounts/ip_rules.py` (platform allow/deny rules, 60 s cache, `AXES_WHITELIST_CALLABLE`),
+`ip_guard.py` (client source, HMAC keys, failure counters, automatic blocks, the local `sw_device` reader),
+`ip_guard_signals.py` (what counts as a failure), `ip_guard_middleware.py` (`LoginIPGuardMiddleware` on
+`login_ip_guard` views), `ip_guard_schema.py` (the OpenAPI hook), `turnstile.py` (Cloudflare Turnstile),
+`password_breach.py` (the HIBP validator), `staff_network.py` (the per-space staff IP allow-list at the staff
+surface check), `admin_ip_access.py` (the `/control/` *IP rules* and *Automatic blocks* screens),
+`login_methods_status.py`, `tasks_login_security.py` (retention) and `management/commands/login_security.py`.
 `staff_accounts.py` atomically creates a tenant staff principal and its roles/type scopes;
 `staff_account_policy.py`, `staff_account_services.py` and `staff_account_lifecycle.py`
 own staff lifecycle authority, onboarding, deactivation and administrator password issue.

@@ -2936,7 +2936,70 @@ Owner decisions #62, #66, #74, #110c, #111 Q9-Q11, #128 C-1/C-2 and #135 Q-A1-Q-
 
 ### Security alerts and "this wasn't me" (S-B fills)
 
-### IP blocking, allow/deny rules and CAPTCHA (S-C fills)
+### IP blocking, allow/deny rules and CAPTCHA (S-C)
+
+- **Automatic blocks: one source, many accounts (#62, #157; `accounts/ip_guard.py`).** A failed sign-in
+  counts once per (source, account) pair inside `LOGIN_IP_BLOCK_WINDOW_SECONDS` (900); when one source has
+  failed against `LOGIN_IP_BLOCK_DISTINCT_ACCOUNTS` (10) different accounts it gets an `IPAutoBlock` for
+  exactly `LOGIN_IP_BLOCK_SECONDS` (3600). The source is the IPv4 address (/32) or the IPv6 /64. One fixed
+  length: an active block is never extended, no escalation, no decay. One person mistyping, however often,
+  never blocks a space's shared NAT. Failures are Django's `user_login_failed` (every `authenticate`
+  failure, the password door's unknown identifiers, the native door) and S-B's `security_signals.
+  login_refused` once it exists (`ip_guard_signals.py` connects it automatically). A block reached inside a
+  transaction is written by the middleware after the response, so a rolled-back sign-in cannot undo it.
+- **Never counted:** an unparsable address, loopback, private (RFC 1918, carrier-grade NAT, IPv6
+  unique-local; not `ipaddress.is_private`, which also swallows the public documentation ranges), link-local, a proxy hop (`REMOTE_ADDR` and the X-Forwarded-For entries the proxy count marks as proxies),
+  and any request whose X-Forwarded-For chain is shorter than `TRUSTED_PROXY_COUNT`; the last logs
+  `security.proxy_count_exceeds_hops` once per process. System check `accounts.W002` warns when
+  `BEHIND_TRUSTED_PROXY` is on with `TRUSTED_PROXY_COUNT=0`. The client is resolved exactly as DRF
+  throttles and axes resolve it (`config/client_ip.get_throttle_client_ip`).
+- **Privacy.** Counters, audit metadata and `IPAutoBlock.ip_key` are keyed HMACs; the raw network lives only
+  on the block row (for the superadmin's list) and is deleted 7 days after the block ends with the row
+  (`tasks_login_security`, daily; django-axes rows after 30 days). Auto-blocks never email anyone (Q14).
+- **Rules (`accounts/ip_rules.py`).** Platform-global `IPAccessRule`s, edited only by the superadmin in
+  `/control/` (*IP rules*, behind the control step-up; both models are in `GLOBAL_ADMIN_MODELS` and
+  `CONTROL_AUTHORITY_MODELS`). ALLOW beats every DENY and every automatic block; DENY always applies, even
+  to a remembered device. Rules are cached 60 s and the cache is dropped on every save and delete; a cache
+  outage reads them from the database, so deny rules never fail open (the counters do). The form refuses a
+  deny rule that covers the editor's own address unless an allow rule also covers it.
+  `AXES_WHITELIST_CALLABLE` exempts only the platform superadmin's username from an ALLOW-listed address.
+- **The guard (`LoginIPGuardMiddleware`, before `AxesMiddleware`).** It acts only on views with
+  `login_ip_guard = True` (password, MFA verify/enrol, sign-up, reset, phone and social doors, OIDC and
+  GitHub browser flows, the native device door, staff-invitation accept, account restore, merge start) plus
+  `GUARDED_ROUTES` (the passkey sign-in routes and `admin:login`), never OPTIONS. Deny or auto-block →
+  429 `ip_blocked` with `Retry-After` when the block ends; a new sign-in view must carry the flag.
+- **Remembered devices (Q12).** A valid signed `sw_device` cookie matching a live, unrevoked `KnownDevice`
+  bypasses AUTOMATIC blocks only; its own failures count per device and 10 in the window suspend the
+  bypass. The reader in `ip_guard.known_device_hmac` is local until S-B swaps it for `device_memory.lookup`.
+- **Turnstile (`accounts/turnstile.py`; off until both keys).** Active for a request only when its `Origin`
+  is one the deployment verifiably serves (`passkeys.rp_id.is_trusted_origin`) and that host is in
+  `TURNSTILE_HOSTNAMES` (empty: the origin's own host). On the CAPTCHA routes (password sign-in, sign-up,
+  password reset, emailed-code requests) a token (`X-Turnstile-Token` header, or `cf-turnstile-response`)
+  is required after `TURNSTILE_AFTER_FAILURES` failures from the source or for the account, always on a
+  space's verified domain set to `always`, and instead of the 429 for an auto-blocked source (a deny rule
+  is never unlocked by a CAPTCHA). Server-side `siteverify` (3 s) checks `success`, `action` and `hostname`;
+  refusals are 400 `captcha_required` / `captcha_failed` carrying `turnstile_site_key` and
+  `turnstile_action`; `auth.captcha_failed` is audited once per source per window. Cloudflare unreachable:
+  `TURNSTILE_FAIL_MODE=open` (default) lets it through. Native device doors are never asked (attestation is
+  their proof). `/api/v1/config` publishes `turnstile_site_key` only when configured, and the SPA's CSP
+  (`frontend/docker-entrypoint.d/40-web-analytics.sh`) adds `https://challenges.cloudflare.com` only when
+  the frontend container has `TURNSTILE_SITE_KEY`.
+- **Per-space rows (#128 C-2).** `security.captcha_on_sign_in` (off < after_failures < always) applies on
+  the space's VERIFIED custom domain only and can only tighten the platform rule. `security.staff_ip_allowlist`
+  applies at the staff surface check (`surface_policy._staff_admits` → `staff_network.assert_staff_network`),
+  never at the shared sign-in door (one account per person; member features are never blocked): a route
+  targeting spaces needs the client inside each targeted space's non-empty list, a space-less staff route
+  inside every non-empty list across the person's staff spaces. Refusal is 403 `staff_network_refused`.
+  The superadmin never reaches it (#110). Platform deny rules and auto-blocks stay global.
+- **Breached passwords (#66; `accounts/password_breach.py`).** `BreachedPasswordValidator` is last in
+  `AUTH_PASSWORD_VALIDATORS`, so every `validate_password` caller runs it (sign-up, change, reset and
+  restore confirmation, invitation accept, admin-set passwords, the `/control/` reset form). Only the first
+  five hex characters of the SHA-1 leave the server (`range/<prefix>`, `Add-Padding: true`, httpx,
+  `PASSWORD_BREACH_CHECK_TIMEOUT_SECONDS`); padding rows (count 0) never match. Timeout, network error or a
+  non-200 answer lets the password through. A refusal is the field's messages plus `code: password_breached`
+  (`error_body`) and an `auth.password_breach_rejected` row naming the account, never an actor.
+- **Host recovery.** `manage.py login_security --list | --allow <cidr> | --unblock <ip|all>` beside
+  `axes_reset_ip` (an axes lockout) and `recover_superadmin --reset-mfa`.
 
 ### Passkeys and the relying-party ID (S-A)
 

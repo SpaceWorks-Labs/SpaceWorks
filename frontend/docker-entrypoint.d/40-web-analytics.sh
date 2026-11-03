@@ -28,8 +28,12 @@ for extra in ${WEB_ANALYTICS_EXTRA_CONNECT_ORIGINS:-}; do
   [ "$validated" = "$extra" ] || fail
   extra_origins="$extra_origins $validated"
 done
+# Cloudflare Turnstile (sign-in CAPTCHA) is allowed only when the deployment configured it;
+# its widget frame needs no frame-src entry because this policy sets no frame-src at all.
+turnstile_origin=''
+[ -z "${TURNSTILE_SITE_KEY:-}" ] || turnstile_origin=' https://challenges.cloudflare.com'
 # Opt-in deployments declare external API/object-storage origins here explicitly.
-printf '%s\n' "add_header Content-Security-Policy \"script-src 'self' 'wasm-unsafe-eval' https://accounts.google.com https://appleid.cdn-apple.com $script_origin; connect-src 'self' https://accounts.google.com https://oauth2.googleapis.com https://appleid.apple.com $collect_origin$extra_origins\" always;" >> "$headers"
+printf '%s\n' "add_header Content-Security-Policy \"script-src 'self' 'wasm-unsafe-eval' https://accounts.google.com https://appleid.cdn-apple.com $script_origin$turnstile_origin; connect-src 'self' https://accounts.google.com https://oauth2.googleapis.com https://appleid.apple.com $collect_origin$extra_origins$turnstile_origin\" always;" >> "$headers"
 cat >> "${TENANT_CONFIG_PATH:-/usr/share/nginx/html/config.js}" <<EOF
 window.__WEB_ANALYTICS__ = {scriptUrl: "$script", collectUrl: "$collect", domain: "$domain"};
 EOF

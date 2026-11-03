@@ -28,9 +28,9 @@ govern sign-in availability. Membership adds plans, vouching, renewals and the m
 | --- | --- | --- |
 | Inventory & lending | `public_inventory`, `request_workflow`, `staff_admin`, `scanner`, `evidence_uploads`, `qr_management` (core); `guest_handover`, `asset_units`, `containers`, `bulk_import`, `stock_transfers`, `qr_print_batches`, `stocktake`, `devices` | `loans.enabled`, `loans.limits`, `loans.renewals`, `loans.kit_checklist`, `loans.reservations`, `loans.pickup_windows`, `loans.waitlist`, `loans.withdrawals`, `inventory.notify_when_back`, `inventory.expected_back`, `inventory.consumables`, `inventory.vendors`, `inventory.tobuy`, `inventory.warranty`, `inventory.self_checkout`, `inventory.contact_self_checkout`, `inventory.kiosk`, `stocktake.discipline`, `packs.import`, `charges.loans`; `payments.loans` with Online payments |
 | Machines | `machines`, `machine_service`, `printing` | `machines.job_requests`, `machines.job_quotes`, `machines.batch_start`, `machines.pay_before_pickup`, `machines.time_booking`, `machines.maintenance`, `machines.tobuy`, `machines.warranty`, `machines.certifications`, `machines.certification_reminders`, `machines.public_detail`, `machines.material_catalogue`, `machines.structured_intake`, `maintenance.reminders`, `maintenance.meters`, `maintenance.calendar_feed`, `charges.machines`, `notifications.delegated_recipients`; `payments.machines` with Online payments |
-| Events | `events` | `events.api_read`, `events.certificate_designer`, `events.website`, `events.embed`, `events.short_links`, `events.online_delivery`, `events.anonymous_feedback`; `events.broadcasts` with Notifications and Email; `events.organization_audience`, `events.offline_checkin`, `events.invites`, `events.account_registration`, `events.ticket_types`, `events.promo_codes`, `charges.events`; `payments.events` with Online payments |
+| Events | `events` | `events.api_read`, `events.certificate_designer`, `events.website`, `events.embed`, `events.short_links`, `events.online_delivery`, `events.anonymous_feedback`; `events.broadcasts` with Notifications and Email; `events.organization_audience`, `events.offline_checkin`, `events.invites`, `events.account_registration`, `events.ticket_types`, `events.promo_codes`, `charges.events`; `payments.events` with Online payments; `events.id_cards`, `events.ticket_designs`, `events.wallet_passes` |
 | Bookings | `bookings` | `bookings.recurring`, `bookings.staff_grants`, `bookings.clone`, `bookings.staff_tools`, `bookings.confirmations`, `bookings.checkin`, `bookings.passes`, `bookings.api_read`, `bookings.website`, `bookings.embed`, `charges.bookings`; `bookings.broadcasts` with Notifications and Email; `bookings.analytics`, `bookings.utilization_pdf`, `bookings.exports` with Reports; `payments.bookings` with Online payments |
-| Membership | `membership`, `mobile` | `membership.auto_renew`, `membership.lifecycle_mail`, `membership.self_service`, `membership.self_export`, `membership.vouching`, `membership.application_form`, `membership.broadcasts`, the 14 release-2 lifecycle switches (`membership.plan_rules` … `membership.monthly_summary`), `mobile.push`, `charges.membership`; `payments.membership` with Online payments |
+| Membership | `membership`, `mobile` | `membership.auto_renew`, `membership.lifecycle_mail`, `membership.self_service`, `membership.self_export`, `membership.vouching`, `membership.application_form`, `membership.broadcasts`, the 14 release-2 lifecycle switches (`membership.plan_rules` … `membership.monthly_summary`), `mobile.push`, `charges.membership`; `payments.membership` with Online payments; `membership.id_programmes`, `membership.wallet_passes` |
 | Online payments | `payments` | `payments.enabled` plus the online-payment feature of each selected domain |
 | Reports | `reports` | `reports.saved_views`; `reports.event_pdf`, `reports.event_exports` with Events |
 | Chat alerts | `telegram`, `slack`, `mattermost`, `discord`, `webhook` | Idle until URLs/tokens are configured |
@@ -592,6 +592,12 @@ history and their owned cover images while preserving the core payment ledger.
 
 [Read the membership module reference](MODULES-WORKSHOPS.md#membership).
 
+**Member cards (release 2 L3).** Member cards ride this module: a free card designer (space default,
+per-plan and per-title designs, approval by a Space Manager when switched on), cards issued when a
+membership starts, PNG/PDF downloads, bulk PDF/ZIP/email jobs (files kept 7 days), a desk scan that
+only identifies, and an optional public check page. There is no fee on any card. Turning the module
+off hides them; a purge deletes cards, designs, card settings and their stored files.
+
 ### presence
 
 Time-limited member and guest check-in and the public current-presence TV display. Independent,
@@ -883,6 +889,11 @@ its parent module is off.
 | `inventory.contact_self_checkout` | — + `inventory.self_checkout` | | Without Member accounts, borrowers check tools out with name, phone and an emailed code (#91); evidence rules unchanged | Account-less checkout is refused; account-less returns always stay open |
 | `presence.geofence` | — | ● | Required location check for self check-in | Self check-in refuses when disabled/unconfigured; authorized staff check-in remains available. Coordinates are not stored |
 | `inventory.kiosk` | — | | Scanner and handover Stations at `/m/<slug>/kiosk/<station>`: a Station PIN opens the channel, and a signed-in staff operator lease attributes every online handover to a real person | No Station sessions, operator leases, work packages or kiosk commands; the public desk at `/kiosk/<slug>` is unaffected |
+| `membership.id_programmes` | `membership` | | Organisation ID programmes hosted by this space: a join page, CSV import, approvals, numbered cards (`PREFIX-YYYY-0001`), a card design and the public check page | Programme pages and routes answer 404; programmes, cards and designs are kept |
+| `membership.wallet_passes` | `membership` | | Apple and Google Wallet passes for member and programme cards, updated when the card changes; shown only once the platform pass credentials are set | No wallet buttons; issued passes stop updating |
+| `events.id_cards` | `events` | | An ID card for every confirmed registrant, designed and published by the event's organisers (no approval by default), valid until the day after the event; the door scan identifies the card | No event cards; issued cards and designs are kept |
+| `events.ticket_designs` | `events` | | Design tickets per event and ticket type; one check-in QR; the PDF can go with the confirmation email | Tickets use no custom design |
+| `events.wallet_passes` | `events` (needs `events.id_cards`) | | Wallet passes for event ID cards | No wallet buttons on event cards |
 
 The `payments.<area>` switches are **off by default and stay inert until credentials resolve** —
 turning one on cannot start charging anyone by itself. They only put a card rail behind a debt the

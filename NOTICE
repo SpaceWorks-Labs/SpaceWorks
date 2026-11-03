@@ -34,6 +34,12 @@ Backend image dependency: pillow-heif (BSD-3-Clause) decodes HEIC/HEIF uploads; 
 wheels bundle libheif and libde265 (LGPL-3.0) and x265 (GPL-2.0-or-later). Their licence
 texts ship inside the installed package (LICENSES_bundled.txt).
 
+Card rendering dependencies: pypdfium2 (Apache-2.0 or BSD-3-Clause; bundles PDFium, BSD-3-Clause)
+rasterises card PNGs; onnxruntime (MIT) runs the u2netp background-removal model (Apache-2.0),
+which an operator fetches with `manage.py fetch_card_photo_model`. Card fonts other than the bundled
+ones are fetched on demand from the Google Fonts catalogue into private storage; each family keeps
+its own licence (SIL OFL 1.1, Apache-2.0 or the Ubuntu Font Licence).
+
 Adapted code: the light/dark theme transition (frontend/src/lib/themeTransition.*) is adapted
 from yuyu by twilighty-abhi (https://github.com/twilighty-abhi/yuyu), AGPL-3.0. The 404 pet
 behaviour (frontend/src/components/delight/NotFoundPatch.tsx: trot, follow, wander, nap) is also

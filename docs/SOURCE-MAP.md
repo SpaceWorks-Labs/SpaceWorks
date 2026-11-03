@@ -319,8 +319,8 @@ Frontend `features/staff/panels/RoleSetPicker.tsx` owns exclusive/combinable che
 `roleSets.ts` owns assignment ceilings, handwritten membership role-set types and cache invalidation.
 `RolesReference.tsx` renders the read-only server role catalogue. `MemberRolesControl.tsx` retains the compatibility role control; the backend refuses
 member-to-staff assignment; `MemberMachineTypes.tsx` edits per-person type scope using `rolesApi.ts`.
-The staffAccounts panel reuses the picker; UsersTable and MembersPanel display the whole role set.
-Built-in staff assignments use separate staff accounts, never the member roster.
+The staffRoles panel reuses the picker; UsersTable and MembersPanel display the whole role set.
+Built-in staff roles are staff-track rows on a person, granted from the staff-roles screen.
 Role CRUD and RoleManager/RoleEditor/RoleMachineScopeEditor are removed. Booking rules reuse
 `MakerspaceBookingRulesSettings.tsx` in both Settings and Bookings.
 
@@ -841,11 +841,14 @@ proof claims), `staff_identity.require_staff_mfa` the staff gate, `mfa_grace.py`
 `security_signals.py` the `mfa_changed` signal, and `accounts/passkeys/` the WebAuthn backend (`rp_id`,
 `ceremonies`, `services`, `assertion`, `policy`, `views`, `urls`, `checks`; routes classified in
 `passkey_route_catalog.py`). `makerspaces/migration_support/retire_staff_mfa.py` backs makerspaces 0119.
-`staff_accounts.py` atomically creates a tenant staff principal and its roles/type scopes;
-`staff_account_policy.py`, `staff_account_services.py` and `staff_account_lifecycle.py`
-own staff lifecycle authority, onboarding, deactivation and administrator password issue.
-`admin_api/views_staff_accounts.py` exposes that lifecycle; the account and makerspace
-`admin_staff_*` modules reuse it in `/control/`. `accounts/admin_native.py` holds native-app administration.
+Staff roles on people (U-B): `staff_account_policy.py` is the one authority policy (superadmin-only
+Space Manager rule, no-self, last manager, tenant gate and quota codes, `StaffRoleRefused`);
+`staff_account_services.py` grants (to community members) and changes roles and machine scopes over
+`makerspaces/staff_role_grants.py`; `staff_account_lifecycle.py` revokes/restores rows and holds the
+superadmin's Disable/Re-enable account; `staff_role_notices.py` the "you were granted a staff role"
+notice. `admin_api/views_staff_roles.py`, `serializers_staff_roles.py` and `urls_staff_roles.py`
+expose `admin/makerspaces/<id>/staff-roles/`; the account and makerspace `admin_staff_*` modules
+reuse the services in `/control/`. `accounts/admin_native.py` holds native-app administration.
 `membership_context.py` shares the object/SQL account-validity rules used by RBAC.
 `backup/main_projection_catalog.py` owns the physical-table check re-exported by
 `main_projection_registry.py`; the staff inert-shell boundary is declared there, with
@@ -874,9 +877,10 @@ keep member credential/community writers separate. `credential_revocation.py` an
 `models_password_reset.py`, `services_password_reset.py`, `services_password_reset_confirmation.py`,
 `services_password_reset_drain.py` and `password_reset_crypto.py` bind recovery to the exact account
 and person (`member`) or platform context. `password_reset_context.py` owns the platform
-trusted-origin policy and the platform reset-page destination; `credential_locks.py` enforces the shared credential-operation lock order. `services_staff_invitations.py`,
-`staff_invitation_acceptance.py` and `staff_invitation_delivery.py` own initial staff password setup.
-`admin_api/urls_staff_accounts.py` and `serializers_staff_accounts.py` define its HTTP contract;
+trusted-origin policy and the platform reset-page destination; `credential_locks.py` enforces the shared credential-operation lock order. `services_staff_invitations.py`
+(issue, resend, revoke), `staff_invitation_acceptance.py` (signed-in redemption with a fresh emailed code)
+and `staff_invitation_delivery.py` (invitee-only email and chat, a room notice) own staff-role invitations;
+`views_staff_invitations.py`/`serializers_staff_invitations.py` their HTTP contract (never the link).
 `accounts/admin_staff_lifecycle.py` and `makerspaces/admin_staff_accounts.py` provide control actions.
 
 Person and staff-role transport (U-D): `tenant_migration/portable_staff.py` (staff-track rows travel
@@ -896,16 +900,21 @@ Shared chat destination facts use `integrations/notification_destination_events.
 `notification_proofs.py` keeps proof and unlink account-bound. Transport/backup policy:
 [account-portability.md](account-portability.md).
 
-Frontend `lib/api/sessionContext.ts` selects member, staff:<slug> or platform;
-`sessionTokens.ts`, `client.ts`, `requests.ts` and `reauthentication.ts` isolate tokens, refresh
-and late responses. `lib/SessionBoundary.tsx` and `lib/queryClient.ts` partition server-state
-caches. `features/staff/useStaffSession.ts` restores tenant or delegated-member workspaces;
-`LoginPanel.tsx` and `ChangePasswordGate.tsx` handle tenant passwords and mandatory change.
-`features/staff/panels/staffAccounts/` owns creation, roles/scope, status and password dialogs,
-using the handwritten contract in `lib/api/staffAccounts.ts`. Password secrets remain in mounted
-dialog state, outside Query caches/storage. Staff offline rosters, jobs and toasts are context-bound;
-member offline cards/loans retain their separate lifecycle. Tests: `backend/tests/account_split/`
-and frontend `*.accountSplit.test.*`, `sessionContexts.test.ts`, `contextStores.test.ts`.
+Frontend `lib/api/sessionContext.ts` selects the `person` or `platform` session (one account per
+person: console, member area, kiosk and scanner share the person session); `sessionTokens.ts`,
+`client.ts`, `requests.ts` and `reauthentication.ts` isolate tokens, refresh and late responses, and
+`mfaEnrollment.ts` is the shared `mfa_enrollment_required` signal (#128 C-1, shared with S-D).
+`lib/SessionBoundary.tsx` and `lib/queryClient.ts` partition server-state caches per session.
+`features/staff/useConsoleSession.ts` restores the console session; `consoleAccess.ts` decides which
+spaces a person may open (staff roles, delegated grants) and the MFA gate; `StaffGateScreens.tsx`
+holds the no-role, enrolment-required and grace-banner screens; `PlatformSignInPanel.tsx` is the
+superadmin's own sign-in (everyone else uses `MemberAuthPanel`); `ChangePasswordGate.tsx` handles a
+mandatory change. `features/staff/panels/staffRoles/` owns the staff-roles screen (grant, invite,
+change, revoke/restore, reset authenticator; no password controls). `features/members/accountLink/`
+owns "Link your staff account" (U-C's merge API) on the member account page, and
+`features/auth/StaffInvitationAcceptPage.tsx` the signed-in invitation redemption. Staff offline
+rosters, jobs and toasts are session-bound; member offline cards/loans retain their separate
+lifecycle.
 
 Addressed messaging is part of core integrations, not a second delivery pipeline.
 `models_endpoints.py` owns canonical channel configuration and templates; `models_contract.py`

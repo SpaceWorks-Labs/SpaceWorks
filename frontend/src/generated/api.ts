@@ -2889,8 +2889,8 @@ export type AuthUserPayload = {
   "makerspaces": Array<AuthMembership>;
   "superadmin_actions": Array<string>;
   "mfa_grace_ends_at": string | null;
-  "merge_suggested": boolean;
   "mfa_enrolment_due": boolean;
+  "merge_suggested": boolean;
   "event_grants"?: Array<GrantedEventEntry>;
   "booking_grants"?: Array<GrantedBookingEntry>;
 };
@@ -10267,6 +10267,13 @@ export type LogError = {
   "message": string;
 };
 
+export type LoginGuardError = {
+  "detail": string;
+  "code": "ip_blocked" | "captcha_required" | "captcha_failed";
+  "turnstile_site_key"?: string;
+  "turnstile_action"?: string;
+};
+
 export type LoginRequest = {
   "username": string;
   "password": string;
@@ -14133,6 +14140,7 @@ export type PasswordUpdated = {
 
 export type PasswordValidationFailure = {
   "new_password": Array<string>;
+  "code"?: string;
 };
 
 export type PatchedAccountProfile = {
@@ -17880,6 +17888,7 @@ export type PublicConfig = {
   [key: string]: unknown;
 };
   "passkeys_enabled": boolean;
+  "turnstile_site_key"?: string;
   "native"?: NativeConfig;
 };
 

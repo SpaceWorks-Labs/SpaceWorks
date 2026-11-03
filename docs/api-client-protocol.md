@@ -230,6 +230,8 @@ Events installed and `events.api_read` enabled:
 | `/api/v1/events/` | `events:read` |
 | `/api/v1/events/<id>/` | `events:read` |
 | `/api/v1/events/<id>/participants/` | `events:read` AND `participants:read` |
+| `/api/v1/events/orders/` | `orders:read` (release 2 L6; also needs `events.orders`) |
+| `/api/v1/events/orders/<id>/` | `orders:read` |
 
 Only a platform superadmin grants these scopes. Browser/publishable keys, global
 clients, JWT sessions, `public:*` and frozen `legacy:v1` never authorize these
@@ -244,6 +246,12 @@ registration ID, display name and registration date. With both prerequisite
 scopes, `participants:attendance:read` adds the current attendance date (null when
 no longer attended). Contacts, answers, ticket/check-in credentials and money are
 excluded. Participant reads audit an opaque client fingerprint and row count.
+
+Ticket orders (`orders:read`, release 2 L6) allow the order ID, event or series ID, kind, status,
+currency, subtotal, discount, fee and total, created and paid dates, the frozen lines (kind, label,
+quantity, unit amount, discount, line total, ticket type and add-on IDs) and seat counts (live and
+claimed). Buyer and attendee names, emails, claim tokens and provider handles are excluded. A space
+with `events.orders` off answers 404, like any unknown route.
 
 Lists return `{ "next_cursor": string|null, "results": [...] }`. Use `page_size`
 1-200 (default 100) and return the cursor unchanged. Signed cursors expire after

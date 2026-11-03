@@ -5374,6 +5374,69 @@ responsibility; local purges never delete shared global organizations or foreign
   `activity` payload is now a typed nested serializer that **omits** absent keys — a zero says
   "attended nothing", an absent key says "this space does not run events".
 
+### Paid ticketing v2 and venue fees (release 2 L6; #69, #71, #94, #128 C-20, #169)
+
+- **An order is money and seats, never admission.** One buyer, several lines, one `Payment` (subject
+  `event_order`). Each seat becomes ONE registration for ONE attendee account, through the ordinary
+  `register()` service inside `orders_context.filling_seat` (audience, forms, waivers, duplicates,
+  credentials, calendar and notices all apply); that registration carries no charge of its own.
+  **Nobody is registered without an account (#71):** a seat for someone else stays an unclaimed seat
+  until that person signs in with the verified address it names and presents the single-use claim
+  token (stored only as a SHA-256 digest). The buyer may fill in or change an unclaimed seat's email
+  (any older link stops working) and chase once a day; unclaimed seats stay visible to buyer and
+  organiser.
+- **Orders run only on open, no-approval events** (`members` or `accounts` audience). Approval and
+  invitation events keep the single-registration flow, whose charge is raised on approval.
+- **Capacity math stays in `events/capacity.py`.** `held_seats` adds the unclaimed seats of PAID
+  orders and the seats of PENDING orders under a live checkout hold (a series pass holds one seat per
+  covered occurrence) to every spots-left computation; the seat being claimed is excluded. Holds last
+  30 minutes (`HOLD_MINUTES`, the shortest hosted checkout session); the beat sweep
+  (`reminders_payments.sweep_order_checkouts_task`) expires them, voids the pending charge and tells
+  the buyer. With `events.seat_holds` off a paid order that finds no room becomes `unfulfilled` and a
+  staff-approved refund case opens for the whole amount: capacity is never oversold.
+- **Preview = charge.** The order quote (`orders_quote.build_quote`) is rebuilt under the promo and
+  access-code row locks and checked against the digest the buyer was shown (409 `price_changed`).
+  Order: access codes unlock hidden types; tier chains open the next tier only on sell-out or sales
+  end; quantity rules (`min_quantity`, `per_order_limit`, the event's `max_tickets_per_order`);
+  pay-what-you-want at or above its minimum; the member's ONE best automatic discount (L15), then the
+  promo on top (fixed-price tickets only; per ticket = one use per discounted ticket, per order = one
+  use); add-ons at their price; the booking fee (fixed + basis points of the discounted ticket total)
+  last. The quote and `total` are frozen on the order (model + trigger); `EventOrderLine.unit_amount`
+  is the frozen per-ticket price, read through `orders_pricing.paid_ticket_price` (the L24 contract).
+- **Every refund goes through a staff-approved refund case (#59, #94).** Event cancelled: each paid
+  order is owed its full balance (decision 60). One seat cancelled: that seat's share of its line under
+  the event's policy (its override, else the space's), less the policy fee; the booking fee is kept.
+  A series-pass occurrence cancelled: the pass type's `occurrence_refund_amount`. A cheaper ticket
+  type: the difference. Each becomes an append-only `EventOrderDue` and a share on the order's case
+  (`payments.services_refund_partial.add_due_share`: grows the active case, else opens one). Nothing
+  here creates a `Refund`.
+- **The refund override may only become more generous after the first sale** (any paid registration
+  charge or paid order): equal or shorter windows, an equal or higher percentage, an equal or lower fee
+  (409 `policy_less_generous`), and it cannot be removed. It is read through the one hook in
+  `payments/refund_policy.area_policy`; the buyer sees the terms and the organiser's text first.
+- **Add-ons never touch hardware inventory.** Their stock is event-local (sold = paid lines + lines
+  under a live hold).
+- **Transfers move a registration, not money.** Accept needs the recipient's verified email and token;
+  the registration's contact fields and blind index are rewritten, the check-in credential rotated
+  (v2 credential or legacy token), the old ID card revoked and re-issued, live certificates revoked.
+- **Desk collection is a ledger settlement.** `services_checkin.collect_at_desk` calls
+  `reconcile_payments` (ManualSettlement receipt, maker-checker honoured) or opens the live checkout;
+  account charges never get an L5 bearer pay link -- the guest pay link is their own checkout or
+  payments page.
+- **Venue fees are one charge per event, to a person's account.** The outside organiser (a member or an
+  organisation's contact) pays `pricing.quote("events", event, params={"venue_fee": row})`: the row's
+  Free/Custom amount (flat or per hour), else the room's price override, else the space rate card
+  (`venue_fee`, `venue_fee_per_hour`). Charged once on publish or by "Charge now"; then frozen. A 0 quote
+  raises nothing. Refunds and waivers are staff decisions only.
+- **Confirmation emails carry calendar invites (#169).** Registration (and booking) confirmations attach
+  an `.ics` (METHOD:PUBLISH, UID `event-<uid>-r<registration>@spaceworks` / `booking-<token>@spaceworks`,
+  SEQUENCE = the sources' calendar sequences), cancellations METHOD:CANCEL, an event change re-sends
+  `registration_updated`; plus Google/Outlook links. Built at send time from public fields only -- the
+  private join link never goes into an invite or a link. The ticket PDF is a typed email-only attachment
+  (`events.ticket`, `id_cards_tickets.render_ticket`) when `events.ticket_designs` is on.
+- **`orders:read`** is a signed server read (tenant-bound, `events.api_read` + `events.orders`),
+  keyset-paginated, with totals, lines and seat counts and never buyer or attendee contacts.
+
 ## Backup, restore and tenant migration (Phase 5A/5B and Lane D D1-D4/D6 built)
 
 - **A restored `DataExportJob` download bearer is never usable.** The download route is anonymous,

@@ -331,6 +331,21 @@ the owned registration. New model, serializer and route files are indexed in
 live in `frontend/src/features/inventory/PublicEventDetailPage.tsx` and
 `frontend/src/features/events/`; staff ticketing uses `eventTicketingApi.ts` and the
 `EventInvitesPanel`, `EventTicketsPanel` and `EventPromosPanel` components.
+
+Paid ticketing v2 (release 2 L6): models in `events/models_{orders,checkout_holds,addons,passes,transfers,
+venue_fees}.py`; the order quote `orders_quote.py` (+ `orders_codes.py`, `ticket_tiers.py`), placement
+`orders_checkout.py`, seats and invites `orders_attendees.py`, claims `orders_claims.py` (the
+`orders_context.py` seat context), settlement `orders_settlement.py` (dispatched from
+`payments/admission_settlement.py`), refunds `orders_refunds.py` (+ `payments/services_refund_partial.py`),
+the frozen per-ticket price `orders_pricing.py` (L24 contract), `orders_type_change.py`, `transfers.py`,
+`passes.py`, `addons.py`, `venue_fees.py` (+ `payments/pricing/build_venue.py`), the refund override in
+`cancellation_policy.py`, desk collection in `services_checkin.collect_at_desk`, the sweep
+`reminders_payments.py`, notices `notices_r2_l6.py`, confirmation invites `registration_invites.py`,
+`bookings/confirmation_invites.py`, `makerspaces/calendar_invites.py` and
+`integrations/inline_attachments.py`, and `orders:read` in `views_integration_orders.py`. Routes:
+`urls_ticketing.py` (staff), `urls_ticketing_member.py`, the shop in `views_ticketing_shop.py`. Frontend:
+`features/events/ticketing/` (shop, order summary, claim page, my orders) and
+`features/staff/eventTicketing/` (orders, sales rules, add-ons, refund policy, venue fee, passes, desk).
 Organizer, audience and partner pickers share `features/staff/AsyncSearchPicker.tsx` through
 `EventPartnerPickers.tsx`; `EventPartnersSection.tsx` is the create form's "Organizers & partners" step,
 `EventAudienceOrganizations.tsx` the Settings-tab audience editor, `EventCheckInList.tsx` the Check-in

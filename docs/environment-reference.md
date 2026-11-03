@@ -70,7 +70,7 @@ TLS hardening is gated on `ENABLE_HTTPS`, never on `DEBUG`. Internal plain-HTTP 
 | `SECURE_HSTS_SECONDS` | `31536000 if ENABLE_HTTPS else 0` | Start at 0 or small while verifying domains. |
 | `SECURE_SSL_REDIRECT` | `ENABLE_HTTPS` |  |
 | `SESSION_COOKIE_SECURE` | `ENABLE_HTTPS` |  |
-| `TRUSTED_PROXY_COUNT` | `None` | Proxies in front of the backend; required when DEBUG is off. Throttles key on the real client IP only when this is right. |
+| `TRUSTED_PROXY_COUNT` | `None` | Proxies in front of the backend; required when DEBUG is off. Throttles, django-axes and the automatic IP block all key on the real client IP only when this is right: too high and a client can spoof its address, too low and every client looks like the proxy. A request whose `X-Forwarded-For` chain is shorter than this is never counted towards an automatic block (logged once as `security.proxy_count_exceeds_hops`); `BEHIND_TRUSTED_PROXY=True` with `0` here is warned at startup (`accounts.W002`). |
 | `TRUST_X_FORWARDED_PROTO` | `False` | Trust the proxy's `X-Forwarded-Proto`; only behind a TLS proxy that is the sole path in. |
 
 ## Managed SaaS mode
@@ -426,11 +426,11 @@ value across those spaces applies. Out-of-range values refuse to start the backe
 | --- | --- | --- |
 | `PASSWORD_BREACH_CHECK_ENABLED` | `True` | Refuse new passwords found in known breaches, using the Have I Been Pwned k-anonymity range API (only a 5-character hash prefix leaves the server). Fail-open: an unreachable service never blocks a password change. |
 | `PASSWORD_BREACH_CHECK_TIMEOUT_SECONDS` | `2` | Time limit for that lookup (1–10 seconds). |
-| `TURNSTILE_SITE_KEY` | empty | Cloudflare Turnstile site key. CAPTCHA stays off until both keys are set. |
+| `TURNSTILE_SITE_KEY` | empty | Cloudflare Turnstile site key. CAPTCHA stays off until both keys are set. Also pass it to the frontend container (the Compose files do) so the SPA's Content-Security-Policy allows `https://challenges.cloudflare.com`; it is public and published in `/api/v1/config` as `turnstile_site_key`. When Turnstile is on, Cloudflare sees the address of anyone asked to solve it (after failed sign-ins); say so in your privacy notice. |
 | `TURNSTILE_SECRET_KEY` | empty | Cloudflare Turnstile secret key (secret-bearing; set it together with the site key). |
 | `TURNSTILE_FAIL_MODE` | `open` | `open` lets a sign-in through when Turnstile cannot be reached; `closed` refuses it. |
 | `TURNSTILE_AFTER_FAILURES` | `3` | Failed sign-ins before the CAPTCHA is shown (1–20). |
-| `TURNSTILE_HOSTNAMES` | empty | Comma-separated hostnames a Turnstile token must have been issued for; empty accepts the request's own host. |
+| `TURNSTILE_HOSTNAMES` | empty | Comma-separated hostnames Turnstile runs on (and a token must have been issued for); empty means the request's own verified origin host. A space's custom domain must also be listed here and in the Cloudflare widget for its `security.captcha_on_sign_in` setting to take effect. |
 | `LOGIN_IP_BLOCK_ENABLED` | `True` | Automatically block a source address that fails sign-in against many different accounts (credential stuffing). Superadmin allow and deny rules in `/control/` always win. |
 | `LOGIN_IP_BLOCK_DISTINCT_ACCOUNTS` | `10` | Distinct accounts one source may fail against inside the window before it is blocked (2–1000). |
 | `LOGIN_IP_BLOCK_WINDOW_SECONDS` | `900` | The counting window (60–86400 seconds). |

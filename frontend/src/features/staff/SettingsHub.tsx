@@ -44,7 +44,7 @@ export function SettingsHub({ makerspace, sectionIds, allowedTabs, tabHref }: Pr
       className="flex min-h-11 min-w-0 items-center gap-3 rounded-xl border border-line bg-surface p-4 hover:bg-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
       <Users aria-hidden="true" size={24} className="shrink-0 text-accent-ink" />
       <span className="grid min-w-0 flex-1 gap-0.5"><span className="font-semibold text-ink">Staff & roles</span>
-        <span className="text-sm text-muted">Create staff accounts for this space, assign their roles and the machine types they manage.</span></span>
+        <span className="text-sm text-muted">Give staff roles to people in this space, invite them by email and choose the machine types they manage.</span></span>
       <span aria-hidden="true" className="text-muted">→</span>
     </Link> : null}
     {allowedTabs.includes("users") ? <SettingsAuthorityCard makerspaceId={makerspace.id} /> : null}

@@ -46,12 +46,16 @@ def member_payment_queryset(user, makerspace_id):
             makerspace_id=claim.makerspace_id,
             member=user,
         )
+    # ``Payment.member`` stays on a merged shell (KEEP_ON_SHELL, U-C), so a person reads
+    # their own charges together with those of every account merged into theirs.
+    from apps.accounts.staff_identity import actor_ids_for
+
     payments = Payment.objects.filter(
         Q(makerspace_id=makerspace_id)
         | Q(
             subject_type=Payment.SubjectType.EVENT_REGISTRATION,
             via_makerspace_id=makerspace_id,
         ),
-        member=user,
+        member_id__in=actor_ids_for(user),
     )
     return restrict_revoked_debts(payments, user, makerspace_id)

@@ -66,10 +66,6 @@ class AuthUserPayload(serializers.Serializer):
     must_change_password = serializers.BooleanField()
     kind = serializers.ChoiceField(choices=("person", "platform"),
                                    help_text="person: one account per person; platform: the superadmin.")
-    account_kind = serializers.ChoiceField(
-        choices=("member", "platform"),
-        help_text="Deprecated alias of kind for one release (member = person). Read kind instead.",
-    )
     is_platform = serializers.BooleanField(help_text="True for the platform superadmin account.")
     has_staff_role = serializers.BooleanField(
         help_text="The person holds an active staff role in at least one servable makerspace.")

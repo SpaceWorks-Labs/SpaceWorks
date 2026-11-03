@@ -189,6 +189,8 @@ INSTALLED_APPS = [
     "apps.devices",
     # Managed-platform hosting requests; inert on self-host.
     "apps.hosting_requests",
+    # Lane L8 (#75d/#120): the Postgres row-level-security backstop (core, never tombstoned).
+    "apps.tenant_rls",
     # Must stay LAST. Django calls ready() in this order, so being last is what
     # guarantees every other app has registered before finalize() freezes the
     # separability registries.
@@ -234,6 +236,9 @@ MIDDLEWARE = [
     "axes.middleware.AxesMiddleware",
     # Masks tenant PII for a superadmin inside a space's staff routes (owner decision #115).
     "apps.accounts.platform_tenant_pii.PlatformTenantPiiMiddleware",
+    # --- lane L8: binds each request's RLS scope once its route is resolved; LAST so every
+    # other layer's own lookups run unbound. Views still scope through rbac (backstop only).
+    "apps.tenant_rls.middleware.TenantRlsBoundaryMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -893,6 +898,11 @@ CELERY_BEAT_SCHEDULE["machine-job-flow"] = {
     "task": "apps.machines.tasks_jobs.sweep_job_flow_task", "schedule": crontab(minute="*/15"),
 }
 # --- end lane L12
+# --- lane L8 (release 2): advance running per-space key jobs (re-encrypt / re-index), bounded.
+CELERY_BEAT_SCHEDULE["advance-key-jobs"] = {
+    "task": "apps.encryption.rekey_tasks.advance_key_jobs_task", "schedule": crontab(minute="*"),
+}
+# --- end lane L8 beat
 
 if "tenant_migration" in TOMBSTONED_APPS:
     CELERY_BEAT_SCHEDULE = {
@@ -1051,6 +1061,14 @@ PII_MASTER_KEY = env("PII_MASTER_KEY", default="")
 PII_MASTER_KEY_PREVIOUS = env("PII_MASTER_KEY_PREVIOUS", default="")
 PII_SEARCH_HASH_KEY = env("PII_SEARCH_HASH_KEY", default="")
 PII_DEK_CACHE_TTL_SECONDS = env.int("PII_DEK_CACHE_TTL_SECONDS", default=300)
+# --- lane L8 (#75d/#120, #128 C-25): row-level security backstop and key rotation.
+# auto = enforce on a narrow runtime role, report-only on an owner role; never refuses to start.
+TENANT_RLS_MODE = env("TENANT_RLS_MODE", default="auto")
+# Tests and the release regression only: bound statements SET LOCAL ROLE to this narrow role.
+TENANT_RLS_PROBE_ROLE = env("TENANT_RLS_PROBE_ROLE", default="")
+# A rotated publishable browser key keeps working this long, then is refused (#77).
+PUBLISHABLE_KEY_ROTATION_GRACE_HOURS = env.int("PUBLISHABLE_KEY_ROTATION_GRACE_HOURS", default=72)
+# --- end lane L8
 PII_AWS_KMS_KEY_ID = env("PII_AWS_KMS_KEY_ID", default="")
 PII_AWS_KMS_REGION = env("PII_AWS_KMS_REGION", default="")
 PII_AWS_KMS_ENDPOINT_URL = env("PII_AWS_KMS_ENDPOINT_URL", default="")

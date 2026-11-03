@@ -138,6 +138,7 @@ class ChangePasswordView(APIView):
 
 class ForgotPasswordView(APIView):
     permission_classes = [AllowAny]
+    login_ip_guard = True  # S-C: platform IP rules, automatic blocks, Turnstile
     throttle_classes = [ScopedRateThrottle, PasswordResetEmailThrottle]
     throttle_scope = "password_reset_request"
 
@@ -175,6 +176,7 @@ class ForgotPasswordView(APIView):
 
 class ResetPasswordConfirmView(APIView):
     permission_classes = [AllowAny]
+    login_ip_guard = True  # S-C: platform IP rules, automatic blocks, Turnstile
     throttle_classes = [ScopedRateThrottle, PasswordResetConfirmEmailThrottle]
     throttle_scope = "password_reset_confirm"
 

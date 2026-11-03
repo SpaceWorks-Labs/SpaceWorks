@@ -55,6 +55,7 @@ from apps.accounts.views_social_helpers import _error, _audit_failure
 
 class SocialNonceView(APIView):
     permission_classes = [AllowAny]
+    login_ip_guard = True  # S-C: platform IP rules, automatic blocks, Turnstile
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "social_nonce"
 
@@ -74,6 +75,7 @@ class SocialNonceView(APIView):
 
 class SocialLoginView(APIView):
     permission_classes = [AllowAny]
+    login_ip_guard = True  # S-C: platform IP rules, automatic blocks, Turnstile
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "social_login"
     provider = None

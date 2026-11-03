@@ -51,6 +51,19 @@ def check_development_attestation(app_configs=None, **kwargs):
     return []
 
 
+@register(Tags.security)
+def check_proxy_topology(app_configs=None, **kwargs):
+    """accounts.W002: a managed proxy deployment with no trusted proxy hop resolves every
+    client to the proxy, so throttles, axes and the automatic IP block all see one address."""
+    if settings.BEHIND_TRUSTED_PROXY and not settings.TRUSTED_PROXY_COUNT:
+        return [Warning(
+            "BEHIND_TRUSTED_PROXY is on but TRUSTED_PROXY_COUNT is 0.",
+            hint="Set TRUSTED_PROXY_COUNT to the number of proxies in front of the backend.",
+            id="accounts.W002",
+        )]
+    return []
+
+
 @register(Tags.database)
 def check_legacy_native_identities(app_configs=None, databases=None, **kwargs):
     from apps.accounts.native_app_identity import eligible_registrations

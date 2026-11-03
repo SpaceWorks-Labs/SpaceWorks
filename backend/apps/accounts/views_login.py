@@ -26,6 +26,7 @@ from apps.openapi import LOGIN_EXAMPLE
 
 class LoginView(TokenObtainPairView):
     permission_classes = [AllowAny]
+    login_ip_guard = True  # S-C: platform IP rules, automatic blocks, Turnstile
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "login"
     serializer_class = LoginSerializer

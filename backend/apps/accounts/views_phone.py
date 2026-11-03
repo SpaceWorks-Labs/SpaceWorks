@@ -70,6 +70,7 @@ class PhoneLoginStartView(APIView):
     # the Refused route policy before this endpoint can mint another credential.
     authentication_classes = [SpaceWorksJWTAuthentication]
     permission_classes = [AllowAny]
+    login_ip_guard = True  # S-C: platform IP rules, automatic blocks, Turnstile
     throttle_classes = [PhoneOtpRequestThrottle, PhoneOtpNumberThrottle]
 
     @extend_schema(
@@ -111,6 +112,7 @@ class PhoneLoginConfirmView(APIView):
 
     authentication_classes = [SpaceWorksJWTAuthentication]
     permission_classes = [AllowAny]
+    login_ip_guard = True  # S-C: platform IP rules, automatic blocks, Turnstile
     throttle_classes = [PhoneLoginConfirmThrottle, PhoneConfirmNumberThrottle]
 
     @extend_schema(

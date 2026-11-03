@@ -37,6 +37,7 @@ def _failure(reason):
 
 class GithubBrowserStartView(APIView):
     permission_classes = [AllowAny]
+    login_ip_guard = True  # S-C: platform IP rules, automatic blocks, Turnstile
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "social_nonce"
 
@@ -61,6 +62,7 @@ class GithubBrowserStartView(APIView):
 
 class GithubBrowserCallbackView(APIView):
     permission_classes = [AllowAny]
+    login_ip_guard = True  # S-C: platform IP rules, automatic blocks, Turnstile
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "social_login"
 

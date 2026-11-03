@@ -23,6 +23,9 @@ class PublicConfigSerializer(serializers.Serializer):
     passkeys_enabled = serializers.BooleanField(
         help_text="Passkey sign-in and registration are offered (the platform switch; a person's staff spaces "
                   "may still turn them off for that person). Passkeys are never required.")
+    turnstile_site_key = serializers.CharField(
+        required=False, help_text="Cloudflare Turnstile site key; present only when Turnstile is configured. "
+                                  "Show the widget when a sign-in answers captcha_required.")
     native = NativeConfigSerializer(required=False)
 
 
@@ -126,6 +129,10 @@ class PublicConfigView(APIView):
 
         if public_available():
             payload["hosting_requests"] = {"enabled": True}
+        from apps.accounts.turnstile import configured as turnstile_configured
+
+        if turnstile_configured():  # omitted until both keys are set, like social_auth
+            payload["turnstile_site_key"] = settings.TURNSTILE_SITE_KEY
         if mobile_grant_creation_enabled():
             payload["native"] = native_config()
         return Response(payload)

@@ -191,29 +191,14 @@ def failures(source, identifier=""):
 
 
 # --- Remembered-device bypass (Q12) ------------------------------------------------------
-# LOCAL reader of S-B's signed ``sw_device`` cookie: ``signing.dumps({"d": <128-bit>},
-# salt="accounts.device")``, stored as ``KnownDevice.device_hmac`` = this HMAC of ``d``.
-# S-B replaces ``known_device_hmac`` with ``device_memory.lookup`` at its merge.
+# S-B's ``device_memory.lookup`` reads the signed ``sw_device`` cookie (or a native app's
+# ``X-Device-Trust``) and names a live ``KnownDevice`` inside the platform window.
 def known_device_hmac(request):
     """The HMAC of a valid remembered-device cookie that matches a live KnownDevice."""
-    from django.core import signing
+    from apps.accounts.device_memory import lookup
 
-    from apps.accounts.login_security_contract import DEVICE_COOKIE
-    from apps.accounts.models import KnownDevice
-
-    raw = getattr(request, "COOKIES", {}).get(DEVICE_COOKIE)
-    if not raw:
-        return ""
-    try:
-        device = signing.loads(raw, salt="accounts.device", max_age=400 * 86400).get("d")
-    except (signing.BadSignature, AttributeError):
-        return ""
-    if not isinstance(device, str) or not device:
-        return ""
-    digest = salted_hmac("spaceworks.accounts.device_memory.v1", device, algorithm="sha256").hexdigest()
-    fresh = timezone.now() - timedelta(days=settings.LOGIN_REMEMBERED_DEVICE_DAYS)
-    live = KnownDevice.objects.filter(device_hmac=digest, revoked_at__isnull=True, last_verified_at__gte=fresh)
-    return digest if live.exists() else ""
+    row = lookup(request)
+    return row.device_hmac if row is not None else ""
 
 
 def device_bypasses_auto_block(request):

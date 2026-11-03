@@ -6285,6 +6285,8 @@ export type DiscoveryCard = {
   "makerspace_name": string;
 };
 
+export type DispositionEnum = "needs_fix" | "remove";
+
 export type Dispute = {
   "id": number;
   "payment_id": number;
@@ -9505,7 +9507,9 @@ export type IssuePhotoUploadResponse = {
 };
 
 export type IssueReject = {
-  "reason": string;
+  "item_id": number;
+  "broken"?: number;
+  "disposition"?: DispositionEnum;
 };
 
 export type IssueReportCreate = {
@@ -9583,6 +9587,10 @@ export type IssueReportList = {
   "updated_at": string;
   "fixed_at"?: string | null;
   "closed_at"?: string | null;
+};
+
+export type IssueReportReject = {
+  "reason": string;
 };
 
 export type IssueRequest = {

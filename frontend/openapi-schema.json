@@ -51017,17 +51017,17 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/IssueReject"
+                                "$ref": "#/components/schemas/IssueReportReject"
                             }
                         },
                         "application/x-www-form-urlencoded": {
                             "schema": {
-                                "$ref": "#/components/schemas/IssueReject"
+                                "$ref": "#/components/schemas/IssueReportReject"
                             }
                         },
                         "multipart/form-data": {
                             "schema": {
-                                "$ref": "#/components/schemas/IssueReject"
+                                "$ref": "#/components/schemas/IssueReportReject"
                             }
                         }
                     },
@@ -198141,6 +198141,14 @@
                     "url"
                 ]
             },
+            "DispositionEnum": {
+                "enum": [
+                    "needs_fix",
+                    "remove"
+                ],
+                "type": "string",
+                "description": "* `needs_fix` - needs_fix\n* `remove` - remove"
+            },
             "Dispute": {
                 "type": "object",
                 "properties": {
@@ -213977,13 +213985,25 @@
             "IssueReject": {
                 "type": "object",
                 "properties": {
-                    "reason": {
-                        "type": "string",
-                        "maxLength": 2000
+                    "item_id": {
+                        "type": "integer"
+                    },
+                    "broken": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "default": 0
+                    },
+                    "disposition": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/DispositionEnum"
+                            }
+                        ],
+                        "default": "needs_fix"
                     }
                 },
                 "required": [
-                    "reason"
+                    "item_id"
                 ]
             },
             "IssueReportCreate": {
@@ -214341,6 +214361,18 @@
                     "title",
                     "updated_at",
                     "work_order_id"
+                ]
+            },
+            "IssueReportReject": {
+                "type": "object",
+                "properties": {
+                    "reason": {
+                        "type": "string",
+                        "maxLength": 2000
+                    }
+                },
+                "required": [
+                    "reason"
                 ]
             },
             "IssueRequest": {

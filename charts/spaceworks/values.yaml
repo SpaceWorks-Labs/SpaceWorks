@@ -28,6 +28,7 @@ frontendEnv:
   WEB_ANALYTICS_COLLECT_URL: ""
   WEB_ANALYTICS_DOMAIN: ""
   WEB_ANALYTICS_EXTRA_CONNECT_ORIGINS: ""
+  TURNSTILE_SITE_KEY: ""
 service:
   type: ClusterIP
   port: 80

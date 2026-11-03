@@ -22,7 +22,9 @@ logger = logging.getLogger(__name__)
 SOURCE = "integrations.invitation"
 EVENT = "invitation"
 INVITE_MODELS = {"events": "events.EventStaffGrantInvite", "bookings": "bookings.BookingSpaceStaffGrantInvite",
-                 "members": "organizations.OrganizationInvitation"}
+                 "members": "organizations.OrganizationInvitation",
+                 # U-B: staff-role invitations (redeemed = accepted_at), sent under feature "members".
+                 "staff_roles": "accounts.StaffInvitation"}
 
 
 def _account(email):
@@ -33,8 +35,11 @@ def _account(email):
                                access_status="active", is_tenant_dump_stub=False).order_by("pk").first()
 
 
-def dispatch_invite_chat(makerspace, *, feature, invite, email, label, link):
-    """Fail-safe: a chat problem never affects the invitation or its email."""
+def dispatch_invite_chat(makerspace, *, feature, invite, email, label, link, invite_kind=None):
+    """Fail-safe: a chat problem never affects the invitation or its email.
+
+    ``invite_kind`` names the invitation model (``INVITE_MODELS``) when it differs from
+    the notification feature it is sent under."""
     from .models_contract import NotificationDelivery
     from .notification_outbox import emit
     try:
@@ -44,9 +49,9 @@ def dispatch_invite_chat(makerspace, *, feature, invite, email, label, link):
         with transaction.atomic():
             envelope = emit(
                 makerspace=makerspace, recipient=user, feature=feature, stream=feature, event=EVENT,
-                audience="member", dedup_key=f"invite:{feature}:{invite.pk}:{sha256(link.encode()).hexdigest()[:24]}",
+                audience="member", dedup_key=f"invite:{invite_kind or feature}:{invite.pk}:{sha256(link.encode()).hexdigest()[:24]}",
                 source_kind=SOURCE, source_id=str(invite.pk), revision=feature,
-                context={"invite_feature": feature},
+                context={"invite_feature": invite_kind or feature},
                 rendered={"subject": label, "text": f"{label}. Accept it here: {link}", "html": "", "link": link})
             NotificationDelivery.objects.get_or_create(envelope=envelope, channel="email", defaults={
                 "makerspace": makerspace, "target_key": "email", "provider": "builtin",
@@ -63,7 +68,8 @@ def invite_eligible(envelope):
     if label is None or envelope.audience != "member":
         return False
     row = apps.get_model(label).objects.filter(pk=envelope.source_id).first()
-    if row is None or row.redeemed_at is not None or row.revoked_at is not None or row.expires_at <= timezone.now():
+    redeemed = getattr(row, "redeemed_at", None) or getattr(row, "accepted_at", None)
+    if row is None or redeemed is not None or row.revoked_at is not None or row.expires_at <= timezone.now():
         return False
     if label == "organizations.OrganizationInvitation":
         from apps.organizations.models import OrganizationMakerspace

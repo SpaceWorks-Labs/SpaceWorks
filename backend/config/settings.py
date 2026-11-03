@@ -305,6 +305,10 @@ AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
+    # Last, so the cheap local checks run first: HIBP k-anonymity, fail-open (S-C).
+    {
+        "NAME": "apps.accounts.password_breach.BreachedPasswordValidator",
+    },
 ]
 
 LANGUAGE_CODE = "en-us"

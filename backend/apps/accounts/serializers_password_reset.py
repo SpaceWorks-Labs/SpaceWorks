@@ -91,6 +91,8 @@ class PasswordResetFailureSerializer(serializers.Serializer):
 
 class PasswordValidationFailureSerializer(serializers.Serializer):
     new_password = serializers.ListField(child=serializers.CharField())
+    code = serializers.CharField(required=False, help_text="`password_breached` when the password appears in a "
+                                                           "known data breach (Have I Been Pwned).")
 
 
 class RecoveryUnavailableSerializer(serializers.Serializer):

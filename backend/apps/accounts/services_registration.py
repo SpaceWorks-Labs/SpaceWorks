@@ -179,7 +179,8 @@ def register_member(display_name, email, phone, password):
     try:
         validate_password(password)
     except DjangoValidationError as exc:
-        raise serializers.ValidationError({"password": list(exc.messages)}) from exc
+        from apps.accounts.password_breach import error_body
+        raise serializers.ValidationError(error_body("password", exc)) from exc
     now = timezone.now()
     with transaction.atomic():
         user = (

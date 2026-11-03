@@ -6,6 +6,13 @@
 
 ## Condensed changelog (newest first — full detail in `git log`)
 
+- **2026-11-04 -- release 2 L6, paid ticketing v2 and venue fees (#69, #71, #94, #128 C-20, #169).**
+  Multi-ticket orders (one `event_order` Payment, one registration per attendee claimed by signing in),
+  checkout seat holds, tiers, pay-what-you-want, group and hidden tickets, promo limits and a booking fee,
+  add-ons with event-local stock, series passes, transfers and type changes, desk collection, a per-event
+  refund override that only gets more generous after the first sale, venue fees charged on publish,
+  `orders:read`, and calendar invites plus the ticket PDF in confirmation emails. Every refund is a
+  staff-approved refund case.
 - **2026-11-02 -- release 2 L12, machines and loans depth (#76, #77, #94, #140-#142).** One "Request a
   job" flow for every machine type (maker_formats-checked files, checked-in members only) with a visible
   lifecycle: needs changes, quotes priced by L15 and approved by digest (charged actual, capped at the

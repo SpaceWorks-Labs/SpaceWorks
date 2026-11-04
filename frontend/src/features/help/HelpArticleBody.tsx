@@ -30,16 +30,16 @@ export function HelpArticleBody({ body, hrefFor }: { body: string; hrefFor: (tar
       if (block.kind === "steps") {
         return <ol key={index} className="grid gap-3">{block.items.map((item, step) => <li key={step} className="flex gap-3">
           <span aria-hidden="true" className="grid size-7 shrink-0 place-items-center rounded-full bg-accent-soft text-sm font-semibold text-accent-ink">{step + 1}</span>
-          <span className="min-w-0 pt-0.5"><Inline text={item} hrefFor={hrefFor} /></span>
+          <span className="min-w-0 pt-0.5 [overflow-wrap:anywhere]"><Inline text={item} hrefFor={hrefFor} /></span>
         </li>)}</ol>;
       }
       if (block.kind === "bullets") {
-        return <ul key={index} className="grid list-disc gap-2 pl-6 marker:text-muted">{block.items.map((item, n) => <li key={n}><Inline text={item} hrefFor={hrefFor} /></li>)}</ul>;
+        return <ul key={index} className="grid list-disc gap-2 pl-6 marker:text-muted">{block.items.map((item, n) => <li key={n} className="[overflow-wrap:anywhere]"><Inline text={item} hrefFor={hrefFor} /></li>)}</ul>;
       }
       if (block.kind === "note") {
         return <aside key={index} className="flex gap-3 rounded-2xl border border-line bg-surface p-4 text-sm leading-6">
           <Info aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-accent-ink" />
-          <p className="min-w-0"><Inline text={block.text} hrefFor={hrefFor} /></p>
+          <p className="min-w-0 [overflow-wrap:anywhere]"><Inline text={block.text} hrefFor={hrefFor} /></p>
         </aside>;
       }
       if (block.kind === "screenshot") {

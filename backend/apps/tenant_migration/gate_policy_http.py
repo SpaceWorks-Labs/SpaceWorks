@@ -123,6 +123,14 @@ HTTP_ANONYMOUS_EXEMPTIONS = {
     "apps.accounts.views_mfa.MFAEnrollmentView.post": "Global MFA enrollment challenge state.",
     "apps.accounts.views_social_login.SocialNonceView.post": "Global social-login nonce state.",
     "apps.accounts.views_social_login.SocialLoginView.post": "Global social identity and session state.",
+    # Login security S-A (passkeys, web only) and S-B (risk code resend, "this wasn't me").
+    "apps.accounts.passkeys.views.PasskeyAuthenticateOptionsView.post": "Global passkey ceremony state.",
+    "apps.accounts.passkeys.views.PasskeyAuthenticateVerifyView.post": "Global passkey credential and session state.",
+    "apps.accounts.passkeys.views.PasskeyMfaOptionsView.post": "Global passkey ceremony and MFA challenge state.",
+    "apps.accounts.views_login_codes.LoginCodeResendView.post": "Global sign-in challenge state.",
+    "apps.accounts.views_security_alerts.SecurityAlertNotMeView.post": (
+        "Global account-wide revocation; no tenant row or authority."
+    ),
     "apps.payments_rail.views_connect.StripeConnectWebhookView.post": "Platform Connect routing state.",
     **{
         f"apps.hosting_requests.views_public.{view}.post": (

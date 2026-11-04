@@ -307,7 +307,9 @@ for gifts and sponsor money is `payments.donations` (needs the `payments` module
   code). Each gift is a `Donation` and ONE `Payment` (subject `donation`, no tax frozen on a gift),
   raised through `create_payment`; with the rail on the response carries the hosted checkout URL,
   otherwise the space's offline instructions. A guest gets a signed status link
-  (`public/donation-links/<token>`: status, pay, 80G PDF) and never sees anyone else's gift.
+  (`public/donation-links/<token>`: status, pay, an "I've paid" claim into the L5 claim queue when
+  `billing.offline_claims` is on, the 80G PDF) and never sees anyone else's gift. Refusals are one typed
+  400 `{detail, code, field}`.
 - **Desk gifts.** Staff with `view_finance` + `record_payment` record a gift received in person
   (`admin/makerspace/<id>/donations`, POST with the settlement): the charge and its
   `ManualSettlement` receipt in one go, maker-checker honoured.
@@ -333,4 +335,5 @@ for gifts and sponsor money is `payments.donations` (needs the `payments` module
   once (`sponsor-perk-reminders`). A sponsor's agreed payment is an account-less charge staff
   raise (`sponsorship`), settled offline or by an L5 pay link. The wall
   (`public/<slug>/sponsors`, the Pages `sponsors` section, `public/<slug>/events/<token>/sponsors`)
-  shows public fields only; an event's sponsors link to `events.EventSponsor` rows, never copies.
+  shows public fields only; an event's sponsors link to `events.EventSponsor` rows (picked from
+  `sponsors/event-sponsors`), never copies.

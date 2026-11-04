@@ -1,0 +1,60 @@
+"""Analytics views: events, registrations and check-ins. No attendee names, emails, phones,
+answers, join links or check-in tokens: a registration is its member id, ticket and state."""
+
+from .types import Col, View
+
+D = "events"
+VIEWS = (
+    View("events", D, "Events with their dates, capacity and price.",
+         "FROM {events.Event} e", "e.makerspace_id", (
+             Col("event_id", "e.id", "Event id."),
+             Col("series_id", "e.series_id", "Series, if part of one."),
+             Col("category_id", "e.category_id", "Category."),
+             Col("title", "e.title", "Event title."),
+             Col("status", "e.status", "Event state."),
+             Col("starts_at", "e.starts_at", "Starts."),
+             Col("ends_at", "e.ends_at", "Ends."),
+             Col("location_kind", "e.location_kind", "In person, online or hybrid."),
+             Col("delivery_mode", "e.delivery_mode", "How it is delivered."),
+             Col("capacity", "e.capacity", "Capacity."),
+             Col("payment_amount", "e.payment_amount", "Base price."),
+             Col("is_public", "e.is_public", "Public event."),
+             Col("listing", "e.listing", "Listed or unlisted."),
+             Col("requires_approval", "e.registration_requires_approval", "Registrations need approval."),
+             Col("created_at", "e.created_at", "Created."),
+         )),
+    View("event_registrations", D, "Registrations; the attendee is a member id only.",
+         "FROM {events.EventRegistration} r JOIN {events.Event} e ON e.id = r.event_id", "e.makerspace_id", (
+             Col("registration_id", "r.id", "Registration id."),
+             Col("event_id", "r.event_id", "Event (events)."),
+             Col("member_id", "r.member_id", "Member (members)."),
+             Col("ticket_type_id", "r.ticket_type_id", "Ticket type (event_ticket_types)."),
+             Col("status", "r.status", "Registration state."),
+             Col("audience", "r.registration_audience", "Audience it registered under."),
+             Col("quoted_amount", "r.quoted_amount", "Price quoted."),
+             Col("discount_amount", "r.discount_amount", "Discount given."),
+             Col("created_at", "r.created_at", "Registered."),
+             Col("cancelled_at", "r.cancelled_at", "Cancelled."),
+         )),
+    View("event_checkins", D, "Attendance records (each check-in at the door or a station).",
+         "FROM {events.EventCheckInEvent} c", "c.makerspace_id", (
+             Col("checkin_id", "c.id", "Check-in id."),
+             Col("event_id", "c.event_id", "Event (events)."),
+             Col("registration_id", "c.registration_id", "Registration (event_registrations)."),
+             Col("source", "c.source", "Where it was recorded."),
+             Col("attended_at", "c.attended_at", "Attended at."),
+         )),
+    View("event_applications", D, "Applications to events that admit by application (hackathons and others).",
+         "FROM {events.HackathonApplication} a JOIN {events.Event} e ON e.id = a.event_id", "e.makerspace_id", (
+             Col("application_id", "a.id", "Application id."),
+             Col("event_id", "a.event_id", "Event (events)."),
+             Col("member_id", "a.member_id", "Applicant (members)."),
+             Col("registration_id", "a.registration_id", "Registration once admitted (event_registrations)."),
+             Col("cohort_id", "a.cohort_id", "Cohort."),
+             Col("state", "a.state", "Application state."),
+             Col("submitted_at", "a.submitted_at", "Submitted."),
+             Col("offered_at", "a.offered_at", "Offered a place."),
+             Col("response_at", "a.response_at", "Applicant responded."),
+             Col("rsvp_accepted_at", "a.rsvp_accepted_at", "Accepted the offer."),
+         )),
+)

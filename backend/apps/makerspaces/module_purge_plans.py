@@ -207,4 +207,10 @@ PLANS += (ModulePurgePlan(
     "finance receipts and stage forms survive.",
     reimbursement_delete, pii_labels=REIMBURSEMENT_PII_LABELS,
 ),)
+# Lane L25 (#163B): the connection row; its database login is dropped after commit.
+from apps.analytics.purge import analytics_delete  # noqa: E402
+PLANS += (ModulePurgePlan(
+    "analytics", "The Metabase connection, its dashboards list and the space's read-only database login.",
+    analytics_delete,
+),)
 BY_KEY = {plan.key: plan for plan in PLANS}

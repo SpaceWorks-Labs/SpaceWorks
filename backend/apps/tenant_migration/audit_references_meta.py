@@ -281,19 +281,7 @@ AUDIT_META_REFERENCES.update(PUBLIC_SURFACE_AUDIT_EDGES)
 from .audit_references_meta_unified_accounts import UNIFIED_ACCOUNT_AUDIT_EDGES  # noqa: E402
 
 AUDIT_META_REFERENCES.update(UNIFIED_ACCOUNT_AUDIT_EDGES)
-from .audit_references_r2_l5 import EDGES as R2_L5_AUDIT_EDGES  # noqa: E402
+# Release-2 lane edges (L5 onward) compose in lane order in their own module (ceiling split).
+from .audit_references_lanes import lane_edges  # noqa: E402
 
-AUDIT_META_REFERENCES.update(R2_L5_AUDIT_EDGES)
-
-from .audit_references_r2_l15 import EDGES as R2_L15_AUDIT_EDGES  # noqa: E402
-
-AUDIT_META_REFERENCES.update(R2_L15_AUDIT_EDGES)
-from .audit_references_r2_l10 import EDGES as R2_L10_AUDIT_EDGES  # noqa: E402
-AUDIT_META_REFERENCES.update(R2_L10_AUDIT_EDGES)
-
-from .audit_references_l12 import EDGES as L12_AUDIT_EDGES  # noqa: E402
-AUDIT_META_REFERENCES.update(L12_AUDIT_EDGES)
-from .audit_references_l3 import EDGES as L3_AUDIT_EDGES  # noqa: E402
-AUDIT_META_REFERENCES.update(L3_AUDIT_EDGES)
-from .audit_references_r2_l6 import EDGES as R2_L6_AUDIT_EDGES  # noqa: E402
-AUDIT_META_REFERENCES.update(R2_L6_AUDIT_EDGES)
+AUDIT_META_REFERENCES.update(lane_edges())

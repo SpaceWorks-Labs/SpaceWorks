@@ -39,6 +39,9 @@ L5_FINANCE_REPORT_DEFINITIONS = (
     _ledger("finance-bookings", "build_finance_bookings", "Bookings and rooms money", rbac.Action.MANAGE_BOOKINGS,
             schedulable=False),
     _ledger("finance-events", "build_finance_events", "Events money", rbac.Action.MANAGE_EVENTS, schedulable=False),
+    # RP-3: the donations domain has no area manager; only finance staff and the Space Manager see it.
+    _ledger("finance-donations", "build_finance_donations", "Donations and sponsorship money",
+            rbac.Action.VIEW_FINANCE),
     ReportDefinition("event-finance", _LEDGER + "build_event_finance", EVENT_FIELDS,
                      required_action=rbac.Action.MANAGE_EVENTS, title="Money per event against budget",
                      deployment_aggregate=False, required_feature="finance.ledger", schedulable=False),
@@ -59,4 +62,5 @@ L5_FINANCE_REPORT_DEFINITIONS = (
 )
 #: Builders that narrow rows to the viewer's finance areas, so the runner passes `actor`.
 L5_ACTOR_REPORT_KEYS = frozenset({"income-spending", "finance-inventory", "finance-machines", "finance-bookings",
-                                  "finance-events", "event-finance"})
+                                  "finance-events", "event-finance",
+                                  "finance-donations"})

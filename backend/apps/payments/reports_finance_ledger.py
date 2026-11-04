@@ -24,6 +24,8 @@ AREAS = {
     "finance-machines": ("machines",),
     "finance-bookings": ("bookings",),
     "finance-events": ("events",),
+    # RP-3: gifts, pledge periods, sponsorship and donation receipts; only view_finance sees them (#100).
+    "finance-donations": ("donations",),
 }
 
 
@@ -94,6 +96,7 @@ build_finance_inventory = _area_builder("finance-inventory")
 build_finance_machines = _area_builder("finance-machines")
 build_finance_bookings = _area_builder("finance-bookings")
 build_finance_events = _area_builder("finance-events")
+build_finance_donations = _area_builder("finance-donations")
 
 
 def event_finance(space, date_range=None, actor=None, event_id=None):

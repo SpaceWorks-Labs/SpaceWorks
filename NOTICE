@@ -56,3 +56,5 @@ Backend dependencies for passkeys (WebAuthn): webauthn 3.0.1 (py_webauthn, BSD-3
 pyOpenSSL 26.4.0 (Apache-2.0), pyasn1 0.6.5 (BSD-2-Clause) and pyasn1-modules 0.4.2 (BSD-2-Clause);
 tldextract 5.4.0 (BSD-3-Clause) with its bundled Public Suffix List snapshot (MPL-2.0, data only),
 filelock 4.2.4 (MIT) and requests-file 3.0.1 (Apache-2.0).
+
+Frontend dependency for passkeys (WebAuthn): @simplewebauthn/browser 14.0.0 (MIT, no dependencies of its own).

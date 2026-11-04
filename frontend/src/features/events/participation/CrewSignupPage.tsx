@@ -22,10 +22,10 @@ export function CrewSignupPage() {
   const signup = useMutation({ mutationFn: () => memberRequest<State>(url, { method: "POST",
     body: JSON.stringify({ crew_role: role, dietary, notes, show_publicly: shown }) }), onSuccess: save });
   const withdraw = useMutation({ mutationFn: () => memberRequest<State>(url + "withdraw/", { method: "POST", body: "{}" }), onSuccess: save });
-  if (state.error) return <main className="mx-auto max-w-xl p-4"><ErrorText message="This crew sign-up is not open." /></main>;
-  if (!state.data) return <main className="mx-auto max-w-xl p-4"><p role="status">Loading…</p></main>;
+  if (state.error) return <div className="mx-auto max-w-xl p-4"><ErrorText message="This crew sign-up is not open." /></div>;
+  if (!state.data) return <div className="mx-auto max-w-xl p-4"><p role="status">Loading…</p></div>;
   const data = state.data, live = data.crew && ["applied", "approved"].includes(data.crew.state);
-  return <main className="mx-auto grid max-w-xl gap-4 p-4">
+  return <div className="mx-auto grid max-w-xl gap-4 p-4">
     <h1 className="font-display text-2xl text-ink">Join the crew</h1>
     <p className="text-ink">{data.event_title}, {new Date(data.starts_at).toLocaleString()}</p>
     {signup.error || withdraw.error ? <ErrorText message={(signup.error ?? withdraw.error)!.message} /> : null}
@@ -45,5 +45,5 @@ export function CrewSignupPage() {
       <p className="text-sm text-muted">{data.approval_required ? "The organisers review each sign-up." : "You join straight away."} Your crew place is free.</p>
       <button type="submit" className="desk-button justify-self-start" disabled={signup.isPending}>Sign up</button>
     </form></Card> : null}
-  </main>;
+  </div>;
 }

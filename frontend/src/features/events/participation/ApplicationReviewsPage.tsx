@@ -19,7 +19,7 @@ export function ApplicationReviewsPage() {
   const stages = useQuery({ queryKey: ["my-review-stages"], retry: false,
     queryFn: () => memberRequest<ReviewStage[]>("/admin/my-application-reviews/") });
   const [current, setCurrent] = useState<ReviewStage | null>(null);
-  return <main className="mx-auto grid max-w-3xl gap-4 p-4">
+  return <div className="mx-auto grid max-w-3xl gap-4 p-4">
     <h1 className="font-display text-2xl text-ink">Application reviews</h1>
     {stages.error ? <ErrorText message={stages.error.message} /> : null}
     {stages.data?.length === 0 ? <p className="text-muted">You have no open review stages.</p> : null}
@@ -29,7 +29,7 @@ export function ApplicationReviewsPage() {
           <p className="text-sm text-muted">{stage.assigned ?? 0} to review, {stage.submitted ?? 0} done{stage.blind ? " · blind" : ""}</p></div>
         <button type="button" className="desk-button" onClick={() => setCurrent(stage)}>Open</button>
       </div></Card></li>)}</ul>}
-  </main>;
+  </div>;
 }
 
 function StageWorkspace({ stage, onBack }: { stage: ReviewStage; onBack: () => void }) {

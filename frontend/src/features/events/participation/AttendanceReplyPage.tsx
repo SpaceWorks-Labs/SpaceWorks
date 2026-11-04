@@ -23,10 +23,10 @@ export function AttendanceReplyPage() {
   const reply = useMutation({ mutationFn: (answer: "yes" | "no") => memberRequest<Own>(url, {
     method: "POST", body: JSON.stringify({ answer, note }) }),
   onSuccess: data => client.setQueryData(["member-attendance", eventId], data) });
-  if (own.error) return <main className="mx-auto max-w-xl p-4"><ErrorText message="This page is not available." /></main>;
-  if (!own.data) return <main className="mx-auto max-w-xl p-4"><p role="status">Loading…</p></main>;
+  if (own.error) return <div className="mx-auto max-w-xl p-4"><ErrorText message="This page is not available." /></div>;
+  if (!own.data) return <div className="mx-auto max-w-xl p-4"><p role="status">Loading…</p></div>;
   const data = own.data, settled = data.effect !== "none";
-  return <main className="mx-auto grid max-w-xl gap-4 p-4">
+  return <div className="mx-auto grid max-w-xl gap-4 p-4">
     <h1 className="font-display text-2xl text-ink">Are you still coming?</h1>
     <p className="text-ink">{data.event_title}, {new Date(data.starts_at).toLocaleString()}</p>
     {reply.error ? <ErrorText message={reply.error.message} /> : null}
@@ -40,5 +40,5 @@ export function AttendanceReplyPage() {
         <button type="button" className="desk-button" disabled={reply.isPending} onClick={() => reply.mutate("no")}>No, I can't come</button>
       </div>
     </div></Card>}
-  </main>;
+  </div>;
 }

@@ -7,7 +7,8 @@ FAMILY_IDS = {
     "presence": (),
     "hardware_requests": ("request_id", "payment_id"),
     "printing": ("machine_service_request_id", "request_id", "machine_id"),
-    "events": ("event_id", "series_id", "registration_id"),
+    # Lane L21a: application status webhooks carry the application and stage IDs only.
+    "events": ("event_id", "series_id", "registration_id", "application_id", "stage_id", "stage_position"),
     "bookings": ("booking_id", "space_id"),
     "maintenance": ("machine_id", "schedule_id", "maintenance_log_id"),
     "members": ("membership_request_id", "membership_id"),

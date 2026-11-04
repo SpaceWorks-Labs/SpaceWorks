@@ -5989,6 +5989,66 @@ responsibility; local purges never delete shared global organizations or foreign
   token, and the token paths are redacted from request logs. The public events feed lists only
   `listed_q()` published events (unlisted, private, offline and draft never appear).
 
+### Applications, review stages, attendance, crew and check-in lists (release 2 L21a; #128 C-32..C-36, #173)
+
+- **One admission engine.** `events.hackathons` OR `events.applications` opens
+  `events/hackathons/admission_*` (form, review, offers, RSVP, waitlist). An applications-only event
+  is forced to solo mode: no teams, finder or submissions. Neither switch is an authorization
+  fallback, and an enabled config still refuses ordinary registration.
+- **Paid places are charged AFTER confirming (C-34).** The offer and RSVP order is unchanged:
+  `admission_bridge` -> `services_registration_admission.transition_locked("confirm")` ->
+  `service_payments.create_for_registered_registration`. There is no pay-to-accept and no DB guard.
+- **Review stages (C-33).** `AdmissionStage` (at most 20 per event) carries 1-20 reviews per
+  application, at most ten criteria scored 1-5, a blind switch, guidance and a window. Judging rounds
+  keep their floor of three: `assignment_planner.plan_assignments` defaults to `minimum_views=3`
+  and only stages pass 1. Criteria, blind and the target FREEZE at the stage's first review
+  (409 `stage_frozen`). An application's path is append-only `AdmissionStageEntry` rows; the newest
+  `entered` row is the stage it stands in (no rows = the first stage).
+- **A panel seat is the reviewer's only authority, and it widens nothing.** Panel members read only
+  their own assignments in an OPEN stage (answers projected through `review_projection.reviewer_answers`,
+  identity stripped when blind); a non-member reads 404. It grants no `event_authority` permission.
+  Managing stages needs the full manager; panels, assignment and decisions need `review_applications`.
+- **Seeded assignment is reproducible.** BALANCED reuses the judging planner; RANDOM orders each
+  application's eligible reviewers by `sha256(seed:application:reviewer)`. The preview writes nothing;
+  apply recomputes under the event lock and refuses (409 `plan_changed`) unless its fingerprint
+  (stage, version, strategy, seed, pairs) matches; the seed and fingerprint are stored and audited.
+- **`advance` and stale skips.** While stages are on, every staged decision records the stage its
+  application stood in. At release a decision whose application moved (another stage, a new version,
+  no longer undecided) is SKIPPED and audited (`event.application.decision_skipped`), never applied.
+  Advance needs the stage's review coverage (or an audited override) and leaves state and registration
+  untouched. The `stage_advanced` email is a per-event switch, off by default.
+- **Application webhooks carry IDs only.** Status is the event name (`events.application_offered`,
+  ..., `events.application_stage_advanced`); data is the event, application, registration and stage
+  IDs. Answers, scores, notes and reviewer identities never ride it. `applications:read` returns
+  counts per event, by status and stage, never applicants.
+- **Stage-aware reimbursement.** `ReimbursementProgramme.min_application_stage`: a request is allowed
+  once the application stands (submitted, offered, waitlisted or confirmed) in that stage or later.
+  Crew requests (`GrantRequest.kind="crew"`, from a crew place) need `events.crew_claims` and skip the
+  participant rules; money out still goes through the L5 ledger via payouts.
+- **Attendance No never moves money (C-35, #59/#60).** Staff send "Are you still coming?" only by hand,
+  at most every 12 hours (429). With "free the place on No" (off by default): a free place is cancelled
+  through `cancel_registration` (which promotes the waitlist); a paid place is cancelled the same way,
+  whose post-commit charge hook opens a refund DUE case under the policy (or none, if the policy owes
+  nothing); a seat from a multi-ticket order is left to staff. A released place's reply is final.
+- **Re-accept a declined registration (X42)** only from `rejected`, only through
+  `registration_spots_left` under the event lock (409 when full), never for admission-backed rows; a
+  paid one raises its charge again (payment-link path), exactly as a first approval.
+- **Crew never counts (C-36).** A crew place is a registration with `is_crew=True`, written only by
+  `contributions/crew_workflow`: excluded from `capacity.confirmed_occupancy` and every
+  `confirmed_count` annotation, never charged (`create_for_registered_registration` returns early),
+  never part of an order or a team. A person who already holds a participant registration keeps it.
+  Crew membership grants NO event staff permission. Dietary needs are scoped PII and appear only as
+  counts in the catering summary; the public crew section lists opted-in crew with a live public
+  profile only (#25).
+- **Check-in lists never touch entry.** A list scan is its own append-only row; it never marks
+  attendance, changes a registration or writes evidence. "After entry" admits `attended` only; an
+  add-on list admits the BUYER of that add-on on a PAID order, once per unit bought. Archived lists
+  are read-only. Online only (no offline sync in v1).
+- **Event-role desks are web-only (#173).** `accounts/programme_route_catalog_l21a.NATIVE_DECISIONS`
+  records a native decision per route; the crew desk and the review-panel workspace are
+  `web_only` (`origin_scope_programme` refuses a native selection) until L21b's native event-role
+  authority contract exists.
+
 ## Backup, restore and tenant migration (Phase 5A/5B and Lane D D1-D4/D6 built)
 
 - **A restored `DataExportJob` download bearer is never usable.** The download route is anonymous,

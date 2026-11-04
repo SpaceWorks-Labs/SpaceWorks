@@ -33,7 +33,23 @@ def request_facts(*, event, owner_id):
     country = canonical_country(event=event, application=application, registration=registration)
     if country:
         value["country"] = country
+    value.update(participation_facts(event=event, application=application, registration=registration))
     return value
+
+
+STANDING = ("submitted", "offered", "waitlisted", "confirmed")
+
+
+def participation_facts(*, event, application, registration):
+    """Lane L21a: the review stage an application stands in, and whether this is a crew place."""
+    facts = {}
+    if registration is not None and registration.is_crew:
+        facts["crew"] = True
+    if application is not None and application.state in STANDING:
+        from apps.events.hackathons.admission_stages import current_stage
+        stage = current_stage(application)
+        facts["application_stage"] = stage.position if stage else 0
+    return facts
 
 
 def canonical_country(*, event, application, registration):
@@ -57,6 +73,14 @@ def canonical_country(*, event, application, registration):
 
 
 def validate_request(programme, value, facts, *, defer_missing=False):
+    if facts.get("crew") is True:
+        # Crew expense claims (lane L21a) need their own switch; participant rules do not apply.
+        from apps.makerspaces.platform import feature_enabled
+        require(feature_enabled(programme.event.makerspace, "events.crew_claims"), "crew_claims_disabled", status=403)
+        return validate_categories(programme, value)
+    if programme.min_application_stage and not (defer_missing and "application_stage" not in facts):
+        require(facts.get("application_stage", 0) >= programme.min_application_stage,
+                "application_stage_required", status=400)
     if programme.eligible_countries and not (defer_missing and "country" not in facts):
         require(facts.get("country") in programme.eligible_countries, "country_ineligible", status=400)
     if programme.eligible_cohorts and not (defer_missing and "cohort" not in facts):
@@ -65,6 +89,10 @@ def validate_request(programme, value, facts, *, defer_missing=False):
         from decimal import Decimal
         require(value.get("distance_km") is not None and Decimal(value["distance_km"]) >= programme.min_distance_km,
                 "minimum_distance_not_met", status=400)
+    validate_categories(programme, value)
+
+
+def validate_categories(programme, value):
     require(all(row["category"] in programme.allowed_categories and row["category"] not in programme.exclusions
         and row["currency"] == programme.currency for row in value["estimates"]), "claim_category_ineligible", status=400)
 

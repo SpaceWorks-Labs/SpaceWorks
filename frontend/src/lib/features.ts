@@ -190,6 +190,13 @@ export const FEATURE_DEFINITIONS: readonly FeatureDefinition[] = [
   { key: "events.shifts_feed", parent_module: "events", label: "Shift calendar feed" },
   { key: "calendar.combined_feed", parent_module: null, label: "Combined personal calendar" },
   { key: "events.public_feed", parent_module: "events", label: "Public events calendar" },
+  // L21a (#128 C-32..C-36): applications for any event, review stages, attendance, crew, check-in lists.
+  { key: "events.applications", parent_module: "events", label: "Applications for any event" },
+  { key: "events.application_stages", parent_module: "events", label: "Application review stages" },
+  { key: "events.attendance_confirmation", parent_module: "events", label: "Attendance confirmation" },
+  { key: "events.crew", parent_module: "events", label: "Event crew" },
+  { key: "events.crew_claims", parent_module: "events", label: "Crew expense claims" },
+  { key: "events.checkin_lists", parent_module: "events", label: "Custom check-in lists" },
 ];
 
 export function featureEnabled(features: Iterable<string>, key: string) {

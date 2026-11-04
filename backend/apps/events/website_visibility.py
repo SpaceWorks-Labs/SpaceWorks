@@ -89,7 +89,8 @@ def discover_events(spaces, filters=None):
         # projection can inspect loaded feature configuration without a fresh
         # opaque-restore lookup for every row. Never persist this read proof.
         website_host_servable=Value(True),
-        confirmed_count=Count("registrations", filter=Q(registrations__status__in=CONFIRMED_STATUSES)),
+        confirmed_count=Count("registrations", filter=Q(registrations__status__in=CONFIRMED_STATUSES,
+                                                         registrations__is_crew=False)),
     ).order_by("starts_at", "id")
 
     from apps.inventory.search import apply_q

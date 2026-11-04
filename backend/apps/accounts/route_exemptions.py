@@ -36,6 +36,8 @@ NON_ACCOUNT_ROUTES |= {"device-integration-queue", "device-integration-job-repor
 NON_ACCOUNT_ROUTES |= {"wallet-apple-registration", "wallet-apple-serials", "wallet-apple-pass", "wallet-apple-log"}
 # Release 2 L6: signed server reads of ticket orders (`orders:read`).
 NON_ACCOUNT_ROUTES |= {"integration-order-list", "integration-order-detail"}
+# Release 2 L21a: signed server reads of application counts (`applications:read`).
+NON_ACCOUNT_ROUTES |= {"integration-application-counts"}
 
 NON_STAFF_ROUTES = PROVIDER_ONLY_ROUTES | NON_ACCOUNT_ROUTES | PUBLIC_ROUTES
 

@@ -4,7 +4,7 @@ from django.db.models import Q
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 from rest_framework.exceptions import APIException
-from apps.makerspaces.platform import feature_enabled
+from .admission_feature import admission_enabled
 from .admission_decisions import release_decision_locked
 from .admission_models import HackathonApplication, AdmissionWaitlistSweep
 from .admission_transactions import record
@@ -13,7 +13,7 @@ from .review_models import ApplicationDecision, ApplicationDecisionBatch
 
 
 def promote_locked(ctx, *, exclude_application_ids=(), limit=100, restart=True):
-    if (not ctx.config.enabled or not feature_enabled(ctx.event.makerspace, "events.hackathons")
+    if (not ctx.config.enabled or not admission_enabled(ctx.event.makerspace)
             or ctx.event.status != "published" or timezone.now() >= ctx.event.ends_at):
         return {"offered": 0, "skipped": []}
     cursor, _ = AdmissionWaitlistSweep.objects.get_or_create(event=ctx.event)

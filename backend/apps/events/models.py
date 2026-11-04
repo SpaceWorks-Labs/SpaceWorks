@@ -123,6 +123,13 @@ from .models_addons import EventAddon, EventAddonVariant  # noqa: E402
 from .models_passes import EventPassType  # noqa: E402
 from .models_transfers import EventTicketTransfer  # noqa: E402
 from .models_venue_fees import EventVenueFee  # noqa: E402
+# Release 2 L21a: review stages, participation switches and attendance, crew, check-in lists.
+from .hackathons.admission_stage_models import (  # noqa: E402
+    AdmissionStage, AdmissionStageAssignment, AdmissionStageEntry, AdmissionStageReview, AdmissionStageReviewer,
+)
+from .models_participation import EventAttendanceReply, EventAttendanceRound, EventParticipationSettings  # noqa: E402
+from .contributions.models_crew import EventCrewMember  # noqa: E402
+from .models_checkin_lists import EventCheckInList, EventCheckInListScan  # noqa: E402
 __all__ += ["EventOrder", "EventOrderDue", "EventOrderLine", "EventOrderSeat", "EventSalesSettings",
             "EventCheckoutHold", "EventAddon", "EventAddonVariant", "EventPassType", "EventTicketTransfer",
             "EventVenueFee"]
@@ -130,3 +137,6 @@ __all__ += ["EventOrder", "EventOrderDue", "EventOrderLine", "EventOrderSeat", "
 # Release 2 L18: personal shift and combined calendar links.
 from .models_calendar_personal import PersonalCalendarFeed  # noqa: E402
 __all__ += ["PersonalCalendarFeed"]
+__all__ += ["AdmissionStage", "AdmissionStageAssignment", "AdmissionStageEntry", "AdmissionStageReview",
+            "AdmissionStageReviewer", "EventAttendanceReply", "EventAttendanceRound", "EventParticipationSettings",
+            "EventCrewMember", "EventCheckInList", "EventCheckInListScan"]

@@ -9,7 +9,7 @@ VENUE_SOURCES = ("qr", "venue_station", "offline_sync")
 POLICY_FIELDS = frozenset({"enabled", "request_phase", "request_opens_at", "request_closes_at",
     "award_mode", "tier_rules", "allowed_categories", "exclusions", "min_distance_km",
     "eligible_countries", "eligible_cohorts", "award_accept_days", "claim_due_at", "attendance_required",
-    "require_project_submission", "permitted_venue_sources", "category_limits"})
+    "require_project_submission", "permitted_venue_sources", "category_limits", "min_application_stage"})
 
 
 def identifiers(value, pattern, maximum=250):

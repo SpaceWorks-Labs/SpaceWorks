@@ -29,7 +29,7 @@ govern sign-in availability. Membership adds plans, vouching, renewals and the m
 | --- | --- | --- |
 | Inventory & lending | `public_inventory`, `request_workflow`, `staff_admin`, `scanner`, `evidence_uploads`, `qr_management` (core); `guest_handover`, `asset_units`, `containers`, `bulk_import`, `stock_transfers`, `qr_print_batches`, `stocktake`, `devices` | `loans.enabled`, `loans.limits`, `loans.renewals`, `loans.kit_checklist`, `loans.reservations`, `loans.pickup_windows`, `loans.waitlist`, `loans.withdrawals`, `inventory.notify_when_back`, `inventory.expected_back`, `inventory.consumables`, `inventory.vendors`, `inventory.tobuy`, `inventory.warranty`, `inventory.self_checkout`, `inventory.contact_self_checkout`, `inventory.kiosk`, `stocktake.discipline`, `packs.import`, `charges.loans`; `payments.loans` with Online payments |
 | Machines | `machines`, `machine_service`, `printing` | `machines.job_requests`, `machines.job_quotes`, `machines.batch_start`, `machines.pay_before_pickup`, `machines.time_booking`, `machines.sessions`, `machines.maintenance`, `machines.tobuy`, `machines.warranty`, `machines.certifications`, `machines.certification_reminders`, `machines.public_detail`, `machines.material_catalogue`, `machines.structured_intake`, `maintenance.reminders`, `maintenance.meters`, `maintenance.calendar_feed`, `charges.machines`, `notifications.delegated_recipients`; `payments.machines` with Online payments |
-| Events | `events` | `events.api_read`, `events.certificate_designer`, `events.website`, `events.embed`, `events.short_links`, `events.online_delivery`, `events.anonymous_feedback`; `events.broadcasts` with Notifications and Email; `events.organization_audience`, `events.offline_checkin`, `events.invites`, `events.account_registration`, `events.ticket_types`, `events.promo_codes`, `charges.events`; `payments.events` with Online payments; `events.id_cards`, `events.ticket_designs`, `events.wallet_passes`, `events.orders`, `events.seat_holds`, `events.addons`, `events.series_passes`, `events.transfers`, `events.desk_collect`, `events.refund_override`, `events.venue_fees`, `events.calendar_feed`, `events.shifts_feed`, `events.public_feed` |
+| Events | `events` | `events.api_read`, `events.certificate_designer`, `events.website`, `events.embed`, `events.short_links`, `events.online_delivery`, `events.anonymous_feedback`; `events.broadcasts` with Notifications and Email; `events.organization_audience`, `events.offline_checkin`, `events.invites`, `events.account_registration`, `events.ticket_types`, `events.promo_codes`, `charges.events`; `payments.events` with Online payments; `events.id_cards`, `events.ticket_designs`, `events.wallet_passes`, `events.orders`, `events.seat_holds`, `events.addons`, `events.series_passes`, `events.transfers`, `events.desk_collect`, `events.refund_override`, `events.venue_fees`, `events.applications`, `events.application_stages`, `events.attendance_confirmation`, `events.crew`, `events.crew_claims`, `events.checkin_lists`, `events.calendar_feed`, `events.shifts_feed`, `events.public_feed` |
 | Bookings | `bookings` | `bookings.recurring`, `bookings.staff_grants`, `bookings.clone`, `bookings.staff_tools`, `bookings.confirmations`, `bookings.checkin`, `bookings.passes`, `bookings.api_read`, `bookings.website`, `bookings.embed`, `bookings.calendar_feed`, `charges.bookings`; `bookings.broadcasts` with Notifications and Email; `bookings.analytics`, `bookings.utilization_pdf`, `bookings.exports` with Reports; `payments.bookings` with Online payments |
 | Membership | `membership`, `mobile` | `membership.auto_renew`, `membership.lifecycle_mail`, `membership.self_service`, `membership.self_export`, `membership.vouching`, `membership.application_form`, `membership.broadcasts`, the 14 release-2 lifecycle switches (`membership.plan_rules` … `membership.monthly_summary`), `mobile.push`, `mobile.watch_actions`, `charges.membership`; `payments.membership` with Online payments; `membership.id_programmes`, `membership.wallet_passes`; `membership.import_sheets`, `membership.id_programmes_import_sheets` |
 | Online payments | `payments` | `payments.enabled` plus the online-payment feature of each selected domain |
@@ -318,6 +318,21 @@ case. Registration and booking confirmation emails carry an `.ics` invite (and, 
 `events.ticket_designs`, the ticket PDF) and "add to calendar" links; the private join link never
 rides the invite. A purge of Events deletes orders, seats, dues and holds with their events;
 the payment ledger rows stay (they are permanently core).
+
+**Applications, review stages, attendance, crew and check-in lists (release 2 L21a).** Six
+capabilities, all off by default, keep their data when turned off. `events.applications` opens the
+hackathon admission engine (form, review, offers, RSVP, waitlist) on any one-off event, without
+teams or submissions; `events.application_stages` adds review stages, each with its own reviewer
+panel, criteria, blind switch and 1 to 20 reviews per application, a seeded reviewer assignment and
+an "advance" decision. Paid places are still charged after the place is confirmed.
+`events.attendance_confirmation` lets staff ask "Are you still coming?" (never automatically, 12
+hours apart); with the per-event switch "free the place on No" a free place goes to the waitlist and
+a paid one is cancelled under the refund policy, any refund waiting for staff approval.
+`events.crew` adds the organising crew: a reviewed sign-up link, free crew places outside capacity,
+a catering count and an opt-in public crew section; `events.crew_claims` (with Event reimbursements)
+lets crew claim expenses. `events.checkin_lists` adds swag, meal and workshop lists beside entry
+check-in. Turning any of them off hides its screens and its routes answer 404; a purge of Events
+deletes this data with its events.
 
 **Programme checkpoint (2026-10-18, `f1ef7736`): keep the new features off.** Hackathons
 are features inside Events, not a separate module. Five declared switches default off:
@@ -970,6 +985,12 @@ its parent module is off.
 | `calendar.combined_feed` | standalone | | One private link per person with their bookings, registrations and shifts in this space | No combined link |
 | `events.public_feed` | `events` | | A public calendar of the space's listed, published events | No public calendar |
 | `events.venue_fees` | `events` | | The space charges an outside organiser for hosting: flat and/or per hour from the space default, a room override or the event's own amount, charged once on publish | No venue fee is configured or charged; raised charges are kept |
+| `events.applications` | `events` | | Applications for any one-off event: a form, review, offer, RSVP and waitlist, like hackathon admission without teams; paid places are charged after confirming | Application routes answer 404 on events without hackathons; applications are kept |
+| `events.application_stages` | `events` (needs `events.applications`) | | Review stages: a panel per stage, at most ten criteria scored 1 to 5, blind review, 1 to 20 reviews per application, a seeded BALANCED or RANDOM assignment and an "advance" decision; an optional stage-advanced email per event | One review round per application; stages, panels and reviews are kept |
+| `events.attendance_confirmation` | `events` | | Staff ask registered people "Are you still coming?" (12 hours apart, never automatic); replies show in the guest list, at the desk and in the export; per event, a No can free the place | No attendance emails or reply page; replies are kept |
+| `events.crew` | `events` | | The event crew: a reviewed sign-up link, free crew places outside capacity, a catering count, an opt-in public crew section and a crew chip on badges and cards; crew gain no staff access | No crew screens or sign-up; crew rows and places are kept |
+| `events.crew_claims` | `events` (needs `events.crew` and `event_reimbursements`) | | Crew members claim expenses through event reimbursements; money out goes through the expense ledger | Crew expense requests are refused |
+| `events.checkin_lists` | `events` | | Swag, meal and workshop lists beside entry check-in, optionally only after entry or only for buyers of an add-on (counted by quantity); online only | No lists; scans are kept |
 
 The `payments.<area>` switches are **off by default and stay inert until credentials resolve** —
 turning one on cannot start charging anyone by itself. They only put a card rail behind a debt the

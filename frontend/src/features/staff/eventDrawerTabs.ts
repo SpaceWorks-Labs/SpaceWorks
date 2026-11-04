@@ -21,6 +21,9 @@ export const MORE_SECTIONS = [
   { key: "programme-setup", label: "Programme setup" },
   { key: "stage-forms", label: "Stage forms" },
   { key: "reimbursements", label: "Travel support" },
+  // Lane L21a: the event crew and extra check-in lists (swag, meals, workshops).
+  { key: "crew", label: "Crew" },
+  { key: "checkin-lists", label: "Check-in lists" },
 ] as const;
 export type MoreSection = typeof MORE_SECTIONS[number]["key"];
 
@@ -35,25 +38,30 @@ export function eventDrawerSurfaces(event: StaffEvent | undefined, access: Retur
   const invites = access.invitations && ticketing.includes("events.invites");
   const ticketTypes = access.manager && ticketing.includes("events.ticket_types");
   const promos = access.manager && ticketing.includes("events.promo_codes");
+  // Applications run on hackathons and, with events.applications, on any one-off event (#128 C-32).
+  const admission = enabledFeatures.includes("events.hackathons") || enabledFeatures.includes("events.applications");
+  const attendance = enabledFeatures.includes("events.attendance_confirmation") && access.registrations;
   const sections: Record<MoreSection, boolean> = {
     tickets: invites || ticketTypes || promos,
     speakers: access.edit || access.manager,
     feedback: access.edit || access.registrations,
-    broadcasts: access.registrations && Boolean(event?.broadcasts_enabled),
+    broadcasts: (access.registrations && Boolean(event?.broadcasts_enabled)) || attendance,
     analytics: Boolean(event?.report_features?.includes("analytics")),
     website: ticketing.includes("events.website") && (access.edit || access.publish),
     team: access.manager,
     settings: access.edit || access.publish,
-    applications: enabledFeatures.includes("events.hackathons") && (access.applications || access.hackathon),
+    applications: admission && (access.applications || access.hackathon),
     "programme-teams": enabledFeatures.includes("events.hackathons") && (access.teams || access.hackathon),
     judging: enabledFeatures.includes("events.hackathons") && (access.hackathon || access.judge || access.sponsor),
     "mentor-desk": enabledFeatures.includes("events.mentoring") && access.mentors,
     volunteers: enabledFeatures.includes("events.volunteering") && access.volunteers,
     certificates: ticketing.includes("events.certificate_designer") && (access.edit || access.manager || access.checkIn),
-    "programme-setup": enabledFeatures.includes("events.hackathons") && access.hackathon,
+    "programme-setup": admission && access.hackathon,
     // Stage forms are Events core; travel support needs its own module and the screening grant.
     "stage-forms": access.edit || access.registrations,
     reimbursements: enabledModules.includes("event_reimbursements") && (access.manager || access.reimbursements),
+    crew: enabledFeatures.includes("events.crew") && access.volunteers,
+    "checkin-lists": enabledFeatures.includes("events.checkin_lists") && access.checkIn,
   };
   return {
     ticketing, checkable, invites, ticketTypes, promos, sections,

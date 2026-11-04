@@ -41,7 +41,7 @@ def public_events_for(organization, *, period="upcoming", now=None):
     if period == "past":
         return rows.filter(status__in=("published", "completed"), ends_at__lt=now).order_by("-ends_at", "-id")
     return rows.filter(status="published", ends_at__gte=now).annotate(confirmed_count=Count("registrations", filter=Q(
-        registrations__status__in=("registered", "attended")))).order_by("starts_at", "id")
+        registrations__status__in=("registered", "attended"), registrations__is_crew=False))).order_by("starts_at", "id")
 
 
 def space_card(space):

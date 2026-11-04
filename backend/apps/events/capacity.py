@@ -13,8 +13,9 @@ CONFIRMED_STATUSES = (
 def confirmed_occupancy(event):
     confirmed = getattr(event, 'confirmed_count', None)
     if confirmed is None:
+        # Crew places (lane L21a, #128 C-36) never count against capacity.
         confirmed = event.registrations.filter(
-            status__in=CONFIRMED_STATUSES
+            status__in=CONFIRMED_STATUSES, is_crew=False,
         ).count()
     return confirmed
 

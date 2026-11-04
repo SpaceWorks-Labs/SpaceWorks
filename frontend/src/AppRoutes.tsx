@@ -44,6 +44,10 @@ const PublicMachineServiceStatusPage = lazy(() => import("./features/machine-ser
 const JobRequestPage = lazy(() => import("./features/machine-jobs/JobRequestPage").then((m) => ({ default: m.JobRequestPage })));
 const TechnicianOptInPage = lazy(() => import("./features/repairs/TechnicianOptInPage").then((m) => ({ default: m.TechnicianOptInPage })));
 const MyMachineJobsPage = lazy(() => import("./features/machine-jobs/MyMachineJobsPage").then((m) => ({ default: m.MyMachineJobsPage })));
+// Lane L21a: the "still coming?" reply page, the crew sign-up link and the review-panel workspace.
+const AttendanceReplyPage = lazy(() => import("./features/events/participation/AttendanceReplyPage").then((m) => ({ default: m.AttendanceReplyPage })));
+const CrewSignupPage = lazy(() => import("./features/events/participation/CrewSignupPage").then((m) => ({ default: m.CrewSignupPage })));
+const ApplicationReviewsPage = lazy(() => import("./features/events/participation/ApplicationReviewsPage").then((m) => ({ default: m.ApplicationReviewsPage })));
 const MachineJobPage = lazy(() => import("./features/machine-jobs/MachineJobPage").then((m) => ({ default: m.MachineJobPage })));
 const UseMachinePage = lazy(() => import("./features/machine-sessions/UseMachinePage").then((m) => ({ default: m.UseMachinePage })));
 const MySessionsPage = lazy(() => import("./features/machine-sessions/MySessionsPage").then((m) => ({ default: m.MySessionsPage })));
@@ -200,6 +204,9 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
       <Route path="/member/account" element={<MemberAccountPage />} />
       <Route path="/member/events/:registrationId/ticket" element={<MemberEventTicketPage />} />
       <Route path="/member/events/history" element={<MemberEventHistoryPage />} />
+      <Route path="/member/events/:eventId/attendance" element={<AttendanceReplyPage />} />
+      <Route path="/member/events/:eventId/crew" element={<CrewSignupPage />} />
+      <Route path="/member/application-reviews" element={<ApplicationReviewsPage />} />
       <Route path="/member/speaker-claim" element={<SpeakerClaimPage />} />
       <Route path="/member/orders" element={<MemberOrdersPage />} />
       <Route path="/member/orders/:orderId" element={<MemberOrdersPage />} />
@@ -251,6 +258,9 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
       <Route path="/m/:slug/member/account" element={<MemberAccountPage />} />
       <Route path="/m/:slug/member/events/:registrationId/ticket" element={<MemberEventTicketPage />} />
       <Route path="/m/:slug/member/events/history" element={<MemberEventHistoryPage />} />
+      <Route path="/m/:slug/member/events/:eventId/attendance" element={<AttendanceReplyPage />} />
+      <Route path="/m/:slug/member/events/:eventId/crew" element={<CrewSignupPage />} />
+      <Route path="/m/:slug/member/application-reviews" element={<ApplicationReviewsPage />} />
       <Route path="/m/:slug/member/speaker-claim" element={<SpeakerClaimPage />} />
       <Route path="/member" element={<MemberArea />} />
       <Route path="/member/account" element={<MemberAccountPage />} />

@@ -30,6 +30,8 @@ class ReimbursementProgramme(Versioned):
     min_distance_km = models.DecimalField(max_digits=8, decimal_places=3, null=True)
     eligible_countries = models.JSONField(default=list)
     eligible_cohorts = models.JSONField(default=list)
+    #: Lane L21a: a request is allowed once the application reaches this review stage and stands.
+    min_application_stage = models.PositiveSmallIntegerField(null=True, blank=True)
     award_accept_days = models.PositiveSmallIntegerField(default=4)
     claim_due_at = models.DateTimeField()
     attendance_required = models.BooleanField(default=True)

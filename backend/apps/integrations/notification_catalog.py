@@ -101,6 +101,9 @@ FEATURE_EVENTS[F.EVENTS] += ("order_confirmed", "order_payment_reminder", "order
                              "registration_updated", "ticket_pay_link")
 # Release 2 L18: the giver's receipt and pledge reminder, and sponsor perks coming due (staff).
 FEATURE_EVENTS[F.PAYMENTS] += ("donation_received", "pledge_due", "perk_due")
+# Release 2 L21a: stage advances, attendance confirmation and its replies, crew invites and decisions.
+FEATURE_EVENTS[F.EVENTS] += ("application_stage_advanced", "attendance_confirmation", "attendance_reminder",
+                             "attendance_replied", "crew_invited", "crew_decided")
 
 # Exact default on/off per (feature, channel). Preserves today's behavior: hardware/printing
 # email + hardware Telegram on; bookings email (Part J seam) + bookings Telegram on; Slack/

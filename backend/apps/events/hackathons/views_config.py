@@ -18,9 +18,9 @@ class ConfigView(AdminView):
     @extend_schema(tags=["Event programme"], request=None, responses={200: ConfigSerializer, **ERRORS})
     def get(self, request, pk):
         event = event_authority.get_event(request.user, pk, None)
-        from apps.makerspaces.platform import feature_enabled
+        from .admission_feature import admission_enabled
         from .admission_errors import fail
-        if not feature_enabled(event.makerspace, "events.hackathons"):
+        if not admission_enabled(event.makerspace):
             fail("not_found", "Not found.", status=404)
         config = HackathonConfig.objects.filter(event=event).first()
         if not config:

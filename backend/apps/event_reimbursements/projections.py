@@ -25,6 +25,7 @@ def programme_detail(row, *, finance=False):
         "allowed_categories": row.allowed_categories, "exclusions": row.exclusions, "claim_due_at": row.claim_due_at,
         "attendance_required": row.attendance_required, "require_project_submission": row.require_project_submission,
         "min_distance_km": str(row.min_distance_km) if row.min_distance_km is not None else None,
+        "min_application_stage": row.min_application_stage,
         "award_accept_days": row.award_accept_days, "category_limits": row.category_limits,
         "finance_policy_revision": row.finance_policy_revision}
     if finance:
@@ -35,7 +36,7 @@ def programme_detail(row, *, finance=False):
 
 
 def request_detail(row, *, sensitive=False, screening=False):
-    value = {"id": row.pk, "uuid": str(row.uuid), "version": row.version, "state": row.state,
+    value = {"id": row.pk, "uuid": str(row.uuid), "version": row.version, "state": row.state, "kind": row.kind,
         "member_id": row.member_id, "currency": row.currency, "estimated_total_minor": row.estimated_total_minor,
         "category_estimates": row.category_estimates, "submitted_at": row.submitted_at, "reason_code": row.reason_code}
     if sensitive:

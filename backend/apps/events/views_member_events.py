@@ -95,7 +95,7 @@ class MemberCollaborativeEventListView(APIView):
             .annotate(
                 confirmed_count=Count(
                     "registrations",
-                    filter=Q(
+                    filter=Q(registrations__is_crew=False,
                         registrations__status__in=(
                             EventRegistration.Status.REGISTERED,
                             EventRegistration.Status.ATTENDED,

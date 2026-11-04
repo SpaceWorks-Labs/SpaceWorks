@@ -23,7 +23,10 @@ FORMS = {
 def provider(key):
     model, field, selector_name, feature = FORMS[key]
     def resolve(*, event, actor, selector, locked):
-        require_feature(event.makerspace, feature)
+        from apps.events.hackathons.admission_feature import admission_enabled
+        # The application form serves hackathons and any one-off event (#128 C-32).
+        if key != "application" or not admission_enabled(event.makerspace):
+            require_feature(event.makerspace, feature)
         rows = model.objects.select_for_update() if locked else model.objects.all()
         filters = {"event_id": event.pk}
         if selector_name:

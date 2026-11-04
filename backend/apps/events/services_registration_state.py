@@ -187,6 +187,40 @@ def promote_registration(registration, *, actor):
     )
 
 
+@event_write(permission="manage_registrations")
+def reaccept_registration(registration, *, actor):
+    """Re-accept a declined (rejected) registration (lane L21a, X42).
+
+    The seat is checked under the event lock like any admission; a full event refuses
+    rather than overbooking. A paid registration goes back through the charge and the
+    payment-link path, exactly as a first approval does.
+    """
+    services = _boundary()
+    event = services._locked_event(registration.event_id, lock_makerspace=False)
+    _fence(event)
+    locked = _lock_registration(event, registration.pk)
+    require_ordinary_transition(locked)
+    if locked.status != EventRegistration.Status.REJECTED or not _decision_is_open(event):
+        raise EventInvalidTransition("Only a declined registration for an open event can be re-accepted.")
+    from .organization_audience import require_queued_admission
+    require_queued_admission(event, locked)
+    available = registration_spots_left(event, locked.ticket_type)
+    if available is not None and available <= 0:
+        raise CapacityConflict("No event capacity is available.")
+    locked.status = EventRegistration.Status.REGISTERED
+    locked.version += 1
+    locked.save(update_fields=["status", "version"])
+    calendar_registration_changed(locked)
+    payment = create_for_registered_registration(locked, actor)
+    from .services_registration_preparation import issue_ordinary_credential_locked
+    issue_ordinary_credential_locked(event, locked, actor=actor)
+    services._audit(event, actor, "event.registration_reaccepted", locked, {
+        "registration_id": locked.pk, "old_status": EventRegistration.Status.REJECTED,
+        "new_status": EventRegistration.Status.REGISTERED, "payment_id": payment.pk if payment else None})
+    services.notify_event_lifecycle(event, "registration_approved", locked.pk)
+    return services._refresh(locked)
+
+
 @event_write
 def cancel_registration(registration, *, actor=None, member_cancel=False):
     services = _boundary()

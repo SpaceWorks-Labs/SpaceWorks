@@ -810,7 +810,8 @@ staff step-up grant of their own person account, fixed to one makerspace where t
 tablets-specific layouts, GitHub sign-in.
 
 Event programme desks are web-only for now (verified by X57, lane L19): judging, the mentor desk,
-volunteer management and check-in by an on-duty volunteer, and event crew.
+volunteer management and check-in by an on-duty volunteer, event crew and the application review
+panel (#173).
 - Their staff routes refuse a member grant: 403 "Native member sessions cannot use delegated
   authority".
 - A staff grant can reach them only for a person who also holds a makerspace staff role.
@@ -819,3 +820,5 @@ volunteer management and check-in by an on-duty volunteer, and event crew.
 - Do not build these screens until the server publishes a native event-role contract. The
   participant side works today on a member grant: raising help requests, office hours, shift
   sign-up and self check-in/out, and role applications.
+- A member's own attendance reply (`/events/{id}/attendance/`) and crew sign-up
+  (`/events/{id}/crew-signup/`) work natively.

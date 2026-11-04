@@ -30,13 +30,17 @@ class DecisionSubjectInput(StrictSerializer):
     application_id = serializers.IntegerField(min_value=1, required=False)
     cohort_id = serializers.IntegerField(min_value=1, required=False)
     expected_version = serializers.IntegerField(min_value=1)
-    outcome = serializers.ChoiceField(choices=["offer", "waitlist", "reject"])
+    outcome = serializers.ChoiceField(choices=["offer", "waitlist", "reject", "advance"])
     reason_code = serializers.RegexField(r"^[a-z][a-z0-9_]{2,39}$")
     review_override_code = serializers.RegexField(r"^[a-z][a-z0-9_]{2,39}$", required=False)
+    #: Lane L21a: the stage an `advance` moves the application on from.
+    stage_id = serializers.IntegerField(min_value=1, required=False)
 
     def validate(self, attrs):
         if ("application_id" in attrs) == ("cohort_id" in attrs):
             raise serializers.ValidationError("Choose exactly one subject.")
+        if attrs["outcome"] == "advance" and "stage_id" not in attrs:
+            raise serializers.ValidationError("Name the stage the application advances from.")
         return attrs
 
 

@@ -17,6 +17,8 @@ class GrantRequest(ScopedPiiModelMixin, Versioned):
     application = models.ForeignKey("events.HackathonApplication", on_delete=models.CASCADE, null=True, related_name="+")
     creation_operation_id = models.UUIDField(null=True)
     request_phase = models.CharField(max_length=16, choices=[(v, v) for v in ("application", "after_acceptance")])
+    #: Lane L21a: `crew` is an organising-crew expense claim (behind `events.crew_claims`).
+    kind = models.CharField(max_length=12, default="participant", choices=[(v, v) for v in ("participant", "crew")])
     state = models.CharField(max_length=12, default="draft", choices=[(v, v) for v in (
         "draft", "requested", "waitlisted", "awarded", "declined", "withdrawn", "expired")])
     origin = models.TextField(blank=True)

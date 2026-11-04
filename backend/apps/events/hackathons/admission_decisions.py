@@ -25,6 +25,10 @@ def subject_locked(event, selection):
 def require_reviews(config, subject, decision):
     if config.review_mode == "auto" or decision.review_override_code:
         return
+    from .admission_stage_flow import require_stage_coverage, required_stage
+    stage = required_stage(config.event, subject, decision)
+    if stage is not None:
+        return require_stage_coverage(stage, subject, decision)
     key = "cohort_id" if isinstance(subject, HackathonApplicationCohort) else "application_id"
     source_at = subject.sealed_at if isinstance(subject, HackathonApplicationCohort) else subject.answers_changed_at
     if source_at is None:
@@ -40,6 +44,9 @@ def require_reviews(config, subject, decision):
 
 
 def release_decision_locked(ctx, decision, *, auto=False):
+    from .admission_stage_flow import release_stage_locked
+    if release_stage_locked(ctx, decision):
+        return
     subject, applications = subject_locked(ctx.event, {"application_id": decision.application_id, "cohort_id": decision.cohort_id})
     check_version(subject, decision.expected_subject_version)
     if not applications or any(a.state not in ("submitted", "waitlisted", "rejected") for a in applications):
@@ -128,9 +135,11 @@ def stage(*, event_id, actor, data):
             selector = {"cohort": subject} if isinstance(subject, HackathonApplicationCohort) else {"application": subject}
             if ApplicationDecision.objects.filter(**selector, active_draft=True).exists():
                 fail("decision_already_staged", "This subject already has a draft decision.")
+            from .admission_stage_flow import stage_for_staging
             ApplicationDecision.objects.create(batch=batch, **selector, outcome=item["outcome"],
                 reason_code=item["reason_code"], expected_subject_version=item["expected_version"],
-                review_override_code=item.get("review_override_code", ""))
+                review_override_code=item.get("review_override_code", ""),
+                stage=stage_for_staging(ctx.event, subject, item))
         record(ctx, "decisions_staged", batch, count=len(seen))
         ctx.finish("decision_batch", batch.pk, status=201)
         return batch

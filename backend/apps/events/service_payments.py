@@ -61,8 +61,9 @@ from apps.payments.services import create_checkout, create_payment
 def create_for_registered_registration(registration, actor):
     event = registration.event
     member = registration.member
-    if member is None or registration_amount(registration) <= 0 or not charge_tracking_enabled(event.makerspace, "events"):
-        return None
+    if (member is None or registration.is_crew or registration_amount(registration) <= 0
+            or not charge_tracking_enabled(event.makerspace, "events")):
+        return None  # a crew place (lane L21a) is never charged
     # A local ledger failure rolls back the registration/approval transaction. Only
     # the optional provider rail may fail safely after the debt has been recorded.
     payment = _get_or_create(registration, actor or member)

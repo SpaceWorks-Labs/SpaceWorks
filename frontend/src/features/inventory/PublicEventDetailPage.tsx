@@ -1,5 +1,6 @@
 import { PublicProgrammeEntry } from '../events/programme/PublicProgrammeEntry';
 import { PublicVolunteerCards } from '../events/contributions/PublicVolunteerCards';
+import { PublicCrewSection } from '../events/participation/PublicCrewSection';
 import { programmeHref } from '../events/programme/routeNames';
 import { CenteredCardLayout, PublicLayout, PublicDetailLayout } from "../../components/layouts";
 import { publicPageChrome } from "./PublicPageChrome";
@@ -79,6 +80,8 @@ export function PublicEventDetailPage({ resolvedSlug, resolvedToken, canonicalUr
           ...(event.website ? [{ id: "website", label: "Event details", content: <PublicEventWebsite website={event.website}
             links={{ schedule: tenantPath(`events/${event.public_token}/schedule`), speaker: (value: string) => tenantPath(`events/${event.public_token}/speakers/${encodeURIComponent(value)}`), session: (value: string) => tenantPath(`events/${event.public_token}/sessions/${encodeURIComponent(value)}`) }}
             image={(url: string, alt: string) => <PublicWebsiteImage makerspaceSlug={makerspaceSlug} url={url} alt={alt} />} /> }] : []),
+          // Lane L21a: the opt-in public crew section (public profiles only, #25).
+          ...(bootstrap?.features.includes('events.crew') ? [{ id: 'crew', label: 'Crew', content: <PublicCrewSection publicToken={event.public_token} profileHref={handle => `/${encodeURIComponent(handle)}`} /> }] : []),
           ...(bootstrap?.features.includes('events.volunteering') ? [{ id: 'volunteers', label: 'Volunteers needed', content: <PublicVolunteerCards publicToken={event.public_token} onApply={id => window.location.assign(programmeHref(event.public_token, `roles/${id}`, makerspaceSlug))} /> }] : []),
           ...(sponsors.length ? [{ id: 'sponsors', label: 'Sponsors', content: <PublicSponsorCards rows={sponsors} /> }] : []),
           ...(bootstrap?.features.includes('events.project_gallery') ? [{ id: 'projects', label: 'Projects and results', content: <div className="flex flex-wrap gap-3"><a className="desk-button" href={tenantPath(`events/${event.public_token}/gallery`)}>Project gallery</a><a className="desk-button" href={tenantPath(`events/${event.public_token}/results`)}>Results</a></div> }] : []), ...venueSection] : []}

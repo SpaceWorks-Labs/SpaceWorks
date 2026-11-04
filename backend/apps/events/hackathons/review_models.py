@@ -67,7 +67,10 @@ class ApplicationDecision(models.Model):
     batch = models.ForeignKey(ApplicationDecisionBatch, on_delete=models.CASCADE, related_name="decisions")
     application = models.ForeignKey("events.HackathonApplication", on_delete=models.PROTECT, null=True, blank=True, related_name="decisions")
     cohort = models.ForeignKey("events.HackathonApplicationCohort", on_delete=models.PROTECT, null=True, blank=True, related_name="decisions")
-    outcome = models.CharField(max_length=8, choices=[(v, v) for v in ("offer", "waitlist", "reject")])
+    outcome = models.CharField(max_length=8, choices=[(v, v) for v in ("offer", "waitlist", "reject", "advance")])
+    # Multi-stage review (#128 C-33): the stage an `advance` decision moves the subject on from.
+    stage = models.ForeignKey("events.AdmissionStage", on_delete=models.PROTECT, null=True, blank=True,
+                              related_name="decisions")
     reason_code = models.CharField(max_length=40)
     expected_subject_version = models.PositiveIntegerField()
     sent_revision = models.PositiveIntegerField(null=True, blank=True)

@@ -210301,7 +210301,8 @@
                         "readOnly": true
                     },
                     "donor_address": {
-                        "type": "string"
+                        "type": "string",
+                        "readOnly": true
                     },
                     "tax_receipt_number": {
                         "type": "string",
@@ -210337,6 +210338,7 @@
                     "campaign_name",
                     "created_at",
                     "currency",
+                    "donor_address",
                     "donor_pan_masked",
                     "id",
                     "is_guest",

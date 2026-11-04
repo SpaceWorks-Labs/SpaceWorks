@@ -6846,7 +6846,7 @@ export type Donation = {
   "status"?: DonationStatusEnum;
   "wants_tax_receipt"?: boolean;
   "donor_pan_masked": string;
-  "donor_address"?: string;
+  "donor_address": string;
   "tax_receipt_number": string;
   "payment_id": number | null;
   "payment_status": string;

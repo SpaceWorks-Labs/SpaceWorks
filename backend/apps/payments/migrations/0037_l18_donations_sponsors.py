@@ -11,9 +11,9 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('events', '0066_l18_personal_calendar_feeds'),
-        ('makerspaces', '0120_l18_calendar_feed_switches'),
+        ('makerspaces', '0124_l18_calendar_feed_switches'),
         ('organizations', '0008_invitation_email_digest'),
-        ('payments', '0035_l6_event_subjects'),
+        ('payments', '0036_l6_event_subjects'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
@@ -21,7 +21,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='payment',
             name='subject_type',
-            field=models.CharField(choices=[('machine_service_request', 'Machine service request'), ('booking', 'Booking'), ('event_registration', 'Event registration'), ('makerspace_membership', 'Makerspace membership'), ('membership_term', 'Membership renewal'), ('membership_request', 'Membership admission'), ('loan_deposit', 'Loan deposit'), ('loan_late_fee', 'Loan late fee'), ('loan_rental', 'Loan rental'), ('loan_damage', 'Loan damage charge'), ('loan_lost', 'Lost item charge'), ('event_order', 'Event ticket order'), ('event_venue_fee', 'Event venue fee'), ('donation', 'Donation'), ('sponsorship', 'Sponsorship')], max_length=48),
+            field=models.CharField(choices=[('machine_service_request', 'Machine service request'), ('booking', 'Booking'), ('event_registration', 'Event registration'), ('makerspace_membership', 'Makerspace membership'), ('membership_term', 'Membership renewal'), ('membership_request', 'Membership admission'), ('loan_deposit', 'Loan deposit'), ('loan_late_fee', 'Loan late fee'), ('loan_rental', 'Loan rental'), ('loan_damage', 'Loan damage charge'), ('loan_lost', 'Lost item charge'), ('machine_session', 'Machine session'), ('event_order', 'Event ticket order'), ('event_venue_fee', 'Event venue fee'), ('donation', 'Donation'), ('sponsorship', 'Sponsorship')], max_length=48),
         ),
         migrations.AlterField(
             model_name='refundcase',

@@ -30,5 +30,5 @@ def disable(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-    dependencies = [("makerspaces", "0119_l3_member_cards")]
+    dependencies = [("makerspaces", "0123_l3_member_cards")]
     operations = [migrations.RunPython(enable, disable)]

@@ -88,6 +88,10 @@ FEATURE_EVENTS[F.MEMBERS] += ("card_issued", "card_design_pending", "card_photo_
 FEATURE_EVENTS[F.EVENTS] += ("order_confirmed", "order_payment_reminder", "order_abandoned", "ticket_type_changed",
                              "pass_occurrence_cancelled", "ticket_claim_invite", "ticket_transfer_received",
                              "registration_updated", "ticket_pay_link")
+# Release 2 L22: the shop buyer's order notices and the shop staff's alerts (payments matrix).
+FEATURE_EVENTS[F.PAYMENTS] += ("shop_order_placed", "shop_order_paid", "shop_order_ready", "shop_order_lapsed",
+                               "shop_order_cancelled", "shop_order_unfulfilled", "shop_order_reminder",
+                               "shop_order_receipt", "shop_order_new", "shop_low_stock")
 
 # Exact default on/off per (feature, channel). Preserves today's behavior: hardware/printing
 # email + hardware Telegram on; bookings email (Part J seam) + bookings Telegram on; Slack/

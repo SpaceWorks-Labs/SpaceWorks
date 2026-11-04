@@ -38,4 +38,14 @@ After your password, enter the code from your app and press **Verify**. You can 
 
 **Remembered devices** lists the browsers that passed an extra sign-in check. **Forget** removes one; its next sign-in simply asks for the check again. A remembered device never skips two-step sign-in.
 
-> **Who can do this:** every account holder. Staff must set up an authenticator or a passkey; see [Two-step sign-in for staff](help:space-manager/staff-two-step).
+## If you're staff
+
+Every staff role needs two-step sign-in. When you're given a role, a banner in the staff console shows the date your three-day grace period ends.
+
+1. Press **Set it up now** on the banner.
+2. Choose **A passkey** or **An authenticator app** and follow the steps above.
+3. You return to the console.
+
+After the grace period, staff screens stay blocked until you set it up; your member area keeps working. Lost your device and your recovery codes? Ask your Space Manager to reset your authenticator.
+
+> **Who can do this:** every account holder. Two-step sign-in is optional for members and required for staff.

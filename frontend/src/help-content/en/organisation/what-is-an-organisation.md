@@ -16,6 +16,14 @@ An organisation is a shared profile for a group that works with one or more spac
 
 ![Screenshot: an organisation's public page](screenshot:org-public-page)
 
+## Find an organisation
+
+1. Open its page at `/o/<organisation>`, or follow the link from a space's page or an event.
+2. Browse its **Linked makerspaces** and its **Organization events**, upcoming and past.
+3. Press **Visit website** for its own site.
+
+Only public spaces and listed events appear.
+
 ## Who does what
 
 - **Owners and governors** edit the profile, invite people, and see the organisation's console.

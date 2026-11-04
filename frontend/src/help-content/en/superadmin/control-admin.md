@@ -21,6 +21,10 @@ keywords: control, django admin, back office, archive space, purge, backup keys,
 
 ## Reaching it
 
+1. Ask the host operator to open access, through the proxy or an SSH tunnel.
+2. Open `/control/` and sign in with the superadmin account.
+3. Complete two-step sign-in at its own step.
+
 It's off the public address by default. The host operator turns on access through the proxy or an SSH tunnel; see [Reach /control/ safely](help:host-operator/control-plane-access). Turn on two-step sign-in before exposing it. Destructive actions ask you to confirm your identity again.
 
 > **Who can do this:** the platform superadmin only.

@@ -12,6 +12,8 @@ Your **Home** tab shows your **Membership plan** and the date it is current unti
 1. Before the end date, a renewal charge appears in **Payments**.
 2. Pay it online with **Pay now**, or pay at the space. See [Pay what you owe](help:member/pay-what-you-owe).
 
+![Screenshot: the Membership plan card on Home with its end date](screenshot:member-renewal)
+
 Spaces usually remind you 14, 7 and 1 days before your membership ends. If a space pauses lapsed members, Home says borrowing is paused until you renew.
 
 ## Stop renewing

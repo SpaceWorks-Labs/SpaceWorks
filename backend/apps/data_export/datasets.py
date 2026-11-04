@@ -232,6 +232,8 @@ from .classification_l3 import DATASET_SPECS as L3_DATASETS  # noqa: E402
 DATASET_SPECS.update(L3_DATASETS)
 from .classification_r2_l6 import DATASET_SPECS as R2_L6_DATASETS  # noqa: E402
 DATASET_SPECS.update(R2_L6_DATASETS)
+from .classification_r2_l21a import DATASET_SPECS as R2_L21A_DATASETS  # noqa: E402
+DATASET_SPECS.update(R2_L21A_DATASETS)
 for _fidelity in Fidelity:
     for _label, (_path, _predicate) in DATASET_SPECS.items():
         _columns_for_dataset, _omissions = _columns(_fidelity, _label)

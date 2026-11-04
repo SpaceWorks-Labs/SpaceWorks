@@ -19,6 +19,9 @@ class EventRegistration(PrivateDocumentMixin, models.Model):
     date_review_required = models.BooleanField(default=False)
     credential_mode = models.CharField(max_length=8, default="legacy",
                                        choices=(("legacy", "Legacy"), ("v2", "Version 2"), ("inert", "Inert")))
+    #: A free crew place (lane L21a, #128 C-36): never counted in capacity, never charged,
+    #: never part of an order or a team. Only `contributions/crew_workflow` sets it.
+    is_crew = models.BooleanField(default=False, editable=False)
     class Status(models.TextChoices):
         PENDING_APPROVAL = "pending_approval", "Pending approval"
         REGISTERED = "registered", "Registered"

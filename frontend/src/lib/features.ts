@@ -165,6 +165,13 @@ export const FEATURE_DEFINITIONS: readonly FeatureDefinition[] = [
   { key: "events.desk_collect", parent_module: "events", label: "Collect payment at the desk" },
   { key: "events.refund_override", parent_module: "events", label: "Per-event refund policy" },
   { key: "events.venue_fees", parent_module: "events", label: "Venue fees for hosting" },
+  // L21a (#128 C-32..C-36): applications for any event, review stages, attendance, crew, check-in lists.
+  { key: "events.applications", parent_module: "events", label: "Applications for any event" },
+  { key: "events.application_stages", parent_module: "events", label: "Application review stages" },
+  { key: "events.attendance_confirmation", parent_module: "events", label: "Attendance confirmation" },
+  { key: "events.crew", parent_module: "events", label: "Event crew" },
+  { key: "events.crew_claims", parent_module: "events", label: "Crew expense claims" },
+  { key: "events.checkin_lists", parent_module: "events", label: "Custom check-in lists" },
 ];
 
 export function featureEnabled(features: Iterable<string>, key: string) {

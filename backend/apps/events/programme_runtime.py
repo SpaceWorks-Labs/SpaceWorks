@@ -5,7 +5,7 @@ from apps.integrations.notification_sources import NotificationSource, register_
 def application_notice_eligible(envelope):
     from .hackathons.admission_models import HackathonApplication
     from .hackathons.admission_notifications import MESSAGES
-    from apps.makerspaces.platform import feature_enabled, module_enabled
+    from apps.makerspaces.platform import module_enabled
     from apps.makerspaces.servability import is_servable
 
     if envelope.event not in MESSAGES:
@@ -14,10 +14,11 @@ def application_notice_eligible(envelope):
         event_id=envelope.context.get("event_id"), member_id=envelope.recipient_id,
     ).select_related("event__makerspace").first()
     from .hackathons.admission_models import HackathonConfig
+    from .hackathons.admission_feature import admission_enabled
     return bool(row and str(row.version) == str(envelope.revision)
         and row.event.makerspace_id == envelope.makerspace_id
         and is_servable(row.event.makerspace) and module_enabled(row.event.makerspace, "events")
-        and feature_enabled(row.event.makerspace, "events.hackathons")
+        and admission_enabled(row.event.makerspace)
         and HackathonConfig.objects.filter(event_id=row.event_id, enabled=True).exists())
 
 

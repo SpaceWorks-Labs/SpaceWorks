@@ -34,6 +34,10 @@ def update(*, event_id, actor, data):
         for key in CONFIG_FIELDS:
             if key in data:
                 setattr(config, key, data[key])
+        from .admission_feature import applications_only
+        if applications_only(ctx.event.makerspace):
+            # Applications for any event (#128 C-32) have no teams, finder or submissions.
+            config.team_mode = "solo"
         if config.team_mode == "solo":
             config.team_min = config.team_max = 1
             config.finder_enabled = False

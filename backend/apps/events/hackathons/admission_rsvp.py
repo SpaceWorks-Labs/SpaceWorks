@@ -88,7 +88,8 @@ def rsvp(*, event_id, actor, data, application_id=None):
                 if cohort:
                     cohort.state, cohort.version = "confirmed", cohort.version + 1
                     cohort.save()
-                if ctx.config.team_mode == "solo":
+                from .admission_feature import applications_only
+                if ctx.config.team_mode == "solo" and not applications_only(ctx.event.makerspace):
                     from .team_workflow import create_solo_locked
                     create_solo_locked(ctx, app)
         if decision != "accept":

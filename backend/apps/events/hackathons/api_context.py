@@ -55,7 +55,9 @@ def context_for_token(*, public_token, actor, request=None):
     ports().context_gate(event=event, actor=actor, request=request)
     config = HackathonConfig.objects.filter(event=event, enabled=True).first()
     capabilities = {key: feature_enabled(event.makerspace, key) for key in CAPABILITIES}
-    if config and not capabilities["events.hackathons"]:
+    # Applications for any one-off event (#128 C-32) share the engine; `kind` tells the two apart.
+    hackathon = capabilities["events.hackathons"]
+    if config and not (hackathon or feature_enabled(event.makerspace, "events.applications")):
         fail("not_found", "Not found.", status=404)
     eligible, reason = True, None
     try:
@@ -74,7 +76,7 @@ def context_for_token(*, public_token, actor, request=None):
                   "starts_at": event.starts_at, "ends_at": event.ends_at,
                   **{key: value for key, value in details.items() if key != "event_id"}},
         "makerspace": {"id": event.makerspace_id, "slug": event.makerspace.slug},
-        "programme": {"kind": "hackathon" if config else "ordinary", "capabilities": capabilities,
+        "programme": {"kind": ("hackathon" if hackathon else "applications") if config else "ordinary", "capabilities": capabilities,
                       "team_mode": config.team_mode if config else None, "finder_enabled": bool(config and config.finder_enabled)},
         "application_form": form_descriptor(event, config.application_form) if config else None,
         "registration_form": None if config else form_descriptor(event, event.custom_form),

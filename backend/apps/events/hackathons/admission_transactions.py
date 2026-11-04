@@ -41,8 +41,13 @@ def require_member(actor):
         fail("account_inactive", "An active member account is required.", status=403)
 
 
+def admission_enabled(makerspace):
+    """Hackathons, or applications for any one-off event (#128 C-32), open the admission engine."""
+    return feature_enabled(makerspace, "events.hackathons") or feature_enabled(makerspace, "events.applications")
+
+
 def require_programme(event):
-    if not feature_enabled(event.makerspace, "events.hackathons"):
+    if not admission_enabled(event.makerspace):
         fail("not_found", "Not found.", status=404)
     config = get_object_or_404(HackathonConfig, event=event, enabled=True)
     return config
@@ -66,6 +71,10 @@ def notice(ctx, application, kind):
     # enqueue on_commit; no SMTP/chat/network I/O is permitted here.
     ports().enqueue_notice(event_id=ctx.event.pk, member_id=application.member_id,
                            application_id=application.pk, revision=application.version, kind=kind)
+    if kind.startswith("application_"):
+        # Lane L21a: the status also reaches staff rooms and webhooks, IDs only.
+        from .admission_webhooks import application_changed
+        application_changed(ctx.event, application, kind)
 
 
 def lock_accounts(integration, event, accounts):
@@ -115,7 +124,7 @@ def command(*, event_id, actor, data, action, permission=None, owner=False, acco
             event_authority.require(actor, locked, permission)
         created_config = False
         if configuration:
-            if not feature_enabled(locked.makerspace, "events.hackathons"):
+            if not admission_enabled(locked.makerspace):
                 fail("not_found", "Not found.", status=404)
             config, created_config = HackathonConfig.objects.get_or_create(event=locked, defaults={
                 "attendance_required": integration.default_attendance_required(event=locked)})

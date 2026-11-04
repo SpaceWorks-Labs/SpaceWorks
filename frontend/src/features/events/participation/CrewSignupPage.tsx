@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { memberRequest } from "../../../lib/api";
 import { Card, ErrorText, StatusBadge } from "../../../components/ui";
+import { ownSavedDetails } from "../../accountSavedDetails/api";
 
 type Crew = { id: number; version: number; crew_role: string; state: string; show_publicly: boolean };
 type State = { event_id: number; event_title: string; starts_at: string; open: boolean; approval_required: boolean; crew: Crew | null };
@@ -17,7 +18,14 @@ export function CrewSignupPage() {
   const client = useQueryClient();
   const state = useQuery({ queryKey: ["member-crew", eventId], retry: false, queryFn: () => memberRequest<State>(url) });
   const [role, setRole] = useState(""), [dietary, setDietary] = useState(""), [notes, setNotes] = useState("");
-  const [shown, setShown] = useState(false);
+  const [shown, setShown] = useState(false), [prefillNote, setPrefillNote] = useState("");
+  // Opt-in (#28): Saved details are read only when the member asks, and only the dietary
+  // field is copied into this form; nothing leaves the browser until they sign up.
+  const prefill = useMutation({ mutationFn: ownSavedDetails, onSuccess: details => {
+    const value = details.fields.find(field => field.field_key === "dietary_needs")?.value;
+    if (typeof value === "string" && value.trim()) { setDietary(value.slice(0, 300)); setPrefillNote("Filled from your Saved details. Edit it if needed."); }
+    else setPrefillNote("Your Saved details have no dietary needs.");
+  }, onError: () => setPrefillNote("Your Saved details are not available right now.") });
   const save = (data: State) => client.setQueryData(["member-crew", eventId], data);
   const signup = useMutation({ mutationFn: () => memberRequest<State>(url, { method: "POST",
     body: JSON.stringify({ crew_role: role, dietary, notes, show_publicly: shown }) }), onSuccess: save });
@@ -38,6 +46,10 @@ export function CrewSignupPage() {
         <input className="desk-input" maxLength={60} value={role} onChange={e => setRole(e.target.value)} placeholder="Door, AV, catering" /></label>
       <label className="grid gap-1 text-sm text-ink">Dietary needs (only counted for catering, never shown with your name)
         <input className="desk-input" maxLength={300} value={dietary} onChange={e => setDietary(e.target.value)} /></label>
+      <div className="flex flex-wrap items-center gap-3">
+        <button type="button" className="desk-button" disabled={prefill.isPending} onClick={() => prefill.mutate()}>Use my Saved details</button>
+        {prefillNote ? <p role="status" className="text-sm text-muted">{prefillNote}</p> : null}
+      </div>
       <label className="grid gap-1 text-sm text-ink">Anything else the organisers should know
         <textarea className="desk-input min-h-20" maxLength={1000} value={notes} onChange={e => setNotes(e.target.value)} /></label>
       <label className="flex min-h-11 items-center gap-3 text-sm text-ink"><input type="checkbox" checked={shown}

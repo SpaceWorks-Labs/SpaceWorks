@@ -166,6 +166,11 @@ HTTP_ANONYMOUS_PARTICIPANTS = {
     "apps.notifications.views_preferences.OneClickUnsubscribeView.post": (
         "Signed token resolves one tenant; save_preference holds tenant_write through its audited commit."
     ),
+    # L16: a technician's own chat opt-in. The hashed token resolves one contact, locked, and the
+    # write asserts its makerspace's tenant gate before consent is saved.
+    "apps.maintenance.repairs.views_public.TechnicianOptInView.post": (
+        "Signed token resolves one tenant's contact; accept asserts tenant writes before saving consent."
+    ),
     **REPLAY_HTTP_PARTICIPANTS,
     "apps.hardware_requests.cron_views.ReturnReminderCronView.post": (
         "The fan-out reminder service takes the skip-and-count gate once per request."

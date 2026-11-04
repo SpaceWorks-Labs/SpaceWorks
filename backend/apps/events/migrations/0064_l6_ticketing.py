@@ -12,9 +12,9 @@ class Migration(migrations.Migration):
     dependencies = [
         ('bookings', '0022_l12_machine_time_booking'),
         ('events', '0063_l3_event_id_cards'),
-        ('makerspaces', '0119_l3_member_cards'),
+        ('makerspaces', '0123_l3_member_cards'),
         ('organizations', '0008_invitation_email_digest'),
-        ('payments', '0035_l6_event_subjects'),
+        ('payments', '0036_l6_event_subjects'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 

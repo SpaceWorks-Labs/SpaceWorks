@@ -165,6 +165,8 @@ export const FEATURE_DEFINITIONS: readonly FeatureDefinition[] = [
   { key: "events.desk_collect", parent_module: "events", label: "Collect payment at the desk" },
   { key: "events.refund_override", parent_module: "events", label: "Per-event refund policy" },
   { key: "events.venue_fees", parent_module: "events", label: "Venue fees for hosting" },
+  // L24 (#163A): price-drop refunds.
+  { key: "charges.price_drop_refunds", parent_module: null, label: "Price-drop refunds" },
 ];
 
 export function featureEnabled(features: Iterable<string>, key: string) {

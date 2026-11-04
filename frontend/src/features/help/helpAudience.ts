@@ -10,14 +10,15 @@ export const ANONYMOUS_READER: HelpReader = {
 export function readerFromUser(user: StaffAuthUser | null | undefined): HelpReader {
   if (!user) return ANONYMOUS_READER;
   const superadmin = user.kind === "platform" || Boolean(user.is_platform);
+  const eventGrants = Boolean(user.event_grants?.length);
+  const bookingGrants = Boolean(user.booking_grants?.length);
+  // Grants travel as pseudo-actions too, so one article can name them in its `actions:` line.
   const actions = new Set<string>([
     ...(user.superadmin_actions ?? []),
     ...user.makerspaces.flatMap(space => space.actions ?? []),
+    ...(eventGrants ? ["grant:events"] : []), ...(bookingGrants ? ["grant:bookings"] : []),
   ]);
-  return {
-    signedIn: true, superadmin, actions,
-    eventGrants: Boolean(user.event_grants?.length), bookingGrants: Boolean(user.booking_grants?.length),
-  };
+  return { signedIn: true, superadmin, actions, eventGrants, bookingGrants };
 }
 
 export function sectionVisible(section: HelpSection, reader: HelpReader): boolean {

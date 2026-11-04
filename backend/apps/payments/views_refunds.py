@@ -49,6 +49,8 @@ class PaymentRefundView(APIView):
         if payment is None:
             raise NotFound("Payment not found.")
         _require_subject_authority(request.user, [payment])
+        from apps.shop.refunds import refuse_direct_refund  # lane L22: shop sales only via a case
+        refuse_direct_refund(payment)
         refund_payment(
             payment,
             amount=payload.validated_data["amount"],

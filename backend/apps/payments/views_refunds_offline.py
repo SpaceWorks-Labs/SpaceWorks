@@ -45,6 +45,8 @@ class PaymentOfflineRefundView(APIView):
         payment = allowed.select_related("makerspace").filter(pk=payment_id, makerspace_id=makerspace_id).first()
         if payment is None:
             raise NotFound("Payment not found.")
+        from apps.shop.refunds import refuse_direct_refund  # lane L22: shop sales only via a case
+        refuse_direct_refund(payment)
         record_offline_refund(payment, actor=request.user, release_deposit=self.release_deposit, **payload.validated_data)
         payment = with_refunds(allowed).get(pk=payment.pk)
         return Response(PaymentReconciliationSerializer(payment, context={

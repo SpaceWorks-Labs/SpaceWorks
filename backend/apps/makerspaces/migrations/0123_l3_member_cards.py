@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('makerspaces', '0118_security_policy'),
+        ('makerspaces', '0122_technician_role_seed'),
     ]
 
     operations = [

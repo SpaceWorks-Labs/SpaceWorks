@@ -9,7 +9,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('events', '0062_l2_communications'),
-        ('makerspaces', '0119_l3_member_cards'),
+        ('makerspaces', '0123_l3_member_cards'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 

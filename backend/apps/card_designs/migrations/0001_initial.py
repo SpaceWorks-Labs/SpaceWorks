@@ -10,7 +10,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('events', '0063_l3_event_id_cards'),
-        ('makerspaces', '0119_l3_member_cards'),
+        ('makerspaces', '0123_l3_member_cards'),
         ('organizations', '0008_invitation_email_digest'),
     ]
 

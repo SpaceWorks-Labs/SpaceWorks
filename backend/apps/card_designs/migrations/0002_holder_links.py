@@ -13,7 +13,7 @@ class Migration(migrations.Migration):
         ('card_designs', '0001_initial'),
         ('events', '0063_l3_event_id_cards'),
         ('id_programmes', '0001_initial'),
-        ('makerspaces', '0119_l3_member_cards'),
+        ('makerspaces', '0123_l3_member_cards'),
         ('organizations', '0008_invitation_email_digest'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]

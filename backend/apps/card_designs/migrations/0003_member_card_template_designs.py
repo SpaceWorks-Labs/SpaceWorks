@@ -45,6 +45,6 @@ def forwards(apps, schema_editor):
 class Migration(migrations.Migration):
     dependencies = [
         ("card_designs", "0002_holder_links"),
-        ("makerspaces", "0119_l3_member_cards"),
+        ("makerspaces", "0123_l3_member_cards"),
     ]
     operations = [migrations.RunPython(forwards, migrations.RunPython.noop)]

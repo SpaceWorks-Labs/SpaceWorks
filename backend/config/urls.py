@@ -72,6 +72,7 @@ from apps.accounts.views_mobile_associations import AssetLinksView, AppleAppSite
 from apps.accounts.control_mfa import control_mfa
 from apps.accounts.reauthentication_control import control_reauthentication
 from apps.operations.control_storage import control_storage
+from apps.tenant_rls.control import control_rls
 
 urlpatterns = [
     path(".well-known/assetlinks.json", AssetLinksView.as_view(), name="mobile-assetlinks"),
@@ -150,6 +151,7 @@ urlpatterns = [
     # console, which owns /admin on the SPA. The Django admin is the Super Admin
     # control plane and lives on its own dedicated prefix.
     path("control/storage/", admin.site.admin_view(control_storage), name="control-storage"),
+    path("control/row-level-security/", admin.site.admin_view(control_rls), name="control-rls"),
     path("control/", admin.site.urls),
     path("api/", include("apps.inventory.urls")),          # existing, unchanged
     # Versioned alias of the public routes. Namespaced so it does NOT collide with the

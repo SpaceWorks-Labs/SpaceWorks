@@ -14,6 +14,8 @@ class EncryptionConfig(AppConfig):
         from apps.encryption import signals  # noqa: F401
 
         self._register_pii_fields()
+        from apps.encryption.key_notifications import register as register_key_notifications
+        register_key_notifications()
         # Celery workers do not use the HTTP readiness view.  The signal keeps an
         # enabled worker from accepting generation-bound tasks before its DB/key
         # preflight passes; disabled installs still do no key parsing or DB work.

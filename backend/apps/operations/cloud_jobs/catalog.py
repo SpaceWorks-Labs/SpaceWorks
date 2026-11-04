@@ -115,6 +115,8 @@ LEGACY_ENTRIES = (
     ("card-wallet-refresh", "apps.card_designs.tasks.refresh_wallet_passes", 30),
     ("card-photo-reminders", "apps.card_designs.tasks.remind_photo_requests", 60),
     ("event-id-cards", "apps.events.tasks_id_cards.reconcile_event_id_cards_task", 15),
+    # Lane L8: one bounded chunk of each running per-space key rotation, re-key or re-index.
+    ("advance-key-jobs", "apps.encryption.rekey_tasks.advance_key_jobs_task", 1),
 )
 _RETAINED = frozenset({
     "evidence-object-expiry", "evidence-abandoned-upload-cleanup",
@@ -136,7 +138,7 @@ _HEAVY = frozenset({
     "resume-space-restores",
     "reconcile-backup-artifacts", "push-offsite-backups",
     "resume-expired-tenant-import-finalizations", "finalize-report-rollups",
-    "restore-drill", "reencrypt-backup-archives",
+    "restore-drill", "reencrypt-backup-archives", "advance-key-jobs",
     "card-jobs", "card-wallet-refresh",
 })
 _CRITICAL = frozenset({

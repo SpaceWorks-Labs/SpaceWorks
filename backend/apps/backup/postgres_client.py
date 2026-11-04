@@ -95,6 +95,9 @@ def run_client(tool, arguments, *, spec, major=None, timeout=3600, binary=None):
         raise PostgresClientUnavailable("Pass PostgreSQL connection facts through the validated spec only.")
     # A caller that already resolved the version-matched binary may pass it in.
     binary = binary or client_binary(tool, major)
+    # --- lane L8: data dumps read policed tables with row security on (tenant_rls.pg_tools).
+    from apps.tenant_rls.pg_tools import client_arguments
+    arguments = client_arguments(tool, arguments)
     with postgres_environment(spec) as (connection_args, environment):
         if tool in {"createdb", "dropdb"}:
             connection_args = ["--maintenance-db" if value == "--dbname" else value for value in connection_args]

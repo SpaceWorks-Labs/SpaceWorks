@@ -10,4 +10,6 @@ ROUTES = frozenset({
     "admin-makerspace-security-settings",
     "admin-makerspace-security-lock",
     "admin-makerspace-pii-access",
+    # Lane L8 (#120): read-only key rotation / re-key history of the space.
+    "admin-makerspace-key-events",
 })

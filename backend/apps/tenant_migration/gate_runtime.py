@@ -88,6 +88,9 @@ def fanout_tenant_write(makerspace_id, *, operation, counts):
             )
             yield False
             return
+        # --- lane L8: one tenant of a scheduled sweep runs under that tenant's RLS scope.
+        from apps.tenant_rls.context import tenant_context
+        stack.enter_context(tenant_context(makerspace_id, label=operation))
         yield True
 
 

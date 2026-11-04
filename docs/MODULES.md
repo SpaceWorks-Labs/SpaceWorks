@@ -913,12 +913,30 @@ its parent module is off.
 | `inventory.contact_self_checkout` | — + `inventory.self_checkout` | | Without Member accounts, borrowers check tools out with name, phone and an emailed code (#91); evidence rules unchanged | Account-less checkout is refused; account-less returns always stay open |
 | `presence.geofence` | — | ● | Required location check for self check-in | Self check-in refuses when disabled/unconfigured; authorized staff check-in remains available. Coordinates are not stored |
 | `inventory.kiosk` | — | | Scanner and handover Stations at `/m/<slug>/kiosk/<station>`: a Station PIN opens the channel, and a signed-in staff operator lease attributes every online handover to a real person | No Station sessions, operator leases, work packages or kiosk commands; the public desk at `/kiosk/<slug>` is unaffected |
+| `platform.help_centre` | — | ● | The [in-app help centre](#the-help-centre-platformhelp_centre): role-gated guide articles and a "Help" link beside each staff console screen | No Help links in the console; the space's `/help` routes answer "page not found". Nothing is stored, so nothing is lost |
 
 The `payments.<area>` switches are **off by default and stay inert until credentials resolve** —
 turning one on cannot start charging anyone by itself. They only put a card rail behind a debt the
 matching `charges.<area>` switch records: with `charges.<area>` off, turning `payments.<area>` on records
 nothing and offers nothing (the two are deliberately independent switches, the A6 rule). `inventory.self_checkout` and `presence.geofence`
 belong to no module: they are standalone capabilities that apply whenever you enable them.
+
+## The help centre (`platform.help_centre`)
+
+A standalone feature, on by default. The guide lives at `/help` (and `/m/<slug>/help` on the central
+origin); every staff console screen carries a "Help" link that opens the matching article in a new tab.
+
+- **Who sees what.** Everyone reads the member and organisation sections. Staff sections follow the
+  reader's actions in any space (Inventory Manager, Machine Manager, Booking Manager, Event Manager,
+  finance, Technician, Shop Manager, handover); a Space Manager sees every staff section; the platform
+  superadmin also sees the superadmin and host-operator sections. Search only covers the articles the
+  reader can see. The gating chooses what is relevant; it is not a security boundary, so articles never
+  hold secrets or anything a member must not read.
+- **Content.** Articles are content files under `frontend/src/help-content/<locale>/<section>/`, one
+  Markdown file each, so translations add a locale folder rather than code (L9). Screenshots are
+  placeholders until the release phase takes them from the `seed_showcase` space.
+- **Without it.** The console shows no Help links and the space's help routes answer "page not found".
+  The platform-wide `/help` on the central origin belongs to no space and stays available.
 
 ## The public stats page (not a module)
 

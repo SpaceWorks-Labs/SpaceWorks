@@ -161,6 +161,8 @@ export const FEATURE_DEFINITIONS: readonly FeatureDefinition[] = [
   { key: "bookings.room_maintenance", parent_module: "bookings", label: "Room maintenance" },
   { key: "bookings.room_repairs", parent_module: "bookings", label: "Room repairs" },
   { key: "bookings.issue_reporting", parent_module: "bookings", label: "Room issue reporting" },
+  // L20 (#69, #128 C-31): the in-app help centre.
+  { key: "platform.help_centre", parent_module: null, label: "Help centre" },
 ];
 
 export function featureEnabled(features: Iterable<string>, key: string) {

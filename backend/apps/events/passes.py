@@ -1,7 +1,7 @@
 """Series passes (release 2 L6, G31): one order admits the buyer to every future occurrence.
 
-A pass covers the occurrences that are published and still ahead when it is bought; it
-needs a place in each of them. It is an order of kind `pass` on the series with one seat
+A pass covers the occurrences that are public, published and still ahead when it is bought;
+it needs a place in each of them (a private occurrence admits no member registration). It is an order of kind `pass` on the series with one seat
 per occurrence, each turned into the buyer's ordinary registration (no charge of its
 own) once paid. When the space cancels one occurrence, each pass holder is owed the pass
 type's `occurrence_refund_amount` -- the organiser's partial amount -- as a staff-approved
@@ -36,7 +36,7 @@ def passes_sold(pass_type):
 
 
 def covered_occurrences(series):
-    return list(Event.objects.filter(series=series, status=Event.Status.PUBLISHED,
+    return list(Event.objects.filter(series=series, status=Event.Status.PUBLISHED, is_public=True,
                                      starts_at__gt=timezone.now()).order_by("starts_at", "pk"))
 
 

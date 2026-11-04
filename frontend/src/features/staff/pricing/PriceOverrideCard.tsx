@@ -1,8 +1,10 @@
 import { useId } from "react";
 import { Tag } from "lucide-react";
 
+import { usePriceDropCheck } from "../priceDrop/usePriceDropCheck";
 import {
-  isPriceOverrideCard, useStaffPricingOn, usePriceOverride, useSavePriceOverride, type PriceTargetType,
+  isPriceOverrideCard, useStaffPricingOn, usePriceOverride, useSavePriceOverride, type PriceOverrideWrite,
+  type PriceTargetType,
 } from "./priceOverrideApi";
 import { PriceOverrideRow } from "./PriceOverrideRow";
 
@@ -21,6 +23,7 @@ export function PriceOverrideCard({ makerspaceId, targetType, targetId, compact 
   const pricingOn = useStaffPricingOn(makerspaceId);
   const card = usePriceOverride(makerspaceId, targetType, targetId, pricingOn !== false);
   const save = useSavePriceOverride(makerspaceId, targetType, targetId);
+  const drop = usePriceDropCheck(makerspaceId);
   if (pricingOn === false || !isPriceOverrideCard(card.data)) {
     const status = statusOf(card.error);
     return card.error && status !== 404 && status !== 403
@@ -28,6 +31,12 @@ export function PriceOverrideCard({ makerspaceId, targetType, targetId, compact 
   }
   const data = card.data;
   if (!data.components.length) return null;
+  // Lane L24: a cheaper room or machine price may owe paid, not-yet-used items a refund.
+  const saveChecked = async (write: PriceOverrideWrite) => {
+    const path = `/admin/makerspace/${makerspaceId}/pricing/overrides/${targetType}/${targetId}`;
+    if (targetType !== "inventory_product" && !(await drop.check(path, "PUT", write))) return;
+    save.mutate(write);
+  };
   const body = <>
     <p className="text-sm text-muted">
       {data.editable ? "Inherit follows the space default in Settings > Pricing. Free makes this item free. Custom gives it its own price."
@@ -36,10 +45,11 @@ export function PriceOverrideCard({ makerspaceId, targetType, targetId, compact 
     <div className="divide-y divide-line">
       {data.components.map(row => <PriceOverrideRow key={`${row.component}:${row.mode}:${row.amount}:${row.cap}:${row.effective_amount}`}
         row={row} currency={data.currency} editable={data.editable} pending={save.isPending && save.variables?.component === row.component}
-        onSave={body => save.mutate(body)} />)}
+        onSave={body => { void saveChecked(body); }} />)}
     </div>
     <p aria-live="polite" className="text-sm text-muted">{save.isSuccess && !save.isPending ? "Price saved." : ""}</p>
     {save.error ? <p role="alert" className="text-sm text-danger">{save.error instanceof Error ? save.error.message : "Couldn't save the price."}</p> : null}
+    {drop.dialog}
   </>;
   if (compact) return <details className="rounded-lg border border-line bg-panel">
     <summary className="flex min-h-11 cursor-pointer items-center gap-2 px-3 text-sm font-semibold text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">

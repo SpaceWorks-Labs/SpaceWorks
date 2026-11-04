@@ -16,6 +16,7 @@ import {
   type PlanInterval,
 } from "./membershipPlansApi";
 import { formatMoney } from "./paymentsApi";
+import { usePriceDropCheck } from "./priceDrop/usePriceDropCheck";
 import { Panel } from "./panels/shared";
 import { PlanPriceNote } from "./pricing/PricingNote";
 import { MembershipRenewalFields, emptyRenewal, planRenewal, renewalInput, validateRenewal } from "./MembershipRenewalFields";
@@ -77,9 +78,10 @@ export function MembershipPlansSection({ makerspaceId, features = [] }: { makers
   const [problem, setProblem] = useState<string | null>(null);
   const [renewal, setRenewal] = useState(emptyRenewal);
   const refresh = () => client.invalidateQueries({ queryKey: membershipPlanKeys.plans(makerspaceId) });
+  const planInput = () => ({ ...toInput(form), ...renewalInput(renewal), ...rulesInput(rules, planRulesOn, publicPlansOn) }) as MembershipPlanInput;
   const save = useMutation({
     mutationFn: () => {
-      const input = { ...toInput(form), ...renewalInput(renewal), ...rulesInput(rules, planRulesOn, publicPlansOn) } as MembershipPlanInput;
+      const input = planInput();
       return editing ? updatePlan(editing.id, input) : createPlan(makerspaceId, input);
     },
     onSuccess: () => {
@@ -99,10 +101,14 @@ export function MembershipPlansSection({ makerspaceId, features = [] }: { makers
     setForm((current) => ({ ...current, [key]: value }));
     setProblem(null);
   };
-  const submit = () => {
+  // Lane L24: a cheaper plan may owe terms paid but not started yet a refund.
+  const drop = usePriceDropCheck(makerspaceId);
+  const submit = async () => {
     const next = validatePlanForm(form) ?? validateRenewal(renewal) ?? validateRules(rules);
     setProblem(next);
-    if (!next) save.mutate();
+    if (next) return;
+    if (editing && !(await drop.check(`/admin/membership-plans/${editing.id}`, "PATCH", planInput()))) return;
+    save.mutate();
   };
   const startEdit = (plan: MembershipPlan) => {
     setEditing(plan);
@@ -150,7 +156,7 @@ export function MembershipPlansSection({ makerspaceId, features = [] }: { makers
         aria-label={editing ? `Edit plan ${editing.name}` : "New membership plan"}
         onSubmit={(event) => {
           event.preventDefault();
-          submit();
+          void submit();
         }}
       >
         <Field label="Plan name" className="sm:col-span-3">
@@ -190,6 +196,7 @@ export function MembershipPlansSection({ makerspaceId, features = [] }: { makers
         <MembershipPlanRulesFields value={rules} onChange={(value) => { setRules(value); setProblem(null); }} planRulesOn={planRulesOn} publicPlansOn={publicPlansOn} />
       </form>
       {error ? <p className="mt-2 text-sm text-danger" role="alert">{error}</p> : null}
+      {drop.dialog}
     </Panel>
   );
 }

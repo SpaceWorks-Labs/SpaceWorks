@@ -30,6 +30,9 @@ export const REASON_LABELS: Record<RefundCase["reason_code"] | "capture_flagged"
   order_unfulfilled: "Order could not be seated",
   ticket_type_changed: "Changed to a cheaper ticket",
   pass_occurrence_cancelled: "Pass occurrence cancelled",
+  price_drop: "Price lowered after payment",
+  job_cancelled: "Prepaid job cancelled before it started",
+  quote_difference: "Job cost less than its prepaid quote",
 };
 
 export function caseTone(status: RefundCaseStatusEnum): "success" | "warn" | "danger" | "neutral" {

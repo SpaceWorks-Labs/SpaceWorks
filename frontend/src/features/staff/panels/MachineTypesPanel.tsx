@@ -15,6 +15,7 @@ import {
   type MeteringUnit,
 } from "../machinesApi";
 import { CapabilityPresetListEditor } from "./machine/CapabilityPresetListEditor";
+import { usePriceDropCheck } from "../priceDrop/usePriceDropCheck";
 
 const meteringUnits: Array<{ value: MeteringUnit; label: string }> = [
   { value: "weight", label: "Weight (grams)" },
@@ -78,14 +79,21 @@ function PricingEditor({ makerspaceId, machineType, currency, canConfigure, draf
   const setRate = (rate: string) => onDraftChange({ ...draft, rate });
   const setFlatFee = (flatFee: string) => onDraftChange({ ...draft, flatFee });
   const setPaymentEnabled = (paymentEnabled: boolean) => onDraftChange({ ...draft, paymentEnabled });
+  const payload = () => ({
+    rate_per_unit: rate || row?.rate_per_unit || "0.00",
+    flat_fee: flatFee || row?.flat_fee || "0.00",
+    payment_enabled: paymentEnabled ?? row?.payment_enabled ?? false,
+  });
   const mutation = useMutation({
-    mutationFn: () => setMachineTypePricing(makerspaceId, machineType.id, {
-      rate_per_unit: rate || row?.rate_per_unit || "0.00",
-      flat_fee: flatFee || row?.flat_fee || "0.00",
-      payment_enabled: paymentEnabled ?? row?.payment_enabled ?? false,
-    }),
+    mutationFn: () => setMachineTypePricing(makerspaceId, machineType.id, payload()),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: machineKeys.pricing(makerspaceId) }),
   });
+  // Lane L24: a cheaper type price may owe prepaid jobs not started yet a refund.
+  const drop = usePriceDropCheck(makerspaceId);
+  const save = async () => {
+    const path = `/admin/makerspace/${makerspaceId}/machine-type-pricing/${machineType.id}`;
+    if (await drop.check(path, "PUT", payload())) mutation.mutate();
+  };
   const shownRate = rate || row?.rate_per_unit || "0.00";
   const shownFlatFee = flatFee || row?.flat_fee || "0.00";
   const shownEnabled = paymentEnabled ?? row?.payment_enabled ?? false;
@@ -99,11 +107,12 @@ function PricingEditor({ makerspaceId, machineType, currency, canConfigure, draf
       <input className="desk-input" type="number" min="0" step="0.01" value={shownFlatFee} onChange={(event) => setFlatFee(event.target.value)} />
     </label>
     <label className="eyebrow flex items-center gap-2"><input type="checkbox" checked={shownEnabled} onChange={(event) => setPaymentEnabled(event.target.checked)} /> Enable payment</label>
-    <button className="desk-button-primary" type="button" onClick={() => mutation.mutate()} disabled={mutation.isPending}>{mutation.isPending ? "Saving..." : "Save pricing"}</button>
+    <button className="desk-button-primary" type="button" onClick={() => { void save(); }} disabled={mutation.isPending || drop.checking}>{mutation.isPending ? "Saving..." : "Save pricing"}</button>
     {pricing.isLoading ? <p className="text-xs text-muted md:col-span-4">Loading pricing...</p> : null}
     {pricing.error instanceof Error ? <p className="text-xs text-danger md:col-span-4">{pricing.error.message}</p> : null}
     {mutation.isSuccess ? <p className="text-xs text-success-ink md:col-span-4">Pricing saved.</p> : null}
     {mutation.error instanceof Error ? <p className="text-xs text-danger md:col-span-4">{mutation.error.message}</p> : null}
+    {drop.dialog}
   </div>;
 }
 

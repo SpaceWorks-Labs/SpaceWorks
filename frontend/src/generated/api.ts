@@ -9368,6 +9368,8 @@ export type ImportRun = {
 };
 };
 
+export type ImportSourceKindEnum = "file" | "google_sheet";
+
 export type ImportUpload = {
   "operation_id": string;
   "expected_version": number;
@@ -12182,6 +12184,8 @@ export type MemberImportPreview = {
   [key: string]: unknown;
 }>;
   "total_rows": number;
+  "source"?: string;
+  "sheet_sha256"?: string;
 };
 
 export type MemberImportResult = {
@@ -12195,7 +12199,10 @@ export type MemberImportResult = {
 };
 
 export type MemberImportUpload = {
-  "file": string;
+  "source"?: ImportSourceKindEnum;
+  "url"?: string;
+  "sheet_sha256"?: string;
+  "file"?: string | null;
   "mapping"?: string;
   "record_only_rows"?: string;
   "skip_rows"?: string;

@@ -6,6 +6,13 @@ from drf_spectacular.utils import extend_schema_field
 from apps.operations.cancellation_restore import restore_deadline
 
 
+class AttendanceReplySummarySerializer(serializers.Serializer):
+    answer = serializers.CharField(allow_null=True)
+    note = serializers.CharField()
+    replied_at = serializers.DateTimeField(allow_null=True)
+    effect = serializers.CharField()
+
+
 class EventRegistrationAdminSerializer(PaymentSummaryMixin, serializers.ModelSerializer):
     custom_answers = serializers.JSONField(read_only=True, allow_null=True)
     event_id = serializers.IntegerField(read_only=True)
@@ -13,15 +20,26 @@ class EventRegistrationAdminSerializer(PaymentSummaryMixin, serializers.ModelSer
     no_longer_eligible = serializers.BooleanField(read_only=True, default=False)
     payment = serializers.SerializerMethodField()
     restore_until = serializers.SerializerMethodField()
+    # Lane L21a: the crew flag and the "still coming?" reply (X43), in the guest list and at the desk.
+    is_crew = serializers.BooleanField(read_only=True)
+    attendance_reply = serializers.SerializerMethodField()
 
     class Meta:
         model = EventRegistration
         fields = (
             'no_longer_eligible', 'id', 'event_id', 'name', 'email', 'phone', 'custom_answers',
             'status', 'created_at', 'payment', 'ticket_type_id', 'quoted_amount', 'discount_amount',
-            'cancelled_at', 'status_before_cancel', 'restore_until',
+            'cancelled_at', 'status_before_cancel', 'restore_until', 'is_crew', 'attendance_reply',
         )
         read_only_fields = fields
+
+    @extend_schema_field(AttendanceReplySummarySerializer(allow_null=True))
+    def get_attendance_reply(self, obj):
+        reply = getattr(obj, "attendance_reply", None) if hasattr(obj, "attendance_reply") else None
+        if reply is None:
+            return None
+        return {"answer": reply.answer or None, "note": reply.note, "replied_at": reply.replied_at,
+                "effect": reply.effect}
 
     @extend_schema_field(serializers.DateTimeField(allow_null=True))
     def get_restore_until(self, obj):

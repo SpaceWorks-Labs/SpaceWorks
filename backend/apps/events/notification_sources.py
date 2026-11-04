@@ -147,3 +147,6 @@ def register_event_sources():
     # Release 2 L6: ticket orders (confirmation, reminders, type changes, pass occurrences, venue fees).
     from .notices_r2_l6 import register as register_order_notices
     register_order_notices()
+    # Release 2 L21a: stage advances, attendance confirmation and crew decisions.
+    from .notices_r2_l21a import register as register_participation_notices
+    register_participation_notices()

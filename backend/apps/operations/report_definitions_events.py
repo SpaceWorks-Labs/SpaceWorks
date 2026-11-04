@@ -10,7 +10,9 @@ from .report_types import ReportDefinition
 from .report_definitions_existing import EXISTING_REPORT_DEFINITIONS
 from .report_charts_remaining import REGISTRATIONS_CHART, FEEDBACK_CHART, ATTENDANCE_PDF_CHART
 
-REGISTRATION_FIELDS = ("registration_id", "name", "email", "phone", "status", "created_at", "answers")
+# Lane L21a appends the crew flag and the "still coming?" reply (X43).
+REGISTRATION_FIELDS = ("registration_id", "name", "email", "phone", "status", "created_at", "answers",
+                       "crew", "attendance_reply")
 FEEDBACK_FIELDS = ("response_id", "created_at", "registration_id", "answers")
 ATTENDANCE_FIELDS = next(d.fields for d in EXISTING_REPORT_DEFINITIONS if d.key == "event-attendance")
 

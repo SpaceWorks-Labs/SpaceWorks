@@ -8,8 +8,10 @@ app is absent, but nothing here is imported until then.
 
 Never exposed (coordinator instruction for L18): ``payments.DonorTaxDetail``, every ``donor_*``
 and ``contact_*`` column, ``access_secret``, ``manage_secret``, ``tax_receipt`` and the whole
-personal calendar feed table (so donations carry no donor id either). L22: never ``pickup_code``, ``status_secret``, ``digest``,
-``guest_*``, ``pricing_snapshot`` or image keys. L21a: never answers, dietary notes or
+personal calendar feed table (so donations carry no donor id either). L22 (its L25 contract): never ``pickup_code``, ``status_secret``, ``digest``,
+``guest_*``, ``pricing_snapshot`` or image keys; the buyer id is masked like a name and no
+created_by, collected_by, actor or cash-session user id appears at all. L21b (its L25 contract):
+the payout ``recipient_id`` is masked; payout references, judge notes and criterion values never appear. L21a: never answers, dietary notes or
 consents. L24 adds refund reasons only: the registered ``refund_cases`` view already covers
 them (its ``reason_code`` column), so L24 needs no new view.
 """
@@ -168,7 +170,8 @@ L22_SHOP = (
              Col("shop_order_id", "o.id", "Order id."),
              Col("channel", "o.channel", "Online or desk (point of sale)."),
              Col("status", "o.status", "Order state."),
-             Col("member_id", "o.buyer_id", "Buyer with an account (members)."),
+             Col("member_id", "o.buyer_id", "Buyer with an account (members); masked unless member details are on.",
+                 pii=True, pii_type="bigint"),
              Col("pickup_at", "o.pickup_at", "Pickup place."),
              Col("currency", "o.currency", "Currency."),
              Col("subtotal", "o.subtotal", "Before discounts."),
@@ -201,5 +204,41 @@ L22_SHOP = (
              Col("amount", "r.amount", "Amount."),
              Col("refund_case_id", "r.refund_case_id", "Refund case (refund_cases)."),
              Col("created_at", "r.created_at", "Recorded."),
+         ), since=2),
+)
+
+L22_SHOP += (
+    View("shop_stock_movements", "shop", "Stock movements per variant (no reason text, no actor).",
+         "FROM {shop.ShopStockMovement} m", "m.makerspace_id", (
+             Col("movement_id", "m.id", "Movement id."),
+             Col("shop_variant_id", "m.variant_id", "Variant (shop_variants)."),
+             Col("kind", "m.kind", "Sale, restock, return, adjustment and so on."),
+             Col("quantity", "m.quantity", "Units (negative leaves stock)."),
+             Col("balance_after", "m.balance_after", "Stock after the movement."),
+             Col("shop_order_id", "m.order_id", "Order, if any (shop_orders)."),
+             Col("created_at", "m.created_at", "Recorded."),
+         ), since=2),
+    View("shop_checkout_holds", "shop", "Stock held for open orders, and why each hold ended.",
+         "FROM {shop.ShopCheckoutHold} h", "h.makerspace_id", (
+             Col("hold_id", "h.id", "Hold id."),
+             Col("shop_order_id", "h.order_id", "Order (shop_orders)."),
+             Col("shop_variant_id", "h.variant_id", "Variant (shop_variants)."),
+             Col("quantity", "h.quantity", "Units held."),
+             Col("expires_at", "h.expires_at", "Hold expires."),
+             Col("released_at", "h.released_at", "Released."),
+             Col("release_reason", "h.release_reason", "Paid, expired or cancelled."),
+             Col("created_at", "h.created_at", "Placed."),
+         ), since=2),
+    View("shop_cash_sessions", "shop", "Desk cash sessions: amounts and times only.",
+         "FROM {shop.ShopCashSession} c", "c.makerspace_id", (
+             Col("cash_shift_id", "c.id", "Cash session (shift) id."),
+             Col("status", "c.status", "Open, closing or closed."),
+             Col("currency", "c.currency", "Currency."),
+             Col("opening_float", "c.opening_float", "Float at opening."),
+             Col("expected_cash", "c.expected_cash", "Cash expected at close."),
+             Col("counted_cash", "c.counted_cash", "Cash counted at close."),
+             Col("variance", "c.variance", "Counted minus expected."),
+             Col("opened_at", "c.opened_at", "Opened."),
+             Col("closed_at", "c.closed_at", "Closed."),
          ), since=2),
 )

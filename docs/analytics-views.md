@@ -549,5 +549,7 @@ To-Buy entries from request to stock, with costs.
 ## Pending at merge (not in version 1)
 
 Pre-written in `catalogue/pending_lanes.py`, registered when their lanes merge (catalogue version 2):
-donations and sponsors (L18), admission decisions and event crew (L21a), the shop (L22). L24's price-drop refund
+donations and sponsors (L18), admission decisions and event crew (L21a), the shop (L22: products, variants,
+orders, lines, returns, stock movements, checkout holds and cash sessions); and, in `catalogue/pending_lanes_l21b.py`,
+judging rounds, finalists, announcements, prizes, prize payouts and judge-score timings (L21b). L24's price-drop refund
 cases need no new view: they appear in `refund_cases` with their own `reason_code`.

@@ -10,7 +10,7 @@ export type Layer = {
 };
 export type LayerDocument = { version: 2; page_width_mm: number; page_height_mm: number; layers: Layer[] };
 export type LegacyDocument = { version: 1; page_width_mm: number; page_height_mm: number; name_box: PositionedElement };
-export const MERGE_TAGS = ["name", "event", "eventDate", "organisation", "issueDate"] as const;
+export const MERGE_TAGS = ["name", "event", "eventDate", "organisation", "issueDate", "crewRole"] as const;
 export const STOCKS = {
   "a6-portrait": [105, 148], "4x6": [101.6, 152.4], "3x4": [76.2, 101.6],
   "4x3": [101.6, 76.2], "cr80-portrait": [53.98, 85.6], "cr80-landscape": [85.6, 53.98],

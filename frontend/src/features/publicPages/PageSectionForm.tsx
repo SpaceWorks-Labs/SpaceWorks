@@ -27,6 +27,7 @@ export function PageSectionForm({ section, assets, kind, onChange }: {
         <label className={pageLabel}>Directions<textarea className={pageInput} maxLength={2000} value={section.payload.directions ?? ""} onChange={e => onChange({ ...section, payload: { ...section.payload, directions: e.target.value } })} /></label>
       </> : null}<p className="text-sm text-muted">This is public location consent. Check-in geofence coordinates are never copied into it.</p>
     </div> : null}
-    {["upcoming_events", "linked_makerspaces", "organization_events", "membership_plans"].includes(section.type) ? <p className="text-sm text-muted">This collection is refreshed from eligible public records on every read. No names, counts or event lists are saved in this section.</p> : null}
+    {section.type === "crew" ? <p className="text-sm text-muted">Shows approved crew who chose to appear publicly and keep a public profile: their name, handle and crew role only.</p> : null}
+    {["upcoming_events", "linked_makerspaces", "organization_events", "membership_plans", "crew"].includes(section.type) ? <p className="text-sm text-muted">This collection is refreshed from eligible public records on every read. No names, counts or event lists are saved in this section.</p> : null}
   </div>;
 }

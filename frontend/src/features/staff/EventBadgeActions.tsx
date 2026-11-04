@@ -15,6 +15,7 @@ import { DeskBadgePanel } from "./eventCredentials/DeskBadgePanel";
 const BASE_FIELDS = [
   ["name", "Name"], ["event_title", "Event"], ["date_time", "Date and time"],
   ["location", "Location"], ["registration_number", "Registration number"],
+  ["crew_role", "Crew role (blank for participants)"],
 ] as const;
 
 function safeFilename(title: string) {

@@ -51,4 +51,5 @@ export const DataExportsPanel = lazy(() => import("./DataExportsPanel").then((m)
 export const BackupRestorePanel = lazy(() => import("./BackupRestorePanel").then((m) => ({ default: m.BackupRestorePanel })));
 export const TenantMigrationPanel = lazy(() => import("./TenantMigrationPanel").then((m) => ({ default: m.TenantMigrationPanel })));
 export const ConsumablesPanel = lazy(() => import("./panels/ConsumablesPanel").then((m) => ({ default: m.ConsumablesPanel })));
+export const ShopPanel = lazy(() => import("./shop/ShopPanel").then((m) => ({ default: m.ShopPanel })));
 

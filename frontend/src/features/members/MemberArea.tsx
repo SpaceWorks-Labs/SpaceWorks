@@ -41,6 +41,7 @@ import { PricePreview } from "../payments/PricePreview";
 import type { CustomAnswers } from "../forms/customFormTypes";
 import { MemberNotifications } from "../notifications/MemberNotifications";
 import { MemberEventHistoryLink } from "./MemberEventHistoryLink";
+import { MemberShopOrdersLink } from "./shopOrders/MemberShopOrdersLink";
 import { MyNotificationSettings } from "../notifications/MyNotificationSettings";
 import { usePreferences } from "../notifications/channelsApi";
 import { MemberPhoneVerification } from "./MemberPhoneVerification";
@@ -241,6 +242,8 @@ export function MemberArea() {
     {error ? <p className="text-sm text-danger" role="alert">{message(error)}</p> : null}
     {memberships.isError && !unauthenticated ? <Link className="desk-button-brand inline-flex" to="/admin">Sign in</Link> : null}
     {activeTab === "bookings" && !unauthenticated && memberships.isSuccess && bootstrap.data?.modules.includes("bookings") ? <MyBookings slug={resolvedSlug} /> : null}
+    {/* L22: a buyer reaches their shop orders from Payments; ordering needs an account, not a membership. */}
+    {activeTab === "payments" && !unauthenticated && memberships.isSuccess && bootstrap.data?.modules.includes("shop") ? <MemberShopOrdersLink slug={slug} /> : null}
     {/* Event history needs only an account: an attendee without a membership reaches it from Home. */}
     {!unauthenticated && memberships.isSuccess && bootstrap.data?.modules.includes("events") && (activeTab === "events" || activeTab === "overview" && membership?.membership_status !== "active") ? <MemberEventHistoryLink slug={slug} /> : null}
     {unauthenticated ? <button type="button" className="desk-button-brand" onClick={() => setShowSignIn(true)}>Sign in to your account</button> : null}

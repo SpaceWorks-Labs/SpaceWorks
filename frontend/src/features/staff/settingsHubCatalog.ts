@@ -41,6 +41,7 @@ const TAB_ENTRIES: HubEntry[] = [
   ["machines", "Machine settings", "Machine features, from the Machines page.", "machines settings maintenance certification"],
   ["events", "Event settings", "Event features, from the Events page's settings menu.", "events settings features"],
   ["bookings", "Booking settings", "Booking features and rules, from the Bookings page's settings menu.", "bookings settings rules features"],
+  ["shop", "Shop settings", "Holds, pickup reminders, returns window and the shop policy, from the Shop page.", "shop store sell merch kits policy pickup holds returns reminders cash till"],
 ].map(([id, title, description, keywords]) => ({ id: `tab:${id}`, title, description, keywords, target: { tab: id } }));
 
 /** Every destination the hub can offer, narrowed to what this page shows and the actor may open. */

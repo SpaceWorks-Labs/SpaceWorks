@@ -165,6 +165,23 @@ export const FEATURE_DEFINITIONS: readonly FeatureDefinition[] = [
   { key: "events.desk_collect", parent_module: "events", label: "Collect payment at the desk" },
   { key: "events.refund_override", parent_module: "events", label: "Per-event refund policy" },
   { key: "events.venue_fees", parent_module: "events", label: "Venue fees for hosting" },
+  // L22 (#128 C-7, #129, #135, #137): the per-space shop.
+  { key: "shop.online", parent_module: "shop", label: "Online shop" },
+  { key: "shop.guest_checkout", parent_module: "shop", label: "Guest checkout" },
+  { key: "shop.holds", parent_module: "shop", label: "Stock holds at checkout" },
+  { key: "shop.member_prices", parent_module: "shop", label: "Member prices" },
+  { key: "shop.tax", parent_module: "shop", label: "Shop tax classes" },
+  { key: "shop.returns", parent_module: "shop", label: "Returns and refunds" },
+  { key: "shop.cash_up", parent_module: "shop", label: "Cash-up" },
+  { key: "shop.event_pickup", parent_module: "shop", label: "Pickup at events" },
+  { key: "shop.order_limits", parent_module: "shop", label: "Per-order limits" },
+  { key: "shop.public_stock", parent_module: "shop", label: "Stock on the shop page" },
+  { key: "shop.receipts", parent_module: "shop", label: "Shop receipts" },
+  { key: "shop.reorder", parent_module: "shop", label: "Low-stock reorder" },
+  { key: "shop.bundles", parent_module: "shop", label: "Kit bundles" },
+  { key: "shop.consumable_link", parent_module: "shop", label: "Sell inventory consumables" },
+  { key: "charges.shop", parent_module: null, label: "Track shop sales" },
+  { key: "payments.shop", parent_module: "shop", label: "Online shop payments" },
 ];
 
 export function featureEnabled(features: Iterable<string>, key: string) {

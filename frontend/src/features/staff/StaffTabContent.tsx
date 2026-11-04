@@ -15,6 +15,7 @@ import { StaffPanelErrorBoundary } from "./StaffPanelErrorBoundary";
 import { PlatformProgrammeDashboard } from "./eventProgramme/PlatformProgrammeDashboard";
 import { GrantedResourcesPanel } from "./GrantedResourcesPanel";
 import { ConsumablesPanel } from "./StaffTabLoaders";
+import { ShopPanel } from "./StaffTabLoaders";
 
 import { PaymentsPanel, RefundQueue, FinancePanel, EventPayoutsSection, DevicesPanel, DashboardPanel, NotificationInbox, DirectLoans, Inventory, Ledger, MachinesPanel, EventsPanel, OrganizedEventsPanel, OrganizationAnalyticsPanel, OrganizationsPanel, BookingsPanel, MembersPanel, MemberCardsPanel, QrTools, RequestsPanel, OperationsReports, AuditLog, BulkImport, ScannerPanel, ContainersPanel, StocktakePanel, StockTransferPanel, ProcurementPanel, WarrantyPanel, AccountabilityPanel, Categories, NeedsFixShelf, HandoverConsole } from "./StaffTabLoaders";
 
@@ -199,6 +200,7 @@ export function StaffTabContent({
         />
       ) : null}
       {activeTab === "consumables" && allowedTabs.includes("consumables") ? <ConsumablesPanel key={makerspaceKey} makerspace={activeMakerspace} canEditInventory={canEditInventory} /> : null}
+      {activeTab === "shop" && allowedTabs.includes("shop") ? <ShopPanel key={makerspaceKey} makerspace={activeMakerspace} actions={actorActions} isSuperadmin={isSuperadmin} /> : null}
       {activeTab === "transfers" && (canEditInventory || isSuperadmin) ? (
         <StockTransferPanel
           key={makerspaceKey}

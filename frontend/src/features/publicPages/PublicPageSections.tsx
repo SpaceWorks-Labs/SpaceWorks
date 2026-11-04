@@ -7,6 +7,7 @@ import { PublicEventCards, PublicSpaceCards, safePublicLink } from "./PublicColl
 export { PublicEventCards, PublicSpaceCards, safePublicLink } from "./PublicCollectionCards";
 import { ProjectedEventCollection } from "./ProjectedEventCollection";
 import { PublicPlanCards } from "./PublicPlanCards";
+import { PublicShopCards } from "./PublicShopCards";
 const metricLabels = {
   public_exact_count_subset_units: "Exact-count inventory subset",
   published_event_count: "Published events",
@@ -32,6 +33,7 @@ function Content({ section, image, functional, organizationCollections, token, s
     case "upcoming_events": return <ProjectedEventCollection key={`${section.id}-${token}`} collection={section.payload} token={token} slug={slug} />;
     case "linked_makerspaces": return <PublicSpaceCards rows={section.payload.results} />;
     case "membership_plans": return <PublicPlanCards rows={section.payload.results} slug={slug} />;
+    case "shop": return <PublicShopCards shop={section.payload} slug={slug} />;
     case "organization_events": return organizationCollections ?? <div className="grid gap-6"><section><h3 className="title-section mb-3">Upcoming events</h3><PublicEventCards rows={section.payload.upcoming.results} /></section><section><h3 className="title-section mb-3">Past event archive</h3><PublicEventCards rows={section.payload.past.results} past /></section></div>;
     case "functional_content": return functional ?? <ul className="flex flex-wrap gap-2">{section.payload.links.map(link => <li key={link.url}><RouteLink className="desk-button" href={safePublicLink(link.url)}>{({ inventory: "Browse inventory", events: "See events", bookings: "Book a space", machines: "Explore machines", membership: "Member area" })[link.family]}</RouteLink></li>)}</ul>;
     default: return null;

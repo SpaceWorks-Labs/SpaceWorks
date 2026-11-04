@@ -28,5 +28,6 @@ export function PageSectionForm({ section, assets, kind, onChange }: {
       </> : null}<p className="text-sm text-muted">This is public location consent. Check-in geofence coordinates are never copied into it.</p>
     </div> : null}
     {["upcoming_events", "linked_makerspaces", "organization_events", "membership_plans"].includes(section.type) ? <p className="text-sm text-muted">This collection is refreshed from eligible public records on every read. No names, counts or event lists are saved in this section.</p> : null}
+    {section.type === "shop" ? <p className="text-sm text-muted">Shows a few public products from your shop, linking to the full shop. Products, prices and stock come live from the shop on every read.</p> : null}
   </div>;
 }

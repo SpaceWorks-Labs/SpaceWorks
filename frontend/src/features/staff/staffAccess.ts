@@ -4,6 +4,7 @@ const ALL_TABS = [
   "stocktake", "containers", "ledger", "reports", "accountability", "warranty", "bulk", "qr", "scanner", "api", "settings", "security", "emailtemplates", "users", "platform", "audit",
   "devices", "email-logs", "payments", "refunds", "finance", "organizations", "organization-analytics", "modules", "exports", "backups", "migration",
   "consumables",
+  "shop",
 ] as const;
 
 export const STAFF_TAB_KEYS: readonly string[] = ALL_TABS;
@@ -62,10 +63,12 @@ export const TAB_LABELS: Record<string, string> = {
   exports: "Data export",
   backups: "Backup & restore",
   migration: "Tenant migration",
+  shop: "Shop",
 };
 
 export const TAB_GROUPS: { label: string; tabs: string[] }[] = [
   { label: "Operate", tabs: ["dashboard", "notifications", "channels", "requests", "direct", "handover", "payments", "refunds", "finance", "ledger", "transfers", "stocktake", "tobuy", "consumables"] },
+  { label: "Shop", tabs: ["shop"] },
   { label: "Inventory", tabs: ["inventory", "categories", "needsfix", "containers", "bulk", "qr", "scanner"] },
   { label: "Machines", tabs: ["machines", "devices"] },
   { label: "Events", tabs: ["events", "organized", "granted"] },
@@ -205,6 +208,8 @@ export function getStaffAccess(
     if (tabName === "exports") return canManageMakerspace;
     if (tabName === "backups") return canManageMakerspace;
     if (tabName === "migration") return isSuperadmin;
+    // L22: the shop actions; the Space Manager holds them through manage_makerspace (rbac IMPLIED_ACTIONS).
+    if (tabName === "shop") return has("view_shop") || has("sell_shop") || has("manage_shop") || canManageMakerspace;
     if (tabName === "requests") return canSeeHardware;
     return true;
   });

@@ -12,6 +12,7 @@ export type SectionPayloads = {
   upcoming_events: Api.Titled; stats: Api.Stats; testimonials: Api.Testimonials; links: Api.Links;
   location: Api.Location; linked_makerspaces: Api.Titled; organization_events: Api.Titled;
   functional_content: Record<string, never>; membership_plans: Api.Titled;
+  shop: Api.Titled;
 };
 export type SectionType = keyof SectionPayloads;
 export type PageSection = { [K in SectionType]: { id: string; type: K; enabled: boolean; payload: SectionPayloads[K] } }[SectionType];

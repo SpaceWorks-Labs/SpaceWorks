@@ -4,8 +4,10 @@ from rest_framework import serializers
 
 
 class FunnelStageSerializer(serializers.Serializer):
-    key = serializers.ChoiceField(choices=("responded", "going", "checked_in", "feedback"))
+    # AN-c1: one `application_stage` row per live L21a review stage, between responded and going.
+    key = serializers.ChoiceField(choices=("responded", "application_stage", "going", "checked_in", "feedback"))
     label = serializers.CharField()
+    stage_position = serializers.IntegerField(min_value=1, allow_null=True)
     count = serializers.IntegerField(min_value=0)
     denominator = serializers.IntegerField(min_value=0, allow_null=True)
     percent = serializers.FloatField(min_value=0, max_value=100, allow_null=True)

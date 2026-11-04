@@ -65,15 +65,19 @@ def project_funnel(event, *, actor=None, now=None):
     feedback = EventFeedbackResponse.objects.filter(
         survey__event=event, registration__event=event, registration__status="attended",
     ).values("registration_id").distinct().count()
+    # AN-c1: L21a's application stages sit between responding and going, in stage order.
+    from apps.events.hackathons.admission_stage_funnel import stage_counts
+    steps = [("responded", "Responded", len(responded), None)]
+    for stage in stage_counts(event):
+        steps.append(("application_stage", stage["name"], stage["count"], steps[-1][2], stage["position"]))
+    steps += [("going", "Going", len(going), steps[-1][2]),
+              ("checked_in", "Checked in", len(checked), len(going)),
+              ("feedback", "Feedback", feedback, len(checked))]
     stages = []
-    for key, label, count, denominator in (
-        ("responded", "Responded", len(responded), None),
-        ("going", "Going", len(going), len(responded)),
-        ("checked_in", "Checked in", len(checked), len(going)),
-        ("feedback", "Feedback", feedback, len(checked)),
-    ):
+    for key, label, count, denominator, *position in steps:
         stages.append({"key": key, "label": label, "count": count, "denominator": denominator,
-                       "percent": percentage(count, denominator) if denominator is not None else None})
+                       "percent": percentage(count, denominator) if denominator is not None else None,
+                       "stage_position": position[0] if position else None})
     dates = {}
     for at in responded.values():
         if start <= at < end:

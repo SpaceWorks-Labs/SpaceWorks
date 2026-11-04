@@ -79,8 +79,9 @@ class TenantDumpCatalogError(AssertionError):
 # lane/r2-s-a: makerspaces/0119 retires security.staff_mfa_required (catalog unchanged).
 # lane/r2-l23: machines/0032 and payments/0035 metered machine sessions; re-pinned.
 # lane/r2-l26: makerspaces/0120 (renumbered after S-A's 0119) public stats settings; re-pinned.
+# lane/r2-l16: makerspaces/0121-0122 (renumbered) Technician role, maintenance/0005 repairs; re-pinned.
 # Orchestrator re-pins the live catalog after final schema/migration verification.
-CATALOG_SCHEMA_SHA256 = "0453f5e05d0b8fb58fa4c191b54f538aa00ff215a32828aaf41f31b52364c682"
+CATALOG_SCHEMA_SHA256 = "8e3acca80aa259789147bc8d0e40fef310cbbfb7cc3a80e839ab0e21c7dcc0e1"
 
 
 def catalog_models(apps_registry=apps):

@@ -95,6 +95,7 @@ export const openApiTags = [
   "Member machine sessions",
   "Member organizations",
   "Member profile",
+  "Member repairs",
   "Memberships",
   "Messaging",
   "Messaging webhooks",
@@ -128,11 +129,15 @@ export const openApiTags = [
   "Public organizations",
   "Public pages",
   "Public profiles",
+  "Public repairs",
   "Public requests",
   "Public websites",
   "QR assets",
   "QR print batches",
   "Reauthentication",
+  "Repairs",
+  "Repairs maintenance",
+  "Repairs technicians",
   "Reports",
   "Saved details",
   "Security settings",
@@ -472,6 +477,20 @@ export const openApiPaths = [
   "/api/v1/admin/inventory/{product_pk}/assets",
   "/api/v1/admin/invitation-requests/{id}/decline",
   "/api/v1/admin/invitation-requests/{id}/invite",
+  "/api/v1/admin/issues/{id}",
+  "/api/v1/admin/issues/{id}/approve",
+  "/api/v1/admin/issues/{id}/assign",
+  "/api/v1/admin/issues/{id}/close",
+  "/api/v1/admin/issues/{id}/dispatch",
+  "/api/v1/admin/issues/{id}/fix",
+  "/api/v1/admin/issues/{id}/parts",
+  "/api/v1/admin/issues/{id}/payout",
+  "/api/v1/admin/issues/{id}/quote",
+  "/api/v1/admin/issues/{id}/reject",
+  "/api/v1/admin/issues/{id}/start",
+  "/api/v1/admin/issues/{id}/triage",
+  "/api/v1/admin/issues/{id}/unassign",
+  "/api/v1/admin/issues/{id}/work-log",
   "/api/v1/admin/kiosk-replays/{id}/",
   "/api/v1/admin/kiosk-replays/{id}/resolve/",
   "/api/v1/admin/kiosk-stations/{id}/",
@@ -539,6 +558,7 @@ export const openApiPaths = [
   "/api/v1/admin/maintenance/logs/{id}/documents/presign/",
   "/api/v1/admin/maintenance/schedules/{id}/",
   "/api/v1/admin/maintenance/schedules/{id}/deactivate/",
+  "/api/v1/admin/maintenance/schedules/{id}/run",
   "/api/v1/admin/makerspace/{makerspace_id}/accepted-requests",
   "/api/v1/admin/makerspace/{makerspace_id}/accountability",
   "/api/v1/admin/makerspace/{makerspace_id}/active-loans",
@@ -789,6 +809,8 @@ export const openApiPaths = [
   "/api/v1/admin/makerspaces/{makerspace_id}/hosting-invitations",
   "/api/v1/admin/makerspaces/{makerspace_id}/hosting-invitations/{id}/cancel",
   "/api/v1/admin/makerspaces/{makerspace_id}/invitation-requests",
+  "/api/v1/admin/makerspaces/{makerspace_id}/issues",
+  "/api/v1/admin/makerspaces/{makerspace_id}/issues/photos",
   "/api/v1/admin/makerspaces/{makerspace_id}/join-requests/bulk-decide",
   "/api/v1/admin/makerspaces/{makerspace_id}/machine-materials",
   "/api/v1/admin/makerspaces/{makerspace_id}/machine-materials/{id}",
@@ -825,18 +847,22 @@ export const openApiPaths = [
   "/api/v1/admin/makerspaces/{makerspace_id}/memberships",
   "/api/v1/admin/makerspaces/{makerspace_id}/memberships/{membership_id}/machine-scope",
   "/api/v1/admin/makerspaces/{makerspace_id}/memberships/{membership_id}/role",
+  "/api/v1/admin/makerspaces/{makerspace_id}/my-jobs",
+  "/api/v1/admin/makerspaces/{makerspace_id}/my-maintenance",
   "/api/v1/admin/makerspaces/{makerspace_id}/pii-access",
   "/api/v1/admin/makerspaces/{makerspace_id}/refund-cases/{case_id}/membership-suggestion",
   "/api/v1/admin/makerspaces/{makerspace_id}/renewal-reminders",
   "/api/v1/admin/makerspaces/{makerspace_id}/renewal-worklist",
   "/api/v1/admin/makerspaces/{makerspace_id}/report-schedules",
   "/api/v1/admin/makerspaces/{makerspace_id}/roles",
+  "/api/v1/admin/makerspaces/{makerspace_id}/room-outages",
   "/api/v1/admin/makerspaces/{makerspace_id}/saved-report-views",
   "/api/v1/admin/makerspaces/{makerspace_id}/saved-report-views/{id}",
   "/api/v1/admin/makerspaces/{makerspace_id}/saved-views",
   "/api/v1/admin/makerspaces/{makerspace_id}/saved-views/{id}",
   "/api/v1/admin/makerspaces/{makerspace_id}/security-settings",
   "/api/v1/admin/makerspaces/{makerspace_id}/security-settings/{key}/lock",
+  "/api/v1/admin/makerspaces/{makerspace_id}/service-state",
   "/api/v1/admin/makerspaces/{makerspace_id}/spaces/",
   "/api/v1/admin/makerspaces/{makerspace_id}/staff-invitations",
   "/api/v1/admin/makerspaces/{makerspace_id}/staff-invitations/{invitation_id}/resend",
@@ -846,6 +872,10 @@ export const openApiPaths = [
   "/api/v1/admin/makerspaces/{makerspace_id}/staff-roles/{membership_id}/mfa-reset",
   "/api/v1/admin/makerspaces/{makerspace_id}/staff-roles/{membership_id}/restore/",
   "/api/v1/admin/makerspaces/{makerspace_id}/staff-roles/{membership_id}/revoke/",
+  "/api/v1/admin/makerspaces/{makerspace_id}/subject-maintenance",
+  "/api/v1/admin/makerspaces/{makerspace_id}/technician-defaults",
+  "/api/v1/admin/makerspaces/{makerspace_id}/technicians",
+  "/api/v1/admin/makerspaces/{makerspace_id}/technicians/candidates",
   "/api/v1/admin/makerspaces/{makerspace_id}/uploads/evidence-url",
   "/api/v1/admin/makerspaces/{makerspace_id}/waiver",
   "/api/v1/admin/makerspaces/{makerspace_id}/walk-in-members",
@@ -1006,6 +1036,11 @@ export const openApiPaths = [
   "/api/v1/admin/stocktakes/{id}/complete",
   "/api/v1/admin/stocktakes/{id}/count-lines",
   "/api/v1/admin/stocktakes/{id}/resolve-scan",
+  "/api/v1/admin/subject-maintenance/{id}",
+  "/api/v1/admin/subject-maintenance/{id}/run",
+  "/api/v1/admin/technicians/{id}",
+  "/api/v1/admin/technicians/{id}/consent",
+  "/api/v1/admin/technicians/{id}/opt-in-link",
   "/api/v1/admin/users/booking-managers",
   "/api/v1/admin/users/event-managers",
   "/api/v1/admin/users/handover",
@@ -1184,6 +1219,9 @@ export const openApiPaths = [
   "/api/v1/member/event-payouts/{obligation_id}/payee/",
   "/api/v1/member/event-payouts/{obligation_id}/payee/reveal/",
   "/api/v1/member/event-speaker-claims/",
+  "/api/v1/member/issues",
+  "/api/v1/member/issues/loan-items",
+  "/api/v1/member/issues/photos",
   "/api/v1/member/machine-jobs",
   "/api/v1/member/machine-jobs/{id}",
   "/api/v1/member/machine-jobs/{id}/approve-quote",
@@ -1427,6 +1465,7 @@ export const openApiPaths = [
   "/api/v1/public/profiles/{handle}/github",
   "/api/v1/public/profiles/{handle}/projects",
   "/api/v1/public/requests/{public_token}/status",
+  "/api/v1/public/technician-opt-in/{token}",
   "/api/v1/public/{makerspace_slug}/bookings/calendar/{raw_token}.ics",
   "/api/v1/public/{makerspace_slug}/event-calendar/{raw_token}.ics",
   "/api/v1/public/{makerspace_slug}/events/",
@@ -1448,6 +1487,8 @@ export const openApiPaths = [
   "/api/v1/public/{makerspace_slug}/inventory/{id}/",
   "/api/v1/public/{makerspace_slug}/inventory/{id}/watch/",
   "/api/v1/public/{makerspace_slug}/invitation-requests",
+  "/api/v1/public/{makerspace_slug}/issues",
+  "/api/v1/public/{makerspace_slug}/issues/photos",
   "/api/v1/public/{makerspace_slug}/machine-jobs",
   "/api/v1/public/{makerspace_slug}/machine-jobs/types",
   "/api/v1/public/{makerspace_slug}/machine-jobs/uploads",
@@ -2177,6 +2218,13 @@ export type AdmissionVouchOutcome = {
   "state": State9efEnum;
 };
 
+export type AffectedBooking = {
+  "id": number;
+  "starts_at": string;
+  "ends_at": string;
+  "status": string;
+};
+
 export type AgeBucketEnum = "0-30" | "31-60" | "61-90" | "90+";
 
 export type Aggregate = {
@@ -2518,6 +2566,8 @@ export type ArchiveRequestError = {
 export type ArchiveRequestValidationError = {
   "reason"?: Array<string>;
 };
+
+export type AreaD55Enum = "machines" | "inventory" | "rooms";
 
 export type Arrival = {
   "starts_at": string;
@@ -4626,6 +4676,10 @@ export type ChannelB6fEnum = "email" | "in_app" | "native_push" | "sms" | "whats
 
 export type ChannelDb9Enum = "telegram" | "slack" | "mattermost" | "discord" | "whatsapp";
 
+export type Channels06eEnum = "whatsapp" | "sms";
+
+export type Channels1dcEnum = "email" | "telegram" | "whatsapp" | "sms";
+
 export type CheckinMethod = {
   "method": CheckinMethodMethodEnum;
   "count": number;
@@ -5354,6 +5408,8 @@ export type ContainerScanHistoryItem = {
   "actor": number | null;
   "created_at": string;
 };
+
+export type ContentType12dEnum = "image/jpeg" | "image/png" | "image/webp";
 
 export type Context = {
   "context_version": number;
@@ -9428,10 +9484,158 @@ export type InviteList = {
   "results": Array<Invite>;
 };
 
+export type IssueAssign = {
+  "contact_id"?: number | null;
+  "myself"?: boolean;
+};
+
+export type IssueAssignment = {
+  "id": number;
+  "contact_id": number | null;
+  "person_id": number | null;
+  "name": string;
+};
+
+export type IssueDispatchRequest = {
+  "contact_ids": Array<number>;
+  "channels"?: Array<Channels1dcEnum> | null;
+  "note"?: string;
+};
+
+export type IssueEvent = {
+  "id": number;
+  "kind": IssueEventKindEnum;
+  "actor_name": string;
+  "contact_name": string;
+  "note"?: string;
+  "occurred_on"?: string | null;
+  "amount"?: string | null;
+  "currency"?: string;
+  "created_at": string;
+};
+
+export type IssueEventKindEnum = "reported" | "triaged" | "rejected" | "assigned" | "unassigned" | "dispatched" | "visit" | "started" | "remark" | "parts_used" | "parts_needed" | "quote" | "quote_approved" | "quote_declined" | "payout" | "fixed" | "closed" | "service_state";
+
+export type IssueNote = {
+  "note"?: string;
+};
+
+export type IssueOpen = {
+  "subject_type": SubjectType0b3Enum;
+  "subject_id": number;
+  "title": string;
+  "description"?: string;
+  "priority"?: PriorityEnum;
+};
+
+export type IssuePhoto = {
+  "id": number;
+  "stage": IssuePhotoStageEnum;
+  "content_type": string;
+  "size_bytes": number;
+  "created_at": string;
+  "url": string;
+};
+
+export type IssuePhotoStageEnum = "reported" | "work" | "fixed";
+
+export type IssuePhotoUpload = {
+  "content_type": ContentType12dEnum;
+};
+
+export type IssuePhotoUploadResponse = {
+  "photo_token": string;
+  "upload": {
+  [key: string]: unknown;
+};
+  "max_bytes": number;
+};
+
 export type IssueReject = {
   "item_id": number;
   "broken"?: number;
   "disposition"?: DispositionEnum;
+};
+
+export type IssueReportCreate = {
+  "photos"?: Array<string>;
+  "makerspace_id"?: number;
+  "makerspace_slug"?: string;
+  "loan_id"?: number;
+  "booking_id"?: number;
+  "booking_token"?: string;
+  "machine_job_id"?: number;
+  "product_id"?: number;
+  "asset_id"?: number;
+  "title": string;
+  "description": string;
+};
+
+export type IssueReportCreated = {
+  "id": number;
+  "state": string;
+};
+
+export type IssueReportDetail = {
+  "id": number;
+  "area": AreaD55Enum;
+  "subject_type": SubjectType0b3Enum;
+  "subject_id": number;
+  "subject_label": string;
+  "source": Source4adEnum;
+  "title": string;
+  "state"?: State9e8Enum;
+  "priority"?: PriorityEnum;
+  "quote_state"?: QuoteStateEnum;
+  "reporter_name": string;
+  "assignees": Array<IssueAssignment>;
+  "work_order_id": number | null;
+  "created_at": string;
+  "updated_at": string;
+  "fixed_at"?: string | null;
+  "closed_at"?: string | null;
+  "description": string;
+  "resolution"?: string;
+  "reporter_email": string;
+  "quote_amount"?: string | null;
+  "quote_currency"?: string;
+  "quote_note"?: string;
+  "quote_contact_id": number | null;
+  "payout_entry_id": number | null;
+  "loan_id": number | null;
+  "booking_id": number | null;
+  "machine_job_id": number | null;
+  "reporter_notified_at"?: string | null;
+  "events": Array<IssueEvent>;
+  "photos": Array<IssuePhoto>;
+  "dispatches": Array<TechnicianDispatch>;
+  "parts": Array<RepairPart>;
+  "viewer_role": string;
+  "default_contact_ids": Array<number>;
+};
+
+export type IssueReportList = {
+  "id": number;
+  "area": AreaD55Enum;
+  "subject_type": SubjectType0b3Enum;
+  "subject_id": number;
+  "subject_label": string;
+  "source": Source4adEnum;
+  "title": string;
+  "state"?: State9e8Enum;
+  "priority"?: PriorityEnum;
+  "quote_state"?: QuoteStateEnum;
+  "reporter_name": string;
+  "assignees": Array<IssueAssignment>;
+  "work_order_id": number | null;
+  "created_at": string;
+  "updated_at": string;
+  "fixed_at"?: string | null;
+  "closed_at"?: string | null;
+};
+
+export type IssueReportReject = {
+  "reason": string;
 };
 
 export type IssueRequest = {
@@ -9444,6 +9648,15 @@ export type IssueRequest = {
 
 export type IssueResolve = {
   "note"?: string;
+};
+
+export type IssueTriage = {
+  "priority"?: PriorityEnum;
+  "note"?: string;
+};
+
+export type IssueUnassign = {
+  "assignment_id": number;
 };
 
 export type Job = {
@@ -10019,7 +10232,7 @@ export type LegacyResetPasswordConfirm = {
   "new_password": string;
 };
 
-export type LegacyRoleEnum = "space_manager" | "inventory_manager" | "print_manager" | "machine_manager" | "event_manager" | "booking_manager" | "handover";
+export type LegacyRoleEnum = "space_manager" | "inventory_manager" | "print_manager" | "machine_manager" | "event_manager" | "booking_manager" | "handover" | "technician";
 
 export type LendingHistoryActor = {
   "username": string;
@@ -10248,6 +10461,12 @@ export type LoanFeeWaiverRevoke = {
   "reason": string;
 };
 
+export type LoanItem = {
+  "product_id": number;
+  "asset_id": number | null;
+  "name": string;
+};
+
 export type LoanRenewal = {
   "id": number;
   "return_due_at": string;
@@ -10400,6 +10619,14 @@ export type MachineDowntimeRow = {
   "machine_type": string | null;
   "status": string;
   "status_hours": string | null;
+};
+
+export type MachineDue = {
+  "id": number;
+  "machine_id": number;
+  "machine_name": string;
+  "description": string;
+  "next_due": string;
 };
 
 export type MachineErrorLog = {
@@ -10860,6 +11087,11 @@ export type MaintenanceLogWrite = {
   "parts_note"?: string;
   "set_idle"?: boolean;
   "schedule_id"?: number;
+};
+
+export type MaintenanceRun = {
+  "summary": string;
+  "parts_note"?: string;
 };
 
 export type MaintenanceSchedule = {
@@ -11530,6 +11762,23 @@ export type MemberImportUpload = {
   "skip_rows"?: string;
 };
 
+export type MemberIssuePhoto = {
+  "content_type": ContentType12dEnum;
+  "makerspace_id"?: number;
+  "makerspace_slug"?: string;
+};
+
+export type MemberIssueReport = {
+  "id": number;
+  "area": AreaD55Enum;
+  "subject_label": string;
+  "source": Source4adEnum;
+  "title": string;
+  "state"?: State9e8Enum;
+  "created_at": string;
+  "fixed_at"?: string | null;
+};
+
 export type MemberJob = {
   "id": number;
   "public_token": string;
@@ -11884,7 +12133,7 @@ export type MembershipList = {
   "user": User;
   "makerspace_id": number;
   "makerspace_slug": string;
-  "role": RoleCddEnum;
+  "role": Role161Enum;
   "assigned_role": MembershipRoleSummary | null;
   "role_ids": Array<number>;
   "roles": Array<MembershipRole>;
@@ -12688,6 +12937,11 @@ export type MuteResult = {
   "state"?: string;
   "allowed_actions": Array<string>;
   "muted_until": string | null;
+};
+
+export type MyMaintenance = {
+  "machine_schedules": Array<MachineDue>;
+  "schedules": Array<SubjectSchedule>;
 };
 
 export type MyMembershipRequest = {
@@ -16003,6 +16257,15 @@ export type PatchedStageConfigurationCommand = {
 };
 };
 
+export type PatchedSubjectScheduleWrite = {
+  "subject_type"?: SubjectScheduleWriteSubjectTypeEnum;
+  "subject_id"?: number;
+  "description"?: string;
+  "interval_days"?: number;
+  "next_due"?: string;
+  "is_active"?: boolean;
+};
+
 export type PatchedTeamInput = {
   "operation_id"?: string;
   "expected_version"?: number;
@@ -16010,6 +16273,17 @@ export type PatchedTeamInput = {
   "seeking_members"?: boolean;
   "finder_intro"?: string;
   "skills"?: Array<string>;
+};
+
+export type PatchedTechnicianContactWrite = {
+  "person_id"?: number | null;
+  "name"?: string;
+  "email"?: string;
+  "phone"?: string;
+  "telegram_handle"?: string;
+  "notes"?: string;
+  "channels"?: Array<Channels1dcEnum>;
+  "coverage"?: Array<TechnicianCoverageRow>;
 };
 
 export type PatchedTicketPatch = {
@@ -18164,6 +18438,27 @@ export type PublicInviteLink = {
   "label": string;
 };
 
+export type PublicIssuePhoto = {
+  "content_type": ContentType12dEnum;
+  "contact_email": string;
+};
+
+export type PublicIssueReportCreate = {
+  "photos"?: Array<string>;
+  "makerspace_id"?: number;
+  "makerspace_slug"?: string;
+  "loan_id"?: number;
+  "booking_id"?: number;
+  "booking_token"?: string;
+  "product_id"?: number;
+  "asset_id"?: number;
+  "title": string;
+  "description": string;
+  "contact_name": string;
+  "contact_email": string;
+  "email_code": string;
+};
+
 export type PublicLandingPage6a0Enum = "auto" | "inventory" | "events" | "machines" | "bookings" | "membership";
 
 export type PublicLinkedMakerspacesSection = {
@@ -19210,6 +19505,8 @@ export type QuoteModeEnum = "auto" | "off" | "above" | "always";
 
 export type QuotesEnum = "auto" | "off" | "above" | "always";
 
+export type QuoteStateEnum = "none" | "pending" | "approved" | "declined";
+
 export type RailEnum = "online" | "offline" | "unallocated";
 
 export type RankInput = {
@@ -19490,7 +19787,7 @@ export type RecentlyAddedReportRow = {
 
 export type RecipeEnum = "free_open" | "free_vouch" | "paid_approval" | "paid_invite_only" | "closed";
 
-export type RecipientActionsEnum = "accept_request" | "assign_box" | "collect_service_request" | "edit_inventory" | "issue_direct_loan" | "issue_request" | "manage_bookings" | "manage_devices" | "manage_events" | "manage_machines" | "manage_makerspace" | "manage_member_cards" | "manage_members" | "manage_printing" | "manage_qr" | "record_payment" | "record_reimbursement_payout" | "reject_request" | "return_request" | "scan_member_cards" | "upload_evidence" | "view_audit" | "view_finance" | "view_inventory";
+export type RecipientActionsEnum = "accept_request" | "assign_box" | "collect_service_request" | "edit_inventory" | "issue_direct_loan" | "issue_request" | "manage_bookings" | "manage_devices" | "manage_events" | "manage_machines" | "manage_makerspace" | "manage_member_cards" | "manage_members" | "manage_printing" | "manage_qr" | "record_payment" | "record_reimbursement_payout" | "reject_request" | "return_request" | "run_maintenance" | "scan_member_cards" | "set_service_state" | "upload_evidence" | "view_audit" | "view_finance" | "view_inventory" | "work_repairs";
 
 export type RecipientEnum = "self";
 
@@ -19875,6 +20172,65 @@ export type ReorderSuggestion = {
   "reorder_point": number;
   "reorder_quantity": number;
 };
+
+export type RepairFix = {
+  "photos"?: Array<string>;
+  "resolution": string;
+};
+
+export type RepairPart = {
+  "id": number;
+  "kind": RepairPartKindEnum;
+  "product_id": number | null;
+  "name": string;
+  "quantity": number;
+  "to_buy_item_id": number | null;
+  "created_at": string;
+};
+
+export type RepairPartKindEnum = "used" | "needed";
+
+export type RepairPartWrite = {
+  "kind": RepairPartWriteKindEnum;
+  "product_id"?: number | null;
+  "name"?: string;
+  "quantity": number;
+};
+
+export type RepairPartWriteKindEnum = "used" | "needed";
+
+export type RepairPayout = {
+  "amount": string;
+  "currency"?: string;
+  "method": RepairPayoutMethodEnum;
+  "reference"?: string;
+  "receipt_id"?: number | null;
+  "entry_date"?: string | null;
+};
+
+export type RepairPayoutMethodEnum = "cash" | "upi" | "bank_transfer" | "cheque" | "other";
+
+export type RepairQuote = {
+  "amount": string;
+  "currency": string;
+  "contact_id"?: number | null;
+  "note"?: string;
+};
+
+export type RepairQuoteDecision = {
+  "approve": boolean;
+  "note"?: string;
+};
+
+export type RepairWorkLog = {
+  "photos"?: Array<string>;
+  "kind": RepairWorkLogKindEnum;
+  "note"?: string;
+  "occurred_on"?: string | null;
+  "contact_id"?: number | null;
+};
+
+export type RepairWorkLogKindEnum = "visit" | "remark";
 
 export type ReplayDirectHandout = {
   "kit_checklist"?: Array<KitCount>;
@@ -20529,7 +20885,7 @@ export type Role = {
   "imported_inert"?: boolean;
 };
 
-export type RoleCddEnum = "space_manager" | "inventory_manager" | "print_manager" | "machine_manager" | "event_manager" | "booking_manager" | "handover" | "custom";
+export type Role161Enum = "space_manager" | "inventory_manager" | "print_manager" | "machine_manager" | "event_manager" | "booking_manager" | "handover" | "technician" | "custom";
 
 export type RoleId = {
   "role_id": number;
@@ -20575,9 +20931,23 @@ export type RoleReason = {
   "reason": string;
 };
 
-export type RoleSlugEnum = "space_manager" | "inventory_manager" | "machine_manager" | "event_manager" | "booking_manager" | "handover";
+export type RoleSlugEnum = "space_manager" | "inventory_manager" | "machine_manager" | "event_manager" | "booking_manager" | "handover" | "technician";
 
 export type RoleStateEnum = "draft" | "proposed" | "applied" | "approved" | "declined" | "withdrawn" | "revoked" | "completed";
+
+export type RoomOutage = {
+  "id": number;
+  "room_id": number;
+  "room_name": string;
+  "mode"?: RoomOutageModeEnum;
+  "reason"?: string;
+  "expected_back_at"?: string | null;
+  "started_at"?: string;
+  "ended_at"?: string | null;
+  "issue_id": number | null;
+};
+
+export type RoomOutageModeEnum = "block" | "warn";
 
 export type RosterMember = {
   "id": number;
@@ -21306,6 +21676,25 @@ export type ServiceStart = {
   "planned_quantity"?: string;
 };
 
+export type ServiceStateChange = {
+  "subject_type": SubjectType0b3Enum;
+  "subject_id": number;
+  "in_service": boolean;
+  "reason"?: string;
+  "expected_back_at"?: string | null;
+  "quantity"?: number | null;
+  "mode"?: ServiceStateChangeModeEnum;
+  "issue_id"?: number | null;
+};
+
+export type ServiceStateChangeModeEnum = "block" | "warn";
+
+export type ServiceStateResult = {
+  "state": string;
+  "outage_id": number | null;
+  "affected_bookings": Array<AffectedBooking>;
+};
+
 export type SessionAmend = {
   "minutes": number;
   "reason": string;
@@ -21585,6 +21974,8 @@ export type Source = {
 };
 
 export type Source04fEnum = "makerspace_public" | "entered";
+
+export type Source4adEnum = "loan" | "booking" | "machine_job" | "staff";
 
 export type SourceEd5Enum = "member_qr" | "staff" | "device";
 
@@ -21957,7 +22348,7 @@ export type StaffMembership = {
   "user": User;
   "makerspace_id": number;
   "makerspace_slug": string;
-  "role"?: RoleCddEnum;
+  "role"?: Role161Enum;
   "created_at": string;
 };
 
@@ -22480,6 +22871,8 @@ export type State766Enum = "applied";
 
 export type State906Enum = "draft" | "open" | "closed";
 
+export type State9e8Enum = "reported" | "triaged" | "assigned" | "in_progress" | "fixed" | "closed" | "rejected";
+
 export type State9efEnum = "requested" | "invited" | "awaiting_vouches" | "awaiting_payment" | "expired" | "canceled" | "active" | "revoked";
 
 export type StateE8dEnum = "draft" | "published" | "retired";
@@ -22752,9 +23145,44 @@ export type SubjectExportList = {
   "results": Array<SubjectExport>;
 };
 
+export type SubjectLog = {
+  "id": number;
+  "schedule_id": number | null;
+  "subject_type": SubjectTypeE13Enum;
+  "performed_at"?: string;
+  "summary": string;
+  "parts_note"?: string;
+};
+
+export type SubjectSchedule = {
+  "id": number;
+  "subject_type": SubjectTypeE13Enum;
+  "subject_id": number;
+  "subject_label": string;
+  "description": string;
+  "interval_days": number;
+  "next_due": string;
+  "is_active"?: boolean;
+  "created_at": string;
+  "updated_at": string;
+};
+
+export type SubjectScheduleWrite = {
+  "subject_type"?: SubjectScheduleWriteSubjectTypeEnum;
+  "subject_id"?: number;
+  "description"?: string;
+  "interval_days"?: number;
+  "next_due"?: string;
+  "is_active"?: boolean;
+};
+
+export type SubjectScheduleWriteSubjectTypeEnum = "inventory_product" | "inventory_asset" | "bookable_space";
+
 export type SubjectType0b3Enum = "machine" | "inventory_product" | "inventory_asset" | "bookable_space";
 
 export type SubjectType61eEnum = "machine_service_request" | "booking" | "event_registration" | "makerspace_membership" | "membership_term" | "membership_request" | "loan_deposit" | "loan_late_fee" | "loan_rental" | "loan_damage" | "loan_lost" | "machine_session";
+
+export type SubjectTypeE13Enum = "inventory_product" | "inventory_asset" | "bookable_space";
 
 export type SubmissionIntegrity = {
   "submission_id": number;
@@ -22931,6 +23359,105 @@ export type TeamInput = {
 };
 
 export type TeamModeEnum = "solo" | "individual_then_team" | "team_together";
+
+export type TechnicianCandidate = {
+  "person_id": number;
+  "name": string;
+  "is_technician": boolean;
+};
+
+export type TechnicianConsent = {
+  "email": boolean;
+  "telegram": boolean;
+  "whatsapp": boolean;
+  "sms": boolean;
+};
+
+export type TechnicianConsentWithdraw = {
+  "channel": TechnicianConsentWithdrawChannelEnum;
+};
+
+export type TechnicianConsentWithdrawChannelEnum = "telegram" | "whatsapp" | "sms";
+
+export type TechnicianContact = {
+  "id": number;
+  "kind": TechnicianContactKindEnum;
+  "person_id": number | null;
+  "name": string;
+  "email": string;
+  "phone": string;
+  "telegram_handle": string;
+  "channels": unknown;
+  "notes": string;
+  "is_archived": boolean;
+  "coverage": Array<TechnicianCoverageRow>;
+  "consent": TechnicianConsent;
+  "opt_in_pending": boolean;
+  "created_at": string;
+  "updated_at": string;
+};
+
+export type TechnicianContactKindEnum = "in_house" | "external";
+
+export type TechnicianContactWrite = {
+  "person_id"?: number | null;
+  "name"?: string;
+  "email"?: string;
+  "phone"?: string;
+  "telegram_handle"?: string;
+  "notes"?: string;
+  "channels"?: Array<Channels1dcEnum>;
+  "coverage"?: Array<TechnicianCoverageRow>;
+};
+
+export type TechnicianCoverageRow = {
+  "kind": TechnicianCoverageRowKindEnum;
+  "id"?: number | null;
+  "label": string;
+};
+
+export type TechnicianCoverageRowKindEnum = "machine_type" | "inventory" | "room";
+
+export type TechnicianDefault = {
+  "id": number;
+  "area": AreaD55Enum;
+  "machine_type_id"?: number | null;
+  "room_id"?: number | null;
+  "contact_id": number;
+};
+
+export type TechnicianDispatch = {
+  "id": number;
+  "contact_id": number;
+  "contact_name": string;
+  "channel": TechnicianDispatchChannelEnum;
+  "status": TechnicianDispatchStatusEnum;
+  "failure_code"?: string;
+  "sent_at": string;
+};
+
+export type TechnicianDispatchChannelEnum = "email" | "telegram" | "whatsapp" | "sms";
+
+export type TechnicianDispatchStatusEnum = "delivered" | "failed";
+
+export type TechnicianOptInAccept = {
+  "channels": Array<Channels06eEnum>;
+};
+
+export type TechnicianOptInLink = {
+  "url": string;
+  "telegram_start": string;
+  "expires_at": string;
+  "emailed": boolean;
+};
+
+export type TechnicianOptInPage = {
+  "makerspace_name": string;
+  "technician_name": string;
+  "has_phone": boolean;
+  "consent": TechnicianConsent;
+  "telegram_start": string;
+};
 
 export type TelegramTestAlert = {
   "makerspace_id": number;

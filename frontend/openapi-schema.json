@@ -99573,6 +99573,58 @@
                 }
             }
         },
+        "/api/v1/admin/makerspaces/{makerspace_id}/security/key-events": {
+            "get": {
+                "operationId": "api_v1_admin_makerspaces_security_key_events_list",
+                "description": "Read-only. Visible to the space's managers (MANAGE_MAKERSPACE) and the superadmin. Starting a rotation is a /control/ superadmin action; no key material is returned.",
+                "summary": "Key rotation and re-key history of one makerspace",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "name": "page",
+                        "required": false,
+                        "in": "query",
+                        "description": "A page number within the paginated result set.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "tags": [
+                    "Security settings"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedKeyEventList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "description": "Not a manager of this space."
+                    },
+                    "404": {
+                        "description": "Unknown or unservable makerspace."
+                    }
+                }
+            }
+        },
         "/api/v1/admin/makerspaces/{makerspace_id}/service-state": {
             "post": {
                 "operationId": "api_v1_admin_makerspaces_service_state_create",
@@ -223749,6 +223801,103 @@
                 "type": "string",
                 "description": "* `hardware_requests` - Hardware requests\n* `printing` - Printing\n* `events` - Events\n* `bookings` - Bookings\n* `maintenance` - Maintenance\n* `members` - Members\n* `api_access` - API access\n* `devices` - Devices\n* `payments` - Payments\n* `stock` - Stock and procurement\n* `certifications` - Certifications\n* `presence` - Presence"
             },
+            "KeyEvent": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "kind": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/KeyEventKindEnum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "status": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/KeyEventStatusEnum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "from_version": {
+                        "type": "integer",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "to_version": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "rows_done": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "rows_skipped": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "retained_versions": {
+                        "readOnly": true
+                    },
+                    "error_code": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "started_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "completed_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "completed_at",
+                    "error_code",
+                    "from_version",
+                    "id",
+                    "kind",
+                    "retained_versions",
+                    "rows_done",
+                    "rows_skipped",
+                    "started_at",
+                    "status",
+                    "to_version",
+                    "updated_at"
+                ]
+            },
+            "KeyEventKindEnum": {
+                "enum": [
+                    "rotation",
+                    "emergency_rekey",
+                    "search_reindex"
+                ],
+                "type": "string",
+                "description": "* `rotation` - Key rotation\n* `emergency_rekey` - Emergency re-key\n* `search_reindex` - Search key rotation"
+            },
+            "KeyEventStatusEnum": {
+                "enum": [
+                    "running",
+                    "completed",
+                    "failed"
+                ],
+                "type": "string",
+                "description": "* `running` - Running\n* `completed` - Completed\n* `failed` - Failed"
+            },
             "Kind181Enum": {
                 "enum": [
                     "receipt",
@@ -242524,6 +242673,37 @@
                         "type": "array",
                         "items": {
                             "$ref": "#/components/schemas/Job"
+                        }
+                    }
+                }
+            },
+            "PaginatedKeyEventList": {
+                "type": "object",
+                "required": [
+                    "count",
+                    "results"
+                ],
+                "properties": {
+                    "count": {
+                        "type": "integer",
+                        "example": 123
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=4"
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=2"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/KeyEvent"
                         }
                     }
                 }

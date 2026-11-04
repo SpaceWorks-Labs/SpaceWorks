@@ -914,6 +914,7 @@ export const openApiPaths = [
   "/api/v1/admin/makerspaces/{makerspace_id}/saved-views/{id}",
   "/api/v1/admin/makerspaces/{makerspace_id}/security-settings",
   "/api/v1/admin/makerspaces/{makerspace_id}/security-settings/{key}/lock",
+  "/api/v1/admin/makerspaces/{makerspace_id}/security/key-events",
   "/api/v1/admin/makerspaces/{makerspace_id}/service-state",
   "/api/v1/admin/makerspaces/{makerspace_id}/spaces/",
   "/api/v1/admin/makerspaces/{makerspace_id}/staff-invitations",
@@ -10235,6 +10236,25 @@ export type Key292Enum = "in_app" | "email" | "telegram" | "slack" | "mattermost
 
 export type Key4d1Enum = "hardware_requests" | "printing" | "events" | "bookings" | "maintenance" | "members" | "api_access" | "devices" | "payments" | "stock" | "certifications" | "presence";
 
+export type KeyEvent = {
+  "id": number;
+  "kind": KeyEventKindEnum;
+  "status": KeyEventStatusEnum;
+  "from_version": number | null;
+  "to_version": number;
+  "rows_done": number;
+  "rows_skipped": number;
+  "retained_versions": unknown;
+  "error_code": string;
+  "started_at": string;
+  "updated_at": string;
+  "completed_at": string | null;
+};
+
+export type KeyEventKindEnum = "rotation" | "emergency_rekey" | "search_reindex";
+
+export type KeyEventStatusEnum = "running" | "completed" | "failed";
+
 export type Kind181Enum = "receipt" | "expense";
 
 export type Kind1c7Enum = "dev_room" | "bench" | "meeting" | "other" | "machine";
@@ -14589,6 +14609,13 @@ export type PaginatedJobList = {
   "next"?: string | null;
   "previous"?: string | null;
   "results": Array<Job>;
+};
+
+export type PaginatedKeyEventList = {
+  "count": number;
+  "next"?: string | null;
+  "previous"?: string | null;
+  "results": Array<KeyEvent>;
 };
 
 export type PaginatedLabelCommandList = {

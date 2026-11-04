@@ -6,6 +6,9 @@
 
 ## Condensed changelog (newest first — full detail in `git log`)
 
+- **2026-11-05 -- RP-3 donations reports (gap lane, after L18).** Finance-only reports for campaign
+  progress, pledges (active, missed, paused, cancelled) and sponsor perks due or fulfilled, plus the
+  `finance-donations` ledger area; per space, organization-excluded, never a donor name, contact or PAN.
 - **2026-11-04 -- release 2 L18, donations, sponsors and calendar sync (#94, #96, #128 C-14).** A donation
   page per space with campaigns and funds; anyone gives (signed in, or a guest confirmed by an emailed
   code) as one `donation` Payment (never taxed, may have no account) in the ledger's `donations` area,

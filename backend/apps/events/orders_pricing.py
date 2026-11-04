@@ -9,7 +9,7 @@ ticket type's current price:
 * a single registration: its frozen `quoted_amount` (the release-1 flat price for
   legacy rows), charged by its own `event_registration` Payment;
 * plus every PAID `type_change` order for that registration, minus every type-change
-  difference already owed back.
+  difference already owed back, minus every price-drop difference offered (lane L24).
 
 `payment` is the charge a refund for that ticket is opened on (None when nothing was paid).
 """
@@ -52,4 +52,12 @@ def paid_ticket_price(registration):
     extra = sum((order.total for order in EventOrder.objects.filter(
         source_registration=registration, kind=EventOrder.Kind.TYPE_CHANGE, status=EventOrder.Status.PAID)),
         Decimal("0"))
-    return base + extra - refunded, payment
+    return base + extra - refunded - _price_drop_offered(payment, registration), payment
+
+
+def _price_drop_offered(payment, registration):
+    """Lane L24 (#163A): money already offered back on this seat because its price dropped."""
+    if payment is None:
+        return Decimal("0")
+    from apps.payments.price_drop.shares import prior_shares, standing
+    return standing(0, prior_shares(payment, f"registration:{registration.pk}"))[1]

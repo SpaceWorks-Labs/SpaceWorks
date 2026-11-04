@@ -7,7 +7,10 @@ Approve, under Payment -> RefundCase locks:
 * offline charge -> `record_offline_refund`, which demands a receipt (method,
   reference, date) because the money is handed back in person (R3).
 Deciding needs subject authority for the charge's domain; recording cash also needs
-RECORD_PAYMENT. With the payments rail removed an online case can only be declined (R4).
+RECORD_PAYMENT. A price-difference case (lane L24: a price lowered after payment, or a
+prepaid job cheaper than its quote) is decided by the Space Manager or a finance admin
+instead (`price_drop.approval`), and approving one never ends a membership term. With
+the payments rail removed an online case can only be declined (R4).
 """
 
 from decimal import Decimal, InvalidOperation
@@ -19,7 +22,7 @@ from rest_framework.exceptions import PermissionDenied
 from apps.accounts import rbac
 from apps.payments.exceptions_refunds import RefundCaseConflict, RefundNotAllowed
 from apps.payments.models import Payment, RefundCase
-from apps.payments.reconciliation_authority import _require_subject_authority
+from apps.payments.price_drop.approval import is_difference_case, require_decider
 from apps.payments.refund_policy import precision_ok, refundable_balance
 from apps.payments.services_refund_cases import _lock_payment, _notify, record_case
 
@@ -28,7 +31,7 @@ def _lock_case(case, actor):
     payment = _lock_payment(case.payment_id)
     locked = RefundCase.objects.select_for_update(of=("self",)).get(pk=case.pk)
     locked.payment = payment
-    _require_subject_authority(actor, [payment])
+    require_decider(actor, payment, locked)
     if locked.status not in RefundCase.ACTIVE_STATUSES:
         raise RefundCaseConflict("This refund case is already closed.", "refund_case_closed", status=locked.status)
     return payment, locked
@@ -68,7 +71,7 @@ def approve_case(case, *, actor, amount=None, reason="", note="", receipt=None, 
                                  balance="0.00")
     if refund.status == refund.Status.PENDING and payment.status == Payment.Status.PAID_ONLINE:
         _send_after_commit(refund, actor)
-    if not keep_membership:
+    if not keep_membership and not is_difference_case(locked):
         from apps.payments.refund_membership_term import end_term_after_commit
         end_term_after_commit(locked, payment, actor)
     return RefundCase.objects.select_related("payment__makerspace", "refund").get(pk=locked.pk)

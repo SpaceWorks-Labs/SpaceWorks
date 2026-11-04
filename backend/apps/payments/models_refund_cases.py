@@ -65,6 +65,12 @@ class RefundCase(models.Model):
         ORDER_UNFULFILLED = "order_unfulfilled", "Order could not be seated"
         TICKET_TYPE_CHANGED = "ticket_type_changed", "Changed to a cheaper ticket"
         PASS_OCCURRENCE_CANCELLED = "pass_occurrence_cancelled", "Pass occurrence cancelled"
+        #: Lane L24: a price LOWERED after payment (#163A), a member cancelling a prepaid
+        #: machine job before it starts (#171 (2)), and a prepaid job whose actual cost came
+        #: in below its quote (#171 (3)). Each case still needs a staff approval.
+        PRICE_DROP = "price_drop", "Price lowered after payment"
+        JOB_CANCELLED = "job_cancelled", "Prepaid job cancelled before it started"
+        QUOTE_DIFFERENCE = "quote_difference", "Actual cost below the prepaid quote"
 
     payment = models.ForeignKey(Payment, on_delete=models.PROTECT, related_name="refund_cases")
     kind = models.CharField(max_length=16, choices=Kind.choices)

@@ -7,7 +7,7 @@ the ledger's `donations` domain, settled offline with a receipt or paid through 
 
 from django.db import transaction
 from django.utils import timezone
-from rest_framework.exceptions import ValidationError
+from .gates import DonationRefused
 
 from apps.audit import services as audit
 
@@ -22,7 +22,7 @@ def save_sponsor(space, *, actor, data, sponsor=None):
     """Create or update. Contact fields are scoped PII and never enter the audit row."""
     tier = data.get("tier")
     if tier is not None and tier.makerspace_id != space.pk:
-        raise ValidationError({"tier": "That tier is not in this space."})
+        raise DonationRefused("That tier is not in this space.", "tier_invalid", "tier")
     creating = sponsor is None
     sponsor = sponsor or Sponsor(makerspace=space, created_by=actor)
     before = {key: getattr(sponsor, key, None) for key in data}
@@ -73,7 +73,7 @@ def copy_tier_perks(sponsor, *, actor):
 def save_perk(space, *, actor, data, perk=None):
     owner = data.get("sponsor") or data.get("tier") or (perk.sponsor if perk else None) or (perk.tier if perk else None)
     if owner is None or owner.makerspace_id != space.pk:
-        raise ValidationError({"detail": "A perk belongs to one sponsor or one tier in this space."})
+        raise DonationRefused("A perk belongs to one sponsor or one tier in this space.", "perk_owner_invalid")
     creating = perk is None
     perk = perk or SponsorPerk(makerspace=space)
     for key, value in data.items():
@@ -91,8 +91,7 @@ def save_perk(space, *, actor, data, perk=None):
 @transaction.atomic
 def fulfil_perk(perk, *, actor, fulfilled=True, note=""):
     if perk.sponsor_id is None:
-        raise ValidationError({"detail": "Tier perks are templates; fulfil a sponsor's copy.",
-                               "code": "perk_is_template"})
+        raise DonationRefused("Tier perks are templates; fulfil a sponsor's copy.", "perk_is_template")
     perk.fulfilled_at, perk.fulfilled_by = (timezone.now(), actor) if fulfilled else (None, None)
     perk.note = (note or perk.note or "")[:300]
     perk.save(update_fields=["fulfilled_at", "fulfilled_by", "note"])
@@ -128,13 +127,14 @@ def raise_charge(sponsor, *, actor, amount, description=""):
 @transaction.atomic
 def link_event_sponsor(sponsor, event_sponsor, *, actor):
     if event_sponsor.makerspace_id != sponsor.makerspace_id:
-        raise ValidationError({"event_sponsor": "That event sponsor is not in this space."})
+        raise DonationRefused("That event sponsor is not in this space.", "event_sponsor_invalid",
+                              "event_sponsor")
     link, created = SponsorEventLink.objects.get_or_create(
         event_sponsor=event_sponsor, defaults={"makerspace_id": sponsor.makerspace_id, "sponsor": sponsor,
                                                "created_by": actor})
     if not created and link.sponsor_id != sponsor.pk:
-        raise ValidationError({"event_sponsor": "That event sponsor is already linked to another sponsor.",
-                               "code": "event_sponsor_linked"})
+        raise DonationRefused("That event sponsor is already linked to another sponsor.", "event_sponsor_linked",
+                              "event_sponsor")
     if created:
         audit.record(actor, "sponsor.event_linked", makerspace=sponsor.makerspace, target=sponsor,
                      meta={"sponsor_id": sponsor.pk, "event_sponsor_id": event_sponsor.pk,

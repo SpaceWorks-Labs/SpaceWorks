@@ -5,13 +5,22 @@ Staff surfaces are the finance ledger's `donations` domain (#100): only holders 
 or opening a refund case also needs `record_payment`.
 """
 
-from rest_framework.exceptions import NotFound, PermissionDenied
+from rest_framework.exceptions import APIException, NotFound, PermissionDenied
 
 from apps.accounts import rbac
 from apps.makerspaces.platform import feature_enabled
 
 DONATIONS, PLEDGES, SPONSORS, TAX = (
     "finance.donations", "finance.recurring_donations", "finance.sponsors", "finance.tax_exempt_receipts")
+
+
+class DonationRefused(APIException):
+    """A typed 400 the screens read: `{"detail", "code", "field"}` (like the refund refusals)."""
+
+    status_code = 400
+
+    def __init__(self, detail, code, field=None):
+        self.detail = {"detail": detail, "code": code, **({"field": field} if field else {})}
 
 
 class FeatureOff(NotFound):

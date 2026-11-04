@@ -100,6 +100,15 @@ class EventLinkSerializer(serializers.ModelSerializer):
         fields = ("id", "sponsor", "event_sponsor", "event_id", "event_title", "label", "created_at")
 
 
+class EventSponsorChoiceSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    label = serializers.CharField()
+    event_id = serializers.IntegerField()
+    event_title = serializers.CharField()
+    active = serializers.BooleanField()
+    linked_sponsor_id = serializers.IntegerField(allow_null=True)
+
+
 class FulfilSerializer(serializers.Serializer):
     fulfilled = serializers.BooleanField(default=True)
     note = serializers.CharField(required=False, allow_blank=True, max_length=300, default="")

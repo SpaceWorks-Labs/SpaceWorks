@@ -13,7 +13,7 @@
 import re
 
 from django.utils import timezone
-from rest_framework.exceptions import ValidationError
+from .gates import DonationRefused
 
 PAN_RE = re.compile(r"^[A-Z]{5}[0-9]{4}[A-Z]$")
 SECTION = "80G"
@@ -47,14 +47,14 @@ def clean_request(space, data):
     settings = DonationSettings.for_makerspace(space)
     if not feature_enabled(space, "finance.tax_exempt_receipts") or not registration_live(
             settings, timezone.localdate()):
-        raise ValidationError({"wants_tax_receipt": "This space does not issue tax-exempt receipts.",
-                               "code": "tax_receipts_unavailable"})
+        raise DonationRefused("This space does not issue tax-exempt receipts.", "tax_receipts_unavailable",
+                              "wants_tax_receipt")
     pan = normalize_pan(data.get("donor_pan"))
     if not PAN_RE.match(pan):
-        raise ValidationError({"donor_pan": "Enter a valid 10-character PAN.", "code": "pan_invalid"})
+        raise DonationRefused("Enter a valid 10-character PAN.", "pan_invalid", "donor_pan")
     address = str(data.get("donor_address") or "").strip()[:500]
     if not address:
-        raise ValidationError({"donor_address": "An 80G receipt needs your postal address."})
+        raise DonationRefused("An 80G receipt needs your postal address.", "address_required", "donor_address")
     return True, pan, address
 
 

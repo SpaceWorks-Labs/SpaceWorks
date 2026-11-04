@@ -11,7 +11,7 @@ import logging
 from dateutil.relativedelta import relativedelta
 from django.db import IntegrityError, transaction
 from django.utils import timezone
-from rest_framework.exceptions import ValidationError
+from .gates import DonationRefused
 
 from apps.audit import services as audit
 
@@ -33,7 +33,7 @@ def create_pledge(space, donor, *, amount, interval, starts_on=None, campaign=No
 
     assert_write_allowed(space.pk)
     if interval not in STEP:
-        raise ValidationError({"interval": "Choose monthly, quarterly or yearly."})
+        raise DonationRefused("Choose monthly, quarterly or yearly.", "interval_invalid", "interval")
     today = timezone.localdate()
     starts_on = max(starts_on or today, today)
     wants, pan, address = tax
@@ -54,7 +54,7 @@ def change_pledge(pledge, *, actor, action, amount=None, interval=None):
     """pause / resume / cancel / update (amount, interval) -- audited `pledge.<action>`."""
     locked = DonationPledge.objects.select_for_update().get(pk=pledge.pk)
     if locked.status == DonationPledge.Status.CANCELLED:
-        raise ValidationError({"detail": "This pledge is cancelled.", "code": "pledge_cancelled"})
+        raise DonationRefused("This pledge is cancelled.", "pledge_cancelled")
     fields = ["updated_at"]
     if action == "cancel":
         locked.status, locked.cancelled_at = DonationPledge.Status.CANCELLED, timezone.now()
@@ -75,11 +75,11 @@ def change_pledge(pledge, *, actor, action, amount=None, interval=None):
             fields.append("amount")
         if interval is not None:
             if interval not in STEP:
-                raise ValidationError({"interval": "Choose monthly, quarterly or yearly."})
+                raise DonationRefused("Choose monthly, quarterly or yearly.", "interval_invalid", "interval")
             locked.interval = interval
             fields.append("interval")
     else:
-        raise ValidationError({"action": "Unknown pledge action."})
+        raise DonationRefused("Unknown pledge action.", "pledge_action_invalid", "action")
     locked.save(update_fields=fields)
     if action == "cancel":
         audit.record(actor, "pledge.cancelled", makerspace=locked.makerspace, target=locked,

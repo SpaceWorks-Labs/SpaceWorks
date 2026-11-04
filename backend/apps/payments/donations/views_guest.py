@@ -13,6 +13,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.makerspaces.platform import feature_enabled
+from apps.payments.serializers_l5 import ClaimSubmitSerializer, OwnClaimSerializer
 from apps.payments.throttles_l5 import PayLinkThrottle
 from apps.tenant_migration.gate_runtime import tenant_write
 
@@ -69,6 +70,29 @@ class GuestGiftCheckoutView(APIView):
             url = checkout_url(payment) if payment else ""
         body = s.GiftStatusSerializer(s.gift_status(donation, payment=payment, token=token, checkout=url)).data
         return Response(body, status=200 if url else 503)
+
+
+class GuestGiftClaimView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    throttle_classes = [PayLinkThrottle]
+
+    @extend_schema(tags=["Donations"], summary="Tell the space you paid a guest gift offline", auth=[],
+                   description="Needs `billing.offline_claims`. One open claim per gift and one per reference; "
+                               "staff confirm or reject it (the L5 claim queue).",
+                   request=ClaimSubmitSerializer, responses={201: OwnClaimSerializer, 409: OpenApiResponse(), **ERRORS})
+    def post(self, request, token):
+        from apps.payments.offline_claims import submit_claim
+
+        from .tax_receipts import payment_for
+
+        donation = _gift(token)
+        require_feature(donation.makerspace, "billing.offline_claims")
+        payload = ClaimSubmitSerializer(data=request.data)
+        payload.is_valid(raise_exception=True)
+        with tenant_write(donation.makerspace_id):
+            claim = submit_claim(payment_for(donation), claimant=None, **payload.validated_data)
+        return Response(OwnClaimSerializer(claim).data, status=201)
 
 
 class GuestTaxReceiptView(APIView):

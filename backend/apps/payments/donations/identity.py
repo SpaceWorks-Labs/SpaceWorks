@@ -9,7 +9,7 @@
 
 from dataclasses import dataclass
 
-from rest_framework.exceptions import ValidationError
+from .gates import DonationRefused
 
 
 @dataclass(frozen=True)
@@ -40,8 +40,8 @@ def donor_for(request, space, data):
         return Donor(account=person, name=name[:200], email=(person.email or "")[:254], actor=person)
     name, email, code = (str(data.get(key) or "").strip() for key in ("donor_name", "donor_email", "email_code"))
     if not name or not email or not code:
-        raise ValidationError({"detail": "Sign in, or give your name, email and the code we emailed you.",
-                               "code": "donor_identity_required"})
+        raise DonationRefused("Sign in, or give your name, email and the code we emailed you.",
+                              "donor_identity_required")
     from apps.hardware_requests.contact_verification import consume_code, normalize_email
     from apps.makerspaces.anonymous_requesters import get_or_create_anonymous_requester
 
@@ -54,7 +54,7 @@ def send_code(space, email):
     from apps.hardware_requests.contact_verification import issue_code
 
     if "@" not in str(email or ""):
-        raise ValidationError({"donor_email": "Enter a valid email address."})
+        raise DonationRefused("Enter a valid email address.", "email_invalid", "donor_email")
     issue_code(space, email)
 
 

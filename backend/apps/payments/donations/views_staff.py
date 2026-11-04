@@ -26,6 +26,10 @@ ERRORS = {400: OpenApiResponse(ErrorSerializer), 403: OpenApiResponse(ErrorSeria
 TAG = ["Donations (staff)"]
 
 
+def _text(value):
+    return "" if value is None else str(value)
+
+
 def payments_by_gift(rows):
     from apps.payments.models import Payment
 
@@ -69,8 +73,8 @@ class DonationSettingsView(APIView):
             row = payload.save(makerspace=space, updated_by=request.user)
             after = s.DonationSettingsSerializer(row).data
             for key in payload.validated_data:
-                record_change(request.user, space, "finance", f"donations.{key}", str(before.get(key)),
-                              str(after.get(key)), decision)
+                record_change(request.user, space, "finance", f"donations.{key}", _text(before.get(key)),
+                              _text(after.get(key)), decision)
         return Response(after)
 
 

@@ -91,4 +91,5 @@ MEMBERSHIP_ROUTES |= frozenset("""admin-donations admin-donation-settings admin-
 admin-donation-campaign admin-donation-pledges admin-donation-pledge admin-donation-cancel admin-donation-return
 admin-donation-tax-receipt admin-sponsors admin-sponsor-tiers admin-sponsor-tier admin-sponsor-perks
 admin-sponsor-perk-fulfil admin-sponsor-charge-return admin-sponsor-event-link admin-sponsor admin-sponsor-archive
-admin-sponsor-restore admin-sponsor-logo admin-sponsor-charges admin-sponsor-event-links""".split())
+admin-sponsor-restore admin-sponsor-logo admin-sponsor-charges admin-sponsor-event-links
+admin-sponsor-event-sponsors""".split())

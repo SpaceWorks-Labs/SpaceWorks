@@ -12,7 +12,7 @@ from decimal import Decimal, InvalidOperation
 
 from django.db import transaction
 from django.utils import timezone
-from rest_framework.exceptions import ValidationError
+from .gates import DonationRefused
 
 from apps.audit import services as audit
 
@@ -31,10 +31,10 @@ def clean_amount(space, raw):
     try:
         amount = Decimal(str(raw)).quantize(Decimal("0.01"))
     except (InvalidOperation, TypeError, ValueError):
-        raise ValidationError({"amount": "Enter an amount.", "code": "amount_invalid"})
+        raise DonationRefused("Enter an amount.", "amount_invalid", "amount")
     minimum = DonationSettings.for_makerspace(space).minimum_amount
     if amount < minimum or amount > Decimal("9999999999.99"):
-        raise ValidationError({"amount": f"The smallest gift here is {minimum}.", "code": "amount_below_minimum"})
+        raise DonationRefused(f"The smallest gift here is {minimum}.", "amount_below_minimum", "amount")
     return amount
 
 
@@ -47,7 +47,7 @@ def open_campaign(space, campaign_id, *, staff=False):
     if campaign is None or (not staff and (
             not campaign.is_active or not campaign.is_public
             or (campaign.starts_at and campaign.starts_at > now) or (campaign.ends_at and campaign.ends_at <= now))):
-        raise ValidationError({"campaign": "This campaign is not open for gifts.", "code": "campaign_closed"})
+        raise DonationRefused("This campaign is not open for gifts.", "campaign_closed", "campaign")
     return campaign
 
 
@@ -113,8 +113,7 @@ def cancel_gift(donation, *, actor, reason=""):
 
     locked = Donation.objects.select_for_update().get(pk=donation.pk)
     if locked.status != Donation.Status.PENDING:
-        raise ValidationError({"detail": "Only a gift waiting for payment can be cancelled.",
-                               "code": "donation_not_pending"})
+        raise DonationRefused("Only a gift waiting for payment can be cancelled.", "donation_not_pending")
     cancel_pending(makerspace=locked.makerspace, subject_type="donation", subject_id=locked.pk, actor=actor)
     locked.status, locked.cancelled_at = Donation.Status.CANCELLED, timezone.now()
     locked.save(update_fields=["status", "cancelled_at"])

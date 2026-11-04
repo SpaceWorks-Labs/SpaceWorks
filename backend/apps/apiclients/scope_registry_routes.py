@@ -192,6 +192,7 @@ _ROUTE_DEFINITIONS += (
     ("public-donation-status", _READ, frozenset(), TARGET_GLOBAL, False, False),
     ("public-donation-tax-receipt", _READ, frozenset(), TARGET_GLOBAL, False, False),
     ("public-donation-checkout", _WRITE, frozenset(), TARGET_GLOBAL, False, False),
+    ("public-donation-claim", _WRITE, frozenset(), TARGET_GLOBAL, False, False),
     ("public-pledge-manage", ("GET", "HEAD", "POST"), frozenset(), TARGET_GLOBAL, False, False),
 )
 

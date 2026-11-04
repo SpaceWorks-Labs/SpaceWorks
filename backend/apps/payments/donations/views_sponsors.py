@@ -9,6 +9,7 @@ from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.accounts import rbac
 from apps.admin_api.permissions import IsActiveStaff
 from apps.audit import services as audit
 from apps.hardware_requests.exceptions import ErrorSerializer
@@ -236,6 +237,24 @@ class EventLinkListView(APIView):
         with tenant_write(sponsor.makerspace_id):
             link = sponsors.link_event_sponsor(sponsor, event_sponsor, actor=request.user)
         return Response(s.EventLinkSerializer(link).data, status=201)
+
+
+class EventSponsorChoicesView(APIView):
+    permission_classes = [IsActiveStaff]
+
+    @extend_schema(tags=TAG, summary="This space's event-level sponsors, to link a sponsor to",
+                   responses={200: s.EventSponsorChoiceSerializer(many=True), **ERRORS})
+    def get(self, request, makerspace_id):
+        from apps.events.models import EventSponsor
+
+        staff_space(request.user, makerspace_id, SPONSORS)
+        rows = rbac.scope_by_action(request.user, rbac.Action.VIEW_FINANCE, EventSponsor.objects.filter(
+            makerspace_id=makerspace_id), field="makerspace_id").select_related("event").order_by("-event__starts_at", "pk")
+        linked = dict(SponsorEventLink.objects.filter(makerspace_id=makerspace_id).values_list(
+            "event_sponsor_id", "sponsor_id"))
+        return Response(s.EventSponsorChoiceSerializer([{
+            "id": row.pk, "label": row.label, "event_id": row.event_id, "event_title": row.event.title,
+            "active": row.active, "linked_sponsor_id": linked.get(row.pk)} for row in rows[:300]], many=True).data)
 
 
 class EventLinkDetailView(APIView):

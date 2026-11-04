@@ -119,11 +119,12 @@ class DonationCreateView(_Give, APIView):
         payload = s.DonationCreateSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
         data = payload.validated_data
+        amount = clean_amount(space, data["amount"])
+        campaign = open_campaign(space, data["campaign"])
+        tax = clean_request(space, data)
+        # Outside any transaction: a wrong code must burn its attempt even though the gift fails.
+        donor = donor_for(request, space, data)
         with tenant_write(space.pk):
-            amount = clean_amount(space, data["amount"])
-            campaign = open_campaign(space, data["campaign"])
-            tax = clean_request(space, data)
-            donor = donor_for(request, space, data)
             donation, payment = create_gift(space, donor, amount=amount, campaign=campaign, note=data["note"],
                                             tax=tax)
         # The gift is committed first: a provider failure never loses it (the debt stays payable).
@@ -151,11 +152,11 @@ class PledgeCreateView(_Give, APIView):
         payload = s.PledgeCreateSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
         data = payload.validated_data
+        amount = clean_amount(space, data["amount"])
+        campaign = open_campaign(space, data["campaign"])
+        tax = clean_request(space, data)
+        donor = donor_for(request, space, data)  # outside any transaction, like giving
         with tenant_write(space.pk):
-            amount = clean_amount(space, data["amount"])
-            campaign = open_campaign(space, data["campaign"])
-            tax = clean_request(space, data)
-            donor = donor_for(request, space, data)
             pledge = create_pledge(space, donor, amount=amount, interval=data["interval"],
                                    starts_on=data["starts_on"], campaign=campaign, tax=tax)
         token = link_token(pledge, "manage_secret", PLEDGE_SALT) if donor.is_guest else ""

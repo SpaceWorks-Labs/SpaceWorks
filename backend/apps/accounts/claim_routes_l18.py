@@ -25,6 +25,7 @@ _PUBLIC = (
     ("public-event-sponsors", ("GET", "HEAD")),
     ("public-donation-status", ("GET", "HEAD")),
     ("public-donation-checkout", ("POST",)),
+    ("public-donation-claim", ("POST",)),
     ("public-donation-tax-receipt", ("GET", "HEAD")),
     ("public-pledge-manage", ("GET", "HEAD", "POST")),
     ("public-shift-calendar-feed", ("GET", "HEAD")),

@@ -33,6 +33,7 @@ from ._showcase_pricing import seed_pricing
 from ._showcase_l12 import seed_l12
 from ._showcase_l6 import seed_ticketing
 from ._showcase_l21a import seed_participation
+from ._showcase_l21b import seed_l21b
 from ._showcase_people import create_members, create_space, create_staff, member_account, restrict
 from ._showcase_requests import RequestSeeder
 
@@ -92,7 +93,8 @@ class Command(BaseCommand):
         seed_bookings(space, staff.manager, members)
         seed_l12(space, staff.manager, staff.inventory, staff.machines, members)
         seed_notices(space, staff.manager)
-        seed_hackathon(space, staff.manager, members)
+        hackathon = seed_hackathon(space, staff.manager, members)
+        seed_l21b(space, staff.manager, hackathon)
         seed_events(space, staff.manager)
         build_night = seed_ticketing(space, staff.manager, next(iter(members.values())))
         seed_participation(space, staff.manager, members, build_night)

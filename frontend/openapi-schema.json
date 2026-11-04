@@ -197297,7 +197297,8 @@
                         }
                     },
                     "team_id": {
-                        "type": "integer"
+                        "type": "integer",
+                        "nullable": true
                     },
                     "slot_id": {
                         "type": "integer"
@@ -197946,13 +197947,13 @@
                     },
                     "team_id": {
                         "type": "integer",
-                        "minimum": 1
+                        "minimum": 1,
+                        "nullable": true
                     }
                 },
                 "required": [
                     "expected_version",
-                    "operation_id",
-                    "team_id"
+                    "operation_id"
                 ]
             },
             "BookingIssue": {
@@ -214032,6 +214033,9 @@
                     },
                     {
                         "$ref": "#/components/schemas/PublicPageLinksSectionInput"
+                    },
+                    {
+                        "$ref": "#/components/schemas/PublicPageCrewSectionInput"
                     }
                 ],
                 "discriminator": {
@@ -214041,7 +214045,8 @@
                         "gallery": "#/components/schemas/PublicPageGallerySectionInput",
                         "team": "#/components/schemas/PublicPageTeamSectionInput",
                         "testimonials": "#/components/schemas/PublicPageTestimonialsSectionInput",
-                        "links": "#/components/schemas/PublicPageLinksSectionInput"
+                        "links": "#/components/schemas/PublicPageLinksSectionInput",
+                        "crew": "#/components/schemas/PublicPageCrewSectionInput"
                     }
                 }
             },
@@ -222240,7 +222245,8 @@
                         "$ref": "#/components/schemas/HelpOriginEnum"
                     },
                     "team_id": {
-                        "type": "integer"
+                        "type": "integer",
+                        "nullable": true
                     },
                     "team_alias": {
                         "type": "string"
@@ -222346,7 +222352,8 @@
                     },
                     "team_id": {
                         "type": "integer",
-                        "minimum": 1
+                        "minimum": 1,
+                        "nullable": true
                     },
                     "type_key": {
                         "type": "string",
@@ -222370,7 +222377,6 @@
                     "expected_version",
                     "operation_id",
                     "summary",
-                    "team_id",
                     "type_key"
                 ]
             },
@@ -222378,10 +222384,11 @@
                 "enum": [
                     "team",
                     "mentor",
-                    "round"
+                    "round",
+                    "attendee"
                 ],
                 "type": "string",
-                "description": "* `team` - team\n* `mentor` - mentor\n* `round` - round"
+                "description": "* `team` - team\n* `mentor` - mentor\n* `round` - round\n* `attendee` - attendee"
             },
             "HelpStateEnum": {
                 "enum": [
@@ -264525,6 +264532,9 @@
                     },
                     {
                         "$ref": "#/components/schemas/PublicMembershipPlansSection"
+                    },
+                    {
+                        "$ref": "#/components/schemas/PublicCrewSection"
                     }
                 ],
                 "discriminator": {
@@ -264541,7 +264551,8 @@
                         "stats": "#/components/schemas/PublicStatsSection",
                         "location": "#/components/schemas/PublicLocationSection",
                         "functional_content": "#/components/schemas/PublicFunctionalContentSection",
-                        "membership_plans": "#/components/schemas/PublicMembershipPlansSection"
+                        "membership_plans": "#/components/schemas/PublicMembershipPlansSection",
+                        "crew": "#/components/schemas/PublicCrewSection"
                     }
                 }
             },
@@ -265257,6 +265268,26 @@
             },
             "PublicCrew": {
                 "type": "object",
+                "description": "Release 2 (#128 C-36): approved crew who opted in and keep a live public profile.",
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "maxLength": 200
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PublicCrewCard"
+                        }
+                    }
+                },
+                "required": [
+                    "results",
+                    "title"
+                ]
+            },
+            "PublicCrewCard": {
+                "type": "object",
                 "properties": {
                     "handle": {
                         "type": "string"
@@ -265272,6 +265303,30 @@
                     "crew_role",
                     "display_name",
                     "handle"
+                ]
+            },
+            "PublicCrewSection": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "type": {
+                        "$ref": "#/components/schemas/TypeD8cEnum"
+                    },
+                    "enabled": {
+                        "type": "boolean"
+                    },
+                    "payload": {
+                        "$ref": "#/components/schemas/PublicCrew"
+                    }
+                },
+                "required": [
+                    "enabled",
+                    "id",
+                    "payload",
+                    "type"
                 ]
             },
             "PublicEvent": {
@@ -265500,6 +265555,12 @@
                             },
                             "title": {
                                 "type": "string"
+                            },
+                            "id": {
+                                "type": "integer"
+                            },
+                            "passes_enabled": {
+                                "type": "boolean"
                             }
                         },
                         "readOnly": true
@@ -265767,6 +265828,12 @@
                             },
                             "title": {
                                 "type": "string"
+                            },
+                            "id": {
+                                "type": "integer"
+                            },
+                            "passes_enabled": {
+                                "type": "boolean"
                             }
                         },
                         "readOnly": true
@@ -265873,6 +265940,9 @@
                     },
                     {
                         "$ref": "#/components/schemas/PublicLinksSection"
+                    },
+                    {
+                        "$ref": "#/components/schemas/PublicCrewSection"
                     }
                 ],
                 "discriminator": {
@@ -265882,7 +265952,8 @@
                         "gallery": "#/components/schemas/PublicGallerySection",
                         "team": "#/components/schemas/PublicTeamSection",
                         "testimonials": "#/components/schemas/PublicTestimonialsSection",
-                        "links": "#/components/schemas/PublicLinksSection"
+                        "links": "#/components/schemas/PublicLinksSection",
+                        "crew": "#/components/schemas/PublicCrewSection"
                     }
                 }
             },
@@ -267148,6 +267219,12 @@
                             },
                             "title": {
                                 "type": "string"
+                            },
+                            "id": {
+                                "type": "integer"
+                            },
+                            "passes_enabled": {
+                                "type": "boolean"
                             }
                         },
                         "readOnly": true
@@ -267295,6 +267372,30 @@
                     },
                     "payload": {
                         "$ref": "#/components/schemas/About"
+                    }
+                },
+                "required": [
+                    "enabled",
+                    "id",
+                    "payload",
+                    "type"
+                ]
+            },
+            "PublicPageCrewSectionInput": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "type": {
+                        "$ref": "#/components/schemas/TypeD8cEnum"
+                    },
+                    "enabled": {
+                        "type": "boolean"
+                    },
+                    "payload": {
+                        "$ref": "#/components/schemas/Titled"
                     }
                 },
                 "required": [
@@ -267557,6 +267658,9 @@
                     },
                     {
                         "$ref": "#/components/schemas/PublicPageMembershipPlansSectionInput"
+                    },
+                    {
+                        "$ref": "#/components/schemas/PublicPageCrewSectionInput"
                     }
                 ],
                 "discriminator": {
@@ -267573,7 +267677,8 @@
                         "linked_makerspaces": "#/components/schemas/PublicPageLinkedMakerspacesSectionInput",
                         "organization_events": "#/components/schemas/PublicPageOrganizationEventsSectionInput",
                         "functional_content": "#/components/schemas/PublicPageFunctionalContentSectionInput",
-                        "membership_plans": "#/components/schemas/PublicPageMembershipPlansSectionInput"
+                        "membership_plans": "#/components/schemas/PublicPageMembershipPlansSectionInput",
+                        "crew": "#/components/schemas/PublicPageCrewSectionInput"
                     }
                 }
             },
@@ -277755,10 +277860,11 @@
                     "linked_makerspaces",
                     "organization_events",
                     "functional_content",
-                    "membership_plans"
+                    "membership_plans",
+                    "crew"
                 ],
                 "type": "string",
-                "description": "* `about` - about\n* `gallery` - gallery\n* `team` - team\n* `testimonials` - testimonials\n* `links` - links\n* `stats` - stats\n* `location` - location\n* `upcoming_events` - upcoming_events\n* `linked_makerspaces` - linked_makerspaces\n* `organization_events` - organization_events\n* `functional_content` - functional_content\n* `membership_plans` - membership_plans"
+                "description": "* `about` - about\n* `gallery` - gallery\n* `team` - team\n* `testimonials` - testimonials\n* `links` - links\n* `stats` - stats\n* `location` - location\n* `upcoming_events` - upcoming_events\n* `linked_makerspaces` - linked_makerspaces\n* `organization_events` - organization_events\n* `functional_content` - functional_content\n* `membership_plans` - membership_plans\n* `crew` - crew"
             },
             "SecurityActivity": {
                 "type": "object",
@@ -287989,6 +288095,13 @@
                 ],
                 "type": "string",
                 "description": "* `organization_events` - organization_events"
+            },
+            "TypeD8cEnum": {
+                "enum": [
+                    "crew"
+                ],
+                "type": "string",
+                "description": "* `crew` - crew"
             },
             "TypeE4fEnum": {
                 "enum": [

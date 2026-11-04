@@ -3680,7 +3680,7 @@ export type Booking = {
   "version": number;
   "state": BookingStateEnum;
   "allowed_actions": Array<string>;
-  "team_id": number;
+  "team_id": number | null;
   "slot_id": number;
 };
 
@@ -3828,7 +3828,7 @@ export type BookingEligibleMemberList = {
 export type BookingInput = {
   "operation_id": string;
   "expected_version": number;
-  "team_id": number;
+  "team_id"?: number | null;
 };
 
 export type BookingIssue = {
@@ -7605,7 +7605,7 @@ export type EventEditorialDocument = {
   "sections": Array<EventEditorialSectionInput>;
 };
 
-export type EventEditorialSectionInput = PublicPageAboutSectionInput | PublicPageGallerySectionInput | PublicPageTeamSectionInput | PublicPageTestimonialsSectionInput | PublicPageLinksSectionInput;
+export type EventEditorialSectionInput = PublicPageAboutSectionInput | PublicPageGallerySectionInput | PublicPageTeamSectionInput | PublicPageTestimonialsSectionInput | PublicPageLinksSectionInput | PublicPageCrewSectionInput;
 
 export type EventEligibility = {
   "eligible": boolean;
@@ -9144,7 +9144,7 @@ export type Help = {
   "state": HelpStateEnum;
   "allowed_actions": Array<string>;
   "origin"?: HelpOriginEnum;
-  "team_id"?: number;
+  "team_id"?: number | null;
   "team_alias"?: string;
   "category"?: string;
   "priority"?: number;
@@ -9172,14 +9172,14 @@ export type HelpCommentPage = {
 export type HelpCreate = {
   "operation_id": string;
   "expected_version": number;
-  "team_id": number;
+  "team_id"?: number | null;
   "type_key": string;
   "summary": string;
   "zone"?: Zone;
   "practice_run_id"?: string | null;
 };
 
-export type HelpOriginEnum = "team" | "mentor" | "round";
+export type HelpOriginEnum = "team" | "mentor" | "round" | "attendee";
 
 export type HelpStateEnum = "open" | "claimed" | "resolved" | "cancelled" | "expired";
 
@@ -18641,7 +18641,7 @@ export type ProjectBudget = {
   "remaining_bytes": number | null;
 };
 
-export type ProjectedPublicPageSection = PublicAboutSection | PublicGallerySection | PublicTeamSection | PublicTestimonialsSection | PublicLinksSection | PublicUpcomingEventsSection | PublicOrganizationEventsSection | PublicLinkedMakerspacesSection | PublicStatsSection | PublicLocationSection | PublicFunctionalContentSection | PublicMembershipPlansSection;
+export type ProjectedPublicPageSection = PublicAboutSection | PublicGallerySection | PublicTeamSection | PublicTestimonialsSection | PublicLinksSection | PublicUpcomingEventsSection | PublicOrganizationEventsSection | PublicLinkedMakerspacesSection | PublicStatsSection | PublicLocationSection | PublicFunctionalContentSection | PublicMembershipPlansSection | PublicCrewSection;
 
 export type ProjectionEnum = "organizer" | "finance";
 
@@ -18929,9 +18929,21 @@ export type PublicConfig = {
 };
 
 export type PublicCrew = {
+  "title": string;
+  "results": Array<PublicCrewCard>;
+};
+
+export type PublicCrewCard = {
   "handle": string;
   "display_name": string;
   "crew_role": string;
+};
+
+export type PublicCrewSection = {
+  "id": string;
+  "type": TypeD8cEnum;
+  "enabled": boolean;
+  "payload": PublicCrew;
 };
 
 export type PublicEvent = {
@@ -18980,6 +18992,8 @@ export type PublicEvent = {
   "series": {
   "public_token"?: string;
   "title"?: string;
+  "id"?: number;
+  "passes_enabled"?: boolean;
 } | null;
 };
 
@@ -19029,6 +19043,8 @@ export type PublicEventCode = {
   "series": {
   "public_token"?: string;
   "title"?: string;
+  "id"?: number;
+  "passes_enabled"?: boolean;
 } | null;
   "canonical_url": string;
   "content_url": string;
@@ -19042,7 +19058,7 @@ export type PublicEventEditorialDocument = {
   "sections": Array<PublicEventEditorialSection>;
 };
 
-export type PublicEventEditorialSection = PublicAboutSection | PublicGallerySection | PublicTeamSection | PublicTestimonialsSection | PublicLinksSection;
+export type PublicEventEditorialSection = PublicAboutSection | PublicGallerySection | PublicTeamSection | PublicTestimonialsSection | PublicLinksSection | PublicCrewSection;
 
 export type PublicEventPage = {
   "count": number;
@@ -19360,6 +19376,8 @@ export type PublicOrganizationEvent = {
   "series": {
   "public_token"?: string;
   "title"?: string;
+  "id"?: number;
+  "passes_enabled"?: boolean;
 } | null;
   "event_url": string;
   "host": OrganizationEventHost;
@@ -19391,6 +19409,13 @@ export type PublicPageAboutSectionInput = {
   "type": Type07aEnum;
   "enabled": boolean;
   "payload": About;
+};
+
+export type PublicPageCrewSectionInput = {
+  "id": string;
+  "type": TypeD8cEnum;
+  "enabled": boolean;
+  "payload": Titled;
 };
 
 export type PublicPageFunctionalContentSectionInput = {
@@ -19453,7 +19478,7 @@ export type PublicPageProjection = {
   "sections": Array<ProjectedPublicPageSection>;
 };
 
-export type PublicPageSectionInput = PublicPageAboutSectionInput | PublicPageGallerySectionInput | PublicPageTeamSectionInput | PublicPageTestimonialsSectionInput | PublicPageLinksSectionInput | PublicPageStatsSectionInput | PublicPageLocationSectionInput | PublicPageUpcomingEventsSectionInput | PublicPageLinkedMakerspacesSectionInput | PublicPageOrganizationEventsSectionInput | PublicPageFunctionalContentSectionInput | PublicPageMembershipPlansSectionInput;
+export type PublicPageSectionInput = PublicPageAboutSectionInput | PublicPageGallerySectionInput | PublicPageTeamSectionInput | PublicPageTestimonialsSectionInput | PublicPageLinksSectionInput | PublicPageStatsSectionInput | PublicPageLocationSectionInput | PublicPageUpcomingEventsSectionInput | PublicPageLinkedMakerspacesSectionInput | PublicPageOrganizationEventsSectionInput | PublicPageFunctionalContentSectionInput | PublicPageMembershipPlansSectionInput | PublicPageCrewSectionInput;
 
 export type PublicPageStats = {
   "title": string;
@@ -21951,7 +21976,7 @@ export type SearchOutput = {
 
 export type SectionOrderEnum = "HERO" | "ABOUT" | "HIGHLIGHTS" | "SCHEDULE" | "SPEAKERS" | "SPONSORS" | "VENUE" | "FAQ" | "RESOURCES" | "EDITORIAL";
 
-export type SectionTypesEnum = "about" | "gallery" | "team" | "testimonials" | "links" | "stats" | "location" | "upcoming_events" | "linked_makerspaces" | "organization_events" | "functional_content" | "membership_plans";
+export type SectionTypesEnum = "about" | "gallery" | "team" | "testimonials" | "links" | "stats" | "location" | "upcoming_events" | "linked_makerspaces" | "organization_events" | "functional_content" | "membership_plans" | "crew";
 
 export type SecurityActivity = {
   "id": number;
@@ -24469,6 +24494,8 @@ export type TypeChangeResult = {
 export type TypeChangeResultStatusEnum = "changed" | "payment_required";
 
 export type TypeD44Enum = "organization_events";
+
+export type TypeD8cEnum = "crew";
 
 export type TypedError = {
   "detail": string;

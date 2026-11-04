@@ -49,3 +49,5 @@ accent per layout, lucide controls and the existing layouts inside AppShell. Ori
 [artwork inventory](../events-programme-artwork-inventory.md) exists; runtime seed copying,
 consumer mounting, accessibility, physical QR and authoritative PDF acceptance remain
 separate requirements. No alternate brand or placeholder artwork establishes completion.
+
+Release 2 L21a: [applications on any event, review stages, attendance, crew and check-in lists](applications-crew-lists.md).

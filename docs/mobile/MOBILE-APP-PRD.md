@@ -713,4 +713,7 @@ For later phases, reuse the same prompt with the phase name, e.g. "Implement **p
 
 Superadmin/control-plane features, organization-derived native staff authority (staff use a
 staff step-up grant of their own person account, fixed to one makerspace where they hold a staff role), kiosk and printer device protocols, offline mode beyond showing cached data read-only,
-tablets-specific layouts, GitHub sign-in.
+tablets-specific layouts, GitHub sign-in. Event-role desks (judge, mentor, volunteer, crew and the
+application review panel) are web-only until the native event-role authority contract exists (#173):
+their routes refuse a native makerspace selection. A member's own attendance reply
+(`/events/{id}/attendance/`) and crew sign-up (`/events/{id}/crew-signup/`) work natively.

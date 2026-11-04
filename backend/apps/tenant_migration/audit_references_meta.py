@@ -281,21 +281,7 @@ AUDIT_META_REFERENCES.update(PUBLIC_SURFACE_AUDIT_EDGES)
 from .audit_references_meta_unified_accounts import UNIFIED_ACCOUNT_AUDIT_EDGES  # noqa: E402
 
 AUDIT_META_REFERENCES.update(UNIFIED_ACCOUNT_AUDIT_EDGES)
-from .audit_references_r2_l5 import EDGES as R2_L5_AUDIT_EDGES  # noqa: E402
 
-AUDIT_META_REFERENCES.update(R2_L5_AUDIT_EDGES)
-
-from .audit_references_r2_l15 import EDGES as R2_L15_AUDIT_EDGES  # noqa: E402
-
-AUDIT_META_REFERENCES.update(R2_L15_AUDIT_EDGES)
-from .audit_references_r2_l10 import EDGES as R2_L10_AUDIT_EDGES  # noqa: E402
-AUDIT_META_REFERENCES.update(R2_L10_AUDIT_EDGES)
-
-from .audit_references_l12 import EDGES as L12_AUDIT_EDGES  # noqa: E402
-AUDIT_META_REFERENCES.update(L12_AUDIT_EDGES)
-from .audit_references_account_merge import EDGES as ACCOUNT_MERGE_AUDIT_EDGES  # noqa: E402
-AUDIT_META_REFERENCES.update(ACCOUNT_MERGE_AUDIT_EDGES)
-from .audit_references_l23 import EDGES as L23_AUDIT_EDGES  # noqa: E402
-AUDIT_META_REFERENCES.update(L23_AUDIT_EDGES)
-from .audit_references_l16 import EDGES as L16_AUDIT_EDGES  # noqa: E402
-AUDIT_META_REFERENCES.update(L16_AUDIT_EDGES)
+# Release-2 lanes L5, L15, L10, L12, U-C, L23 and L16 compose in audit_references_meta_r2.py.
+from .audit_references_meta_r2 import lane_edges as _r2_lane_edges  # noqa: E402
+AUDIT_META_REFERENCES.update(_r2_lane_edges())

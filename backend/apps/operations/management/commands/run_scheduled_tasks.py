@@ -42,7 +42,8 @@ _TOMBSTONE_RETAINED = {"events": frozenset({
     "event-asset-work", "event-asset-retention", "event-asset-obligations", "event-print-cleanup",
     "event-stage-file-retention",
 })}
-for _tombstoned in ("tenant_migration", "events", "event_reimbursements", "devices", "presence", "notifications"):
+for _tombstoned in ("tenant_migration", "events", "event_reimbursements", "devices", "presence", "notifications",
+                    "shop"):
     if _tombstoned in settings.TOMBSTONED_APPS:
         SCHEDULED_TASKS = tuple(task for task in SCHEDULED_TASKS if f".{_tombstoned}." not in task[1]
                                 or task[0] in _TOMBSTONE_RETAINED.get(_tombstoned, ()))

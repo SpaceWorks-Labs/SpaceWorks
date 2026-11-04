@@ -51,6 +51,11 @@ def _restock(actor, item, refill_amount):
             public_availability_mode="status_only", show_public_count=False,
             public_self_checkout_enabled=False)
         return "product", product.pk
+    if item.source_shop_variant_id:
+        # Release 2 L22: a shop restock goes back on the shop shelf, exactly once.
+        from apps.shop.restock import restock_from_to_buy
+        variant = restock_from_to_buy(actor, item)
+        return "shop_variant", variant.pk
     if item.source_consumable_id:
         if refill_amount is None:
             raise ValidationError({"refill_amount": "Say how much material arrived for this machine consumable."})
@@ -96,5 +101,6 @@ def mark_bought(actor, item, *, amount, currency, method, reference="", receipt_
         "domain": domain, "machine_type_id": machine_type_id,
         "credited_product_id": credited_id if credited == "product" else None,
         "credited_consumable_id": credited_id if credited == "consumable" else None,
+        "credited_shop_variant_id": credited_id if credited == "shop_variant" else None,
     })
     return locked

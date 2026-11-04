@@ -54,7 +54,7 @@ def _public_client():
 
 def build_object_key(kind, makerspace_id, ext):
     if kind not in {
-        "event", "event-series", "items", "machine", "makerspace", "member", "printers",
+        "event", "event-series", "items", "machine", "makerspace", "member", "printers", "shop",
     }:
         raise ValueError("Invalid public image kind.")
     return f"{kind}/{makerspace_id}/{uuid.uuid4().hex}{ext}"

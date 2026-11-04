@@ -33,6 +33,7 @@ from .claim_routes_membership_l4 import L4_CLAIM_ROUTES
 from .claim_routes_r2 import R2_CLAIM_ROUTES
 from .claim_routes_l3 import L3_CLAIM_ROUTES
 from .claim_routes_l6 import L6_CLAIM_ROUTES
+from .claim_routes_l22 import L22_CLAIM_ROUTES
 
 from .claim_routes_p2_presence import ROUTES as PRESENCE_ROUTES
 from .claim_routes_programme import CLAIM_ROUTES as PROGRAMME_CLAIM_ROUTES
@@ -50,6 +51,7 @@ CLAIM_ROUTES = {
     **R2_CLAIM_ROUTES,
     **L3_CLAIM_ROUTES,
     **L6_CLAIM_ROUTES,
+    **L22_CLAIM_ROUTES,
     **AUTH_CLAIM_ROUTES,
 }
 

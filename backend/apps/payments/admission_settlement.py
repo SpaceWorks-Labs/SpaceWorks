@@ -18,6 +18,11 @@ def resume_admission_after_settlement(payment):
     if payment.subject_type == Payment.SubjectType.EVENT_ORDER:
         _resume_event_order(payment)
         return
+    if payment.subject_type == Payment.SubjectType.SHOP_ORDER:
+        # Lane L22: a settled shop order sells its held stock after the payment lock is released.
+        from apps.shop.settlement import after_settlement
+        after_settlement(payment)
+        return
     if payment.subject_type != Payment.SubjectType.MEMBERSHIP_REQUEST or payment.status not in {
         Payment.Status.PAID_ONLINE, Payment.Status.PAID_OFFLINE, Payment.Status.WAIVED,
     }:

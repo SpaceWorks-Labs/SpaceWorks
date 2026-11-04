@@ -85,3 +85,10 @@ admin-event-orders admin-event-order-detail admin-event-registration-collect-pay
 admin-event-registration-pay-link""".split())
 MEMBERSHIP_ROUTES |= frozenset("""admin-event-refund-policy admin-event-venue-fee admin-event-venue-fee-charge
 admin-event-series-pass-types admin-event-pass-type-detail""".split())
+# Release-2 lane L22, the shop: its till, stock and money stay inside ONE space, so every route
+# needs a staff role in the target space (the shop actions are never organization-grantable).
+MEMBERSHIP_ROUTES |= frozenset("""admin-shop-settings admin-shop-products admin-shop-product admin-shop-product-image
+admin-shop-variant admin-shop-variant-stock admin-shop-movements admin-shop-orders admin-shop-order
+admin-shop-order-ready admin-shop-order-collect admin-shop-order-take-payment admin-shop-order-cancel
+admin-shop-order-returns admin-shop-order-receipt admin-shop-pos-quote admin-shop-pos-sale admin-shop-member-lookup
+admin-shop-cash-sessions admin-shop-cash-session-close admin-shop-cash-session-confirm""".split())

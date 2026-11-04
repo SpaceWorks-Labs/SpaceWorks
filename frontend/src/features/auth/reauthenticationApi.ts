@@ -1,12 +1,7 @@
 import { getAccessToken, staffRequest } from "../../lib/api";
 import { browserSessionIdentity } from "../../lib/api/reauthentication";
+import type { ReauthenticationStatus } from "../../generated/api";
 
-export type ReauthenticationStatus = {
-  verified: boolean;
-  password_available: boolean;
-  mfa_enabled: boolean;
-  providers: string[];
-};
 export type ReauthenticationResult = { verified: boolean; mfa_required?: boolean; expires_in: number; factor_required?: "totp" | "phone" | "email_code"; factor_token?: string };
 export const reauthenticationKey = ["reauthentication-status"] as const;
 export const reauthenticationSessionKey = () => [...reauthenticationKey, browserSessionIdentity(getAccessToken())] as const;

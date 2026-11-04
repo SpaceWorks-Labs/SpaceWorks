@@ -56,7 +56,8 @@ class DonationSerializer(PiiMaskingSerializerMixin, serializers.ModelSerializer)
     donor_pan_masked = serializers.SerializerMethodField()
     tax_receipt_number = serializers.SerializerMethodField()
     is_guest = serializers.SerializerMethodField()
-    pii_account_fields = ("donor_pan_masked",)
+    donor_address = serializers.SerializerMethodField()
+    pii_account_fields = ("donor_pan_masked", "donor_address")
 
     class Meta:
         model = Donation
@@ -77,7 +78,10 @@ class DonationSerializer(PiiMaskingSerializerMixin, serializers.ModelSerializer)
         return payment.status if payment else ""
 
     def get_donor_pan_masked(self, obj) -> str:
-        return mask_pan(obj.donor_pan) if obj.wants_tax_receipt else ""
+        return mask_pan(obj.tax_detail.pan) if obj.tax_detail_id else ""
+
+    def get_donor_address(self, obj) -> str:
+        return obj.tax_detail.address if obj.tax_detail_id else ""
 
     def get_tax_receipt_number(self, obj) -> str:
         return (obj.tax_receipt or {}).get("number", "")
@@ -98,7 +102,7 @@ class PledgeSerializer(PiiMaskingSerializerMixin, serializers.ModelSerializer):
                   "donor_pan_masked", "created_at", "cancelled_at")
 
     def get_donor_pan_masked(self, obj) -> str:
-        return mask_pan(obj.donor_pan) if obj.wants_tax_receipt else ""
+        return mask_pan(obj.tax_detail.pan) if obj.tax_detail_id else ""
 
 
 class DeskGiftSerializer(serializers.Serializer):
@@ -124,5 +128,5 @@ def pledge_status(pledge, *, token=""):
             "campaign": pledge.campaign.name if pledge.campaign_id else "", "amount": pledge.amount,
             "currency": pledge.currency, "interval": pledge.interval, "status": pledge.status,
             "starts_on": pledge.starts_on, "next_due_on": pledge.next_due_on,
-            "donor_pan_masked": mask_pan(pledge.donor_pan) if pledge.wants_tax_receipt else "",
+            "donor_pan_masked": mask_pan(pledge.tax_detail.pan) if pledge.tax_detail_id else "",
             "manage_token": token}

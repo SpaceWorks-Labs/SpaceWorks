@@ -52,6 +52,19 @@ class DonationCampaign(models.Model):
         ]
 
 
+class DonorTaxDetail(ScopedPiiModelMixin, models.Model):
+    """The 80G identity a giver gave: PAN (ALWAYS encrypted) and postal address.
+
+    Its own row so that only writing it needs the tenant's encryption key prepared; a gift or a
+    pledge points at it (every period gift of a pledge shares the pledge's row).
+    """
+
+    makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE, related_name="+")
+    pan = models.TextField(blank=True, default="")
+    address = models.TextField(blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
 class DonationPledge(ScopedPiiModelMixin, models.Model):
     """A promise to give every period. It raises one charge per period; no card on file (C-14c)."""
 
@@ -81,8 +94,7 @@ class DonationPledge(ScopedPiiModelMixin, models.Model):
     ends_on = models.DateField(null=True, blank=True)
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.ACTIVE)
     wants_tax_receipt = models.BooleanField(default=False)
-    donor_pan = models.TextField(blank=True, default="")
-    donor_address = models.TextField(blank=True, default="")
+    tax_detail = models.ForeignKey(DonorTaxDetail, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
     #: A random secret bound into a guest's signed manage link (`identity.link_token`). It is
     #: replaced on a tenant move, so links minted elsewhere stop working.
     manage_secret = models.CharField(max_length=64, unique=True, default=secrets.token_hex, editable=False)
@@ -130,8 +142,7 @@ class Donation(ScopedPiiModelMixin, models.Model):
     source = models.CharField(max_length=10, choices=Source.choices, default=Source.ONLINE)
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING)
     wants_tax_receipt = models.BooleanField(default=False)
-    donor_pan = models.TextField(blank=True, default="")
-    donor_address = models.TextField(blank=True, default="")
+    tax_detail = models.ForeignKey(DonorTaxDetail, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
     #: The 80G receipt frozen when the gift was received: registration, validity, number,
     #: amount and date. Never the PAN (it stays encrypted on this row). Insert-once.
     tax_receipt = models.JSONField(null=True, blank=True, default=None)

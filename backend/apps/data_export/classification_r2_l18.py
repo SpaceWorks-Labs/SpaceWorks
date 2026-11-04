@@ -19,11 +19,12 @@ EXPORTED_FIELDS = {
     "payments.DonationCampaign": "id makerspace kind name slug description goal_amount currency starts_at ends_at "
                                  "is_active is_public created_by created_at updated_at",
     "payments.DonationPledge": "id makerspace campaign donor donor_name donor_email amount currency interval starts_on "
-                               "next_due_on ends_on status wants_tax_receipt donor_pan donor_address manage_secret "
+                               "next_due_on ends_on status wants_tax_receipt tax_detail manage_secret "
                                "created_by created_at updated_at cancelled_at last_reminded_on",
     "payments.Donation": "id makerspace campaign pledge period_start donor donor_name donor_email donor_note amount "
-                         "currency source status wants_tax_receipt donor_pan donor_address tax_receipt access_secret "
+                         "currency source status wants_tax_receipt tax_detail tax_receipt access_secret "
                          "created_by created_at paid_at cancelled_at",
+    "payments.DonorTaxDetail": "id makerspace pan address created_at",
     "payments.SponsorTier": "id makerspace name rank amount currency description created_at",
     "payments.Sponsor": "id makerspace name organization tier logo_key website_url blurb contact_name contact_email "
                         "contact_phone starts_on ends_on show_on_wall created_by created_at updated_at archived_at",
@@ -45,6 +46,7 @@ DATASET_SPECS = {
     "payments.DonationCampaign": ("finance/donation_campaigns.csv", P(("makerspace",))),
     "payments.DonationPledge": ("finance/donation_pledges.csv", P(("makerspace",))),
     "payments.Donation": ("finance/donations.csv", P(("makerspace",))),
+    "payments.DonorTaxDetail": ("finance/donor_tax_details.csv", P(("makerspace",))),
     "payments.SponsorTier": ("finance/sponsor_tiers.csv", P(("makerspace",))),
     "payments.Sponsor": ("finance/sponsors.csv", P(("makerspace",))),
     "payments.SponsorPerk": ("finance/sponsor_perks.csv", P(("makerspace",))),

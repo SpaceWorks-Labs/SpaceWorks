@@ -29,7 +29,7 @@ def next_period(day, interval):
 def create_pledge(space, donor, *, amount, interval, starts_on=None, campaign=None, tax=(False, "", "")):
     from apps.tenant_migration.gate_runtime import assert_write_allowed
 
-    from .services import space_currency
+    from .services import space_currency, tax_detail_for
 
     assert_write_allowed(space.pk)
     if interval not in STEP:
@@ -40,7 +40,7 @@ def create_pledge(space, donor, *, amount, interval, starts_on=None, campaign=No
     pledge = DonationPledge(
         makerspace=space, campaign=campaign, donor=donor.account, donor_name=donor.name, donor_email=donor.email,
         amount=amount, currency=space_currency(space), interval=interval, starts_on=starts_on,
-        next_due_on=starts_on, wants_tax_receipt=wants, donor_pan=pan, donor_address=address,
+        next_due_on=starts_on, wants_tax_receipt=wants, tax_detail=tax_detail_for(space, pan, address) if wants else None,
         created_by=donor.actor)
     pledge.save()
     audit.record(donor.account, "pledge.created", makerspace=space, target=pledge, meta={
@@ -121,7 +121,7 @@ def raise_period(pledge, today):
                 with transaction.atomic():
                     gift, _payment = create_gift(
                         locked.makerspace, donor, amount=locked.amount, campaign=locked.campaign,
-                        tax=(locked.wants_tax_receipt, locked.donor_pan, locked.donor_address),
+                        tax=(locked.wants_tax_receipt, "", ""), tax_detail=locked.tax_detail,
                         source=Donation.Source.PLEDGE, pledge=locked, period_start=period, actor=locked.created_by)
             except IntegrityError:
                 gift = None

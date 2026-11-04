@@ -68,6 +68,6 @@ __all__ += [
 
 # Release 2 lane L18: donations, pledges and sponsors.
 from .donations.models import (  # noqa: E402,F401
-    Donation, DonationCampaign, DonationPledge, DonationSettings,
+    Donation, DonationCampaign, DonationPledge, DonationSettings, DonorTaxDetail,
     Sponsor, SponsorEventLink, SponsorPerk, SponsorshipCharge, SponsorTier,
 )

@@ -24,6 +24,9 @@ class PerkSerializer(serializers.ModelSerializer):
         fields = ("id", "tier", "sponsor", "source_perk", "description", "due_on", "fulfilled_at", "fulfilled_by",
                   "fulfilled_by_name", "note", "created_at")
         read_only_fields = ("id", "source_perk", "fulfilled_at", "fulfilled_by", "created_at")
+        # The copied-once rule is a database constraint the service keeps; DRF's generated
+        # unique-together check would demand `source_perk`, which callers never send.
+        validators = []
 
     def get_fulfilled_by_name(self, obj) -> str:
         user = obj.fulfilled_by

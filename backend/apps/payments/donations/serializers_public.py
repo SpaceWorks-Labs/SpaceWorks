@@ -145,7 +145,7 @@ def gift_status(donation, *, payment=None, token="", checkout=""):
         "created_at": donation.created_at, "paid_at": donation.paid_at, "receipt_number": receipt,
         "tax_receipt_number": (donation.tax_receipt or {}).get("number", "")
         if feature_enabled(donation.makerspace, "finance.tax_exempt_receipts") else "",
-        "donor_pan_masked": mask_pan(donation.donor_pan) if donation.wants_tax_receipt else "",
+        "donor_pan_masked": mask_pan(donation.tax_detail.pan) if donation.tax_detail_id else "",
         "online_available": pending and online_payments_enabled_for(payment), "checkout_url": checkout,
         "status_token": token, "offline": offline,
     }

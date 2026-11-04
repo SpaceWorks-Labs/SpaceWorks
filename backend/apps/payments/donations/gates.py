@@ -28,6 +28,19 @@ class FeatureOff(NotFound):
         super().__init__({"detail": "This feature is turned off here.", "code": "feature_disabled", "key": key})
 
 
+def tax_key(space, tax):
+    """Prepare the tenant key OUTSIDE any transaction when an 80G identity will be written."""
+    from contextlib import nullcontext
+
+    if not tax or not tax[0]:
+        return nullcontext()
+    from apps.encryption.tenant_preparation import holds_tenant_key, prepare_tenant_key, tenant_key_context
+
+    if holds_tenant_key(space.pk):
+        return nullcontext()
+    return tenant_key_context(prepare_tenant_key(space.pk))
+
+
 def require_feature(space, key):
     if not feature_enabled(space, key):
         raise FeatureOff(key)

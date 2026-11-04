@@ -17,7 +17,7 @@ from apps.hardware_requests.exceptions import ErrorSerializer
 from apps.tenant_migration.gate_runtime import tenant_write
 
 from . import serializers_staff as s
-from .gates import DONATIONS, PLEDGES, TAX, require_feature, scoped, staff_space
+from .gates import DONATIONS, PLEDGES, TAX, require_feature, scoped, staff_space, tax_key
 from .models import Donation, DonationCampaign, DonationPledge, DonationSettings
 from .serializers_public import PledgeActionSerializer
 
@@ -151,7 +151,8 @@ class DonationListView(APIView):
         payload = s.DeskGiftSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
         data = payload.validated_data
-        with tenant_write(space.pk):
+        tax = clean_request(space, data)
+        with tax_key(space, tax), tenant_write(space.pk):
             from apps.makerspaces.anonymous_requesters import get_or_create_anonymous_requester
 
             donor = Donor(account=None, name=data["donor_name"].strip(), email=data["donor_email"].strip().lower(),
@@ -159,7 +160,7 @@ class DonationListView(APIView):
             donation = record_desk_gift(space, donor, actor=request.user, amount=clean_amount(space, data["amount"]),
                                         settlement=data["settlement"], campaign=open_campaign(
                                             space, data["campaign"], staff=True), note=data["note"],
-                                        tax=clean_request(space, data))
+                                        tax=tax)
         context = {"request": request, "payments": payments_by_gift([donation])}
         return Response(s.DonationSerializer(donation, context=context).data, status=201)
 

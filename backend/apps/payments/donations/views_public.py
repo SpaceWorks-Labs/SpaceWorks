@@ -20,7 +20,7 @@ from apps.makerspaces.platform import feature_enabled
 from apps.tenant_migration.gate_runtime import tenant_write
 
 from . import serializers_public as s
-from .gates import PLEDGES, SPONSORS, public_space, require_feature
+from .gates import PLEDGES, SPONSORS, public_space, require_feature, tax_key
 from .identity import PLEDGE_SALT, STATUS_SALT, donor_for, link_token, send_code
 from .models import DonationCampaign, DonationSettings
 
@@ -124,7 +124,7 @@ class DonationCreateView(_Give, APIView):
         tax = clean_request(space, data)
         # Outside any transaction: a wrong code must burn its attempt even though the gift fails.
         donor = donor_for(request, space, data)
-        with tenant_write(space.pk):
+        with tax_key(space, tax), tenant_write(space.pk):
             donation, payment = create_gift(space, donor, amount=amount, campaign=campaign, note=data["note"],
                                             tax=tax)
         # The gift is committed first: a provider failure never loses it (the debt stays payable).
@@ -156,7 +156,7 @@ class PledgeCreateView(_Give, APIView):
         campaign = open_campaign(space, data["campaign"])
         tax = clean_request(space, data)
         donor = donor_for(request, space, data)  # outside any transaction, like giving
-        with tenant_write(space.pk):
+        with tax_key(space, tax), tenant_write(space.pk):
             pledge = create_pledge(space, donor, amount=amount, interval=data["interval"],
                                    starts_on=data["starts_on"], campaign=campaign, tax=tax)
         token = link_token(pledge, "manage_secret", PLEDGE_SALT) if donor.is_guest else ""

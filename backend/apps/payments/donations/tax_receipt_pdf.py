@@ -52,8 +52,9 @@ def _render(donation, *, show_pan):
     story.extend([Spacer(1, 6 * mm), text("Donation receipt", heading, True),
                   text(f"Receipt {receipt.get('number', '')}", bold=True),
                   text(f"Received on {receipt.get('received_on', '')}", small), Spacer(1, 5 * mm)])
-    pan = donation.donor_pan if show_pan else mask_pan(donation.donor_pan)
-    rows = [("Received from", donation.donor_name), ("Address", donation.donor_address), ("PAN", pan),
+    detail = donation.tax_detail
+    pan = (detail.pan if show_pan else mask_pan(detail.pan)) if detail else ""
+    rows = [("Received from", donation.donor_name), ("Address", detail.address if detail else ""), ("PAN", pan),
             ("Amount", f"{donation.currency.upper()} {receipt.get('amount', donation.amount)}"),
             ("Towards", donation.campaign.name if donation.campaign_id else "General donation")]
     table = Table([[text(label, small, True), text(value or "-")] for label, value in rows],

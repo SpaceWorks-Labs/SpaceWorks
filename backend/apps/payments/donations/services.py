@@ -53,7 +53,7 @@ def open_campaign(space, campaign_id, *, staff=False):
 
 @transaction.atomic
 def create_gift(space, donor, *, amount, campaign=None, note="", tax=(False, "", ""),
-                source=Donation.Source.ONLINE, pledge=None, period_start=None, actor=None):
+                source=Donation.Source.ONLINE, pledge=None, period_start=None, actor=None, tax_detail=None):
     """One gift and its charge. Returns `(donation, payment)`."""
     from apps.payments.models import Payment
     from apps.payments.services import create_payment
@@ -61,11 +61,13 @@ def create_gift(space, donor, *, amount, campaign=None, note="", tax=(False, "",
 
     assert_write_allowed(space.pk)
     wants, pan, address = tax
+    if wants and tax_detail is None:
+        tax_detail = tax_detail_for(space, pan, address)
     donation = Donation(
         makerspace=space, campaign=campaign, pledge=pledge, period_start=period_start, donor=donor.account,
         donor_name=donor.name, donor_email=donor.email, donor_note=(note or "").strip()[:500], amount=amount,
-        currency=space_currency(space), source=source, wants_tax_receipt=wants, donor_pan=pan,
-        donor_address=address, created_by=actor or donor.actor)
+        currency=space_currency(space), source=source, wants_tax_receipt=wants, tax_detail=tax_detail,
+        created_by=actor or donor.actor)
     donation.save()
     label = f"Donation: {campaign.name}" if campaign else f"Donation to {space.name}"
     payment = create_payment(
@@ -76,6 +78,16 @@ def create_gift(space, donor, *, amount, campaign=None, note="", tax=(False, "",
         "source": source, "campaign_id": getattr(campaign, "pk", None), "pledge_id": getattr(pledge, "pk", None),
         "guest": donor.is_guest, "tax_receipt_requested": wants})
     return donation, payment
+
+
+def tax_detail_for(space, pan, address):
+    """The giver's 80G identity. Its PAN is a mandatory encrypted field: the caller holds the tenant
+    key, prepared outside any transaction (`gates.tax_key`)."""
+    from .models import DonorTaxDetail
+
+    row = DonorTaxDetail(makerspace=space, pan=pan, address=address)
+    row.save()
+    return row
 
 
 def checkout_url(payment):

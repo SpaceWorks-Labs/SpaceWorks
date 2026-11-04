@@ -1751,3 +1751,9 @@ WALLET_APPLE_WWDR_FILE = env("WALLET_APPLE_WWDR_FILE", default="")
 WALLET_GOOGLE_ISSUER_ID = env("WALLET_GOOGLE_ISSUER_ID", default="")
 WALLET_GOOGLE_SERVICE_ACCOUNT_FILE = env("WALLET_GOOGLE_SERVICE_ACCOUNT_FILE", default="")
 # --- end lane L3
+
+# --- lane L13 (release 2): the import-source enum (upload or public Google Sheet) gets one stable name.
+SPECTACULAR_SETTINGS["ENUM_NAME_OVERRIDES"].update({
+    "ImportSourceKindEnum": [("file", "file"), ("google_sheet", "google_sheet")],
+})
+# --- end lane L13

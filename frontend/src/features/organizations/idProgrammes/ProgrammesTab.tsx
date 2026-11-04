@@ -12,14 +12,14 @@ const STATUS_LABEL = { draft: "Draft", active: "Open", closed: "Closed" } as con
 const PRESETS = [{ value: "", label: "Blank" }, { value: "students", label: "Student ID" },
   { value: "volunteers", label: "Volunteer ID" }, { value: "staff", label: "Staff ID" }];
 
-export function ProgrammesTab({ makerspaceId }: { makerspaceId: number }) {
+export function ProgrammesTab({ makerspaceId, sheetImport = false }: { makerspaceId: number; sheetImport?: boolean }) {
   const organizations = useOrganizations({ active: true });
   const [organizationId, setOrganizationId] = useState<number | null>(null);
   const [open, setOpen] = useState<number | null>(null);
   const chosen = organizationId ?? organizations.data?.results[0]?.id ?? null;
   const programmes = useProgrammes(chosen);
   const rows = (programmes.data ?? []).filter((row) => row.makerspace === makerspaceId);
-  if (open !== null) return <ProgrammePage programmeId={open} onBack={() => setOpen(null)} />;
+  if (open !== null) return <ProgrammePage programmeId={open} onBack={() => setOpen(null)} sheetImport={sheetImport} />;
   if (organizations.isLoading) return <Skeleton className="h-40 w-full" />;
   if (organizations.isError) return <ErrorBlock error={organizations.error} resource="organisations" />;
   if (!organizations.data?.results.length) return <EmptyState title="No organisations yet"

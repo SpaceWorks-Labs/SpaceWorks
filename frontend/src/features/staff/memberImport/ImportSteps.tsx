@@ -8,10 +8,13 @@ const REASONS: Record<string, string> = {
   already_member: "Already an active member here",
 };
 
+export function ImportIntro() {
+  return <p className="text-sm text-muted">Each row becomes a pending membership. The person gets an emailed invitation and joins by signing in with that
+    email; existing accounts are never linked for them. Rows marked “record only” are kept in the register without an invitation.</p>;
+}
+
 export function ImportFilePicker({ file, onFile }: { file: File | null; onFile: (file: File | null) => void }) {
   return <div className="grid gap-3">
-    <p className="text-sm text-muted">Each row becomes a pending membership. The person gets an emailed invitation and joins by signing in with that
-      email; existing accounts are never linked for them. Rows marked “record only” are kept in the register without an invitation.</p>
     <Field label="Member file" hint="CSV, TSV or Excel (.xlsx), up to 5 MB and 5,000 rows. The first row holds the column names.">
       <input className="desk-input" type="file" accept=".csv,.tsv,.xlsx,text/csv"
         onChange={(event) => onFile(event.target.files?.[0] ?? null)} />

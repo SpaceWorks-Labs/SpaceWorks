@@ -26,7 +26,9 @@ export type ProgrammeCard = {
 };
 
 export type ImportPreview = { headers: string[]; rows: string[][]; mapping: Record<string, number | null>; rows_total: number;
-  to_create: number; skipped: { row: number; reason: string }[] };
+  to_create: number; skipped: { row: number; reason: string }[]; source?: "google_sheet"; sheet_sha256?: string };
+/** Pasted/uploaded CSV text, or a public Google Sheet link (`membership.id_programmes_import_sheets`, L13). */
+export type ImportInput = { content: string } | { source: "google_sheet"; url: string; sheet_sha256?: string };
 
 const keys = {
   list: (organizationId: number) => ["id-programmes", organizationId] as const,
@@ -91,14 +93,14 @@ export function useDecide(id: number) {
 }
 
 export function useImportPreview(id: number) {
-  return useMutation({ mutationFn: (content: string) =>
-    staffRequest<ImportPreview>(`/admin/id-programmes/${id}/imports/preview`, json("POST", { content })) });
+  return useMutation({ mutationFn: (input: ImportInput) =>
+    staffRequest<ImportPreview>(`/admin/id-programmes/${id}/imports/preview`, json("POST", input)) });
 }
 
 export function useImportCommit(id: number) {
   const refresh = useInvalidateCards(id);
   return useMutation({
-    mutationFn: (input: { content: string; mapping: Record<string, number | null>; approve: boolean }) =>
+    mutationFn: (input: ImportInput & { mapping: Record<string, number | null>; approve: boolean }) =>
       staffRequest<{ created: number; skipped: { row: number; reason: string }[] }>(`/admin/id-programmes/${id}/imports`, json("POST", input)),
     onSuccess: refresh,
   });

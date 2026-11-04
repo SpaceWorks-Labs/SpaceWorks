@@ -32,6 +32,7 @@ Every guide in this repository, grouped by what you are trying to do. Start with
 - [Notifications and bookings (WP3)](WP3-NOTIFICATIONS-BOOKINGS.md) — payment-failure and booking notification behaviour.
 - [Inventory and machine operations (WP4)](WP4-INVENTORY.md) — opt-in inventory and machine operation features.
 - [Account deletion privacy note](privacy-account-deletion.md) — member account deletion, archive, restore and purge.
+- [Google Sheets import privacy note](privacy-sheet-import.md) — what SpaceWorks reads when staff import from a public sheet.
 
 ### Events programme (pre-release, off by default)
 

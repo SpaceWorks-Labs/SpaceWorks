@@ -1,10 +1,11 @@
-"""CSV import into a programme (SPEC §5.2; #128 C-13). Google Sheets arrive in lane L13.
+"""CSV import into a programme (SPEC §5.2; #128 C-13), or a public Google Sheet (L13).
 
 Step 1 (preview): headers, the first 20 rows and an automatic column mapping. Step 2
 (commit): the confirmed mapping, optionally approving, optionally as a dry run.
 Imported rows are `source=import` pending entries bound to an emailed invite: nothing
 links to an existing account and no account is created until the person accepts by
-signing in with that verified email. The file itself is never stored.
+signing in with that verified email. The file itself is never stored; a sheet is
+fetched as CSV under `membership.id_programmes_import_sheets` and parsed the same way.
 """
 import csv
 import hashlib
@@ -86,6 +87,14 @@ def plan(programme, body, mapping):
     return create, skipped
 
 
+def read(programme, values):
+    """-> (CSV bytes or text, the fetched sheet or None) for a validated preview/commit request."""
+    from apps.admin_api import import_sources
+    sheet = import_sources.read_source(values, programme.makerspace, import_sources.PROGRAMME_SHEETS,
+                                       max_bytes=MAX_BYTES, max_rows=MAX_ROWS)
+    return (sheet.content if sheet else values["content"]), sheet
+
+
 def preview(programme, raw):
     headers, body, _digest = parse(raw)
     mapping = auto_map(programme, headers)
@@ -95,7 +104,7 @@ def preview(programme, raw):
 
 
 @transaction.atomic
-def commit(actor, programme, raw, mapping, *, approve=False, dry_run=False):
+def commit(actor, programme, raw, mapping, *, approve=False, dry_run=False, source="file"):
     headers, body, source_digest = parse(raw)
     if not isinstance(mapping, dict) or mapping.get("name") is None or mapping.get("email") is None:
         raise ValidationError({"mapping": "Map a name column and an email column."})
@@ -113,7 +122,7 @@ def commit(actor, programme, raw, mapping, *, approve=False, dry_run=False):
                                            mapping={key: value for key, value in mapping.items()
                                                     if isinstance(value, int)})
     audit.record(actor, "id_programme.cards_imported", makerspace=programme.makerspace, target=programme,
-                 meta={"programme_id": programme.pk, "import_id": run.pk, "count": len(cards)})
+                 meta={"programme_id": programme.pk, "import_id": run.pk, "count": len(cards), "source": source})
     from .invites import send_invites
     transaction.on_commit(lambda: send_invites([card.pk for card in cards]), robust=True)
     return result

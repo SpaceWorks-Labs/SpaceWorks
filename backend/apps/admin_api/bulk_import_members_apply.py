@@ -10,7 +10,8 @@ Runs under `membership.import` and `manage_members`, one transaction for the who
 * `update` -> refreshes the pending row's details (never its email or status).
 * `skip`   -> reported with its reason.
 
-Audited once as `membership.imported` with counts and the batch id -- never row data.
+Audited once as `membership.imported` with counts, the batch id and the source kind
+(`file` or `google_sheet`, never the sheet's link) -- never row data.
 """
 from django.db import transaction
 
@@ -48,7 +49,7 @@ def _fill(imported, data, plans):
 
 
 def apply_members(actor, makerspace, raw_rows, mapping, *, record_only_rows=(), skip_rows=(),
-                  file_name="", file_kind="csv"):
+                  file_name="", file_kind="csv", source="file"):
     from apps.makerspaces.membership_helpers import _member_role
     record_only_rows, skip_rows = set(record_only_rows), set(skip_rows)
     with transaction.atomic():
@@ -96,5 +97,5 @@ def apply_members(actor, makerspace, raw_rows, mapping, *, record_only_rows=(), 
         audit.record(actor, "membership.imported", makerspace=space, target=batch,
                      meta={"batch_id": batch.pk, "created": totals["created"], "updated": totals["updated"],
                            "skipped": totals["skipped"], "invited": totals["invited"],
-                           "record_only": totals["record_only"]})
+                           "record_only": totals["record_only"], "source": source})
     return batch, results

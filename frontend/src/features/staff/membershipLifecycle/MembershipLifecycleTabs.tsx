@@ -37,7 +37,8 @@ export function MembershipLifecycleTab({ tab, makerspaceId, slug, features, canM
   if (tab === "import") return <section aria-label="Member import" className="grid gap-3">
     <p className="text-sm text-muted">Bring members over from a spreadsheet. Each person is invited by email and joins when they accept; nobody is linked to an existing account for them.</p>
     <div><button className="desk-button-primary" type="button" onClick={() => setImporting(true)}>Import members</button></div>
-    <MemberImportWizard makerspaceId={makerspaceId} open={importing} onClose={() => setImporting(false)} />
+    <MemberImportWizard makerspaceId={makerspaceId} open={importing} onClose={() => setImporting(false)}
+      sheetsEnabled={has(features, "import_sheets")} />
   </section>;
   if (tab === "tools") return <div className="grid gap-4">
     {has(features, "titles") ? <TitlesManager makerspaceId={makerspaceId} /> : null}

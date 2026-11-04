@@ -28,8 +28,8 @@ govern sign-in availability. Membership adds plans, vouching, renewals and the m
 | --- | --- | --- |
 | Inventory & lending | `public_inventory`, `request_workflow`, `staff_admin`, `scanner`, `evidence_uploads`, `qr_management` (core); `guest_handover`, `asset_units`, `containers`, `bulk_import`, `stock_transfers`, `qr_print_batches`, `stocktake`, `devices` | `loans.enabled`, `loans.limits`, `loans.renewals`, `loans.kit_checklist`, `loans.reservations`, `loans.pickup_windows`, `loans.waitlist`, `loans.withdrawals`, `inventory.notify_when_back`, `inventory.expected_back`, `inventory.consumables`, `inventory.vendors`, `inventory.tobuy`, `inventory.warranty`, `inventory.self_checkout`, `inventory.contact_self_checkout`, `inventory.kiosk`, `stocktake.discipline`, `packs.import`, `charges.loans`; `payments.loans` with Online payments |
 | Machines | `machines`, `machine_service`, `printing` | `machines.job_requests`, `machines.job_quotes`, `machines.batch_start`, `machines.pay_before_pickup`, `machines.time_booking`, `machines.maintenance`, `machines.tobuy`, `machines.warranty`, `machines.certifications`, `machines.certification_reminders`, `machines.public_detail`, `machines.material_catalogue`, `machines.structured_intake`, `maintenance.reminders`, `maintenance.meters`, `maintenance.calendar_feed`, `charges.machines`, `notifications.delegated_recipients`; `payments.machines` with Online payments |
-| Events | `events` | `events.api_read`, `events.certificate_designer`, `events.website`, `events.embed`, `events.short_links`, `events.online_delivery`, `events.anonymous_feedback`; `events.broadcasts` with Notifications and Email; `events.organization_audience`, `events.offline_checkin`, `events.invites`, `events.account_registration`, `events.ticket_types`, `events.promo_codes`, `charges.events`; `payments.events` with Online payments; `events.id_cards`, `events.ticket_designs`, `events.wallet_passes`; `events.orders` (`events.seat_holds`, `events.addons`, `events.series_passes`, `events.transfers`), `events.desk_collect`, `events.refund_override`, `events.venue_fees` |
-| Bookings | `bookings` | `bookings.recurring`, `bookings.staff_grants`, `bookings.clone`, `bookings.staff_tools`, `bookings.confirmations`, `bookings.checkin`, `bookings.passes`, `bookings.api_read`, `bookings.website`, `bookings.embed`, `charges.bookings`; `bookings.broadcasts` with Notifications and Email; `bookings.analytics`, `bookings.utilization_pdf`, `bookings.exports` with Reports; `payments.bookings` with Online payments |
+| Events | `events` | `events.api_read`, `events.certificate_designer`, `events.website`, `events.embed`, `events.short_links`, `events.online_delivery`, `events.anonymous_feedback`; `events.broadcasts` with Notifications and Email; `events.organization_audience`, `events.offline_checkin`, `events.invites`, `events.account_registration`, `events.ticket_types`, `events.promo_codes`, `charges.events`; `payments.events` with Online payments; `events.id_cards`, `events.ticket_designs`, `events.wallet_passes`; `events.orders` (`events.seat_holds`, `events.addons`, `events.series_passes`, `events.transfers`), `events.desk_collect`, `events.refund_override`, `events.venue_fees`; `events.calendar_feed`, `events.shifts_feed`, `events.public_feed` |
+| Bookings | `bookings` | `bookings.recurring`, `bookings.staff_grants`, `bookings.clone`, `bookings.staff_tools`, `bookings.confirmations`, `bookings.checkin`, `bookings.passes`, `bookings.api_read`, `bookings.website`, `bookings.embed`, `bookings.calendar_feed`, `charges.bookings`; `bookings.broadcasts` with Notifications and Email; `bookings.analytics`, `bookings.utilization_pdf`, `bookings.exports` with Reports; `payments.bookings` with Online payments |
 | Membership | `membership`, `mobile` | `membership.auto_renew`, `membership.lifecycle_mail`, `membership.self_service`, `membership.self_export`, `membership.vouching`, `membership.application_form`, `membership.broadcasts`, the 14 release-2 lifecycle switches (`membership.plan_rules` … `membership.monthly_summary`), `mobile.push`, `charges.membership`; `payments.membership` with Online payments; `membership.id_programmes`, `membership.wallet_passes` |
 | Online payments | `payments` | `payments.enabled` plus the online-payment feature of each selected domain |
 | Reports | `reports` | `reports.saved_views`; `reports.event_pdf`, `reports.event_exports` with Events |
@@ -759,6 +759,21 @@ Refund cases and per-area (and per-membership-plan) refund policies are core led
 every refund in the **Refunds** queue, and without the rail an online-paid case can only be declined.
 See [refund cases in payment billing](payment-billing.md#refund-cases-and-policies).
 
+### Donations and sponsors (`finance.*`, release 2)
+
+No module key (#97): four parentless capabilities on the core ledger, each off by default.
+`finance.donations` adds a public donation page per space (optional campaigns and funds with a goal
+and window), one-off gifts from anyone (signed in, or a guest confirmed by an emailed code), gifts
+staff record at the desk, and receipts; `finance.recurring_donations` adds pledges that raise one
+charge each month, quarter or year (no card is stored); `finance.tax_exempt_receipts` adds India 80G
+receipts (the donor PAN is always encrypted); `finance.sponsors` adds sponsors, tiers, perk
+checklists, sponsorship charges and an opt-in sponsor wall on Pages and the event page.
+`payments.donations` puts the online rail behind gifts and sponsor money. Every gift is income in
+the finance ledger's `donations` area; returning one is a staff-approved refund case. Turning a
+switch off hides its screens and routes and stops its jobs; gifts, pledges and sponsors are kept, and
+their charges stay in the ledger (they are never purged). See
+[donations and sponsors](payment-billing.md#donations-and-sponsors).
+
 ## Mobile apps
 
 ### mobile
@@ -912,6 +927,16 @@ its parent module is off.
 | `events.transfers` | `events` (needs `events.orders`) | | Attendees hand a ticket to another account (credential rotated, card re-issued) or change ticket type (pay the difference, or a refund case for it), when the organiser allows | Transfers and type changes are refused |
 | `events.desk_collect` | `events` | | Check-in staff record a pending ticket payment at the desk (receipt) or open a pay-now checkout | Settlement stays in the payments console |
 | `events.refund_override` | `events` | | An event's own refund policy, shown before payment; after the first sale it may only become more generous | The space's events refund policy applies |
+| `finance.donations` | standalone core ledger | | The donation page, campaigns and funds, one-off gifts (signed in or a guest with an emailed code), desk gifts and receipts; every gift is `donations` income in the ledger | Page, giving and staff screens answer 404; gifts and their charges are kept |
+| `finance.recurring_donations` | standalone core ledger (needs `finance.donations`) | | Pledges that raise one charge per month, quarter or year; the giver pays each like any charge, no card stored; missed periods are never back-charged | No new pledges and no period charges; pledges are kept |
+| `finance.tax_exempt_receipts` | standalone core ledger (needs `finance.donations`) | | India 80G receipts with the space's registration number and validity; the donor's PAN is asked only for an 80G receipt and is always stored encrypted | No 80G option; frozen receipts are kept |
+| `finance.sponsors` | standalone core ledger | | Sponsors with tiers, perk checklists (who ticked, when), sponsorship charges and the opt-in sponsor wall (Pages section and event page) | Sponsor screens, wall and perk reminders are gone; rows are kept |
+| `payments.donations` | `payments` (needs `finance.donations`) | | Gifts and sponsor money can be paid online | Gifts are settled offline with a receipt |
+| `bookings.calendar_feed` | `bookings` | ● | A member's private calendar link for their own bookings | The link answers 404; links are kept and work again when turned back on |
+| `events.calendar_feed` | `events` | ● | A member's private calendar link for their own event registrations | The link answers 404; links are kept |
+| `events.shifts_feed` | `events` | | A person's private calendar link for their approved volunteer and mentor shifts | No shift link |
+| `calendar.combined_feed` | standalone | | One private link per person with their bookings, registrations and shifts in this space | No combined link |
+| `events.public_feed` | `events` | | A public calendar of the space's listed, published events | No public calendar |
 | `events.venue_fees` | `events` | | The space charges an outside organiser for hosting: flat and/or per hour from the space default, a room override or the event's own amount, charged once on publish | No venue fee is configured or charged; raised charges are kept |
 
 The `payments.<area>` switches are **off by default and stay inert until credentials resolve** —

@@ -5437,6 +5437,40 @@ responsibility; local purges never delete shared global organizations or foreign
 - **`orders:read`** is a signed server read (tenant-bound, `events.api_read` + `events.orders`),
   keyset-paginated, with totals, lines and seat counts and never buyer or attendee contacts.
 
+### Donations, sponsors and calendar sync (release 2 L18; #94, #96, #128 C-14)
+
+- **A gift is a charge on the core ledger, never a second ledger.** Each `Donation` (one-off or one
+  pledge period) raises ONE `Payment` (subject `donation`, `ACCOUNTLESS_SUBJECT_TYPES` lets a
+  guest's gift have no account, `UNTAXED_SUBJECT_TYPES` freezes no tax on it) and a sponsor's agreed
+  payment one `sponsorship` Payment. Both are the `donations` finance domain; income reaches the
+  ledger and reports through the charge's settlement only (no `record_receipt` on top). Settlement
+  marks the gift received through the one seam `payments/admission_settlement.py`.
+- **Money never moves back without staff (#59).** A gift or sponsor payment is returned only through
+  a `RefundCase` in area `donations` (staff open it; the queue decides it); the direct staff refund
+  routes refuse both subjects with `refund_via_case_only`. Online payment is optional on top
+  (`payments.donations`); a provider failure never loses the recorded gift.
+- **Anyone may give, but nobody in someone else's name.** A guest proves the email with the #80
+  contact code; their contact details live only in the gift's scoped-PII columns and their status
+  or pledge link is a Django-signed value binding the row's random secret (FRESH on a tenant move).
+- **The 80G PAN is ALWAYS encrypted** (`encryption_required` in `encryption/registry_r2_l18.py`),
+  collected only with an 80G request, shown as its last four characters (masked entirely for a
+  superadmin without a PII window), printed in full only on the receipt PDF for the giver and for
+  staff who may read the space's PII, and never in an audit row, a frozen receipt snapshot or a
+  report. The frozen 80G receipt is insert-once (model guard).
+- **Pledges raise at most one charge per period** (unique `donation_one_per_pledge_period`), skip
+  missed periods, and stop while `finance.recurring_donations` is off. No card is ever stored.
+- **The sponsor wall is public fields only**: name, tier name, logo, website, blurb of sponsors shown
+  on the wall, not archived and inside their window. Contacts, amounts, perks and charges never
+  leave the staff console. Event-level sponsors stay `events.EventSponsor`; `SponsorEventLink` points
+  at one (L18 never writes `events/contributions/*`).
+- **Calendar feeds are bearer links with switches.** `bookings.calendar_feed` and
+  `events.calendar_feed` gate the existing feeds (on by default, backfilled on); the shift feed
+  (`calendar_feed_shifts.py`, reading L21a's shift models only) and the combined feed carry only the
+  person's own approved shifts, bookings and registrations; `PersonalCalendarFeed` stores only a
+  SHA-256 digest, rotation and revocation kill the old link, a lapsed account reads as an unknown
+  token, and the token paths are redacted from request logs. The public events feed lists only
+  `listed_q()` published events (unlisted, private, offline and draft never appear).
+
 ## Backup, restore and tenant migration (Phase 5A/5B and Lane D D1-D4/D6 built)
 
 - **A restored `DataExportJob` download bearer is never usable.** The download route is anonymous,

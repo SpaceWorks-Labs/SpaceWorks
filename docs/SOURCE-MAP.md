@@ -346,6 +346,16 @@ the frozen per-ticket price `orders_pricing.py` (L24 contract), `orders_type_cha
 `urls_ticketing.py` (staff), `urls_ticketing_member.py`, the shop in `views_ticketing_shop.py`. Frontend:
 `features/events/ticketing/` (shop, order summary, claim page, my orders) and
 `features/staff/eventTicketing/` (orders, sales rules, add-ons, refund policy, venue fee, passes, desk).
+Donations, sponsors and calendar sync (release 2 L18): the internal package `payments/donations/`
+(models `models_donations.py`, `models_sponsors.py`; giving `services.py`, `identity.py` (guest code and
+signed links), pledges `pledges.py`, 80G `tax_receipts.py` + `tax_receipt_pdf.py`, settlement `settlement.py`
+(from `payments/admission_settlement.py`), returns `refunds.py`, sponsors `sponsors.py`, the wall `wall.py`,
+notices `notices.py`, beat jobs `tasks.py`; routes `urls.py`, views `views_public|guest|member|staff|sponsors|
+sponsor_logo.py`). Calendar: `events/models_calendar_personal.py`, `calendar_feed_tokens.py`,
+`calendar_feed_shifts.py`, `calendar_feed_combined.py`, `views_calendar_feeds_r2.py`; the feed switches in
+`bookings/views_feed.py` and `events/views_calendar.py`. The Pages `sponsors` section is in
+`makerspaces/public_page_*`. Frontend: `features/donations/`, `features/staff/sponsors/`,
+`features/members/calendarFeeds/`.
 Organizer, audience and partner pickers share `features/staff/AsyncSearchPicker.tsx` through
 `EventPartnerPickers.tsx`; `EventPartnersSection.tsx` is the create form's "Organizers & partners" step,
 `EventAudienceOrganizations.tsx` the Settings-tab audience editor, `EventCheckInList.tsx` the Check-in

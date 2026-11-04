@@ -42,7 +42,7 @@ export const donationKeys = {
   memberPledges: (id: number) => ["member-pledges", id] as const,
 };
 
-export const signedIn = () => Boolean(getAccessToken("member"));
+export const signedIn = () => Boolean(getAccessToken("person"));
 
 /**
  * Giving and a guest's own signed links are browser flows no API-client scope reaches, so they go

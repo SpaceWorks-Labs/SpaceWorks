@@ -119,7 +119,7 @@ def next_project(event_id, round_id, *, actor, data):
     values = validated(CommandInput, data)
     with mutation(event_id, actor, permission="judge", account_ids=(actor.pk,)) as (event, _):
         def run():
-            round = owned(JudgingRound, event_id, round_id, expected=values["expected_version"])
+            round = owned(JudgingRound, event_id, round_id)  # Judges never read round versions; send 0.
             round.event = event
             now = timezone.now()
             if (round.state != "open" or round.mode != "weighted_1_5" or (round.opens_at and now < round.opens_at)

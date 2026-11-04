@@ -12,7 +12,7 @@ from .models_finalists import FinalistAdvance
 from .serializers import CommandInput, ResultEnvelope
 from .serializers_l21b import (
     FinalistAdvanceRead, FinalistApplyInput, FinalistPreviewRead, FinalistPublishInput, NextProjectRead,
-    OptionsInput, OptionsRead, PayoutInput, PayoutRead, PayoutReverseInput, ProgressRead,
+    OptionsInput, OptionsRead, PayoutInput, PayoutRead, PrizePayableAwardRead, PrizePayoutPage, PayoutReverseInput, ProgressRead,
 )
 
 PREVIEW_PARAMS = [OpenApiParameter(name, kind, OpenApiParameter.QUERY, required=required) for name, kind, required in (
@@ -70,7 +70,8 @@ class RoundProgress(PrivateView):
 
 class NextProject(PrivateView):
     @schema(request=CommandInput, response=NextProjectRead,
-            description="The judge's started project, else the eligible project with the fewest reviews. "
+            description="The judge's started project, else the eligible project with the fewest reviews "
+                        "(expected_version is not checked; judges send 0). "
                         "With round visibility 'all' an unassigned project may be pulled and assigned.")
     def post(self, request, pk, round_id):
         return Response(progress.next_project(pk, round_id, actor=request.user, data=request.data))
@@ -98,13 +99,14 @@ class ResultsSendEmail(PrivateView):
         return Response(options.send_results_email(pk, actor=request.user, data=request.data))
 
 
-@extend_schema_view(get=schema(response=PayoutRead(many=True), page=True),
+@extend_schema_view(get=schema(response=PrizePayoutPage),
                     post=schema(request=PayoutInput, response=PayoutRead, status=201,
                                 description="Record a prize payout by hand (record_payment or the Event Manager); "
                                             "writes one L5 ledger expense. Never moves money."))
 class PrizePayouts(PrivateView):
     def get(self, request, pk):
-        return paginated(request, payouts.listing(pk, actor=request.user), PayoutRead)
+        rows, awards = payouts.listing(pk, actor=request.user)
+        return paginated(request, rows, PayoutRead, awards=PrizePayableAwardRead(awards, many=True).data)
 
     def post(self, request, pk):
         return Response(payouts.record_payout(pk, actor=request.user, data=request.data), status=201)

@@ -110,7 +110,8 @@ class ProgressRead(ClosedSerializer):
 
 class PayoutInput(CommandInput):
     award_id = serializers.IntegerField(min_value=1)
-    recipient_id = serializers.IntegerField(min_value=1)
+    recipient_id = serializers.IntegerField(min_value=1, required=False,
+                                            help_text="A member of the winning team; defaults to the team leader.")
     amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0.01"), required=False)
     method = serializers.ChoiceField(choices=("cash", "upi", "bank_transfer", "card", "cheque", "online", "other"))
     reference = serializers.CharField(max_length=64, allow_blank=True, default="")
@@ -141,6 +142,23 @@ class PayoutRead(ClosedSerializer):
     allowed_actions = serializers.ListField(child=serializers.CharField())
 
 
+class PrizePayableAwardRead(ClosedSerializer):
+    id = serializers.IntegerField()
+    prize_name = serializers.CharField()
+    rank = serializers.IntegerField()
+    title = serializers.CharField()
+    amount_per_winner = serializers.DecimalField(max_digits=12, decimal_places=2, allow_null=True)
+    paid = serializers.BooleanField()
+
+
+class PrizePayoutPage(ClosedSerializer):
+    count = serializers.IntegerField()
+    next = serializers.URLField(allow_null=True)
+    previous = serializers.URLField(allow_null=True)
+    results = PayoutRead(many=True)
+    awards = PrizePayableAwardRead(many=True)
+
+
 class OptionsInput(CommandInput):
     results_email = serializers.BooleanField(required=False)
     submission_receipt_email = serializers.BooleanField(required=False)
@@ -161,3 +179,4 @@ class OptionsRead(ResultEnvelope):
     team_fee = serializers.DecimalField(max_digits=12, decimal_places=2, allow_null=True)
     currency = serializers.CharField()
     results_email_sent = serializers.BooleanField()
+    published_result_version = serializers.IntegerField(allow_null=True, help_text="Send-now's expected_version.")

@@ -54,7 +54,8 @@ def record_payout(event_id, *, actor, data):
         def run():
             award = _published_award(event, values["award_id"])
             snapshot = runtime().snapshot(award.submission_snapshot_id)
-            if values["recipient_id"] not in snapshot.member_ids:
+            recipient = values.get("recipient_id") or _leader(snapshot)
+            if recipient not in snapshot.member_ids:
                 raise ValidationError({"recipient_id": "Pay a member of the winning team."})
             if HackathonPrizePayout.objects.filter(award=award, kind="payout", reversal__isnull=True).exists():
                 raise ProgrammeError("payout_exists", "This award already has a recorded payout. Reverse it first.")
@@ -67,7 +68,7 @@ def record_payout(event_id, *, actor, data):
             from .options import currency
             money = currency(event.makerspace)
             payout = HackathonPrizePayout(makerspace=event.makerspace, event=event, award=award, prize=award.prize,
-                                          recipient_id=values["recipient_id"], amount=amount, currency=money,
+                                          recipient_id=recipient, amount=amount, currency=money,
                                           method=values["method"], reference=values["reference"],
                                           paid_on=values["paid_on"], recorded_by=actor)
             # A LedgerConflict (409) rolls the whole payout back with the event transaction.
@@ -84,6 +85,12 @@ def record_payout(event_id, *, actor, data):
             payout_recorded_notice(payout)
             return projection(payout)
         return command(event, actor, values, path="prize-payouts", run=run)
+
+
+def _leader(snapshot):
+    from apps.events.models import HackathonTeam
+    leader = HackathonTeam.objects.filter(pk=snapshot.team_id).values_list("leader_id", flat=True).first()
+    return leader if leader in snapshot.member_ids else (snapshot.member_ids[0] if snapshot.member_ids else None)
 
 
 def _attempt(award):
@@ -128,7 +135,21 @@ def listing(event_id, *, actor):
     from .feature import PRIZE_PAYOUTS, require_capability
     require_capability(event, PRIZE_PAYOUTS)
     rows = HackathonPrizePayout.objects.filter(event=event).select_related("award").order_by("-pk")
-    return [projection(row, recorder=may_record(actor, event.makerspace_id)) for row in rows]
+    return [projection(row, recorder=may_record(actor, event.makerspace_id)) for row in rows], payable_awards(event)
+
+
+def payable_awards(event):
+    """The announced result's awards with their prize amount and whether a payout stands."""
+    state = ResultPublicationState.objects.filter(event=event).select_related("current_announcement").first()
+    if state is None or state.current_announcement_id is None:
+        return []
+    paid = set(HackathonPrizePayout.objects.filter(event=event, kind="payout", reversal__isnull=True)
+               .values_list("award_id", flat=True))
+    return [{"id": award.pk, "prize_name": award.prize_name, "rank": award.rank,
+             "title": runtime().snapshot(award.submission_snapshot_id).title,
+             "amount_per_winner": award.prize.amount_per_winner, "paid": award.pk in paid}
+            for award in EventAward.objects.select_related("prize").filter(
+                result_id=state.current_announcement.result_id).order_by("prize_id", "rank")]
 
 
 def projection(row, *, recorder=True):

@@ -16,14 +16,18 @@ from .serializers import ErrorSerializer
 from .views_base import PrivateSubmissionView
 
 ERRORS = {code: ErrorSerializer for code in (400, 401, 402, 403, 404, 409, 429, 503)}
-ChargeRead = inline_serializer(name="ProgrammeChargeRead", fields={
-    "required": serializers.BooleanField(),
-    "amount": serializers.DecimalField(max_digits=12, decimal_places=2, allow_null=True),
-    "payment_id": serializers.IntegerField(allow_null=True),
-    "status": serializers.CharField(help_text="not_required, not_raised, or the payment status."),
-    "currency": serializers.CharField(allow_blank=True),
-})
-FeesRead = inline_serializer(name="ProgrammeChargesRead", fields={"entry_fee": ChargeRead, "team_charge": ChargeRead})
+def charge_read():
+    """A fresh field per use: one serializer instance cannot be bound to two fields."""
+    return inline_serializer(name="ProgrammeChargeRead", fields={
+        "required": serializers.BooleanField(),
+        "amount": serializers.DecimalField(max_digits=12, decimal_places=2, allow_null=True),
+        "payment_id": serializers.IntegerField(allow_null=True),
+        "status": serializers.CharField(help_text="not_required, not_raised, or the payment status."),
+        "currency": serializers.CharField(allow_blank=True),
+    })
+
+
+FeesRead = inline_serializer(name="ProgrammeChargesRead", fields={"entry_fee": charge_read(), "team_charge": charge_read()})
 
 
 def _team_charge(event, team):
@@ -57,7 +61,7 @@ class ProgrammeChargesView(PrivateSubmissionView):
 class EntryFeeView(PrivateSubmissionView):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(request=None, responses={200: ChargeRead, **ERRORS}, tags=["Event submissions"],
+    @extend_schema(request=None, responses={200: charge_read(), **ERRORS}, tags=["Event submissions"],
                    description="The leader raises the project's entry fee (idempotent). The project stays a draft "
                                "until it is paid or waived; pay through the member checkout for payment_id.")
     def post(self, request, pk, team_id, **kwargs):

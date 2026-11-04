@@ -48,7 +48,8 @@ def projection(event):
     values = {key: getattr(row, key) if row else HackathonProgrammeOptions._meta.get_field(key).default for key in FIELDS}
     return {"id": row.pk if row else 0, "event_id": event.pk, "version": row.version if row else 0,
             "allowed_actions": ["edit", "send_results_email"], "currency": currency(event.makerspace),
-            "results_email_sent": results_email_sent(event), **values}
+            "results_email_sent": results_email_sent(event),
+            "published_result_version": getattr(_current_result(event), "version", None), **values}
 
 
 def read(event_id, *, actor):

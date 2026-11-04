@@ -12,7 +12,7 @@ export function GallerySearchBar({ value, onChange, unavailable }: { value: Gall
     <label className="flex min-h-11 items-center gap-3"><input type="checkbox" checked={value.awards === 'only'}
       onChange={e => onChange({ ...value, awards: e.target.checked ? 'only' : undefined })} />Award winners only</label>
     <button type="submit" className="desk-button min-h-11">Search</button>
-    {unavailable ? <p role="status" className="text-sm text-muted">Search is not available for this gallery. <button type="button" className="underline underline-offset-4"
+    {unavailable ? <p role="status" className="text-sm text-muted">Search is not available for this gallery. <button type="button" className="min-h-11 underline underline-offset-4"
       onClick={() => { setText(''); onChange({}); }}>Show every project</button></p> : null}
   </form>;
 }

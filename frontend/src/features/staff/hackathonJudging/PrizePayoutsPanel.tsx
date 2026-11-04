@@ -13,7 +13,7 @@ export function PrizePayoutsPanel({ scope }: { scope: Scope }) {
   const awards: PrizePayableAwardRead[] = list.data?.awards ?? [];
   const [award, setAward] = useState(0); const [amount, setAmount] = useState(''); const [method, setMethod] = useState('bank_transfer');
   const [reference, setReference] = useState(''); const [paidOn, setPaidOn] = useState(new Date().toISOString().slice(0, 10));
-  const [reason, setReason] = useState('');
+  const [reasons, setReasons] = useState<Record<number, string>>({});
   const busy = record.isPending || reverse.isPending;
   const submit = () => record.mutate({ award_id: award, method, reference, paid_on: paidOn, ...(amount.trim() ? { amount: amount.trim() } : {}) },
     { onSuccess: () => { setAward(0); setAmount(''); setReference(''); } });
@@ -40,8 +40,8 @@ export function PrizePayoutsPanel({ scope }: { scope: Scope }) {
       <div className="flex flex-wrap items-center justify-between gap-2"><p className="font-semibold">{row.prize_name}</p>
         <StatusPill label={row.kind === 'reversal' ? 'Reversal' : row.allowed_actions.includes('reverse') ? 'Paid' : 'Reversed'} /></div>
       <p className="text-sm">{row.amount} {row.currency.toUpperCase()} · {row.method.replace('_', ' ')} · {row.paid_on}{row.reference ? ` · ${row.reference}` : ''}</p>
-      {row.allowed_actions.includes('reverse') ? <div className="flex flex-wrap items-end gap-2"><Field label="Reason for reversing"><input className="desk-input min-h-11" maxLength={300} value={reason} onChange={e => setReason(e.target.value)} /></Field>
-        <button type="button" className="desk-button min-h-11" disabled={busy || !reason.trim()} onClick={() => reverse.mutate({ id: row.id, reason: reason.trim() }, { onSuccess: () => setReason('') })}>Reverse payout</button></div> : null}
+      {row.allowed_actions.includes('reverse') ? <div className="flex flex-wrap items-end gap-2"><Field label="Reason for reversing"><input className="desk-input min-h-11" maxLength={300} value={reasons[row.id] ?? ''} onChange={e => setReasons(value => ({ ...value, [row.id]: e.target.value }))} /></Field>
+        <button type="button" className="desk-button min-h-11" disabled={busy || !(reasons[row.id] ?? '').trim()} onClick={() => reverse.mutate({ id: row.id, reason: (reasons[row.id] ?? '').trim() })}>Reverse payout</button></div> : null}
     </article>)}
   </section>;
 }

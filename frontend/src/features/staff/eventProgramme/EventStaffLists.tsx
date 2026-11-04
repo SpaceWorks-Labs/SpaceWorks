@@ -17,6 +17,7 @@ export const LISTS = {
 } as const;
 type ListKey = keyof typeof LISTS;
 const SEARCHABLE: ListKey[] = ['guests', 'teams', 'submissions'];
+const FILTER_LABELS: Record<string, string> = { status: 'Status', state: 'State', triage: 'Eligibility', below_target: 'Below the review target' };
 
 /** Build the exact query string the list and its CSV export share (filters only, never the page). */
 export function filterQuery(list: ListKey, values: Record<string, string>) {
@@ -52,7 +53,7 @@ function StaffList({ eventId, makerspaceId, list, canSaveViews }: { eventId: num
   return <div className="grid gap-3">
     <ListViewControls state={state} makerspaceId={makerspaceId} entity={spec.entity} sorts={[]} savedViews={canSaveViews}
       search={SEARCHABLE.includes(list)} searchLabel={`Search ${spec.label.toLowerCase()}`}
-      controls={<>{Object.entries(spec.filters).map(([key, options]) => <Field key={key} label={key.replace('_', ' ')}>
+      controls={<>{Object.entries(spec.filters).map(([key, options]) => <Field key={key} label={FILTER_LABELS[key] ?? key}>
         <select className="desk-input min-h-11" value={(state.values as Record<string, string>)[key] ?? ''} onChange={e => state.setFilter(key, e.target.value)}>
           <option value="">Any</option>{(options as readonly string[]).map(option => <option key={option} value={option}>{option.replace('_', ' ')}</option>)}</select></Field>)}
         <button type="button" className="desk-button min-h-11" disabled={exportCsv.isPending} onClick={() => exportCsv.mutate()}>Export these rows as CSV</button></>} />

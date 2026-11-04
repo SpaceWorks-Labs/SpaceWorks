@@ -24,6 +24,9 @@ def triage(*, actor, event_id, submission_id, operation_id, expected_version, tr
             raise SubmissionError("invalid_transition", 409)
         if triage in {"ineligible", "hidden"}:
             port.invalidate_snapshot(context=ctx, snapshot_id=project.current_snapshot_id)
+        if triage == "ineligible" and project.triage != "ineligible":  # L21b: staff disqualification.
+            from .entry_fees import on_disqualified
+            on_disqualified(event=ctx.event, project=project, actor=actor)
         project.triage, project.triage_reason = triage, reason
         project.version += 1
         project.save(update_fields=["triage", "triage_reason", "version"])

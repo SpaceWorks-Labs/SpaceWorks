@@ -9,7 +9,7 @@ def subject_event_ids(subjects):
     """`{(subject_type, subject_id): event_id}` for `event_order` and `event_venue_fee` subjects."""
     from .models import EventOrder, EventVenueFee
 
-    wanted = {"event_order": set(), "event_venue_fee": set()}
+    wanted = {"event_order": set(), "event_venue_fee": set(), "submission_fee": set(), "team_registration": set()}
     for subject_type, subject_id in subjects:
         if subject_type in wanted:
             wanted[subject_type].add(subject_id)
@@ -21,4 +21,10 @@ def subject_event_ids(subjects):
         for pk, event_id in EventVenueFee.objects.filter(pk__in=wanted["event_venue_fee"]).values_list(
                 "pk", "event_id"):
             found[("event_venue_fee", pk)] = event_id
+    # Lane L21b: entry fees and team charges name their event through the project or team.
+    from .models import HackathonSubmission, HackathonTeam
+    for subject_type, model in (("submission_fee", HackathonSubmission), ("team_registration", HackathonTeam)):
+        if wanted[subject_type]:
+            for pk, event_id in model.objects.filter(pk__in=wanted[subject_type]).values_list("pk", "event_id"):
+                found[(subject_type, pk)] = event_id
     return found

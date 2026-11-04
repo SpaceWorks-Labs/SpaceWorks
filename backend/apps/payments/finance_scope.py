@@ -45,6 +45,9 @@ PAYMENT_DOMAINS = {
     # Lane L6: ticket orders and venue fees are events income.
     "event_order": "events",
     "event_venue_fee": "events",
+    # Lane L21b: a project's entry fee and a paid team's one charge are events income.
+    "submission_fee": "events",
+    "team_registration": "events",
 }
 
 

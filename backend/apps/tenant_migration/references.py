@@ -95,6 +95,9 @@ PAYMENT_SUBJECT_REFERENCES = {
     # Lane L6: one order of several tickets; one hosting fee per event.
     "event_order": "events.EventOrder",
     "event_venue_fee": "events.EventVenueFee",
+    # Lane L21b: an entry fee per project; one leader-paid charge per team.
+    "submission_fee": "events.HackathonSubmission",
+    "team_registration": "events.HackathonTeam",
 }
 
 NOTIFICATION_URL_ROUTES = (

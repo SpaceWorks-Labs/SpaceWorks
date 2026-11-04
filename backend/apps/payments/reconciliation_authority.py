@@ -33,6 +33,9 @@ SUBJECT_ACTIONS = {
     # Lane L6: event money follows the Event Manager, like a registration charge.
     Payment.SubjectType.EVENT_ORDER: rbac.Action.MANAGE_EVENTS,
     Payment.SubjectType.EVENT_VENUE_FEE: rbac.Action.MANAGE_EVENTS,
+    # Lane L21b: entry fees and team charges, like every other events charge.
+    Payment.SubjectType.SUBMISSION_FEE: rbac.Action.MANAGE_EVENTS,
+    Payment.SubjectType.TEAM_REGISTRATION: rbac.Action.MANAGE_EVENTS,
 }
 
 

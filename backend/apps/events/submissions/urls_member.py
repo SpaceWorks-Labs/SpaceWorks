@@ -4,6 +4,7 @@ from .views_projects import ProjectView, ProjectCommandView
 from .views_uploads import (UploadView, AssetDetailView, AssetCommandView,
                            ResumeCollectionView, ResumeDetailView, FromSavedView, AssetPartsView, AssetResumeView)
 from .views_downloads import AssetDownloadView
+from .views_fees import EntryFeeView, ProgrammeChargesView
 
 ROOT = "makerspaces/<int:makerspace_id>/events/<int:pk>/"
 TEAM = ROOT + "teams/<int:team_id>/"
@@ -11,6 +12,9 @@ urlpatterns = [
     path(TEAM + "submission/", ProjectView.as_view(), name="events-programme-member-teams-submission"),
     path(TEAM + "submission/submit/", ProjectCommandView.as_view(), name="events-programme-member-teams-submission-submit"),
     path(TEAM + "submission/withdraw/", ProjectCommandView.as_view(action="withdraw"), name="events-programme-member-teams-submission-withdraw"),
+    # Release 2 L21b: the entry fee and the leader-paid team charge.
+    path(TEAM + "charges/", ProgrammeChargesView.as_view(), name="events-programme-member-teams-charges"),
+    path(TEAM + "charges/entry-fee/", EntryFeeView.as_view(), name="events-programme-member-teams-entry-fee"),
     path(TEAM + "assets/", UploadView.as_view(), name="events-programme-member-teams-assets-list"),
     path(TEAM + "assets/<int:asset_id>/", AssetDetailView.as_view(), name="events-programme-member-teams-assets-detail"),
     path(TEAM + "assets/<int:asset_id>/parts/", AssetPartsView.as_view(), name="events-programme-member-teams-assets-parts"),

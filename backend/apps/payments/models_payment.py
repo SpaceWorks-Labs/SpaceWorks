@@ -27,13 +27,17 @@ class Payment(models.Model):
         # venue fee is an outside organiser's hosting charge (subject_id = EventVenueFee id).
         EVENT_ORDER = "event_order", "Event ticket order"
         EVENT_VENUE_FEE = "event_venue_fee", "Event venue fee"
+        # Lane L21b. A hackathon project's entry fee (subject_id = HackathonSubmission id) and a
+        # paid team's one charge on its leader (subject_id = HackathonTeam id, C-39).
+        SUBMISSION_FEE = "submission_fee", "Project entry fee"
+        TEAM_REGISTRATION = "team_registration", "Team registration"
 
     #: Subjects whose subject_id is the HardwareRequest id.
     LOAN_SUBJECT_TYPES = ("loan_deposit", "loan_late_fee", "loan_rental")
     #: Subjects whose subject_id is a RequesterAccountability row of a loan.
     LOAN_ACCOUNTABILITY_SUBJECT_TYPES = ("loan_damage", "loan_lost")
     #: Lane L6: event money that is not one registration's own charge.
-    EVENT_SUBJECT_TYPES = ("event_registration", "event_order", "event_venue_fee")
+    EVENT_SUBJECT_TYPES = ("event_registration", "event_order", "event_venue_fee", "submission_fee", "team_registration")
 
     class Status(models.TextChoices):
         PENDING = "pending", "Pending"

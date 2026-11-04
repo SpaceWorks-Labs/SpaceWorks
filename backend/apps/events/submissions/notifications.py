@@ -33,6 +33,10 @@ def render(envelope):
 def enqueue_locked(*, project, action):
     if action not in STATES:
         return
+    if action in ("submit", "amend"):  # C-37: the submission receipt is a per-event switch, off for new events.
+        from apps.events.judging.options import option
+        if not option(project.event_id, "submission_receipt_email"):
+            return
     ids = project.team.memberships.filter(state="active").values_list("member_id", flat=True)
     for member in User.objects.filter(person_q(), pk__in=ids, is_active=True, access_status="active",
             is_tenant_dump_stub=False).order_by("pk"):

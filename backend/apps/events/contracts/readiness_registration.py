@@ -58,8 +58,13 @@ def summarize(key, *, event, actor):
 def respondents(*, event, actor, since, until):
     if not HackathonConfig.objects.filter(event=event, enabled=True).exists():
         return None
-    rows = HackathonApplication.objects.filter(event=event, submitted_at__gte=since,
-        submitted_at__lt=until).exclude(submitted_at=None).values_list("member_id", "submitted_at")
+    # The funnel asks with since=None (all time); a None bound is no bound, not a lookup value.
+    rows = HackathonApplication.objects.filter(event=event).exclude(submitted_at=None)
+    if since is not None:
+        rows = rows.filter(submitted_at__gte=since)
+    if until is not None:
+        rows = rows.filter(submitted_at__lt=until)
+    rows = rows.values_list("member_id", "submitted_at")
     return True, tuple(Respondent(("member", pk), submitted) for pk, submitted in rows)
 
 

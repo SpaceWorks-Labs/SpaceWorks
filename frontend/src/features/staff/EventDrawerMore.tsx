@@ -52,7 +52,7 @@ export function EventDrawerMore({ event, makerspaceId, access, surfaces, section
       <EventFeedbackPanel eventId={eventId} makerspaceId={makerspaceId} canViewResponses={access.registrations} canManageCertificates={access.manager} />
       {ticketing.includes("events.certificate_designer") ? <EventDisclosure title="Certificate designer"><EventCertificateDesigner key={`certificate:${eventId}`} makerspaceId={makerspaceId} eventId={eventId} /></EventDisclosure> : null}
     </> : access.registrations ? <EventFeedbackResponses eventId={eventId} makerspaceId={makerspaceId} responseCount={0} canManageCertificates={false} /> : null : null}
-    {sections.broadcasts && section === "broadcasts" ? <EventBroadcastsPanel makerspaceId={makerspaceId} eventId={eventId} /> : null}
+    {sections.broadcasts && access.registrations && event.broadcasts_enabled && section === "broadcasts" ? <EventBroadcastsPanel makerspaceId={makerspaceId} eventId={eventId} /> : null}
     {sections.analytics && section === "analytics" ? <EventAnalyticsPanel makerspaceId={makerspaceId} eventId={eventId} endsAt={event.ends_at} features={event.report_features ?? []} /> : null}
     {/* Kept mounted (hidden) so the "publish website with event" choice the Publish action reads never goes stale. */}
     {sections.website && access.publish && event.status === "draft" ? <div hidden={section !== "website"}><EventWebsitePublication key={eventId} target={websiteTarget} onChange={onWebsitePublication} /></div> : null}

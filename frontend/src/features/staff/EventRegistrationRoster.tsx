@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { DataTable, EmptyState, Skeleton, StatusBadge } from "../../components/ui";
 import { EventRegistrationAnswers } from "./EventRegistrationAnswers";
+import { ParticipationChips, ReacceptButton } from "./eventParticipation/RosterParticipation";
 import { offerCancellationUndo, useRestoreRegistration } from "./eventToolsApi";
 import { EventCheckInOperator } from "./EventCheckInOperator";
 import { EventBadgeActions } from "./EventBadgeActions";
@@ -75,18 +76,19 @@ export function EventRegistrationRoster({ visible = true, event, makerspaceId, o
       { key: "badge", header: "Badge", phone: "lead", render: row => <label className="inline-flex min-h-11 min-w-11 items-center justify-center"><input type="checkbox" aria-label={`Select ${row.name} for a badge`} disabled={!access.checkIn || (!access.manager ? row.status !== "attended" : row.status !== "registered" && !(includeAttended && row.status === "attended"))} checked={selectedIds.includes(row.id)} onChange={e => setSelectedIds(ids => e.target.checked ? [...ids, row.id] : ids.filter(id => id !== row.id))} /></label> },
       { key: "name", header: "Name", phone: "title", render: row => <>{row.name}{access.manager ? <PaymentReconcileActions makerspaceId={makerspaceId} payment={row.payment} invalidateKeys={[["event", event.id, "registrations"], ["event", event.id], ["events", makerspaceId]]} /> : null}</> },
       { key: "contact", header: "Contact", render: row => <><a className="inline-flex min-h-11 items-center [overflow-wrap:anywhere] hover:underline" href={`mailto:${row.email}`}>{row.email}</a><a className="flex min-h-11 items-center text-muted hover:underline" href={`tel:${row.phone}`}>{row.phone}</a></> },
-      { key: "status", header: "Status", render: row => <><StatusBadge status={row.status} label={opsStatusLabel(row.status)} />{row.no_longer_eligible ? <span className="mt-1 block text-xs text-warn">No longer eligible</span> : null}</> },
+      { key: "status", header: "Status", render: row => <><StatusBadge status={row.status} label={opsStatusLabel(row.status)} /><ParticipationChips row={row} />{row.no_longer_eligible ? <span className="mt-1 block text-xs text-warn">No longer eligible</span> : null}</> },
       { key: "actions", header: "Action", render: row => {
         const pending = pendingFor(row.id);
         const rowError = errorFor(row.id);
         const cancellable = ["pending_approval", "registered", "waitlisted"].includes(row.status);
-        const hasAction = cancellable || row.status === "attended";
+        const hasAction = cancellable || row.status === "attended" || (access.registrations && row.status === "rejected");
         return <><div className="flex flex-wrap gap-2">
             {cancellable ? <button className="desk-button-danger" type="button" disabled={pending} onClick={() => cancel.mutate(row.id, { onSuccess: (cancelled) => offerCancellationUndo(cancelled, restore.mutateAsync) })}>Cancel registration</button> : null}
             {row.status === "pending_approval" ? <><button className="desk-button-success" type="button" disabled={pending} onClick={() => approve.mutate(row.id)}>Approve</button><button className="desk-button-danger" type="button" disabled={pending} onClick={() => reject.mutate(row.id)}>Reject</button></> : null}
             {row.status === "waitlisted" && event.registration_requires_approval ? <><button className="desk-button-success" type="button" disabled={pending} onClick={() => promote.mutate(row.id)}>Promote</button><button className="desk-button-danger" type="button" disabled={pending} onClick={() => reject.mutate(row.id)}>Reject</button></> : null}
             {access.checkIn && row.status === "registered" && checkable ? <button className="desk-button-success" type="button" disabled={pending} onClick={() => attended.mutate(row.id)}>Mark attended</button> : null}
             {access.checkIn && row.status === "attended" ? <button className="desk-button-danger" type="button" disabled={pending} onClick={() => correct.mutate(row.id)}>Correct attendance</button> : null}
+            {access.registrations ? <ReacceptButton eventId={event.id} row={row} onDone={() => void rows.refetch()} /> : null}
             {!hasAction ? "—" : null}
             {access.registrations ? <EventRegistrationAnswers row={row} schema={event.custom_form} makerspaceId={makerspaceId} eventId={event.id} /> : null}
           </div>{access.checkIn && row.payment?.status === "pending" && event.ticketing_features?.includes("events.desk_collect")

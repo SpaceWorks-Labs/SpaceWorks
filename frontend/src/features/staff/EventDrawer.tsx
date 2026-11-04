@@ -25,6 +25,7 @@ import type { EventPatch } from "./eventsApi";
 import { eventErrorText } from "./eventUi";
 import { EventProgrammePanel } from "./eventProgramme/EventProgrammePanel";
 import { EventAddonPanel } from "./eventProgramme/EventAddonPanel";
+import { EventParticipationSection } from "./eventParticipation/EventParticipationSection";
 import { ProgrammeSessionBoundary } from "./eventProgramme/sessionScope";
 
 type Action = "publish" | "cancel" | "complete";
@@ -112,6 +113,7 @@ export function EventDrawer({ eventId, makerspaceId, onClose, onOpenSeries, enab
           {tabs.section && sections[tabs.section] ? <EventProgrammePanel event={event} makerspaceId={makerspaceId} section={tabs.section} access={access} features={enabledFeatures} /> : null}
           {(tabs.section === "stage-forms" || tabs.section === "reimbursements") && sections[tabs.section]
             ? <EventAddonPanel key={`${event.id}:${tabs.section}`} event={event} makerspaceId={makerspaceId} section={tabs.section} access={access} /> : null}
+          {tabs.section && sections[tabs.section] ? <EventParticipationSection key={`${event.id}:l21a:${tabs.section}`} event={event} section={tabs.section} access={access} features={enabledFeatures} /> : null}
           {actionError ? <p role="alert" className="text-sm text-danger">{eventErrorText(actionError)}</p> : null}
         </div> : null} />
     </div>

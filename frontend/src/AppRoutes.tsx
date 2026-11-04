@@ -60,6 +60,7 @@ const PublicWebsiteDetailPage = lazy(() => import("./features/events/PublicWebsi
 const HostingRequestPage = lazy(() => import("./features/hosting/HostingRequestPage").then((m) => ({ default: m.HostingRequestPage })));
 const HostingInvitePage = lazy(() => import("./features/hosting/HostingInvitePage").then((m) => ({ default: m.HostingInvitePage })));
 const HostingRequestStatusPage = lazy(() => import("./features/hosting/HostingRequestStatusPage").then((m) => ({ default: m.HostingRequestStatusPage })));
+const HelpPage = lazy(() => import("./features/help/HelpPage").then((m) => ({ default: m.HelpPage })));
 
 // Tenant capabilities choose the home independently of the deployment edition.
 
@@ -198,6 +199,9 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
       <Route path="/guest-admin/*" element={<StaffApp guestOnly />} />
       <Route path="/scanner" element={<ScannerPage />} />
       <Route path="/kiosk/:stationToken" element={<KioskStationPage />} />
+      <Route path="/help" element={<HelpPage />} />
+      <Route path="/help/:sectionId" element={<HelpPage />} />
+      <Route path="/help/:sectionId/:articleSlug" element={<HelpPage />} />
       {/* Public profiles: after every explicit route, before the catch-all. */}
       <Route path="/:handle" element={<PublicHandlePage />} />
       <Route path="*" element={<NotFoundPage />} />
@@ -255,6 +259,12 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
       <Route path="/hosting" element={<HostingRequestPage />} />
       <Route path="/hosting/invite" element={<HostingInvitePage />} />
       <Route path="/hosting/request" element={<HostingRequestStatusPage />} />
+      <Route path="/help" element={<HelpPage />} />
+      <Route path="/help/:sectionId" element={<HelpPage />} />
+      <Route path="/help/:sectionId/:articleSlug" element={<HelpPage />} />
+      <Route path="/m/:slug/help" element={<HelpPage />} />
+      <Route path="/m/:slug/help/:sectionId" element={<HelpPage />} />
+      <Route path="/m/:slug/help/:sectionId/:articleSlug" element={<HelpPage />} />
       {/* Public profiles: after every explicit route, before the catch-all. */}
       <Route path="/:handle" element={<PublicHandlePage />} />
       <Route path="*" element={<NotFoundPage />} />

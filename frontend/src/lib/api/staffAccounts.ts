@@ -3,7 +3,7 @@ import type { StaffRole } from "../../features/staff/panels/rolesApi";
 
 export const STAFF_ROLE_NAMES = {
   space_manager: "Space Manager", inventory_manager: "Inventory Manager", machine_manager: "Machine Manager",
-  event_manager: "Event Manager", booking_manager: "Booking Manager", handover: "Handover",
+  event_manager: "Event Manager", booking_manager: "Booking Manager", handover: "Handover", shop_manager: "Shop Manager",
 } as const;
 export type StaffRoleKey = keyof typeof STAFF_ROLE_NAMES;
 export type StaffAccount = {

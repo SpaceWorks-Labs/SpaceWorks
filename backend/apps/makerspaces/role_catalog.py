@@ -35,6 +35,12 @@ ROLE_CATALOG = (
         "view_inventory", "assign_box", "issue_request", "issue_direct_loan",
         "return_request", "upload_evidence", "collect_service_request",
     }), True),
+    # Release 2 L22 (#137): products, stock, prices, orders, the front desk, cash-ups,
+    # returns, shop reports and the shop's own settings. No other inventory, no money
+    # outside the shop and no other settings.
+    RoleDefinition("shop_manager", "Shop Manager", "shop_manager", frozenset({
+        "manage_shop", "sell_shop", "view_shop",
+    }), True),
     RoleDefinition("member", "Member", None, frozenset()),
 )
 ROLE_BY_SLUG = {role.slug: role for role in ROLE_CATALOG}

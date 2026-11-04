@@ -32,5 +32,6 @@ export const ROLE_DESCRIPTIONS: Record<string, string> = {
   event_manager: "Manages events and registrations, event reports and email templates.",
   booking_manager: "Manages bookable spaces, bookings, booking rules, reports and email templates.",
   handover: "Issues accepted requests and direct handouts, processes returns and hands over completed machine jobs.",
+  shop_manager: "Runs the shop: products, stock, prices, orders, the front desk, cash-ups, returns, shop reports and the shop's own settings. No other inventory, money or settings.",
   member: "Uses member services without staff management access.",
 };

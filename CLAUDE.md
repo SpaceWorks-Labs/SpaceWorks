@@ -68,8 +68,8 @@ verified private account-link proofs, never workflow decisions. Two architectura
   password, MFA, attestation and a fixed tenant; platform native grants forbidden).
   Accounts `0032_account_context` is a development-data role reset, never an authorized
   live-authority migration. Resource helpers and organization delegates are the person's.
-  Super Admin is global; each makerspace has seven fixed built-in `MakerspaceRole` instances: Space Manager, Inventory
-  Manager, Machine Manager, Event Manager, Booking Manager, Handover and Member. No custom roles or role
+  Super Admin is global; each makerspace has eight fixed built-in `MakerspaceRole` instances: Space Manager, Inventory
+  Manager, Machine Manager, Event Manager, Booking Manager, Handover, Shop Manager and Member. No custom roles or role
   editing. A membership holds a primary role plus combinable additional roles; Space Manager and Member
   must each stand alone. Authority is the union of the valid role set's actions. Machine Manager reach is
   assigned per person by machine type; no type links means no machines, and a type covers machines added
@@ -129,7 +129,7 @@ lifecycle in `machines/service_workflow*` -- see **Machines and loans depth** in
 ## Multi-Tenancy (Makerspace Scoping)
 
 Every domain entity is scoped to a `makerspace_id`. A makerspace owns its inventory, public URL, Space
-Managers, Inventory Managers, its seven built-in role instances, Telegram group chat ID, QR
+Managers, Inventory Managers, its eight built-in role instances, Telegram group chat ID, QR
 namespace, and audit-log scope. **Any list/query for makerspace-scoped staff actors must be scoped through
 the Auth module** — forgetting this is a cross-tenant data leak, not just a bug.
 

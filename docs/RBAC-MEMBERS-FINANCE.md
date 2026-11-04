@@ -1,8 +1,8 @@
 # Member and finance delegation (F6)
 
 Membership roles are fixed and local to one makerspace: Space Manager, Inventory Manager, Machine
-Manager, Event Manager, Booking Manager, Handover and Member. Space Manager and Member stand alone;
-the other five combine freely. There is no custom-role editor or editable grant list. The action
+Manager, Event Manager, Booking Manager, Handover, Shop Manager and Member (eight built-ins). Space
+Manager and Member stand alone; the other six combine freely. There is no custom-role editor or editable grant list. The action
 checks below remain the authorization contract, including organization-derived grants. See
 [roles and access](README-HOSTING.md#roles--access) for assignment and machine-type scope.
 
@@ -16,6 +16,11 @@ Space Manager includes `manage_members`, `view_finance` and `record_payment`. Th
 Membership Coordinator, Treasurer or front-desk cashier built-ins; old custom roles are mapped by
 migration 0089's raw-grant subset rules and can lose authority that no built-in represents.
 Handover includes job collection and evidence but does not independently grant cash recording.
+Shop Manager (release 2 L22, #137) holds only `manage_shop`, `sell_shop` and `view_shop`: the shop's
+catalogue, stock, prices, orders, front desk, cash-ups, returns and its own settings, plus the shop's
+money in the ledger (domain `shop`). It records cash only for shop sales and shop refunds, never other
+money; the Space Manager reaches the shop through `manage_makerspace`. See
+[Shop](INVARIANTS.md#shop).
 Machine Manager reach is assigned per person by type; combining roles unions actions without
 widening that machine reach.
 

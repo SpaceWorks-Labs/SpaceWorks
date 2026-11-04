@@ -72,7 +72,7 @@ def policy_share(order, share, *, cancelled_at):
 
 
 def seat_cancelled(registration, *, actor):
-    seat = EventOrderSeat.objects.select_for_update().select_related("order", "line").filter(
+    seat = EventOrderSeat.objects.select_for_update(of=("self",)).select_related("order", "line").filter(
         registration=registration).first()
     if seat is None or seat.status == EventOrderSeat.Status.VOID:
         return None
@@ -111,7 +111,7 @@ def event_cancelled(event, *, actor):
 def pass_occurrence_cancelled(event, *, actor):
     """Each pass holder of a cancelled occurrence is owed the pass type's partial amount."""
     from .notices_r2_l6 import order_notice
-    seats = (EventOrderSeat.objects.select_for_update().select_related("order", "line__pass_type")
+    seats = (EventOrderSeat.objects.select_for_update(of=("self",)).select_related("order", "line__pass_type")
              .filter(event=event, order__kind=EventOrder.Kind.PASS, order__status=EventOrder.Status.PAID)
              .exclude(status=EventOrderSeat.Status.VOID).order_by("pk"))
     for seat in seats:

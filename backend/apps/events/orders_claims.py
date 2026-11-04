@@ -27,7 +27,9 @@ def fill_seat(seat, *, member, actor, **values):
     """Turn a locked, unclaimed, paid seat into `member`'s registration (caller holds the boundary)."""
     import secrets
     from .services_registration import register
-    seat = EventOrderSeat.objects.select_for_update().select_related("order", "line__ticket_type").get(pk=seat.pk)
+    # of=("self",): line.ticket_type is nullable, and Postgres refuses FOR UPDATE across an outer join.
+    seat = (EventOrderSeat.objects.select_for_update(of=("self",)).select_related("order", "line__ticket_type")
+            .get(pk=seat.pk))
     if seat.status != EventOrderSeat.Status.UNCLAIMED or seat.order.status != EventOrder.Status.PAID:
         raise OrderRefused("claim_invalid", "This place has already been claimed or was cancelled.")
     with filling_seat(seat):

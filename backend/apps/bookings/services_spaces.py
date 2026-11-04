@@ -183,6 +183,10 @@ def update_space(space, *, actor, audit_service, **changes):
         audit_service,
         {'changed_fields': sorted(changes)},
     )
+    if 'payment_amount' in changes:
+        # Lane L24: a lowered room price opens refund cases for paid upcoming bookings.
+        from apps.payments.price_drop.triggers import after_space_price
+        after_space_price(actor, locked)
     locked.refresh_from_db()
     return locked
 

@@ -15,6 +15,7 @@ from .serializers_speakers import CategoryPatchSerializer, TicketPatchSerializer
 from .serializers_ticketing import CategorySerializer, TicketSerializer
 from .views_admin_event_detail import _visible_makerspace
 from .views_invites import ERRORS, manageable_event_code
+from apps.payments.price_drop.preview import PREVIEW_PARAMETER, previewable
 
 TAGS = ["Admin events"]
 CONFLICT = {409: OpenApiResponse(ErrorSerializer, description="Referenced by registrations or events (code names which).")}
@@ -35,8 +36,12 @@ class EventTicketDetailView(APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(tags=TAGS, request=TicketPatchSerializer, responses={200: TicketSerializer, **ERRORS, **CONFLICT},
+                   parameters=[PREVIEW_PARAMETER],
                    description="Edit a ticket type. Price and audience are frozen once any registration used it "
-                               "(409 ticket_type_referenced); capacity cannot drop below live registrations. Audited.")
+                               "(409 ticket_type_referenced), except that with `charges.price_drop_refunds` on a "
+                               "fixed price may be LOWERED, which opens a refund case per paid seat for an event not "
+                               "yet held. Capacity cannot drop below live registrations. Audited.")
+    @previewable
     def patch(self, request, pk):
         ticket = _ticket(request, pk)
         values = TicketPatchSerializer(data=request.data, partial=True)

@@ -22,6 +22,7 @@ from apps.payments.pricing.components import SETTINGS_MODULES
 from apps.payments.pricing.errors import ComponentNotAllowed
 from apps.payments.pricing.http import domain_read_actions, require_domain, require_pricing, space_for
 from apps.payments.pricing.impact import impact
+from apps.payments.price_drop.preview import PREVIEW_PARAMETER, previewable
 from apps.payments.pricing.rates import RateCard
 from apps.payments.pricing.serializers import (
     PricingCurrencySerializer, PricingImpactSerializer, PricingDefaultSerializer, PricingDefaultWriteSerializer,
@@ -58,8 +59,9 @@ class PricingDefaultView(APIView):
                                "columns `payment-settings` edits). Run the impact preview first: items that "
                                "inherit the default change price; custom and Free items never do (A13). "
                                "Membership is read-only here (plans own their prices).",
-                   request=PricingDefaultWriteSerializer,
+                   request=PricingDefaultWriteSerializer, parameters=[PREVIEW_PARAMETER],
                    responses={200: PricingDefaultSerializer, **WRITE_ERRORS})
+    @previewable
     @transaction.atomic
     def put(self, request, makerspace_id, domain):
         space = _space(request, makerspace_id, domain)

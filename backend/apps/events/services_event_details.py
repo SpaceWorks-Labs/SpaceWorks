@@ -228,6 +228,10 @@ def update_event(event, *, actor, inherit_fields=(), **changes):
                 None if locked.capacity == 0 else locked.capacity - confirmed,
             )
 
+    if "payment_amount" in changes:
+        # Lane L24: a lowered event price opens refund cases for paid seats without a ticket type.
+        from apps.payments.price_drop.triggers import after_event_price
+        after_event_price(actor, locked)
     meta = {"changed_fields": sorted(changes)}
     if "registration_audience" in changes:
         from .organization_audience import candidate_ids

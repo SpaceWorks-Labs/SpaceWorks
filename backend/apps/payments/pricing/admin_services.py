@@ -89,6 +89,8 @@ def set_default(actor, makerspace, domain, *, mode=None, lines=(), loan_block=No
     if legacy_after:
         before["lending"], after["lending"] = legacy_before, legacy_after
     record_change(actor, space, module, setting_key(domain), before, after, decision)
+    from apps.payments.price_drop.triggers import after_domain_change
+    after_domain_change(actor, space, domain, row)  # lane L24: a lowered rate opens refund cases
     return row
 
 
@@ -155,6 +157,8 @@ def set_override(actor, makerspace, target_type, target_id, component, *, mode, 
         row.full_clean()
         row.save()
     _audit_override(actor, space, target, domain, component, target_type, mode, amount, cap, before)
+    from apps.payments.price_drop.triggers import after_override
+    after_override(actor, space, target_type, target)  # lane L24: a lowered price opens refund cases
     return row
 
 

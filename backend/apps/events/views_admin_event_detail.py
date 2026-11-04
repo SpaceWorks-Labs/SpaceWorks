@@ -31,6 +31,7 @@ from apps.hardware_requests.exceptions import ErrorSerializer
 from apps.makerspaces.guards import require_module
 from apps.makerspaces.models import Makerspace, MakerspaceMembership
 from apps.payments.models import Payment
+from apps.payments.price_drop.preview import PREVIEW_PARAMETER, previewable
 
 
 EVENT_VALIDATION_ERROR_SCHEMA = {'type': 'object', 'additionalProperties': {}}
@@ -131,6 +132,7 @@ class EventDetailView(APIView):
         tags=['Admin events'],
         summary='Update an event',
         request=EventWriteSerializer,
+        parameters=[PREVIEW_PARAMETER],
         responses={
             200: EventAdminSerializer,
             400: EVENT_ERROR_400,
@@ -140,6 +142,7 @@ class EventDetailView(APIView):
             **{code: ErrorSerializer for code in (401, 403, 404, 423, 503)},
         },
     )
+    @previewable
     def patch(self, request, pk, *args, **kwargs):
         event = _manageable_event(request.user, pk, VIEW)
         serializer = EventWriteSerializer(event, data=request.data, partial=True)

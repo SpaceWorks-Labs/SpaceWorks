@@ -47,7 +47,7 @@ def update_ticket(ticket, *, actor, **values):
     from .models import EventOrderLine
     sold = used.exists() or EventOrderLine.objects.filter(ticket_type=row).exists()
     changed = sorted(field for field in TICKET_FIELDS if field in values and values[field] != getattr(row, field))
-    if any(field in changed for field in FROZEN_WHEN_USED) and sold:
+    if any(field in changed for field in FROZEN_WHEN_USED) and sold and not _price_drop(event, row, changed, values):
         raise ReferencedConflict("Price and audience are fixed once people registered with this ticket. "
                                  "Deactivate it and create a new ticket type instead.", "ticket_type_referenced")
     capacity = values.get("capacity", row.capacity)
@@ -61,7 +61,23 @@ def update_ticket(ticket, *, actor, **values):
     if changed:
         row.save(update_fields=changed)
         record(actor, "event.ticket_updated", makerspace=event.makerspace, target=row, meta={"fields": changed})
+    if "amount" in changed:
+        from apps.payments.price_drop.triggers import after_ticket_price
+        after_ticket_price(actor, event, row)
     return row
+
+
+def _price_drop(event, row, changed, values):
+    """Lane L24 (#163A): with price-drop refunds on, a sold fixed-price ticket may get CHEAPER.
+
+    Everything else stays frozen once sold; a rise is still refused, so nobody already
+    holding the ticket can be asked for more, and the cheaper price opens refund cases.
+    """
+    from apps.makerspaces.platform import feature_enabled
+    from apps.payments.price_drop import FEATURE
+    frozen = [field for field in changed if field in FROZEN_WHEN_USED]
+    return (frozen == ["amount"] and row.pricing_mode == "fixed" and values["amount"] < row.amount
+            and feature_enabled(event.makerspace, FEATURE))
 
 
 @transaction.atomic

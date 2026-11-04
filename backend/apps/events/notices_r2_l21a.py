@@ -48,7 +48,7 @@ def attendance_notice(reply, name, revision):
     return _send(event, reply.registration.member_id, name, source=ATTENDANCE_SOURCE, source_id=reply.pk,
                  revision=revision, subject=reply.registration, context={"reply_id": reply.pk},
                  title=f"Are you still coming to {event.title}?", text=text,
-                 tail=f"events/{reply.registration_id}/attendance")
+                 tail=f"events/{event.pk}/attendance")
 
 
 def crew_notice(crew, name):

@@ -62,7 +62,7 @@ class EventAttendanceReply(ScopedPiiModelMixin, models.Model):
     class Effect(models.TextChoices):
         NONE = "none", "No change"
         RELEASED = "released", "Place released"
-        DUE_CASE = "due_case", "Cancelled with a refund case"
+        DUE_CASE = "due_case", "Cancelled; refund assessed under policy"
         LEFT_TO_STAFF = "left_to_staff", "Left to staff"
 
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE, related_name="+")

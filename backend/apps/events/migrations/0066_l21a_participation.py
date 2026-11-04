@@ -119,7 +119,7 @@ class Migration(migrations.Migration):
                 ('answer', models.CharField(blank=True, choices=[('yes', 'Still coming'), ('no', 'Not coming')], default='', max_length=4)),
                 ('note', models.TextField(blank=True, default='')),
                 ('replied_at', models.DateTimeField(blank=True, null=True)),
-                ('effect', models.CharField(choices=[('none', 'No change'), ('released', 'Place released'), ('due_case', 'Cancelled with a refund case'), ('left_to_staff', 'Left to staff')], default='none', max_length=16)),
+                ('effect', models.CharField(choices=[('none', 'No change'), ('released', 'Place released'), ('due_case', 'Cancelled; refund assessed under policy'), ('left_to_staff', 'Left to staff')], default='none', max_length=16)),
                 ('reminded_at', models.DateTimeField(blank=True, null=True)),
                 ('event', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='attendance_replies', to='events.event')),
                 ('makerspace', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='+', to='makerspaces.makerspace')),

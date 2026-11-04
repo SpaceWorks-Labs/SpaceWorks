@@ -107,7 +107,7 @@ uses the registry rather than scalar JSONField choices. Follow the independent
 **Notifications**: [notifications](#notifications) · [email](#email) · [sms](#sms) · [whatsapp](#whatsapp) · [telegram](#telegram) ·
 [slack](#slack) · [mattermost](#mattermost) · [discord](#discord) · [webhook](#webhook) — **Reports**: [reports](#reports) —
 **Payments**: [payments](#payments) — **Accounts**: [member_accounts](#member_accounts) —
-**Mobile apps**: [mobile](#mobile) · **Connected devices**: [devices](#devices)
+**Mobile apps**: [mobile](#mobile) · **Connected devices**: [devices](#devices) — **Shop**: [shop](#shop)
 
 ---
 
@@ -786,6 +786,39 @@ switch. [What changed](MODULES-PLATFORM.md#backup-retired).
 
 [Read the devices module reference](MODULES-PLATFORM.md#devices).
 
+
+## Shop
+
+### shop
+
+Release 2 (L22; #128 C-7, #129, #135-#137). **Off by default.** Each makerspace may run its own shop:
+its own catalogue, stock, prices, receipts and finance records; nothing is shared between spaces and the
+superadmin sees every space's shop. It sells consumables and kits (stock goes down on sale), merch with
+sizes and variants, online from a public shop page for pickup, and at the front desk. The shop is its own
+top-level module, an owner exception to #97 (#135 Q-S1).
+
+- **What it adds:** the staff **Shop** tab (catalogue, stock, orders, the front-desk POS, cash-up, shop
+  reports and settings), the public page `/m/<slug>/shop` with `shop.online`, "My shop orders" in the
+  member area, a `shop` section for Pages, and the built-in **Shop Manager** role (`manage_shop`,
+  `sell_shop`, `view_shop`; #137). Every sale is one `Payment` (subject `shop_order`, finance domain
+  `shop`), so it is in the ledger, the income-versus-spending report and the shop reports.
+- **Without it:** no shop route answers (404 `shop_closed`), no shop job runs and nothing is shown. Rows
+  are kept; turning it back on restores everything (#95, #128 C-8).
+- **Its switches** (every shop feature is optional, #135): `shop.online` (public page and online
+  orders), `shop.guest_checkout` (name, email and an emailed code), `shop.holds` (15 minutes online,
+  48 hours for pay-at-desk; default on), `shop.member_prices` (the space's member discounts, members-only
+  items), `shop.tax` (a tax rate and HSN code per product, prices tax-inclusive; needs `billing.tax`),
+  `shop.returns` (returns window, restock or write-off, a refund case), `shop.cash_up` (cash sessions with
+  float, counted cash and variance; the two-person check applies to the cash-up), `shop.event_pickup`
+  (collect at one of the space's events; needs `events`), `shop.order_limits` (a per-order limit),
+  `shop.public_stock` (In stock / Low / Sold out, exact counts per product opt-in; default on),
+  `shop.receipts` (receipt screen at 80 mm and A4 and by email; default on), `shop.reorder` (a To-Buy draft
+  with `inventory.tobuy`, else a staff notice), `shop.bundles` (kits take their parts' stock),
+  `shop.consumable_link` (a product draws on an inventory consumable). Money: `charges.shop`
+  (standalone, default on: every sale is recorded) and `payments.shop` (the online card/UPI rail; needs the
+  `payments` module; without it online orders are paid at the desk).
+- **Purge:** a superadmin purge of the module removes the shop's catalogue, stock history and cash
+  sessions; orders that carry a charge keep their `Payment` and documents, which are core ledger.
 
 ## Features: the level below a module
 

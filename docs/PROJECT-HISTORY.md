@@ -6,6 +6,15 @@
 
 ## Condensed changelog (newest first — full detail in `git log`)
 
+- **2026-11-05 -- release 2 L22, the per-space shop (#128 C-7, #129, #135-#137).** A new top-level
+  module `shop` (owner exception to #97) with fourteen optional switches: a catalogue of consumables,
+  kits and merch with variants, stock kept only by the inventory availability module (holds, sales,
+  returns, write-offs, an inventory consumable link, bundle kits), online orders for pickup at the space
+  or an event (signed-in or guest with an emailed code; the rail with `payments.shop`, else pay at the
+  desk), the front-desk POS (cash, UPI, card on an external terminal; one transaction with its receipt),
+  cash-up with the two-person check, returns and uncollected orders through refund cases, per-product
+  tax classes with HSN, low-stock To-Buy drafts, receipts at 80 mm and A4, shop reports, and the new
+  built-in Shop Manager role. Every sale is a `shop_order` Payment in the ledger.
 - **2026-11-04 -- release 2 L6, paid ticketing v2 and venue fees (#69, #71, #94, #128 C-20, #169).**
   Multi-ticket orders (one `event_order` Payment, one registration per attendee claimed by signing in),
   checkout seat holds, tiers, pay-what-you-want, group and hidden tickets, promo limits and a booking fee,

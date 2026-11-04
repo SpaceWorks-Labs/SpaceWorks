@@ -762,6 +762,16 @@ identity normalization and production minimum-version comparison. `mobile_associ
   `segmentation.py`, `extras.py`, `verification.py`, `scan.py`, `wallet/`; views `views_*.py`, URLs
   `urls_{admin,member,public,wallet}.py`.
 - `apps/id_programmes/` (separable) -- programmes, cards, numbering, questions, import, invites, join.
+- `apps/shop/` (separable, module `shop`, release 2 L22) -- `models_catalogue.py` (settings, products,
+  variants, kit parts), `models_orders.py` (orders, lines, returns), `models_stock.py` (movements,
+  holds), `models_pos.py` (cash sessions); `pricing.py` (baskets through L15 `quote()`), `tax_lines.py`
+  (per-product tax snapshot), `orders_core.py` (order + one charge), `checkout.py` (online orders,
+  guests), `settlement.py` (sell after payment), `services_orders.py` (ready, collect, cancel, lapse),
+  `services_pos.py` (desk sale and desk payment), `services_cash.py`, `services_returns.py`,
+  `services_catalogue.py`, `reorder.py` + `restock.py` (To-Buy), `notices.py`, `tasks.py` (minute sweep),
+  `receipts.py`, `public.py`, views/urls for public, member and staff. Stock math lives in
+  `apps/inventory/availability_shop.py`; reports in `apps/operations/reports_shop.py` and
+  `payments/reports_finance_ledger.py` (`finance-shop`).
 - Events: `events/models_id_cards.py`, `id_cards*.py`, `services_checkin_cards.py`,
   `id_cards_tickets.py` (`render_ticket(registration, fmt)`), `urls_id_cards*.py`, `tasks_id_cards.py`.
 - Makerspaces: `models_member_card_settings.py`, `member_card_admin_views_l3.py`,

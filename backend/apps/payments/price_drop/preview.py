@@ -10,6 +10,7 @@ With `charges.price_drop_refunds` off the preview answers 404, like any switched
 surface. A save that changes no price previews an empty list.
 """
 
+from contextlib import nullcontext
 from contextvars import ContextVar
 from functools import wraps
 
@@ -62,8 +63,16 @@ def wants_preview(request):
     return str(request.query_params.get(PARAM, "")).lower() in ("1", "true", "yes")
 
 
-def previewable(method):
-    """Wrap a price-saving APIView method so `?price_drop_preview=1` dry-runs it."""
+def previewable(method=None, *, prepare=None):
+    """Wrap a price-saving APIView method so `?price_drop_preview=1` dry-runs it.
+
+    `prepare(view, request, *args, **kwargs)` may return a context manager entered BEFORE
+    the rollback transaction, for saves whose preparation must precede every domain
+    transaction (an event write prepares its credential material first).
+    """
+    if method is None:
+        return lambda inner: previewable(inner, prepare=prepare)
+
     @wraps(method)
     def wrapper(self, request, *args, **kwargs):
         if not wants_preview(request):
@@ -72,9 +81,10 @@ def previewable(method):
         token = _ACTIVE.set(collector)
         response = None
         try:
-            with transaction.atomic():
-                response = method(self, request, *args, **kwargs)
-                raise _Rollback()
+            with (prepare(self, request, *args, **kwargs) if prepare else nullcontext()):
+                with transaction.atomic():
+                    response = method(self, request, *args, **kwargs)
+                    raise _Rollback()
         except _Rollback:
             pass
         finally:

@@ -142,7 +142,7 @@ class EventDetailView(APIView):
             **{code: ErrorSerializer for code in (401, 403, 404, 423, 503)},
         },
     )
-    @previewable
+    @previewable(prepare=lambda view, request, pk, *args, **kwargs: _prepared(request, pk))
     def patch(self, request, pk, *args, **kwargs):
         event = _manageable_event(request.user, pk, VIEW)
         serializer = EventWriteSerializer(event, data=request.data, partial=True)
@@ -172,6 +172,15 @@ class EventDetailView(APIView):
             event = set_online(event, actor=request.user, delivery_mode=online.get("delivery_mode"),
                                join_url_value=online.get("join_url"))
         return Response(EventAdminSerializer(event, context={"request": request}).data)
+
+
+def _prepared(request, pk):
+    """A previewed event save prepares its credential material before the rollback transaction (L24).
+
+    Only for an event the caller may see; anything else 404s here, before any preparation.
+    """
+    from .credentials.preparation import prepare_event_credentials
+    return prepare_event_credentials([_manageable_event(request.user, pk, VIEW).pk])
 
 
 class _EventActionView(APIView):

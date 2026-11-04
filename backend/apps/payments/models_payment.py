@@ -27,6 +27,8 @@ class Payment(models.Model):
         # venue fee is an outside organiser's hosting charge (subject_id = EventVenueFee id).
         EVENT_ORDER = "event_order", "Event ticket order"
         EVENT_VENUE_FEE = "event_venue_fee", "Event venue fee"
+        # Lane L22. One shop order (online or a front-desk sale; subject_id = ShopOrder id).
+        SHOP_ORDER = "shop_order", "Shop order"
 
     #: Subjects whose subject_id is the HardwareRequest id.
     LOAN_SUBJECT_TYPES = ("loan_deposit", "loan_late_fee", "loan_rental")
@@ -34,6 +36,9 @@ class Payment(models.Model):
     LOAN_ACCOUNTABILITY_SUBJECT_TYPES = ("loan_damage", "loan_lost")
     #: Lane L6: event money that is not one registration's own charge.
     EVENT_SUBJECT_TYPES = ("event_registration", "event_order", "event_venue_fee")
+    #: Lane L22: money that may belong to no account (a guest buyer, an anonymous desk sale).
+    #: Lane L18 adds its own gift subjects here at merge.
+    ACCOUNTLESS_SUBJECT_TYPES = ("shop_order",)
 
     class Status(models.TextChoices):
         PENDING = "pending", "Pending"

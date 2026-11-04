@@ -19,7 +19,7 @@ from rest_framework.exceptions import PermissionDenied
 from apps.accounts import rbac
 from apps.payments.exceptions_refunds import RefundCaseConflict, RefundNotAllowed
 from apps.payments.models import Payment, RefundCase
-from apps.payments.reconciliation_authority import _require_subject_authority
+from apps.payments.reconciliation_authority import _require_subject_authority, may_record_cash
 from apps.payments.refund_policy import precision_ok, refundable_balance
 from apps.payments.services_refund_cases import _lock_payment, _notify, record_case
 
@@ -80,7 +80,7 @@ def _approve_locked(payment, case, *, actor, amount, reason, note, receipt):
         if app_is_tombstoned("payments_rail"):
             raise RefundCaseConflict("Online refunds are not available on this deployment; decline instead.",
                                      "refund_rail_unavailable")
-    elif not rbac.can(actor, rbac.Action.RECORD_PAYMENT, payment.makerspace_id):
+    elif not may_record_cash(actor, payment):
         raise PermissionDenied("Recording a cash refund requires record_payment.")
     elif not receipt:
         raise RefundNotAllowed("An offline refund needs a receipt: method, reference and date.",

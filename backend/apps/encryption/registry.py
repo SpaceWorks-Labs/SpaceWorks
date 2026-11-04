@@ -28,6 +28,7 @@ from .registry_reimbursements import reimbursement_pii_fields
 from .registry_r2_l4 import membership_lifecycle_pii_fields
 from .registry_r2_l3 import id_card_pii_fields
 from .registry_r2_l6 import ticketing_pii_fields
+from .registry_r2_l22 import shop_pii_fields
 
 SOURCE_FIELDS = (
     *_fields("integrations.MessagingConsent", ("phone_e164",), "makerspace_id", "source", ((32,), ("none",))),
@@ -38,6 +39,7 @@ SOURCE_FIELDS = (
     *membership_lifecycle_pii_fields(PiiField),
     *id_card_pii_fields(PiiField),
     *ticketing_pii_fields(PiiField),
+    *shop_pii_fields(PiiField),
     *_fields("hardware_requests.HardwareRequest", ("requester_username", "requester_name", "requester_contact_email", "requester_contact_phone"), "makerspace_id", "source", ((150, 200, 254, 32), ("none", "bloom", "bloom_exact", "none"))),
     *_fields("events.EventRegistration", ("name", "email", "phone"), "event.makerspace_id", "source", ((200, 254, 32), ("none", "event_exact", "none"))),
     *_fields("events.EventFeedbackResponse", ("answers_snapshot",), "survey.event.makerspace_id", "source", ((None,), ("none",))),

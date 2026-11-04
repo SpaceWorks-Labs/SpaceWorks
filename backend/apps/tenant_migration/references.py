@@ -95,6 +95,8 @@ PAYMENT_SUBJECT_REFERENCES = {
     # Lane L6: one order of several tickets; one hosting fee per event.
     "event_order": "events.EventOrder",
     "event_venue_fee": "events.EventVenueFee",
+    # Lane L22: one shop order (online or a front-desk sale).
+    "shop_order": "shop.ShopOrder",
 }
 
 NOTIFICATION_URL_ROUTES = (

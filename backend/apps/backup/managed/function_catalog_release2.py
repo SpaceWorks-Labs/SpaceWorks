@@ -20,4 +20,9 @@ RELEASE2_FUNCTIONS = frozenset({
     # Lane L6: the frozen order quote and append-only order dues.
     "events_order_l6_guard",
     "events_orderdue_l6_guard",
+    # Lane L22: the frozen shop order quote, append-only stock movements and returns, frozen cash-ups.
+    "shop_order_l22_guard",
+    "shop_stockmovement_l22_guard",
+    "shop_orderreturn_l22_guard",
+    "shop_cashsession_l22_guard",
 })

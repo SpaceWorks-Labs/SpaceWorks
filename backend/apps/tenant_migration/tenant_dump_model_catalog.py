@@ -11,7 +11,7 @@ FIRST_PARTY_APP_LABELS = frozenset(
     inventory machines
     maintenance makerspaces notifications operations organizations payments payments_rail
     presence
-    printing procurement roadmap separability tenant_migration warranty""".split()
+    printing procurement roadmap separability shop tenant_migration warranty""".split()
 )
 THIRD_PARTY_MODEL_APP_LABELS = frozenset(
     {"admin", "auth", "axes", "contenttypes", "sessions", "token_blacklist"}
@@ -110,6 +110,8 @@ from .catalog_l3 import PROJECTED_LABELS as L3_PROJECTED  # noqa: E402
 PROJECTED_MODEL_LABELS |= L3_PROJECTED
 from .catalog_r2_l6 import PROJECTED_LABELS as R2_L6_PROJECTED  # noqa: E402
 PROJECTED_MODEL_LABELS |= R2_L6_PROJECTED
+from .catalog_r2_l22 import PROJECTED_LABELS as R2_L22_PROJECTED  # noqa: E402
+PROJECTED_MODEL_LABELS |= R2_L22_PROJECTED
 
 from .catalog_profiles import EXPORTED_FIELDS as PROFILE_FIELDS
 PROJECTED_MODEL_LABELS |= PROFILE_FIELDS.keys()

@@ -33,7 +33,23 @@ SUBJECT_ACTIONS = {
     # Lane L6: event money follows the Event Manager, like a registration charge.
     Payment.SubjectType.EVENT_ORDER: rbac.Action.MANAGE_EVENTS,
     Payment.SubjectType.EVENT_VENUE_FEE: rbac.Action.MANAGE_EVENTS,
+    # Lane L22 (Q-S7, #137): the Shop Manager settles and decides refunds on shop orders.
+    Payment.SubjectType.SHOP_ORDER: rbac.Action.MANAGE_SHOP,
 }
+#: Lane L22 (#137): subjects whose cash (a desk refund handed back in person) may also be
+#: recorded by their own area's manager, not only by RECORD_PAYMENT holders. The Shop
+#: Manager refunds shop sales and nothing else.
+CASH_RECORD_ACTIONS = {
+    Payment.SubjectType.SHOP_ORDER: rbac.Action.MANAGE_SHOP,
+}
+
+
+def may_record_cash(actor, payment):
+    """RECORD_PAYMENT, or the subject's own cash authority (`CASH_RECORD_ACTIONS`)."""
+    if rbac.can(actor, rbac.Action.RECORD_PAYMENT, payment.makerspace_id):
+        return True
+    action = CASH_RECORD_ACTIONS.get(payment.subject_type)
+    return action is not None and rbac.can(actor, action, payment.makerspace_id)
 
 
 def payment_list_action(actor, makerspace_id, *, for_recording=False, subject_type=None):

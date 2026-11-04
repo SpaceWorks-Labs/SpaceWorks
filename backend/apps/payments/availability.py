@@ -71,6 +71,8 @@ SUBJECT_DOMAINS = {
     # Lane L6: ticket orders and venue fees are events income.
     "event_order": "events",
     "event_venue_fee": "events",
+    # Lane L22: shop orders, online and at the front desk.
+    "shop_order": "shop",
 }
 
 

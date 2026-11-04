@@ -10,6 +10,8 @@ that area's money, in and out, and nothing else:
   maintenance, limited to the machine types their role covers (`machines.role_scope`);
 * Event Manager (`manage_events`) -- events money: registrations, tickets, reimbursement
   and prize payouts (#128 C-16).
+* Shop Manager (`manage_shop`) -- shop sales, shop refunds and shop restock spending
+  (lane L22, #137).
 
 Recording spending follows the same areas (#94). Finance staff holding BOTH
 `view_finance` and `record_payment` record in every area; `view_finance` alone is
@@ -28,6 +30,8 @@ DOMAIN_ACTIONS = {
     "machines": rbac.Action.MANAGE_MACHINES,
     "bookings": rbac.Action.MANAGE_BOOKINGS,
     "events": rbac.Action.MANAGE_EVENTS,
+    # Lane L22 (#135 Q-S10, #137): shop money is the Shop Manager's (and the Space Manager's).
+    "shop": rbac.Action.MANAGE_SHOP,
 }
 #: Payment subject types per finance domain (the ledger's own vocabulary).
 PAYMENT_DOMAINS = {
@@ -45,6 +49,8 @@ PAYMENT_DOMAINS = {
     # Lane L6: ticket orders and venue fees are events income.
     "event_order": "events",
     "event_venue_fee": "events",
+    # Lane L22: shop orders, online and at the front desk.
+    "shop_order": "shop",
 }
 
 

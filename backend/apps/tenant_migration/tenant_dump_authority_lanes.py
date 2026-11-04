@@ -14,7 +14,9 @@ def lane_entries(authority, disposition):
     from .catalog_r2_l2 import authority_entries as l2
     from .catalog_r2_l5 import authority_entries as l5
     from .catalog_r2_l6 import authority_entries as l6
+    from .catalog_r2_l22 import authority_entries as l22
 
     return (*l1(authority, disposition), *l2(authority, disposition), *l5(authority, disposition),
             *s0(authority, disposition), *l15(authority, disposition), *l12(authority, disposition),
-            *l3(authority, disposition), *l6(authority, disposition))
+            *l3(authority, disposition), *l6(authority, disposition),
+            *l22(authority, disposition))

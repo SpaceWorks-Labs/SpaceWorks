@@ -83,12 +83,18 @@ MEMBERSHIP = (
               legacy_default="MakerspaceMembershipSettings.joining_fee"),
 )
 
+# Lane L22: a shop item is priced on its own variant (read-only here: no space rate card).
+SHOP = (
+    Component("item", "Item price", "item", "shop_order", read_only=True, legacy_item="ShopVariant.price"),
+)
+
 DOMAINS = {
     PricingDomain.LOANS: LOANS,
     PricingDomain.MACHINES: MACHINES,
     PricingDomain.BOOKINGS: BOOKINGS,
     PricingDomain.EVENTS: EVENTS,
     PricingDomain.MEMBERSHIP: MEMBERSHIP,
+    PricingDomain.SHOP: SHOP,
 }
 
 #: The settings-authority module that owns each domain's defaults (#101): the Space
@@ -106,6 +112,7 @@ DOMAIN_MODULES = {
     PricingDomain.BOOKINGS: "bookings",
     PricingDomain.EVENTS: "events",
     PricingDomain.MEMBERSHIP: "membership",
+    PricingDomain.SHOP: "shop",
 }
 #: Waiver component -> the loan pricing components it makes free (A14). Never the deposit.
 WAIVER_COMPONENTS = {

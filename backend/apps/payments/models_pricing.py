@@ -26,6 +26,8 @@ class PricingDomain(models.TextChoices):
     BOOKINGS = "bookings", "Bookings"
     EVENTS = "events", "Events"
     MEMBERSHIP = "membership", "Membership"
+    #: Lane L22: shop items, priced per variant.
+    SHOP = "shop", "Shop"
 
 
 class PricingDefault(models.Model):

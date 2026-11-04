@@ -33,6 +33,8 @@ class RefundCase(models.Model):
         EVENTS = "events", "Events"
         MEMBERSHIP = "membership", "Membership"
         LOANS = "loans", "Loans"
+        #: Lane L22: shop orders (returns, uncollected and unfilled orders).
+        SHOP = "shop", "Shop"
 
     class Status(models.TextChoices):
         OPEN = "open", "Open"
@@ -65,6 +67,11 @@ class RefundCase(models.Model):
         ORDER_UNFULFILLED = "order_unfulfilled", "Order could not be seated"
         TICKET_TYPE_CHANGED = "ticket_type_changed", "Changed to a cheaper ticket"
         PASS_OCCURRENCE_CANCELLED = "pass_occurrence_cancelled", "Pass occurrence cancelled"
+        #: Lane L22: shop items taken back, a paid order nobody collected, a paid order the
+        #: stock could not fill.
+        SHOP_RETURN = "shop_return", "Shop items returned"
+        SHOP_UNCOLLECTED = "shop_uncollected", "Shop order not collected"
+        SHOP_UNFULFILLED = "shop_unfulfilled", "Shop order could not be filled"
 
     payment = models.ForeignKey(Payment, on_delete=models.PROTECT, related_name="refund_cases")
     kind = models.CharField(max_length=16, choices=Kind.choices)

@@ -167,3 +167,5 @@ OMITTED_FIELD_RECONSTRUCTIONS = {
 # fresh unclaimable values; the buyer or sender re-sends the invite.
 OMITTED_FIELD_RECONSTRUCTIONS.update(_rules(
     FRESH, ("events.EventOrderSeat", "claim_token_digest"), ("events.EventTicketTransfer", "token_digest")))
+# Release 2 L22: a guest's status-link secret is bearer material; the target mints a fresh one.
+OMITTED_FIELD_RECONSTRUCTIONS.update(_rules(FRESH, ("shop.ShopOrder", "status_secret")))

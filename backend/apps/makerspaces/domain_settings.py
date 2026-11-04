@@ -57,6 +57,8 @@ DOMAINS = {
     "inventory": Domain(
         Action.EDIT_INVENTORY, ("loans.", "inventory.", "stocktake."), (),
     ),
+    # L22 (#137): the Shop Manager decides the shop's own switches without a grant.
+    "shop": Domain(Action.MANAGE_SHOP, ("shop.",), ()),
 }
 SETTING_FIELDS = tuple(dict.fromkeys(
     field for domain in DOMAINS.values() for field in domain.settings

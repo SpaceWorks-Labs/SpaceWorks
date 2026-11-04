@@ -12,10 +12,18 @@ from apps.payments.serializers_refunds_offline import PaymentOfflineRefundSerial
 
 
 def offline_refund_queryset(actor):
-    """Manual money-out requires RECORD_PAYMENT, including after rail removal."""
-    return rbac.scope_by_action(
-        actor, rbac.Action.RECORD_PAYMENT, Payment.objects.all(), field="makerspace_id",
-    )
+    """Manual money-out requires RECORD_PAYMENT, including after rail removal.
+
+    Lane L22 (#137): a subject's own cash authority (`CASH_RECORD_ACTIONS`, the Shop
+    Manager for shop orders) also records that subject's cash refunds, and nothing else.
+    """
+    from apps.payments.reconciliation_authority import CASH_RECORD_ACTIONS
+
+    rows = rbac.scope_by_action(actor, rbac.Action.RECORD_PAYMENT, Payment.objects.all(), field="makerspace_id")
+    for subject_type, action in CASH_RECORD_ACTIONS.items():
+        rows = rows | rbac.scope_by_action(actor, action, Payment.objects.filter(subject_type=subject_type),
+                                           field="makerspace_id")
+    return rows
 
 
 @transaction.atomic

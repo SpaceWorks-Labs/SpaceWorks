@@ -37,10 +37,14 @@ class HackathonPrize(EventOwned):
     award_count = models.PositiveSmallIntegerField(default=1)
     winner_selection_mode = models.CharField(max_length=20, default="manager",
                                            choices=(("manager", "Manager"), ("sponsor_proposal", "Sponsor proposal")))
+    # L21b (C-38): prize money per winner. Paid out only by hand, through the append-only payout ledger.
+    amount_per_winner = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
 
     class Meta:
         ordering = ("order", "id")
-        constraints = [models.CheckConstraint(condition=Q(award_count__gte=1), name="ev_prize_awards_positive")]
+        constraints = [models.CheckConstraint(condition=Q(award_count__gte=1), name="ev_prize_awards_positive"),
+                       models.CheckConstraint(condition=Q(amount_per_winner__isnull=True) | Q(amount_per_winner__gt=0),
+                                              name="ev_prize_amount_positive")]
 
 
 class JudgingRound(EventOwned):
@@ -60,6 +64,11 @@ class JudgingRound(EventOwned):
     algorithm_version = models.CharField(max_length=40, default="spaceworks-judging-v1", editable=False)
     coverage_exception = models.ForeignKey("events.JudgingReason", null=True, blank=True,
                                          on_delete=models.PROTECT, related_name="+")
+    # L21b per-round settings: who may pull unassigned projects, and never the same team twice.
+    visibility = models.CharField(max_length=12, default="assigned",
+                                  choices=(("assigned", "Assigned only"), ("all", "All judges see all")))
+    fresh_eyes = models.BooleanField(default=False)
+    advanced_from = models.ForeignKey("self", null=True, blank=True, on_delete=models.PROTECT, related_name="+")
 
     class Meta:
         constraints = [
@@ -69,9 +78,19 @@ class JudgingRound(EventOwned):
             models.CheckConstraint(condition=Q(state__in=("draft", "open", "closed", "finalized")), name="ev_round_state"),
             models.CheckConstraint(condition=Q(normalization__in=("none", "zscore")), name="ev_round_normalization"),
             models.CheckConstraint(condition=Q(minutes_per_view__gte=1, judging_minutes__gte=1), name="ev_round_timing"),
+            models.CheckConstraint(condition=Q(visibility__in=("assigned", "all")), name="ev_round_visibility"),
             models.CheckConstraint(condition=Q(opens_at__isnull=True) | Q(closes_at__isnull=True)
                                    | Q(closes_at__gt=F("opens_at")), name="ev_round_window"),
         ]
+
+
+class JudgingPanelSeat(models.Model):
+    """L21b: an optional round panel. With seats, only these judges are assigned or pull work."""
+    round = models.ForeignKey(JudgingRound, on_delete=models.CASCADE, related_name="panel_seats")
+    judge_role_assignment = models.ForeignKey("events.EventRoleAssignment", on_delete=models.PROTECT, related_name="+")
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=("round", "judge_role_assignment"), name="ev_round_panel_seat")]
 
 
 class JudgingCriterion(models.Model):

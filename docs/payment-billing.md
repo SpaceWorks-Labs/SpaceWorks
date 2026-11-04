@@ -301,3 +301,46 @@ Routes (staff): `admin/makerspace/<id>/pricing/<domain>` (+ `/impact`), `pricing
 counts, storage, box, QR or requester data. The public booking and event registration submits
 take an optional `quote_digest`: a moved price is refused with 409 `price_changed` and the new
 quote before anything is written.
+
+## Donations and sponsors
+
+Four switches on the core ledger, each off by default (#128 C-14): `finance.donations`,
+`finance.recurring_donations`, `finance.tax_exempt_receipts`, `finance.sponsors`; the online rail
+for gifts and sponsor money is `payments.donations` (needs the `payments` module and credentials).
+
+- **Giving.** `public/<slug>/donations` is the page (intro, suggested amounts, minimum, open
+  campaigns and funds with their goal and the amount raised). Anyone gives: a signed-in person as
+  themselves, a guest with name, email and the code from `donations/email-code` (the #80 contact
+  code). Each gift is a `Donation` and ONE `Payment` (subject `donation`, no tax frozen on a gift),
+  raised through `create_payment`; with the rail on the response carries the hosted checkout URL,
+  otherwise the space's offline instructions. A guest gets a signed status link
+  (`public/donation-links/<token>`: status, pay, an "I've paid" claim into the L5 claim queue when
+  `billing.offline_claims` is on, the 80G PDF) and never sees anyone else's gift. Refusals are one typed
+  400 `{detail, code, field}`.
+- **Desk gifts.** Staff with `view_finance` + `record_payment` record a gift received in person
+  (`admin/makerspace/<id>/donations`, POST with the settlement): the charge and its
+  `ManualSettlement` receipt in one go, maker-checker honoured.
+- **Pledges.** `public/<slug>/donations/pledges` (or the member area) promises an amount every
+  month, quarter or year. The hourly `donation-pledges` job raises one gift and charge per period
+  (unique per pledge and period) and reminds the giver; a missed or paused period is skipped, never
+  back-charged. No card is stored: the giver pays each charge like any other.
+- **Receipts.** A received gift gets the ordinary L5 receipt document. With
+  `finance.tax_exempt_receipts` on and the space's registration number and validity set
+  (`donations/settings`, Space Manager only), a gift whose giver asked for one freezes an 80G
+  receipt (registration, validity, number, amount, date) when it is received; the PDF prints the
+  giver's name, address and PAN from their encrypted columns (`DonorTaxDetail`, shared by a pledge's gifts). The PAN is asked only for an 80G
+  receipt, validated, always encrypted, shown elsewhere as its last four characters, masked for a
+  superadmin without a PII window, and never part of a report.
+- **Money.** Gifts and sponsor money are the ledger's `donations` area, visible to the Space Manager
+  and finance staff. Giving one back is a refund case in area `donations` that staff open
+  (`donations/<id>/return`, `sponsors/charges/<id>/return`) and decide in the refund-case queue; the
+  direct staff refund routes refuse these charges (`refund_via_case_only`).
+- **Sponsors.** `admin/makerspace/<id>/sponsors` (+ tiers, perks, charges, event links, logo):
+  a sponsor's public face (name, tier, logo through the public image pipeline, website, blurb,
+  active window) and private contact (scoped PII). A tier's perks are copied to each of its
+  sponsors as a checklist; ticking one records who and when; perks due within a week tell staff
+  once (`sponsor-perk-reminders`). A sponsor's agreed payment is an account-less charge staff
+  raise (`sponsorship`), settled offline or by an L5 pay link. The wall
+  (`public/<slug>/sponsors`, the Pages `sponsors` section, `public/<slug>/events/<token>/sponsors`)
+  shows public fields only; an event's sponsors link to `events.EventSponsor` rows (picked from
+  `sponsors/event-sponsors`), never copies.

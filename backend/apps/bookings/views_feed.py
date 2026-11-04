@@ -55,7 +55,15 @@ def _feeds(space):
     return rbac.scope_notification_policy(BookingCalendarFeed.objects.all(), makerspace_id=space.pk)
 
 
+def _require_switch(space):
+    """Release 2 L18: `bookings.calendar_feed` (on by default) switches the private feed off."""
+    from apps.makerspaces.platform import feature_enabled
+    if not feature_enabled(space, 'bookings.calendar_feed'):
+        raise NotFound({'detail': 'The booking calendar feed is turned off here.', 'code': 'feature_disabled'})
+
+
 def _require_owner(user, space):
+    _require_switch(space)
     require_active_account(user, space)
     if user.is_tenant_dump_stub or rbac.personal_notification_membership_refused(user, space.pk):
         raise PermissionDenied('An active account in good standing is required.')
@@ -129,6 +137,7 @@ class PublicBookingFeedView(APIView):
     def get(self, request, makerspace_slug, raw_token):
         space = get_public_makerspace(makerspace_slug)
         require_module_for_servable(space, 'bookings')
+        _require_switch(space)
         if not re.fullmatch(r'[A-Za-z0-9_-]{43}', raw_token or ''):
             raise NotFound()
         hashed = digest(raw_token)

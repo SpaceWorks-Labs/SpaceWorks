@@ -104,6 +104,11 @@ def derived_payload(kind, owner, key, payload, *, request=None):
     if key == "membership_plans":
         from .public_page_plans import plan_cards
         return plan_cards(owner, title)
+    if key == "sponsors":
+        # Release 2 L18: public sponsor fields only; nothing renders while `finance.sponsors` is off.
+        from apps.payments.donations.wall import wall
+        cards = wall(owner)
+        return {"title": title, "results": cards} if cards else None
     if key == "location":
         if not payload["enabled_publicly"]:
             return None

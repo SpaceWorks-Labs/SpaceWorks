@@ -15,6 +15,7 @@ def gate_tasks(exemptions, internal, fanout, resolvers=None):
     from .gate_policy_r2_sb import gate_tasks as sb_tasks
     from .gate_policy_r2_l8 import gate_tasks as l8_tasks
     from .gate_policy_r2_l6 import gate_tasks as l6_tasks
+    from .gate_policy_r2_l18 import gate_tasks as l18_tasks
 
     l2_tasks(internal, fanout)
     l11_tasks(exemptions)
@@ -25,3 +26,4 @@ def gate_tasks(exemptions, internal, fanout, resolvers=None):
     sb_tasks(exemptions)
     l8_tasks(internal, fanout)
     l6_tasks(internal, resolvers if resolvers is not None else {})
+    l18_tasks(internal)

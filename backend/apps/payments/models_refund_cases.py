@@ -33,6 +33,8 @@ class RefundCase(models.Model):
         EVENTS = "events", "Events"
         MEMBERSHIP = "membership", "Membership"
         LOANS = "loans", "Loans"
+        #: Lane L18: donations and sponsorship money (#59: refunds only through a case).
+        DONATIONS = "donations", "Donations"
 
     class Status(models.TextChoices):
         OPEN = "open", "Open"
@@ -65,6 +67,8 @@ class RefundCase(models.Model):
         ORDER_UNFULFILLED = "order_unfulfilled", "Order could not be seated"
         TICKET_TYPE_CHANGED = "ticket_type_changed", "Changed to a cheaper ticket"
         PASS_OCCURRENCE_CANCELLED = "pass_occurrence_cancelled", "Pass occurrence cancelled"
+        #: Lane L18: staff opened a case to return a gift or a sponsor's payment.
+        DONATION_RETURNED = "donation_returned", "Gift returned to the giver"
 
     payment = models.ForeignKey(Payment, on_delete=models.PROTECT, related_name="refund_cases")
     kind = models.CharField(max_length=16, choices=Kind.choices)

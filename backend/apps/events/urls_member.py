@@ -82,3 +82,11 @@ urlpatterns = [
     # Release 2 L6: ticket orders, seat claims, transfers, type changes and series passes.
     path("", include("apps.events.urls_ticketing_member")),
 ]
+
+# Release 2 L18: a person's shift and combined calendar links.
+from apps.events.views_calendar_feeds_r2 import PersonalFeedSettingsView  # noqa: E402
+
+urlpatterns += [
+    path("makerspaces/<int:makerspace_id>/calendar-feeds/<str:kind>/", PersonalFeedSettingsView.as_view(),
+         name="member-personal-calendar-feed"),
+]

@@ -126,3 +126,7 @@ from .models_venue_fees import EventVenueFee  # noqa: E402
 __all__ += ["EventOrder", "EventOrderDue", "EventOrderLine", "EventOrderSeat", "EventSalesSettings",
             "EventCheckoutHold", "EventAddon", "EventAddonVariant", "EventPassType", "EventTicketTransfer",
             "EventVenueFee"]
+
+# Release 2 L18: personal shift and combined calendar links.
+from .models_calendar_personal import PersonalCalendarFeed  # noqa: E402
+__all__ += ["PersonalCalendarFeed"]

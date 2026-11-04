@@ -167,3 +167,8 @@ OMITTED_FIELD_RECONSTRUCTIONS = {
 # fresh unclaimable values; the buyer or sender re-sends the invite.
 OMITTED_FIELD_RECONSTRUCTIONS.update(_rules(
     FRESH, ("events.EventOrderSeat", "claim_token_digest"), ("events.EventTicketTransfer", "token_digest")))
+
+# Release 2 L18: a guest's donation and pledge link secrets are bearer material; the target
+# mints fresh values (guests get fresh links).
+OMITTED_FIELD_RECONSTRUCTIONS.update(_rules(
+    FRESH, ("payments.Donation", "access_secret"), ("payments.DonationPledge", "manage_secret")))

@@ -26,3 +26,8 @@ urlpatterns = [
         name="member-payment-history",
     ),
 ]
+
+# Release 2 L18: a giver's own gifts, 80G receipts and pledges.
+from apps.payments.donations.urls import MEMBER_PATTERNS as _DONATION_MEMBER_PATTERNS  # noqa: E402
+
+urlpatterns += _DONATION_MEMBER_PATTERNS

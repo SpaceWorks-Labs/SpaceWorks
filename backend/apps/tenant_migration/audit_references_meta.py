@@ -282,6 +282,6 @@ from .audit_references_meta_unified_accounts import UNIFIED_ACCOUNT_AUDIT_EDGES 
 
 AUDIT_META_REFERENCES.update(UNIFIED_ACCOUNT_AUDIT_EDGES)
 
-# Release-2 lanes L5, L15, L10, L12, U-C, L23, L16, L3, L8 and L6 compose in audit_references_meta_r2.py.
+# Release-2 lanes L5, L15, L10, L12, U-C, L23, L16, L3, L8, L6 and L18 compose in audit_references_meta_r2.py.
 from .audit_references_meta_r2 import lane_edges as _r2_lane_edges  # noqa: E402
 AUDIT_META_REFERENCES.update(_r2_lane_edges())

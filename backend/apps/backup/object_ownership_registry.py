@@ -149,6 +149,8 @@ from .object_ownership_reimbursements import field_object_rules as _reimbursemen
 FIELD_OBJECT_RULES += _reimbursement_rules(FieldObjectRule, BucketRule, ReferencePolicy)
 from .object_ownership_l3 import field_object_rules as _l3_rules  # noqa: E402
 FIELD_OBJECT_RULES += _l3_rules(FieldObjectRule, BucketRule, ReferencePolicy)
+# Release 2 L18: a sponsor's public logo (the sponsor wall).
+FIELD_OBJECT_RULES += (FieldObjectRule("payments.Sponsor", "logo_key", BucketRule.PUBLIC_IMAGE),)
 
 AUDIT_META_OBJECT_VARIANTS = {
     "machine.document_added": "object_key",

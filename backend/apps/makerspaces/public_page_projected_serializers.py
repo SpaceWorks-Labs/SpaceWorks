@@ -145,11 +145,26 @@ class PublicMembershipPlans(Titled):
     collection_url = s.CharField()
 
 
+class PublicSponsorCard(s.Serializer):
+    id = s.IntegerField()
+    name = s.CharField()
+    tier = s.CharField(allow_blank=True)
+    logo_url = s.CharField(allow_blank=True)
+    website_url = s.CharField(allow_blank=True)
+    blurb = s.CharField(allow_blank=True)
+
+
+class PublicSponsors(Titled):
+    """Release 2 L18: the opt-in sponsor wall."""
+
+    results = PublicSponsorCard(many=True)
+
+
 PUBLIC_PAYLOADS = {"about": About, "gallery": PublicGallery, "team": PublicTeam,
     "testimonials": Testimonials, "links": Links, "upcoming_events": PublicUpcoming,
     "organization_events": PublicOrganizationEvents, "linked_makerspaces": PublicLinkedSpaces,
     "stats": PublicStats, "location": PublicLocation, "functional_content": PublicFunctional,
-    "membership_plans": PublicMembershipPlans}
+    "membership_plans": PublicMembershipPlans, "sponsors": PublicSponsors}
 
 
 class ProjectedSection(s.Serializer):

@@ -100,6 +100,10 @@ def validate_subject(payment, identity_unchanged):
         validate_loan_accountability(payment, identity_unchanged)
     if payment.subject_type in ("event_order", "event_venue_fee") and payment.subject_id:
         validate_event_money(payment, identity_unchanged)
+    if payment.subject_type in ("donation", "sponsorship") and payment.subject_id:
+        from apps.payments.donations.validation import validate_gift_subject  # lane L18
+
+        validate_gift_subject(payment, identity_unchanged)
     if payment.subject_type == Payment.SubjectType.MEMBERSHIP_TERM and payment.subject_id:
         from apps.makerspaces.models import MembershipTerm
 

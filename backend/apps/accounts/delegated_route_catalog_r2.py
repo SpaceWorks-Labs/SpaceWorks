@@ -100,3 +100,11 @@ admin-event-orders admin-event-order-detail admin-event-registration-collect-pay
 admin-event-registration-pay-link""".split())
 MEMBERSHIP_ROUTES |= frozenset("""admin-event-refund-policy admin-event-venue-fee admin-event-venue-fee-charge
 admin-event-series-pass-types admin-event-pass-type-detail""".split())
+# Release-2 lane L18, donations and sponsors: finance money of the space (view_finance, plus
+# record_payment for every write), never delegated to an event or resource grant.
+MEMBERSHIP_ROUTES |= frozenset("""admin-donations admin-donation-settings admin-donation-campaigns
+admin-donation-campaign admin-donation-pledges admin-donation-pledge admin-donation-cancel admin-donation-return
+admin-donation-tax-receipt admin-sponsors admin-sponsor-tiers admin-sponsor-tier admin-sponsor-perks
+admin-sponsor-perk-fulfil admin-sponsor-charge-return admin-sponsor-event-link admin-sponsor admin-sponsor-archive
+admin-sponsor-restore admin-sponsor-logo admin-sponsor-charges admin-sponsor-event-links
+admin-sponsor-event-sponsors""".split())

@@ -25,6 +25,8 @@ import { EventPrice } from "../events/EventPrice";
 import type { PublicEventDetail } from "../events/eventTicketTypes";
 import { useEventVenueSection } from "../bookings/EventVenueBlock";
 import { PageShare } from "../publicPages/PageShare";
+import { PublicSponsorCards } from "../publicPages/PublicSponsorCards";
+import { useEventSponsors } from "../donations/useEventSponsors";
 
 /** WP2 mounts this component on both central and tenant-domain event routes. */
 export function PublicEventDetailPage({ resolvedSlug, resolvedToken, canonicalUrl }: { resolvedSlug?: string; resolvedToken?: string; canonicalUrl?: string } = {}) {
@@ -39,6 +41,7 @@ export function PublicEventDetailPage({ resolvedSlug, resolvedToken, canonicalUr
   const bootstrap = tenant.mode === "single" ? tenant.bootstrap : bootstrapQuery.data;
   const brandStyle = useTenantBranding(bootstrap);
   const [shareError, setShareError] = useState("");
+  const sponsors = useEventSponsors(makerspaceSlug, publicToken, Boolean(bootstrap?.features.includes("finance.sponsors")));
   const calendar = useMutation({ mutationFn: (item: PublicEventDetail) => downloadEventCalendar(makerspaceSlug, item) });
   const eventQuery = useQuery({
     queryKey: ["public-event", makerspaceSlug, publicToken],
@@ -77,6 +80,7 @@ export function PublicEventDetailPage({ resolvedSlug, resolvedToken, canonicalUr
             links={{ schedule: tenantPath(`events/${event.public_token}/schedule`), speaker: (value: string) => tenantPath(`events/${event.public_token}/speakers/${encodeURIComponent(value)}`), session: (value: string) => tenantPath(`events/${event.public_token}/sessions/${encodeURIComponent(value)}`) }}
             image={(url: string, alt: string) => <PublicWebsiteImage makerspaceSlug={makerspaceSlug} url={url} alt={alt} />} /> }] : []),
           ...(bootstrap?.features.includes('events.volunteering') ? [{ id: 'volunteers', label: 'Volunteers needed', content: <PublicVolunteerCards publicToken={event.public_token} onApply={id => window.location.assign(programmeHref(event.public_token, `roles/${id}`, makerspaceSlug))} /> }] : []),
+          ...(sponsors.length ? [{ id: 'sponsors', label: 'Sponsors', content: <PublicSponsorCards rows={sponsors} /> }] : []),
           ...(bootstrap?.features.includes('events.project_gallery') ? [{ id: 'projects', label: 'Projects and results', content: <div className="flex flex-wrap gap-3"><a className="desk-button" href={tenantPath(`events/${event.public_token}/gallery`)}>Project gallery</a><a className="desk-button" href={tenantPath(`events/${event.public_token}/results`)}>Results</a></div> }] : []), ...venueSection] : []}
         actionCard={{ title: event?.registration_requires_approval ? "Apply to join" : event?.availability === "Full" ? "Join waitlist" : "Join this event",
           state: event?.registration_open || organizationAudience ? "open" : "closed", note: event?.registration_open ? undefined : closedNote,

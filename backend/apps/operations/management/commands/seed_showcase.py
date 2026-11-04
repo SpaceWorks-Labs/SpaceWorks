@@ -34,6 +34,7 @@ from ._showcase_l12 import seed_l12
 from ._showcase_l23 import seed_l23
 from ._showcase_l16 import seed_l16
 from ._showcase_l6 import seed_ticketing
+from ._showcase_l18 import seed_donations
 from ._showcase_people import create_members, create_space, create_staff, member_account, restrict
 from ._showcase_requests import RequestSeeder
 
@@ -98,6 +99,7 @@ class Command(BaseCommand):
         seed_hackathon(space, staff.manager, members)
         seed_events(space, staff.manager)
         seed_ticketing(space, staff.manager, next(iter(members.values())))
+        seed_donations(space, staff.manager, members)
         publish_public_page(space, staff.manager)
         restrict(root, members[data.RESTRICTED_MEMBER[0]],
                  "Two multimeters not returned after the March repair cafe.")

@@ -6,6 +6,15 @@
 
 ## Condensed changelog (newest first — full detail in `git log`)
 
+- **2026-11-04 -- release 2 L18, donations, sponsors and calendar sync (#94, #96, #128 C-14).** A donation
+  page per space with campaigns and funds; anyone gives (signed in, or a guest confirmed by an emailed
+  code) as one `donation` Payment (never taxed, may have no account) in the ledger's `donations` area,
+  online when `payments.donations` is on, else settled offline; desk gifts; monthly/quarterly/yearly
+  pledges that raise one charge per period (no card stored, never back-charged); optional 80G receipts
+  with the donor PAN always encrypted; sponsors with tiers, perk checklists, sponsorship charges and an
+  opt-in sponsor wall on Pages and the event page. Gifts go back only through staff-approved refund
+  cases. Calendar sync adds switches on the booking and event feeds, a shift feed, one combined personal
+  feed and a public listed-events feed.
 - **2026-11-04 -- release 2 L6, paid ticketing v2 and venue fees (#69, #71, #94, #128 C-20, #169).**
   Multi-ticket orders (one `event_order` Payment, one registration per attendee claimed by signing in),
   checkout seat holds, tiers, pay-what-you-want, group and hidden tickets, promo limits and a booking fee,

@@ -35,6 +35,9 @@ SUBJECT_ACTIONS = {
     # Lane L6: event money follows the Event Manager, like a registration charge.
     Payment.SubjectType.EVENT_ORDER: rbac.Action.MANAGE_EVENTS,
     Payment.SubjectType.EVENT_VENUE_FEE: rbac.Action.MANAGE_EVENTS,
+    # Lane L18: no area manager owns gifts or sponsor money; finance staff do.
+    Payment.SubjectType.DONATION: rbac.Action.RECORD_PAYMENT,
+    Payment.SubjectType.SPONSORSHIP: rbac.Action.RECORD_PAYMENT,
 }
 
 

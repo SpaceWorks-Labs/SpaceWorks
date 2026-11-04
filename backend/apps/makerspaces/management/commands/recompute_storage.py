@@ -187,6 +187,9 @@ class Command(BaseCommand):
         keys.update(BookableSpace.objects.filter(makerspace=makerspace).values_list("image_key", flat=True))
         from apps.bookings.purge_p2 import photo_keys
         keys.update(photo_keys(makerspace))
+        # Release 2 L18: sponsor logos, charged on attach like every public image.
+        from apps.payments.models import Sponsor
+        keys.update(Sponsor.objects.filter(makerspace=makerspace).values_list("logo_key", flat=True))
         # Member avatars and project images, reached through the membership: the profile
         # carries no makerspace column, being hung off MakerspaceMembership.
         keys.update(

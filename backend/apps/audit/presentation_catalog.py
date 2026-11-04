@@ -68,7 +68,6 @@ from .presentation_catalog_account_merge import ENTRIES as _ACCOUNT_MERGE
 from .presentation_catalog_login_security import ENTRIES as _LOGIN_SECURITY
 from .presentation_catalog_staff_roles import ENTRIES as _STAFF_ROLES
 from .presentation_catalog_ip_security import ENTRIES as _IP_SECURITY
-from .presentation_catalog_login_risk import ENTRIES as _LOGIN_RISK
 
 PRESENTATION_CATALOG = _compose(
     _PROGRAMME,
@@ -89,7 +88,6 @@ PRESENTATION_CATALOG = _compose(
     _LOGIN_SECURITY,
     _STAFF_ROLES,
     _IP_SECURITY,
-    _LOGIN_RISK,
     _ACCOUNTS, _MAKERSPACES, _HARDWARE, _MACHINES, _COMMUNITY, _MIGRATION, _PAYMENTS,
     _PLATFORM, _MEMBER_ACCOUNT, _MERGED, _PROFILES, _WA_TWILIO, _WA_META, _P2_P_CHAT, _P2_BOOKINGS, _P2_EVENTS,
     _MESSAGING, _R2_L4, _L12,

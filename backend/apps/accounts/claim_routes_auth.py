@@ -109,6 +109,9 @@ AUTH_CLAIM_ROUTES = {
     # Release 2 S-B: remembered devices and the unusual-login code belong to a person's own sign-in.
     **_refused("auth-devices", ("GET", "HEAD"), "claim sessions have no remembered devices"),
     **_refused("auth-device-detail", ("DELETE",), "claim sessions have no remembered devices"),
-    **_refused("auth-login-code-resend", ("POST",), "claim sessions do not authenticate"),
-    **_refused("auth-security-alerts-not-me", ("POST",), "claim sessions cannot revoke account credentials"),
+    # Token-only (no authentication classes): a presented claim token is never read.
+    ("auth-login-code-resend", "POST"): ControlRoute(),
+    ("auth-login-code-resend", "OPTIONS"): AnonymousRead(),
+    ("auth-security-alerts-not-me", "POST"): ControlRoute(),
+    ("auth-security-alerts-not-me", "OPTIONS"): AnonymousRead(),
 }

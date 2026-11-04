@@ -31,8 +31,8 @@ from .security_setting_types import (  # noqa: F401 -- re-exported
 # (#62), so it is a fixed platform rule, not a setting. The login-security rows are
 # appended here by the lane whose door honours them (accounts.login_security_settings).
 from apps.accounts.login_security_settings import (
-    CAPTCHA_ON_SIGN_IN, PASSKEYS_ALLOWED, STAFF_IDLE_TIMEOUT_MINUTES, STAFF_IP_ALLOWLIST,
-    STAFF_SESSION_MAX_HOURS,
+    CAPTCHA_ON_SIGN_IN, LOGIN_RISK_CHECK, PASSKEYS_ALLOWED, REMEMBERED_DEVICE_DAYS, STAFF_IDLE_TIMEOUT_MINUTES,
+    STAFF_IP_ALLOWLIST, STAFF_SESSION_MAX_HOURS,
 )
 
 REGISTRY = (
@@ -41,6 +41,8 @@ REGISTRY = (
     STAFF_IDLE_TIMEOUT_MINUTES,  # S-A: staff routes (staff_session_policy)
     CAPTCHA_ON_SIGN_IN,  # S-C: Turnstile on the space's verified domain (accounts.turnstile)
     STAFF_IP_ALLOWLIST,  # S-C: the space's staff routes (accounts.staff_network)
+    LOGIN_RISK_CHECK,  # S-B: the unusual-sign-in step-up at every password door (accounts.login_risk)
+    REMEMBERED_DEVICE_DAYS,  # S-B: how long a device is remembered (accounts.device_memory)
 )
 BY_KEY = {setting.key: setting for setting in REGISTRY}
 FEATURE_KEYS = frozenset(setting.key for setting in REGISTRY if setting.storage == FEATURE)

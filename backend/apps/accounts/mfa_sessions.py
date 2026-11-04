@@ -12,12 +12,13 @@ from apps.accounts.tokens import SpaceWorksRefreshToken
 from apps.accounts.session_issuance import lock_session_user
 
 
-def context(request, *, surface, device=None):
+def context(request, *, surface, device=None, login_method=None):
     from apps.accounts.social_nonces import request_origin
     origin = request_origin(request) if request is not None else ""
     if surface == "control":
         origin = request.build_absolute_uri("/").rstrip("/")
-    return {"surface": surface, "origin": origin, **({"device": device} if device else {})}
+    return {"surface": surface, "origin": origin, **({"device": device} if device else {}),
+            **({"login_method": login_method} if login_method else {})}
 
 
 def device_context(challenge, verified, grant=None, *, login_method=None):
@@ -71,3 +72,16 @@ def issue_session(user, data, request):
     refresh["surface"] = surface
     return {"access": str(refresh.access_token), "refresh": str(refresh), "surface": surface,
             "user": user_payload(user, request=request, session_authority=surface)}
+
+
+def record_completed_sign_in(user, data, request, result):
+    """S-B: a sign-in completed through a challenge remembers its device and network. Not
+    the ``/control/`` step-up and not a settings enrolment (neither is a sign-in)."""
+    device = data.get("device") or {}
+    if data.get("surface") == "control" or device.get("purpose") == "settings_enroll":
+        return
+    from apps.accounts.login_risk import record_success
+    method = device.get("login_method") or data.get("login_method") or "password"
+    token = record_success(request, user, method=method, web=not device)
+    if device and token:
+        result["device_trust"] = token

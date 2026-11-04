@@ -91,6 +91,16 @@ class UserAdmin(PersonPiiRevealAdminMixin, PiiMaskingAdminMixin, StaffLifecycleA
         return super().get_search_results(request, queryset, search_term)
 
     def user_change_password(self, request, id, form_url=""):
+        """S-B: a password set here sends the person the ``password_changed`` alert."""
+        before = User.objects.filter(pk=id).values_list("password", flat=True).first()
+        response = self._user_change_password(request, id, form_url)
+        target = User.objects.filter(pk=id).first() if request.method == "POST" else None
+        if target is not None and target.password != before:
+            from apps.accounts import security_alerts
+            security_alerts.password_changed(target)
+        return response
+
+    def _user_change_password(self, request, id, form_url=""):
         """Make the inherited password form an explicit account transition."""
         user = self.get_object(request, id)
         if user is not None and is_shell(user):

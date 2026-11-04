@@ -106,4 +106,12 @@ AUTH_CLAIM_ROUTES = {
     **_refused("auth-mfa-passkey-options", ("POST",), "claim sessions cannot exchange credentials"),
     **_refused("auth-reauth-passkey-options", ("POST",), "claim sessions cannot reauthenticate"),
     **_refused("auth-reauth-passkey", ("POST",), "claim sessions cannot reauthenticate"),
+    # Release 2 S-B: remembered devices and the unusual-login code belong to a person's own sign-in.
+    **_refused("auth-devices", ("GET", "HEAD"), "claim sessions have no remembered devices"),
+    **_refused("auth-device-detail", ("DELETE",), "claim sessions have no remembered devices"),
+    # Token-only (no authentication classes): a presented claim token is never read.
+    ("auth-login-code-resend", "POST"): ControlRoute(),
+    ("auth-login-code-resend", "OPTIONS"): AnonymousRead(),
+    ("auth-security-alerts-not-me", "POST"): ControlRoute(),
+    ("auth-security-alerts-not-me", "OPTIONS"): AnonymousRead(),
 }

@@ -82,8 +82,11 @@ def issue_social_session(
     assert_social_user_active(user)
     user = lock_token_issuance(user)
     assert_social_user_active(user)
-    # Provider authentication is sufficient by platform policy, on web and native alike.
-    user._mfa_provider_verified = True
+    # Provider authentication stands in for local two-step sign-in for MEMBERS only (#62):
+    # a person MFA is mandatory for never gets provider proof (their door challenged them).
+    from apps.accounts.mfa_policy import required
+    if not required(user):
+        user._mfa_provider_verified = True
     from apps.backup.recovery import assert_token_issuance_allowed
 
     try:
@@ -124,3 +127,22 @@ def social_audit_meta(provider, outcome, subject):
         "outcome": outcome,
         "subject_hash": audit_events.fingerprint(subject),
     }
+
+
+def staff_challenge(request, user, *, delivery, nonce_row=None, verified_attestation=None):
+    """#62: a person MFA is mandatory for (staff and other elevated authority) still enters
+    their factor after Google, Apple, GitHub or an OIDC provider. Returns the challenge
+    response, or None when the sign-in may complete (members: unchanged)."""
+    from apps.accounts.mfa_challenges import start
+    from apps.accounts.mfa_policy import needs_challenge, required
+    from apps.accounts.mfa_sessions import context, device_context
+    if not (required(user) and needs_challenge(user)):
+        return None
+    assert_social_user_active(user)
+    from apps.backup.recovery import assert_token_issuance_allowed
+    assert_token_issuance_allowed(user)
+    device = None
+    if delivery == SocialDelivery.DEVICE:
+        device = device_context(nonce_row.attestation_challenge, verified_attestation,
+                                grant=nonce_row.device_grant, login_method="social")
+    return start(user, context=context(request, surface=SocialSurface.MEMBER, device=device, login_method="social"))

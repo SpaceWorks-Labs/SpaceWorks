@@ -1,4 +1,5 @@
-"""GitHub browser OAuth, always delivering a provider-verified member session."""
+"""GitHub browser OAuth: a provider-verified member session, or for a person MFA is
+mandatory for (staff) the MFA challenge, finished at ``auth/mfa/verify`` (#62)."""
 
 from django.db import IntegrityError
 from drf_spectacular.utils import extend_schema
@@ -7,7 +8,8 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
-from apps.accounts import audit_events
+from apps.accounts import audit_events, device_memory
+from apps.accounts.login_risk import record_success
 from apps.accounts.auth_cookies import set_refresh_cookies
 from apps.accounts.github_browser import (
     GithubRejected, GithubUnavailable, github_settings, start_github_attempt,
@@ -23,16 +25,21 @@ from apps.accounts.serializers_oidc_browser import (
     OidcBrowserCallbackSerializer, OidcBrowserLoginResponseSerializer,
 )
 from apps.accounts.services_social_identity import SocialResolutionError, resolve_social_identity
-from apps.accounts.services_social_login import issue_social_session, social_audit_meta
+from apps.accounts.services_social_login import issue_social_session, social_audit_meta, staff_challenge
+from apps.accounts.serializers_mfa import MFAChallengeResponseSerializer
+from drf_spectacular.utils import PolymorphicProxySerializer
 from apps.accounts.views_social_helpers import _error
 from apps.makerspaces.import_adoption import adopt_pending_memberships_for_user
 from apps.openapi_errors import errors
 
 
-def _failure(reason):
+def _failure(reason, request=None):
     audit_events.record_auth_event(
         None, "auth.social_login_failed", meta={"provider": "github", "reason": reason}
     )
+    if request is not None:  # S-B: feeds the failure counters
+        from apps.accounts.security_signals import send_login_refused
+        send_login_refused(request, "", f"social_{reason}")
 
 
 class GithubBrowserStartView(APIView):
@@ -68,8 +75,10 @@ class GithubBrowserCallbackView(APIView):
 
     @extend_schema(
         tags=["Social auth"], auth=[], request=OidcBrowserCallbackSerializer,
-        responses={200: OidcBrowserLoginResponseSerializer,
-                   **errors(400, 401, 403, 409, 429, 503)},
+        responses={200: PolymorphicProxySerializer(
+            component_name="GithubBrowserLoginResult",
+            serializers=[OidcBrowserLoginResponseSerializer, MFAChallengeResponseSerializer], resource_type_field_name=None),
+            **errors(400, 401, 403, 409, 429, 503)},
     )
     def post(self, request):
         serializer = OidcBrowserCallbackSerializer(data=request.data)
@@ -87,22 +96,30 @@ class GithubBrowserCallbackView(APIView):
             )
             # Same as the Google/Apple path: a verified email recovers imported memberships.
             adopt_pending_memberships_for_user(user)
-            tokens = issue_social_session(user, surface="member", delivery="web", nonce_row=attempt)
+            challenge = staff_challenge(request, user, delivery="web")
+            if challenge is None:
+                tokens = issue_social_session(user, surface="member", delivery="web", nonce_row=attempt)
         except (OidcAttemptRejected, GithubRejected):
-            _failure("invalid_token_or_attempt")
+            _failure("invalid_token_or_attempt", request)
             return _error("social_invalid", 401)
         except GithubUnavailable:
             _failure("provider_unavailable")
             return _error("social_unavailable", 503)
         except SocialResolutionError as exc:
-            _failure(exc.code)
+            _failure(exc.code, request)
             return _error(exc.code, exc.status_code)
         audit_events.record_auth_event(
             user, "auth.social_login_succeeded", target=user,
             meta=social_audit_meta("github", outcome, claims["sub"]),
         )
+        if challenge is not None:
+            response = Response(challenge)
+            response["Cache-Control"] = "no-store"
+            return response
+        record_success(request, user, method="social", web=True)  # Q4: recorded, never stepped up
         response = Response({"access": tokens["access"],
                              "user": user_payload(user, request=request, session_authority="member"),
                              "outcome": outcome})
         set_refresh_cookies(response, tokens["refresh"], request)
+        device_memory.attach(response, request)
         return response

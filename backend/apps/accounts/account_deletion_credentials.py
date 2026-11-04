@@ -31,3 +31,8 @@ def revoke(user, now):
     if push is not None:
         every_row(push).filter(user=user, active=True).update(active=False, invalidated_at=now)
     UserMFA.objects.filter(user=user).delete()
+    # Release-2 login security (S-B): passkeys, their ceremonies, the staff grace and the
+    # unusual-login state are account credentials or telemetry; none outlives a departure.
+    for label in ("accounts.WebAuthnCredential", "accounts.WebAuthnCeremony", "accounts.StaffMfaGrace",
+                  "accounts.KnownDevice", "accounts.KnownNetwork", "accounts.SecurityAlert"):
+        apps.get_model(label).objects.filter(user=user).delete()

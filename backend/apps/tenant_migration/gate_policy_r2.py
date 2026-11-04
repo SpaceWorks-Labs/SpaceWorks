@@ -1,4 +1,4 @@
-"""Release-2 lane source-gate declarations, composed in lane order (L2, L11, L12, L23, S-C).
+"""Release-2 lane source-gate declarations, composed in lane order (L2, L11, L12, L23, S-C, L3, S-B).
 
 Split out of `gate_policy_tasks.py` when it crossed the 300-line ceiling; each lane keeps
 its own `gate_policy_r2_<lane>.py` and this function applies them to the shared tables.
@@ -12,6 +12,7 @@ def gate_tasks(exemptions, internal, fanout, resolvers=None):
     from .gate_policy_r2_l23 import gate_tasks as l23_tasks
     from .gate_policy_r2_sc import gate_tasks as sc_tasks
     from .gate_policy_r2_l3 import gate_tasks as l3_tasks
+    from .gate_policy_r2_sb import gate_tasks as sb_tasks
 
     l2_tasks(internal, fanout)
     l11_tasks(exemptions)
@@ -19,3 +20,4 @@ def gate_tasks(exemptions, internal, fanout, resolvers=None):
     l23_tasks(internal, fanout)
     sc_tasks(exemptions)
     l3_tasks(internal, exemptions, resolvers if resolvers is not None else {})
+    sb_tasks(exemptions)

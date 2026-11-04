@@ -143,7 +143,9 @@ class DeviceGrant(models.Model):
         constraints = [models.CheckConstraint(
             condition=(models.Q(status="revoked") | models.Q(
                 authority="member", staff_makerspace_id__isnull=True,
-            ) | models.Q(authority="staff", staff_makerspace_id__isnull=False, login_method="password")),
+            # A staff grant is a step-up after ANY primary method (S-B, #62; trigger 0049).
+            ) | models.Q(authority="staff", staff_makerspace_id__isnull=False,
+                         login_method__in=("password", "phone", "social"))),
             name="device_grant_account_context",
         )]
 

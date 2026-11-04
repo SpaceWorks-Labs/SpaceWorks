@@ -8,6 +8,7 @@ from .delegated_route_catalog import (
 )
 from .claim_routes_public_pages import MAKERSPACE_PAGE_EDITORS, ORGANIZATION_PAGE_EDITORS
 from .passkey_route_catalog import PASSKEY_CEREMONY_ROUTES, PASSKEY_ROUTES
+from .login_risk_route_catalog import LOGIN_RISK_ANONYMOUS_ROUTES, LOGIN_RISK_ROUTES
 from .programme_route_catalog import ROUTES as PROGRAMME_ROUTES
 from .reimbursement_route_catalog import ROUTES as REIMBURSEMENT_ROUTES
 from .security_route_catalog import ROUTES as SECURITY_ROUTES
@@ -42,6 +43,8 @@ ROUTE_CLASSES = MappingProxyType({
     **dict.fromkeys(SECURITY_ROUTES, MEMBERSHIP_ONLY),
     **dict.fromkeys(PASSKEY_ROUTES, MEMBER_ONLY),
     **dict.fromkeys(PASSKEY_CEREMONY_ROUTES, SHARED_ACCOUNT_UTILITY),
+    **dict.fromkeys(LOGIN_RISK_ROUTES, MEMBER_ONLY),
+    **dict.fromkeys(LOGIN_RISK_ANONYMOUS_ROUTES, SHARED_ACCOUNT_UTILITY),
     **dict.fromkeys(DELEGABLE_ROUTES, DELEGABLE),
     **dict.fromkeys(SHARED_ROUTES, SHARED_ACCOUNT_UTILITY),
     **dict.fromkeys(TENANT_STAFF_ROUTES, MEMBERSHIP_ONLY),

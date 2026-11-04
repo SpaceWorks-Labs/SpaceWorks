@@ -92,6 +92,14 @@ def _password_login_locked(request, data, challenge, verified, staff_space):
         response = Response(start(user, context=context(request, surface="member", device=device)))
         response["Cache-Control"] = "no-store"
         return response
+    # S-B: an unusual sign-in by someone without a factor proves the mailbox first.
+    from apps.accounts.login_risk import record_success, step_up
+    risk = step_up(request, user, method="password", context=context(
+        request, surface="member", device=device_context(challenge, verified, login_method="password")))
+    if risk is not None:
+        response = Response(risk)
+        response["Cache-Control"] = "no-store"
+        return response
     try:
         access, refresh, grant = issue_first_device_session(user, challenge, verified, login_method="password")
     except DeviceGrantCreationRetryRequired as exc:
@@ -99,4 +107,5 @@ def _password_login_locked(request, data, challenge, verified, staff_space):
     request.device_grant = grant
     return Response({"access": access, "refresh": refresh,
         "user": user_payload(user, request=request, session_authority="member"),
-        "device_grant": DeviceGrantSerializer(grant).data})
+        "device_grant": DeviceGrantSerializer(grant).data,
+        "device_trust": record_success(request, user, method="password", web=False)})

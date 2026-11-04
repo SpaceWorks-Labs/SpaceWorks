@@ -2950,9 +2950,78 @@ Owner decisions #62, #66, #74, #110c, #111 Q9-Q11, #128 C-1/C-2 and #135 Q-A1-Q-
   `manage.py staff_mfa_readiness` lists unenrolled elevated people per space with their grace end and
   reset path; nothing is revoked at deploy.
 
-### Login risk and remembered devices (S-B fills)
+### Login risk and remembered devices (S-B)
 
-### Security alerts and "this wasn't me" (S-B fills)
+- **Every door, one order.** Sign-in doors challenge a person whose factor proves the sign-in
+  (`needs_challenge`) first; only a sign-in that would otherwise mint tokens at once is checked as unusual
+  (`accounts/login_risk.py`). Google, Apple and GitHub challenge a person MFA is mandatory for (`required`
+  AND enrolled) and complete at `auth/mfa/verify`, web and device alike; `issue_social_session` stamps
+  PROVIDER proof only when the person is NOT required, so "an IdP sign-in skips local TOTP" is members-only
+  (#62). The OIDC browser callback and the phone doors keep challenging every enrolled account. Staff
+  device grants accept any primary method behind a verified factor (`authority_for_login`, the 0049
+  trigger, and since accounts `0054` the `device_grant_account_context` constraint, which until then still
+  demanded `login_method = 'password'` and turned a staff step-up from a Google, Apple, GitHub or phone
+  device session into an IntegrityError).
+- **Triggers (any one).** No valid remembered device for this person; the client's IPv4 /24 (IPv6 /64,
+  #157) unseen for them in 90 days; `LOGIN_RISK_FAILURE_THRESHOLD` (3) failed steps naming the account in
+  the last hour from any address (`login_risk_signals`: `user_login_failed` and `login_refused`, cache-only,
+  fail open). S0 froze two network granularities, so the /16 and /48-/32 tiers of the lost plan are not
+  built ([#165 auto]).
+- **Step-up only for passwords.** Web and native PASSWORD sign-ins are stepped up; social, phone-code and
+  passkey sign-ins only record the device (Q4). The step-up is the ordinary MFA challenge for an enrolled
+  person, otherwise a `purpose: risk` challenge with `factors: ["email_code"]`: a 6-digit code mailed to the
+  account email (`login_code_flow`: digest in the challenge `context` with `purpose`, `code_digest`,
+  `sent_at`, `resends`; 10 minutes; `MFA_MAX_ATTEMPTS`; at most 2 resends via `POST auth/login-code/resend`,
+  each replacing the code). It completes with `mfa_source=email_code`: never VERIFIED, never `mfa_method`,
+  never staff proof, and it works with the platform two-step switch off. Wrong code: 400
+  `login_code_invalid`. No email or no mail transport: the sign-in fails OPEN, audited
+  `auth.risk_unverifiable`. The superadmin is never stepped up, only alerted (#66).
+- **The switch only tightens.** `security.login_risk_check` and `security.remembered_device_days` are
+  registry rows (strictest across the person's staff spaces; members get the platform defaults). The risk
+  check's platform default is on, so a space cannot switch it off; the days only shorten.
+- **Remembered devices (`accounts/device_memory.py`).** Web: the `sw_device` cookie, HttpOnly, Lax,
+  `AUTH_COOKIE_SECURE`, `AUTH_COOKIE_PATH`, 400 days, value `signing.dumps({"d": <128-bit hex>},
+  salt="accounts.device")`; native: the same value as `device_trust` on every device completion (password,
+  social, phone, `mfa/verify`), sent back in `X-Device-Trust`. The table keeps only `KnownDevice.device_hmac`
+  and a coarse label ("Firefox on Windows"). A row is created or slid forward only when a sign-in COMPLETES
+  (`login_risk.record_success`); refresh and device grants never evaluate risk. S-C's auto-block bypass reads
+  `device_memory.lookup` through `ip_guard.known_device_hmac`. A remembered device never skips a second
+  factor (Q13).
+- **Forgetting.** `GET auth/devices`, `DELETE auth/devices/<id>` (`auth.device_forgotten`). Every
+  `revoke_authentication` (logout-all, password change and reset, not-me, account lifecycle) revokes all
+  devices; a password change then restores the one device that made it.
+- **Retention (`login_risk_retention`, inside the daily auth purge).** `KnownNetwork` 90 days after last
+  seen, `KnownDevice` 180 days after its last sign-in, `WebAuthnCeremony` one day after expiry. Account
+  deletion and purge delete every passkey, ceremony, grace, device, network and alert row of the person.
+  The subject export carries the person's devices (label, dates), passkeys (name, dates) and networks
+  (granularity and dates only), never a digest.
+
+### Security alerts and "this wasn't me" (S-B)
+
+- **Kinds.** `new_device` (a completed sign-in created a device row for a person who already had one; the
+  first device is the baseline, [#165 auto]), `password_changed` (own change, reset confirm by code or
+  link, the `/control/` reset action and password form, the admin reset service), `mfa_changed`
+  (`security_signals.mfa_changed`), `lockout` (axes `user_locked_out`, at most one an hour). Platform mail:
+  `makerspace=None`, stream `account`, events `security_*`, `persist_body=False`, in `EMAIL_MODULE_EXEMPT`
+  (nobody opts out). The emailed sign-in code (`security_login_code`) is the same kind of mail with no row.
+- **Delivery.** `security_alerts.create` writes the row with an unusable placeholder digest and queues
+  delivery after commit; the Celery argument is the alert id only (inline on the free profile). Delivery
+  mints the nonce, stores its SHA-256 and mails the link; the nonce never crosses the queue. Labels: the
+  network (/24 or /64) and the device label are stored only until the mail is sent, then cleared; an unsent
+  alert keeps them until its link expires (`SECURITY_ALERT_LINK_TTL_DAYS`, 14) and the row is deleted 30 days
+  after that.
+- **The link.** `/security/not-me#token=<signing.dumps({"a": id, "n": nonce})>`: a URL FRAGMENT, never a
+  query. `POST auth/security-alerts/not-me {token}` has `authentication_classes=[]` (no cookie or bearer is
+  read: CSRF-exempt by construction), throttle `security_alert_action`. In one transaction it runs
+  `revoke_all_credentials(reason="account.not_me")`, forgets every device, `set_unusable_password()`, marks
+  the alert used and expires every other outstanding alert, then requests a reset code through the ordinary
+  recovery queue. No factor is removed; the answer lists who the MFA-reset rule lets reset two-step sign-in
+  (`mfa_reset.superadmin`, `mfa_reset.space_managers_of`). Any refusal is 400 `security_alert_used`.
+  Completing a password reset also expires every outstanding alert.
+- **Audit.** `auth.security_alert_sent`, `auth.not_me_used`, `auth.login_risk_challenged`,
+  `auth.login_code_sent|failed`, `auth.risk_unverifiable`, `auth.device_remembered|forgotten`; never an
+  address, a code or a link. Every MFA, code and social refusal sends `security_signals.login_refused`
+  (S-C's IP counter and the risk failure count listen).
 
 ### IP blocking, allow/deny rules and CAPTCHA (S-C)
 

@@ -968,12 +968,19 @@ proof claims), `staff_identity.require_staff_mfa` the staff gate, `mfa_grace.py`
 `ceremonies`, `services`, `assertion`, `policy`, `views`, `urls`, `checks`; routes classified in
 `passkey_route_catalog.py`). `makerspaces/migration_support/retire_staff_mfa.py` backs makerspaces 0119.
 Login security S-C: `accounts/ip_rules.py` (platform allow/deny rules, 60 s cache, `AXES_WHITELIST_CALLABLE`),
-`ip_guard.py` (client source, HMAC keys, failure counters, automatic blocks, the local `sw_device` reader),
+`ip_guard.py` (client source, HMAC keys, failure counters, automatic blocks; remembered devices via S-B's `device_memory.lookup`),
 `ip_guard_signals.py` (what counts as a failure), `ip_guard_middleware.py` (`LoginIPGuardMiddleware` on
 `login_ip_guard` views), `ip_guard_schema.py` (the OpenAPI hook), `turnstile.py` (Cloudflare Turnstile),
 `password_breach.py` (the HIBP validator), `staff_network.py` (the per-space staff IP allow-list at the staff
 surface check), `admin_ip_access.py` (the `/control/` *IP rules* and *Automatic blocks* screens),
 `login_methods_status.py`, `tasks_login_security.py` (retention) and `management/commands/login_security.py`.
+Login security S-B: `accounts/login_risk.py` (the unusual-sign-in check and `record_success`),
+`login_risk_networks.py` (/24 and /64 HMACs), `login_risk_signals.py` (failure counts, lockout alerts),
+`device_memory.py` (`sw_device` / `device_trust`), `login_code_flow.py` (emailed codes on `login_codes`),
+`mfa_challenge_factors.py` (`factors[]` and checking the answer), `security_alerts.py` (+
+`tasks_security_alerts.py`, `templates/email/security_*`), `security_not_me.py`, `login_risk_retention.py`;
+views `views_login_codes.py`, `views_devices.py`, `views_security_alerts.py` on `urls_login_risk.py`
+(classified in `login_risk_route_catalog.py`); `data_export/subject_runtime_security.py` (subject export).
 Staff roles on people (U-B): `staff_account_policy.py` is the one authority policy (superadmin-only
 Space Manager rule, no-self, last manager, tenant gate and quota codes, `StaffRoleRefused`);
 `staff_account_services.py` grants (to community members) and changes roles and machine scopes over

@@ -41,6 +41,9 @@ def revoke_authentication(user, *, now, revoke_invitations=True):
     counts["push_devices"] = PushDevice.objects.filter(user=user, active=True).update(
         active=False, invalidated_at=now,
     )
+    # S-B: every remembered device is forgotten with the sessions it signed in.
+    from apps.accounts.device_memory import revoke_all
+    counts["known_devices"] = revoke_all(user, now=now)
     if revoke_invitations:
         counts["staff_invitations"] = StaffInvitation.objects.filter(
             account=user, accepted_at__isnull=True, revoked_at__isnull=True,

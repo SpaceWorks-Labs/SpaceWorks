@@ -29,4 +29,7 @@ class AccountsConfig(AppConfig):
         # Failed sign-ins feed the automatic IP block; rule edits drop the rule cache (S-C).
         from apps.accounts.ip_guard_signals import connect_signals as connect_ip_guard_signals
         connect_ip_guard_signals()
+        # S-B: unusual-login failure counts and the security alerts (mfa_changed, lockout).
+        from apps.accounts.login_risk_signals import connect_signals as connect_login_risk_signals
+        connect_login_risk_signals()
         user_logged_in.connect(stamp_password_session, dispatch_uid="accounts.control_mfa.password_session")

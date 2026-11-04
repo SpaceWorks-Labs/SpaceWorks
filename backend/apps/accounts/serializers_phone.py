@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from apps.accounts.models_social import SocialClientPlatform, SocialDelivery
 from apps.accounts.serializers_attestation import AttestationPayloadField
+from apps.accounts.serializers_device import APP_VERSION_HELP
 
 
 class PhoneStartSerializer(serializers.Serializer):
@@ -37,6 +38,7 @@ class PhoneLoginStartSerializer(PhoneStartSerializer):
 
 class PhoneLoginConfirmSerializer(PhoneLoginStartSerializer, PhoneConfirmSerializer):
     attestation = AttestationPayloadField(required=False, write_only=True)
+    app_version = serializers.CharField(max_length=32, required=False, help_text=APP_VERSION_HELP)
 
     def validate(self, attrs):
         attrs = super().validate(attrs)

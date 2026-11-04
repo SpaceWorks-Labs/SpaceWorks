@@ -23,6 +23,7 @@ from apps.accounts.services_phone import confirm_login_challenge
 from apps.backup.recovery import assert_token_issuance_allowed
 
 logger = logging.getLogger(__name__)
+NATIVE_PLATFORM = {"ios": "apple", "android": "android"}
 
 
 class PhoneDeviceError(APIException):
@@ -39,6 +40,9 @@ class PhoneDeviceError(APIException):
 
 
 def complete_phone_device_login(request, data):
+    # #162(3): an app older than the platform minimum is refused before the code is spent.
+    from apps.accounts.native_app_version import assert_supported
+    assert_supported(NATIVE_PLATFORM.get(data["client_platform"]), data.get("app_version"))
     # Never put this inside the grant transaction: failed_attempts and a successful
     # OTP's consumed_at must survive every subsequent attestation/issuance failure.
     user, otp = confirm_login_challenge(data["phone"], data["code"], delivery="device")
@@ -78,10 +82,12 @@ def complete_phone_device_login(request, data):
         user, "auth.phone_login_succeeded", target=user,
         meta={"phone_hash": audit_events.fingerprint(user.phone_e164)},
     )
+    from apps.accounts.login_risk import record_success  # S-B: a phone code records the device (Q4)
     return {
         "access": access, "refresh": refresh,
         "device_grant": DeviceGrantSerializer(grant).data,
         "user": user_payload(user, request=request, session_authority="member"),
+        "device_trust": record_success(request, user, method="phone", web=False),
     }
 
 

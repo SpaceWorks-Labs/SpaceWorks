@@ -1,4 +1,9 @@
-"""Opaque, expiring first-factor proofs; no JWT exists until the second factor succeeds."""
+"""Opaque, expiring first-factor proofs; no JWT exists until the second factor succeeds.
+
+A challenge's ``purpose`` is ``login`` (a second factor, or enrolment) or ``risk`` (S-B's
+unusual-sign-in check: an emailed code, ``mfa_source=email_code``, never VERIFIED). Any
+other purpose -- a re-authentication intent -- never completes a sign-in here.
+"""
 
 import hashlib
 import secrets
@@ -10,12 +15,15 @@ from django.utils import timezone
 from rest_framework.exceptions import AuthenticationFailed
 
 from apps.accounts import audit_events
+from apps.accounts.login_security_contract import (
+    FACTOR_EMAIL_CODE, FACTOR_PASSKEY, LOGIN_CODE_INVALID, PASSKEY_FAILED, PURPOSE_LOGIN, PURPOSE_RISK,
+)
 from apps.accounts.mfa_crypto import new_secret, provisioning_uri
-from apps.accounts.mfa_policy import assert_available, stamp
+from apps.accounts.mfa_policy import EMAIL_CODE, assert_available, is_enrolled, stamp
 from apps.accounts.models import User
 from apps.accounts.models_mfa import MFAChallenge, UserMFA
 from apps.accounts.password_reset_crypto import credential_fingerprint
-from apps.accounts.services_mfa import active, consume_code, enable
+from apps.accounts.services_mfa import active, enable
 from apps.accounts.tokens import current_auth_generation
 from apps.accounts.services_device_grants import DeviceSuperadminNotSupported, audit_grant_refusal
 from apps.accounts.session_issuance import lock_session_user
@@ -23,6 +31,7 @@ from apps.makerspaces.secrets import decrypt_value, encrypt_value
 
 
 SETTINGS_ENROLL = "settings_enroll"
+LOGIN_PURPOSES = (None, PURPOSE_LOGIN, PURPOSE_RISK)
 
 
 def digest(raw):
@@ -30,24 +39,32 @@ def digest(raw):
 
 
 @transaction.atomic
-def start(user, *, context):
-    assert_available(user)  # S-A: staff MFA is never paused by the platform switch
+def start(user, *, context, purpose=PURPOSE_LOGIN):
+    risk = purpose == PURPOSE_RISK
+    if not risk:  # the unusual-sign-in code is not "two-step sign-in" and works with it off
+        assert_available(user)  # S-A: staff MFA is never paused by the platform switch
     user = lock_session_user(user)
     active(user)
     from apps.accounts.surface_policy import assert_surface, token_kind
     assert_surface(user, context.get("surface"), request=None)
-    context = {**context, "kind": token_kind(user), "credential_generation": user.credential_generation}
+    context = {**context, "purpose": purpose, "kind": token_kind(user),
+               "credential_generation": user.credential_generation}
     row, _ = UserMFA.objects.get_or_create(user=user)
     raw = secrets.token_urlsafe(32)
+    ttl = settings.LOGIN_CODE_TTL_SECONDS if risk else settings.MFA_CHALLENGE_TTL_SECONDS
     challenge = MFAChallenge.objects.create(
         user=user, token_digest=digest(raw), mfa_version=row.version,
         credential_fingerprint=credential_fingerprint(user, user.email),
         auth_generation=current_auth_generation(), context=context,
-        expires_at=timezone.now() + timedelta(seconds=settings.MFA_CHALLENGE_TTL_SECONDS),
+        expires_at=timezone.now() + timedelta(seconds=ttl),
     )
     audit_events.record_auth_event(user, "auth.mfa_challenge_created", target=user)
-    return {"mfa_required": True, "enrollment_required": not bool(row.enabled_at),
-            "challenge": raw, "expires_in": settings.MFA_CHALLENGE_TTL_SECONDS}
+    if risk:
+        from apps.accounts.login_code_flow import issue
+        issue(challenge)
+    from apps.accounts.mfa_challenge_factors import offered
+    return {"mfa_required": True, "enrollment_required": not risk and not is_enrolled(user, row),
+            "challenge": raw, "expires_in": ttl, "purpose": purpose, "factors": offered(user, row, context)}
 
 
 def _settings_device(challenge):
@@ -92,7 +109,8 @@ def _locked(raw, request):
     user = User.objects.select_for_update().get(pk=candidate["user_id"])
     row = UserMFA.objects.select_for_update().get(user=user)
     challenge = MFAChallenge.objects.select_for_update().filter(pk=candidate["pk"]).first()
-    if challenge is None:
+    if challenge is None or challenge.context.get("purpose") not in LOGIN_PURPOSES:
+        # A re-authentication intent's challenge never completes a sign-in.
         raise AuthenticationFailed("Invalid or expired MFA challenge.")
     active(user)
     from apps.accounts.surface_policy import assert_surface, validate_account_token
@@ -122,6 +140,8 @@ def _locked(raw, request):
 def enroll(raw, request):
     challenge, user, row = _locked(raw, request)
     assert_available(user)
+    if challenge.context.get("purpose") == PURPOSE_RISK:
+        raise AuthenticationFailed("Invalid or expired MFA challenge.")
     if row.enabled_at:
         raise AuthenticationFailed("MFA is already enrolled.")
     if not challenge.pending_secret:
@@ -139,48 +159,75 @@ def enroll(raw, request):
             "qr_data_url": "data:image/png;base64," + base64.b64encode(output.getvalue()).decode()}
 
 
-def finish(raw, code, request, *, enrolling=False):
+def finish(raw, code, request, *, enrolling=False, factor=None, webauthn=None):
     try:
-        return _finish(raw, code, request, enrolling=enrolling)
+        return _finish(raw, code, request, enrolling=enrolling, factor=factor, webauthn=webauthn)
     except DeviceSuperadminNotSupported as exc:
         # _finish's transaction has rolled back, including any enrollment changes.
         audit_grant_refusal(exc)
         raise
 
 
-def _finish(raw, code, request, *, enrolling):
-    refusal = False
+def _verify(challenge, user, row, request, *, code, enrolling, factor, webauthn):
+    """``(valid, method, recovery_codes)``; ``method`` is the proof to stamp."""
+    if challenge.context.get("purpose") == PURPOSE_RISK:
+        from apps.accounts.login_code_flow import verify
+        valid = not enrolling and factor in (None, FACTOR_EMAIL_CODE) and verify(challenge, code)
+        return valid, EMAIL_CODE, None
+    if enrolling and not row.enabled_at and challenge.pending_secret:
+        # Settings enrollment on a device keeps that grant and re-issues its tokens.
+        keep = _kept_grant(challenge, user)
+        codes = enable(user, row, decrypt_value(challenge.pending_secret), code, keep_grant=keep)
+        return codes is not None, "totp", codes
+    if _settings_device(challenge) or enrolling or not is_enrolled(user, row):
+        # A settings challenge only enrolls; it is never a second sign-in on its grant.
+        return False, None, None
+    from apps.accounts.mfa_challenge_factors import verify
+    method = verify(user, row, challenge, request, factor=factor, code=code, webauthn=webauthn)
+    return method is not None, method, None
+
+
+def _refusal(challenge, factor):
+    from rest_framework.exceptions import ValidationError
+    if challenge.context.get("purpose") == PURPOSE_RISK:
+        return ValidationError({"detail": "That code is not right or has expired.", "code": LOGIN_CODE_INVALID})
+    if factor == FACTOR_PASSKEY:
+        return ValidationError({"detail": "The passkey could not be verified. Try again.", "code": PASSKEY_FAILED})
+    return AuthenticationFailed("Invalid or expired MFA challenge.")
+
+
+def _finish(raw, code, request, *, enrolling, factor=None, webauthn=None):
+    refusal = None
     result = None
     with transaction.atomic():
         challenge, user, row = _locked(raw, request)
-        assert_available(user)
-        codes = None
-        if enrolling and not row.enabled_at and challenge.pending_secret:
-            # Settings enrollment on a device keeps that grant and re-issues its tokens.
-            keep = _kept_grant(challenge, user)
-            codes = enable(user, row, decrypt_value(challenge.pending_secret), code, keep_grant=keep)
-            valid = codes is not None
-        elif _settings_device(challenge):
-            # A settings challenge only enrolls; it is never a second sign-in on its grant.
-            valid = False
-        else:
-            valid = bool(not enrolling and row.enabled_at and consume_code(row, code))
+        risk = challenge.context.get("purpose") == PURPOSE_RISK
+        if not risk:
+            assert_available(user)
+        valid, method, codes = _verify(challenge, user, row, request, code=code, enrolling=enrolling,
+                                       factor=factor, webauthn=webauthn)
         if not valid:
             challenge.attempts += 1
             challenge.save(update_fields=["attempts"])
-            audit_events.record_auth_event(user, "auth.mfa_failed", target=user)
-            refusal = True
+            audit_events.record_auth_event(user, "auth.login_code_failed" if risk else "auth.mfa_failed", target=user)
+            refusal = _refusal(challenge, factor)
         else:
-            stamp(user, row)
+            if risk:
+                user._mfa_source = EMAIL_CODE  # proves the mailbox, never a second factor
+            else:
+                stamp(user, row, method)
             # Context is server-owned; callers cannot widen the login's surface or device.
-            from apps.accounts.mfa_sessions import issue_session
+            from apps.accounts.mfa_sessions import issue_session, record_completed_sign_in
             result = issue_session(user, challenge.context, request)
             if codes is not None:
                 result["recovery_codes"] = codes
+            record_completed_sign_in(user, challenge.context, request, result)
             challenge.consumed_at = timezone.now()
             challenge.pending_secret = ""
             challenge.save(update_fields=["consumed_at", "pending_secret"])
             audit_events.record_auth_event(user, "auth.mfa_verified", target=user)
-    if refusal:
-        raise AuthenticationFailed("Invalid or expired MFA challenge.")
+    if refusal is not None:
+        from apps.accounts.security_signals import send_login_refused
+        send_login_refused(request, user, "login_code_invalid" if risk else "mfa_failed")
+        raise refusal
     return result

@@ -34,6 +34,9 @@ POLICY_OVERRIDE_ALLOWLIST = {
     "apps.bookings.throttles_feed.BookingFeedIpThrottle": {"get_cache_key"},
     "apps.accounts.throttles_mfa.MFAChallengeThrottle": {"get_cache_key"},
     "apps.accounts.throttles_mfa.MFAUserThrottle": {"get_cache_key"},
+    # S-B: the login-code resend budgets, per address and per challenge.
+    "apps.accounts.views_login_codes.LoginCodeIPThrottle": {"get_cache_key"},
+    "apps.accounts.views_login_codes.LoginCodeResendThrottle": {"get_cache_key"},
     "apps.accounts.views_reauthentication.ReauthenticationThrottle": {"get_cache_key"},
     "apps.accounts.views_account_merge.AccountMergeStartThrottle": {"get_cache_key"},  # U-C, keyed per person
     "apps.accounts.views_account_merge.AccountMergeProveThrottle": {"get_cache_key"},  # U-C, keyed per person
@@ -60,12 +63,8 @@ POLICY_OVERRIDE_ALLOWLIST = {
     "apps.accounts.throttles.PhoneLoginConfirmThrottle": {"get_cache_key"},
     "apps.accounts.throttles.PhoneOtpNumberThrottle": {"get_cache_key"},
     "apps.accounts.throttles.PhoneOtpRequestThrottle": {"get_cache_key"},
-    "apps.apiclients.throttling.ClientTierRateThrottle": {
-        "_tier", "allow_request", "get_cache_key"
-    },
-    "apps.apiclients.throttling.MemberPrincipalRateThrottle": {
-        "_tier", "allow_request", "get_cache_key"
-    },
+    "apps.apiclients.throttling.ClientTierRateThrottle": {"_tier", "allow_request", "get_cache_key"},
+    "apps.apiclients.throttling.MemberPrincipalRateThrottle": {"_tier", "allow_request", "get_cache_key"},
     "apps.events.throttles.CollaborativeRegistrationThrottle": {
         "_tier", "allow_request", "get_cache_key"
     },

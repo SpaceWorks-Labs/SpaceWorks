@@ -8,6 +8,7 @@ from apps.accounts.models_social import (
 )
 from apps.accounts.models_oidc import provider_for_slug, slug_from_provider_key
 from apps.accounts.serializers_attestation import AttestationPayloadField
+from apps.accounts.serializers_device import APP_VERSION_HELP
 
 
 class SocialProviderKeyField(serializers.CharField):
@@ -68,6 +69,7 @@ class SocialLoginSerializer(serializers.Serializer):
         max_length=512, required=False, write_only=True, trim_whitespace=False
     )
     attestation = AttestationPayloadField(required=False, write_only=True)
+    app_version = serializers.CharField(max_length=32, required=False, help_text=APP_VERSION_HELP)
 
     def validate_attestation(self, value):
         if not isinstance(value, dict) or not value or len(value) > 16:
@@ -139,3 +141,6 @@ class SocialLoginResponseSerializer(serializers.Serializer):
     device_grant = serializers.DictField(required=False)
     user = serializers.DictField()
     outcome = serializers.CharField()
+    device_trust = serializers.CharField(
+        required=False, help_text="Device delivery only: send it back in the `X-Device-Trust` header on later "
+                                  "sign-ins (the unusual-sign-in check).")

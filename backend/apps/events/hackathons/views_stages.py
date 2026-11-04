@@ -11,7 +11,7 @@ from .api_base import AdminView, ProgrammeCommandThrottle
 from .api_schema import ERRORS
 from .review_projection import alias
 from .serializers_stages import (
-    ApplyInput, ApplyResultSerializer, PanelInput, PlanSerializer, PreviewInput, ProgressRowSerializer,
+    ApplyInput, ApplyResultSerializer, PanelInput, PlanSerializer, StageAssignmentPreviewInput, ProgressRowSerializer,
     StageCreateInput, StageSerializer, StageUpdateInput,
 )
 
@@ -74,11 +74,11 @@ class StagePanelView(StageView):
 
 
 class StagePreviewView(StageView):
-    @extend_schema(tags=TAGS, request=PreviewInput, responses={200: PlanSerializer, **ERRORS},
+    @extend_schema(tags=TAGS, request=StageAssignmentPreviewInput, responses={200: PlanSerializer, **ERRORS},
                    summary="Preview a seeded reviewer assignment; nothing is written")
     def post(self, request, pk, stage_id):
         event, stage = self.stage_target(request, pk, stage_id)
-        data = PreviewInput(data=request.data)
+        data = StageAssignmentPreviewInput(data=request.data)
         data.is_valid(raise_exception=True)
         return Response(admission_stage_assign.preview(event=event, stage=stage, **data.validated_data))
 

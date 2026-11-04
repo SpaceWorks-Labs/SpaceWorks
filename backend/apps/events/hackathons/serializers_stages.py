@@ -33,7 +33,7 @@ class PanelInput(CommandInput):
     reviewer_ids = serializers.ListField(child=serializers.IntegerField(min_value=1), max_length=200)
 
 
-class PreviewInput(StrictSerializer):
+class StageAssignmentPreviewInput(StrictSerializer):
     seed = serializers.RegexField(r"^[A-Za-z0-9_-]{1,64}$", required=False)
     strategy = serializers.ChoiceField(choices=["balanced", "random"], required=False)
 

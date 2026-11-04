@@ -69,8 +69,8 @@ NON_CREDENTIAL = {
 }
 DATASET_SPECS = {
     "card_designs.CardDesign": ("cards/designs.csv", P(("makerspace",))),
-    "card_designs.CardDesignRevision": ("cards/design_revisions.csv", P(("design", "makerspace"))),
-    "card_designs.CardDesignApproval": ("cards/design_approvals.csv", P(("design", "makerspace"))),
+    "card_designs.CardDesignRevision": ("cards/design_revisions.csv", P(("design__makerspace",))),
+    "card_designs.CardDesignApproval": ("cards/design_approvals.csv", P(("design__makerspace",))),
     "card_designs.CardDesignAsset": ("cards/design_assets.csv", P(("makerspace",))),
     "card_designs.CardApprovalSetting": ("cards/approval_settings.csv", P(("makerspace",))),
     "card_designs.CardVerifyCheckDay": ("cards/verify_checks.csv", P(("makerspace",))),
@@ -78,9 +78,9 @@ DATASET_SPECS = {
     "makerspaces.MemberCardSettings": ("members/member_card_settings.csv", P(("makerspace",))),
     "id_programmes.IdProgramme": ("id_programmes/programmes.csv", P(("makerspace",))),
     "id_programmes.IdProgrammeCard": ("id_programmes/cards.csv", P(("makerspace",))),
-    "id_programmes.IdProgrammeImport": ("id_programmes/imports.csv", P(("programme", "makerspace"))),
+    "id_programmes.IdProgrammeImport": ("id_programmes/imports.csv", P(("programme__makerspace",))),
     "events.EventIdCard": ("events/id_cards.csv", P(("makerspace",))),
-    "events.EventCardSettings": ("events/card_settings.csv", P(("event", "makerspace"))),
+    "events.EventCardSettings": ("events/card_settings.csv", P(("event__makerspace",))),
 }
 RELATIONAL_USER_FIELDS = frozenset({
     ("card_designs.CardDesign", "updated_by"),

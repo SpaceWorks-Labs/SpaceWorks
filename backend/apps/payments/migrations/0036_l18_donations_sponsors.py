@@ -179,7 +179,7 @@ class Migration(migrations.Migration):
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('created_by', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='+', to=settings.AUTH_USER_MODEL)),
                 ('makerspace', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='+', to='makerspaces.makerspace')),
-                ('sponsor', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='charges', to='payments.sponsor')),
+                ('sponsor', models.ForeignKey(on_delete=django.db.models.deletion.RESTRICT, related_name='charges', to='payments.sponsor')),
             ],
             options={
                 'ordering': ['-created_at', '-pk'],

@@ -93,7 +93,9 @@ class SponsorshipCharge(models.Model):
     """One agreed sponsor payment; its `Payment` (subject `sponsorship`) has no account."""
 
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE, related_name="+")
-    sponsor = models.ForeignKey(Sponsor, on_delete=models.PROTECT, related_name="charges")
+    # RESTRICT, not PROTECT: a sponsor with charges is never deleted on its own (it is archived),
+    # but a space purge that deletes both together may.
+    sponsor = models.ForeignKey(Sponsor, on_delete=models.RESTRICT, related_name="charges")
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     currency = models.CharField(max_length=3, validators=[currency_validator])
     description = models.CharField(max_length=200, blank=True, default="")

@@ -30,6 +30,8 @@ export const REASON_LABELS: Record<RefundCase["reason_code"] | "capture_flagged"
   order_unfulfilled: "Order could not be seated",
   ticket_type_changed: "Changed to a cheaper ticket",
   pass_occurrence_cancelled: "Pass occurrence cancelled",
+  submission_disqualified: "Project disqualified",
+  team_rejected: "Team rejected",
 };
 
 export function caseTone(status: RefundCaseStatusEnum): "success" | "warn" | "danger" | "neutral" {

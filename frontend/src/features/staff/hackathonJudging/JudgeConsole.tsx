@@ -3,6 +3,7 @@ import { DetailLayout } from '../../../components/layouts';
 import { EmptyState, ErrorBlock, Field, Pagination, StatusPill } from '../../../components/ui';
 import { useAssignments } from './api';
 import { PairwiseDesk } from './PairwiseDesk';
+import { ScoreNextBar } from './ScoreNextBar';
 import { PrivateProgrammeBoundary } from '../../events/hackathonGallery/PrivateProgrammeBoundary';
 import { StructuredApiError } from '../../../lib/api';
 import type { Assignment, Scope } from './types';
@@ -14,6 +15,7 @@ function JudgeConsoleContent({ scope, renderAssets, pairwiseEnabled = false }: {
   return <DetailLayout title="Your judging desk" state={{ status: query.isLoading ? 'loading' : query.isError ? 'error' : 'ready',
     error: query.error?.message, onRetry: () => void query.refetch() }} main={<div className="grid gap-6">
       {pairwiseEnabled ? <PairwiseDesk scope={scope} renderAssets={renderAssets} /> : null}
+      <ScoreNextBar scope={scope} assignments={query.data?.results ?? []} />
       {!query.data?.count ? <EmptyState title="No assigned projects" description="Your projects will appear here when the organizer assigns this round." /> : null}
       {query.data?.results.map(row => <JudgeAssignmentEditor key={`${scope.context}:${scope.actorId}:${row.id}:${resets[row.id] ?? 0}`} assignment={row}
         pending={submit.isPending} error={submit.error} renderAssets={renderAssets}

@@ -9,8 +9,8 @@ import { SponsorConsole } from '../hackathonJudging/SponsorConsole'
 import type { Scope } from '../hackathonJudging/types'
 import { StaffProjectFiles, downloadProgrammeFile } from './StaffProjectFiles'
 
-export function JudgingWorkspace({ scope, manager, judge, sponsor, timezone, galleryEnabled, pairwiseEnabled = false, sponsorIds = [] }: {
-  scope: Scope; manager: boolean; judge: boolean; sponsor: boolean; timezone: string; galleryEnabled: boolean; pairwiseEnabled?: boolean; sponsorIds?: number[]
+export function JudgingWorkspace({ scope, manager, judge, sponsor, timezone, galleryEnabled, pairwiseEnabled = false, sponsorIds = [], features = [] }: {
+  scope: Scope; manager: boolean; judge: boolean; sponsor: boolean; timezone: string; galleryEnabled: boolean; pairwiseEnabled?: boolean; sponsorIds?: number[]; features?: readonly string[]
 }) {
   const [tab, setTab] = useState(manager ? 'manage' : judge ? 'judge' : 'sponsor')
   const [sponsorId, setSponsorId] = useState(sponsorIds[0] ?? 0)
@@ -21,7 +21,7 @@ export function JudgingWorkspace({ scope, manager, judge, sponsor, timezone, gal
     ...(manager ? [{ key: 'manage', label: 'Rounds and results' }] : []), ...(judge ? [{ key: 'judge', label: 'My judging assignments' }] : []),
     ...(sponsor ? [{ key: 'sponsor', label: 'Sponsor projects' }] : []),
   ]}>
-    {tab === 'manage' && manager ? <JudgingPanel scope={scope} timezone={timezone} fullManager galleryEnabled={galleryEnabled} pairwiseEnabled={pairwiseEnabled} /> : null}
+    {tab === 'manage' && manager ? <JudgingPanel scope={scope} timezone={timezone} fullManager galleryEnabled={galleryEnabled} pairwiseEnabled={pairwiseEnabled} features={features} /> : null}
     {tab === 'judge' && judge ? <JudgeConsole scope={scope} pairwiseEnabled={pairwiseEnabled} renderAssets={ids => <StaffProjectFiles scope={scope} assetIds={ids} purpose="judge" />} /> : null}
     {tab === 'sponsor' && sponsor ? <div className="grid gap-5"><Field label="Assigned sponsor"><select className="desk-input" value={sponsorId} onChange={event => setSponsorId(Number(event.target.value))}>
       <option value={0}>Choose an assigned sponsor</option>{options.map(row => <option value={row.id} key={row.id}>{row.label}</option>)}</select></Field>

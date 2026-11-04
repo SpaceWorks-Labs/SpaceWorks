@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { FormPageLayout } from "../../../components/layouts";
 import { ActionControl, Callout, Field, Spinner } from "../../../components/ui";
 import { useSubmission, useSubmissionCommand } from "./api";
+import { ProgrammeCharges } from "./ProgrammeCharges";
 import { LinkEditor } from "./LinkEditor";
 import { UploadEditor } from "./UploadEditor";
 import { ProjectFormFields } from "./ProjectFormFields";
@@ -53,6 +54,7 @@ export function SubmissionEditor({ scope, uploadOrigins, formats, tracks = [], p
     <p className="text-sm text-muted">Build your project draft, then submit a frozen version for judging. Files stay private until you choose gallery sharing and the organizer publishes it.</p>
     {query.data?.snapshot_id ? <p role="status" className="rounded-xl border border-line bg-success-soft p-3 text-sm text-success-ink">Frozen submission receipt: {query.data.snapshot_id}. Judging uses this submitted version.</p> : null}
     {requirements ? <p className="text-sm text-muted">Submit by {new Date(requirements.deadline).toLocaleString()}. {requirements.budget.remaining_bytes === null ? "Storage is metered by your host." : `${Math.floor(requirements.budget.remaining_bytes / 1024 / 1024)} MiB remaining; ${Math.ceil(requirements.budget.reserved_bytes / 1024 / 1024)} MiB reserved.`}</p> : null}
+    {query.data?.id ? <ProgrammeCharges scope={scope} isLeader={Boolean(query.data.allowed_actions.includes("submit"))} /> : null}
     {dirty ? <p role="status" className="text-sm font-semibold text-ink">You have unsaved changes.</p> : null}
     {mutation.isError ? <Callout size="panel" tone="danger" lead="Your changes were not saved."
       body={mutation.error.message} action={{ label: "Reload server version", onClick: () => { setDirty(false); void query.refetch(); } }} /> : null}

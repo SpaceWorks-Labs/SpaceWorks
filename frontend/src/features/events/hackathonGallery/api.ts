@@ -33,11 +33,21 @@ export function useGalleryConsent(scope: MemberScope, teamId: number) {
   useClearOnAccessLoss(sharing.key, [query.error, sharing.mutate.error]);
   return { query, mutate: sharing.mutate };
 }
-export function usePublicGallery(slug: string, token: string, pageNumber: number, entryId?: string) {
+export type GallerySearch = { q?: string; sort?: 'newest' | 'az' | 'awards'; awards?: 'only' };
+/** Gallery search params (L21b, X54) are sent only when set, so a space with search off still gets the plain list. */
+export function gallerySearchQuery(search: GallerySearch = {}) {
+  const params = new URLSearchParams();
+  if (search.q?.trim()) params.set('q', search.q.trim());
+  if (search.sort && search.sort !== 'newest') params.set('sort', search.sort);
+  if (search.awards) params.set('awards', search.awards);
+  return params.toString();
+}
+export function usePublicGallery(slug: string, token: string, pageNumber: number, entryId?: string, search: GallerySearch = {}) {
   const base = `/public/event-programmes/${encodeURIComponent(token)}/gallery/`;
-  return useQuery({ queryKey: ['public-project-gallery', slug, token, entryId, pageNumber], staleTime: 0, gcTime: 0, retry: false,
+  const filters = gallerySearchQuery(search);
+  return useQuery({ queryKey: ['public-project-gallery', slug, token, entryId, pageNumber, filters], staleTime: 0, gcTime: 0, retry: false,
     queryFn: async () => entryId ? galleryEntry(await tenantPublicRequest(slug, `${base}${encodeURIComponent(entryId)}/`, { cache: 'no-store' }))
-      : page(await tenantPublicRequest(slug, `${base}?page=${pageNumber}`, { cache: 'no-store' }), galleryEntry) });
+      : page(await tenantPublicRequest(slug, `${base}?${filters ? `${filters}&` : ''}page=${pageNumber}`, { cache: 'no-store' }), galleryEntry) });
 }
 export function usePublicResults(slug: string, token: string) {
   return useQuery({ queryKey: ['public-hackathon-results', slug, token], staleTime: 0, gcTime: 0, retry: false,

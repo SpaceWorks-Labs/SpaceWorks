@@ -22,6 +22,7 @@ import { BulkCertificates } from '../eventCredentials/BulkCertificates'
 import { EventCardsPanel } from '../eventCards/EventCardsPanel'
 import { DeskBadgePanel } from '../eventCredentials/DeskBadgePanel'
 import { ProgrammeTeamsPanel } from './ProgrammeTeamsPanel'
+import { EventStaffLists } from './EventStaffLists'
 import { sessionScope } from './sessionScope'
 
 export function EventProgrammePanel({ event, makerspaceId, section, access, features }: {
@@ -42,8 +43,9 @@ export function EventProgrammePanel({ event, makerspaceId, section, access, feat
   if (section === 'mentor-desk') return <MentorWorkspace scope={scope} manager={access.hackathon || access.manager} roundsEnabled={features.includes('events.mentor_rounds')} />
   if (section === 'judging') return <JudgingWorkspace scope={{ ...scope, actorId: account.data.id, context: currentSessionContext() }} manager={access.hackathon}
     judge={access.judge} sponsor={access.sponsor} timezone={event.timezone_name} galleryEnabled={features.includes('events.project_gallery')}
-    pairwiseEnabled={features.includes('events.pairwise_judging')} />
-  if (section === 'programme-teams') return <ProgrammeTeamsPanel eventId={event.id} canTriage={access.hackathon} />
+    pairwiseEnabled={features.includes('events.pairwise_judging')} features={features} />
+  if (section === 'programme-teams') return <div className="grid gap-8"><ProgrammeTeamsPanel eventId={event.id} canTriage={access.hackathon} />
+    {features.includes('events.saved_views') && access.hackathon ? <EventStaffLists eventId={event.id} makerspaceId={makerspaceId} canSaveViews={access.manager} /> : null}</div>
   if (section === 'certificates') return <div className="grid gap-6">
     {access.edit ? <EventCertificateDesigner makerspaceId={makerspaceId} eventId={event.id} /> : access.manager ? <BulkCertificates eventId={event.id} /> : null}
     <DeskBadgePanel eventId={event.id} registrationIds={[]} canEdit={access.edit} canPrint={access.checkIn} />

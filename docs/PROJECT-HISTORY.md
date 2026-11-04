@@ -16,6 +16,7 @@
   alerts (new device, password change, factor change, lockout) with a single-use fragment-token "this
   wasn't me" that signs out everywhere and disables the password, keeping factors. `app_version` on the
   social and phone native completions; retention, deletion and the subject export for the new rows.
+  accounts `0054` lets a staff device grant follow any primary method (the 0041 check still said password).
 
 - **2026-11-03 -- release 2 S-C, IP blocking, Turnstile and breached passwords (#62, #66, #110c,
   #128 C-2, #157).** `LoginIPGuardMiddleware` on every sign-in view: superadmin allow/deny rules (allow

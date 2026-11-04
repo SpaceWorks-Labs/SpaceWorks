@@ -12,6 +12,7 @@ STAFF = (
     ("tinker_inventory", "Omar Siddiqui", "inventory_manager"),
     ("tinker_machines", "Hana Kowalski", "machine_manager"),
     ("tinker_desk", "Ben Okafor", "handover"),
+    ("tinker_shop", "Priya Shah", "shop_manager"),
 )
 
 MEMBERS = (

@@ -8,6 +8,7 @@ import { StaffListContext } from "./StaffListContext";
 import { SetupChecklist } from "./SetupChecklist";
 import { StaffTabContent } from "./StaffTabContent";
 import { PiiAccessBanner } from "./PiiAccessBanner";
+import { StaffScreenHelp } from "../help/HelpLink";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { getStaffAccess, STAFF_TAB_KEYS, TAB_LABELS } from "./staffAccess";
 import {
@@ -137,6 +138,7 @@ export function StaffWorkspace({
           body="Every change is audited in this space." />
           {activeTab !== "users" ? <PiiAccessBanner key={`pii:${activeMakerspace.id}`} makerspaceId={activeMakerspace.id} compact /> : null}</div> : null}
         {routeTabDenied ? <PageHeader title="Page unavailable" /> : null}
+        {routeTabDenied ? null : <StaffScreenHelp tab={activeTab} makerspace={activeMakerspace} singleTenant={singleTenantLocked} platform={isSuperadmin} />}
           {routeTabDenied ? (
             <EmptyState
               title="Access denied"

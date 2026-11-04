@@ -178,6 +178,20 @@ without revoking). Audits: `auth.staff_grant_issued` / `auth.staff_grant_revoked
 refuse an older or unversioned app with 426 `native_app_update_required` at device login, the
 staff step-up and refresh, before anything rotates.
 
+**Event-role grants (#173, L21b).** A person holding an active event role (a live event staff grant for
+the event, directly or through its series) steps an active device session up with
+`POST auth/device/event-grant`: same attestation, app-version and verified-second-factor rules as the
+staff step-up, finished through `auth/mfa/verify`. The grant (`authority=event`, `event_id` snapshot)
+carries NO staff authority (`limit_staff_authority` gives it none) and the route gate
+(`native_event_grants.admits_event_route`) admits only the DELEGABLE, event-targeted programme routes
+of ITS event (`pk` match, `mfa_source=verified`, no `X-Makerspace-Id`, decision not `web_only`);
+everything else is decided as for a member grant, so staff, tenant and other-event routes refuse.
+It is revoked when the role ends: signals on `EventStaffGrant`/`EventGrantEntitlement`, plus a re-check
+on every request and refresh (`services_event_grants`). The device-context trigger requires the event,
+a factor and attestation. Native payloads list `event_grants` (an event grant: its own event only) and
+`session_authority=native_event`; listing grants nothing. Audits: `auth.event_grant_issued` /
+`auth.event_grant_revoked`. A native member grant may redeem an event staff invite.
+
 **Recovery** is person (`member` envelope context) or platform only; the staff context and its
 makerspace slug are gone. `control_mfa` is unchanged.
 
@@ -5492,10 +5506,48 @@ responsibility; local purges never delete shared global organizations or foreign
   attendance, changes a registration or writes evidence. "After entry" admits `attended` only; an
   add-on list admits the BUYER of that add-on on a PAID order, once per unit bought. Archived lists
   are read-only. Online only (no offline sync in v1).
-- **Event-role desks are web-only (#173).** `accounts/programme_route_catalog_l21a.NATIVE_DECISIONS`
-  records a native decision per route; the crew desk and the review-panel workspace are
-  `web_only` (`origin_scope_programme` refuses a native selection) until L21b's native event-role
-  authority contract exists.
+- **Event-role desks and the native event grant (#173).** `accounts/programme_route_catalog_l21a.NATIVE_DECISIONS`
+  records a native decision per route. Since L21b the crew desk and the per-event review workspace are
+  `native`: an `event` device grant reaches them for its own event. Only the cross-event "my application
+  reviews" list stays `web_only`. Member grants still refuse delegated authority.
+
+### Judging extras, hackathon money, staff lists and the gallery (release 2 L21b; X40, X50-X54, #128 C-37..C-39, #173)
+
+- **Finalists come from a finalized round's live calculation.** Preview (top N, ties at the cutoff
+  kept, or hand-picked) writes nothing; apply recomputes under the event lock and refuses
+  (409 `plan_changed`) unless the fingerprint (rounds, versions, selection, projects) matches. Rows are
+  append-only (`FinalistAdvance`, `JudgingFinalist`); the newest advance into a round is its list, and that
+  round opens on the finalists alone. Disqualified and withdrawn projects never advance (they leave the
+  calculation). A round that advanced finalists can never be finalized into results: results, awards and
+  prizes come from the final round. Publishing is separate and once per advance (`FinalistAnnouncement`,
+  revalidated at publish); the public block applies gallery consent like awards; finalist certificates
+  follow the publication.
+- **Round settings freeze at open** (`configuration.settings`): optional panel (`JudgingPanelSeat`), visibility
+  (`assigned` or `all`, which lets a judge pull unassigned projects through Score next) and fresh eyes (a judge
+  never meets a team they reviewed in an earlier round). The floor of three reviews stays (C-33). RANDOM is
+  seeded and reproducible; Re-roll is a new seed.
+- **Hackathon emails are per-event switches (C-37).** Results announcement and submission receipt are OFF for
+  events created after L21b (no options row) and ON for every event that existed before (migration 0068 wrote
+  their rows). "Send results email now" works once per announced result, even with the switch off.
+- **Prize payouts are recorded, never paid (C-38).** Only RECORD_PAYMENT holders or the Event Manager
+  (MANAGE_EVENTS) record them, only for awards of the announced result, at most one standing payout per award.
+  Each payout writes one L5 ledger expense (domain `events`, category `prize`); a correction is an append-only
+  reversal row that voids that expense. Postgres guards the rows append-only and same-event.
+- **Entry fee and leader-pays team (X50, C-39, Q-E1).** One seam (`events/programme_charges.py`) raises both
+  charges on the team leader (subjects `submission_fee`, `team_registration`) and closes them: a pending charge
+  is voided, a paid one opens a full-amount refund DUE case for staff (#59). A project stays a draft (submit
+  refuses `entry_fee_required` / `team_payment_required`) until paid or waived. The team charge is ONE fixed
+  price, raised once after confirming (C-34: a team-together cohort confirmed, else roster lock); size changes
+  never re-price it; a rejected/withdrawn/expired cohort or a disbanded team closes it. A disqualification
+  voids a pending fee and opens a due case for a paid one only with "refund on disqualification". With charge
+  tracking or the capability off, nothing is charged and nothing is held.
+- **Staff lists never grant access (X40).** The five lists re-check the event permission on every read; a saved
+  view (`operations.SavedView`, entities `event_*`) restores allow-listed filters only. The CSV export streams
+  exactly the filtered rows in keyset chunks, neutralises formulas, refuses guest PII to a superadmin without a
+  PII window and is audited (`event.export.csv`).
+- **The gallery never reveals winners early (X54).** Search, sort and the winners filter run server-side over
+  publishable entries; badges and "awards first" read only the currently announced result's public awards.
+- **Native event grants (#173).** See "Sign-in, sessions and native grants".
 
 ## Backup, restore and tenant migration (Phase 5A/5B and Lane D D1-D4/D6 built)
 

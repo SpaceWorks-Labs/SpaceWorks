@@ -17,6 +17,14 @@ from .serializers_participation import (
 TAGS = ["Event check-in lists"]
 
 
+def masked(request, event, row):
+    """A superadmin without an open PII window for this space sees the name masked (#114.1)."""
+    from apps.accounts.pii_presentation import mask_data, pii_visible
+    if not pii_visible(request.user, event.makerspace_id):
+        mask_data(row, ("name",))
+    return row
+
+
 class ListView(ProgrammeView):
     permission_classes = [IsActiveStaff]
     throttle_classes = [ProgrammeCommandThrottle]
@@ -68,8 +76,8 @@ class CheckInListLookupView(ListView):
             registration_id = 0
         registration = get_object_or_404(EventRegistration, pk=registration_id, event=event)
         allowed, used, reason = checkin_lists.eligibility(row, registration)
-        return Response({"registration_id": registration.pk, "name": registration.name, "allowed": allowed,
-                         "used": used, "reason": reason})
+        return Response(masked(request, event, {"registration_id": registration.pk, "name": registration.name,
+                                                "allowed": allowed, "used": used, "reason": reason}))
 
 
 class CheckInListScanView(ListView):
@@ -81,5 +89,6 @@ class CheckInListScanView(ListView):
         data.is_valid(raise_exception=True)
         scan, (allowed, used, reason) = checkin_lists.scan(event, actor=request.user, list_id=list_id,
                                                           **data.validated_data)
-        return Response({"registration_id": scan.registration_id, "name": scan.registration.name,
-                         "allowed": allowed, "used": used, "reason": reason}, status=201)
+        return Response(masked(request, event, {"registration_id": scan.registration_id,
+                                                "name": scan.registration.name, "allowed": allowed, "used": used,
+                                                "reason": reason}), status=201)

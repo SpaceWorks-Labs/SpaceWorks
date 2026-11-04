@@ -27,6 +27,14 @@ from .models_crew import LIVE, EventCrewMember
 TAGS = ["Event crew"]
 
 
+def masked(request, event, row):
+    """A superadmin without an open PII window for this space sees names masked (#114.1)."""
+    from apps.accounts.pii_presentation import mask_data, pii_visible
+    if not pii_visible(request.user, event.makerspace_id):
+        mask_data(row, ("name",))
+    return row
+
+
 class CrewStaffView(ProgrammeView):
     permission_classes = [IsActiveStaff]
     throttle_classes = [ProgrammeCommandThrottle]
@@ -41,7 +49,7 @@ class CrewRosterView(CrewStaffView):
     @extend_schema(tags=TAGS, request=None, responses={200: CrewRowSerializer(many=True), **ERRORS})
     def get(self, request, pk):
         event = self.target(request, pk)
-        return Response([crew_reads.project_staff(row) for row in crew_reads.roster(event)])
+        return Response([masked(request, event, crew_reads.project_staff(row)) for row in crew_reads.roster(event)])
 
     @extend_schema(tags=TAGS, request=CrewAddInput, responses={201: CrewRowSerializer, **ERRORS},
                    summary="Add someone to the crew; they get a free crew place")
@@ -51,7 +59,7 @@ class CrewRosterView(CrewStaffView):
         data.is_valid(raise_exception=True)
         member = get_object_or_404(User, pk=data.validated_data["member_id"], is_active=True)
         crew = crew_workflow.add(event, actor=request.user, member=member, crew_role=data.validated_data["crew_role"])
-        return Response(crew_reads.project_staff(crew), status=201)
+        return Response(masked(request, event, crew_reads.project_staff(crew)), status=201)
 
 
 class CrewDecisionView(CrewStaffView):
@@ -61,7 +69,7 @@ class CrewDecisionView(CrewStaffView):
         data = CrewDecisionInput(data=request.data)
         data.is_valid(raise_exception=True)
         crew = crew_workflow.decide(event, actor=request.user, crew_id=crew_id, **data.validated_data)
-        return Response(crew_reads.project_staff(crew))
+        return Response(masked(request, event, crew_reads.project_staff(crew)))
 
 
 class CrewRemoveView(CrewStaffView):
@@ -69,7 +77,7 @@ class CrewRemoveView(CrewStaffView):
     def post(self, request, pk, crew_id):
         event = self.target(request, pk)
         crew = crew_workflow.end(event, actor=request.user, crew_id=crew_id, own=False)
-        return Response(crew_reads.project_staff(crew))
+        return Response(masked(request, event, crew_reads.project_staff(crew)))
 
 
 class CrewCateringView(CrewStaffView):

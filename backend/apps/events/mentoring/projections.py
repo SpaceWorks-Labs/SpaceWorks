@@ -1,7 +1,6 @@
 from datetime import timedelta
 from django.utils import timezone
 from apps.events.contributions.api_common import envelope
-from apps.events.contributions.ports import ports
 from .models_queue import EventHelpRequest
 from . import policy
 from .help_expiry import live_claim, deadline
@@ -20,7 +19,7 @@ def help_request(row, *, actor, event, detail=False, member=False):
         own_claim = row.claimed_by_id == mentor.pk and live_claim(row)
         allowed = ["release", "resolve", "comment", "renew"] if own_claim else ["claim"] if row.state == "open" else []
     data = {**envelope(row, allowed), "origin": row.origin,
-        "team_alias": ports().teams.alias(event_id=event.pk, team_id=row.team_id),
+        "team_alias": policy.request_alias(row, event),
         "category": row.type.label, "priority": row.priority, "zone": row.structured_zone}
     if deadline(row, event) <= timezone.now():
         data["allowed_actions"] = []

@@ -24,7 +24,7 @@ def recipients(request, event):
             state="approved", imported_inert=False).select_related("member"):
         try:
             assignment, profile = policy.mentor_for(role.member, event, assignment_id=role.pk)
-            if policy.visit_eligible(assignment=assignment, profile=profile, team_id=request.team_id,
+            if policy.request_eligible(assignment=assignment, profile=profile, row=request,
                     skill_tags=request.type.skill_tags, priority_until=request.exclusive_until):
                 ids.append(role.member_id)
         except Exception as exc:
@@ -72,7 +72,7 @@ def deliver_one(intent_id):
             recipient_ids = adapter.organizer_ids(event_id=event.pk) if row.kind == "attention" else recipients(request, event)
         if recipient_ids:
             payload = {
-                "event_id": event.pk, "team_alias": adapter.teams.alias(event_id=event.pk, team_id=request.team_id),
+                "event_id": event.pk, "team_alias": policy.request_alias(request, event),
                 "category": request.type.key, "priority": request.priority,
                 "navigation_path": f"/staff/events/{event.pk}/mentor-desk"}
             adapter.deliver_help(intent_id=row.pk, recipient_ids=recipient_ids, payload=payload,

@@ -55,13 +55,15 @@ class EventHelpType(EventBound):
 
 
 class EventHelpRequest(ScopedPiiModelMixin, EventBound):
-    team = models.ForeignKey("events.HackathonTeam", on_delete=models.CASCADE)
+    # Null for a drop-in request (#128 C-36, E2-f): an attendee of an event without hackathon
+    # teams asks the Mentor Desk on their own; `raised_by` is then the requester.
+    team = models.ForeignKey("events.HackathonTeam", null=True, blank=True, on_delete=models.CASCADE)
     type = models.ForeignKey(EventHelpType, on_delete=models.PROTECT)
     raised_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
                                   related_name="raised_event_help")
     raised_by_role_assignment = models.ForeignKey("events.EventRoleAssignment", null=True, blank=True,
                                                   on_delete=models.SET_NULL)
-    origin = models.CharField(max_length=8, choices=[(x, x) for x in ("team", "mentor", "round")])
+    origin = models.CharField(max_length=8, choices=[(x, x) for x in ("team", "mentor", "round", "attendee")])
     structured_zone = models.JSONField(default=dict, blank=True)
     summary = models.TextField()
     state = models.CharField(max_length=10, default="open", choices=[
@@ -87,6 +89,7 @@ class EventHelpRequest(ScopedPiiModelMixin, EventBound):
     class Meta(EventBound.Meta):
         constraints = [
             models.UniqueConstraint(fields=["claimed_by"], condition=Q(state="claimed"), name="mentor_one_claimed_help"),
+            models.CheckConstraint(condition=Q(team__isnull=False) | Q(origin="attendee"), name="event_help_team_or_drop_in"),
             models.CheckConstraint(condition=(Q(state="claimed", claimed_by__isnull=False)
                 | (~Q(state="claimed") & Q(claimed_by__isnull=True))), name="event_help_claim_shape"),
             models.CheckConstraint(condition=(Q(state="claimed", claim_uuid__isnull=False,
@@ -116,7 +119,8 @@ class EventHelpComment(ScopedPiiModelMixin, AppendOnly, EventBound):
 
 class OfficeHoursBooking(EventBound):
     slot = models.ForeignKey("events.EventShift", on_delete=models.PROTECT, related_name="bookings")
-    team = models.ForeignKey("events.HackathonTeam", on_delete=models.CASCADE)
+    # Null for a drop-in booking by one attendee (#128 C-36, E2-f); `booked_by` is then the booker.
+    team = models.ForeignKey("events.HackathonTeam", null=True, blank=True, on_delete=models.CASCADE)
     booked_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
     mentor_assignment = models.ForeignKey("events.EventRoleAssignment", on_delete=models.PROTECT)
     state = models.CharField(max_length=10, default="booked", choices=[(x, x) for x in ("booked", "cancelled")])
@@ -126,7 +130,9 @@ class OfficeHoursBooking(EventBound):
 
     class Meta(EventBound.Meta):
         constraints = [models.UniqueConstraint(fields=["slot", "team"],
-            condition=Q(state="booked"), name="office_hours_live_team_slot")]
+            condition=Q(state="booked"), name="office_hours_live_team_slot"),
+            models.UniqueConstraint(fields=["slot", "booked_by"], condition=Q(state="booked", team__isnull=True),
+                                    name="office_hours_live_drop_in_slot")]
 
 
 class OfficeHoursChange(ScopedPiiModelMixin, AppendOnly, EventBound):

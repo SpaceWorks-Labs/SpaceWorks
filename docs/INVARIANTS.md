@@ -972,6 +972,14 @@ holds canonical `ReportDefinition`s (module-gated, `report_scope.eligible_makers
 contract; **aggregate output groups by `makerspace_id` and never flattens cross-tenant data**. Per-makerspace
 report rows are gated by query-level scope (no per-row Python check → no N+1).
 
+**A report admits one primary action and, rarely, alternates.** `ReportDefinition.required_action` is
+the primary tenant action; `alternate_actions` (empty for almost every report) lists further actions
+that admit a viewer, read through `report_types.definition_actions` by the run gate
+(`report_subjects.report_action_allowed`), the catalog, the report-space resolution and saved views.
+A report with alternates serves several areas' people at once, so its builder MUST narrow rows to the
+viewer (it receives `actor`), and it stays tenant-local: unschedulable, never a deployment aggregate,
+and excluded from organization dashboards. Only the repairs family uses it today.
+
 **Every previewable report declares a valid F1 `chart_spec`.** Chart dimensions and values
 reference only its registered output fields. Money charts partition by currency and preserve
 negative corrections; reports without a currency field chart non-money measures. Detail
@@ -3281,6 +3289,13 @@ Release 2 lane L16 (#93, #94, #98, #100, #102, #103, #128 C-3/C-4/C-5/C-6b/C-9, 
 - **Per-parent switches and purge.** Off answers 404 and keeps every row. Purging `*.repairs` deletes
   that area's issues and their whole record; `*.issue_reporting` owns no rows; the technician
   directory is shared and goes only with a tenant purge.
+- **Reports (RP-5).** `repairs-work-orders` (open and overdue, a snapshot), `repairs-technician-workload`
+  (identity-bearing: contact names and staff first names only), `repairs-time-by-area` (average and median
+  hours from report to fix) and `repairs-parts-used`. They admit the Technician (`work_repairs`) and the
+  Machine, Inventory and Booking Managers (`alternate_actions`), and every builder narrows through this
+  package's authority (`repairs/report_scope.py`): a Technician sees only their own jobs (and covered
+  scheduled maintenance orders), a Machine Manager only their machine types. Tenant-local: unschedulable,
+  no deployment aggregate, excluded from organization dashboards.
 
 ## Machines and loans depth (release 2, lane L12; #76, #77, #94, #140–#142)
 

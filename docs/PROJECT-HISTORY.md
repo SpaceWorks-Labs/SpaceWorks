@@ -6,6 +6,10 @@
 
 ## Condensed changelog (newest first — full detail in `git log`)
 
+- **2026-11-05 -- release 2 gap RP-5, repairs reports.** A repairs/technician report family (open and
+  overdue work orders, technician workload, repair time per area, parts used), each narrowed to the
+  viewer through the L16 repairs authority; `ReportDefinition.alternate_actions` admits the area managers
+  beside the Technician. Tenant-local, unschedulable, organization-excluded.
 - **2026-11-03 -- release 2 S-C, IP blocking, Turnstile and breached passwords (#62, #66, #110c,
   #128 C-2, #157).** `LoginIPGuardMiddleware` on every sign-in view: superadmin allow/deny rules (allow
   wins, cached 60 s, deny-self guard) and automatic blocks of one source failing against many accounts

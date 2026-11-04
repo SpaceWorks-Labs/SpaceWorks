@@ -19,6 +19,19 @@ from apps.integrations.serializers_push import PushDeviceRegistrationSerializer,
 from apps.makerspaces.origin_scope import require_native_selected_makerspace
 
 
+PUSH_PAYLOAD_V3 = (
+    "Register this device's push token for the selected makerspace. Pushes then carry payload "
+    "v3 (#116): string `data` with `v`=\"3\", `event_id`, `makerspace_id`, `feature`, `event`, "
+    "optional `inbox_row_id` and `link` (all as in v2), plus `channel` (Android channel id, "
+    "e.g. `sw_loans`) and an optional `category`: `sw.open` (Open), `sw.inbox` (Open, Mark seen) "
+    "or `sw.inbox.snooze` (Open, Mark seen, Snooze). Mark seen calls `POST "
+    "/notifications/inbox/{makerspace_id}/{inbox_row_id}/read`; Snooze calls `.../snooze`. "
+    "Titles are at most 40 characters and bodies 120. Money and evidence notices carry no "
+    "category; no push action approves, pays, refunds or hands anything over. iOS `thread-id` "
+    "is the makerspace id (events: `<id>.events`). See docs/mobile/MOBILE-APP-PRD.md."
+)
+
+
 def _fingerprint(provider, environment, raw):
     key = settings.PUSH_TOKEN_HMAC_KEY
     if not key or len(key) < 32:
@@ -32,7 +45,7 @@ class PushDeviceListCreateView(APIView):
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "push_device_registration"
 
-    @extend_schema(tags=["Native push"], request=PushDeviceRegistrationSerializer,
+    @extend_schema(tags=["Native push"], request=PushDeviceRegistrationSerializer, description=PUSH_PAYLOAD_V3,
         responses={200: PushDeviceSerializer, 201: PushDeviceSerializer, **errors(400, 401, 403, 409, 429, 503)})
     def post(self, request):
         membership = require_native_selected_makerspace(request)

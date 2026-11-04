@@ -11,7 +11,7 @@ FIRST_PARTY_APP_LABELS = frozenset(
     inventory machines
     maintenance makerspaces notifications operations organizations payments payments_rail
     presence
-    printing procurement roadmap separability tenant_migration warranty""".split()
+    printing procurement roadmap separability tenant_migration tenant_rls warranty""".split()
 )
 THIRD_PARTY_MODEL_APP_LABELS = frozenset(
     {"admin", "auth", "axes", "contenttypes", "sessions", "token_blacklist"}

@@ -57,6 +57,11 @@ OBJECT_MUTATION_PARTICIPANTS = {
     "apps.machines.services.remove_document": "Runs inside the model-resolved machine document route.",
     "apps.machines.services.remove_image": "Runs inside the model-resolved machine image route.",
     "apps.machines.services.update_image": "Runs inside the model-resolved machine image route.",
+    # Release 2 L12: the one machine job flow's file staging, promotion and attachment.
+    "apps.machines.job_files.stage_job_file": "Runs inside the public-slug job upload route.",
+    "apps.machines.job_files.validate_job_object": "Runs inside finalize_file, under the job route's tenant transaction.",
+    "apps.machines.job_files.attach_job_file": "Runs inside the public-slug job submit and the member resubmit routes.",
+    "apps.machines.service_storage_attach._validated": "Runs inside finalize_file, under the request route's tenant transaction.",
     "apps.maintenance.services_documents.delete_log_document": "Runs inside the model-resolved maintenance document route.",
     "apps.maintenance.services_documents.finalize_log_document": "Runs inside the model-resolved maintenance document route.",
     "apps.makerspaces.lifecycle_storage._delete_public_image_keys": "Tenant purge is an express source-gate exclusion.",

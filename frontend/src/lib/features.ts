@@ -165,6 +165,7 @@ export const FEATURE_DEFINITIONS: readonly FeatureDefinition[] = [
   { key: "events.desk_collect", parent_module: "events", label: "Collect payment at the desk" },
   { key: "events.refund_override", parent_module: "events", label: "Per-event refund policy" },
   { key: "events.venue_fees", parent_module: "events", label: "Venue fees for hosting" },
+  { key: "mobile.watch_actions", parent_module: "mobile", label: "Watch-friendly push actions" },
 ];
 
 export function featureEnabled(features: Iterable<string>, key: string) {

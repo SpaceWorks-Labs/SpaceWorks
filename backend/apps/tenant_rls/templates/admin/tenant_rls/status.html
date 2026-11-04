@@ -1,0 +1,22 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+{% if state.mode == "enforce" %}
+<p><strong>Enforced.</strong> The database refuses a query that reads or writes another makerspace's rows inside a request or job bound to a space. Views still scope every query through the Auth module; this is the backstop.</p>
+{% elif state.mode == "report" %}
+<p class="errornote"><strong>Report-only.</strong> The app connects to the database as the role that owns the tables, so cross-space rows are only reported (audit action <code>rls.report_only_violation</code>), never refused. Connect the app as a separate narrow role (the bundled compose <code>spaceworks_app</code>) to enforce it.</p>
+{% elif state.mode == "inactive" %}
+<p class="errornote"><strong>Inactive.</strong> The app connects as a superuser or a BYPASSRLS role, which PostgreSQL never restricts. Connect it as a narrow role that owns nothing, holds no BYPASSRLS and is not a superuser.</p>
+{% else %}
+<p class="errornote"><strong>Off.</strong> <code>TENANT_RLS_MODE=off</code> is set on this deployment.</p>
+{% endif %}
+<p>Configured mode: <code>{{ state.configured }}</code>.{% if state.contract %} Runtime role <code>{{ state.contract.role }}</code>: superuser {{ state.contract.superuser|yesno }}, BYPASSRLS {{ state.contract.bypassrls|yesno }}, owns policed tables {{ state.contract.owns_scoped_tables|yesno }}.{% endif %}</p>
+<p>Makerspace-scoped tables policed: {{ scoped }}. Missing or stale policies: {{ gaps|length }}{% if gaps %} ({{ gaps|join:", " }}; run <code>manage.py rls_sync</code>){% endif %}.{% if unresolvable %} Uncompilable: {{ unresolvable|length }}.{% endif %}</p>
+
+<h2>Cross-space capabilities</h2>
+<table><thead><tr><th scope="col">Capability</th><th scope="col">Path</th></tr></thead>
+<tbody>{% for name, text in capabilities %}<tr><td><code>{{ name }}</code></td><td>{{ text }}</td></tr>{% endfor %}</tbody></table>
+<h2>Routes and tasks holding one</h2>
+<table><thead><tr><th scope="col">Route or task</th><th scope="col">Capability</th></tr></thead>
+<tbody>{% for name, cap in routes %}<tr><td><code>{{ name }}</code></td><td>{{ cap }}</td></tr>{% endfor %}
+{% for name, cap in tasks %}<tr><td><code>{{ name }}</code></td><td>{{ cap }}</td></tr>{% endfor %}</tbody></table>
+{% endblock %}

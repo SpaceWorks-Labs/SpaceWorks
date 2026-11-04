@@ -110,6 +110,14 @@ pointer/CAS adapter, never ambient shell state. The Cloud static-environment ini
 callbacks are not implemented yet, so the older Supabase path is suitable only for a non-H1 demo—not a
 supported restore topology.
 
+**Row-level security.** The database also refuses cross-space reads and writes as a backstop to the app's
+own scoping, but only when the app connects as a narrow role: one that owns no table, holds no BYPASSRLS and
+is not a superuser. The bundled compose and installer already run the app as `spaceworks_app` and migrations
+as the owner. On an external database where the app uses the owner role (common on free tiers that cannot
+create roles) RLS runs report-only and `/control/` > Row-level security says so; nothing stops working.
+`TENANT_RLS_MODE=off` turns it off entirely. Per-space key rotation and emergency re-key are on each
+makerspace's `/control/` Keys page.
+
 ### Split deployment: backend on your server, frontend on Netlify
 
 The installer can configure this split deployment: answer **No, API only** to the website question,

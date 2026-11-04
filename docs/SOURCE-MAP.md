@@ -401,8 +401,13 @@ registered fan-out, current source/device gates, fenced claims and transport. Th
 member_push_leases helper remains for legacy staff matrix use. `notifications/tasks.py`
 re-enters canonical envelope delivery for five-minute recovery; old enqueue IDs are inert.
 `notifications/inbox_scope.py` validates persisted requester-selection subjects.
-`integrations/push.py` shares one-device provider sending; `push_payload.py` builds v2
-data through the existing `mobile_link_contract.py` routing contract.
+`integrations/push.py` shares one-device provider sending; `push_payload.py` builds v3
+data (v2 keys unchanged, plus `channel`/`category`, 40/120-character title/body) through the
+existing `mobile_link_contract.py` routing contract. `push_categories.py` is the single source of
+truth for the watch-friendly presentation (L19, #116): feature -> Android channel and iOS
+(sub)thread, the three safe action sets, and the money/evidence events that never get buttons.
+`push_apns.py`/`push_fcm.py` place them on the wire (`aps.category`/`thread-id`; FCM
+`android.notification.channel_id`/`tag`, never `click_action`).
 `payments/failure_notifications.py` handles verified failed attempts without closing debt.
 `payments/services_mobile.py` coordinates native rail locks and vendor dispatch;
 `services_mobile_razorpay.py` validates and recovers native Orders through

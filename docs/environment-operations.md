@@ -19,6 +19,16 @@ See `docs/scoped-pii-encryption.md`.
 | `PII_MASTER_KEY_PREVIOUS` | `''` |  |
 | `PII_SEARCH_HASH_KEY` | `''` |  |
 
+## Row-level security and per-space keys (release 2, lane L8)
+
+See `docs/INVARIANTS.md` "Row-level security backstop" and "Per-space key rotation".
+
+| Variable | Default | Notes |
+|---|---|---|
+| `TENANT_RLS_MODE` | `'auto'` | `auto` enforces on a narrow runtime role and reports only on an owner role; `enforce`, `report` or `off` override it. The app never refuses to start. |
+| `TENANT_RLS_PROBE_ROLE` | `''` | Tests and the release regression only: bound statements `SET LOCAL ROLE` to this narrow role, so a superuser test run is forced on. Leave empty in production. |
+| `PUBLISHABLE_KEY_ROTATION_GRACE_HOURS` | `72` | How long a rotated public-site browser key keeps working before it is refused. |
+
 ## Audit attestation
 
 | Variable | Default | Notes |

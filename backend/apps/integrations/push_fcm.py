@@ -5,11 +5,28 @@ import jwt
 import requests
 from cryptography.fernet import InvalidToken
 
+from apps.integrations.push_payload import short_body, short_title
+
 
 class PushProviderError(Exception):
     def __init__(self, message, *, invalid_token=False):
         super().__init__(message)
         self.invalid_token = invalid_token
+
+
+def fcm_message(token, title, body, data):
+    """The FCM v1 message: watch-sized text; v3 adds the topic channel and a dedupe tag.
+
+    `click_action` is deliberately absent: a v2 app without a matching intent filter would
+    open nothing on tap. The action set travels in `data.category` instead.
+    """
+    message = {"token": token, "notification": {"title": short_title(title), "body": short_body(body)},
+               "data": data}
+    if data.get("channel"):
+        message["android"] = {"notification": {
+            "channel_id": data["channel"], "tag": f"sw-{data.get('event_id', '')}",
+        }}
+    return message
 
 
 def send_fcm(settings_row, token, title, body, data):
@@ -44,9 +61,7 @@ def send_fcm(settings_row, token, title, body, data):
         response = requests.post(
             f"https://fcm.googleapis.com/v1/projects/{required['project_id']}/messages:send",
             headers={"Authorization": f"Bearer {access_token}"},
-            json={"message": {"token": token, "notification": {
-                "title": title, "body": body,
-            }, "data": data}}, timeout=10,
+            json={"message": fcm_message(token, title, body, data)}, timeout=10,
         )
     except (requests.RequestException, ValueError, TypeError) as exc:
         raise PushProviderError("FCM request failed.") from exc

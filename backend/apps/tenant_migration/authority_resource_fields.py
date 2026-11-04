@@ -66,6 +66,7 @@ RESOURCE_AUTHORITY_FIELDS = {
     ("bookings.BookableSpace", "makerspace"): "Tenant boundary for booking authority; remapped to the target.",
     ("bookings.BookableSpace", "public_token"): "Source resource tokens reset to fresh target-local identifiers.",
     ("bookings.BookableSpace", "machine_type"): "Remapped type relation; never a staff authority scope.",
+    ("bookings.BookableSpace", "machine"): "L12 machine-time link; remapped to the target machine, never a staff authority scope.",
     ("bookings.BookableSpace", "is_active"): "Lifecycle state gates bookings; target authority decides who acts.",
     ("bookings.BookableSpace", "requester_notifications_enabled"): (
         "Portable notification preference; delivery still requires live target recipients."

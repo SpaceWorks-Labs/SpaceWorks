@@ -7,6 +7,8 @@ from rest_framework.exceptions import ValidationError
 from apps.encryption.blind_index import active_generation, bloom_bits, canonical_email, exact_hash, normalized_name
 from apps.encryption.crypto import is_envelope
 from apps.encryption.models import PiiBlindIndex
+from apps.encryption.search_keys import search_keys
+from django.db.models import Q
 from apps.encryption.registry import fields_for_label
 
 CANDIDATE_LIMIT = 250
@@ -28,14 +30,28 @@ def indexed_candidates(*, makerspace_id, model_label, field_name, term, exact=Fa
     filters = {"makerspace_id": makerspace_id, "model_label": model_label, "field_name": field_name, "search_generation": generation}
     if base_ids is not None:
         filters["object_id__in"] = base_ids
+    common = {"generation": generation.generation, "makerspace_id": makerspace_id,
+              "model_label": model_label, "field_name": field_name}
+    # Lane L8: a per-space key (and, during its re-index, the key it replaces) is consulted.
+    keys = search_keys(makerspace_id)
     if exact:
-        filters["exact_hash"] = exact_hash(term, generation=generation.generation, makerspace_id=makerspace_id, model_label=model_label, field_name=field_name)
-        return _limit(PiiBlindIndex.objects.filter(**filters).values_list("object_id", flat=True))
+        match = Q()
+        for version, key in keys:
+            owner = Q(space_key_version=version) if version else Q(space_key_version__isnull=True)
+            match |= owner & Q(exact_hash=exact_hash(term, key=key, **common))
+        return _limit(PiiBlindIndex.objects.filter(match, **filters).values_list("object_id", flat=True))
     normalized = normalized_name(term)
     if len(normalized) < 3:
         raise ValidationError({"search": "Enter at least three characters."})
-    bits = bloom_bits(term, generation=generation.generation, makerspace_id=makerspace_id, model_label=model_label, field_name=field_name)
-    qs = PiiBlindIndex.objects.filter(**filters).extra(where=["pii_bloom_contains(bloom_bits, %s)"], params=[bits])
+    clauses, params = [], []
+    for version, key in keys:
+        if version:
+            clauses.append("(space_key_version = %s AND pii_bloom_contains(bloom_bits, %s))")
+            params += [version, bloom_bits(term, key=key, **common)]
+        else:
+            clauses.append("(space_key_version IS NULL AND pii_bloom_contains(bloom_bits, %s))")
+            params.append(bloom_bits(term, key=key, **common))
+    qs = PiiBlindIndex.objects.filter(**filters).extra(where=["(" + " OR ".join(clauses) + ")"], params=params)
     return _limit(qs.values_list("object_id", flat=True))
 
 

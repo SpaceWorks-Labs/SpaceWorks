@@ -161,8 +161,101 @@ update:
 
 ### Watch-friendly notifications
 
-(Placeholder: lane L19 fills the #116 push contract here -- thread ids, the Open and Mark seen
-actions, Apple Watch and Wear OS presentation.)
+There is no separate watch app (#116). Phone notifications are written so they read well when
+Apple Watch and Wear OS mirror them, and they carry a few safe action buttons. Push payload **v3**
+(release 2, lane L19) adds this on top of v2 without changing any v2 key.
+
+**What a push carries (payload v3).** `data` has string values only:
+- the v2 keys, with the same names and meanings: `v` (now `"3"`), `event_id`, `makerspace_id`,
+  `feature`, `event`, optional `inbox_row_id`, optional `link`;
+- `channel`: the topic, always present (table below);
+- `category`: the action set, present only when buttons are allowed (rules below).
+
+Ignore keys you do not know. A missing `v` is v1, `"2"` is v2 and `"3"` is v3. An app built
+for v2 keeps working unchanged: it ignores `channel` and `category`. The visible text is:
+- **title**: the notice's own subject, at most **40 characters**;
+- **body**: at most **120 characters**, cut at a word boundary with an ellipsis;
+- staff room alerts keep the space name as their title.
+
+The space is shown through grouping, not the title (thread rules below).
+
+**Categories and actions.** Register these three categories at launch: on iOS as
+`UNNotificationCategory` identifiers, on Android as a map you look up `data.category` in. Show
+the buttons in this order.
+
+| `category` | Buttons (action identifiers) | When the server sends it |
+|---|---|---|
+| `sw.open` | `open` | The notice has no inbox row (staff room alerts, or the inbox is off) |
+| `sw.inbox` | `open`, `mark_seen` | The notice has an `inbox_row_id` |
+| `sw.inbox.snooze` | `open`, `mark_seen`, `snooze` | As above, and the space has inbox snooze (`notifications.inbox_snooze`) on |
+| *(absent)* | none; a tap still opens the app | Money and evidence notices (below), unknown events, or the space turned `mobile.watch_actions` off |
+
+What each action calls:
+- **`open`** is a foreground action. It does exactly what a tap does: select the makerspace,
+  open the supported `link`, else the inbox, else home. It never takes a decision.
+- **`mark_seen`** is a background action, so the app does not open. It calls
+  `POST /api/v1/notifications/inbox/{makerspace_id}/{inbox_row_id}/read` with the device grant's
+  bearer token. That is the same route and audit row as marking the message read in the app.
+  - If it fails, fall back to opening the app. Never retry it in a loop.
+  - 400 `feature` means the space has the inbox switched off for members. 404 means the row is
+    gone.
+- **`snooze`** is a background action. It calls
+  `POST /api/v1/notifications/inbox/{makerspace_id}/{inbox_row_id}/snooze` with
+  `{"until": <now + 1 hour, ISO 8601>}`, the same route the inbox's snooze uses.
+  - The server allows any time up to 30 days ahead. The app picks the hour, with no picker on a
+    watch.
+  - 404 means snooze was switched off since the push left: fall back to opening the app.
+
+Push is not a decision surface, exactly like chat. **No push action approves, rejects, pays,
+refunds, issues, returns or hands anything over.** Never add such a button on the app side
+either, even when a notice is about one of those things.
+- **Money notices** carry no `category`: every `payments` event, the loan charge events
+  (`deposit_raised`, `late_fee_raised`, `rental_raised`, `damage_charged`, `lost_charged`,
+  `fees_waived`) and the membership payment events (`renewal_due`, `renewal_failed`,
+  `awaiting_payment`, `payment_due`, `renewed`).
+- **Evidence notices** carry no `category` either: loan `issued`, `partially_returned`,
+  `returned`, `closed_with_issue`, `problem_report.filed`, and print `collected`.
+
+**Channels (Android) and threads (iOS).**
+
+| `channel` (Android `channel_id`) | Name to show | Features | iOS `thread-id` |
+|---|---|---|---|
+| `sw_loans` | Loans | `hardware_requests` | `<makerspace_id>` |
+| `sw_bookings` | Bookings | `bookings` | `<makerspace_id>` |
+| `sw_events` | Events | `events` | `<makerspace_id>.events` |
+| `sw_machines` | Machines and jobs | `printing`, `maintenance`, `devices` | `<makerspace_id>` |
+| `sw_membership` | Membership | `members`, `certifications`, `presence` | `<makerspace_id>` |
+| `sw_money` | Payments | `payments`, plus the money events above from any feature | `<makerspace_id>` |
+| `sw_space` | Space operations | `stock`, `api_access`, anything else | `<makerspace_id>` |
+
+- **iOS:** the server sets `aps.thread-id` and `aps.category`, so the system groups and draws
+  the buttons; Apple Watch mirrors both with no watch target. Events get their own subthread
+  because an event day can send dozens of notices that would bury loan and booking notices.
+- **Android:**
+  - Create the seven channels on first launch, with the names above. People mute a topic per
+    channel. An unknown or not-yet-created channel falls back to the manifest's default channel.
+  - The server sets `android.notification.channel_id` and `tag` = `sw-<event_id>`, so a
+    duplicate delivery replaces itself instead of stacking.
+  - The server does **not** set `click_action`: a tap opens the launcher activity exactly as in
+    v2.
+  - FCM notification messages cannot carry buttons. When the app is in the background, the
+    system draws the notice without buttons and Wear OS bridges it as is (no app code). When the
+    app receives the message itself, build the notification with the `category` buttons and
+    `setGroup("sw.<makerspace_id>")`. Wear OS bridges those buttons automatically.
+- Deduplicate by `event_id` and refetch the source APIs after any tap or action, exactly as in v2.
+
+**Switch.** `mobile.watch_actions` (under the `mobile` module, **on by default**, #128 C-27)
+decides only whether `category` is sent. Off: pushes still arrive, with the same channel,
+thread and short text, but no buttons. It is in the space's `enabled_features`, but the app
+never has to read it: the server simply omits `category`.
+
+**Minimum app version (C-6a).** `MIN_NATIVE_APP_VERSION_IOS` and `MIN_NATIVE_APP_VERSION_ANDROID`
+are `x.y.z` with numeric parts, compared part by part (`1.10.0` is newer than `1.9.3`; never
+compare as strings). They are published in `GET /config` as `native.min_app_version`. Below the
+minimum, device login, the staff step-up and refresh answer 426 `native_app_update_required`.
+Payload v3 does not depend on a minimum: v2 apps keep receiving every push. An operator who
+wants every device to show buttons raises the minimum to the first build that registers the
+categories.
 
 **Transport**
 - HTTPS only (allow `http://10.0.2.2` / `localhost` in debug builds only).
@@ -323,9 +416,10 @@ single-device logout and needs no selected makerspace or optional module.
   returns `{cells:[{feature,channel,enabled,daily_digest?,available,mandatory_events:string[]}]}`;
   PATCH takes `{feature,channel,enabled,daily_digest?}` and returns the same cells. Inbox rows are
   `{id,feature,event,title,summary,link,read_at:datetime|null,created_at}`.
-- Payload `data` has string values: `v:"2"`, `event_id`, `makerspace_id`, `feature`, `event`,
-  optional `inbox_row_id`, and optional allowlisted `link`. The title is the makerspace name;
-  iOS uses the makerspace thread ID. Ignore unknown keys and accept missing `v` as v1.
+- Payload `data` has string values: `v:"3"`, `event_id`, `makerspace_id`, `feature`, `event`,
+  optional `inbox_row_id`, optional allowlisted `link`, plus v3's `channel` and optional
+  `category` (see "Watch-friendly notifications" above for titles, threads, channels and the
+  safe actions). Ignore unknown keys and accept missing `v` as v1.
   Canonical `event_id` is stable for the envelope intent; inbox ID is optional. Deduplicate by
   `event_id`; tapping selects an authorized makerspace and opens the supported link, inbox if
   available, or home. Never navigate a staff grant into another tenant.
@@ -619,7 +713,7 @@ an older 2026-10-17 schema is not the reconciled contract.
 | A1 Sign-in | Attestation, password + MFA, Google/Apple/OIDC, token storage, refresh, logout, makerspace switcher, `/auth/me`, superadmin refusal screen, min-version gate | available - password/social/phone, attestation, native config and staff authority |
 | A2 Member — read | Inventory browse/search/detail, my requests & loans with due dates, bookings, events, member dashboard/activity + my-usage, membership card, inbox (read/unread) | none |
 | A3 Member — act | Submit hardware request, renew loan, book, register/cancel event + ticket QR, profile edit, notification preferences, phone verification and SMS/WhatsApp consent | none |
-| A4 Push + deep links | Device registration, notification tap routing, universal/app links | available - member/staff push and association files; owner configures hosts |
+| A4 Push + deep links | Device registration, notification tap routing, universal/app links, watch-friendly categories and channels (payload v3, §7) | available - member/staff push and association files; owner configures hosts |
 | A5 Payments | Payments list, Stripe PaymentSheet, Razorpay Checkout, receipts/documents | available - Stripe PaymentSheet and Razorpay Orders; server provisioning in §7 |
 | A6 Staff | Pending requests accept/reject, QR scanner, issue (QR + photo), return (photo + remark), direct handout, booking approvals, event check-in, role dashboard and authorized analytics | available - native staff grants and scoped APIs |
 | A7 Account + store readiness | Device sessions list/revoke, leave/cancel membership, **delete account** (blocker list → fix links → re-auth → confirm, §7), privacy labels, accessibility pass, localisation-ready strings | available - deletion, identity-only restore and logout-all |
@@ -714,3 +808,14 @@ For later phases, reuse the same prompt with the phase name, e.g. "Implement **p
 Superadmin/control-plane features, organization-derived native staff authority (staff use a
 staff step-up grant of their own person account, fixed to one makerspace where they hold a staff role), kiosk and printer device protocols, offline mode beyond showing cached data read-only,
 tablets-specific layouts, GitHub sign-in.
+
+Event programme desks are web-only for now (verified by X57, lane L19): judging, the mentor desk,
+volunteer management and check-in by an on-duty volunteer, and event crew.
+- Their staff routes refuse a member grant: 403 "Native member sessions cannot use delegated
+  authority".
+- A staff grant can reach them only for a person who also holds a makerspace staff role.
+- A person who only judges, mentors or volunteers for one event has no native path. `/auth/me`
+  on a device does not list event grants.
+- Do not build these screens until the server publishes a native event-role contract. The
+  participant side works today on a member grant: raising help requests, office hours, shift
+  sign-up and self check-in/out, and role applications.

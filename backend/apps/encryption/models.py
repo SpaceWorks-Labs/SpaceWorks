@@ -2,6 +2,7 @@ from django.db import connection, models
 from django.db.models import Q
 from django.core.exceptions import ValidationError
 from .account_models import AccountPiiKey, PiiAccountWriteFence  # noqa: F401
+from .models_rotation import KeyRotationJob, MakerspaceSearchKey, RetiredPublishableKey  # noqa: F401
 
 
 class EncryptionKeyQuerySet(models.QuerySet):
@@ -94,6 +95,8 @@ class PiiBlindIndex(models.Model):
     bloom_bits = models.BinaryField(max_length=256)
     exact_hash = models.BinaryField(max_length=32, null=True, blank=True)
     algorithm_version = models.PositiveSmallIntegerField(default=1)
+    # Lane L8: the per-space search key version the row was written with; null = the global key.
+    space_key_version = models.PositiveIntegerField(null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:

@@ -115,3 +115,6 @@ from .function_catalog_unified_accounts import UNIFIED_ACCOUNT_FUNCTIONS  # noqa
 APPLICATION_FUNCTIONS = APPLICATION_FUNCTIONS | UNIFIED_ACCOUNT_FUNCTIONS
 from .function_catalog_release2 import RELEASE2_FUNCTIONS  # noqa: E402
 APPLICATION_FUNCTIONS = APPLICATION_FUNCTIONS | RELEASE2_FUNCTIONS
+# --- lane L8: the row-level security policy functions every generated policy calls.
+from apps.tenant_rls.sql import FUNCTION_NAMES as _RLS_FUNCTIONS  # noqa: E402
+APPLICATION_FUNCTIONS = APPLICATION_FUNCTIONS | frozenset(_RLS_FUNCTIONS)

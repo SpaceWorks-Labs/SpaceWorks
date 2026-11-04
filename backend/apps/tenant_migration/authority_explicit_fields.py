@@ -72,3 +72,10 @@ EXPLICIT_AUTHORITY_FIELDS = {
     # membership's join/manual/import label is provenance and grants no authority.
     ("makerspaces.MakerspaceMembership", "source"): "Join-path provenance label; grants no target authority.",
 }
+
+# Release 2 L12: per-type job settings travel as the space's own configuration (catalog_l12).
+from .catalog_l12 import POLICY_FIELDS as _L12_POLICY_FIELDS  # noqa: E402
+EXPLICIT_AUTHORITY_FIELDS.update({
+    ("machines.MakerspaceMachineTypePolicy", name): "Portable per-type job setting; grants no staff authority."
+    for name in _L12_POLICY_FIELDS.split()
+})

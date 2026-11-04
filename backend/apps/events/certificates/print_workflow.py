@@ -143,15 +143,19 @@ def require_prepared_photo(job, registration_id, presentation_id, version, photo
 
 
 def snapshots(job):
+    from apps.events.contributions.crew_reads import crew_labels
     result = []
-    for qr in job.resources.filter(kind="qr").select_related("registration"):
+    qrs = list(job.resources.filter(kind="qr").select_related("registration"))
+    crew = crew_labels(job.event, [qr.registration_id for qr in qrs])
+    for qr in qrs:
         registration = qr.registration
         photo = job.resources.filter(kind="photo", registration=registration, bound_at__isnull=False).first()
         logo = job.resources.filter(kind="logo", registration=registration, bound_at__isnull=False).first()
         result.append(BadgeSnapshot(registration_id=registration.pk, event_id=job.event_id,
             member_id=registration.member_id, authorized_fields=(("name", registration.name),
                 ("event", job.event.title), ("eventDate", job.event.starts_at.strftime("%d %B %Y")),
-                ("organisation", job.event.makerspace.name), ("issueDate", job.created_at.strftime("%d %B %Y"))), template_revision=str(job.template_revision_id),
+                ("organisation", job.event.makerspace.name), ("issueDate", job.created_at.strftime("%d %B %Y")),
+                ("crewRole", crew.get(registration.pk, ""))), template_revision=str(job.template_revision_id),
             stock=job.stock, logo_artwork_revision=str(logo.pk) if logo else None, credential_generation=qr.credential_generation,
             credential_render_handle=qr.pk, presentation_id=photo.presentation_id if photo else None,
             presentation_version=photo.presentation_version if photo else None,

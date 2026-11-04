@@ -8,7 +8,7 @@ from uuid import UUID, uuid5, NAMESPACE_URL
 from rest_framework.exceptions import ValidationError
 from apps.operations.printable_layout import number
 
-TAGS = frozenset(("name", "event", "eventDate", "organisation", "issueDate"))
+TAGS = frozenset(("name", "event", "eventDate", "organisation", "issueDate", "crewRole"))
 COLOURS = {"ink": "#142C2A", "teal": "#006E63", "orange": "#FF7447", "citron": "#DFFF8F",
            "sky": "#B5CDFF", "yellow": "#FFD447", "cream": "#FFF4E8"}
 SLOTS = {"logo": "logo", "photo": "selected_member_photo", "certificate_qr": "certificate_verification_qr",

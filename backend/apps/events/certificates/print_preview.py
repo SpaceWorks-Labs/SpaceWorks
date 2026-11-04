@@ -44,7 +44,7 @@ class BadgePreviewView(APIView):
         snapshot = BadgeSnapshot(registration_id=0, event_id=event.pk, member_id=None,
             authorized_fields=(("name", "Sample participant"), ("event", "Sample event"),
                                ("eventDate", "18 October 2026"), ("organisation", "Space Works"),
-                               ("issueDate", "18 October 2026")),
+                               ("issueDate", "18 October 2026"), ("crewRole", "Crew")),
             template_revision="preview", stock=values["stock"], logo_artwork_revision=None,
             credential_generation=None, credential_render_handle=0, presentation_id=None,
             presentation_version=None, source_profile_id=None, source_avatar_revision=None,

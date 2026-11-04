@@ -50,7 +50,7 @@ def _text(value):
     return value
 
 
-def _field_values(event, registration, selectors):
+def _field_values(event, registration, selectors, crew=None):
     labels = {str(row["id"]): row["label"] for row in (event.custom_form or [])}
     answers = _answer_values(registration)
     date_time = timezone.localtime(event.starts_at, timezone=ZoneInfo(event.timezone_name))
@@ -62,6 +62,7 @@ def _field_values(event, registration, selectors):
         "registration_number": ("Registration", str(registration.pk)),
         "email": ("Email", registration.email),
         "phone": ("Phone", registration.phone),
+        "crew_role": ("Crew", (crew or {}).get(registration.pk, "")),
     }
     output = []
     for selector in selectors:
@@ -140,10 +141,12 @@ def prepare_badges(event, registration_ids, *, actor, template_override=None,
         raise EventInvalidTransition("A selected registration is not eligible for a badge.")
     if not manager and any(row.status != EventRegistration.Status.ATTENDED for row in registrations):
         raise PermissionDenied()
+    from apps.events.contributions.crew_reads import crew_labels
+    crew = crew_labels(locked, [row.pk for row in registrations]) if "crew_role" in normalized["fields"] else {}
     snapshots = tuple(BadgeSnapshot(
         registration_id=registration.pk,
         event_id=locked.pk, member_id=registration.member_id,
-        authorized_fields=_field_values(locked, registration, normalized["fields"]),
+        authorized_fields=_field_values(locked, registration, normalized["fields"], crew),
         template_revision=hashlib.sha256(json.dumps(normalized, sort_keys=True).encode()).hexdigest(),
         stock="legacy-sheet", logo_artwork_revision=None, credential_generation=None,
         credential_render_handle=None, presentation_id=None, presentation_version=None,

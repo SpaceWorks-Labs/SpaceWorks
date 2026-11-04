@@ -34,7 +34,7 @@ def merge_values(certificate):
             "eventDate": certificate.event_starts_at.astimezone(ZoneInfo(getattr(certificate, "event_timezone_name", "UTC"))).strftime("%d %B %Y"),
             "organisation": certificate.issuer_name,
             "issueDate": certificate.issued_at.strftime("%d %B %Y"),
-            "certificate_id": str(certificate.serial)}
+            "certificate_id": str(certificate.serial), "crewRole": ""}
 
 
 def render_layers(canvas, certificate, *, preflight=False):

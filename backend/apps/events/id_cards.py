@@ -32,6 +32,10 @@ def has_published_design(event):
 
 
 def _role(event, registration):
+    from .contributions.crew_reads import crew_labels
+    crew = crew_labels(event, [registration.pk]).get(registration.pk)
+    if crew is not None:
+        return EventIdCard.Role.MENTOR if crew == "Mentor" else EventIdCard.Role.CREW
     try:
         from .speaker_identity_models import EventSpeaker
         if registration.member_id and EventSpeaker.objects.filter(event=event, user_id=registration.member_id).exists():

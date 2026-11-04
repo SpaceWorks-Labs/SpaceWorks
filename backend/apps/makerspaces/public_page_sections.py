@@ -128,4 +128,6 @@ class Location(Titled):
 PAYLOADS = {"about": About, "gallery": Gallery, "team": Team, "testimonials": Testimonials,
             "links": Links, "stats": Stats, "location": Location, "upcoming_events": Titled,
             "linked_makerspaces": Titled, "organization_events": Titled,
-            "functional_content": StrictSerializer, "membership_plans": Titled}
+            "functional_content": StrictSerializer, "membership_plans": Titled,
+            # Release 2 L18: the opt-in sponsor wall (live public sponsor fields, `finance.sponsors`).
+            "sponsors": Titled}

@@ -1,6 +1,7 @@
 import { isProgrammePath } from "./features/events/programme/routeNames";
 import { isEventAddonPath } from "./features/events/eventAddons/routeNames";
 import { isCardPath } from "./features/cards/routeNames";
+import { isDonationPath } from "./features/donations/routeNames";
 import { lazy, Suspense, type ReactNode } from "react";
 import { Navigate, Route, Routes, useLocation, useParams, useSearchParams } from "react-router-dom";
 import { MakerspacePage } from "./features/public/MakerspacePage";
@@ -120,6 +121,7 @@ function MemberTabRoute() {
 const ProgrammeRoutes = lazy(() => import("./features/events/programme/ProgrammeRoutes").then(m => ({ default: m.ProgrammeRoutes })));
 const CardRoutes = lazy(() => import("./features/cards/CardRoutes").then(m => ({ default: m.CardRoutes })));
 const MemberEventAddonRoutes = lazy(() => import("./features/events/eventAddons/MemberEventAddonRoutes").then(m => ({ default: m.MemberEventAddonRoutes })));
+const DonationRoutes = lazy(() => import("./features/donations/DonationRoutes").then(m => ({ default: m.DonationRoutes })));
 
 export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landing: ReactNode }) {
   const location = useLocation();
@@ -130,6 +132,8 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
     routes = <MemberEventAddonRoutes />;
   } else if (isCardPath(location.pathname)) {
     routes = <CardRoutes />;
+  } else if (isDonationPath(location.pathname)) {
+    routes = <DonationRoutes />;
   } else if (/^\/(?:m\/[^/]+\/)?admin\/reset-password\/?$/.test(location.pathname)) {
     routes = <Routes>
       <Route path="/admin/reset-password" element={<ConsolePasswordResetPage />} />

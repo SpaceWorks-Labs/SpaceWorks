@@ -12,6 +12,8 @@ export type SectionPayloads = {
   upcoming_events: Api.Titled; stats: Api.Stats; testimonials: Api.Testimonials; links: Api.Links;
   location: Api.Location; linked_makerspaces: Api.Titled; organization_events: Api.Titled;
   functional_content: Record<string, never>; membership_plans: Api.Titled;
+  // Release 2 L18: the opt-in sponsor wall (derived live from the space's public sponsor rows).
+  sponsors: Api.Titled;
 };
 export type SectionType = keyof SectionPayloads;
 export type PageSection = { [K in SectionType]: { id: string; type: K; enabled: boolean; payload: SectionPayloads[K] } }[SectionType];
@@ -22,7 +24,7 @@ export type EditorState = Omit<Api.EditorState, "document"> & { document: PageDo
 export type Collection<T> = Pick<Api.OrganizationSpaceList, "count" | "next" | "previous"> & { results: T[] };
 export type SpaceCard = Api.SpaceCard;
 export type PublicEventCard = Api.EventCard | Api.ArchiveCard | Api.PublicOrganizationEvent | Api.OrganizationArchiveEvent;
-export type PublicPageSection = Api.ProjectedPublicPageSection;
+export type PublicPageSection = Api.ProjectedPublicPageSection | import("./PublicSponsorCards").SponsorWallSection;
 export type PublicSectionPayloads = { [K in SectionType]: Extract<PublicPageSection, { type: K }>["payload"] };
 export type PublicPageProjection = Api.PublicPageProjection;
 export type PreviewProjection = Api.PreviewProjection;

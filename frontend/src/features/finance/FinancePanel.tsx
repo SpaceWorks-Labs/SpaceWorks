@@ -10,6 +10,8 @@ import { MoneyQueues } from "./MoneyQueues";
 import { FlagsSection, DisputesSection } from "./FlagsDisputes";
 import { EventMoneySection } from "./EventMoneySection";
 import { financeApi, financeKeys } from "./financeApi";
+import { DonationsSection } from "../staff/sponsors/DonationsSection";
+import { SponsorsSection } from "../staff/sponsors/SponsorsSection";
 
 type Space = { id: number; name?: string; enabled_modules?: string[]; enabled_features?: string[] };
 
@@ -32,6 +34,9 @@ export function FinancePanel({ makerspace, canViewFinance, canRecordPayment }: {
       ? [{ key: "queues", label: "Offline payments" }] : []),
     ...(canViewFinance && capabilityOn(makerspace, "billing.capture_flags") ? [{ key: "flags", label: "Unexpected payments" }] : []),
     ...(canViewFinance && capabilityOn(makerspace, "billing.disputes") ? [{ key: "disputes", label: "Disputes" }] : []),
+    // Lane L18: gifts and sponsors are the ledger's `donations` domain, read by finance staff only.
+    ...(canViewFinance && capabilityOn(makerspace, "finance.donations") ? [{ key: "donations", label: "Donations" }] : []),
+    ...(canViewFinance && capabilityOn(makerspace, "finance.sponsors") ? [{ key: "sponsors", label: "Sponsors" }] : []),
   ];
   const [chosen, setChosen] = useState("overview");
   const active = sections.some(section => section.key === chosen) ? chosen : sections[0]?.key;
@@ -55,5 +60,7 @@ export function FinancePanel({ makerspace, canViewFinance, canRecordPayment }: {
       claimsOn={capabilityOn(makerspace, "billing.offline_claims")} /> : null}
     {active === "flags" ? <FlagsSection makerspaceId={makerspace.id} /> : null}
     {active === "disputes" ? <DisputesSection makerspaceId={makerspace.id} /> : null}
+    {active === "donations" ? <DonationsSection makerspace={makerspace} canRecordPayment={canRecordPayment} /> : null}
+    {active === "sponsors" ? <SponsorsSection makerspaceId={makerspace.id} canRecordPayment={canRecordPayment} /> : null}
   </section>;
 }

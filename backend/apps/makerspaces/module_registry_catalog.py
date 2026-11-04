@@ -228,3 +228,6 @@ MODULES = (
 
 from .module_registry_p2_presence import MODULES as PRESENCE_MODULES
 MODULES += PRESENCE_MODULES
+# Release-2 lane L25 (#163B): per-space Metabase analytics.
+from .module_registry_r2_l25 import MODULES as R2_L25_MODULES  # noqa: E402
+MODULES += R2_L25_MODULES

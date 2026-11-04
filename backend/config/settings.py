@@ -195,6 +195,8 @@ INSTALLED_APPS = [
     "apps.id_programmes",
     # Lane L8 (#75d/#120): the Postgres row-level-security backstop (core, never tombstoned).
     "apps.tenant_rls",
+    # Lane L25 (#163B): per-space read-only analytics logins and Metabase embedding.
+    "apps.analytics",
     # Must stay LAST. Django calls ready() in this order, so being last is what
     # guarantees every other app has registered before finalize() freezes the
     # separability registries.

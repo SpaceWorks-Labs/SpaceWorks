@@ -28,6 +28,7 @@ ACTION_MODULES = {
     "membership": "membership", "presence": "presence", "notification": "notifications", "email": "email",
     "payment": "payments", "device": "mobile", "devices": "devices",
     "report": "reports",
+    "analytics": "analytics",
 }
 
 

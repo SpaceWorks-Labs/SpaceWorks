@@ -134,6 +134,8 @@ from .classification_r2_l11 import OMITTED_MODELS as R2_L11_OMITTED  # noqa: E40
 OMITTED_MODELS.update(R2_L11_OMITTED)
 from .classification_r2_l8 import OMITTED_MODELS as R2_L8_OMITTED  # noqa: E402
 OMITTED_MODELS.update(R2_L8_OMITTED)
+from .classification_r2_l25 import OMITTED_MODELS as R2_L25_OMITTED  # noqa: E402
+OMITTED_MODELS.update(R2_L25_OMITTED)
 EXPORTED_MODELS = frozenset(EXPORTED_MODEL_FIELDS)
 
 NOT_TENANT_MODELS = {

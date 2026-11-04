@@ -16,6 +16,10 @@ Space Manager includes `manage_members`, `view_finance` and `record_payment`. Th
 Membership Coordinator, Treasurer or front-desk cashier built-ins; old custom roles are mapped by
 migration 0089's raw-grant subset rules and can lose authority that no built-in represents.
 Handover includes job collection and evidence but does not independently grant cash recording.
+`view_analytics` (release 2 L25, #163B) opens the space's embedded Metabase dashboards. The Space
+Manager holds it through `manage_makerspace`; it is also organization-grantable. Creating, rotating
+or revoking the analytics database login and pasting the Metabase secret stay with the space's own
+Space Manager and the superadmin (`rbac.is_space_manager_identity`), never a delegated grant.
 Machine Manager reach is assigned per person by type; combining roles unions actions without
 widening that machine reach.
 

@@ -923,6 +923,20 @@ Login security S-C: `accounts/ip_rules.py` (platform allow/deny rules, 60 s cach
 `password_breach.py` (the HIBP validator), `staff_network.py` (the per-space staff IP allow-list at the staff
 surface check), `admin_ip_access.py` (the `/control/` *IP rules* and *Automatic blocks* screens),
 `login_methods_status.py`, `tasks_login_security.py` (retention) and `management/commands/login_security.py`.
+Login security S-D (frontend): `features/auth/MfaFlow.tsx` is the second step, its factor picker driven by
+the challenge's `purpose` and `factors[]` (`mfaFactors.ts`; `MfaEmailCodeResend.tsx` resends an emailed code,
+two at most); `features/auth/passkeys/` holds the browser ceremony (`webauthn.ts`, `@simplewebauthn/browser`),
+passwordless sign-in with autofill (`usePasskeySignIn.ts`, `PasskeySignInButton.tsx` on `MemberAuthPanel`)
+and the passkey list on the account security page (`MfaAccountPage.tsx`, with `KnownDevicesList.tsx`);
+`ReauthenticationDialog.tsx` offers a passkey. `NotMePage.tsx` serves `/security/not-me#token=...`: it drops the
+fragment, sets `no-referrer` and posts only on the button. `components/auth/useTurnstileGate.tsx` imports the
+Turnstile widget only after a `captcha_required` refusal and only when `/api/v1/config` has a site key;
+`lib/api/authErrorCopy.ts` turns every login-security code into plain words. `components/shell/MfaReadinessBanner.tsx`
+is the 3-day grace banner (`StaffGateScreens.tsx`), and `features/staff/security/` the per-space security rows
+(number, choice and network-list editors with lock-floor badges). Member help, in the screens' own words: a
+passkey signs you in with your fingerprint, face or device PIN and only works on this website; an unusual
+sign-in emails a 6-digit code that works once for 10 minutes; "This wasn't me" signs you out everywhere,
+forgets remembered devices and turns your password off, but keeps your passkeys and authenticator.
 Staff roles on people (U-B): `staff_account_policy.py` is the one authority policy (superadmin-only
 Space Manager rule, no-self, last manager, tenant gate and quota codes, `StaffRoleRefused`);
 `staff_account_services.py` grants (to community members) and changes roles and machine scopes over

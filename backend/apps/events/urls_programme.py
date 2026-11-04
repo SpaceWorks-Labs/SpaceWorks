@@ -31,7 +31,13 @@ from .contributions.urls_completion import ADMIN, MEMBER
 from .mentoring.urls_completion import urlpatterns as mentoring_completion
 from .programme.urls import admin_patterns, series_patterns
 
+from .urls_l21a import ADMIN as L21A_ADMIN, MEMBER as L21A_MEMBER, PUBLIC as L21A_PUBLIC
+
 urlpatterns += [
+    # Lane L21a: review stages, participation switches, attendance, re-accept, crew, check-in lists.
+    path("admin/", include(L21A_ADMIN)),
+    path("member/", include(L21A_MEMBER)),
+    path("public/", include(L21A_PUBLIC)),
     path("admin/", include(ADMIN)),
     path("member/", include(MEMBER)),
     path("admin/", include(mentoring_completion)),

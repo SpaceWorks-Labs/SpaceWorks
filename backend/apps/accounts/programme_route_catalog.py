@@ -246,4 +246,8 @@ ROUTES = (
     ('admin-platform-insights', ('GET', 'HEAD'), 'account'),
 )
 
+# Release 2 L21a: its routes and their explicit native-app decisions (#173) live in their own module.
+from .programme_route_catalog_l21a import L21A_ROUTES, NATIVE_DECISIONS, NATIVE_WEB_ONLY  # noqa: E402,F401
+ROUTES += L21A_ROUTES
+
 BY_NAME = {name: (methods, target) for name, methods, target in ROUTES}

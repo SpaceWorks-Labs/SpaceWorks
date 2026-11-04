@@ -11,7 +11,7 @@ def with_public_tickets(events):
     tickets = EventTicketType.objects.filter(is_active=True).annotate(
         confirmed_count=Count(
             "eventregistration", filter=Q(
-                eventregistration__status__in=CONFIRMED_STATUSES,
+                eventregistration__status__in=CONFIRMED_STATUSES, eventregistration__is_crew=False,
                 eventregistration__event_id=F("event_id"),
             ),
         ),

@@ -1,10 +1,23 @@
 import { useState, type ReactNode } from "react";
 import { useMutation } from "@tanstack/react-query";
+import { Fingerprint, KeyRound, MailCheck, Smartphone, type LucideIcon } from "lucide-react";
+import { authErrorMessage } from "../../lib/api/authErrorCopy";
 import { AuthStepCard } from "./AuthStepCard";
+import { MfaEmailCodeResend } from "./MfaEmailCodeResend";
+import { MfaRecoveryCodesStep } from "./MfaRecoveryCodesStep";
+import { SWITCH_LABEL, stepCopy, usableFactors } from "./mfaFactors";
+import { mfaRequest, type Enrollment, type MfaChallenge, type MfaCompleted, type MfaFactor } from "./mfaApi";
+import { verifyPasskeyFactor } from "./passkeys/passkeyApi";
+import { isPasskeyCancelled, passkeysSupported } from "./passkeys/webauthn";
 
-import { mfaRequest, type Enrollment, type MfaChallenge, type MfaCompleted } from "./mfaApi";
+const FACTOR_ICONS: Record<MfaFactor, LucideIcon> = { totp: Smartphone, passkey: Fingerprint, recovery: KeyRound, email_code: MailCheck };
 
-export function MfaFlow({ challenge, onComplete, onCancel, embedded = false, eyebrow, extra }: {
+/**
+ * The second step of a sign-in: the factor picker is driven by the challenge's `factors[]`
+ * (authenticator, passkey, recovery code, emailed code) and its `purpose` (`risk` explains
+ * the unusual-sign-in check). An `enrollment_required` challenge sets up an authenticator.
+ */
+export function MfaFlow({ challenge, onComplete, onCancel, embedded = false, eyebrow, extra, turnstileSiteKey }: {
   challenge: MfaChallenge;
   onComplete: (result: MfaCompleted) => void;
   onCancel: () => void;
@@ -13,9 +26,12 @@ export function MfaFlow({ challenge, onComplete, onCancel, embedded = false, eye
   /** The host flow's context (e.g. an invitation) and its way out, kept visible through the code step. */
   eyebrow?: string;
   extra?: ReactNode;
+  /** `/api/v1/config`'s Turnstile key, for resending an emailed code behind a CAPTCHA. */
+  turnstileSiteKey?: string;
 }) {
+  const factors = usableFactors(challenge, passkeysSupported());
+  const [factor, setFactor] = useState<MfaFactor>(factors[0]);
   const [code, setCode] = useState("");
-  const [usingRecovery, setUsingRecovery] = useState(false);
   const [copyNotice, setCopyNotice] = useState("");
   async function copy(value: string) {
     try { await navigator.clipboard.writeText(value); setCopyNotice("Copied. Store it somewhere secure."); }
@@ -23,33 +39,31 @@ export function MfaFlow({ challenge, onComplete, onCancel, embedded = false, eye
   }
   const [enrollment, setEnrollment] = useState<Enrollment>();
   const [completed, setCompleted] = useState<MfaCompleted>();
+  const finish = (result: MfaCompleted) => result.recovery_codes ? setCompleted(result) : onComplete(result);
   const enroll = useMutation({
     mutationFn: () => mfaRequest<Enrollment>("/auth/mfa/enroll", { challenge: challenge.challenge }),
     onSuccess: setEnrollment,
   });
   const verify = useMutation({
+    // A challenge that names its factors (S-B) is answered with the chosen one; an older one infers it.
     mutationFn: () => mfaRequest<MfaCompleted>(challenge.enrollment_required ? "/auth/mfa/confirm" : "/auth/mfa/verify",
-      { challenge: challenge.challenge, code }),
-    onSuccess: (result) => result.recovery_codes ? setCompleted(result) : onComplete(result),
+      challenge.factors && !challenge.enrollment_required ? { challenge: challenge.challenge, code, factor } : { challenge: challenge.challenge, code }),
+    onSuccess: finish,
   });
-  if (completed) return <AuthStepCard embedded={embedded} eyebrow={eyebrow} state={{ status: "ready" }}
-    media={{ icon: "CheckCircle", tone: "success" }} title="Save your recovery codes"
-    body="Each code works once. Save these somewhere secure; they will not be shown again."
-    primary={{ label: "I saved my codes. Continue", onClick: () => onComplete(completed) }} footer={extra}
-    content={<div className="grid gap-4">
-      <ul className="grid grid-cols-2 gap-2">{completed.recovery_codes?.map((value) => <li className="min-w-0 break-all rounded-control border border-line bg-surface p-3 code-text text-sm" key={value}>{value}</li>)}</ul>
-      <button type="button" className="desk-button" onClick={() => void copy(completed.recovery_codes?.join("\n") ?? "")}>Copy all codes</button>
-      {copyNotice ? <p role="status" className="text-sm text-muted">{copyNotice}</p> : null}
-      <a className="desk-button" download="space-works-recovery-codes.txt" href={`data:text/plain;charset=utf-8,${encodeURIComponent(completed.recovery_codes?.join("\n") ?? "")}`}>Download codes</a>
-    </div>} />;
-  const error = enroll.error ?? verify.error;
+  const passkey = useMutation({ mutationFn: () => verifyPasskeyFactor<MfaCompleted>(challenge.challenge), onSuccess: finish });
+  if (completed) return <MfaRecoveryCodesStep completed={completed} embedded={embedded} eyebrow={eyebrow} extra={extra}
+    onContinue={() => onComplete(completed)} />;
+  const failure = enroll.error ?? verify.error ?? (isPasskeyCancelled(passkey.error) ? null : passkey.error);
+  const usingPasskey = factor === "passkey" && !challenge.enrollment_required;
   const canVerify = !challenge.enrollment_required || Boolean(enrollment);
-  return <AuthStepCard embedded={embedded} eyebrow={eyebrow} state={{ status: "ready" }} media={{ icon: "CheckCircle", tone: "accent" }}
-    title={challenge.enrollment_required ? "Set up two-step sign-in" : usingRecovery ? "Use a recovery code" : "Enter your 6-digit code"}
-    body={challenge.enrollment_required ? "Add Space Works to your authenticator app to secure this account."
-      : "Enter the code from your authenticator app, or one of your recovery codes."}
-    primary={canVerify ? { label: "Verify", pending: verify.isPending,
-      onClick: () => (document.getElementById("mfa-verify-form") as HTMLFormElement)?.requestSubmit() }
+  const copyText = stepCopy(challenge, factor);
+  const choose = (next: MfaFactor) => { setFactor(next); setCode(""); verify.reset(); passkey.reset(); };
+  return <AuthStepCard embedded={embedded} eyebrow={eyebrow} state={{ status: "ready" }}
+    media={{ icon: challenge.purpose === "risk" ? "ShieldAlert" : "ShieldCheck", tone: "accent" }}
+    title={copyText.title} body={copyText.body}
+    primary={usingPasskey ? { label: "Use your passkey", pending: passkey.isPending, pendingLabel: "Waiting for your passkey…", onClick: () => passkey.mutate() }
+      : canVerify ? { label: "Verify", pending: verify.isPending,
+        onClick: () => (document.getElementById("mfa-verify-form") as HTMLFormElement)?.requestSubmit() }
       : { label: "Show enrollment QR and key", pending: enroll.isPending, onClick: () => enroll.mutate() }}
     escape={{ label: "Back to sign-in", onClick: onCancel }}
     footer={<><p>{`This sign-in expires in ${Math.ceil(challenge.expires_in / 60)} minutes. Restart sign-in if it expires.`}</p>{extra ? <div className="mt-4">{extra}</div> : null}</>}
@@ -61,15 +75,22 @@ export function MfaFlow({ challenge, onComplete, onCancel, embedded = false, eye
           <button type="button" className="desk-button mt-2" onClick={() => void copy(enrollment.secret)}>Copy key</button>
         </details>
       </> : null}
-      {canVerify ? <form id="mfa-verify-form" className="grid gap-3" onSubmit={(event) => { event.preventDefault(); if (!verify.isPending) verify.mutate(); }}>
-        <label htmlFor="mfa-code" className="text-sm font-semibold">{usingRecovery ? "Recovery code" : `Authenticator${!challenge.enrollment_required ? " or recovery" : ""} code`}</label>
-        <input id="mfa-code" className="desk-input" autoComplete="one-time-code" value={code} maxLength={64} required onChange={(event) => setCode(event.target.value)} />
-      <button type="submit" disabled={verify.isPending} hidden aria-hidden="true" tabIndex={-1} />
-    </form> : null}
-      {!challenge.enrollment_required ? <button type="button" className="desk-button-ghost" onClick={() => setUsingRecovery(!usingRecovery)}>
-        {usingRecovery ? "Use an authenticator code instead" : "Use a recovery code instead"}
-      </button> : null}
-      {copyNotice ? <p role="status" className="text-sm text-muted">{copyNotice}</p> : null}
-      {error ? <p role="alert" className="text-danger">{error.message}</p> : null}
+      {canVerify && !usingPasskey ? <form id="mfa-verify-form" className="grid gap-3" onSubmit={(event) => { event.preventDefault(); if (!verify.isPending) verify.mutate(); }}>
+        <label htmlFor="mfa-code" className="text-sm font-semibold">{copyText.label}</label>
+        <input id="mfa-code" className="desk-input" autoComplete="one-time-code" value={code} maxLength={64} required
+          inputMode={factor === "recovery" || !challenge.factors ? undefined : "numeric"} onChange={(event) => setCode(event.target.value)} />
+        <button type="submit" disabled={verify.isPending} hidden aria-hidden="true" tabIndex={-1} />
+      </form> : null}
+      {factor === "email_code" && !challenge.enrollment_required ? <MfaEmailCodeResend challenge={challenge.challenge}
+        initialResends={challenge.resends_left} turnstileSiteKey={turnstileSiteKey} /> : null}
+      {!challenge.enrollment_required && factors.length > 1 ? <div className="grid gap-2" role="group" aria-label="Other ways to verify">
+        {factors.filter(other => other !== factor).map(other => {
+          const Glyph = FACTOR_ICONS[other];
+          return <button key={other} type="button" className="desk-button-ghost min-h-11 justify-start gap-2" onClick={() => choose(other)}>
+            <Glyph aria-hidden="true" size={20} />{SWITCH_LABEL[other]}</button>;
+        })}
+      </div> : null}
+      <p role="status" className="text-sm text-muted empty:hidden">{copyNotice}</p>
+      {failure ? <p role="alert" className="text-danger">{authErrorMessage(failure, "Unable to verify. Try again.")}</p> : null}
     </div>} />;
 }

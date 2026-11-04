@@ -1,6 +1,8 @@
-﻿import { useState } from "react";
+import { plural } from "../../../lib/plural";
+import { useState } from "react";
 
 import { useStaffGet } from "./shared";
+import { ActivityItem, ActivityRail, EmptyState, ErrorBlock, StatusPill } from "../../../components/ui";
 
 type Actor = { username: string; role: string };
 type TimelineEvent = {
@@ -37,9 +39,9 @@ type ChainResponse = {
 export function RequestTimelineBlock({ requestId }: { requestId: number }) {
   const timeline = useStaffGet<RequestTimelineResponse>(["request-timeline", requestId], `/admin/requests/${requestId}/timeline?limit=200`);
   return (
-    <div className="mt-3 rounded-md border border-line bg-bg p-3">
+    <div className="mt-4 rounded-xl border border-line bg-panel p-4">
       <h4 className="title-section">Loan timeline</h4>
-      <QueryState loading={timeline.isLoading} error={timeline.error?.message} empty={!timeline.data?.events.length} emptyLabel="No timeline events yet." />
+      <QueryState loading={timeline.isLoading} error={timeline.error} retry={() => { void timeline.refetch(); }} empty={!timeline.data?.events.length} emptyLabel="No timeline events yet." />
       {timeline.data ? <EventList events={timeline.data.events} truncated={timeline.data.truncated} /> : null}
     </div>
   );
@@ -54,7 +56,7 @@ export function ChainOfCustodyBlock({ productId }: { productId: number }) {
         <h3 className="title-section">Chain of custody</h3>
         <button className="desk-button-ghost" type="button" onClick={() => setOpen((value) => !value)}>{open ? "Hide" : "Open"}</button>
       </div>
-      {open ? <QueryState loading={chain.isLoading} error={chain.error?.message} empty={!chain.data?.events.length} emptyLabel="No custody events yet." /> : null}
+      {open ? <QueryState loading={chain.isLoading} error={chain.error} retry={() => { void chain.refetch(); }} empty={!chain.data?.events.length} emptyLabel="No custody events yet." /> : null}
       {open && chain.data?.quantity_summary ? <QuantitySummaryView summary={chain.data.quantity_summary} /> : null}
       {open && chain.data?.asset_groups.length ? <AssetGroups groups={chain.data.asset_groups} /> : null}
       {open && chain.data ? <EventList events={chain.data.events} truncated={chain.data.truncated} /> : null}
@@ -62,10 +64,10 @@ export function ChainOfCustodyBlock({ productId }: { productId: number }) {
   );
 }
 
-function QueryState({ loading, error, empty, emptyLabel }: { loading: boolean; error?: string; empty: boolean; emptyLabel: string }) {
-  if (loading) return <p className="text-sm text-muted">Loading...</p>;
-  if (error) return <p className="text-sm text-danger">{error}</p>;
-  if (empty) return <p className="text-sm text-muted">{emptyLabel}</p>;
+function QueryState({ loading, error, retry, empty, emptyLabel }: { loading: boolean; error?: Error | null; retry: () => void; empty: boolean; emptyLabel: string }) {
+  if (loading) return <p role="status" className="text-sm text-muted">Loading…</p>;
+  if (error) return <ErrorBlock error={error} resource="loan history" onRetry={retry} />;
+  if (empty) return <EmptyState message={emptyLabel} />;
   return null;
 }
 
@@ -73,9 +75,9 @@ function AssetGroups({ groups }: { groups: AssetGroup[] }) {
   return (
     <div className="grid gap-2">
       {groups.map((group) => (
-        <div key={group.asset_id ?? group.asset_tag} className="rounded-md border border-line bg-surface p-2 text-xs">
-          <p className="font-semibold text-ink">{group.asset_tag || `Asset #${group.asset_id}`} <span className="font-normal text-muted">{group.status}</span></p>
-          <p className="text-muted">{group.events.map((event) => humanize(String(event.detail.outcome ?? event.kind))).join(" | ")}</p>
+        <div key={group.asset_id ?? group.asset_tag} className="rounded-xl border border-line bg-surface p-4 text-sm">
+          <p className="flex flex-wrap items-center gap-2 font-semibold text-ink">{group.asset_tag || `Asset #${group.asset_id}`} <StatusPill label={humanize(group.status)} tone="neutral" /></p>
+          <p className="text-muted [overflow-wrap:anywhere]">{group.events.map((event) => humanize(String(event.detail.outcome ?? event.kind))).join(" | ")}</p>
         </div>
       ))}
     </div>
@@ -84,8 +86,8 @@ function AssetGroups({ groups }: { groups: AssetGroup[] }) {
 
 function QuantitySummaryView({ summary }: { summary: QuantitySummary }) {
   const parts = [
-    `${summary.loan_count} reviewed loans`,
-    `${summary.direct_loan_count} direct loans`,
+    plural(summary.loan_count, "reviewed loan"),
+    plural(summary.direct_loan_count, "direct loan"),
     `${summary.issued_quantity} issued`,
     `${summary.returned_quantity} returned`,
     `${summary.damaged_quantity} damaged`,
@@ -98,20 +100,20 @@ function QuantitySummaryView({ summary }: { summary: QuantitySummary }) {
 function EventList({ events, truncated }: { events: TimelineEvent[]; truncated: boolean }) {
   if (!events.length) return null;
   return (
-    <ul className="eyebrow mt-2 grid gap-1">
+    <ActivityRail title="History">
       {events.map((event, index) => (
-        <li key={`${event.kind}-${String(event.detail.id ?? index)}-${event.at}`} className="rounded-md border border-line bg-surface px-2 py-1">
-          <span className="font-medium text-ink">
+        <ActivityItem exact key={`${event.kind}-${String(event.detail.id ?? index)}-${event.at}`} actor={event.actor ? formatActor(event.actor) : "Space Works"} date={event.at}>
+          {/* Audit meta can carry long IDs, keys and URLs; let them break instead of widening the drawer. */}
+          <span className="font-medium text-ink [overflow-wrap:anywhere]">
             {event.kind === "audit" ? String(event.detail.action_label ?? "Audit entry") : humanize(event.kind)}
-          </span> on {formatDate(event.at)}
-          {event.actor ? ` by ${formatActor(event.actor)}` : ""}
-          {event.evidence_id ? ` | evidence #${event.evidence_id}` : ""}
+          </span>
+          {event.evidence_id ? ` · evidence #${event.evidence_id}` : ""}
           {event.evidence_retention ? ` (photo ${retentionLabel(event.evidence_retention)})` : ""}
           {event.kind === "audit" ? <AuditDetail detail={event.detail} /> : <DetailText detail={event.detail} />}
-        </li>
+        </ActivityItem>
       ))}
       {truncated ? <li className="text-muted">History truncated at the requested limit.</li> : null}
-    </ul>
+    </ActivityRail>
   );
 }
 
@@ -120,14 +122,14 @@ function DetailText({ detail }: { detail: Record<string, unknown> }) {
     .map((key) => detail[key])
     .filter((value) => value !== undefined && value !== null && value !== "")
     .map(String);
-  return parts.length ? <span> | {parts.join(" | ")}</span> : null;
+  return parts.length ? <span className="[overflow-wrap:anywhere]"> | {parts.join(" | ")}</span> : null;
 }
 
 function AuditDetail({ detail }: { detail: Record<string, unknown> }) {
   const meta = (detail.meta ?? {}) as Record<string, unknown>;
   const parts = Object.entries(meta).map(([key, value]) => `${key}: ${String(value)}`);
   if (detail.meta_redacted) parts.push("some details withheld");
-  return parts.length ? <span> | {parts.join(" | ")}</span> : null;
+  return parts.length ? <span className="[overflow-wrap:anywhere]"> | {parts.join(" | ")}</span> : null;
 }
 
 function retentionLabel(retention: NonNullable<TimelineEvent["evidence_retention"]>) {

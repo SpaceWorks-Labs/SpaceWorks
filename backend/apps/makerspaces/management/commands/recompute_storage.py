@@ -1,10 +1,11 @@
 from django.core.management.base import BaseCommand, CommandError
+from django.db import transaction
 from django.db.models import Q
 
-from apps.bookings.models import BookableSpace
+from apps.bookings.models import BookableSpace, BookingResourcePageAsset
 from apps.data_export import storage as export_storage
 from apps.data_export.models import DataExportJob
-from apps.events.models import Event, EventAttendanceCertificate, EventSeries
+from apps.events.models import Event, EventAttendanceCertificate, EventCertificateArtwork, EventPageAsset, EventSeries
 from apps.evidence import storage as evidence_storage
 from apps.evidence.models import EvidenceObjectRetentionState, EvidencePhoto
 from apps.inventory import public_image_storage
@@ -14,12 +15,15 @@ from apps.machines.models import Machine, MachineDocument, ServiceRequestFile
 from apps.maintenance import storage as maintenance_storage
 from apps.maintenance.models import MaintenanceLogDocument
 from apps.makerspaces.models import MemberCard, Makerspace, MemberProfile, MemberProject
+from apps.makerspaces.models_public_pages import MakerspacePublicPageAsset
 from apps.makerspaces.servability import servable_queryset
+from apps.makerspaces.storage_events_programme import accounted_bytes, accounted_print_bytes
 from apps.procurement import storage as procurement_storage
 from apps.procurement.models import ToBuyReceipt
 from apps.warranty import storage as warranty_storage
 from apps.warranty.models import WarrantyDocument
 from apps.backup.models import RestoreRollbackObject
+from apps.accounts.models_account_purge import AccountPurgeObject
 
 
 class StorageReadError(Exception):
@@ -43,64 +47,102 @@ class Command(BaseCommand):
             if not makerspaces.exists():
                 raise CommandError(f"Makerspace {selector!r} was not found.")
         for makerspace in makerspaces.order_by("pk"):
-            if EvidenceObjectRetentionState.objects.filter(
-                evidence__makerspace=makerspace,
-                status=EvidenceObjectRetentionState.Status.CLEANING,
-            ).exists():
-                # Bytes may be half-deleted; the cleanup completion settles quota once.
-                self.stdout.write(self.style.WARNING(
-                    f"{makerspace.slug}: usage left unchanged while abandoned-upload cleanup is in progress."
-                ))
-                continue
-            try:
-                values = {
-                    "evidence": self._sum(
-                        EvidencePhoto.objects.filter(makerspace=makerspace)
-                        .exclude(
-                            object_retention_state__status=
-                            EvidenceObjectRetentionState.Status.EXPIRED
-                        )
-                        .values_list("object_key", "size_bytes"),
-                        evidence_storage.object_size,
-                        True,
-                    ),
-                    "print_files": self._sum(ServiceRequestFile.objects.filter(makerspace=makerspace).values_list("object_key", "size_bytes"), machine_storage.object_size, True),
-                    "public_images": self._sum(((key, None) for key in self._public_image_keys(makerspace)), public_image_storage.object_size),
-                    "machine_documents": self._sum(((key, None) for key in MachineDocument.objects.filter(machine__makerspace=makerspace).values_list("object_key", flat=True)), machine_storage.object_size),
-                    "warranty_documents": self._sum(((key, None) for key in WarrantyDocument.objects.filter(warranty__makerspace=makerspace).values_list("object_key", flat=True)), warranty_storage.object_size),
-                    "procurement_receipts": self._sum(((key, None) for key in ToBuyReceipt.objects.filter(to_buy_item__makerspace=makerspace).values_list("object_key", flat=True)), procurement_storage.object_size),
-                    # Charged on upload by `maintenance/services_documents.py` and collected by
-                    # both the makerspace purge and the `maintenance` module purge plan, but
-                    # absent here -- so this command, which is the AUTHORITATIVE reconciler,
-                    # wrote a total omitting every maintenance document and silently lowered a
-                    # space's recorded usage. Reached through the log's machine; the rows carry
-                    # `size_bytes`, so a HEAD that cannot see the object falls back to it.
-                    "maintenance_documents": self._sum(MaintenanceLogDocument.objects.filter(log__machine__makerspace=makerspace).values_list("object_key", "size_bytes"), maintenance_storage.object_size, True),
-                    # Both charged on finalize (`member_card_storage.finalize_photo`,
-                    # `events/services_certificates.py`) into the private bucket and
-                    # collected by purge, but absent here until 2026-10-09 -- the same
-                    # silent under-count as the maintenance documents above.
-                    "member_card_photos": self._sum(MemberCard.objects.filter(makerspace=makerspace).values_list("photo_object_key", "photo_size_bytes"), evidence_storage.object_size, True),
-                    "event_certificates": self._sum(EventAttendanceCertificate.objects.filter(registration__event__makerspace=makerspace).values_list("object_key", "size_bytes"), evidence_storage.object_size, True),
-                    "data_exports": self._sum(
-                        DataExportJob.objects.filter(
-                            makerspace=makerspace,
-                            status=DataExportJob.Status.AVAILABLE,
-                        ).values_list("object_key", "accounted_size_bytes"),
-                        export_storage.object_size,
-                        True,
-                    ),
-                    "restore_rollback_objects": sum(
-                        RestoreRollbackObject.objects.filter(makerspace=makerspace)
-                        .values_list("size_bytes", flat=True)
-                    ),
-                }
-            except StorageReadError as exc:
-                self.stdout.write(self.style.WARNING(f"{makerspace.slug}: usage left unchanged due to storage read error for {exc}."))
-                continue
-            total = sum(values.values())
-            Makerspace.objects.filter(pk=makerspace.pk).update(storage_bytes_used=total)
-            self.stdout.write(self.style.SUCCESS(f"{makerspace.slug}: total={total} bytes"))
+            self._recompute(makerspace)
+
+    @transaction.atomic
+    def _recompute(self, makerspace):
+        # Purge scrub and quota release also take Makerspace first. Hold it
+        # across the journal snapshot and total write to avoid a raced release.
+        makerspace = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
+        if EvidenceObjectRetentionState.objects.filter(
+            evidence__makerspace=makerspace,
+            status=EvidenceObjectRetentionState.Status.CLEANING,
+        ).exists():
+            # Bytes may be half-deleted; the cleanup completion settles quota once.
+            self.stdout.write(self.style.WARNING(
+                f"{makerspace.slug}: usage left unchanged while abandoned-upload cleanup is in progress."
+            ))
+            return
+        try:
+            values = {
+                "event_asset_obligations": accounted_bytes(makerspace),
+                "event_print_obligations": accounted_print_bytes(makerspace),
+                "evidence": self._sum(
+                    EvidencePhoto.objects.filter(makerspace=makerspace)
+                    .exclude(
+                        object_retention_state__status=
+                        EvidenceObjectRetentionState.Status.EXPIRED
+                    )
+                    .values_list("object_key", "size_bytes"),
+                    evidence_storage.object_size,
+                    True,
+                ),
+                "print_files": self._sum(ServiceRequestFile.objects.filter(makerspace=makerspace).values_list("object_key", "size_bytes"), machine_storage.object_size, True),
+                "public_images": self._sum(((key, None) for key in self._public_image_keys(makerspace)), public_image_storage.object_size),
+                "machine_documents": self._sum(((key, None) for key in MachineDocument.objects.filter(machine__makerspace=makerspace).values_list("object_key", flat=True)), machine_storage.object_size),
+                "warranty_documents": self._sum(((key, None) for key in WarrantyDocument.objects.filter(warranty__makerspace=makerspace).values_list("object_key", flat=True)), warranty_storage.object_size),
+                "procurement_receipts": self._sum(((key, None) for key in ToBuyReceipt.objects.filter(to_buy_item__makerspace=makerspace).values_list("object_key", flat=True)), procurement_storage.object_size),
+                # Charged on upload by `maintenance/services_documents.py` and collected by
+                # both the makerspace purge and the `maintenance` module purge plan, but
+                # absent here -- so this command, which is the AUTHORITATIVE reconciler,
+                # wrote a total omitting every maintenance document and silently lowered a
+                # space's recorded usage. Reached through the log's machine; the rows carry
+                # `size_bytes`, so a HEAD that cannot see the object falls back to it.
+                "maintenance_documents": self._sum(MaintenanceLogDocument.objects.filter(log__machine__makerspace=makerspace).values_list("object_key", "size_bytes"), maintenance_storage.object_size, True),
+                # Both charged on finalize (`member_card_storage.finalize_photo`,
+                # `events/services_certificates.py`) into the private bucket and
+                # collected by purge, but absent here until 2026-10-09 -- the same
+                # silent under-count as the maintenance documents above.
+                "member_card_photos": self._sum(MemberCard.objects.filter(makerspace=makerspace).values_list("photo_object_key", "photo_size_bytes"), evidence_storage.object_size, True),
+                "booking_website_assets": self._sum(BookingResourcePageAsset.objects.filter(page__space__makerspace=makerspace).values_list("object_key", "size_bytes"), evidence_storage.object_size, True),
+                "event_website_assets": self._sum(EventPageAsset.objects.filter(page__makerspace=makerspace).values_list("object_key", "size_bytes"), evidence_storage.object_size, True),
+                "makerspace_page_assets": self._sum(MakerspacePublicPageAsset.objects.filter(page__makerspace=makerspace).values_list("object_key", "size_bytes"), evidence_storage.object_size, True),
+                "pending_page_asset_cleanup": self._pending_page_assets(makerspace),
+                "event_certificates": self._sum(EventAttendanceCertificate.objects.filter(event__makerspace=makerspace).values_list("object_key", "size_bytes"), evidence_storage.object_size, True),
+                "event_certificate_artwork": self._sum(
+                    EventCertificateArtwork.objects.filter(
+                        event__makerspace=makerspace, promoted_at__isnull=False,
+                    ).values_list("object_key", "size_bytes"), evidence_storage.object_size, True,
+                ),
+                # An unpromoted artwork row owns an upload budget, not an observed
+                # final size. HEAD must never shrink a reservation after failed attach.
+                "event_certificate_artwork_reservations": sum(
+                    EventCertificateArtwork.objects.filter(
+                        event__makerspace=makerspace, promoted_at__isnull=True,
+                    ).values_list("size_bytes", flat=True)
+                ),
+                "data_exports": self._sum(
+                    DataExportJob.objects.filter(
+                        makerspace=makerspace,
+                        status=DataExportJob.Status.AVAILABLE,
+                    ).values_list("object_key", "accounted_size_bytes"),
+                    export_storage.object_size,
+                    True,
+                ),
+                "restore_rollback_objects": sum(
+                    RestoreRollbackObject.objects.filter(makerspace=makerspace)
+                    .values_list("size_bytes", flat=True)
+                ),
+                # Profiles transfer their quota to this journal atomically.
+                # Reserve the recorded size even after bytes are deleted;
+                # only the quota-release transaction ends the reservation.
+                "account_purge_reservations": sum(
+                    AccountPurgeObject.objects.filter(
+                        makerspace=makerspace, quota_released_at__isnull=True,
+                    ).values_list("size_bytes", flat=True)
+                ),
+            }
+        except StorageReadError as exc:
+            self.stdout.write(self.style.WARNING(f"{makerspace.slug}: usage left unchanged due to storage read error for {exc}."))
+            return
+        total = sum(values.values())
+        Makerspace.objects.filter(pk=makerspace.pk).update(storage_bytes_used=total)
+        self.stdout.write(self.style.SUCCESS(f"{makerspace.slug}: total={total} bytes"))
+
+    @staticmethod
+    def _pending_page_assets(makerspace):
+        from apps.makerspaces.website_asset_journal import accounted_pending_bytes
+        return accounted_pending_bytes(makerspace.pk)
 
     @staticmethod
     def _sum(rows, object_size, fallback=False):
@@ -128,6 +170,8 @@ class Command(BaseCommand):
         # silently lowered a space's recorded usage. apps/bookings/storage.py is a thin
         # wrapper over public_image_storage, so these live in the same bucket.
         keys.update(BookableSpace.objects.filter(makerspace=makerspace).values_list("image_key", flat=True))
+        from apps.bookings.purge_p2 import photo_keys
+        keys.update(photo_keys(makerspace))
         # Member avatars and project images, reached through the membership: the profile
         # carries no makerspace column, being hung off MakerspaceMembership.
         keys.update(

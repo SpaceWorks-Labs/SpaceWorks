@@ -1,3 +1,4 @@
+import { SettingsActions } from "../../components/ui";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -6,7 +7,11 @@ import { ImageUploader } from "../staff/ImageUploader";
 import { Field } from "./memberProfile/Field";
 import { tagsToText, textToTags } from "./memberProfile/helpers";
 import { ProjectEditor } from "./memberProfile/ProjectEditor";
+import { isPublicLink, LinksField, MAX_DOMAINS, SkillsField } from "./memberProfile/PublicContentFields";
 import { type MemberProfile, type ProjectDraft } from "./memberProfile/types";
+import { PublicPageSettings } from "../profile/edit/PublicPageSettings";
+import { TimelineEditor } from "../profile/edit/TimelineEditor";
+import type { ProfileLink, ProfileSkill } from "../profile/publicProfileApi";
 
 export type {
   MemberProfile,
@@ -32,6 +37,9 @@ export function MemberProfilePanel({ makerspaceId }: { makerspaceId: number }) {
   const [interests, setInterests] = useState("");
   const [languages, setLanguages] = useState("");
   const [projects, setProjects] = useState<ProjectDraft[]>([]);
+  const [domains, setDomains] = useState("");
+  const [skills, setSkills] = useState<ProfileSkill[]>([]);
+  const [links, setLinks] = useState<ProfileLink[]>([]);
   // Set by any edit, cleared by a successful save. Guards the re-seed effect below.
   const [dirty, setDirty] = useState(false);
 
@@ -41,12 +49,18 @@ export function MemberProfilePanel({ makerspaceId }: { makerspaceId: number }) {
   // every field to the last saved copy — a member who wrote a bio and then changed their
   // avatar lost the bio with no warning. Image URLs are the one thing that must still
   // refresh after an upload, so they are merged in separately below.
+  const seed = (data: MemberProfile) => {
+    setDraft(data);
+    setInterests(tagsToText(data.interests));
+    setLanguages(tagsToText(data.languages));
+    setProjects(data.projects.map((project) => ({ ...project })));
+    setDomains(tagsToText(data.domains ?? []));
+    setSkills((data.skills ?? []).map((skill) => ({ ...skill })));
+    setLinks((data.links ?? []).map((link) => ({ ...link })));
+  };
   useEffect(() => {
     if (!profile.data || dirty) return;
-    setDraft(profile.data);
-    setInterests(tagsToText(profile.data.interests));
-    setLanguages(tagsToText(profile.data.languages));
-    setProjects(profile.data.projects.map((project) => ({ ...project })));
+    seed(profile.data);
   }, [profile.data, dirty]);
 
   useEffect(() => {
@@ -70,12 +84,18 @@ export function MemberProfilePanel({ makerspaceId }: { makerspaceId: number }) {
           github_username: draft?.github_username ?? "",
           interests: textToTags(interests),
           languages: textToTags(languages),
+          domains: textToTags(domains).slice(0, MAX_DOMAINS),
+          skills: skills.filter((skill) => skill.name.trim()).map((skill) => ({ name: skill.name.trim(), level: skill.level })),
+          links: links.filter((link) => link.url.trim()).map((link) => ({ kind: link.kind, url: link.url.trim() })),
           education: draft?.education ?? [],
           projects: projects
             .filter((project) => project.title.trim())
             .map((project) => ({
               ...(project.id ? { id: project.id } : {}),
               title: project.title.trim(),
+              subtitle: project.subtitle ?? "",
+              tags: project.tags ?? [],
+              public_visible: Boolean(project.public_visible),
               description: project.description,
               links: project.links.filter((link) => link.label.trim() && link.url.trim()),
             })),
@@ -91,7 +111,8 @@ export function MemberProfilePanel({ makerspaceId }: { makerspaceId: number }) {
     return <section className="desk-panel p-5 text-sm text-muted">Loading your profile…</section>;
   }
   if (profile.isError) return <section className="desk-panel p-5"><p role="alert" className="text-sm text-danger">{profile.error instanceof Error ? profile.error.message : "Unable to load your profile."}</p></section>;
-  if (!draft) return null;
+  if (!draft || !profile.data) return null;
+  const badLink = links.some((link) => link.url.trim() !== "" && !isPublicLink(link.url.trim()));
 
   const patch = (changes: Partial<MemberProfile>) => {
     setDirty(true);
@@ -103,25 +124,27 @@ export function MemberProfilePanel({ makerspaceId }: { makerspaceId: number }) {
   };
 
   return (
-    <section className="desk-panel p-5">
+    <div className="grid gap-5">
+      <PublicPageSettings makerspaceId={makerspaceId} profile={profile.data} />
+      <section className="desk-panel p-5">
       <h2 className="title-panel">Your maker profile</h2>
       <p className="mt-1 text-sm text-muted">
-        Nothing here is shown to other members until you publish it.
+        Nothing here is shown to other members until you choose to. The member directory and your public page are separate switches.
       </p>
 
-      <label className="mt-4 flex items-center gap-2 text-sm text-ink">
+      <label className="mt-4 flex min-h-11 items-center gap-2 text-sm text-ink">
         <input
           type="checkbox"
-          className="h-4 w-4"
+          className="h-5 w-5"
           checked={draft.is_visible}
           onChange={(event) => patch({ is_visible: event.target.checked })}
         />
         Show my profile in this makerspace&apos;s member directory
       </label>
-      <label className="mt-2 flex items-center gap-2 text-sm text-ink">
+      <label className="mt-2 flex min-h-11 items-center gap-2 text-sm text-ink">
         <input
           type="checkbox"
-          className="h-4 w-4"
+          className="h-5 w-5"
           checked={draft.show_attended_events}
           onChange={(event) => patch({ show_attended_events: event.target.checked })}
         />
@@ -173,6 +196,16 @@ export function MemberProfilePanel({ makerspaceId }: { makerspaceId: number }) {
           onChange={(event) => { setDirty(true); setInterests(event.target.value); }}
         />
       </Field>
+      <Field id="profile-domains" label="Domains" hint="What you work in, comma separated. Shown as chips on your public page.">
+        <input
+          id="profile-domains"
+          className="desk-input mt-1 w-full"
+          value={domains}
+          onChange={(event) => { setDirty(true); setDomains(event.target.value); }}
+        />
+      </Field>
+      <SkillsField skills={skills} onChange={(next) => { setDirty(true); setSkills(next); }} />
+      <LinksField links={links} onChange={(next) => { setDirty(true); setLinks(next); }} />
       <Field id="profile-languages" label="Languages" hint="Comma separated">
         <input
           id="profile-languages"
@@ -191,7 +224,7 @@ export function MemberProfilePanel({ makerspaceId }: { makerspaceId: number }) {
       </Field>
       {draft.github_contributions !== null ? (
         <p className="mt-1 text-sm text-muted">
-          <span className="font-mono">{draft.github_contributions}</span> contributions in the last year.
+          <span className="tabular-nums">{draft.github_contributions}</span> contributions in the last year.
         </p>
       ) : null}
 
@@ -221,7 +254,7 @@ export function MemberProfilePanel({ makerspaceId }: { makerspaceId: number }) {
         className="desk-button-ghost mt-3"
         type="button"
         onClick={() =>
-          editProjects([...projects, { title: "", description: "", links: [] }])
+          editProjects([...projects, { title: "", subtitle: "", tags: [], public_visible: false, description: "", links: [] }])
         }
       >
         Add a project
@@ -232,14 +265,13 @@ export function MemberProfilePanel({ makerspaceId }: { makerspaceId: number }) {
           {save.error instanceof Error ? save.error.message : "Could not save."}
         </p>
       ) : null}
-      <button
-        className="desk-button-secondary mt-4"
-        type="button"
-        disabled={save.isPending}
-        onClick={() => save.mutate()}
-      >
-        {save.isPending ? "Saving…" : "Save profile"}
-      </button>
-    </section>
+      {dirty || save.isPending ? <SettingsActions pending={save.isPending} disabled={badLink} onSave={() => save.mutate()} onDiscard={() => {
+        if (!profile.data) return;
+        setDirty(false); seed(profile.data);
+        save.reset();
+      }} /> : null}
+      </section>
+      <TimelineEditor makerspaceId={makerspaceId} />
+    </div>
   );
 }

@@ -3,44 +3,44 @@
 Access is scoped **per makerspace and per action**. Super Admin is global; every other role is a
 per-makerspace membership.
 
-Authority comes from **actions, not role names**. A role is a row owned by one makerspace holding a
-list of granted action strings (`view_inventory`, `accept_request`, `issue_direct_loan`,
-`manage_machines`, …), and every permission check asks whether the actor holds the action — never
-what their role is called. So a makerspace can rename, re-scope, or invent roles to match how it
-actually works, and nothing downstream has to learn the new name.
+Authority comes from **actions, not role names**. Each makerspace has seven fixed built-in role
+instances. Their names and grants cannot be edited, and roles cannot be created or deleted.
 
-Every makerspace starts with four protected default roles:
+| Role | What it can do |
+|---|---|
+| **Space Manager** | Administers the makerspace, staff, settings, inventory, machines, events, bookings, membership and finance |
+| **Inventory Manager** | Runs the full hardware lifecycle, inventory, QR, evidence and audit; no machines, staff or settings |
+| **Machine Manager** | Manages machines, service work, maintenance and usage within this person's assigned machine types |
+| **Event Manager** | Manages events, registrations, event reports and email templates |
+| **Booking Manager** | Manages bookable spaces, bookings, booking rules, reports and email templates |
+| **Handover** | Issues accepted requests/direct handouts, takes returns, uploads evidence and collects completed machine jobs |
+| **Member** | Uses community services without staff management actions |
 
-| Role | Granted actions | Notes |
-|---|---|---|
-| **Space Manager** | Everything grantable: full hardware lifecycle, inventory, QR, evidence, machines, events, bookings, audit, and makerspace settings | Must always keep `manage_makerspace` |
-| **Inventory Manager** | Full hardware lifecycle + inventory + QR + evidence + audit | No machines, staff or settings |
-| **Machine Manager** | `manage_machines` — every machine in the space, end to end: usage, warranty, maintenance, and handing finished jobs over | Implies `manage_printing` and `collect_service_request`, so it absorbed the old Print Manager |
-| **Member** | None | A role granting no actions *is* a community membership — that is how staff and member invitations are told apart |
+A membership has a primary role and optional additional roles. **Space Manager and Member must each
+stand alone**; the other five combine freely, such as Event Manager + Booking Manager. The console
+assigns the complete set on a separate tenant staff account with checkboxes. Initial-setup invitations
+snapshot the full role set and machine scopes. With platform access on, only the superadmin manages
+Space Managers; with it off, another local Space Manager may manage them. Never self or the last active
+Space Manager. Members cannot receive built-in staff roles. Staff resets are admin-issued; staff and
+platform sign-in uses password (+ local authenticator MFA), while delegated helpers use member accounts.
 
-Beyond those, a Space Manager can **create custom roles** with any subset of actions they themselves
-hold, and can edit the defaults — including renaming them and narrowing what they grant. One limit
-protects the defaults from being edited into incoherence: Space Manager must retain
-`manage_makerspace`. Protected defaults cannot be deleted; custom roles can be, once nobody is
-assigned to them.
+Machine Manager types are assigned **per person**, not per role or individual machine. Save the role
+and types together under **Staff & roles**; member accounts cannot become Machine Managers.
+No selected types means no machines. A type includes machines added to it later; **All machine types**
+selects today's available types, so newly created types need explicit assignment. Space Manager is
+exempt and covers future types too. Existing direct type authority and per-machine operator grants
+are unchanged.
 
-**Front-desk handover is a custom role, not a built-in.** Earlier versions shipped a protected
-"Guest Admin", which handed every makerspace a role it might not want and made the one role people
-most wanted to reshape the one they could not delete. Build the role your space actually has — call it
-Front Desk, Duty Volunteer, whatever — and give it the handout actions: `view_inventory`,
-`assign_box`, `issue_request`, `issue_direct_loan`, `return_request`, `upload_evidence`, and
-`collect_service_request` to hand finished machine jobs to their owners. A role holding only these
-gets a deliberately narrow console (Requests, Direct handout, Job handover) instead of the full staff
-surface. Existing Guest Admin roles were converted in place and kept their name, actions and people.
-
-Escalation is blocked in both directions: you cannot grant an action you do not hold, you cannot
-create or assign a role carrying `manage_makerspace` (superadmin only), and you cannot modify a
-membership that already holds it. `transfer_stock` and `manage_staff` are superadmin-only and are
-never grantable to any role.
+Handover alone uses the narrow Requests, Direct handout and Job handover console and cannot
+accept/reject requests, edit inventory or manage QR. Combining it with other built-ins adds their
+actions. Guest Admin and Print Manager remain retired. `transfer_stock` and `manage_staff` remain
+superadmin-only, outside the role catalogue. Upgrade from editable/custom roles requires an offline,
+irreversible migration: read [the fixed-role upgrade procedure](update-recovery.md#fixed-role-upgrade-2026-10-16)
+before running migrations.
 
 **Organizations reach across makerspaces.** A network, a university or a chain can be registered as an
-organization, linked to any number of makerspaces as owner, manager or affiliate, and given staff whose
-authority applies in every one of them — without a separate login or a membership row per space. An
+organization, linked to any number of makerspaces as owner, manager or affiliate, and grant member
+accounts specific actions across those spaces without tenant staff accounts or memberships. An
 organization grant confers **actions, never identity**: an organization administrator can hold
 `manage_events` across the network's spaces while being Space Manager of none of them, and staff lists
 still show only that space's own people, with a separate read-only view of which organizations reach in.
@@ -50,13 +50,29 @@ routed in through an organization.
 Outside this system entirely: **Public** users browse, submit requests, and — where enabled —
 self-checkout and return eligible QR tools, gated on member presence and photo evidence.
 
-> Earlier versions shipped five fixed, code-defined roles. Roles are now editable data; the four
-> above are seeded defaults rather than the whole vocabulary.
-
 Staff work in the **React console** at `/admin`; the superadmin-only **Django control plane** lives at
 `/control/` (backend-only, never exposed on the public port). Two design rules are load-bearing — the
 Request Workflow module is the single source of truth for state transitions, and the Inventory
 Availability module owns all quantity math. Details in **[.github/CONTRIBUTING.md](../.github/CONTRIBUTING.md)**.
+
+### Staff accounts and passwords
+
+Staff accounts belong to one makerspace and are created under **Staff & roles** by its Space Manager
+(non-Space-Manager staff) or a permitted superadmin (including Space Managers). A staff email can
+also have a separate member account and separate staff accounts in other spaces. Staff sign in at
+`/m/<slug>/admin` with username/email + password (+ authenticator MFA); member and staff sessions
+can stay open together, with independent sign-out. Event/booking helpers and organization delegates
+continue to use their member login and only their granted workspace actions.
+
+Staff invitations set the initial password of that exact new staff account. With Email or invitations
+off, an administrator sets or generates a password and hands it over; Membership and MFA need not
+be enabled. Admin-issued reset ends sessions and forces password change. Separate staff/platform
+email OTP recovery ends sessions, clears forced password change and preserves enrolled MFA; it needs
+configured Platform Email, including when tenant Email is off. Deactivation retains history and
+revokes credentials; reactivation needs new credentials. Only the platform superadmin manages Space
+Managers; local Space Managers manage the other staff. Nobody can manage self or remove the last
+active manager. Member sign-in methods and recovery are described in
+[Sign-in, identity and borrowing](sign-in-and-borrowing.md).
 
 ## Hosting
 
@@ -76,7 +92,7 @@ Create the first superadmin + makerspace (the wizard does this for you; for a ma
 scripts/spaceworks-compose.sh bundled run --rm --no-deps backend --role management python manage.py setup_instance
 ```
 
-With no arguments it creates **`superadmin` with a generated password**, prints it once for you to save, and forces a password change on first login. Re-running setup keeps the existing password and does not print it. Supply `--password` or `SETUP_SUPERADMIN_PASSWORD` to choose your own credential.
+With no arguments it creates **`superadmin` with a generated password**, prints it once for you to save, and forces a password change on first login. Re-running setup keeps the existing password and does not print it. Supply `--password` or `SETUP_SUPERADMIN_PASSWORD` to choose your own credential. On first creation of the login-methods row, `SETUP_MFA_ENABLED=y|n` and `SETUP_SOCIAL_PROVIDERS=google,apple,github` (or literal `none`) choose the sign-in options. Reruns preserve them; later use `manage.py set_login_methods`. Provider keys are entered in the console.
 Guided installs pin the latest published main release from `SPACEWORKS_REPOSITORY`. Updates run through
 an optional server GitHub Actions runner after release publication, or `bash scripts/update.sh --force`
 as the install owner. Use `--version X.Y.Z-main.<run>.<12-hex sha>` for an exact published main release.
@@ -161,3 +177,15 @@ Three things are deliberate, because this moves real accountability records:
 - **The source is archived, not deleted** — and archives are outside the purge guarantee.
 
 Both sides are driven from the staff console; nothing here needs a shell.
+
+People travel with their staff roles (staff-track memberships with built-in roles, remapped machine
+types and their notification preferences). A person created on the target arrives with their
+travelled sign-in credentials -- password, authenticator and same-domain passkeys, sealed under the
+space's key -- so staff and members can sign in without a reset; a person linked to an existing
+target account keeps that account's credentials and gets staff roles only when the superadmin
+grants them. Sessions, device grants, chat endpoints and invitations never travel. Merged accounts
+travel as inert, PII-free shells and platform audit actors remain inert provenance. See the
+[account portability contract](account-portability.md) for PORTABLE, sovereign Lane D, per-space
+restore and data export.
+
+Cloud integration: [hosting choices and operational contracts](deploy/cloud-overview.md). Full host defaults remain unchanged; managed/free is explicit and subject to release acceptance gates.

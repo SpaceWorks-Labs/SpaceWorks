@@ -32,8 +32,8 @@ def build_fablab_health(makerspace_id, *, limit=None, date_range=None):
     now = timezone.now()
     today = timezone.localdate()
     base = eligible_makerspaces() if aggregate else Makerspace.objects.filter(pk=makerspace_id)
-    spaces = list(base.values("id", "enabled_modules").order_by("id"))
-    records = {row["id"]: _empty_record(row, aggregate) for row in spaces}
+    spaces = list(base.values("id", "enabled_modules", "enabled_features").order_by("id"))
+    records = {row["id"]: _empty_record(row) for row in spaces}
     _run_section(spaces, records, "events", lambda ids: _event_rows(ids, date_range))
     _run_section(spaces, records, "bookings", lambda ids: _booking_rows(ids, date_range, now))
     _run_section(spaces, records, "machines", lambda ids: _machine_rows(ids, date_range))
@@ -41,19 +41,23 @@ def build_fablab_health(makerspace_id, *, limit=None, date_range=None):
     ordered = [records[row["id"]] for row in spaces]
     if limit is not None:
         ordered = ordered[:limit]
-    return ReportResult((("makerspace_id",) + FIELDS) if aggregate else FIELDS, ordered)
+    # The health chart uses this real tenant dimension on local previews too.
+    return ReportResult(("makerspace_id", *FIELDS), ordered)
 
 
-def _empty_record(space, aggregate):
+def _empty_record(space):
     record = {}
     modules = set(space["enabled_modules"] or [])
+    features = set(space.get("enabled_features") or [])
     for section, metrics in SECTION_FIELDS.items():
         enabled = runtime_active(section) and section in modules
+        if section == "maintenance":
+            # The `machines.maintenance` capability since #97, not a module key.
+            enabled = runtime_active(section) and "machines" in modules and "machines.maintenance" in features
         record[f"{section}_enabled"] = enabled
         record[f"{section}_available"] = False
         record.update({metric: None for metric in metrics})
-    if aggregate:
-        record["makerspace_id"] = space["id"]
+    record["makerspace_id"] = space["id"]
     return record
 
 
@@ -97,9 +101,11 @@ def _event_rows(ids, date_range):
     completed = period & Q(events__status=Event.Status.COMPLETED)
     attended = Q(events__registrations__status=EventRegistration.Status.ATTENDED)
     registered = Q(events__registrations__status=EventRegistration.Status.REGISTERED)
+    # Annotation names must not shadow the `events` relation: an `events=` annotation
+    # turns every later `events__registrations` into a lookup on an IntegerField.
     rows = list(Makerspace.objects.filter(id__in=ids).values("id").annotate(
-        events=Count("events", filter=period, distinct=True),
-        registrations=Count("events__registrations", filter=period),
+        event_count=Count("events", filter=period, distinct=True),
+        registration_count=Count("events__registrations", filter=period),
         attended=Count("events__registrations", filter=period & attended),
         completed_attended=Count("events__registrations", filter=completed & attended),
         completed_registered=Count("events__registrations", filter=completed & registered),
@@ -108,8 +114,8 @@ def _event_rows(ids, date_range):
     for row in rows:
         denominator = row["completed_attended"] + row["completed_registered"]
         result.append({
-            "makerspace_id": row["id"], "events_in_period": row["events"],
-            "events_registrations": row["registrations"], "events_attended": row["attended"],
+            "makerspace_id": row["id"], "events_in_period": row["event_count"],
+            "events_registrations": row["registration_count"], "events_attended": row["attended"],
             "events_completed_attendance_rate_percent": round(row["completed_attended"] / denominator * 100, 2) if denominator else None,
             # Private inputs are retained in ReportResult.records but omitted from
             # FIELDS, so legacy single-space responses and exports do not change.

@@ -4,6 +4,7 @@ from apps.admin_api.bulk_import_rows import (
     _normalize_row,
     _row_action,
 )
+from apps.operations.cloud_jobs import bounded
 
 
 def preview_import(makerspace, rows, mapping, progress_callback=None):
@@ -13,6 +14,7 @@ def preview_import(makerspace, rows, mapping, progress_callback=None):
     warnings = []
     existing_names = _existing_names(makerspace, rows, mapping)
     for offset, row in enumerate(rows, start=1):
+        bounded.check()
         index = offset + 1
         normalized, row_errors, row_warnings = _normalize_row(makerspace, row, mapping)
         if row_errors:

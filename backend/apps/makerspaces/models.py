@@ -68,6 +68,7 @@ def presence_presets(makerspace):
 
 from apps.makerspaces.models_makerspace import Makerspace  # noqa: E402,F401
 from apps.makerspaces.models_memberships import MakerspaceMembership  # noqa: E402,F401
+from apps.makerspaces.models_additional_roles import MembershipAdditionalRole  # noqa: E402,F401
 from apps.makerspaces.models_roles import (  # noqa: E402,F401
     MakerspaceRole,
     MakerspaceWaiver,
@@ -77,12 +78,32 @@ from apps.makerspaces.models_roles import (  # noqa: E402,F401
 from apps.makerspaces.models_profiles import (  # noqa: E402,F401
     MemberProfile,
     MemberProject,
+    PublicHandle,
+    PublicHandleRedirect,
+    ProfileTimelineEntry,
 )
 from apps.makerspaces.models_member_cards import MemberCard  # noqa: E402,F401
+from .models_page_cleanup import PublicPageObjectCleanup  # noqa: E402,F401
+from apps.makerspaces.models_public_pages import (  # noqa: E402,F401
+    MakerspacePublicPage, MakerspacePublicPageRevision, MakerspacePublicPageAsset,
+    MakerspacePublicPageRevisionAsset, MakerspacePublicPageRevisionMember,
+)
 from apps.makerspaces.models_membership_plans import (  # noqa: E402,F401
     MembershipPlan,
     MembershipTerm,
 )
+from apps.makerspaces.models_membership_terms import MembershipTermStatusEvent  # noqa: E402,F401
+from apps.makerspaces.models_membership_records import (  # noqa: E402,F401
+    MembershipRecord, MembershipTitle, MembershipTitleAssignment,
+)
+from apps.makerspaces.models_membership_privacy import (  # noqa: E402,F401
+    MembershipConsent, MembershipErasureRequest,
+)
+from apps.makerspaces.models_membership_invites import MembershipInviteLink  # noqa: E402,F401
+from apps.makerspaces.models_membership_imports import (  # noqa: E402,F401
+    ImportedMember, MembershipImportBatch,
+)
+from apps.makerspaces.models_membership_summary import MembershipSummaryOptOut  # noqa: E402,F401
 from apps.makerspaces.models_admission import (  # noqa: E402,F401
     MakerspaceMembershipSettings,
     MembershipVouch,
@@ -106,4 +127,9 @@ from apps.makerspaces.models_stations import (  # noqa: E402,F401
 from apps.makerspaces.models_station_leases import (  # noqa: E402,F401
     StationOperatorLease,
     StationSessionRevocation,
+)
+from apps.makerspaces.models_security import MakerspaceSecurityLock, MakerspaceSecurityPolicy  # noqa: E402,F401
+from apps.makerspaces.models_settings_authority import (  # noqa: E402,F401
+    ModuleSettingLock,
+    ModuleSettingsGrant,
 )

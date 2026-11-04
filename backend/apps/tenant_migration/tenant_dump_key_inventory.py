@@ -5,7 +5,7 @@ from apps.backup.dek_rewrap import (
     enumerate_staged_deks,
     validate_staged_deks,
 )
-from apps.backup.recipient_selection import BackupBuildError
+from apps.backup.build_errors import BackupBuildError
 from apps.encryption.models import MakerspaceEncryptionKey
 
 from .tenant_dump_errors import TenantDumpVerificationError

@@ -1,3 +1,4 @@
+import { DetailDrawer, EmptyState, ListRow } from "../../components/ui";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
@@ -14,10 +15,10 @@ type DirectoryEntry = {
 type Directory = { members: DirectoryEntry[]; hidden_count: number };
 
 const IDENTITY_TONES = [
-  { border: "border-accent", surface: "bg-accent/15", ink: "text-accent-ink" },
-  { border: "border-secondary", surface: "bg-secondary/15", ink: "text-secondary-ink" },
-  { border: "border-success", surface: "bg-success/15", ink: "text-success-ink" },
-  { border: "border-warn", surface: "bg-warn/15", ink: "text-warn-ink" },
+  { border: "border-accent", surface: "bg-accent-soft", ink: "text-accent-ink" },
+  { border: "border-brand", surface: "bg-brand-soft", ink: "text-brand-ink" },
+  { border: "border-success", surface: "bg-success-soft", ink: "text-success-ink" },
+  { border: "border-warn", surface: "bg-warn-soft", ink: "text-warn-ink" },
 ] as const;
 
 function identityTone(identity: string | number) {
@@ -34,6 +35,7 @@ function identityTone(identity: string | number) {
  * is an address harvest available to anyone the space admits.
  */
 export function MemberDirectory({ makerspaceId }: { makerspaceId: number }) {
+  const [search, setSearch] = useState("");
   const [openId, setOpenId] = useState<number | null>(null);
   const directory = useQuery({
     queryKey: ["member", "directory", makerspaceId],
@@ -55,50 +57,25 @@ export function MemberDirectory({ makerspaceId }: { makerspaceId: number }) {
   }
   if (directory.isError) return <section className="desk-panel p-5"><p role="alert" className="text-sm text-danger">{directory.error instanceof Error ? directory.error.message : "Unable to load members."}</p></section>;
 
-  const entries = directory.data?.members ?? [];
+  const entries = (directory.data?.members ?? []).filter(entry => `${entry.display_name} ${entry.headline}`.toLowerCase().includes(search.toLowerCase()));
   const hidden = directory.data?.hidden_count ?? 0;
 
   return (
     <section className="desk-panel p-5">
       <h2 className="title-panel">Members</h2>
+      <label className="mt-3 grid gap-1 text-sm sm:max-w-sm">Search members<input className="desk-input" type="search" value={search} onChange={event => setSearch(event.target.value)} /></label>
       {detail.isLoading ? <p className="text-sm text-muted">Loading profile…</p> : null}
       {detail.isError ? <p role="alert" className="text-sm text-danger">{detail.error instanceof Error ? detail.error.message : "Unable to load this profile."}</p> : null}
       {entries.length === 0 ? (
-        <p className="mt-1 text-sm text-muted">Nobody has published a profile yet.</p>
+        <EmptyState message={search ? "No members match. Try another name." : "No members have shared a profile yet."} />
       ) : (
         <ul className="mt-3 space-y-2">
-          {entries.map((entry) => {
-            const tone = identityTone(entry.membership_id);
-            return <li className={`border-l-2 ${openId === entry.membership_id ? "border-secondary" : tone.border} pl-2`} key={entry.membership_id}>
-              <button
-                className="desk-button-ghost w-full justify-start text-left"
-                type="button"
-                onClick={() =>
-                  setOpenId(openId === entry.membership_id ? null : entry.membership_id)
-                }
-                aria-expanded={openId === entry.membership_id}
-              >
-                <span className={`h-10 w-10 shrink-0 overflow-hidden rounded-full border ${tone.border} ${tone.surface}`}>
-                  {entry.avatar_url ? (
-                    <img src={entry.avatar_url} alt="" className="h-full w-full object-cover" />
-                  ) : null}
-                </span>
-                <span className="min-w-0">
-                  <span className="block font-medium text-ink">{entry.display_name}</span>
-                  {entry.headline ? (
-                    <span className="block truncate text-sm text-muted">{entry.headline}</span>
-                  ) : null}
-                </span>
-              </button>
-              {/* Unmounted rather than hidden when collapsed, so keyboard users cannot
-                  tab into links they cannot see. */}
-              {openId === entry.membership_id && detail.data ? (
-                <ProfileDetail profile={detail.data} />
-              ) : null}
-            </li>;
-          })}
+          {entries.map(entry => <li key={entry.membership_id}><ListRow title={entry.display_name}
+            identity={entry.avatar_url ? { kind: "image", src: entry.avatar_url } : { kind: "avatar", name: entry.display_name, seed: String(entry.membership_id) }}
+            meta={entry.headline} onClick={() => setOpenId(entry.membership_id)} /></li>)}
         </ul>
       )}
+      {openId !== null ? <DetailDrawer open title={directory.data?.members.find(entry => entry.membership_id === openId)?.display_name || "Member profile"} onClose={() => setOpenId(null)}>{detail.isLoading ? <p role="status">Loading profile...</p> : detail.data ? <ProfileDetail profile={detail.data} /> : null}</DetailDrawer> : null}
       {hidden > 0 ? (
         <p className="mt-3 text-sm text-muted">
           {`${hidden} more ${hidden === 1 ? "member has" : "members have"} not published a profile.`}
@@ -110,7 +87,7 @@ export function MemberDirectory({ makerspaceId }: { makerspaceId: number }) {
 
 function ProfileDetail({ profile }: { profile: MemberProfile }) {
   return (
-    <div className="desk-panel mt-2 border-secondary p-3">
+    <div className="desk-panel mt-2 border-brand p-3">
       {profile.institution ? (
         <p className="text-sm text-muted">{profile.institution}</p>
       ) : null}
@@ -129,12 +106,12 @@ function ProfileDetail({ profile }: { profile: MemberProfile }) {
       ) : null}
       {profile.github_contributions !== null ? (
         <p className="mt-3 text-sm text-muted">
-          <span className="font-mono">{profile.github_contributions}</span> GitHub contributions in the last year.
+          <span className="tabular-nums">{profile.github_contributions}</span> GitHub contributions in the last year.
         </p>
       ) : null}
       {typeof profile.activity?.events_attended === "number" ? (
         <p className="mt-1 text-sm text-muted">
-          <span className="font-mono">{profile.activity.events_attended}</span> events attended here.
+          <span className="tabular-nums">{profile.activity.events_attended}</span> events attended here.
         </p>
       ) : null}
       {profile.activity?.recent_attended_events?.length ? (
@@ -147,7 +124,7 @@ function ProfileDetail({ profile }: { profile: MemberProfile }) {
             {profile.activity.recent_attended_events.map((event) => (
               <li key={event.id}>
                 {event.title} ·{" "}
-                <span className="font-mono">{new Date(event.starts_at).toLocaleDateString(undefined, {
+                <span className="tabular-nums">{new Date(event.starts_at).toLocaleDateString(undefined, {
                   year: "numeric",
                   month: "short",
                   day: "numeric",
@@ -181,7 +158,7 @@ function ProfileDetail({ profile }: { profile: MemberProfile }) {
                       {/* External and member-authored: noopener/noreferrer keeps the
                           destination from reaching back through window.opener. */}
                       <a
-                        className={`${linkTone.ink} underline`}
+                        className={`${linkTone.ink} inline-flex min-h-11 items-center break-all underline`}
                         href={link.url}
                         target="_blank"
                         rel="noopener noreferrer"

@@ -26,6 +26,7 @@ class NotificationFeature(models.TextChoices):
     PAYMENTS = "payments", "Payments"
     STOCK = "stock", "Stock and procurement"
     CERTIFICATIONS = "certifications", "Certifications"
+    PRESENCE = "presence", "Presence"
 
 
 class NotificationChannel(models.TextChoices):
@@ -37,22 +38,27 @@ class NotificationChannel(models.TextChoices):
     DISCORD = "discord", "Discord"
     WEBHOOK = "webhook", "Signed webhook"
     NATIVE_PUSH = "native_push", "Native push"
+    SMS = "sms", "SMS"
+    WHATSAPP = "whatsapp", "WhatsApp"
 
 
 class NonEmailNotificationChannel(models.TextChoices):
+    # Addressed SMS/WhatsApp and device push are never room destinations.
+    WHATSAPP = "whatsapp", "WhatsApp"
     TELEGRAM = "telegram", "Telegram"
     SLACK = "slack", "Slack"
     MATTERMOST = "mattermost", "Mattermost"
     DISCORD = "discord", "Discord"
     WEBHOOK = "webhook", "Signed webhook"
     NATIVE_PUSH = "native_push", "Native push"
+    SMS = "sms", "SMS"
 
 
 class ChatNotificationChannel(models.TextChoices):
     """The channels that post into a room, i.e. the ones a destination can name.
 
-    `NonEmailNotificationChannel` minus `native_push`: push is delivered per device to a
-    named user, so there is no room to address and no credential to store.
+    Excludes addressed SMS/WhatsApp and native push: those channels target a named
+    person or device, so a room cannot supply their recipient identity.
     """
 
     TELEGRAM = "telegram", "Telegram"
@@ -105,6 +111,8 @@ class NotificationDeliveryStatus(models.TextChoices):
 # out — overstating what the toggle does. Tenant email is gated by
 # `dispatch.email_module_blocks`, which knows about the exemptions; this table does not.
 CHANNEL_MODULE_KEYS = {
+    "sms": "sms",
+    "whatsapp": "whatsapp",
     "in_app": "notifications",
     "telegram": "telegram",
     "slack": "slack",

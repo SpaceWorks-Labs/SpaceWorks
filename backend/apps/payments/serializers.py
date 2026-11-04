@@ -6,6 +6,8 @@ from rest_framework import serializers
 from apps.payments.models import Payment
 from apps.payments.subjects import subject_label
 from apps.payments.serializers_reconciliation import refunded_total
+from apps.payments.serializers_refund_cases import MemberRefundCaseSerializer
+from apps.payments.serializers_l5 import OfflineCollectionSerializer
 
 
 class MemberSettlementSerializer(serializers.Serializer):
@@ -40,6 +42,12 @@ class MemberPaymentSerializer(serializers.ModelSerializer):
     # the receipt, yet the payer had no way to see that a refund existed at all.
     refunded_amount = serializers.SerializerMethodField()
     refunds = serializers.SerializerMethodField()
+    # The latest refund case and whether asking for one is possible now. Status and the
+    # staff decision note only -- never the policy figures or who decided.
+    refund_case = serializers.SerializerMethodField()
+    refund_requestable = serializers.SerializerMethodField()
+    # Lane L5: UPI QR details, offline instructions and the payer's own claim.
+    offline_collection = serializers.SerializerMethodField()
 
     class Meta:
         model = Payment
@@ -51,8 +59,38 @@ class MemberPaymentSerializer(serializers.ModelSerializer):
             "id", "subject_type", "subject_label", "status", "amount", "currency",
             "due_at", "due_date", "due_state",
             "checkout_url", "online_payment_available", "settlement",
-            "refunded_amount", "refunds", "created_at",
+            "refunded_amount", "refunds", "refund_case", "refund_requestable", "created_at",
+            "method_label", "offline_collection",
         )
+
+    @extend_schema_field(OfflineCollectionSerializer())
+    def get_offline_collection(self, payment):
+        from apps.payments.payment_rows_l5 import offline_collection
+        return offline_collection(payment, self.context.get("payment_offline"))
+
+    def _cases(self, payment):
+        # Prefetched by the member history view; newest first by model ordering.
+        return list(payment.refund_cases.all())
+
+    @extend_schema_field(MemberRefundCaseSerializer(allow_null=True))
+    def get_refund_case(self, payment):
+        cases = self._cases(payment)
+        return MemberRefundCaseSerializer(cases[0]).data if cases else None
+
+    def get_refund_requestable(self, payment) -> bool:
+        from apps.payments.models import Refund, RefundCase
+        if payment.status not in (Payment.Status.PAID_ONLINE, Payment.Status.PAID_OFFLINE):
+            return False
+        if payment.subject_type == Payment.SubjectType.LOAN_DEPOSIT:
+            return False
+        cases = self._cases(payment)
+        if any(case.status in RefundCase.ACTIVE_STATUSES and (case.kind == RefundCase.Kind.REQUEST
+                                                                or case.requested_by_id) for case in cases):
+            return False
+        counted = sum((row.amount for row in payment.refunds.all()
+                       if row.status in Refund.COUNTED_STATUSES and not hasattr(row, "amended_by")),
+                      Decimal("0.00"))
+        return counted < payment.amount
 
     def get_refunded_amount(self, payment) -> Decimal:
         return refunded_total(payment)
@@ -148,6 +186,9 @@ class StaffPaymentSerializer(MemberPaymentSerializer):
     # per-row refund query would grow the service queue's query count with its length.
     refunded_amount = None
     refunds = None
+    refund_case = None
+    refund_requestable = None
+    offline_collection = None
     # Machine-queue summaries do not render aging. Keep local-day lookups on the
     # ledger/history surfaces whose queries fetch the owning makerspace in bulk.
     due_state = None
@@ -156,5 +197,6 @@ class StaffPaymentSerializer(MemberPaymentSerializer):
     class Meta(MemberPaymentSerializer.Meta):
         fields = tuple(
             name for name in MemberPaymentSerializer.Meta.fields
-            if name not in {"refunded_amount", "refunds", "due_at", "due_date", "due_state"}
+            if name not in {"refunded_amount", "refunds", "refund_case", "refund_requestable",
+                            "due_at", "due_date", "due_state", "offline_collection", "method_label"}
         )

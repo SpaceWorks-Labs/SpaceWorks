@@ -12,19 +12,10 @@ answers which:
   PROTECT FK on a PII-mapped model, and the Hard Rules need a named person on every
   handover. What goes away is self-service, not identity.
 
-Two exemptions are load-bearing and neither is optional:
-
-* **Staff authentication is NEVER gated.** It is core RBAC -- a deployment that could
-  switch off its own staff logins could not be administered. This is the same reasoning
-  that keeps the staff roster ungated by `membership` (plan A7), and it is why the gate
-  below is keyed on the login *surface* and not merely on the provider.
-* **A configured OIDC provider is never gated.** `oidc:<slug>` rows are the space's own
-  directory (Keycloak, Authentik, Azure AD, Okta) -- an institution's existing accounts,
-  not an account ecosystem this deployment runs. They are precisely the identity source
-  an accounts-off install is expected to authenticate members against, so gating them
-  would remove the alternative at the same moment it removes the default. The built-in
-  `google`/`apple` providers are the consumer ecosystem and are gated on the member
-  surface.
+Staff and platform accounts use password authentication independently of this member
+policy. Consumer providers, phone OTP and OIDC deliver member sessions only. A configured
+OIDC provider remains available when the accounts ecosystem is off, because it is the
+installation's own directory rather than a self-registration service.
 
 Reads fail **OPEN**, matching every other capability read on an auth path: a broken
 lookup must never lock people out of signing in. The access rules elsewhere fail closed;
@@ -93,7 +84,7 @@ def member_login_allowed(provider=None, *, surface="member"):
     sign-in and self sign-up.
     """
     if surface != "member":
-        return True
+        return False
     if is_external_provider(provider):
         return True
     return member_accounts_enabled()

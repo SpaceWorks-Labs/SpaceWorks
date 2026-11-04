@@ -1,7 +1,7 @@
 import { MaintenanceMeterFields } from "./MaintenanceMeterFields";
 import { useState } from "react";
 
-import { ConfirmDialog, EmptyState } from "../../../../components/ui";
+import { ConfirmDialog, EmptyState, ListRow, StatusPill } from "../../../../components/ui";
 import {
   useCreateMaintenanceSchedule,
   useDeactivateMaintenanceSchedule,
@@ -83,6 +83,10 @@ export function MaintenanceSchedules({
           required
         />
       </label>
+      <label className="flex min-h-11 items-center gap-2 text-sm sm:col-span-3">
+        <input type="checkbox" checked={value.blocks_use ?? false} onChange={(event) => change({ ...value, blocks_use: event.target.checked })} />
+        Lock the machine out when overdue
+      </label>
     </>
   );
 
@@ -93,12 +97,11 @@ export function MaintenanceSchedules({
       </h3>
       {!schedules.length ? (
         <EmptyState
-          title="No maintenance schedules"
-          description="Create a recurring schedule to track upcoming maintenance."
+          message="No maintenance schedules yet. Create the first recurring schedule."
         />
       ) : null}
       {[...active, ...inactive].map((schedule) => (
-        <article key={schedule.id} className="rounded-lg border border-line bg-bg p-3">
+        <article key={schedule.id} className="grid gap-3">
           {editing === schedule.id ? (
             <form
               className="grid gap-2 sm:grid-cols-3"
@@ -111,7 +114,7 @@ export function MaintenanceSchedules({
               }}
             >
               {fields(editDraft, setEditDraft, "Edit schedule")}
-              <div className="flex gap-2 sm:col-span-3">
+              <div className="flex flex-wrap gap-2 sm:col-span-3">
                 <button className="desk-button-primary" type="submit" disabled={update.isPending}>
                   {update.isPending ? "Saving..." : "Save schedule"}
                 </button>
@@ -121,24 +124,16 @@ export function MaintenanceSchedules({
               </div>
             </form>
           ) : (
-            <div className="flex flex-wrap items-start gap-2">
-              <div className="min-w-0 flex-1">
-                <strong className="block text-sm text-ink">{schedule.description}</strong>
-                <span className="text-xs text-muted">
+            <ListRow title={schedule.description} meta={<span>
                   {schedule.trigger !== "days" && schedule.trigger ? `Usage: ${[schedule.usage_hours && `${schedule.usage_hours} hours`, schedule.job_count && `${schedule.job_count} jobs`].filter(Boolean).join(" or ")}. ` : ""}
                   {schedule.trigger !== "usage" ? `Every ${schedule.interval_days} days (${schedule.anchor === "calendar" ? "fixed calendar" : "from completion"}) · ${formatDate(schedule.next_due)}` : "Resets when maintenance is completed."}
-                </span>
-              </div>
-              <span className={schedule.overdue
-                ? "rounded-md bg-danger/15 px-2 py-1 text-xs font-semibold text-danger"
-                : schedule.is_active
-                  ? "rounded-md bg-accent/15 px-2 py-1 text-xs font-semibold text-ink"
-                  : "rounded-md bg-surface px-2 py-1 text-xs font-semibold text-muted"}
-              >
-                {schedule.overdue ? "Maintenance due" : schedule.is_active ? schedule.trigger === "usage" ? "Within usage threshold" : "Due as scheduled" : "Inactive"}
-              </span>
+                  {schedule.blocks_use ? " · Locks the machine when overdue" : ""}
+                </span>}
+              right={<div className="flex flex-wrap items-center gap-2"><StatusPill
+                label={schedule.overdue ? "Maintenance due" : schedule.is_active ? schedule.trigger === "usage" ? "Within usage threshold" : "Due as scheduled" : "Inactive"}
+                tone={schedule.overdue ? "danger" : schedule.is_active ? "accent" : "neutral"} />
               {canEdit && schedule.is_active && !retired ? (
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <button className="desk-button-success" type="button" onClick={() => onComplete(schedule)}>
                     Complete
                   </button>
@@ -152,6 +147,7 @@ export function MaintenanceSchedules({
                         interval_days: schedule.interval_days,
                         anchor: schedule.anchor ?? "completion",
                         next_due: schedule.next_due,
+                        blocks_use: schedule.blocks_use ?? false,
                       });
                       setEditing(schedule.id);
                     }}
@@ -167,8 +163,7 @@ export function MaintenanceSchedules({
                     Deactivate
                   </button>
                 </div>
-              ) : null}
-            </div>
+              ) : null}</div>} />
           )}
         </article>
       ))}

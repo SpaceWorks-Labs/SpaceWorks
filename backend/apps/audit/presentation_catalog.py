@@ -23,6 +23,19 @@ from .presentation_catalog_payments import ENTRIES as _PAYMENTS
 from .presentation_catalog_platform import ENTRIES as _PLATFORM
 from .presentation_catalog_merged import ENTRIES as _MERGED
 from .presentation_catalog_types import AuditPresentation, P
+from .presentation_catalog_profiles import ENTRIES as _PROFILES
+from .presentation_catalog_p2_wa_twilio import ENTRIES as _WA_TWILIO
+from .presentation_catalog_wa_meta import ENTRIES as _WA_META
+from .presentation_catalog_p2_p_chat import ENTRIES as _P2_P_CHAT
+from .presentation_catalog_p2_bookings import ENTRIES as _P2_BOOKINGS
+from .presentation_catalog_p2_events import ENTRIES as _P2_EVENTS
+from .presentation_catalog_notification_media import ENTRIES as _NOTIFICATION_MEDIA
+from .presentation_catalog_messaging import ENTRIES as _MESSAGING
+from .presentation_catalog_programme import ENTRIES as _PROGRAMME
+from .presentation_catalog_reimbursements import ENTRIES as _REIMBURSEMENTS
+from .presentation_catalog_l12 import ENTRIES as _L12
+from .presentation_catalog_l23 import ENTRIES as _L23
+from .presentation_catalog_l16 import ENTRIES as _L16
 
 # Closed name -> callable registry for target links. Phase 10 ships no resolver: a link
 # needs a real route and query-level tenant authorization, which no generic one has.
@@ -41,9 +54,45 @@ def _compose(*fragments):
     return catalogue
 
 
+from .presentation_catalog_p2_presence import ENTRIES as _PRESENCE
+from .presentation_catalog_security import ENTRIES as _SECURITY
+from .presentation_catalog_settings_authority import ENTRIES as _SETTINGS_AUTHORITY
+from .presentation_catalog_r2_l1 import ENTRIES as _R2_L1
+from .presentation_catalog_space_backup import ENTRIES as _SPACE_BACKUP
+from .presentation_catalog_r2_l2 import ENTRIES as _R2_L2
+from .presentation_catalog_unified_accounts import ENTRIES as _UNIFIED_ACCOUNTS
+from .presentation_catalog_r2_l4 import ENTRIES as _R2_L4
+from .presentation_catalog_r2_l5 import ENTRIES as _R2_L5
+from .presentation_catalog_r2_l15 import ENTRIES as _R2_L15
+from .presentation_catalog_r2_l10 import ENTRIES as _R2_L10
+from .presentation_catalog_r2_l11 import ENTRIES as _R2_L11
+from .presentation_catalog_account_merge import ENTRIES as _ACCOUNT_MERGE
+from .presentation_catalog_login_security import ENTRIES as _LOGIN_SECURITY
+from .presentation_catalog_ip_security import ENTRIES as _IP_SECURITY
+from .presentation_catalog_staff_roles import ENTRIES as _STAFF_ROLES
+
 PRESENTATION_CATALOG = _compose(
+    _PROGRAMME,
+    _REIMBURSEMENTS,
+    _NOTIFICATION_MEDIA,
+    _PRESENCE,
+    _SECURITY,
+    _SETTINGS_AUTHORITY,
+    _R2_L1,
+    _SPACE_BACKUP,
+    _R2_L2,
+    _UNIFIED_ACCOUNTS,
+    _R2_L5,
+    _R2_L15,
+    _R2_L10,
+    _R2_L11,
+    _ACCOUNT_MERGE,
+    _LOGIN_SECURITY,
+    _IP_SECURITY,
+    _STAFF_ROLES,
     _ACCOUNTS, _MAKERSPACES, _HARDWARE, _MACHINES, _COMMUNITY, _MIGRATION, _PAYMENTS,
-    _PLATFORM, _MEMBER_ACCOUNT, _MERGED,
+    _PLATFORM, _MEMBER_ACCOUNT, _MERGED, _PROFILES, _WA_TWILIO, _WA_META, _P2_P_CHAT, _P2_BOOKINGS, _P2_EVENTS,
+    _MESSAGING, _R2_L4, _L12, _L23, _L16,
 )
 
 

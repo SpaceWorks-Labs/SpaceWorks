@@ -7,6 +7,7 @@ The source-tree guard holds this literal catalogue exact for future emitters.
 from .presentation_catalog_types import P
 
 ENTRIES = (
+    P("email.provider_event_received", "Email provider event received"),
     P("backup.archive_pruned", "Backup archive pruned"),
     P("backup.archive_rehydrate_failed", "Backup archive rehydrate failed"),
     P("backup.archive_rehydrate_requested", "Backup archive rehydrate requested"),
@@ -81,10 +82,6 @@ ENTRIES = (
     P("platform.space_pack_profile_saved", "Platform space pack profile saved"),
     P("qr_print_batch.item_saved", "Qr print batch item saved"),
     P("qr_print_batch.items_saved", "Qr print batch items saved"),
-    P("staff.invitation_accepted", "Staff invitation accepted"),
-    P("staff.invitation_created", "Staff invitation created"),
-    P("staff.invitation_resent", "Staff invitation resent"),
-    P("staff.invitation_revoked", "Staff invitation revoked"),
     P("stocktake.policy_updated", "Stocktake policy updated"),
     P("stocktake.schedule_created", "Stocktake schedule created"),
     P("stocktake.schedule_deleted", "Stocktake schedule deleted"),

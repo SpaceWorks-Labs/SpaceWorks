@@ -1,7 +1,9 @@
+import { SettingsEditorActions } from "./SettingsEditorActions";
+import { SettingsRow } from "../../components/ui";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { Badge } from "../../components/ui";
+import { StatusPill as Badge } from "../../components/ui";
 import type { ApiPath } from "../../generated/api";
 import { staffRequest } from "../../lib/api";
 import type { Makerspace } from "./StaffPanels";
@@ -105,7 +107,7 @@ export function MakerspaceCustomDomainSettings({ makerspace, settings, loading }
     Boolean(currentDomain) && !record && status === "verified" && !domainChanged;
 
   return (
-    <div className="min-w-0 rounded-md border border-line bg-bg p-4">
+    <SettingsRow label="Custom domain" helper="Route this makerspace's public and staff surfaces through a dedicated domain."><div className="@container grid min-w-0 gap-4">
       <form
         className="grid min-w-0 gap-4"
         onSubmit={(event) => {
@@ -115,25 +117,17 @@ export function MakerspaceCustomDomainSettings({ makerspace, settings, loading }
           }
         }}
       >
-        <div className="grid min-w-0 gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
+        <div className="grid min-w-0 gap-3  md:items-start">
           <div className="grid min-w-0 max-w-2xl gap-2">
             <div className="flex flex-wrap items-center gap-2">
-              <h3 className="text-base font-semibold text-ink">Custom domain</h3>
-              <Badge tone={isSelfHostActive ? "success" : domainStatusTone(status)}>
+
+              <Badge label="" tone={isSelfHostActive ? "success" : domainStatusTone(status)}>
                 {isSelfHostActive ? "Active" : domainStatusLabel(status)}
               </Badge>
             </div>
-            <p className="text-sm text-muted">
-              Route this makerspace&apos;s public and staff surfaces through a dedicated domain.
-            </p>
+
           </div>
-          <button
-            className="desk-button-primary w-full max-w-full justify-self-start sm:w-auto md:justify-self-end"
-            type="submit"
-            disabled={domainSaveDisabled}
-          >
-            {updateCustomDomain.isPending ? "Saving..." : "Save domain"}
-          </button>
+          <SettingsEditorActions dirty={domainChanged || hiddenChanged} onDiscard={() => { setDomainInput(currentDomain ?? ""); setHideFromDirectory(Boolean(currentDomain) && currentHidden); setVerifyDetail(""); }} pending={updateCustomDomain.isPending} disabled={domainSaveDisabled} />
         </div>
 
         <div className="grid min-w-0 max-w-xl gap-2">
@@ -155,7 +149,7 @@ export function MakerspaceCustomDomainSettings({ makerspace, settings, loading }
           />
         </div>
 
-        <label className="flex min-w-0 max-w-xl items-start gap-3 text-sm text-ink">
+        <label className="min-h-11 flex min-w-0 max-w-xl items-start gap-3 text-sm text-ink">
           <input
             className="mt-1 h-4 w-4"
             type="checkbox"
@@ -215,7 +209,7 @@ export function MakerspaceCustomDomainSettings({ makerspace, settings, loading }
           <p className="text-sm text-danger">{verifyDomain.error.message}</p>
         ) : null}
       </form>
-    </div>
+    </div></SettingsRow>
   );
 }
 
@@ -223,13 +217,13 @@ function DnsRecord({ record }: { record: DomainRecord }) {
   return (
     <div className="grid min-w-0 gap-2">
       <p className="font-semibold text-ink">DNS TXT record</p>
-      <dl className="grid min-w-0 gap-2 sm:grid-cols-[96px_minmax(0,1fr)]">
-        <dt className="font-mono text-xs uppercase text-muted">Host</dt>
-        <dd className="break-all font-mono text-xs text-ink">{record.host}</dd>
-        <dt className="font-mono text-xs uppercase text-muted">Type</dt>
-        <dd className="font-mono text-xs text-ink">{record.type}</dd>
-        <dt className="font-mono text-xs uppercase text-muted">Value</dt>
-        <dd className="break-all font-mono text-xs text-ink">{record.value}</dd>
+      <dl className="grid min-w-0 gap-2 @sm:grid-cols-[96px_minmax(0,1fr)]">
+        <dt className="text-xs uppercase text-muted">Host</dt>
+        <dd className="break-all code-text text-xs text-ink">{record.host}</dd>
+        <dt className="text-xs uppercase text-muted">Type</dt>
+        <dd className="code-text text-xs text-ink">{record.type}</dd>
+        <dt className="text-xs uppercase text-muted">Value</dt>
+        <dd className="break-all code-text text-xs text-ink">{record.value}</dd>
       </dl>
     </div>
   );

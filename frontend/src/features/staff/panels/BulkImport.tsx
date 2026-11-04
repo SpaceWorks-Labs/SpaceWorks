@@ -1,14 +1,14 @@
+import { plural } from "../../../lib/plural";
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 
-import { Field, Metric, Modal } from "../../../components/ui";
+import { ErrorText, Field } from "../../../components/ui";
 import { staffRequest } from "../../../lib/api";
 import { getJobSession, trackJob } from "../../../components/ui/jobStore";
 import {
   fields,
   labelFor,
   mapRow,
-  messageFor,
   parseDelimited,
   parseFileSample,
   suggestMapping,
@@ -17,7 +17,9 @@ import {
   type Mapping,
   type RawRow,
 } from "./BulkImportHelpers";
-import { Panel, type Makerspace } from "./shared";
+import { type Makerspace } from "./shared";
+import { FlowLayout } from "../../../components/layouts";
+import { ImportSummary, ImportProgress } from "./BulkImportResults";
 
 export function BulkImport({ makerspace }: { makerspace: Makerspace }) {
   const [advancedOpen, setAdvancedOpen] = useState(false);
@@ -27,7 +29,8 @@ export function BulkImport({ makerspace }: { makerspace: Makerspace }) {
   const [sourceRows, setSourceRows] = useState<RawRow[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [mapping, setMapping] = useState<Mapping>({});
-  const [mappingOpen, setMappingOpen] = useState(false);
+  const [step, setStep] = useState("upload");
+  const [source, setSource] = useState<"table" | "file" | "json">("table");
   const [jobId, setJobId] = useState<number | null>(null);
   const [error, setError] = useState("");
   const syncMutation = useMutation({
@@ -37,6 +40,7 @@ export function BulkImport({ makerspace }: { makerspace: Makerspace }) {
         body: JSON.stringify({ rows }),
       }),
     onMutate: () => setJobId(null),
+    onSuccess: (_data, variables) => setStep(variables.apply ? "import" : "review"),
   });
   const jobMutation = useMutation({
     onMutate: getJobSession,
@@ -47,7 +51,7 @@ export function BulkImport({ makerspace }: { makerspace: Makerspace }) {
       body.append("mapping", JSON.stringify(mapping));
       return staffRequest<BulkImportJob>(`/admin/makerspace/${makerspace.id}/inventory/import/jobs`, { method: "POST", body });
     },
-    onSuccess: (job, _variables, session) => { setJobId(job.id); trackJob({ key: `import:${makerspace.id}:${job.id}`, label: `Inventory ${job.mode} #${job.id}`, makerspaceId: makerspace.id, status: job.status, endpoint: `/admin/makerspace/${makerspace.id}/inventory/import/jobs/${job.id}` }, session); },
+    onSuccess: (job, _variables, session) => { setStep(job.mode === "apply" ? "import" : "review"); setJobId(job.id); trackJob({ key: `import:${makerspace.id}:${job.id}`, label: `Inventory ${job.mode} #${job.id}`, makerspaceId: makerspace.id, status: job.status, endpoint: `/admin/makerspace/${makerspace.id}/inventory/import/jobs/${job.id}` }, session); },
   });
   const jobQuery = useQuery({
     queryKey: ["bulk-import-job", makerspace.id, jobId],
@@ -57,7 +61,7 @@ export function BulkImport({ makerspace }: { makerspace: Makerspace }) {
   });
   const activeJob = jobQuery.data ?? jobMutation.data;
   const pending = syncMutation.isPending || jobMutation.isPending || isRunning(activeJob);
-  const result = activeJob?.result && Object.keys(activeJob.result).length ? activeJob.result : syncMutation.data;
+  const result = activeJob ? activeJob.result && Object.keys(activeJob.result).length ? activeJob.result : undefined : syncMutation.data;
   const mappedRows = () => sourceRows.map((row) => mapRow(row, mapping));
 
   const submitRows = (apply: boolean, rows: RawRow[]) => {
@@ -93,112 +97,41 @@ export function BulkImport({ makerspace }: { makerspace: Makerspace }) {
     setSourceRows(rows);
     setHeaders(nextHeaders);
     setMapping(suggestMapping(nextHeaders));
-    setMappingOpen(true);
+    setStep("map");
     setError("");
   };
-  return (
-    <Panel title="Bulk import">
-      <div className="grid gap-4">
-        <Field label="Upload CSV or XLSX" className="gap-2">
-          <input
-            className="desk-input"
-            type="file"
-            accept=".csv,.tsv,.xlsx"
-            disabled={pending}
-            onChange={(event) => {
-              const file = event.target.files?.[0];
-              if (file) { setSelectedFile(file); parseFileSample(file).then(loadRows).catch((exc: Error) => setError(exc.message)); }
-            }}
-          />
-        </Field>
-        <div className="grid gap-2">
-          <Field label="Paste table"><textarea className="desk-input h-28 w-full text-sm" value={tableText} onChange={(e) => { setSelectedFile(null); setTableText(e.target.value); }} /></Field>
-          <div className="desk-actions flex flex-wrap gap-2">
-            <button className="desk-button-ghost" type="button" disabled={pending || !tableText.trim()} onClick={() => loadRows(parseDelimited(tableText))}>Map pasted table</button>
-            <button className="desk-button-ghost" type="button" disabled={pending || !sourceRows.length} onClick={() => setMappingOpen(true)}>Edit mapping</button>
-            <button className="desk-button-ghost" type="button" disabled={pending || !sourceRows.length} onClick={() => submitRows(false, mappedRows())}>Preview</button>
-            <button className="desk-button-primary" type="button" disabled={pending || !sourceRows.length} onClick={() => submitRows(true, mappedRows())}>Apply rows</button>
-            <button className="desk-button-primary" type="button" disabled={pending || !selectedFile} onClick={() => startFileJob("apply")}>Apply file job</button>
-          </div>
-        </div>
-        <details open={advancedOpen} onToggle={(event) => setAdvancedOpen(event.currentTarget.open)}>
-          <summary className="cursor-pointer text-sm font-semibold text-ink">Advanced JSON</summary>
-          <Field label="JSON rows"><textarea className="desk-input mt-2 h-32 w-full font-mono text-sm" value={rawJson} onChange={(e) => setRawJson(e.target.value)} /></Field>
-          <div className="desk-actions mt-2 flex flex-wrap gap-2">
-            <button className="desk-button-ghost" type="button" disabled={pending} onClick={() => submitJson(false)}>Preview JSON</button>
-            <button className="desk-button-primary" type="button" disabled={pending} onClick={() => submitJson(true)}>Apply JSON</button>
-          </div>
+  const chooseFile = (file: File) => { setSource("file"); setSelectedFile(file); parseFileSample(file, makerspace.id).then(loadRows).catch((exc: unknown) => setError(`We couldn't read that file${exc instanceof Error && exc.message ? `: ${exc.message}` : ""}. Save it as CSV or .xlsx and try again.`)); };
+  const errors = result?.summary?.errors ?? result?.errors?.length ?? 0;
+  const finish = step === "import" && !pending && Boolean(result) && activeJob?.status !== "failed";
+  const preview = () => selectedFile ? startFileJob("preview") : submitRows(false, mappedRows());
+  const apply = () => selectedFile ? startFileJob("apply") : source === "json" ? submitJson(true) : submitRows(true, mappedRows());
+  const failure = error || syncMutation.error?.message || jobMutation.error?.message || jobQuery.error?.message || (activeJob?.status === "failed" ? activeJob.error || "Import job failed." : "");
+  return <FlowLayout title="Bulk import" subject="Add or update inventory from a spreadsheet. Review every change before importing." standalone={false}
+    state={{ status: "ready" }} current={step} steps={[{ key: "upload", label: "Upload" }, { key: "map", label: "Match columns" }, { key: "review", label: "Review" }, { key: "import", label: "Import" }].map((item, index) => ({ ...item, state: item.key === step ? "current" : index < ["upload", "map", "review", "import"].indexOf(step) ? "done" : "todo" }))}
+    onCancel={() => { setStep("upload"); setSourceRows([]); setSelectedFile(null); setJobId(null); syncMutation.reset(); jobMutation.reset(); }}
+    leaveGuard={sourceRows.length && !finish ? "Leave this import? Your selected file and mapping will be cleared. A running import continues in the background." : undefined}
+    footer={{ back: step === "import" && failure && !pending ? { label: "Review and try again", onClick: () => setStep(source === "json" ? "upload" : "map") } : step !== "upload" && step !== "import" ? { label: "Back", disabled: pending, onClick: () => setStep(step === "review" ? source === "json" ? "upload" : "map" : "upload") } : undefined,
+      next: { label: step === "upload" ? "Match columns" : step === "map" ? "Preview" : step === "review" ? errors > 0 ? `Import ${plural(Math.max(0, (result?.summary?.total ?? sourceRows.length) - errors), "valid row")}, skip ${errors}` : `Import ${plural(result?.summary?.total ?? sourceRows.length, "row")}` : "Importing…",
+        pending, pendingLabel: step === "review" ? "Importing…" : "Preparing…", disabled: step === "review" ? !result : step === "import",
+        disabledReason: step === "import" ? "Wait for the import to finish." : undefined,
+        onClick: () => { if (step === "upload") { if (source === "json") submitJson(false); else if (selectedFile) setStep("map"); else loadRows(parseDelimited(tableText)); } else if (step === "map") preview(); else if (step === "review") { setStep("import"); apply(); } } } }}
+    result={finish ? { tone: "success", title: "Import complete", summary: <><p>Your inventory is ready to review.</p>{result ? <ImportSummary result={result} /> : null}</>, next: { label: "View inventory →", href: `/m/${makerspace.slug}/admin/inventory` } } : undefined}
+    work={<div className="grid gap-6">
+      {step === "upload" ? <>
+        <div onDragOver={event => event.preventDefault()} onDrop={event => { event.preventDefault(); const file = event.dataTransfer.files[0]; if (file && !pending) chooseFile(file); }}>
+        <Field label="Upload CSV or XLSX" hint="Drop a CSV or Excel file here, or choose a file."><input className="desk-input min-h-32 border-dashed" type="file" accept=".csv,.tsv,.xlsx" disabled={pending}
+          onChange={event => { const file = event.target.files?.[0]; if (file) chooseFile(file); }} /></Field></div>
+        <Field label="Paste table"><textarea className="desk-input min-h-32" value={tableText} onChange={event => { setSource("table"); setSelectedFile(null); setTableText(event.target.value); }} /></Field>
+        <details open={advancedOpen} onToggle={event => setAdvancedOpen(event.currentTarget.open)}><summary className="desk-button-ghost">Use JSON instead</summary>
+          <Field label="JSON rows"><textarea className="desk-input min-h-32 code-text" value={rawJson} onChange={event => { setSource("json"); setSelectedFile(null); setRawJson(event.target.value); }} /></Field>
+          <button className="desk-button" disabled={pending} onClick={() => { setSource("json"); setSelectedFile(null); submitJson(false); }}>Preview JSON</button>
         </details>
-        {pending || activeJob ? <ProgressBar job={activeJob} loading={jobMutation.isPending || syncMutation.isPending} /> : null}
-        {error ? <p className="text-sm text-danger">{error}</p> : null}
-        {syncMutation.error ? <p className="text-sm text-danger">{syncMutation.error.message}</p> : null}
-        {jobMutation.error ? <p className="text-sm text-danger">{jobMutation.error.message}</p> : null}
-        {jobQuery.error ? <p className="text-sm text-danger">{jobQuery.error.message}</p> : null}
-        {activeJob?.status === "failed" ? <p className="text-sm text-danger">{activeJob.error || "Import job failed."}</p> : null}
-        {result ? <ImportSummary result={result} /> : null}
-      </div>
-      <MappingModal open={mappingOpen} headers={headers} mapping={mapping} setMapping={setMapping} onClose={() => setMappingOpen(false)} onPreview={() => { setMappingOpen(false); submitRows(false, mappedRows()); }} />
-    </Panel>
-  );
+      </> : null}
+      {step === "map" ? <div className="grid gap-4 sm:grid-cols-2">{fields.map(field => <Field key={field} label={labelFor(field)}><select className="desk-input" value={mapping[field] ?? ""}
+        onChange={event => setMapping(current => ({ ...current, [field]: event.target.value || undefined }))}><option value="">Do not import</option>{headers.map(header => <option key={header} value={header}>{header}</option>)}</select></Field>)}</div> : null}
+      {pending || activeJob ? <ImportProgress job={activeJob} loading={pending} /> : null}
+      {(step === "review" || step === "import") && result ? <ImportSummary result={result} /> : null}
+      <ErrorText message={failure} />{jobQuery.error ? <button className="desk-button" onClick={() => { void jobQuery.refetch(); }}>Retry</button> : null}
+    </div>} />;
 }
-
-function MappingModal({ open, headers, mapping, setMapping, onClose, onPreview }: { open: boolean; headers: string[]; mapping: Mapping; setMapping: React.Dispatch<React.SetStateAction<Mapping>>; onClose: () => void; onPreview: () => void }) {
-  return (
-    <Modal open={open} onClose={onClose} title="Map columns" footer={<div className="desk-actions flex flex-wrap justify-end gap-2"><button className="desk-button-ghost" type="button" onClick={onClose}>Cancel</button><button className="desk-button-primary" type="button" onClick={onPreview}>Preview</button></div>}>
-      <div className="grid gap-3 sm:grid-cols-2">
-        {fields.map((field) => (
-          <label key={field} className="grid gap-1 text-sm">
-            <span className="font-medium text-ink">{labelFor(field)}</span>
-            <select className="desk-input" value={mapping[field] ?? ""} onChange={(e) => setMapping((current) => ({ ...current, [field]: e.target.value || undefined }))}>
-              <option value="">Do not import</option>
-              {headers.map((header) => <option key={header} value={header}>{header}</option>)}
-            </select>
-          </label>
-        ))}
-      </div>
-    </Modal>
-  );
-}
-
-function ProgressBar({ job, loading }: { job?: BulkImportJob; loading: boolean }) {
-  const total = job?.total_rows ?? 0;
-  const processed = job?.processed_rows ?? 0;
-  const percent = total ? Math.min(100, Math.round((processed / total) * 100)) : 35;
-  return (
-    <div className="grid gap-1" role="status" aria-live="polite">
-      <div className="h-2 overflow-hidden rounded-sm bg-line"><div className="h-full rounded-sm bg-accent transition-all" style={{ width: `${percent}%` }} /></div>
-      <p className="text-xs text-muted">{job ? `${job.status} ${processed}/${total || "..."}` : loading ? "processing" : "ready"}</p>
-    </div>
-  );
-}
-
-function ImportSummary({ result }: { result: ImportResult }) {
-  const errorRows = new Map((result.errors ?? []).map((item) => [item.row, item.errors]));
-  const warningRows = new Map((result.warnings ?? []).map((item) => [item.row, item.warnings]));
-  return (
-    <div className="grid gap-3 rounded-md border border-line bg-panel p-3">
-      <div className="grid gap-2 text-sm sm:grid-cols-5">
-        <Metric label="Create" value={result.created ?? result.summary?.create ?? 0} />
-        <Metric label="Update" value={result.updated ?? result.summary?.update ?? 0} />
-        <Metric label="Errors" value={result.summary?.errors ?? result.errors?.length ?? 0} />
-        <Metric label="Warnings" value={result.summary?.warnings ?? result.warnings?.length ?? 0} />
-        <Metric label="Rows" value={result.summary?.total ?? result.rows?.length ?? 0} />
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[640px] text-left text-sm">
-          <thead className="eyebrow"><tr><th scope="col" className="px-2 py-1">Row</th><th scope="col" className="px-2 py-1">Status</th><th scope="col" className="px-2 py-1">Name</th><th scope="col" className="px-2 py-1">Message</th></tr></thead>
-          <tbody>{(result.rows ?? []).map((row) => {
-            const errors = errorRows.get(row.row) ?? row.errors;
-            const warnings = warningRows.get(row.row) ?? row.warnings;
-            const message = errors ? messageFor(errors) : warnings ? messageFor(warnings) : "";
-            return <tr key={row.row} className="border-t border-line"><td className="px-2 py-1">{row.row}</td><td className="px-2 py-1">{errors ? "error" : row.action ?? "ready"}</td><td className="px-2 py-1">{String(row.data?.name ?? "")}</td><td className={errors ? "px-2 py-1 text-danger" : "px-2 py-1 text-warn-ink"}>{message}</td></tr>;
-          })}</tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
-function isRunning(job?: BulkImportJob) {
-  return job?.status === "pending" || job?.status === "running";
-}
+function isRunning(job?: BulkImportJob) { return job?.status === "pending" || job?.status === "running"; }

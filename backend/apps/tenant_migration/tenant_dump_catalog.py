@@ -36,53 +36,52 @@ class TenantDumpCatalogError(AssertionError):
     pass
 
 
-# SHA-256 of the ordered model/table/field graph produced by ``catalog_schema``.
+# SHA-256 of the ordered model/table/field graph produced by catalog_schema.
 # Updating it is an explicit review act; runtime introspection never blesses drift.
-# Re-blessed once for the WHOLE merged model graph: the events programme (series,
-# check-in ledger, feedback, certificates, station credential), the organization layer
-# and the evidence retention state. Neither branch's pinned value describes the merge,
-# so this was recomputed after the merge rather than taken from either side.
-# Re-blessed again after both evidence retention models gained a normal auto primary key
-# so that it can travel with a tenant at all.
-# Re-blessed for the forward plan (2026-09-04): trigger-maintained `search_vector` columns on
-# Event/InventoryProduct/Machine (phase 1, DERIVED on import), MemberCard, CertificationType,
-# CertificationGrant, BookableSpace.machine_type and MemberProfile.show_certifications (phase 5);
-# again for phase 6: Refund, loan settings/deposit_amount, MembershipPlan/Term, InvitationRequest,
-# Makerspace.lapsed_members_cannot_borrow, ReportSchedule/ReportDelivery.
-# Re-blessed for the manual-settlement ledger: `payments.ManualSettlement` is the
-# append-only cash book recording how and when an offline charge was actually paid, so
-# it must travel with the payments it explains.
-# Re-blessed again for `TenantDumpCapture.money_fingerprint_sha256`, which binds a
-# capture to the tenant's unsettled money so publication can refuse a dump the source
-# has since moved past.
-# Re-blessed on integration: phases 11 and 10, the backup lane, Wave-0 offline refunds,
-# the 7a-7d devices chain and the 9a-9e kiosk chain all changed the catalog; recomputed
-# from the merged snapshot.
-# Recompute after merging lane/w1-events, lane/w1-sweeper, lane/w1-profile,
-# lane/w1-rbac and lane/w1-security. Reminder schedules, makerspace profile fields,
-# and MFA credentials/challenges and staff invitations change the merged catalog.
-# lane/w5-lists adds operations.SavedView to the merged snapshot.
-# Merge lane/w5-theme into integration/2026-10 (including lane/w5-lists);
-# the coordinator recomputes the digest after all lanes are integrated.
-# The security models are DROP in portable artifacts; the coordinator pins the digest.
-# Merge lane/w6-platform into integration/2026-10 (including lane/w5-lists and
-# lane/w5-theme); the coordinator recomputes the digest for the merged lanes.
-# Merge lane/w1-membership with integration/2026-10 (including lane/w6-platform,
-# lane/w5-lists and lane/w5-theme); the coordinator recomputes the merged digest.
-# Merge lane/w1-payments with integration/2026-10 (including lane/w1-membership,
-# lane/w6-platform, lane/w5-lists and lane/w5-theme). Billing policy, Payment.due_at
-# and Refund.amends change the catalog; the coordinator recomputes the merged digest.
-# Merge lane/w2-loans with integration/2026-10 (including lane/w1-payments,
-# lane/w1-membership, lane/w6-platform, lane/w5-lists and lane/w5-theme).
-# The coordinator recomputes the digest for the combined loan and policy graph.
-# Merge lane/w2-machines with integration/2026-10 (including lane/w2-loans);
-# the coordinator recomputes the combined machine, maintenance and loan catalog.
-# Merge lane/w2-events with integration/2026-10 (including lane/w2-loans and
-# lane/w2-machines); the coordinator recomputes the merged event/booking catalog.
-# Merge lane/w2-notify with integration/2026-10 (including lane/w2-events,
-# lane/w2-machines and lane/w2-loans); the coordinator recomputes the merged digest.
-# Re-blessed after permanent removal of the deployment updater singleton.
-CATALOG_SCHEMA_SHA256 = "971cdeb8cbf63d0d5461dc51d9085fd7ad6bba7480fcaf638cdd9de392b4b2d7"
+# Bootstrap union: T account kinds, governance, documents, profiles and presence;
+# O native grants, account lifecycle, push, analytics and addressed messaging.
+# Literal graph reconstruction reproduced BOTH parent pins before computing this
+# merged snapshot digest. Historical repin commentary lives in git history.
+# Pages programme: public page/revision/asset models, handles and event session
+# identities; re-pinned from schema_digest() over the merged graph.
+# Hosting requests (lane/hosting-requests): HostingRequest; re-pinned after that merge.
+# Machine-service ETA (lane/machine-eta): cancellation and notice markers; re-pinned.
+# Cloud programme (cloud/integration): managed coordination, email providers, cloud
+# accounting and storage history; with lane/refunds (refund cases), re-pinned after both merges.
+# Events programme (lane/events-final, decision #86): programme, design and fence
+# steps plus reimbursements; re-pinned from schema_digest() over the merged graph.
+# lane/r1-security: makerspaces/0105 drops anonymous_requests_enabled and accounts/0046 drops
+# User.external_checkin_user_id (#80); re-pinned.
+# lane/p1b-c: makerspaces/0109 MakerspaceSecurityLock and accounts/0047 PlatformPiiAccessGrant
+# (security locks and the superadmin PII window, #114); re-pinned.
+# lane/r2-l17: makerspaces/0110 settings authority (grants and SM locks) and 0111 folded
+# modules (#97, #101, #128); re-pinned.
+# lane/r2-l7b: events/0059-0060 pairwise judging and its guards; re-pinned over L17.
+# lane/p1b-b1 (#110/#111): backup/0030-0033 drop archive custody, decision snapshots, Lane E
+# restore state and the backup module; tenant_migration/0013 drops dump custody; re-pinned.
+# lane/r2-l1b: events/0061 (re-chained after pairwise) public event surface and makerspaces/0112
+# closed notice; re-pinned.
+# lane/p1b-b2: makerspaces/0113 (re-chained after 0112) drops superadmin_access_enabled;
+# backup/0034-0036 per-space backup and restore; accounts/0048; re-pinned.
+# lane/r2-l2b: events/0062 (re-chained after L1's 0061) communications, notifications/0011,
+# integrations/0049, hosting_requests/0002 and organizations/0008; re-pinned.
+# Release-2 batch U-A1 + L4 + L5: accounts/0049-0050 unified accounts, makerspaces/0114 membership
+# track and 0115-0117 (L4, re-chained after 0114) membership lifecycle, payments/0031-0032 and
+# evidence/0009 finance ledger and receipts; re-pinned.
+# lane/r2-s0: accounts/0051-0053 passkeys, login risk and IP access; makerspaces/0118 (re-chained
+# after L4's 0117) per-space security policy; re-pinned.
+# lane/r2-u-d: tenant_migration/0014 grant_staff_roles on import identity decisions; re-pinned.
+# lane/r2-l15c: payments/0033-0034 pricing kernel and guards, bookings/0021 requested price; re-pinned.
+# lane/r2-l10-l11: devices/0005 machine integrations, backup/0038 key rotation and drills,
+# tenant_migration/0015 self-host move request; re-pinned.
+# lane/r2-l12c: inventory/0017, procurement/0009, warranty/0004, hardware_requests/0030,
+# machines/0031, maintenance/0004, bookings/0022 machines and loans depth; re-pinned.
+# lane/r2-s-a: makerspaces/0119 retires security.staff_mfa_required (catalog unchanged).
+# lane/r2-l23: machines/0032 and payments/0035 metered machine sessions; re-pinned.
+# lane/r2-l26: makerspaces/0120 (renumbered after S-A's 0119) public stats settings; re-pinned.
+# lane/r2-l16: makerspaces/0121-0122 (renumbered) Technician role, maintenance/0005 repairs; re-pinned.
+# Orchestrator re-pins the live catalog after final schema/migration verification.
+CATALOG_SCHEMA_SHA256 = "8e3acca80aa259789147bc8d0e40fef310cbbfb7cc3a80e839ab0e21c7dcc0e1"
 
 
 def catalog_models(apps_registry=apps):

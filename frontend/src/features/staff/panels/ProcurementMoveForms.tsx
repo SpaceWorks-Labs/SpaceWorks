@@ -1,4 +1,4 @@
-import { Field } from "../../../components/ui";
+import { Field, SegmentedControl } from "../../../components/ui";
 import type { Product } from "./shared";
 
 type PrinterOption = { id: number; name: string };
@@ -44,7 +44,7 @@ export function HardwareMoveForm({ form, setForm, products, categories, containe
 }) {
   return (
     <div className="grid gap-3">
-      <Segmented values={["create", "topup"]} value={form.mode} label={(mode) => mode === "create" ? "Create item" : "Top up"} onChange={(mode) => setForm({ ...form, mode })} />
+      <SegmentedControl label="Inventory destination" value={form.mode} options={[{ value: "create", label: "Create item" }, { value: "topup", label: "Top up" }]} onChange={mode => setForm({ ...form, mode: mode as HardwareMode })} />
       <Field label="Quantity"><input className="desk-input" type="number" min="1" value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} /></Field>
       {form.mode === "topup" ? (
         <Field label="Existing product">
@@ -64,10 +64,12 @@ export function HardwareMoveForm({ form, setForm, products, categories, containe
             <Field label="Category"><select className="desk-input" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}><option value="">Uncategorized</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></Field>
             <Field label="Container"><select className="desk-input" value={form.box} onChange={(e) => setForm({ ...form, box: e.target.value })}><option value="">No container</option>{containers.map((container) => <option key={container.id} value={container.id}>{container.label}</option>)}</select></Field>
           </div>
-          <div className="grid gap-2 sm:grid-cols-4">
+          <div className="flex flex-wrap gap-x-6">
             <Check label="Public" checked={form.isPublic} onChange={(value) => setForm({ ...form, isPublic: value })} />
             <Check label="Show count" checked={form.showPublicCount} onChange={(value) => setForm({ ...form, showPublicCount: value })} />
             <Check label="Self checkout" checked={form.publicSelfCheckoutEnabled} onChange={(value) => setForm({ ...form, publicSelfCheckoutEnabled: value })} />
+          </div>
+          <div className="grid gap-2">
             <Field label="Visibility"><select className="desk-input" value={form.publicAvailabilityMode} onChange={(e) => setForm({ ...form, publicAvailabilityMode: e.target.value as HardwareForm["publicAvailabilityMode"] })}><option value="status_only">Status only</option><option value="exact_count">Exact count</option><option value="hidden">Hidden</option></select></Field>
           </div>
         </>
@@ -79,7 +81,7 @@ export function HardwareMoveForm({ form, setForm, products, categories, containe
 export function PrintingMoveForm({ form, setForm, printers }: { form: PrintingForm; setForm: (form: PrintingForm) => void; printers: PrinterOption[] }) {
   return (
     <div className="grid gap-3">
-      <Segmented values={["spool", "printer"]} value={form.target} label={(target) => target === "spool" ? "Spool" : "Printer"} onChange={(target) => setForm({ ...form, target })} />
+      <SegmentedControl label="Printing destination" value={form.target} options={[{ value: "spool", label: "Spool" }, { value: "printer", label: "Printer" }]} onChange={target => setForm({ ...form, target: target as PrintingTarget })} />
       {form.target === "spool" ? (
         <>
           <Field label="Printer"><select className="desk-input" value={form.printerId} onChange={(e) => setForm({ ...form, printerId: e.target.value })}><option value="">Unassigned printer</option>{printers.map((printer) => <option key={printer.id} value={printer.id}>{printer.name}</option>)}</select></Field>
@@ -100,10 +102,6 @@ export function PrintingMoveForm({ form, setForm, printers }: { form: PrintingFo
   );
 }
 
-function Segmented<T extends string>({ values, value, label, onChange }: { values: T[]; value: T; label: (value: T) => string; onChange: (value: T) => void }) {
-  return <div className="inline-flex w-max rounded-md border border-line bg-surface p-1">{values.map((item) => <button key={item} type="button" className={value === item ? "desk-button-primary" : "desk-button-ghost"} onClick={() => onChange(item)}>{label(item)}</button>)}</div>;
-}
-
 function Check({ label, checked, onChange }: { label: string; checked: boolean; onChange: (value: boolean) => void }) {
-  return <label className="inline-flex items-center gap-2 text-sm"><input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} /> {label}</label>;
+  return <label className="inline-flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} /> {label}</label>;
 }

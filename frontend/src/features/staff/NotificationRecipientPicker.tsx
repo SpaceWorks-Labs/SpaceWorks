@@ -1,3 +1,5 @@
+import { SettingsQueryState } from "./SettingsQueryState";
+import { SettingsRow } from "../../components/ui";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
@@ -24,9 +26,11 @@ const RECIPIENTS_KEY = (makerspaceId: number) =>
 export function NotificationRecipientPicker({
   makerspaceId,
   delegated = false,
+  visible = true,
 }: {
   makerspaceId: number;
   delegated?: boolean;
+  visible?: boolean;
 }) {
   const path = `/admin/makerspace/${makerspaceId}/notification-recipient-rules`;
   const data = useQuery({
@@ -37,9 +41,9 @@ export function NotificationRecipientPicker({
   const broadOptions = useScopeOptions(makerspaceId, !delegated);
   const options = delegated && data.data
     ? {
-        machineTypes: data.data.scope_options.machine_types,
-        machines: data.data.scope_options.machines,
-        categories: data.data.scope_options.categories,
+        machineTypes: data.data.scope_options?.machine_types ?? [],
+        machines: data.data.scope_options?.machines ?? [],
+        categories: data.data.scope_options?.categories ?? [],
       }
     : broadOptions;
   const features = data.data?.features ?? [];
@@ -47,12 +51,12 @@ export function NotificationRecipientPicker({
     ? { feature: features[0].key, event: features[0].events[0] }
     : null);
   const events = features.find((item) => item.key === current?.feature)?.events ?? [];
+  if (!visible) return null;
 
   return (
-    <section aria-labelledby="notification-recipients-heading" className="mt-6">
-      <h4 id="notification-recipients-heading" className="title-section">
-        Who gets notified
-      </h4>
+    <section className="mt-6" aria-labelledby="notification-recipients-heading"><h3 id="notification-recipients-heading" className="title-section">Who gets notified</h3>
+    <SettingsQueryState query={data} resource="recipient"><SettingsRow label="Recipients"><div className="@container min-w-0">
+
       <p className="mt-2 text-sm text-muted">
         {delegated
           ? "Pick recipients for maintenance alerts within your machine scope. Every rule must name at least one reachable machine or machine type."
@@ -68,7 +72,7 @@ export function NotificationRecipientPicker({
 
       {current ? (
         <>
-          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          <div className="mt-3 grid gap-2 @md:grid-cols-2">
             <label className="grid gap-1 text-sm">
               <span className="eyebrow">Area</span>
               <select
@@ -116,6 +120,6 @@ export function NotificationRecipientPicker({
           ) : null}
         </>
       ) : null}
-    </section>
+    </div></SettingsRow></SettingsQueryState></section>
   );
 }

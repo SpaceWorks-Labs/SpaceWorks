@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { Badge } from "../../../components/ui";
+import { StatusPill as Badge, ListRow, OverflowMenu } from "../../../components/ui";
 import { type NotificationDestination } from "../notificationDestinationTypes";
 import { CHANNELS } from "./channels";
 import { DestinationForm } from "./DestinationForm";
@@ -38,27 +38,14 @@ export function DestinationRow({
     );
   }
 
-  return (
-    <div className="flex flex-wrap items-center gap-2 rounded-md border border-line bg-bg p-3">
-      <span className="font-medium text-ink">{destination.label}</span>
-      <Badge tone="neutral">{destination.channel}</Badge>
-      {destination.credential_set ? (
-        <Badge tone="success">Configured</Badge>
-      ) : (
-        <Badge tone="danger">No credential</Badge>
-      )}
-      {destination.is_active ? null : <Badge tone="warn">Paused</Badge>}
-      <span className="text-sm text-muted">
-        {scopeCount === 0 ? "Everything" : `${scopeCount} scoped`}
-      </span>
-      <span className="ml-auto flex gap-2">
-        <button className="desk-button" onClick={() => setEditing(true)} type="button">
-          Edit
-        </button>
-        <button className="desk-button-danger" onClick={onDelete} type="button">
-          Remove
-        </button>
-      </span>
-    </div>
-  );
+  return <ListRow title={destination.label} meta={<span className="flex flex-wrap items-center gap-2">
+    <Badge label={destination.channel} />
+    <Badge label={destination.credential_set ? "Configured" : "No credential"} tone={destination.credential_set ? "success" : "danger"} />
+    {destination.is_active ? null : <Badge label="Paused" tone="warn" />}
+    <span>{scopeCount === 0 ? "Everything" : `${scopeCount} scoped`}</span>
+  </span>} right={<div className="flex flex-wrap gap-2">
+    <button className="desk-button" onClick={() => setEditing(true)} type="button">Edit</button>
+    <OverflowMenu label={`Actions for ${destination.label}`} actions={[{ label: "Remove", tone: "danger", onClick: onDelete,
+      confirm: { title: "Remove room?", message: `Alerts stop reaching ${destination.label}. Its saved webhook URL is discarded and can't be shown again.`, confirmLabel: "Remove room" } }]} />
+  </div>} />;
 }

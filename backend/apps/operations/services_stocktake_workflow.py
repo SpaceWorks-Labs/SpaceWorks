@@ -144,10 +144,13 @@ def complete_stocktake(actor, stocktake):
         locked.completed_at = timezone.now()
         locked.save(update_fields=["status", "completed_at", "approval_required"])
         audit.record(actor, "stocktake.completed", makerspace=locked.makerspace, target=locked)
+        from .notifications_p2_alerts import notify_stocktake, stocktake_intent
+        notify_stocktake(locked, "completed")
         emit_notification(
             locked.makerspace,
             level="info",
             event="stocktake.completed",
+            source_intent=stocktake_intent(locked, "completed"),
             title="Stocktake awaiting approval" if locked.approval_required else "Stocktake ready to apply",
             body=f"Stocktake #{locked.pk} was completed. " + (
                 "Review is required." if locked.approval_required else "Variances are within the configured threshold."),

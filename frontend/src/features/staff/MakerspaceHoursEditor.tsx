@@ -21,7 +21,7 @@ function IntervalsEditor({ label, intervals, onChange }: {
 
 export function MakerspaceHoursEditor({ value, onChange }: { value: HoursDraft; onChange: (value: HoursDraft) => void }) {
   return <div className="grid gap-4">
-    <label className="flex gap-2 text-sm font-semibold">
+    <label className="flex min-h-11 items-center gap-2 text-sm font-semibold">
       <input type="checkbox" checked={value.configured} onChange={event => onChange({ ...value, configured: event.target.checked })} />
       Set weekly opening hours
     </label>

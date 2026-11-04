@@ -1,5 +1,8 @@
-import { useRef, type KeyboardEvent, type ReactNode } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import type { ReactNode } from "react";
+import { Home, Package, CalendarClock, Calendar, Wallet, Inbox, User } from "lucide-react";
+import { AppShell, type ShellUser, type ShellWorkspace } from "../../components/shell";
+import { useLocation } from "react-router-dom";
+import { ThemeToggle } from "../../components/ThemeToggle";
 
 export const MEMBER_TABS = ["overview", "loans", "bookings", "events", "payments", "inbox", "account"] as const;
 export type MemberTab = typeof MEMBER_TABS[number];
@@ -23,32 +26,26 @@ export function useMemberTab(modules: string[]) {
   return tabs.find((tab) => tab === requested) ?? "overview";
 }
 
-export function MemberPortalTabs({ modules, active, children }: { modules: string[]; active: MemberTab; children: ReactNode }) {
+/** URL destinations use ordinary navigation links; the main region remains the skip target. */
+export function MemberPortalTabs({ modules, active, children, workspace, user }: {
+  modules: string[]; active: MemberTab; children: ReactNode; workspace?: ShellWorkspace; user: ShellUser;
+}) {
   const location = useLocation();
-  const navigate = useNavigate();
-  const refs = useRef<(HTMLAnchorElement | null)[]>([]);
-  const base = location.pathname.match(/^((?:\/m\/[^/]+)?\/member)(?:\/[^/]+)?\/?$/)?.[1] ?? "/member";
-  const tabs = memberTabs(modules);
-  // /account belongs to MemberAccountPage; keep portal controls on the tab route.
-  const path = (tab: MemberTab) => `${base}/${tab === "account" ? "account-portal" : tab}`;
-  function keyDown(event: KeyboardEvent, index: number) {
-    const next = event.key === "ArrowRight" ? (index + 1) % tabs.length
-      : event.key === "ArrowLeft" ? (index + tabs.length - 1) % tabs.length
-        : event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 : null;
-    if (next === null) return;
-    event.preventDefault();
-    refs.current[next]?.focus();
-    navigate(path(tabs[next]));
-  }
-  return <>
-    <div role="tablist" aria-label="Member portal" className="flex flex-wrap gap-2">
-      {tabs.map((tab, index) => <Link key={tab} ref={(node) => { refs.current[index] = node; }}
-        role="tab" id={`member-tab-${tab}`} aria-controls="main-content" aria-selected={active === tab}
-        tabIndex={active === tab ? 0 : -1} className={active === tab ? "desk-button-secondary" : "desk-button"}
-        to={path(tab)} onKeyDown={(event) => keyDown(event, index)}>{tab[0].toUpperCase() + tab.slice(1)}</Link>)}
-    </div>
-    <section role="tabpanel" id="main-content" aria-labelledby={`member-tab-${active}`} tabIndex={-1} className="space-y-5 focus-visible:outline-2 focus-visible:outline-focus">
-      {children}
-    </section>
-  </>;
+  // Deeper member pages (member/machine-jobs/12) keep the tenant prefix for the nav links too.
+  const base = location.pathname.match(/^((?:\/m\/[^/]+)?\/member)(?:\/.*)?$/)?.[1] ?? "/member";
+  const icons = { overview: Home, loans: Package, bookings: CalendarClock, events: Calendar, payments: Wallet, inbox: Inbox, account: User };
+  const items = memberTabs(modules).map(tab => ({ key: tab, label: tab === "overview" ? "Home" : tab[0].toUpperCase() + tab.slice(1),
+    href: `${base}/${tab === "account" ? "account-portal" : tab}`, icon: icons[tab] }));
+  return <AppShell variant="member" compactNav="bottom-tabs" workspace={workspace} activeKey={active}
+    nav={[{ key: "member", items }]} footerLinks={workspace ? [{ label: "View public page ↗", href: base.startsWith("/m/") ? base.replace(/\/member$/, "") : "/" }] : []}
+    user={user}>
+    {/* Below lg the shell pins a bottom tab bar. Sticky save bars sit above it, and a field
+        scrolled into view for the on-screen keyboard keeps clear of it. A list row's text keeps
+        at least 12rem, so on a phone its status/amount/actions drop under the title instead of
+        squeezing it to a few characters per line. */}
+    <div className="min-w-0 space-y-5 [&_:is(input,select,textarea)]:scroll-mb-28 [&_.sticky.bottom-0]:bottom-[calc(var(--shell-bottom-tabs,0px)+env(safe-area-inset-bottom,0px))] lg:[&_.sticky.bottom-0]:bottom-0 [&_.rounded-2xl.flex-wrap>:first-child]:basis-48">
+      {/* Visible on every member screen, as the old header's toggle was; the user menu keeps its copy. */}
+      <div className="flex justify-end"><ThemeToggle variant="icon" /></div>
+      {children}</div>
+  </AppShell>;
 }

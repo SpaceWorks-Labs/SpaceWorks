@@ -9,6 +9,12 @@ def _same(label, names, disposition, reason):
 
 
 AUTHORITY_ENTRIES = (
+    (("events.EventAttendanceCertificate", "layout_snapshot"), authority(
+        D.RESET, "Preserve issuance parameters and SHA-256; discard source-bucket version identity.",
+    )),
+    (("events.EventCertificateArtwork", "version_id"), authority(
+        D.RESET, "Source bucket version identity is local; SHA-256 pins the imported artwork.",
+    )),
     *_same(
         "accounts.User",
         "is_superuser is_staff role",
@@ -23,7 +29,7 @@ AUTHORITY_ENTRIES = (
     ),
     *_same(
         "accounts.User",
-        "telegram_user_id external_checkin_user_id",
+        "telegram_user_id",
         D.RESET,
         "Source-bound external login identities require target relinking.",
     ),
@@ -50,9 +56,9 @@ AUTHORITY_ENTRIES = (
     ),
     *_same(
         "makerspaces.MakerspaceMembership",
-        "role assigned_role can_refer can_verify receives_notifications",
+        "can_refer can_verify",
         D.RESET,
-        "Membership authority and delivery preferences restart at target defaults.",
+        "Member referral and verification grants restart at target defaults.",
     ),
     *_same(
         "makerspaces.MembershipRequest",
@@ -68,7 +74,7 @@ AUTHORITY_ENTRIES = (
     ),
     *_same(
         "makerspaces.Makerspace",
-        "membership_policy referrals_enabled superadmin_access_enabled frontend_domain "
+        "membership_policy referrals_enabled frontend_domain "
         "frontend_domain_status domain_verification_token domain_verified_at "
         "frontend_domain_changed_at cors_allowed_origins enabled_modules enabled_features "
         "resource_limit_overrides hidden_from_central_directory storage_bytes_used "
@@ -261,18 +267,6 @@ AUTHORITY_ENTRIES = (
         "Tenant-authored wording remains bounded by reset target delivery policy.",
     ),
     *_same(
-        "backup.MakerspaceArchiveRecipient",
-        "public_recipient fingerprint label",
-        D.PRESERVE,
-        "Public recipient metadata travels for fresh target proof.",
-    ),
-    *_same(
-        "backup.MakerspaceArchiveRecipient",
-        "verified_at challenge_nonce_digest challenge_issued_at",
-        D.RESET,
-        "Source proof state is not target proof of recipient possession.",
-    ),
-    *_same(
         "apiclients.ApiKeyRequest",
         "status",
         (D.PRESERVE, D.DROP),
@@ -287,3 +281,7 @@ AUTHORITY_ENTRIES = (
     ),
 )
 
+from .catalog_booking_arrival import authority_entries as booking_arrival_authority
+AUTHORITY_ENTRIES += booking_arrival_authority(authority, D)
+from .catalog_p2_bookings import authority_entries as p2_booking_authority
+AUTHORITY_ENTRIES += p2_booking_authority(authority, D)

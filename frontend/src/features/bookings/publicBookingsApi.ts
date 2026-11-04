@@ -3,15 +3,18 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ApiPath } from "../../generated/api";
 import { StructuredApiError, tenantPublicRequest } from "../../lib/api";
 import type { CustomAnswers, CustomFormSchema } from "../forms/customFormTypes";
+import type { GalleryPhoto } from "../../components/ui/Gallery";
 
 export type PublicBookableSpace = {
   public_token: string;
   name: string;
-  kind: "dev_room" | "bench" | "meeting" | "other";
+  kind: "dev_room" | "bench" | "meeting" | "other" | "machine";
   description: string;
   capacity: number;
   location: string;
   image_url: string;
+  /** Ordered place photos (Phase 2 gallery); absent on older servers. */
+  photos?: GalleryPhoto[];
   approval_mode: "instant" | "approve";
   custom_form: CustomFormSchema;
   show_public_availability: boolean;
@@ -32,9 +35,11 @@ export type PublicBookingInput = {
   ends_at: string;
   custom_answers?: CustomAnswers | null;
   website?: string;
+  /** The digest of the price preview the member saw (lane L15); 409 `price_changed` if it moved. */
+  quote_digest?: string;
 };
 
-export type PublicBookingResult = { status: "pending" | "confirmed" };
+export type PublicBookingResult = { status: "pending" | "confirmed"; public_token?: string; confirmation_available?: boolean };
 
 const SPACES_PATH: ApiPath = "/api/v1/public/{makerspace_slug}/spaces/";
 const AVAILABILITY_PATH: ApiPath = "/api/v1/public/{makerspace_slug}/spaces/{public_token}/availability/";
@@ -83,6 +88,7 @@ export function useSubmitPublicBooking(slug: string, token: string) {
       { method: "POST", body: JSON.stringify(payload) },
     ),
     onSuccess: async (result) => {
+      await queryClient.invalidateQueries({ queryKey: ["member", slug] });
       if (result.status === "confirmed") {
         await queryClient.invalidateQueries({ queryKey: publicBookingKeys.availabilityPrefix(slug, token) });
       }

@@ -9,8 +9,10 @@ import {
   subscribe,
   trapDialogFocus,
 } from "./dialogFocus";
+import { revealFieldAboveKeyboard } from "./keyboardSafe";
+import { OverlayPortal } from "./OverlayPortal";
 
-type DetailDrawerProps = {
+export type DetailDrawerProps = {
   open: boolean;
   title: string;
   onClose: () => void;
@@ -71,7 +73,8 @@ export function DetailDrawer({ open, title, onClose, children }: DetailDrawerPro
   if (!open) return null;
 
   return (
-    <div ref={layerRef} inert={!amTop} className="fixed inset-0 z-50">
+    <OverlayPortal>
+    <div ref={layerRef} inert={!amTop} className="sw-overlay-layer fixed inset-0 z-50">
       <button
         type="button"
         aria-label="Close detail drawer"
@@ -88,10 +91,11 @@ export function DetailDrawer({ open, title, onClose, children }: DetailDrawerPro
            tab row and its two-column forms both overflowed, so tabs were clipped mid-word and
            an "Add" button sat half outside the panel. Widened, and capped at the viewport so
            it can never exceed the screen on a small display. */
-        className="absolute right-0 top-0 flex h-full w-full max-w-[min(48rem,100vw)] flex-col border-l border-line bg-panel shadow-xl outline-none"
+        className="absolute right-0 top-0 flex h-full w-full md:max-w-[min(48rem,100vw)] flex-col border-l border-line bg-panel shadow-overlay focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
       >
-        <header className="flex items-center gap-3 border-b border-line px-4 py-3">
-          <h2 id={titleId} className="title-panel min-w-0 truncate">
+        {/* Full screen on phones, so the header and body pad for the notch and home indicator. */}
+        <header className="flex shrink-0 items-center gap-3 border-b border-line pt-[max(1rem,env(safe-area-inset-top))] pr-[max(1.25rem,env(safe-area-inset-right))] pb-4 pl-[max(1.25rem,env(safe-area-inset-left))] md:pt-4">
+          <h2 id={titleId} className="title-panel min-w-0 truncate" title={title}>
             {title}
           </h2>
           <button type="button" className="desk-button ml-auto shrink-0" onClick={onClose}>
@@ -101,8 +105,10 @@ export function DetailDrawer({ open, title, onClose, children }: DetailDrawerPro
         {/* `min-w-0` so a wide child (a table, a long unbroken string) is constrained by the
             drawer and scrolls inside its own container, rather than stretching this flex column
             and pushing content out past the panel edge. */}
-        <div className="min-w-0 flex-1 overflow-y-auto p-4">{children}</div>
+        <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain p-5 pr-[max(1.25rem,env(safe-area-inset-right))] pb-[max(1.25rem,env(safe-area-inset-bottom))] pl-[max(1.25rem,env(safe-area-inset-left))]"
+          onFocus={revealFieldAboveKeyboard}>{children}</div>
       </aside>
     </div>
+    </OverlayPortal>
   );
 }

@@ -1,5 +1,8 @@
 """Audited, locked lifecycle changes for makerspace memberships."""
 
+from apps.accounts.staff_identity import person_q
+from apps.accounts.account_kind_guards import require_member_account
+
 from django.db import IntegrityError, transaction
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
@@ -33,6 +36,7 @@ from apps.makerspaces.membership_helpers import (
 )
 
 def legacy_request_membership(user, makerspace):
+    require_member_account(user)
     if not _eligible_user(user):
         raise ValidationError({"detail": "An active account with a verified email is required."})
     with transaction.atomic():
@@ -63,6 +67,8 @@ def legacy_request_membership(user, makerspace):
 
 
 def invite_membership(actor, makerspace, invite_email, assigned_role):
+    if assigned_role.slug != "member":
+        raise ValidationError({"role_id": "Grant staff roles through the staff roles screen."})
     email = normalized_email(invite_email)
     if not email:
         raise ValidationError({"invite_email": "An email address is required."})
@@ -76,7 +82,7 @@ def invite_membership(actor, makerspace, invite_email, assigned_role):
         role_services.can_assign_role(actor, makerspace, role)
         if _is_community_invitation(role):
             require_module(makerspace, "membership")
-        user = User.objects.filter(email__iexact=email).first()
+        user = User.objects.filter(person_q(), email__iexact=email).first()
         # The rule `refer_membership` already had. Approving an invitation for someone who is
         # already a member would silently rewrite their role; that is `change_role`'s job.
         if user and MakerspaceMembership.objects.filter(
@@ -93,10 +99,8 @@ def invite_membership(actor, makerspace, invite_email, assigned_role):
             raise ValidationError({"detail": "An open invitation already exists."}, code="conflict") from exc
         audit.record(actor, "membership.invited", makerspace=makerspace, target=request,
                      meta={"role_id": role.id, "invite_email": email})
-    from apps.integrations.email import send_makerspace_email
-    send_makerspace_email(makerspace, "Makerspace membership invitation",
-                          "You have been invited to join this makerspace. Sign in with this email to claim the invitation.",
-                          [email], stream="membership", event="invitation", audience="member")
+        from .notifications_p2_members import notify_invitation
+        notify_invitation(request)
     return request
 
 
@@ -116,7 +120,7 @@ def refer_membership(actor, makerspace, invite_email):
         require_module(makerspace, "membership")
         if not makerspace.referrals_enabled or not actor_membership or not actor_membership.can_refer:
             raise PermissionDenied()
-        target = User.objects.filter(email__iexact=email).first()
+        target = User.objects.filter(person_q(), email__iexact=email).first()
         if target and MakerspaceMembership.objects.filter(
             makerspace=makerspace, user=target, status="active"
         ).exists():
@@ -133,17 +137,13 @@ def refer_membership(actor, makerspace, invite_email):
             raise ValidationError({"detail": "An open invitation already exists."}, code="conflict") from exc
         audit.record(actor, "membership.referred", makerspace=makerspace, target=request,
                      meta={"role_id": role.id})
-    from apps.integrations.email import send_makerspace_email
-    send_makerspace_email(
-        makerspace,
-        "Makerspace membership invitation",
-        "You have been invited to join this makerspace. Sign in with this email to claim the invitation.",
-        [email], stream="membership", event="invitation", audience="member",
-    )
+        from .notifications_p2_members import notify_invitation
+        notify_invitation(request)
     return request
 
 
 def legacy_claim_invitation(user, request_id):
+    require_member_account(user)
     request = MembershipRequest.objects.select_related("makerspace").filter(pk=request_id).first()
     if request is None:
         raise ValidationError({"detail": "Invitation not found."})
@@ -181,10 +181,12 @@ def legacy_approve_request(actor, request, assigned_role, plan=None):
 
 
 def _approve_request(actor, request, assigned_role):
+    if assigned_role.slug != "member":
+        raise ValidationError({"role_id": "Grant staff roles through the staff roles screen."})
     request = MembershipRequest.objects.select_related("makerspace", "user").get(pk=request.pk)
     with transaction.atomic():
         makerspace = Makerspace.objects.select_for_update().get(pk=request.makerspace_id)
-        request = MembershipRequest.objects.select_for_update(of=("self",)).select_related("user").get(pk=request.pk)
+        request = MembershipRequest.objects.select_for_update().get(pk=request.pk)
         if (request.assigned_role_id and request.assigned_role.granted_actions
                 and not rbac.can(actor, rbac.Action.MANAGE_MAKERSPACE, makerspace.pk)):
             raise PermissionDenied("Managing staff invitations requires makerspace administration.")

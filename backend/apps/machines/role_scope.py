@@ -6,7 +6,6 @@ and queryset-filter layers. ``EXEMPT`` and ``NOTHING`` are defined only in
 """
 
 from .role_scope_grants import (
-    grant_builtin_type_scope,
     grants_directly,
     is_machine_only,
     makerspaces_granting_directly,

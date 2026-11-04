@@ -2,10 +2,45 @@ import { useQuery } from "@tanstack/react-query";
 
 import { apiGet } from "../../lib/api";
 
+export type StatsSectionKey = "events" | "machines" | "printing" | "lending" | "community";
+
+/** A published count: `value` is null while it is suppressed (below 3, shown as "fewer than 3"). */
+export type PublicCount = { value: number | null; suppressed: boolean };
+
+export type PublicStatsMetric = PublicCount & {
+  key: string;
+  section: StatsSectionKey;
+  label: string;
+  kind: "count" | "hours";
+};
+
 export type PublicStatsResponse = {
+  /** Shown sections, in the order the Space Manager chose (#170). */
+  sections: StatsSectionKey[];
+  period: { key: "month" | "year" | "all" | "fy"; label: string; start: string | null; end: string | null };
+  headline: PublicStatsMetric[];
+  metrics: PublicStatsMetric[];
+  tv: { enabled: boolean; refresh_seconds: number };
+  machines: { usage_hours: number } | null;
   printing: PublicStatsPrinting | null;
-  hardware: PublicStatsHardware;
-  current_loans: PublicStatsCurrentLoan[];
+  hardware: PublicStatsHardware | null;
+  current_loans: PublicStatsCurrentLoan[] | null;
+  events: PublicStatsEvents | null;
+  community: PublicStatsCommunity | null;
+};
+
+export type PublicStatsEvents = {
+  upcoming: { public_token: string; title: string; starts_at: string; ends_at: string; image_url: string | null }[];
+  upcoming_count: PublicCount;
+  held: PublicCount;
+  attendees: PublicCount;
+};
+
+export type PublicStatsCommunity = {
+  active_members: PublicCount | null;
+  new_members: PublicCount | null;
+  bookings: PublicCount | null;
+  checkins: PublicCount | null;
 };
 
 export type PublicStatsPrinting = {
@@ -38,6 +73,7 @@ export type PublicStatsPrinting = {
       collected: number;
       failed: number;
       rejected: number;
+      cancelled?: number;
     };
     queue: {
       pending: number;
@@ -78,10 +114,13 @@ export async function fetchPublicStats(
   return apiGet<PublicStatsResponse>(`/public/${slug}/stats/`);
 }
 
-export function usePublicStats(slug: string) {
+/** `refetchSeconds` drives the TV mode's auto-refresh; the page itself fetches once. */
+export function usePublicStats(slug: string, refetchSeconds?: number) {
   return useQuery({
     queryKey: publicStatsKey(slug),
     queryFn: () => fetchPublicStats(slug),
     enabled: Boolean(slug),
+    refetchInterval: refetchSeconds ? refetchSeconds * 1000 : false,
+    refetchIntervalInBackground: Boolean(refetchSeconds),
   });
 }

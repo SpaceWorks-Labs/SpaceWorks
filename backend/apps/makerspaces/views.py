@@ -39,13 +39,16 @@ TenantBootstrapSerializer = inline_serializer(
                 "membership_policy": serializers.ChoiceField(
                     choices=Makerspace.MembershipPolicy.choices
                 ),
-                # `required=False` for the same reason as `geofence_enabled`: the key is
-                # emitted ONLY when the makerspace opted into account-less requests, so
-                # every other deployment keeps a byte-for-byte identical payload. Absent
-                # means an account is required.
+                # Present only for a space without member accounts (#80): borrow
+                # requests then take name, phone, email and an email code, no account.
                 "request_access": serializers.ChoiceField(
-                    choices=[("anyone", "anyone")], required=False
+                    choices=[("contact", "contact")], required=False
                 ),
+                # Present only while `public_site.closed_notice` is on and set (#77).
+                "closed_notice": inline_serializer(name="TenantBootstrapClosedNotice", required=False, fields={
+                    "text": serializers.CharField(),
+                    "reopens_on": serializers.DateField(allow_null=True),
+                }),
             },
         ),
         "frontend": inline_serializer(
@@ -65,6 +68,9 @@ TenantBootstrapSerializer = inline_serializer(
         "theme": serializers.JSONField(),
         "branding": serializers.JSONField(),
         "email_enabled": serializers.BooleanField(),
+        "messaging": inline_serializer(name="TenantMessagingAvailability", fields={
+            "sms": serializers.BooleanField(), "whatsapp": serializers.BooleanField(),
+        }),
         "public_api": inline_serializer(
             name="TenantBootstrapPublicApi",
             fields={

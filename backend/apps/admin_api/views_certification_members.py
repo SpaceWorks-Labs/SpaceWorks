@@ -5,6 +5,7 @@ from rest_framework import serializers
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.views import APIView
 
+from apps.accounts.staff_identity import person_q
 from apps.accounts import rbac
 from apps.admin_api.permissions import IsActiveStaff
 from apps.makerspaces.models import MakerspaceMembership
@@ -39,7 +40,7 @@ class CertificationMembersView(APIView):
     def get(self, request, pk):
         row = _resolved_type(request.user, pk)
         rows = rbac.scope_by_makerspace(request.user, MakerspaceMembership.objects.select_related("user")).filter(
-            makerspace_id=row.makerspace_id, status="active", user__is_active=True,
+            person_q("user__"), makerspace_id=row.makerspace_id, status="active", user__is_active=True,
             user__access_status="active",
         ).order_by("user__display_name", "user__username", "pk")
         paginator = PageNumberPagination()

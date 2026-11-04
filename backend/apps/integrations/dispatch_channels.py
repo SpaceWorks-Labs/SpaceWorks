@@ -1,5 +1,6 @@
 import logging
 import re
+from uuid import uuid4
 
 from django.db import transaction
 from django.utils import timezone
@@ -120,12 +121,16 @@ def dispatch_channel(
     specific room rather than to "Slack". Quota is charged per row, because N rooms is N
     real sends and that is what costs.
     """
-    if channel not in NonEmailNotificationChannel.values:
+    if channel in {"sms", "whatsapp"} or channel not in NonEmailNotificationChannel.values:
         raise ValueError(f"Unsupported notification channel: {channel}")
+    if channel == NonEmailNotificationChannel.WHATSAPP:
+        raise ValueError("WhatsApp requires an explicit personal envelope")
 
     # Push resolves its recipients at delivery time, so the alert's subject has to travel
     # on the row or a narrowed recipient rule would match nothing by then.
     stored_payload = dict(payload or {})
+    if channel == NonEmailNotificationChannel.NATIVE_PUSH:
+        stored_payload.setdefault("event_key", str(uuid4()))
     if scope is not None and hasattr(scope, "as_dict"):
         stored_payload["scope"] = scope.as_dict()
 
@@ -152,6 +157,9 @@ def dispatch_channel(
                 "notification_channel_module_disabled",
             )
         ]
+
+    if configuration_blocks(makerspace, channel):
+        return [record(NotificationDeliveryStatus.SKIPPED, "notification_channel_configuration_disabled")]
 
     if channel == NonEmailNotificationChannel.NATIVE_PUSH:
         # Push has no room to address: it is delivered per device to a named user, so it
@@ -199,7 +207,10 @@ def dispatch_channel(
         if defer_log(log, kind='channel'):
             logs.append(log)
             continue
-        if sync:
+        from .mail_providers.outbox import enqueue_inline_allowed
+        if not enqueue_inline_allowed(sync=sync):
+            logs.append(log)
+        elif sync:
             logs.append(_deliver_notification(log))
         else:
             transaction.on_commit(
@@ -210,6 +221,9 @@ def dispatch_channel(
 
 
 def _enqueue_notification(log_id):
+    from .mail_providers.outbox import enqueue_inline_allowed
+    if not enqueue_inline_allowed():
+        return
     from apps.integrations.tasks import deliver_notification_task
 
     try:
@@ -227,3 +241,10 @@ def _enqueue_notification(log_id):
 
 
 from .dispatch_channels_delivery import _deliver_notification  # noqa: E402,F401
+
+
+def configuration_blocks(makerspace, channel):
+    from .models_endpoints import ChannelConfiguration
+    config = ChannelConfiguration.objects.filter(makerspace=makerspace, channel=channel).first()
+    return bool(config and not (config.enabled and (
+        config.personal_enabled if channel == "native_push" else config.room_enabled)))

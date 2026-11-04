@@ -1,4 +1,6 @@
+import { EmptyState, ListRow, StatusPill, StatCard } from "../../components/ui";
 import type { MemberActivity } from "./MemberActivity";
+import { MemberRequestWithdraw, WITHDRAWABLE } from "./MemberRequestWithdraw";
 
 /** The member dashboard's history, money and notices (D8).
  *
@@ -11,17 +13,8 @@ export function MemberNotices({ notices }: { notices: MemberActivity["notices"] 
   return (
     <section className="desk-panel p-5">
       <h2 className="title-panel">Needs your attention</h2>
-      <ul className="mt-3 space-y-2">
-        {notices.map((notice) => (
-          <li
-            className={`rounded-md border px-3 py-2 text-sm ${borderFor(notice.level)}`}
-            key={notice.event + notice.title}
-          >
-            <span className="font-medium text-ink">{notice.title}</span>
-            {notice.body ? <p className="mt-1 text-muted">{notice.body}</p> : null}
-          </li>
-        ))}
-      </ul>
+      <div className="mt-3 grid gap-3">{notices.map(notice => <ListRow key={notice.event + notice.title} title={notice.title} meta={notice.body}
+        right={<StatusPill label={notice.level === "critical" ? "Action needed" : notice.level === "warning" ? "Attention" : "Update"} tone={notice.level === "critical" ? "danger" : notice.level === "warning" ? "warn" : "info"} />} />)}</div>
     </section>
   );
 }
@@ -53,25 +46,14 @@ export function MemberDues({ dues }: { dues: MemberActivity["membership_dues"] }
   return (
     <section className="desk-panel p-5">
       <h2 className="title-panel">Membership fee</h2>
-      <p className="mt-2 text-sm text-muted">
-        Dues <span className="font-mono text-ink">{dues.dues_amount}</span>
-      </p>
+<div className="mt-3 grid gap-3 sm:grid-cols-2"><StatCard label="Membership fee" value={dues.dues_amount} />{outstanding.map(([currency, amount]) => <StatCard key={currency} label={`Outstanding ${currency.toUpperCase()}`} value={`${amount} ${currency.toUpperCase()}`} />)}</div>
       {unavailable ? (
         <p className="mt-1 text-sm text-muted">
           Outstanding balance is unavailable right now.
         </p>
-      ) : outstanding.length ? (
-        <p className="mt-1 text-sm text-muted">
-          Outstanding{" "}
-          {outstanding.map(([currency, amount]) => (
-            <span className="font-mono text-ink" key={currency}>
-              {amount} {currency.toUpperCase()}{" "}
-            </span>
-          ))}
-        </p>
-      ) : (
+      ) : !outstanding.length ? (
         <p className="mt-1 text-sm text-muted">Nothing outstanding.</p>
-      )}
+      ) : null}
     </section>
   );
 }
@@ -79,58 +61,20 @@ export function MemberDues({ dues }: { dues: MemberActivity["membership_dues"] }
 export function MemberHistory({
   loans,
   requests,
+  withdraw,
 }: {
   loans: MemberActivity["loan_history"];
   requests: MemberActivity["request_history"];
+  /** Set when `loans.withdrawals` is on: pending and accepted requests get a Withdraw button. */
+  withdraw?: { makerspaceId: number; makerspaceSlug: string };
 }) {
-  if (!loans?.length && !requests?.length) return null;
-  return (
-    <section className="desk-panel p-5">
-      <h2 className="title-panel">Your history</h2>
-      {requests?.length ? (
-        <>
-          <h3 className="eyebrow mt-3">Requests</h3>
-          <ul className="mt-2 space-y-1 text-sm text-muted">
-            {requests.map((row, index) => (
-              <li key={`${row.created_at}-${index}`}>
-                <span className="text-ink">{row.status.replace(/_/g, " ")}</span>
-                {" · "}
-                {new Date(row.created_at).toLocaleDateString()}
-                {" · "}
-                {row.item_count} item(s), {row.returned_quantity} returned
-                {row.damaged_quantity || row.missing_quantity ? (
-                  <span className="text-danger">
-                    {" · "}
-                    {row.damaged_quantity} damaged, {row.missing_quantity} missing
-                  </span>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        </>
-      ) : null}
-      {loans?.length ? (
-        <>
-          <h3 className="eyebrow mt-4">Returned items</h3>
-          <ul className="mt-2 space-y-1 text-sm text-muted">
-            {loans.map((row, index) => (
-              <li key={`${row.label}-${index}`}>
-                <span className="text-ink">{row.label}</span>
-                {row.returned_at ? (
-                  <> · returned {new Date(row.returned_at).toLocaleDateString()}</>
-                ) : null}
-                {row.returned_late ? <span className="text-warn"> · late</span> : null}
-              </li>
-            ))}
-          </ul>
-        </>
-      ) : null}
-    </section>
-  );
-}
-
-function borderFor(level: string) {
-  if (level === "critical") return "border-danger/40 bg-danger/10";
-  if (level === "warning") return "border-warn/40 bg-warn/10";
-  return "border-line";
+  if (!loans?.length && !requests?.length) return <EmptyState message="No returned items yet. Your borrowing history will appear here." />;
+  return <section className="grid gap-4"><h2 className="title-panel">Your history</h2>
+    {requests?.length ? <><h3 className="title-section">Requests</h3>{requests.map((row, index) => <ListRow key={`${row.created_at}-${index}`} title={`${row.item_count} ${row.item_count === 1 ? "item" : "items"} requested`} identity={{ kind: "date", date: row.created_at }}
+      meta={<>{row.returned_quantity} returned{row.damaged_quantity || row.missing_quantity ? <span className="block text-danger">{row.damaged_quantity} damaged, {row.missing_quantity} missing</span> : null}</>}
+      right={<div className="grid justify-items-start gap-2"><StatusPill label={row.status.replace(/_/g, " ")} />
+        {withdraw && row.id && WITHDRAWABLE.includes(row.status) ? <MemberRequestWithdraw {...withdraw} requestId={row.id} /> : null}</div>} />)}</> : null}
+    {loans?.length ? <><h3 className="title-section">Returned items</h3>{loans.map((row, index) => <ListRow key={`${row.label}-${index}`} title={row.label} identity={row.returned_at ? { kind: "date", date: row.returned_at } : undefined}
+      meta={row.returned_at ? `Returned ${new Date(row.returned_at).toLocaleDateString()}` : undefined} right={row.returned_late ? <StatusPill label="Returned late" tone="warn" /> : <StatusPill label="Returned" tone="success" />} />)}</> : null}
+  </section>;
 }

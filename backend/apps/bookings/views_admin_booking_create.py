@@ -6,6 +6,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.accounts.staff_identity import person_q
 from apps.accounts import rbac
 from apps.accounts.models import User
 from apps.admin_api.permissions import IsActiveStaff
@@ -34,12 +35,11 @@ ERRORS = {
 
 
 def _members(actor, space):
-    return rbac.scope_by_action(
-        actor, rbac.Action.MANAGE_BOOKINGS,
-        MakerspaceMembership.objects.select_related('user').filter(
-            makerspace_id=space.makerspace_id, status='active',
-            user__is_active=True, user__access_status=User.AccessStatus.ACTIVE,
-        ),
+    from .booking_authority import require
+    require(actor, space, "manage_reservations")
+    return MakerspaceMembership.objects.select_related("user").filter(
+        person_q("user__"), makerspace_id=space.makerspace_id, status="active", user__is_active=True,
+        user__access_status=User.AccessStatus.ACTIVE, user__is_tenant_dump_stub=False,
     )
 
 
@@ -52,7 +52,7 @@ class StaffBookingCreateMixin:
                    503: OpenApiResponse(ErrorSerializer, description='Tenant write gate unavailable.')},
     )
     def post(self, request, pk, *args, **kwargs):
-        space = manageable_space(request.user, pk)
+        space = manageable_space(request.user, pk, "manage_reservations")
         serializer = StaffBookingInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         values = dict(serializer.validated_data)
@@ -79,7 +79,7 @@ class BookingEligibleMembersView(APIView):
         responses={200: BookingEligibleMemberListSerializer, **ERRORS},
     )
     def get(self, request, pk):
-        space = manageable_space(request.user, pk)
+        space = manageable_space(request.user, pk, "manage_reservations")
         rows = _members(request.user, space).order_by('user__display_name', 'user__username', 'pk')
         paginator = _MemberPagination()
         page = paginator.paginate_queryset(rows, request, view=self)

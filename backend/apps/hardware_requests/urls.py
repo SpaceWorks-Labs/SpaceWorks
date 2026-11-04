@@ -3,16 +3,26 @@ from django.urls import path
 from apps.hardware_requests import cron_views, timeline_views, views
 from apps.hardware_requests import replay_recovery_views as recovery
 
+from apps.hardware_requests.public_contact_views import RequestContactCodeView
+
 app_name = "hardware_requests"
 
 from apps.hardware_requests.renewal_views import MemberLoanRenewView, StaffLoanRenewView
 from apps.hardware_requests.kit_views import StaffKitPreviewView, MemberKitPreviewView
+from apps.hardware_requests import loan_depth_views as depth
 
 urlpatterns = [
     path("admin/makerspace/<int:makerspace_id>/kit-checklist-preview", StaffKitPreviewView.as_view(), name="staff-kit-preview"),
     path("public/<slug:makerspace_slug>/tools/checklist", MemberKitPreviewView.as_view(), name="public-tool-checklist"),
     path("member/makerspaces/<int:makerspace_id>/loans/<int:pk>/renew", MemberLoanRenewView.as_view(), name="member-loan-renew"),
     path("admin/makerspace/<int:makerspace_id>/loans/<int:pk>/renew", StaffLoanRenewView.as_view(), name="staff-loan-renew"),
+    # Lane L12: withdraw/cancel, the waitlist and pickup timing.
+    path("member/makerspaces/<int:makerspace_id>/requests/<int:pk>/withdraw", depth.MemberRequestWithdrawView.as_view(), name="member-request-withdraw"),
+    path("admin/makerspace/<int:makerspace_id>/requests/<int:pk>/cancel", depth.StaffRequestCancelView.as_view(), name="staff-request-cancel"),
+    path("member/makerspaces/<int:makerspace_id>/waitlist", depth.MemberWaitlistView.as_view(), name="member-loan-waitlist"),
+    path("member/makerspaces/<int:makerspace_id>/waitlist/<int:pk>/leave", depth.MemberWaitlistLeaveView.as_view(), name="member-loan-waitlist-leave"),
+    path("admin/makerspace/<int:makerspace_id>/waitlist", depth.StaffWaitlistView.as_view(), name="staff-loan-waitlist"),
+    path("admin/makerspace/<int:makerspace_id>/loan-reservation-policy", depth.LoanReservationPolicyView.as_view(), name="admin-loan-reservation-policy"),
     path("admin/makerspace/<int:makerspace_id>/kiosk-replays/", recovery.ReplayRecoveryListView.as_view(), name="admin-kiosk-replay-list"),
     path("admin/kiosk-replays/<uuid:pk>/", recovery.ReplayRecoveryDetailView.as_view(), name="admin-kiosk-replay-detail"),
     path("admin/kiosk-replays/<uuid:pk>/resolve/", recovery.ReplayRecoveryResolveView.as_view(), name="admin-kiosk-replay-resolve"),
@@ -25,6 +35,11 @@ urlpatterns = [
         "public/<slug:makerspace_slug>/requests",
         views.RequestSubmitView.as_view(),
         name="request-submit",
+    ),
+    path(
+        "public/<slug:makerspace_slug>/requests/email-code",
+        RequestContactCodeView.as_view(),
+        name="request-contact-code",
     ),
     path(
         "public/<slug:makerspace_slug>/tools/evidence-url",

@@ -1,11 +1,14 @@
-import { Fragment, useState } from "react";
+import { useState } from "react";
 import { useUrlListState } from "../../../lib/useUrlListState";
 
-import { EmptyState, SkeletonRows } from "../../../components/ui";
+import { Field, ListRow, RelativeTime, type IconName } from "../../../components/ui";
 import { WarrantyStatusBadge } from "../WarrantyStatusBadge";
 import { WarrantySection } from "../WarrantySection";
 import type { WarrantyReportRow, WarrantyStatus } from "../warrantyApi";
-import { Panel, type Makerspace, useStaffGet } from "./shared";
+import { ListLayout, DetailLayout } from "../../../components/layouts";
+import { useSearchParams } from "react-router-dom";
+import { inventoryQueryState } from "./inventoryPresentation";
+import { type Makerspace, useStaffGet } from "./shared";
 
 type WarrantyResponse = {
   count: number;
@@ -25,6 +28,7 @@ export function WarrantyPanel({
   makerspace: Makerspace;
   canEditInventory: boolean;
 }) {
+  const [params] = useSearchParams();
   const list = useUrlListState({ status: "all", missing_docs: "false", expires_before: "", page: "1" });
   const status = list.values.status as StatusFilter;
   const missingDocs = list.values.missing_docs === "true";
@@ -47,156 +51,32 @@ export function WarrantyPanel({
   );
 
   const visibleRows = warranties.data?.results ?? [];
-  const totalPages = Math.max(1, Math.ceil((warranties.data?.count ?? 0) / PAGE_SIZE));
-  const scopeLabel = "equipment you can manage";
   const filtersActive = status !== "all" || missingDocs || Boolean(expiresBefore);
 
-  function updateStatus(value: StatusFilter) {
-    list.setFilter("status", value);
-  }
-
-  function updateMissingDocs(value: boolean) {
-    list.setFilter("missing_docs", String(value));
-  }
-
-  function updateExpiresBefore(value: string) {
-    list.setFilter("expires_before", value);
-  }
-
-  return (
-    <Panel title="Warranties">
-      <div className="mb-3 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <p className="text-sm text-muted">Warranty coverage for {scopeLabel} in {makerspace.name}.</p>
-          {warranties.data ? <p className="mt-1 font-mono text-xs text-muted">{warranties.data.count} hosts total</p> : null}
-        </div>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-          <label className="eyebrow grid gap-1 sm:w-48">
-            Status
-            <select className="desk-input" value={status} onChange={(event) => updateStatus(event.target.value as StatusFilter)}>
-              <option value="all">All</option>
-              <option value="active">Active</option>
-              <option value="expiring_soon">Expiring soon</option>
-              <option value="expired">Expired</option>
-              <option value="unknown">Uncovered / no warranty</option>
-            </select>
-          </label>
-          <label className="eyebrow grid gap-1 sm:w-44">
-            Expires before
-            <input className="desk-input" type="date" value={expiresBefore} onChange={(event) => updateExpiresBefore(event.target.value)} />
-          </label>
-          <label className="flex min-h-10 items-center gap-2 text-sm font-medium text-ink">
-            <input
-              type="checkbox"
-              className="h-4 w-4 rounded border-line"
-              checked={missingDocs}
-              onChange={(event) => updateMissingDocs(event.target.checked)}
-            />
-            Missing docs
-          </label>
-        </div>
-      </div>
-
-      {warranties.isLoading ? <WarrantyTableSkeleton /> : null}
-      {warranties.error instanceof Error ? <p className="mb-3 text-sm text-danger">{warranties.error.message}</p> : null}
-      {!warranties.isLoading && !warranties.error && !visibleRows.length ? (
-        <EmptyState title="No warranties" description={filtersActive ? "No hosts match these warranty filters." : "No warranty-covered hosts are in scope yet."} />
-      ) : null}
-
-      {visibleRows.length ? (
-        <div className="overflow-x-auto rounded-md border border-line">
-          <table className="min-w-[820px] divide-y divide-line text-left text-sm">
-            <thead className="eyebrow bg-bg">
-              <tr>
-                <th scope="col" className="px-3 py-2">Host</th>
-                <th scope="col" className="px-3 py-2">Vendor</th>
-                <th scope="col" className="px-3 py-2">Purchased</th>
-                <th scope="col" className="px-3 py-2">Expires</th>
-                <th scope="col" className="px-3 py-2">Status</th>
-                <th scope="col" className="px-3 py-2 text-right">Docs</th>
-                <th scope="col" className="px-3 py-2 text-right">Manage</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-line bg-surface">
-              {visibleRows.map((row) => {
-                const rowKey = `${row.host_kind}-${row.host_id}`;
-                const isOpen = expanded === rowKey;
-                const manageable = canManageRow(row);
-                return (
-                  <Fragment key={rowKey}>
-                    <tr>
-                      <td className="px-3 py-2 align-top">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="rounded-md border border-line bg-bg px-2 py-0.5 text-xs font-medium text-muted">
-                            {row.host_kind}
-                          </span>
-                          <span className="max-w-56 break-words font-medium text-ink">{row.host_label}</span>
-                        </div>
-                        {row.serial_number ? <p className="mt-1 text-xs text-muted">Serial: {row.serial_number}</p> : null}
-                      </td>
-                      <td className="px-3 py-2 align-top text-ink"><span className="block max-w-48 break-words">{row.vendor_name || "-"}</span></td>
-                      <td className="whitespace-nowrap px-3 py-2 align-top text-muted">{formatDate(row.purchased_on)}</td>
-                      <td className="whitespace-nowrap px-3 py-2 align-top text-muted">{formatDate(row.warranty_expires_on)}</td>
-                      <td className="whitespace-nowrap px-3 py-2 align-top"><WarrantyStatusBadge status={row.status} /></td>
-                      <td className="whitespace-nowrap px-3 py-2 text-right align-top text-muted">{row.document_count}</td>
-                      <td className="whitespace-nowrap px-3 py-2 text-right align-top">
-                        {manageable ? (
-                          <button className="desk-button-ghost" type="button" onClick={() => setExpanded(isOpen ? null : rowKey)}>
-                            {isOpen ? "Close" : "Manage"}
-                          </button>
-                        ) : <span className="text-xs text-muted">-</span>}
-                      </td>
-                    </tr>
-                    {isOpen && manageable ? (
-                      <tr key={`${rowKey}-edit`}>
-                        <td colSpan={7} className="bg-bg px-3 py-3">
-                          <WarrantySection hostKind={row.host_kind} hostId={row.host_id} />
-                        </td>
-                      </tr>
-                    ) : null}
-                  </Fragment>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      ) : null}
-
-      <div className="mt-3 flex items-center justify-between gap-3 text-sm">
-        <button className="desk-button-ghost" type="button" disabled={!warranties.data?.previous} onClick={() => setPage((current) => Math.max(1, current - 1))}>
-          Previous
-        </button>
-        <span className="font-mono text-muted">Page {page} of {totalPages}</span>
-        <button className="desk-button-ghost" type="button" disabled={!warranties.data?.next} onClick={() => setPage((current) => current + 1)}>
-          Next
-        </button>
-      </div>
-    </Panel>
-  );
+  const href = (value: string) => { const next = new URLSearchParams(params); next.set("status", value); next.delete("page"); return `?${next}`; };
+  const selected = visibleRows.find(row => `${row.host_kind}-${row.host_id}` === expanded);
+  return <ListLayout header={{ title: "Warranties", subtitle: `Coverage for equipment you can manage in ${makerspace.name}.`, meta: `${warranties.data?.count ?? 0} hosts` }}
+    state={inventoryQueryState(warranties, "warranties")} isEmpty={!visibleRows.length} filtered={filtersActive}
+    empty={{ message: "No warranties recorded yet. Add one from a machine or asset." }}
+    filteredEmpty={{ message: "Nothing matches these filters.", action: { label: "Clear filters", onClick: () => list.restore({}) } }}
+    tabs={["all", "active", "expiring_soon", "expired", "unknown"].map(key => ({ key, label: ({ all: "All", active: "Active", expiring_soon: "Expiring soon", expired: "Expired", unknown: "Not covered" } as Record<string, string>)[key], href: href(key) }))} activeTab={status}
+    filters={{ views: <button type="button" className={missingDocs ? "desk-button-primary" : "desk-button"} aria-pressed={missingDocs} onClick={() => list.setFilter("missing_docs", String(!missingDocs))}>Missing docs</button>,
+      controls: <Field label="Expires before"><input className="desk-input" type="date" value={expiresBefore} onChange={event => list.setFilter("expires_before", event.target.value)} /></Field>,
+      activeCount: expiresBefore ? 1 : 0,
+      chips: expiresBefore ? [{ key: "expires_before", label: `expires before ${expiresBefore}`, onRemove: () => list.setFilter("expires_before", "") }] : [] }}
+    body={{ kind: "rows", rows: visibleRows.map(row => <ListRow key={`${row.host_kind}-${row.host_id}`} title={row.host_label}
+      identity={{ kind: "icon", icon: HOST_KINDS[row.host_kind].icon, tone: "accent" }} meta={<>{HOST_KINDS[row.host_kind].label} · {row.vendor_name || "No vendor recorded"} · Purchased {formatDate(row.purchased_on)} · {row.warranty_expires_on ? <>Expires <RelativeTime date={row.warranty_expires_on} /></> : "No expiry recorded"}{row.serial_number ? ` · Serial: ${row.serial_number}` : ""}</>}
+      right={<div className="flex flex-wrap items-center gap-3"><WarrantyStatusBadge status={row.status} /><span className="text-sm tabular-nums">{row.document_count} docs</span>
+        {canManageRow(row) ? <button className="desk-button-ghost" onClick={() => setExpanded(`${row.host_kind}-${row.host_id}`)}>Manage</button> : null}</div>} />) }}
+    pagination={{ page, pageSize: PAGE_SIZE, count: warranties.data?.count ?? 0, onChange: setPage }}
+    detail={selected && canManageRow(selected) ? <DetailLayout presentation="drawer" open onClose={() => setExpanded(null)} title={selected.host_label} state={{ status: "ready" }}
+      status={<WarrantyStatusBadge status={selected.status} />} main={<WarrantySection hostKind={selected.host_kind} hostId={selected.host_id} />} /> : null} />;
 }
-
-function WarrantyTableSkeleton() {
-  return (
-    <div className="overflow-x-auto rounded-md border border-line" aria-hidden="true">
-      <table className="min-w-[820px] divide-y divide-line text-left text-sm">
-        <thead className="eyebrow bg-bg">
-          <tr>
-            {["Host", "Vendor", "Purchased", "Expires", "Status", "Docs", "Manage"].map((label) => (
-              <th scope="col" key={label} className="px-3 py-2">{label}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-line bg-surface">
-          <SkeletonRows rows={4} cols={7} />
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
+const HOST_KINDS: Record<WarrantyReportRow["host_kind"], { label: string; icon: IconName }> = {
+ asset: { label: "Asset", icon: "Wrench" }, machine: { label: "Machine", icon: "Cog" }, printer: { label: "Printer", icon: "Printer" },
+};
 function formatDate(value: string | null) {
-  if (!value) return "-";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "-";
-  return date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+ if (!value) return "—";
+ const date = new Date(value);
+ return Number.isNaN(date.getTime()) ? "—" : date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 }

@@ -23,7 +23,7 @@ class PlatformDashboardView(APIView):
     @extend_schema(tags=["Platform"], summary="Read platform operations dashboard", request=None,
                    responses={200: PlatformDashboardSerializer, **errors(400, 401, 403)})
     def get(self, request):
-        return Response(PlatformDashboardSerializer(build_platform_dashboard(request.user)).data)
+        return Response(PlatformDashboardSerializer(build_platform_dashboard()).data)
 
 
 class PlatformProblemsView(APIView):
@@ -33,7 +33,7 @@ class PlatformProblemsView(APIView):
     @extend_schema(tags=["Platform"], summary="Run read-only platform problem checks on demand", request=None,
                    responses={200: PlatformProblemsSerializer, **errors(400, 401, 403)})
     def get(self, request):
-        return Response(PlatformProblemsSerializer(run_problem_checks(request.user)).data)
+        return Response(PlatformProblemsSerializer(run_problem_checks()).data)
 
 
 class MakerspaceUsageView(APIView):

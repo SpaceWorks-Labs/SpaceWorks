@@ -6,16 +6,15 @@ from rest_framework.views import APIView
 
 from apps.admin_api.exports import csv_response, xlsx_response
 from apps.admin_api.permissions import IsActiveStaff
-from apps.makerspaces.guards import require_module
 from apps.makerspaces.models import Makerspace
 from apps.procurement import access
 from apps.procurement.models import ToBuyItem
 from apps.procurement.serializers import ToBuyItemSerializer
 from apps.procurement.views_common import (
-    MODULE_KEY,
     PROCUREMENT_ERROR_RESPONSES,
     STATUS_PARAM,
     apply_status_filter,
+    require_tobuy,
 )
 
 
@@ -39,7 +38,7 @@ class ToBuyExportView(APIView):
         },
     )
     def get(self, request, makerspace_id, *args, **kwargs):
-        require_module(get_object_or_404(Makerspace, pk=makerspace_id), MODULE_KEY)
+        require_tobuy(get_object_or_404(Makerspace, pk=makerspace_id))
         if not access.viewable_kinds(request.user, makerspace_id):
             raise PermissionDenied()
         fmt = request.query_params.get("format", "csv")

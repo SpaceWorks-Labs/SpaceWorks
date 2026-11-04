@@ -1,3 +1,5 @@
+from apps.accounts.account_kind_guards import require_member_account
+
 from collections import Counter
 from datetime import timedelta
 
@@ -5,6 +7,7 @@ from django.db import IntegrityError, transaction
 from django.utils import timezone
 
 from apps.audit import services as audit
+from apps.accounts.account_obligations import lock_obligation_owner
 from apps.boxes.access import inventory_qr_codes
 from apps.boxes.models import Box, QrCode, QrScanEvent
 from apps.evidence.models import EvidencePhoto
@@ -45,6 +48,7 @@ def issue_direct_loan(
     kit_checklist=None,
 ):
     # The lapsed-term rule is about the BORROWER, not about who hands the tool over.
+    require_member_account(borrower)
     require_current_term(
         makerspace, require_active_member_presence(borrower, makerspace).membership
     )
@@ -59,7 +63,10 @@ def issue_direct_loan(
         raise RequestValidationError("Provide qr_payloads, items, or a container.")
     finalized = validate_evidence_upload(evidence, label="Issue")
     with transaction.atomic():
+        from apps.tenant_migration.gate_runtime import assert_write_allowed
+        assert_write_allowed(makerspace.pk)
         makerspace = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
+        borrower = lock_obligation_owner(borrower)
         if not lock_evidence_for_attachment(evidence.pk):
             raise RequestValidationError("Evidence has expired under the retention policy.")
         if HardwareRequest.objects.filter(issue_evidence=evidence).exists():
@@ -203,6 +210,10 @@ def issue_direct_loan(
                 request=request,
             )
         record_item_logs(actor, "admin_direct.checked_out", makerspace, request, loan)
+        # Lane L15 (A10): direct and kiosk handouts are charged like reviewed loans --
+        # deposit (never blocking) and rental at checkout, after the handout commits.
+        from apps.hardware_requests import loan_payments
+        transaction.on_commit(lambda: loan_payments.on_request_issued(request.pk, actor))
         return loan
 
 
@@ -260,4 +271,6 @@ def _manual_product(makerspace, product_id):
         raise RequestValidationError(
             "Individual-tracked products require scanned asset QR codes for handout."
         )
+    if product.is_consumable:
+        raise RequestValidationError("Consumables are logged as used, not lent.")
     return product

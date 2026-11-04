@@ -177,6 +177,11 @@ def _create_checkout_url_atomic(payment_id, *, actor=None):
         member_url = compatibility.member_payment_return_url(
             payment.via_makerspace or payment.makerspace
         )
+        if payment.member_id is None:
+            # An account-less payer reached this through a pay link (lane L5) and has no
+            # member area to return to.
+            from apps.payments.pay_links import completion_url
+            member_url = completion_url()
         if not member_url:
             logger.warning("payment_checkout_return_url_unavailable", extra={"payment_id": payment_id})
             raise compatibility.stripe_client.PaymentsUnavailable("A payment return URL is not configured.")

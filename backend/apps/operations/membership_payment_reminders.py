@@ -7,6 +7,7 @@ checks at discovery, build and dispatch. Expiry/activation remains a domain serv
 
 from datetime import timedelta
 
+from django.db import transaction
 from django.db.models import CharField, F
 from django.db.models.functions import Cast
 
@@ -67,12 +68,16 @@ def build_payment_message(makerspace, reminder, now, local_tz):
     )
 
 
+@transaction.atomic
 def dispatch_payment_message(makerspace, reminder, message, now, local_tz):
     from apps.makerspaces.membership_admission_notifications import notify_admission
 
     request = _current_request(makerspace, reminder, now)
     if request is not None:
-        notify_admission(request, "payment_due")
+        result = notify_admission(request, "payment_due")
+        from .notifications_p2 import finish_reminder
+        finish_reminder(makerspace, reminder, now, result)
+        return result
 
 
 MEMBERSHIP_PAYMENT_SOURCE = ReminderSource(

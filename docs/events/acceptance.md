@@ -1,0 +1,77 @@
+# Owner add-on traceability
+
+Updated for GF4, 2026-10-18. **No AO is accepted without its runtime/browser evidence.**
+The real A/B/C/D/E/F/P adapters and consumer routes are installed in this tree; local
+TypeScript and 52-file/211-test frontend verification passed. Python compilation and
+source-only checks do not establish PostgreSQL/provider/physical-print acceptance.
+Existing backend tests below are exact rerun targets, not passing outcomes. Full files,
+local evidence and unresolved code dependencies are in the GF4 scratchpad report and
+[integration closure](integration-status.md). Programme capabilities remain OFF.
+
+Path shorthand: **E**=`backend/apps/events/`; **T**=`backend/tests/events/programme/`;
+**U**=`frontend/src/`. Route suffixes under **A**=`/api/v1/admin/events/{event_id}/`,
+**M**=`/api/v1/member/makerspaces/{host_id}/events/{event_id}/`,
+**P**=`/api/v1/public/event-programmes/{public_token}/`. Consult generated OpenAPI for
+methods/auth/error schemas; authenticated `/context/` is deliberately under a public prefix.
+
+| AO | Implementing code / route evidence | Test evidence target and remaining acceptance |
+| --- | --- | --- |
+| AO1 certificate verification | E `certificates/{verification,publication,rendering}.py`; `/api/v1/public/event-certificates/{verification_id}/verify/`; UI `U/features/events/eventPresentation/CertificateVerificationPage.tsx` | T `certificates/test_subjects_verification.py`, `test_publication_commands.py`; verify real PDF QR + ID, revoked state and identity/PDF omission in browser. **Pending PDF/router/runtime proof.** |
+| AO2 badge QR identifies member and checks in | E `credentials/{crypto,workflow,resolution}.py`, `views_checkin.py`, `certificates/print_workflow.py`; existing A `check-in/resolve/`, owner ticket/QR and A `badges/print-jobs/` | T `credentials/test_credentials.py`, `certificates/test_print_policy.py`, `integration/test_legacy_credential_boundary.py`; wrong-event/revoked badge, authenticated resolve and generation-bound confirm, physical scan. **Canonical generation-bound confirmation installed; Docker race and physical scan proof pending.** |
+| AO3 every team journey | E `hackathons/{admission_models,team_workflow,team_invitations,admission_rsvp}.py`; M `teams/`, `team-finder/` | T `teams/test_membership_and_cohorts.py`, `test_team_policy.py`, `test_team_concurrency.py`, `admission/test_rsvp_capacity.py`; real solo / individual-then-team / together + finder-on/off. **Production providers installed; Docker and browser acceptance pending.** |
+| AO4 uploads + links / all maker formats | E `submissions/{workflow,link_workflow,asset_jobs}.py`, `backend/apps/maker_formats/registry.py`; M `teams/{team_id}/submission/`, `assets/` | T `submissions/test_links.py`, `test_snapshot_workflow.py`, `uploads/test_scan_probe.py`; `backend/tests/maker_formats/` matrix. **Real exports, adversarial matrix, video/STL/Gerber browser and storage faults pending.** |
+| AO5 organizers/co-organizers/contributors | E `services_organizers.py`, `contributions/{role_workflow,role_policy,sources}.py`, `mentoring/configuration_workflow.py`; existing organizer/grant routes, A `roles/`, public `volunteer-postings/` | T `contributions/test_entitlements_subjects.py`, `test_role_lifecycle_completion.py`, `test_contracts.py`; invite/accept each role, exact subset/window and public needed card. **Source-aware authority and real consumer routes installed; live race/provider/UI proof pending.** |
+| AO6 mentor assignment modes | E `mentoring/assignment_workflow.py::allocate`; A `mentor-assignments/preview/`, `assign/`, mapping activate/end | T `mentoring/test_assignment_lifecycle.py`, `test_algorithms_leases.py`; manual/round-robin/skill, zero-coverage and conflicts in real console. **Live C adapters and complete team-index consumers installed; Docker/browser proof pending.** |
+| AO7 Mentor Desk | E `mentoring/{help_workflow,round_workflow,help_expiry,analytics}.py`; M/A `help/`, A `mentor-rounds/`, `mentor-analytics/` | T `mentoring/test_help_workflow.py`, `test_concurrent_claims.py`, `test_office_round_races.py`, `test_notifications_triggers_diagnostics.py`; raise→claim→resolve, round lease and analytics. **Current source-backed recipients and ordered fences installed; provider/race/browser proof pending.** |
+| AO8 complete registration + team video submit | E `hackathons/{api_context,admission_workflow,admission_rsvp}.py`, `submissions/{workflow,asset_jobs}.py`; P `context/`, M `application/submit/`, `application/rsvp/`, team submission | T `admission/test_context_bootstrap.py`, `contracts/test_registration_adapter.py`, `uploads/test_storage_protocol.py`, `submissions/test_snapshot_workflow.py`; **public URL only → reviewed first submit → released offer → RSVP → team → real video E2E pending**; contract doubles insufficient. |
+| AO9 org makerspaces + cross-venue events/archive | `backend/apps/organizations/{public_catalog,views_public}.py`; existing `/api/v1/public/organizations/{slug}/` and `events/` list current published visible-host events; E `programme_sections/providers.py` supplies only programme sections | `backend/tests/organizations/test_public_directory.py`, `test_public_event_website_omission.py` cover existing catalogue. **Pages owner must supply makerspace list/past archive/shared page routes/tests/browser evidence. Not implemented by the programme-section seam.** |
+| AO10 richer shared-handle maker/org pages | Existing `backend/apps/makerspaces/public_profile_handles.py`, `public_profile_projection.py`, `U/features/profile/PublicProfilePage.tsx` and `/api/v1/public/profiles/{handle}/` cover member profile; E `programme_sections/providers.py` is a consumer seam | **Pages lane builder/publication/share/QR/SEO/shared namespace/SM-access-off publication code/new routes/exact tests/browser evidence pending and not present here. Existing member profiles do not establish organization/makerspace page completion.** |
+| AO11 all fifteen UX gaps | E `certificates/`, `programme/`, `backend/apps/forms_schema/`; account/security/org/operations extras and `U/features/staff/eventProgramme/` | See fifteen-gap table below. T forms/communications/operations/certificate tests exist; **Consumers, owned seed installer and joint P adapters installed; separate Pages code and runtime/visual acceptance pending.** |
+| AO12 original delight/easter eggs | U `components/delight/`, `features/NotFoundPage.tsx`, `features/landing/SpaceWorksDemo.tsx`, ThemeToggle/About and booking/loan wrappers | `components/delight/Delight.test.tsx` and beside-code Saved details/booking/loan/404 tests are lane evidence targets; **Mounted consumers and default-off deployment/runtime flags installed; sensitive-route/reduced-motion/404 browser proof pending.** |
+| AO13 Saved details/autofill | `backend/apps/accounts/saved_details/{workflow,prefill,intents,subject_binding}.py`; global `/api/v1/member/saved-details/`; shared F registry and E `answer_derivations/` | `backend/tests/accounts/saved_details/test_prefill_contract.py`, `test_intents.py`, `test_workflow.py`; **all four real registration journeys + Saved details edit/delete/browser and disclosure pending.** |
+| AO14 DOB + automatic age | E `answer_derivations/{preparation,workflow,serialization,dates}.py`; `backend/apps/accounts/saved_details/age.py`; owner date-review routes | T `answer_derivations/test_calendar_age.py`, `test_subject_lifecycle.py`, `test_vault_independence.py`; **encrypted source/year/event-local date/freeze/erasure/runtime proof pending; numeric age must never be persisted.** |
+| AO15 no age limit | `backend/apps/forms_schema/` v2 validation, E `answer_derivations/`; no minimum-age/guardian feature is declared | T `forms/test_v2_boundaries.py`, `answer_derivations/test_calendar_age.py`; **integrated schema/UI/OpenAPI scan and browser proof of no age/DOB gating pending.** DOB information is compatible with this rule. |
+| AO16 Space Works theme only | `docs/brand/`, U `components/layouts/`, `components/shell/`, all lane exports | Beside-code axe/theme tests cannot establish contrast or final composition. **Integrated Impeccable/visual audit, light/dark/mobile/keyboard/44px/reduced-motion evidence pending.** Gilroy 400–700 + one Unbounded accent, lucide controls. |
+| AO17 original artwork | U `assets/illustrations/`, E `default_templates/`; [inventory](../events-programme-artwork-inventory.md): 58 frontend + 12 template SVGs, 35 pairs; 3 certificate + 3 badge families | T `default_templates/test_inventory.py`; ARTWORK local 42 PDF/78-page proofs are reported separately. **Consumer imports, owned seed installation and authoritative rendering installed; real QR/physical/visual acceptance pending.** |
+| AO18 reuse member profile photo | `backend/apps/makerspaces/profile_images.py`, E `profile_photos/{selection_workflow,snapshot,policy}.py`; M `profile-photo-options/`, `presentation/` | T `profile_photos/test_selection.py`, `test_public_cards.py`, `certificates/test_print_policy.py`; **real upload→explicit selected membership→print consent/fallback, source-removal and print races pending.** No staff profile/new camera workflow. |
+| AO23 parallel build / no silent deferral | All lane handoffs plus [GF4 closure ledger](integration-status.md) and this lane report; no route | **Pending:** each lane's exact runtime tests, independent integrated review, owner QA and owner-controlled commit/merge evidence. Reporting required work does not accept it as a release deferral. This lane does not stage/commit. |
+
+## Fifteen-gap coverage within AO11
+
+All rows remain pending integrated/browser acceptance. An existing route means its handler is
+mounted, not that a production provider or UI consumer is installed.
+
+| Gap | Code / HTTP surface | Concrete test target / remaining gap |
+| --- | --- | --- |
+| 1 layered certificate builder | E `certificates/layout.py`, `layer_rendering.py`; existing certificate-template routes; U `features/staff/EventCertificateDesigner.tsx` | T `certificates/test_layers.py`; physical PDF/font/RTL and approved italic resources pending |
+| 2 bulk + library | E `certificates/issuance.py`, `library_capture.py`; A `certificates/bulk/`, `certificates/batches/{batch_id}/`; tenant library routes | T `certificates/test_batches_library.py`, `test_library_artwork_copy.py`; owned seed installation authored; real storage/rendering proof pending |
+| 3 desk ID print | E `certificates/{badge_designs,print_workflow}.py`; A `badges/print-jobs/` | T `certificates/test_print_policy.py`; QuickPrint mounted; physical stock-size QR/resources/photo proof pending |
+| 4 forms v2/show-if | `backend/apps/forms_schema/`, E `programme/forms.py`; A `forms/{form_key}/` | T `forms/test_v2_contracts.py`, `test_v2_boundaries.py`; real consumer/P adapters installed; transactional/provider acceptance pending |
+| 5 broadcast v2 | E `programme/broadcast_*`; existing broadcasts + preview/test/schedule/cancel; R2 L2 adds `send/` (5 s undo), `tallies/`, draft `PATCH`, `broadcast-templates/` | T `communications/test_broadcast_schedule.py`, `test_broadcast_self_test.py`; R2 L2 local `test_broadcast_hold.py`, `test_broadcast_templates.py`, `test_broadcast_tallies_and_draft.py`; provider/retry/browser proof pending |
+| 6 readiness | E `programme/readiness.py`; A `programme/readiness/` | T `operations/test_readiness_forms.py`; actual domain providers installed; Docker/current-authority proof pending |
+| 7 event-day mode | E `programme/live.py`; A `programme/live/` | T `operations/test_live_funnel.py`; UI mounted; live/current-authority proof pending |
+| 8 funnel | `backend/apps/operations/reports_events_programme.py`; existing analytics route and `event-programme` report registry | T `operations/test_live_funnel.py`; shared registry/typed union/provider authored; Docker/privacy acceptance pending |
+| 9 live ticket | E `views_ticket.py`; U `features/events/MemberEventTicketPage.tsx`; existing owner ticket route | T `credentials/test_credentials.py`; real persisted attendance/undo + shared pass integration pending |
+| 10 short links | `/e/<7-char base62>` codes beside `/e/<public token>` (release 2 L1, `events.short_links`): regenerate retires, resolve has the public gate, 30/min throttle, PII-free daily visits | Built in L1; local tests `tests/events/test_short_links.py` |
+| 11 cover editor | E `programme/cover.py`; existing cover attachment path | T `operations/test_cover_accent.py`; sanitized canonical attachment and UI consumer authored; browser proof pending |
+| 12 publish questions/dirty bar | E `programme/publishing.py`; A `programme/publishing/`; F UI exports | T `operations/test_commands.py`; version writers and dirty-state consumers authored; runtime/browser proof pending |
+| 13 accent presets | E `programme/accent_presets.py`, Event accent field | T `operations/test_cover_accent.py`; event create/update/read/clone consumers authored; real clone/palette/browser proof pending |
+| 14 leave/security/series guests | `organizations/member_leave.py`, `accounts/security_activity.py`, E `programme/series_guests.py`; member org leave/activity, admin series guests | T `operations/test_account_extras.py`, `test_series_guests.py`; own-organization version/actions, v2 projections and mounted UI authored; privacy/race/browser proof pending |
+| 15 platform insights | `backend/apps/operations/platform_insights.py`; `/api/v1/admin/platform/insights/` | T `operations/test_account_extras.py`; platform UI mounted; real cache/privacy/browser proof pending |
+
+Owner decisions 34 (reimbursement, superseding “not now”) and 35 (staged forms) remain
+required before integration acceptance; they belong to the separate approved R plan.
+AO19/AO20 and later cloud/governance checklist rows are not silently closed by AO1–AO18/AO23.
+The cloud/VPS work is separately owned; this branch supplies no fresh-VM or free-tier proof.
+
+## Release 2 L2 closures (communications, analytics, programme)
+
+Built on staging with local tests (`backend/tests/l2_local/`, kept out of the repository):
+the organiser approval digest; the removal notice after the undo window and the ticket
+re-send on a verified new email; the 12-hour fresh sign-up reminder skip; analytics extras
+(arrivals, check-in methods, choice charts, waitlist conversion, series turnout, short-link
+visits) and organisation insights with k >= 10 suppression; Mentor Desk chat-room alerts
+while mentors are on shift; the GitHub first-commit information flag (never a verdict);
+durable storage cleanup receipts with daily reconciliation; and per-form anonymous feedback.
+Browser and provider acceptance for these rows follows the same rule as above.
+

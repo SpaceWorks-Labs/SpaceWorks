@@ -26,6 +26,8 @@ Read by every backend process. `ALLOWED_HOSTS`, `SECRET_KEY` and the proxy postu
 | Variable | Default | Notes |
 |---|---|---|
 | `ADMIN_SITE_NAME` | `'Space Works'` |  |
+| `ACCOUNT_DELETION_RETENTION_DAYS` | `90` | Days between the account deletion request and scheduled identity purge; Stage A immediately deactivates the account. |
+| `ACCOUNT_UNIFICATION_ACK` | empty | Release-2 upgrade only: the `plan_sha256` printed by `manage.py account_unification_report` after you reviewed it. The one-account-per-person migration refuses to convert existing staff accounts until this matches; leave it empty on fresh installs and once migrated. |
 | `ALLOWED_HOSTS` | `['localhost', '127.0.0.1']` | Django's host check; add every custom domain on self-host. |
 | `CORS_ALLOWED_ORIGINS` | `['http://localhost:5000', 'http://localhost:5173']` |  |
 | `CSRF_TRUSTED_ORIGINS` | `[]` |  |
@@ -50,7 +52,7 @@ published main release. Forks configure their own repository, releases, runner a
 
 | Variable | Default | Notes |
 | --- | --- | --- |
-| `SPACEWORKS_REPOSITORY` | `SpaceWorks-HQ/SpaceWorks` | Strict GitHub `owner/repo`; installer source, release lookup and runner registration URL. Persisted in `.env`. The lower-cased owner supplies default GHCR backend/frontend image namespaces unless `MAKERSPACE_BACKEND_IMAGE` / `MAKERSPACE_FRONTEND_IMAGE` override them. |
+| `SPACEWORKS_REPOSITORY` | `SpaceWorks-Labs/SpaceWorks` | Strict GitHub `owner/repo`; installer source, release lookup and runner registration URL. Persisted in `.env`. The lower-cased owner supplies default GHCR backend/frontend image namespaces unless `MAKERSPACE_BACKEND_IMAGE` / `MAKERSPACE_FRONTEND_IMAGE` override them. An install that still saves the old `SpaceWorks-HQ/*` repository or `ghcr.io/spaceworks-hq/*` images is switched to `SpaceWorks-Labs` / `ghcr.io/spaceworks-labs` automatically by the updater, installer re-run and compose wrapper (owner decision #107); forks are untouched. |
 
 ## TLS, cookies and proxies
 
@@ -68,7 +70,7 @@ TLS hardening is gated on `ENABLE_HTTPS`, never on `DEBUG`. Internal plain-HTTP 
 | `SECURE_HSTS_SECONDS` | `31536000 if ENABLE_HTTPS else 0` | Start at 0 or small while verifying domains. |
 | `SECURE_SSL_REDIRECT` | `ENABLE_HTTPS` |  |
 | `SESSION_COOKIE_SECURE` | `ENABLE_HTTPS` |  |
-| `TRUSTED_PROXY_COUNT` | `None` | Proxies in front of the backend; required when DEBUG is off. Throttles key on the real client IP only when this is right. |
+| `TRUSTED_PROXY_COUNT` | `None` | Proxies in front of the backend; required when DEBUG is off. Throttles, django-axes and the automatic IP block all key on the real client IP only when this is right: too high and a client can spoof its address, too low and every client looks like the proxy. A request whose `X-Forwarded-For` chain is shorter than this is never counted towards an automatic block (logged once as `security.proxy_count_exceeds_hops`); `BEHIND_TRUSTED_PROXY=True` with `0` here is warned at startup (`accounts.W002`). |
 | `TRUST_X_FORWARDED_PROTO` | `False` | Trust the proxy's `X-Forwarded-Proto`; only behind a TLS proxy that is the sole path in. |
 
 ## Managed SaaS mode
@@ -81,7 +83,7 @@ Every managed feature is dormant while `PLATFORM_DOMAIN_SUFFIX` is blank (self-h
 | `PLATFORM_ADMIN_SSO` | `False` |  |
 | `PLATFORM_DOMAIN_SUFFIX` | `''` | Blank = self-host. Non-blank activates managed mode and fair-use limits. |
 | `PLATFORM_ORIGIN_HOST` | `''` |  |
-| `PLATFORM_STAFF_ORIGINS` | `[]` |  |
+| `PLATFORM_STAFF_ORIGINS` | `[]` | Exact platform-console origins allowed for platform API password login; tenant staff login supplies its makerspace slug and must match a verified custom origin. Member provider switches do not disable staff/platform passwords. |
 | `PLATFORM_SUBDOMAIN_AUTO_TLS` | `False` | Guided platforms enable TLS admission for registered, verified, non-archived tenant subdomains. Unknown/pending/archived domains remain denied. Compared during restore preflight without blocking a target's TLS choice. |
 
 ## Database
@@ -89,7 +91,7 @@ Every managed feature is dormant while `PLATFORM_DOMAIN_SUFFIX` is blank (self-h
 | Variable | Default | Notes |
 |---|---|---|
 | `CONN_HEALTH_CHECKS` | `True` |  |
-| `CONN_MAX_AGE` | `60` | Set 0 on a transaction pooler (Supabase :6543). |
+| `CONN_MAX_AGE` | `60` | Use direct/session transport; transaction pooling is unsupported. |
 | `DATABASE_URL` | read outside `settings.py` | Supplied by the atomic ops pointer under Compose; never put it in a static `.env`. |
 | `DISABLE_SERVER_SIDE_CURSORS` | `False` |  |
 | `MANAGED_POSTGRES` | `False` | True on hosts that forbid `session_replication_role` (Supabase, RDS). |
@@ -171,12 +173,69 @@ storage endpoint and expire no later than the archive retention boundary.
 | `PRINT_ALLOWED_MODEL_EXT` | `['stl', '3mf', 'step', 'stp', 'obj', 'amf', 'ply', 'gcode...` |  |
 | `PRINT_ALLOWED_MODEL_MIME` | `['application/octet-stream', 'model/stl', 'application/sl...` |  |
 | `PRINT_UPLOAD_MAX_BYTES` | `104857600` |  |
-| `PRINT_URL_TTL_SECONDS` | `300` |  |
 | `PROCUREMENT_RECEIPT_ALLOWED_MIME` | `['application/pdf', 'image/jpeg', 'image/png', 'image/webp']` |  |
 | `PROCUREMENT_RECEIPT_MAX_BYTES` | `10485760` |  |
 | `REPORT_DELIVERY_URL_TTL_SECONDS` | `6 * 60 * 60` |  |
 | `WARRANTY_DOC_ALLOWED_MIME` | `['application/pdf', 'image/jpeg', 'image/png', 'image/webp']` |  |
 | `WARRANTY_DOC_MAX_BYTES` | `10485760` |  |
+
+## Events programme and account Saved details
+
+Read by `backend/config/settings.py` at checkpoint `f1ef7736`. **Keep programme features
+and Saved details off until [integration acceptance](events/integration-status.md).**
+These are independent deployment secrets/settings, not extra module keys.
+
+| Variable | Default | Notes |
+| --- | --- | --- |
+| `ACCOUNT_SAVED_DETAILS_ENABLED` | `False` | Enables configured owner vault/key readiness. No host membership required; missing/unhealthy account broker fails closed. Does not enable tenant PII or any Events feature. |
+| `ACCOUNT_PII_KEY_BROKER` | `'local'` | `local` or `aws_kms`; independent account wrapping broker, never a tenant-key or SECRET_KEY fallback. |
+| `ACCOUNT_PII_MASTER_KEY` | `''` | Local account wrapping key in Fernet format (URL-safe base64 of 32 bytes). Required for local readiness; secret, retain with deployment backup custody. |
+| `ACCOUNT_PII_MASTER_KEY_PREVIOUS` | `''` | Previous local account wrapping key for transition/read compatibility; not permission to discard keys still needed by retained ciphertext. |
+| `ACCOUNT_PII_AWS_KMS_KEY_ID` | `''` | Account KMS wrapping key identifier; AWS broker uses account/version-specific encryption context and bounded calls outside transactions. IAM credentials use the normal SDK chain. |
+| `ACCOUNT_SAVED_ASSET_BUDGET_BYTES` | `50 * 1024**2` | Default 50 MiB account résumé pool. Managed mode stays at 50 MiB; self-host may raise it, never below that floor. File cap remains 10 MiB. Separate from event storage. |
+| `ACCOUNT_SAVED_RESUME_SCAN_REQUIRED` | `False` | When true, every saved PDF must pass the configured callback; missing/error fails closed. Separate from B's event scanner runtime options. |
+| `ACCOUNT_SAVED_RESUME_SCANNER` | `''` | Dotted import path to a core callable `(bytes) -> 'clean'`. Blank/broken while required refuses. No production callback is installed here; do not point core Accounts at separable Events. |
+| `EVENT_REGISTRATION_CREDENTIAL_DIGEST_KEY` | `''` | Independent standard-base64 32-byte HMAC key for event-bound v2 lookup. Changing it requires coordinated invalidation/reissue, not an unnoticed rotation. |
+| `EVENT_REGISTRATION_CREDENTIAL_KEY_VERSION` | `1` | Current integer keyring version; its string form must exist in the JSON map below. |
+| `EVENT_REGISTRATION_CREDENTIAL_KEYS` | `{}` | JSON object mapping string versions to standard-base64 32-byte AES-GCM keys. Keep old versions needed by stored credentials. Empty configuration refuses v2; no Django/PII-key fallback. |
+
+The shared Compose application anchors forward these eleven settings to all relevant
+web/migration/worker/scheduler processes. Secrets remain operator-owned; upgrades must
+retain current/previous wrapping keys and credential digest/keyring values. Tenant dumps
+exclude the global vault and live credentials. Real install/upgrade continuity is still
+an acceptance check.
+
+Event budgets, lower file/group caps and retention anchors are domain policy.
+All eleven settings above are forwarded through each Compose application environment
+anchor, including migration/worker/beat processes, without generating or rotating keys.
+
+| Setting | Default | Purpose |
+| --- | --- | --- |
+| `EVENT_ASSET_SCAN_BACKEND` | `'none'` | `none` or `clamav`; optional event-asset scanner; configured failures refuse publication. |
+| `EVENT_ASSET_CLAMAV_HOST` | `''` | Explicit external ClamAV endpoint; no silent host inference. |
+| `EVENT_ASSET_CLAMAV_PORT` | `3310` | Scanner TCP port. |
+| `UI_DELIGHT_ENABLED` | `True` | Deployment kill switch for frontend artwork/motion. On by default; each space can still turn `ui.delight` off, and a reduced-motion preference always applies. |
+| `UI_EASTER_EGGS_ENABLED` | `True` | Deployment kill switch for easter eggs. On by default; each space can turn `ui.easter_eggs` off; scanner, kiosk and payment routes always suppress eggs. |
+
+Travel support (`event_reimbursements`) and staged event forms. Each value is bounded;
+an out-of-range value refuses to start. Retention counts from the record's terminal
+financial anchor (receipts, payee data) or the event end (stage uploads), never from upload time.
+
+| Setting | Default | Purpose |
+| --- | --- | --- |
+| `EVENT_REIMBURSEMENT_RECEIPT_RETENTION_DAYS` | `2555` | Days a private reimbursement receipt is kept after its claim's financial closure (1–36500). A space's own finance retention policy must exist before a non-default value is used. |
+| `EVENT_REIMBURSEMENT_PAYEE_PURGE_DAYS` | `30` | Days after full payment or finance cancellation before payee bank/routing details and routing documents are purged (1–36500). Shown to members in the payee disclosure. |
+| `EVENT_REIMBURSEMENT_FILE_MAX_BYTES` | `10485760` | Per-file cap for receipts and payee documents; can only be lowered (max 10 MiB). |
+| `EVENT_REIMBURSEMENT_MEMBER_STORAGE_BYTES` | `104857600` | Per-member finance attachment budget within one event. |
+| `EVENT_REIMBURSEMENT_EVENT_STORAGE_BYTES` | `1073741824` | Per-event finance attachment budget. |
+| `EVENT_STAGE_FILE_RETENTION_DAYS` | `365` | Days a submitted stage-form upload is kept after the event ends (1–36500); the value is snapshotted onto each upload. |
+| `EVENT_STAGE_MEMBER_QUOTA_BYTES` | `104857600` | Per-member stage-form upload budget within one event. |
+| `EVENT_STAGE_EVENT_QUOTA_BYTES` | `1073741824` | Per-event stage-form upload budget. |
+
+The installed video provider invokes the bounded non-root ffprobe launcher; the backend
+image includes ffmpeg. [Scanner/probe setup](events/operations.md#optional-malware-scanner)
+requires real provider/fault tests. These controls do not enable programme capabilities.
+Certificate verify uses a fixed 30/min anonymous throttle, rather than a new env setting.
 
 ## API clients (HMAC)
 
@@ -195,23 +254,74 @@ See `docs/api-client-protocol.md`.
 | `THROTTLE_CLIENT_STANDARD` | `'120/min'` |  |
 | `THROTTLE_CLIENT_TRUSTED` | `'600/min'` |  |
 
+## Install-time sign-in choices
+
+Accounts and authentication are always installed by the guided installer. It asks which built-in
+providers to offer and whether to enable two-step sign-in; provider credentials are entered later
+in the platform console. Provider switches are read-only in `/control/` and compose with the social
+master switch and configured credentials. OIDC keeps its per-provider `is_enabled`.
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `SETUP_MFA_ENABLED` | unset (preserve model default: on) | First `setup_instance` creation only: `y` or `n`. Guided setup defaults to `Y`. |
+| `SETUP_SOCIAL_PROVIDERS` | unset (preserve model defaults: all on) | First creation only: comma list of `google,apple,github`, or literal `none`. Guided setup defaults to `google`. |
+
+Both are one-shot setup inputs, excluded from backup compatibility requirements; do not add them to
+runtime service settings. Reruns never rewrite an existing login-methods row. Use
+`manage.py set_login_methods --mfa on|off --providers google,apple,github` (or `--providers none`) for
+later changes; the command validates the full state and records an audit event in the same transaction.
+
 ## Two-step sign-in
 
-Superadmins must enroll TOTP; staff enrollment is required when a space enables
-`security.staff_mfa_required`. Members can opt in at `/mfa`. Secrets use the
-existing `API_CLIENT_ENC_KEY` encryption; recovery codes are hashed. No separate key is needed.
+Superadmins sign in with a password and may opt in to TOTP. Every staff role in every space
+must have two-step sign-in (an authenticator app or a passkey; release 2, #62): it is a platform rule
+with no setting, and newly appointed staff get three days to set it up. Members can opt in at `/mfa`.
+Secrets use the existing `API_CLIENT_ENC_KEY` encryption; recovery codes are hashed. No separate key is
+needed.
+
+`Platform login methods` in `/control/` shows `mfa_enabled` read-only (existing deployments
+default on) and the `passkeys_enabled` switch (default on; passkeys are offered, never required).
+Setup chooses `mfa_enabled` at install ("Let members turn on two-step sign-in too?"); change it later
+with `manage.py set_login_methods --mfa on|off`. It governs MEMBER opt-in only: turning it off pauses
+member challenges, enrollment and recovery-code regeneration and keeps existing authenticators; it
+never pauses staff MFA. Disable remains available. Sessions issued while bypassing required/enrolled MFA cannot continue after re-enabling,
+even after refresh rotation. Identity-provider sign-ins skip local TOTP by owner decision and
+carry provider proof; credential resets/disable still revoke them. Django control sessions also
+carry source and credential version, so host recovery requires a fresh password login.
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `MFA_CHALLENGE_TTL_SECONDS` | `300` | Lifetime of the opaque first-factor proof (60–600 seconds); no JWT exists until verification. |
 | `MFA_MAX_ATTEMPTS` | `5` | Failed second-factor attempts per challenge before refusal (1–10). |
 
+### GitHub member sign-in
+
+In GitHub **Settings → Developer settings → OAuth Apps → New OAuth App**, set the
+homepage to the public SpaceWorks site. Register the **Authorization callback URL**
+as the exact member sign-in page, for example `https://space.example/member` or
+`https://platform.example/m/makerspace/member`. Locally, use
+`http://localhost:5000/member` (or the corresponding `/m/<slug>/member` page).
+The browser returns to that same page, which posts the code, state and its tab-held
+nonce to `/api/v1/auth/social/github/callback`; the API URL is not the registered
+callback. Use an OAuth App registration matching the public sign-in URL being used.
+
+Copy the **Client ID** and generate a **Client secret**. Paste them into
+**Platform → Social sign-in → GitHub OAuth App (members)** in the staff console, or
+the platform social-auth settings in `/control/`. The secret uses `API_CLIENT_ENC_KEY`,
+is write-only, and a blank field keeps the saved value; use **Clear saved GitHub secret**
+to remove it. Keep social sign-in and member accounts enabled. Members must have a
+primary verified email on GitHub. New accounts also require self-registration enabled.
+GitHub does not sign into the staff console. No new environment variables are needed.
+
+See [GitHub's OAuth App flow](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps)
+for the authorization-code and PKCE contract.
+
 ### Staff invitations
 
 Staff invitation links use `PUBLIC_APP_BASE_URL` or the verified tenant frontend domain.
 The email module may be off; staff still receive a copyable link. Links expire in seven
 days by default, contain a fragment token, and are single use. Existing accounts must
-supply their password and enrolled second factor; an invitation cannot reset passwords.
+supply their password and, while platform MFA is on, enrolled second factor; an invitation cannot reset passwords.
 
 
 ## Installer topology selectors
@@ -237,6 +347,9 @@ documented under managed SaaS mode above.
 | `CADDY_SAAS_CONFIG` | Defaults to existing `./deploy/Caddyfile.saas`; new guided platforms use `./deploy/Caddyfile.saas-install` for public ACME. Existing deployments keep their origin-certificate configuration. |
 | `STORAGE_DOMAIN` | Bundled HTTPS storage hostname (`files.<server/platform-domain>`). Requires DNS; an existing proxy forwards to loopback Silo port 9000. |
 | `STORAGE_CADDY_CONFIG` | Defaults to `/etc/caddy/storage-disabled.caddy`; guided bundled HTTPS storage selects `/etc/caddy/storage.caddy`. External storage has no local route. |
+| `CONTROL_PLANE_PROXY` | `false`. `true` makes the bundled proxy (Caddy or the website nginx) forward `/control/` and `/mfa/control/` to Django on the site's own host. Only `true`/`false` are valid; anything else stops the proxy from starting. Apply a change with `bash scripts/apply-settings.sh`. |
+| `CONTROL_PLANE_ALLOW_CIDRS` | Empty (any address). Space-separated IPv4/IPv6 addresses or CIDRs allowed to reach the control plane; others get 403. Only meaningful where the proxy sees the real client address — not behind your own reverse proxy. |
+| `CONTROL_PLANE_TUNNEL_PORT` | Empty (off). Automatic-HTTPS installs only: a `127.0.0.1`-only HTTPS port serving just the control plane, for `ssh -L`. Needs Docker Engine 28 or newer. |
 
 External storage also writes existing `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`,
 `AWS_S3_ENDPOINT_URL`, `AWS_S3_PUBLIC_ENDPOINT_URL`, `AWS_S3_REGION_NAME`, `AWS_STORAGE_BUCKET_NAME`,
@@ -251,3 +364,88 @@ Shared multi-tenant staff sites also populate `PLATFORM_STAFF_ORIGINS`. Set exte
 `VITE_API_URL=https://<API-domain>/api`. The installer writes `ENABLE_HTTPS`,
 `TRUST_X_FORWARDED_PROTO`, `TRUSTED_PROXY_COUNT`, `PLATFORM_DOMAIN_SUFFIX`, `BEHIND_TRUSTED_PROXY`,
 `PLATFORM_ORIGIN_HOST` and `INFRA_HOSTS` to match the selected edge/proxy topology.
+
+## Metrics, organization creation and analytics
+
+See [the operations reference](environment-operations.md#route-metrics-organization-creation-and-web-analytics)
+for `ROUTE_METRICS_ENABLED` (default `False`), `PROMETHEUS_MULTIPROC_DIR` (empty;
+Compose uses `/tmp/spaceworks-prometheus`), `ORGANIZATION_SELF_CREATION_ENABLED`
+(default `False`), `ORGANIZATION_SELF_CREATION_MAX_OWNED` (3), and
+`ORGANIZATION_SELF_CREATION_MAX_PER_DAY` (1).
+
+`WEB_ANALYTICS_SCRIPT_URL`, `WEB_ANALYTICS_COLLECT_URL` and `WEB_ANALYTICS_DOMAIN`
+default to empty and must be configured together for manual Plausible analytics.
+`WEB_ANALYTICS_EXTRA_CONNECT_ORIGINS` is a frontend-only CSP option (empty by default),
+not a Django setting. The operations reference describes their validation and backup policies.
+Station PINs also require the independent `EVENT_STATION_PIN_PEPPER` secret documented
+there; setup creates it once and upgrades must preserve it.
+
+## Addressed messaging
+
+Canonical Twilio/Meta credentials live in `ChannelConfiguration`, with explicit platform
+opt-in. Compatibility callback verifiers and encrypted retired credential versions remain
+available during replay; retirement and sending activation require separate operator
+checkpoints. Canonical Meta HTTP uses `WHATSAPP_META_GRAPH_VERSION` (default `v25.0`),
+documented in [the delivery reference](environment-reference-delivery.md); the
+compatibility send and template-check helpers read the same setting, and it does not enable a
+sender. Preserve old signed callback routes through the
+[callback/replay compatibility period](notification-reconciliation-rollout.md).
+
+| Variable | Default | Notes |
+| --- | --- | --- |
+| `MESSAGING_WEBHOOK_BASE_URL` | empty | Operator-owned absolute externally reachable origin (scheme and host, optional deployment prefix). Required for SMS and compatibility SMS/WhatsApp callback resolution. Old callback paths shown in settings remain under `/api/v1/integrations/messaging/`; canonical WhatsApp routes are under `/api/v1/integrations/makerspace/{id}/whatsapp/`. Twilio signatures use this configured base, never forwarded headers. |
+
+Provider credentials live encrypted in the platform or tenant settings, not environment
+variables. OTP SMS keeps its existing independent platform configuration. Retired callback
+credentials are accepted for fourteen days and wiped by `messaging-credential-wipe` in
+both Celery beat and `run_scheduled_tasks`. Sending remains separately paused by NotificationCutover
+until explicit replay verification/activation; migrations do not enable delivery.
+
+
+Addressed channel operations: see [SMS and WhatsApp notifications](messaging-channels.md)
+for exact versioned webhook URLs, Twilio Advanced Opt-Out and connection overrides,
+Meta registration/PIN and permissions, and the bounded WhatsApp correlation probe.
+`MANAGED_RESOURCE_LIMITS["sms"]` and `["whatsapp"]` default to 100 logical messages per
+makerspace/day, with existing per-space resource-limit overrides. Self-host bypasses
+these notification quotas. Both scheduler modes run `messaging-recovery` every five
+minutes and `canonical-messaging-retention` hourly; provider secrets retired for 14 days are
+wiped independently of module state.
+
+Cloud integration: [hosting choices and operational contracts](deploy/cloud-overview.md). Full host defaults remain unchanged; managed/free is explicit and subject to release acceptance gates.
+Provider/cloud inputs and secret-file rules: [managed environment reference](deploy/cloud-environment.md). FREE_* caps apply only in the selected free profile.
+
+## Login security (release 2)
+
+These are the deployment's **platform defaults** for login security. Each space has its own
+security policy (Security settings in the staff console and `/control/`); a space may only
+make a value **stricter** than the platform default, never looser, and a superadmin lock is a
+floor the space cannot go below. For a person who is staff in several spaces, the strictest
+value across those spaces applies. Out-of-range values refuse to start the backend.
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `PASSWORD_BREACH_CHECK_ENABLED` | `True` | Refuse new passwords found in known breaches, using the Have I Been Pwned k-anonymity range API (only a 5-character hash prefix leaves the server). Fail-open: an unreachable service never blocks a password change. |
+| `PASSWORD_BREACH_CHECK_TIMEOUT_SECONDS` | `2` | Time limit for that lookup (1–10 seconds). |
+| `TURNSTILE_SITE_KEY` | empty | Cloudflare Turnstile site key. CAPTCHA stays off until both keys are set. Also pass it to the frontend container (the Compose files do) so the SPA's Content-Security-Policy allows `https://challenges.cloudflare.com`; it is public and published in `/api/v1/config` as `turnstile_site_key`. When Turnstile is on, Cloudflare sees the address of anyone asked to solve it (after failed sign-ins); say so in your privacy notice. |
+| `TURNSTILE_SECRET_KEY` | empty | Cloudflare Turnstile secret key (secret-bearing; set it together with the site key). |
+| `TURNSTILE_FAIL_MODE` | `open` | `open` lets a sign-in through when Turnstile cannot be reached; `closed` refuses it. |
+| `TURNSTILE_AFTER_FAILURES` | `3` | Failed sign-ins before the CAPTCHA is shown (1–20). |
+| `TURNSTILE_HOSTNAMES` | empty | Comma-separated hostnames Turnstile runs on (and a token must have been issued for); empty means the request's own verified origin host. A space's custom domain must also be listed here and in the Cloudflare widget for its `security.captcha_on_sign_in` setting to take effect. |
+| `LOGIN_IP_BLOCK_ENABLED` | `True` | Automatically block a source address that fails sign-in against many different accounts (credential stuffing). Superadmin allow and deny rules in `/control/` always win. |
+| `LOGIN_IP_BLOCK_DISTINCT_ACCOUNTS` | `10` | Distinct accounts one source may fail against inside the window before it is blocked (2–1000). |
+| `LOGIN_IP_BLOCK_WINDOW_SECONDS` | `900` | The counting window (60–86400 seconds). |
+| `LOGIN_IP_BLOCK_SECONDS` | `3600` | How long an automatic block lasts (60–604800 seconds). |
+| `LOGIN_RISK_FAILURE_THRESHOLD` | `3` | Failed sign-ins after which the next one is treated as unusual and asks for a second check (1–20). |
+| `LOGIN_REMEMBERED_DEVICE_DAYS` | `90` | How long a device that passed the unusual-login check stays remembered (1–90 days). |
+| `LOGIN_CODE_TTL_SECONDS` | `600` | Lifetime of an emailed 6-digit login code (60–1800 seconds). |
+| `SECURITY_ALERT_LINK_TTL_DAYS` | `14` | How long the "this wasn't me" link in a security alert email works (1–30 days). |
+| `WEBAUTHN_RP_NAME` | `Space Works` | Name a browser shows when creating a passkey (1–64 characters). The passkey relying-party ID is the site's own host. |
+| `MIN_NATIVE_APP_VERSION_IOS` | empty | Oldest iOS app version (`x.y.z`, compared numerically) allowed to sign in or refresh a device session. Older or unversioned apps get HTTP 426 `native_app_update_required`. Empty = no minimum. |
+| `MIN_NATIVE_APP_VERSION_ANDROID` | empty | The same minimum for the Android app. |
+| `THROTTLE_LOGIN_CODE_RESEND` | `'5/hour'` | Emailed login-code sends per challenge. |
+| `THROTTLE_LOGIN_CODE_IP` | `'30/hour'` | Login-code sends and checks per source address. |
+| `THROTTLE_PASSKEY_OPTIONS` | `'30/min'` | Passkey registration and sign-in option requests. |
+| `THROTTLE_PASSKEY_VERIFY` | `'10/min'` | Passkey verification attempts. |
+| `THROTTLE_SECURITY_ALERT_ACTION` | `'10/hour'` | Uses of a security alert's "this wasn't me" link. |
+| `THROTTLE_ACCOUNT_MERGE_START` | `'10/hour'` | Account-link requests and code resends per person (`auth/account-merge/start`, `.../resend`). |
+| `THROTTLE_ACCOUNT_MERGE_PROVE` | `'30/hour'` | Account-link proofs, previews, confirmations and cancels per person. |

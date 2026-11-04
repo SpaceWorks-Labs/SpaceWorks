@@ -7,6 +7,7 @@ text, secrets, object keys or before/after payloads)."""
 from .presentation_catalog_types import P
 
 ENTRIES = (
+    P("inventory.stock_observed", "Inventory stock observed"),
     P("asset.issued", "Asset issued",
       ("qr_id", "request_id", "request_item_id"), request_refs=("request_id",)),
     P("asset_units.generated", "Asset units generated", ("count",)),
@@ -50,6 +51,7 @@ ENTRIES = (
       )),
     P("inventory.asset_updated", "Inventory asset updated", ("fields", "product_id")),
     P("inventory.bulk_imported", "Inventory bulk imported", ("created", "updated")),
+    P("inventory.bulk_import_sheet_read", "Inventory import spreadsheet read", ("columns", "rows")),
     P("inventory.created", "Inventory created"),
     P("inventory.image_attached", "Inventory image attached"),
     P("inventory.image_cleared", "Inventory image cleared"),
@@ -91,6 +93,8 @@ ENTRIES = (
     P("request.rejected", "Request rejected"),
     P("request.renewed", "Loan renewed", ("old_return_due_at", "return_due_at", "renewal_count", "staff")),
     P("request.return_due_updated", "Request return due updated", ("return_due_at",)),
+    P("request.contact_code_failed", "Borrower email code refused"),
+    P("request.contact_code_sent", "Borrower email code sent"),
     P("request.submitted", "Request submitted"),
     P("stock_transfer.applied", "Stock transfer applied"),
     P("stock_transfer.received", "Stock transfer received", ("source_makerspace_id",)),

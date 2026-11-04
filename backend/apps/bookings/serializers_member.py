@@ -13,11 +13,31 @@ class MemberBookingSerializer(serializers.ModelSerializer):
     timezone = serializers.CharField(source='space.makerspace.timezone', read_only=True)
     cancellation_cutoff_at = serializers.SerializerMethodField()
     can_cancel = serializers.SerializerMethodField()
+    confirmation_available = serializers.SerializerMethodField()
+    decision_reason = serializers.CharField(read_only=True)
+    departed_at = serializers.DateTimeField(read_only=True, allow_null=True)
+    can_checkout = serializers.SerializerMethodField()
+    departure_outcome = serializers.SerializerMethodField()
+
+    @extend_schema_field(serializers.BooleanField())
+    def get_can_checkout(self, booking):
+        from apps.bookings.services_departure import can_depart
+        return can_depart(booking, now=self.context.get('now') or timezone.now(), source="member")
+
+    @extend_schema_field(serializers.CharField(allow_null=True))
+    def get_departure_outcome(self, booking):
+        return booking.departure_events.values_list("outcome", flat=True).first()
+
+    @extend_schema_field(serializers.BooleanField())
+    def get_confirmation_available(self, booking):
+        from apps.makerspaces.platform import feature_enabled
+        return feature_enabled(booking.space.makerspace, "bookings.confirmations")
 
     class Meta:
         model = Booking
         fields = ('public_token', 'space_name', 'timezone', 'starts_at', 'ends_at',
-                  'status', 'cancellation_cutoff_at', 'can_cancel')
+                  'status', 'cancellation_cutoff_at', 'can_cancel', 'confirmation_available',
+                  'decision_reason', 'departed_at', 'can_checkout', 'departure_outcome')
         read_only_fields = fields
 
     @extend_schema_field(serializers.DateTimeField())
@@ -26,7 +46,7 @@ class MemberBookingSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(serializers.BooleanField())
     def get_can_cancel(self, booking):
-        return member_can_cancel(booking, now=self.context.get('now') or timezone.now())
+        return booking.arrived_at is None and member_can_cancel(booking, now=self.context.get('now') or timezone.now())
 
 
 class MemberBookingListSerializer(serializers.Serializer):

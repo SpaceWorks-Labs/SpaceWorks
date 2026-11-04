@@ -18,6 +18,7 @@ from .models_protocol import DisclosureClosureApproval
 from .protocol_errors import ClosureAdmissionError, ClosureChangedError
 from .row_conditions import condition_matches
 from .target_projection import ROW_POLICIES, RowDisposition
+from apps.backup.capture_managers import every_row
 
 
 def export_row_policy(model_label, row):
@@ -27,10 +28,10 @@ def export_row_policy(model_label, row):
         # this before the user closure too, so a dropped application's voucher
         # cannot introduce an unrelated global identity into the portable archive.
         return export_row_policy("makerspaces.MembershipRequest", row.request)
-    if model_label == "audit.AuditLog" and row.action.startswith("tenant_migration."):
-        # Migration coordination audit remains append-only on the source deployment,
-        # but carrying it would make the act of reviewing/approving a closure change
-        # that same closure through the audit actor edge.
+    if model_label == "audit.AuditLog" and row.action.startswith(("tenant_migration.", "selfhost_move.")):
+        # Migration coordination audit (and the self-host move's, release 2 L11) remains
+        # append-only on the source deployment, but carrying it would make the act of
+        # reviewing/approving a closure change that same closure through the audit actor edge.
         return False, False
     policy = ROW_POLICIES.get(model_label)
     if policy is None or not condition_matches(policy.condition, row):
@@ -56,7 +57,8 @@ def canonical_identities(user_rows):
     for user in sorted(user_rows, key=lambda item: str(item.pk)):
         identity = {}
         for name in sorted(names):
-            value = getattr(user, name)
+            # A foreign key would be compared by its column value, never the related object.
+            value = getattr(user, user._meta.get_field(name).attname)
             identity[name] = value.isoformat() if hasattr(value, "isoformat") else value
         identities.append(identity)
     return identities
@@ -71,18 +73,20 @@ def closure_digest(identities):
 
 def compute_pending_closure(makerspace):
     """Compute the exact projected identity list shown to the source superadmin."""
-    closure = set()
+    from apps.data_export.runner_users import staff_track_user_ids
+    closure = staff_track_user_ids(makerspace.pk)
     for dataset in DATASETS.values():
         if dataset.fidelity is not Fidelity.PORTABLE or dataset.model == "accounts.User":
             continue
         model = apps.get_model(dataset.model)
-        rows = model.objects.filter(dataset.predicate.as_q(makerspace.pk))
+        rows = every_row(model).filter(dataset.predicate.as_q(makerspace.pk))
         for row in rows.iterator(chunk_size=500):
             emit, contributes = export_row_policy(dataset.model, row)
             if emit and contributes:
                 closure.update(_row_user_ids(dataset.model, row))
-    users = apps.get_model("accounts.User").objects.filter(pk__in=closure)
-    identities = canonical_identities(users)
+    from apps.data_export.runner_users import scrub_shell_identities
+    users = every_row(apps.get_model("accounts.User")).filter(pk__in=closure, retired_at__isnull=True)
+    identities = canonical_identities(scrub_shell_identities(list(users)))
     return {"digest": closure_digest(identities), "identities": identities}
 
 

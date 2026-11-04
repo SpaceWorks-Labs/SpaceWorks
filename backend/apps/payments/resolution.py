@@ -24,7 +24,7 @@ class PaymentSource:
     vendor: str = "stripe"
 
 
-def _razorpay_source(merchant) -> PaymentSource | None:
+def razorpay_source(merchant) -> PaymentSource | None:
     """Razorpay is self-host / own-account only, by owner decision.
 
     There is no Razorpay equivalent of Stripe Connect here, so there is no platform
@@ -33,7 +33,9 @@ def _razorpay_source(merchant) -> PaymentSource | None:
     space always pays into its own merchant account -- which is why this returns None
     rather than falling through to any platform credential.
     """
-    if not merchant.raw_credentials_configured:
+    # Existing collections still belong to this vendor after provider selection
+    # changes. Only new-checkout resolution checks the selected provider.
+    if not (merchant.razorpay_key_id and merchant.razorpay_key_secret and merchant.razorpay_webhook_secret):
         return None
     try:
         secret = merchant.get_razorpay_key_secret()
@@ -54,7 +56,7 @@ def _razorpay_source(merchant) -> PaymentSource | None:
 def resolve_payment_source(makerspace) -> PaymentSource | None:
     merchant = MakerspacePaymentSettings.for_makerspace(makerspace)
     if merchant.provider == "razorpay":
-        return _razorpay_source(merchant)
+        return razorpay_source(merchant)
     if merchant.raw_credentials_configured:
         try:
             secret_key = merchant.get_stripe_secret_key()
@@ -106,7 +108,7 @@ def source_for_payment(payment) -> PaymentSource | None:
     credentials simply resolves to None and is reconciled offline.
     """
     if payment.provider == payment.Provider.RAZORPAY:
-        return _razorpay_source(MakerspacePaymentSettings.for_makerspace(payment.makerspace))
+        return razorpay_source(MakerspacePaymentSettings.for_makerspace(payment.makerspace))
     if payment.stripe_provider == payment.StripeProvider.RAW:
         merchant = MakerspacePaymentSettings.for_makerspace(payment.makerspace)
         if not merchant.raw_credentials_configured:

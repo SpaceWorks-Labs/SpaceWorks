@@ -35,13 +35,13 @@ A multi-tenant system for managing community hardware loans across makerspaces. 
 remarks + audit log). Photo bytes may expire under the configured retention policy, while immutable photo
 metadata, remarks, scans and audit history preserve the durable accountability trail. Public users
 browse and request; when self-checkout is enabled they may also issue/return eligible QR tools after
-authentication and evidence upload. Staff physically issue reviewed requests and direct handouts according
+authentication (or, without member accounts, a confirmed contact) and evidence upload. Staff physically issue reviewed requests and direct handouts according
 to action scope.
 
 ## Architecture: Concepts That Span Multiple Modules
 
-UIs are thin clients over an API server composed of deep modules; Telegram is an outbound notification
-channel only. Two architectural rules are load-bearing and easy to violate if you only read one module:
+UIs are thin clients over an API server composed of deep modules; Telegram carries notifications and
+verified private account-link proofs, never workflow decisions. Two architectural rules are load-bearing and easy to violate if you only read one module:
 
 1. **The Request Workflow Module is the single source of truth for state transitions.** The web admin
    panel, the guest-admin app and the `/control/` review page must all route through the *same* workflow
@@ -56,17 +56,26 @@ channel only. Two architectural rules are load-bearing and easy to violate if yo
 
 ### Module responsibilities
 
-- **Auth & RBAC** — enforces the role/action matrix AND makerspace scoping on every query. Super Admin is
-  global; every other role is a per-makerspace membership resolved through an editable `MakerspaceRole` row,
-  action-based. `roles.DEFAULT_ROLE_DEFINITIONS` + `MEMBER_ROLE_DEFINITION` seed **four** protected defaults
-  per makerspace — Space Manager, Inventory Manager, Machine Manager, Member. **Guest Admin and Print
-  Manager are both retired** — handover is a custom role, and `print_manager` survives only as the frozen
-  legacy fallback in `_MEMBERSHIP_ROLE_ACTIONS` (migrations and enum archaeology under **Handover roles**
-  in `docs/INVARIANTS.md`). Inventory Manager is membership-only and covers the full hardware lifecycle but
-  not printing, staff, or makerspace settings. Also blocks restricted/suspended users. Interface:
-  `can(actor, action, resource)`, `scope_by_makerspace(actor, query)`. (It no longer verifies Telegram
-  actors — that went with the callback route. `assertTelegramActorCan` never existed in the code at all;
-  this line asserted it for months.)
+- **Auth & RBAC** — enforces the role/action matrix AND makerspace scoping on every query.
+  **One account per person (#63, release 2 U-A1):** staff roles are a STAFF-TRACK membership on
+  the person's account (`MakerspaceMembership.track` = `community` | `staff`); the superadmin is a
+  separate platform account; `account_kind="staff"` survives only for inert retired/merged shells.
+  Identity questions go through `accounts/staff_identity.py` (`is_person`, `has_staff_role`,
+  `actor_ids_for`, `require_staff_mfa`), never `account_kind`/`staff_makerspace`. The default
+  membership manager is community-only; staff authority reads `staff_tracks`. Until U-A2/U-B land,
+  the login/session surface, staff lifecycle and recovery code still follow the old split
+  (staff/platform password + authenticator MFA, context-bound recovery, native staff grants with
+  password, MFA, attestation and a fixed tenant; platform native grants forbidden).
+  Accounts `0032_account_context` is a development-data role reset, never an authorized
+  live-authority migration. Resource helpers and organization delegates are the person's.
+  Super Admin is global; each makerspace has eight fixed built-in `MakerspaceRole` instances: Space Manager, Inventory
+  Manager, Machine Manager, Event Manager, Booking Manager, Handover, Technician and Member. No custom roles or role
+  editing. A membership holds a primary role plus combinable additional roles; Space Manager and Member
+  must each stand alone. Authority is the union of the valid role set's actions. Machine Manager reach is
+  assigned per person by machine type; no type links means no machines, and a type covers machines added
+  later. Space Manager is exempt. Inventory Manager covers the full hardware lifecycle but not printing,
+  staff or makerspace settings. Also blocks restricted/suspended users. Interface:
+  `can(actor, action, resource)`, `scope_by_makerspace(actor, query)`.
 - **Request Workflow** — owns the state machine, emits audit logs, triggers Telegram alerts, coordinates
   inventory reservation/issue/return.
 - **Inventory Availability** — quantity math + asset status for QR-tracked tools.
@@ -78,47 +87,93 @@ channel only. Two architectural rules are load-bearing and easy to violate if yo
 - **Check-In API Client** — **RETIRED** (`73a480c`, Part M7). `apps/checkin/` no longer exists and there is
   no `CHECKIN_MODE` setting. Requester identity now comes from authenticated member accounts, so there is no
   external verify dependency left to fail safe on.
-- **Telegram Integration** — sends per-makerspace group alerts. **Outbound only.** The webhook route is
-  retained but accept-and-ignores every callback, because a deployment that already ran `setWebhook` would
-  otherwise have Telegram retry a 404 for hours; no chat message may carry an inline keyboard.
+- **Notifications v2** — transactional personal envelopes/outbox, per-makerspace channel configuration
+  with encrypted credentials, provider-proven endpoints and per-category channel selections with email
+  fallback. Space Managers configure channels; personal choices cannot grant tenant authority. Mandatory
+  mail and email-only authentication proofs keep their rules. Member JWTs reach exactly six personal
+  route shapes; chat OAuth completes only through authenticated challenge verification. SMS uses
+  Twilio; WhatsApp uses Twilio or Meta under independent default-off modules.
+  Sender history, durable STOP/suppression, BSUID correlation, segments and analytics live in this
+  pipeline; duplicate addressed workers are inert. Platform sending requires explicit operator and
+  tenant opt-in. Per-device native push belongs to envelope deliveries, independently of the inbox
+  module. Sending activation and destructive retirement remain held pending replay sign-off
+  (`docs/notification-reconciliation-rollout.md`). Contract and remaining integration limits:
+  `docs/notification-contract.md`; actual adapter coverage: `docs/notification-coverage.md`.
+- **Telegram Integration** — sends per-makerspace room alerts and verified personal messages.
+  **Outbound for decisions.** The secret-authenticated webhook accepts only private `/start` account-link
+  proofs and accept-and-ignores every `callback_query`; no message carries an inline keyboard.
+  `setWebhook.allowed_updates` must include `message`. Rooms use the contract bot token when configured.
+- **Public profiles and presence** — opt-in `/<handle>` publication is separate from the member
+  directory. The `presence` module owns member/guest check-in and the privacy-controlled `/m/<slug>/now`
+  display. Self check-in requires an enabled, configured geofence and an in-range reading; staff can
+  check people in without GPS. Migration `makerspaces/0096` installs presence on existing spaces;
+  new spaces opt in. Shared presets are 60/120/180/240 minutes. Current-session reads expose name/
+  opt-out policy even when empty; public profiles expose `viewer_is_owner`, member profiles `verified`.
+  Long-form consent, display and lifecycle rules: `docs/INVARIANTS.md`.
 
 ## Request State Machine
 
 ```
-draft → pending_approval → {rejected | accepted}
+draft → pending_approval → {rejected | accepted | cancelled}
 accepted → issued → {partially_returned | returned | closed_with_issue}
+accepted → {cancelled | expired}
 ```
 
 The workflow module enforces *allowed* transitions only. `closed_with_issue` and the
 accountability/access-restriction flow (PRD §6.5) are how lost/damaged hardware ties back to a requester's
-`access_status`.
+`access_status`. `cancelled` (the requester with `loans.withdrawals`, or staff) and `expired` (an accepted
+request not collected by its pickup deadline, `loans.pickup_windows`) are terminal and release the
+reservation through `inventory/availability.py` (release 2, L12; #77). Machine jobs have their own
+lifecycle in `machines/service_workflow*` -- see **Machines and loans depth** in `docs/INVARIANTS.md`.
 
 ## Multi-Tenancy (Makerspace Scoping)
 
 Every domain entity is scoped to a `makerspace_id`. A makerspace owns its inventory, public URL, Space
-Managers, Inventory Managers, its own custom roles (handover included), Telegram group chat ID, QR
+Managers, Inventory Managers, its eight built-in role instances, Telegram group chat ID, QR
 namespace, and audit-log scope. **Any list/query for makerspace-scoped staff actors must be scoped through
 the Auth module** — forgetting this is a cross-tenant data leak, not just a bug.
 
 ## Hard Rules Baked Into Workflows (don't regress these)
 
+- **One account per person.** Staff roles are granted to a person's existing account as a
+  staff-track row (never a separate account); nothing merges on email alone (#65); conversion
+  needs the reviewed `plan_sha256` (`ACCOUNT_UNIFICATION_ACK`). Platform accounts have their own
+  email recovery and host break-glass command. The superadmin is always on and is the only one
+  who grants, changes or revokes the Space Manager role, in every space
+  (`space_manager_superadmin_only`); never self and never the last active manager. See **One
+  account per person** in `docs/INVARIANTS.md`.
 - Reviewed-request hardware **cannot be issued** without both a box QR scan and an issue photo.
 - Public self-checkout and staff direct handout **cannot be issued** without uploaded issue evidence and an
   eligible scanned/selected tool.
 - Hardware **cannot be returned** without a return photo and a return remark/notes.
 - Issued quantity cannot exceed accepted quantity without authorized workflow permission.
-- **Guest Admin is no longer a built-in role**; handover staff get a **custom role** holding the handout
-  actions. It issues accepted requests, creates **direct handouts**, processes scoped returns and uploads
-  evidence — through the same evidence/QR/remark/audit workflow as staff — and still cannot accept/reject
-  requests, edit inventory or manage QR unless granted those actions. `rbac.HANDOUT_ACTIONS` is no longer a
-  cap on what a role may hold; it only defines what counts as handover-only for `rbac.is_handout_only`,
-  which decides how narrow the console is. The `guest-admin/` **URL paths** in `hardware_requests/urls.py`
-  are the handover API surface (module key `guest_handover`), not the role — renaming them would break
-  clients. Full detail: **Handover roles** in `docs/INVARIANTS.md`.
-- Public request submission requires an **authenticated member** (`RequestSubmitView` → `IsAuthenticated`),
-  and request lookup is scoped to that verified identity — it never matches free-text contact fields (no
-  enumeration by known email/phone). Since the Check-In retirement (`73a480c`) this is enforced by member
-  auth rather than an external verify call.
+- **Handover is a built-in role again.** It issues accepted requests, creates **direct handouts**, processes
+  scoped returns, uploads evidence and collects completed machine jobs through the same evidence/QR/remark/
+  audit workflow as staff. It cannot accept/reject requests, edit inventory or manage QR on its own;
+  combining it with another built-in adds that role's actions. `rbac.HANDOUT_ACTIONS` defines handover-only
+  console narrowing, not a grant ceiling. The `guest-admin/` **URL paths** in `hardware_requests/urls.py`
+  remain the handover API surface (module key `guest_handover`); renaming them would break clients.
+  Full detail: **Handover roles** in `docs/INVARIANTS.md`.
+- **Who may request or self-check-out is decided by the `member_accounts` module (#80, #91).** A space WITH member
+  accounts requires a signed-in account (`RequestSubmitView`; an anonymous POST is a 401): with
+  **`membership` on** an active member must pass the presence, waiver and current-term checks; with it
+  **off** any active signed-in account may submit. A space WITHOUT member accounts has accounts for
+  **staff only**, so EVERYONE there — signed in or not, staff and organisation sign-ins included (a
+  walk-in's claim session keeps its own person record) —
+  requests and self-checks-out with **name, phone and email, all required**, and the email must carry a
+  one-time code from `requests/email-code` (the sign-up OTP machinery, throttled and audited) before the
+  request or handover exists; account-less self-checkout also needs its own switch,
+  `inventory.contact_self_checkout` (#95, default off, returns always open); evidence rules are unchanged. `membership` requires
+  `member_accounts` (`makerspaces/0108` repaired rows that had membership without it). That path is automatic — there is no opt-in switch (`makerspaces/0105`
+  dropped the old one). Such requests are recorded against the space's inert
+  `Makerspace.anonymous_requester` principal; phone and email live only in the request's scoped-PII
+  encrypted contact snapshot and are staff-only, and the typed name is the borrower's public name.
+  Derivation: `makerspaces/request_access.py`. Staff acceptance still reserves stock. Identity-based
+  borrower history remains authenticated and owner-scoped — never match free-text email/phone. Existing
+  public request-status links remain bearer-token reads.
+- Sensitive browser changes (staff role-set assignments/grants, API-client management and organization
+  governance/deletion) require recent, server-owned session reauthentication. Refresh never renews
+  that proof; `/control/` keeps its separate MFA and reauthentication surface.
 - Inventory Managers can run the full hardware lifecycle but **cannot** manage printing, staff, or
   makerspace settings.
 - Evidence endpoints require per-makerspace `UPLOAD_EVIDENCE` plus active status; QR management also checks
@@ -135,6 +190,10 @@ the Auth module** — forgetting this is a cross-tenant data leak, not just a bu
   stamped `provider=unclaimed` and claimed exactly once by the first checkout that reaches a provider
   (DB-enforced). Marking one paid offline requires a `ManualSettlement` receipt — method, reference,
   received date — written in the same transaction and append-only, with corrections as `amends` rows.
+- **Refund cases never move money; only a staff approval does.** A `RefundCase` is an entitlement
+  (policy due or member request). `services_refund_decisions.approve_case` is the only path from a
+  case to a `Refund`, under Payment -> RefundCase -> Refund locks, with subject authority (cash also
+  needs `record_payment` and a receipt). Rules: **Refund cases** in `docs/INVARIANTS.md`.
 - **The payment LEDGER is permanently core; only the RAIL is separable.** `apps.payments`
   (Payment, ManualSettlement, reconciliation, member history, receipts, reports) can never be
   tombstoned — a deployment that cannot read or settle money it is holding has lost data.
@@ -142,6 +201,15 @@ the Auth module** — forgetting this is a cross-tenant data leak, not just a bu
   refunds, credential settings and every webhook. The `payments` MODULE key belongs to the rail,
   so tombstoning the rail drops the key. `TOMBSTONED_APPS=payments` still works and is
   translated to `payments_rail` (`separability.tombstones.RENAMED_LABELS`).
+- **Tax, offline income and spending (release 2 L5).** `billing.tax` (off by default) freezes each
+  charge's tax at `create_payment` (`Payment.tax_snapshot`, immutable) and numbers documents issued while
+  it is on in a gapless per-financial-year series; with it off every document and number is exactly
+  release 1. `billing.maker_checker` makes a second `record_payment` holder confirm every OFFLINE
+  settlement (never refunds, expenses or payouts; no self-confirm). Every money-out movement goes through
+  `payments.ledger_api.record_expense`, which is ALWAYS recorded -- `finance.ledger` hides only screens and
+  reports -- and each area's manager sees only that area's money through `payments.finance_scope`.
+  No code path moves money without a staff decision: claims, capture flags, disputes and the gateway
+  poll record and flag, never refund.
 - **Pending payments travel in a portable dump.** A single pending row used to refuse the whole
   dump; that is gone, because money owed is now recorded by default and the refusal made a dump
   impossible for any space keeping a ledger. Three things replace it: the preflight refuses a
@@ -162,8 +230,25 @@ the Auth module** — forgetting this is a cross-tenant data leak, not just a bu
 - Public inventory must never expose: storage locations, box IDs, QR codes, scan history, evidence photos,
   requester history, or hidden counts. Public visibility is governed per-item by `is_public`,
   `show_public_count`, and `public_availability_mode` (`exact_count | status_only | hidden`).
+- **Maintenance, To-Buy, warranty and repairs are capabilities under each parent, not modules**
+  (#97, #128 C-9): `machines.*`, `bookings.*` and the parentless `inventory.*` family, each its own
+  switch. The `maintenance` and `procurement` module keys are retired — never reintroduce them. A
+  switched-off folded route answers 404 and its rows are kept; purging them is a separate
+  superadmin `/control/` action, per parent. New features join their parent as capabilities.
+- **Every module setting is written through `settings_authority.assert_setting_write`** (#101,
+  #128 C-11), never a bare `manage_makerspace` check: the Space Manager always; a module manager
+  only with a per-person grant and never past an SM lock; the Inventory Manager always for rental
+  timing. Security and finance settings are never delegated. The Space Manager switches modules
+  on and off (data kept); limit-gated installs on the managed platform and every purge stay
+  superadmin-only. Full rules: **Settings authority** and **Folded modules** in
+  `docs/INVARIANTS.md`.
+- **Money owed is priced through the pricing kernel** (#84, #85): every charge seam asks it for
+  the amount, never a stored constant. A fee waiver never reverses a paid charge without a
+  staff-approved `RefundCase`; a price that moved since the quote returns 409 `price_changed`;
+  a booking awaiting approval keeps the price quoted at request. Full rules: **Pricing** in
+  `docs/INVARIANTS.md`.
 
-> The machine-scoping program (`MANAGE_MACHINES` per role, the Machines console, procurement and dashboard
+> The machine-scoping program (`MANAGE_MACHINES` per person by machine type, the Machines console, procurement and dashboard
 > narrowing) is documentation of an invariant, not a workflow rule, and lives under **Machine scoping** in
 > `docs/INVARIANTS.md`.
 
@@ -185,22 +270,22 @@ the Auth module** — forgetting this is a cross-tenant data leak, not just a bu
   classes/functions into domain submodules (`views_*`, `serializers_*`, `admin_*`, `services_*`) and keep
   the original file as a **thin re-export barrel** (explicit `from .submodule import (...)`, never
   `import *`) so `from app.views import X` and `views.X` keep resolving; for `admin.py` the barrel must
-  still import the admin submodules so the `@admin.register` side effects fire. **The ceiling is enforced
-  on what you touch, and it is nearly met repo-wide: four `backend/apps/` files (non-migration, non-test)
-  exceed 300 lines** — `machines/access.py` (367), `inventory/middleware.py` (308),
-  `tenant_migration/tenant_dump_authority.py` (305), `tenant_migration/source_gate_guards.py` (301) —
-  plus `config/settings.py` (1161, the accepted exception — Django settings are conventionally a single
-  file). `backend/tests/` is not held to the ceiling. Frontend: **zero** non-test, non-generated files
-  exceed it — `8be90478` split all eleven, so a frontend file over the ceiling is now new debt, not
-  inherited. Measured 2026-10-09, when `makerspaces/module_registry.py`, `tenant_migration/unique_values.py`,
-  `data_export/classification.py` and `data_export/references.py` were split into catalogue/core
-  siblings behind thin barrels; every earlier version of this line (37 files 2026-08-20, eleven frontend
-  files 2026-09-03, five backend files 2026-09-06) was already stale by the time it was read.
+  still import the admin submodules so the `@admin.register` side effects fire. **The ceiling is enforced on what you touch.**
+  **CI enforces it too:** the `rules` job of the Checks workflow runs `scripts/ci/check_rules.py`
+  (`python scripts/ci/check_rules.py` locally) over tracked, non-migration, non-test, non-generated files in
+  `backend/apps`, `backend/config` and `frontend/src`; its `ALLOWLIST` is the only exception list, and
+  today it holds just `config/settings.py` (Django settings conventionally use one file). Measured
+  2026-10-28: **four `backend/apps/` files exceed 300 lines** -- `tenant_migration/row_planning.py` (325),
+  `makerspaces/module_purge.py` (305), `tenant_migration/materialization.py` (302),
+  `tenant_migration/source_gate_guards.py` (301) -- and the P2 split sweep owns them; frontend has none.
+  (`machines/access.py`, `apiclients/scope_registry.py` and `tenant_migration/authority_guards.py` were
+  split behind barrels on 2026-10-28.) `backend/tests/` is not held to the ceiling.
   **Split an over-ceiling file in its own commit before adding to it**, and when splitting one that other
   modules import from, check for guards pinned to its path: `tests/makerspaces/test_tenant_servability_guard.py`
   pins two function *bodies* to `accounts/rbac.py` by `(path, function)`, and
-  `tenant_migration/authority_guards.py` pins whole *files* via `AUTHORIZATION_SOURCES` — the latter goes
-  silently blind rather than failing if you move code out from under it.
+  `tenant_migration/authority_guards.py` pins whole *files* via `AUTHORIZATION_SOURCES` (the list itself
+  lives in `tenant_migration/authority_sources.py`) — the latter goes silently blind rather than failing
+  if you move code out from under it, so list every new sibling there.
 - **Production-level code, not prototype code.** Validate all inputs at the boundary, handle external-service
   failure explicitly (especially outbound integrations — Stripe, Telegram, SMTP, object storage — fail safe,
   never crash a request flow), use structured logging, return consistent typed error responses, and never
@@ -297,9 +382,12 @@ its two gates, the U-SEC security posture (axes, throttles, CSP), the non-techni
 implementation status. Read it to find out whether something already exists and how it is wired; the rules
 those areas impose are in `docs/INVARIANTS.md`.
 
-Two facts from it that bite outside their own area: the Django admin is at **`/control/`**, not `/admin/`
-(that is the React staff console SPA route), and superadmin operations are admin **actions routed through
-the existing services** — never direct status mutation.
+Three facts from it that bite outside their own area: the Django admin is at **`/control/`**, not `/admin/`
+(that is the React staff console SPA route); superadmin operations are admin **actions routed through
+the existing services** — never direct status mutation; and since release 2 **two-step sign-in is
+mandatory for every staff role** (an authenticator or a passkey, a platform rule with a 3-day grace, never a
+per-space switch) — staff routes go through `staff_identity.require_staff_mfa`, see **Login security** in
+`docs/INVARIANTS.md`.
 
 Stack (in use):
 
@@ -310,11 +398,18 @@ Stack (in use):
 - **Styling:** Tailwind CSS 4 (CSS-first; `src/index.css` uses `@import "tailwindcss"` + `@config
   "../tailwind.config.ts"`; PostCSS via `@tailwindcss/postcss`) with CSS-variable light/dark theme tokens.
   Light default; dark toggle persisted locally.
+- **Design system:** Space Works brand guidelines v1 (`docs/brand/`) for all colour, type, logo and icons;
+  UX patterns from the Yuyu reference boards. Fonts (approved brand kit, 2026-10-15): Gilroy 400–700 for all text
+  and headings, Unbounded for one accent per layout — no other family. Icons: `lucide-react`. Every screen composes one layout from
+  `frontend/src/components/layouts/` inside the sidebar `AppShell` (`components/shell/`); shared UI
+  primitives are exported from `frontend/src/components/ui/index.ts`.
 - **API documentation:** drf-spectacular / OpenAPI (snapshot `frontend/openapi-schema.json` + generated
   `frontend/src/generated/api.ts`; regenerate both when routes/models change — spectacular needs
   `--format openapi-json`).
-- **Telegram:** request alerts and test alerts. Outbound only — the webhook acknowledges and discards
-  callbacks; decisions are made in the staff console or `/control/`.
+- **Notifications:** personal outboxes plus scoped staff rooms; Telegram, Slack, Mattermost, Discord
+  and WhatsApp provider adapters. See the delivery contract for integration limits. Telegram accepts
+  verified private `/start` account-link proofs only; decision callbacks are ignored and decisions
+  remain in the staff console or `/control/`.
 
 ## Current source map — in `docs/SOURCE-MAP.md`
 
@@ -375,15 +470,21 @@ because none are quoted here — this index is a router, not a summary.
 
 | Section of `docs/INVARIANTS.md` | Before you touch |
 | --- | --- |
-| **Cross-cutting invariants** | self-host vs managed SaaS and fair-use limits; `frontend_domain` and origin scoping; superadmin hide/archive/purge; archival vs member money; the two-key archive request; public borrower names; public image fields and storage accounting; rate-limit cache; object storage; the report registry; scoped PII encryption; custom roles; `module_registry` and opt-in modules; module install/uninstall/purge; the `email` module gate; A6 master switches; two-level capabilities; the `membership` module; payments, credentials and reconciliation; native device grants; OIDC, social, phone and login-method switches; walk-in/account-less identity; maker profiles; staff event registration; notifications v2; presence geofence; the colour vocabulary; the accessibility floor; console parity |
-| **Handover roles and the retired Guest Admin** | handout/front-desk custom roles, `rbac.HANDOUT_ACTIONS`, `is_handout_only`, the retired `guest_admin`/`print_manager` enum members and their migrations |
+| **One account per person** (and its "split-account surfaces awaiting their lanes") | account creation, kinds, shells and `merged_into`, membership tracks and managers, `staff_identity`, the merge registry, the unification migration and report, staff lifecycle, auth surfaces and delegated routes, session contexts, reset/MFA, chat identity, staff export/import, retirement and backup shells |
+| **Cross-cutting invariants** | self-host vs managed SaaS and fair-use limits; `frontend_domain` and origin scoping; superadmin always on; archive/purge; archival vs member money; the two-key archive request; public borrower names; public image fields and storage accounting; rate-limit cache; object storage; the report registry; scoped PII encryption; fixed role sets; `module_registry` and opt-in modules; module install/uninstall/purge; the `email` module gate; A6 master switches; two-level capabilities; the `membership` module; payments, credentials and reconciliation; native device grants; OIDC, social, phone and login-method switches; walk-in/account-less identity; maker profiles and public handles; staff event registration; notifications v2; presence check-in and TV privacy; the colour vocabulary; the accessibility floor; console parity; managed hosting requests; per-space security settings, platform locks and superadmin PII access (expiry sweep, platform-route masking) |
+| **Login security** | `accounts/login_security_contract.py` and `login_security_settings.py`, `login_codes.py`, passkeys, login risk, alerts, IP access, the staff MFA grace, `MakerspaceSecurityPolicy` storage and per-person strictest resolution |
+| **Settings authority** | `makerspaces/settings_authority*.py`, `domain_settings.py`, any module-setting write, grants, locks, the rental-timing exception |
+| **Folded modules** | `machines.maintenance`/`*.tobuy`/`*.warranty` and the reserved repairs keys, `folded_capabilities.py`, capability purge, module switches, report sources |
+| **Pricing** | `payments/pricing/`, rate cards, item prices, member discounts, loan fee waivers, every charge seam, quotes and `price_changed`, bookings' requested price |
+| **Handover roles and the retired Guest Admin** | built-in Handover and combined role sets, `rbac.HANDOUT_ACTIONS`, `is_handout_only`, the retired `guest_admin`/`print_manager` enum members and their migrations |
 | **Separability and tombstoning** | `apps/separability/`, `TOMBSTONED_APPS`, `SEPARABLE_APPS`, retention vs runtime registries, adding a PII-holding model |
 | **Machine scoping** | `MANAGE_MACHINES`, `machines/role_scope.py`, the Machines console, machine-service surfaces, procurement narrowing, dashboard scoping, delegated recipient rules |
+| **Machines and loans depth** | the uniform machine job flow (`machines/job_*`, `service_workflow_review|board|batch|failure`), quotes and job charges, `booking_gate`, `lockout`, the downtime ledger, work orders, `makerspaces/opening_hours.py`, consumables and auto To-Buy, mark bought and vendors, loan cancel/expiry, pickup windows, the waitlist, expected-back dates |
 | **Events program invariants** | `apps/events/`, registration vs presence, member history and provenance, collaborative events, host waivers, QR check-in |
-| **Backup, restore and tenant migration** | `apps/backup/`, `apps/data_export/`, `apps/tenant_migration/`, the deployment recovery gate, the source gate lock protocol, archive projection |
+| **Backup, restore and tenant migration** | `apps/backup/` (platform-key-only deployment archives, the single-component deployment manifest, no recipients/custody/`backup` module; per-space backup and restore: nightly one-space raw slices, preview/confirm/apply with identity ids, the safety backup, the `/control/` console), `apps/data_export/`, `apps/tenant_migration/` (one-shot `--recipient` tenant exit), the deployment recovery gate, the source gate lock protocol, archive projection |
 | **Organization accounts and organization-derived authority** | `apps/organizations/`, `OrganizationMembership`, the rbac org branch, `resolve_scope` vs `scope_by_action`, the auth payload `source` field, `EventOrganizer`, org purge scoping |
 | **API client scopes and the protected-route registry** | `apps/apiclients/scope_registry*.py`, `legacy:v1`, unknown-route denial, target resolution, the system check, the HMAC signed message and nonce namespace. The client-facing protocol is written up in `docs/api-client-protocol.md` |
-| **Container / deployment invariants** | `Dockerfile`, the compose files, Celery beat, MinIO/CORS, browser-facing storage URLs, production compose defaults |
+| **Container / deployment invariants** | `Dockerfile`, the compose files, Celery beat, MinIO/CORS, browser-facing storage URLs, production compose defaults, the opt-in `/control/` proxy route and SSH-tunnel listener (`CONTROL_PLANE_*`, `scripts/apply-settings.sh`) |
 
 Two rules are repeated here because they bite outside their own area: **a new model must be classified in
 `apps/data_export` and have its `accounts.User` FKs decided, or the drift guards refuse the build**, and
@@ -412,3 +513,7 @@ use `git log --oneline` / `git blame`.
 - MVP vs. later scope: §16
 - Behaviors that must be tested: §17 (test external behavior, not implementation)
 - Unresolved decisions: §18 — **resolve relevant open questions before implementing the affected area** rather than guessing.
+- **PRD notes — owner decisions that override the PRD text:** §4.4 "an admin cannot accept their own
+  personal request unless also superadmin" is **DROPPED** (#75e, no code check exists or is wanted);
+  §4.4/§9 Telegram accept/reject is reversed (outbound-only, 2026-08-31); public requests need an
+  account only where the space has member accounts (#80, revising #75f). Detail in `docs/INVARIANTS.md`.

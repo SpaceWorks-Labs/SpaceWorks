@@ -6,7 +6,6 @@ from django.utils.dateparse import parse_date
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from apps.accounts import rbac
-from apps.makerspaces.guards import require_module
 from apps.makerspaces.models import Makerspace
 from apps.operations import reports
 from apps.operations.report_date_ranges import CalendarDateRange
@@ -14,8 +13,10 @@ from apps.operations.report_registry import REPORT_DEFINITIONS, REPORT_REGISTRY
 
 
 def _require_source_modules(makerspace, modules):
+    from .report_sources import require_source
+
     for module in modules:
-        require_module(makerspace, module)
+        require_source(makerspace, module)
 
 
 def _date_range(request, makerspace=None):
@@ -60,7 +61,6 @@ def _makerspace_for_inventory_view(user, makerspace_id):
     queryset = rbac.scope_by_action(
         user, rbac.Action.VIEW_INVENTORY, Makerspace.objects.all(), field="id"
     )
-    queryset = rbac.hide_from_superadmin(user, queryset, field="id")
     return get_object_or_404(queryset, pk=makerspace_id)
 
 
@@ -74,24 +74,34 @@ def _makerspace_for_report_view(user, makerspace_id, report_key):
     nothing, so it cannot help an actor with no inventory scope enumerate a makerspace.
     The registry lookup never invokes a builder.
     """
+    if report_key == "organization-membership":
+        # Global organization membership is an ORG + PLAT projection. A local
+        # makerspace grant does not authorize its owner's global membership data.
+        raise reports.ReportNotFound()
     spaces = Makerspace.objects.all()
     queryset = rbac.scope_by_action(user, rbac.Action.VIEW_INVENTORY, spaces, field="id")
     definition = REPORT_REGISTRY.get(report_key)
+    if definition is not None and definition.platform_only:
+        raise reports.ReportNotFound()
     if definition is not None:
         queryset = queryset | rbac.scope_by_action(
             user, definition.required_action, spaces, field="id"
         )
-    queryset = rbac.hide_from_superadmin(user, queryset, field="id")
+        from .report_subjects import subject_capable
+        if subject_capable(definition):
+            # The resource-grant path: tenant VIEW_AUDIT plus the subject's own grant.
+            queryset = queryset | rbac.scope_by_action(
+                user, rbac.Action.VIEW_AUDIT, spaces, field="id"
+            )
     return get_object_or_404(queryset.distinct(), pk=makerspace_id)
 
 
 def _makerspace_for_catalog(user, makerspace_id):
     queryset = Makerspace.objects.none()
-    for action in {definition.required_action for definition in REPORT_DEFINITIONS}:
+    for action in {definition.required_action for definition in REPORT_DEFINITIONS if not definition.platform_only}:
         queryset = queryset | rbac.scope_by_action(
             user, action, Makerspace.objects.all(), field="id"
         )
-    queryset = rbac.hide_from_superadmin(user, queryset, field="id")
     return get_object_or_404(queryset.distinct(), pk=makerspace_id)
 
 

@@ -23,8 +23,6 @@ def project_row(row, fields):
             value = value.slug if value else None
         elif key == "default_plan":
             value = value.name if value else None
-        elif key == "granted_actions":
-            value = sorted(value)
         values[key] = value
     return json.loads(json.dumps(values, cls=DjangoJSONEncoder))
 
@@ -42,9 +40,7 @@ def configuration_for(actor, makerspace):
             config[name] = [] if spec.identity else None
             continue
         rows = scoped_rows(actor, makerspace, spec)
-        if name == "roles":
-            rows = rows.filter(is_default=False, is_protected=False)
-        elif name == "active_waiver":
+        if name == "active_waiver":
             rows = rows.filter(is_active=True)
         elif name == "item_templates":
             rows = rows.filter(is_archived=False).select_related("category")

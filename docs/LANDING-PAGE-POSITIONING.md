@@ -37,7 +37,6 @@ supported installation without them.
 | Member accounts | Self-sign-up, member area, password, Google/Apple and phone login | Staff sign-in and external OIDC remain; members become staff-created walk-ins |
 | Mobile apps | Attested device sessions, native push and PaymentSheet support | The web app works, but native clients cannot hold a session for the space |
 | Connected devices | Printers and label printers enrolled with an Ed25519 key; signed heartbeats, key rotation/revocation, printer jobs, label commands and offline alerts | No device enrollment or device-signed requests |
-| Backup & custody (default-on) | Makerspace archive requests and downloads, archive-recipient keys and custody status | Deployment backups still cover the space; a Space Manager cannot request or open its own archives |
 
 Two dependency rules also come directly from the registry: Printing requires Machine service, and Mobile
 apps requires Member accounts. Installing a dependent module pulls in its requirement; a required module

@@ -32,8 +32,8 @@ thirteen modules under it are optional.
   allowed to change.
 - **Who may submit is set by `membership`, not by this module.** Being core, this module is present in every
   makerspace and therefore must work with `membership` uninstalled: members only when `membership` is on,
-  any signed-in account when it is off, and account-less strangers only when an operator has explicitly
-  opted in (`manage.py set_request_access --mode anyone`, which is refused while `membership` is installed).
+  any signed-in account when it is off — while `member_accounts` is installed. Without `member_accounts`
+  a borrower asks with no account: name, phone and an email confirmed by a one-time code (#80).
   See the `membership` module below, and **Who may submit a borrow request** in `docs/INVARIANTS.md`.
 - **Accept and reject are one request at a time.** There is no bulk accept or bulk reject anywhere —
   `/control/` serves a per-request review page, and Telegram alerts carry no buttons.
@@ -116,7 +116,10 @@ thirteen modules under it are optional.
 ### bulk_import
 
 - **What it is** — spreadsheet import of inventory rows.
-- **What it adds** — the `bulk_import` workflow: upload a sheet, map columns, preview, commit.
+- **What it adds** — the `bulk_import` workflow: upload a sheet, map columns, preview, commit. An
+  `.xlsx` is read on the server for column matching (`POST …/inventory/import/sheet`, openpyxl,
+  first sheet, cached values only, size/row/column caps); the browser no longer ships a spreadsheet
+  parser.
 - **Without it** — inventory is created one product at a time in the console (or through the API). The
   most common reason to install it is the first week of migrating from a spreadsheet.
 - **Data** — `purge_module_data` reports it stores no data of its own to purge separately.
@@ -145,18 +148,22 @@ thirteen modules under it are optional.
 - **What it adds** — the `guest_issue` and `guest_return` workflows, and direct handouts at the counter.
 - **Without it** — handovers happen in the full staff console instead. Front-desk volunteers then need a
   role with wider access than they should have, which is the reason this module exists. The handover
-  **role** is a separate concept: a custom role holding the handout actions, editable per space.
+  **role** is a separate concept: the fixed built-in Handover, combinable with other staff roles.
 - **Data** — `purge_module_data` reports it stores no data of its own to purge separately; the requests
   and evidence it produced belong to the core loan spine.
 
 ### procurement
+
+**Retired module key (#97, #128 C-9).** The To-Buy list is switched per parent: `inventory.tobuy`
+for inventory items, `machines.tobuy` for machine consumables. See
+[the per-parent switches](MODULES.md#maintenance-to-buy-warranty-and-repairs-switches-under-each-parent).
 
 - **What it is** — the "to buy" list and the receipts attached to it.
 - **What it adds** — the `procurement` workflow: raise a to-buy item, track it, attach a receipt, and
   move a purchased item into stock.
 - **Without it** — restocking is tracked outside the system. Low-stock signals still show in inventory;
   there is just nowhere in-app to record what was ordered.
-- **Data** — purgeable: to-buy items and their receipts (including the uploaded receipt files).
+- **Data** — purged per parent from `/control/` (Purge capability data): one parent's rows and receipts only.
 
 ---
 

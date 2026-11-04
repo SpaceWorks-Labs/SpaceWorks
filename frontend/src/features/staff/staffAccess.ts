@@ -1,17 +1,24 @@
 const ALL_TABS = [
   "platform-dashboard", "usage",
-  "dashboard", "notifications", "requests", "direct", "handover", "inventory", "needsfix", "categories", "machines", "events", "organized", "bookings", "members", "cards", "tobuy", "transfers",
-  "stocktake", "containers", "ledger", "reports", "accountability", "warranty", "bulk", "qr", "scanner", "api", "settings", "emailtemplates", "users", "platform", "audit",
-  "devices", "email-logs", "payments", "organizations", "organization-analytics", "modules", "exports", "backups", "migration",
+  "dashboard", "notifications", "channels", "requests", "direct", "handover", "inventory", "needsfix", "categories", "machines", "events", "organized", "granted", "bookings", "members", "cards", "tobuy", "transfers",
+  "stocktake", "containers", "ledger", "reports", "accountability", "warranty", "bulk", "qr", "scanner", "api", "settings", "security", "emailtemplates", "users", "platform", "audit",
+  "devices", "email-logs", "payments", "refunds", "finance", "organizations", "organization-analytics", "modules", "exports", "backups", "migration",
+  "consumables", "repairs",
 ] as const;
 
 export const STAFF_TAB_KEYS: readonly string[] = ALL_TABS;
+
+// What a superadmin sees before choosing a space (surface_policy.PLATFORM_ROUTES). Once a
+// space is chosen they also hold every action there (owner decision #115) and see exactly
+// that space's Space-Manager tabs; `StaffApp` passes `superadmin_actions` only then.
+const PLATFORM_TABS = ["platform-dashboard", "users", "security", "organizations", "modules", "backups", "migration", "platform"];
 
 export const TAB_LABELS: Record<string, string> = {
   "platform-dashboard": "Platform dashboard",
   usage: "Usage & limits",
   dashboard: "Dashboard",
   notifications: "Notifications",
+  channels: "My channels",
   requests: "Requests",
   direct: "Direct handout",
   handover: "Job handover",
@@ -29,10 +36,13 @@ export const TAB_LABELS: Record<string, string> = {
   devices: "Devices",
   events: "Events",
   organized: "Organized events",
+  granted: "Assigned resources",
   bookings: "Bookings",
   members: "Members",
   cards: "Member cards",
   tobuy: "To Buy",
+  consumables: "Consumables",
+  repairs: "Repairs",
   reports: "Reports",
   "organization-analytics": "Organization analytics",
   organizations: "Organizations",
@@ -41,11 +51,14 @@ export const TAB_LABELS: Record<string, string> = {
   audit: "Audit log",
   users: "Users",
   settings: "Settings",
+  security: "Security",
   emailtemplates: "Email templates",
   "email-logs": "Delivery logs",
   api: "API access",
   platform: "Platform settings",
   payments: "Payments",
+  refunds: "Refunds",
+  finance: "Finance",
   modules: "Modules",
   exports: "Data export",
   backups: "Backup & restore",
@@ -53,15 +66,15 @@ export const TAB_LABELS: Record<string, string> = {
 };
 
 export const TAB_GROUPS: { label: string; tabs: string[] }[] = [
-  { label: "Operate", tabs: ["dashboard", "notifications", "requests", "direct", "handover", "payments", "ledger", "transfers", "stocktake", "tobuy"] },
+  { label: "Operate", tabs: ["dashboard", "notifications", "channels", "requests", "direct", "handover", "payments", "refunds", "finance", "ledger", "transfers", "stocktake", "tobuy", "consumables"] },
   { label: "Inventory", tabs: ["inventory", "categories", "needsfix", "containers", "bulk", "qr", "scanner"] },
-  { label: "Machines", tabs: ["machines", "devices"] },
-  { label: "Events", tabs: ["events", "organized"] },
+  { label: "Machines", tabs: ["machines", "devices", "repairs"] },
+  { label: "Events", tabs: ["events", "organized", "granted"] },
   { label: "Bookings", tabs: ["bookings"] },
   { label: "Members", tabs: ["members", "cards"] },
   { label: "Insights", tabs: ["reports", "organization-analytics", "accountability", "warranty", "audit"] },
   { label: "Organizations", tabs: ["organizations"] },
-  { label: "Admin", tabs: ["users", "settings", "usage", "emailtemplates", "email-logs", "api", "exports", "backups", "migration", "modules", "platform-dashboard", "platform"] },
+  { label: "Admin", tabs: ["users", "settings", "security", "usage", "emailtemplates", "email-logs", "api", "exports", "backups", "migration", "modules", "platform-dashboard", "platform"] },
 ];
 
 // Permissions only. Module availability is decided in exactly one place --
@@ -79,8 +92,11 @@ export function getStaffAccess(
   isSuperadmin: boolean,
   singleTenantLocked: boolean,
   _isMachineOnly = false,
+  hasEventGrants = false,
+  hasBookingGrants = false,
 ) {
-  const has = (action: string) => isSuperadmin || actions.includes(action);
+  const hasGrants = hasEventGrants || hasBookingGrants;
+  const has = (action: string) => actions.includes(action);
   const canEditInventory = has("edit_inventory");
   const canViewInventory = has("view_inventory");
   const canSeePrinting = has("manage_printing") || has("manage_machines");
@@ -89,17 +105,17 @@ export function getStaffAccess(
   const canManageBookings = has("manage_bookings");
   const canViewAudit = has("view_audit");
   const canManageQr = has("manage_qr");
-  const canManageMakerspace = has("manage_makerspace");
+  const canManageMakerspace = isSuperadmin || has("manage_makerspace");
   const canManageMembers = has("manage_members");
   const canViewFinance = has("view_finance");
   const canRecordPayment = has("record_payment");
   // Mirrors the backend gate: the member-card endpoints check SCAN_MEMBER_CARDS /
   // MANAGE_MEMBER_CARDS, never MANAGE_MAKERSPACE. Space Manager holds the manage action by
-  // default, but a front-desk custom role may hold only the scan action -- and a
-  // manage_makerspace role that was never granted either must not be shown a tab that 403s.
+  // default. Organization-derived grants may hold only the scan action, so keep
+  // this gate action-based rather than assuming a local role's catalogue grants.
   const canUseMemberCards = canManageMembers || has("manage_member_cards") || has("scan_member_cards");
   const canIssueDirectLoan = has("issue_direct_loan");
-  const canSeeHardware = isSuperadmin || ["accept_request", "reject_request", "assign_box", "issue_request", "issue_direct_loan", "return_request"].some((action) => actions.includes(action));
+  const canSeeHardware = ["accept_request", "reject_request", "assign_box", "issue_request", "issue_direct_loan", "return_request"].some((action) => actions.includes(action));
   const canUseToBuy = has("edit_inventory") || has("manage_printing") || has("manage_machines") || has("manage_makerspace");
   const canChooseToBuyKind = has("manage_makerspace");
   const canSeeDashboard = has("view_inventory") || has("manage_printing") || has("manage_machines")
@@ -116,14 +132,24 @@ export function getStaffAccess(
   // finished work over, so a manager needs no separate grant.
   const canCollectServiceRequests = has("collect_service_request") || canManageMachines;
   const printingOnly = canSeePrinting && !canEditInventory && !canManageMakerspace;
-  const baseTabs = handoutOnly ? (["requests", "direct", "handover", "payments", "notifications"] as const) : ALL_TABS;
-  const allowedTabs: readonly string[] = governanceOnly ? ["organizations"] : baseTabs.filter((tabName) => {
+  const baseTabs = handoutOnly ? (["dashboard", "requests", "direct", "handover", "payments", "notifications", "channels", "granted"] as const) : ALL_TABS;
+  const grantOnly = !isSuperadmin && actions.length === 0 && hasGrants;
+  // Central organization governance is independent of makerspace actions. An
+  // event grant adds a workspace without replacing that existing global surface.
+  const allowedTabs: readonly string[] = isSuperadmin && actions.length === 0
+    ? PLATFORM_TABS.filter(tab => !singleTenantLocked || !["platform-dashboard", "platform", "organizations"].includes(tab))
+    : grantOnly ? (singleTenantLocked ? ["granted"] : ["granted", "organizations"]) : governanceOnly ? ["organizations"] : baseTabs.filter((tabName) => {
+    if (tabName === "granted") return hasGrants;
     if (tabName === "platform-dashboard") return isSuperadmin && !singleTenantLocked;
     if (tabName === "usage") return canManageMakerspace;
-    if (tabName === "dashboard") return !handoutOnly && (isSuperadmin || canSeeDashboard);
+    if (tabName === "dashboard") return handoutOnly || isSuperadmin || canSeeDashboard;
     // Personal rows and read state admit machine-only and handover staff.
     if (tabName === "notifications") return isSuperadmin || actions.length > 0;
+    // Personal delivery channels belong to a staff account, not to the space.
+    if (tabName === "channels") return !isSuperadmin && actions.length > 0;
     if (tabName === "tobuy") return canUseToBuy;
+    // The merged list reads items (view_inventory) and machine/pool rows (machine scope).
+    if (tabName === "consumables") return canViewInventory || canSeePrinting;
     if (tabName === "needsfix") return canEditInventory;
     if (tabName === "categories") return canEditInventory;
     if (tabName === "bulk") return canEditInventory;
@@ -138,18 +164,22 @@ export function getStaffAccess(
     if (tabName === "scanner") return canManageQr;
     if (tabName === "audit") return canViewAudit;
     if (tabName === "accountability") return canViewAudit;
-    if (tabName === "reports") return canViewFinance || canViewAudit || canSeePrinting || canManageMachines;
+    if (tabName === "reports") return canViewFinance || canViewAudit || canSeePrinting || canManageMachines || canManageEvents || canManageBookings;
     if (tabName === "warranty") return canEditInventory || canSeePrinting;
     if (tabName === "users") return canManageMakerspace;
     if (tabName === "settings") return canManageMakerspace;
-    if (tabName === "emailtemplates") return canEditInventory || canSeePrinting || has("manage_devices");
+    // The backend narrows further: only this space's Space Manager or a platform superadmin.
+    if (tabName === "security") return canManageMakerspace;
+    if (tabName === "emailtemplates") return canEditInventory || canSeePrinting || has("manage_devices") || canManageEvents || canManageBookings;
     if (tabName === "email-logs") return canManageMakerspace;
     if (tabName === "platform") return isSuperadmin && !singleTenantLocked;
-    // Superadmin-only, matching the backend: `enabled_modules` is superadmin-owned and a
-    // staff PATCH carrying it is a hard 403. Unlike `platform` this IS available in a
-    // single-tenant deployment -- that operator is exactly who needs to install modules.
-    if (tabName === "modules") return isSuperadmin;
+    // #128 C-10: the Space Manager switches modules on and off (data kept); the server
+    // keeps limit-gated installs on the managed platform for the superadmin.
+    if (tabName === "modules") return canManageMakerspace;
     if (tabName === "devices") return has("manage_devices");
+    // L16: the area managers (#102) and the Technician (#128 C-3); the server narrows every row.
+    if (tabName === "repairs") return canEditInventory || canManageMachines || canManageBookings || canManageMakerspace
+      || ["work_repairs", "run_maintenance", "set_service_state"].some(has);
     if (tabName === "machines") return canManageMachines;
     if (tabName === "events") return canManageEvents;
     // Organizer authority is per event and cross-venue; selected-space actions cannot
@@ -166,7 +196,16 @@ export function getStaffAccess(
     if (tabName === "bookings") return canManageBookings;
     if (tabName === "members") return canManageMembers;
     if (tabName === "cards") return canUseMemberCards;
-    if (tabName === "payments") return canViewFinance || canRecordPayment;
+    // Event Managers settle registration fees by hand when the online rail is off; the
+    // panel narrows them to event-registration charges (PaymentsPanel `eventOnly`).
+    if (tabName === "payments") return canViewFinance || canRecordPayment || canManageEvents;
+    // Mirrors `refund_case_access.may_read_queue`: finance reads every case, each domain's
+    // staff read the cases for the charges they own. Cash-recording alone is not enough.
+    if (tabName === "refunds") return canViewFinance || canManageEvents || canManageBookings || canManageMachines
+      || canManageMembers || canManageMakerspace;
+    // #100: each area's manager sees that area's money; the server narrows every list.
+    if (tabName === "finance") return canViewFinance || canRecordPayment || canEditInventory || canManageBookings
+      || canManageMachines || canManageEvents;
     if (tabName === "exports") return canManageMakerspace;
     if (tabName === "backups") return canManageMakerspace;
     if (tabName === "migration") return isSuperadmin;
@@ -174,6 +213,7 @@ export function getStaffAccess(
     return true;
   });
   return {
+    grantOnly,
     handoutOnly,
     printingOnly,
     canSeeHardware,
@@ -195,11 +235,7 @@ export function getStaffAccess(
     canCollectServiceRequests,
     canChooseToBuyKind,
     allowedTabs,
-    // A handover-only staffer lands on Requests when they have it -- but a collect-only
-    // role does not, and defaulting to a tab they cannot open would open the console on an
-    // error. Fall through to whatever they actually have.
-    defaultTab: handoutOnly
-      ? (allowedTabs.includes("requests") ? "requests" : (allowedTabs[0] ?? "handover"))
-      : (allowedTabs.includes("dashboard") ? "dashboard" : (allowedTabs[0] ?? "dashboard")),
+    // The backend serves handover-only actors an operational queue home.
+    defaultTab: allowedTabs.includes("dashboard") ? "dashboard" : (allowedTabs[0] ?? "dashboard"),
   };
 }

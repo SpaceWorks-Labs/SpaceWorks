@@ -35,13 +35,15 @@ class RequestIdFilter(logging.Filter):
         # and replaces request.path for Gunicorn. Cover those earlier records too.
         from apps.events.middleware import redact_calendar_feed_uri
         message = record.getMessage()
-        redacted = redact_calendar_feed_uri(message)
+        from apps.makerspaces.confirmation_secrets import redact_confirmation_credentials
+        from apps.integrations.notification_media_secrets import redact_media_uri
+        redacted = redact_media_uri(redact_confirmation_credentials(redact_calendar_feed_uri(message)))
         if redacted != message:
             record.msg, record.args = redacted, ()
         request = getattr(record, 'request', None)
         if request is not None:
             rendered = str(request)
-            redacted_request = redact_calendar_feed_uri(rendered)
+            redacted_request = redact_media_uri(redact_confirmation_credentials(redact_calendar_feed_uri(rendered)))
             if redacted_request != rendered:
                 record.request = redacted_request
         return True

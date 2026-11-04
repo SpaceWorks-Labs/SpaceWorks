@@ -1,10 +1,12 @@
+import { RequestFlowDialog } from "./RequestFlowDialog";
 import { useEffect, useState } from "react";
 
-import { ErrorText, Modal } from "../../../components/ui";
+import { ErrorText } from "../../../components/ui";
 import QrScanner from "../../../components/ui/QrScanner";
 import { staffRequest } from "../../../lib/api";
 import { EvidenceUpload } from "./EvidenceUpload";
-import { BoxCodeField, FormFooter, ShelfLine, submitForm } from "./QueuesModalShared";
+import { QuantityStepper } from "../QuantityStepper";
+import { BoxCodeField, ShelfLine, submitForm } from "./QueuesModalShared";
 import type { AssignIssueValues, FormModalProps } from "./QueuesModalTypes";
 import { KitChecklistCapture, useKitChecklist } from "../../inventory/KitChecklist";
 
@@ -62,7 +64,7 @@ export function AssignIssueModal({ row, open, pending, error, onClose, onSubmit,
   }));
 
   return (
-    <Modal open={open} onClose={onClose} title={row ? `Assign and issue request #${row.id}` : "Assign and issue"} footer={<FormFooter formId="assign-issue-form" pending={pending} submitLabel="Assign + issue" onCancel={onClose} />}>
+    <RequestFlowDialog open={open} onClose={onClose} title={row ? `Assign and issue request #${row.id}` : "Assign and issue"} formId="assign-issue-form" pending={pending} submitLabel="Assign + issue">
       <form id="assign-issue-form" className="grid gap-3" onSubmit={(event) => submitForm(event, () => submitAssign())}>
         {row?.assigned_box_label ? <p className="text-xs text-muted">Box: <span className="font-medium text-ink">{row.assigned_box_label}</span></p> : null}
         <BoxCodeField value={boxCode} onChange={setBoxCode} makerspaceId={makerspaceId} pending={pending} />
@@ -80,7 +82,7 @@ export function AssignIssueModal({ row, open, pending, error, onClose, onSubmit,
         <ErrorText message={validationError || error} />
         <KitChecklistCapture checklist={kits} />
       </form>
-    </Modal>
+    </RequestFlowDialog>
   );
 
   function submitAssign() {
@@ -97,25 +99,25 @@ export function AssignIssueModal({ row, open, pending, error, onClose, onSubmit,
 function AssetScanList({ scanned, requiredScans, pending, onScan, onRemove }: { scanned: ScannedAsset[]; requiredScans: number; pending: boolean; onScan: () => void; onRemove: (payload: string) => void }) {
   return (
     <div className="grid gap-2">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm font-medium text-ink">Scan asset QR codes ({scanned.length}/{requiredScans})</p>
         <button className="desk-button-ghost" type="button" disabled={pending} onClick={onScan}>Scan asset QR</button>
       </div>
-      {scanned.length ? <div className="flex flex-wrap gap-2">{scanned.map((item) => <span key={item.payload} className="inline-flex items-center gap-2 rounded-md border border-line bg-surface px-3 py-1 text-sm text-ink">{item.label}<button className="desk-button-danger" type="button" disabled={pending} onClick={() => onRemove(item.payload)}>Remove</button></span>)}</div> : null}
+      {scanned.length ? <div className="flex flex-wrap gap-2">{scanned.map((item) => <span key={item.payload} className="inline-flex max-w-full min-w-0 items-center gap-2 rounded-md [overflow-wrap:anywhere] border border-line bg-surface px-3 py-1 text-sm text-ink">{item.label}<button className="desk-button-danger" type="button" disabled={pending} onClick={() => onRemove(item.payload)}>Remove</button></span>)}</div> : null}
     </div>
   );
 }
 
 function IssueItems({ row, pending, rejects, setBroken, setDisposition }: { row: FormModalProps<AssignIssueValues>["row"]; pending: boolean; rejects: Record<number, { broken: number; disposition: "needs_fix" | "remove" }>; setBroken: (itemId: number, broken: number) => void; setDisposition: (itemId: number, disposition: "needs_fix" | "remove") => void }) {
   return (
-    <div className="grid gap-2">
+    <div className="@container grid gap-2">
       <p className="text-sm font-medium text-ink">Items - reject any broken units</p>
       {row?.items.map((item) => item.requires_asset_qr ? <div key={item.id} className="rounded-md border border-line p-2"><p className="text-sm font-medium text-ink">{item.product_name} <span className="text-muted">x{item.accepted_quantity}</span></p><ShelfLine location={item.storage_location} /><p className="mt-1 text-xs text-muted">Individually tracked - issued by asset QR scan above.</p></div> : (
         <div key={item.id} className="rounded-md border border-line p-2">
           <p className="text-sm font-medium text-ink">{item.product_name} <span className="text-muted">x{item.accepted_quantity}</span></p>
           <ShelfLine location={item.storage_location} />
-          <div className="mt-2 grid gap-2 sm:grid-cols-[auto_1fr] sm:items-end">
-            <label className="eyebrow grid gap-1"><span>Reject as broken</span><input className="desk-input w-24" type="number" min="0" max={item.accepted_quantity} value={rejects[item.id]?.broken ?? 0} disabled={pending} onChange={(event) => setBroken(item.id, Number(event.target.value))} /></label>
+          <div className="mt-2 grid gap-2 @md:grid-cols-[auto_minmax(0,1fr)] @md:items-end">
+            <label className="eyebrow grid min-w-0 gap-1"><span>Reject as broken</span><QuantityStepper label="broken" max={item.accepted_quantity} value={rejects[item.id]?.broken ?? 0} disabled={pending} onValueChange={(value) => setBroken(item.id, Number(value))} /></label>
             {(rejects[item.id]?.broken ?? 0) > 0 ? <label className="eyebrow grid gap-1"><span>Send broken units to</span><select className="desk-input" value={rejects[item.id]?.disposition ?? "needs_fix"} disabled={pending} onChange={(event) => setDisposition(item.id, event.target.value as "needs_fix" | "remove")}><option value="needs_fix">To-be-fixed shelf</option><option value="remove">Remove from inventory</option></select></label> : null}
           </div>
         </div>

@@ -17,6 +17,8 @@ export type Product = {
   tracking_mode?: "quantity" | "individual";
   availability: Availability;
   image_url?: string | null;
+  // Lane L12: when the item is out and its expected-back date is published ("YYYY-MM-DD").
+  expected_back_on?: string | null;
 };
 
 export type PublicCategory = {
@@ -54,18 +56,6 @@ export type RequestCartItem = {
 export type RequestSubmitResponse = {
   public_token: string;
   status: string;
-};
-
-export type PublicRequestStatus = {
-  public_token?: string;
-  requested_for?: string;
-  status: string;
-  rejection_reason: string;
-  created_at: string;
-  items: {
-    product_name: string;
-    requested_quantity: number;
-  }[];
 };
 
 export type PublicToolLoan = {

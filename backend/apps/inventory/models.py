@@ -52,6 +52,9 @@ from .models_watch import InventoryWatch  # noqa: F401
 
 
 class InventoryProduct(models.Model):
+    unit_cost = models.DecimalField(max_digits=14, decimal_places=4, null=True, blank=True, validators=[MinValueValidator(0)])
+    cost_currency = models.CharField(max_length=3, blank=True)
+    cost_unit = models.CharField(max_length=16, blank=True)
     borrowing_terms = models.TextField(blank=True, max_length=2000)
     loan_days = models.PositiveIntegerField(null=True, blank=True, validators=[MinValueValidator(1), MaxValueValidator(365)])
     max_renewals = models.PositiveIntegerField(null=True, blank=True, validators=[MaxValueValidator(100)])
@@ -82,6 +85,12 @@ class InventoryProduct(models.Model):
     supplier = models.CharField(max_length=200, blank=True)
     reorder_point = models.PositiveIntegerField(default=0)
     reorder_quantity = models.PositiveIntegerField(default=0)
+    # Take-and-go stock (screws, glue): logged as used, never lent, auto-restocked at
+    # its reorder point. Quantity-tracked only (CHECK below).
+    is_consumable = models.BooleanField(default=False)
+    # Public expected-back date while none is free (inventory.expected_back, D16): the
+    # earliest due date only, never who holds it or how many are out.
+    public_show_expected_back = models.BooleanField(default=False)
     kit_components = models.JSONField(default=list, blank=True, validators=[validate_kit_definition])
     description = models.TextField(blank=True)
     image_key = models.CharField(max_length=300, blank=True, default="")
@@ -171,12 +180,18 @@ class InventoryProduct(models.Model):
                 ),
                 name="qty_sum_within_total",
             ),
+            models.CheckConstraint(
+                condition=models.Q(is_consumable=False) | models.Q(tracking_mode="quantity"),
+                name="consumable_quantity_tracked",
+            ),
         ]
 
     def __str__(self) -> str:
         return f"{self.name} ({self.makerspace.slug})"
 
     def clean(self):
+        from .cost_basis import clean_model_price
+        clean_model_price(self, "count")
         if self.box_id and self.box.makerspace_id != self.makerspace_id:
             raise ValidationError(
                 {"box": "Box must belong to the same makerspace as the product."}
@@ -249,3 +264,5 @@ class InventoryAsset(models.Model):
 
     def __str__(self):
         return f"{self.asset_tag} ({self.makerspace.slug})"
+
+from .models_tracking import InventoryStockSnapshot  # noqa: F401

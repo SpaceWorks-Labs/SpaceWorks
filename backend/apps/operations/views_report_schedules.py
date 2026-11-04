@@ -2,6 +2,7 @@ from django.http import Http404
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
 from rest_framework import generics, status
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -39,11 +40,13 @@ def _scoped_schedule(user, pk):
     if report_key is None:
         raise Http404
     definition = REPORT_REGISTRY.get(report_key)
+    if definition is not None and definition.platform_only:
+        raise Http404
     action = definition.required_action if definition else rbac.Action.MANAGE_MAKERSPACE
     queryset = rbac.scope_by_action(
         user, action, ReportSchedule.objects.select_related("makerspace", "destination", "created_by")
     )
-    schedule = get_object_or_404(rbac.hide_from_superadmin(user, queryset), pk=pk)
+    schedule = get_object_or_404(queryset, pk=pk)
     require_module(schedule.makerspace, "reports")
     return schedule
 
@@ -78,7 +81,8 @@ class ReportScheduleListCreateView(generics.ListCreateAPIView):
         # schedule is invisible to a VIEW_AUDIT holder, exactly like the catalog.
         keys = [
             definition.key for definition in REPORT_DEFINITIONS
-            if rbac.can(self.request.user, definition.required_action, makerspace.id)
+            if not definition.platform_only
+            and rbac.can(self.request.user, definition.required_action, makerspace.id)
         ]
         rows = ReportSchedule.objects.none()
         for action in {REPORT_REGISTRY[key].required_action for key in keys}:
@@ -153,7 +157,10 @@ class ReportScheduleRunNowView(APIView):
     )
     def post(self, request, pk, *args, **kwargs):
         schedule = _scoped_schedule(request.user, pk)
-        require_action(request.user, REPORT_REGISTRY[schedule.report_key].required_action, schedule.makerspace_id)
+        definition = REPORT_REGISTRY.get(schedule.report_key)
+        if definition is None:
+            raise ValidationError({"report_key": ["Report is unavailable on this deployment."]})
+        require_action(request.user, definition.required_action, schedule.makerspace_id)
         delivery = run_schedule(schedule.pk, force=True, actor=request.user)
         if delivery is None:
             return Response(

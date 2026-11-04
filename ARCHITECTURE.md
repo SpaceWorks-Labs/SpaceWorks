@@ -47,11 +47,11 @@ module flags, branding, public API key, domain/origin setup, archive state, and 
   makerspace and rejects cross-tenant targets even where a user otherwise has access
   (`backend/apps/makerspaces/origin_scope.py:39-122`). Normal staff querysets must also use
   action-scoped RBAC, described below.
-- A tenant can be hidden from the central directory. `superadmin_access_enabled=False` is a
-  hard block on global superadmin powers; only an explicit active membership with the required
-  action can see or operate that tenant (`backend/apps/accounts/rbac.py:295-358`).
-- Archive is a soft operational removal (`archived_at` is the source of truth); only archived,
-  superadmin-visible tenants can be permanently purged. Purge clears the object graph and
+- A tenant can be hidden from the central directory; that is directory visibility only. The
+  superadmin is always on: global superadmin authority reaches every servable tenant, and only
+  archived or otherwise unservable tenants are excluded (`backend/apps/accounts/rbac.py`).
+- Archive is a soft operational removal (`archived_at` is the source of truth); only archived
+  tenants can be permanently purged. Purge clears the object graph and
   storage keys under an explicit immutable-delete escape hatch
   (`backend/apps/makerspaces/models.py:203-208`, `backend/apps/makerspaces/lifecycle.py:44-66`,
   `backend/apps/makerspaces/lifecycle.py:197-264`).
@@ -150,13 +150,9 @@ flowchart TD
 ```
 
 Check-In is retired as a runtime integration: `apps.checkin` is not installed
-(`backend/config/settings.py:78-116`), no Check-In routes are present in the URL configuration,
-and the M7 test asserts the removed import surface and routes
-(`backend/tests/accounts/test_checkin_retirement_m7.py:17-36`). Historical columns such as
-`User.external_checkin_user_id` and `PrintRequestFile.owner_checkin_user_id` remain read-only
-legacy data to keep old records and staff labels interpretable; they are not populated by the
-member flows (`backend/apps/accounts/models.py:25-45`,
-`backend/tests/accounts/test_checkin_retirement_m7.py:38-73`).
+(`backend/config/settings.py:78-116`), and no Check-In routes are present in the URL configuration.
+The last leftover, `User.external_checkin_user_id`, was dropped (`accounts/0043`, owner decision #80);
+nothing reads or writes a Check-In identity any more.
 
 ## 5. Core domain modules
 
@@ -297,8 +293,8 @@ and per-makerspace write fences fail protected writes closed during sensitive op
 
 - **Quantity:** only inventory availability changes quantity buckets; no bucket goes below zero.
 - **Transition:** state changes go through each domain's authority, not direct `.status` writes.
-- **Tenant:** staff reads are RBAC/action scoped and origin scoped; hidden/archived makerspaces
-  are excluded even from global superadmin scope unless the explicit-membership exception applies.
+- **Tenant:** staff reads are RBAC/action scoped and origin scoped; archived makerspaces are
+  excluded even from global superadmin scope.
 - **Traceability:** issues need box scan + issue photo; returns need return photo + remark;
   audit/scan/attached-evidence records are immutable outside the narrowly scoped purge path; only a
   never-consumed presign may be removed by the exact-row abandoned-upload cleanup.
@@ -362,9 +358,9 @@ schema URL) and writes the lightweight typed path/tag client at `src/generated/a
 
 ### Superadmin archive and purge
 
-1. A superadmin archives a visible makerspace through the guarded lifecycle; scopes stop serving
+1. A superadmin archives a makerspace through the guarded lifecycle; scopes stop serving
    it operationally.
-2. Purge requires archived state, visible superadmin access, and the explicit `/control/`
+2. Purge requires archived state and the explicit `/control/`
    confirmation path. The lifecycle collects object keys, enables the transaction-local immutable
    deletion exception suited to self-host or managed Postgres, deletes the graph, emits
    `makerspace.purge_started`/`makerspace.purged`, and attempts storage cleanup.
@@ -415,8 +411,7 @@ latest tags, then creates `vX.Y.Z` and a GitHub Release
 
 - M1-M7 are explicitly identified in the `dev` commit history through `73a480c`; the member activity
   portal and member machine-service submission are represented by `610abea` and `cb003a7`, and N6/N7
-  scoped-PII hardening is represented by `7d91633`. M7 removed Check-In runtime code. The remaining
-  `backend/apps/checkin/` directory contains only `__pycache__`, not Python source or an installed app.
+  scoped-PII hardening is represented by `7d91633`. M7 removed the Check-In app entirely.
 - M9 closeout (2026-07-19) proved clean migrations from an empty PostgreSQL database, ran the three
   required foreground test chunks (2,107 passing tests), regenerated the 302-path OpenAPI client, and
   passed `tsc -b` plus the production Vite build. The isolated H4 review found two rollback/runbook

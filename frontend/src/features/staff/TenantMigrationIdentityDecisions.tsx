@@ -18,7 +18,7 @@ const defaultDecision: DraftDecision = {
   target_user_id: null,
 };
 
-export function TenantMigrationIdentityDecisions({ job }: { job: ImportJob }) {
+export function TenantMigrationIdentityDecisions({ job, active = true }: { job: ImportJob; active?: boolean }) {
   const client = useQueryClient();
   const [drafts, setDrafts] = useState<Record<string, DraftDecision>>({});
   const identities = useQuery({
@@ -45,6 +45,7 @@ export function TenantMigrationIdentityDecisions({ job }: { job: ImportJob }) {
     [String(id)]: { ...decisionFor(id), ...patch },
   }));
 
+  if (!active) return null;
   return (
     <section className="mt-3 rounded-md border border-line bg-bg p-3" aria-labelledby={`identity-title-${job.id}`}>
       <h4 className="title-section" id={`identity-title-${job.id}`}>Per-person identity decisions</h4>
@@ -58,7 +59,7 @@ export function TenantMigrationIdentityDecisions({ job }: { job: ImportJob }) {
             <article className="rounded-md border border-line bg-surface p-3" key={identity.id}>
               <p className="font-semibold text-ink">{identity.display_name || identity.username}</p>
               <p className="break-words text-xs text-muted">{identity.email || "No email"} · {identity.phone || "No phone"} · source user {identity.id}</p>
-              {choicesAvailable ? <div className="mt-2 grid gap-3 md:grid-cols-3">
+              {choicesAvailable ? <div className="mt-2 grid gap-3 @2xl:grid-cols-3">
                 <label className="text-sm text-ink">
                   Identity resolution
                   <select

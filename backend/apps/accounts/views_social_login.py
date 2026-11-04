@@ -1,6 +1,5 @@
 from django.conf import settings
-from drf_spectacular.utils import OpenApiResponse, extend_schema, PolymorphicProxySerializer
-from apps.accounts.serializers_mfa import MFAChallengeResponseSerializer
+from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
@@ -10,7 +9,7 @@ from apps.accounts import audit_events
 from apps.accounts.attestation import (
     AttestationRejected,
     AttestationUnavailable,
-    verify_attestation,
+    live_approved_challenge,
 )
 from apps.accounts.auth_cookies import set_refresh_cookies
 from apps.accounts.login_methods import self_registration_enabled, social_login_enabled
@@ -42,12 +41,13 @@ from apps.accounts.social_nonces import (
     SocialNonceRejected,
     consume_social_nonce,
     create_social_nonce,
+    native_apple_audience,
     provider_settings,
+    verify_nonce_attestation,
 )
 from apps.openapi_errors import errors
 from apps.hardware_requests.exceptions import ErrorSerializer
 from apps.makerspaces.import_adoption import adopt_pending_memberships_for_user
-from apps.makerspaces.origin_scope import NO_STAFF_ORIGIN_SCOPE, staff_origin_scope
 
 
 from apps.accounts.views_social_helpers import _error, _audit_failure
@@ -55,6 +55,7 @@ from apps.accounts.views_social_helpers import _error, _audit_failure
 
 class SocialNonceView(APIView):
     permission_classes = [AllowAny]
+    login_ip_guard = True  # S-C: platform IP rules, automatic blocks, Turnstile
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "social_nonce"
 
@@ -74,12 +75,14 @@ class SocialNonceView(APIView):
 
 class SocialLoginView(APIView):
     permission_classes = [AllowAny]
+    login_ip_guard = True  # S-C: platform IP rules, automatic blocks, Turnstile
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "social_login"
     provider = None
 
     @extend_schema(tags=["Social auth"], auth=[], request=SocialLoginSerializer,
-        responses={200: PolymorphicProxySerializer(component_name="SocialLoginResult", serializers=[SocialLoginResponseSerializer, MFAChallengeResponseSerializer], resource_type_field_name=None), **errors(400, 401, 403, 404, 409, 429, 503), 409: OpenApiResponse(ErrorSerializer, description="Includes `social_device_restart_required` when burned pre-grant inputs must be replaced.")})
+        description="Social sign-in with web or attested device delivery. Native Apple audiences bind to the approved iOS app ID on the attestation challenge (or existing grant). New device grants derive staff authority from active local memberships. Superadmin device creation returns device_superadmin_not_supported (403); existing grants remain usable. Attestation outages return attestation_unavailable (503); obtain a new nonce and challenge before retrying.",
+        responses={200: SocialLoginResponseSerializer, **errors(400, 401, 403, 404, 409, 429, 503), 409: OpenApiResponse(ErrorSerializer, description="Includes `social_device_restart_required` when burned pre-grant inputs must be replaced.")})
     def post(self, request):
         serializer = SocialLoginSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
@@ -100,6 +103,12 @@ class SocialLoginView(APIView):
         nonce_row = None
         try:
             _settings, audience = provider_settings(self.provider, data["client_platform"])
+            if self.provider == SocialProvider.APPLE and data["delivery"] == "device":
+                identity = (
+                    live_approved_challenge(data["challenge"])
+                    if data.get("challenge") else getattr(request, "device_grant", None)
+                )
+                audience = native_apple_audience(_settings, identity)
             nonce_row, attestation_challenge = consume_social_nonce(
                 request, raw=data["nonce"], provider=self.provider,
                 surface=data["surface"], delivery=data["delivery"],
@@ -108,7 +117,8 @@ class SocialLoginView(APIView):
             )
             verified_attestation = None
             if attestation_challenge is not None:
-                verified_attestation = verify_attestation(
+                verified_attestation = verify_nonce_attestation(
+                    nonce_row,
                     attestation_challenge,
                     data["challenge"],
                     data["attestation"],
@@ -133,31 +143,11 @@ class SocialLoginView(APIView):
             ):
                 raise SocialResolutionError("access_denied", 403)
             adopt_pending_memberships_for_user(user)
-            scope = staff_origin_scope(request)
-            staff_scope = None if scope is NO_STAFF_ORIGIN_SCOPE else str(scope)
-            from apps.accounts.mfa_policy import needs_challenge
-            from apps.accounts.mfa_challenges import start
-            from apps.accounts.mfa_sessions import context, device_context
-            if needs_challenge(user):
-                device = None
-                if data["delivery"] == "device":
-                    from apps.accounts.mfa_policy import credential
-                    mfa = credential(user)
-                    if nonce_row.device_grant_id and not (mfa and mfa.enabled_at):
-                        # Enrollment revokes old grants. Restart with fresh attestation
-                        # so the second step can create a replacement grant safely.
-                        raise SocialDeviceRestartRequired()
-                    device = device_context(attestation_challenge, verified_attestation, nonce_row.device_grant)
-                response = Response(start(user, context=context(request, surface=data["surface"],
-                    staff_scope=staff_scope, device=device)))
-                response["Cache-Control"] = "no-store"
-                return response
             tokens = issue_social_session(
                 user,
                 surface=data["surface"],
                 delivery=data["delivery"],
                 nonce_row=nonce_row,
-                staff_scope=staff_scope,
                 verified_attestation=verified_attestation,
             )
             if data["delivery"] == "device":
@@ -175,7 +165,10 @@ class SocialLoginView(APIView):
         except SocialNonceRejected:
             _audit_failure(self.provider, "invalid")
             return _error("social_invalid", 401)
-        except (AttestationRejected, AttestationUnavailable):
+        except AttestationUnavailable:
+            _audit_failure(self.provider, "attestation_unavailable")
+            return _error("attestation_unavailable", 503)
+        except AttestationRejected:
             _audit_failure(self.provider, "attestation_failed")
             return _error("social_device_restart_required", 409)
         except SocialProviderUnavailable:
@@ -195,7 +188,17 @@ class SocialLoginView(APIView):
             return _error(exc.code, exc.status_code)
         audit_events.record_auth_event(user, "auth.social_login_succeeded", target=user,
             meta=social_audit_meta(self.provider, outcome, claims["sub"]))
-        payload = {"access": tokens["access"], "user": user_payload(user, request=request), "outcome": outcome}
+        if self.provider == SocialProvider.APPLE:
+            from apps.accounts.apple_credentials import store_refresh_credential
+            store_refresh_credential(user, claims, data.get("authorization_code", ""),
+                                     data.get("redirect_uri", "") if data["delivery"] == "web" else "")
+        if data["delivery"] == "device":
+            grant = tokens["device_grant"]
+            authority = "native_staff" if grant.authority == "staff" else "member"
+        else:
+            authority = data["surface"]
+        payload = {"access": tokens["access"], "user": user_payload(user, request=request,
+            session_authority=authority), "outcome": outcome}
         if data["delivery"] == "device":
             payload.update({"refresh": tokens["refresh"], "device_grant": DeviceGrantSerializer(tokens["device_grant"]).data})
             return Response(payload)
@@ -222,6 +225,3 @@ class OidcSocialLoginView(SocialLoginView):
     @property
     def provider(self):
         return provider_key(self.kwargs["slug"])
-
-
-

@@ -14,6 +14,7 @@ from apps.admin_api.serializers_inventory import (
 from apps.events import services_series_images
 from apps.events.serializers_series import EventSeriesDetailSerializer
 from apps.events.views_series import manageable_series
+from apps.events.event_permissions import EDIT_DETAILS
 from apps.evidence.responses import storage_unavailable_response
 from apps.evidence.storage import StorageUnavailable
 from apps.inventory import public_image_storage
@@ -39,7 +40,7 @@ class EventSeriesImageView(APIView):
         responses={201: PublicImageUploadResponseSerializer, **ERRORS},
     )
     def post(self, request, pk):
-        series = manageable_series(request.user, pk)
+        series = manageable_series(request.user, pk, EDIT_DETAILS)
         serializer = PublicImageUploadRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         content_type = serializer.validated_data["content_type"]
@@ -61,7 +62,7 @@ class EventSeriesImageView(APIView):
     )
     @transaction.atomic
     def put(self, request, pk):
-        series = manageable_series(request.user, pk)
+        series = manageable_series(request.user, pk, EDIT_DETAILS)
         serializer = PublicImageAttachRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         object_key = serializer.validated_data["object_key"]
@@ -88,13 +89,13 @@ class EventSeriesImageView(APIView):
             )
             raise ValidationError({"object_key": message})
         series = services_series_images.update_image(series, request.user, object_key)
-        return Response(EventSeriesDetailSerializer(series).data)
+        return Response(EventSeriesDetailSerializer(series, context={"request": request}).data)
 
     @extend_schema(
         tags=["Admin event series"], summary="Clear a series image",
         request=None, responses={200: EventSeriesDetailSerializer, **ERRORS},
     )
     def delete(self, request, pk):
-        series = manageable_series(request.user, pk)
+        series = manageable_series(request.user, pk, EDIT_DETAILS)
         series = services_series_images.remove_image(series, request.user)
-        return Response(EventSeriesDetailSerializer(series).data)
+        return Response(EventSeriesDetailSerializer(series, context={"request": request}).data)

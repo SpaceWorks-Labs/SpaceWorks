@@ -1,0 +1,29 @@
+@layer components {
+  .desk-button {
+    @apply border-line bg-panel text-ink hover:bg-hover active:bg-line min-h-11 inline-flex items-center justify-center gap-2 rounded-control border px-3 py-2 text-label font-semibold transition-colors duration-120 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-not-allowed disabled:border-line disabled:bg-surface disabled:text-muted;
+  }
+  .desk-button-primary {
+    @apply border-accent-ink bg-accent text-on-accent hover:bg-accent-hover active:bg-accent-active min-h-11 inline-flex items-center justify-center gap-2 rounded-control border px-3 py-2 text-label font-semibold transition-colors duration-120 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-not-allowed disabled:border-line disabled:bg-surface disabled:text-muted;
+  }
+  .desk-button-brand {
+    @apply border-brand-boundary bg-brand text-on-brand hover:bg-brand-hover active:bg-brand-active min-h-11 inline-flex items-center justify-center gap-2 rounded-control border px-3 py-2 text-label font-semibold transition-colors duration-120 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-not-allowed disabled:border-line disabled:bg-surface disabled:text-muted;
+  }
+  .desk-button-emphasis {
+    @apply border-line bg-emphasis text-on-emphasis hover:bg-emphasis-hover active:bg-emphasis-active min-h-11 inline-flex items-center justify-center gap-2 rounded-control border px-3 py-2 text-label font-semibold transition-colors duration-120 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-not-allowed disabled:border-line disabled:bg-surface disabled:text-muted;
+  }
+  .desk-button-success {
+    @apply border-line bg-success text-on-success hover:bg-success-hover active:bg-success-active min-h-11 inline-flex items-center justify-center gap-2 rounded-control border px-3 py-2 text-label font-semibold transition-colors duration-120 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-not-allowed disabled:border-line disabled:bg-surface disabled:text-muted;
+  }
+  .desk-button-warn {
+    @apply border-line bg-warn text-on-warn hover:bg-warn-hover active:bg-warn-active min-h-11 inline-flex items-center justify-center gap-2 rounded-control border px-3 py-2 text-label font-semibold transition-colors duration-120 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-not-allowed disabled:border-line disabled:bg-surface disabled:text-muted;
+  }
+  .desk-button-danger {
+    @apply border-line bg-danger text-on-danger hover:bg-danger-hover active:bg-danger-active min-h-11 inline-flex items-center justify-center gap-2 rounded-control border px-3 py-2 text-label font-semibold transition-colors duration-120 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-not-allowed disabled:border-line disabled:bg-surface disabled:text-muted;
+  }
+  .desk-button-ghost {
+    @apply border-transparent bg-transparent text-accent-ink hover:bg-accent-soft active:bg-accent-soft active:text-ink min-h-11 inline-flex items-center justify-center gap-2 rounded-control border px-3 py-2 text-label font-semibold transition-colors duration-120 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-not-allowed disabled:border-line disabled:bg-surface disabled:text-muted;
+  }
+  .desk-button-danger-outline {
+    @apply border-danger bg-panel text-danger hover:border-danger-hover hover:text-danger-hover active:bg-hover min-h-11 inline-flex items-center justify-center gap-2 rounded-control border px-3 py-2 text-label font-semibold transition-colors duration-120 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-not-allowed disabled:border-line disabled:bg-surface disabled:text-muted;
+  }
+}

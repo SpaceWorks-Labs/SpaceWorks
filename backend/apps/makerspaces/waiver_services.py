@@ -1,5 +1,7 @@
 """Locked, audited waiver publishing and acceptance."""
 
+from apps.accounts.account_kind_guards import require_member_account
+
 from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
@@ -41,6 +43,7 @@ def deactivate_waiver(actor, makerspace):
 
 
 def accept_waiver(actor_membership):
+    require_member_account(actor_membership.user)
     with transaction.atomic():
         membership = MakerspaceMembership.objects.select_for_update().select_related("makerspace", "user").get(pk=actor_membership.pk)
         if membership.status != "active":
@@ -79,6 +82,7 @@ def witness_waiver_acceptance(actor, membership_id):
         membership = MakerspaceMembership.objects.select_for_update().get(
             pk=membership_id
         )
+        require_member_account(membership.user)
         if membership.makerspace_id != makerspace.id:
             raise PermissionDenied()
         if membership.status != "active":

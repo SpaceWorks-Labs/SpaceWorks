@@ -40,7 +40,8 @@ def validate_measurements(request, machine, payload):
     return consumables
 
 
-def claim_result(principal, job_id, data):
+def claim_result(principal, job_id, data, *, hold=False):
+    """``hold`` keeps the claim for staff review whatever the binding's auto-apply policy."""
     serializer = ResultSerializer(data=data)
     serializer.is_valid(raise_exception=True)
     payload = serializer.validated_data
@@ -66,7 +67,7 @@ def claim_result(principal, job_id, data):
             job.reported_at = timezone.now()
             for field in ("outcome", "actual_minutes", "failure_reason", "percent_complete", "actual_grams", "actual_quantity"):
                 setattr(job, field, payload[field])
-            job.state = "reported" if binding.auto_apply_terminal else "needs_review"
+            job.state = "reported" if binding.auto_apply_terminal and not hold else "needs_review"
             job.save(update_fields=["terminal_operation_id", "report_sha256", "reported_at", "outcome", "actual_minutes",
                                    "failure_reason", "percent_complete", "actual_grams", "actual_quantity", "state"])
             with connection.cursor() as cursor:

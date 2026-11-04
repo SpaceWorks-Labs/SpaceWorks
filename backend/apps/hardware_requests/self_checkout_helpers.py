@@ -1,3 +1,5 @@
+
+from apps.accounts.account_kind_guards import require_member_account
 from collections import Counter
 
 from django.utils import timezone
@@ -132,6 +134,8 @@ def _eligible_product(pk, makerspace, *, require_public=True):
     product = InventoryProduct.objects.select_for_update().filter(pk=pk, makerspace=makerspace).first()
     if product is None or product.is_archived:
         raise RequestValidationError("Tool is not enabled for public self-checkout.")
+    if product.is_consumable:
+        raise RequestValidationError("Consumables are logged as used, not lent.")
     if require_public and (
         not product.is_public or not product.public_self_checkout_enabled
     ):
@@ -204,6 +208,7 @@ def _create_issued_request(
     requested_for,
     issued_by,
 ):
+    require_member_account(requester)
     request = HardwareRequest.objects.create(
         makerspace=makerspace,
         requester=requester,

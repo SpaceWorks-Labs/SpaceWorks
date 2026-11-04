@@ -1,0 +1,15 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
+  "buildCommand": "npm --prefix frontend ci && npm --prefix frontend run build",
+  "outputDirectory": "frontend/dist",
+  "env": {
+    "VITE_API_URL": "/api"
+  },
+  "rewrites": [
+    {
+      "source": "/((?!api(?:/|$)|assets(?:/|$)|fonts(?:/|$)|brand(?:/|$)|share(?:/|$)|embed(?:/|$)|static(?:/|$)|docs(?:/|$)|redoc(?:/|$)|schema(?:/|$)|config\\.js$|.*\\.(?:js|css|wasm|woff2?|png|jpg|svg|ico|webmanifest)$).*)",
+      "destination": "/index.html"
+    }
+  ]
+}

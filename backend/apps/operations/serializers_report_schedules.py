@@ -32,6 +32,8 @@ class ReportScheduleFiltersSerializer(serializers.Serializer):
     status = serializers.ChoiceField(choices=Payment.Status.choices, required=False)
     subject_type = serializers.ChoiceField(choices=Payment.SubjectType.choices, required=False)
     months = serializers.IntegerField(required=False, min_value=1, max_value=120)
+    subject_kind = serializers.CharField(max_length=48, required=False)
+    subject_id = serializers.IntegerField(min_value=1, required=False)
 
     def to_internal_value(self, data):
         # Nested serializers receive raw data here, before DRF drops unknown keys.
@@ -40,6 +42,9 @@ class ReportScheduleFiltersSerializer(serializers.Serializer):
         return super().to_internal_value(data)
 
     def validate(self, attrs):
+        from .report_subjects import SubjectFilterSerializer
+        subject = SubjectFilterSerializer(data=attrs)
+        subject.is_valid(raise_exception=True)
         if attrs.get("window_days") and (attrs.get("start") or attrs.get("end")):
             raise serializers.ValidationError("Use either window_days or start/end, not both.")
         if attrs.get("start") and attrs.get("end") and attrs["start"] > attrs["end"]:
@@ -138,9 +143,10 @@ class ReportScheduleSerializer(serializers.ModelSerializer):
         # recipients; legacy schedules are still reauthorized by the runner.
         from apps.makerspaces.models import MakerspaceMembership
         space = self.context["makerspace"]
-        members = MakerspaceMembership.objects.none()
+        members = MakerspaceMembership.staff_tracks.none()
         for action in {definition.required_action for definition in REPORT_REGISTRY.values()}:
-            members = members | rbac.scope_by_action(self.context["request"].user, action, MakerspaceMembership.objects.all())
+            members = members | rbac.scope_by_action(self.context["request"].user, action,
+                                                     MakerspaceMembership.staff_tracks.all())
         known = {email.lower() for email in members.filter(makerspace=space).values_list("user__email", flat=True) if email}
         existing = {email.strip().lower() for email in getattr(self.instance, "recipient_emails", [])}
         if known & ({email.strip().lower() for email in emails} - existing):
@@ -150,8 +156,15 @@ class ReportScheduleSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         current = self.instance
         report_key = attrs.get("report_key", getattr(current, "report_key", None))
-        definition = REPORT_REGISTRY[report_key]
+        definition = REPORT_REGISTRY.get(report_key)
+        if definition is not None and definition.platform_only:
+            from .report_types import ReportNotFound
+            raise ReportNotFound()
+        if definition is None:
+            raise serializers.ValidationError({"report_key": "Report is unavailable on this deployment."})
         filters = attrs.get("filters", getattr(current, "filters", {}))
+        from .report_subjects import reject_aggregate
+        reject_aggregate(filters)
         if set(filters) - (allowed_report_filters(report_key) | {"window_days"}):
             raise serializers.ValidationError({"filters": "Unsupported filters for this report."})
         condition = attrs.get("condition", getattr(current, "condition", {}))
@@ -171,10 +184,10 @@ class ReportScheduleSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"report_key": "Report is not exportable."})
         # The manual export refuses a report whose source module is off; a schedule for it
         # could only ever skip, so it is refused with the same 400 naming the module.
-        from apps.makerspaces.guards import require_module
+        from .report_sources import require_source
 
         for module in definition.required_modules:
-            require_module(self.context["makerspace"], module)
+            require_source(self.context["makerspace"], module)
         if not definition.schedulable:
             # Email/chat delivery would broaden custody of this report's data.
             raise serializers.ValidationError({"report_key": "Report cannot be scheduled."})

@@ -73,23 +73,23 @@ export function CardPhotoUpload({
         accept="image/jpeg,image/png,image/webp"
         disabled={status === "uploading"}
         onChange={(event) => setFile(event.target.files?.[0] ?? null)}
-        className="mt-1 block w-full min-w-0 text-sm text-muted file:mr-3 file:rounded-md file:border-0 file:bg-accent file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-on-accent"
+        className="mt-1 block w-full min-w-0 text-sm text-muted file:mr-3 file:min-h-11 file:rounded-md file:border-0 file:bg-accent file:px-3 file:py-2 file:text-sm file:font-semibold file:text-on-accent"
       />
 
-      <label className="mt-3 flex items-start gap-2 text-sm text-ink" htmlFor={consentId}>
+      <label className="mt-3 flex items-start gap-3 text-sm text-ink" htmlFor={consentId}>
         <input
           id={consentId}
           type="checkbox"
-          className="mt-1 h-4 w-4"
+          className="mt-0.5 h-5 w-5 shrink-0"
           checked={consent}
           onChange={(event) => setConsent(event.target.checked)}
         />
         <span>{CONSENT_TEXT}</span>
       </label>
 
-      <div className="desk-actions mt-3 flex flex-wrap gap-2">
+      <div className="desk-actions mt-3 flex flex-wrap gap-2 [&>button]:flex-1 sm:[&>button]:flex-none">
         <button
-          className="desk-button-secondary"
+          className="desk-button-brand"
           type="button"
           disabled={status === "uploading"}
           onClick={() => void upload()}

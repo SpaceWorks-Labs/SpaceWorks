@@ -1,3 +1,4 @@
+from apps.operations.durable_dispatch import dispatch
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from drf_spectacular.utils import OpenApiResponse, extend_schema
@@ -6,10 +7,7 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
-from apps.admin_api.permissions import (
-    IsActiveSuperAdmin,
-    require_makerspace_superadmin_access,
-)
+from apps.admin_api.permissions import IsActiveSuperAdmin
 from apps.audit import services as audit
 from apps.data_export import services as export_services
 from apps.data_export.models import DataExportJob
@@ -39,7 +37,6 @@ class MigrationAPIView(APIView):
         makerspace_id = self.kwargs.get("makerspace_id")
         if makerspace_id is not None:
             self.makerspace = get_object_or_404(Makerspace, pk=makerspace_id)
-            require_makerspace_superadmin_access(request.user, self.makerspace)
 
     def get_throttles(self):
         self.throttle_scope = (
@@ -52,9 +49,11 @@ class MigrationAPIView(APIView):
     def handle_exception(self, exc):
         response = super().handle_exception(exc)
         codes = {
+            status.HTTP_400_BAD_REQUEST: "invalid_request",
             status.HTTP_401_UNAUTHORIZED: "not_authenticated",
             status.HTTP_403_FORBIDDEN: "permission_denied",
             status.HTTP_404_NOT_FOUND: "not_found",
+            status.HTTP_415_UNSUPPORTED_MEDIA_TYPE: "unsupported_media_type",
             status.HTTP_429_TOO_MANY_REQUESTS: "throttled",
         }
         if (
@@ -81,7 +80,9 @@ class DisclosureClosureView(MigrationAPIView):
                 "identity_count": len(closure["identities"]), "format_version": 1,
             },
         )
-        return Response(PendingClosureSerializer(closure).data)
+        return Response(PendingClosureSerializer(
+            closure, context={"request": request, "makerspace_id": space.pk}
+        ).data)
 
 
 class DisclosureApprovalListCreateView(MigrationAPIView):
@@ -152,7 +153,7 @@ class MigrationExportListCreateView(MigrationAPIView):
         except Exception as exc:
             return protocol_error(exc)
         try:
-            run_migration_export_job_task.delay(str(job.pk))
+            dispatch(run_migration_export_job_task, str(job.pk))
         except Exception:
             export_services._fail_job(
                 job, DataExportJob.FailureCode.INTERNAL_ERROR,

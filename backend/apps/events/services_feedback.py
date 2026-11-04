@@ -78,17 +78,25 @@ def configure_survey(
     thank_you_text="",
     questions=None,
     certificate_enabled=False,
+    anonymous=None,
 ):
+    from .feedback_modes import record_anonymous_change, resolve_anonymous
     locked_event = _locked_event(event)
     survey = _locked_survey(locked_event, required=False)
     created = survey is None
     if created:
         survey = EventFeedbackSurvey(event=locked_event)
+    was_anonymous = bool(survey.pk and survey.anonymous)
     survey.title = title
     survey.thank_you_text = thank_you_text
     survey.questions = _canonical_questions(questions)
+    survey.anonymous = resolve_anonymous(locked_event, survey, anonymous, certificate_enabled)
     survey.certificate_enabled = certificate_enabled
-    survey.save()
+    try:
+        survey.save()
+    except DjangoValidationError as exc:
+        raise serializers.ValidationError(exc.message_dict) from exc
+    record_anonymous_change(actor, locked_event, survey, was_anonymous)
     audit.record(
         actor,
         "event.feedback_survey_configured",
@@ -148,7 +156,9 @@ def close_survey(event, *, actor):
 def submit_anonymous_feedback(event, answers):
     locked_event = _locked_event(event)
     survey = _locked_survey(locked_event)
-    if survey.certificate_enabled or not _submission_ready(locked_event, survey):
+    from apps.makerspaces.platform import feature_enabled
+    if (survey.certificate_enabled or not survey.anonymous or not _submission_ready(locked_event, survey)
+            or not feature_enabled(locked_event.makerspace, "events.anonymous_feedback")):
         raise FeedbackIneligible()
     snapshot, encoded = _snapshot(survey.questions, answers)
     response = EventFeedbackResponse.objects.create(
@@ -170,7 +180,6 @@ def submit_anonymous_feedback(event, answers):
     return response, None
 
 
-@transaction.atomic
 def submit_identified_feedback(
     event,
     *,
@@ -179,6 +188,24 @@ def submit_identified_feedback(
     answers,
     registration=None,
 ):
+    # Discover the authorized recipient and unwrap issuance keys before Event locks.
+    from .certificates.preparation import prepare_issuance
+    from .certificates.issuance import create_pending_locked
+    from .services_write_boundary import write_boundary
+    query = EventRegistration.objects.filter(event=event, member=actor, status="attended")
+    if registration is not None:
+        query = query.filter(pk=registration.pk)
+    subject = query.first()
+    if subject is None:
+        raise FeedbackIneligible()
+    prepared = prepare_issuance(event.pk, [{"subject_kind": "registration", "subject_id": subject.pk}])
+    tenants = tuple(value for value in (subject.registered_via_makerspace_id, subject.payment_via_makerspace_id) if value)
+    with write_boundary(event, actor=actor, account_ids=prepared.account_ids, tenant_ids=tenants):
+        return _submit_identified_locked(event, actor=actor, email=email, answers=answers,
+                                         registration=subject, prepared=prepared)
+
+
+def _submit_identified_locked(event, *, actor, email, answers, registration, prepared):
     locked_event = _locked_event(event)
     survey = _locked_survey(locked_event)
     if not survey.certificate_enabled or not _submission_ready(locked_event, survey):
@@ -221,7 +248,8 @@ def submit_identified_feedback(
         answers_snapshot=encoded,
         certificate_requested=True,
     )
-    certificate = create_pending(response)
+    from .certificates.issuance import create_pending_locked
+    certificate = create_pending_locked(locked_event, response, prepared=prepared, actor=actor)
     _merge_answered_ids(survey, snapshot)
     audit.record(
         actor,

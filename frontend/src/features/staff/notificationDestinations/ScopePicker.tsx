@@ -27,13 +27,13 @@ export function ScopePicker({
           ? "Required: choose at least one machine or machine type"
           : "Limit to (leave everything unticked to receive all alerts)"}
       </legend>
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="@container"><div className="grid gap-3 @lg:grid-cols-3">
         {groups.map((group) => (
           <div key={group.key}>
             <p className="eyebrow">{group.label}</p>
             <div className="mt-1 grid max-h-40 gap-1 overflow-y-auto">
               {group.items.map((item) => (
-                <label className="flex items-center gap-2 text-sm" key={item.id}>
+                <label className="flex min-h-11 items-center gap-2 text-sm" key={item.id}>
                   <input
                     checked={scope[group.key].includes(item.id)}
                     onChange={(event) =>
@@ -52,7 +52,7 @@ export function ScopePicker({
             </div>
           </div>
         ))}
-      </div>
+      </div></div>
     </fieldset>
   );
 }

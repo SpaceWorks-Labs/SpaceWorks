@@ -5,6 +5,8 @@ records a FAILED delivery and lets the sweep carry on. The run is idempotent und
 coarse cron because the claim advances `next_run_at` under a `skip_locked` row lock
 BEFORE any work happens; a second worker in the same minute finds nothing due.
 """
+from apps.operations.cloud_jobs import bounded
+
 
 import logging
 from datetime import timedelta
@@ -48,8 +50,9 @@ PAYMENT_FILTER_KEYS = ("status", "subject_type")
 
 
 def run_report_schedules(*, now=None, limit=50):
+    limit = bounded.limit(limit)
     now = now or timezone.now()
-    # Archived, reports-disabled and superadmin-hidden makerspaces never run: the same
+    # Archived and reports-disabled makerspaces never run: the same
     # eligibility the aggregate reports use, applied before any row is claimed.
     due = list(
         rbac.scope_for_scheduled_work(ReportSchedule.objects.all()).filter(
@@ -57,7 +60,7 @@ def run_report_schedules(*, now=None, limit=50):
         ).order_by("next_run_at", "id").values_list("id", "makerspace_id")[: max(int(limit), 1)]
     )
     counts = {"delivered": 0, "failed": 0, "skipped": 0}
-    for schedule_id, makerspace_id in due:
+    for schedule_id, makerspace_id in bounded.items(due):
         with fanout_tenant_write(
             makerspace_id, operation="report_schedule", counts=counts
         ) as should_process:
@@ -117,14 +120,21 @@ def _claim(schedule_id, now, force):
 
 
 def _skip_reason(schedule, definition):
-    if definition is None or not definition.exportable or not definition.schedulable:
+    if any(key in (schedule.filters or {}) for key in ("subject_kind", "subject_id")):
+        return "subject_filter_not_schedulable"
+    if definition is None or definition.platform_only or not definition.exportable or not definition.schedulable:
         return "report_unavailable"
     if schedule.format not in definition.allowed_formats:
         return "format_not_allowed"
     if not module_enabled(schedule.makerspace, "reports"):
         return "module_disabled:reports"
+    # A capability-gated report stops running while its switch is off (#95).
+    from apps.makerspaces.platform import feature_enabled
+    if definition.required_feature and not feature_enabled(schedule.makerspace, definition.required_feature):
+        return f"feature_disabled:{definition.required_feature}"
+    from .report_sources import source_enabled
     for module in definition.required_modules:
-        if not module_enabled(schedule.makerspace, module):
+        if not source_enabled(schedule.makerspace, module):
             return f"module_disabled:{module}"
     if schedule.makerspace_id not in eligible_makerspace_ids():
         return "makerspace_not_report_eligible"
@@ -138,14 +148,17 @@ def _skip_reason(schedule, definition):
 def schedule_inputs(schedule, now):
     """Translate the stored filters into exactly what the manual export view passes."""
     filters = dict(schedule.filters or {})
+    from .report_definitions_machines import MACHINE_REPORT_KEYS
     window_days = filters.get("window_days")
     if window_days:
         date_range = (now - timedelta(days=int(window_days)), now)
     else:
+        # Keep calendar labels for builders to resolve in the source space,
+        # exactly as the preview/download and organization paths do.
         date_range = date_range_from_dates(
             parse_date(filters.get("start") or "") if filters.get("start") else None,
             parse_date(filters.get("end") or "") if filters.get("end") else None,
-            makerspace=schedule.makerspace if schedule.report_key in {"member-retention", "membership-revenue"} else None,
+            makerspace=schedule.makerspace if schedule.report_key in MACHINE_REPORT_KEYS else None,
         )
     report_filters = {}
     if schedule.report_key in {"payment-reconciliation", "payments-ledger", "revenue-over-time", "cash-book", "accounting-journal"}:
@@ -157,8 +170,10 @@ def schedule_inputs(schedule, now):
 
 def _build_and_deliver(schedule, definition, now, actor):
     makerspace = schedule.makerspace
-    errors, object_key = [], ""
+    errors, object_key, built = [], "", False
     try:
+        from .cloud_jobs.admission import assert_report
+        assert_report(schedule)
         date_range, report_filters = schedule_inputs(schedule, now)
         provenance = build_provenance(
             definition.key, version=definition.version, makerspace_id=makerspace.id,
@@ -169,9 +184,12 @@ def _build_and_deliver(schedule, definition, now, actor):
         )
         rows = reports.report_rows(
             definition.key, makerspace.id, date_range=date_range,
+            limit=501 if settings.SPACEWORKS_DEPLOYMENT_PROFILE == "free" else None,
             actor=schedule.created_by,
             report_filters=report_filters, grain=schedule.grain,
         )
+        if settings.SPACEWORKS_DEPLOYMENT_PROFILE == "free" and len(rows) > 500:
+            raise ValueError("This report exceeds the free profile's 500-row export limit.")
         condition = validate_condition(schedule.condition, definition)
         if not condition_matches(condition, rows):
             audit.record(actor, "report_schedule.skipped", makerspace=makerspace, target=schedule,
@@ -183,23 +201,33 @@ def _build_and_deliver(schedule, definition, now, actor):
         store_report_object(key, payload, schedule.format)
         object_key = key
         url = signed_download_url(key)
+        built = True
     except Exception as exc:  # noqa: BLE001 - recorded on the delivery row instead
         logger.error("report_schedule_build_failed", extra={"schedule_id": schedule.pk, "error_type": type(exc).__name__})
         errors.append(f"build:{type(exc).__name__}")
-    else:
+    delivered = not errors
+    with transaction.atomic():
+        delivery = ReportDelivery.objects.create(
+            schedule=schedule, object_key=object_key,
+            status=ReportDelivery.Status.SENT if delivered else ReportDelivery.Status.FAILED,
+            error="; ".join(errors)[:2000],
+            expires_at=(
+                now + timedelta(seconds=settings.REPORT_DELIVERY_URL_TTL_SECONDS) if object_key else None
+            ),
+        )
+        if built:
+            from .notifications_p2_reports import notify_report
+            notify_report(delivery)
+    if built:
+        # As before: nothing is sent unless the build and presign both succeeded.
         try:
-            errors.extend(_send(schedule, definition, url))
-        except Exception as exc:  # noqa: BLE001 - retain the failed delivery receipt
+            errors.extend(_send(schedule, definition, url, delivery=delivery))
+        except Exception as exc:
             errors.append(f"send:{type(exc).__name__}")
     delivered = not errors
-    delivery = ReportDelivery.objects.create(
-        schedule=schedule, object_key=object_key,
-        status=ReportDelivery.Status.SENT if delivered else ReportDelivery.Status.FAILED,
-        error="; ".join(errors)[:2000],
-        expires_at=(
-            now + timedelta(seconds=settings.REPORT_DELIVERY_URL_TTL_SECONDS) if object_key else None
-        ),
-    )
+    delivery.status = ReportDelivery.Status.SENT if delivered else ReportDelivery.Status.FAILED
+    delivery.error = "; ".join(errors)[:2000]
+    delivery.save(update_fields=["status", "error"])
     audit.record(
         actor, "report_schedule.delivered" if delivered else "report_schedule.failed",
         makerspace=makerspace, target=schedule,
@@ -208,9 +236,11 @@ def _build_and_deliver(schedule, definition, now, actor):
     return delivery
 
 
-def _send(schedule, definition, url):
-    """Deliver the LINK to every configured leg; the bytes never enter a chat channel."""
+def _send(schedule, definition, url, delivery=None):
+    """Keep external email; selected staff use envelopes and rooms get navigation."""
+    from .notifications_p2 import staff_link
     makerspace = schedule.makerspace
+    navigation = staff_link(makerspace, "reports")
     title = definition.title or definition.key
     hours = max(settings.REPORT_DELIVERY_URL_TTL_SECONDS // 3600, 1)
     text = (
@@ -220,13 +250,19 @@ def _send(schedule, definition, url):
     errors = []
     if schedule.destination_id:
         ok, error = deliver_text_to_destination(
-            makerspace, schedule.destination, text=text, feature=NOTIFICATION_FEATURE,
+            makerspace, schedule.destination,
+            text=f"Scheduled report is ready. Sign in to the staff console: {navigation}",
+            feature=NOTIFICATION_FEATURE,
             event=NOTIFICATION_EVENT, reference=f"report-schedule-{schedule.pk}",
-            payload={"schedule_id": schedule.pk, "report_key": definition.key, "download_url": url},
+            payload={"schedule_id": schedule.pk, "report_key": definition.key},
         )
         if not ok:
             errors.append(f"{schedule.destination.channel}:{error}")
-    emails = recipient_emails(schedule, definition)
+    from .notifications_p2_reports import emailed_by_envelope
+    # A selected staff member keeps the existing signed-link email unless their own
+    # report envelope already emails them (navigation only), so nobody gets two.
+    personal = emailed_by_envelope(delivery, definition) if delivery is not None else set()
+    emails = [email for email in recipient_emails(schedule, definition) if email.strip().casefold() not in personal]
     for email in emails:
         try:
             log = dispatch_email(
@@ -241,7 +277,7 @@ def _send(schedule, definition, url):
             # SKIPPED means the `email` module is off for this makerspace; that leg did
             # not deliver, and the row must say so rather than count a silent skip as sent.
             errors.append(f"email:{log.status}")
-    if not schedule.destination_id and not emails:
+    if not schedule.destination_id and not emails and not personal:
         errors.append("no_recipients")
     return errors
 
@@ -250,7 +286,7 @@ def _sweep_expired(schedule, now):
     """Delete this schedule's expired objects; the row keeps the delivery history."""
     deliveries = rbac.scope_for_scheduled_work(schedule.deliveries.all(),
         makerspace_id=schedule.makerspace_id, field="schedule__makerspace_id")
-    for delivery in deliveries.filter(expires_at__lt=now).exclude(object_key=""):
+    for delivery in bounded.page(deliveries.filter(expires_at__lt=now).exclude(object_key=""), f"report-delivery:{schedule.pk}"):
         if delete_report_object(delivery.object_key) is False:
             logger.warning("report_schedule_cleanup_failed", extra={"schedule_id": schedule.pk, "delivery_id": delivery.pk})
             continue

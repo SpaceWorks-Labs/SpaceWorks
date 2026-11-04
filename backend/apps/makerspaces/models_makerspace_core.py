@@ -11,7 +11,6 @@ from django.utils.crypto import get_random_string
 from apps.makerspaces.capabilities import default_enabled_features
 from apps.makerspaces.module_registry import default_enabled_module_keys
 from apps.makerspaces.provenance import validate_actor_snapshot
-from apps.makerspaces.request_access import reconcile_enabled_modules
 from apps.makerspaces.models_makerspace_secrets import MakerspaceSecretsMixin
 from apps.makerspaces.models_makerspace_validation import clean_makerspace
 from apps.makerspaces.profile_validation import (
@@ -82,15 +81,6 @@ class Makerspace(MakerspaceSecretsMixin, PublicSiteSettings):
     geofence_longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True, validators=[MinValueValidator(-180), MaxValueValidator(180)])
     geofence_radius_m = models.PositiveIntegerField(default=25, validators=[MinValueValidator(1)])
     geofence_enabled = models.BooleanField(default=False)
-    # Account-less requests are an unauthenticated write surface, so this is an
-    # independent opt-in. In particular, it must not follow the membership module:
-    # recommended installs omit that module and must stay closed after an upgrade.
-    #
-    # The reverse direction IS coupled, and `save()` enforces it: installing
-    # `membership` forces this off, because the anonymous branch of RequestSubmitView
-    # runs before any membership guard and would otherwise walk straight past the
-    # requirement the operator just switched on. See `request_access`.
-    anonymous_requests_enabled = models.BooleanField(default=False)
     public_print_status_lookup_policy = models.CharField(
         max_length=32,
         choices=PublicPrintStatusLookupPolicy.choices,
@@ -108,6 +98,11 @@ class Makerspace(MakerspaceSecretsMixin, PublicSiteSettings):
         validators=[MinValueValidator(0)],
     )
     referrals_enabled = models.BooleanField(default=False)
+    # The month (1-12) the space's financial year starts; April by default (decision 71).
+    # Read through `makerspaces.financial_year`, never directly.
+    financial_year_start_month = models.PositiveSmallIntegerField(
+        default=4, validators=[MinValueValidator(1), MaxValueValidator(12)],
+    )
     # Opt-in: a member whose membership terms have all expired or been cancelled is
     # refused a borrow request like a non-member. A member with no term at all is never
     # affected -- plans are optional. Enforced by `request_access.require_current_term`.
@@ -119,9 +114,8 @@ class Makerspace(MakerspaceSecretsMixin, PublicSiteSettings):
         decimal_places=2,
         default=0,
     )
-    superadmin_access_enabled = models.BooleanField(default=True)
     staff_notifications_enabled = models.BooleanField(default=True)
-    booking_requester_notifications_enabled = models.BooleanField(default=False)
+    booking_requester_notifications_enabled = models.BooleanField(default=True)
     event_reminder_lead_hours = models.JSONField(
         default=default_reminder_lead_hours, blank=True, validators=[validate_reminder_lead_hours],
     )
@@ -164,6 +158,10 @@ class Makerspace(MakerspaceSecretsMixin, PublicSiteSettings):
     branding_config = models.JSONField(default=default_branding_config, blank=True)
     telegram_group_chat_id = models.CharField(max_length=64, blank=True)
     telegram_bot_token = models.CharField(max_length=200, blank=True)
+    email_provider = models.CharField(max_length=16, blank=True, choices=[
+        (v, v) for v in ("", "inherit", "smtp", "resend", "postmark", "ses", "brevo", "mailgun", "sendgrid")
+    ])
+    email_provider_config = models.TextField(blank=True)
     smtp_host = models.CharField(max_length=200, blank=True)
     smtp_port = models.PositiveIntegerField(default=587)
     smtp_username = models.CharField(max_length=200, blank=True)
@@ -195,6 +193,9 @@ class Makerspace(MakerspaceSecretsMixin, PublicSiteSettings):
         on_delete=models.SET_NULL,
         related_name="created_makerspaces",
     )
+    # The inert principal that account-less requests filed before #75f point at. Nothing
+    # creates one any more; the link stays so those rows remain readable and the principal
+    # stays identifiable (`accounts.principal_guards`, report exclusions).
     anonymous_requester = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         null=True,
@@ -241,6 +242,10 @@ class Makerspace(MakerspaceSecretsMixin, PublicSiteSettings):
                 condition=Q(membership_dues_amount__gte=0),
                 name="makerspace_dues_nonnegative",
             ),
+            models.CheckConstraint(
+                condition=Q(financial_year_start_month__gte=1, financial_year_start_month__lte=12),
+                name="makerspace_fy_start_month_range",
+            ),
         ]
 
     def __str__(self) -> str:
@@ -255,22 +260,6 @@ class Makerspace(MakerspaceSecretsMixin, PublicSiteSettings):
         sync_loan_policy = bool(self.pk) and (fields is None or "default_loan_days" in fields)
         self.public_code = (self.public_code or "").upper()
         self.frontend_domain = normalize_frontend_domain(self.frontend_domain)
-        # Membership and account-less requests are mutually exclusive, and this is the
-        # ONE chokepoint every writer passes through: module install/uninstall, profile
-        # application, the /control/ capability matrix, setup_instance, seed_demo and a
-        # plain obj.save(). Enforcing it here rather than in each of them is what makes
-        # the state unreachable instead of merely discouraged -- see
-        # `request_access` for why the pair is impossible.
-        reconciled = reconcile_enabled_modules(
-            self.enabled_modules, self.anonymous_requests_enabled
-        )
-        if reconciled != self.anonymous_requests_enabled:
-            self.anonymous_requests_enabled = reconciled
-            # A partial save that did not name this field would otherwise change the
-            # attribute in memory and leave the row in the impossible state.
-            update_fields = kwargs.get("update_fields")
-            if update_fields is not None:
-                kwargs["update_fields"] = [*update_fields, "anonymous_requests_enabled"]
         with transaction.atomic():
             super().save(*args, **kwargs)
             if sync_loan_policy:

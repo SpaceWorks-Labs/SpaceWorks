@@ -1,7 +1,6 @@
 """Single-row queue and challenge state for account recovery."""
 
 from django.db import models
-from django.db.models.functions import Lower
 
 
 class PasswordResetEnvelopeStatus(models.TextChoices):
@@ -16,23 +15,26 @@ class PasswordResetEnvelopeStatus(models.TextChoices):
 
 
 class PasswordResetEnvelope(models.Model):
-    """One reusable recovery envelope for each normalized global email address.
+    """One reusable recovery envelope for each account and its immutable namespace.
 
     The stable row is both the request queue item and the confirmation lock target.
-    Unknown addresses deliberately get the same row shape as known addresses so the
-    anonymous request path never needs to look up an account.
+    Email is a delivery address, never account ownership. Unknown addresses and
+    unavailable accounts receive the same public acknowledgement without a queue row.
     """
 
+    purpose = models.CharField(max_length=16, default="reset", choices=[("reset", "Reset"), ("restore", "Restore")])
     email_normalized = models.CharField(max_length=254)
+    context = models.CharField(max_length=8, choices=[(kind, kind.title()) for kind in ("member", "staff", "platform")], default="member")
+    makerspace = models.ForeignKey("makerspaces.Makerspace", null=True, blank=True, on_delete=models.CASCADE)
+    request_origin = models.CharField(max_length=512, blank=True)
+    credential_generation = models.PositiveBigIntegerField(default=0)
     email_fingerprint = models.CharField(max_length=64)
     digest = models.CharField(max_length=64)
     digest_is_live = models.BooleanField(default=False)
     credential_fingerprint = models.CharField(max_length=64, blank=True)
     user = models.ForeignKey(
         "accounts.User",
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
+        on_delete=models.CASCADE,
         related_name="password_reset_envelopes",
     )
     expires_at = models.DateTimeField(null=True, blank=True)
@@ -53,9 +55,12 @@ class PasswordResetEnvelope(models.Model):
 
     class Meta:
         constraints = [
+            models.CheckConstraint(condition=(models.Q(purpose="reset") | models.Q(
+                purpose="restore", context="member", makerspace__isnull=True,
+            )), name="reset_restore_member_context"),
             models.UniqueConstraint(
-                Lower("email_normalized"),
-                name="uniq_password_reset_email_ci",
+                fields=["user"],
+                name="uniq_password_reset_account",
             )
         ]
         indexes = [

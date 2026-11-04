@@ -9,18 +9,11 @@ export type StaffRole = {
   legacy_role: string | null;
   is_default: boolean;
   is_protected: boolean;
+  combinable: boolean;
+  exclusive: boolean;
   member_count: number;
   created_at: string;
   updated_at: string;
-};
-
-export type Capability = {
-  value: string;
-  label: string;
-  description: string;
-  group: string;
-  grantable: boolean;
-  lock_reason: string | null;
 };
 
 export type StaffMembershipRow = {
@@ -29,72 +22,38 @@ export type StaffMembershipRow = {
   makerspace_id: number;
   makerspace_slug: string;
   role: string;
+  role_ids: number[];
+  roles: Pick<StaffRole, "id" | "name" | "slug">[];
+  status: "active" | "revoked";
   assigned_role: Pick<StaffRole, "id" | "name" | "slug" | "legacy_role" | "is_default" | "is_protected"> | null;
   created_at: string;
 };
 
-export function listRoles(msId: number) {
-  return staffRequest<StaffRole[]>(`/admin/makerspaces/${msId}/roles`);
-}
-
-export function createRole(msId: number, body: Pick<StaffRole, "name" | "granted_actions">) {
-  return staffRequest<StaffRole>(`/admin/makerspaces/${msId}/roles`, { method: "POST", body: JSON.stringify(body) });
-}
-
-export function updateRole(msId: number, roleId: number, patch: Partial<Pick<StaffRole, "name" | "granted_actions">>) {
-  return staffRequest<StaffRole>(`/admin/makerspaces/${msId}/roles/${roleId}`, { method: "PATCH", body: JSON.stringify(patch) });
-}
-
-export function deleteRole(msId: number, roleId: number) {
-  return staffRequest<void>(`/admin/makerspaces/${msId}/roles/${roleId}`, { method: "DELETE" });
-}
-
-export type MachineScopeOption = {
-  id: number;
-  label: string;
-  is_builtin?: boolean;
-  is_active?: boolean;
-};
-
-export type RoleMachineScope = {
-  machine_type_ids: number[];
-  machine_ids: number[];
-  available_machine_types: MachineScopeOption[];
-  available_machines: MachineScopeOption[];
-  /** False when the role is exempt (holds manage_makerspace) or grants no machine authority. */
+export type MemberMachineScope = {
+  membership_id: number;
   scoping_applies: boolean;
+  machine_type_ids: number[];
+  available_machine_types: { id: number; name: string; slug: string; is_global: boolean }[];
 };
 
-export function getRoleMachineScope(msId: number, roleId: number) {
-  return staffRequest<RoleMachineScope>(`/admin/makerspaces/${msId}/roles/${roleId}/machine-scope`);
+export function getMemberMachineScope(msId: number, membershipId: number) {
+  return staffRequest<MemberMachineScope>(`/admin/makerspaces/${msId}/memberships/${membershipId}/machine-scope`);
 }
 
-export function setRoleMachineScope(
-  msId: number,
-  roleId: number,
-  body: { machine_type_ids: number[]; machine_ids: number[] },
-) {
-  return staffRequest<RoleMachineScope>(`/admin/makerspaces/${msId}/roles/${roleId}/machine-scope`, {
-    method: "PUT", body: JSON.stringify(body),
+export function setMemberMachineScope(msId: number, membershipId: number, machineTypeIds: number[]) {
+  return staffRequest<MemberMachineScope>(`/admin/makerspaces/${msId}/memberships/${membershipId}/machine-scope`, {
+    method: "PUT", body: JSON.stringify({ machine_type_ids: machineTypeIds }),
   });
 }
 
-export function listCapabilities(msId: number) {
-  return staffRequest<Capability[]>(`/admin/makerspaces/${msId}/roles/capabilities`);
-}
-
-export function listMemberships(msId: number) {
-  return staffRequest<StaffMembershipRow[]>(`/admin/makerspaces/${msId}/memberships`);
-}
-
 export function createMembership(msId: number, body: {
-  username: string; email?: string; first_name?: string; last_name?: string; password?: string; role_id: number;
+  username: string; email?: string; first_name?: string; last_name?: string; password?: string; role_ids: number[];
 }) {
   return staffRequest<StaffMembershipRow>(`/admin/makerspaces/${msId}/memberships`, { method: "POST", body: JSON.stringify(body) });
 }
 
-export function assignRole(msId: number, membershipId: number, roleId: number) {
+export function assignRole(msId: number, membershipId: number, roleIds: number[]) {
   return staffRequest<StaffMembershipRow>(`/admin/makerspaces/${msId}/memberships/${membershipId}/role`, {
-    method: "PATCH", body: JSON.stringify({ role_id: roleId }),
+    method: "PATCH", body: JSON.stringify({ role_ids: roleIds }),
   });
 }

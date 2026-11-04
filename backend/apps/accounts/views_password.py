@@ -1,5 +1,7 @@
 """Password change and anonymous account-recovery endpoints."""
 
+from collections.abc import Mapping
+
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.tokens import default_token_generator
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -18,8 +20,11 @@ from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from apps.accounts.models import User
+from apps.accounts.password_breach import error_body
 from apps.accounts.principal_guards import is_anonymous_requester
 from apps.accounts.password_reset_crypto import normalize_email
+from apps.accounts.password_reset_context import recovery_origin
+from apps.accounts.staff_identity import is_person, person_q
 from apps.accounts.serializers_password_reset import (
     ChangePasswordResponseSerializer,
     ChangePasswordSerializer,
@@ -40,7 +45,7 @@ from apps.accounts.services_password_reset import (
     request_password_reset,
     validate_recovery_password,
 )
-from apps.accounts.services_tokens import blacklist_outstanding_tokens
+from apps.accounts.credential_revocation import revoke_sessions_only
 from apps.accounts.throttles import (
     PasswordResetConfirmEmailThrottle,
     PasswordResetEmailThrottle,
@@ -110,11 +115,10 @@ class ChangePasswordView(APIView):
         try:
             validate_password(new_password, user=user)
         except DjangoValidationError as exc:
-            raise serializers.ValidationError(
-                {"new_password": list(exc.messages)}
-            ) from exc
+            raise serializers.ValidationError(error_body("new_password", exc)) from exc
 
         with transaction.atomic():
+            revoke_sessions_only(user, reason="account.password_changed", actor=user)
             locked = User.objects.select_for_update().get(pk=user.pk)
             if (
                 locked.is_walk_in
@@ -127,19 +131,20 @@ class ChangePasswordView(APIView):
             locked.set_password(new_password)
             locked.must_change_password = False
             locked.save(update_fields=["password", "must_change_password"])
-        blacklist_outstanding_tokens(locked)
-        audit.record(locked, "user.password_changed", target=locked)
+            audit.record(locked, "user.password_changed", target=locked)
         return Response({"detail": "Password updated."})
 
 
 class ForgotPasswordView(APIView):
     permission_classes = [AllowAny]
+    login_ip_guard = True  # S-C: platform IP rules, automatic blocks, Turnstile
     throttle_classes = [ScopedRateThrottle, PasswordResetEmailThrottle]
     throttle_scope = "password_reset_request"
 
     @extend_schema(
         tags=["Auth"],
-        summary="Request an emailed password reset code",
+        summary="Request a context-bound emailed recovery proof",
+        description="Select person (default) or platform; there is no staff context any more (one account per person). Unknown and unavailable accounts receive the same acknowledgement. Platform recovery requires a trusted platform origin and Platform Email. Eligible archived people receive a single-use, 24-hour restore link instead of a reset code.",
         auth=[],
         request=ForgotPasswordRequestSerializer,
         responses={
@@ -151,16 +156,17 @@ class ForgotPasswordView(APIView):
     )
     def post(self, request, *args, **kwargs):
         # This deployment-level gate deliberately precedes payload validation and every
-        # account-independent envelope write. It reveals only the same mail capability
+        # envelope write. It reveals only the same mail capability
         # already published by /api/v1/config.
-        if not email_enabled():
+        payload = request.data if isinstance(request.data, Mapping) else {}
+        if payload.get("context", "person") in {"person", "member"} and not email_enabled():
             return Response(
                 RECOVERY_UNAVAILABLE, status=status.HTTP_503_SERVICE_UNAVAILABLE
             )
         serializer = ForgotPasswordRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         try:
-            request_password_reset(serializer.validated_data["email"])
+            request_password_reset(**serializer.validated_data, origin=recovery_origin(request))
         except PasswordResetCooldown:
             # A per-account 429 would turn the resend budget into an enumeration oracle.
             pass
@@ -169,12 +175,13 @@ class ForgotPasswordView(APIView):
 
 class ResetPasswordConfirmView(APIView):
     permission_classes = [AllowAny]
+    login_ip_guard = True  # S-C: platform IP rules, automatic blocks, Turnstile
     throttle_classes = [ScopedRateThrottle, PasswordResetConfirmEmailThrottle]
     throttle_scope = "password_reset_confirm"
 
     @extend_schema(
         tags=["Auth"],
-        summary="Confirm an OTP or coexisting legacy password reset link",
+        summary="Confirm a context-bound OTP (legacy UID/token links are member-only)",
         auth=[],
         request=CONFIRM_REQUEST_SCHEMA,
         responses={
@@ -189,7 +196,8 @@ class ResetPasswordConfirmView(APIView):
         data = serializer.validated_data
         if data["method"] == "otp":
             confirm_password_reset(
-                data["email"], data["code"], data["new_password"]
+                data["email"], data["code"], data["new_password"],
+                context=data["context"], origin=recovery_origin(request)
             )
         else:
             # Removal condition: last time old links could be issued +
@@ -201,10 +209,9 @@ class ResetPasswordConfirmView(APIView):
 def _confirm_legacy_link(uid, token, new_password):
     failure = None
     password_failure = None
-    changed_user = None
     try:
         user_pk = force_str(urlsafe_base64_decode(uid))
-        user = User.objects.filter(pk=user_pk).first()
+        user = User.objects.filter(person_q(), pk=user_pk).first()
     except (ValueError, TypeError, OverflowError):
         user = None
     verified_email = _verified_legacy_email(user, token)
@@ -212,41 +219,40 @@ def _confirm_legacy_link(uid, token, new_password):
         raise _generic_confirmation_failure()
 
     with transaction.atomic():
-        locked = User.objects.select_for_update().filter(pk=user.pk).first()
+        locked = User.objects.select_for_update().filter(person_q(), pk=user.pk).first()
         if _verified_legacy_email(locked, token, expected_email=verified_email) is None:
             failure = _generic_confirmation_failure()
         else:
             try:
                 validate_recovery_password(new_password, locked)
             except DjangoValidationError as exc:
-                password_failure = serializers.ValidationError(
-                    {"new_password": list(exc.messages)}
-                )
+                password_failure = serializers.ValidationError(error_body("new_password", exc))
             else:
                 locked.set_password(new_password)
                 locked.must_change_password = False
                 locked.save(update_fields=["password", "must_change_password"])
+                revoke_sessions_only(locked, reason="member.password_reset", actor=locked)
                 audit.record(
                     locked,
                     "user.password_reset_via_email",
                     target=locked,
                     meta={"method": "link"},
                 )
-                changed_user = locked
 
     if failure is not None:
         raise failure
     if password_failure is not None:
         raise password_failure
-    blacklist_outstanding_tokens(changed_user)
 
 
 def _verified_legacy_email(user, token, *, expected_email=None):
     if not (
         user
+        and is_person(user)
         and user.is_active
         and user.access_status == User.AccessStatus.ACTIVE
         and not user.is_walk_in
+        and user.deletion_requested_at is None
         and not is_anonymous_requester(user)
     ):
         return None

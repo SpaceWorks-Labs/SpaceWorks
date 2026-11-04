@@ -16,7 +16,7 @@ separate switch.
 | Edition | Hidden module keys | Public home |
 |---|---|---|
 | `makerspace` (default) | none | the catalogue |
-| `events` | `public_inventory request_workflow scanner asset_units containers bulk_import stock_transfers qr_print_batches guest_handover procurement stocktake machines machine_service printing maintenance bookings` | the events page |
+| `events` | `public_inventory request_workflow scanner asset_units containers bulk_import stock_transfers qr_print_batches guest_handover stocktake machines machine_service printing bookings` | the events page |
 | `bookings` | the same set with `bookings` visible and `events` hidden | the bookings page |
 | `organization` | none — a labelling edition: one makerspace row is presented as "the organization" (`branding.display_name`) | the catalogue |
 
@@ -33,17 +33,22 @@ modules.
 | Profile | Modules | For |
 |---|---|---|
 | `minimal` | 6 | Core only; nothing published publicly |
-| `workshop` | 14 | A machine shop: machines, service queue, maintenance — deliberately without `member_accounts` |
+| `workshop` | 13 | A machine shop: machines, service queue, and `machines.maintenance` switched on — deliberately without `member_accounts` |
 | `lending` | 17 | A tool library: the full lending lifecycle, no machines |
 | `recommended` | 20 | Core plus the inventory lifecycle, reports and machines (the default) |
 | `cloud` | 25 | A managed box: everything that runs on a single Django process, no worker or beat |
-| `everything` / `full` | 34 | All modules |
+| `everything` / `full` | 36 | All modules, including the opt-in SMS and WhatsApp channels |
 | `events` | 12 | An events programme: events, notifications, email, member accounts, payments, reports (core is present but hidden by the `events` edition) |
 | `bookings` | 12 | Bookable rooms and resources: bookings, notifications, email, member accounts, payments, reports (core hidden by the `bookings` edition) |
 
-**Installing without a profile** gives you **7 modules**: the six core ones plus `backup`.
-Member accounts and mobile apps are opt-in; installing `mobile` also installs its
-`member_accounts` dependency.
+**Installing without a profile** gives you **8 modules**: the six core ones plus `backup` and
+`member_accounts`. Member accounts are default-on since owner decisions #80/#91, because a space without
+them takes account-less requests and self-checkout from anyone with a confirmed email -- that must be a
+deliberate untick. Mobile apps are opt-in; installing `mobile` or `membership` also installs
+`member_accounts`.
+
+The new `sms` and `whatsapp` notification modules default off. Only `everything` / `full`
+includes them; curated profile sizes stay unchanged.
 
 ## Deleting a module's data
 
@@ -65,6 +70,11 @@ docker compose run --rm --no-deps backend --role management python manage.py pur
 
 A module absent from `--list` either owns no data of its own or cannot be purged separately, and the
 command tells you which. [`machines`](MODULES.md#machines) is the notable second case.
+
+Maintenance, To-Buy and warranty data are purged per **capability**, not per module (#97, #128 C-8):
+in `/control/`, a makerspace's **Purge capability data** page previews the rows each switched-off
+capability holds and deletes one parent's data at a time after a recent re-authentication and the key
+typed back. The switch must already be off. Each purge is audited in the space's own log.
 
 ## Removing a module from the build entirely
 

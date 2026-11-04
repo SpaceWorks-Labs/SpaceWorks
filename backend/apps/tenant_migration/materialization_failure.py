@@ -9,6 +9,7 @@ from .insertion_errors import (
     ImportPromotionClaimLost,
     ImportPromotionInProgress,
     MaterializationAlreadyCommitted,
+    MaterializationSuperseded,
 )
 from .models_import_job import TenantImportJob
 from .object_import import rollback_import_objects
@@ -19,17 +20,20 @@ _NON_CLEANUP_FAILURES = (
     ImportPromotionClaimLost,
     ImportPromotionInProgress,
     MaterializationAlreadyCommitted,
+    MaterializationSuperseded,
 )
 
 
-def handle_materialization_failure(*, job, target, error):
+def handle_materialization_failure(*, job, target, error, run_attempt=None):
     """Clean owned partial work, or preserve work owned by another execution."""
     if isinstance(error, _NON_CLEANUP_FAILURES):
         return
 
     now = timezone.now()
-    failed_active = TenantImportJob.objects.filter(
-        pk=job.pk,
+    owned = TenantImportJob.objects.filter(pk=job.pk)
+    if run_attempt is not None:
+        owned = owned.filter(run_attempt=run_attempt)
+    failed_active = owned.filter(
         status__in=(
             TenantImportJob.Status.MATERIALIZING,
             TenantImportJob.Status.FINALIZING,
@@ -40,6 +44,12 @@ def handle_materialization_failure(*, job, target, error):
         updated_at=now,
     )
     if not failed_active:
+        if run_attempt is not None and TenantImportJob.objects.filter(
+            pk=job.pk, status=TenantImportJob.Status.MATERIALIZING,
+        ).exists():
+            raise MaterializationSuperseded(
+                "The import execution was superseded before failure cleanup."
+            ) from error
         # A replacement that completed the import owns its objects. Other states
         # represent an ordinary failure and must preserve the original error.
         if TenantImportJob.objects.filter(

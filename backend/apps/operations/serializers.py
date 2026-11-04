@@ -14,7 +14,6 @@ from apps.boxes.serializers import BoxSerializer, QrCodeSerializer
 from apps.inventory.models import InventoryAsset, InventoryProduct
 from apps.inventory.kit_serializers import KitDefinitionField
 from apps.operations.models import (
-    InventoryAdjustment,
     QrPrintBatch,
     QrPrintBatchItem,
     StockTransfer,
@@ -52,10 +51,13 @@ class AnalyticsSummarySerializer(serializers.Serializer):
     issued_quantity = serializers.IntegerField()
     damaged_quantity = serializers.IntegerField()
     missing_quantity = serializers.IntegerField()
-
-
-class ReportRowsSerializer(serializers.Serializer):
-    rows = serializers.ListField(child=serializers.ListField(child=serializers.CharField(allow_blank=True, allow_null=True)))
+    asset_available = serializers.IntegerField()
+    asset_reserved = serializers.IntegerField()
+    asset_issued = serializers.IntegerField()
+    asset_damaged = serializers.IntegerField()
+    asset_lost = serializers.IntegerField()
+    asset_maintenance = serializers.IntegerField()
+    asset_retired = serializers.IntegerField()
 
 
 class LedgerUnitSerializer(serializers.Serializer):
@@ -161,25 +163,6 @@ from .serializers_stocktake import (
     StocktakeLineSerializer,
     StocktakeSerializer,
 )
-
-
-class InventoryAdjustmentSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = InventoryAdjustment
-        fields = [
-            "id",
-            "makerspace",
-            "stocktake",
-            "transfer",
-            "product",
-            "asset",
-            "delta_available",
-            "delta_damaged",
-            "delta_lost",
-            "reason",
-            "created_by",
-            "created_at",
-        ]
 
 
 class ContainerMoveSerializer(serializers.Serializer):

@@ -8,7 +8,8 @@ from rest_framework.views import APIView
 
 from apps.admin_api.permissions import IsActiveStaff
 from apps.events.models import Event
-from apps.events.organizer_authority import organizer_event_q
+from apps.events import event_authority
+from apps.events.serializers_event_authority import event_list_context
 from apps.events.serializers_admin import (
     EventAdminSerializer,
     EventListResponseSerializer,
@@ -48,15 +49,18 @@ class OrganizedEventListView(APIView):
         # would double every Count in _annotate_registration_counts. distinct() cannot
         # undo duplication inside an aggregate, so the outer queryset carries no organizer
         # join at all.
-        organized_ids = Event.objects.filter(
-            organizer_event_q(request.user)
-        ).values('pk')
-        queryset = Event.objects.filter(pk__in=organized_ids).select_related('makerspace')
+        queryset = event_authority.organized_events_for(
+            request.user, Event.objects.all(),
+        ).select_related('makerspace')
         queryset = (
             _annotate_registration_counts(queryset)
-            .prefetch_related('organizers__organization')
+            .prefetch_related('organizers__organization', 'audience_organizations__organization')
             .order_by('starts_at', 'id')
         )
         paginator = _EventPagination()
         page = paginator.paginate_queryset(queryset, request, view=self)
-        return _paginated_response(paginator, page, EventAdminSerializer)
+        context = event_list_context(request, page)
+        return _paginated_response(
+            paginator, page,
+            lambda rows, many: EventAdminSerializer(rows, many=many, context=context),
+        )

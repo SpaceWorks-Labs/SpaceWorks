@@ -17,7 +17,7 @@ def verify_apple_token(raw_token, *, nonce, audience):
     token_nonce = str(claims.get("nonce") or "")
     hashed_nonce = hashlib.sha256(nonce.encode()).hexdigest()
     subject = str(claims.get("sub") or "")
-    if not subject or not (
+    if not isinstance(claims.get("aud"), str) or not subject or not (
         constant_time_compare(token_nonce, nonce)
         or constant_time_compare(token_nonce, hashed_nonce)
     ):
@@ -27,6 +27,8 @@ def verify_apple_token(raw_token, *, nonce, audience):
         claims.get("email_verified")
     ).lower() == "true"
     return {
+        "aud": claims["aud"],
+        "auth_time": claims.get("auth_time"),
         "sub": subject,
         "email": email,
         "email_verified": bool(email and verified),

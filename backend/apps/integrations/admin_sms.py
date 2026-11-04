@@ -18,7 +18,7 @@ class PlatformSmsSettingsForm(forms.ModelForm):
 
     class Meta:
         model = PlatformSmsSettings
-        fields = ("is_enabled", "provider", "account_sid", "from_number")
+        fields = ("is_enabled", "provider", "account_sid", "from_number", "notifications_enabled", "notifications_from_number")
 
     def clean_from_number(self):
         """Validate the sender at the form, not at send time.
@@ -36,6 +36,34 @@ class PlatformSmsSettingsForm(forms.ModelForm):
         except InvalidPhoneNumber as exc:
             raise forms.ValidationError(str(exc)) from exc
 
+    def clean_notifications_from_number(self):
+        value = (self.cleaned_data.get("notifications_from_number") or "").strip()
+        if not value:
+            return value
+        from apps.accounts.phone_numbers import InvalidPhoneNumber, normalize_e164
+        try:
+            return normalize_e164(value)
+        except InvalidPhoneNumber as exc:
+            raise forms.ValidationError(str(exc)) from exc
+
+    def clean(self):
+        values = super().clean()
+        from types import SimpleNamespace
+        from rest_framework.exceptions import ValidationError
+        from apps.integrations.messaging.settings_service import validate_platform_sms
+        try:
+            validate_platform_sms(SimpleNamespace(**{key: values.get(key, "") for key in (
+                "account_sid", "from_number", "notifications_from_number",
+            )}))
+        except ValidationError as exc:
+            raise forms.ValidationError(str(exc.detail)) from exc
+        if not values.get("auth_token_raw") and not values.get("clear_auth_token"):
+            try:
+                self.instance.get_auth_token()
+            except Exception:
+                self.add_error("auth_token_raw", "Re-enter or clear the unreadable credential.")
+        return values
+
     def save(self, commit=True):
         row = super().save(commit=False)
         if self.cleaned_data.get("clear_auth_token"):
@@ -43,7 +71,8 @@ class PlatformSmsSettingsForm(forms.ModelForm):
         elif self.cleaned_data.get("auth_token_raw"):
             row.set_auth_token(self.cleaned_data["auth_token_raw"])
         if commit:
-            row.save()
+            from apps.integrations.messaging.settings_service import sync_platform_sms
+            sync_platform_sms(row)
         return row
 
 
@@ -62,6 +91,8 @@ class PlatformSmsSettingsAdmin(AuditedControlChangeMixin, SuperuserOnlyModelAdmi
                     "auth_token_raw",
                     "clear_auth_token",
                     "from_number",
+                    "notifications_enabled",
+                    "notifications_from_number",
                 ),
                 "description": (
                     "Platform-wide SMS for sign-in codes. Phone sign-in stays hidden "
@@ -71,6 +102,11 @@ class PlatformSmsSettingsAdmin(AuditedControlChangeMixin, SuperuserOnlyModelAdmi
         ),
     )
     list_display = ("__str__", "is_enabled", "provider", "updated_at")
+
+    def save_model(self, request, obj, form, change):
+        from apps.integrations.messaging.settings_service import sync_platform_sms
+        sync_platform_sms(obj)
+        super().save_model(request, obj, form, change)
 
     def has_add_permission(self, request):
         # Singleton at pk=1, same as the email and push settings rows.

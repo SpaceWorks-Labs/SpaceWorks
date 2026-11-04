@@ -1,6 +1,8 @@
 from django.urls import path
+from apps.organizations.views_governance import OrganizationMembershipDetailView
 from apps.organizations.views_console import OrganizationLinksView, OrganizationLinkDeleteView
 
+from apps.integrations.org_sender_views import OrganizationEmailSenderView
 from apps.organizations.views_admin import (
     OrganizationDetailView,
     OrganizationInvitationListCreateView,
@@ -11,10 +13,13 @@ from apps.organizations.views_admin import (
 
 
 urlpatterns = [
+    path("organizations/<int:pk>/memberships/<int:membership_id>/", OrganizationMembershipDetailView.as_view(), name="admin-organization-membership-detail"),
     path("organizations/<int:pk>/makerspaces/", OrganizationLinksView.as_view(), name="admin-organization-links"),
     path("organizations/<int:pk>/makerspaces/<int:makerspace_id>/", OrganizationLinkDeleteView.as_view(), name="admin-organization-link-delete"),
     path("organizations/", OrganizationListView.as_view(), name="admin-organization-list"),
     path("organizations/<int:pk>/", OrganizationDetailView.as_view(), name="admin-organization-detail"),
+    path("organizations/<int:pk>/email-sender/", OrganizationEmailSenderView.as_view(),
+         name="admin-organization-email-sender"),
     path(
         "organizations/<int:pk>/memberships/",
         OrganizationMembershipListView.as_view(),

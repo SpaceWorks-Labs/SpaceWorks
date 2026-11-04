@@ -1,6 +1,5 @@
-from django.db import transaction
-from django.http import Http404
-from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
+from apps.accounts.reauthentication_permissions import RecentReauthenticationMixin
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import generics
 from apps.admin_api.list_options import StableOrderingFilter
 from rest_framework.exceptions import PermissionDenied, ValidationError
@@ -9,9 +8,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts import rbac
-from apps.accounts.models import User
 from apps.admin_api.permissions import IsActiveStaff
-from apps.admin_api.services_staff import attach_staff_membership
 from apps.admin_api.serializers_audit import (
     AuditLogFilterSerializer,
     AuditLogSerializer,
@@ -21,45 +18,34 @@ from apps.admin_api.serializers_users import (
     StaffCreateSerializer,
     StaffMembershipSerializer,
 )
-from apps.audit import services as audit
 from apps.audit.models import AuditLog
 from apps.hardware_requests.exceptions import ErrorSerializer
-from apps.makerspaces.models import Makerspace, MakerspaceMembership, MakerspaceRole
-from apps.makerspaces.servability import is_servable
+from apps.makerspaces.models import MakerspaceMembership
 
-# Roles a Space Manager (MANAGE_MAKERSPACE holder, non-superadmin) may assign, list, and
-# revoke within their own makerspace scope. Deliberately excludes SPACE_MANAGER: an SM must
-# never create another Space Manager or escalate toward superadmin (Part I non-escalation
-# guard). Creating/assigning SPACE_MANAGER and every restrict/restore/reset existential
-# guard stay superadmin-only.
-#
-# Only the roles still mounted as fixed-role routes. PRINT_MANAGER is absent because its
-# route is gone, and GUEST_ADMIN because the enum member itself is gone. This asks what a
-# Space Manager may *create*; `services_staff._is_superadmin_only_membership` asks what one
-# may modify over an existing membership, and answers it by action rather than by label.
+# Compatibility listings keep their existing non-manager role scope. Granting and
+# changing staff roles go through the staff-roles API instead.
 _SM_DELEGABLE_ROLES = (
     MakerspaceMembership.Role.INVENTORY_MANAGER,
     MakerspaceMembership.Role.MACHINE_MANAGER,
+    MakerspaceMembership.Role.EVENT_MANAGER,
+    MakerspaceMembership.Role.BOOKING_MANAGER,
+    MakerspaceMembership.Role.HANDOVER,
+    MakerspaceMembership.Role.TECHNICIAN,
 )
 
 
-@extend_schema(tags=["Admin users"], summary="List or create staff memberships")
-class StaffListCreateView(generics.ListCreateAPIView):
+@extend_schema(tags=["Admin users"], summary="List legacy staff memberships")
+class StaffListCreateView(RecentReauthenticationMixin, generics.ListCreateAPIView):
     serializer_class = StaffMembershipSerializer
     permission_classes = [IsActiveStaff]
 
     def get_queryset(self):
         target_role = self.kwargs["role"]
         scope = rbac.makerspaces_for_action(self.request.user, rbac.Action.MANAGE_STAFF)
-        queryset = MakerspaceMembership.objects.select_related("user", "makerspace").filter(
+        queryset = MakerspaceMembership.staff_tracks.select_related("user", "makerspace").filter(
             role=target_role
         )
         if scope is rbac.ALL:
-            queryset = rbac.hide_from_superadmin(
-                self.request.user,
-                queryset,
-                field="makerspace_id",
-            )
             return queryset.order_by("user__username")
         if target_role in _SM_DELEGABLE_ROLES:
             manage_scope = rbac.makerspaces_for_action(
@@ -73,138 +59,38 @@ class StaffListCreateView(generics.ListCreateAPIView):
             )
         return queryset.none()
 
-    @extend_schema(request=StaffCreateSerializer, responses=StaffMembershipSerializer)
+    @extend_schema(
+        description="Retired writer. Grant staff roles through `admin/makerspaces/<id>/staff-roles/`.",
+        deprecated=True,
+        request=StaffCreateSerializer,
+        responses={**{
+            code: ErrorSerializer for code in (400, 401, 403, 404)
+        }},
+    )
     def create(self, request, *args, **kwargs):
         serializer = StaffCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
-        target_role = self.kwargs["role"]
-        if data["role"] != target_role:
-            raise ValidationError({"role": "Role does not match endpoint."})
-        makerspace_id = data["makerspace_id"]
-        if not _can_create_staff_role(request.user, target_role, makerspace_id):
+        if not rbac.can(request.user, rbac.Action.MANAGE_MAKERSPACE, data["makerspace_id"]):
             raise PermissionDenied()
-        makerspace = Makerspace.objects.filter(pk=makerspace_id).first()
-        if not makerspace:
-            raise ValidationError({"makerspace_id": "Makerspace does not exist."})
-        # An archived makerspace is soft-deleted / operationally unreachable; never attach
-        # new staff to it (the superadmin branch of _can_create_staff_role bypasses rbac scope).
-        if not is_servable(makerspace):
-            raise ValidationError({"makerspace_id": "Makerspace is archived."})
-        role = MakerspaceRole.objects.get(
-            makerspace=makerspace, legacy_role=target_role
-        )
-        with transaction.atomic():
-            membership, created, is_break_glass = attach_staff_membership(
-                actor=request.user,
-                makerspace=makerspace,
-                role=role,
-                username=data["username"],
-                email=data.get("email", ""),
-                first_name=data.get("first_name", ""),
-                last_name=data.get("last_name", ""),
-                password=data.get("password", ""),
-            )
-            audit.record(
-                request.user,
-                (
-                    "superadmin.break_glass_space_manager_created"
-                    if is_break_glass
-                    else "staff.created" if created else "staff.membership_updated"
-                ),
-                makerspace=membership.makerspace,
-                target=membership.user,
-                meta={"membership_role": target_role},
-            )
-        return Response(StaffMembershipSerializer(membership).data, status=201)
+        raise ValidationError({"detail": "Grant staff roles through the staff-roles API."})
 
 
-def _can_create_staff_role(user, target_role, makerspace_id):
-    if user.is_superuser or user.role == User.Role.SUPERADMIN:
-        if rbac._id_in(makerspace_id, rbac.superadmin_hidden_makerspace_ids()):
-            return target_role == MakerspaceMembership.Role.SPACE_MANAGER
-        return True
-    if target_role not in _SM_DELEGABLE_ROLES:
-        return False
-    return rbac.can(user, rbac.Action.MANAGE_MAKERSPACE, makerspace_id)
-
-
-@extend_schema(
-    tags=["Admin users"],
-    summary="Revoke a staff membership",
-    responses={204: None},
-)
-class MembershipRevokeView(APIView):
-    """Remove a single makerspace membership (un-assign a delegable role).
-
-    Scope contract (mirrors the create path's non-escalation model): a Space Manager may
-    revoke ONLY delegable-role memberships within their MANAGE_MAKERSPACE scope; a superadmin
-    may revoke any, except inside a superadmin-hidden makerspace (governance hard-block ->
-    404). 404-before-403: out-of-scope existence is hidden as 404, a delegable-scope actor
-    aiming at a SPACE_MANAGER gets 403.
-    """
-
+@extend_schema(tags=["Admin users"], summary="Revoke a staff row (legacy route)", responses={204: None})
+class MembershipRevokeView(RecentReauthenticationMixin, APIView):
     permission_classes = [IsActiveStaff]
 
-    @extend_schema(
-        tags=["Admin users"],
-        summary="Revoke a makerspace staff membership",
-        responses={
-            204: OpenApiResponse(description="Membership revoked."),
-            403: OpenApiResponse(
-                description="A Space Manager membership can only be revoked by a superadmin."
-            ),
-            404: OpenApiResponse(
-                description="Membership not found or outside the actor's makerspace scope."
-            ),
-        },
-    )
+    @extend_schema(responses={204: None, **{code: ErrorSerializer for code in (400, 401, 403, 404, 423, 503)}})
     def delete(self, request, pk):
-        actor = request.user
-        is_superadmin = actor.is_superuser or actor.role == User.Role.SUPERADMIN
-        # Lock the membership row and run the authorization re-check + delete + audit in one
-        # transaction: a concurrent promotion to SPACE_MANAGER must not slip past the role
-        # guard, and a delete must never commit without its audit row.
-        with transaction.atomic():
-            membership = (
-                MakerspaceMembership.objects.select_for_update()
-                .select_related("makerspace", "user")
-                .filter(pk=pk)
-                .first()
-            )
-            if membership is None:
-                raise Http404
-            if is_superadmin:
-                # The superadmin branch bypasses `rbac.can`, so it must restate both halves
-                # of the envelope that `can` enforces for everyone else: a hard-hidden space
-                # and an unservable one (archived, importing, aborted, not restored) are
-                # invisible here -- archival is reversible only in /control/.
-                if rbac._id_in(
-                    membership.makerspace_id, rbac.superadmin_hidden_makerspace_ids()
-                ) or not is_servable(membership.makerspace):
-                    raise Http404
-            else:
-                if not rbac.can(
-                    actor, rbac.Action.MANAGE_MAKERSPACE, membership.makerspace_id
-                ):
-                    raise Http404
-                if rbac.Action.MANAGE_MAKERSPACE in rbac.actions_for_membership(membership):
-                    raise PermissionDenied(
-                        "Only a superadmin can revoke a Space Manager membership."
-                    )
-            makerspace, target_user, role = (
-                membership.makerspace,
-                membership.user,
-                membership.role,
-            )
-            membership.delete()
-            audit.record(
-                actor,
-                "staff.membership_revoked",
-                makerspace=makerspace,
-                target=target_user,
-                meta={"membership_role": role},
-            )
+        from django.shortcuts import get_object_or_404
+        from apps.accounts.staff_account_lifecycle import revoke
+
+        membership = get_object_or_404(rbac.scope_by_action(
+            request.user, rbac.Action.MANAGE_MAKERSPACE, MakerspaceMembership.both_tracks()), pk=pk)
+        if membership.track != MakerspaceMembership.Track.STAFF:
+            raise ValidationError({"detail": "Use the community membership revocation workflow."})
+        revoke(request.user, membership.makerspace_id, membership.pk,
+               reason="Removed through legacy staff console")
         return Response(status=204)
 
 
@@ -237,9 +123,8 @@ class AuditLogListView(generics.ListAPIView):
         filters = AuditLogFilterSerializer(data=self.request.query_params)
         filters.is_valid(raise_exception=True)
         queryset = AuditLog.objects.select_related("actor").order_by("-created_at", "-pk")
-        # Tenant/action scope, hidden and archived spaces are applied BEFORE user filters.
+        # Tenant/action scope and archived spaces are applied BEFORE user filters.
         queryset = rbac.scope_by_action(self.request.user, rbac.Action.VIEW_AUDIT, queryset)
-        queryset = rbac.hide_from_superadmin(self.request.user, queryset, field="makerspace_id")
         archived = rbac.archived_makerspace_ids()
         if archived:
             queryset = queryset.exclude(makerspace_id__in=archived)

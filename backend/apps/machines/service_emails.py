@@ -10,8 +10,12 @@ logger = logging.getLogger(__name__)
 def notify_service_status(service_request, event):
     """Emit a staff notification without allowing delivery to break the workflow."""
     try:
-        from apps.machines.service_printing_emails import notify_printer_service_status
-        notify_printer_service_status(service_request, event)
+        from apps.machines.notifications_p2_service import notify_service
+        from apps.machines.service_printing_emails import _is_printer_request, notify_printer_service_status
+        if _is_printer_request(service_request):
+            notify_printer_service_status(service_request, event)
+        else:
+            notify_service(service_request, event)
     except Exception:
         logger.exception("machine_printer_service_notification_failed", extra={"request_id": getattr(service_request, "pk", None), "event": event})
     try:

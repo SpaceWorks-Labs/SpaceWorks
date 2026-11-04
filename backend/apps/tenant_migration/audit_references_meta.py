@@ -14,6 +14,8 @@ from .audit_references_meta_reports import REPORT_SCHEDULE_AUDIT_EDGES
 from .audit_references_meta_source_local import SOURCE_LOCAL_AUDIT_EDGES
 from .audit_references_meta_ux import UX_AUDIT_EDGES
 from .audit_references_wp3 import WP3_AUDIT_EDGES
+from .audit_references_meta_fixed_roles import FIXED_ROLE_AUDIT_EDGES
+from .audit_references_meta_p2_bookings import P2_BOOKING_AUDIT_EDGES
 
 _SOURCE_LOCAL_EDGES = SOURCE_LOCAL_AUDIT_EDGES
 
@@ -33,7 +35,41 @@ S = AuditReferenceDisposition.SOURCE_LOCAL_SNAPSHOT
 # polymorphic references whose live binding must not be asserted.
 from .target_projection_w7_events import EVENT_AUDIT_EDGES
 
+from .audit_references_events_programme import EDGES as PROGRAMME_AUDIT_EDGES
+from .audit_references_reimbursements import EDGES as REIMBURSEMENT_AUDIT_EDGES
+from .audit_references_r2_l2 import EDGES as R2_L2_AUDIT_EDGES
+from .audit_references_r2_l4 import EDGES as R2_L4_AUDIT_EDGES
+
 AUDIT_META_REFERENCES = {
+    **_reference(S, None, *((action, field) for action in (
+        "public_page.updated", "public_page.published", "public_page.unpublished",
+        "public_page.handle_claimed", "public_page.handle_released", "public_page.asset_reserved",
+        "public_page.asset_uploaded", "public_page.asset_deleted",
+    ) for field in ("owner_id", "revision_id", "asset_id"))),
+    **_reference(S, None,
+                 ("public_page.unattached_assets_removed", "owner_id"),
+                 ("public_page.asset_bytes_deleted", "owner_id"),
+                 ("public_page.asset_bytes_deleted", "cleanup_id")),
+    **PROGRAMME_AUDIT_EDGES,
+    **REIMBURSEMENT_AUDIT_EDGES,
+    **R2_L2_AUDIT_EDGES,
+    **R2_L4_AUDIT_EDGES,
+    **_reference(S, None,
+                 ("notification.media_grant_cleaned", "grant_id"),
+                 ("notification.media_grant_issued", "delivery_id"),
+                 ("notification.media_grant_consumed", "delivery_id")),
+    **_reference(R, "payments.PaymentDocument",
+                 ("notification.media_grant_issued", "document_id"),
+                 ("notification.media_grant_consumed", "document_id")),
+    **_reference(R, "bookings.BookableSpace", ("booking.space_cloned", "source_space_id")),
+    **_reference(R, "bookings.Booking", ("booking.restored", "booking_id")),
+    **_reference(R, "events.EventCertificateArtwork", ("event.certificate_template_saved", "artwork_id")),
+    **_reference(R, "events.EventCertificateTemplateRevision",
+                 ("event.certificate_template_previewed", "revision_id"),
+                 ("event.certificate_created", "template_revision_id")),
+    **_reference(R, "bookings.Booking", ("booking.arrival_confirmed", "booking_id"), ("booking.arrival_reversed", "booking_id")),
+    **P2_BOOKING_AUDIT_EDGES,
+    **FIXED_ROLE_AUDIT_EDGES,
     **{edge: AuditReference(R, model) for edge, model in EVENT_AUDIT_EDGES.items()},
     **_reference(R, "makerspaces.MakerspaceLoanPolicy",
                  ("makerspace.return_policy_updated", "policy_id")),
@@ -81,6 +117,7 @@ AUDIT_META_REFERENCES = {
         ("event.registration_rejected", "registration_id"),
         ("event.registration_promoted", "registration_id"),
         ("event.registration_cancelled", "registration_id"),
+        ("event.registration_restored", "registration_id"),
         ("event.registration_attended", "registration_id"),
     ),
     **_reference(
@@ -94,6 +131,7 @@ AUDIT_META_REFERENCES = {
     # the AST guard reports them as dynamic rather than as declared paths.
     **_reference(
         R, "events.Event",
+        ("event.duplicated", "source_event_id"),
         # All three organizer actions, not just the one the AST guard can see. The guard
         # only discovers literal action strings, and created/updated are chosen with a
         # conditional -- but portable import remaps meta ids by EXACT action/path, so an
@@ -205,86 +243,9 @@ AUDIT_META_REFERENCES = {
 }
 
 AUDIT_META_REFERENCES.update(_reference(S, None, *_SOURCE_LOCAL_EDGES))
-AUDIT_META_REFERENCES.update(
-    _reference(
-        S, "backup.RestoreOperation",
-        ("backup.quarantine_acknowledged", "restore_id"),
-    )
-)
-AUDIT_META_REFERENCES.update(
-    _reference(S, "integrations.EmailLog", ("email.retried", "email_log_id"))
-)
-AUDIT_META_REFERENCES.update(
-    _reference(
-        S, "accounts.User", ("encryption.write_fence_closed", "actor_id"),
-        ("encryption.write_fence_opened", "actor_id"),
-    )
-)
-# Revoking an organization membership names the person it revoked. SOURCE_LOCAL_SNAPSHOT
-# rather than REMAP because the membership itself is an omitted model that never travels
-# with a tenant, so asserting a live binding for the id it mentions would be a claim the
-# archive cannot keep. Sibling created/updated events emit the same key but pick their
-# action with a conditional expression, so the AST guard reports them as dynamic rather
-# than as declared paths.
-AUDIT_META_REFERENCES.update(
-    _reference(
-        S, "accounts.User", ("organization.membership_deleted", "user_id"),
-    )
-)
-AUDIT_META_REFERENCES.update(
-    _reference(
-        S, "organizations.Organization",
-        ("event.organizers_updated", "old_organization_ids"),
-        ("event.organizers_updated", "organization_ids"),
-        ("organization.invitation_created", "organization_id"),
-        ("organization.invitation_redeemed", "organization_id"),
-        ("organization.invitation_revoked", "organization_id"),
-    )
-)
-AUDIT_META_REFERENCES.update(
-    _reference(
-        S, "organizations.OrganizationMembership",
-        ("organization.invitation_redeemed", "membership_id"),
-    )
-)
-AUDIT_META_REFERENCES.update(
-    _reference(
-        S, "makerspaces.Makerspace",
-        ("event.host_waiver_accepted", "via_makerspace_id"),
-        ("inventory.asset_moved_makerspace", "new_makerspace_id"),
-        ("inventory.asset_moved_makerspace", "old_makerspace_id"),
-        ("payment.created", "via_makerspace_id"),
-        ("qr.rebound", "new_makerspace_id"),
-        ("stock_transfer.received", "source_makerspace_id"),
-    )
-)
-AUDIT_META_REFERENCES.update(
-    _reference(
-        S, "makerspaces.MakerspaceArchiveRequest",
-        ("makerspace.archive_request_approved", "archive_request_id"),
-        ("makerspace.archive_request_declined", "archive_request_id"),
-        ("makerspace.archive_request_withdrawn", "archive_request_id"),
-        ("makerspace.archive_requested", "archive_request_id"),
-    )
-)
-AUDIT_META_REFERENCES.update(
-    _reference(
-        S, "payments.ProcessedStripeEvent",
-        ("payment.checkout_expired", "stripe_event_id"),
-        ("payment.double_paid_refund_required", "stripe_event_id"),
-        ("payment.paid_after_terminal", "stripe_event_id"),
-        ("payment.paid_online", "stripe_event_id"),
-    )
-)
-AUDIT_META_REFERENCES.update(
-    _reference(
-        S, "accounts.MemberClaimCode",
-        ("presence.ended_claim_revoked", "claim_session_id"),
-    )
-)
-AUDIT_META_REFERENCES.update(
-    _reference(S, "boxes.QrScanEvent", ("qr.scanned", "scan_id"))
-)
+from .audit_references_meta_snapshots import SNAPSHOT_AUDIT_EDGES
+
+AUDIT_META_REFERENCES.update(SNAPSHOT_AUDIT_EDGES)
 AUDIT_META_REFERENCES.update(PHASE5_AUDIT_EDGES)
 AUDIT_META_REFERENCES.update(MEMBERSHIP_AUDIT_EDGES)
 AUDIT_META_REFERENCES.update(KIOSK_AUDIT_EDGES)
@@ -296,3 +257,31 @@ from .audit_references_meta_7c import LABEL_AUDIT_EDGES
 
 AUDIT_META_REFERENCES.update(LABEL_AUDIT_EDGES)
 AUDIT_META_REFERENCES.update(DEVICE_7D_AUDIT_EDGES)
+
+# Cloud programme: tick, staging, mail-budget and storage-receipt identifiers name
+# deployment-local rows that never travel, so they are kept only as source snapshots.
+AUDIT_META_REFERENCES.update(_reference(S, None, *(
+    ("cloud.delivery_cancelled", "delivery_id"), ("cloud.tick_finished", "tick_id"),
+    ("cloud.tick_started", "tick_id"), ("deployment.staging_available", "stage_id"),
+    ("deployment.staging_created", "stage_id"), ("deployment.staging_deleted", "stage_id"),
+    ("email.acceptance_reconciled", "reservation_id"), ("email.budget_reserved", "reservation_id"),
+    ("email.budget_settled", "reservation_id"), ("notification.email_accepted", "delivery_id"),
+    ("notification.email_accepted", "email_log_id"), ("storage.bucket_binding_migrated", "receipt_id"),
+    ("storage.bucket_handoff_resumed", "receipt_id"), ("storage.legacy_receipt_bound", "receipt_id"),
+)))
+
+from .audit_references_meta_r2_l17 import SETTINGS_AUTHORITY_AUDIT_EDGES  # noqa: E402
+
+AUDIT_META_REFERENCES.update(SETTINGS_AUTHORITY_AUDIT_EDGES)
+
+from .audit_references_meta_r2_l1 import PUBLIC_SURFACE_AUDIT_EDGES  # noqa: E402
+
+AUDIT_META_REFERENCES.update(PUBLIC_SURFACE_AUDIT_EDGES)
+
+from .audit_references_meta_unified_accounts import UNIFIED_ACCOUNT_AUDIT_EDGES  # noqa: E402
+
+AUDIT_META_REFERENCES.update(UNIFIED_ACCOUNT_AUDIT_EDGES)
+
+# Release-2 lanes L5, L15, L10, L12, U-C, L23 and L16 compose in audit_references_meta_r2.py.
+from .audit_references_meta_r2 import lane_edges as _r2_lane_edges  # noqa: E402
+AUDIT_META_REFERENCES.update(_r2_lane_edges())

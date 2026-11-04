@@ -21,6 +21,7 @@ from apps.hardware_requests.exceptions import ErrorSerializer
 from apps.makerspaces.guards import require_module_for_servable
 from apps.makerspaces.lookup import get_public_makerspace
 from apps.bookings.access import require_booking_account
+from .website_visibility import public_spaces as _public_spaces
 
 
 LOOSE_ERROR_SCHEMA = {'type': 'object', 'additionalProperties': {}}
@@ -38,14 +39,6 @@ PUBLIC_BOOKING_SUBMISSION_ERRORS = {
     423: OpenApiResponse(ErrorSerializer, description='Tenant frozen for migration.'),
     503: OpenApiResponse(ErrorSerializer, description='Tenant write gate unavailable.'),
 }
-
-
-def _public_spaces(makerspace):
-    return BookableSpace.objects.filter(
-        makerspace=makerspace,
-        is_public=True,
-        is_active=True,
-    )
 
 
 class PublicBookableSpaceListView(APIView):
@@ -66,7 +59,7 @@ class PublicBookableSpaceListView(APIView):
     def get(self, request, makerspace_slug):
         makerspace = get_public_makerspace(makerspace_slug)
         require_module_for_servable(makerspace, 'bookings')
-        spaces = _public_spaces(makerspace).order_by('name', 'id')
+        spaces = _public_spaces(makerspace).order_by('name', 'id').prefetch_related('photos')
         return Response(PublicBookableSpaceSerializer(spaces, many=True).data)
 
 
@@ -131,6 +124,9 @@ class PublicSpaceAvailabilityView(APIView):
         return Response(PublicSpaceAvailabilitySerializer(payload).data)
 
 
+from .serializers_confirmation_result import BOOKING_SUBMISSION_RESPONSE
+
+
 class PublicBookingSubmissionView(APIView):
     permission_classes = [IsAuthenticated]
     throttle_classes = [ClientTierRateThrottle]
@@ -140,7 +136,7 @@ class PublicBookingSubmissionView(APIView):
         tags=['Public bookings'],
         request=PublicBookingInputSerializer,
         responses={
-            201: PublicBookingResponseSerializer,
+            201: BOOKING_SUBMISSION_RESPONSE,
             **PUBLIC_BOOKING_SUBMISSION_ERRORS,
         },
     )
@@ -169,6 +165,9 @@ class PublicBookingSubmissionView(APIView):
 
         serializer = PublicBookingInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        from apps.payments.pricing.submit_guard import check_submitted_digest  # L15 (A8): 409 price_changed
+        check_submitted_digest(request, makerspace, "bookings", space, {
+            "starts_at": serializer.validated_data.get("starts_at"), "ends_at": serializer.validated_data.get("ends_at")})
         booking = services_bookings.create_booking(
             space,
             member=request.user,
@@ -178,4 +177,5 @@ class PublicBookingSubmissionView(APIView):
         return Response(
             PublicBookingResponseSerializer(booking).data,
             status=status.HTTP_201_CREATED,
+            headers={"Cache-Control": "private, no-store", "Referrer-Policy": "no-referrer"},
         )

@@ -46,25 +46,16 @@ STREAM_ACTIONS = {
 STREAM_MODULES = {
     "events": "events",
     "bookings": "bookings",
-    "maintenance": "maintenance",
+    # Maintenance is the `machines.maintenance` capability since #97 (STREAM_CAPABILITIES).
+    "maintenance": "machines",
     "membership": "membership",
     "devices": "devices",
     # Payments is a core ledger stream: cash-only spaces can edit receipts/reminders.
-    "stock": "procurement",
+    # Stock follows the To-Buy capabilities (STREAM_CAPABILITIES), not a module key.
     "certifications": "machines",
 }
-
-def _stream_module_available(makerspace, stream):
-    key = STREAM_MODULES.get(stream)
-    if key is None:
-        return True
-    try:
-        from apps.makerspaces.platform import module_enabled
-
-        return bool(module_enabled(makerspace, key))
-    except Exception:
-        return True
-
+# A capability stream answers 404 while off; stock follows either To-Buy switch (#97).
+STREAM_CAPABILITIES = {"maintenance": ("machines.maintenance",), "stock": ("inventory.tobuy", "machines.tobuy")}
 
 def _resolve_makerspace(actor, makerspace_id, stream):
     actions = STREAM_ACTIONS.get(stream)
@@ -87,6 +78,9 @@ def _resolve_makerspace(actor, makerspace_id, stream):
     module_key = STREAM_MODULES.get(stream)
     if module_key is not None:
         require_module(makerspace, module_key)
+    if stream in STREAM_CAPABILITIES:
+        from apps.makerspaces.folded_capabilities import require_any_capability
+        require_any_capability(makerspace, STREAM_CAPABILITIES[stream])
     return makerspace
 def email_template_type_scope(actor, makerspace_id, stream):
     """None is unrestricted; a set (including empty) is narrowed type authority.

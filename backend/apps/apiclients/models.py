@@ -88,6 +88,16 @@ class ApiClient(models.Model):
         from django.core.exceptions import ValidationError
 
         from apps.apiclients.origin_validation import validate_exact_origins
+        from apps.apiclients.scope_registry_reads import read_scope_vocabulary
+        from apps.apiclients.scope_grants import validate_grantable_scopes
+
+        if set(self.scopes or ()) & read_scope_vocabulary():
+            if self.client_type != "server" or self.makerspace_id is None:
+                raise ValidationError({"scopes": "Staff read scopes require a tenant-bound server client."})
+            try:
+                validate_grantable_scopes(self.scopes, privileged=True)
+            except ValueError as exc:
+                raise ValidationError({"scopes": str(exc)}) from exc
 
         try:
             self.allowed_origins = validate_exact_origins(self.allowed_origins)

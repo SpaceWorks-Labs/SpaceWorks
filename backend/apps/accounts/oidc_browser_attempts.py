@@ -14,11 +14,13 @@ from django.utils import timezone
 
 from apps.accounts.models import OidcBrowserAttempt
 from apps.accounts.models_oidc import provider_key
+from apps.accounts.models_social import SocialSurface
 from apps.accounts.social_nonces import request_origin
 from apps.audit import services as audit
 from apps.makerspaces.cors import member_origin_is_registered
 from apps.makerspaces.models import MakerspaceMembership
 from apps.makerspaces.servability import servable_queryset
+from apps.accounts.staff_identity import person_q
 
 
 class OidcAttemptRejected(Exception):
@@ -32,9 +34,13 @@ class StartedOidcAttempt:
     nonce: str
 
 
-def start_attempt(request, provider, document, *, redirect_uri, email="", makerspace_slug=""):
+def start_attempt(request, provider, document, *, redirect_uri, email="", makerspace_slug="",
+                  surface=SocialSurface.MEMBER):
+    if surface != SocialSurface.MEMBER:
+        raise OidcAttemptRejected()
     origin = request_origin(request)
-    if not member_origin_is_registered(origin) or not _valid_redirect(redirect_uri, origin):
+    trusted = member_origin_is_registered(origin)
+    if not trusted or not _valid_redirect(redirect_uri, origin):
         raise OidcAttemptRejected()
     state = secrets.token_urlsafe(48)
     nonce = secrets.token_urlsafe(48)
@@ -45,6 +51,7 @@ def start_attempt(request, provider, document, *, redirect_uri, email="", makers
     with transaction.atomic():
         attempt = OidcBrowserAttempt.objects.create(
             provider=provider.provider_key,
+            surface=surface,
             state_digest=_digest("state", state),
             nonce_digest=_digest("nonce", nonce),
             code_verifier=verifier,
@@ -59,7 +66,7 @@ def start_attempt(request, provider, document, *, redirect_uri, email="", makers
             actor,
             "auth.oidc_browser_attempt_started",
             target=attempt,
-            meta={"provider": provider.provider_key, "transition": bool(user_id)},
+            meta={"provider": provider.provider_key, "surface": surface, "transition": bool(user_id)},
         )
     challenge = base64.urlsafe_b64encode(
         hashlib.sha256(verifier.encode()).digest()
@@ -84,7 +91,7 @@ def start_attempt(request, provider, document, *, redirect_uri, email="", makers
     )
 
 
-def consume_attempt(request, *, state, nonce):
+def consume_attempt(request, *, state, nonce, provider=None):
     now = timezone.now()
     failure = None
     resolved = None
@@ -96,9 +103,11 @@ def consume_attempt(request, *, state, nonce):
         )
         valid = bool(
             row
+            and row.surface == SocialSurface.MEMBER
             and row.consumed_at is None
             and row.expires_at > now
             and row.origin == request_origin(request)
+            and (provider is None or row.provider == provider)
             and hmac.compare_digest(row.nonce_digest, _digest("nonce", nonce))
         )
         if row is not None and row.consumed_at is None:
@@ -132,6 +141,7 @@ def _transition_binding(request, *, email, makerspace_slug):
         return None, None
     membership = (
         servable_queryset(MakerspaceMembership.objects.filter(
+            person_q("user__"),
             makerspace__slug=slug,
             status="active",
             user__email__iexact=normalized,

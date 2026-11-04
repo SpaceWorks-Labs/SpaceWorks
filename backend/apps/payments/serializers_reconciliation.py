@@ -6,6 +6,7 @@ from django.utils import timezone
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
+from apps.payments.serializers_l5 import LedgerFlagsSerializer
 from apps.payments.models import ManualSettlement, Payment, Refund
 from apps.payments.subjects import subject_label
 
@@ -60,6 +61,7 @@ class PaymentReconciliationSerializer(serializers.ModelSerializer):
     refunded_amount = serializers.SerializerMethodField()
     refunds = RefundSerializer(many=True, read_only=True)
     settlement = serializers.SerializerMethodField()
+    ledger_flags = serializers.SerializerMethodField()
 
     class Meta:
         model = Payment
@@ -75,10 +77,16 @@ class PaymentReconciliationSerializer(serializers.ModelSerializer):
             "refunded_amount",
             "refunds",
             "settlement",
+            "ledger_flags",
             "created_at",
             "updated_at",
         )
         read_only_fields = fields
+
+    @extend_schema_field(LedgerFlagsSerializer())
+    def get_ledger_flags(self, payment):
+        from apps.payments.payment_rows_l5 import staff_flags
+        return staff_flags(payment, self.context.get("payment_l5"))
 
     def get_due_state(self, payment) -> str:
         from apps.payments.due_dates import due_state

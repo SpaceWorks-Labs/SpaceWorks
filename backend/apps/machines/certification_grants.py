@@ -7,6 +7,7 @@ from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from apps.accounts import rbac
+from apps.accounts.account_kind_guards import require_member_account
 from apps.audit.services import record
 from apps.makerspaces.guards import require_module
 from apps.makerspaces.models import MakerspaceMembership
@@ -22,6 +23,7 @@ def issue_grant(certification_type, membership, *, actor, expires_at=None, notes
     if not access.can_create_machine(actor, row.makerspace_id, row.machine_type):
         raise PermissionDenied()
     membership = rbac.scope_by_makerspace(actor, MakerspaceMembership.objects.select_for_update()).get(pk=membership.pk)
+    require_member_account(membership.user)
     if not row.is_active:
         raise ValidationError("This certification type is inactive.")
     if membership.makerspace_id != row.makerspace_id or membership.status != "active":

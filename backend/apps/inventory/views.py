@@ -106,6 +106,7 @@ class PublicInventoryListView(ListAPIView):
             makerspace.products.select_related("category").filter(
                 is_public=True,
                 is_archived=False,
+                is_consumable=False,
             ),
             relation="makerspace",
         )
@@ -207,6 +208,7 @@ class PublicInventoryDetailView(RetrieveAPIView):
             makerspace.products.select_related("category").filter(
                 is_public=True,
                 is_archived=False,
+                is_consumable=False,
             ),
             relation="makerspace",
         ).order_by("name")

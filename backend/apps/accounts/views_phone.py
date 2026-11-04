@@ -14,11 +14,16 @@ from rest_framework.views import APIView
 
 from apps.accounts import audit_events
 from apps.openapi_errors import errors
+from apps.hardware_requests.exceptions import ErrorSerializer
 from apps.accounts.auth_cookies import set_refresh_cookies
 from apps.accounts.authentication import SpaceWorksJWTAuthentication
 from apps.accounts.serializers import user_payload
+from apps.accounts.serializers_attestation import ATTESTATION_DESCRIPTION
+from apps.accounts.serializers_device import DeviceTokenResponseSerializer
 from apps.accounts.serializers_phone import (
     PhoneConfirmSerializer,
+    PhoneLoginConfirmSerializer,
+    PhoneLoginStartSerializer,
     PhoneStartResponseSerializer,
     PhoneStartSerializer,
     PhoneStatusSerializer,
@@ -65,13 +70,15 @@ class PhoneLoginStartView(APIView):
     # the Refused route policy before this endpoint can mint another credential.
     authentication_classes = [SpaceWorksJWTAuthentication]
     permission_classes = [AllowAny]
+    login_ip_guard = True  # S-C: platform IP rules, automatic blocks, Turnstile
     throttle_classes = [PhoneOtpRequestThrottle, PhoneOtpNumberThrottle]
 
     @extend_schema(
         tags=["Auth"],
         summary="Request a phone sign-in code",
+        description="Archived phone-only accounts receive a restore OTP instead of a login OTP, redeemable at account/restore/phone. Device delivery binds the OTP to an approved attestation challenge and matching ios/android client_platform. Unknown numbers, invalid challenges and cooldowns receive the same acknowledgement.",
         auth=[],
-        request=PhoneStartSerializer,
+        request=PhoneLoginStartSerializer,
         responses={
             200: PhoneStartResponseSerializer,
             400: OpenApiResponse(description="Invalid request."),
@@ -82,10 +89,17 @@ class PhoneLoginStartView(APIView):
     def post(self, request):
         if not _phone_login_available():
             return Response(SMS_UNAVAILABLE, status=status.HTTP_404_NOT_FOUND)
-        serializer = PhoneStartSerializer(data=request.data)
+        serializer = PhoneLoginStartSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         try:
-            start_login(serializer.validated_data["phone"])
+            data = serializer.validated_data
+            if data["delivery"] == "device":
+                start_login(
+                    data["phone"], delivery="device",
+                    client_platform=data["client_platform"], challenge=data.get("challenge"),
+                )
+            else:
+                start_login(data["phone"])
         except SmsUnavailable:
             return Response(SMS_UNAVAILABLE, status=status.HTTP_404_NOT_FOUND)
         # Always the same body, always 200 -- whether the number is unknown, malformed,
@@ -98,20 +112,24 @@ class PhoneLoginConfirmView(APIView):
 
     authentication_classes = [SpaceWorksJWTAuthentication]
     permission_classes = [AllowAny]
+    login_ip_guard = True  # S-C: platform IP rules, automatic blocks, Turnstile
     throttle_classes = [PhoneLoginConfirmThrottle, PhoneConfirmNumberThrottle]
 
     @extend_schema(
         tags=["Auth"],
         summary="Sign in with a phone code",
+        description="Device delivery creates a new member-only grant, or returns an MFA challenge when required, without setting cookies. Superadmins receive device_superadmin_not_supported (403). Rejected or consumed device challenges return phone_device_restart_required (409). " + ATTESTATION_DESCRIPTION,
         auth=[],
-        request=PhoneConfirmSerializer,
+        request=PhoneLoginConfirmSerializer,
         responses={
-            200: PolymorphicProxySerializer(component_name="PhoneLoginResult", serializers=[MFACompletedSerializer, MFAChallengeResponseSerializer], resource_type_field_name=None),
+            200: PolymorphicProxySerializer(component_name="PhoneLoginResult", serializers=[MFACompletedSerializer, MFAChallengeResponseSerializer, DeviceTokenResponseSerializer], resource_type_field_name=None),
             401: OpenApiResponse(description="The first-factor account is no longer available."),
             400: OpenApiResponse(description="Invalid or expired code."),
+            403: OpenApiResponse(ErrorSerializer, description="device_superadmin_not_supported: superadmins cannot create grants."),
             404: OpenApiResponse(description="Phone sign-in is not configured."),
+            409: OpenApiResponse(ErrorSerializer, description="phone_device_restart_required: restart with new one-time inputs."),
             429: OpenApiResponse(description="Request throttled."),
-            503: OpenApiResponse(description="Authentication write boundary unavailable."),
+            503: OpenApiResponse(ErrorSerializer, description="attestation_unavailable or authentication write boundary unavailable."),
         },
     )
     def post(self, request):
@@ -119,9 +137,15 @@ class PhoneLoginConfirmView(APIView):
         # switched off must not still mint a session after it.
         if not _phone_login_available():
             return Response(SMS_UNAVAILABLE, status=status.HTTP_404_NOT_FOUND)
-        serializer = PhoneConfirmSerializer(data=request.data)
+        serializer = PhoneLoginConfirmSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
+        if data["delivery"] == "device":
+            from apps.accounts.services_phone_device import complete_phone_device_login
+
+            response = Response(complete_phone_device_login(request, data))
+            response["Cache-Control"] = "no-store"
+            return response
         user = confirm_login(data["phone"], data["code"])
         from apps.backup.recovery import assert_token_issuance_allowed
 
@@ -149,7 +173,7 @@ class PhoneLoginConfirmView(APIView):
         response = Response(
             {
                 "access": str(refresh.access_token),
-                "user": user_payload(user, request=request),
+                "user": user_payload(user, request=request, session_authority="member"),
             }
         )
         set_refresh_cookies(response, str(refresh), request)

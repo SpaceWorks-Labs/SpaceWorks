@@ -15,6 +15,11 @@ class HardwareRequest(ScopedPiiModelMixin, models.Model):
         PARTIALLY_RETURNED = "partially_returned", "Partially Returned"
         RETURNED = "returned", "Returned"
         CLOSED_WITH_ISSUE = "closed_with_issue", "Closed with Issue"
+        # Terminal exits from pending/accepted (inventory D1, #77): the borrower or staff
+        # withdrew it, or an accepted request was not collected in time. Both release any
+        # reservation through the availability module.
+        CANCELLED = "cancelled", "Cancelled"
+        EXPIRED = "expired", "Expired"
 
     makerspace = models.ForeignKey(
         "makerspaces.Makerspace",
@@ -56,6 +61,10 @@ class HardwareRequest(ScopedPiiModelMixin, models.Model):
         related_name="+",
     )
     accepted_at = models.DateTimeField(null=True)
+    # The pickup window (loans.reservations / loans.pickup_windows): when the borrower
+    # wants to collect, and the deadline after which an accepted request expires.
+    pickup_from = models.DateTimeField(null=True, blank=True)
+    pickup_until = models.DateTimeField(null=True, blank=True)
     assigned_box = models.ForeignKey(
         "boxes.Box",
         null=True,
@@ -117,6 +126,11 @@ class HardwareRequest(ScopedPiiModelMixin, models.Model):
                     return_reminder_sent_at__isnull=True,
                     status__in=["issued", "partially_returned"],
                 ),
+            ),
+            models.Index(
+                fields=["pickup_until", "id"],
+                name="hwreq_pickup_expiry_idx",
+                condition=models.Q(status="accepted", pickup_until__isnull=False),
             ),
             models.Index(
                 fields=["makerspace", "status"],
@@ -186,3 +200,4 @@ from apps.hardware_requests.self_checkout_models import (  # noqa: E402
     PublicToolLoan,
 )
 from .models_replay import ReplayCommand
+from .models_loans import LoanReservationPolicy, LoanWaitlistEntry  # noqa: E402,F401

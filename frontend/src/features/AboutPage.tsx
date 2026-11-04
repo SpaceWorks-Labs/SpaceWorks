@@ -1,73 +1,44 @@
-import { Link } from "react-router-dom";
-
-import { SpaceWorksHomeLink, SpaceWorksLogo } from "../components/SpaceWorksLogo";
-import { SiteFooter } from "../components/SiteFooter";
+import { PublicLayout } from "../components/layouts";
 import { ThemeToggle } from "../components/ThemeToggle";
+import { ActionControl, ListRow } from "../components/ui";
+import { LICENSE_URL } from "./inventory/PublicPageChrome";
+import { WorkshopLogbook } from "../components/delight/WorkshopLogbook";
+import { MakerModePanel, MakerModeToggle, useMakerMode, useShellMakerMode } from "../components/delight/EasterEggs";
+
+function LocalMakerMode() {
+  const mode = useMakerMode("/about");
+  return <><MakerModeToggle mode={mode} /><MakerModePanel mode={mode} version="" /></>;
+}
+function AboutMakerMode() {
+  const mode = useShellMakerMode();
+  return mode ? <MakerModeToggle mode={mode} /> : <LocalMakerMode />;
+}
+
+/** About opens with a Citron field (brand p.2): ink statement type, teal caps eyebrow, teal primary. */
+function AboutHero() {
+  return <section aria-labelledby="about-title" className="sw-field-citron mb-8 grid gap-4 rounded-[20px] px-5 py-7 md:mb-10 md:gap-5 md:rounded-[28px] md:px-10 md:py-10">
+    <p className="sw-field-eyebrow">About</p>
+    <h1 id="about-title" className="sw-field-heading">Open-source makerspace management</h1>
+    <p className="sw-hero-lede">Tools to run a community workshop, with care for every handover.</p>
+    <div><ActionControl action={{ label: "Browse spaces", href: "/" }} primary /></div>
+  </section>;
+}
 
 export function AboutPage() {
-  return (
-    <main className="desk-shell flex min-h-screen flex-col">
-      <header className="border-b border-line bg-panel">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-5 py-4">
-          <SpaceWorksHomeLink className="flex min-w-0 items-center gap-3 text-ink">
-            <SpaceWorksLogo className="shrink-0" size={36} />
-            <div className="min-w-0">
-              <p className="text-sm font-semibold">Space Works</p>
-              <p className="eyebrow">Shared equipment portal</p>
-            </div>
-          </SpaceWorksHomeLink>
-          <div className="flex flex-wrap items-center gap-2">
-            <ThemeToggle />
-            <Link className="desk-button" to="/admin">
-              Staff login
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      <section className="mx-auto w-full max-w-3xl flex-1 px-5 py-10">
-        <p className="eyebrow text-secondary-ink">About</p>
-        <h1 className="title-page mt-3">
-          Open Source Makerspace Manager
-        </h1>
-        <div className="mt-5 space-y-4 text-sm leading-6 text-muted">
-          <p>
-            Space Works is a platform for running community makerspaces &mdash;
-            public equipment catalogs, hardware lending with traceable handovers,
-            3D-print request queues, and multi-makerspace operations in one place.
-          </p>
-          <p>
-            Each makerspace controls its own inventory, branding, staff, and
-            notifications. Visitors browse catalogs and request equipment; staff
-            handle approvals, issue and return with evidence, and reporting.
-          </p>
-          <p className="eyebrow normal-case leading-6">
-            Space Works is free and open source software, licensed under the{" "}
-            <a
-              className="underline hover:text-ink"
-              href="https://github.com/SpaceWorks-HQ/SpaceWorks/blob/main/LICENSE"
-              target="_blank"
-              rel="noreferrer"
-            >
-              GNU Affero General Public License v3
-            </a>
-            . Free to use, study, share, and modify under the terms of the AGPL.
-          </p>
-        </div>
-
-        <div className="mt-8 grid gap-3 sm:grid-cols-2">
-          <Link className="desk-panel p-4 transition hover:border-secondary" to="/">
-            <h2 className="title-section">Browse makerspaces &rarr;</h2>
-            <p className="eyebrow mt-1 normal-case">View public equipment catalogs.</p>
-          </Link>
-          <Link className="desk-panel p-4 transition hover:border-secondary" to="/admin">
-            <h2 className="title-section">Staff login &rarr;</h2>
-            <p className="eyebrow mt-1 normal-case">Manage your makerspace.</p>
-          </Link>
-        </div>
-      </section>
-
-      <SiteFooter />
-    </main>
-  );
+  return <PublicLayout makerspace={{ name: "Space Works", slug: "", homeHref: "/" }} chrome="canvas"
+    nav={[{ label: "Browse spaces", href: "/" }]} headerAction={{ label: "Sign in", href: "/member" }}
+    liveStatus={<ThemeToggle variant="icon" />} width="narrow" state={{ status: "ready" }} hero={<AboutHero />}
+    footer={{ credit: "Space Works · Made for shared workshops", links: [{ label: "License", href: LICENSE_URL, external: true }, { label: "Staff sign-in", href: "/admin" }] }}>
+    <div className="space-y-5 text-base leading-7 text-muted">
+      <p>Space Works brings public equipment catalogues, traceable hardware loans, 3D-print requests, and makerspace operations together.</p>
+      <p>Each space controls its inventory, branding, team, and notifications. Members browse and request tools; staff review requests and record every issue and return with evidence.</p>
+      <p>Free and open source under the <a className="underline decoration-line underline-offset-4 hover:text-ink focus-visible:outline-2 focus-visible:outline-focus" href="https://github.com/SpaceWorks-Labs/SpaceWorks/blob/main/LICENSE" target="_blank" rel="noreferrer">GNU Affero General Public License v3 ↗</a>. Use, study, share, and modify it under the licence terms.</p>
+    </div>
+    <WorkshopLogbook />
+    <div className="mt-5"><AboutMakerMode /></div>
+    <div className="mt-8 grid gap-4">
+      <ListRow title="Browse spaces" meta="Find a community workshop and explore its catalogue." href="/" right={<span aria-hidden="true">→</span>} />
+      <ListRow title="Staff sign-in" meta="Open the console for your makerspace." href="/admin" right={<span aria-hidden="true">→</span>} />
+    </div>
+  </PublicLayout>;
 }

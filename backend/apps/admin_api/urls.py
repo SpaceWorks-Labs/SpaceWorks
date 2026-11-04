@@ -8,24 +8,32 @@ from .urls_machine_service import urlpatterns as machine_service_urlpatterns
 from .urls_machines import urlpatterns as machine_urlpatterns
 from .urls_makerspaces import urlpatterns as makerspace_urlpatterns
 from .urls_membership_plans import urlpatterns as membership_plan_urlpatterns
+from .urls_membership_lifecycle import urlpatterns as membership_lifecycle_urlpatterns
 from .urls_memberships import management_urlpatterns, roster_urlpatterns
 from .urls_notifications import urlpatterns as notification_urlpatterns
 from .urls_platform import settings_urlpatterns, urlpatterns as platform_urlpatterns
 from .urls_staff import urlpatterns as staff_urlpatterns
+from .urls_staff_roles import urlpatterns as staff_role_urlpatterns
+from .urls_security import urlpatterns as space_security_urlpatterns
+from .urls_space_restore import urlpatterns as space_restore_urlpatterns
 from .urls_utils import _separable as _separable
 
 
 from apps.accounts.urls_security import admin_urlpatterns as security_urlpatterns
 
 urlpatterns = [
+    *staff_role_urlpatterns,
     *security_urlpatterns,
+    *space_security_urlpatterns,
     *platform_urlpatterns,
+    *space_restore_urlpatterns,
     *roster_urlpatterns,
     *machine_service_urlpatterns,
     *management_urlpatterns,
     *machine_urlpatterns,
     *certification_urlpatterns,
     *membership_plan_urlpatterns,
+    *membership_lifecycle_urlpatterns,
     *settings_urlpatterns,
     *makerspace_urlpatterns,
     *inventory_urlpatterns,

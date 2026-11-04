@@ -10,13 +10,13 @@ from apps.admin_api.recipient_rule_common import (
     rows_for,
 )
 from apps.admin_api.recipient_rule_merge import SHARED_KINDS, owned_links
-from apps.integrations import notification_catalog, recipients as recipient_selection
+from apps.integrations import notification_catalog, recipients as notification_recipients
 from apps.integrations.notification_enums import NotificationFeature
 from apps.integrations.models_recipients import NotificationRecipientKind
 from apps.machines.models import Machine, MachineType
-from apps.makerspaces.models import MakerspaceMembership, MakerspaceRole
+from apps.makerspaces.models import MakerspaceRole
 
-SELECTABLE = sorted(recipient_selection.SELECTABLE_FEATURES)
+SELECTABLE = sorted(notification_recipients.SELECTABLE_FEATURES)
 
 
 def serialize_rule(row):
@@ -95,7 +95,7 @@ def _features(makerspace, delegated):
             "events": list(notification_catalog.FEATURE_EVENTS.get(feature, ())),
         }
         for feature in offered
-        if recipient_selection.feature_available(makerspace, feature)
+        if notification_recipients.category_available(makerspace, feature)
     ]
 
 
@@ -124,23 +124,13 @@ def _manageable_identity(makerspace, actor):
     (`RecipientMachineTypeScope` is `(recipient, machine_type)` and nothing more). Pinned
     by `test_delegate_may_delete_a_manager_special_row_inside_their_reach`.
     """
-    membership = (
-        MakerspaceMembership.objects.filter(
-            makerspace=makerspace, user=actor, status="active"
-        )
-        .select_related("assigned_role")
-        .first()
-    )
-    role_id = membership.assigned_role_id if membership else None
-    member_ids = (
-        {row.user_id for row in memberships_for(makerspace, assigned_role_id=role_id)}
-        if role_id
-        else set()
-    )
+    from .recipient_rule_identities import delegated_identities
+
+    role_ids, member_ids = delegated_identities(makerspace, actor)
 
     def manageable(row):
         if row.kind == NotificationRecipientKind.ROLE:
-            return role_id is not None and row.role_id == role_id
+            return row.role_id in role_ids
         if row.kind == NotificationRecipientKind.USER:
             return row.user_id in member_ids
         # requester / members: no identity to gate. See the docstring.
@@ -151,27 +141,11 @@ def _manageable_identity(makerspace, actor):
 
 def _identity_options(makerspace, actor, delegated):
     if delegated:
-        membership = (
-            MakerspaceMembership.objects.filter(
-                makerspace=makerspace, user=actor, status="active"
-            )
-            .select_related("assigned_role")
-            .first()
-        )
-        role_ids = (
-            [membership.assigned_role_id]
-            if membership and membership.assigned_role_id
-            else []
-        )
+        from .recipient_rule_identities import delegated_identities
+
+        role_ids, user_ids = delegated_identities(makerspace, actor)
         roles = MakerspaceRole.objects.filter(pk__in=role_ids, makerspace=makerspace)
-        members = (
-            memberships_for(
-                makerspace,
-                assigned_role_id=membership.assigned_role_id if membership else None,
-            )
-            if role_ids
-            else []
-        )
+        members = memberships_for(makerspace).filter(user_id__in=user_ids)
     else:
         roles = MakerspaceRole.objects.filter(makerspace=makerspace).order_by("name")
         members = memberships_for(makerspace)
@@ -242,4 +216,3 @@ def payload(makerspace, actor, *, delegated, reach=None):
         ],
         "scope_options": _scope_options(makerspace, reach),
     }
-

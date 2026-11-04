@@ -16,6 +16,10 @@ from apps.makerspaces.models import Makerspace, MakerspaceMembership, Membership
 
 
 def revoke_membership(actor, membership, reason=""):
+    # One account per person: this is the COMMUNITY revocation (cards, terms, presence,
+    # admission cleanup). A staff-track row is revoked by the staff-roles service.
+    if membership.track == MakerspaceMembership.Track.STAFF:
+        raise PermissionDenied("Revoke staff roles from the staff roles screen.")
     with transaction.atomic():
         makerspace = Makerspace.objects.select_for_update().get(pk=membership.makerspace_id)
         membership = MakerspaceMembership.objects.select_for_update().get(pk=membership.pk)
@@ -41,6 +45,11 @@ def _revoke_locked(actor, membership, makerspace, reason, *, self_leave=False):
     membership.can_refer = False
     membership.can_verify = False
     membership.save()
+    from apps.integrations.models_push import PushDevice
+
+    PushDevice.objects.filter(user_id=membership.user_id, makerspace=makerspace, active=True).update(
+        active=False, invalidated_at=timezone.now(),
+    )
     if changed:
         audit.record(actor, "membership.left" if self_leave else "membership.revoked",
                      makerspace=makerspace, target=membership,

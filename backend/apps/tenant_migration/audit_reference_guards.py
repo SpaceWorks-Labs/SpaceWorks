@@ -136,7 +136,12 @@ def _audit_record_imports(tree):
                 for item in node.names
                 if item.name == "services"
             )
-        elif node.module == "apps.audit.services":
+        elif node.module in {
+            "apps.audit.services",
+            # Historical migration writer has the same action/meta positions and
+            # must pass the same portable-reference and presentation drift checks.
+            "apps.makerspaces.migration_support.fixed_roles_audit",
+        }:
             direct_names.update(
                 item.asname or item.name for item in node.names if item.name == "record"
             )

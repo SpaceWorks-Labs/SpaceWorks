@@ -2,8 +2,10 @@
 
 
 def collect_private_object_keys(makerspace, *, include_coordination=True):
+    from .models_public_pages import MakerspacePublicPageAsset
+    from apps.bookings.models_website import BookingResourcePageAsset
     from apps.evidence.models import EvidencePhoto
-    from apps.events.models import EventAttendanceCertificate
+    from apps.events.models import EventAttendanceCertificate, EventCertificateArtwork, EventPageAsset
     from apps.maintenance.models import MaintenanceLogDocument
     from apps.machines.models import MachineDocument
     from apps.machines.service_lifecycle import collect_private_object_keys as collect_service
@@ -18,8 +20,11 @@ def collect_private_object_keys(makerspace, *, include_coordination=True):
             keys.append(str(key))
 
     for model, lookup in (
+        (EventPageAsset, {"page__makerspace": makerspace}),
+        (MakerspacePublicPageAsset, {"page__makerspace": makerspace}),
+        (BookingResourcePageAsset, {"page__space__makerspace": makerspace}),
         (EvidencePhoto, {"makerspace": makerspace}),
-        (EventAttendanceCertificate, {"registration__event__makerspace": makerspace}),
+        (EventAttendanceCertificate, {"event__makerspace": makerspace}),
         (WarrantyDocument, {"warranty__makerspace": makerspace}),
         (ToBuyReceipt, {"to_buy_item__makerspace": makerspace}),
         (MaintenanceLogDocument, {"log__machine__makerspace": makerspace}),
@@ -27,9 +32,33 @@ def collect_private_object_keys(makerspace, *, include_coordination=True):
     ):
         for key in model.objects.filter(**lookup).values_list("object_key", flat=True):
             add(key)
+            if model is EvidencePhoto and include_coordination and key:
+                from apps.evidence.storage import staging_key
+                add(staging_key(key))
     collect_service(makerspace, add)
+    from .storage_keys_events_programme import collect_programme_keys
+    collect_programme_keys(makerspace, add, include_coordination=include_coordination)
+    from apps.payments.models import PaymentDocument
+    for key in PaymentDocument.objects.filter(makerspace=makerspace).values_list("branding_logo_key", flat=True):
+        add(key)
+    artwork = EventCertificateArtwork.objects.filter(event__makerspace=makerspace)
+    if not include_coordination:
+        artwork = artwork.filter(promoted_at__isnull=False)
+    for key in artwork.values_list("object_key", flat=True):
+        add(key)
+        if include_coordination:
+            add(f"staging/{key}")
     if include_coordination:
         _collect_private_coordination_keys(makerspace, add)
+        from django.conf import settings
+        if settings.SPACEWORKS_DEPLOYMENT_MODE == "managed" or getattr(settings, "STORAGE_CAPABILITIES_FILE", ""):
+            from apps.storage_capabilities.presigning import public_image_staging
+            for key in collect_public_image_keys(makerspace, include_coordination=False):
+                add(public_image_staging(key, private_bucket=settings.AWS_STORAGE_BUCKET_NAME).key)
+    else:
+        # Migration capture/verification only; purge keeps its locator-driven deletion.
+        from .storage_keys_reimbursements import collect_portable_keys
+        collect_portable_keys(makerspace, add)
     return keys
 
 
@@ -55,6 +84,8 @@ def collect_public_image_keys(makerspace, *, include_coordination=True):
             profile__membership__makerspace=makerspace
         ).values_list("image_key", flat=True)
     )
+    from apps.bookings.purge_p2 import photo_keys
+    keys.extend(photo_keys(makerspace))
     if include_coordination:
         keys.extend(_public_coordination_keys(makerspace))
     return [str(key) for key in dict.fromkeys(keys) if key]
@@ -101,6 +132,7 @@ def _collect_private_coordination_keys(makerspace, add):
 
 
 def _public_coordination_keys(makerspace):
+    from apps.accounts.models_account_purge import AccountPurgeObject
     from apps.backup.models import RestoreRollbackObject
     from apps.tenant_migration.models import TenantImportObject
 
@@ -116,4 +148,8 @@ def _public_coordination_keys(makerspace):
             bucket_kind=TenantImportObject.BucketKind.PUBLIC_IMAGE,
         ).exclude(target_key="").values_list("target_key", flat=True)
     )
+    # Profiles may already be gone while durable account image deletion retries.
+    # Break-glass tenant purge must still collect those source-only keys.
+    keys.extend(AccountPurgeObject.objects.filter(makerspace=makerspace, deleted_at__isnull=True)
+                .values_list("object_key", flat=True))
     return keys

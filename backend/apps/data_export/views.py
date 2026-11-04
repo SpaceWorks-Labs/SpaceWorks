@@ -1,3 +1,4 @@
+from apps.operations.durable_dispatch import dispatch
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -70,7 +71,7 @@ class DataExportListCreateView(APIView):
         serializer = DataExportCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         job = services.create_export_job(request.user, makerspace)
-        run_data_export_task.delay(str(job.pk))
+        dispatch(run_data_export_task, str(job.pk))
         job.refresh_from_db()
         return Response(DataExportJobSerializer(job).data, status=status.HTTP_201_CREATED)
 

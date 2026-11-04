@@ -1,3 +1,4 @@
+from apps.storage_clients import s3_client
 import boto3
 from botocore.client import Config
 from botocore.exceptions import BotoCoreError, ClientError
@@ -8,7 +9,7 @@ from apps.evidence.storage import StorageUnavailable
 
 
 def _client():
-    return boto3.client(
+    return s3_client(
         "s3",
         endpoint_url=settings.AWS_S3_ENDPOINT_URL,
         aws_access_key_id=settings.AWS_ACCESS_KEY_ID,

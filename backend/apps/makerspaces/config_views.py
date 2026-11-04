@@ -7,6 +7,8 @@ from rest_framework.views import APIView
 
 from apps.integrations.email import email_enabled
 from apps.openapi_errors import errors
+from apps.accounts.services_device_tokens import mobile_grant_creation_enabled
+from apps.makerspaces.config_native import NativeConfigSerializer, native_config
 
 
 class PublicConfigSerializer(serializers.Serializer):
@@ -17,6 +19,14 @@ class PublicConfigSerializer(serializers.Serializer):
     password_login = serializers.DictField(required=False)
     self_registration = serializers.DictField(required=False)
     member_accounts = serializers.DictField(required=False)
+    hosting_requests = serializers.DictField(required=False)
+    passkeys_enabled = serializers.BooleanField(
+        help_text="Passkey sign-in and registration are offered (the platform switch; a person's staff spaces "
+                  "may still turn them off for that person). Passkeys are never required.")
+    turnstile_site_key = serializers.CharField(
+        required=False, help_text="Cloudflare Turnstile site key; present only when Turnstile is configured. "
+                                  "Show the widget when a sign-in answers captcha_required.")
+    native = NativeConfigSerializer(required=False)
 
 
 class PublicConfigView(APIView):
@@ -27,18 +37,22 @@ class PublicConfigView(APIView):
     @extend_schema(
         tags=["Platform"],
         summary="Return frontend-safe platform configuration",
+        description="Includes native minimum app versions and public provider settings only while the mobile module permits new grants.",
         responses={200: PublicConfigSerializer, **errors(400, 503)},
     )
     def get(self, request, *args, **kwargs):
+        from apps.accounts.login_methods import passkeys_enabled
         payload = {
             "email_enabled": email_enabled(),
             "public_image_max_bytes": settings.PUBLIC_IMAGE_MAX_BYTES,
+            "passkeys_enabled": passkeys_enabled(),
         }
         from apps.accounts.login_methods import (
             password_login_enabled,
             phone_login_enabled,
             self_registration_enabled,
             social_login_enabled,
+            provider_login_enabled,
         )
         from apps.accounts.member_identity import member_accounts_enabled
 
@@ -51,12 +65,17 @@ class PublicConfigView(APIView):
         # screen must not render a provider whose endpoint 404s.
         if social_login_enabled():
             social = PlatformSocialAuthSettings.objects.filter(pk=1).first()
-            if social and social.google_web_client_id:
+            from apps.accounts.member_identity import member_login_allowed
+            from apps.accounts.social_lockout import provider_configured
+
+            if provider_configured(social, "github") and member_login_allowed("github"):
+                configured["github"] = True
+            if provider_login_enabled("google") and social and social.google_web_client_id:
                 configured["google"] = {
                     "enabled": True,
                     "web_client_id": social.google_web_client_id,
                 }
-            if social and social.apple_service_id:
+            if provider_login_enabled("apple") and social and social.apple_service_id:
                 configured["apple"] = {
                     "enabled": True,
                     "service_id": social.apple_service_id,
@@ -104,4 +123,16 @@ class PublicConfigView(APIView):
             # built-in providers because the STAFF login screen reads the same endpoint;
             # what stops a member-surface login is the check in `SocialLoginView`.
             payload["member_accounts"] = {"enabled": False}
+        # Present only on a managed platform that can mail a confirmation link, so
+        # every other deployment's payload stays byte-for-byte unchanged.
+        from apps.hosting_requests.availability import public_available
+
+        if public_available():
+            payload["hosting_requests"] = {"enabled": True}
+        from apps.accounts.turnstile import configured as turnstile_configured
+
+        if turnstile_configured():  # omitted until both keys are set, like social_auth
+            payload["turnstile_site_key"] = settings.TURNSTILE_SITE_KEY
+        if mobile_grant_creation_enabled():
+            payload["native"] = native_config()
         return Response(payload)

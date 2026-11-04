@@ -8,8 +8,12 @@ import {
   validateCustomAnswers,
   type CustomAnswers,
 } from "../forms/customFormTypes";
+import { BookingConfirmation } from "./BookingConfirmation";
 import { AvailabilityCalendar } from "./AvailabilityCalendar";
 import { useSubmitPublicBooking, type PublicBookableSpace } from "./publicBookingsApi";
+import { PricePreview } from "../payments/PricePreview";
+import { isPriceChanged, PriceChangedNotice } from "../payments/PriceChangedNotice";
+import { isoTime } from "../payments/usePriceQuote";
 
 type StandardErrors = Partial<Record<"starts_at" | "ends_at", string>>;
 
@@ -34,14 +38,16 @@ function failureMessage(error: StructuredApiError | null) {
   return error.detail ?? "The booking service is unavailable. Please try again.";
 }
 
-export function PublicBookingForm({ makerspaceSlug, space }: {
+export function PublicBookingForm({ makerspaceSlug, space, showCalendar = true }: {
   makerspaceSlug: string;
   space: PublicBookableSpace;
+  showCalendar?: boolean;
 }) {
   const [startsAt, setStartsAt] = useState("");
   const [endsAt, setEndsAt] = useState("");
   const [answers, setAnswers] = useState<CustomAnswers>({});
   const [website, setWebsite] = useState("");
+  const [quoteDigest, setQuoteDigest] = useState("");
   const [standardErrors, setStandardErrors] = useState<StandardErrors>({});
   const [answerErrors, setAnswerErrors] = useState<Record<string, string>>({});
   const successRef = useRef<HTMLDivElement>(null);
@@ -56,11 +62,12 @@ export function PublicBookingForm({ makerspaceSlug, space }: {
   if (booking.data) {
     const pending = booking.data.status === "pending";
     return (
-      <div ref={successRef} className={`rounded-lg border ${pending ? "border-warn bg-warn/15" : "border-success bg-success/15"} p-4 outline-none`} role="status" tabIndex={-1}>
+      <div ref={successRef} className={`rounded-lg border ${pending ? "border-warn bg-warn-soft" : "border-success bg-success-soft"} p-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus`} role="status" tabIndex={-1}>
         <h3 className="title-section">{pending ? "Booking request received" : "Space booked"}</h3>
         <p className="mt-1 text-sm text-muted">
           {pending ? "Staff must approve this request before the slot is confirmed." : "Your selected slot is confirmed and booked."}
         </p>
+        {booking.data.public_token && booking.data.confirmation_available ? <BookingConfirmation slug={makerspaceSlug} token={booking.data.public_token} /> : null}
       </div>
     );
   }
@@ -83,28 +90,33 @@ export function PublicBookingForm({ makerspaceSlug, space }: {
       ends_at: new Date(endsAt).toISOString(),
       custom_answers: Object.keys(answers).length ? answers : null,
       website,
+      ...(quoteDigest ? { quote_digest: quoteDigest } : {}),
     });
   };
   const errorFor = (field: keyof StandardErrors) => standardErrors[field] || apiFieldError(apiError, field);
 
   return (
     <div className="grid gap-4">
-      <AvailabilityCalendar makerspaceSlug={makerspaceSlug} publicToken={space.public_token} />
-      <form className="grid gap-4 rounded-lg border border-secondary bg-bg p-4" onSubmit={submit} noValidate>
+      {showCalendar ? <AvailabilityCalendar makerspaceSlug={makerspaceSlug} publicToken={space.public_token} /> : null}
+      <form className="@container grid min-w-0 gap-4 rounded-lg border border-brand bg-bg p-4" onSubmit={submit} noValidate>
         <div>
           <h3 className="title-section">Request this space</h3>
-          <p className="eyebrow mt-1">Times are shown in your device timezone.</p>
+          <p className="mt-1 text-sm text-muted">Times are shown in your device timezone.</p>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="Starts" error={errorFor("starts_at")}><input className="desk-input" type="datetime-local" value={startsAt} onChange={(event) => setStartsAt(event.target.value)} required /></Field>
-          <Field label="Ends" error={errorFor("ends_at")}><input className="desk-input" type="datetime-local" value={endsAt} onChange={(event) => setEndsAt(event.target.value)} required /></Field>
+        {/* Sized by the form, not the viewport: in the narrow desktop action card two
+            datetime pickers side by side would each be too cramped to read. */}
+        <div className="grid gap-3 @lg:grid-cols-2">
+          <Field label="Starts" error={errorFor("starts_at")}><input className="desk-input w-full min-w-0" type="datetime-local" value={startsAt} onChange={(event) => setStartsAt(event.target.value)} required /></Field>
+          <Field label="Ends" error={errorFor("ends_at")}><input className="desk-input w-full min-w-0" type="datetime-local" value={endsAt} onChange={(event) => setEndsAt(event.target.value)} required /></Field>
         </div>
         <CustomFormFields schema={space.custom_form} answers={answers} onChange={setAnswers} errors={{ ...answerErrors, ...serverAnswerErrors }} disabled={booking.isPending} />
         <label className="absolute left-[-10000px] top-auto h-px w-px overflow-hidden" aria-hidden="true">Website
           <input name="website" tabIndex={-1} autoComplete="off" value={website} onChange={(event) => setWebsite(event.target.value)} />
         </label>
-        {booking.error ? <p className="text-sm text-danger" role="alert">{failureMessage(apiError)}</p> : null}
-        <button className="desk-button-secondary" type="submit" disabled={booking.isPending}>
+        <PricePreview makerspaceSlug={makerspaceSlug} request={{ domain: "bookings", space_token: space.public_token, starts_at: isoTime(startsAt), ends_at: isoTime(endsAt) }} onDigest={setQuoteDigest} />
+        {isPriceChanged(booking.error) ? <PriceChangedNotice makerspaceSlug={makerspaceSlug} error={booking.error} />
+          : booking.error ? <p className="text-sm text-danger" role="alert">{failureMessage(apiError)}</p> : null}
+        <button className="desk-button-brand" type="submit" disabled={booking.isPending}>
           {booking.isPending ? "Submitting..." : space.approval_mode === "approve" ? "Submit booking request" : "Book this slot"}
         </button>
       </form>

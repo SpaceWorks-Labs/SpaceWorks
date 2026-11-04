@@ -1,6 +1,7 @@
+import { useEffect, useState } from "react";
 import { ImageUploader } from "../../staff/ImageUploader";
 import { memberRequest } from "../../../lib/api";
-import { profileToneForIdentity } from "./helpers";
+import { profileToneForIdentity, tagsToText, textToTags } from "./helpers";
 import { type ProjectDraft } from "./types";
 
 export function ProjectEditor({
@@ -18,6 +19,15 @@ export function ProjectEditor({
   onRemove: () => void;
   onImageChanged: () => void;
 }) {
+  const tags = project.tags ?? [];
+  // Typed text is kept as-is so a trailing comma survives; the parsed list is what saves.
+  const [tagsText, setTagsText] = useState(() => tagsToText(tags));
+  const tagsKey = JSON.stringify(tags);
+  // Re-sync only when the saved list changes underneath (discard, reload), not on every keystroke.
+  useEffect(() => {
+    const next = JSON.parse(tagsKey) as string[];
+    setTagsText(current => (JSON.stringify(textToTags(current)) === tagsKey ? current : tagsToText(next)));
+  }, [tagsKey]);
   return (
     <div className={`rounded-lg border ${profileToneForIdentity(project.id)} p-3`}>
       <input
@@ -27,6 +37,14 @@ export function ProjectEditor({
         value={project.title}
         onChange={(event) => onChange({ ...project, title: event.target.value })}
       />
+      <input
+        className="desk-input mt-2 w-full"
+        placeholder="Subtitle, e.g. FPGA design for DVCon"
+        aria-label="Project subtitle"
+        maxLength={200}
+        value={project.subtitle ?? ""}
+        onChange={(event) => onChange({ ...project, subtitle: event.target.value })}
+      />
       <textarea
         className="desk-input mt-2 w-full"
         rows={2}
@@ -35,6 +53,22 @@ export function ProjectEditor({
         value={project.description}
         onChange={(event) => onChange({ ...project, description: event.target.value })}
       />
+      <input
+        className="desk-input mt-2 w-full"
+        placeholder="Tags, comma separated"
+        aria-label="Project tags"
+        value={tagsText}
+        onChange={(event) => { setTagsText(event.target.value); onChange({ ...project, tags: textToTags(event.target.value).slice(0, 20) }); }}
+      />
+      <label className="mt-2 flex min-h-11 items-center gap-2 text-sm text-ink">
+        <input
+          type="checkbox"
+          className="h-5 w-5"
+          checked={Boolean(project.public_visible)}
+          onChange={(event) => onChange({ ...project, public_visible: event.target.checked })}
+        />
+        Show on my public profile page
+      </label>
       {/* An image can only be attached to a project that exists server-side — a new one
           has no id to attach it to, so it appears after the first save. */}
       {project.id ? (
@@ -86,7 +120,7 @@ export function ProjectEditor({
           </div>
         ))}
       </div>
-      <div className="mt-2 flex gap-2">
+      <div className="mt-2 flex flex-wrap gap-2">
         <button
           className="desk-button-ghost"
           type="button"

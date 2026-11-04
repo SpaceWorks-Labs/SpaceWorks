@@ -1,6 +1,6 @@
 import { useId, useState } from "react";
 
-import { CameraCapture } from "../../../components/ui";
+import { CameraCapture, StatusPill } from "../../../components/ui";
 import { staffRequest } from "../../../lib/api";
 
 export type UploadResponse = {
@@ -83,7 +83,7 @@ export function EvidenceUpload({
   }
 
   return (
-    <div className="space-y-1">
+    <div className="@container grid gap-3 rounded-xl border border-dashed border-line bg-surface p-4">
       {label ? (
         <label className="block font-medium text-ink" htmlFor={inputId}>
           {label}
@@ -91,7 +91,8 @@ export function EvidenceUpload({
       ) : null}
       {/* When a visible <label> names the control, aria-label must go: it would override the
           visible text, leaving the accessible name saying something the sighted user never reads. */}
-      <div className="flex min-w-0 items-center gap-2">
+      {/* In a narrow column the camera button takes the full row, so the photo is a thumb tap away. */}
+      <div className="flex min-w-0 flex-wrap items-center gap-3">
         <input
           id={inputId}
           aria-label={label ? undefined : `${evidenceType} photo`}
@@ -102,10 +103,10 @@ export function EvidenceUpload({
             const file = event.target.files?.[0];
             if (file) handleFile(file);
           }}
-          className="block min-w-0 flex-1 text-sm text-muted file:mr-3 file:rounded-md file:border-0 file:bg-accent file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-on-accent"
+          className="desk-input min-h-11 min-w-0 flex-1 basis-full @sm:basis-0 file:mr-3 file:min-h-11 file:rounded-control file:border-0 file:bg-accent file:px-3 file:text-sm file:font-semibold file:text-on-accent"
         />
         {cameraSupported ? (
-          <button className="desk-button min-h-11" type="button" aria-label={`Take ${label ?? `${evidenceType} photo`}`} disabled={disabled || status === "uploading"} onClick={() => setCameraOpen(true)}>
+          <button className="desk-button min-h-11 w-full @sm:w-auto" type="button" aria-label={`Take ${label ?? `${evidenceType} photo`}`} disabled={disabled || status === "uploading"} onClick={() => setCameraOpen(true)}>
             Camera
           </button>
         ) : null}
@@ -120,9 +121,9 @@ export function EvidenceUpload({
         className={`text-xs ${status === "error" ? "text-danger" : status === "done" ? "text-success-ink" : "text-muted"}`}
       >
         {status === "uploading"
-          ? `Uploading ${fileName}...`
+          ? `Uploading ${fileName}…`
           : status === "done"
-            ? "Photo uploaded"
+            ? <StatusPill tone="success" label="Photo uploaded" />
             : status === "error"
               ? error
               : ""}

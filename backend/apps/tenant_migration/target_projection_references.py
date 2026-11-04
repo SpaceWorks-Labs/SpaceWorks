@@ -19,6 +19,12 @@ SEEDED_RESOLUTIONS = {
 
 
 FK_POLICIES = {
+    ("events.EventCertificateTemplateRevision", "artwork"): ForeignKeyPolicy(
+        ReferenceDisposition.REMAP_RESOLVED,
+        "Revisions only reference promoted artwork; remap its retained identity.",
+    ),
+    ("makerspaces.MembershipAdditionalRole", "role"): ForeignKeyPolicy(ReferenceDisposition.DROP_ROW, "Source roles never become target authority."),
+    ("machines.MembershipMachineTypeScope", "machine_type"): ForeignKeyPolicy(ReferenceDisposition.DROP_ROW, "A resolved type must not revive source authority."),
     ("inventory.InventoryProduct", "category"): ForeignKeyPolicy(ReferenceDisposition.REMAP_RESOLVED, "Use the category slug resolution map."),
     ("integrations.DestinationCategoryScope", "category"): ForeignKeyPolicy(ReferenceDisposition.REMAP_RESOLVED, "Use the category slug resolution map."),
     ("integrations.RecipientCategoryScope", "category"): ForeignKeyPolicy(ReferenceDisposition.DROP_ROW, "The owning recipient scope is dropped."),
@@ -28,9 +34,16 @@ FK_POLICIES = {
         ReferenceDisposition.REMAP_RESOLVED,
         "Remap retained application history; vouches for dropped open applications do not travel.",
     ),
+    # Release 2 L4: both point at application history, which is remapped like a vouch's request.
+    ("makerspaces.ImportedMember", "invitation"): ForeignKeyPolicy(
+        ReferenceDisposition.REMAP_RESOLVED,
+        "Remap the retained invitation; an imported member whose open invite was dropped keeps no link.",
+    ),
+    ("makerspaces.MembershipTerm", "admission_request"): ForeignKeyPolicy(
+        ReferenceDisposition.REMAP_RESOLVED,
+        "Remap the retained application the term was sold through.",
+    ),
     ("integrations.NotificationRecipient", "role"): ForeignKeyPolicy(ReferenceDisposition.DROP_ROW, "All explicit recipient rules are dropped."),
-    ("machines.RoleMachineScope", "role"): ForeignKeyPolicy(ReferenceDisposition.DROP_ROW, "Role scopes are never remapped to Member."),
-    ("machines.RoleMachineTypeScope", "role"): ForeignKeyPolicy(ReferenceDisposition.DROP_ROW, "Role scopes are never remapped to Member."),
     ("machines.Machine", "machine_type"): ForeignKeyPolicy(ReferenceDisposition.REMAP_RESOLVED, "Use the built-in/custom machine type map."),
     ("machines.MachineConsumablePool", "machine_type"): ForeignKeyPolicy(ReferenceDisposition.REMAP_RESOLVED, "Use the built-in/custom machine type map."),
     ("machines.MakerspaceMachineTypePricing", "machine_type"): ForeignKeyPolicy(ReferenceDisposition.REMAP_RESOLVED, "Use the built-in/custom machine type map."),
@@ -42,7 +55,6 @@ FK_POLICIES = {
     ("integrations.MachineTypeEmailTemplate", "machine_type"): ForeignKeyPolicy(ReferenceDisposition.REMAP_RESOLVED, "Use the built-in/custom machine type map."),
     ("integrations.DestinationMachineTypeScope", "machine_type"): ForeignKeyPolicy(ReferenceDisposition.REMAP_RESOLVED, "Use the built-in/custom machine type map."),
     ("integrations.RecipientMachineTypeScope", "machine_type"): ForeignKeyPolicy(ReferenceDisposition.DROP_ROW, "The owning recipient scope is dropped."),
-    ("machines.RoleMachineTypeScope", "machine_type"): ForeignKeyPolicy(ReferenceDisposition.DROP_ROW, "Archived role scopes are dropped even when both targets resolve."),
     ("integrations.RecipientMachineTypeScope", "recipient"): ForeignKeyPolicy(ReferenceDisposition.DROP_ROW, "The parent recipient is dropped."),
     ("integrations.RecipientMachineScope", "recipient"): ForeignKeyPolicy(ReferenceDisposition.DROP_ROW, "The parent recipient is dropped."),
     ("integrations.RecipientCategoryScope", "recipient"): ForeignKeyPolicy(ReferenceDisposition.DROP_ROW, "The parent recipient is dropped."),
@@ -55,3 +67,12 @@ DROPPED_NOTIFICATION_RECIPIENT_KINDS = frozenset(
 
 from .projection_wp4 import FK_POLICIES as WP4_FK_POLICIES
 FK_POLICIES.update(WP4_FK_POLICIES)
+from .catalog_r2_l5 import fk_policies as _r2_l5_fk_policies  # noqa: E402
+FK_POLICIES.update(_r2_l5_fk_policies(ForeignKeyPolicy, ReferenceDisposition))
+# Release 2 L23: a machine session's type resolves through the built-in/custom type map.
+FK_POLICIES[("machines.MachineSession", "machine_type")] = ForeignKeyPolicy(
+    ReferenceDisposition.REMAP_RESOLVED, "Use the built-in/custom machine type map.")
+# Release 2 L16: technician coverage and default recipients resolve their type the same way.
+for _l16_model in ("maintenance.TechnicianCoverage", "maintenance.TechnicianDefault"):
+    FK_POLICIES[(_l16_model, "machine_type")] = ForeignKeyPolicy(
+        ReferenceDisposition.REMAP_RESOLVED, "Use the built-in/custom machine type map.")

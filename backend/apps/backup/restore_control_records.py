@@ -42,6 +42,13 @@ def export_control_record(restore_id, output, decision=None):
 @transaction.atomic
 def rehydrate_control_record(restore_id, options):
     from apps.accounts.models import User
+    from apps.backup.services_access import (
+        invalidate_download_tokens_after_restore as invalidate_archive_download_tokens_after_restore,
+    )
+    from apps.data_export.restore_hooks import invalidate_download_tokens_after_restore
+    from apps.tenant_migration.restore_hooks import (
+        invalidate_download_tokens_after_restore as invalidate_tenant_dump_download_tokens_after_restore,
+    )
 
     control = json.loads(Path(options["control_record"]).read_text(encoding="utf-8"))
     manifest = json.loads(Path(options["manifest"]).read_text(encoding="utf-8"))
@@ -95,6 +102,18 @@ def rehydrate_control_record(restore_id, options):
     state.mode = DeploymentRecoveryState.Mode.QUIESCED
     state.active_restore = restore
     state.save(update_fields=("mode", "active_restore", "updated_at"))
+    count = invalidate_download_tokens_after_restore()
+    archive_count = invalidate_archive_download_tokens_after_restore()
+    tenant_dump_count = invalidate_tenant_dump_download_tokens_after_restore()
+    logger.info(
+        "restore_download_bearers_cleared",
+        extra={
+            "restore_id": str(restore_id),
+            "data_export_bearers_cleared": count,
+            "archive_bearers_cleared": archive_count,
+            "tenant_dump_bearers_cleared": tenant_dump_count,
+        },
+    )
     return restore
 
 
@@ -104,26 +123,11 @@ def validate_restored_state(restore_id):
         raise RuntimeError("Only the validating stage can run restored-state checks.")
     call_command("check", verbosity=0)
     from apps.accounts.token_guard import validate_token_configuration
-    from apps.backup.custody import validate_deployment_custody
     from apps.backup.route_guard import validate_recovery_route_allowlists
     from apps.encryption.readiness import assert_ready
 
     assert_ready()
-    # `validate_deployment_custody` has already PERSISTED each makerspace's custody
-    # state in deterministic order, so the alarm exists before we decide anything.
-    custody = validate_deployment_custody()
-    if custody.zero_recipient_off_makerspace_ids:
-        # Deliberately NOT fatal. Zero recipients is an explicitly supported state --
-        # a compromise always proceeds even when it breaches the floor -- so aborting
-        # here would make every deployment archive containing such a tenant
-        # unrestorable, with no repair path (quarantine blocks acknowledgement and
-        # exposes no recipient management). Refusing the restore does not fix the
-        # tenant's custody posture; it only prevents recovery.
-        # The fail-closed rule belongs on the BUILD side, where `selection_for`
-        # already refuses to encrypt an archive to nobody.
-        logger.error(
-            "restore_zero_recipient_self_governed_makerspaces",
-            extra={"makerspace_ids": list(custody.zero_recipient_off_makerspace_ids)},
-        )
     validate_token_configuration()
     validate_recovery_route_allowlists()
+    from .public_page_verification import verify_public_pages
+    verify_public_pages()

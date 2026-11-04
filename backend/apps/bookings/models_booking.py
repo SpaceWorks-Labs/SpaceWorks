@@ -8,9 +8,11 @@ from apps.encryption.mappers import ScopedPiiModelMixin
 
 from django.utils import timezone
 from .models_spaces import BookableSpace
+from .models_arrival import BookingArrivalFields
+from .models_departure import BookingDepartureFields
 
 
-class Booking(ScopedPiiModelMixin, models.Model):
+class Booking(ScopedPiiModelMixin, BookingArrivalFields, BookingDepartureFields):
     class Status(models.TextChoices):
         PENDING = "pending", "Pending"
         CONFIRMED = "confirmed", "Confirmed"
@@ -47,8 +49,13 @@ class Booking(ScopedPiiModelMixin, models.Model):
         choices=Status.choices,
         default=Status.CONFIRMED,
     )
+    cancelled_at = models.DateTimeField(null=True, blank=True)
+    status_before_cancel = models.CharField(max_length=16, blank=True, default="")
     note = models.TextField(blank=True)
     custom_answers = models.JSONField(null=True, blank=True, default=None)
+    # Lane L15 (#159): the quote frozen when a booking awaiting approval was requested;
+    # approval charges exactly this. `{}` for instant or legacy bookings. Insert-only.
+    pricing_snapshot = models.JSONField(default=dict, blank=True)
     calendar_sequence = models.PositiveIntegerField(default=0)
     calendar_updated_at = models.DateTimeField(default=timezone.now)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -73,6 +80,8 @@ class Booking(ScopedPiiModelMixin, models.Model):
         ]
 
     def save(self, *args, **kwargs):
+        from .services_arrival_policy import prepare_booking_save
+        prepare_booking_save(self, kwargs)
         self.name = (self.name or "").strip()
         self.email = (self.email or "").strip().lower()
         self.phone = (self.phone or "").strip()
@@ -84,9 +93,11 @@ class Booking(ScopedPiiModelMixin, models.Model):
         if errors:
             raise ValidationError(errors)
         if self.pk:
-            original = type(self).objects.only("public_token", "space_id").get(
+            original = type(self).objects.only("public_token", "space_id", "pricing_snapshot").get(
                 pk=self.pk
             )
             self.public_token = original.public_token
             self.space_id = original.space_id
+            if original.pricing_snapshot != self.pricing_snapshot:
+                raise ValidationError("A booking's requested price is frozen.")
         super().save(*args, **kwargs)

@@ -3,7 +3,6 @@ from django.contrib import admin
 from django.contrib import messages
 from django.contrib.admin.helpers import ACTION_CHECKBOX_NAME
 from django.contrib.auth import update_session_auth_hash
-from django.contrib.auth.admin import GroupAdmin as DjangoGroupAdmin
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 from django.contrib.auth.models import Group
 from django.db import transaction
@@ -11,11 +10,18 @@ from django.http import HttpResponseRedirect
 from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils.translation import gettext
-from unfold.admin import ModelAdmin, TabularInline
-from unfold.forms import AdminPasswordChangeForm, UserChangeForm, UserCreationForm
+from unfold.admin import ModelAdmin
+from unfold.forms import AdminPasswordChangeForm
+from .admin_account_forms import AccountUserChangeForm, PlatformUserCreationForm
+from .admin_membership_inlines import MakerspaceMembershipInline, StaffTrackMembershipInline
+from .admin_staff_lifecycle import StaffLifecycleAdminMixin
+from .admin_mfa_reset import MfaResetAdminMixin
+from .admin_pii_access import PersonPiiRevealAdminMixin, PlatformPiiAccessGrantAdmin  # noqa: F401 (registers)
+from .admin_pii_masking import PiiMaskingAdminMixin
 from rest_framework.exceptions import APIException
 
-from apps.accounts.models import NativeAppRegistration, User
+from apps.accounts.models import User
+from apps.accounts.staff_identity import is_shell, person_q
 from apps.accounts.principal_guards import (
     refuse_anonymous_requester_access_mutation,
     refuse_anonymous_requester_credential,
@@ -43,45 +49,53 @@ class RestrictAccessForm(forms.Form):
     reason = forms.CharField(required=True, widget=forms.Textarea)
 
 
-class MakerspaceMembershipInline(TabularInline):
-    model = MakerspaceMembership
-    fk_name = "user"
-    fields = ("makerspace", "role")
-    autocomplete_fields = ("makerspace",)
-    extra = 0
-
-
 @admin.register(User)
-class UserAdmin(SuperuserOnlyModelAdmin, DjangoUserAdmin, ModelAdmin):
-    actions = ["restrict_access", "restore_access", "reset_password_selected"]
-    form = UserChangeForm
-    add_form = UserCreationForm
+class UserAdmin(PersonPiiRevealAdminMixin, PiiMaskingAdminMixin, StaffLifecycleAdminMixin, MfaResetAdminMixin,
+                SuperuserOnlyModelAdmin, DjangoUserAdmin, ModelAdmin):
+    actions = ["restrict_access", "restore_access", "reset_password_selected", "reset_two_step",
+               "disable_account", "enable_account"]
+    form = AccountUserChangeForm
+    add_form = PlatformUserCreationForm
     change_password_form = AdminPasswordChangeForm
-    fieldsets = DjangoUserAdmin.fieldsets + (
+    fieldsets = (
+        (None, {"fields": ("username", "password")}),
+        ("Personal info", {"fields": ("first_name", "last_name", "email")}),
+        ("Status", {"fields": ("account_kind", "staff_makerspace", "is_active", "is_staff", "is_superuser")}),
+        ("Important dates", {"fields": ("last_login", "date_joined")}),
         (
             "Space Works Access",
             {
-                "fields": (
-                    "phone",
-                    "external_checkin_user_id",
-                    "role",
-                    "access_status",
-                    "restriction_reason",
-                ),
+                "fields": ("phone", "role", "access_status", "restriction_reason"),
             },
         ),
     )
     list_display = ("username", "email", "role", "access_status", "is_staff")
-    list_filter = DjangoUserAdmin.list_filter + (
+    list_filter = (
+        "is_staff",
+        "is_superuser",
+        "is_active",
         "role",
         "access_status",
         "makerspace_memberships__makerspace",
     )
-    inlines = (MakerspaceMembershipInline,)
+    filter_horizontal = ()
+    inlines = (MakerspaceMembershipInline, StaffTrackMembershipInline)
+
+    def get_search_results(self, request, queryset, search_term):
+        # Django autocomplete calls the RELATED User admin, not the source form.
+        # Organization community grants go to people, never platform accounts or shells.
+        if (request.GET.get("app_label"), request.GET.get("model_name"), request.GET.get("field_name")) == (
+            "organizations", "organizationmembership", "user",
+        ):
+            queryset = queryset.filter(person_q())
+        return super().get_search_results(request, queryset, search_term)
 
     def user_change_password(self, request, id, form_url=""):
         """Make the inherited password form an explicit account transition."""
         user = self.get_object(request, id)
+        if user is not None and is_shell(user):
+            from django.core.exceptions import PermissionDenied
+            raise PermissionDenied("A retired or merged account never signs in again.")
         if request.method == "POST" and user is not None:
             try:
                 refuse_anonymous_requester_credential(user)
@@ -135,6 +149,7 @@ class UserAdmin(SuperuserOnlyModelAdmin, DjangoUserAdmin, ModelAdmin):
 
     @admin.action(description="Reset selected user passwords")
     def reset_password_selected(self, request, queryset):
+        self._refuse_lifecycle_bulk(queryset)
         succeeded, skipped = 0, 0
         for user in queryset:
             try:
@@ -161,6 +176,7 @@ class UserAdmin(SuperuserOnlyModelAdmin, DjangoUserAdmin, ModelAdmin):
 
     @admin.action(description="Restrict selected users")
     def restrict_access(self, request, queryset):
+        self._refuse_lifecycle_bulk(queryset)
         if "apply" not in request.POST:
             context = {
                 **self.admin_site.each_context(request),
@@ -218,6 +234,7 @@ class UserAdmin(SuperuserOnlyModelAdmin, DjangoUserAdmin, ModelAdmin):
 
     @admin.action(description="Restore selected users")
     def restore_access(self, request, queryset):
+        self._refuse_lifecycle_bulk(queryset)
         success_count = 0
         for user in queryset:
             try:
@@ -225,7 +242,8 @@ class UserAdmin(SuperuserOnlyModelAdmin, DjangoUserAdmin, ModelAdmin):
                     locked = User.objects.select_for_update().get(pk=user.pk)
                     refuse_anonymous_requester_access_mutation(locked)
                     if locked.access_status != User.AccessStatus.ACTIVE and locked.is_active:
-                        memberships = MakerspaceMembership.objects.select_related(
+                        # Restoring a person re-counts their staff-track rows against quota.
+                        memberships = MakerspaceMembership.staff_tracks.select_related(
                             "makerspace"
                         ).filter(user=locked).order_by("makerspace_id")
                         for membership in memberships:
@@ -253,42 +271,12 @@ class UserAdmin(SuperuserOnlyModelAdmin, DjangoUserAdmin, ModelAdmin):
             )
 
 
-@admin.register(NativeAppRegistration)
-class NativeAppRegistrationAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
-    list_display = (
-        "app_id", "platform", "environment", "makerspace", "status", "updated_at",
-    )
-    list_filter = ("status", "platform", "environment", "makerspace")
-    search_fields = ("app_id", "verifier_config_key", "makerspace__name")
-    autocomplete_fields = ("makerspace", "approved_by")
-    readonly_fields = ("created_at", "updated_at")
-
-    def save_model(self, request, obj, form, change):
-        """Route a revocation through the service so live grants are settled too.
-
-        Saving `status = revoked` on the row alone would leave existing grants and refresh
-        tokens intact, so re-approving later would resurrect them.
-        """
-        becoming_revoked = (
-            obj.status == NativeAppRegistration.Status.REVOKED
-            and (not change or "status" in (form.changed_data or []))
-        )
-        super().save_model(request, obj, form, change)
-        if becoming_revoked:
-            from apps.accounts.services_native_apps import revoke_registration
-
-            revoke_registration(obj, actor=request.user)
-
-
 admin.site.unregister(Group)
 
-from apps.accounts import admin_claim, admin_social  # noqa: E402,F401
-from apps.accounts import admin_password_reset  # noqa: E402,F401
-
-
-@admin.register(Group)
-class GroupAdmin(SuperuserOnlyModelAdmin, DjangoGroupAdmin, ModelAdmin):
-    pass
+from apps.accounts import admin_claim, admin_social, admin_tokens  # noqa: E402,F401
+from apps.accounts import admin_password_reset, admin_attestation  # noqa: E402,F401
+from apps.accounts import admin_ip_access  # noqa: E402,F401 -- IP rules and automatic blocks (S-C)
+from apps.accounts.admin_native_apps import NativeAppRegistrationAdmin  # noqa: E402,F401
 
 
 def _api_exception_message(exc):

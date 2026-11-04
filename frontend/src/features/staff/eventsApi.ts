@@ -13,9 +13,8 @@ import {
   EVENT_PUBLISH_PATH,
   eventKeys,
   staffPath,
+  type EventCreatePayload,
   type EventPatch,
-  type EventPayload,
-  type EventRegistrationStatus,
   type Paginated,
   type StaffEvent,
 } from "./eventsApiTypes";
@@ -23,11 +22,11 @@ import {
 export {
   eligibleMemberKey,
   eventKeys,
+  type EventCreatePayload,
   type EventPatch,
   type EventPayload,
   type EventRegistration,
   type EventRegistrationCounts,
-  type EventRegistrationStatus,
   type EventStatus,
   type Paginated,
   type StaffEvent,
@@ -46,7 +45,7 @@ export {
 
 export function useEvents(makerspaceId: number, page = 1, query = "") {
   return useQuery({ queryKey: [...eventKeys.list(makerspaceId), page, query], queryFn: () =>
-    staffRequest<Paginated<StaffEvent>>(
+    staffRequest<Paginated<StaffEvent> & { default_registration_audience?: "members" | "accounts" | "invite" | "participating_organizations" }>(
       `${staffPath(EVENT_LIST_PATH, { makerspace_id: makerspaceId })}?${query || `page=${page}`}`,
     ) });
 }
@@ -60,10 +59,18 @@ export function useEventInvalidation(makerspaceId: number, eventId?: number) {
   const queryClient = useQueryClient();
   return async () => {
     await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["event-website", makerspaceId] }),
+      queryClient.invalidateQueries({ queryKey: ["event-discover"] }),
       queryClient.invalidateQueries({ queryKey: eventKeys.list(makerspaceId) }),
       queryClient.invalidateQueries({ queryKey: organizedEventKeys.all }),
+      queryClient.invalidateQueries({ queryKey: ["events", "accessible"] }),
       ...(eventId === undefined ? [] : [
         queryClient.invalidateQueries({ queryKey: eventKeys.detail(eventId) }),
+      queryClient.invalidateQueries({ queryKey: eventKeys.registrations(eventId) }),
+      queryClient.invalidateQueries({ queryKey: ["event", eventId, "eligible-members"] }),
+      queryClient.invalidateQueries({ queryKey: ["event-organization-eligibility"] }),
+      queryClient.invalidateQueries({ queryKey: ["public-events"] }),
+      queryClient.invalidateQueries({ queryKey: ["public-event"] }),
       ]),
     ]);
   };
@@ -72,29 +79,25 @@ export function useEventInvalidation(makerspaceId: number, eventId?: number) {
 export function useCreateEvent(makerspaceId: number) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (payload: EventPayload) => staffRequest<StaffEvent>(
+    mutationFn: (payload: EventCreatePayload) => staffRequest<StaffEvent>(
       staffPath(EVENT_LIST_PATH, { makerspace_id: makerspaceId }),
       { method: "POST", body: JSON.stringify(payload) },
     ), onSuccess: async (created) => { await Promise.all([
       queryClient.invalidateQueries({ queryKey: eventKeys.list(makerspaceId) }),
       queryClient.invalidateQueries({ queryKey: eventKeys.detail(created.id) }),
       queryClient.invalidateQueries({ queryKey: organizedEventKeys.all }),
+      queryClient.invalidateQueries({ queryKey: ["events", "accessible"] }),
     ]); },
   });
 }
 
 export function useUpdateEvent(makerspaceId: number, eventId: number) {
-  const queryClient = useQueryClient();
+  const invalidate = useEventInvalidation(makerspaceId, eventId);
   return useMutation({
     mutationFn: (payload: EventPatch) => staffRequest<StaffEvent>(
       staffPath(EVENT_DETAIL_PATH, { id: eventId }),
       { method: "PATCH", body: JSON.stringify(payload) },
-    ), onSuccess: async () => { await Promise.all([
-      queryClient.invalidateQueries({ queryKey: eventKeys.registrations(eventId) }),
-      queryClient.invalidateQueries({ queryKey: eventKeys.detail(eventId) }),
-      queryClient.invalidateQueries({ queryKey: eventKeys.list(makerspaceId) }),
-      queryClient.invalidateQueries({ queryKey: organizedEventKeys.all }),
-    ]); },
+    ), onSuccess: invalidate,
   });
 }
 
@@ -107,8 +110,14 @@ export function useReplaceEventOrganizers(makerspaceId: number, eventId: number)
     ),
     onSuccess: async () => Promise.all([
       queryClient.invalidateQueries({ queryKey: eventKeys.detail(eventId) }),
+      queryClient.invalidateQueries({ queryKey: eventKeys.registrations(eventId) }),
+      queryClient.invalidateQueries({ queryKey: ["event", eventId, "eligible-members"] }),
+      queryClient.invalidateQueries({ queryKey: ["event-organization-eligibility"] }),
+      queryClient.invalidateQueries({ queryKey: ["public-events"] }),
+      queryClient.invalidateQueries({ queryKey: ["public-event"] }),
       queryClient.invalidateQueries({ queryKey: eventKeys.list(makerspaceId) }),
       queryClient.invalidateQueries({ queryKey: organizedEventKeys.all }),
+      queryClient.invalidateQueries({ queryKey: ["events", "accessible"] }),
       queryClient.invalidateQueries({ queryKey: ["public-organization"] }),
     ]),
   });
@@ -122,7 +131,8 @@ function useLifecycle(makerspaceId: number, eventId: number, path: ApiPath) {
 }
 
 export function usePublishEvent(makerspaceId: number, eventId: number) {
-  return useLifecycle(makerspaceId, eventId, EVENT_PUBLISH_PATH);
+  const invalidate = useEventInvalidation(makerspaceId, eventId);
+  return useMutation({ mutationFn: (options: { publish_website: boolean; website_revision?: number } | undefined) => staffRequest<StaffEvent>(staffPath(EVENT_PUBLISH_PATH, { id: eventId }), { method: "POST", body: JSON.stringify(options ?? {}) }), onSuccess: invalidate });
 }
 export function useCancelEvent(makerspaceId: number, eventId: number) {
   return useLifecycle(makerspaceId, eventId, EVENT_CANCEL_PATH);
@@ -131,19 +141,11 @@ export function useCompleteEvent(makerspaceId: number, eventId: number) {
   return useLifecycle(makerspaceId, eventId, EVENT_COMPLETE_PATH);
 }
 
-export type EventCheckInResolution = {
-  registration_id: number;
-  name: string;
-  status: EventRegistrationStatus;
-  // Null when the event is free or no charge was raised. Shown to the staffer, never
-  // used to block: cash is taken at the door and reconciled later.
-  payment_status: string | null;
-  // Reported, never enforced -- someone with missing evidence is exactly who the host wants
-  // to hand a waiver to at the desk; not_required means the host has no active waiver.
-  host_waiver_state: "not_required" | "on_file" | "missing";
-  event_status: string;
-  confirmable: boolean;
-};
+export type EventCheckInResolution = import('../../generated/api').EventCheckInResolveResponse;
+export function checkInInput(value: string): import('../../generated/api').EventCheckInResolveRequest {
+  return /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(value)
+    ? { checkin_token: value } : { credential: value };
+}
 
 export function useResolveEventCheckIn(eventId: number) {
   // No invalidation: resolving is read-only by design. It turns a scanned token into a
@@ -152,7 +154,7 @@ export function useResolveEventCheckIn(eventId: number) {
   return useMutation({
     mutationFn: (checkinToken: string) => staffRequest<EventCheckInResolution>(
       staffPath(CHECK_IN_RESOLVE_PATH, { id: eventId }),
-      { method: "POST", body: JSON.stringify({ checkin_token: checkinToken }) },
+      { method: "POST", body: JSON.stringify(checkInInput(checkinToken)) },
     ),
   });
 }

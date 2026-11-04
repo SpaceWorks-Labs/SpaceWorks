@@ -75,6 +75,11 @@ class StripeProvider:
     def create_refund(self, source, request: RefundRequest) -> RefundResult:
         if not request.payment_id:
             raise PaymentsUnavailable("The payment has no Stripe PaymentIntent to refund.")
+        params = {}
+        if request.refund_application_fee:
+            params["refund_application_fee"] = True
+        if request.reverse_transfer:
+            params["reverse_transfer"] = True
         try:
             refund = stripe_client.create_refund(
                 source,
@@ -82,6 +87,7 @@ class StripeProvider:
                 payment_intent=request.payment_id,
                 amount=request.amount_minor,
                 metadata={key: str(value) for key, value in (request.metadata or {}).items()},
+                **params,
             )
         except PaymentsUnavailable:
             raise

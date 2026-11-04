@@ -1,20 +1,27 @@
-import { Suspense } from "react";
+import { ModuleAnalytics } from "./panels/ModuleAnalytics";
+import { capabilityOn } from "../../lib/features";
+import { MyNotificationSettings } from "../notifications/MyNotificationSettings";
+import { Suspense, type ReactNode } from "react";
 
+import { ListLayout } from "../../components/layouts";
 import { Skeleton } from "../../components/ui";
 import type { StaffAuthUser } from "../../lib/api";
 import { featureEnabled } from "../../lib/features";
 import { getStaffAccess } from "./staffAccess";
 import { filterTabsByEnabledModules } from "./staffTabs";
 import { StaffPlatformTabContent } from "./StaffPlatformTabContent";
-import { Panel, type Makerspace } from "./panels/shared";
+import type { Makerspace } from "./panels/shared";
 import { StaffPanelErrorBoundary } from "./StaffPanelErrorBoundary";
-import { PlatformDashboardPanel } from "./StaffTabLoaders";
+import { PlatformProgrammeDashboard } from "./eventProgramme/PlatformProgrammeDashboard";
+import { GrantedResourcesPanel } from "./GrantedResourcesPanel";
+import { ConsumablesPanel, RepairsPanel } from "./StaffTabLoaders";
 
-import { PaymentsPanel, DevicesPanel, DashboardPanel, NotificationInbox, DirectLoans, Inventory, Ledger, MachinesPanel, EventsPanel, OrganizedEventsPanel, OrganizationAnalyticsPanel, OrganizationsPanel, BookingsPanel, MembersPanel, MemberCardsPanel, QrTools, RequestsPanel, OperationsReports, AuditLog, BulkImport, ScannerPanel, ContainersPanel, StocktakePanel, StockTransferPanel, ProcurementPanel, WarrantyPanel, AccountabilityPanel, Categories, NeedsFixShelf, HandoverConsole } from "./StaffTabLoaders";
+import { PaymentsPanel, RefundQueue, FinancePanel, EventPayoutsSection, DevicesPanel, DashboardPanel, NotificationInbox, DirectLoans, Inventory, Ledger, MachinesPanel, EventsPanel, OrganizedEventsPanel, OrganizationAnalyticsPanel, OrganizationsPanel, BookingsPanel, MembersPanel, MemberCardsPanel, QrTools, RequestsPanel, OperationsReports, AuditLog, BulkImport, ScannerPanel, ContainersPanel, StocktakePanel, StockTransferPanel, ProcurementPanel, WarrantyPanel, AccountabilityPanel, Categories, NeedsFixShelf, HandoverConsole } from "./StaffTabLoaders";
 
 export function StaffTabContent({
   activeMakerspace,
   activeTab,
+  progress,
   guestOnly,
   makerspaces,
   isSuperadmin,
@@ -38,9 +45,11 @@ export function StaffTabContent({
   canSeePrinting,
   canViewAudit,
   singleTenantLocked = false,
+  lockedMakerspaceId,
 }: {
   activeMakerspace?: Makerspace;
   activeTab: string;
+  progress?: ReactNode;
   guestOnly: boolean;
   makerspaces: Makerspace[];
   isSuperadmin: boolean;
@@ -65,18 +74,28 @@ export function StaffTabContent({
   canViewAudit: boolean;
   // Machines needs this for links; targetless organization panels need it as a mount gate.
   singleTenantLocked?: boolean;
+  lockedMakerspaceId?: number;
 }) {
   if (activeTab === "platform-dashboard" && isSuperadmin && !singleTenantLocked) {
-    return <StaffPanelErrorBoundary resetKey="platform-dashboard"><Suspense fallback={<Skeleton className="h-40 w-full" />}><PlatformDashboardPanel /></Suspense></StaffPanelErrorBoundary>;
+    return <StaffPanelErrorBoundary resetKey="platform-dashboard"><Suspense fallback={<Skeleton className="h-40 w-full" />}><PlatformProgrammeDashboard /></Suspense></StaffPanelErrorBoundary>;
   }
   if (activeTab === "organizations") {
     return <StaffPanelErrorBoundary resetKey="organizations"><Suspense fallback={<Skeleton className="h-40 w-full" />}><OrganizationsPanel isSuperadmin={isSuperadmin} makerspaces={makerspaces} /></Suspense></StaffPanelErrorBoundary>;
   }
+  if (activeTab === "granted" && (currentUser.event_grants?.length || currentUser.booking_grants?.length)) {
+    if (singleTenantLocked && lockedMakerspaceId === undefined) return <ListLayout header={{ title: "Assigned resources" }} state={{ status: "ready" }}
+      isEmpty empty={{ message: "Unable to resolve this makerspace." }} body={{ kind: "rows", rows: null }} />;
+    return <StaffPanelErrorBoundary resetKey="granted"><Suspense fallback={<Skeleton className="h-40 w-full" />}><GrantedResourcesPanel eventGrants={currentUser.event_grants} bookingGrants={Boolean(currentUser.booking_grants?.length)} makerspaceId={singleTenantLocked ? lockedMakerspaceId : undefined} /></Suspense></StaffPanelErrorBoundary>;
+  }
   if (!activeMakerspace) {
-    return <Panel title="No makerspace">Assign a makerspace to this account.</Panel>;
+    return <ListLayout header={{ title: "No makerspace" }} state={{ status: "ready" }}
+      isEmpty empty={{ message: "Assign a makerspace to this account." }} body={{ kind: "rows", rows: null }} />;
   }
   const makerspaceKey = activeMakerspace.id;
-  const actorActions = currentUser.makerspaces.find((space) => space.id === makerspaceKey)?.actions ?? [];
+  // A platform superadmin has no membership row; inside a chosen space they hold every action (#115).
+  const actorActions = isSuperadmin ? currentUser.superadmin_actions ?? []
+    : currentUser.makerspaces.find((space) => space.id === makerspaceKey)?.actions ?? [];
+  const allowedTabs = filterTabsByEnabledModules(getStaffAccess(actorActions, isSuperadmin, singleTenantLocked, isMachineOnly).allowedTabs, activeMakerspace);
   const has = (action: string) => isSuperadmin || actorActions.includes(action);
   return (
     <StaffPanelErrorBoundary resetKey={`${makerspaceKey}:${activeTab}`}>
@@ -87,11 +106,15 @@ export function StaffTabContent({
         <DevicesPanel key={makerspaceKey} makerspaceId={makerspaceKey} />
       ) : null}
       {activeTab === "dashboard" ? (
-        <DashboardPanel key={makerspaceKey} makerspace={activeMakerspace} canManageMakerspace={canManageMakerspace} allowedTabs={filterTabsByEnabledModules(getStaffAccess(actorActions, isSuperadmin, singleTenantLocked, isMachineOnly).allowedTabs, activeMakerspace)} singleTenantLocked={singleTenantLocked} guestOnly={guestOnly} />
+        <DashboardPanel key={makerspaceKey} makerspace={activeMakerspace} canManageMakerspace={canManageMakerspace} allowedTabs={allowedTabs} actions={actorActions} isSuperadmin={isSuperadmin} progress={progress} singleTenantLocked={singleTenantLocked} guestOnly={guestOnly} />
       ) : null}
       {activeTab === "notifications" ? (
         <NotificationInbox key={makerspaceKey} makerspace={activeMakerspace} canManageMembers={has("manage_members")} />
       ) : null}
+      {activeTab === "channels" && !isSuperadmin && actorActions.length > 0 ? <section className="desk-panel p-5">
+        <h1 className="title-panel mb-4">My notification channels</h1>
+        <MyNotificationSettings key={makerspaceKey} makerspaceId={makerspaceKey} />
+      </section> : null}
       {activeTab === "requests" ? (
         <RequestsPanel
           key={makerspaceKey}
@@ -107,6 +130,7 @@ export function StaffTabContent({
           makerspace={activeMakerspace}
           canViewAudit={canViewAudit}
           canUseToBuy={canUseToBuy}
+          canEditInventory={canEditInventory}
         />
       ) : null}
       {activeTab === "needsfix" && canEditInventory ? <NeedsFixShelf key={makerspaceKey} makerspace={activeMakerspace} /> : null}
@@ -117,7 +141,7 @@ export function StaffTabContent({
           canManage={canManageMachines}
           enabledFeatures={activeMakerspace.enabled_features ?? []}
           canConfigureMachineTypes={canConfigureMachineTypes}
-          maintenanceEnabled={activeMakerspace.enabled_modules?.includes("maintenance") ?? false}
+          maintenanceEnabled={capabilityOn(activeMakerspace, "machines.maintenance")}
           machineServiceEnabled={activeMakerspace.enabled_modules?.includes("machine_service") ?? false}
           printingEnabled={activeMakerspace.enabled_modules?.includes("printing") ?? false}
           reportsEnabled={activeMakerspace.enabled_modules?.includes("reports") ?? false}
@@ -134,7 +158,7 @@ export function StaffTabContent({
           }
         />
       ) : null}
-      {activeTab === "events" && canManageEvents ? <EventsPanel key={makerspaceKey} makerspaceId={activeMakerspace.id} /> : null}
+      {activeTab === "events" && canManageEvents ? <EventsPanel key={makerspaceKey} enabledFeatures={activeMakerspace.enabled_features} enabledModules={activeMakerspace.enabled_modules} makerspaceId={activeMakerspace.id} /> : null}
       {activeTab === "organized" && !isSuperadmin ? <OrganizedEventsPanel /> : null}
       {activeTab === "organization-analytics" && !isSuperadmin && !singleTenantLocked ? (
         <OrganizationAnalyticsPanel makerspaces={makerspaces} />
@@ -144,23 +168,39 @@ export function StaffTabContent({
         <MembersPanel
           key={makerspaceKey}
           makerspaceId={activeMakerspace.id}
+          actorActions={actorActions}
+          isSuperadmin={isSuperadmin}
+          onAuthRefresh={onAuthRefresh}
           membershipEnabled={(activeMakerspace.enabled_modules ?? []).includes("membership")}
+          presenceEnabled={(activeMakerspace.enabled_modules ?? []).includes("presence")}
           canManageMakerspace={canManageMakerspace}
           canViewFinance={has("view_finance")}
           canRecordPayment={has("record_payment")}
+          enabledFeatures={activeMakerspace.enabled_features ?? []}
+          makerspaceSlug={activeMakerspace.slug}
         />
       ) : null}
       {activeTab === "cards" && canUseMemberCards ? (
         <MemberCardsPanel key={makerspaceKey} makerspaceId={activeMakerspace.id} />
       ) : null}
-      {activeTab === "payments" && (has("view_finance") || has("record_payment")) ? <PaymentsPanel key={makerspaceKey} makerspaceId={activeMakerspace.id} actorActions={actorActions} isSuperadmin={isSuperadmin} /> : null}
+      {activeTab === "payments" && (has("view_finance") || has("record_payment") || has("manage_events")) ? <PaymentsPanel key={makerspaceKey} makerspaceId={activeMakerspace.id} makerspaceName={activeMakerspace.name} actorActions={actorActions} isSuperadmin={isSuperadmin} /> : null}
+      {activeTab === "refunds" && allowedTabs.includes("refunds") ? <RefundQueue key={makerspaceKey} makerspaceId={activeMakerspace.id}
+        makerspaceName={activeMakerspace.name} canEditPolicy={canManageMakerspace}
+        canDecide={["manage_events", "manage_bookings", "manage_machines", "manage_members", "manage_makerspace"].some(has)} /> : null}
+      {activeTab === "finance" && allowedTabs.includes("finance") ? <FinancePanel key={makerspaceKey} makerspace={activeMakerspace}
+        canViewFinance={has("view_finance")} canRecordPayment={has("record_payment")} /> : null}
+      {activeTab === "payments" && has("view_finance") ? <EventPayoutsSection key={`payouts:${makerspaceKey}`} makerspaceId={activeMakerspace.id} /> : null}
       {activeTab === "tobuy" ? (
         <ProcurementPanel
           key={makerspaceKey}
           makerspace={activeMakerspace}
           canChooseKind={canChooseToBuyKind}
+          inventoryTabAvailable={allowedTabs.includes("inventory")}
         />
       ) : null}
+      {activeTab === "consumables" && allowedTabs.includes("consumables") ? <ConsumablesPanel key={makerspaceKey} makerspace={activeMakerspace} canEditInventory={canEditInventory} /> : null}
+      {activeTab === "repairs" && allowedTabs.includes("repairs") ? <RepairsPanel key={makerspaceKey} makerspace={activeMakerspace}
+        actions={isSuperadmin ? [...actorActions, "manage_makerspace", "manage_machines", "edit_inventory", "manage_bookings"] : actorActions} /> : null}
       {activeTab === "transfers" && (canEditInventory || isSuperadmin) ? (
         <StockTransferPanel
           key={makerspaceKey}
@@ -215,8 +255,9 @@ export function StaffTabContent({
           makerspaces={makerspaces}
         />
       ) : null}
-      <StaffPlatformTabContent activeTab={activeTab} activeMakerspace={activeMakerspace} makerspaces={makerspaces} isSuperadmin={isSuperadmin} canManageMakerspace={canManageMakerspace} currentUser={currentUser} onAuthRefresh={onAuthRefresh} />
+      <StaffPlatformTabContent activeTab={activeTab} activeMakerspace={activeMakerspace} makerspaces={makerspaces} isSuperadmin={isSuperadmin} canManageMakerspace={canManageMakerspace} currentUser={currentUser} onAuthRefresh={onAuthRefresh} allowedTabs={allowedTabs} singleTenantLocked={singleTenantLocked} />
       {activeTab === "audit" && canViewAudit ? <AuditLog makerspaceId={activeMakerspace?.id} /> : null}
+      <ModuleAnalytics key={`analytics:${makerspaceKey}:${activeTab}`} makerspace={activeMakerspace} tab={activeTab} singleTenantLocked={singleTenantLocked} guestOnly={guestOnly} />
       </Suspense>
     </StaffPanelErrorBoundary>
   );

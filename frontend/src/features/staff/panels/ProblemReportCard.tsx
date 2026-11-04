@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 
-import { Field } from "../../../components/ui";
+import { Field, ListRow, RelativeTime } from "../../../components/ui";
 import { staffRequest } from "../../../lib/api";
 import type { Makerspace } from "./shared";
 import { OUTCOME_OPTIONS, type ProblemReport, type TriageOutcome } from "./AccountabilityTypes";
@@ -9,6 +9,7 @@ import { OUTCOME_OPTIONS, type ProblemReport, type TriageOutcome } from "./Accou
 export function ProblemReportCard({ row, makerspace, onTriaged }: { row: ProblemReport; makerspace: Makerspace; onTriaged: () => void }) {
   const [outcome, setOutcome] = useState<TriageOutcome>("no_issue");
   const [quantities, setQuantities] = useState<Record<number, string>>({});
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const [note, setNote] = useState("");
   const actionable = outcome !== "no_issue";
   const resolutions = actionable
@@ -26,14 +27,13 @@ export function ProblemReportCard({ row, makerspace, onTriaged }: { row: Problem
 
   return (
     <div className="grid gap-3 rounded-md border border-line bg-surface p-3 text-sm">
-      <div className="min-w-0">
-        <p className="font-medium text-ink">{row.label || "(tool)"}</p>
-        <p className="font-mono text-xs text-muted">{row.requester_username} | {new Date(row.created_at).toLocaleString()}</p>
-        <p className="mt-1 break-words text-ink">{row.note}</p>
-      </div>
+      <ListRow title={row.label || "(tool)"} identity={{ kind: "avatar", name: row.requester_username, seed: row.requester_username }}
+        meta={<>{row.requester_username} · <RelativeTime date={row.created_at} /><span className="mt-1 block line-clamp-2">{row.note}</span></>} />
+      <button className="desk-button-ghost w-fit" aria-expanded={detailsOpen} onClick={() => setDetailsOpen(!detailsOpen)}>Problem details</button>
+      {detailsOpen ? <p className="whitespace-pre-wrap break-words">{row.note}</p> : null}
       <div className="flex flex-wrap gap-2">
         {OUTCOME_OPTIONS.map((option) => (
-          <label key={option.value} className="flex items-center gap-2 rounded-md border border-line bg-bg px-2 py-1 text-xs text-ink">
+          <label key={option.value} className="flex min-h-11 items-center gap-2 rounded-md border border-line bg-bg px-2 py-1 text-xs text-ink">
             <input type="radio" name={`problem-outcome-${row.id}`} value={option.value} checked={outcome === option.value} onChange={() => setOutcome(option.value)} />
             {option.label}
           </label>
@@ -58,10 +58,11 @@ export function ProblemReportCard({ row, makerspace, onTriaged }: { row: Problem
         </div>
       ) : null}
       <Field label="Triage note"><textarea className="desk-input min-h-20" value={note} onChange={(event) => setNote(event.target.value)} /></Field>
+      {actionable && resolutions.length === 0 ? <p className="text-sm text-muted">Choose at least one item quantity to save this outcome.</p> : null}
       <div className="flex flex-wrap items-center justify-between gap-3">
         {triage.error ? <p className="text-sm text-danger">{(triage.error as Error).message}</p> : <span />}
         <button className="desk-button-primary" type="button" disabled={triage.isPending || (actionable && resolutions.length === 0)} onClick={() => triage.mutate()}>
-          Save triage
+          {triage.isPending ? "Saving…" : "Save triage"}
         </button>
       </div>
     </div>

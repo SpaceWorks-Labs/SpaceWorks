@@ -1,0 +1,57 @@
+# Preserve existing host installs. The managed wizard selects managed explicitly.
+deploymentMode: host
+deploymentProfile: full
+taskProfile: redis
+scheduler: beat
+backendImage: ghcr.io/spaceworks-labs/spaceworks-backend
+backendDigest: ""
+frontendImage: ghcr.io/spaceworks-labs/spaceworks-frontend
+frontendDigest: ""
+imageTag: ""
+imagePullPolicy: IfNotPresent
+replicas: 1
+workers: 3
+runtimeSecret: ""
+releaseSecret: ""
+# Used only in explicit host-supervised mode; existing prepared authority required.
+databasePointerSecret: ""
+migrationPointerSecret: ""
+hostGate:
+  existingClaim: ""
+rolloutGeneration: ""
+routeMetricsEnabled: false
+frontend:
+  enabled: true
+frontendEnv:
+  TENANT_API_URL: /api
+  WEB_ANALYTICS_SCRIPT_URL: ""
+  WEB_ANALYTICS_COLLECT_URL: ""
+  WEB_ANALYTICS_DOMAIN: ""
+  WEB_ANALYTICS_EXTRA_CONNECT_ORIGINS: ""
+  TURNSTILE_SITE_KEY: ""
+service:
+  type: ClusterIP
+  port: 80
+ingress:
+  enabled: false
+  className: ""
+  host: ""
+  annotations: {}
+  tls: []
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    memory: 1Gi
+worker:
+  enabled: true
+  replicas: 1
+live:
+  enabled: true
+beat:
+  enabled: true
+  existingClaim: ""
+scratchSize: 2Gi
+# Provider config file Secrets; filenames are explicit, never shell-expanded.
+configFiles: []

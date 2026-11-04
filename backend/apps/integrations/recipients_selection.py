@@ -48,25 +48,37 @@ FEATURE_MODULES = {
     NotificationFeature.PRINTING: "printing",
     NotificationFeature.EVENTS: "events",
     NotificationFeature.BOOKINGS: "bookings",
-    NotificationFeature.MAINTENANCE: "maintenance",
+    # A dotted key is a capability: maintenance is `machines.maintenance` since #97.
+    NotificationFeature.MAINTENANCE: "machines.maintenance",
     NotificationFeature.MEMBERS: "membership",
     NotificationFeature.DEVICES: "devices",
     # Ledger messages work without the separable online rail.
     NotificationFeature.PAYMENTS: "request_workflow",
-    NotificationFeature.STOCK: "procurement",
+    # One To-Buy list, two switches (#97): readable while either parent's is on. Core
+    # inventory thresholds and stocktake alerts override this per source kind below.
+    NotificationFeature.STOCK: "inventory.tobuy|machines.tobuy",
     NotificationFeature.CERTIFICATIONS: "machines",
+    NotificationFeature.PRESENCE: "presence",
 }
 
 
-def feature_available(makerspace, feature) -> bool:
+def feature_available(makerspace, feature, *, source_kind="") -> bool:
     """False when the feature's module is not installed for this makerspace."""
-    key = FEATURE_MODULES.get(feature)
+    # These categories are shared by independent domain families. Their registered
+    # source still checks the particular job type/revision before every delivery.
+    # Inventory is core (no module key): low-stock thresholds are never module-gated, and the
+    # borrower back-in-stock watch follows the lending workflow it belongs to.
+    overrides = {"machines.service": "machine_service", "operations.stocktake": "stocktake",
+                 "inventory.threshold": None, "inventory.watch": "request_workflow",
+                 "machines.procurement": "inventory.tobuy|machines.tobuy"}
+    key = overrides[source_kind] if source_kind in overrides else FEATURE_MODULES.get(feature)
     if key is None or makerspace is None:
         return True
     try:
-        from apps.makerspaces.platform import module_enabled
+        from apps.makerspaces.platform import feature_enabled, module_enabled
 
-        return bool(module_enabled(makerspace, key))
+        return any(feature_enabled(makerspace, part) if "." in part else module_enabled(makerspace, part)
+                   for part in key.split("|"))
     except Exception:
         # Fail open, as everywhere else here: a capability lookup failure must not mute a
         # space. A genuinely uninstalled module has no domain objects to notify about
@@ -76,6 +88,18 @@ def feature_available(makerspace, feature) -> bool:
             extra={"makerspace_id": getattr(makerspace, "pk", None), "feature": feature},
         )
         return True
+
+
+def category_available(makerspace, feature):
+    """A shared category is configurable while any owning family is installed.
+
+    Actual deliveries still pass the exact source gate in feature_available and
+    the registered source predicate; showing a category grants no delivery reach.
+    """
+    alternatives = {"printing": ["machines.service"], "stock": ["operations.stocktake", "inventory.threshold"]}
+    return feature_available(makerspace, feature) or (
+        any(feature_available(makerspace, feature, source_kind=kind) for kind in alternatives.get(feature, []))
+    )
 
 
 def selection_rows(makerspace, feature, event):
@@ -88,7 +112,7 @@ def selection_rows(makerspace, feature, event):
     """
     if feature not in SELECTABLE_FEATURES or not event:
         return []
-    if not feature_available(makerspace, feature):
+    if not category_available(makerspace, feature):
         return []
     try:
         from apps.integrations import recipients

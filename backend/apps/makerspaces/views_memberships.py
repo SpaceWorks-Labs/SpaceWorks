@@ -1,3 +1,5 @@
+from apps.accounts import rbac
+from apps.accounts.rbac_roles import additional_roles_prefetch
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework.exceptions import PermissionDenied
@@ -29,7 +31,7 @@ ERRORS = {400: ErrorSerializer, 401: ErrorSerializer, 403: ErrorSerializer, 404:
 
 def _membership(user, makerspace_id):
     return get_object_or_404(
-        servable_queryset(MakerspaceMembership.objects.select_related("makerspace", "assigned_role").filter(
+        servable_queryset(MakerspaceMembership.objects.select_related("makerspace", "assigned_role").prefetch_related(additional_roles_prefetch()).filter(
             user=user, user__is_active=True, user__access_status=User.AccessStatus.ACTIVE,
             makerspace_id=makerspace_id, status="active"
         ), relation="makerspace")
@@ -53,7 +55,9 @@ class PublicMembershipRequestView(APIView):
         require_module(makerspace, "membership")
         serializer = MembershipRequestCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        outcome = request_membership(request.user, makerspace, serializer.validated_data.get("application_answers"))
+        data = serializer.validated_data
+        outcome = request_membership(request.user, makerspace, data.get("application_answers"),
+                                     plan_id=data.get("plan_id"), invite_code=data.get("invite_code") or None)
         return Response(MembershipOutcomeSerializer(outcome).data, status=201)
 
 
@@ -66,7 +70,7 @@ class MyMembershipsView(APIView):
             raise PermissionDenied()
         memberships = servable_queryset(
             MakerspaceMembership.objects.filter(user=request.user), relation="makerspace"
-        ).select_related("makerspace", "assigned_role")
+        ).select_related("makerspace", "assigned_role").prefetch_related(additional_roles_prefetch())
         requests = servable_queryset(
             MembershipRequest.objects.filter(user=request.user), relation="makerspace"
         ).select_related("makerspace", "admission_payment")
@@ -76,7 +80,7 @@ class MyMembershipsView(APIView):
             rows.append({"makerspace": {"slug": membership.makerspace.slug, "name": membership.makerspace.name},
                          "membership_status": membership.status,
                          "role": membership.assigned_role.name if membership.assigned_role_id else membership.get_role_display(),
-                         "actions": sorted(membership.assigned_role.granted_actions) if membership.assigned_role_id else [],
+                         "actions": sorted(rbac.actions_for_membership(membership)),
                          "can_refer": membership.can_refer,
                          "can_verify": membership.can_verify,
                          "verified_at": membership.verified_at,

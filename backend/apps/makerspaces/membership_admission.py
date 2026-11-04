@@ -3,6 +3,8 @@
 Lock order: makerspace, request, membership/role, payment. Legacy tenants continue
 through the shipped flow until settings are explicitly configured.
 """
+
+from apps.accounts.account_kind_guards import require_member_account
 from datetime import timedelta
 
 from django.db import IntegrityError, transaction
@@ -10,6 +12,7 @@ from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from apps.accounts import rbac
+from apps.accounts.account_obligations import lock_obligation_owner
 from apps.audit import services as audit
 from apps.makerspaces import role_services
 from apps.makerspaces.membership_admission_forms import encode_answers
@@ -31,20 +34,25 @@ def transition(actor, row, state, *, event=None):
                  meta={"from_state": previous, "to_state": state})
 
 
-def _prepare(row, user, policy, raw_answers):
+def _prepare(row, user, policy, raw_answers, plan=None):
+    require_member_account(user)
     row.user = user
     row.admission_managed = True
     row.application_schema = application_schema_for(row.makerspace, policy)
     row.application_answers = encode_answers(row.application_schema, raw_answers)
-    row.selected_plan = policy.default_plan
+    row.selected_plan = plan if plan is not None else policy.default_plan
     row.expires_at = timezone.now() + timedelta(days=policy.request_expiry_days)
     row.rejoining = MakerspaceMembership.objects.filter(makerspace=row.makerspace, user=user).exists()
     row.save()
 
 
-def request_membership(user, makerspace, application_answers=None):
+def request_membership(user, makerspace, application_answers=None, *, plan_id=None, invite_code=None):
+    require_member_account(user)
+    from apps.tenant_migration.gate_runtime import assert_write_allowed
     with transaction.atomic():
+        assert_write_allowed(makerspace.pk)
         makerspace = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
+        user = lock_obligation_owner(user)
         policy = ensure_join_allowed(makerspace)
         if not policy.configured:
             from apps.makerspaces.membership_legacy import legacy_request_membership
@@ -53,10 +61,10 @@ def request_membership(user, makerspace, application_answers=None):
         require_module(makerspace, "membership")
         if not _eligible_user(user) or user.access_status != "active":
             raise ValidationError({"detail": "An unrestricted account with a verified email is required."})
-        if policy.join_mode == "invite_only":
-            raise AdmissionError("membership_invite_required", "This makerspace is invite-only.")
         if MakerspaceMembership.objects.filter(makerspace=makerspace, user=user, status="active").exists():
             raise ValidationError({"detail": "You are already an active member."})
+        from apps.makerspaces.membership_admission_plans import resolve_join
+        plan, policy = resolve_join(makerspace, user, policy, plan_id, invite_code)
         try:
             with transaction.atomic():
                 row = MembershipRequest.objects.create(
@@ -65,7 +73,7 @@ def request_membership(user, makerspace, application_answers=None):
                 )
         except IntegrityError as exc:
             raise AdmissionError("membership_request_exists", "An open membership request already exists.") from exc
-        _prepare(row, user, policy, application_answers)
+        _prepare(row, user, policy, application_answers, plan)
         audit.record(user, "membership.requested", makerspace=makerspace, target=row)
         from apps.makerspaces.membership_notifications import notify_membership_request_pending
         notify_membership_request_pending(row)
@@ -82,12 +90,23 @@ def request_membership(user, makerspace, application_answers=None):
 
 
 def claim_invitation(user, request_id, application_answers=None):
+    require_member_account(user)
+    from apps.tenant_migration.gate_runtime import assert_write_allowed
     original = MembershipRequest.objects.get(pk=request_id)
     with transaction.atomic():
+        assert_write_allowed(original.makerspace_id)
         makerspace = Makerspace.objects.select_for_update().get(pk=original.makerspace_id)
         row = MembershipRequest.objects.select_for_update().get(pk=request_id, makerspace=makerspace)
+        user = lock_obligation_owner(user)
         require_module_for_request(makerspace, row)
         policy = ensure_join_allowed(makerspace)
+        from apps.makerspaces.membership_import_accept import accept_import, pending_import_for
+        imported = pending_import_for(row)
+        if imported is not None:
+            # An imported member (C-13): proof is the verified email, nothing else links.
+            if row.state != "invited" or normalized_email(user.email) != row.invite_email or not _eligible_user(user):
+                raise PermissionDenied()
+            return accept_import(user, makerspace, row, imported)
         if is_staff_invitation(row) or not policy.configured:
             from apps.makerspaces.membership_legacy import legacy_claim_invitation
             return legacy_claim_invitation(user, request_id)
@@ -95,9 +114,11 @@ def claim_invitation(user, request_id, application_answers=None):
             raise AdmissionError("membership_invitation_unclaimable", "Invitation is not claimable.")
         if normalized_email(user.email) != row.invite_email:
             raise PermissionDenied()
+        from apps.makerspaces.membership_plan_policy import plan_policy
+        policy = plan_policy(makerspace, row.selected_plan or policy.default_plan, policy)
         if not _eligible_user(user) or user.access_status != "active":
             raise ValidationError({"detail": "An unrestricted account with a verified email is required."})
-        _prepare(row, user, policy, application_answers)
+        _prepare(row, user, policy, application_answers, row.selected_plan)
         audit.record(user, "membership.invitation_claimed", makerspace=makerspace, target=row)
         from apps.makerspaces.membership_notifications import notify_membership_request_pending
         notify_membership_request_pending(row)
@@ -114,9 +135,12 @@ def claim_invitation(user, request_id, application_answers=None):
 
 
 def approve_request(actor, request, assigned_role, plan=None):
+    from apps.tenant_migration.gate_runtime import assert_write_allowed
     with transaction.atomic():
+        assert_write_allowed(request.makerspace_id)
         makerspace = Makerspace.objects.select_for_update().get(pk=request.makerspace_id)
         row = MembershipRequest.objects.select_for_update().get(pk=request.pk, makerspace=makerspace)
+        row.user = lock_obligation_owner(row.user)
         if not rbac.can(actor, rbac.Action.MANAGE_MEMBERS, makerspace.pk):
             raise PermissionDenied()
         require_module_for_request(makerspace, row, outcome_role=assigned_role)
@@ -146,6 +170,8 @@ def approve_request(actor, request, assigned_role, plan=None):
             row.selected_plan = policy.default_plan
         if row.selected_plan and (row.selected_plan.makerspace_id != makerspace.pk or not row.selected_plan.is_active):
             raise ValidationError({"plan_id": "Choose an active plan in this makerspace."})
+        from apps.makerspaces.membership_plan_policy import plan_policy
+        policy = plan_policy(makerspace, row.selected_plan, policy)
         if vouching_on(makerspace, policy):
             from apps.makerspaces.membership_vouching import require_vouches
             require_vouches(row, policy)
@@ -160,6 +186,9 @@ def approve_request(actor, request, assigned_role, plan=None):
 
 def advance(actor, row, policy):
     """Re-evaluate gates under the makerspace/request locks; never grant staff actions."""
+    from apps.makerspaces.membership_plan_policy import plan_policy
+    policy = plan_policy(row.makerspace, row.selected_plan, policy)
+    row.user = lock_obligation_owner(row.user)
     if row.expires_at and row.expires_at <= timezone.now():
         raise AdmissionError("membership_request_expired", "This membership application has expired.")
     if vouching_on(row.makerspace, policy):

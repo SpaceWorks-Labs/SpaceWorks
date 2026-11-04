@@ -16,7 +16,7 @@ class AwsKmsBroker(KeyBroker):
             import boto3
         except ImportError as exc:
             raise ImproperlyConfigured(
-                "AWS KMS PII broker requires boto3; install requirements-kms.txt."
+                "AWS KMS PII broker requires boto3, which ships in backend/requirements.txt."
             ) from exc
         # Region is optional here: when unset, boto3 resolves it from the standard
         # shared config / AWS_DEFAULT_REGION chain and raises NoRegionError (mapped

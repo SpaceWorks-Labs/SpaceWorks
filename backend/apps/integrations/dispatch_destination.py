@@ -7,6 +7,7 @@ every other rule the fan-out applies -- the channel's module gate, the credentia
 the daily quota, the same transports -- and returns `(ok, error_code)` instead of raising,
 because the caller records the outcome on its own delivery row.
 """
+from apps.integrations.notification_cutover import guarded, sending_allowed
 
 import logging
 from dataclasses import dataclass, field
@@ -43,10 +44,13 @@ class DestinationEnvelope:
     created_at: datetime = field(default_factory=timezone.now)
 
 
+@guarded()
 def deliver_text_to_destination(
     makerspace, destination, *, text, feature, event, reference, payload=None
 ):
     """Send `text` to `destination`; returns (delivered, error_code)."""
+    if not sending_allowed():
+        return (False, "notification_cutover_closed")
     if destination.makerspace_id != makerspace.pk:
         return False, "notification_destination_foreign"
     if not destination.is_active:

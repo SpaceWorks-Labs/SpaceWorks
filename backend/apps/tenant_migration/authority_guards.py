@@ -12,107 +12,67 @@ other modules, semantic changes to a declared field, or a new authorization modu
 also deliberately over-approximates where the AST cannot infer an expression's model.
 Code review remains necessary; this guard makes the mechanically visible subset fail
 closed instead of claiming whole-program authorization analysis.
+
+The scanned file list lives in ``authority_sources`` and the reviewed declarations in
+``authority_explicit_fields``; both are re-exported here, so callers keep importing
+``APPS_DIR``, ``AUTHORIZATION_SOURCES`` and ``EXPLICIT_AUTHORITY_FIELDS`` from this module.
 """
 
 import ast
 from pathlib import Path
 
-import apps as project_apps
 from django.apps import apps
 
 from apps.data_export.models import EXPORTED_MODEL_FIELDS
 
+from .authority_events_programme import FIELDS as PROGRAMME_AUTHORITY_FIELDS, SCANNED_LABELS
+from .authority_explicit_fields import EXPLICIT_AUTHORITY_FIELDS
+from .authority_reimbursements import FIELDS as REIMBURSEMENT_AUTHORITY_FIELDS
+from .authority_resource_fields import RESOURCE_SCANNED_MODEL_LABELS
+from .authority_sources import APPS_DIR, AUTHORIZATION_SOURCES
+from .catalog_p2_presence import FIELD_NAMES as PRESENCE_FIELDS
+from .catalog_public_pages import EXPORTED_FIELDS as PAGE_EXPORTED_FIELDS
 from .target_projection import TARGET_FIELD_PROJECTION
-from .tenant_dump_authority_loans import LOAN_AUTHORITY_FIELDS
-from .authority_wp4 import AUTHORITY_FIELDS as WP4_AUTHORITY_FIELDS
 
 
 class AuthorityRegistryError(AssertionError):
     pass
 
 
-APPS_DIR = Path(project_apps.__file__).resolve().parent
-AUTHORIZATION_SOURCES = (
-    APPS_DIR / "accounts" / "rbac.py",
-    APPS_DIR / "accounts" / "rbac_catalogue.py",
-    APPS_DIR / "accounts" / "rbac_notifications.py",
-    APPS_DIR / "accounts" / "rbac_bookings.py",
-    APPS_DIR / "accounts" / "rbac_actions.py",
-    APPS_DIR / "accounts" / "rbac_memberships.py",
-    APPS_DIR / "accounts" / "rbac_borrowers.py",
-    APPS_DIR / "accounts" / "rbac_organizations.py",
-    APPS_DIR / "accounts" / "rbac_superadmin.py",
-    APPS_DIR / "makerspaces" / "role_authority.py",
-    APPS_DIR / "makerspaces" / "role_assignments.py",
-    APPS_DIR / "accounts" / "mfa_policy.py",
-    APPS_DIR / "machines" / "access.py",
-)
 SCANNED_MODEL_LABELS = frozenset({
+    "makerspaces.MembershipAdditionalRole",
+    "machines.MembershipMachineTypeScope",
     "makerspaces.Makerspace",
     "makerspaces.MakerspaceMembership",
     "makerspaces.MakerspaceRole",
     "machines.Machine",
     "machines.MachineOperator",
     "machines.MachineType",
-})
-
-
-EXPLICIT_AUTHORITY_FIELDS = {
-    **WP4_AUTHORITY_FIELDS,
-    **LOAN_AUTHORITY_FIELDS,
-    ("machines.MakerspaceMachineTypePolicy", "makerspace"): "Tenant boundary for reminder policy; preserved data does not grant staff authority.",
-    ("machines.MakerspaceMachineTypePolicy", "machine_type"): "Remapped type boundary for reminder policy, never an authorization scope grant.",
-    ("machines.MakerspaceMachineTypePolicy", "cert_reminder_days"): "Portable certification disclosure timing; target-owned feature and channel gates still apply.",
-    ("machines.MakerspaceMachineTypePolicy", "reminder_lead_days"): "Portable maintenance disclosure timing; recipients require live target machine authority.",
-    ("machines.MakerspaceMachineTypePolicy", "grace_days"): "Portable overdue disclosure timing; grants no access or automatic lockout bypass.",
-    ("maintenance.MaintenanceSchedule", "anchor"): "Portable recurrence preference; completion still requires target actor authority.",
-    ("makerspaces.Makerspace", "lifecycle_state"): (
-        "Scheduled-work visibility is target-owned; Lane D resets lifecycle state."
-    ),
-    ("makerspaces.MakerspaceMembership", "makerspace"): "Tenant boundary for membership authority.",
-    ("makerspaces.MakerspaceMembership", "user"): "Identity receiving the membership grant.",
-    ("makerspaces.MakerspaceMembership", "role"): "Legacy fallback authority is reduced to Member/CUSTOM.",
-    ("makerspaces.MakerspaceMembership", "assigned_role"): "Remapped only to the target Member role.",
-    ("makerspaces.MakerspaceMembership", "status"): "Preserved only as inert pending-membership evidence until target proof.",
-    ("makerspaces.MakerspaceRole", "makerspace"): "Target-seeded role ownership boundary.",
-    ("makerspaces.MakerspaceRole", "slug"): "Identifies the target-seeded Member role.",
-    ("makerspaces.MakerspaceRole", "granted_actions"): "Archived role rows are dropped; target grants are kept.",
-    ("makerspaces.MakerspaceRole", "legacy_role"): "Archived role rows are dropped; target identity is kept.",
-    ("makerspaces.MakerspaceRole", "is_default"): "Required when resolving the protected target Member role.",
-    ("makerspaces.MakerspaceRole", "is_protected"): "Required when resolving the protected target Member role.",
-    ("machines.Machine", "makerspace"): "Machine authorization is bounded by this tenant relation.",
-    ("machines.Machine", "machine_type"): "Type-level authority follows this remapped relation.",
-    ("machines.Machine", "status"): "AST over-approximation: operational state remains archive evidence.",
-    ("machines.Machine", "is_active"): "AST over-approximation: lifecycle state remains archive evidence.",
-    ("machines.MachineType", "makerspace"): "Distinguishes target globals from tenant custom types.",
-    ("machines.MachineType", "is_builtin"): "Discriminator for global resolution versus projected custom insertion.",
-    ("machines.MachineType", "slug"): "Resolves target built-in types; custom type identifiers stay tenant-scoped.",
-    ("makerspaces.Makerspace", "slug"): "Portable routing identifier is resolved for the new tenant; it grants no actor authority.",
-    ("makerspaces.Makerspace", "public_inventory_enabled"): "Portable catalogue publication choice remains bounded by target modules, loan visibility and servability.",
-    ("machines.MachineOperator", "machine"): "Owner decision 22 preserves this live authority relation.",
-    ("machines.MachineOperator", "user"): "Owner decision 22 preserves the identity receiving authority.",
-    ("machines.MachineOperator", "access_level"): "Owner decision 22 preserves the operate/manage/full grant.",
-    ("machines.MachineOperator", "assigned_by"): "Owner decision 22 preserves assignment provenance with FK closure.",
-    ("machines.MachineOperator", "assigned_at"): "Owner decision 22 preserves assignment-time provenance.",
-    ("machines.RoleMachineScope", "role"): "Dropped role authority scope.",
-    ("machines.RoleMachineScope", "machine"): "Dropped role authority scope.",
-    ("machines.RoleMachineTypeScope", "role"): "Dropped role authority scope.",
-    ("machines.RoleMachineTypeScope", "machine_type"): "Dropped role authority scope.",
-    ("makerspaces.MembershipRequest", "assigned_role"): "Remapped to target Member, never a source role.",
-    ("integrations.NotificationRecipient", "makerspace"): "Dropped disclosure-rule tenant boundary.",
-    ("integrations.NotificationRecipient", "feature"): "Dropped disclosure-rule discriminator.",
-    ("integrations.NotificationRecipient", "event"): "Dropped disclosure-rule discriminator.",
-    ("integrations.NotificationRecipient", "kind"): "Every recipient kind is dropped.",
-    ("integrations.NotificationRecipient", "role"): "Dropped role-directed disclosure rule.",
-    ("integrations.NotificationRecipient", "user"): "Dropped named-user disclosure rule.",
-    ("integrations.NotificationDestination", "channel"): "Selects credential and delivery semantics.",
-    ("integrations.NotificationDestination", "telegram_chat_id"): "Target-bot disclosure destination.",
-}
+}) | RESOURCE_SCANNED_MODEL_LABELS
 
 DECLARED_AUTHORITY_FIELDS = {
     **{edge: policy.reason for edge, policy in TARGET_FIELD_PROJECTION.items()},
     **EXPLICIT_AUTHORITY_FIELDS,
 }
+SCANNED_MODEL_LABELS |= PAGE_EXPORTED_FIELDS.keys()
+DECLARED_AUTHORITY_FIELDS.update({
+    (label, field): "Authored page history is remapped with reset publication/disclosures and locked target-side owner authority."
+    for label, fields in PAGE_EXPORTED_FIELDS.items() for field in fields.split() if field != "id"
+})
+DECLARED_AUTHORITY_FIELDS.update({
+    ("events.EventPage", field): "Selected publication and editorial content travel only with reviewed page-pointer/disclosure resets."
+    for field in ("draft_revision", "published_revision", "editorial_document")
+})
+SCANNED_MODEL_LABELS |= PRESENCE_FIELDS.keys()
+DECLARED_AUTHORITY_FIELDS.update({
+    (label, field): "Source-local presence/disclosure input; the entire model is DROP on tenant import."
+    for label, fields in PRESENCE_FIELDS.items() for field in fields if field != "id"
+})
+SCANNED_MODEL_LABELS |= SCANNED_LABELS
+DECLARED_AUTHORITY_FIELDS.update(PROGRAMME_AUTHORITY_FIELDS)
+DECLARED_AUTHORITY_FIELDS.update(REIMBURSEMENT_AUTHORITY_FIELDS)
+from .catalog_unified_accounts import AUTHORITY_DECLARATIONS as UNIFIED_ACCOUNT_AUTHORITY  # noqa: E402
+DECLARED_AUTHORITY_FIELDS.update(UNIFIED_ACCOUNT_AUTHORITY)
 
 
 def _normalise_field_name(name, model_fields):

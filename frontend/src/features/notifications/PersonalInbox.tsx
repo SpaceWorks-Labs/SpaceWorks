@@ -1,31 +1,75 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ListLayout } from "../../components/layouts";
+import { ErrorBlock, ListRow, RelativeTime, StatusPill, type Action, type IconName } from "../../components/ui";
+import { RouteLink } from "../../components/ui/RouteLink";
 import { memberRequest, staffRequest } from "../../lib/api";
+import { opsQueryState, useOpsTabs } from "../staff/opsPresentation";
+import { inboxUnreadKey, personalRecipientKey } from "./personalQueryKeys";
+import { useOptionalTenant } from "../../lib/tenant";
+import { inboxRoute, isInboxLink } from "./inboxLinks";
+import { InboxRowActions } from "./InboxRowActions";
+export { inboxUnreadKey } from "./personalQueryKeys";
+export { isInboxLink } from "./inboxLinks";
 
 export type InboxRow = {
   id: number; feature: string; event: string; title: string; summary: string; link: string;
   read_at: string | null; created_at: string;
 };
 export type Page<T> = { count: number; next: string | null; previous: string | null; results: T[] };
-import { inboxUnreadKey, personalRecipientKey } from "./personalQueryKeys";
-export { inboxUnreadKey } from "./personalQueryKeys";
+const families: Record<string, string> = { hardware_requests: "Hardware", printing: "Printing", events: "Events",
+  bookings: "Bookings", maintenance: "Maintenance", members: "Members", payments: "Payments", stock: "Stock",
+  certifications: "Certifications", devices: "Devices", api_access: "API access" };
 
-export function isInboxLink(value: string): boolean {
-  return value.startsWith("/") && !value.startsWith("//") && !/[\\\x00-\x1f\x7f]/.test(value);
+const familyIcons: Record<string, IconName> = { hardware_requests: "Wrench", printing: "Settings", events: "Calendar",
+  bookings: "Calendar", maintenance: "Wrench", members: "User", payments: "Info", stock: "Wrench",
+  certifications: "CheckCircle", devices: "Settings", api_access: "Settings" };
+
+function dateGroup(value: string) {
+  const date = new Date(value);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  if (date >= today) return "Today";
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  if (date >= yesterday) return "Yesterday";
+  const week = new Date(today);
+  week.setDate(week.getDate() - 7);
+  return date >= week ? "Earlier this week" : "Older";
 }
 
-export function PersonalInbox({ makerspaceId, member = false }: { makerspaceId: number; member?: boolean }) {
+/** The server decides the page size: a page with a `next` link is full, and the last page's size follows from the count. */
+function serverPageSize(data: Page<unknown>, page: number) {
+  const length = data.results.length;
+  if (data.next || page === 1) return Math.max(1, length);
+  return Math.max(1, Math.round((data.count - length) / (page - 1)));
+}
+
+export function PersonalInbox({ makerspaceId, makerspaceSlug, member = false, announcement, overflow, snooze = false }: {
+  makerspaceId: number; makerspaceSlug?: string; member?: boolean; announcement?: Action; overflow?: Action[]; snooze?: boolean;
+}) {
+  const tenant = useOptionalTenant();
+  const { slug } = useParams();
+  const linkSlug = makerspaceSlug || slug || tenant?.slug || "";
   const client = useQueryClient();
   const send = member ? memberRequest : staffRequest;
   const mode = member ? "member" : "staff";
   const recipient = personalRecipientKey();
-  const [unread, setUnread] = useState(false);
-  const [page, setPage] = useState(1);
+  const tabs = useOpsTabs("inbox", [{ key: "unread", label: "Unread" }, { key: "all", label: "All" },
+    ...(snooze ? [{ key: "archived", label: "Archived" }] : [])], "all");
+  const unread = tabs.active === "unread";
+  const archived = snooze && tabs.active === "archived";
+  const [pageState, setPage] = useState({ page: 1, tab: tabs.active });
+  const page = pageState.tab === tabs.active ? pageState.page : 1;
+  useEffect(() => { setPage({ page: 1, tab: tabs.active }); }, [tabs.active]);
   const [feature, setFeature] = useState("");
+  const [expanded, setExpanded] = useState<Record<number, boolean>>({});
   const path = `/notifications/inbox/${makerspaceId}`;
   const params = new URLSearchParams({ page: String(page), unread: String(unread) });
   if (feature) params.set("feature", feature);
-  const rows = useQuery({ queryKey: ["notifications-inbox", makerspaceId, mode, recipient, page, unread, feature],
+  if (archived) params.set("archived", "true");
+  const rows = useQuery({ queryKey: ["notifications-inbox", makerspaceId, mode, recipient, page, unread, feature, archived],
     queryFn: () => send<Page<InboxRow>>(`${path}?${params}`), refetchInterval: 60_000 });
   const count = useQuery({ queryKey: inboxUnreadKey(makerspaceId, mode),
     queryFn: () => send<{ count: number }>(`${path}/unread-count`), refetchInterval: 60_000 });
@@ -35,37 +79,47 @@ export function PersonalInbox({ makerspaceId, member = false }: { makerspaceId: 
   };
   const read = useMutation({ mutationFn: (id: number) => send(`${path}/${id}/read`, { method: "POST" }), onSuccess: refresh });
   const readAll = useMutation({ mutationFn: () => send(`${path}/read-all`, { method: "POST" }), onSuccess: refresh });
-  const error = rows.error ?? count.error ?? read.error ?? readAll.error;
-  return <section className="desk-panel p-5" aria-label="Personal notifications">
-    <h2 className="title-panel">Your inbox <span className="text-sm text-muted" aria-live="polite">({count.data?.count ?? 0} unread)</span></h2>
-    <div className="my-3 flex flex-wrap items-center gap-3">
-      <label className="inline-flex items-center gap-2 text-sm"><input type="checkbox" checked={unread}
-        onChange={(event) => { setUnread(event.target.checked); setPage(1); }} />Unread only</label>
-      <label className="grid gap-1 text-sm">Family<select className="desk-input" value={feature}
-        onChange={(event) => { setFeature(event.target.value); setPage(1); }}>
-        <option value="">All families</option>
-        {["hardware_requests", "printing", "events", "bookings", "maintenance", "members", "payments", "stock", "certifications", "devices", "api_access"].map((key) =>
-          <option key={key} value={key}>{key.replace(/_/g, " ")}</option>)}
-      </select></label>
-      <button className="desk-button-success" disabled={readAll.isPending || !count.data?.count}
-        onClick={() => readAll.mutate()}>Mark all read</button>
-    </div>
-    {rows.isLoading ? <p className="text-sm text-muted">Loading your inbox...</p> : null}
-    {error ? <p className="text-sm text-danger" role="alert">{error.message}</p> : null}
-    {rows.data?.results.length === 0 ? <p className="text-sm text-muted">No notifications.</p> : null}
-    <ul className="space-y-3">{rows.data?.results.map((row) => <li key={row.id}
-      className={`rounded-md border p-3 ${row.read_at ? "border-line" : "border-accent"}`}>
-      <p className="text-xs text-muted">{row.feature.replace(/_/g, " ")} · {new Date(row.created_at).toLocaleString()}</p>
-      <h3 className="font-semibold text-ink">{row.title}</h3>
-      <p className="mt-1 whitespace-pre-wrap break-words text-sm text-muted">{row.summary}</p>
-      <div className="mt-2 flex gap-3">{isInboxLink(row.link) ?
-        <a className="desk-button-secondary" href={row.link}>Open</a> : null}
-      {!row.read_at ? <button className="desk-button-success" disabled={read.isPending} onClick={() => read.mutate(row.id)}>Mark read</button> : null}</div>
-    </li>)}</ul>
-    <div className="mt-4 flex items-center gap-3">
-      <button className="desk-button-ghost" disabled={!rows.data?.previous} onClick={() => setPage(page - 1)}>Previous</button>
-      <span className="text-sm text-muted">Page {page}</span>
-      <button className="desk-button-ghost" disabled={!rows.data?.next} onClick={() => setPage(page + 1)}>Next</button>
-    </div>
+  const unreadCount = count.data?.count ?? 0;
+  const state = opsQueryState({ isLoading: rows.isLoading || count.isLoading, error: rows.error ?? count.error,
+    refetch: () => Promise.all([rows.refetch(), count.refetch()]) }, "notifications");
+  let previousGroup = "";
+  return <section aria-label="Personal notifications" onClickCapture={tabs.onClickCapture}>
+    <ListLayout header={{ title: member ? "Your inbox" : "Notifications", subtitle: "Activity from your Space Works community.",
+      meta: <span aria-live="polite">({unreadCount} unread)</span>,
+      primary: { label: "Mark all read", onClick: () => readAll.mutate(), pending: readAll.isPending, pendingLabel: "Marking read…",
+        disabled: !unreadCount, disabledReason: !unreadCount ? "You're all caught up." : undefined }, secondary: announcement, overflow }}
+      tabs={tabs.tabs.map(tab => tab.key === "unread" ? { ...tab, count: unreadCount } : tab)} activeTab={tabs.active}
+      filters={{ controls: <label className="grid gap-1 text-sm">Family<select className="desk-input" value={feature}
+        onChange={event => { setFeature(event.target.value); setPage({ page: 1, tab: tabs.active }); }}>
+        <option value="">All families</option>{Object.entries(families).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
+      </select></label> }} state={state} isEmpty={rows.data?.results.length === 0}
+      empty={{ message: unread ? "You're all caught up." : "No notifications yet. Activity from your space shows up here." }}
+      filtered={Boolean(feature)} filteredEmpty={{ message: "No notifications in this family. Try another family.", action: { label: "Clear filters", onClick: () => setFeature("") } }}
+      body={{ kind: "rows", rows: rows.data?.results.map(row => {
+        const link = inboxRoute(row.link, tenant?.mode ?? "central", linkSlug);
+        const group = dateGroup(row.created_at);
+        const showGroup = previousGroup !== group;
+        previousGroup = group;
+        return <div key={row.id} className="grid gap-3">{showGroup ? <h2 className="eyebrow mt-3">{group}</h2> : null}
+          <div className={row.read_at ? "" : "rounded-xl border-l-4 border-accent"}>
+            <ListRow title={row.title} identity={{ kind: "icon", icon: familyIcons[row.feature] ?? "Info", tone: "neutral" }}
+              onClick={!row.read_at ? () => read.mutate(row.id) : undefined}
+              meta={<><span>{families[row.feature] ?? row.feature.replace(/_/g, " ")} · <RelativeTime date={row.created_at} /></span>
+                <span className="mt-1 block line-clamp-2 whitespace-pre-wrap break-words">{row.summary}</span></>}
+              right={<div className="flex flex-wrap items-center gap-2">{!row.read_at ? <StatusPill label="Unread" tone="accent" /> : null}
+                {isInboxLink(link) ? <RouteLink className="desk-button" href={link} onClick={() => { if (!row.read_at) read.mutate(row.id); }}>Open</RouteLink> : null}
+                {!row.read_at ? <button className="desk-button" disabled={read.isPending} onClick={() => read.mutate(row.id)}>Mark read</button> : null}
+                {snooze ? <InboxRowActions path={path} id={row.id} member={member} archived={archived} onChanged={refresh} /> : null}</div>} />
+            {row.summary ? <div className="mx-4 mb-4">
+              <button className="desk-button-ghost" aria-expanded={Boolean(expanded[row.id])}
+                onClick={() => { setExpanded(current => ({ ...current, [row.id]: !current[row.id] }));
+                  if (!row.read_at && !read.isPending) read.mutate(row.id); }}>
+                {expanded[row.id] ? "Show less" : "Read message"}</button>
+              {expanded[row.id] ? <p className="whitespace-pre-wrap break-words text-sm">{row.summary}</p> : null}
+            </div> : null}
+          </div></div>;
+      }) }} pagination={rows.data ? { page, pageSize: serverPageSize(rows.data, page), count: rows.data.count,
+        onChange: next => setPage({ page: next, tab: tabs.active }) } : undefined}
+      detail={read.error || readAll.error ? <ErrorBlock error={read.error ?? readAll.error} /> : undefined} />
   </section>;
 }

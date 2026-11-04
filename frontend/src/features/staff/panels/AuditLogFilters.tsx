@@ -46,7 +46,7 @@ export function AuditLogFilters({
   const set = (key: keyof AuditFilters) => (event: { target: { value: string } }) =>
     onChange({ ...filters, [key]: event.target.value });
   return (
-    <div className="mb-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-2">
       <Field label="Makerspace ID"><input className="desk-input" inputMode="numeric" value={filters.makerspace} onChange={set("makerspace")} /></Field>
       <Field label="Action"><input className="desk-input" placeholder="e.g. request.issued" value={filters.action} onChange={set("action")} /></Field>
       <Field label="Actor ID"><input className="desk-input" inputMode="numeric" value={filters.actor} onChange={set("actor")} /></Field>

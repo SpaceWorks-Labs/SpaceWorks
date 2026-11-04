@@ -1,130 +1,19 @@
-"""Email-only member notices plus matrix-controlled membership staff alerts."""
-
-import logging
-
-from apps.integrations.email import send_makerspace_email
-from apps.integrations.email_templates import render
-from apps.integrations.email_templates_fablab import membership_context
-from apps.integrations.notify import EmailDelivery, LifecyclePayload, notify_lifecycle
-from apps.integrations.staff_notifications import staff_emails_for_feature
-from apps.makerspaces.models import MakerspaceMembership, MembershipRequest
-from apps.notifications.inbox import InboxDelivery
-
-logger = logging.getLogger(__name__)
-
-
-def _member_email(membership, *, event, subject, body):
-    """Queue a direct member email without routing it to staff chat channels."""
-    recipient = (membership.user.email or "").strip()
-    if not recipient:
-        return
-    try:
-        send_makerspace_email(
-            membership.makerspace,
-            subject,
-            body,
-            [recipient],
-            stream="membership",
-            event=event,
-            audience="member",
-            recipient_id=membership.user_id,
-            feature="members",
-        )
-    except Exception:
-        logger.warning(
-            "membership_member_email_failed",
-            extra={"makerspace_id": membership.makerspace_id, "event": event},
-        )
+"""Stable membership notification entry points."""
+from .notifications_p2_members import notify_member, notify_request
 
 
 def send_member_welcome(membership, *, source):
-    event = "approved" if source == "approval" else "joined"
-    _member_email(
-        membership,
-        event=event,
-        subject=f"Welcome to {membership.makerspace.name}",
-        body=f"Your membership at {membership.makerspace.name} is active. Welcome!",
-    )
+    return notify_member(membership, "approved" if source == "approval" else "joined", staff=False)
 
 
 def send_member_verified(membership):
-    _member_email(
-        membership,
-        event="verified",
-        subject=f"You are verified at {membership.makerspace.name}",
-        body=f"You have been verified as a member of {membership.makerspace.name}.",
-    )
-
-
-def _staff_payload(makerspace, event, context, data, user_id=None):
-    from apps.integrations.recipients import feature_available
-    from apps.makerspaces.servability import is_servable
-    makerspace.refresh_from_db()
-    if not is_servable(makerspace) or not feature_available(makerspace, "members"):
-        raise ValueError("Membership notifications are unavailable.")
-    # Streams and features differ by name for membership alone (`membership` vs
-    # `members`), so the render call spells the stream out rather than reusing the feature.
-    staff = render(makerspace, "membership", "staff", event, context)
-    emails = tuple(
-        EmailDelivery(
-            to_email=recipient,
-            subject=staff["subject"],
-            text_body=staff["text_body"],
-            audience="staff",
-            stream="membership",
-        )
-        for recipient in staff_emails_for_feature(makerspace, "members", event=event)
-    )
-    return LifecyclePayload(
-        text=staff["text_body"], emails=emails, context=context, data=data,
-        inbox=(InboxDelivery(user_id, "Membership update", f"Your membership: {event.replace('_', ' ')}.",
-                             f"/m/{makerspace.slug}/member"),) if user_id else (),
-    )
+    return notify_member(membership, "verified", staff=False)
 
 
 def notify_membership_request_pending(request, *, sync=False):
-    request_id = request.pk
-    makerspace = request.makerspace
-
-    def build():
-        row = MembershipRequest.objects.select_related("makerspace", "user").get(pk=request_id)
-        return _staff_payload(
-            row.makerspace,
-            "request_pending",
-            membership_context(row.makerspace, "request_pending", request=row),
-            {"membership_request_id": row.pk},
-            row.user_id,
-        )
-
-    return notify_lifecycle(
-        makerspace,
-        feature="members",
-        event="request_pending",
-        build=build,
-        sync=sync,
-    )
+    return notify_request(request, "request_pending")
 
 
 def notify_member_joined(membership, *, sync=False):
-    membership_id = membership.pk
-    makerspace = membership.makerspace
-
-    def build():
-        row = MakerspaceMembership.objects.select_related("makerspace", "user").get(
-            pk=membership_id
-        )
-        return _staff_payload(
-            row.makerspace,
-            "member_joined",
-            membership_context(row.makerspace, "member_joined", user=row.user),
-            {"membership_id": row.pk},
-            row.user_id,
-        )
-
-    return notify_lifecycle(
-        makerspace,
-        feature="members",
-        event="member_joined",
-        build=build,
-        sync=sync,
-    )
+    # Activation already reserved the owner's one welcome intent.
+    return notify_member(membership, "member_joined", owner=False)

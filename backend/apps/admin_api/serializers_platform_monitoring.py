@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 
 class UsageResourceSerializer(serializers.Serializer):
-    key = serializers.CharField()
+    key = serializers.CharField(help_text="Resource limit key, including daily sms and whatsapp logical messages.")
     label = serializers.CharField()
     used = serializers.IntegerField(allow_null=True)
     limit = serializers.IntegerField(allow_null=True)
@@ -52,7 +52,11 @@ class FailedDeliveriesSerializer(serializers.Serializer):
     notifications = serializers.IntegerField()
 
 
+from .serializers_deployment import DeploymentSummarySerializer
+
+
 class PlatformDashboardSerializer(serializers.Serializer):
+    deployment = DeploymentSummarySerializer(required=False)
     checked_at = serializers.DateTimeField()
     tenants_by_state = serializers.DictField(child=serializers.IntegerField())
     usage_totals = serializers.DictField(child=serializers.IntegerField())

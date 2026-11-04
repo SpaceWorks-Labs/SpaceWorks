@@ -2,11 +2,14 @@ from django.urls import path
 
 from apps.admin_api import views
 from apps.inventory.reorder_views import ReorderSuggestionsView, ReorderDraftView
+from apps.inventory.views_consumables import ConsumableListView, ConsumableUseView
 
 
 urlpatterns = [
     path("makerspace/<int:makerspace_id>/inventory/reorder-suggestions", ReorderSuggestionsView.as_view(), name="admin-reorder-suggestions"),
     path("makerspace/<int:makerspace_id>/inventory/reorder-draft", ReorderDraftView.as_view(), name="admin-reorder-draft"),
+    path("makerspace/<int:makerspace_id>/consumables", ConsumableListView.as_view(), name="admin-consumables"),
+    path("makerspace/<int:makerspace_id>/consumables/<int:pk>/use", ConsumableUseView.as_view(), name="admin-consumable-use"),
     path(
         "makerspace/<int:makerspace_id>/inventory",
         views.InventoryListCreateView.as_view(),
@@ -67,6 +70,11 @@ urlpatterns = [
         "makerspace/<int:makerspace_id>/inventory/import/apply",
         views.BulkImportApplyView.as_view(),
         name="inventory-import-apply",
+    ),
+    path(
+        "makerspace/<int:makerspace_id>/inventory/import/sheet",
+        views.BulkImportSheetView.as_view(),
+        name="inventory-import-sheet",
     ),
     path(
         "makerspace/<int:makerspace_id>/inventory/import/jobs",

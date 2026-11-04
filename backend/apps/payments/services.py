@@ -4,6 +4,8 @@ The rail lives in `services_checkout`; this module re-exports it, and the webhoo
 handlers, so `from apps.payments.services import X` keeps resolving for every caller.
 """
 
+from apps.accounts.account_kind_guards import require_member_account
+
 import logging
 
 from django.db import transaction
@@ -34,12 +36,17 @@ logger = logging.getLogger(__name__)
 @transaction.atomic
 def create_payment(
     *, makerspace, subject_type, subject_id, member, amount, currency, created_by,
-    via_makerspace=None, subject_label="", due_at=None,
+    via_makerspace=None, subject_label="", due_at=None, pricing_snapshot=None,
 ):
     # A missing source is NOT fatal any more. Recording what a member owes is separate
     # from being able to collect it online: a space that takes cash still needs the debt
     # on the books, visible in the member area and settleable by staff. The row is stamped
     # `unclaimed` and the first checkout that reaches a provider claims it.
+    require_member_account(member)
+    # Tax is frozen once, here, the single seam every domain raises charges through. With
+    # `billing.tax` off this returns the amount unchanged and no snapshot (release 1).
+    from apps.payments.tax.snapshot import freeze_for_charge
+    amount, tax_snapshot = freeze_for_charge(makerspace, amount, currency, member)
     source = resolve_payment_source(makerspace)
     if source is None:
         vendor = Payment.Provider.UNCLAIMED
@@ -71,6 +78,9 @@ def create_payment(
         stripe_provider=provider,
         stripe_connected_account_id=connected_account_id,
         stripe_application_fee_amount=fee_amount,
+        tax_snapshot=tax_snapshot,
+        # Lane L15: the frozen net quote this amount came from (insert-only).
+        pricing_snapshot=pricing_snapshot or {},
     )
     # Raising a charge is when a member incurs a debt; the log previously recorded
     # only its settlement.
@@ -86,11 +96,28 @@ def create_payment(
             "amount": str(amount),
             "currency": payment.currency,
             "via_makerspace_id": via_makerspace.pk if via_makerspace else None,
+            # Lane L15: the automatic discount this raise applied, if any.
+            "discount_id": _discount(pricing_snapshot).get("id"),
+            "discount_saving": _discount(pricing_snapshot).get("saving"),
         },
     )
     from apps.payments.notifications import notify_payment
     notify_payment(payment, "charge_raised")
+    # An optional document must never poison the required debt transaction.
+    try:
+        with transaction.atomic():
+            from apps.payments.documents import issue_bill
+            issue_bill(payment, actor=created_by)
+    except Exception as exc:
+        logger.error("payment_bill_issue_failed", extra={
+            "payment_id": payment.pk, "failure_type": type(exc).__name__,
+        })
     return payment
+
+
+def _discount(snapshot):
+    """Lane L15: the discount a raise applied, named in its audit entry."""
+    return (snapshot or {}).get("discount") or {}
 
 
 from apps.payments.reconciliation import mark_offline, waive  # noqa: E402,F401

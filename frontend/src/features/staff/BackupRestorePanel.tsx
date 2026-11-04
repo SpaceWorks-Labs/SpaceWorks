@@ -8,92 +8,95 @@ import {
   issueBackupDownload,
   listDeploymentBackups,
   listRestores,
-  listTenantBackups,
   requestDeploymentBackup,
   requestRestore,
-  requestTenantBackup,
   updateBackupSettings,
   type BackupArchive,
 } from "./backupApi";
-import { Panel } from "./panels/shared";
+import { useState } from "react";
+import { SettingsLayout } from "../../components/layouts";
+import { ErrorText } from "../../components/ui";
+import { toast } from "../../components/ui/toastStore";
+import { adminQueryState } from "./adminPresentation";
+import { ArchiveDisclosure, BackupArchiveRows } from "./BackupArchiveRows";
+import { BackupScheduleSettings } from "./BackupScheduleSettings";
+import { BackupRestoreDialog } from "./BackupRestoreDialog";
+import { RestoreDecision } from "./RestoreDecision";
+import { BackupStatusCard } from "./panels/DashboardArchiveStatus";
+export { RestoreDecision } from "./RestoreDecision";
 
-export function BackupRestorePanel({ makerspaceId, isSuperadmin, tenantBackupsEnabled = true }: { makerspaceId: number; isSuperadmin: boolean; tenantBackupsEnabled?: boolean }) {
+import { getPlatformDashboard } from "./platformMonitoringApi";
+import { SpaceBackupSection } from "./SpaceBackupSection";
+import { BackupScheduleView } from "./BackupScheduleView";
+import { getBackupSchedule } from "./spaceRestoreApi";
+import { DeploymentNotices } from "../deployment/DeploymentNotices";
+import { SelfHostMoveCard } from "./SelfHostMoveCard";
+
+export function BackupRestorePanel({ makerspaceId, isSuperadmin }: { makerspaceId: number; isSuperadmin: boolean }) {
+  const runtime = useQuery({ queryKey: ["platform-dashboard"], queryFn: getPlatformDashboard, enabled: isSuperadmin });
+  const deploymentInfo = runtime.data?.deployment;
+  const hostControls = isSuperadmin && deploymentInfo?.mode === "host";
   const client = useQueryClient();
-  const tenantKey = ["tenant-backups", makerspaceId];
+  const [restoreOpen, setRestoreOpen] = useState(false);
+  // One flow for both scopes (#111 SEAMLESS): the whole platform, or one space.
+  const [scope, setScope] = useState<"platform" | number>("platform");
+  const schedule = useQuery({ queryKey: ["backup-schedule"], queryFn: getBackupSchedule, enabled: isSuperadmin });
   const deploymentKey = ["deployment-backups"];
-  const tenant = useQuery({ queryKey: tenantKey, queryFn: () => listTenantBackups(makerspaceId), enabled: tenantBackupsEnabled, refetchInterval: pollArchives });
-  const deployment = useQuery({ queryKey: deploymentKey, queryFn: listDeploymentBackups, enabled: isSuperadmin, refetchInterval: pollArchives });
-  const settings = useQuery({ queryKey: ["backup-settings"], queryFn: getBackupSettings, enabled: isSuperadmin });
-  const restores = useQuery({ queryKey: ["restore-operations"], queryFn: listRestores, enabled: isSuperadmin, refetchInterval: 3000 });
+  const deployment = useQuery({ queryKey: deploymentKey, queryFn: listDeploymentBackups, enabled: hostControls, refetchInterval: pollArchives });
+  const settings = useQuery({ queryKey: ["backup-settings"], queryFn: getBackupSettings, enabled: hostControls });
+  const restores = useQuery({ queryKey: ["restore-operations"], queryFn: listRestores, enabled: hostControls, refetchInterval: 3000 });
   const activeRestore = restores.data?.find((row) => !["completed", "failed", "aborted", "restored_quarantined"].includes(row.stage));
   const restoreDetail = useQuery({ queryKey: ["restore-operation", activeRestore?.id], queryFn: () => getRestore(activeRestore!.id), enabled: Boolean(activeRestore), refetchInterval: 1000 });
-  const createTenant = useMutation({ onMutate: getJobSession, mutationFn: () => requestTenantBackup(makerspaceId), onSuccess: (job, _variables, session) => { trackJob({ key: `backup:${job.id}`, label: "Makerspace backup", makerspaceId, status: job.status, endpoint: `/admin/makerspace/${makerspaceId}/backups`, collectionId: job.id }, session); return client.invalidateQueries({ queryKey: tenantKey }); } });
   const createDeployment = useMutation({ onMutate: getJobSession, mutationFn: requestDeploymentBackup, onSuccess: (job, _variables, session) => { trackJob({ key: `backup:${job.id}`, label: "Deployment backup", makerspaceId: 0, status: job.status, endpoint: "/admin/platform/backups", collectionId: job.id }, session); return client.invalidateQueries({ queryKey: deploymentKey }); } });
-  const saveSettings = useMutation({ mutationFn: updateBackupSettings, onSuccess: (data) => client.setQueryData(["backup-settings"], data) });
+  const saveSettings = useMutation({ mutationFn: updateBackupSettings, onSuccess: (data) => { client.setQueryData(["backup-settings"], data); toast("Backup settings saved."); } });
   const download = useMutation({ mutationFn: issueBackupDownload, onSuccess: ({ url }) => window.location.assign(url) });
-  const startRestore = useMutation({ mutationFn: ({ archive, kind }: { archive: string; kind: "rollback_in_place" | "disaster" }) => requestRestore(archive, kind), onSuccess: () => client.invalidateQueries({ queryKey: ["restore-operations"] }) });
+  const startRestore = useMutation({ mutationFn: ({ archive, kind }: { archive: string; kind: "rollback_in_place" | "disaster" }) => requestRestore(archive, kind), onSuccess: () => { setRestoreOpen(false); return client.invalidateQueries({ queryKey: ["restore-operations"] }); } });
   const decision = useMutation({ mutationFn: ({ id, value }: { id: string; value: "proceed" | "reset" | "abort" }) => decideRestore(id, value), onSuccess: () => client.invalidateQueries({ queryKey: ["restore-operations"] }) });
 
-  return (
-    <div className="grid gap-5">
-      {tenantBackupsEnabled ? (
-        <Panel title="Makerspace backups">
-          <ArchiveDisclosure deployment={false} />
-          <ActionButton label="Create makerspace archive" pending={createTenant.isPending} onClick={() => createTenant.mutate()} />
-          <ArchiveRows rows={tenant.data ?? []} onDownload={(id) => download.mutate(id)} />
-        </Panel>
-      ) : (
-        <p className="text-sm text-muted">The backup module is not installed for this makerspace; the deployment's own backups still cover it.</p>
-      )}
-      {isSuperadmin ? (
-        <Panel title="Deployment backup and restore">
-          <div className="grid gap-4">
-            <ArchiveDisclosure deployment />
-            <label className="flex items-center gap-3 text-sm text-ink">
-              <input type="checkbox" checked={settings.data?.automatic_backups_enabled ?? false} disabled={saveSettings.isPending} onChange={(event) => saveSettings.mutate({ automatic_backups_enabled: event.target.checked })} />
-              Create a full deployment archive each day
-            </label>
-            <p className="text-xs text-muted">Last successful archive: {formatDate(settings.data?.last_success_at)}</p>
-            <label className="grid max-w-xs gap-1 text-sm text-ink">
-              Archive retention (days)
-              <input className="desk-input" type="number" min={1} max={3650} key={settings.data?.retention_days} defaultValue={settings.data?.retention_days ?? 30} onBlur={(event) => saveSettings.mutate({ retention_days: Math.max(1, Number(event.target.value) || 30) })} />
-            </label>
-            {settings.data?.last_error ? <p className="text-sm text-danger" role="alert">{settings.data.last_error}</p> : null}
-            <ActionButton label="Create full deployment archive" pending={createDeployment.isPending} onClick={() => createDeployment.mutate()} />
-            <ArchiveRows rows={deployment.data ?? []} onDownload={(id) => download.mutate(id)} onRestore={(id, kind) => startRestore.mutate({ archive: id, kind })} />
-            {restoreDetail.data ? <RestoreDecision operation={restoreDetail.data} onDecide={(value) => decision.mutate({ id: restoreDetail.data!.id, value })} /> : null}
-          </div>
-        </Panel>
-      ) : null}
-      {tenant.error || deployment.error || settings.error || restores.error || createTenant.error || createDeployment.error || saveSettings.error || download.error || startRestore.error || decision.error ? (
-        <p className="text-sm text-danger" role="alert">A backup operation failed. Refresh for the persisted status.</p>
-      ) : null}
-    </div>
-  );
+  const available = (deployment.data ?? []).filter(row => row.status === "available");
+  const primary = hostControls && scope === "platform" ? { label: "Create full deployment archive", onClick: () => createDeployment.mutate(), pending: createDeployment.isPending, pendingLabel: "Requesting…" } : undefined;
+  return <>
+    <SettingsLayout header={{ title: "Backup & restore", subtitle: "Keep encrypted copies of your space and review every restore before it changes live data.", primary }}
+      state={{ status: "ready" }} sections={[
+        ...(isSuperadmin && runtime.isError ? [{ id: "deployment-status", title: "Deployment information", rows: <ErrorText resource="deployment information" onRetry={() => { void runtime.refetch(); }} /> }] : []),
+        // Managers no longer request or download archives (owner decision #111 Q2): the
+        // superadmin backs up and restores; a manager reads the last backup and keeps their
+        // own copy through data export.
+        ...(!isSuperadmin ? [{ id: "this-space", title: "This space", rows: <div className="grid gap-3">
+          <BackupStatusCard makerspaceId={makerspaceId} />
+          <p className="text-sm text-muted">The platform backs up and restores this space. For your own copy of its data, use Data export.</p>
+        </div> }] : []),
+        ...(!isSuperadmin ? [{ id: "self-host-move", title: "Move to your own server", rows: <SelfHostMoveCard makerspaceId={makerspaceId} /> }] : []),
+        ...(isSuperadmin ? [{ id: "scope", title: "What to back up or restore", rows: <label className="grid gap-2 text-sm">Scope
+          <select className="desk-input max-w-full" value={String(scope)} onChange={event => setScope(event.target.value === "platform" ? "platform" : Number(event.target.value))}>
+            <option value="platform">Whole platform</option>
+            {(schedule.data?.spaces ?? []).map(space => <option key={space.makerspace_id} value={space.makerspace_id}>One space: {space.name}</option>)}
+          </select></label> }] : []),
+        ...(isSuperadmin && scope !== "platform" ? [{ id: "space", title: "This space's restore points", rows: <SpaceBackupSection key={scope} makerspaceId={scope} /> }] : []),
+        ...(isSuperadmin ? [{ id: "schedule", title: "Schedule", rows: <BackupScheduleView onPickSpace={setScope} /> }] : []),
+        ...(deploymentInfo?.mode === "managed" && scope === "platform" ? [{ id: "managed-deployment", title: "Deployment recovery", rows: <DeploymentNotices data={deploymentInfo} /> }] : []),
+        ...(hostControls && scope === "platform" ? [{ id: "deployment", title: "Whole platform", rows: <div className="grid gap-4">
+          <ArchiveDisclosure deployment />
+          <p className="text-sm text-muted">One space from a whole-platform backup: restore via host command (see docs). It becomes a restore point of that space here.</p>
+          <BackupQuery query={settings} resource="backup settings">{settings.data ? <BackupScheduleSettings deployment={deploymentInfo} key={makerspaceId} data={settings.data} pending={saveSettings.isPending} onSave={(value, onSaved) => saveSettings.mutate(value, { onSuccess: onSaved })} /> : null}</BackupQuery>
+          {saveSettings.error ? <ErrorText message={saveSettings.error.message} /> : null}
+          <BackupQuery query={deployment} resource="deployment backups"><BackupArchiveRows rows={deployment.data ?? []} onDownload={id => download.mutate(id)} downloading={download.isPending ? download.variables : undefined} /></BackupQuery>
+          {createDeployment.error ? <ErrorText message={createDeployment.error.message} /> : null}
+          {restoreDetail.data ? <RestoreDecision operation={restoreDetail.data} pending={decision.isPending} onDecide={value => decision.mutate({ id: restoreDetail.data!.id, value })} /> : null}
+          {restores.isError ? <ErrorText resource="restore operations" onRetry={() => { void restores.refetch(); }} /> : null}
+          {restoreDetail.isError ? <ErrorText resource="restore report" onRetry={() => { void restoreDetail.refetch(); }} /> : null}
+          {decision.error ? <ErrorText message={decision.error.message} /> : null}
+        </div> }] : []),
+        ...(download.error ? [{ id: "download-error", title: "Download", rows: <ErrorText message={download.error.message} /> }] : []),
+      ]} danger={hostControls && scope === "platform" ? [{ title: "Restore from a backup", consequence: "A restore replaces live deployment data. Review the archive and recovery kind before starting.",
+        action: { label: "Restore from a backup…", onClick: () => setRestoreOpen(true), disabled: !available.length, disabledReason: "Create a full deployment archive before restoring." } }] : []} />
+    {hostControls && restoreOpen ? <BackupRestoreDialog archives={available} pending={startRestore.isPending} error={startRestore.error} onCancel={() => setRestoreOpen(false)} onRestore={(archive, kind) => startRestore.mutate({ archive, kind })} /> : null}
+  </>;
 }
 
-function ArchiveDisclosure({ deployment }: { deployment: boolean }) {
-  return <p className="rounded-md border border-warn/40 bg-warn/10 p-3 text-sm text-ink">This {deployment ? "deployment archive contains production data and continuity secrets" : "makerspace archive contains production tenant data"}, encrypted to the configured age recipient. Downloaded copies are outside makerspace purge guarantees; delete retained copies separately.</p>;
+import { QueryContent } from "../../components/layouts/LayoutFrame";
+import type { ReactNode } from "react";
+function BackupQuery({ query, resource, children }: { query: Parameters<typeof adminQueryState>[0]; resource: string; children: ReactNode }) {
+  return <QueryContent state={adminQueryState(query, resource)}>{children}</QueryContent>;
 }
-
-function ArchiveRows({ rows, onDownload, onRestore }: { rows: BackupArchive[]; onDownload: (id: string) => void; onRestore?: (id: string, kind: "rollback_in_place" | "disaster") => void }) {
-  return <div className="grid gap-2">{rows.length === 0 ? <p className="text-sm text-muted">No backup archives yet.</p> : rows.map((row) => (
-    <article key={row.id} className="rounded-md border border-line p-3">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div><p className="font-medium text-ink">{row.scope === "deployment" ? "Full deployment" : "Makerspace"}</p><p className="text-xs text-muted">{new Date(row.created_at).toLocaleString()} · {row.status} · {formatBytes(row.size_bytes)}</p></div>
-        <div className="flex flex-wrap gap-2">{row.status === "available" ? <button className="desk-button" type="button" onClick={() => onDownload(row.id)}>Download</button> : null}{onRestore && row.status === "available" ? <><button className="desk-button" type="button" onClick={() => onRestore(row.id, "rollback_in_place")}>Rollback here</button><button className="desk-button-danger" type="button" onClick={() => onRestore(row.id, "disaster")}>Disaster restore</button></> : null}</div>
-      </div>{row.failure_detail ? <p className="mt-2 text-sm text-danger">{row.failure_detail}</p> : null}
-    </article>
-  ))}</div>;
-}
-
-export function RestoreDecision({ operation, onDecide }: { operation: Awaited<ReturnType<typeof getRestore>>; onDecide: (value: "proceed" | "reset" | "abort") => void }) {
-  const waiting = operation.stage === "quiesced" && operation.decision === "pending" && operation.decision_deadline_at;
-  const seconds = waiting ? Math.max(0, Math.ceil((new Date(operation.decision_deadline_at!).getTime() - Date.now()) / 1000)) : 0;
-  return <section className="rounded-md border border-danger/40 bg-danger/5 p-4"><h3 className="title-section">Restore {operation.stage}</h3><p className="mt-1 text-sm text-muted">{operation.restore_diff.tables_compared ?? 0} tables compared; {operation.restore_diff.tables_changed ?? 0} differ.</p><div className="mt-3 grid max-h-72 gap-2 overflow-auto">{operation.restore_diff.tables?.map((table) => <details key={table.table} className="rounded border border-line bg-surface p-2"><summary className="cursor-pointer text-sm text-ink"><span className="font-mono">{table.table}</span> · {table.live.row_count} live / {table.archive.row_count} archived {table.security_relevant ? "· security-relevant" : ""} {table.noisy ? "· noisy" : ""}</summary>{table.row_diff ? <pre className="mt-2 overflow-auto text-xs text-muted">{JSON.stringify(table.row_diff, null, 2)}</pre> : null}</details>)}</div>{waiting ? <><p className="mt-2 font-mono text-sm">Decision window: {seconds}s</p><p className="mt-2 text-sm text-ink">Proceed only after reviewing the all-table report. “Reset authority” quarantines every principal and invalidates restored credentials.</p><div className="mt-3 flex flex-wrap gap-2"><button className="desk-button-primary" onClick={() => onDecide("proceed")}>Proceed</button><button className="desk-button" onClick={() => onDecide("reset")}>Proceed and reset authority</button><button className="desk-button-danger" onClick={() => onDecide("abort")}>Abort safely</button></div></> : null}</section>;
-}
-
-function ActionButton({ label, pending, onClick }: { label: string; pending: boolean; onClick: () => void }) { return <button className="desk-button-primary w-fit" type="button" disabled={pending} onClick={onClick}>{pending ? "Requesting…" : label}</button>; }
-function pollArchives(query: { state: { data?: BackupArchive[] } }) { return query.state.data?.some((row) => row.status === "pending" || row.status === "running" || row.status === "promoting") ? 2000 : false; }
-function formatDate(value?: string | null) { return value ? new Date(value).toLocaleString() : "Never"; }
-function formatBytes(value: number) { return value ? `${(value / 1024 / 1024).toFixed(1)} MB` : "—"; }
+function pollArchives(query: { state: { data?: BackupArchive[] } }) { return query.state.data?.some(row => row.status === "pending" || row.status === "running" || row.status === "promoting") ? 2000 : false; }

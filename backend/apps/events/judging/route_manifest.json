@@ -1,0 +1,1122 @@
+{
+  "lane": "D",
+  "contract_version": 3,
+  "mounted": false,
+  "routes": [
+    {
+      "name": "events-programme-admin-tracks-list",
+      "path": "/api/v1/admin/events/{pk}/tracks/",
+      "view": "definitions.TrackList",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "authority": "manage_hackathon",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-tracks-detail",
+      "path": "/api/v1/admin/events/{pk}/tracks/{track_id}/",
+      "view": "definitions.TrackDetail",
+      "methods": [
+        "GET",
+        "HEAD",
+        "PATCH"
+      ],
+      "authority": "manage_hackathon",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-prizes-list",
+      "path": "/api/v1/admin/events/{pk}/prizes/",
+      "view": "definitions.PrizeList",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "authority": "manage_hackathon",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-prizes-detail",
+      "path": "/api/v1/admin/events/{pk}/prizes/{prize_id}/",
+      "view": "definitions.PrizeDetail",
+      "methods": [
+        "GET",
+        "HEAD",
+        "PATCH"
+      ],
+      "authority": "manage_hackathon",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-judging-rounds-list",
+      "path": "/api/v1/admin/events/{pk}/judging-rounds/",
+      "view": "definitions.RoundList",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "authority": "manage_hackathon",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-judging-rounds-detail",
+      "path": "/api/v1/admin/events/{pk}/judging-rounds/{round_id}/",
+      "view": "definitions.RoundDetail",
+      "methods": [
+        "GET",
+        "HEAD",
+        "PATCH"
+      ],
+      "authority": "manage_hackathon",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-judging-rounds-open",
+      "path": "/api/v1/admin/events/{pk}/judging-rounds/{round_id}/open/",
+      "view": "definitions.RoundOpen",
+      "methods": [
+        "POST"
+      ],
+      "authority": "manage_hackathon",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-judging-rounds-assign",
+      "path": "/api/v1/admin/events/{pk}/judging-rounds/{round_id}/assign/",
+      "view": "definitions.RoundAssign",
+      "methods": [
+        "POST"
+      ],
+      "authority": "manage_hackathon",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-judging-rounds-close",
+      "path": "/api/v1/admin/events/{pk}/judging-rounds/{round_id}/close/",
+      "view": "definitions.RoundClose",
+      "methods": [
+        "POST"
+      ],
+      "authority": "manage_hackathon",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-judging-rounds-finalize",
+      "path": "/api/v1/admin/events/{pk}/judging-rounds/{round_id}/finalize/",
+      "view": "definitions.RoundFinalize",
+      "methods": [
+        "POST"
+      ],
+      "authority": "manage_hackathon",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-pairwise-rounds-list",
+      "path": "/api/v1/admin/events/{pk}/pairwise-rounds/",
+      "view": "pairwise.PairwiseRounds",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "authority": "judge plus own pairwise cursor and current nonconflicted assignment",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-pairwise-state",
+      "path": "/api/v1/admin/events/{pk}/judging-rounds/{round_id}/pairwise/",
+      "view": "pairwise.PairwiseState",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "authority": "judge plus own pairwise cursor and current nonconflicted assignment",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-pairwise-next",
+      "path": "/api/v1/admin/events/{pk}/judging-rounds/{round_id}/pairwise/next/",
+      "view": "pairwise.PairwiseNext",
+      "methods": [
+        "POST"
+      ],
+      "authority": "judge plus own pairwise cursor and current nonconflicted assignment",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-pairwise-compare",
+      "path": "/api/v1/admin/events/{pk}/judging-rounds/{round_id}/pairwise/compare/",
+      "view": "pairwise.PairwiseCompare",
+      "methods": [
+        "POST"
+      ],
+      "authority": "judge plus own pairwise cursor and current nonconflicted assignment",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-pairwise-skip",
+      "path": "/api/v1/admin/events/{pk}/judging-rounds/{round_id}/pairwise/skip/",
+      "view": "pairwise.PairwiseSkip",
+      "methods": [
+        "POST"
+      ],
+      "authority": "judge plus own pairwise cursor and current nonconflicted assignment",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-pairwise-recuse",
+      "path": "/api/v1/admin/events/{pk}/judging-rounds/{round_id}/pairwise/recuse/",
+      "view": "pairwise.PairwiseRecuse",
+      "methods": [
+        "POST"
+      ],
+      "authority": "judge plus own pairwise cursor and current nonconflicted assignment",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-pairwise-standings",
+      "path": "/api/v1/admin/events/{pk}/judging-rounds/{round_id}/pairwise/standings/",
+      "view": "pairwise.PairwiseStandings",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "authority": "manage_hackathon",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-judge-assignments-list",
+      "path": "/api/v1/admin/events/{pk}/judge-assignments/",
+      "view": "scoring.AssignmentList",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "authority": "judge plus own current nonconflicted assignment",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-judge-assignments-detail",
+      "path": "/api/v1/admin/events/{pk}/judge-assignments/{assignment_id}/",
+      "view": "scoring.AssignmentDetail",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "authority": "judge plus own current nonconflicted assignment",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-judge-assignments-score",
+      "path": "/api/v1/admin/events/{pk}/judge-assignments/{assignment_id}/score/",
+      "view": "scoring.AssignmentScore",
+      "methods": [
+        "POST"
+      ],
+      "authority": "judge plus own current nonconflicted assignment",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-judge-assignments-rank",
+      "path": "/api/v1/admin/events/{pk}/judge-assignments/{assignment_id}/rank/",
+      "view": "scoring.AssignmentRank",
+      "methods": [
+        "POST"
+      ],
+      "authority": "judge plus own current nonconflicted assignment",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-judge-assignments-recuse",
+      "path": "/api/v1/admin/events/{pk}/judge-assignments/{assignment_id}/recuse/",
+      "view": "scoring.AssignmentRecuse",
+      "methods": [
+        "POST"
+      ],
+      "authority": "judge plus own current nonconflicted assignment",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-judge-assignments-skip",
+      "path": "/api/v1/admin/events/{pk}/judge-assignments/{assignment_id}/skip/",
+      "view": "scoring.AssignmentSkip",
+      "methods": [
+        "POST"
+      ],
+      "authority": "judge plus own current nonconflicted assignment",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-sponsors-submissions",
+      "path": "/api/v1/admin/events/{pk}/sponsors/{sponsor_id}/submissions/",
+      "view": "sponsors.SponsorSubmissions",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "authority": "view_sponsor_track plus exact sponsor/track role",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-sponsors-prizes-propose",
+      "path": "/api/v1/admin/events/{pk}/sponsors/{sponsor_id}/prizes/{prize_id}/propose/",
+      "view": "sponsors.SponsorWinnerProposal",
+      "methods": [
+        "POST"
+      ],
+      "authority": "view_sponsor_track plus exact sponsor/track role",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-sponsor-resume-download",
+      "path": "/api/v1/admin/events/{pk}/sponsors/{sponsor_id}/resumes/{participant_asset_id}/",
+      "view": "sponsors.SponsorResumeDownload",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "authority": "view_sponsor_track plus exact sponsor/track role",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-results-preview",
+      "path": "/api/v1/admin/events/{pk}/results/preview/",
+      "view": "results.ResultsPreview",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "authority": "full event manager",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-results-finalize",
+      "path": "/api/v1/admin/events/{pk}/results/finalize/",
+      "view": "results.ResultsFinalize",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "authority": "full event manager",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-results-publish",
+      "path": "/api/v1/admin/events/{pk}/results/publish/",
+      "view": "results.ResultsPublish",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "authority": "full event manager",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-results-correct",
+      "path": "/api/v1/admin/events/{pk}/results/correct/",
+      "view": "results.ResultsCorrect",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "authority": "full event manager",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-gallery-publish",
+      "path": "/api/v1/admin/events/{pk}/gallery/publish/",
+      "view": "gallery.GalleryPublish",
+      "methods": [
+        "POST"
+      ],
+      "authority": "full event manager",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-gallery-list",
+      "path": "/api/v1/admin/events/{pk}/gallery/",
+      "view": "gallery.AdminGallery",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "authority": "full event manager",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-gallery-entries-hide",
+      "path": "/api/v1/admin/events/{pk}/gallery/entries/{entry_id}/hide/",
+      "view": "gallery.GalleryHide",
+      "methods": [
+        "POST"
+      ],
+      "authority": "full event manager",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-gallery-amend",
+      "path": "/api/v1/admin/events/{pk}/gallery/amend/",
+      "view": "gallery.GalleryAmend",
+      "methods": [
+        "POST"
+      ],
+      "authority": "full event manager",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-gallery-correct-result",
+      "path": "/api/v1/admin/events/{pk}/gallery/correct-result/",
+      "view": "gallery.GalleryCorrectResult",
+      "methods": [
+        "POST"
+      ],
+      "authority": "full event manager",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-member-resume-consents",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/resume-consents/",
+      "view": "sponsors.ResumeConsents",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "authority": "active member exact owner",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "public:read / public:write + owner checks",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-member-resume-consent-revoke",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/resume-consents/{consent_id}/revoke/",
+      "view": "sponsors.ResumeConsentRevoke",
+      "methods": [
+        "POST"
+      ],
+      "authority": "active member exact owner",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "public:read / public:write + owner checks",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-member-gallery-consent-detail",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/teams/{team_id}/gallery-consent/",
+      "view": "gallery.GalleryConsentDetail",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "authority": "active member exact owner",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "public:read / public:write + owner checks",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-member-gallery-consent-grant",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/teams/{team_id}/gallery-consent/grant/",
+      "view": "gallery.GalleryConsentGrant",
+      "methods": [
+        "POST"
+      ],
+      "authority": "active member exact owner",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "public:read / public:write + owner checks",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-member-gallery-consent-withdraw",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/teams/{team_id}/gallery-consent/withdraw/",
+      "view": "gallery.GalleryConsentWithdraw",
+      "methods": [
+        "POST"
+      ],
+      "authority": "active member exact owner",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "public:read / public:write + owner checks",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-public-gallery-list",
+      "path": "/api/v1/public/event-programmes/{public_token}/gallery/",
+      "view": "gallery.GalleryList",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "authority": "public live gate",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "public:read",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-public-gallery-detail",
+      "path": "/api/v1/public/event-programmes/{public_token}/gallery/{entry_public_id}/",
+      "view": "gallery.GalleryDetail",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "authority": "public live gate",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "public:read",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-public-results",
+      "path": "/api/v1/public/event-programmes/{public_token}/results/",
+      "view": "gallery.PublicResults",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "authority": "public live gate",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "public:read",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-judging-signals",
+      "path": "/api/v1/admin/events/{pk}/judging-signals/",
+      "view": "ShortlistSignals",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "authority": "full event manager; C production-only private signals",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    }
+  ],
+  "binary_owned_by_B": {
+    "name": "events-programme-public-gallery-assets",
+    "path": "/api/v1/public/event-programmes/{public_token}/gallery/assets/{public_asset_id}/",
+    "methods": [
+      "GET",
+      "HEAD"
+    ],
+    "provider": "apps.events.submissions.gallery_views.GalleryAsset or B view delegating gallery_projection.asset_download; mount exactly once via B/G",
+    "range": [
+      200,
+      206,
+      416
+    ],
+    "no_redirect": true,
+    "reauthorization": "D live predicate before storage and each <=1MiB chunk through B transport"
+  },
+  "additional_domain_routes": [
+    "admin-gallery-list (required manager publication status and hide/unhide IDs)",
+    "admin-gallery-amend (explicit regrant/new-snapshot publication)",
+    "admin-gallery-correct-result (audited immutable result-reference correction)",
+    "admin-sponsors-prizes-propose (own-prize proposal only, full manager finalizes)",
+    "admin-judging-signals (separate private C nomination/rating/top-two board; never scoring input)"
+  ],
+  "schemas": "Actual DRF serializer schemas/decorators in serializers*.py, views*.py, gallery_api_schemas.py and gallery_views.py; G generates the runtime schema after mounting."
+}

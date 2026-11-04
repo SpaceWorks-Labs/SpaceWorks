@@ -3,9 +3,9 @@ from urllib.parse import urlsplit
 from django.conf import settings
 from rest_framework.exceptions import PermissionDenied
 
-from apps.accounts import rbac
 from apps.makerspaces.models import Makerspace, MakerspaceMembership
 from apps.makerspaces.origin_scope_routes import (
+    QUERY_SCOPED_ROUTES,
     MAKERSPACE_KWARG_ROUTES as _MAKERSPACE_KWARG_ROUTES,
     MODEL_LOOKUPS as _MODEL_LOOKUPS,
     TARGET_SET_LOOKUPS,
@@ -68,6 +68,11 @@ def validate_native_makerspace_scope(request, user, grant):
         raise PermissionDenied('Invalid native makerspace selection.') from exc
     if makerspace_id <= 0 or str(makerspace_id) != str(raw).strip():
         raise PermissionDenied('Invalid native makerspace selection.')
+    # A staff device grant is a step-up fixed to one tenant and reads the STAFF row
+    # there; every other grant is membership-only and reads the community row.
+    staff_grant = getattr(grant, 'authority', None) == 'staff'
+    if staff_grant and makerspace_id != grant.staff_makerspace_id:
+        raise PermissionDenied('Staff makerspace selection is fixed to the grant tenant.')
 
     origin = _origin_candidate(request)
     origin_scope = staff_origin_scope(request)
@@ -84,14 +89,12 @@ def validate_native_makerspace_scope(request, user, grant):
                 'Makerspace selection conflicts with browser origin.'
             )
 
-    memberships = servable_queryset(MakerspaceMembership.objects.filter(
+    track = MakerspaceMembership.Track.STAFF if staff_grant else MakerspaceMembership.Track.COMMUNITY
+    memberships = servable_queryset(MakerspaceMembership.track_manager(track).filter(
         user=user,
         makerspace_id=makerspace_id,
         status='active',
     ), relation="makerspace").select_related('makerspace', 'assigned_role')
-    memberships = rbac.hide_from_superadmin(
-        user, memberships, field='makerspace_id'
-    )
     membership = memberships.first()
     if membership is None:
         raise PermissionDenied('Makerspace selection is not available.')
@@ -99,11 +102,20 @@ def validate_native_makerspace_scope(request, user, grant):
     url_name, targets, invalid, native_route_allowed = request_route_targets(
         request
     )
+    from .origin_scope_routes_public_pages import GLOBAL_ROUTES
+    if url_name in GLOBAL_ROUTES:
+        raise PermissionDenied("Global organization pages cannot select a makerspace.")
     if invalid or not native_route_allowed:
         raise PermissionDenied('Makerspace target could not be resolved.')
     if targets and targets != {makerspace_id}:
         raise PermissionDenied(
             'Makerspace target does not match the selected makerspace.'
+        )
+    if url_name in QUERY_SCOPED_ROUTES and targets != {makerspace_id}:
+        # These listings narrow by their query parameter, not by the native selection,
+        # so a native request must name the selected makerspace explicitly.
+        raise PermissionDenied(
+            'This listing requires its makerspace query parameter to match the selection.'
         )
     request.selected_makerspace_id = makerspace_id
     request.selected_makerspace_membership = membership
@@ -136,6 +148,12 @@ def require_native_selected_makerspace(request, makerspace_id=None):
 
 
 def staff_origin_scope_allows(request, view=None):
+    from .origin_scope_routes_public_pages import (
+        ORGANIZATION_PAGE_EDITORS, organization_editor_origin_allowed,
+    )
+    match = getattr(request, 'resolver_match', None)
+    if getattr(match, 'url_name', '') in ORGANIZATION_PAGE_EDITORS:
+        return organization_editor_origin_allowed(request)
     scope = staff_origin_scope(request)
     if scope is NO_STAFF_ORIGIN_SCOPE:
         return True

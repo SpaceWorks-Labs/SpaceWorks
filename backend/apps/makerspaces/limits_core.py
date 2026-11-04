@@ -19,8 +19,9 @@ NUMERIC_LIMIT_KEYS = frozenset(
         "discord",
         "webhook",
         "native_push",
+        "sms",
+        "whatsapp",
         "api_clients",
-        "custom_roles",
         "machine_service_open",
         "machine_service_submit",
         "data_exports",
@@ -28,6 +29,12 @@ NUMERIC_LIMIT_KEYS = frozenset(
 )
 BOOLEAN_LIMIT_KEYS = frozenset({"custom_domain"})
 KNOWN_LIMIT_KEYS = NUMERIC_LIMIT_KEYS | BOOLEAN_LIMIT_KEYS
+# One vocabulary (#77): the per-space keys above are each defaulted in
+# MANAGED_RESOURCE_LIMITS and overridable per space (`resource_limit_overrides`); these
+# two are platform-wide daily counters, defaulted there and overridable per deployment
+# (MANAGED_OTP_EMAIL_DAILY_LIMIT / MANAGED_OTP_SMS_DAILY_LIMIT). `custom_domain` is the
+# one boolean key and defaults to allowed.
+PLATFORM_LIMIT_KEYS = frozenset({"otp_email", "otp_sms"})
 
 RESOURCE_LABELS = {
     "products": "products",
@@ -46,8 +53,9 @@ RESOURCE_LABELS = {
     "discord": "daily Discord notifications",
     "webhook": "daily signed webhook deliveries",
     "native_push": "daily native push notifications",
+    "sms": "daily SMS notifications",
+    "whatsapp": "daily WhatsApp notifications",
     "api_clients": "API clients",
-    "custom_roles": "custom roles",
     "machine_service_open": "open machine service requests",
     "machine_service_submit": "daily machine service requests",
     "data_exports": "active data exports",

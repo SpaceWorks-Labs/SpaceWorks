@@ -38,9 +38,10 @@ if [[ "$mode" == remove && ! -f "$RUNNER_DIR/.runner" ]]; then
   exit 0
 fi
 repository="${SPACEWORKS_REPOSITORY:-$(repository_env_value SPACEWORKS_REPOSITORY)}"
-repository="${repository:-SpaceWorks-HQ/SpaceWorks}"
+repository="${repository:-SpaceWorks-Labs/SpaceWorks}"
 SPACEWORKS_REPOSITORY="$repository"
 configure_release_repository || die 'Invalid GitHub repository.'
+repository="$SPACEWORKS_REPOSITORY"  # the line above migrates a renamed-org value (#107)
 read_token() {
   local purpose="$1"
   echo "In https://github.com/$repository: Settings -> Actions -> Runners."

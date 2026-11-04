@@ -5,7 +5,7 @@ keeps social sign-in off the capability registry: every one of these resolves *b
 makerspace is selected, so a per-tenant key would be unreachable at the moment it must be
 answered and would read as disabled for everyone.
 
-All four default **on**, so introducing them changes nothing for an existing deployment.
+All switches default **on**, so introducing them changes nothing for an existing deployment.
 They are additive `AND`s in front of the readiness each method already had -- switching
 one on can never make an unconfigured method start working, and switching one off never
 touches the stored credentials, so re-enabling needs no re-entry.
@@ -27,10 +27,19 @@ class PlatformLoginMethods(models.Model):
     social_enabled = models.BooleanField(
         default=True,
         help_text=(
-            "Sign-in through an identity provider — the built-in Google and Apple "
+            "Sign-in through an identity provider — the built-in Google, Apple and GitHub "
             "providers and every configured OIDC provider. They share one endpoint, so "
             "they share one switch."
         ),
+    )
+    google_enabled = models.BooleanField(
+        default=True, help_text="Chosen at install; change with manage.py set_login_methods.",
+    )
+    apple_enabled = models.BooleanField(
+        default=True, help_text="Chosen at install; change with manage.py set_login_methods.",
+    )
+    github_enabled = models.BooleanField(
+        default=True, help_text="Chosen at install; change with manage.py set_login_methods.",
     )
     phone_enabled = models.BooleanField(
         default=True, help_text="Sign-in with an SMS code to a verified number."
@@ -40,6 +49,20 @@ class PlatformLoginMethods(models.Model):
         help_text=(
             "Whether anyone may create their own member account. With this off, staff "
             "add people from the console."
+        ),
+    )
+    mfa_enabled = models.BooleanField(
+        default=True,
+        help_text=(
+            "Chosen at install; change with manage.py set_login_methods. Turning off overrides "
+            "staff-MFA-required makerspaces; enrolled authenticators are retained."
+        ),
+    )
+    passkeys_enabled = models.BooleanField(
+        default=True,
+        help_text=(
+            "Whether people may add and use passkeys. Offered, never forced: switching it "
+            "off never removes a passkey, and nobody is ever required to have one."
         ),
     )
     updated_at = models.DateTimeField(auto_now=True)

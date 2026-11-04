@@ -32,10 +32,10 @@ These counts were checked against the current sources rather than copied as mark
 | Module keys and customer-facing areas | **32 modules in 12 areas** | `backend/apps/makerspaces/module_registry.py` |
 | Module modes | **6 core, 4 optional default-on, 22 opt-in; 26 non-core total** | `backend/apps/makerspaces/module_registry.py` |
 | User-facing module entries | **32**, with no missing registry key and no extra entry | `docs/MODULES.md` |
-| Seeded default roles | **4**: Space Manager, Inventory Manager, Machine Manager and Member | Roles table in `README.md` |
+| Seeded default roles | **7**: Space Manager, Inventory Manager, Machine Manager, Event Manager, Booking Manager, Handover and Member | Roles table in `README.md` |
 
 The six core keys counted in the registry are Public inventory, Request workflow, Staff admin, Evidence
-uploads, QR management and Scanner. Custom roles can be added beyond the four seeded roles.
+uploads, QR management and Scanner. The seven built-ins are fixed; five staff roles combine, while Space Manager and Member each stand alone.
 
 ## Hardware lending and returns
 
@@ -108,18 +108,17 @@ a login policy does not revoke existing sessions; restriction or suspension is t
 ## Staff roles and permissions
 
 - Scope staff access by makerspace and by action, not by a hard-coded role name.
-- Seed four protected starting roles, then let a Space Manager rename or narrow them and create custom roles from actions the manager is allowed to grant.
+- Provide seven fixed built-in roles; assign combinable staff role sets within the acting manager’s action ceiling.
 - Give Inventory Managers the full hardware lifecycle without machine, staff or settings access.
-- Scope Machine Managers to all machines or selected machines.
-- Build a custom Front Desk or Duty Volunteer role that sees only request handover, direct handout and job
-  collection surfaces.
+- Assign Machine Managers per person by machine type; no types means no machines, and linked types include machines added later.
+- Use built-in Handover for the narrow request handover, direct handout and job collection surfaces.
 - Block privilege escalation: a manager cannot grant an action they do not hold, and high-risk staff and
   stock-transfer actions remain superadmin-only.
 - Provide a separate superadmin control plane at `/control/`, kept off the public frontend port. The normal
   staff console remains at `/admin`.
 
-**Honest limits:** front-desk handover is not a fifth built-in role. It is an optional console paired with
-a custom per-makerspace role, so each space must choose and assign the actions it wants.
+**Honest limits:** the optional handover console and fixed built-in Handover role are separate concepts.
+Handover can combine with the other four operational manager roles; its own grants remain fixed.
 
 ## Machines, jobs and maintenance
 
@@ -206,7 +205,7 @@ underlying operational records remain owned by their original modules.
 
 ## Multiple makerspaces and organization accounts
 
-- Host many makerspaces on one deployment. Each tenant owns its inventory, public URL, staff memberships, custom roles, integrations, QR namespace and audit scope.
+- Host many makerspaces on one deployment. Each tenant owns its inventory, public URL, staff memberships, seven built-in role instances, integrations, QR namespace and audit scope.
 - Keep public and staff queries scoped to the selected makerspace.
 - Move stock through an explicit cross-makerspace transfer rather than silently changing another tenant's
   count.

@@ -1,17 +1,13 @@
 import type { ReactNode } from "react";
-
-type EmptyStateProps = {
-  title: string;
-  description?: string;
-  action?: ReactNode;
-};
-
-export function EmptyState({ title, description, action }: EmptyStateProps) {
-  return (
-    <div className="flex min-h-32 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-line bg-bg px-4 py-8 text-center">
-      <h3 className="title-section">{title}</h3>
-      {description ? <p className="max-w-md text-sm text-muted">{description}</p> : null}
-      {action ? <div className="mt-2">{action}</div> : null}
-    </div>
-  );
+import { ActionControl } from "./ActionControl";
+import type { EmptyProps } from "./types";
+export type EmptyStateProps = EmptyProps | { title: string; description?: string; action?: ReactNode };
+export function EmptyState(props: EmptyStateProps) {
+  const modern = "message" in props;
+  return <div className="flex min-h-32 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-line p-6 text-center">
+    {modern ? <p className="max-w-md text-[15px] text-muted">{props.message}</p>
+      : <><h3 className="title-section">{props.title}</h3>
+        {props.description ? <p className="max-w-md text-sm text-muted">{props.description}</p> : null}</>}
+    {modern ? props.action ? <ActionControl action={props.action} /> : null : props.action ? <div>{props.action}</div> : null}
+  </div>;
 }

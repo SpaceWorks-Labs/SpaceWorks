@@ -22,6 +22,11 @@ anything if being listed at all is a choice.
 """
 
 from django.db import models
+from django.conf import settings
+from django.db.models.functions import Lower
+from django.core.validators import RegexValidator
+
+HANDLE_PATTERN = r"^[a-z0-9](?:[a-z0-9._-]{1,28}[a-z0-9])$"
 
 
 class MemberProfile(models.Model):
@@ -34,6 +39,18 @@ class MemberProfile(models.Model):
         default=False,
         help_text="Whether other members of this makerspace can see this profile.",
     )
+    public_visible = models.BooleanField(default=False)
+    public_consented_at = models.DateTimeField(null=True, blank=True, editable=False)
+    show_activity_graph = models.BooleanField(default=False)
+    show_events = models.BooleanField(default=False)
+    show_speaking = models.BooleanField(default=False)
+    show_projects = models.BooleanField(default=False)
+    show_machine_activity = models.BooleanField(default=False)
+    show_bookings = models.BooleanField(default=False)
+    show_loans = models.BooleanField(default=False)
+    domains = models.JSONField(default=list, blank=True)
+    skills = models.JSONField(default=list, blank=True)
+    links = models.JSONField(default=list, blank=True)
     # CONSENT, not configurability: profile visibility publishes fields the member typed
     # into the form, while attendance is separately derived information. Reusing
     # is_visible would disclose it on already-visible profiles without a new member act.
@@ -80,6 +97,9 @@ class MemberProject(models.Model):
         MemberProfile, on_delete=models.CASCADE, related_name="projects"
     )
     title = models.CharField(max_length=200)
+    subtitle = models.CharField(max_length=200, blank=True, default="")
+    tags = models.JSONField(default=list, blank=True)
+    public_visible = models.BooleanField(default=False)
     description = models.TextField(blank=True, default="")
     image_key = models.CharField(max_length=500, blank=True, default="")
     # `[{"label": ..., "url": ...}]`. Arbitrary labelled links, because a project's
@@ -95,3 +115,86 @@ class MemberProject(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class PublicHandle(models.Model):
+    """One global namespace claim, pointing at one explicitly chosen tenant profile."""
+
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+                              related_name="public_handle", null=True, blank=True)
+    profile = models.ForeignKey(MemberProfile, on_delete=models.CASCADE, related_name="handles", null=True, blank=True)
+    makerspace = models.OneToOneField("makerspaces.Makerspace", null=True, blank=True,
+                                     on_delete=models.CASCADE, related_name="public_handle")
+    organization = models.OneToOneField("organizations.Organization", null=True, blank=True,
+                                       on_delete=models.CASCADE, related_name="public_handle")
+    handle = models.CharField(max_length=30, validators=[RegexValidator(HANDLE_PATTERN)])
+    claimed_at = models.DateTimeField(auto_now_add=True)
+    changed_at = models.DateTimeField()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(Lower("handle"), name="public_handle_ci_unique"),
+            models.CheckConstraint(condition=models.Q(handle__regex=HANDLE_PATTERN),
+                                   name="public_handle_grammar"),
+            models.CheckConstraint(condition=(
+                models.Q(user__isnull=False, profile__isnull=False, makerspace__isnull=True, organization__isnull=True)
+                | models.Q(user__isnull=True, profile__isnull=True, makerspace__isnull=False, organization__isnull=True)
+                | models.Q(user__isnull=True, profile__isnull=True, makerspace__isnull=True, organization__isnull=False)
+            ), name="public_handle_typed_owner"),
+        ]
+
+
+class PublicHandleRedirect(models.Model):
+    """A retired claim reserves its name for thirty days; redirects require live consent."""
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True,
+                             on_delete=models.CASCADE, related_name="public_handle_redirects")
+    profile = models.ForeignKey(MemberProfile, on_delete=models.CASCADE, related_name="handle_redirects", null=True, blank=True)
+    makerspace = models.ForeignKey("makerspaces.Makerspace", null=True, blank=True,
+                                   on_delete=models.CASCADE, related_name="public_handle_redirects")
+    organization = models.ForeignKey("organizations.Organization", null=True, blank=True,
+                                     on_delete=models.CASCADE, related_name="public_handle_redirects")
+    handle = models.CharField(max_length=30)
+    released_at = models.DateTimeField()
+    expires_at = models.DateTimeField(db_index=True)
+
+    def save(self, *args, **kwargs):
+        # Compatibility for member-only callers; capture the stable account once.
+        if self.profile_id and self.user_id is None:
+            self.user_id = self.profile.membership.user_id
+        super().save(*args, **kwargs)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(Lower("handle"), name="profile_redirect_ci_unique"),
+            models.CheckConstraint(condition=models.Q(handle__regex=HANDLE_PATTERN), name="redirect_handle_grammar"),
+            models.CheckConstraint(condition=(
+                models.Q(user__isnull=False, profile__isnull=False, makerspace__isnull=True, organization__isnull=True)
+                | models.Q(user__isnull=True, profile__isnull=True, makerspace__isnull=False, organization__isnull=True)
+                | models.Q(user__isnull=True, profile__isnull=True, makerspace__isnull=True, organization__isnull=False)
+            ), name="redirect_handle_typed_owner"),
+        ]
+
+
+class ProfileTimelineEntry(models.Model):
+    class Kind(models.TextChoices):
+        EXPERIENCE = "experience", "Experience"
+        EDUCATION = "education", "Education"
+        VOLUNTEERING = "volunteering", "Volunteering"
+
+    profile = models.ForeignKey(MemberProfile, on_delete=models.CASCADE, related_name="timeline")
+    kind = models.CharField(max_length=16, choices=Kind.choices)
+    title = models.CharField(max_length=200)
+    organization = models.CharField(max_length=200, blank=True, default="")
+    location = models.CharField(max_length=200, blank=True, default="")
+    start = models.DateField()
+    end = models.DateField(null=True, blank=True)
+    description = models.TextField(blank=True, default="")
+    order = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ("order", "-start", "id")
+        constraints = [models.CheckConstraint(
+            condition=models.Q(end__isnull=True) | models.Q(end__gte=models.F("start")),
+            name="profile_timeline_date_order",
+        )]

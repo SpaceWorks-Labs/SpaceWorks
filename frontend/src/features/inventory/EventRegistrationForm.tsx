@@ -1,3 +1,4 @@
+import { Icon, TicketCard } from "../../components/ui";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -7,6 +8,8 @@ import { EventTicketPicker } from "../events/EventTicketPicker";
 import type { EventTicket } from "../events/eventTicketTypes";
 import { StructuredApiError, tenantPublicRequest } from "../../lib/api";
 import { CustomFormFields } from "../forms/CustomFormFields";
+import { PricePreview } from "../payments/PricePreview";
+import { isPriceChanged, PriceChangedNotice } from "../payments/PriceChangedNotice";
 import {
   customAnswerErrors,
   validateCustomAnswers,
@@ -36,12 +39,20 @@ function failureMessage(error: StructuredApiError | null) {
   return error.detail ?? error.message;
 }
 
-export function EventRegistrationForm({ makerspaceSlug, publicToken, waitlist, approvalRequired, customForm, audience = "members", tickets = [], promoEnabled = false, ticketRequired = false, currency = "" }: {
+export function EventRegistrationForm({ makerspaceSlug, publicToken, waitlist, approvalRequired, customForm, audience = "members", tickets = [], promoEnabled = false, ticketRequired = false, currency = "", hostWaiver = null, organisation = "", paymentsHref = "" }: {
   makerspaceSlug: string; publicToken: string; waitlist: boolean; approvalRequired: boolean;
-  customForm: CustomFormSchema; audience?: "members" | "accounts" | "invite";
+  customForm: CustomFormSchema; audience?: "members" | "accounts" | "invite" | "participating_organizations";
+  hostWaiver?: { id: number; version: string; body: string } | null;
   tickets?: EventTicket[]; promoEnabled?: boolean; ticketRequired?: boolean; currency?: string;
+  /** The hosting makerspace's name, printed on the confirmation ticket. */
+  organisation?: string;
+  /** Member-area Payments link, set only for a paid event: the fee is paid there, online
+   * when the space has a rail, otherwise at the space against a staff receipt. */
+  paymentsHref?: string;
 }) {
   const queryClient = useQueryClient();
+  const [waiverAccepted, setWaiverAccepted] = useState(false);
+  useEffect(() => { setWaiverAccepted(false); }, [hostWaiver?.id, hostWaiver?.version]);
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [needsPhone, setNeedsPhone] = useState(false);
@@ -49,19 +60,29 @@ export function EventRegistrationForm({ makerspaceSlug, publicToken, waitlist, a
   const [inviteCode, setInviteCode] = useState("");
   const [promoCode, setPromoCode] = useState("");
   const [ticketId, setTicketId] = useState<number | null>(null);
+  const [quoteDigest, setQuoteDigest] = useState("");
   const [website, setWebsite] = useState("");
   const [answers, setAnswers] = useState<CustomAnswers>({});
   const [clientErrors, setClientErrors] = useState<Record<string, string>>({});
   const successRef = useRef<HTMLDivElement>(null);
   const registration = useMutation({
     mutationFn: async () => {
-      const rawTransportBody = { ...(phone.trim() ? { phone: phone.trim() } : {}), ...(email.trim() ? { email: email.trim() } : {}), website, custom_answers: answers, ...(inviteCode ? { invite_code: inviteCode } : {}), ...(promoCode ? { promo_code: promoCode } : {}), ...(ticketId !== null ? { ticket_type_id: ticketId } : {}) };
+      const rawTransportBody = { ...(hostWaiver ? { host_waiver_id: hostWaiver.id, host_waiver_version: hostWaiver.version, host_waiver_accepted: waiverAccepted } : {}), ...(phone.trim() ? { phone: phone.trim() } : {}), ...(email.trim() ? { email: email.trim() } : {}), website, custom_answers: answers, ...(inviteCode ? { invite_code: inviteCode } : {}), ...(promoCode ? { promo_code: promoCode } : {}), ...(ticketId !== null ? { ticket_type_id: ticketId } : {}), ...(quoteDigest ? { quote_digest: quoteDigest } : {}) };
       return tenantPublicRequest<RegistrationResult>(makerspaceSlug, registerPath(makerspaceSlug, publicToken), {
         method: "POST", body: JSON.stringify(rawTransportBody),
       });
     },
-    onError: (error) => { if (error instanceof StructuredApiError) { if (error.body.phone) setNeedsPhone(true); if (error.body.email) setNeedsEmail(true); } },
+    onError: async (error) => {
+      if (!(error instanceof StructuredApiError)) return;
+      if (error.body.phone) setNeedsPhone(true);
+      if (error.body.email) setNeedsEmail(true);
+      if (error.code === "host_waiver_required") {
+        setWaiverAccepted(false);
+        await queryClient.invalidateQueries({ queryKey: ["event-organization-eligibility", makerspaceSlug, publicToken] });
+      }
+    },
     onSuccess: async () => { await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["event-organization-eligibility", makerspaceSlug, publicToken] }),
       queryClient.invalidateQueries({ queryKey: ["public-events", makerspaceSlug] }),
       queryClient.invalidateQueries({ queryKey: ["public-event", makerspaceSlug, publicToken] }),
       queryClient.invalidateQueries({ queryKey: ["member", makerspaceSlug, "activity"] }),
@@ -70,9 +91,14 @@ export function EventRegistrationForm({ makerspaceSlug, publicToken, waitlist, a
   useEffect(() => { if (registration.data) successRef.current?.focus(); }, [registration.data]);
 
   if (registration.data) {
-    return <div ref={successRef} className="rounded-lg border border-line bg-surface p-4 outline-none" role="status" tabIndex={-1}>
-      <h3 className="title-section">{registration.data.status === "pending_approval" ? "Application awaiting approval" : registration.data.status === "waitlisted" ? "You’re on the waitlist" : "Registration received"}</h3>
-      <p className="mt-1 text-sm text-muted">{registration.data.status === "pending_approval" ? "You will only be charged if a place is confirmed." : registration.data.status === "waitlisted" ? "The makerspace has recorded your waitlist request." : "The makerspace has recorded your registration."}</p>
+    const pending = registration.data.status === "pending_approval";
+    const waitlisted = registration.data.status === "waitlisted";
+    return <div ref={successRef} role="status" tabIndex={-1} className="focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
+      <TicketCard organisation={organisation} title={pending ? "Application awaiting approval" : waitlisted ? "You’re on the waitlist" : "Registration received"}
+        fields={[{ label: "Status", value: pending ? "Pending review" : waitlisted ? "Waitlisted" : "Registered" }, { label: "Next step", value: pending ? "Wait for confirmation" : waitlisted ? "Wait for a place" : "See you there" }]}
+        qr={<div className="grid h-full place-items-center rounded-xl bg-success-soft text-success-ink"><Icon name="CheckCircle" className="h-16 w-16" /></div>}
+        caption={pending ? "You will only be charged if a place is confirmed." : waitlisted ? "The makerspace has recorded your waitlist request." : "The makerspace has recorded your registration."} />
+      {paymentsHref && registration.data.status === "registered" ? <p className="mt-3 text-sm text-muted">Any fee for this event is listed under <a className="font-semibold text-ink underline" href={paymentsHref}>Payments</a> in your member area. Pay online there when it is offered, or pay at the space.</p> : null}
     </div>;
   }
 
@@ -82,8 +108,8 @@ export function EventRegistrationForm({ makerspaceSlug, publicToken, waitlist, a
     event.preventDefault();
     const errors = validateCustomAnswers(customForm, answers);
     setClientErrors(errors);
+    if (hostWaiver && !waiverAccepted) { setClientErrors({ waiver: "Accept the current host waiver." }); return; }
     if (tickets.length && ticketId === null) { setClientErrors({ ticket: "Choose a ticket type." }); return; }
-    if (audience === "invite" && !inviteCode.trim()) { setClientErrors({ invite: "Enter your invitation code." }); return; }
     if (Object.keys(errors).length) return;
     if (!registration.isPending) registration.mutate();
   };
@@ -97,12 +123,15 @@ export function EventRegistrationForm({ makerspaceSlug, publicToken, waitlist, a
     </label>
     <EventContactFallback needsPhone={needsPhone} needsEmail={needsEmail} phone={phone} email={email} onPhone={setPhone} onEmail={setEmail} disabled={registration.isPending} />
     <EventTicketPicker tickets={tickets} value={ticketId} onChange={setTicketId} currency={currency} disabled={registration.isPending} />
-    {audience === "invite" ? <label className="grid gap-1 text-sm">Invitation code<input className="desk-input" required maxLength={128} autoComplete="off" value={inviteCode} onChange={(e) => setInviteCode(e.target.value)} /></label> : null}
+    {audience === "invite" ? <><label className="grid gap-1 text-sm">Invitation code<input className="desk-input" maxLength={128} autoComplete="off" value={inviteCode} onChange={(e) => setInviteCode(e.target.value)} /></label><p className="text-sm text-muted">Leave blank if your verified account email was invited.</p></> : null}
+    {hostWaiver ? <fieldset className="grid gap-2 rounded-xl border border-line bg-panel p-3"><legend className="px-1 text-sm font-semibold">Host waiver</legend><p className="whitespace-pre-wrap text-sm leading-6">{hostWaiver.body}</p><label className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={waiverAccepted} onChange={(e) => setWaiverAccepted(e.target.checked)} />I accept this host waiver (version {hostWaiver.version}).</label>{clientErrors.waiver ? <p className="text-sm text-danger" role="alert">{clientErrors.waiver}</p> : null}</fieldset> : null}
     {promoEnabled ? <label className="grid gap-1 text-sm">Promo code (optional)<input className="desk-input" maxLength={128} autoComplete="off" value={promoCode} onChange={(e) => setPromoCode(e.target.value)} /></label> : null}
-    {clientErrors.ticket || clientErrors.invite ? <p role="alert">{clientErrors.ticket || clientErrors.invite}</p> : null}
+    {clientErrors.ticket || clientErrors.invite ? <p className="text-sm text-danger" role="alert">{clientErrors.ticket || clientErrors.invite}</p> : null}
     <CustomFormFields schema={customForm} answers={answers} onChange={setAnswers} errors={{ ...serverErrors, ...clientErrors }} />
-    {registration.error ? <p className="text-sm text-danger" role="alert">{failureMessage(apiError)}</p> : null}
-    <button className="desk-button-secondary" type="submit" disabled={registration.isPending}>
+    {!tickets.length || ticketId !== null ? <PricePreview makerspaceSlug={makerspaceSlug} request={{ domain: "events", event_token: publicToken, ticket_type_id: ticketId ?? undefined }} onDigest={setQuoteDigest} /> : null}
+    {isPriceChanged(registration.error) ? <PriceChangedNotice makerspaceSlug={makerspaceSlug} error={registration.error} />
+      : registration.error ? <p className="text-sm text-danger" role="alert">{failureMessage(apiError)}</p> : null}
+    <button className="desk-button-brand" type="submit" disabled={registration.isPending}>
       {registration.isPending ? "Submitting..." : approvalRequired ? "Apply" : waitlist ? "Join waitlist" : "Register"}
     </button>
   </form>;

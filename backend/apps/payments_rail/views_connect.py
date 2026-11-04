@@ -13,6 +13,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts import rbac
+from apps.accounts.rbac_roles import additional_roles_prefetch
 from apps.accounts.models import User
 from apps.admin_api.permissions import active_user
 from apps.audit import services as audit
@@ -67,14 +68,15 @@ def _lock_callback_authority(makerspace_id, actor_id):
     makerspace = Makerspace.objects.select_for_update().get(pk=makerspace_id)
     actor = User.objects.select_for_update().get(pk=actor_id)
 
-    membership_snapshot = MakerspaceMembership.objects.filter(
+    # Space Manager authority lives on the staff-track row (one account per person).
+    membership_snapshot = MakerspaceMembership.staff_tracks.filter(
         makerspace_id=makerspace_id,
         user_id=actor_id,
     ).values_list("assigned_role_id", flat=True).first()
     if membership_snapshot:
         MakerspaceRole.objects.select_for_update().get(pk=membership_snapshot)
     membership = (
-        MakerspaceMembership.objects.select_for_update(of=("self",))
+        MakerspaceMembership.staff_tracks.prefetch_related(additional_roles_prefetch()).select_for_update(of=("self",))
         .select_related("assigned_role")
         .filter(makerspace_id=makerspace_id, user_id=actor_id)
         .first()
@@ -86,10 +88,7 @@ def _lock_callback_authority(makerspace_id, actor_id):
         is_servable(makerspace)
         and active_user(actor)
         and (
-            (
-                (actor.is_superuser or actor.role == User.Role.SUPERADMIN)
-                and makerspace.superadmin_access_enabled
-            )
+            actor.is_superuser or actor.role == User.Role.SUPERADMIN
             or rbac.Action.MANAGE_MAKERSPACE
             in rbac.actions_for_membership(membership)
         )

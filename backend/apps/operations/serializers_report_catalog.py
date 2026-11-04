@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from .serializers_report_chart import ReportChartSpecSerializer
 
 
 class ReportCatalogItemSerializer(serializers.Serializer):
@@ -12,8 +13,10 @@ class ReportCatalogItemSerializer(serializers.Serializer):
     unavailable_reason = serializers.CharField(allow_null=True)
     grains = serializers.ListField(child=serializers.CharField())
     chart_hint = serializers.CharField()
+    chart_spec = ReportChartSpecSerializer(allow_null=True)
+    identity_bearing = serializers.BooleanField()
     aggregate_supported = serializers.BooleanField()
-    allowed_formats = serializers.ListField(child=serializers.ChoiceField(choices=["csv", "xlsx"]))
+    allowed_formats = serializers.ListField(child=serializers.ChoiceField(choices=["csv", "xlsx", "pdf"]))
     schedulable = serializers.BooleanField()
     previewable = serializers.BooleanField()
     condition_metrics = serializers.ListField(child=serializers.CharField())
@@ -28,3 +31,7 @@ class GenericAnalyticsReportSerializer(serializers.Serializer):
     rows = serializers.ListField(child=serializers.ListField(child=serializers.JSONField()))
     typed_rows = serializers.ListField(child=serializers.DictField(), required=False)
     meta = serializers.DictField(required=False)
+
+
+class PlatformAnalyticsReportSerializer(GenericAnalyticsReportSerializer):
+    chart_spec = ReportChartSpecSerializer(help_text="Canonical chart fields, units, and partitions from the report definition.")

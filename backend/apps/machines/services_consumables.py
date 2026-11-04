@@ -123,6 +123,11 @@ def unlink_consumable(machine, actor, consumable):
     ).first()
     if row is None:
         raise ValidationError("Consumable is not linked to this machine.")
+    from apps.separability.registry import runtime_active
+    if runtime_active("procurement"):
+        from apps.procurement.services_refill import has_unresolved_item
+        if has_unresolved_item(row):
+            raise ValidationError("A restock for this consumable is still open; resolve it first.")
     meta = {
         "consumable_id": row.pk,
         "measurement": row.measurement,
@@ -167,6 +172,10 @@ def log_consumption(machine, actor, consumable, quantity):
             raise ValidationError({"quantity": f"Only {row.remaining} grams remain."})
         row.remaining -= quantity
         row.save(update_fields=["remaining"])
+        from apps.separability.registry import runtime_active
+        if runtime_active("procurement"):
+            from apps.procurement.auto_drafts import schedule_consumable
+            schedule_consumable(row.pk)
 
     meta = {"measurement": row.measurement, "quantity": str(quantity)}
     if row.product_id:

@@ -1,9 +1,11 @@
 import { MaintenanceFeedControl } from "./MaintenanceFeedControl";
 import { useState } from "react";
 
-import { EmptyState, Skeleton } from "../../../../components/ui";
+import { EmptyState, Skeleton, ErrorBlock, ListRow, RelativeTime } from "../../../../components/ui";
 import { MaintenanceDocuments } from "./MaintenanceDocuments";
 import { MaintenanceSchedules } from "./MaintenanceSchedules";
+import { DowntimePanel, LockoutNotice } from "./DowntimePanel";
+import { MachineWorkOrders } from "./workOrders/MachineWorkOrders";
 import {
   useLogMaintenance,
   useMaintenanceLogs,
@@ -41,7 +43,7 @@ export function MaintenanceTab({
 
   const queryError = schedules.error ?? logs.error;
   if (queryError instanceof Error) {
-    return <EmptyState title="Unable to load maintenance" description={queryError.message} />;
+    return <ErrorBlock error={queryError} resource="maintenance" onRetry={() => { void schedules.refetch(); void logs.refetch(); }} />;
   }
 
   const scheduleRows = schedules.data?.results ?? [];
@@ -49,7 +51,10 @@ export function MaintenanceTab({
 
   return (
     <div className="grid gap-5">
+      <LockoutNotice machineId={machineId} />
       {feedEnabled ? <MaintenanceFeedControl makerspaceId={makerspaceId} /> : null}
+      <MachineWorkOrders makerspaceId={makerspaceId} machineId={machineId} canCreate={canOperate && !retired} />
+      <DowntimePanel machineId={machineId} canEdit={canEdit} />
       <MaintenanceSchedules
         metersEnabled={metersEnabled}
         makerspaceId={makerspaceId}
@@ -78,18 +83,13 @@ export function MaintenanceTab({
         </h3>
         {!logRows.length ? (
           <EmptyState
-            title="No maintenance logged"
-            description="Completed maintenance records will appear here."
+            message="No maintenance logged. Record the first completed maintenance."
           />
         ) : null}
         {logRows.map((log) => (
-          <details key={log.id} className="rounded-lg border border-line bg-bg p-3">
-            <summary className="cursor-pointer list-none text-sm marker:hidden">
-              <span className="flex flex-wrap items-start justify-between gap-2">
-                <strong className="min-w-0 flex-1 text-ink">{log.summary}</strong>
-                <span className="font-mono text-xs text-muted">{formatDateTime(log.performed_at)}</span>
-              </span>
-              {log.cost ? <span className="mt-1 block font-mono text-xs text-muted">Cost: {log.cost}</span> : null}
+          <details key={log.id} className="grid gap-3">
+            <summary className="flex min-h-11 cursor-pointer list-none flex-col justify-center text-sm marker:hidden focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
+              <ListRow title={log.summary} meta={log.cost ? `Cost: ${log.cost}` : undefined} right={<RelativeTime date={log.performed_at} exact />} />
             </summary>
             <div className="mt-3 border-t border-line pt-3 text-sm text-muted">
               {log.parts_note ? (
@@ -150,7 +150,7 @@ function ScheduleCompletionForm({ makerspaceId, machineId, schedule, onCancel, o
         </label>
         <label className="eyebrow grid gap-1">
           Performed at (optional)
-          <input className="desk-input" type="datetime-local" value={performedAt}
+          <input className="desk-input w-full min-w-0" type="datetime-local" value={performedAt}
             onChange={(event) => setPerformedAt(event.target.value)} />
         </label>
         <label className="eyebrow grid gap-1">
@@ -163,12 +163,12 @@ function ScheduleCompletionForm({ makerspaceId, machineId, schedule, onCancel, o
           <textarea className="desk-input min-h-20" value={partsNote}
             onChange={(event) => setPartsNote(event.target.value)} />
         </label>
-        <label className="eyebrow flex items-center gap-2 sm:col-span-2">
+        <label className="eyebrow flex min-h-11 items-center gap-2 sm:col-span-2">
           <input type="checkbox" checked={setIdle}
             onChange={(event) => setSetIdle(event.target.checked)} />
           Set machine status to idle
         </label>
-        <div className="flex gap-2 sm:col-span-2">
+        <div className="flex flex-wrap gap-2 sm:col-span-2">
           <button className="desk-button-primary" type="submit"
             disabled={complete.isPending || !summary.trim()}>
             {complete.isPending ? "Completing..." : "Complete maintenance"}
@@ -230,7 +230,7 @@ function MaintenanceLogForm({ makerspaceId, machineId }: {
         </label>
         <label className="eyebrow grid gap-1">
           Performed at (optional)
-          <input className="desk-input" type="datetime-local" value={performedAt}
+          <input className="desk-input w-full min-w-0" type="datetime-local" value={performedAt}
             onChange={(event) => setPerformedAt(event.target.value)} />
         </label>
         <label className="eyebrow grid gap-1">
@@ -243,7 +243,7 @@ function MaintenanceLogForm({ makerspaceId, machineId }: {
           <textarea className="desk-input min-h-20" value={partsNote}
             onChange={(event) => setPartsNote(event.target.value)} />
         </label>
-        <label className="eyebrow flex items-center gap-2 sm:col-span-2">
+        <label className="eyebrow flex min-h-11 items-center gap-2 sm:col-span-2">
           <input type="checkbox" checked={setIdle}
             onChange={(event) => setSetIdle(event.target.checked)} />
           Set machine status to idle
@@ -258,9 +258,4 @@ function MaintenanceLogForm({ makerspaceId, machineId }: {
       ) : null}
     </section>
   );
-}
-
-function formatDateTime(value: string) {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
 }

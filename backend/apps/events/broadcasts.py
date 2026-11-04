@@ -1,0 +1,95 @@
+"""Thin event adapter over the common campaign/outbox pipeline."""
+
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.core.validators import validate_email
+from django.db.models import Subquery
+from rest_framework.exceptions import PermissionDenied
+from django.utils import timezone
+
+from apps.accounts.models import User
+from apps.integrations.broadcasts_registry import BroadcastAdapter, register
+from apps.integrations.email_preferences import blocked_reason
+from apps.integrations.notification_catalog import is_notification_enabled
+from apps.makerspaces.guards import require_feature, require_module
+from apps.makerspaces.servability import is_servable
+from apps.makerspaces.website_directory import public_url
+from apps.integrations.recipients_owners import eligible_owner
+from . import event_authority
+from .event_permissions import MANAGE_REGISTRATIONS
+from .models import EventRegistration
+from .models_broadcasts import EventBroadcast, EventBroadcastDelivery
+
+PLACEHOLDERS = ("name", "event_title", "event_date", "event_location", "ticket_url")
+
+
+def authorize(campaign, actor):
+    event = campaign.event
+    if campaign.makerspace_id != event.makerspace_id:
+        raise PermissionDenied()
+    # Refresh the root on execution: cached relation data is never a policy proof.
+    event.makerspace.refresh_from_db()
+    if not is_servable(event.makerspace):
+        raise PermissionDenied()
+    event_authority.require(actor, event, MANAGE_REGISTRATIONS)
+    require_feature(event.makerspace, "events.broadcasts")
+    for module in ("notifications", "email"):
+        require_module(event.makerspace, module)
+    if (campaign.status in {"queued", "sending"} and campaign.available_at
+            and campaign.available_at > timezone.now()):
+        raise PermissionDenied("This campaign is not due.")
+
+
+def registrations(campaign):
+    rows = EventRegistration.objects.filter(event_id=campaign.event_id, status__in=campaign.statuses)
+    if campaign.attendance == "attended":
+        rows = rows.filter(status="attended")
+    elif campaign.attendance == "not_attended":
+        rows = rows.exclude(status="attended")
+    return rows
+
+
+def recipients(campaign):
+    return User.objects.filter(pk__in=Subquery(registrations(campaign).values("member_id")),
+                               is_active=True, access_status="active", is_tenant_dump_stub=False)
+
+
+def eligible(campaign, account):
+    from .broadcast_channels import legacy_email_eligible
+    # Rechecked by delivery preparation on every retry as well as by the batch.
+    if not legacy_email_eligible(campaign, account):
+        return False
+    if not account.email_verified_at or not account.email or not eligible_owner(campaign.makerspace, account.pk):
+        return False
+    try:
+        validate_email(account.email)
+    except DjangoValidationError:
+        return False
+    return (registrations(campaign).filter(member=account).exists()
+            and is_notification_enabled(campaign.makerspace, "events", "email")
+            and not blocked_reason(campaign.makerspace, account.email, user_id=account.pk,
+                                   feature="events", stream="events", event="broadcast"))
+
+
+def render_recipient(campaign, account):
+    event = campaign.event
+    # Registration PK is authenticated navigation identity, never checkin_token.
+    registration = registrations(campaign).filter(member=account).select_related(
+        "registered_via_makerspace",
+    ).order_by("pk").first()
+    if registration is None:
+        return None
+    ticket_space = registration.registered_via_makerspace or event.makerspace
+    from .programme.broadcast_content import render_content
+    from .programme.broadcast_placeholders import placeholder_context
+    return render_content(campaign, placeholder_context(
+        event, name=account.get_full_name() or account.username,
+        ticket_url=public_url(ticket_space, "member", f"events/{registration.pk}/ticket")))
+
+
+def register_broadcasts():
+    from .broadcast_channels import emit_channels
+    register("event_broadcast", BroadcastAdapter(EventBroadcast, EventBroadcastDelivery, authorize,
+             recipients, eligible, render_recipient, "events", "event.broadcast",
+             reserve_personal=emit_channels))
+    from .programme.broadcast_test import register_test_source
+    register_test_source()

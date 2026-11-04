@@ -18,7 +18,7 @@ in `docs/PROJECT-HISTORY.md`** — do not maintain a second copy of that list he
 **Programs already shipped on `dev`**, each with its rules in `docs/INVARIANTS.md` and its dated entry in
 `docs/PROJECT-HISTORY.md`: the FabLab modules (Events, Bookings, Maintenance, Analytics/reports, Machine
 Manager role, public self-booking + shared custom forms, the notification matrix, scoped PII encryption
-H1–H4, custom editable roles L); **Phase C** (capabilities toggles, Stripe payments, advisory geofenced
+H1–H4, historical custom editable roles L, replaced by seven fixed built-ins on 2026-10-16); **Phase C** (capabilities toggles, Stripe payments, advisory geofenced
 check-in, custom machine-type config, per-space pricing, Stripe Connect, reconciliation, native device
 sessions + push + PaymentSheet, social sign-in); machine-scoped `MANAGE_MACHINES`; deployment-removable
 `payments` + install profiles + `suggest_tombstones`; generic OIDC providers; phone + SMS login;
@@ -71,8 +71,10 @@ plus their prior verdict returned both approvals in minutes.
 - **Parallel Codex via git worktree.** A second track runs in a sibling worktree (e.g. `../IM-nbuild` on its
   own branch) with a dedicated test DB, so two Codex builds don't collide on shared files (`rbac.py`,
   `origin_scope.py`, `admin_api/urls.py`, `openapi-schema.json`, `api.ts`). Worktrees are fresh checkouts →
-  **gitignored files (e.g. `backend/.env`) must be copied in**. Cap at 2 heavy builds. At the end: merge the
-  worktree branch → `dev`, `git worktree remove`, drop its DB.
+  **gitignored files (e.g. `backend/.env`) must be copied in**. Cap at 2 heavy builds. At the end, prepare
+  and verify the proposed merge, report exactly what would land, then hand it to the owner. **Only the
+  owner merges and pushes.** Keep the worktree until the owner has merged; remove it and its dedicated
+  test DB only after that handoff is complete.
 - **Codex gotchas.** Run Codex with skill-free prompts that skip reading this file, in the **background**
   (`run_in_background:true`) — the 10-min foreground ceiling is too short. Stage-4 = `codex exec review
   --uncommitted` (no `--sandbox`, no custom prompt; findings at the literal tail). If Codex dies with
@@ -187,7 +189,7 @@ eager, broker-less local flow) makes the endpoint answer 503 and the console kee
 
 `frontend/e2e/` drives a REAL stack — never mocks — and pins the Hard Rules through a browser and a real
 presigned upload to object storage. `./scripts/dev.sh up --build`, then `./scripts/dev.sh e2e`
-is the recipe for a laptop and CI. Install host frontend dependencies with `cd frontend && npm ci`
+is the local recipe before pushing. Install host frontend dependencies with `cd frontend && npm ci`
 and Chromium with `npx playwright install --with-deps chromium` first. The script polls the running
 Django :8000 health endpoint and Vite :5000 for up to 60 seconds, runs `seed_e2e --write-json` in
 backend, copies the seed JSON to `frontend/e2e/.seed.json`, and passes its native host path to
@@ -196,9 +198,37 @@ from one IP. Seeding refuses unless `DEBUG` or `E2E_SEED_ALLOWED=1`.
 
 Each seed run creates a fresh random `e2e-<token>` tenant with users and immutable workflow records;
 those tenants accumulate in the persistent dev database, isolated from other data. `dev.sh down -v`
-wipes that database when wanted; CI starts fresh on each runner. Seed identifiers are loaded by
+wipes that database when wanted. Seed identifiers are loaded by
 `frontend/e2e/helpers.ts` from the output of
 `backend/apps/operations/management/commands/seed_e2e.py`.
 
 Unit-level accessibility checks use `frontend/src/test/axe.ts` (jsdom cannot compute
 colour contrast; `e2e/a11y.spec.ts` covers that in Chromium).
+
+Tests run locally only, before pushing: `./scripts/dev.sh test` and `./scripts/dev.sh e2e`.
+Actions builds/publishes backend/frontend images, creates the GitHub Release, promotes rolling tags
+and optionally deploys through the self-hosted runner; `security-audit.yml` runs `pip-audit` on PRs.
+
+## CI checks (`.github/workflows/checks.yml`)
+
+The **Checks** workflow runs on every PR into `main` or `dev`, on pushes to `dev`, and by hand. It runs
+**checks only** (owner decision #108): the pytest and vitest suites stay local and gitignored, so a green
+Checks run is not a test run. Its four jobs are the required status checks on `main`; keep their names:
+
+- **`frontend`** — `npm ci`, `npx tsc -b`, `npm run build` (which runs the PWA verify script). There is no
+  lint step because no ESLint config is committed.
+- **`backend`** — Python 3.12, `manage.py check`, `manage.py makemigrations --check --dry-run`. Settings
+  get dummy values plus keys from `scripts/ci/throwaway_keys.py` (`SECRET_KEY` and the
+  Fernet keys, including the mandatory `PII_MASTER_KEY`); no database or service is started.
+- **`contracts`** — regenerates the OpenAPI snapshot (`spectacular --format openapi-json`) and fails on
+  any diff with `frontend/openapi-schema.json`; reruns `npm run generate:api` and fails if
+  `frontend/src/generated/api.ts` changes; runs `validate_catalog()`, so a stale
+  `CATALOG_SCHEMA_SHA256` fails here.
+- **`rules`** — `scripts/ci/check_rules.py`: the 300-line ceiling over tracked, non-migration, non-test,
+  non-generated source files in `backend/apps`, `backend/config` and `frontend/src` (its `ALLOWLIST`
+  holds the accepted exceptions, today only `config/settings.py`), plus `CLAUDE.md` == `AGENTS.md`.
+
+Run the rules locally with `python scripts/ci/check_rules.py` from anywhere in the repo; it measures
+tracked files only, so local test trees never affect it. The backend and contracts commands need Linux
+(`apps/backup` imports `fcntl`), so run them in a `python:3.12-slim` container or the backend image
+rather than a Windows venv, with the same dummy env the workflow sets.

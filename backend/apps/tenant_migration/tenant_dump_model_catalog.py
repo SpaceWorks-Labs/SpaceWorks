@@ -7,7 +7,7 @@ from .tenant_dump_types import ModelDisposition, ModelRule, TableRule
 
 FIRST_PARTY_APP_LABELS = frozenset(
     """accounts admin_api apiclients audit backup bookings boxes data_export devices
-    encryption events evidence hardware_requests integrations inventory machines
+    encryption event_reimbursements events evidence hardware_requests hosting_requests integrations inventory machines
     maintenance makerspaces notifications operations organizations payments payments_rail
     presence
     printing procurement roadmap separability tenant_migration warranty""".split()
@@ -26,11 +26,14 @@ THIRD_PARTY_INSTALLED_APP_LABELS = frozenset(
 # Lane-D-specific review.
 PROJECTED_MODEL_LABELS = frozenset(
     """operations.SavedView accounts.User apiclients.ApiKeyRequest audit.AuditLog
-    backup.MakerspaceArchiveRecipient bookings.BookableSpace bookings.Booking boxes.Box
+    makerspaces.MembershipAdditionalRole machines.MembershipMachineTypeScope
+    notifications.MemberNotificationPreference notifications.NotificationPreference
+    bookings.BookableSpace bookings.Booking boxes.Box
     boxes.BoxScan boxes.QrCode boxes.QrScanEvent devices.Device devices.DeviceEvent
     events.EventSeries events.Event events.EventRegistration
     events.EventCheckInEvent events.EventStationBinding events.EventFeedbackSurvey events.EventFeedbackResponse
     events.EventAttendanceCertificate
+    events.EventCertificateArtwork events.EventCertificateTemplateRevision
     evidence.EvidencePhoto evidence.EvidenceObjectRetentionState
     evidence.EvidenceRetentionPolicy hardware_requests.HardwareRequest
     hardware_requests.HardwareRequestItem hardware_requests.HardwareRequestItemAsset
@@ -59,7 +62,8 @@ PROJECTED_MODEL_LABELS = frozenset(
     operations.StockTransferLine
     operations.StocktakeLedgerEntry operations.StocktakeLine operations.StocktakeSession
     payments.MakerspacePaymentSettings payments.MakerspaceBillingSettings payments.ManualSettlement payments.Payment
-    payments.Refund payments.PaymentDocument presence.PresenceSession
+    payments.Refund payments.RefundCase payments.RefundPolicy payments.PaymentDocument presence.PresenceSession
+    makerspaces.ModuleSettingsGrant makerspaces.ModuleSettingLock
     procurement.ToBuyItem procurement.ToBuyReceipt
     tenant_migration.ExternalTenantReference warranty.Warranty
     warranty.WarrantyDocument""".split()
@@ -77,14 +81,48 @@ PROJECTED_MODEL_LABELS |= WP4_PROJECTED_LABELS
 
 from .catalog_w7_events import EVENT_PROJECTED_MODELS
 PROJECTED_MODEL_LABELS |= EVENT_PROJECTED_MODELS
+from .catalog_broadcasts import FIELD_NAMES as BROADCAST_FIELDS
+PROJECTED_MODEL_LABELS |= BROADCAST_FIELDS.keys()
+from .catalog_website import FIELD_NAMES as WEBSITE_FIELDS
+PROJECTED_MODEL_LABELS |= WEBSITE_FIELDS.keys()
 
 from .catalog_wp3 import WP3_PROJECTED_LABELS
 PROJECTED_MODEL_LABELS |= WP3_PROJECTED_LABELS
 
+from .catalog_booking_arrival import FIELD_NAMES as BOOKING_ARRIVAL_FIELDS
+PROJECTED_MODEL_LABELS |= BOOKING_ARRIVAL_FIELDS.keys()
+from .catalog_p2_bookings import FIELD_NAMES as P2_BOOKING_FIELDS
+PROJECTED_MODEL_LABELS |= P2_BOOKING_FIELDS.keys()
+from .catalog_r2_l1 import FIELD_NAMES as R2_L1_FIELDS  # noqa: E402
+PROJECTED_MODEL_LABELS |= R2_L1_FIELDS.keys()
+from .catalog_r2_l4 import PROJECTED_LABELS as R2_L4_PROJECTED  # noqa: E402
+PROJECTED_MODEL_LABELS |= R2_L4_PROJECTED
+from .catalog_r2_l5 import PROJECTED_LABELS as R2_L5_PROJECTED  # noqa: E402
+PROJECTED_MODEL_LABELS |= R2_L5_PROJECTED
+from .catalog_login_security import PROJECTED_LABELS as S0_PROJECTED_LABELS  # noqa: E402
+PROJECTED_MODEL_LABELS |= S0_PROJECTED_LABELS
+from .catalog_r2_l15 import PROJECTED_LABELS as R2_L15_PROJECTED  # noqa: E402
+PROJECTED_MODEL_LABELS |= R2_L15_PROJECTED
+from .catalog_l12 import PROJECTED_LABELS as L12_PROJECTED  # noqa: E402
+PROJECTED_MODEL_LABELS |= L12_PROJECTED
+from .catalog_l23 import PROJECTED_LABELS as L23_PROJECTED  # noqa: E402
+PROJECTED_MODEL_LABELS |= L23_PROJECTED
+from .catalog_l16 import PROJECTED_LABELS as L16_PROJECTED  # noqa: E402
+PROJECTED_MODEL_LABELS |= L16_PROJECTED
+
+from .catalog_profiles import EXPORTED_FIELDS as PROFILE_FIELDS
+PROJECTED_MODEL_LABELS |= PROFILE_FIELDS.keys()
+from .catalog_public_pages import EXPORTED_FIELDS as PAGE_EXPORTED_FIELDS
+PROJECTED_MODEL_LABELS |= PAGE_EXPORTED_FIELDS.keys()
+
+PROJECTED_MODEL_LABELS |= frozenset({"inventory.InventoryStockSnapshot", "machines.MachineStatusEvent", "machines.ConsumableCostRecord"})
+
 PRESERVE_LIVE_MODEL_LABELS = frozenset({"machines.MachineOperator"})
 
+from .catalog_messaging import PROJECTED_LABELS as MESSAGING_PROJECTED_LABELS
+PROJECTED_MODEL_LABELS |= MESSAGING_PROJECTED_LABELS
+
 EXPLICIT_DROP_MODEL_REASONS = {
-    "notifications.MemberNotificationPreference": "Target users re-establish personal communication preferences; no source disclosure controls become live.",
     "apiclients.ApiClient": "Source clients and their bearer secrets never become target authority.",
     "events.EventCollaborator": "Cross-tenant collaboration grants have no target counterpart.",
     "events.EventSeriesCollaborator": "Cross-tenant series collaboration grants have no target counterpart.",
@@ -95,11 +133,14 @@ EXPLICIT_DROP_MODEL_REASONS = {
     "integrations.RecipientCategoryScope": "The owning disclosure recipient is dropped.",
     "integrations.RecipientMachineScope": "The owning disclosure recipient is dropped.",
     "integrations.RecipientMachineTypeScope": "The owning disclosure recipient is dropped.",
-    "machines.RoleMachineScope": "Source role scopes must not grant target machine authority.",
-    "machines.RoleMachineTypeScope": "Source role scopes must not grant target type authority.",
     "makerspaces.MakerspaceRole": "Source roles are replaced by target-seeded protected defaults.",
     "organizations.Organization": "Organizations are deployment-global and do not travel.",
 }
+
+
+from .catalog_p2_presence import model_catalog, DROP_MODELS as PRESENCE_DROPS
+PROJECTED_MODEL_LABELS = model_catalog(PROJECTED_MODEL_LABELS)
+EXPLICIT_DROP_MODEL_REASONS.update(PRESENCE_DROPS)
 
 
 def _model_rules():
@@ -128,6 +169,10 @@ def _model_rules():
     return rules
 
 
+from .catalog_events_programme import EXPORTED_FIELDS as PROGRAMME_PROJECTED_FIELDS
+PROJECTED_MODEL_LABELS |= PROGRAMME_PROJECTED_FIELDS.keys()
+from .catalog_reimbursements import EXPORTED_FIELDS as REIMBURSEMENT_PROJECTED_FIELDS
+PROJECTED_MODEL_LABELS |= REIMBURSEMENT_PROJECTED_FIELDS.keys()
 FIRST_PARTY_MODEL_RULES = _model_rules()
 
 AUTO_CREATED_TABLE_RULES = {

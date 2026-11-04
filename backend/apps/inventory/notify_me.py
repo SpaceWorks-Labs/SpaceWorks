@@ -8,7 +8,6 @@ from rest_framework.exceptions import ValidationError
 
 from apps.accounts import rbac
 from apps.audit.services import record
-from apps.integrations.notify import EmailDelivery, LifecyclePayload, notify_lifecycle
 from apps.makerspaces.platform import feature_enabled
 from apps.operations.reminder_types import ReminderMessage, ReminderSource, ReminderSubject
 from apps.operations.reminder_consumer_queries import unfinished
@@ -23,12 +22,19 @@ def tenant_watches(space):
 @transaction.atomic
 def subscribe(product, user):
     require_active_member(user, product.makerspace)
+    if not product.makerspace.public_inventory_enabled:
+        raise ValidationError({"detail": "Public inventory is disabled."})
     if not feature_enabled(product.makerspace, "inventory.notify_when_back"):
         raise ValidationError({"detail": "Notify-me is disabled."})
     # Same lock as quantity writes: a return cannot slip between eligibility and watch.
     product = rbac.scope_public_catalogue(
         type(product).objects.select_for_update(), product.makerspace,
     ).get(pk=product.pk, is_public=True, is_archived=False)
+    from .notifications_p2 import public_availability
+    if not public_availability(product):
+        raise ValidationError({"detail": "Availability is not public for this item."})
+    if product.available_quantity > 0:
+        raise ValidationError({"detail": "This item is already available."})
     watch, created = tenant_watches(product.makerspace).get_or_create(
         product=product, user=user, defaults={"makerspace": product.makerspace},
     )
@@ -52,8 +58,8 @@ def availability_rose(product, previous):
     if product.available_quantity <= 0:
         tenant_watches(product.makerspace).filter(product=product, notified_at__isnull=True).update(ready_at=None)
         return
-    if (product.available_quantity <= previous or product.available_quantity <= 0
-            or not product.is_public or product.is_archived
+    if (previous > 0 or product.available_quantity <= 0
+            or not product.is_public or product.is_archived or product.public_availability_mode == "hidden"
             or not feature_enabled(product.makerspace, "inventory.notify_when_back")):
         return
     # Latch only the first rise. No count or borrower identity enters the notification.
@@ -66,7 +72,7 @@ def watches(space):
         InventoryWatch.objects.select_related("user", "product", "makerspace"),
         makerspace_id=space.pk,
     ).filter(ready_at__isnull=False, notified_at__isnull=True,
-             product__is_public=True, product__is_archived=False, product__available_quantity__gt=0)
+             product__is_public=True, product__is_archived=False, product__available_quantity__gt=0).exclude(product__public_availability_mode="hidden")
 
 
 def discover(space, now, limit, local_tz):
@@ -101,32 +107,18 @@ def dispatch(space, reminder, message, now, local_tz):
     if row is None:
         return None
 
-    def payload():
-        space.refresh_from_db()
-        row.user.refresh_from_db()
-        row.product.refresh_from_db()
-        try:
-            membership = require_active_member(row.user, space).membership
-        except (MemberPresenceRequired, WaiverAcceptanceRequired):
-            return LifecyclePayload(text="", staff_channels_enabled=False)
-        if (not feature_enabled(space, "inventory.notify_when_back")
-                or not space.public_inventory_enabled or not row.product.is_public
-                or row.product.is_archived or row.product.available_quantity <= 0
-                or not membership.receives_notifications
-                or not tenant_watches(space).filter(pk=row.pk, created_at=row.created_at,
-                                                      notified_at=now).exists()):
-            return LifecyclePayload(text="", staff_channels_enabled=False)
-        return LifecyclePayload(
-            text=message.body, staff_channels_enabled=False,
-            emails=(EmailDelivery(to_email=row.user.email, subject=message.title,
-                                  text_body=message.body, html_body="", stream="hardware", mute_event="back_available",
-                                  audience="requester", user_id=row.user_id),),
-        )
+    # eligible_watch reloads source, membership and opt-out state at delivery;
+    # keep one source-backed intent instead of a second lifecycle fan-out.
     row.notified_at = now
     row.save(update_fields=["notified_at"])
-    result = notify_lifecycle(space, feature="hardware_requests", event="back_available", build=payload)
+    from .notifications_p2 import notify_watch
+    result = notify_watch(row, message)
+    if result is None or not result.scheduled:
+        raise RuntimeError("Inventory watch intent could not be persisted.")
     record(None, "inventory.watch_notified", makerspace=space, target=row.product)
-    return result
+    # The reminder protocol's None result means a durable intent was dispatched;
+    # delivered_counts would incorrectly claim provider acknowledgement here.
+    return None
 
 
 SOURCE = ReminderSource("inventory.back_available", "public_inventory", discover, build,

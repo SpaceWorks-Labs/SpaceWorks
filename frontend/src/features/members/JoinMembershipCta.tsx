@@ -35,7 +35,7 @@ export function JoinMembershipCta({ policy, signedIn, pending, onJoin, onSignIn 
   return <section className="desk-panel p-5">
     <h2 className="title-panel">{state.title}</h2>
     <p className="mt-1 text-sm text-muted">{state.description}</p>
-    {state.action !== "none" ? <button className="desk-button-secondary mt-4" type="button" disabled={pending} onClick={state.action === "join" ? onJoin : onSignIn}>
+    {state.action !== "none" ? <button className="desk-button-brand mt-4 w-full sm:w-fit" type="button" disabled={pending} onClick={state.action === "join" ? onJoin : onSignIn}>
       {pending && state.action === "join" ? "Sending…" : state.actionLabel}
     </button> : null}
   </section>;

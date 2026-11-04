@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { staffRequest } from "../../lib/api";
+import { Field } from "../../components/ui";
 
 export type KitComponent = { key: string; label: string; quantity: number };
 export type KitExpectation = KitComponent & { owner_label: string; issue_present?: number };
@@ -53,16 +54,16 @@ export function useSuppliedKitChecklist(components: KitExpectation[], token: str
 
 export function KitChecklistCapture({ checklist }: { checklist: Pick<ReturnType<typeof useKitChecklist>, "components" | "values" | "loading" | "error" | "update"> }) {
   return <div className="grid gap-2">
-    {checklist.loading ? <p role="status" className="text-sm text-muted">Loading kit checklist...</p> : null}
+    {checklist.loading ? <p role="status" className="text-sm text-muted">Loading kit checklist…</p> : null}
     {checklist.error ? <p role="alert" className="text-sm text-danger">{checklist.error}</p> : null}
-    {checklist.components.length ? <fieldset className="grid gap-2 rounded-md border border-line p-3">
+    {checklist.components.length ? <fieldset className="grid gap-4 rounded-xl border border-line bg-panel p-4">
       <legend className="text-sm font-medium text-ink">Kit component counts</legend>
-      <p className="text-xs text-muted">Count what is physically present. Enter 0 for a missing component.</p>
-      {checklist.components.map((row) => <label key={row.key} className="grid gap-1 text-sm">
-        <span>{row.owner_label}: {row.label} ({row.quantity} expected{row.issue_present !== undefined ? `, ${row.issue_present} at issue` : ""})</span>
+      <p className="text-sm text-muted">Count what is physically present. Enter 0 for a missing component.</p>
+      {checklist.components.map((row) => <Field key={row.key}
+        label={`${row.owner_label}: ${row.label} (${row.quantity} expected${row.issue_present !== undefined ? `, ${row.issue_present} at issue` : ""})`}>
         <input className="desk-input" type="number" required min="0" max={row.quantity} step="1"
           value={checklist.values[row.key] ?? ""} onChange={(event) => checklist.update(row.key, event.target.value)} />
-      </label>)}
+      </Field>)}
     </fieldset> : null}
   </div>;
 }

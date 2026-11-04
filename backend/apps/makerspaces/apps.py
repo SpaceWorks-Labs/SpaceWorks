@@ -18,6 +18,26 @@ class MakerspacesConfig(AppConfig):
 
         register_signal()
         self._register_separability()
+        from .security_lock_guard import register as register_security_guard
+        register_security_guard()
+        from .public_profile_cache import register_signals
+        from .profile_activity_sources import register_builtin_sources
+        register_signals()
+        register_builtin_sources()
+        from .profile_activity_p2 import register_sources
+        register_sources()
+        from .notifications_p2_members import register as register_member_notifications
+        from .notifications_p2_terms import register as register_term_notifications
+        from .notifications_p2_subdomains import register as register_subdomain_notifications
+        register_member_notifications()
+        register_term_notifications()
+        register_subdomain_notifications()
+        from .notifications_p2_broadcasts import register as register_broadcast_notifications
+        register_broadcast_notifications()
+        from .notifications_p2_vouches import register as register_vouch_notifications
+        register_vouch_notifications()
+        from .notifications_l4 import register as register_l4_notifications
+        register_l4_notifications()
 
         def invalidate_hosting_cache(**kwargs):
             # Any write to frontend_domain / frontend_domain_status must drop the
@@ -45,8 +65,8 @@ class MakerspacesConfig(AppConfig):
             from apps.makerspaces.roles import ensure_default_roles
 
             # Seed in the SAME transaction as the makerspace insert (not on_commit)
-            # so a new makerspace is never observable without its five protected
-            # defaults, and a seeding failure rolls the creation back.
+            # so a new makerspace is never observable without its seven built-in
+            # roles, and a seeding failure rolls the creation back.
             ensure_default_roles(instance)
 
         def ensure_pii_write_fence_on_create(sender, instance, created, **kwargs):

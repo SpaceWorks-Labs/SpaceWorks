@@ -4,7 +4,6 @@ from django.db import transaction
 
 from apps.accounts.models import User
 from apps.audit import services as audit
-from apps.backup.custody import with_makerspace_custody_lock
 from apps.makerspaces.models import Makerspace
 
 from . import target_state
@@ -51,52 +50,43 @@ def _activate_target_transaction(*, pairing, import_job, receipt_envelope, actor
         receipt_envelope,
         MigrationReceipt.Operation.SOURCE_CUTOVER,
     )
-    with with_makerspace_custody_lock(target.pk) as custody:
-        target = custody.makerspace
-        consumed = ReceiptConsumption.objects.filter(receipt=receipt).first()
-        if consumed is not None:
-            _require_idempotent_consumption(
-                consumed, ReceiptConsumption.Purpose.ACTIVATE_TARGET
-            )
-            if not target_state.target_has_state(target.pk, target_state.ACTIVE):
-                raise TransitionConflictError(
-                    "The activation receipt was consumed without an active target."
-                )
-            return persisted_envelope(receipt)
-
-        if (
-            not target.superadmin_access_enabled
-            and custody.verified_recipient_count() == 0
-        ):
-            raise TransitionConflictError(
-                "Target activation requires a verified archive recipient when "
-                "superadmin access is disabled."
-            )
-        verify_import_object_ownership(job)
-        verify_import_object_journal_state(job)
-        if target_state.transition_target(
-            target.pk, target_state.IMPORTING, target_state.ACTIVE
-        ) != 1:
-            raise TransitionConflictError(
-                "Target activation requires the IMPORTING lifecycle state."
-            )
-        consume_once(receipt, ReceiptConsumption.Purpose.ACTIVATE_TARGET, actor)
-        audit.record(
-            actor,
-            "tenant_migration.target_activated",
-            makerspace=target,
-            target=receipt,
-            meta={
-                "migration_id": str(receipt.migration_id),
-                "receipt_id": str(receipt.receipt_id),
-                "signer_fingerprint": receipt.signer_fingerprint,
-                "source_deployment_id": receipt.source_deployment_id,
-                "target_deployment_id": receipt.target_deployment_id,
-                "format_version": receipt.format_version,
-                "outcome": "active",
-            },
+    target = Makerspace.objects.select_for_update().get(pk=target.pk)
+    consumed = ReceiptConsumption.objects.filter(receipt=receipt).first()
+    if consumed is not None:
+        _require_idempotent_consumption(
+            consumed, ReceiptConsumption.Purpose.ACTIVATE_TARGET
         )
+        if not target_state.target_has_state(target.pk, target_state.ACTIVE):
+            raise TransitionConflictError(
+                "The activation receipt was consumed without an active target."
+            )
         return persisted_envelope(receipt)
+
+    verify_import_object_ownership(job)
+    verify_import_object_journal_state(job)
+    if target_state.transition_target(
+        target.pk, target_state.IMPORTING, target_state.ACTIVE
+    ) != 1:
+        raise TransitionConflictError(
+            "Target activation requires the IMPORTING lifecycle state."
+        )
+    consume_once(receipt, ReceiptConsumption.Purpose.ACTIVATE_TARGET, actor)
+    audit.record(
+        actor,
+        "tenant_migration.target_activated",
+        makerspace=target,
+        target=receipt,
+        meta={
+            "migration_id": str(receipt.migration_id),
+            "receipt_id": str(receipt.receipt_id),
+            "signer_fingerprint": receipt.signer_fingerprint,
+            "source_deployment_id": receipt.source_deployment_id,
+            "target_deployment_id": receipt.target_deployment_id,
+            "format_version": receipt.format_version,
+            "outcome": "active",
+        },
+    )
+    return persisted_envelope(receipt)
 
 
 def abort_target(*, pairing, import_job, actor):
@@ -208,7 +198,7 @@ def _require_lane_d_readiness(job):
     """Re-run D5 target readiness on the activation path, not only at DEK install time.
 
     Sections 2.4-2.5 prove readiness once when the tenant DEKs are installed, but activation is a
-    separate, later transition: encryption or recipient custody can regress in between. Called from
+    separate, later transition: encryption readiness can regress in between. Called from
     _require_activation_ready, so it runs both in the outer pre-check and again inside the locked
     transaction - a readiness failure must block the transition itself, not just the preflight.
     Imported locally because apps.tenant_migration.tenant_dump_target imports back into this app.

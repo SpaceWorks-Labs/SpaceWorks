@@ -1,7 +1,7 @@
 import { useContext, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { Field, Modal } from "../../components/ui";
+import { EmptyState, Field, Modal, OverflowMenu } from "../../components/ui";
 import { staffRequest } from "../../lib/api";
 import type { Paginated } from "../../lib/usePaginatedQuery";
 import type { ListState } from "../../lib/useUrlListState";
@@ -16,6 +16,7 @@ export function SavedViewsMenu({ makerspaceId, entity, state, onRestore }: {
   const client = useQueryClient();
   const [page, setPage] = useState(1);
   const [open, setOpen] = useState(false);
+  const [manage, setManage] = useState(false);
   const [name, setName] = useState("");
   const [shared, setShared] = useState(false);
   const key = ["saved-views", ownerName, makerspaceId, entity];
@@ -31,16 +32,31 @@ export function SavedViewsMenu({ makerspaceId, entity, state, onRestore }: {
       ? { method: "DELETE" } : { method: "PATCH", body: JSON.stringify({ shared: publish }) }),
     onSuccess: () => { setPage(1); void refresh(); },
   });
-  return <div className="my-3 flex flex-wrap items-center gap-2">
-    <label className="text-xs text-muted">Saved views <select aria-label="Saved views" className="desk-input" value="" onChange={(event) => {
-      const view = views.data?.results?.find((row) => row.id === Number(event.target.value));
-      if (view) onRestore(view.state);
-    }}><option value="">Choose a view</option>{views.data?.results?.map((view) => <option key={view.id} value={view.id}>{view.name}{view.shared ? " (shared)" : ""}</option>)}</select></label>
-    <button type="button" className="desk-button-ghost" onClick={() => setOpen(true)}>Save current view</button>
-    {views.data?.previous ? <button className="desk-button-ghost" onClick={() => setPage((p) => p - 1)}>Previous views</button> : null}
-    {views.data?.next ? <button className="desk-button-ghost" onClick={() => setPage((p) => p + 1)}>More views</button> : null}
-    <details><summary className="cursor-pointer text-sm">Manage saved views</summary>{views.data?.results?.filter((view) => view.owner_username === ownerName).map((view) => <div key={view.id} className="flex gap-2 py-1"><span>{view.name}</span>{canShare ? <button className="desk-button-ghost" disabled={change.isPending} onClick={() => change.mutate({ id: view.id, publish: !view.shared })}>{view.shared ? "Make private" : "Share to makerspace"}</button> : null}<button className="desk-button-ghost" disabled={change.isPending} onClick={() => change.mutate({ id: view.id })}>Delete {view.name}</button></div>)}</details>
-    {views.error || change.error ? <p role="alert" className="text-sm text-danger">{(views.error ?? change.error)?.message}</p> : null}
+  const paging = <div className="flex flex-wrap gap-2">
+    {views.data?.previous ? <button type="button" className="desk-button" onClick={() => setPage(p => p - 1)}>Previous views</button> : null}
+    {views.data?.next ? <button type="button" className="desk-button" onClick={() => setPage(p => p + 1)}>More views</button> : null}
+  </div>;
+  return <div className="flex items-center gap-2">
+    <OverflowMenu label="Views" showLabel actions={[
+      ...(views.data?.results ?? []).map(view => ({ label: `${view.name}${view.shared ? " (shared)" : ""}`, onClick: () => onRestore(view.state) })),
+      ...(views.data?.previous ? [{ label: "Previous views", onClick: () => setPage(p => p - 1) }] : []),
+      ...(views.data?.next ? [{ label: "More views", onClick: () => setPage(p => p + 1) }] : []),
+      { label: "Save current view…", onClick: () => setOpen(true) },
+      { label: "Manage views…", onClick: () => setManage(true) },
+    ]} />
+    {views.error ? <p role="alert" className="text-sm text-danger">{views.error.message}</p> : null}
+    <Modal title="Manage saved views" open={manage} onClose={() => { setManage(false); change.reset(); }}>
+      <div className="grid gap-3">
+        {(views.data?.results ?? []).filter(view => view.owner_username === ownerName).map(view => <div key={view.id} className="grid gap-2 border-b border-line pb-3">
+          <span className="font-semibold">{view.name}</span>
+          <div className="flex flex-wrap gap-2">{canShare ? <button type="button" className="desk-button" disabled={change.isPending} onClick={() => change.mutate({ id: view.id, publish: !view.shared })}>{view.shared ? "Make private" : "Share to makerspace"}</button> : null}
+            <button type="button" className="desk-button-ghost text-danger" disabled={change.isPending} onClick={() => change.mutate({ id: view.id })}>Delete {view.name}</button></div>
+        </div>)}
+        {!views.isLoading && !views.data?.results?.some(view => view.owner_username === ownerName) ? <EmptyState message="No personal views on this page. Save the current view to come back to it." /> : null}
+        {paging}
+        {change.error ? <p role="alert" className="text-sm text-danger">{change.error.message}</p> : null}
+      </div>
+    </Modal>
     {open ? <Modal title="Save current view" open onClose={() => { setOpen(false); save.reset(); }}>
       <form className="grid gap-3" onSubmit={(event) => { event.preventDefault(); save.mutate(); }}>
         <Field label="View name"><input className="desk-input" maxLength={80} required value={name} onChange={(event) => setName(event.target.value)} /></Field>

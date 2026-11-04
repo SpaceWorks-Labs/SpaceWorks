@@ -1,0 +1,19 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+<p>This clears {{ person.username }}'s authenticator, every passkey and their recovery codes, and ends every session they have. They keep their member features and must set up two-step sign-in again before using staff screens. The reset is recorded in the audit log.</p>
+<form method="post" action="{{ request.path }}">
+  {% csrf_token %}
+  <input type="hidden" name="action" value="{{ action_name }}">
+  <input type="hidden" name="{{ action_checkbox_name }}" value="{{ person.pk }}">
+  <fieldset class="module aligned">
+    <div class="form-row">
+      <label for="id_reason">Reason:</label>
+      <textarea id="id_reason" name="reason" rows="4" minlength="3" maxlength="300" required></textarea>
+    </div>
+  </fieldset>
+  <div class="submit-row">
+    <input type="submit" name="apply" value="Reset two-step sign-in">
+  </div>
+</form>
+{% endblock %}

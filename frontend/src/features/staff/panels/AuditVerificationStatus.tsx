@@ -1,6 +1,8 @@
+import { plural } from "../../../lib/plural";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
+import { StatusPill } from "../../../components/ui";
 import { staffRequest } from "../../../lib/api";
 
 type Coverage = {
@@ -88,16 +90,16 @@ export function AuditVerificationStatus({
     <div className="mb-3 rounded-md border border-line bg-bg p-3 text-sm">
       <div className="flex flex-wrap items-center gap-3">
         <button
-          className="desk-button-primary"
+          className="desk-button"
           type="button"
           disabled={!makerspaceId || start.isPending || (accepted !== null && !run?.terminal)}
           onClick={() => start.mutate()}
         >
-          Verify these entries
+          {start.isPending ? "Starting verification\u2026" : "Verify these entries"}
         </button>
         {!makerspaceId ? <span className="text-muted">Choose one makerspace to verify.</span> : null}
         {accepted && !run ? <span className="text-muted">Loading verification status…</span> : null}
-        {run ? <span className="font-medium">{verificationVerdict(run)}</span> : null}
+        {run ? <StatusPill label={verificationVerdict(run)} tone={verificationVerdict(run).includes("problems") ? "danger" : verificationVerdict(run) === "All entries fully verified." ? "success" : "warn"} /> : null}
       </div>
       {start.error ? <p className="mt-2 text-danger">{start.error.message}</p> : null}
       {status.error ? (
@@ -111,7 +113,7 @@ export function AuditVerificationStatus({
       ) : null}
       {run?.terminal ? (
         <p className="mt-1 text-xs text-muted">
-          {run.coverage.row_count} rows · {run.coverage.mac_valid_count} MAC-valid ·{" "}
+          {plural(run.coverage.row_count, "row")} · {run.coverage.mac_valid_count} MAC-valid ·{" "}
           {run.coverage.local_batch_verified_count} in a verified batch · chain {run.coverage.chain_status} ·
           anchor {run.coverage.anchor_status.replace("_", " ")}
         </p>

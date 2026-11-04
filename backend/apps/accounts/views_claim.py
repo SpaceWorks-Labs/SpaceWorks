@@ -60,7 +60,8 @@ class ClaimRedemptionView(APIView):
                 pair = mint_claim_tokens(claim)
                 user = attach_claim_context(claim.membership.user, claim)
                 response = Response(
-                    {"access": pair.access, "user": user_payload(user, request=request)}
+                    {"access": pair.access,
+                     "user": user_payload(user, request=request, session_authority="member")}
                 )
                 set_refresh_cookies(response, pair.refresh, request)
         if refusal is not None:

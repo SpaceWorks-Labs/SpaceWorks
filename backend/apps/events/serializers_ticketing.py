@@ -38,13 +38,20 @@ class PromoSerializer(serializers.ModelSerializer):
 class TicketInputSerializer(serializers.ModelSerializer):
     class Meta:
         model = EventTicketType
-        fields = ("name", "amount", "audience", "capacity", "sales_start_at", "sales_end_at")
+        fields = ("name", "amount", "audience", "capacity", "sales_start_at", "sales_end_at",
+                  "purpose", "contributor_capacity_policy")
 
 
 class TicketSerializer(TicketInputSerializer):
+    registration_count = serializers.SerializerMethodField()
+
     class Meta(TicketInputSerializer.Meta):
-        fields = ("id", *TicketInputSerializer.Meta.fields, "is_active")
+        fields = ("id", *TicketInputSerializer.Meta.fields, "is_active", "registration_count")
         read_only_fields = fields
+
+    def get_registration_count(self, obj) -> int:
+        from apps.events.models import EventRegistration
+        return EventRegistration.objects.filter(ticket_type=obj).count()
 
 
 class CategoryInputSerializer(serializers.ModelSerializer):
@@ -54,9 +61,14 @@ class CategoryInputSerializer(serializers.ModelSerializer):
 
 
 class CategorySerializer(CategoryInputSerializer):
+    event_count = serializers.SerializerMethodField()
+
     class Meta(CategoryInputSerializer.Meta):
-        fields = ("id", "name", "slug")
+        fields = ("id", "name", "slug", "event_count")
         read_only_fields = fields
+
+    def get_event_count(self, obj) -> int:
+        return obj.events.count()
 
 
 class InviteListSerializer(serializers.Serializer):

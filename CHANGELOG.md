@@ -8,8 +8,69 @@ regenerating `frontend/openapi-schema.json` and `frontend/src/generated/api.ts`.
 
 Entries up to 0.2.0 below were generated automatically from conventional commits. That
 generation stopped afterwards, so **0.3.0 through 0.5.1 were never recorded here** — for that
-window see `git log` and the condensed changelog in `CLAUDE.md`, which also carries the design
-rule each change introduced.
+window see `git log` and the condensed changelog in `docs/PROJECT-HISTORY.md`, which also
+carries the design rule each change introduced.
+
+## Unreleased
+
+- **Staff roles on people (one account per person, U-B)** — `admin/makerspaces/<id>/staff-roles/`
+  (list, grant to a community member, invite by email, change roles and machine scopes, revoke,
+  restore) replaces the staff-account routes. **Removed:** `admin/makerspaces/<id>/staff-accounts/`
+  and its `policy`, `<user>/`, `deactivate/`, `reactivate/`, `set-password/` and `resend-invite/`
+  routes, and the `POST admin/makerspaces/<id>/staff-invitations` writer. Staff invitations are
+  accepted signed in with a fresh emailed code; no response returns `accept_url` any more. The auth
+  payload drops `account_kind` (read `kind`) and refresh/logout accept only the `person` and `platform`
+  contexts. Disabling an account is a superadmin `/control/` action. The console uses the one person
+  sign-in; "Link your staff account" merges a second account from the member account page.
+- **Space Works design system** — brand v1 colours, approved Gilroy text and headings,
+  Unbounded accents and supplied logo masters; a sidebar shell and shared page layouts replace
+  the header/dock UI. The restoration pass restores existing workflow controls across consoles.
+- **Events and bookings programme** — resource-specific staff grants, answer editing and
+  cancellation undo, draft cloning, private ticket/booking confirmations and arrival tracking,
+  curated public websites, email campaigns, signed integration reads, printable credentials
+  and scoped reports. Shared mechanisms keep the two domains independently removable.
+- **Installer choices** — hosting, website, HTTPS and storage precede optional control-plane
+  proxy access, web/organization/makerspace identity, platform MFA and Google/Apple/GitHub
+  selection, then areas and follow-ups, admin, Stripe, repository and optional deploy runner.
+  Provider keys are configured later; Inventory, Machines and Reports default on.
+- **Platform sign-in** — GitHub browser OAuth with PKCE and verified email is member-only;
+  audited login-method settings and the host `set_login_methods` command prevent lockout.
+  Platform MFA can be paused without deleting credentials; superadmins enroll optionally.
+- **Optional control-plane access** — default-off `CONTROL_PLANE_PROXY`, a peer-IP allowlist
+  and an independent loopback HTTPS SSH-tunnel fallback on supported TLS installations.
+
+- **Owner organizations at setup** — the installer asks for the organization name as its own question,
+  before the makerspace name. New makerspaces created in the staff console, API or `/control/` require an existing
+  active owner organization or a new name; the console includes search and pagination. Creation and
+  owner assignment are atomic. Existing ownerless spaces remain usable; tenant import and `seed_e2e`
+  are exceptions to the creation requirement.
+- **Standard containers for every install** — the single-box shape is removed and the all-in-one image
+  is no longer built or published. Existing single-box installs must switch to standard containers before updating;
+  setup and update refuse the old choice and print [switch steps](docs/update-recovery.md#moving-off-a-single-box-install).
+- **Your own nginx** — HTTPS option 3 writes `spaceworks-proxy.nginx.conf` in the install directory and
+  prints the DNS, Certbot, installation and reload steps.
+- **API-only setup** — offers automatic HTTPS or your own reverse proxy and points you to the website
+  hosted elsewhere.
+- **Upload limits fixed** — the built-in web server no longer rejects bulk inventory imports over 1 MB
+  or tenant-migration archive uploads; API bodies allow 10 MB and the archive import route 20 GB.
+- **Tests run locally only** — run `./scripts/dev.sh test` and `./scripts/dev.sh e2e` before pushing.
+  Actions builds/publishes backend/frontend images, creates the GitHub Release, promotes rolling tags
+  and optionally deploys through the self-hosted runner; `pip-audit` still runs on PRs.
+
+- Seven fixed roles replace editable roles. Staff role sets combine except Space Manager and Member,
+  which stand alone; Machine Manager reach is assigned per person by machine type. The console now
+  provides role-set checkboxes, a read-only role reference and per-person type controls.
+- **Machine Manager scope is per machine type** (owner decision #75b). Staff who had per-machine
+  limits now cover **all machines of their types**, including machines added later. Review each
+  Machine Manager's types after upgrading if someone should reach fewer machines.
+- **Two published images** (owner decision #75a) — `spaceworks-backend` and `spaceworks-frontend`.
+  The one backend image runs host/full, managed/full and managed/free, chosen at start-up by
+  `SPACEWORKS_DEPLOYMENT_MODE` / `SPACEWORKS_DEPLOYMENT_PROFILE`; no `-managed`/`-free` images are published.
+- **Nightly backups keep 7 daily + 4 weekly archives**; on-demand archives keep the configured days.
+  Space Managers see their own archive status on the dashboard.
+- **Operator action required:** fixed-role migration is irreversible. Back up, stop writers, run the
+  new image's `python manage.py preview_fixed_roles` before `migrate`, and fix all “must fix before
+  upgrading” notification rules. Follow the [upgrade procedure](docs/update-recovery.md#fixed-role-upgrade-2026-10-16).
 
 ## 0.9.2 (2026-10-14)
 
@@ -81,21 +142,21 @@ The feature-research programme, Waves 1-6 plus the coverage-gap packages:
   accepts or declines, and the partner's members then discover and register through their own
   member area. Registration records durable provenance, so later edits to the collaborator list
   cannot erase a member's history or void a QR already issued
-  ([799804d](https://github.com/SpaceWorks-HQ/SpaceWorks/commit/799804d101a1ef74a17a20ef0a4332715bd675ba))
+  ([799804d](https://github.com/SpaceWorks-Labs/SpaceWorks/commit/799804d101a1ef74a17a20ef0a4332715bd675ba))
 * **events:** a visiting member accepts the host's waiver on the registration itself, rather than
   by manufacturing a membership at the host — which would corrupt the host's roster, quotas, dues
   and member reporting. Audited by waiver id and version, never by body
-  ([dab0354](https://github.com/SpaceWorks-HQ/SpaceWorks/commit/dab035456decbfb3315533354a345fa255761311))
+  ([dab0354](https://github.com/SpaceWorks-Labs/SpaceWorks/commit/dab035456decbfb3315533354a345fa255761311))
 * **events:** QR check-in for event registrations. Resolution is read-only and answers unknown,
   malformed and wrong-event tokens identically, so it cannot be used to tell them apart
-  ([d59f38d](https://github.com/SpaceWorks-HQ/SpaceWorks/commit/d59f38d6ded06592f8041517d24cc5c3af39d8bd))
+  ([d59f38d](https://github.com/SpaceWorks-Labs/SpaceWorks/commit/d59f38d6ded06592f8041517d24cc5c3af39d8bd))
 * **members:** opt-in publication of recently attended events on a maker profile, consent-gated
   separately from the rest of the profile because attendance is not something the member typed
-  ([9ed0fcb](https://github.com/SpaceWorks-HQ/SpaceWorks/commit/9ed0fcb5af38994f67180cd0746e26b34abe7873))
+  ([9ed0fcb](https://github.com/SpaceWorks-Labs/SpaceWorks/commit/9ed0fcb5af38994f67180cd0746e26b34abe7873))
 * **events:** registering no longer requires an active presence session — signing up is planning
   to attend, not attending. Presence is proven at the door by the staff-scanned QR, and the nine
   other presence-guarded surfaces are unchanged
-  ([f16896f](https://github.com/SpaceWorks-HQ/SpaceWorks/commit/f16896f5062010f44e6b3eca1aeb6252a93ef632))
+  ([f16896f](https://github.com/SpaceWorks-Labs/SpaceWorks/commit/f16896f5062010f44e6b3eca1aeb6252a93ef632))
 
 ### Bug Fixes
 

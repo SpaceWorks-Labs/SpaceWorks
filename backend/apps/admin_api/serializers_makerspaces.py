@@ -1,8 +1,8 @@
+from apps.integrations.email_provider_serializers import EmailProviderFields
 from apps.admin_api.serializers_theme import ThemeConfigField
 from rest_framework import serializers
 
 from apps.admin_api.serializers_makerspace_aux import (
-    MakerspaceDisabledRowSerializer,
     MakerspaceSwitcherSerializer,
     ReturnPolicySerializer,
 )
@@ -21,13 +21,42 @@ from apps.admin_api.serializers_creation_setup import MakerspaceCreationSetupSer
 class MakerspaceSerializer(
     MakerspaceValidationMixin,
     MakerspaceMutationMixin,
+    EmailProviderFields,
     serializers.ModelSerializer,
 ):
+    def get_email_provider_configured(self, obj) -> bool:
+        return super().get_email_provider_configured(obj)
+
     def validate_creation_setup(self, value):
         if self.instance is not None:
             raise serializers.ValidationError("Use setup only when creating a makerspace.")
         return value
 
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        fields = ("organization_id", "organization_name")
+        supplied = [field for field in fields if field in attrs]
+        if self.instance is not None:
+            if supplied:
+                raise serializers.ValidationError({
+                    field: "Choose an owner organization only when creating a makerspace."
+                    for field in supplied
+                })
+        elif len(supplied) != 1:
+            raise serializers.ValidationError({
+                field: "Provide exactly one of organization_id or organization_name."
+                for field in fields
+            })
+        return attrs
+
+    organization_id = serializers.IntegerField(
+        required=False, write_only=True, min_value=1,
+        help_text="Existing active owner organization ID. On create, supply this or organization_name, exactly one; refused on update.",
+    )
+    organization_name = serializers.CharField(
+        required=False, write_only=True, max_length=200,
+        help_text="Create a new owner organization with this name. On create, supply this or organization_id, exactly one; refused on update.",
+    )
     install_profile_id = serializers.IntegerField(required=False, write_only=True, min_value=1)
     creation_setup = MakerspaceCreationSetupSerializer(required=False, write_only=True)
     creation_invitation = CreationInviteDeliverySerializer(read_only=True, allow_null=True)
@@ -75,9 +104,9 @@ class MakerspaceSerializer(
     logo_url = serializers.SerializerMethodField()
     cover_image_url = serializers.SerializerMethodField()
     domain_verification_record = serializers.SerializerMethodField()
+    passkey_only_accounts = serializers.SerializerMethodField()
     platform_hosting = serializers.SerializerMethodField()
     is_platform_subdomain = serializers.SerializerMethodField()
-    archive_custody_state = serializers.SerializerMethodField()
     public_display_name = serializers.CharField(
         write_only=True,
         required=False,
@@ -86,11 +115,17 @@ class MakerspaceSerializer(
         trim_whitespace=True,
     )
     enabled_modules = serializers.SerializerMethodField()
+    request_access = serializers.SerializerMethodField()
     unavailable_apps = serializers.SerializerMethodField()
+
+    def get_request_access(self, obj) -> str:
+        from apps.makerspaces.request_access import effective_policy
+        return effective_policy(obj)
 
     class Meta:
         model = Makerspace
         fields = [
+            "organization_id", "organization_name",
             "creation_setup", "creation_invitation",
             "install_profile_id",
             "id",
@@ -116,11 +151,11 @@ class MakerspaceSerializer(
             "membership_dues_amount",
             "referrals_enabled",
             "lapsed_members_cannot_borrow",
+            "request_access",
             "filament_low_stock_threshold_grams",
-            "superadmin_access_enabled",
-            "archive_custody_state",
             "staff_notifications_enabled",
             "booking_requester_notifications_enabled",
+            "event_default_registration_audience",
             "event_reminder_lead_hours",
             "booking_reminder_lead_hours",
             "logo_key",
@@ -132,6 +167,7 @@ class MakerspaceSerializer(
             "domain_verified_at",
             "domain_verification_token",
             "domain_verification_record",
+            "passkey_only_accounts",
             "platform_hosting",
             "is_platform_subdomain",
             "hidden_from_central_directory",
@@ -147,6 +183,7 @@ class MakerspaceSerializer(
             "telegram_group_chat_id",
             "telegram_bot_token",
             "telegram_bot_token_set",
+            "email_provider", "email_provider_config", "email_provider_configured",
             "smtp_host",
             "smtp_port",
             "smtp_username",
@@ -184,9 +221,9 @@ class MakerspaceSerializer(
             "domain_verified_at",
             "domain_verification_token",
             "domain_verification_record",
+            "passkey_only_accounts",
             "platform_hosting",
             "is_platform_subdomain",
-            "archive_custody_state",
             "telegram_bot_token_set",
             "smtp_password_set",
             "slack_webhook_url_set",

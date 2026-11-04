@@ -8,8 +8,6 @@ import sys
 from urllib.parse import unquote, urlparse
 from urllib.parse import quote, urlsplit, urlunsplit
 
-import psycopg2
-
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from apps.backup.database_grants import (
@@ -18,10 +16,7 @@ from apps.backup.database_grants import (
     fence_runtime_login,
     provision_runtime_role,
 )
-from apps.backup.database_identity import (
-    DatabaseIdentityError,
-    query_live_database_identity,
-)
+from apps.backup.database_identity import query_live_database_identity
 from apps.backup.host_marker import (
     DatabaseIdentity,
     MarkerStage,
@@ -31,6 +26,8 @@ from apps.backup.host_marker import (
     write_marker_fsynced,
 )
 from apps.backup.topology import validate_scheduler_environment
+from apps.backup.privileged_target import privileged_url, verify_target
+from config.cloud_database import connect_database, database_spec
 
 
 def _runtime_credentials(url):
@@ -60,11 +57,21 @@ def _grant_only(maintenance_url, runtime_url):
         runtime_url = _database_url(runtime_url, database_name)
     runtime_role, runtime_password = _runtime_credentials(runtime_url)
     try:
-        with psycopg2.connect(maintenance_url) as database:
-            database.autocommit = True
+        with connect_database(database_spec(maintenance_url)) as database:
             with database.cursor() as cursor:
                 cursor.execute("SELECT current_database()")
                 live_name = cursor.fetchone()[0]
+                # Restore diff databases are separate from ordinary migrations.
+                # The root supervisor proves their exact queried identity under
+                # operation.lock and supplies a one-shot grant-only tuple.
+                cursor.execute("SELECT oid FROM pg_database WHERE datname=current_database()")
+                oid = cursor.fetchone()[0]
+                live = query_live_database_identity(database)
+                if (live_name, str(oid), live.database_uuid) != (
+                    database_name, os.environ.get("SPACEWORKS_GRANT_DATABASE_OID"),
+                    os.environ.get("SPACEWORKS_GRANT_DATABASE_UUID"),
+                ):
+                    raise ValueError("The separately authorized grant target disagrees.")
                 target = GrantTarget(database=live_name, runtime_role=runtime_role)
                 provision_runtime_role(cursor, target, runtime_password)
                 apply_grant_state(cursor, target, MarkerState.NORMAL)
@@ -81,6 +88,7 @@ def main():
     runtime_url = os.environ.get("SPACEWORKS_RUNTIME_DATABASE_URL")
     if not runtime_url:
         raise RuntimeError("SPACEWORKS_RUNTIME_DATABASE_URL is required.")
+    maintenance_url = privileged_url(maintenance_url, runtime_url)
     if os.environ.get("SPACEWORKS_GRANTS_ONLY") == "1":
         _grant_only(maintenance_url, runtime_url)
         return
@@ -104,19 +112,14 @@ def main():
             "Host marker intent cannot adopt a database; a new empty sibling is required."
         )
     runtime_role, runtime_password = _runtime_credentials(runtime_url)
-    with psycopg2.connect(maintenance_url) as database:
-        database.autocommit = True
+    with connect_database(database_spec(maintenance_url)) as database:
+        live_identity = verify_target(database, existing_marker, runtime_url, os.environ,
+                                      allow_initial=existing_marker is None or existing_marker.database.server_identity is None)
         with database.cursor() as cursor:
             cursor.execute(
                 "SELECT current_database(), oid FROM pg_database WHERE datname = current_database()"
             )
             name, oid = cursor.fetchone()
-            try:
-                live_identity = query_live_database_identity(database)
-            except DatabaseIdentityError:
-                # The first bootstrap runs before migration 0021. The second
-                # upgrades the marker to the queried UUID before services start.
-                live_identity = None
             identity = DatabaseIdentity(
                 name=name,
                 oid=oid,
@@ -144,13 +147,12 @@ def main():
         if current.database.server_identity is None:
             write_marker_fsynced(
                 marker_path,
-                marker_payload(state, identity, readiness={
-                    "reservations": list(current.reservations),
-                    "fences": list(current.fences),
-                    "not_restored": list(current.not_restored),
-                }),
+                marker_payload(state, identity),
             )
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception:
+        sys.exit("Host orchestration bootstrap refused: target identity, grants or configuration could not be verified.")

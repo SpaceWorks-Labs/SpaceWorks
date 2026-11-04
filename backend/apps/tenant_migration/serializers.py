@@ -23,6 +23,7 @@ class FieldValidationErrorSerializer(serializers.Serializer):
     approval_id = serializers.ListField(child=serializers.CharField(), required=False)
     target_age_recipient = serializers.ListField(child=serializers.CharField(), required=False)
     archive = serializers.ListField(child=serializers.CharField(), required=False)
+    archive_bytes = serializers.ListField(child=serializers.CharField(), required=False)
     source_archive_digest = serializers.ListField(child=serializers.CharField(), required=False)
     target_identity = serializers.ListField(child=serializers.CharField(), required=False)
     receipt = serializers.ListField(child=serializers.CharField(), required=False)
@@ -37,6 +38,26 @@ class ClosureIdentitySerializer(serializers.Serializer):
     display_name = serializers.CharField(allow_blank=True)
     phone = serializers.CharField(allow_blank=True)
     date_joined = serializers.DateTimeField()
+    account_kind = serializers.CharField(
+        required=False, help_text="member (a person), platform, or staff (an inert merged shell).")
+    holds_staff_roles = serializers.BooleanField(
+        required=False, help_text="Import review only: the person holds staff-track roles in the archived space.")
+    pii_masked = serializers.BooleanField(read_only=True, required=False)
+
+    def to_representation(self, instance):
+        """Mask email, phone and name for a superadmin with no PII window (#114).
+
+        The closure digest is computed from the real values and never from this output,
+        so approving a masked closure still binds the exact identities it names.
+        """
+        data = super().to_representation(instance)
+        request = self.context.get("request")
+        from apps.accounts.pii_presentation import ACCOUNT_PII_FIELDS, mask_data, pii_visible
+        if request is not None and not pii_visible(
+            request.user, self.context.get("makerspace_id"), subject=instance["id"]
+        ) and mask_data(data, ACCOUNT_PII_FIELDS):
+            data["pii_masked"] = True
+        return data
 
 
 class PendingClosureSerializer(serializers.Serializer):
@@ -131,7 +152,9 @@ class ImportJobSerializer(serializers.ModelSerializer):
             "aggregate_outcome", "failure_code", "failure_detail", "created_at",
             "updated_at", "expires_at", "terminal_at", "scrubbed_at",
             "source_retention_notice",
+            "upload_total_bytes", "upload_received_bytes",
         )
+        read_only_fields = ("upload_total_bytes", "upload_received_bytes")
 
     def get_identity_count(self, obj):
         return obj.identity_decisions.count()
@@ -157,6 +180,11 @@ class ImportIdentityDecisionSerializer(serializers.Serializer):
         choices=ImportIdentityDecision.MembershipDisposition.choices
     )
     target_user_id = serializers.IntegerField(required=False, allow_null=True)
+    grant_staff_roles = serializers.BooleanField(
+        required=False, default=False,
+        help_text="link_existing only: keep the person's staff-track roles ACTIVE. Without it a "
+                  "linked person's staff roles arrive revoked (audited tenant_migration.staff_roles_granted).",
+    )
 
     def validate(self, attrs):
         target = attrs.get("target_user_id")
@@ -164,6 +192,10 @@ class ImportIdentityDecisionSerializer(serializers.Serializer):
         if linked != (target is not None):
             raise serializers.ValidationError(
                 {"target_user_id": "Required only for link_existing decisions."}
+            )
+        if attrs.get("grant_staff_roles") and not linked:
+            raise serializers.ValidationError(
+                {"grant_staff_roles": "Only a linked person's staff roles take an explicit grant."}
             )
         return attrs
 

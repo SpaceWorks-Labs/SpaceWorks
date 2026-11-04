@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>{{ title }}</title>
+<style>
+  /* Space Works tokens, inlined: this page loads nothing else. */
+  :root { color-scheme: light dark; --bg: 255 244 232; --panel: 255 255 255; --line: 213 208 198;
+    --ink: 20 44 42; --muted: 91 104 99; --brand: 0 110 99; --brand-soft: 224 238 236; --on-brand: 255 255 255; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: 20 44 42; --panel: 31 67 63; --line: 77 109 103; --ink: 255 244 232; --muted: 199 196 186;
+      --brand-soft: 26 74 69; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: rgb(var(--bg)); color: rgb(var(--ink));
+    font: 400 15px/1.45 Gilroy, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .card { margin: 0; border: 1px solid rgb(var(--line)); border-radius: 16px; background: rgb(var(--panel));
+    overflow: hidden; display: grid; }
+  .cover { display: block; width: 100%; aspect-ratio: 16 / 7; object-fit: cover; background: rgb(var(--brand-soft)); }
+  .body { padding: 16px; display: grid; gap: 8px; }
+  h1 { margin: 0; font-size: 19px; font-weight: 700; line-height: 1.25; overflow-wrap: anywhere; }
+  .meta { margin: 0; color: rgb(var(--muted)); font-size: 14px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+  .chip { border-radius: 999px; padding: 2px 10px; font-size: 12px; font-weight: 600;
+    background: rgb(var(--brand-soft)); color: rgb(var(--ink)); }
+  .cta { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; margin-top: 4px;
+    padding: 0 18px; border-radius: 12px; background: rgb(var(--brand)); color: rgb(var(--on-brand));
+    font-weight: 700; text-decoration: none; justify-self: start; }
+  .cta:focus-visible { outline: 3px solid rgb(var(--ink)); outline-offset: 2px; }
+  .host { margin: 0; font-size: 12px; color: rgb(var(--muted)); }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+</style>
+</head>
+<body>
+<main class="card">
+  {% if image_url %}<img class="cover" src="{{ image_url }}" alt="">{% endif %}
+  <div class="body">
+    <h1>{{ title }}</h1>
+    <p class="meta"><time>{{ when }}</time>{% if location %} · {{ location }}{% endif %}</p>
+    <ul class="chips" aria-label="Event details">
+      {% if mode %}<li class="chip">{{ mode }}</li>{% endif %}
+      {% if availability %}<li class="chip">{{ availability }}</li>{% endif %}
+    </ul>
+    <a class="cta" href="{{ event_url }}" target="_blank" rel="noopener noreferrer">Register<span class="sr"> (opens in a new tab)</span></a>
+    <p class="host">Hosted by {{ space }}</p>
+  </div>
+</main>
+</body>
+</html>

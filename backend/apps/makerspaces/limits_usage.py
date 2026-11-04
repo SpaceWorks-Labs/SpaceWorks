@@ -10,6 +10,7 @@ from django.db.models import Q
 from django.utils import timezone
 from rest_framework import serializers
 
+from apps.accounts.staff_identity import person_q
 from apps.makerspaces.limits_core import RESOURCE_LABELS
 
 
@@ -58,7 +59,9 @@ def _staff(makerspace) -> int:
     from apps.accounts.models import User
     from apps.makerspaces.models import MakerspaceMembership
 
-    return MakerspaceMembership.objects.filter(
+    # Staff quota counts staff-TRACK rows on people (one account per person).
+    return MakerspaceMembership.staff_tracks.filter(
+        person_q("user__"),
         makerspace=makerspace,
         user__is_active=True,
         user__access_status=User.AccessStatus.ACTIVE,
@@ -70,7 +73,7 @@ def _members(makerspace) -> int:
     from apps.makerspaces.models import MakerspaceMembership
 
     return MakerspaceMembership.objects.filter(
-        makerspace=makerspace, status="active", user__is_active=True,
+        person_q("user__"), makerspace=makerspace, status="active", user__is_active=True,
         user__access_status=User.AccessStatus.ACTIVE,
     ).count()
 
@@ -89,12 +92,6 @@ def _api_clients(makerspace) -> int:
     from apps.apiclients.models import ApiClient
 
     return ApiClient.objects.filter(makerspace=makerspace, is_active=True).count()
-
-
-def _custom_roles(makerspace) -> int:
-    from apps.makerspaces.models import MakerspaceRole
-
-    return MakerspaceRole.objects.filter(makerspace=makerspace, is_default=False).count()
 
 
 def _data_exports(makerspace) -> int:
@@ -156,7 +153,11 @@ def _machine_service_submit(makerspace) -> int:
 
 
 def _storage(makerspace) -> int:
-    return makerspace.storage_bytes_used
+    from .website_asset_journal import pending_bytes
+    from .storage_events_programme import accounted_bytes
+    # Dedicated event pools count toward provider usage but not the ordinary tenant
+    # entitlement; pending page-asset deletions still hold their bytes until cleaned.
+    return max(0, makerspace.storage_bytes_used - accounted_bytes(makerspace)) + pending_bytes(makerspace.pk)
 
 
 def add_storage(makerspace, size_bytes) -> None:
@@ -181,7 +182,7 @@ def add_storage(makerspace, size_bytes) -> None:
 
     with transaction.atomic():
         locked = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
-        if locked.storage_bytes_used + size_bytes > limit:
+        if _storage(locked) + size_bytes > limit:
             raise serializers.ValidationError(
                 {
                     "limit": "You've reached the free storage limit for this space — ask the operator to raise it or self-host."
@@ -229,7 +230,6 @@ _COUNTERS: dict[str, Callable[[object], int]] = {
     "staff": _staff,
     "members": _members,
     "api_clients": _api_clients,
-    "custom_roles": _custom_roles,
     "print": _print_requests,
     "machine_service_open": _machine_service_open,
     "machine_service_submit": _machine_service_submit,
@@ -257,7 +257,10 @@ def check_quota(makerspace, key, *, adding=1) -> None:
 
     from apps.makerspaces.models import Makerspace
 
-    locked = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
+    # NO KEY UPDATE, like require_module_locked: creators still serialize with each other
+    # and with module install/uninstall, and a caller already holding the fence never has
+    # to upgrade to FOR UPDATE (which would wait on commit-time FOR KEY SHARE holders).
+    locked = Makerspace.objects.select_for_update(no_key=True).get(pk=makerspace.pk)
     current = counter(locked)
     if current + adding > limit:
         resource = RESOURCE_LABELS.get(key, key.replace("_", " "))

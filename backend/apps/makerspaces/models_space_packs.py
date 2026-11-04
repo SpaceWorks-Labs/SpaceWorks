@@ -12,7 +12,9 @@ def validate_space_pack(value):
 
     try:
         validate_configuration(open_pack(value))
-    except (PackError, ValidationError, SerializerValidationError) as exc:
+    except PackError as exc:
+        raise ValidationError(str(exc.detail["detail"])) from exc
+    except (ValidationError, SerializerValidationError) as exc:
         raise ValidationError("Invalid configuration space pack.") from exc
 
 

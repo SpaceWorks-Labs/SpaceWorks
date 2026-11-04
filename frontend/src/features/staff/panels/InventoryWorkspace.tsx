@@ -1,23 +1,30 @@
+import { toast } from "../../../components/ui/toastStore";
 import type { Key } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { ConfirmDialog, DataTable, Field, FilterBar, Modal, StatusBadge } from "../../../components/ui";
+import { ConfirmDialog, DataTable, Field, Modal, ErrorText } from "../../../components/ui";
 import { useInventoryArchive } from "./useInventoryArchive";
 import { useQuickCreate } from "../quickCreate";
-import type { DataTableColumn } from "../../../components/ui";
+import { inventoryColumns } from "./InventoryColumns";
+import { QuantityStepper } from "../QuantityStepper";
 import { downloadStaffFile, staffRequest } from "../../../lib/api";
 import { useDebouncedValue } from "../../../lib/useDebouncedValue";
 import { useUrlListState } from "../../../lib/useUrlListState";
-import { Pagination } from "../../../components/ui/Pagination";
-import { SavedViewsMenu } from "../SavedViewsMenu";
-import { ImageUploader } from "../ImageUploader";
+import { ListLayout, DetailLayout } from "../../../components/layouts";
+import { useSearchParams } from "react-router-dom";
+import { inventoryQueryState } from "./inventoryPresentation";
+import { InventoryItemDetail } from "./InventoryItemDetail";
+import { ListViewControls } from "../ListViewControls";
+import { plural } from "../../../lib/plural";
 import { KitDefinitionEditor } from "../../inventory/KitChecklist";
-import { featureEnabled } from "../../../lib/features";
-import { ReorderSuggestions } from "./ReorderSuggestions";
-import { ChainOfCustodyBlock } from "./LoanTimeline";
+import { capabilityOn, featureEnabled } from "../../../lib/features";
+import { useReorderSuggestions } from "./ReorderSuggestions";
 import { invalidateInventoryViews } from "../queryInvalidation";
-import { categoryResults, Panel, type CategoryListResponse, type Makerspace, useStaffGet } from "./shared";
+import { useDomainSettingsDialog } from "../useDomainSettingsDialog";
+import { MakerspaceLoanPolicySettings } from "../MakerspaceLoanPolicySettings";
+import { LoanReservationPolicySettings } from "../LoanReservationPolicySettings";
+import { categoryResults, type CategoryListResponse, type Makerspace, useStaffGet } from "./shared";
 import {
   adjustPayload,
   defaultToBuyQuantity,
@@ -31,19 +38,15 @@ import {
 } from "./InventoryPanelShared";
 import {
   IndividualAssets,
-  InventoryAvailability,
   ItemModal,
-  LendingHistory,
-  QrHistory,
-  QuantityAdjust,
 } from "./InventoryPanelParts";
 
-export function Inventory({ makerspace, canViewAudit = false, canUseToBuy = false }: { makerspace: Makerspace; canViewAudit?: boolean; canUseToBuy?: boolean }) {
+export function Inventory({ makerspace, canViewAudit = false, canUseToBuy = false, canEditInventory = false }: { makerspace: Makerspace; canViewAudit?: boolean; canUseToBuy?: boolean; canEditInventory?: boolean }) {
   const queryClient = useQueryClient();
+  const [params, setParams] = useSearchParams();
   const kitEnabled = featureEnabled(makerspace.enabled_features ?? [], "loans.kit_checklist");
   const list = useUrlListState({ id: "", q: "", ordering: "name", page: "1", archived: "false", low_stock: "false", out_of_stock: "false" });
   const search = list.values.q;
-  const setSearch = (value: string) => list.setFilter("q", value);
   const [selectedIds, setSelectedIds] = useState<Key[]>([]);
   const [form, setForm] = useState<ItemForm>(emptyForm);
   const [adjustForm, setAdjustForm] = useState<AdjustmentForm>(emptyAdjust);
@@ -52,8 +55,11 @@ export function Inventory({ makerspace, canViewAudit = false, canUseToBuy = fals
   const [toBuyQty, setToBuyQty] = useState("1");
   const [toBuyMessage, setToBuyMessage] = useState("");
   const [addOpen, setAddOpen] = useState(false);
+  // The loan policy (loan period, renewals, limits) belongs to the Inventory Manager, not only the Space Manager.
+  const domainSettings = useDomainSettingsDialog(makerspace.id, "inventory", canEditInventory,
+    (makerspace.enabled_modules ?? []).includes("request_workflow") ? <><MakerspaceLoanPolicySettings makerspaceId={makerspace.id} />
+      {["loans.pickup_windows", "loans.reservations", "loans.waitlist"].some(key => capabilityOn(makerspace, key)) ? <LoanReservationPolicySettings makerspaceId={makerspace.id} /> : null}</> : undefined);
   useQuickCreate("item", () => { setForm(emptyForm); setAddOpen(true); });
-  const [archiveTarget, setArchiveTarget] = useState<AdminProduct | null>(null);
   const [fixTarget, setFixTarget] = useState<AdminProduct | null>(null);
   const [assetFixTarget, setAssetFixTarget] = useState<AdminProduct | null>(null);
   const [fixQty, setFixQty] = useState("1");
@@ -73,7 +79,6 @@ export function Inventory({ makerspace, canViewAudit = false, canUseToBuy = fals
     setToBuyQty("1");
     setToBuyMessage("");
     setAddOpen(false);
-    setArchiveTarget(null);
     setFixTarget(null);
     setAssetFixTarget(null);
     setFixQty("1");
@@ -95,17 +100,17 @@ export function Inventory({ makerspace, canViewAudit = false, canUseToBuy = fals
     // Reopen the just-created item in the edit modal so the user can add a photo.
     // The image uploader needs an existing product id, so it can't live on the add
     // form - this hands off straight into editing instead of forcing a manual re-open.
-    onSuccess: (created) => { setAddOpen(false); invalidate(); openEdit(created); },
+    onSuccess: (created) => { setAddOpen(false); invalidate(); openEdit(created); toast("Item created. Add a photo so members can recognise it."); },
   });
   const update = useMutation({
     mutationFn: () => editing ? staffRequest(`/admin/inventory/${editing.id}`, { method: "PATCH", body: JSON.stringify(payloadFromForm(form, false)) }) : Promise.resolve(),
-    onSuccess: () => { setEditing(null); setAdjustForm(emptyAdjust); invalidate(); },
+    onSuccess: () => { closeEdit(); setAdjustForm(emptyAdjust); invalidate(); },
   });
   const adjust = useMutation({
     mutationFn: () => editing ? staffRequest(`/admin/inventory/${editing.id}/adjust-quantity`, { method: "POST", body: JSON.stringify(adjustPayload(adjustForm)) }) : Promise.resolve(),
     onSuccess: () => { setAdjustForm(emptyAdjust); invalidate(); },
   });
-  const { archive, unarchive } = useInventoryArchive(invalidate, () => setArchiveTarget(null));
+  const { archive, unarchive } = useInventoryArchive(invalidate, () => {});
   const moveToFix = useMutation({
     mutationFn: () => {
       if (!fixTarget) return Promise.reject(new Error("Select an item first."));
@@ -179,7 +184,7 @@ export function Inventory({ makerspace, canViewAudit = false, canUseToBuy = fals
       });
     },
     onSuccess: () => {
-      setToBuyMessage(toBuyTarget ? `${toBuyTarget.name} added to To Buy.` : "Item added to To Buy.");
+      setToBuyMessage(toBuyTarget ? `${toBuyTarget.name} added to To buy.` : "Item added to To buy.");
       setToBuyTarget(null);
       setToBuyQty("1");
       queryClient.invalidateQueries({ queryKey: ["procurement", makerspace.id] });
@@ -187,97 +192,71 @@ export function Inventory({ makerspace, canViewAudit = false, canUseToBuy = fals
   });
   const rows = useMemo(() => products.data?.results ?? [], [products.data?.results]);
   const categoryRows = categoryResults(categories.data);
+  const itemId = params.get("item") ?? "";
+  const linkedItem = useStaffGet<{ results: AdminProduct[] }>(["inventory", makerspace.id, "item", itemId],
+    `/admin/makerspace/${makerspace.id}/inventory?id=${encodeURIComponent(itemId)}&archived=all`, Boolean(itemId) && !rows.some(row => String(row.id) === itemId));
   const openEdit = (product: AdminProduct) => {
     setEditing(product);
+    setParams(current => { current.set("item", String(product.id)); return current; });
     setForm({ ...formFromProduct(product), ...(kitEnabled ? { kit_components: product.kit_components ?? [] } : {}) });
     setAdjustForm(emptyAdjust);
   };
-  const columns: DataTableColumn<AdminProduct>[] = [
-    { key: "image", header: "", render: (product) => (
-      <div className="h-10 w-10 overflow-hidden rounded-lg border border-line bg-surface">
-        {product.image_url ? <img src={product.image_url} alt="" className="h-full w-full object-cover" /> : <div className="blueprint-bg h-full w-full" />}
-      </div>
-    ) },
-    { key: "name", header: "Name", sortable: true, render: (product) => <button type="button" className="desk-button-ghost justify-start text-left" onClick={() => openEdit(product)}>{product.name}</button> },
-    { key: "tracking_mode", header: "Mode", sortable: true, render: (product) => <span className="inline-flex items-center gap-2"><span>{product.tracking_mode}</span>{product.is_archived ? <StatusBadge status="archived" label="Archived" /> : null}</span> },
-    { key: "total_quantity", header: "Total", sortable: true },
-    { key: "available_quantity", header: "Available", sortable: true, render: (product) => <InventoryAvailability product={product} /> },
-    { key: "issued_quantity", header: "Issued", sortable: true },
-    { key: "damaged_quantity", header: "Damaged", sortable: true },
-    { key: "lost_quantity", header: "Lost", sortable: true },
-    { key: "actions", header: "", render: (product) => (
-      <div className="desk-actions ml-auto grid w-max grid-cols-2 gap-2">
-        <button className="desk-button-primary w-full" type="button" onClick={() => openEdit(product)}>Edit</button>
-        {!product.is_archived ? <button className="desk-button-warn w-full" type="button" disabled={product.tracking_mode === "individual" ? product.available_quantity + product.damaged_quantity <= 0 : product.available_quantity <= 0} onClick={() => openFix(product)}>To Fix</button> : null}
-        {product.is_archived ? <button className="desk-button-success w-full" type="button" disabled={unarchive.isPending} onClick={() => unarchive.mutate(product)}>Back to inventory</button> : <button className="desk-button-danger w-full" type="button" onClick={() => setArchiveTarget(product)}>Archive</button>}
-        {canUseToBuy ? <button className="desk-button-primary w-full" type="button" onClick={() => openToBuy(product)}>To Buy</button> : null}
-      </div>
-    ) },
-  ];
+  const closeEdit = () => { setEditing(null); setParams(current => { current.delete("item"); current.delete("itemTab"); return current; }); };
+  useEffect(() => {
+    const id = params.get("item");
+    if (!id) { setEditing(null); return; }
+    const item = rows.find(row => String(row.id) === id) ?? linkedItem.data?.results.find(row => String(row.id) === id);
+    if (item && editing?.id !== item.id) { setEditing(item); setForm({ ...formFromProduct(item), ...(kitEnabled ? { kit_components: item.kit_components ?? [] } : {}) }); }
+    else if (item && item !== editing) setEditing(item);
+  }, [params, rows, linkedItem.data, editing, kitEnabled]);
+  const reorder = useReorderSuggestions({ makerspaceId: makerspace.id, canProcure: canUseToBuy });
+  const selectedSuffix = selectedIds.length ? ` (${selectedIds.length} selected)` : "";
+  const columns = inventoryColumns({ openEdit, openFix, openToBuy, archive: item => archive.mutate(item), unarchive: item => unarchive.mutate(item), canUseToBuy, pending: archive.isPending || unarchive.isPending, stockTab: showLowStock || outOfStock });
+  const addItem = { label: "Add item", onClick: () => { setForm(emptyForm); setAddOpen(true); } };
+  const href = (archived: string, low: string, out: string) => { const next = new URLSearchParams(params); next.set("archived", archived); next.set("low_stock", low); next.set("out_of_stock", out); next.delete("page"); return `?${next}`; };
+  const activeTab = showArchived ? "archived" : outOfStock ? "out" : showLowStock ? "low" : "all";
+  if (addOpen) return <ItemModal title="Add item" open onClose={() => setAddOpen(false)} form={form} setForm={setForm} categories={categoryRows} makerspace={makerspace} includeQuantities pending={create.isPending} error={create.error?.message} onSubmit={() => create.mutate()}>
+    {kitEnabled ? <KitDefinitionEditor value={form.kit_components ?? []} onChange={value => setForm(current => ({ ...current, kit_components: value }))} /> : null}
+  </ItemModal>;
   return (
-    <Panel title="Inventory">
-      <ReorderSuggestions key={makerspace.id} makerspaceId={makerspace.id} canProcure={canUseToBuy} />
-      <div className="grid gap-3">
-        <FilterBar
-          value={search}
-          onChange={setSearch}
-          placeholder="Filter table"
-          actions={(
-            <>
-              <button className="desk-button-primary" type="button" onClick={() => { setForm(emptyForm); setAddOpen(true); }}>Add item</button>
-              <button className="desk-button-ghost" type="button" onClick={() => list.setFilter("archived", String(!showArchived))}>{showArchived ? "Show active" : "Show archived"}</button>
-              <button className="desk-button-ghost" type="button" onClick={() => list.setFilter("low_stock", String(!showLowStock))}>{showLowStock ? "All stock" : "Low stock"}</button>
-              <button className="desk-button-success" type="button" disabled={!selectedIds.length || bulkQr.isPending} onClick={() => { setBulkQrMessage(""); setQrConfirm(true); }}>Enable QR</button>
-              <button className="desk-button-danger" type="button" disabled={!selectedIds.length || bulkQr.isPending} onClick={() => { setBulkQrMessage(""); setQrConfirm(false); }}>Disable QR</button>
-              <button className="desk-button-ghost" type="button" disabled={exportInventory.isPending} onClick={() => exportInventory.mutate("csv")}>{selectedIds.length ? `Export CSV (${selectedIds.length})` : "Export CSV"}</button>
-              <button className="desk-button-ghost" type="button" disabled={exportInventory.isPending} onClick={() => exportInventory.mutate("xlsx")}>{selectedIds.length ? `Export XLSX (${selectedIds.length})` : "Export XLSX"}</button>
-            </>
-          )}
-        />
-        <SavedViewsMenu makerspaceId={makerspace.id} entity="inventory" state={list.values} onRestore={list.restore} />
-        {outOfStock ? <p className="text-sm text-muted">Out of stock · {archivedFilter === "all" ? "active and archived inventory" : "current inventory filter"}. <button className="desk-button-ghost" type="button" onClick={() => list.update({ out_of_stock: "false", archived: "false" })}>Clear dashboard filter</button></p> : null}
-        {list.values.id ? <button className="desk-button-ghost" type="button" onClick={() => list.setFilter("id", "")}>Clear selected result</button> : null}
-        <DataTable<AdminProduct> listState={list} ordering={list.values.ordering} onOrderingChange={(value) => list.setFilter("ordering", value)} columns={columns} data={rows} getRowId={(row) => row.id} selectedIds={selectedIds} onSelectionChange={setSelectedIds} loading={products.isLoading} emptyTitle={showArchived ? "No archived inventory" : "No active inventory"} skeletonCols={columns.length + 1} />
-        <Pagination page={list.page} totalPages={Math.max(1, Math.ceil((products.data?.count ?? 0) / 24))} count={products.data?.count ?? 0} pageSize={24} onChange={list.setPage} />
-        {products.error ? <p role="alert" className="text-sm text-danger">{products.error.message}</p> : null}
-        {toBuyMessage ? <p className="text-sm text-muted">{toBuyMessage}</p> : null}
-        {bulkQrMessage ? <p className="text-sm text-muted">{bulkQrMessage}</p> : null}
-        {exportInventory.error ? <p className="text-sm text-danger">{exportInventory.error instanceof Error ? exportInventory.error.message : "Could not export inventory."}</p> : null}
-      </div>
-      <ItemModal title="Add item" open={addOpen} onClose={() => setAddOpen(false)} form={form} setForm={setForm} categories={categoryRows} includeQuantities pending={create.isPending} error={create.error?.message} onSubmit={() => create.mutate()}>
-        {kitEnabled ? <KitDefinitionEditor value={form.kit_components ?? []} onChange={(value) => setForm((current) => ({ ...current, kit_components: value }))} /> : null}
-      </ItemModal>
-      <ItemModal title={editing?.name ?? "Edit item"} open={Boolean(editing)} onClose={() => setEditing(null)} form={form} setForm={setForm} categories={categoryRows} pending={update.isPending} error={update.error?.message} onSubmit={() => update.mutate()}>
-        {kitEnabled ? <KitDefinitionEditor value={form.kit_components ?? []} onChange={(value) => setForm((current) => ({ ...current, kit_components: value }))} /> : null}
-        {editing ? <div className="border-t border-line pt-3"><ImageUploader endpoint={`/admin/inventory/${editing.id}/image`} currentUrl={editing.image_url} label="Item photo" onChanged={invalidate} /></div> : null}
-        {editing ? <QuantityAdjust product={editing} form={adjustForm} setForm={setAdjustForm} pending={adjust.isPending} error={adjust.error?.message} onSubmit={() => adjust.mutate()} /> : null}
-        {editing ? <QrHistory title="Product QR history" queryKey={["product-qr-history", editing.id]} path={`/admin/inventory/${editing.id}/qr-history`} /> : null}
-        {editing?.tracking_mode === "individual" ? <IndividualAssets productId={editing.id} makerspaceId={makerspace.id} refreshInventory={invalidate} /> : null}
-        {editing && canViewAudit ? <LendingHistory productId={editing.id} /> : null}
-        {editing && canViewAudit ? <ChainOfCustodyBlock productId={editing.id} /> : null}
-      </ItemModal>
+    <ListLayout width="wide" header={{ title: "Inventory", subtitle: "Parts, tools and the stock ready for your next project.", primary: addItem,
+      secondary: { label: "Export", menu: [{ label: `Export CSV${selectedSuffix}`, pending: exportInventory.isPending, onClick: () => exportInventory.mutate("csv") }, { label: `Export Excel${selectedSuffix}`, pending: exportInventory.isPending, onClick: () => exportInventory.mutate("xlsx") }] }, overflow: domainSettings.actions.length ? domainSettings.actions : undefined, meta: plural(products.data?.count ?? 0, "item") }}
+      callout={reorder.callout} state={inventoryQueryState(products, "inventory")} isEmpty={!rows.length} filtered={Boolean(search || showArchived || showLowStock || outOfStock || list.values.id)}
+      empty={{ message: "No parts added yet. Add your first item.", action: addItem }} filteredEmpty={{ message: showArchived ? "No archived items." : showLowStock ? "Nothing low on stock." : "Nothing matches these filters.", action: { label: "Clear filters", onClick: () => list.restore({}) } }}
+      tabs={[{ key: "all", label: "All", href: href("false", "false", "false") }, { key: "low", label: "Low stock", href: href("false", "true", "false") }, { key: "out", label: "Out of stock", href: href("false", "false", "true") }, { key: "archived", label: "Archived", href: href("true", "false", "false") }]} activeTab={activeTab}
+      filters={{ toolbar: <ListViewControls state={list} makerspaceId={makerspace.id} entity="inventory" searchLabel="Search inventory"
+        sorts={[["name", "Name"], ["-name", "Name descending"], ["available_quantity", "Available first"], ["-available_quantity", "Available last"]]} /> }}
+      bulkBar={{ count: selectedIds.length, onClear: () => setSelectedIds([]), actions: [{ label: "Enable QR", pending: bulkQr.isPending, onClick: () => { setBulkQrMessage(""); setQrConfirm(true); } }, { label: "Disable QR", pending: bulkQr.isPending, onClick: () => { setBulkQrMessage(""); setQrConfirm(false); } }, { label: "Export CSV", pending: exportInventory.isPending, onClick: () => exportInventory.mutate("csv") }, { label: "Export Excel", pending: exportInventory.isPending, onClick: () => exportInventory.mutate("xlsx") }] }}
+      body={{ kind: "table", table: <DataTable<AdminProduct> listState={list} ordering={list.values.ordering} onOrderingChange={value => list.setFilter("ordering", value)} columns={columns} data={rows} getRowId={row => row.id} selectedIds={selectedIds} onSelectionChange={setSelectedIds} /> }}
+      pagination={{ page: list.page, pageSize: 24, count: products.data?.count ?? 0, onChange: list.setPage }}
+      detail={<>
+      {reorder.panel}{products.isError ? null : reorder.error}
+      <p role="status" className="text-sm text-muted">{toBuyMessage || bulkQrMessage}</p><ErrorText message={exportInventory.error?.message} />
+      {editing ? <InventoryItemDetail product={editing} makerspace={makerspace} canViewAudit={canViewAudit} kitEnabled={kitEnabled} form={form} setForm={setForm} categories={categoryRows} onClose={closeEdit}
+        pending={update.isPending} error={update.error?.message} onSave={() => update.mutate()} onArchive={() => { archive.mutate(editing); closeEdit(); }}
+        adjustForm={adjustForm} setAdjustForm={setAdjustForm} adjustPending={adjust.isPending} adjustError={adjust.error?.message} onAdjust={() => adjust.mutate()} invalidate={invalidate} /> : itemId ? <DetailLayout presentation="drawer" open onClose={closeEdit} title="Inventory item" state={inventoryQueryState(linkedItem, "this item")} isEmpty={!linkedItem.data?.results.length} empty={{ message: "This item isn't available in this makerspace. Close this drawer to return to inventory." }} main={null} /> : null}
       {canUseToBuy ? (
-        <Modal open={Boolean(toBuyTarget)} onClose={() => setToBuyTarget(null)} title="Add to To Buy" footer={<div className="desk-actions flex flex-wrap justify-end gap-2"><button className="desk-button-ghost" type="button" disabled={toBuy.isPending} onClick={() => setToBuyTarget(null)}>Cancel</button><button className="desk-button-primary" type="button" disabled={toBuy.isPending} onClick={() => toBuy.mutate()}>Add</button></div>}>
+        <Modal open={Boolean(toBuyTarget)} onClose={() => setToBuyTarget(null)} title="Add to To buy" footer={<div className="desk-actions flex flex-wrap justify-end gap-2"><button className="desk-button-ghost" type="button" disabled={toBuy.isPending} onClick={() => setToBuyTarget(null)}>Cancel</button><button className="desk-button-primary" type="button" disabled={toBuy.isPending} onClick={() => toBuy.mutate()}>{toBuy.isPending ? "Adding…" : "Add"}</button></div>}>
           <div className="grid gap-3 text-sm">
             <p className="font-semibold text-ink">{toBuyTarget?.name}</p>
-            <Field label="Quantity"><input className="desk-input" type="number" min="1" value={toBuyQty} onChange={(e) => setToBuyQty(e.target.value)} /></Field>
+            <Field label="Quantity"><QuantityStepper label="quantity" min={1} value={toBuyQty} onValueChange={setToBuyQty} /></Field>
             {toBuy.error ? <p className="text-sm text-danger">{toBuy.error.message}</p> : null}
           </div>
         </Modal>
       ) : null}
-      <Modal open={Boolean(fixTarget)} onClose={() => setFixTarget(null)} title="Move to Fix Shelf" footer={<div className="desk-actions flex flex-wrap justify-end gap-2"><button className="desk-button-ghost" type="button" disabled={moveToFix.isPending} onClick={() => setFixTarget(null)}>Cancel</button><button className="desk-button-warn" type="button" disabled={moveToFix.isPending || !fixTarget || Number(fixQty) < 1 || Number(fixQty) > (fixTarget?.available_quantity ?? 0)} onClick={() => moveToFix.mutate()}>Move to Fix Shelf</button></div>}>
+      <Modal open={Boolean(fixTarget)} onClose={() => setFixTarget(null)} title="Move to repair shelf" footer={<div className="desk-actions flex flex-wrap justify-end gap-2"><button className="desk-button-ghost" type="button" disabled={moveToFix.isPending} onClick={() => setFixTarget(null)}>Cancel</button><button className="desk-button-warn" type="button" disabled={moveToFix.isPending || !fixTarget || Number(fixQty) < 1 || Number(fixQty) > (fixTarget?.available_quantity ?? 0)} onClick={() => moveToFix.mutate()}>{moveToFix.isPending ? "Moving…" : "Move to repair shelf"}</button></div>}>
         <div className="grid gap-3 text-sm">
           <p className="font-semibold text-ink">{fixTarget?.name}</p>
           <p className="text-muted">Move available units out of circulation for repair.</p>
-          <Field label={`Quantity (${fixTarget?.available_quantity ?? 0} available)`}><input className="desk-input" type="number" min="1" max={fixTarget?.available_quantity ?? 1} value={fixQty} onChange={(e) => setFixQty(e.target.value)} /></Field>
+          <Field label={`Quantity (${fixTarget?.available_quantity ?? 0} available)`}><QuantityStepper label="quantity" min={1} max={fixTarget?.available_quantity ?? 1} value={fixQty} onValueChange={setFixQty} /></Field>
           {moveToFix.error ? <p className="text-sm text-danger">{moveToFix.error.message}</p> : null}
         </div>
       </Modal>
-      <Modal open={Boolean(assetFixTarget)} onClose={() => setAssetFixTarget(null)} title={assetFixTarget ? `Choose Asset to Fix - ${assetFixTarget.name}` : "Choose Asset to Fix"} footer={<div className="desk-actions flex flex-wrap justify-end gap-2"><button className="desk-button-ghost" type="button" onClick={() => setAssetFixTarget(null)}>Close</button></div>}>
+      <Modal open={Boolean(assetFixTarget)} onClose={() => setAssetFixTarget(null)} title={assetFixTarget ? `Choose an asset to repair · ${assetFixTarget.name}` : "Choose an asset to repair"} footer={<div className="desk-actions flex flex-wrap justify-end gap-2"><button className="desk-button-ghost" type="button" onClick={() => setAssetFixTarget(null)}>Close</button></div>}>
         {assetFixTarget ? <IndividualAssets productId={assetFixTarget.id} makerspaceId={makerspace.id} refreshInventory={invalidate} /> : null}
       </Modal>
-      <ConfirmDialog open={Boolean(archiveTarget)} title="Archive item" message={archiveTarget ? `Archive ${archiveTarget.name}? It will be hidden from active inventory views.` : ""} confirmLabel="Archive" tone="danger" pending={archive.isPending} onCancel={() => setArchiveTarget(null)} onConfirm={() => { if (archiveTarget) archive.mutate(archiveTarget); }} />
+      {domainSettings.dialog}
       <ConfirmDialog open={qrConfirm !== null} title={qrConfirm ? "Enable public QR" : "Disable public QR"} message={`${qrConfirm ? "Enable" : "Disable"} public self-checkout QR for ${selectedIds.length} selected items?`} confirmLabel={qrConfirm ? "Enable" : "Disable"} pending={bulkQr.isPending} onCancel={() => setQrConfirm(null)} onConfirm={() => { if (qrConfirm !== null) bulkQr.mutate(qrConfirm); }} />
-    </Panel>
+      </>} />
   );
 }

@@ -95,11 +95,13 @@ def schedule_reminders(*, makerspace, source, subject, kind, due_at, offsets=(0,
         return tuple(rows)
 
 
-def claim_reminders(*, makerspace, source, now=None, limit=200):
+def claim_reminders(*, makerspace, source, now=None, limit=200, normalize_claim=None):
     """Commit disjoint claims with skip_locked, before calling the emit path.
 
     Call from autocommit: an outer transaction could roll back the claim after an
     external send. The gate's separate lock-only connection is safe to hold here.
+    Optional domain normalization runs under the candidate locks in this same
+    transaction, so a legacy identity cannot become an unrecoverable claim first.
     """
     if transaction.get_connection().in_atomic_block or not transaction.get_autocommit():
         raise RuntimeError("Reminder dispatch claims require autocommit.")
@@ -114,6 +116,15 @@ def claim_reminders(*, makerspace, source, now=None, limit=200):
                     state=ReminderSchedule.State.PENDING, remind_at__lte=now)
             .order_by("remind_at", "pk")[:limit]
         )
+        if normalize_claim is not None:
+            canonical_ids = [normalize_claim(makerspace, row).pk for row in rows]
+            # A replacement may already be claimed/completed, or appear twice
+            # when both its legacy and current identities were in this batch.
+            rows = list(
+                _reminders(makerspace).select_for_update(skip_locked=True)
+                .filter(pk__in=canonical_ids, state=ReminderSchedule.State.PENDING, remind_at__lte=now)
+                .order_by("remind_at", "pk")
+            )
         for row in rows:
             row.state = ReminderSchedule.State.CLAIMED
             row.claim_token = uuid4()

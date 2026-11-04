@@ -1,279 +1,46 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-
-import { ConfirmDialog } from "../../../components/ui";
 import { staffRequest, type StaffAuthUser } from "../../../lib/api";
-import { Panel, useStaffGet, type Makerspace } from "./shared";
-import { RoleManager } from "./RoleManager";
-import { StaffInvitations } from "./StaffInvitations";
-import { UsersTable } from "./UsersTable";
-import {
-  AddStaffModal,
-  CreateMakerspaceModal,
-  ResetPasswordModal,
-  RestrictUserModal,
-  type MakerspaceForm,
-  type ResetPasswordForm,
-  type ResetPasswordResult,
-  type RestrictForm,
-  type StaffForm,
-} from "./UsersModals";
-import {
-  assignRole,
-  createMembership,
-  type StaffMembershipRow,
-  type StaffRole,
-} from "./rolesApi";
-import {
-  emptyMakerspaceForm,
-  emptyResetPasswordForm,
-  emptyRestrictForm,
-  emptyStaffForm,
-  makerspacePayload,
-  staffPayload,
-} from "./users/forms";
+import type { Makerspace } from "./shared";
+import { ListLayout } from "../../../components/layouts";
+import { CreateMakerspaceModal, type MakerspaceForm } from "./UsersModals";
+import { emptyMakerspaceForm, makerspacePayload } from "./users/forms";
+import { StaffRolesPanel } from "./staffRoles/StaffRolesPanel";
 
+/** Both the tenant console and React platform console use the same lifecycle API. */
 export function Users({ makerspaces, isSuperadmin, currentUser, onAuthRefresh }: {
-  makerspaces: Makerspace[];
-  isSuperadmin: boolean;
-  currentUser: StaffAuthUser;
-  onAuthRefresh: () => void;
+  makerspaces: Makerspace[]; isSuperadmin: boolean; currentUser: StaffAuthUser; onAuthRefresh: () => void;
 }) {
-  const queryClient = useQueryClient();
-  const [msId, setMsId] = useState<number>(makerspaces[0]?.id ?? 0);
-  const [roleFilter, setRoleFilter] = useState("all");
-  const [addOpen, setAddOpen] = useState(false);
-  const [makerspaceOpen, setMakerspaceOpen] = useState(false);
-  const [staffForm, setStaffForm] = useState<StaffForm>(emptyStaffForm);
-  const [makerspaceForm, setMakerspaceForm] = useState<MakerspaceForm>(emptyMakerspaceForm);
-  const [creationInvite, setCreationInvite] = useState<{ accept_url: string; delivery_status: string } | null>(null);
-  const [restrictTarget, setRestrictTarget] = useState<StaffMembershipRow | null>(null);
-  const [restrictForm, setRestrictForm] = useState<RestrictForm>(emptyRestrictForm);
-  const [restoreTarget, setRestoreTarget] = useState<StaffMembershipRow | null>(null);
-  const [revokeTarget, setRevokeTarget] = useState<StaffMembershipRow | null>(null);
-  const [resetPasswordTarget, setResetPasswordTarget] = useState<StaffMembershipRow | null>(null);
-  const [resetPasswordForm, setResetPasswordForm] = useState<ResetPasswordForm>(emptyResetPasswordForm);
-  const [resetPasswordResult, setResetPasswordResult] = useState<ResetPasswordResult | null>(null);
-
-  // makerspaces may arrive after first mount (async load); the useState initializer only runs
-  // once, so reconcile msId to a valid makerspace whenever the list changes or msId is stale.
+  const client = useQueryClient();
+  const [selected, setSelected] = useState<number>();
+  const [createOpen, setCreateOpen] = useState(false);
+  const [form, setForm] = useState<MakerspaceForm>(emptyMakerspaceForm);
+  // Keep the created space selectable while the makerspace list refetches.
+  const [createdSpace, setCreatedSpace] = useState<Makerspace>();
   useEffect(() => {
-    if (makerspaces.length && !makerspaces.some((space) => space.id === msId)) {
-      setMsId(makerspaces[0].id);
-    }
-  }, [makerspaces, msId]);
-
-  const memberships = useStaffGet<StaffMembershipRow[]>(["staff", "memberships", msId], `/admin/makerspaces/${msId}/memberships`, msId > 0);
-  const rolesList = useStaffGet<StaffRole[]>(["staff", "roles", msId], `/admin/makerspaces/${msId}/roles`, msId > 0);
-
-  const makerspaceNames = useMemo(() => new Map(makerspaces.map((space) => [space.id, space.name])), [makerspaces]);
-  const actorActions = useMemo(
-    () => currentUser.makerspaces.find((item) => item.id === msId)?.actions ?? [],
-    [currentUser, msId],
-  );
-  const canManageRoles = isSuperadmin || actorActions.includes("manage_makerspace");
-  const assignableRoles = useMemo(() => {
-    const all = rolesList.data ?? [];
-    if (isSuperadmin) return all;
-    const ceiling = new Set(actorActions.filter((action) => action !== "manage_makerspace"));
-    return all.filter(
-      (role) => !role.granted_actions.includes("manage_makerspace") && role.granted_actions.every((action) => ceiling.has(action)),
-    );
-  }, [rolesList.data, isSuperadmin, actorActions]);
-
-  const roleFilterOptions = useMemo(() => {
-    const names = new Set<string>();
-    (memberships.data ?? []).forEach((row) => names.add(row.assigned_role?.name ?? row.role));
-    return Array.from(names).sort();
-  }, [memberships.data]);
-  const rows = useMemo(() => {
-    const data = memberships.data ?? [];
-    return roleFilter === "all" ? data : data.filter((row) => (row.assigned_role?.name ?? row.role) === roleFilter);
-  }, [memberships.data, roleFilter]);
-
-  // A role edit / assignment / revoke can change the CURRENT actor's own effective actions,
-  // so refetch /auth/me (onAuthRefresh) in addition to invalidating the makerspace-scoped lists.
-  const afterStaffChange = () => {
-    queryClient.invalidateQueries({ queryKey: ["staff", "memberships", msId] });
-    queryClient.invalidateQueries({ queryKey: ["staff", "roles", msId] });
-    onAuthRefresh();
-  };
-
-  const createStaff = useMutation({
-    mutationFn: () => createMembership(msId, staffPayload(staffForm)),
-    onSuccess: () => { setAddOpen(false); setStaffForm(emptyStaffForm); afterStaffChange(); },
-  });
-  const changeRole = useMutation({
-    mutationFn: ({ membership, roleId }: { membership: StaffMembershipRow; roleId: number }) => assignRole(msId, membership.id, roleId),
-    onSuccess: afterStaffChange,
-  });
-  const restrict = useMutation({
-    mutationFn: () =>
-      restrictTarget
-        ? staffRequest(`/admin/users/${restrictTarget.user.id}/restrict`, {
-            method: "POST",
-            body: JSON.stringify({ status: restrictForm.status, reason: restrictForm.reason.trim() }),
-          })
-        : Promise.resolve(),
-    onSuccess: () => { setRestrictTarget(null); setRestrictForm(emptyRestrictForm); afterStaffChange(); },
-  });
-  const restore = useMutation({
-    mutationFn: (membership: StaffMembershipRow) => staffRequest(`/admin/users/${membership.user.id}/restore-access`, { method: "POST" }),
-    onSuccess: () => { setRestoreTarget(null); afterStaffChange(); },
-  });
-  const revoke = useMutation({
-    mutationFn: (membership: StaffMembershipRow) => staffRequest(`/admin/memberships/${membership.id}`, { method: "DELETE" }),
-    onSuccess: () => { setRevokeTarget(null); afterStaffChange(); },
-  });
-  const resetPassword = useMutation({
-    mutationFn: () => {
-      if (!resetPasswordTarget) throw new Error("No user selected");
-      const password = resetPasswordForm.password;
-      return staffRequest<ResetPasswordResult>(`/admin/users/${resetPasswordTarget.user.id}/reset-password`, {
-        method: "POST",
-        body: JSON.stringify(password ? { password } : {}),
-      });
-    },
-    onSuccess: (result) => setResetPasswordResult(result),
-  });
-  const createMakerspace = useMutation({
-    mutationFn: () => staffRequest<{ creation_invitation?: { accept_url: string; delivery_status: string } }>("/admin/makerspaces", { method: "POST", body: JSON.stringify(makerspacePayload(makerspaceForm)) }),
-    onSuccess: result => {
-      setCreationInvite(result.creation_invitation ?? null);
-      setMakerspaceOpen(false);
-      setMakerspaceForm(emptyMakerspaceForm);
-      queryClient.invalidateQueries({ queryKey: ["staff", "makerspaces"] });
-    },
-  });
-
-  const openAdd = () => { setStaffForm({ ...emptyStaffForm, makerspace_id: String(msId) }); setAddOpen(true); };
-  const openRestrict = (membership: StaffMembershipRow) => { setRestrictTarget(membership); setRestrictForm(emptyRestrictForm); };
-  const openResetPassword = (membership: StaffMembershipRow) => {
-    resetPassword.reset();
-    setResetPasswordTarget(membership);
-    setResetPasswordForm(emptyResetPasswordForm);
-    setResetPasswordResult(null);
-  };
-  const closeResetPassword = () => {
-    resetPassword.reset();
-    setResetPasswordTarget(null);
-    setResetPasswordForm(emptyResetPasswordForm);
-    setResetPasswordResult(null);
-  };
-
-  if (!makerspaces.length) {
-    return <Panel title="Users"><p className="text-sm text-muted">No makerspaces available for this account.</p></Panel>;
-  }
-
-  const panelError = memberships.error?.message ?? rolesList.error?.message ?? restore.error?.message;
-
-  return (
-    <Panel title="Users">
-      <div className="grid gap-4">
-        {creationInvite ? <div role="status" className="rounded border border-line p-3"><p>First staff invitation delivery: {creationInvite.delivery_status}. Share this link privately if needed.</p><input className="desk-input w-full" aria-label="First staff invitation link" value={creationInvite.accept_url} readOnly onFocus={event => event.currentTarget.select()} /><button className="desk-button-ghost" onClick={() => setCreationInvite(null)}>Dismiss invitation link</button></div> : null}
-        <div className="flex flex-wrap items-center gap-3">
-          {makerspaces.length > 1 ? (
-            <label className="eyebrow">
-              Makerspace{" "}
-              <select className="desk-input" value={msId} onChange={(event) => { setMsId(Number(event.target.value)); setRoleFilter("all"); }}>
-                {makerspaces.map((space) => <option key={space.id} value={space.id}>{space.name}</option>)}
-              </select>
-            </label>
-          ) : null}
-          <label className="eyebrow">
-            Role{" "}
-            <select className="desk-input" value={roleFilter} onChange={(event) => setRoleFilter(event.target.value)}>
-              <option value="all">All roles</option>
-              {roleFilterOptions.map((name) => <option key={name} value={name}>{name}</option>)}
-            </select>
-          </label>
-          <div className="desk-actions ml-auto flex flex-wrap gap-2">
-            <button className="desk-button-primary" type="button" onClick={openAdd} disabled={!assignableRoles.length}>Add staff</button>
-            {isSuperadmin ? <button className="desk-button" type="button" onClick={() => setMakerspaceOpen(true)}>Create makerspace</button> : null}
-          </div>
-        </div>
-
-        {panelError ? <p className="text-sm text-danger">{panelError}</p> : null}
-        <UsersTable
-          rows={rows}
-          makerspaceNames={makerspaceNames}
-          loading={memberships.isLoading}
-          assignableRoles={assignableRoles}
-          onRestrict={openRestrict}
-          onRestore={setRestoreTarget}
-          onResetPassword={openResetPassword}
-          onRevoke={setRevokeTarget}
-          onChangeRole={(membership, roleId) => changeRole.mutateAsync({ membership, roleId })}
-        />
-        {canManageRoles && makerspaces.find((space) => space.id === msId)?.enabled_features?.includes("staff.invitations") ? <StaffInvitations key={msId} msId={msId} roles={assignableRoles} /> : null}
-        {canManageRoles ? (
-          <RoleManager msId={msId} actorActions={actorActions} isSuperadmin={isSuperadmin} onRolesChanged={afterStaffChange} />
-        ) : null}
-      </div>
-
-      <AddStaffModal
-        open={addOpen}
-        form={staffForm}
-        makerspaceName={makerspaceNames.get(msId) ?? ""}
-        pending={createStaff.isPending}
-        error={createStaff.error}
-        roles={assignableRoles}
-        onChange={setStaffForm}
-        onClose={() => setAddOpen(false)}
-        onSubmit={() => createStaff.mutate()}
-      />
-      <RestrictUserModal
-        open={Boolean(restrictTarget)}
-        userLabel={restrictTarget?.user.username ?? ""}
-        form={restrictForm}
-        pending={restrict.isPending}
-        error={restrict.error}
-        onChange={setRestrictForm}
-        onClose={() => setRestrictTarget(null)}
-        onSubmit={() => restrict.mutate()}
-      />
-      <CreateMakerspaceModal
-        open={makerspaceOpen}
-        form={makerspaceForm}
-        pending={createMakerspace.isPending}
-        error={createMakerspace.error}
-        onChange={setMakerspaceForm}
-        onClose={() => setMakerspaceOpen(false)}
-        onSubmit={() => createMakerspace.mutate()}
-      />
-      <ResetPasswordModal
-        open={Boolean(resetPasswordTarget)}
-        userLabel={resetPasswordTarget?.user.username ?? ""}
-        form={resetPasswordForm}
-        pending={resetPassword.isPending}
-        error={resetPassword.error}
-        result={resetPasswordResult}
-        onChange={setResetPasswordForm}
-        onClose={closeResetPassword}
-        onSubmit={() => resetPassword.mutate()}
-      />
-      <ConfirmDialog
-        open={Boolean(restoreTarget)}
-        title="Restore access"
-        message={restoreTarget ? `Restore access for ${restoreTarget.user.username}?` : ""}
-        confirmLabel="Restore"
-        pending={restore.isPending}
-        onCancel={() => setRestoreTarget(null)}
-        onConfirm={() => { if (restoreTarget) restore.mutate(restoreTarget); }}
-      />
-      <ConfirmDialog
-        open={Boolean(revokeTarget)}
-        title="Revoke role"
-        message={
-          revokeTarget
-            ? `Remove ${revokeTarget.user.username}'s "${revokeTarget.assigned_role?.name ?? revokeTarget.role.replace(/_/g, " ")}" role in ${makerspaceNames.get(revokeTarget.makerspace_id) ?? revokeTarget.makerspace_slug}? Their account is not deleted.`
-            : ""
-        }
-        confirmLabel="Revoke"
-        pending={revoke.isPending}
-        onCancel={() => setRevokeTarget(null)}
-        onConfirm={() => { if (revokeTarget) revoke.mutate(revokeTarget); }}
-      />
-    </Panel>
-  );
+    if (createdSpace && makerspaces.some(row => row.id === createdSpace.id)) setCreatedSpace(undefined);
+  }, [createdSpace, makerspaces]);
+  const spaces = createdSpace && !makerspaces.some(row => row.id === createdSpace.id) ? [...makerspaces, createdSpace] : makerspaces;
+  const space = spaces.find(row => row.id === selected) ?? spaces[0];
+  const canManageRoles = isSuperadmin || Boolean(currentUser.makerspaces.find(row => row.id === space?.id)?.actions.includes("manage_makerspace"));
+  const create = useMutation({ mutationFn: () => staffRequest<Makerspace>("/admin/makerspaces", {
+    method: "POST", body: JSON.stringify(makerspacePayload(form)),
+  }), onSuccess: result => {
+    setCreatedSpace(result); setSelected(result.id); setCreateOpen(false); setForm(emptyMakerspaceForm);
+    void client.invalidateQueries({ queryKey: ["staff", "makerspaces"] });
+    void client.invalidateQueries({ queryKey: ["organizations"] });
+  } });
+  return <>
+    {space ? <StaffRolesPanel key={space.id} space={space.id} onAuthRefresh={onAuthRefresh}
+      canManageRoles={canManageRoles}
+      secondary={isSuperadmin ? { label: "Create makerspace", onClick: () => { create.reset(); setCreateOpen(true); } } : undefined}
+      toolbar={<>
+        {spaces.length > 1 ? <label className="grid gap-2 text-sm font-semibold">Makerspace<select className="desk-input" value={space.id} onChange={e => { setSelected(Number(e.target.value)); setCreatedSpace(undefined); }}>
+          {spaces.map(row => <option key={row.id} value={row.id}>{row.name}</option>)}
+        </select></label> : null}
+      </>} /> : <ListLayout header={{ title: "Staff & roles", primary: isSuperadmin ? { label: "Create makerspace", onClick: () => setCreateOpen(true) } : undefined }}
+        state={{ status: "ready" }} isEmpty empty={{ message: "No makerspaces available for this account." }} body={{ kind: "rows", rows: null }} />}
+    <CreateMakerspaceModal open={createOpen} form={form} pending={create.isPending} error={create.error}
+      onChange={setForm} onClose={() => setCreateOpen(false)} onSubmit={() => create.mutate()} />
+  </>;
 }

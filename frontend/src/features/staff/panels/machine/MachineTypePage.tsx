@@ -1,8 +1,19 @@
+import { plural } from "../../../../lib/plural";
+import { QueueSummary } from "../../../machine-service/QueueSummary";
+import { machineStatusLabel } from "./machineStatusLabel";
 import { MaterialCataloguePanel } from "./MaterialCataloguePanel";
 import { CertificationsPanel } from "./CertificationsPanel";
 import { MachineReminderPolicy } from "./MachineReminderPolicy";
-import { Skeleton, StatusBadge } from "../../../../components/ui";
+import { JobBoard } from "./JobBoard";
+import { JobSettingsEditor } from "./JobSettingsEditor";
+import { SessionSettingsEditor } from "./sessions/SessionSettingsEditor";
+import { EmptyState, StatusBadge, Tabs, DataTable } from "../../../../components/ui";
 import { ImageThumbnail } from "../../../../components/ui/ImageThumbnail";
+import { DetailLayout, FlowLayout } from "../../../../components/layouts";
+import { useState, type ReactNode } from "react";
+import { useSearchParams } from "react-router-dom";
+import { machineTypeIdentity } from "./MachineTypeCards";
+import { useOpsTabs } from "../../opsPresentation";
 import type { PrinterPool } from "../../../../generated/api";
 import { isBuiltinPrinterType } from "../../machinesApi";
 import type { Machine, MachineType } from "../../machinesApi";
@@ -14,6 +25,7 @@ import { ConsumablePoolList } from "./SharedConsumablesSection";
 import type { ServiceDraft } from "./serviceDrafts";
 
 type Props = {
+  detail?: ReactNode; indexHref?: string; settings?: ReactNode; statusFilter: string; onStatusFilter: (value: "all" | Machine["status"]) => void; onRetry: () => void; poolError?: string; onRetryPools: () => void;
   enabledFeatures?: string[];
   makerspaceId: number;
   canManage: boolean;
@@ -32,9 +44,11 @@ type Props = {
   onSelectMachine: (machineId: number) => void;
   draft: ServiceDraft;
   setDraft: (update: (draft: ServiceDraft) => ServiceDraft) => void;
+  /** Opens the work-order screen (present only when machines.maintenance is on). */
+  onWorkOrders?: () => void;
 };
 
-const focusRing = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus";
+
 
 /** One machine type's whole world: its machines, its bound consumables, its service queue.
  *
@@ -44,99 +58,73 @@ const focusRing = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-
  * any type that records one -- the retired printer roster was the only place it was ever
  * shown, and `run_machine_model` reads it.
  */
-export function MachineTypePage({
-  enabledFeatures = [],
-  makerspaceId,
-  canManage,
-  canConfigureMachineTypes = false,
-  machineServiceEnabled,
-  printingEnabled,
-  reportsEnabled = true,
-  machineType,
-  allMachines,
-  visibleMachines,
-  typePools,
-  formPools,
-  existingPools,
-  machinesLoading,
-  machinesFailed,
-  onSelectMachine,
-  draft,
-  setDraft,
-}: Props) {
-  return (
-    <div className="grid gap-4">
-      <section aria-label={`${machineType.name} machines`} className="rounded-xl border border-line bg-panel">
-        <div className="hidden grid-cols-[minmax(0,2fr)_auto_auto] gap-3 border-b border-line px-3 py-2 font-mono text-[11px] uppercase tracking-wide text-muted sm:grid">
-          <span>Name</span><span>Status</span><span className="text-right">Usage</span>
-        </div>
-        {canManage && machineType.can_create_machine === true ? (
-          <MachineCreateForm
-            makerspaceId={makerspaceId}
-            machineType={machineType}
-            onCreated={onSelectMachine}
-          />
-        ) : null}
-        {machinesLoading ? (
-          <div className="grid gap-2 p-3" aria-label={`Loading ${machineType.name} machines`}>
-            <Skeleton className="h-14 w-full" />
-          </div>
-        ) : null}
-        {/* Both empty states require a SUCCESSFUL load. A failed machines request also yields an
-            empty array with `isLoading` false, and claiming "no machines are registered" beside
-            the actual error tells the operator something untrue about their own fleet. */}
-        {!machinesLoading && !machinesFailed && !allMachines.length ? (
-          <p className="px-3 py-4 text-sm text-muted">No machines are registered for this type.</p>
-        ) : null}
-        {!machinesLoading && !machinesFailed && allMachines.length > 0 && !visibleMachines.length ? (
-          <p className="px-3 py-4 text-sm text-muted">No machines match the selected status.</p>
-        ) : null}
-        {visibleMachines.map((machine) => (
-          <button
-            key={machine.id}
-            type="button"
-            onClick={() => onSelectMachine(machine.id)}
-            className={`grid min-h-11 w-full gap-2 border-b border-line px-3 py-3 text-left last:border-b-0 hover:bg-surface sm:grid-cols-[minmax(0,2fr)_auto_auto] sm:items-center sm:gap-3 ${focusRing}`}
-          >
-            <span className="flex min-w-0 items-center gap-3">
-              {machine.image_url ? <ImageThumbnail src={machine.image_url} alt={machine.name} className="h-10 w-10" /> : null}
-              <span className="min-w-0">
-                <strong className="block truncate text-sm text-ink">{machine.name}</strong>
-                <span className="block truncate text-xs text-muted">
-                  {[machine.type_payload?.model, machine.location || "No location"].filter(Boolean).join(" · ")}
-                </span>
-              </span>
-            </span>
-            <span><StatusBadge status={machine.status} /></span>
-            <span className="font-mono text-sm text-muted sm:text-right">{machine.usage_hours} h</span>
-          </button>
-        ))}
-      </section>
+export function MachineTypePage({ enabledFeatures = [], makerspaceId, canManage, canConfigureMachineTypes = false,
+  machineServiceEnabled, printingEnabled, reportsEnabled = true, machineType, allMachines, visibleMachines,
+  typePools, formPools, existingPools, machinesLoading, machinesFailed, onSelectMachine, draft, setDraft,
+  detail, indexHref, settings, statusFilter, onStatusFilter, onRetry, poolError, onRetryPools, onWorkOrders }: Props) {
+  const [creating, setCreating] = useState(false);
+  const [createdMachineId, setCreatedMachineId] = useState<number | null>(null);
+  // Lifted here so the Service queue tab header can open manual usage in one click.
+  const [logging, setLogging] = useState(false);
+  const [params] = useSearchParams();
+  const queueStatus = params.get("job_status") ?? undefined;
+  const service = machineServiceEnabled && canManage;
+  const choices = [{ key: "machines", label: "Machines", count: allMachines.length },
+    ...(service ? [{ key: "queue", label: "Service queue" }, { key: "board", label: "Queue board" }, { key: "consumables", label: "Consumables" }] : []),
+    ...(machineType.can_create_machine === true ? [{ key: "certifications", label: "Certifications" }] : []),
+    ...(canConfigureMachineTypes || settings ? [{ key: "settings", label: "Settings" }] : [])];
+  const view = useOpsTabs("view", choices, "machines");
+  const statuses = ["all", "idle", "running", "reserved", "maintenance", "offline"] as const;
+  const main = <>
+    {view.active === "machines" ? <section aria-label={`${machineType.name} machines`} className="grid gap-4">
+      <Tabs label="Machine status" activeKey={statusFilter} onChange={key => onStatusFilter(key as typeof statusFilter & ("all" | Machine["status"]))}
+        tabs={statuses.map(key => ({ key, label: key === "all" ? "All statuses" : key.charAt(0).toUpperCase() + key.slice(1), href: "#" }))}>
+      {!allMachines.length ? <EmptyState message="No machines are registered for this type. Add the first one with Add machine." /> :
+        !visibleMachines.length ? <EmptyState message="No machines match the selected status. Choose another status." /> :
+        <DataTable data={visibleMachines} columns={[
+          { key: "name", header: "Name", render: machine => <button className="desk-button-ghost min-h-11 max-w-full justify-start text-left" onClick={() => onSelectMachine(machine.id)}><ImageThumbnail src={machine.image_url} alt={machine.name} className="h-10 w-10 shrink-0" /><span className="min-w-0 break-words">
+            <strong className="block">{machine.name}</strong><span className="block text-sm text-muted">{[machine.type_payload?.model, machine.location || "No location"].filter(Boolean).join(" · ")}</span>
+          </span></button> },
+          { key: "status", header: "Status", render: machine => <StatusBadge status={machine.status} label={machineStatusLabel(machine.status)} /> },
+          { key: "usage_hours", header: "Usage", render: machine => <span className="tabular-nums">{machine.usage_hours} h</span> },
+          ...(visibleMachines.some(machine => machine.service_queue_summary) ? [{ key: "service_queue", header: "Service queue",
+            render: (machine: Machine) => <QueueSummary summary={machine.service_queue_summary} /> }] : []),
+        ]} />}
+      </Tabs>
+    </section> : null}
+    {service ? isBuiltinPrinterType(machineType) ?
+      <PrinterServiceConsole visible={view.active === "queue"} makerspaceId={makerspaceId} canManage={canManage} printingEnabled={printingEnabled} reportsEnabled={reportsEnabled} machineType={machineType} machines={allMachines} pools={formPools} draft={draft} setDraft={setDraft} queueStatus={queueStatus} logging={logging} onLogging={setLogging} /> :
+      <MachineServiceConsole visible={view.active === "queue"} makerspaceId={makerspaceId} canManage={canManage} machineType={machineType} machines={allMachines} pools={formPools} draft={draft} setDraft={setDraft} queueStatus={queueStatus} logging={logging} onLogging={setLogging} /> : null}
+    {service ? <JobBoard visible={view.active === "board"} makerspaceId={makerspaceId} machineType={machineType} machines={allMachines} pools={formPools}
+      batchEnabled={enabledFeatures.includes("machines.batch_start")} /> : null}
+    {service ? <>
+      <ConsumablePoolCreateForm visible={view.active === "consumables"} makerspaceId={makerspaceId} machineType={machineType} existingPools={existingPools} />
+      <ConsumablePoolList visible={view.active === "consumables"} makerspaceId={makerspaceId} pools={typePools} />
+    </> : null}
+    {machineType.can_create_machine === true ? <CertificationsPanel visible={view.active === "certifications"} makerspaceId={makerspaceId} machineTypeId={machineType.id} /> : null}
+    <>
+      {canConfigureMachineTypes && (enabledFeatures.includes("machines.material_catalogue") || enabledFeatures.includes("machines.structured_intake")) ? <MaterialCataloguePanel visible={view.active === "settings"} makerspaceId={makerspaceId} typeId={machineType.id} custom={machineType.makerspace !== null} materialsEnabled={enabledFeatures.includes("machines.material_catalogue")} intakeEnabled={enabledFeatures.includes("machines.structured_intake")} /> : null}
+      {canConfigureMachineTypes ? <MachineReminderPolicy visible={view.active === "settings"} makerspaceId={makerspaceId} machineTypeId={machineType.id} /> : null}
+      {canConfigureMachineTypes && machineServiceEnabled ? <JobSettingsEditor visible={view.active === "settings"} makerspaceId={makerspaceId} machineTypeId={machineType.id} /> : null}
+      {canConfigureMachineTypes && enabledFeatures.includes("machines.sessions") ? <SessionSettingsEditor visible={view.active === "settings"} makerspaceId={makerspaceId} machineTypeId={machineType.id} /> : null}{settings}
+    </>
+    {creating ? <FlowLayout presentation="dialog" open title="Add machine" steps={[]} current="create" state={{ status: "ready" }} onCancel={() => { setCreating(false); setCreatedMachineId(null); }}
+      work={<MachineCreateForm makerspaceId={makerspaceId} machineType={machineType} hideSubmit onCreated={setCreatedMachineId}
+        onDone={() => { const id = createdMachineId; setCreating(false); setCreatedMachineId(null); if (id !== null) onSelectMachine(id); }} />}
+      footer={createdMachineId === null ? { next: { label: "Add machine", onClick: () => document.querySelector<HTMLFormElement>("#machine-create-form")?.requestSubmit() } }
+        : { next: { label: "Done", onClick: () => { const id = createdMachineId; setCreating(false); setCreatedMachineId(null); onSelectMachine(id); } } }} /> : null}
+    {detail}
+  </>;
+  return <div onClickCapture={view.onClickCapture}>
+    <DetailLayout title={indexHref ? machineType.name : "Machines"} identity={machineTypeIdentity(machineType)}
+      back={indexHref ? { label: "All machine types", href: indexHref } : undefined}
+      meta={[...(indexHref ? [] : [machineType.name]), plural(allMachines.length, "machine"), `${allMachines.filter(machine => machine.status === "running").length} running`]}
+      actions={{ primary: canManage && machineType.can_create_machine === true ? { label: "Add machine", icon: "Plus", onClick: () => setCreating(true) } : undefined,
+        secondary: service && view.active === "queue" ? { label: "Log usage", onClick: () => setLogging(true) } : undefined,
+        overflow: onWorkOrders ? [{ label: "Work orders", onClick: onWorkOrders }] : undefined }}
+      banner={poolError ? { size: "banner", tone: "warn", lead: "Couldn’t load consumable pools. Try again before starting work.", action: { label: "Retry", onClick: onRetryPools } } : undefined}
+      tabs={view.tabs} activeTab={view.active} main={main}
+      state={view.active !== "machines" ? { status: "ready" } : machinesLoading ? { status: "loading" } : machinesFailed ? { status: "error", error: "Couldn't load machines. Try again.", onRetry } : { status: "ready" }} />
 
-      {machineType.can_create_machine === true ? <CertificationsPanel makerspaceId={makerspaceId} machineTypeId={machineType.id} /> : null}
-      {canConfigureMachineTypes && (enabledFeatures.includes("machines.material_catalogue") || enabledFeatures.includes("machines.structured_intake")) ? <MaterialCataloguePanel makerspaceId={makerspaceId} typeId={machineType.id} custom={machineType.makerspace !== null} materialsEnabled={enabledFeatures.includes("machines.material_catalogue")} intakeEnabled={enabledFeatures.includes("machines.structured_intake")} /> : null}
-      {canConfigureMachineTypes ? <MachineReminderPolicy makerspaceId={makerspaceId} machineTypeId={machineType.id} /> : null}
-
-      {machineServiceEnabled && canManage ? (
-        <>
-          <section className="grid gap-4 rounded-xl border border-line bg-panel p-3" aria-labelledby={`consumables-${machineType.id}`}>
-            <div>
-              <h3 className="title-panel" id={`consumables-${machineType.id}`}>Consumables</h3>
-              <p className="mt-1 text-sm text-muted">Manage stock used by this machine type and any pools reserved for one of its machines.</p>
-            </div>
-            <ConsumablePoolCreateForm makerspaceId={makerspaceId} machineType={machineType} existingPools={existingPools} />
-            <div>
-              <h4 className="title-section mb-2">Stock</h4>
-              <ConsumablePoolList makerspaceId={makerspaceId} pools={typePools} />
-            </div>
-          </section>
-          {isBuiltinPrinterType(machineType) ? (
-            <PrinterServiceConsole makerspaceId={makerspaceId} canManage={canManage} printingEnabled={printingEnabled} reportsEnabled={reportsEnabled} machineType={machineType} machines={allMachines} pools={formPools} draft={draft} setDraft={setDraft} />
-          ) : (
-            <MachineServiceConsole makerspaceId={makerspaceId} canManage={canManage} machineType={machineType} machines={allMachines} pools={formPools} draft={draft} setDraft={setDraft} />
-          )}
-        </>
-      ) : null}
-    </div>
-  );
+  </div>;
 }

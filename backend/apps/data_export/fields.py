@@ -17,11 +17,21 @@ USER_PROJECTIONS = {
             "display_name",
             "phone",
             "date_joined",
+            # person | platform | staff (an inert merged shell, PII-free; its survivor
+            # travels in global/user-aliases.json). No staff tenant since one account per
+            # person: staff roles are staff-track memberships in the roster.
+            "account_kind",
+            "is_active",
         }
     ),
 }
 
 ALWAYS_OMITTED = {
+    ("makerspaces.Makerspace", "email_provider"): "Reconfigure transport on target.",
+    ("makerspaces.Makerspace", "email_provider_config"): "Encrypted transport credentials.",
+    ("bookings.Booking", "checkin_token"): "Source arrival bearer credential; target issues a fresh one.",
+    ("bookings.BookingBroadcastDelivery", "outbox"): "Source-local send authority never travels.",
+    ("events.EventBroadcastDelivery", "outbox"): "Source-local send authority never travels.",
     ("devices.DeviceCommand", "lease_token_digest"): "Deployment-local command delivery credential.",
     # Trigger-maintained full-text vectors: derived from exported columns and rebuilt by
     # the search trigger on the target, so they never travel (apps/inventory/search.py).
@@ -41,15 +51,6 @@ ALWAYS_OMITTED = {
     ),
     ("audit.AuditLog", "event_uuid"): "Source-deployment audit integrity identity.",
     ("audit.AuditLog", "row_mac"): "Source-deployment audit integrity evidence.",
-    ("backup.MakerspaceArchiveRecipient", "verified_at"): (
-        "Proof of possession must be repeated on the target deployment."
-    ),
-    ("backup.MakerspaceArchiveRecipient", "challenge_nonce_digest"): (
-        "Source-deployment proof-of-possession challenge."
-    ),
-    ("backup.MakerspaceArchiveRecipient", "challenge_issued_at"): (
-        "Source-deployment proof-of-possession challenge lifecycle."
-    ),
     # A device key proves possession on ONE deployment; elsewhere it must be re-proven,
     # so the key travels nowhere and an imported device arrives pending (phase 7a).
     ("devices.Device", "public_key"): "Deployment-local device key; re-enroll on the target.",
@@ -109,6 +110,8 @@ ALWAYS_OMITTED = {
     ("payments.Payment", "stripe_checkout_session_expired_at"): "Source checkout session state.",
     ("payments.Payment", "stripe_payment_intent_id"): "Source provider identifier.",
 }
+from .classification_r2_l1 import ALWAYS_OMITTED as _R2_L1_OMITTED  # noqa: E402
+ALWAYS_OMITTED.update(_R2_L1_OMITTED)
 
 FIVE_CONFIG_FIELDS = {
     ("makerspaces.Makerspace", "branding_config"),
@@ -159,6 +162,9 @@ def _field_disposition(fidelity: Fidelity, label: str, field_name: str):
     pair = (label, field_name)
     if pair in ALWAYS_OMITTED:
         return Omitted(ALWAYS_OMITTED[pair])
+    from .fields_events_programme import PRIVATE_FIELDS
+    if pair in PRIVATE_FIELDS and fidelity is Fidelity.REDACTED:
+        return Redacted("programme_private_redacted")
     if pair in FIVE_CONFIG_FIELDS and fidelity is Fidelity.REDACTED:
         return Omitted("Operator-authored JSON configuration is omitted from readable exports.")
     if pair == ("audit.AuditLog", "meta") and fidelity is Fidelity.REDACTED:
@@ -182,6 +188,15 @@ def _field_disposition(fidelity: Fidelity, label: str, field_name: str):
 from .classification_w7_events import EVENT_OMITTED_FIELDS
 ALWAYS_OMITTED.update(EVENT_OMITTED_FIELDS)
 
+ALWAYS_OMITTED[("integrations.MessagingConsent", "lifted_suppression_id")] = "Source-local suppression provenance does not address target protection rows."
+ALWAYS_OMITTED.update({
+    ("integrations.MessagingConsent", name): "Source sender/proof binding is deployment-local; imported consent is inert."
+    for name in ("sender_key", "configuration_generation", "endpoint")
+})
+from apps.tenant_migration.catalog_events_programme_fields import OMITTED_FIELDS as PROGRAMME_OMITTED_FIELDS
+ALWAYS_OMITTED.update(PROGRAMME_OMITTED_FIELDS)
+from .classification_l16 import OMITTED_FIELDS as L16_OMITTED_FIELDS  # noqa: E402
+ALWAYS_OMITTED.update(L16_OMITTED_FIELDS)
 FIELDS = {}
 for _fidelity in Fidelity:
     for _label, _names in EXPORTED_MODEL_FIELDS.items():
@@ -197,9 +212,16 @@ for _fidelity in Fidelity:
         if _field.name in USER_PROJECTIONS[_fidelity]:
             disposition = (
                 Remapped()
-                if _fidelity is Fidelity.PORTABLE and _field.primary_key
+                if _fidelity is Fidelity.PORTABLE and (_field.primary_key or _field.is_relation)
                 else Emitted()
             )
         else:
-            disposition = Omitted("Outside the literal global-user projection.")
+            disposition = Omitted({
+                "retired_at": "Retired staff shells are excluded from tenant exports.",
+                "credential_generation": "Source credential fencing is deployment-local.",
+                "account_kind": "Readable identity projection omits account context.",
+                "staff_makerspace": "Always empty since one account per person; staff roles travel as staff-track rows.",
+                "merged_into": "A shell's survivor travels as a closure-bounded alias, never as a closure edge.",
+                "merged_at": "Merge time is deployment-local; the target import re-stamps it.",
+            }.get(_field.name, "Outside the literal global-user projection."))
         FIELDS[(_fidelity, "accounts.User", _field.name)] = disposition

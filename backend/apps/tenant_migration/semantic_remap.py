@@ -17,6 +17,10 @@ from .references import (
 
 
 def remap_semantic_references(label, source, row, pk_map, references):
+    from .semantic_events_programme import remap_programme
+    remap_programme(label, source, row, lambda target, value: pk_map.lookup(apps.get_model(target), value))
+    from .semantic_reimbursements import remap as remap_reimbursement
+    remap_reimbursement(label, source, row, lambda target, value: pk_map.lookup(apps.get_model(target), value))
     if label in {edge[0] for edge in DISCRIMINATOR_REFERENCES}:
         _remap_discriminator(label, source, row, pk_map, references)
     if label == "payments.Payment":
@@ -24,6 +28,10 @@ def remap_semantic_references(label, source, row, pk_map, references):
             return False
         target = apps.get_model(PAYMENT_SUBJECT_REFERENCES[row["subject_type"]])
         row["subject_id"] = pk_map.lookup(target, row["subject_id"])
+    elif label == "machines.ConsumableCostRecord":
+        from .tracking_references import COST_SOURCE_MODELS
+        target = apps.get_model(COST_SOURCE_MODELS[row["source_kind"]])
+        row["source_id"] = pk_map.lookup(target, row["source_id"])
     elif label == "audit.AuditLog":
         _remap_audit(row, pk_map)
     elif label == "notifications.Notification":

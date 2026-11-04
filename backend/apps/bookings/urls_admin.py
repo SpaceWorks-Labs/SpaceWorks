@@ -14,6 +14,9 @@ otherwise never be the winning match for the more specific paths.
 """
 
 from django.urls import path
+from .urls_staff_grants import urlpatterns as staff_grant_patterns
+from .urls_broadcasts import urlpatterns as broadcast_patterns
+from .urls_website import admin_patterns as website_patterns
 
 from apps.bookings.views_admin_bookings import (
     BookingApproveView,
@@ -37,7 +40,18 @@ from apps.bookings.views_admin_spaces import (
 
 from .views_recurrence import StaffRecurringBookingView
 
-urlpatterns = [
+from .views_staff_tools import BookingCloneView, BookingDetailsEditView, BookingTimeEditView, BookingRestoreView
+
+from .urls_arrival import urlpatterns as arrival_patterns
+
+from .urls_passes import urlpatterns as pass_patterns
+from .urls_p2 import admin_patterns as p2_patterns
+
+urlpatterns = [*p2_patterns, *staff_grant_patterns, *arrival_patterns, *pass_patterns, *broadcast_patterns, *website_patterns,
+    path("spaces/<int:pk>/clone/", BookingCloneView.as_view(), name="admin-bookable-space-clone"),
+    path("bookings/<int:pk>/details/", BookingDetailsEditView.as_view(), name="admin-booking-details-edit"),
+    path("bookings/<int:pk>/time/", BookingTimeEditView.as_view(), name="admin-booking-time-edit"),
+    path("bookings/<int:pk>/restore/", BookingRestoreView.as_view(), name="admin-booking-restore"),
     path('spaces/<int:pk>/recurring-bookings/', StaffRecurringBookingView.as_view(), name='admin-recurring-bookings'),
     path(
         'makerspaces/<int:makerspace_id>/booking-machine-types/',

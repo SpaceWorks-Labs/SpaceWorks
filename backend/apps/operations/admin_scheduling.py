@@ -1,8 +1,8 @@
 """Read-only `/control/` view of the beat-less scheduler's last runs.
 
 `run_scheduled_tasks` records each task's last run and last error in `PeriodicTaskRun`,
-and the cron drivers swallow its exit code (`|| true` in the cloud compose file and the
-single-box runner) so one failing task cannot stop the loop. Without this page that
+and the cron driver swallows its exit code (`|| true` in the cloud compose file)
+so one failing task cannot stop the loop. Without this page that
 record was invisible: a reminder sweep could fail every night with nothing in any console.
 Rows are written only by the command, so nothing here is editable.
 """

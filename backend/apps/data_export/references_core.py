@@ -16,14 +16,42 @@ RAW_USER_REFERENCE_FIELDS = frozenset(  # Raw integers are not discoverable as F
 # SpacePackProfile has no accounts.User FKs; platform attribution lives in AuditLog.
 RELATIONAL_USER_FIELDS = frozenset(
     {
+        ("makerspaces.PublicHandle", "user"),
+        ("accounts.AccountRestoreIntent", "user"),
+        ("accounts.AccountPurgeProgress", "user"),
+        ("accounts.AccountPurgeObject", "user"),
+        ("accounts.AppleRevocation", "user"),
+        ("bookings.BookingBroadcast", "created_by"),
+        ("bookings.BookingBroadcastDelivery", "recipient"),
+        ("events.EventBroadcast", "created_by"),
+        ("events.EventBroadcastDelivery", "recipient"),
+        # Excluded credential rows never pull these accounts into an archive.
+        ("bookings.BookingSpaceStaffGrant", "user"),
+        ("bookings.BookingSpaceStaffGrant", "granted_by"),
+        ("bookings.BookingSpaceStaffGrant", "revoked_by"),
+        ("bookings.BookingSpaceStaffGrantInvite", "created_by"),
+        ("bookings.BookingSpaceStaffGrantInvite", "redeemed_by"),
+        ("events.EventStaffGrant", "user"),
+        ("events.EventStaffGrant", "granted_by"),
+        ("events.EventStaffGrant", "revoked_by"),
+        ("events.EventStaffGrantInvite", "created_by"),
+        ("events.EventStaffGrantInvite", "redeemed_by"),
+        ("makerspaces.MembershipAdditionalRole", "assigned_by"),
+        ("makerspaces.ModuleSettingsGrant", "grantee"),
+        ("makerspaces.ModuleSettingsGrant", "granted_by"),
+        ("makerspaces.ModuleSettingsGrant", "revoked_by"),
+        ("makerspaces.ModuleSettingLock", "locked_by"),
+        ("makerspaces.ModuleSettingLock", "released_by"),
         ("notifications.NotificationInboxRow", "user"),
         ("notifications.MemberNotificationPreference", "user"),
         ("integrations.EmailSuppression", "created_by"),
         ("integrations.EmailLog", "recipient"),
         ("accounts.UserMFA", "user"),
+        ("accounts.ReauthenticationSession", "user"),
         ("accounts.MFAChallenge", "user"),
         ("accounts.StaffInvitation", "created_by"),
         ("accounts.StaffInvitation", "accepted_by"),
+        ("accounts.StaffInvitation", "account"),
         ("operations.SavedView", "owner"),
         ("accounts.DeviceGrant", "user"),
         ("accounts.DeviceRefreshFamily", "user"),
@@ -37,10 +65,9 @@ RELATIONAL_USER_FIELDS = frozenset(
         ("backup.BackupArchive", "requested_by"),
         ("backup.DeploymentRecoveryState", "acknowledged_by"),
         ("backup.DeploymentRecoveryState", "recovery_principal"),
-        ("backup.MakerspaceArchiveRecipient", "added_by"),
-        ("backup.ArchiveCustodyAlarmDelivery", "recipient_user"),
-        ("backup.TenantExitCustodyAlarmDelivery", "recipient_user"),
         ("backup.RestoreOperation", "requested_by"),
+        ("backup.MakerspaceRestoreOperation", "requested_by"),
+        ("backup.MakerspaceRestoreOperation", "confirmed_by"),
         ("backup.BackupDestination", "created_by"),
         ("data_export.DataExportJob", "requested_by"),
         ("data_export.DataExportJob", "download_issued_to"),
@@ -65,6 +92,7 @@ RELATIONAL_USER_FIELDS = frozenset(
         ("events.EventCollaborator", "invited_by"),
         ("events.EventCollaborator", "responded_by"),
         ("events.EventOrganizer", "created_by"),
+        ("events.EventAudienceOrganization", "added_by"),
         ("events.EventRegistration", "member"),
         ("events.EventCheckInEvent", "actor"),
         ("events.EventAttendanceCertificate", "revoked_by"),
@@ -165,11 +193,16 @@ RELATIONAL_USER_FIELDS = frozenset(
         ("organizations.OrganizationMembership", "created_by"),
         ("organizations.OrganizationInvitation", "created_by"),
         ("organizations.OrganizationInvitation", "redeemed_by"),
+        ("hosting_requests.HostingRequest", "invited_by"),
+        ("hosting_requests.HostingRequest", "decided_by"),
         ("payments.Payment", "member"),
         ("payments.PaymentDocument", "issued_by"),
         ("payments.Payment", "created_by"),
         ("payments.ManualSettlement", "recorded_by"),
         ("payments.Refund", "created_by"),
+        ("payments.RefundCase", "requested_by"),
+        ("payments.RefundCase", "decided_by"),
+        ("payments.RefundPolicy", "updated_by"),
         ("payments.StripeConnectOAuthState", "initiated_by"),
         ("presence.PresenceSession", "member"),
         ("presence.PresenceSession", "ended_by"),
@@ -181,6 +214,30 @@ RELATIONAL_USER_FIELDS = frozenset(
 )
 
 _EXCLUDED_USER_EDGE_REASONS = {
+    ("accounts.StaffInvitation", "account"): "Account-bound invitation credential is deployment-local; reissue on the target.",
+    ("accounts.AccountRestoreIntent", "user"): "Deployment-local recovery proof never expands portable closure.",
+    ("accounts.AccountPurgeProgress", "user"): "Deployment-local erasure coordination never expands portable closure.",
+    ("accounts.AccountPurgeObject", "user"): "Deployment-local object cleanup never expands portable closure.",
+    ("accounts.AppleRevocation", "user"): "Deployment-local credential revocation never expands portable closure.",
+    ("accounts.ReauthenticationSession", "user"): "Source-bound browser proof is never portable and never expands the user closure.",
+    **{edge: "Booking resource authority and credentials are omitted at both fidelities."
+       for edge in (
+           ("bookings.BookingSpaceStaffGrant", "user"),
+           ("bookings.BookingSpaceStaffGrant", "granted_by"),
+           ("bookings.BookingSpaceStaffGrant", "revoked_by"),
+           ("bookings.BookingSpaceStaffGrantInvite", "created_by"),
+           ("bookings.BookingSpaceStaffGrantInvite", "redeemed_by"),
+       )},
+    **{
+        edge: "Event staff credentials and authority are omitted at both fidelities; reissue on the target."
+        for edge in (
+            ("events.EventStaffGrant", "user"),
+            ("events.EventStaffGrant", "granted_by"),
+            ("events.EventStaffGrant", "revoked_by"),
+            ("events.EventStaffGrantInvite", "created_by"),
+            ("events.EventStaffGrantInvite", "redeemed_by"),
+        )
+    },
     # machines.MakerspaceMachineTypePolicy has no accounts.User FKs; its tenant/type
     # preferences do not expand the portable user closure.
     # operations.ReminderSchedule deliberately has no accounts.User FK: opaque
@@ -199,8 +256,10 @@ _EXCLUDED_USER_EDGE_REASONS = {
     ("tenant_migration.TenantDumpCapture", "requested_by"): "Source capture coordination must not contribute to a tenant archive's user closure.",
 }
 
-RELATIONAL_USER_FIELDS |= frozenset({("notifications.MemberBroadcast", "created_by"), ("bookings.BookingCalendarFeed", "user")})
+RELATIONAL_USER_FIELDS |= frozenset({("bookings.BookingCheckInEvent", "actor"), ("notifications.MemberBroadcast", "created_by"), ("bookings.BookingCalendarFeed", "user")})
 _EXCLUDED_USER_EDGE_REASONS[("bookings.BookingCalendarFeed", "user")] = "Source-bound calendar authority is excluded from portable closure."
+from apps.tenant_migration.catalog_p2_bookings import USER_EDGES as P2_BOOKING_USER_EDGES
+RELATIONAL_USER_FIELDS |= P2_BOOKING_USER_EDGES
 
 # WP4 policies, schedules and materials have no User FKs. Personal watches and
 # feed credentials are explicitly omitted, but their actor edges remain classified.

@@ -1,3 +1,4 @@
+import { PasswordStrength } from "./PasswordStrength";
 export function NewPasswordFields({
   idPrefix,
   newPassword,
@@ -29,6 +30,7 @@ export function NewPasswordFields({
         aria-invalid={tooShort}
         onChange={(event) => onNewPasswordChange(event.target.value)}
       />
+      <PasswordStrength password={newPassword} />
       {tooShort ? (
         <p
           id={`${idPrefix}-password-error`}

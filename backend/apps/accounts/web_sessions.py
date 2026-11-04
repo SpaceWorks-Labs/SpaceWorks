@@ -30,6 +30,8 @@ def validate_session(user, token, *, lock=False):
     # lifetime; they acquire a marker on their next successful refresh.
     sid = token.get("sid")
     if not sid:
+        if user.account_restored_at:
+            raise AuthenticationFailed("Sign in again after restoring your account.", code="session_revoked")
         return None
     rows = OutstandingToken.objects
     if lock:
@@ -73,6 +75,8 @@ def legacy_sessions(user):
 
 @transaction.atomic
 def revoke_session(user, sid):
+    from apps.accounts.models import User
+    User.objects.select_for_update(no_key=True).get(pk=user.pk)
     row = OutstandingToken.objects.select_for_update().filter(user=user, jti=sid, token="").first()
     if row is None:
         raise NotFound("Session not found.")
@@ -82,6 +86,8 @@ def revoke_session(user, sid):
 
 @transaction.atomic
 def revoke_legacy_session(user, jti):
+    from apps.accounts.models import User
+    User.objects.select_for_update(no_key=True).get(pk=user.pk)
     allowed_ids = {row.pk for row in legacy_sessions(user)}
     row = OutstandingToken.objects.select_for_update().filter(user=user, jti=jti, pk__in=allowed_ids).first()
     if row is None:

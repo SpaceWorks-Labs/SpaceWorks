@@ -1,6 +1,8 @@
 import { useState, type ChangeEvent } from "react";
 
 import { ConfirmDialog } from "../../components/ui";
+import { FormBuilderV2 } from "./FormBuilderV2";
+import type { FormSchemaV2 } from "./types";
 
 import {
   CHOICE_QUESTION_TYPES,
@@ -12,10 +14,10 @@ import {
 } from "./customFormTypes";
 
 const QUESTION_TONES = [
-  "border-accent bg-accent/15",
-  "border-secondary bg-secondary/15",
-  "border-success bg-success/15",
-  "border-warn bg-warn/15",
+  "border-accent bg-accent-soft",
+  "border-line bg-accent-soft",
+  "border-success bg-success-soft",
+  "border-warn bg-warn-soft",
 ] as const;
 
 function questionTone(id: string) {
@@ -31,7 +33,16 @@ function newQuestion(): CustomFormQuestion {
   return { id: questionId(), label: "", type: "short_text", options: [], required: false };
 }
 
-export function CustomFormBuilder({
+type LegacyBuilderProps = Parameters<typeof LegacyCustomFormBuilder>[0];
+type V2BuilderProps = Omit<LegacyBuilderProps, "value" | "onChange"> & { value: FormSchemaV2; onChange: (schema: FormSchemaV2) => void; context?: React.ComponentProps<typeof FormBuilderV2>["context"] };
+export function CustomFormBuilder(props: LegacyBuilderProps): React.JSX.Element;
+export function CustomFormBuilder(props: V2BuilderProps): React.JSX.Element;
+export function CustomFormBuilder(props: LegacyBuilderProps | V2BuilderProps) {
+  if (props.value && !Array.isArray(props.value)) return <fieldset disabled={props.disabled}><FormBuilderV2 value={props.value} context={(props as V2BuilderProps).context} onChange={props.onChange as (schema: FormSchemaV2) => void} /></fieldset>;
+  return <LegacyCustomFormBuilder {...props as LegacyBuilderProps} />;
+}
+
+function LegacyCustomFormBuilder({
   value,
   onChange,
   disabled = false,
@@ -122,7 +133,7 @@ function QuestionEditor({ question, index, count, allowedTypes, locked, onChange
   return (
     <div className={`rounded-xl border ${questionTone(question.id)} p-3`}>
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <span className="eyebrow">Question <span className="font-mono">{index + 1}</span></span>
+        <span className="eyebrow">Question <span className="tabular-nums">{index + 1}</span></span>
         <div className="ml-auto flex gap-2">
           <button className="desk-button-ghost" type="button" disabled={index === 0} onClick={() => onMove(-1)} aria-label={"Move question " + (index + 1) + " up"}>Up</button>
           <button className="desk-button-ghost" type="button" disabled={index === count - 1} onClick={() => onMove(1)} aria-label={"Move question " + (index + 1) + " down"}>Down</button>

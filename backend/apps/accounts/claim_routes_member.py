@@ -74,9 +74,26 @@ MEMBER_CLAIM_ROUTES = {
     ("member-certifications", "GET"): ReadOnly(tenant=ID),
     ("member-certifications", "HEAD"): ReadOnly(tenant=ID),
     **_options("member-certifications"),
+    # Owner self-service on a machine-service job (C4/C16): one explicit entry per route
+    # and method, no fallback. Row ownership is `member_id == caller`; a claim session
+    # is never the job's owner account, so both are refused outright.
+    ("member-machine-service-cancel", "POST"): Refused(
+        "claim sessions cannot cancel machine-service jobs", ownership=RowOwnership.SINGLE_OWNER,
+    ),
+    **_options("member-machine-service-cancel"),
+    ("member-machine-service-owner", "GET"): Refused(
+        "claim sessions cannot read machine-service owner controls", ownership=RowOwnership.SINGLE_OWNER,
+    ),
+    ("member-machine-service-owner", "HEAD"): Refused(
+        "claim sessions cannot read machine-service owner controls", ownership=RowOwnership.SINGLE_OWNER,
+    ),
+    **_options("member-machine-service-owner"),
     ("member-activity", "GET"): LocallyFiltered(tenant=ID),
     ("member-activity", "HEAD"): LocallyFiltered(tenant=ID),
     **_options("member-activity"),
+    ("member-my-usage", "GET"): LocallyFiltered(tenant=ID),
+    ("member-my-usage", "HEAD"): LocallyFiltered(tenant=ID),
+    **_options("member-my-usage"),
     ("hardware_requests:member-loan-renew", "POST"): Allowed(
         tenant=ID, audited=True, ownership=RowOwnership.LOCAL_OWNER_ENFORCED,
     ),
@@ -103,6 +120,12 @@ MEMBER_CLAIM_ROUTES = {
         "native payment intent requires an attested device grant"
     ),
     **_options("member-payment-mobile-intent"),
+    # A refund request is a money decision on the account's own ledger; a walk-in
+    # claim session at a kiosk must not open or withdraw one.
+    ("member-refund-request", "POST"): Refused("refund requests require an account session"),
+    **_options("member-refund-request"),
+    ("member-refund-withdraw", "POST"): Refused("refund requests require an account session"),
+    **_options("member-refund-withdraw"),
     ("member-referrals", "POST"): Refused("walk-ins cannot delegate membership eligibility"),
     **_options("member-referrals"),
     ("member-verification", "POST"): Refused("claim sessions cannot verify other members"),
@@ -186,6 +209,18 @@ MEMBER_CLAIM_ROUTES = {
         ownership=RowOwnership.MIXED_REFUSED,
     ),
     **_options("member-event-checkin-qr"),
+    **{(name, method): Refused(
+        "event tickets can contain foreign-hosted registrations and durable QR credentials",
+        ownership=RowOwnership.MIXED_REFUSED,
+    ) for name in ("member-event-ticket", "member-event-ticket-png")
+       for method in ("GET", "HEAD")},
+    **_options("member-event-ticket"),
+    **_options("member-event-ticket-png"),
+    **{("member-event-registration-calendar", method): Refused(
+        "registration calendars can contain foreign-hosted rows",
+        ownership=RowOwnership.MIXED_REFUSED,
+    ) for method in ("GET", "HEAD")},
+    **_options("member-event-registration-calendar"),
     ("member-event-calendar", "GET"): Refused(
         "event calendars can contain foreign-hosted registration rows",
         ownership=RowOwnership.MIXED_REFUSED,
@@ -233,3 +268,10 @@ MEMBER_CLAIM_ROUTES = {
     ),
     **_options("member-event-certificate-download"),
 }
+
+# Release 2 L5: telling a space you paid a charge offline is a money statement on the
+# account's own ledger; a walk-in claim session at a kiosk must not make one.
+MEMBER_CLAIM_ROUTES.update({
+    ("member-paid-claim", "POST"): Refused("offline payment claims require an account session"),
+    **_options("member-paid-claim"),
+})

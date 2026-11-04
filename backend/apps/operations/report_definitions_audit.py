@@ -2,6 +2,7 @@
 
 from apps.accounts import rbac
 from apps.operations.report_types import ReportDefinition
+from apps.operations.report_charts_remaining import AUDIT_CHART
 
 AUDIT_REPORT_DEFINITIONS = (
     ReportDefinition(
@@ -15,6 +16,7 @@ AUDIT_REPORT_DEFINITIONS = (
         title="Audit trail",
         chart_hint="table",
         version=1,
+        chart_spec=AUDIT_CHART,
         allowed_formats=("csv",),
         # Email/chat delivery would broaden custody of accountability data.
         schedulable=False,

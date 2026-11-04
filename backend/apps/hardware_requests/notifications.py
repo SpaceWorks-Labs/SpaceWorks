@@ -1,12 +1,9 @@
 import logging
 
 from apps.hardware_requests.display import requester_label
-from apps.accounts import rbac
-from apps.hardware_requests.models import HardwareRequest
 from apps.integrations.email_templates import hardware_context, render
-from apps.integrations.notify import EmailDelivery, LifecyclePayload, notify_lifecycle
+from apps.integrations.notify import EmailDelivery
 from apps.integrations.staff_notifications import staff_emails_for_feature
-from apps.notifications.inbox import InboxDelivery
 
 logger = logging.getLogger(__name__)
 
@@ -67,27 +64,13 @@ def notify_request_returned(request):
 
 
 def notify_loan_charge(request, event, payment):
-    """`deposit_raised` / `late_fee_raised`. Chat, push and webhook text only: there is
-    no email template for loan charges yet, so the email channel gets no deliveries."""
-    label = "Loan deposit" if event == "deposit_raised" else "Late return fee"
-    text = (
-        f"Hardware request #{request.pk}: {label} of "
-        f"{payment.amount} {payment.currency.upper()} raised."
-    )
-    logger.info(
-        "Hardware request loan charge notification.",
-        extra={"request_id": request.pk, "makerspace_id": request.makerspace_id, "event": event},
-    )
-    return notify_lifecycle(
-        request.makerspace,
-        feature="hardware_requests",
-        event=event,
-        build=lambda: LifecyclePayload(
-            text=text, data={"request_id": request.pk, "payment_id": payment.pk},
-            inbox=(InboxDelivery(request.requester_id, label, text,
-                                 f"/m/{request.makerspace.slug}/member"),) if request.requester_id else (),
-        ),
-    )
+    from .notifications_p2_requests import notify_charge
+    return notify_charge(request, event, payment)
+
+
+def notify_loan_fees_waived(request, waiver):
+    from .notifications_p2_requests import notify_waiver
+    return notify_waiver(request, waiver)
 
 
 def notify_return_due(request):
@@ -99,7 +82,7 @@ def notify_return_due(request):
         text_builder=lambda row: f"Hardware request #{row.pk} is due for return.",
         sync=True,
     )
-    return bool(result.delivered_counts)
+    return bool(result and result.scheduled)
 
 
 def _notify(
@@ -111,42 +94,10 @@ def _notify(
     text_builder,
     sync=False,
 ):
-    logger.info(
-        "Hardware request lifecycle notification.",
-        extra={
-            "request_id": request.pk,
-            "makerspace_id": request.makerspace_id,
-            "status": request.status,
-            "event": event,
-        },
-    )
-    request_id = request.pk
-
-    def build():
-        row = (
-            rbac.scope_notification_policy(
-                HardwareRequest.objects.all(), makerspace_id=request.makerspace_id,
-            ).select_related(
-                "makerspace", "requester", "assigned_box"
-            )
-            .prefetch_related("items__product")
-            .get(pk=request_id)
-        )
-        emails = _email_deliveries(row, requester_key, staff_event)
-        return LifecyclePayload(
-            text=text_builder(row), emails=emails, data={"request_id": row.pk},
-            inbox=(InboxDelivery(row.requester_id, f"Hardware request #{row.pk}",
-                                 f"Your request {event.replace('_', ' ')}.",
-                                 f"/m/{row.makerspace.slug}/member"),) if row.requester_id else (),
-        )
-
-    return notify_lifecycle(
-        request.makerspace,
-        feature="hardware_requests",
-        event=event,
-        build=build,
-        sync=sync,
-    )
+    from .notifications_p2_requests import notify_request
+    # The staff room keeps its existing staff-authored text (contact, items and the
+    # unverified-contact warning); it never carries the requester's own body.
+    return notify_request(request, event, room_text=text_builder)
 
 
 def _email_deliveries(request, requester_key, staff_event):

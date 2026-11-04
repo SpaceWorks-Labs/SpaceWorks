@@ -20,6 +20,8 @@ inseparable from the makerspace's (see `NOT_SEPARABLE`).
 from dataclasses import dataclass
 from typing import Callable
 
+from .module_purge_collectors_booking_website import bookings_private_keys, bookings_private_key_sizes
+
 from apps.makerspaces.module_purge_collectors import (
     bookings_delete,
     bookings_public_images,
@@ -32,16 +34,11 @@ from apps.makerspaces.module_purge_collectors import (
     machine_service_delete,
     machine_service_private_key_sizes,
     machine_service_private_keys,
-    maintenance_delete,
-    maintenance_private_key_sizes,
-    maintenance_private_keys,
     membership_delete,
     membership_private_key_sizes,
     membership_private_keys,
     membership_public_image_keys,
     notifications_delete,
-    procurement_delete,
-    procurement_private_keys,
     qr_print_batches_delete,
     slack_destinations_delete,
     stock_transfers_delete,
@@ -49,11 +46,11 @@ from apps.makerspaces.module_purge_collectors import (
     telegram_destinations_delete,
     webhook_destinations_delete,
 )
-from apps.makerspaces.module_purge_collectors_backup import (
-    backup_delete,
-    backup_private_keys,
-)
 from apps.makerspaces.module_purge_collectors_devices import devices_delete
+from apps.makerspaces.module_purge_collectors_reimbursements import (
+    REIMBURSEMENT_PII_LABELS,
+    STAGE_PII_LABELS,
+)
 from apps.makerspaces.module_purge_collectors_reports import (
     reports_delete,
     reports_private_keys,
@@ -101,18 +98,25 @@ NOT_SEPARABLE = {
 }
 
 
+from .module_purge_collectors_addressed import sms_delete, whatsapp_delete
+
 PLANS = (
+    ModulePurgePlan("sms", "SMS credentials, sender identities, consent and delivery history.", sms_delete),
+    ModulePurgePlan("whatsapp", "WhatsApp credentials, sender identities, bindings, consent and delivery history.", whatsapp_delete),
     ModulePurgePlan(
         # The one-line description is what the purge confirmation shows an operator, so it
         # has to name what actually goes: registrations are only the first layer.
         "events",
-        "Events, series, registrations, check-in history, feedback, certificates and "
+        "Events, series, registrations, check-in history, feedback, certificates, template revisions, artwork and "
         "calendar feeds.",
         events_delete,
         pii_labels=(
             "events.EventRegistration",
             "events.EventFeedbackResponse",
             "events.EventAttendanceCertificate",
+            "events.EventBroadcast",
+            *REIMBURSEMENT_PII_LABELS,
+            *STAGE_PII_LABELS,
         ),
         private_keys=events_private_keys,
         private_key_sizes=events_private_key_sizes,
@@ -120,18 +124,12 @@ PLANS = (
     ),
     ModulePurgePlan(
         "bookings", "Bookable spaces and their bookings.", bookings_delete,
-        pii_labels=("bookings.Booking",),
+        pii_labels=("bookings.Booking", "bookings.BookingBroadcast"),
         public_image_keys=bookings_public_images,
+        private_keys=bookings_private_keys, private_key_sizes=bookings_private_key_sizes,
     ),
-    ModulePurgePlan(
-        "maintenance", "Maintenance schedules, logs and log documents.", maintenance_delete,
-        private_keys=maintenance_private_keys,
-        private_key_sizes=maintenance_private_key_sizes,
-    ),
-    ModulePurgePlan(
-        "procurement", "To-buy items and their receipts.", procurement_delete,
-        private_keys=procurement_private_keys,
-    ),
+    # Maintenance and To-Buy are per-parent capabilities since #97; their data purge is
+    # `capability_purge_plans` (split per parent), not a module plan.
     ModulePurgePlan(
         "notifications", "In-app notification rows.", notifications_delete,
         pii_labels=("notifications.NotificationInboxRow", "notifications.MemberBroadcast"),
@@ -190,14 +188,6 @@ PLANS = (
         reports_delete,
         private_keys=reports_private_keys,
     ),
-    ModulePurgePlan(
-        "backup",
-        "Space-Manager-requested makerspace archives and their stored bytes. Archive "
-        "recipients, custody state, run-produced and offsite archives stay. Archives are "
-        "outside the purge guarantee: downloaded and offsite copies are not deleted.",
-        backup_delete,
-        private_keys=backup_private_keys,
-    ),
     ModulePurgePlan("stocktake", "Stocktake sessions, lines and ledger entries.", stocktake_delete),
     ModulePurgePlan("stock_transfers", "Stock transfers and their lines.", stock_transfers_delete),
     ModulePurgePlan("qr_print_batches", "QR print batches and their items.", qr_print_batches_delete),
@@ -208,4 +198,13 @@ PLANS = (
     ),
 )
 
+from apps.presence.purge import delete as presence_delete
+PLANS += (ModulePurgePlan("presence", "Current and historical presence sessions and display preferences.", presence_delete),)
+from .module_purge_collectors_reimbursements import reimbursement_delete
+PLANS += (ModulePurgePlan(
+    "event_reimbursements",
+    "Terminal travel-support history: programmes, requests, awards and claims. Core payout liabilities, "
+    "finance receipts and stage forms survive.",
+    reimbursement_delete, pii_labels=REIMBURSEMENT_PII_LABELS,
+),)
 BY_KEY = {plan.key: plan for plan in PLANS}

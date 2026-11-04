@@ -28,7 +28,6 @@ GROUP_NOTIFICATIONS = "notifications"
 GROUP_REPORTS = "reports"
 GROUP_PAYMENTS = "payments"
 GROUP_MOBILE = "mobile"
-GROUP_BACKUP = "backup"
 GROUP_DEVICES = "devices"
 
 
@@ -70,7 +69,7 @@ GROUPS = (
     GroupDefinition(
         GROUP_NOTIFICATIONS, "Notifications",
         "The in-app inbox and every outbound channel: email, Telegram, Slack, "
-        "Mattermost and Discord. API-client issuance sits here.",
+        "Mattermost, Discord, SMS and WhatsApp. API-client issuance sits here.",
     ),
     GroupDefinition(
         GROUP_REPORTS, "Reports",
@@ -86,11 +85,6 @@ GROUPS = (
     GroupDefinition(
         GROUP_MOBILE, "Mobile apps",
         "Attested device sessions, native push and the in-app payment sheet.",
-    ),
-    GroupDefinition(
-        GROUP_BACKUP, "Backup & custody",
-        "Makerspace archive requests, archive-recipient keys and custody status. The "
-        "deployment's own backups cover every makerspace whether or not this is on.",
     ),
     GroupDefinition(
         GROUP_DEVICES, "Connected devices",

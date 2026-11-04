@@ -1,7 +1,11 @@
+import { SettingsResetAction } from "./SettingsResetAction";
+import { SettingsQueryState } from "./SettingsQueryState";
+import { SettingsEditorActions } from "./SettingsEditorActions";
+import { SettingsRow } from "../../components/ui";
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { Badge } from "../../components/ui";
+import { StatusPill as Badge } from "../../components/ui";
 import { staffRequest } from "../../lib/api";
 import { type Makerspace, useStaffGet } from "./StaffPanels";
 
@@ -35,17 +39,12 @@ export function MakerspaceWebhookSettings({ makerspace }: { makerspace: Makerspa
   );
 
   return (
-    <div className="rounded-md border border-line bg-bg p-4">
+    <SettingsQueryState query={settings} resource="webhook"><SettingsRow label="Chat webhooks" helper="Add incoming webhook URLs for Slack, Mattermost or Discord. Saving a webhook configures the destination; enable delivery separately in the notification channel matrix under Notifications. Each channel is also its own module, so a space ships only the ones it uses."><div className="@container grid min-w-0 gap-4">
       <div className="grid max-w-2xl gap-2">
-        <h3 className="text-base font-semibold text-ink">Chat webhooks</h3>
-        <p className="text-sm text-muted">
-          Add incoming webhook URLs for Slack, Mattermost or Discord. Saving a webhook
-          configures the destination; enable delivery separately in the notification channel
-          matrix below. Each channel is also its own module, so a space ships only the ones
-          it uses.
-        </p>
+
+
       </div>
-      <div className="mt-4 grid gap-3 lg:grid-cols-3">
+      <div className="mt-4 grid gap-3 @3xl:grid-cols-3">
         <ProviderCard
           configured={settings.data?.slack_webhook_url_set ?? false}
           label="Slack"
@@ -66,12 +65,12 @@ export function MakerspaceWebhookSettings({ makerspace }: { makerspace: Makerspa
         />
       </div>
       {settings.isLoading ? (
-        <p className="mt-3 text-sm text-muted">Loading webhook settings...</p>
+        <p className="mt-3 text-sm text-muted">Loading webhook settings…</p>
       ) : null}
       {settings.error ? (
         <p className="mt-3 text-sm text-danger">{settings.error.message}</p>
       ) : null}
-    </div>
+    </div></SettingsRow></SettingsQueryState>
   );
 }
 
@@ -114,7 +113,7 @@ function ProviderCard({ configured, label, makerspaceId, provider }: ProviderCar
     <section className="rounded-md border border-line bg-surface p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h4 className="text-sm font-semibold text-ink">{label}</h4>
-        <Badge tone={configured ? "success" : "neutral"}>
+        <Badge label="" tone={configured ? "success" : "neutral"}>
           {configured ? "Configured" : "Not configured"}
         </Badge>
       </div>
@@ -131,23 +130,9 @@ function ProviderCard({ configured, label, makerspaceId, provider }: ProviderCar
           onChange={(event) => setWebhookUrl(event.target.value)}
         />
       </label>
-      <div className="mt-3 grid gap-2 sm:grid-cols-2">
-        <button
-          className="desk-button-primary w-full"
-          type="button"
-          disabled={!webhookUrl.trim() || pending}
-          onClick={() => saveWebhook.mutate(webhookUrl.trim())}
-        >
-          {saveWebhook.isPending ? "Saving..." : `Save ${label} webhook`}
-        </button>
-        <button
-          className="desk-button w-full"
-          type="button"
-          disabled={!configured || pending}
-          onClick={() => clearWebhook.mutate()}
-        >
-          {clearWebhook.isPending ? "Clearing..." : `Clear ${label} webhook`}
-        </button>
+      <div className="mt-3">
+        <SettingsEditorActions dirty={Boolean(webhookUrl)} onDiscard={() => setWebhookUrl("")} pending={saveWebhook.isPending} disabled={!webhookUrl.trim() || pending} onSave={() => saveWebhook.mutate(webhookUrl.trim())} />
+
       </div>
       {saveWebhook.error ? (
         <p className="mt-2 text-sm text-danger" role="alert">
@@ -159,6 +144,6 @@ function ProviderCard({ configured, label, makerspaceId, provider }: ProviderCar
           {clearWebhook.error.message}
         </p>
       ) : null}
-    </section>
+    <SettingsResetAction label={`Clear ${label} webhook`} consequence="Remove this saved webhook. Alerts will stop reaching this destination until it is configured again." pending={clearWebhook.isPending} disabled={!configured || pending} onConfirm={() => clearWebhook.mutateAsync()} /></section>
   );
 }

@@ -1,7 +1,12 @@
+import { SettingsQueryState } from "./SettingsQueryState";
+import { DataTable } from "../../components/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { staffRequest } from "../../lib/api";
 import { DELIVERY_SETTINGS_KEY } from "./MakerspaceWebhookSettings";
+import { useChannels } from "../notifications/channelsApi";
+import { CHANNEL_LABELS } from "../notifications/channelCatalog";
+import { MATRIX_TOGGLE_CELL, STICKY_FIRST_COLUMN } from "./matrixColumns";
 import type {
   NotificationPreferenceCell,
   NotificationRulesResponse,
@@ -30,6 +35,8 @@ export function NotificationChannelPreferences({ makerspaceId, rules }: Props) {
     queryFn: () =>
       staffRequest<DeliverySettings>(`/admin/makerspace/${makerspaceId}/api-settings`),
   });
+  const hasMessaging = rules.channels.some(channel => channel.key === "sms" || channel.key === "whatsapp");
+  const messaging = useChannels(makerspaceId, hasMessaging);
 
   const updatePreference = useMutation({
     mutationFn: (change: PreferenceChange) =>
@@ -61,9 +68,16 @@ export function NotificationChannelPreferences({ makerspaceId, rules }: Props) {
   });
 
   const warnings = deliveryWarnings(rules.preferences, settings.data);
+  for (const channel of ["sms", "whatsapp"] as const) {
+    const config = messaging.data?.results.find(row => row.channel === channel);
+    if (messaging.isSuccess && (!config?.enabled || !config.personal_enabled || config.activation_hold || !config.sender_key)
+      && rules.preferences.some(cell => cell.channel === channel && cell.enabled)) {
+      warnings.push(`${CHANNEL_LABELS[channel]} needs sender setup or review under Communication channels.`);
+    }
+  }
 
   return (
-    <section aria-labelledby="notification-channel-heading">
+    <section aria-labelledby="notification-channel-heading" className="min-w-0">
       <h4 id="notification-channel-heading" className="text-sm font-semibold text-ink">
         Notification channels
       </h4>
@@ -71,63 +85,24 @@ export function NotificationChannelPreferences({ makerspaceId, rules }: Props) {
         Checked = enabled for that feature and channel. The Staff email notifications switch and
         per-member recipient toggles affect staff email only, not Telegram, Slack, or Mattermost.
       </p>
-      <div className="mt-3 max-w-full overflow-x-auto rounded-md border border-line bg-bg">
-        <table className="w-max min-w-full border-collapse text-sm">
-          <caption className="sr-only">
-            Checked boxes enable each notification channel for a feature.
-          </caption>
-          <thead className="bg-surface text-xs uppercase text-muted">
-            <tr className="border-b border-line">
-              <th className="px-3 py-2 text-left font-semibold" scope="col">
-                Feature
-              </th>
-              {rules.channels.map((channel) => (
-                <th
-                  key={channel.key}
-                  className="min-w-28 px-3 py-2 text-center font-semibold"
-                  scope="col"
-                >
-                  {channel.label}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rules.features.map((feature) => (
-              <tr key={feature.key} className="border-b border-line last:border-b-0">
-                <th className="whitespace-nowrap px-3 py-2 text-left font-semibold text-ink" scope="row">
-                  {feature.label}
-                </th>
-                {rules.channels.map((channel) => {
-                  const cell = preferenceCell(rules.preferences, feature.key, channel.key);
-                  const checked = cell?.enabled ?? false;
-                  return (
-                    <td key={channel.key} className="px-3 py-2 text-center">
-                      <input
-                        aria-label={`${checked ? "Disable" : "Enable"} ${channel.label} for ${feature.label}`}
-                        className="h-4 w-4"
-                        type="checkbox"
-                        checked={checked}
-                        disabled={updatePreference.isPending}
-                        onChange={(event) =>
-                          updatePreference.mutate({
-                            feature: feature.key,
-                            channel: channel.key,
-                            enabled: event.target.checked,
-                          })
-                        }
-                      />
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {rules.channels.some(channel => channel.key === "whatsapp") ? <p className="mt-2 text-sm text-muted">WhatsApp also requires an approved template binding for each event and audience. Configure bindings under Communication channels.</p> : null}
+      <SettingsQueryState query={settings} resource="channel setup" />
+      {hasMessaging ? <SettingsQueryState query={messaging} resource="messaging channel setup" /> : null}
+      <DataTable data={rules.features} getRowId={feature => feature.key} columns={[
+        { key: "feature", header: "Feature", className: `font-semibold ${STICKY_FIRST_COLUMN}`, render: feature => feature.label },
+        ...rules.channels.map(channel => ({ key: channel.key, header: channel.label, className: MATRIX_TOGGLE_CELL,
+          render: (feature: NotificationRulesResponse["features"][number]) => {
+            const checked = preferenceCell(rules.preferences, feature.key, channel.key)?.enabled ?? false;
+            return <label className="inline-flex min-h-11 min-w-11 items-center justify-center">
+              <input className="h-4 w-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus" aria-label={`${checked ? "Disable" : "Enable"} ${channel.label} for ${feature.label}`}
+                type="checkbox" checked={checked} disabled={updatePreference.isPending}
+                onChange={event => updatePreference.mutate({ feature: feature.key, channel: channel.key, enabled: event.target.checked })} />
+            </label>;
+          } })),
+      ]} caption="Notification channels enabled per feature. Checked means enabled." emptyTitle="No notification channels yet." />
       {warnings.length ? (
         <div
-          className="mt-3 rounded-md border border-warn bg-warn/15 p-3 text-sm text-warn-ink"
+          className="mt-3 rounded-md border border-warn bg-warn-soft p-3 text-sm text-warn-ink"
           role="status"
           aria-live="polite"
         >
@@ -139,9 +114,7 @@ export function NotificationChannelPreferences({ makerspaceId, rules }: Props) {
           </ul>
         </div>
       ) : null}
-      {settings.error ? (
-        <p className="mt-3 text-sm text-danger">Unable to check channel setup: {settings.error.message}</p>
-      ) : null}
+
       {updatePreference.error ? (
         <p className="mt-3 text-sm text-danger" role="alert" aria-live="assertive">
           {updatePreference.error.message}

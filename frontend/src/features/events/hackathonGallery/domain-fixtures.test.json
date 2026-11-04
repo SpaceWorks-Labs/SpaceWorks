@@ -1,0 +1,24 @@
+{
+  "contract_version": 3,
+  "weighted_criterion": {
+    "key": "build", "label": "Build quality", "weight": "2.0000",
+    "anchors": {"1": "Early concept", "2": "Partial build", "3": "Working build", "4": "Strong build", "5": "Exceptional build"}
+  },
+  "assignment": {
+    "id": 81, "event_id": 42, "version": 4, "state": "assigned", "allowed_actions": ["score", "recuse", "skip"],
+    "round_id": 2, "snapshot_id": 101, "title": "Shared sensor", "description": "A low-power workshop sensor.",
+    "mode": "weighted_1_5", "batch": "v3",
+    "configuration": {"criteria": [{"key": "build", "label": "Build quality", "weight": "2.0000", "anchors": {"1": "Early concept", "2": "Partial build", "3": "Working build", "4": "Strong build", "5": "Exceptional build"}}]},
+    "scores": {}, "notes": "", "asset_ids": [201],
+    "batch_projects": [{"snapshot_id": 101, "title": "Shared sensor"}, {"snapshot_id": 102, "title": "Open controller"}]
+  },
+  "gallery_entry": {
+    "public_id": "11111111-2222-4333-8444-555555555555", "title": "Shared sensor", "description": "A low-power workshop sensor.",
+    "consent_version": 4, "files_state": "available", "content_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "assets": [{"public_id": "11111111-2222-4333-8444-555555555556", "mime": "application/pdf", "bytes": 1200,
+      "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "kind": "slides",
+      "download_url": "/api/v1/public/event-programmes/11111111-2222-4333-8444-555555555550/gallery/assets/11111111-2222-4333-8444-555555555556/"}],
+    "links": [{"kind": "repo", "url": "https://github.com/example/shared-sensor"}],
+    "members": [{"display_name": "Maker", "profile_url": "/maker-name"}]
+  }
+}

@@ -1,8 +1,9 @@
+import { SettingsQueryState } from "./SettingsQueryState";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import type { MakerspaceArchiveRequest } from "../../generated/api";
-import { Badge } from "../../components/ui";
+import { StatusPill as Badge } from "../../components/ui";
 import { StructuredApiError, staffRequest } from "../../lib/api";
 
 const REASON_MAX_LENGTH = 2000;
@@ -10,7 +11,6 @@ const REASON_MAX_LENGTH = 2000;
 const ERROR_MESSAGES: Record<string, string> = {
   pending_archive_request_exists: "An archive request is already pending for this makerspace.",
   archive_request_cooldown: "Please wait one hour after the last archive request before filing another.",
-  superadmin_access_disabled: "Turn on superadmin access before requesting archival.",
   makerspace_already_archived: "This makerspace has already been archived.",
   archive_request_not_pending: "This archive request is no longer pending and cannot be withdrawn.",
 };
@@ -73,19 +73,15 @@ function AuthorizedArchiveRequestPanel({ makerspaceId }: { makerspaceId: number 
         </p>
       </div>
 
-      {requests.isLoading ? (
-        <p className="mt-4 text-sm text-muted" role="status">Loading archive requests…</p>
-      ) : null}
-      {requests.isError ? (
-        <p className="mt-4 text-sm text-danger" role="alert">{errorMessage(requests.error)}</p>
-      ) : null}
+      <SettingsQueryState query={requests} resource="archive requests" />
+
 
       {requests.isSuccess && pending ? (
         <div className="mt-4 rounded-md border border-warn bg-surface p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2">
               <h4 className="text-sm font-semibold text-ink">Pending request</h4>
-              <Badge tone="warn">Pending</Badge>
+              <Badge label="" tone="warn">Pending</Badge>
             </div>
             <button
               className="desk-button min-h-11"
@@ -141,7 +137,7 @@ function AuthorizedArchiveRequestPanel({ makerspaceId }: { makerspaceId: number 
           </div>
           {formError ? <p className="text-sm text-danger" role="alert">{formError}</p> : null}
           <button
-            className="desk-button-primary min-h-11 justify-self-start"
+            className="desk-button-danger min-h-11 justify-self-start"
             type="submit"
             disabled={create.isPending}
           >
@@ -176,7 +172,7 @@ function HistoryRow({ request }: { request: MakerspaceArchiveRequest }) {
   return (
     <li className="rounded-md border border-line bg-surface p-3">
       <div className="flex flex-wrap items-center gap-2">
-        <Badge tone={tone}>{label}</Badge>
+        <Badge label="" tone={tone}>{label}</Badge>
         <span className="text-xs text-muted">
           Requested by {request.requested_by_username ?? "a staff member"} on {formatDateTime(request.requested_at)}
         </span>

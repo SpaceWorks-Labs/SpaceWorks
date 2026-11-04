@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { ConfirmDialog } from "../../../components/ui";
+import { ConfirmDialog, DangerZone, SettingsRow, SettingsSection, SettingsActions } from "../../../components/ui";
 import { devicesApi, type Device, type DeviceKind, type EnrollmentGrant } from "../devicesApi";
 import { deviceQueryKeys } from "../deviceQueryKeys";
 
@@ -22,12 +22,12 @@ export function DeviceCreateForm({ makerspaceId, onGrant }: {
       void client.invalidateQueries({ queryKey: deviceQueryKeys.root(makerspaceId) });
     },
   });
-  return <form className="mb-4 flex flex-wrap gap-3" onSubmit={(event) => { event.preventDefault(); create.mutate(); }}>
+  return <form id="device-create-form" className="grid gap-4" onSubmit={(event) => { event.preventDefault(); create.mutate(); }}>
     <label>Device name<input className="desk-input block" required maxLength={120} value={name} onChange={(e) => setName(e.target.value)} /></label>
     <label>Device kind<select className="desk-input block" value={kind} onChange={(e) => setKind(e.target.value as DeviceKind)}>
       <option value="generic">Generic</option><option value="printer">Printer</option><option value="label_printer">Label printer</option>
     </select></label>
-    <button className="desk-button" disabled={create.isPending || !name.trim()}>Create device</button>
+    <button hidden disabled={create.isPending || !name.trim()}>Create device</button>
     {create.isPending ? <p role="status">Creating device...</p> : null}
     {create.error ? <p role="alert">Could not create device. Please retry.</p> : null}
   </form>;
@@ -50,22 +50,26 @@ export function DeviceIdentitySection({ device, onGrant }: { device: Device; onG
       void client.invalidateQueries({ queryKey: deviceQueryKeys.root(device.makerspace) });
     },
   });
-  return <section className="mt-4 border-t border-line pt-4" aria-label={`Identity for ${device.name}`}>
-    <h3 className="title-section">{device.name}</h3>
-    <p>Fingerprint: {device.key_fingerprint ? `${device.key_fingerprint.slice(0, 12)}...` : "Not enrolled"} | Key version {device.key_version}</p>
-    <form className="flex flex-wrap gap-3" onSubmit={(e) => { e.preventDefault(); action.mutate("save"); }}>
-      <label>Name<input className="desk-input block" required maxLength={120} value={name} onChange={(e) => setName(e.target.value)} /></label>
-      <label>Offline threshold (seconds)<input className="desk-input block" required type="number" min={1} max={604800} value={threshold} onChange={(e) => setThreshold(Number(e.target.value))} /></label>
-      <button className="desk-button" disabled={action.isPending}>Save identity</button>
-    </form>
-    <div className="mt-3 flex gap-3">
-      <button className="desk-button" disabled={action.isPending} onClick={() => action.mutate("enrollment")}>
-        {device.status === "active" ? "Rotate key" : device.status === "revoked" ? "Reactivate device" : "Issue enrollment"}
-      </button>
-      <button className="desk-button" disabled={action.isPending || device.status === "revoked"} onClick={() => setConfirmRevoke(true)}>Revoke device</button>
-    </div>
-    <p role="status">{action.isPending ? "Saving..." : action.isSuccess ? "Device updated." : ""}</p>
+  const dirty = name !== device.name || threshold !== device.offline_threshold_seconds;
+  return <section aria-label={`Identity for ${device.name}`}>
+    <SettingsSection title="Device identity" description={`Fingerprint: ${device.key_fingerprint ? `${device.key_fingerprint.slice(0, 12)}…` : "Not enrolled"} · Key version ${device.key_version}`}>
+      <form onSubmit={e => { e.preventDefault(); action.mutate("save"); }}>
+        <SettingsRow label="Name" htmlFor="device-name"><input id="device-name" className="desk-input w-full" required maxLength={120} value={name} onChange={e => setName(e.target.value)} /></SettingsRow>
+        <SettingsRow label="Offline threshold (seconds)" htmlFor="device-threshold" helper="Space Works marks the device offline when a heartbeat is late by this amount.">
+          <input id="device-threshold" className="desk-input w-full" required type="number" min={1} max={604800} value={threshold} onChange={e => setThreshold(Number(e.target.value))} />
+        </SettingsRow>
+        {dirty || action.isPending ? <SettingsActions onDiscard={() => { setName(device.name); setThreshold(device.offline_threshold_seconds); }} pending={action.isPending} /> : null}
+      </form>
+      <SettingsRow label="Enrollment" helper="A new enrollment replaces the device key. Copy the one-time token before closing it.">
+        <button className="desk-button" disabled={action.isPending} onClick={() => action.mutate("enrollment")}>
+          {device.status === "active" ? "Rotate key" : device.status === "revoked" ? "Reactivate device" : "Issue enrollment"}
+        </button>
+      </SettingsRow>
+    </SettingsSection>
+    <p role="status">{action.isPending ? "Saving…" : action.isSuccess ? "Device updated." : ""}</p>
     {action.error ? <p role="alert">Device change failed. Please retry.</p> : null}
+    <DangerZone title="Revoke device" consequence="Stops signed requests immediately. Enroll the device again to reactivate it."
+      action={{ label: "Revoke device", disabled: action.isPending || device.status === "revoked", disabledReason: device.status === "revoked" ? "This device is already revoked." : "Wait for the current change to finish.", onClick: () => setConfirmRevoke(true) }} />
     <ConfirmDialog open={confirmRevoke} onCancel={() => setConfirmRevoke(false)} title="Revoke device"
       onConfirm={() => action.mutate("revoke")} pending={action.isPending} tone="danger"
       message="This immediately stops signed requests from this device. Re-enrollment is required to activate it again." />

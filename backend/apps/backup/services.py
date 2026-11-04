@@ -17,7 +17,6 @@ from apps.backup.services_archives import (
     create_archive,
     fail_archive_dispatch,
     run_archive,
-    superadmin_access_decision,
     sweep_stale_promotions,
 )
 from apps.backup.services_lease import _claim_lease, _release_lease, _renew_lease
@@ -42,7 +41,6 @@ __all__ = (
     "purge_expired_archives",
     "run_archive",
     "schedule_deployment_backup",
-    "superadmin_access_decision",
     "sweep_stale_promotions",
     "storage",
 )

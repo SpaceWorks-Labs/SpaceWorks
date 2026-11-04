@@ -4,6 +4,7 @@ import logging
 from django.db import IntegrityError, transaction
 
 from apps.accounts import rbac
+from apps.accounts.account_obligations import AccountDeletionPending, lock_obligation_owner
 from apps.audit import services as audit
 from apps.makerspaces.models import MembershipTerm
 
@@ -15,20 +16,35 @@ def raise_renewal(term):
     from apps.payments.models import Payment
     from apps.payments.services import create_payment
 
-    space, plan = term.membership.makerspace, term.plan
-    if plan.amount <= 0 or not charge_tracking_enabled(space, "membership"):
-        return "skipped"
-    lookup = dict(makerspace=space, subject_type=Payment.SubjectType.MEMBERSHIP_TERM,
-                  subject_id=term.pk)
     try:
         with transaction.atomic():
+            from apps.makerspaces.guards import require_module_locked
+            from apps.makerspaces.models import MakerspaceMembership
+            from apps.tenant_migration.gate_runtime import assert_write_allowed
+            space_id = term.membership.makerspace_id
+            assert_write_allowed(space_id)
+            space = require_module_locked(space_id, "membership")
+            membership = MakerspaceMembership.objects.select_for_update().get(pk=term.membership_id)
+            locked = MembershipTerm.objects.select_for_update(of=("self",)).select_related("plan").get(pk=term.pk)
+            locked.membership = membership
+            membership.user = lock_obligation_owner(membership.user)
+            if (membership.status != "active" or locked.status != "active"
+                    or membership.renewal_cancelled_at or not locked.plan.is_active or not locked.plan.renews
+                    or locked.plan.renewal_price <= 0 or not charge_tracking_enabled(space, "membership")):
+                return "skipped"
+            if locked.renewal_payment_id:
+                term.renewal_payment = locked.renewal_payment
+                return "skipped"
+            plan = locked.plan
+            lookup = dict(makerspace=space, subject_type=Payment.SubjectType.MEMBERSHIP_TERM,
+                          subject_id=locked.pk)
             # A savepoint contains a uniqueness race; the outer transaction stays usable.
             try:
                 with transaction.atomic():
                     payment = create_payment(
-                        **lookup, member=term.membership.user, amount=plan.amount,
-                        currency=plan.currency, created_by=term.membership.user,
-                        subject_label=f"Membership renewal: {plan.name}", due_at=term.ends_at,
+                        **lookup, member=membership.user, amount=plan.renewal_price,
+                        currency=plan.currency, created_by=membership.user,
+                        subject_label=f"Membership renewal: {plan.name}", due_at=locked.ends_at,
                     )
             except IntegrityError:
                 payment = rbac.scope_for_scheduled_work(
@@ -42,6 +58,8 @@ def raise_renewal(term):
                          meta={"membership_id": term.membership_id, "term_id": term.pk,
                                "payment_id": payment.pk})
         return "charged"
+    except AccountDeletionPending:
+        return "skipped"
     except Exception:
         logger.warning("membership_renewal_charge_failed", extra={"term_id": term.pk})
         return "failed"
@@ -110,4 +128,4 @@ def attempt_checkout(term_id, now):
             from apps.makerspaces.membership_renewal_notifications import notify_term
             audit.record(None, "membership.renewal_retry", makerspace=space,
                          target=term, meta={"attempt": attempt})
-            transaction.on_commit(lambda: notify_term(term, "renewal_failed"))
+            notify_term(term, "renewal_failed")

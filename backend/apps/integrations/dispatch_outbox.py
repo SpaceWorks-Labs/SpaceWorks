@@ -36,6 +36,9 @@ def dispatch_email(
     sync=False,
     recipient_id=None,
     feature="",
+    source_kind="",
+    source_id=None,
+    source_metadata=None,
 ):
     from apps.integrations.dispatch import _deliver
 
@@ -67,6 +70,7 @@ def dispatch_email(
             connection_kind=connection,
             recipient_id=recipient_id,
             feature=feature,
+            source_kind=source_kind, source_id=source_id, source_metadata=source_metadata or {},
             status=EmailLog.Status.SKIPPED,
             error=reason or "Email is disabled for this makerspace.",
         )
@@ -109,6 +113,7 @@ def dispatch_email(
                             connection_kind=connection,
                             recipient_id=recipient_id,
                             feature=feature,
+                            source_kind=source_kind, source_id=source_id, source_metadata=source_metadata or {},
                             status=EmailLog.Status.FAILED,
                             error="Daily email limit reached for this space.",
                         )
@@ -138,6 +143,7 @@ def dispatch_email(
         connection_kind=connection,
         recipient_id=recipient_id,
         feature=feature,
+        source_kind=source_kind, source_id=source_id, source_metadata=source_metadata or {},
     )
     if not persist_body:
         # In-memory only - _deliver's save(update_fields=...) excludes the body fields,
@@ -152,6 +158,9 @@ def dispatch_email(
         from apps.integrations.timing_dispatch import defer_log
         if defer_log(log, kind='email'):
             return log
+    from .mail_providers.outbox import enqueue_inline_allowed
+    if not enqueue_inline_allowed(sync=sync, persist_body=persist_body):
+        return log
     if sync:
         return _deliver(log)
     transaction.on_commit(lambda lid=log.id: _enqueue(lid))
@@ -159,6 +168,9 @@ def dispatch_email(
 
 
 def _enqueue(log_id):
+    from .mail_providers.outbox import enqueue_inline_allowed
+    if not enqueue_inline_allowed():
+        return
     from apps.integrations.tasks import deliver_email_task
 
     try:

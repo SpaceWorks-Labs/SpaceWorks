@@ -67,6 +67,14 @@ def validate_policy(makerspace, row):
         raise ValidationError({"payment_timing": "Pay before activation requires membership charge tracking."})
 
 
+def plan_feature_needs(makerspace):
+    """Whether any live plan uses vouching or its own application form (per-plan overrides)."""
+    from apps.makerspaces.models import MembershipPlan
+    plans = MembershipPlan.objects.filter(makerspace=makerspace, is_active=True, archived_at__isnull=True)
+    return (plans.filter(join_mode="vouch").exists(),
+            plans.filter(application_schema__isnull=False).exclude(application_schema={}).exists())
+
+
 def sync_legacy_settings(actor, makerspace, values):
     """Keep established PATCH fields writable after opting in to admission settings."""
     if not module_enabled(makerspace, "membership") or not settings_for(makerspace).configured:
@@ -86,7 +94,12 @@ def update_settings(actor, makerspace, values):
         makerspace = require_module_locked(makerspace, "membership")
         if not rbac.can(actor, rbac.Action.MANAGE_MAKERSPACE, makerspace.pk):
             raise PermissionDenied()
+        from apps.makerspaces.membership_admission_settings_l4 import authorize_settings, record_settings
+        decisions = authorize_settings(actor, makerspace, values)
         row = settings_for(makerspace)
+        from apps.makerspaces.membership_admission_settings_l4 import gate_settings
+        gate_settings(makerspace, values, row)
+        before = {key: getattr(row, key, None) for key in values}
         values = dict(values)
         recipe = values.pop("recipe", None)
         if recipe:
@@ -98,6 +111,8 @@ def update_settings(actor, makerspace, values):
             values = defaults
         for name, value in values.items():
             setattr(row, name, value)
+        if row.rejoin_dues_rule != "after_lapse":
+            row.rejoin_after_days = None
         row.configured = True
         validate_policy(makerspace, row)
         row.full_clean()
@@ -105,8 +120,9 @@ def update_settings(actor, makerspace, values):
         # The settings editor opts in to these gates. Later disabling a feature makes
         # its stored configuration inert, just like every other module feature.
         features = set(makerspace.enabled_features or [])
-        for key, enabled in (("membership.vouching", row.join_mode == "vouch"),
-                             ("membership.application_form", bool(row.application_schema))):
+        plan_vouch, plan_form = plan_feature_needs(makerspace)
+        for key, enabled in (("membership.vouching", row.join_mode == "vouch" or plan_vouch),
+                             ("membership.application_form", bool(row.application_schema) or plan_form)):
             if enabled:
                 features.add(key)
             else:
@@ -118,4 +134,5 @@ def update_settings(actor, makerspace, values):
         makerspace.save(update_fields=["enabled_features", "membership_policy", "membership_dues_amount"])
         audit.record(actor, "membership.admission_settings_updated", makerspace=makerspace,
                      target=row, meta={"fields": sorted(values), "recipe": recipe})
+        record_settings(actor, makerspace, before, row, decisions)
     return row

@@ -1,100 +1,36 @@
 from django.apps import apps
 
-from apps.makerspaces.origin_scope_model_lookups import (
+# Thin barrel over the route tables: every table is re-exported here, so
+# `from apps.makerspaces.origin_scope_routes import X` keeps resolving.
+from .origin_scope_routes_catalog import (  # noqa: F401 - re-exported tables
     BASE_MODEL_LOOKUPS,
     TARGET_SET_LOOKUPS,
+    PUBLIC_SLUG_ROUTES,
+    REPLAY_TOKEN_ROUTES,
+    SERVICE_TOKEN_ROUTES,
+    QR_PAYLOAD_ROUTES,
+    BODY_SCOPED_ROUTES,
+    MAKERSPACE_KWARG_ROUTES,
+    PRINTER_MAKERSPACE_ROUTES,
+    WP4_ROUTES,
+    QUERY_SCOPED_ROUTES,
+    NATIVE_HEADER_GLOBAL_ROUTES,
+    REQUEST_ACTIONS,
+    MACHINE_SERVICE_ACTIONS,
+    EVENT_MODEL_LOOKUPS,
+    P2_EVENT_MODEL_LOOKUPS,
+    MODEL_LOOKUPS,
+    P2_BOOKING_LOOKUPS,
 )
 
-REPLAY_TOKEN_ROUTES = {"kiosk-replay-prepare", "kiosk-replay-execute"}
-
-MAKERSPACE_KWARG_ROUTES = {
-    'admin-booking-machine-types': 'makerspace_id',
-    'admin-makerspace-setup-state': 'makerspace_id',
-    'admin-maintenance-overdue': 'makerspace_id',
-    'admin-makerspace-profile': 'makerspace_id',
-    'admin-makerspace-usage': 'makerspace_id',
-    'admin-kiosk-replay-list': 'makerspace_id',
-    'admin-maintenance-schedule-list-create': 'makerspace_id',
-    'admin-maintenance-log-list-create': 'makerspace_id',
-    'admin-bookable-space-list-create': 'makerspace_id',
-    'admin-event-list-create': 'makerspace_id',
-    'admin-event-series-list-create': 'makerspace_id',
-    'admin-event-series-collaboration-inbox': 'makerspace_id',
-    'admin-role-capabilities': 'makerspace_id',
-    'admin-role-list-create': 'makerspace_id',
-    'admin-role-detail': 'makerspace_id',
-    'admin-machine-types': 'makerspace_id',
-    'admin-machine-type-detail': 'makerspace_id',
-    'admin-makerspace-provision-subdomain': 'makerspace_id',
-    'admin-makerspace-subdomain-request': 'makerspace_id',
-    'admin-api-settings': 'makerspace_id',
-    'admin-notification-recipients': 'makerspace_id',
-    'admin-notification-rules': 'makerspace_id',
-    'admin-machine-service-request-list-create': 'makerspace_id',
-    'admin-audit-verifications': 'makerspace_id',
-    'admin-audit-verification-detail': 'makerspace_id',
-    'admin-kiosk-station-list-create': 'makerspace_id',
-}
-from .origin_scope_routes_7b import PRINTER_MAKERSPACE_ROUTES
-
-MAKERSPACE_KWARG_ROUTES.update(PRINTER_MAKERSPACE_ROUTES)
-from .origin_scope_routes_wp4 import MAKERSPACE_ROUTES as WP4_ROUTES
-MAKERSPACE_KWARG_ROUTES.update(WP4_ROUTES)
-
-# These routes have no tenant-bearing path segment by design: each is a listing whose
-# queryset is explicitly narrowed by the named makerspace query parameter.
-QUERY_SCOPED_ROUTES = {
-    'admin-search',                # ?makerspace_id= is mandatory
-    'admin-api-key-requests',       # requester-owned API-key requests; ?makerspace=
-    'admin-audit-logs',             # tenant audit-log listing; ?makerspace=
-    'admin-membership-requests',    # tenant join-request queue; ?makerspace_id=
-    'admin-memberships-roster',     # tenant membership roster; ?makerspace_id=
-    'admin-needs-fix-shelf',        # tenant repair shelf; ?makerspace=
-    'ledger-aggregate',             # superadmin aggregate listing; ?makerspace=
-    'ledger-export-aggregate',      # matching aggregate export; ?makerspace=
-}
-NATIVE_HEADER_GLOBAL_ROUTES = {
-    'auth-me',
-    'device-grants',
-    'device-grant-detail',
-    'push-device-list-create',
-    'push-device-detail',
-}
-REQUEST_ACTIONS = {
-    'request-accept',
-    'request-reject',
-    'request-assign-box',
-    'request-issue',
-    'request-return-due',
-    'request-return',
-    'guest-admin-request-return',
-    'request-timeline',
-}
-MACHINE_SERVICE_ACTIONS = {
-    'admin-machine-service-request-detail',
-    'admin-machine-service-request-accept',
-    'admin-machine-service-request-reject',
-    'admin-machine-service-request-start',
-    'admin-machine-service-request-complete',
-    'admin-machine-service-request-fail',
-    'admin-machine-service-request-collect',
-    'admin-machine-service-file-presign',
-    'admin-machine-service-file-finalize',
-}
-from .origin_scope_routes_w7_events import EVENT_MODEL_LOOKUPS
-MAKERSPACE_KWARG_ROUTES["admin-event-categories"] = "makerspace_id"
-
-MODEL_LOOKUPS = {
-    **EVENT_MODEL_LOOKUPS,
-    **BASE_MODEL_LOOKUPS,
-    **{name: ('hardware_requests.HardwareRequest', 'makerspace_id') for name in REQUEST_ACTIONS},
-    **{name: ('machines.MachineServiceRequest', 'makerspace_id') for name in MACHINE_SERVICE_ACTIONS},
-}
 
 def request_route_targets(request, view=None):
     url_name, targets, invalid, route_recognized = _authoritative_route_targets(
         request, view
     )
+    from .origin_scope_routes_public_pages import GLOBAL_ROUTES
+    if url_name in GLOBAL_ROUTES:
+        return url_name, set(), invalid, route_recognized
     hints = []
     query = getattr(request, 'query_params', None)
     if query is None:
@@ -144,20 +80,67 @@ def _authoritative_route_targets(request, view=None):
     url_name = getattr(match, 'url_name', '')
     kwargs = dict(getattr(match, 'kwargs', {}) or {})
     kwargs.update(getattr(view, 'kwargs', {}) or {})
+    from .origin_scope_routes_public_pages import page_route_targets
+    page_target = page_route_targets(url_name, kwargs, request)
+    if page_target is not None:
+        return page_target
+    from .origin_scope_account_routes import account_route_targets
+    account_target = account_route_targets(url_name, kwargs)
+    if account_target is not None:
+        return account_target
+    if url_name == "notification-media":
+        from .origin_scope_notification_media import media_grant_targets
+        targets = media_grant_targets(kwargs.get("token"))
+        return url_name, targets, not bool(targets), True
     targets = set()
     invalid = False
+    # Domain adapters register targets without widening any user RBAC scope.
+    # This resolver is advisory for origin/source-gate scoping; HMAC authorization
+    # independently verifies the signature, server client and required scopes.
+    from apps.apiclients.read_contract import read_target_registered, resolve_read_target
+    if match is not None and read_target_registered(match.view_name):
+        target, resolved = resolve_read_target(request, match)
+        return url_name, {target.pk} if resolved else set(), not resolved, True
     registered = MAKERSPACE_KWARG_ROUTES.get(url_name)
     route_recognized = bool(
         registered or 'makerspace_id' in kwargs
         or (url_name == 'admin-makerspace' and 'pk' in kwargs)
         or url_name in MODEL_LOOKUPS or url_name in TARGET_SET_LOOKUPS
         or url_name in QUERY_SCOPED_ROUTES or url_name in NATIVE_HEADER_GLOBAL_ROUTES
-        or url_name in REPLAY_TOKEN_ROUTES)
+        or url_name in REPLAY_TOKEN_ROUTES or url_name in PUBLIC_SLUG_ROUTES
+        or url_name in QR_PAYLOAD_ROUTES or url_name in BODY_SCOPED_ROUTES
+        or url_name in SERVICE_TOKEN_ROUTES)
+    if url_name in BODY_SCOPED_ROUTES:
+        body = getattr(request, "data", {})
+        target = _positive_int(body.get("makerspace_id")) if hasattr(body, "get") else None
+        invalid = target is None
+        if target is not None:
+            targets.add(target)
+    if url_name in QR_PAYLOAD_ROUTES:
+        resolved = _qr_payload_makerspace_id(request)
+        if resolved is not None:
+            targets.add(resolved)
+    if url_name in PUBLIC_SLUG_ROUTES:
+        from .lookup import get_public_makerspace
+        from django.http import Http404
+        try:
+            targets.add(get_public_makerspace(kwargs.get("makerspace_slug")).pk)
+        except Http404:
+            invalid = True
     if url_name in REPLAY_TOKEN_ROUTES:
         token = kwargs.get("public_token")
         resolved = apps.get_model("makerspaces.StationCredential").objects.filter(
             public_token=token,
         ).values_list("station__makerspace_id", flat=True).first() if token else None
+        if resolved is not None:
+            targets.add(resolved)
+        else:
+            invalid = True
+    if url_name in SERVICE_TOKEN_ROUTES:
+        token = kwargs.get("public_token")
+        resolved = apps.get_model("machines.MachineServiceRequest").objects.filter(
+            public_token=token,
+        ).values_list("makerspace_id", flat=True).first() if token else None
         if resolved is not None:
             targets.add(resolved)
         else:
@@ -188,6 +171,19 @@ def _authoritative_route_targets(request, view=None):
         if pk is not None:
             targets.update(_lookup_makerspace_ids(url_name, pk))
     return url_name, targets, invalid, route_recognized
+
+
+def _qr_payload_makerspace_id(request):
+    body = getattr(request, "data", None)
+    payload = body.get("payload") if hasattr(body, "get") else None
+    if not isinstance(payload, str) or not payload:
+        return None
+    from apps.boxes.access import inventory_qr_codes
+    from apps.boxes.models import QrCode
+
+    return inventory_qr_codes().filter(
+        payload=payload, status=QrCode.Status.ACTIVE,
+    ).values_list("makerspace_id", flat=True).first()
 
 
 def _positive_int(value):

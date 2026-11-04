@@ -52,7 +52,7 @@ Writes emit audit entries with a User actor.
 | GET/POST | `/integrations/makerspace/{makerspace_id}/email-suppressions` | List hashes or add `{address,reason}` |
 | DELETE | `/integrations/makerspace/{makerspace_id}/email-suppressions/{id}` | Remove a scoped suppression |
 
-Delivery controls require `MANAGE_MAKERSPACE`, including delegated custom roles.
+Delivery controls require `MANAGE_MAKERSPACE`, including organization-derived action grants; local roles are fixed built-ins.
 Log filters: `channel`, `status`, `feature`, `event`, `destination`, `page`. Responses
 exclude rendered bodies, addresses, credentials and destination URLs. Retry locks the
 row, checks the submitted generation, advances it once and enqueues after commit. A
@@ -65,10 +65,11 @@ before SENT commits can resend. Send-test cannot name an arbitrary email recipie
 Personal opt-outs are checked both when mail is queued and immediately before send.
 They cannot turn on a channel the makerspace disabled. Existing staff receives-notification
 and recipient rules remain authoritative. Turning off the editor does not discard saved
-opt-outs, including after a deployment tombstones notifications. Email, inbox and existing staff device push preferences are independent;
-this lane does not add member push delivery.
+opt-outs, including after a deployment tombstones notifications. Email, inbox and device
+push preferences are independent. Member push intentionally requires an inbox row, so
+tenant `in_app` and personal `in_app` must allow its creation.
 
-Account recovery, verification, overdue return reminders, custody alarms and loan
+Account recovery, verification, overdue return reminders and loan
 closure-with-issue emails bypass personal opt-outs. Suppression still blocks known bad
 addresses, including transactional mail. Suppression stores a tenant-keyed HMAC of the
 normalized address, a reason (`bounce` or `complaint`) and the staff User who recorded it.
@@ -90,6 +91,42 @@ JSON with `List-Unsubscribe=One-Click`; GET has no effect. Forged/expired tokens
 400. The late tenant write gate refuses frozen tenants with 423. No login, cookies or
 CSRF session are required. Configure the SMTP provider to DKIM-sign both unsubscribe
 headers as required by RFC 8058; the application cannot enforce provider signing.
+
+## Native push beneath personal envelopes
+
+Canonical native push is a channel delivery under `NotificationEnvelope`, with one
+`MemberPushDelivery` child per `(envelope_delivery, push_device)`. The required parent is
+`integrations.NotificationDelivery`; optional `inbox_row` uses SET_NULL. Creating or reading
+an inbox row never starts a push and deleting inbox rows cannot cascade delivery history.
+Old enqueue/deliver-row/Celery identifiers remain inert compatibility shims.
+
+Current member/requester owners with a proved source tie qualify without an active membership
+or inbox installation. Revoked memberships and account/source restrictions still refuse.
+Staff require a separate staff-kind password/MFA/attested grant fixed to their tenant; native
+platform grants do not exist. Each attempt rechecks source revision, account/generation, module,
+tenant matrix, intersected personal choices, registration, grant and current device identity.
+The notifications app registers the adapter: disabling the inbox module is supported, whereas
+tombstoning the entire app removes that adapter.
+
+Atomic UUID claims fence provider completions. Definitive transport rejections can retry within
+the parent's four-attempt budget; unknown outcomes and expired leases are held without blind
+resend. A late actual response can settle only its original token; rotation cannot invalidate
+a replacement push token. The five-minute sweep re-enters the envelope dispatcher and respects
+parent backoff and inert historical records. Provider I/O runs outside application transactions.
+
+Payload v2 has string values `v`, `event_id`, `makerspace_id`, `feature`, `event`, optional
+`inbox_row_id` and allowlisted local `link`. Canonical `event_id` is
+`uuid5(NAMESPACE_URL, envelope.dedup_key)`. Content is rendered for the personal recipient,
+not copied from a room. Titles name the makerspace; APNs groups by its thread ID. Retained
+legacy staff matrix legs preserve their stable identities and matching envelope pre-skips.
+Apps deduplicate, refetch source APIs on foreground/tap and fall back to inbox when available
+or makerspace home when it is absent.
+
+Notifications 0008 expands nullable parents before the shared barrier; 0009 maps every old
+push row and creates inert historical parents; 0010 verifies original fingerprints and makes
+the parent required. Terminal rows stay inert, untouched pending rows become canceled and
+uncertain attempts held. Conversion never sends. Follow the separate
+[deployment checkpoints](notification-reconciliation-rollout.md) before activation or retirement.
 
 ## Retention and data hygiene
 
@@ -115,8 +152,8 @@ Export/model/User-edge and tenant field catalogues declare all new models. Inbox
 and deployment-keyed suppressions are omitted from portable artifacts. Preferences
 are included in manager datasets but dropped at target import, following the existing
 target-owned notification policy; target Users must re-establish them before optional
-communications are enabled. Tenant backups preserve source data normally. The target
-catalogue schema digest remains the Wave 1 `RECOMPUTE` marker for coordinator pinning.
+communications are enabled. Tenant backups preserve source data normally. The reconciled catalog and concrete field snapshot define the target schema digest;
+regenerate/verify it with the owning registry workflow rather than retaining either parent pin.
 
 ## Structured webhooks
 

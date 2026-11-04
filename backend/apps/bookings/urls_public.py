@@ -10,7 +10,11 @@ from apps.bookings.views_member import MemberBookingCancelView, MemberBookingLis
 
 from .views_feed import BookingFeedSettingsView, PublicBookingFeedView
 
-urlpatterns = [
+from .urls_confirmation import urlpatterns as confirmation_patterns
+from .urls_website import public_patterns as website_patterns
+from .urls_p2 import public_patterns as p2_patterns
+
+urlpatterns = [*p2_patterns, *confirmation_patterns, *website_patterns,
     path('<slug:makerspace_slug>/my-bookings/calendar/', BookingFeedSettingsView.as_view(), name='member-booking-feed-settings'),
     path('<slug:makerspace_slug>/bookings/calendar/<str:raw_token>.ics', PublicBookingFeedView.as_view(), name='public-booking-feed'),
     path('<slug:makerspace_slug>/my-bookings/<uuid:public_token>/reschedule/', MemberBookingRescheduleView.as_view(), name='member-booking-reschedule'),

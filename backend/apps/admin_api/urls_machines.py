@@ -1,5 +1,7 @@
 from django.urls import path
 
+from apps.admin_api.views_machine_downtime import MachineDowntimeView, MachineLockoutView
+
 from apps.admin_api.views_machine_candidates import MachineOperatorCandidatesView
 from apps.admin_api.views_machine_consumables import (
     MachineConsumableCandidatesView,
@@ -37,7 +39,10 @@ from apps.admin_api.views_machines_actions import (
 )
 
 
+from .views_machine_usage_candidates import MachineUsageCandidatesView
+
 urlpatterns = [
+    path("machines/<int:pk>/usage-candidates", MachineUsageCandidatesView.as_view(), name="admin-machine-usage-candidates"),
     path(
         'makerspace/<int:makerspace_id>/machines',
         MachineListCreateView.as_view(),
@@ -83,6 +88,9 @@ urlpatterns = [
         MachineSetStatusView.as_view(),
         name='admin-machine-set-status',
     ),
+    # Lane L12: the downtime ledger and maintenance lockout (machines.maintenance).
+    path('machines/<int:pk>/downtime', MachineDowntimeView.as_view(), name='admin-machine-downtime'),
+    path('machines/<int:pk>/lockout', MachineLockoutView.as_view(), name='admin-machine-lockout'),
     path(
         'machines/<int:pk>/retire',
         MachineRetireView.as_view(),
@@ -158,4 +166,23 @@ urlpatterns = [
         MachineErrorLogView.as_view(),
         name='admin-machine-error-logs',
     ),
+]
+
+# Lane L23: metered machine sessions (#158), behind `machines.sessions`.
+from apps.admin_api.views_machine_session_settings import MachineTypeSessionSettingsView  # noqa: E402
+from apps.admin_api.views_machine_sessions import (  # noqa: E402
+    MachineSessionAmendView, MachineSessionAssignView, MachineSessionConfirmView, MachineSessionListView,
+    MachineSessionStopView,
+)
+
+urlpatterns += [
+    path('makerspaces/<int:makerspace_id>/machine-sessions', MachineSessionListView.as_view(),
+         name='admin-machine-sessions'),
+    path('machine-sessions/<int:pk>/stop', MachineSessionStopView.as_view(), name='admin-machine-session-stop'),
+    path('machine-sessions/<int:pk>/amend', MachineSessionAmendView.as_view(), name='admin-machine-session-amend'),
+    path('machine-sessions/<int:pk>/assign', MachineSessionAssignView.as_view(), name='admin-machine-session-assign'),
+    path('machine-sessions/<int:pk>/confirm', MachineSessionConfirmView.as_view(),
+         name='admin-machine-session-confirm'),
+    path('makerspaces/<int:makerspace_id>/machine-types/<int:type_id>/session-settings',
+         MachineTypeSessionSettingsView.as_view(), name='admin-machine-type-session-settings'),
 ]

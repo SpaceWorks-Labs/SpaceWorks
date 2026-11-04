@@ -7,6 +7,7 @@ from apps.audit import services as audit
 from apps.boxes.models import Box
 from apps.inventory.models import Category, InventoryProduct
 from apps.makerspaces import limits
+from apps.operations.cloud_jobs import bounded
 
 
 def apply_import(actor, makerspace, rows, mapping, progress_callback=None, allow_partial=False):
@@ -33,6 +34,7 @@ def apply_import(actor, makerspace, rows, mapping, progress_callback=None, allow
             adding=len(import_names - existing_names),
         )
         for item in preview["rows"]:
+            bounded.check()
             if item["action"] == "error":
                 continue
             try:

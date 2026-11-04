@@ -52,7 +52,6 @@ export const CARD_FRONT_FIELDS = [
   "issued_at",
   "membership_role",
 ] as const;
-export type CardFrontField = (typeof CARD_FRONT_FIELDS)[number];
 
 export type CardTemplate = {
   version: number;

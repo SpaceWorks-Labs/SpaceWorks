@@ -46,6 +46,7 @@ function useRegistrationAction(
         queryClient.invalidateQueries({ queryKey: eventKeys.detail(eventId) }),
         queryClient.invalidateQueries({ queryKey: eventKeys.list(makerspaceId) }),
         queryClient.invalidateQueries({ queryKey: organizedEventKeys.all }),
+        queryClient.invalidateQueries({ queryKey: ["events", "accessible"] }),
       ]);
     },
   });
@@ -58,7 +59,7 @@ export function useMarkEventAttended(
 ) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (registrationId: number) => staffRequest<EventRegistration>(
+    mutationFn: (registrationId: number) => staffRequest<EventRegistration | Pick<EventRegistration, "id" | "event_id" | "name" | "status">>(
       staffPath(MARK_ATTENDED_PATH, { id: registrationId }),
       { method: "POST", body: JSON.stringify({ source }) },
     ),
@@ -68,6 +69,7 @@ export function useMarkEventAttended(
         queryClient.invalidateQueries({ queryKey: eventKeys.detail(eventId) }),
         queryClient.invalidateQueries({ queryKey: eventKeys.list(makerspaceId) }),
         queryClient.invalidateQueries({ queryKey: eventKeys.checkinHistory(eventId) }),
+        queryClient.invalidateQueries({ queryKey: ["events", "accessible"] }),
         queryClient.invalidateQueries({ queryKey: organizedEventKeys.all }),
       ]);
     },

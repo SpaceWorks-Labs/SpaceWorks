@@ -53,10 +53,5 @@ class KitExpectationSerializer(serializers.Serializer):
     issue_present = serializers.IntegerField(required=False)
 
 
-class KitSnapshotSerializer(KitExpectationSerializer):
-    present = serializers.IntegerField()
-    baseline = serializers.IntegerField(required=False)
-
-
 class KitPreviewSerializer(serializers.Serializer):
     components = KitExpectationSerializer(many=True)

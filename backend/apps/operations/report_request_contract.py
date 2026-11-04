@@ -18,6 +18,19 @@ class RetentionFilterSerializer(serializers.Serializer):
     months = serializers.IntegerField(required=False, min_value=1, max_value=120)
 
 
+SUBJECT_REPORT_DESCRIPTION = (
+    "Subject reports require live resource management plus tenant VIEW_AUDIT. "
+    "For bookable_space use booking-resource-utilization, booking-reservations or booking-answers; "
+    "bookings.analytics / bookings.exports must be enabled. Resource PDF requires tenant MANAGE_BOOKINGS, "
+    "bookings.utilization_pdf and complete start/end dates. Dates are tenant-local, end inclusive; "
+    "reservation detail includes overlapping windows. No credentials are exported. "
+    "Event PDFs require full event management and an ended event. Subjects cannot be scheduled or aggregated. "
+    "Active-loan and return detail rows include count=1 for chart summaries of returned rows. "
+    "Event, booking and audit detail exports retain their explicit column allowlists and use table specs. "
+    "FabLab health rows include makerspace_id in tenant previews."
+)
+
+
 DATE_RANGE_PARAMETERS = [
     OpenApiParameter("start", OpenApiTypes.DATE, OpenApiParameter.QUERY),
     OpenApiParameter("end", OpenApiTypes.DATE, OpenApiParameter.QUERY),
@@ -28,6 +41,8 @@ PAYMENT_FILTER_PARAMETERS = [
     OpenApiParameter("subject_type", OpenApiTypes.STR, OpenApiParameter.QUERY, enum=Payment.SubjectType.values),
 ]
 PREVIEW_PARAMETERS = [
+    OpenApiParameter("subject_kind", OpenApiTypes.STR, OpenApiParameter.QUERY, description="Typed tenant-local subject (event or bookable_space), paired with subject_id. Booking resources require manage_reservations plus tenant VIEW_AUDIT; resource PDF requires tenant MANAGE_BOOKINGS and both dates. Subject filters cannot be scheduled or aggregated."),
+    OpenApiParameter("subject_id", OpenApiTypes.INT, OpenApiParameter.QUERY),
     OpenApiParameter("limit", OpenApiTypes.INT, OpenApiParameter.QUERY),
     *DATE_RANGE_PARAMETERS,
     *PAYMENT_FILTER_PARAMETERS,
@@ -56,12 +71,18 @@ FILTER_SERIALIZERS = {
 
 
 def _report_filters(request, report_key):
+    from .report_subjects import SubjectFilterSerializer, SUBJECTS
+    subjects = SubjectFilterSerializer(data=request.query_params)
+    subjects.is_valid(raise_exception=True)
+    values = dict(subjects.validated_data)
+    if values and not any(report_key in adapter.report_keys for adapter in SUBJECTS.values()):
+        raise ValidationError({"subject_kind": "Unsupported subject for this report."})
     serializer_class = FILTER_SERIALIZERS.get(report_key)
     if serializer_class is None:
-        return {}
+        return values
     serializer = serializer_class(data=request.query_params)
     serializer.is_valid(raise_exception=True)
-    return serializer.validated_data
+    return {**serializer.validated_data, **values}
 
 
 def _grain_param(request, definition):

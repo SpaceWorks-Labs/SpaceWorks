@@ -3,6 +3,8 @@ from django.db import models
 
 from unfold.admin import ModelAdmin
 
+from apps.accounts.admin_pii_masking import PiiMaskingAdminMixin
+
 from apps.machines import services
 from apps.machines.models import (
     Machine,
@@ -13,8 +15,6 @@ from apps.machines.models import (
     MachineType,
     MachineUsageEntry,
     PrintingCutoverRepair,
-    RoleMachineScope,
-    RoleMachineTypeScope,
     PrintingCutoverState,
     MachineConsumablePool,
     MachineConsumableAdjustment,
@@ -37,8 +37,9 @@ class MachineTypeAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
     formfield_overrides = {
         models.JSONField: {
             "help_text": (
-                "requires_booking is not yet enforced. Machine time bookings are "
-                "not available; this flag does not block service requests or job starts."
+                "requires_booking: with Machine time booking on, a person using a machine of "
+                "this type must hold a live booking on it, and nobody may start a job while "
+                "someone else holds it."
             ),
         },
     }
@@ -133,7 +134,7 @@ class MachineOperatorAdmin(_ReadOnlyMachineChildAdmin):
 
 
 @admin.register(MachineUsageEntry)
-class MachineUsageEntryAdmin(_ReadOnlyMachineChildAdmin):
+class MachineUsageEntryAdmin(PiiMaskingAdminMixin, _ReadOnlyMachineChildAdmin):
     list_display = ("id", "machine", "hours", "source", "logged_by", "created_at")
     list_filter = ("source",)
     search_fields = ("machine__name",)
@@ -210,7 +211,7 @@ class MachineConsumableAdjustmentAdmin(_ReadOnlyMachineChildAdmin):
 
 
 @admin.register(MachineServiceRequest)
-class MachineServiceRequestAdmin(_ReadOnlyMachineChildAdmin):
+class MachineServiceRequestAdmin(PiiMaskingAdminMixin, _ReadOnlyMachineChildAdmin):
     list_display = ("id", "title", "bucket", "assigned_machine", "status", "created_at")
     list_filter = ("status", "assigned_machine", "bucket__machine")
     search_fields = ("title", "requester_name", "contact_email")
@@ -231,32 +232,3 @@ class ServiceRequestConsumptionAdmin(_ReadOnlyMachineChildAdmin):
     list_filter = ("outcome", "measurement", "machine_consumable__machine")
     search_fields = ("service_request__title", "machine_consumable__label", "machine_consumable__machine__name")
     raw_id_fields = ("service_request", "machine_consumable", "product", "created_by")
-
-
-@admin.register(RoleMachineTypeScope)
-class RoleMachineTypeScopeAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
-    """Which machine types a role's MANAGE_MACHINES grant reaches.
-
-    Writable here on purpose: this is the break-glass surface for a deployment that has
-    scoped a role down to nothing by accident, and the alternative is a shell. Staff edit
-    these through the role editor, which enforces the tenant match; the admin is
-    superadmin-only and `role_scope` re-checks the makerspace at resolution anyway, so a
-    bad row written here is inert rather than a cross-tenant leak.
-    """
-
-    list_display = ("id", "role", "machine_type", "created_at")
-    list_filter = ("role__makerspace",)
-    search_fields = ("role__name", "machine_type__name")
-    raw_id_fields = ("role", "machine_type")
-    readonly_fields = ("created_at",)
-
-
-@admin.register(RoleMachineScope)
-class RoleMachineScopeAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
-    """Which individual machines a role's MANAGE_MACHINES grant reaches."""
-
-    list_display = ("id", "role", "machine", "created_at")
-    list_filter = ("role__makerspace",)
-    search_fields = ("role__name", "machine__name")
-    raw_id_fields = ("role", "machine")
-    readonly_fields = ("created_at",)

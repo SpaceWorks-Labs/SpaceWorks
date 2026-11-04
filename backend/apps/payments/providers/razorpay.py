@@ -1,10 +1,4 @@
-"""Razorpay, via Payment Links.
-
-Payment Links rather than Orders + Checkout.js: the rest of this codebase hands the
-member a URL and lets the vendor host the page (that is what Stripe Checkout gives us),
-and an Orders-based flow would need a Razorpay JS widget embedded in the member area --
-a second, differently-shaped payment UI to maintain. ``short_url`` is the direct
-analogue of ``session.url``.
+"""Razorpay Payment Links for browsers and Orders for native Checkout.
 
 **Self-host / own-account only, by owner decision.** Razorpay has no equivalent of
 Stripe Connect in this design, so there is no way to route a platform fee or to charge
@@ -24,7 +18,9 @@ import logging
 import urllib.error
 import urllib.request
 from base64 import b64encode
+from urllib.parse import quote, urlencode
 
+from apps.payments.method_labels import razorpay_label
 from apps.payments.providers.base import (
     RAZORPAY,
     CheckoutRequest,
@@ -53,6 +49,23 @@ REFUND_STATUSES = {
     "created": "pending",
     "failed": "failed",
 }
+
+
+class RazorpayRequestError(PaymentsUnavailable):
+    """Sanitized public message; provider diagnostics are retained only for recovery."""
+
+    def __init__(self, status, code="", description=""):
+        super().__init__("Razorpay rejected the request.")
+        self.status, self.code, self.description = status, code, description
+
+    @property
+    def is_duplicate_receipt(self):
+        description = self.description.lower()
+        return (
+            self.status == 400 and self.code == "BAD_REQUEST_ERROR"
+            and "receipt" in description
+            and any(word in description for word in ("unique", "duplicate", "already"))
+        )
 
 
 class RazorpayProvider:
@@ -88,12 +101,41 @@ class RazorpayProvider:
             logger.warning(
                 "razorpay_http_error", extra={"status": exc.code, "path": path}
             )
-            raise PaymentsUnavailable("Razorpay rejected the request.") from exc
+            try:
+                error = json.loads(exc.read().decode()).get("error", {})
+                code, description = error.get("code", ""), error.get("description", "")
+            except (ValueError, AttributeError, OSError):
+                code, description = "", ""
+            raise RazorpayRequestError(
+                exc.code, str(code), str(description)
+            ) from None
         except (urllib.error.URLError, TimeoutError, ValueError) as exc:
             logger.warning("razorpay_unreachable", extra={"path": path})
             raise PaymentsUnavailable("Razorpay could not be reached.") from exc
 
     # ---- Provider protocol -----------------------------------------------------
+
+    def create_order(self, source, *, amount_minor, currency, receipt, notes):
+        return self._request(source, "POST", "/orders", {
+            "amount": amount_minor, "currency": currency.upper(), "receipt": receipt,
+            "notes": {key: str(value) for key, value in notes.items()},
+        })
+
+    def fetch_order(self, source, order_id):
+        return self._request(source, "GET", f"/orders/{quote(order_id, safe='')}")
+
+    def fetch_orders_by_receipt(self, source, receipt):
+        orders, skip = [], 0
+        while True:
+            query = urlencode({"receipt": receipt, "count": 100, "skip": skip})
+            result = self._request(source, "GET", f"/orders?{query}")
+            items = result.get("items") if isinstance(result, dict) else None
+            if not isinstance(items, list):
+                raise PaymentsUnavailable("Razorpay returned an invalid order list.")
+            orders.extend(items)
+            if len(items) < 100:
+                return orders
+            skip += len(items)
 
     def create_checkout(self, source, request: CheckoutRequest) -> CheckoutResult:
         payload = {
@@ -179,6 +221,7 @@ class RazorpayProvider:
         payment = (entities.get("payment") or {}).get("entity") or {}
         order = (entities.get("order") or {}).get("entity") or {}
         refund = (entities.get("refund") or {}).get("entity") or {}
+        dispute = (entities.get("dispute") or {}).get("entity") or {}
 
         # Razorpay does not send a top-level event id, so the delivery id header is the
         # idempotency anchor. Falling back to the entity id keeps the record unique per
@@ -193,10 +236,18 @@ class RazorpayProvider:
             event_id=event_id,
             is_paid=event_type in PAID_EVENTS,
             is_failed=event_type == "payment.failed",
+            amount_minor=int(payment.get("amount") or order.get("amount") or link.get("amount") or 0),
+            currency=payment.get("currency") or order.get("currency") or link.get("currency") or "",
             order_id=link.get("id") or order.get("id") or payment.get("order_id") or "",
-            payment_id=payment.get("id") or refund.get("payment_id") or "",
+            payment_id=payment.get("id") or refund.get("payment_id") or dispute.get("payment_id") or "",
             metadata=link.get("notes") or payment.get("notes") or order.get("notes") or {},
             refund_id=refund.get("id") or "",
             refund_status=REFUND_STATUSES.get(refund.get("status") or "", ""),
             refund_amount_minor=int(refund.get("amount") or 0),
+            method_label=razorpay_label(payment),
+            dispute_id=dispute.get("id") or "",
+            dispute_status=str(dispute.get("status") or event_type.rpartition(".")[2] or "")[:32],
+            dispute_reason=str(dispute.get("reason_code") or dispute.get("reason_description") or "")[:64],
+            dispute_amount_minor=int(dispute.get("amount") or 0),
+            event_type=event_type,
         )

@@ -1,3 +1,7 @@
+import { SettingsQueryState } from "./SettingsQueryState";
+import { ErrorBlock } from "../../components/ui";
+import { SettingsEditorActions } from "./SettingsEditorActions";
+import { SettingsRow } from "../../components/ui";
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -37,11 +41,11 @@ export function MakerspaceProfileSettings({ makerspaceId }: { makerspaceId: numb
   });
   useEffect(() => { mutation.reset(); }, [makerspaceId, mutation.reset]);
   const changed = () => { setDirty(true); setSaved(false); setError(null); };
-  return <section className="min-w-0 rounded-md border border-line bg-bg p-4" aria-labelledby="location-hours-heading">
-    <h3 id="location-hours-heading" className="text-base font-semibold text-ink">Location &amp; hours</h3>
-    <p className="my-2 text-sm text-muted">Times use this makerspace&apos;s timezone. Hours are informational until a workflow uses them. Currency is the same default used by payment settings; existing charges keep their currency. Country stays private to staff.</p>
-    {query.isPending ? <p role="status">Loading profile...</p> : null}
-    {query.error ? <p role="alert">{query.error.message} <button className="desk-button" type="button" onClick={() => void query.refetch()}>Retry</button></p> : null}
+  return <SettingsQueryState query={query} resource="profile"><><div className="grid min-w-0 gap-4">
+
+
+    {query.isPending ? <p role="status">Loading profile…</p> : null}
+    {query.error ? <ErrorBlock error={new Error("Couldn't load profile. Try again.")} onRetry={() => { void query.refetch(); }} /> : null}
     {draft ? <form className="grid gap-4" onSubmit={event => {
       event.preventDefault();
       const invalid = validateHours(hours) ?? (!/^[a-z]{3}$/.test(draft.default_currency) ? "Enter a three-letter currency code." : null);
@@ -60,26 +64,28 @@ export function MakerspaceProfileSettings({ makerspaceId }: { makerspaceId: numb
     }}>
       <fieldset className="grid gap-4" disabled={mutation.isPending}>
         <legend className="sr-only">Profile fields</legend>
-        <label className="grid gap-1 text-sm font-semibold">Timezone
-          <select className="desk-input" value={draft.timezone} onChange={event => { changed(); setDraft({ ...draft, timezone: event.target.value }); }}>
+        <SettingsRow label="Timezone" htmlFor="profile-timezone" helper="Use local time for opening hours, reminders and bookings.">
+          <select id="profile-timezone" className="desk-input max-w-full" value={draft.timezone} onChange={event => { changed(); setDraft({ ...draft, timezone: event.target.value }); }}>
             {draft.timezone_choices.map(zone => <option key={zone}>{zone}</option>)}
           </select>
-        </label>
-        <label className="grid gap-1 text-sm font-semibold">Country
-          <select className="desk-input" value={draft.country} onChange={event => { changed(); setDraft({ ...draft, country: event.target.value }); }}>
+        </SettingsRow>
+        <SettingsRow label="Country" htmlFor="profile-country" helper="Visible to staff only.">
+          <select id="profile-country" className="desk-input max-w-full" value={draft.country} onChange={event => { changed(); setDraft({ ...draft, country: event.target.value }); }}>
             <option value="">Unspecified</option>
             {draft.country_choices.map(code => <option key={code} value={code}>{countryLabel(code)}</option>)}
           </select>
-        </label>
-        <label className="grid gap-1 text-sm font-semibold">Default currency
-          <input className="desk-input" maxLength={3} value={draft.default_currency} onChange={event => { changed(); setDraft({ ...draft, default_currency: event.target.value.toLowerCase() }); }} />
-        </label>
-        <MakerspaceHoursEditor value={hours} onChange={value => { changed(); setHours(value); }} />
+        </SettingsRow>
+        <SettingsRow label="Default currency" htmlFor="profile-currency" helper="Used by payment settings. Existing charges keep their currency.">
+          <input id="profile-currency" className="desk-input" maxLength={3} value={draft.default_currency} onChange={event => { changed(); setDraft({ ...draft, default_currency: event.target.value.toLowerCase() }); }} />
+        </SettingsRow>
+        <SettingsRow label="Opening hours" helper="Set weekly hours and dated exceptions in the makerspace timezone.">
+          <MakerspaceHoursEditor value={hours} onChange={value => { changed(); setHours(value); }} />
+        </SettingsRow>
       </fieldset>
       {error ? <p role="alert" className="text-danger">{error}</p> : null}
       {mutation.error ? <p role="alert" className="text-danger">{mutation.error.message}{mutation.error instanceof StructuredApiError && mutation.error.body.fields && typeof mutation.error.body.fields === "object" ? ` ${Object.entries(mutation.error.body.fields).map(([field, messages]) => `${field}: ${messages}`).join("; ")}` : ""}</p> : null}
       {saved ? <p role="status">Saved.</p> : null}
-      <button className="desk-button-primary w-fit" disabled={!dirty || mutation.isPending} type="submit">{mutation.isPending ? "Saving..." : "Save location & hours"}</button>
+      <SettingsEditorActions dirty={dirty} onDiscard={() => { setDraft(baseline); setHours(hoursDraft(baseline?.opening_hours ?? {})); setDirty(false); setError(null); setSaved(false); }} pending={mutation.isPending} disabled={!dirty || mutation.isPending} />
     </form> : null}
-  </section>;
+  </div></></SettingsQueryState>;
 }

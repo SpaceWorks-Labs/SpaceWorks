@@ -5,7 +5,6 @@ from contextvars import ContextVar
 from django.db import transaction
 from django.utils import timezone
 
-from apps.backup.not_restored import TenantNotRestored, assert_restored
 from apps.tenant_migration.gate_errors import SourceMigrationGateClosed
 from apps.tenant_migration.gate_locks import acquire_shared, shared_boundary
 from apps.tenant_migration.models_source_gate import SourceMigrationGate
@@ -19,11 +18,14 @@ logger = logging.getLogger(__name__)
 def assert_write_allowed(makerspace_id):
     """Lock and validate in either a service transaction or a gate boundary."""
     makerspace_id = int(makerspace_id)
-    if transaction.get_connection().in_atomic_block:
-        acquire_shared(makerspace_id)
+    # A boundary already protects all application transactions through commit.
+    # Reacquiring on another connection can queue behind an exclusive waiter that
+    # is itself waiting for our boundary, so consult boundary ownership FIRST.
+    if makerspace_id in _boundary_shared_locks.get():
         _assert_gate_state(makerspace_id)
         return
-    if makerspace_id in _boundary_shared_locks.get():
+    if transaction.get_connection().in_atomic_block:
+        acquire_shared(makerspace_id)
         _assert_gate_state(makerspace_id)
         return
     # A direct non-transactional assertion is supported for boundary-style callers.
@@ -34,7 +36,6 @@ def assert_write_allowed(makerspace_id):
 
 
 def _assert_gate_state(makerspace_id):
-    assert_restored(makerspace_id)
     gate = SourceMigrationGate.objects.only(
         "state", "purpose", "owner_id", "fencing_token", "lease_expires_at"
     ).filter(makerspace_id=makerspace_id).first()
@@ -57,6 +58,10 @@ def _assert_gate_state(makerspace_id):
 def boundary_tenant_write(makerspace_id):
     """Validate under a dedicated lock transaction without transacting dispatch."""
     makerspace_id = int(makerspace_id)
+    if makerspace_id in _boundary_shared_locks.get():
+        assert_write_allowed(makerspace_id)
+        yield
+        return
     with shared_boundary(makerspace_id):
         token = _boundary_shared_locks.set(
             _boundary_shared_locks.get() + (makerspace_id,)
@@ -75,7 +80,7 @@ def fanout_tenant_write(makerspace_id, *, operation, counts):
     with ExitStack() as stack:
         try:
             stack.enter_context(boundary_tenant_write(makerspace_id))
-        except (SourceMigrationGateClosed, TenantNotRestored):
+        except SourceMigrationGateClosed:
             counts["skipped"] = counts.get("skipped", 0) + 1
             logger.info(
                 "tenant_fanout_skipped_closed_source_gate",

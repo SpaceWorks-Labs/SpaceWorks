@@ -2,6 +2,7 @@
 
 from apps.makerspaces.local_time import local_day_bounds
 from apps.makerspaces.models import Makerspace
+from apps.accounts import rbac
 from apps.operations.report_scope import scoped_ids
 from apps.operations.report_date_ranges import CalendarDateRange
 from apps.payments.models import ManualSettlement, Payment, PaymentDocument, Refund
@@ -26,10 +27,13 @@ def in_window(at, bounds):
     return at is not None and (start is None or at >= start) and (end is None or at < end)
 
 
-def finance_sources(makerspace_id, *, date_range=None, subject_type=None, status=None):
+def finance_sources(makerspace_id, *, date_range=None, subject_type=None, status=None, actor=None):
     ids = scoped_ids(makerspace_id)
     spaces = {space.pk: space for space in Makerspace.objects.filter(pk__in=ids)}
-    payments = Payment.objects.filter(makerspace_id__in=ids).order_by("pk")
+    payments = Payment.objects.filter(makerspace_id__in=ids)
+    if actor is not None:
+        payments = rbac.scope_by_action(actor, rbac.Action.VIEW_FINANCE, payments)
+    payments = payments.order_by("pk")
     if subject_type:
         payments = payments.filter(subject_type=subject_type)
     if status:

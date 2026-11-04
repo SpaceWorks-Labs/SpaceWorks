@@ -1,3 +1,4 @@
+from django.http import Http404
 from django.db.models import Exists
 from django.shortcuts import get_object_or_404
 from drf_spectacular.types import OpenApiTypes
@@ -21,7 +22,9 @@ from apps.operations.views_reports import (
     _limit_param,
     _report_filters,
 )
+from .report_request_contract import _grain_param
 from apps.organizations.models import Organization, OrganizationMembership
+from apps.accounts.native_session import is_native_session
 
 
 class InvalidOrganizationReport(APIException):
@@ -54,6 +57,9 @@ def _organization_for_report(actor, organization_id, definition):
     resolve_organization_report_scope simply returns an empty scope, so "you may not" and
     "you own nothing" would look identical to the caller.
     """
+    if is_native_session(actor):
+        # Native device sessions are membership-only; same 404 as any non-qualifying actor.
+        raise Http404
     qualifying = OrganizationMembership.objects.filter(
         organization_id=organization_id,
         organization__is_active=True,
@@ -90,7 +96,9 @@ class OrganizationAnalyticsView(APIView):
         description=(
             "Requires an active organization membership carrying the report's action. "
             "Authorization and the owned-makerspace set are resolved server-side; a "
-            "combined total is always returned together with its per-makerspace breakdown."
+            "combined total is always returned together with its per-makerspace breakdown. "
+            "A chart_spec projected onto the aggregation strategy's total fields accompanies "
+            "combinable charts; null means a table-only combined projection."
         ),
         request=None,
         parameters=[
@@ -101,6 +109,7 @@ class OrganizationAnalyticsView(APIView):
             OpenApiParameter("limit", OpenApiTypes.INT, OpenApiParameter.QUERY),
             *DATE_RANGE_PARAMETERS,
             *PAYMENT_FILTER_PARAMETERS,
+            OpenApiParameter("grain", OpenApiTypes.STR, OpenApiParameter.QUERY, enum=["day", "week", "month"]),
         ],
         responses={
             200: OrganizationReportResponseSerializer,
@@ -108,6 +117,8 @@ class OrganizationAnalyticsView(APIView):
         },
     )
     def get(self, request, organization_id, report_key, *args, **kwargs):
+        from .report_subjects import reject_aggregate
+        reject_aggregate(request.query_params)
         definition = reports.validate_report_key(report_key)
         organization = _organization_for_report(
             request.user, organization_id, definition
@@ -116,12 +127,20 @@ class OrganizationAnalyticsView(APIView):
             scope = resolve_organization_report_scope(
                 request.user, organization, definition
             )
+            if report_key == "organization-membership":
+                from .reports_j_organizations import organization_membership_data
+                return Response(organization_membership_data(
+                    organization, scope, limit=_limit_param(request), date_range=_date_range(request),
+                    grain=_grain_param(request, definition),
+                ))
             data = org_reports.organization_report_data(
                 definition,
                 scope,
                 limit=_limit_param(request),
                 date_range=_date_range(request),
                 report_filters=_report_filters(request, report_key),
+                grain=_grain_param(request, definition),
+                actor=request.user,
             )
         except (OrganizationReportScopeError, org_reports.OrganizationAggregationError) as exc:
             raise InvalidOrganizationReport(exc) from exc

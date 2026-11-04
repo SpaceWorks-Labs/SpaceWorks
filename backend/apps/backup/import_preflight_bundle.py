@@ -119,21 +119,6 @@ def _component_facts(manifest):
                 main["path"], main["size_bytes"], main["ciphertext_sha256"]
             )
         ]
-        slices = manifest["slice_components"]
-        for item in slices:
-            if item["ciphertext_path"] != (
-                f"slices/{item['component_id']}.tar.age"
-            ):
-                raise ValueError
-            declared.append(
-                _component_fact(
-                    item["ciphertext_path"],
-                    item["size_bytes"],
-                    item["ciphertext_sha256"],
-                )
-            )
-        if len({item[0] for item in declared}) != len(declared):
-            raise ValueError
         mirrored = [
             _component_fact(item["path"], item["size"], item["sha256"])
             for item in manifest["contents"]
@@ -146,30 +131,12 @@ def _component_facts(manifest):
                 for item in manifest[ledger_name]
             ):
                 raise ValueError
-        _validate_compatibility_slices(slices, manifest["slices"])
         return declared
     except (KeyError, TypeError, ValueError) as exc:
         raise ImportPreflightError(
             "component_policy",
             "the signed component declarations are invalid or inconsistent.",
         ) from exc
-
-
-def _validate_compatibility_slices(primary, compatibility):
-    if not isinstance(compatibility, list) or len(compatibility) != len(primary):
-        raise ValueError
-    for source, mirror in zip(primary, compatibility, strict=True):
-        if not isinstance(mirror, dict) or (
-            mirror.get("slice_id") != source["component_id"]
-            or mirror.get("component_id") != source["component_id"]
-            or mirror.get("makerspace_id") != source["makerspace_id"]
-            or mirror.get("path") != source["ciphertext_path"]
-            or mirror.get("size_bytes") != source["size_bytes"]
-            or mirror.get("ciphertext_sha256") != source["ciphertext_sha256"]
-            or mirror.get("recipient_fingerprints")
-            != source["recipient_fingerprints"]
-        ):
-            raise ValueError
 
 
 def _component_fact(path, size, digest):
@@ -203,7 +170,7 @@ def _is_main_object_member(name):
 
 
 def _is_allowed_directory(name):
-    return name in {".", "keys", "objects", "slices"} or (
+    return name in {".", "keys", "objects"} or (
         name == "objects/private"
         or name.startswith("objects/private/")
         or name == "objects/public_image"

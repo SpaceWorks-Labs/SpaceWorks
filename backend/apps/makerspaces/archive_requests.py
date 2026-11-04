@@ -12,6 +12,7 @@ from apps.makerspaces.archive_request_notifications import (
 )
 from apps.makerspaces.models import Makerspace, MakerspaceArchiveRequest
 from apps.makerspaces.servability import is_servable
+from .lifecycle_authority import require_platform_superadmin
 
 COOLDOWN = timedelta(hours=1)
 DIRECT_ARCHIVE_NOTE = "Approved automatically because a superadmin archived the makerspace directly."
@@ -49,12 +50,6 @@ def create(makerspace, actor, reason):
                     "An unavailable makerspace cannot request archival.",
                     "makerspace_already_archived",
                 )
-            if not locked.superadmin_access_enabled:
-                raise ArchiveRequestConflict(
-                    "Enable superadmin access before requesting archival.",
-                    "superadmin_access_disabled",
-                )
-
             requests = list(
                 MakerspaceArchiveRequest.objects.select_for_update()
                 .filter(makerspace=locked)
@@ -123,6 +118,7 @@ def withdraw(archive_request, actor):
 
 
 def approve(archive_request, actor, resolution_note=""):
+    require_platform_superadmin(actor)
     note = _optional_note(resolution_note)
     with transaction.atomic():
         locked_space = Makerspace.objects.select_for_update().get(
@@ -153,6 +149,7 @@ def approve(archive_request, actor, resolution_note=""):
 
 
 def decline(archive_request, actor, resolution_note):
+    require_platform_superadmin(actor)
     note = (resolution_note or "").strip()
     if not note:
         raise ValidationError({"resolution_note": "Explain why the request was declined."})
@@ -185,6 +182,7 @@ def decline(archive_request, actor, resolution_note):
 
 
 def direct_archive(makerspace, actor):
+    require_platform_superadmin(actor)
     with transaction.atomic():
         locked_space = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
         pending = (

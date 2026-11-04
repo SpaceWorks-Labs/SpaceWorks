@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import replace
+from contextlib import contextmanager
 from pathlib import Path
 import subprocess
 from urllib.parse import quote, unquote, urlsplit, urlunsplit
@@ -83,8 +84,13 @@ class PostgresSiblingLifecycle:
         self.runtime_role, self.runtime_password = _runtime_credentials(runtime_url)
         self._last = None
 
+    @contextmanager
     def _connect(self, url=None):
-        return psycopg2.connect(url or self.maintenance_url)
+        from config.cloud_database import connect_database, database_spec
+        # Preserve transaction-on-success semantics and close the physical session.
+        with connect_database(database_spec(url or self.maintenance_url), autocommit=False) as database:
+            with database:
+                yield database
 
     def privilege_facts(self):
         try:
@@ -222,15 +228,14 @@ class PostgresSiblingLifecycle:
         )
 
     def restore(self, sibling, dump_path):
+        from config.cloud_database import database_spec
+        from apps.backup.postgres_client import run_client
         try:
-            with pg_restore_process_inputs(sibling.database_url) as environment:
-                subprocess.run([
-                    client_binary("pg_restore", self.target_major), "--exit-on-error",
-                    "--no-owner", "--no-acl", str(Path(dump_path)),
-                ], env=environment, check=True, stdout=subprocess.DEVNULL,
-                    stderr=subprocess.PIPE)
-        except (OSError, subprocess.CalledProcessError) as exc:
-            raise TenantRestoreRefused("pg_restore failed for the empty sibling.") from exc
+            run_client("pg_restore", ["--exit-on-error", "--no-owner", "--no-acl", str(Path(dump_path))],
+                       spec=database_spec(sibling.database_url), major=self.target_major, timeout=3600,
+                       binary=client_binary("pg_restore", self.target_major))
+        except Exception:
+            raise TenantRestoreRefused("pg_restore failed for the empty sibling.") from None
 
     def apply_runtime_ownership_and_grants(self, sibling):
         with self._connect(sibling.database_url) as connection:

@@ -11,7 +11,12 @@ export type BackupArchive = {
   failure_detail: string;
   expires_at: string | null;
   created_at: string;
+  completed_at: string | null;
   purge_warning: string;
+  trigger: "on_demand" | "nightly" | "safety" | "extracted";
+  format: string;
+  /** A one-space restore point this server can open and restore. */
+  restorable_in_app: boolean;
 };
 
 export type RestoreOperation = {
@@ -34,15 +39,17 @@ export type RestoreOperation = {
 export type BackupSettings = {
   automatic_backups_enabled: boolean;
   retention_days: number;
+  daily_keep_days: number;
+  weekly_keep_weeks: number;
   last_scheduled_at: string | null;
   last_success_at: string | null;
   last_error: string;
 };
 
-export const listTenantBackups = (makerspaceId: number) =>
-  staffRequest<BackupArchive[]>(`/admin/makerspace/${makerspaceId}/backups`);
-export const requestTenantBackup = (makerspaceId: number) =>
-  staffRequest<BackupArchive>(`/admin/makerspace/${makerspaceId}/backups`, { method: "POST", body: "{}" });
+/** The read-only "Last backup" line a makerspace's managers see (owner decision #111 Q2). */
+export type MakerspaceBackupStatus = { last_backed_up_at: string | null; nightly_backups_enabled: boolean };
+export const getMakerspaceBackupStatus = (makerspaceId: number) =>
+  staffRequest<MakerspaceBackupStatus>(`/admin/makerspace/${makerspaceId}/backup-status`);
 export const listDeploymentBackups = () => staffRequest<BackupArchive[]>("/admin/platform/backups");
 export const requestDeploymentBackup = () =>
   staffRequest<BackupArchive>("/admin/platform/backups", { method: "POST", body: "{}" });

@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-
 import { ApiClientCreateCard } from "./ApiClientCreateCard";
 import { ApiClientListCard } from "./ApiClientListCard";
 import {
@@ -21,8 +20,10 @@ import {
   updateApiClientScopes,
 } from "./apiClientsApi";
 import { ApiClientsAccessSummary } from "./ApiClientsAccessSummary";
-import { ApiClientsTelegramSettings } from "./ApiClientsTelegramSettings";
-import { Panel, type Makerspace, useStaffGet } from "./StaffPanels";
+import { SettingsLayout } from "../../components/layouts";
+import { Modal } from "../../components/ui";
+import { ApiClientSecretReveal } from "./ApiClientSecretReveal";
+import { type Makerspace, useStaffGet } from "./StaffPanels";
 
 export function ApiClientsPanel({
   makerspace,
@@ -40,6 +41,9 @@ export function ApiClientsPanel({
   const [scopes, setScopes] = useState<string[]>([]);
   const [submitted, setSubmitted] = useState(false);
   const [oneTimeSecret, setOneTimeSecret] = useState<ApiClientCreateResponse | null>(null);
+  // A rotated secret opens over the list, next to the action, rather than in the create
+  // section above it where a show-once secret could appear off-screen.
+  const [rotatedSecret, setRotatedSecret] = useState<ApiClientCreateResponse | null>(null);
   const requests = useStaffGet<{ results: ApiKeyRequest[] }>(
     apiKeyRequestsQueryKey(makerspace.id),
     `/admin/api-key-requests?makerspace=${makerspace.id}`,
@@ -64,7 +68,6 @@ export function ApiClientsPanel({
   const selectableCreateScopes = scopes.filter((scope) => (
     catalog.some((option) => option.value === scope && option.grantable)
   ));
-
   const requestKey = useMutation({
     mutationFn: () => requestApiKey(makerspace.id, label, reason, splitOrigins(origins)),
     onSuccess: () => {
@@ -99,7 +102,7 @@ export function ApiClientsPanel({
   const rotateClient = useMutation({
     mutationFn: rotateApiClient,
     onSuccess: (rotated) => {
-      setOneTimeSecret(rotated);
+      setRotatedSecret(rotated);
       queryClient.invalidateQueries({ queryKey: apiClientsQueryKey(makerspace.id) });
     },
   });
@@ -111,7 +114,6 @@ export function ApiClientsPanel({
       queryClient.invalidateQueries({ queryKey: apiClientsQueryKey(makerspace.id) });
     },
   });
-
   const handleLabelChange = (value: string) => {
     setLabel(value);
     if (!canManageMakerspace) setSubmitted(false);
@@ -124,11 +126,12 @@ export function ApiClientsPanel({
     setOrigins(value);
     if (!canManageMakerspace) setSubmitted(false);
   };
-
-  return (
-    <Panel title="API access">
-      <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-        <div className="space-y-3">
+  return (<>
+    <Modal open={Boolean(rotatedSecret)} onClose={() => setRotatedSecret(null)} title="New client secret">
+      {rotatedSecret ? <ApiClientSecretReveal secret={rotatedSecret.client_secret} onDismiss={() => setRotatedSecret(null)} /> : null}
+    </Modal>
+    <SettingsLayout header={{ title: "API access", subtitle: `Let your own tools work with ${makerspace.name}, without sharing anyone’s login.` }}
+      state={{ status: "ready" }} sections={[{ id: "new-client", title: canManageMakerspace ? "New API client" : "Request API access", rows: (<>
           <ApiClientCreateCard
             canManageMakerspace={canManageMakerspace}
             label={label}
@@ -142,6 +145,7 @@ export function ApiClientsPanel({
             scopes={selectableCreateScopes}
             scopesLoading={scopeOptions.isLoading}
             scopesError={scopeOptions.error}
+            onRetryScopes={() => { void scopeOptions.refetch(); }}
             onLabelChange={handleLabelChange}
             onReasonChange={handleReasonChange}
             onOriginsChange={handleOriginsChange}
@@ -149,19 +153,16 @@ export function ApiClientsPanel({
             onSubmit={() => canManageMakerspace ? createClient.mutate() : requestKey.mutate()}
             onDismissSecret={() => setOneTimeSecret(null)}
           />
-
-          {isSuperadmin ? <ApiClientsTelegramSettings makerspace={makerspace} /> : null}
-        </div>
-
-        <div className="space-y-3">
-          <ApiClientsAccessSummary makerspace={makerspace} isSuperadmin={isSuperadmin} settings={settings.data} />
-
+          </>) }, { id: "clients", title: canManageMakerspace ? "Clients" : "Your requests", rows: (<>
           <ApiClientListCard
             canManageMakerspace={canManageMakerspace}
             clients={apiClients.data?.results}
             clientsLoading={apiClients.isLoading}
             clientsError={apiClients.error}
+            onRetry={() => { void (canManageMakerspace ? apiClients.refetch() : requests.refetch()); }}
             requests={requests.data?.results}
+            requestsLoading={requests.isLoading}
+            requestsError={requests.error}
             deletePending={deleteClient.isPending}
             deleteError={deleteClient.error}
             rotatePending={rotateClient.isPending}
@@ -169,14 +170,13 @@ export function ApiClientsPanel({
             scopeOptions={catalog}
             scopesLoading={scopeOptions.isLoading}
             scopesError={scopeOptions.error}
+            onRetryScopes={() => { void scopeOptions.refetch(); }}
             scopeUpdatePending={updateScopes.isPending}
             scopeUpdateError={updateScopes.error}
             onDelete={(clientId) => deleteClient.mutate(clientId)}
             onRotate={(clientId) => rotateClient.mutate(clientId)}
             onScopesUpdate={(clientId, nextScopes) => updateScopes.mutate({ clientId, nextScopes })}
           />
-        </div>
-      </div>
-    </Panel>
-  );
+          </>) }, { id: "developer-reference", title: "Developer reference", rows: <ApiClientsAccessSummary makerspace={makerspace} isSuperadmin={isSuperadmin} settings={settings.data} loading={isSuperadmin && settings.isLoading} error={isSuperadmin ? settings.error : null} onRetry={() => { void settings.refetch(); }} /> }]} />
+  </>);
 }

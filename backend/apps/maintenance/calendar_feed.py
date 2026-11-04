@@ -14,7 +14,7 @@ from apps.accounts import rbac
 from apps.audit.services import record
 from apps.machines import access
 from apps.machines.models import Machine
-from apps.makerspaces.guards import require_module
+from apps.makerspaces.folded_capabilities import MACHINES_MAINTENANCE, require_capability
 from apps.makerspaces.models import Makerspace
 from apps.makerspaces.platform import feature_enabled
 from apps.makerspaces.servability import is_servable
@@ -32,8 +32,7 @@ def feed_space(actor, pk):
                                makerspace_field="id"), pk=pk)
     if not actor.is_active or actor.access_status != "active" or not is_servable(space):
         raise PermissionDenied()
-    require_module(space, "maintenance")
-    require_module(space, "machines")
+    require_capability(space, MACHINES_MAINTENANCE)
     if not feature_enabled(space, "maintenance.calendar_feed"):
         raise ValidationError({"detail": "Maintenance calendar feed is disabled."})
     if not scope(actor, space).exists():

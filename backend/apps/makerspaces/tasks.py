@@ -1,8 +1,16 @@
 """Periodic makerspace tasks."""
+from apps.operations.cloud_jobs import bounded
+
 
 from celery import shared_task
 
 from apps.tenant_migration.gate_runtime import fanout_tenant_write
+
+
+@shared_task(name="apps.makerspaces.tasks.cleanup_public_page_assets_task")
+def cleanup_public_page_assets_task():
+    from .public_page_asset_cleanup import sweep
+    return sweep()
 
 
 @shared_task(name="apps.makerspaces.tasks.refresh_github_contributions_task")
@@ -22,7 +30,7 @@ def refresh_github_contributions_task():
     profiles = MemberProfile.objects.select_related("membership").exclude(
         github_username=""
     )
-    for profile in profiles:
+    for profile in bounded.page(profiles, "github-profiles"):
         if not github_contributions.due_for_sync(profile):
             continue
         # `refresh` swallows every failure and keeps the last known count, so one bad
@@ -38,6 +46,8 @@ def refresh_github_contributions_task():
                 counts["updated"] += 1
             else:
                 counts["unavailable"] += 1
+    from .profile_github_tasks import refresh_public_calendars
+    refresh_public_calendars()
     return {"configured": True, **counts}
 
 

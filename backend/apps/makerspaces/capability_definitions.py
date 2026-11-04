@@ -8,6 +8,18 @@ from .capability_definitions_modules import module_family_features
 from .capability_definitions_w7_events import event_features
 from .capability_definitions_wp3 import wp3_features
 from .capability_definitions_wp4 import definitions as wp4_definitions
+from .capability_definitions_yuyu import definitions as yuyu_definitions
+from .capability_definitions_events_programme import programme_features
+from .capability_definitions_r2_l17 import definitions as r2_l17_definitions
+from .capability_definitions_r2_l1 import definitions as r2_l1_definitions
+from .capability_definitions_r2_l2 import definitions as r2_l2_definitions
+from .capability_definitions_r2_l4 import definitions as r2_l4_definitions
+from .capability_definitions_r2_l5 import definitions as r2_l5_definitions
+from .capability_definitions_r2_l15 import definitions as r2_l15_definitions
+from .capability_definitions_r2_l10 import definitions as r2_l10_definitions
+from .capability_definitions_r2_l12 import definitions as r2_l12_definitions
+from .capability_definitions_r2_l19 import definitions as r2_l19_definitions
+from .capability_definitions_r2_l23 import definitions as r2_l23_definitions
 
 
 @dataclass(frozen=True)
@@ -24,6 +36,9 @@ class FeatureDefinition:
     requires_modules: tuple[str, ...] = ()
     requires_features: tuple[str, ...] = ()
     frontend_exposed: bool = True
+    # The separable app whose surfaces this switch gates, when that is not the parent's
+    # app (#97: `machines.maintenance` lives in `maintenance`). A tombstoned app reads off.
+    app_label: str | None = None
 
 
 FEATURE_DEFINITIONS = (
@@ -56,8 +71,14 @@ FEATURE_DEFINITIONS = (
                       "Count kit components at issue and return; retain missing-component accountability."),
     FeatureDefinition("staff.invitations", None, "Staff invitations",
                       "Invite staff with a single-use email link.", default_enabled=True),
-    FeatureDefinition("security.staff_mfa_required", None, "Require MFA for staff",
-                      "Require staff with actions in this space to enroll in TOTP MFA."),
+    # Delight is on for every space unless it turns it off. The deployment flags
+    # (UI_DELIGHT_ENABLED / UI_EASTER_EGGS_ENABLED) remain a global kill switch, and
+    # reduced-motion preferences always win in the browser.
+    FeatureDefinition("ui.delight", None, "Interface effects",
+                      "Artwork, gentle motion and celebration moments.", default_enabled=True),
+    FeatureDefinition("ui.easter_eggs", None, "Easter eggs",
+                      "Hidden playful moments; never on scanner, kiosk or payment screens.",
+                      default_enabled=True),
     FeatureDefinition("membership.vouching", "membership", "Membership vouching",
                       "Require eligible members to vouch before admission."),
     FeatureDefinition("membership.application_form", "membership", "Membership application form",
@@ -140,6 +161,16 @@ FEATURE_DEFINITIONS = (
         "Member self-checkout and staff direct handouts of QR tools.",
         default_enabled=True,
     ),
+    # Owner decisions #91/#95: where Member accounts are off, borrowers may also check a
+    # tool out with no account -- name, phone and an email confirmed by a code. Its own
+    # switch, off by default; returning is never blocked by it.
+    FeatureDefinition(
+        "inventory.contact_self_checkout", None, "Self checkout without an account",
+        "Without Member accounts, borrowers check tools out with name, phone and an "
+        "emailed code. Evidence rules are unchanged; returns always stay open.",
+        default_enabled=False,
+        requires_features=("inventory.self_checkout",),
+    ),
     # The three below are standalone master switches (plan A6). Each is an additive
     # `AND` in front of an existing readiness check, never a replacement -- turning one
     # ON must not make an unconfigured capability start working. They default ENABLED so
@@ -168,17 +199,16 @@ FEATURE_DEFINITIONS = (
         default_enabled=True,
     ),
     FeatureDefinition(
-        "notifications.delegated_recipients", "notifications",
+        "notifications.delegated_recipients", "machines",
         "Delegated maintenance recipients",
         "Let machine-scoped maintainers manage maintenance alert recipients for "
         "their own machines.",
         default_enabled=False,
         # It delegates MAINTENANCE alerts, narrowed by MACHINE scope, so it cannot function
-        # without either module. Declaring only `notifications` let capability validation
-        # accept an unusable combination, and -- worse -- uninstalling `maintenance` or
-        # `machines` did not prune the enabled feature, so reinstalling silently
-        # reactivated delegated access without anybody opting in again.
-        requires_modules=("maintenance", "machines"),
+        # without machine maintenance. Parented to `machines` since #97 folded the old
+        # `maintenance` module key; the key itself is unchanged for data stability.
+        requires_modules=("notifications",),
+        requires_features=("machines.maintenance",),
     ),
     FeatureDefinition(
         "machines.certifications", "machines", "Certification gating",
@@ -192,9 +222,9 @@ FEATURE_DEFINITIONS = (
         requires_modules=("notifications",),
     ),
     FeatureDefinition(
-        "maintenance.reminders", "maintenance", "Maintenance reminders",
+        "maintenance.reminders", "machines", "Maintenance reminders",
         "Notify scoped maintainers before and after maintenance is due.",
-        requires_modules=("machines", "notifications"),
+        requires_modules=("notifications",), requires_features=("machines.maintenance",),
     ),
     FeatureDefinition(
         "events.offline_checkin", "events", "Offline & station check-in",
@@ -210,9 +240,21 @@ FEATURE_DEFINITIONS = (
     ),
 )
 FEATURE_DEFINITIONS += event_features(FeatureDefinition)
+FEATURE_DEFINITIONS += programme_features(FeatureDefinition)
 FEATURE_DEFINITIONS += module_family_features(FeatureDefinition)
 FEATURE_DEFINITIONS += wp3_features(FeatureDefinition)
 FEATURE_DEFINITIONS += wp4_definitions(FeatureDefinition)
+FEATURE_DEFINITIONS += yuyu_definitions(FeatureDefinition)
+FEATURE_DEFINITIONS += r2_l17_definitions(FeatureDefinition)
+FEATURE_DEFINITIONS += r2_l1_definitions(FeatureDefinition)
+FEATURE_DEFINITIONS += r2_l2_definitions(FeatureDefinition)
+FEATURE_DEFINITIONS += r2_l4_definitions(FeatureDefinition)
+FEATURE_DEFINITIONS += r2_l5_definitions(FeatureDefinition)
+FEATURE_DEFINITIONS += r2_l15_definitions(FeatureDefinition)
+FEATURE_DEFINITIONS += r2_l10_definitions(FeatureDefinition)
+FEATURE_DEFINITIONS += r2_l12_definitions(FeatureDefinition)
+FEATURE_DEFINITIONS += r2_l19_definitions(FeatureDefinition)
+FEATURE_DEFINITIONS += r2_l23_definitions(FeatureDefinition)
 FEATURES = {definition.key: definition for definition in FEATURE_DEFINITIONS}
 # A feature's parent/required modules are validated against the module registry
 # rather than a hand-kept set, so adding a module can no longer leave a valid

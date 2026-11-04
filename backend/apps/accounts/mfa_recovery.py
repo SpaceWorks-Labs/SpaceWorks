@@ -1,4 +1,4 @@
-"""Host-only recovery; does not waive the superadmin enrollment floor."""
+"""Host-only recovery of a lost superadmin authenticator; the account returns to password sign-in."""
 
 import uuid
 

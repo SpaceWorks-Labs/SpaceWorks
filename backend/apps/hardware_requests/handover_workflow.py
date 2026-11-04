@@ -199,7 +199,7 @@ def issue_request(actor, request, evidence_id, remark="", asset_qr_payloads=None
         )
         notifications.notify_request_issued(locked)
         request_id = locked.pk
-        transaction.on_commit(lambda: loan_payments.raise_deposit(request_id, actor))
+        transaction.on_commit(lambda: loan_payments.on_request_issued(request_id, actor))
         return locked
 
 def set_return_due(actor, request, return_due_at):

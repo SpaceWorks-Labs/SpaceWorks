@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 
-from apps.accounts import rbac
 from apps.accounts.models import User
 from apps.apiclients.scope_registry import (
     LEGACY_SCOPE,
@@ -47,6 +46,17 @@ _CATALOG = (
     ),
 )
 
+from .scope_registry_reads import read_scope_vocabulary
+from .scope_registry_booking_reads import ARRIVAL_READ, BOOKING_READ, booking_read_catalog
+_CATALOG += tuple(ScopeGrantOption(value, label, description, "Staff integration (operator-only)")
+    for value, label, description in (
+        ("events:read", "Event read", "Read minimal events through tenant-bound signed server routes."),
+        ("participants:read", "Participants read", "Read participant IDs, display names and registration dates; requires events:read."),
+        ("participants:attendance:read", "Attendance read", "Include attendance dates; requires events:read and participants:read."),
+    ) if value in read_scope_vocabulary())
+_CATALOG += tuple(ScopeGrantOption(value, label, description, "Staff integration (operator-only)")
+                  for value, label, description in booking_read_catalog())
+
 
 def validate_grantable_scopes(scopes, *, privileged):
     """Return a defensive list after applying the complete grant policy."""
@@ -60,6 +70,14 @@ def validate_grantable_scopes(scopes, *, privileged):
     unknown = sorted(set(values) - SCOPE_VOCABULARY)
     if unknown:
         raise ValueError(f"Unknown API-client scope(s): {', '.join(unknown)}.")
+    requirements = {
+        ARRIVAL_READ: {BOOKING_READ},
+        "participants:read": {"events:read"},
+        "participants:attendance:read": {"events:read", "participants:read"},
+    }
+    for value, dependencies in requirements.items():
+        if value in values and not dependencies.issubset(values):
+            raise ValueError(f"{value} requires {', '.join(sorted(dependencies))}.")
     allowed = SCOPE_VOCABULARY if privileged else TENANT_GRANTABLE_SCOPES
     forbidden = sorted(set(values) - allowed)
     if forbidden:
@@ -67,19 +85,12 @@ def validate_grantable_scopes(scopes, *, privileged):
     return values
 
 
-def actor_may_grant_privileged_scopes(actor, makerspace_id):
-    is_superadmin = bool(
+def actor_may_grant_privileged_scopes(actor):
+    return bool(
         actor
         and (
             actor.is_superuser
             or getattr(actor, "role", None) == User.Role.SUPERADMIN
-        )
-    )
-    return bool(
-        is_superadmin
-        and (
-            makerspace_id is None
-            or int(makerspace_id) not in rbac.superadmin_hidden_makerspace_ids()
         )
     )
 

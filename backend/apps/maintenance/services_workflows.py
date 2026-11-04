@@ -47,7 +47,7 @@ def log_maintenance(
     parts_note="", set_idle=False,
 ):
     machine = lock_machine(machine, actor)
-    prepare_machine(machine, actor, manage=False)
+    prepare_machine(machine, actor, manage=False, technician=True)
     ensure_idle_transition(machine, set_idle)
     values = validate_log_values(
         summary=summary, performed_at=performed_at, cost=cost,
@@ -61,14 +61,14 @@ def log_maintenance(
 
 
 @transaction.atomic
-def create_schedule(machine, *, actor, description, interval_days, next_due, anchor="completion", trigger="days", usage_hours=None, job_count=None):
+def create_schedule(machine, *, actor, description, interval_days, next_due, anchor="completion", trigger="days", usage_hours=None, job_count=None, blocks_use=False):
     machine = lock_machine(machine, actor)
     prepare_machine(machine, actor, manage=True)
     schedule = MaintenanceSchedule(
         machine=machine,
         description=clean_text(description, "description"),
         anchor=clean_anchor(anchor),
-        trigger=trigger, usage_hours=usage_hours, job_count=job_count,
+        trigger=trigger, usage_hours=usage_hours, job_count=job_count, blocks_use=bool(blocks_use),
         interval_days=clean_interval(interval_days),
         next_due=_schedule_date(next_due),
         created_by=actor,
@@ -99,7 +99,8 @@ def update_schedule(schedule, *, actor, **changes):
     ).get(
         pk=schedule.pk, machine=machine,
     )
-    allowed = {"description", "interval_days", "next_due", "anchor", "trigger", "usage_hours", "job_count"}
+    allowed = {"description", "interval_days", "next_due", "anchor", "trigger", "usage_hours", "job_count",
+               "blocks_use"}
     unknown = sorted(set(changes) - allowed)
     if unknown:
         raise ValidationError({name: "This field cannot be changed." for name in unknown})
@@ -114,7 +115,7 @@ def update_schedule(schedule, *, actor, **changes):
     if "next_due" in changes:
         schedule.next_due = _schedule_date(changes["next_due"])
     from .meters import validate_meter
-    for field in ("trigger", "usage_hours", "job_count"):
+    for field in ("trigger", "usage_hours", "job_count", "blocks_use"):
         if field in changes:
             setattr(schedule, field, changes[field])
     validate_meter(schedule)
@@ -162,7 +163,7 @@ def complete_due(
     parts_note="", set_idle=False,
 ):
     machine = lock_machine(schedule.machine, actor)
-    prepare_machine(machine, actor, manage=True)
+    prepare_machine(machine, actor, manage=True, technician=True)
     schedule = rbac.scope_by_makerspace(
         actor, MaintenanceSchedule.objects.select_for_update(), makerspace_field="machine__makerspace_id",
     ).get(

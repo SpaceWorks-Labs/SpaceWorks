@@ -10,8 +10,9 @@ def definitions(feature):
         feature("machines.material_catalogue", "machines", "Local material catalogue"),
         feature("machines.structured_intake", "machine_service", "Structured machine intake",
                 requires_modules=("machines",)),
-        feature("maintenance.meters", "maintenance", "Usage-based maintenance",
-                requires_modules=("machines",)),
-        feature("maintenance.calendar_feed", "maintenance", "Maintenance calendar feed",
-                requires_modules=("machines",)),
+        # Parented to `machines` since #97 folded the `maintenance` module key; keys unchanged.
+        feature("maintenance.meters", "machines", "Usage-based maintenance",
+                requires_features=("machines.maintenance",)),
+        feature("maintenance.calendar_feed", "machines", "Maintenance calendar feed",
+                requires_features=("machines.maintenance",)),
     )

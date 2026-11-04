@@ -9,7 +9,6 @@ from rest_framework.exceptions import AuthenticationFailed, PermissionDenied, Va
 from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, OutstandingToken
 
 from apps.audit import services as audit
-from apps.backup.custody import validate_deployment_custody
 from apps.backup.models import DeploymentRecoveryState, RestoreOperation
 
 
@@ -110,6 +109,8 @@ def enter_quarantine(restore, reason):
             public_api_key=generate_publishable_key()
         )
     _reset_device_authority(now)
+    from .station_revocation import revoke_station_credentials
+    revoke_station_credentials(actor=restore.requested_by, now=now)
     PasswordResetEnvelope.objects.update(
         status=PasswordResetEnvelopeStatus.DISCARDED,
         digest_is_live=False,
@@ -166,7 +167,9 @@ def _invalidate_tokens(now):
 def set_recovery_principal(user, raw_password):
     User = get_user_model()
     locked = User.objects.select_for_update().get(pk=user.pk)
-    if not (locked.is_superuser or locked.role == User.Role.SUPERADMIN):
+    from apps.accounts.staff_identity import is_platform
+
+    if not is_platform(locked) or not (locked.is_superuser and locked.role == User.Role.SUPERADMIN):
         raise ValidationError("The recovery principal must already be a superadmin.")
     locked.is_active = True
     locked.is_staff = True
@@ -199,16 +202,6 @@ def acknowledge_quarantine(actor, acknowledgement):
         raise PermissionDenied("Only the recovered superadmin may acknowledge quarantine.")
     if acknowledgement != RESIDUAL_RISK:
         raise ValidationError({"acknowledgement": "The residual-risk acknowledgement must match exactly."})
-    custody = validate_deployment_custody()
-    if custody.zero_recipient_off_makerspace_ids:
-        raise ValidationError(
-            {
-                "archive_custody": (
-                    "Quarantine cannot be acknowledged while a self-governed "
-                    "makerspace has zero verified archive recipients."
-                )
-            }
-        )
     now = timezone.now()
     state.mode = DeploymentRecoveryState.Mode.NORMAL
     state.acknowledged_at = now

@@ -48,8 +48,10 @@ def _assert_active(space):
 
 @transaction.atomic
 def cleanup_unattached_space_image(space, *, object_key, storage):
+    from .models_gallery import BookableSpacePhoto
     _locked_space(space.pk)
-    if not BookableSpace.objects.filter(image_key=object_key).exists():
+    if not (BookableSpace.objects.filter(image_key=object_key).exists()
+            or BookableSpacePhoto.objects.filter(object_key=object_key).exists()):
         storage.delete_object(object_key)
     staging_key = storage.staging_key(object_key)
     if staging_key != object_key:
@@ -73,6 +75,8 @@ def set_space_image(
     snapshot_key = space.image_key
     old_size = storage.object_size(snapshot_key) if snapshot_key else None
     locked = _active_space(space.pk)
+    from .booking_authority import require
+    require(actor, locked, "edit_details")
     validate_space_image_key(locked, object_key, storage)
     if storage.public_image_key_in_use(locked.makerspace_id, object_key):
         raise serializers.ValidationError(
@@ -110,6 +114,8 @@ def remove_space_image(space, *, actor, audit, limits, storage):
     snapshot_key = space.image_key
     old_size = storage.object_size(snapshot_key) if snapshot_key else None
     locked = _active_space(space.pk)
+    from .booking_authority import require
+    require(actor, locked, "edit_details")
     if not locked.image_key:
         raise serializers.ValidationError({'image': 'This space has no image.'})
     validate_space_image_key(locked, locked.image_key, storage)

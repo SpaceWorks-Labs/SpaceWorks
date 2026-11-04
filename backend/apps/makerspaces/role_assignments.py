@@ -4,21 +4,35 @@ from django.db import transaction
 from rest_framework.exceptions import PermissionDenied
 
 from apps.accounts import rbac
+from apps.accounts.rbac_roles import additional_roles_prefetch
 from apps.audit import services as audit
 from apps.makerspaces.models import Makerspace, MakerspaceMembership, MakerspaceRole
 
 
-def can_assign_role(actor, makerspace, role, target_membership=None):
-    """Raise on a role assignment that would let a local manager escalate."""
-    if role.makerspace_id != makerspace.id:
-        raise PermissionDenied()
-    from apps.makerspaces.role_authority import _clean_actions, _locked_actor_actions, _superadmin
+def can_assign_roles(actor, makerspace, roles, target_membership=None):
+    """Revalidate the actor ceiling against the complete union under locks."""
+    from apps.makerspaces.role_authority import _locked_actor_actions, _superadmin
+    from apps.makerspaces.role_membership_writes import validated_roles
 
-    actions = _clean_actions(role.granted_actions)
+    roles = list(roles)
+    if (any(role.makerspace_id != makerspace.pk for role in roles)
+            or (target_membership and target_membership.makerspace_id != makerspace.pk)):
+        raise PermissionDenied()
+    roles = validated_roles(
+        target_membership or MakerspaceMembership(makerspace=makerspace), roles
+    )
+    if any(role.slug != "member" for role in roles) or (
+            target_membership and target_membership.track == MakerspaceMembership.Track.STAFF):
+        from apps.accounts.staff_account_policy import require_authority
+
+        require_authority(actor, makerspace,
+                          target=target_membership.user if target_membership else None, roles=roles)
+        return True
+    actions = set().union(*(set(role.granted_actions) for role in roles))
     actor_actions = _locked_actor_actions(actor, makerspace)
     if rbac.Action.MANAGE_MAKERSPACE not in actor_actions:
-        # Roster delegation confers community assignment, never staff administration.
-        if (rbac.Action.MANAGE_MEMBERS not in actor_actions or actions
+        if (rbac.Action.MANAGE_MEMBERS not in actor_actions
+                or [role.slug for role in roles] != ["member"]
                 or (target_membership and rbac.actions_for_membership(target_membership))):
             raise PermissionDenied()
         return True
@@ -33,39 +47,58 @@ def can_assign_role(actor, makerspace, role, target_membership=None):
     return True
 
 
-def assign_role(*, makerspace, actor, membership, role):
-    """Atomically assign a makerspace role and preserve the legacy role mirror."""
-    if role.makerspace_id != makerspace.id or membership.makerspace_id != makerspace.id:
+def can_assign_role(actor, makerspace, role, target_membership=None):
+    return can_assign_roles(actor, makerspace, [role], target_membership)
+
+
+def set_membership_roles(*, makerspace, actor, membership, roles):
+    """Replace the complete role set, preserving the existing assignment lock order."""
+    from apps.makerspaces.role_membership_writes import replace_membership_roles, validated_roles
+
+    roles = list(roles)
+    if membership.makerspace_id != makerspace.pk or any(
+        role.makerspace_id != makerspace.pk for role in roles
+    ):
         raise PermissionDenied()
     with transaction.atomic():
+        from apps.tenant_migration.gate_runtime import assert_write_allowed
+        assert_write_allowed(makerspace.pk)
         makerspace = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
-        role = MakerspaceRole.objects.select_for_update().get(
-            pk=role.pk, makerspace=makerspace
-        )
-        membership = (
-            MakerspaceMembership.objects.select_for_update(of=("self",))
-            .select_related("assigned_role")
-            .get(pk=membership.pk)
-        )
-        if membership.makerspace_id != makerspace.id:
+        from apps.accounts.models import User
+        actor = User.objects.get(pk=actor.pk)
+        # Keep the pre-existing primary-role lock in its original position.
+        # Additional roles are immutable and need no new row locks.
+        requested_ids = {role.pk for role in roles}
+        current_roles = list(MakerspaceRole.objects.filter(
+            pk__in=requested_ids, makerspace=makerspace,
+        ))
+        if len(current_roles) != len(requested_ids):
             raise PermissionDenied()
-        can_assign_role(actor, makerspace, role, target_membership=membership)
-        old_role_id = membership.assigned_role_id
-        membership.assigned_role = role
-        membership.role = role.legacy_role or MakerspaceMembership.Role.CUSTOM
-        membership.save(update_fields=["assigned_role", "role"])
-        audit.record(
-            actor,
-            "staff.role_assigned",
-            makerspace=makerspace,
-            target=membership.user,
-            meta={
-                "membership_id": membership.id,
-                "old_role_id": old_role_id,
-                "new_role_id": role.id,
-                "new_role_slug": role.slug,
-            },
+        roles = validated_roles(membership, current_roles)
+        primary = MakerspaceRole.objects.select_for_update().get(pk=roles[0].pk)
+        roles[0] = primary
+        membership = (
+            MakerspaceMembership.track_manager(membership.track).select_for_update()
+            .prefetch_related(additional_roles_prefetch())
+            .get(pk=membership.pk, makerspace=makerspace)
         )
+        can_assign_roles(actor, makerspace, roles, target_membership=membership)
+        if (membership.track == MakerspaceMembership.Track.STAFF
+                and "space_manager" not in {role.slug for role in roles}):
+            from apps.accounts.staff_account_policy import protect_last_manager
+
+            protect_last_manager(makerspace, membership)
+        changes = replace_membership_roles(
+            membership=membership, roles=roles, actor=actor, reason="staff.roles_changed",
+        )
+        audit.record(actor, "staff.roles_changed", makerspace=makerspace,
+                     target=membership.user, meta={"membership_id": membership.pk,
+                     "before": changes["before"], "after": changes["after"],
+                     "removed_machine_type_ids": changes["removed_machine_type_ids"]})
         return membership
 
 
+def assign_role(*, makerspace, actor, membership, role):
+    return set_membership_roles(
+        makerspace=makerspace, actor=actor, membership=membership, roles=[role],
+    )

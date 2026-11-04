@@ -95,3 +95,30 @@ class EventCheckInEvent(models.Model):
 
     def delete(self, *args, **kwargs):
         raise RuntimeError("EventCheckInEvent rows are immutable.")
+
+
+class EventAttendanceCorrection(models.Model):
+    """Durable watermark: old venue scans cannot override a later correction."""
+
+    registration = models.ForeignKey(EventRegistration, on_delete=models.PROTECT, related_name="attendance_corrections")
+    event = models.ForeignKey(Event, on_delete=models.PROTECT, related_name="attendance_corrections")
+    attendance_revision = models.PositiveBigIntegerField()
+    invalidated_through_checkin_id = models.PositiveBigIntegerField()
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="+")
+    operation_id = models.UUIDField(default=uuid4, unique=True, editable=False)
+    corrected_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=("registration", "attendance_revision"), name="event_attendance_correction_revision"),
+            models.CheckConstraint(condition=models.Q(attendance_revision__gte=1, invalidated_through_checkin_id__gte=1),
+                                   name="event_attendance_correction_positive"),
+        ]
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise RuntimeError("Attendance corrections are immutable.")
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise RuntimeError("Attendance corrections require an authorized purge.")

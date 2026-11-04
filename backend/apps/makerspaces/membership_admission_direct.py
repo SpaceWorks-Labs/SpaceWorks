@@ -29,9 +29,11 @@ def prepare_direct_admission(actor, makerspace, user, role):
 def finish_direct_admission(actor, row, membership):
     from apps.makerspaces.membership_admission_payments import charge_admission
     from apps.makerspaces.membership_plan_services import create_term
-    charge_admission(row, actor, settings_for(row.makerspace))
+    from apps.makerspaces.membership_plan_policy import plan_policy
+    charge_admission(row, actor, plan_policy(row.makerspace, row.selected_plan, settings_for(row.makerspace)))
     if row.selected_plan_id:
-        create_term(actor, membership, row.selected_plan)
+        create_term(actor, membership, row.selected_plan, price=row.first_term_amount,
+                    joining_fee=row.joining_fee, admission_request=row)
 
 
 def admit_walk_in(actor, makerspace, user, raw_answers=None):

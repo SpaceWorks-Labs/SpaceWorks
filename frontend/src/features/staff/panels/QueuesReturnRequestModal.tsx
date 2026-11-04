@@ -1,10 +1,12 @@
+import { RequestFlowDialog } from "./RequestFlowDialog";
 import { useEffect, useState } from "react";
 
-import { ErrorText, Modal } from "../../../components/ui";
+import { ErrorText } from "../../../components/ui";
 import { staffRequest } from "../../../lib/api";
 import { evidenceErrorText } from "../evidenceUi";
 import { EvidenceUpload } from "./EvidenceUpload";
-import { BoxCodeField, FormFooter, ShelfLine, submitForm } from "./QueuesModalShared";
+import { QuantityStepper } from "../QuantityStepper";
+import { BoxCodeField, ShelfLine, submitForm } from "./QueuesModalShared";
 import type { AssetReturnOutcome, FormModalProps, ReturnRequestValues } from "./QueuesModalTypes";
 import { KitChecklistCapture, useKitChecklist } from "../../inventory/KitChecklist";
 
@@ -78,11 +80,11 @@ export function ReturnRequestModal({ row, open, pending, error, onClose, onSubmi
   };
 
   return (
-    <Modal open={open} onClose={onClose} title={row ? `Return request #${row.id}` : "Return request"} footer={<FormFooter formId="return-request-form" pending={pending} submitLabel="Submit return" onCancel={onClose} />}>
-      <form id="return-request-form" className="grid gap-3" onSubmit={(event) => submitForm(event, submitReturn)}>
-        <div className="grid gap-3 sm:grid-cols-2">
+    <RequestFlowDialog open={open} onClose={onClose} title={row ? `Return request #${row.id}` : "Return request"} formId="return-request-form" pending={pending} submitLabel="Submit return">
+      <form id="return-request-form" className="@container grid gap-3" onSubmit={(event) => submitForm(event, submitReturn)}>
+        <div className="grid gap-3 @2xl:grid-cols-2">
           {issueUrl ? <div className="grid min-w-0 gap-1 text-sm"><span className="font-medium text-ink">Issue photo</span><img src={issueUrl} alt="Issue photo for comparison" className="max-h-56 w-full rounded-md border border-line object-contain" /></div> : null}
-          {issueError ? <p className="text-sm text-warning" role="status">{issueError}</p> : null}
+          {issueError ? <p className="text-sm text-warn-ink" role="status">{issueError}</p> : null}
           <div className="grid min-w-0 gap-1 text-sm"><span className="font-medium text-ink">Return photo</span><EvidenceUpload makerspaceId={makerspaceId} evidenceType="return" disabled={pending} onUploaded={setEvidenceId} /></div>
         </div>
         {row?.assigned_box_label ? <p className="text-xs text-muted">Box: <span className="font-medium text-ink">{row.assigned_box_label}</span></p> : null}
@@ -92,7 +94,7 @@ export function ReturnRequestModal({ row, open, pending, error, onClose, onSubmi
         <ErrorText message={validationError || error} />
         <KitChecklistCapture checklist={kits} />
       </form>
-    </Modal>
+    </RequestFlowDialog>
   );
 
   function submitReturn() {
@@ -132,7 +134,7 @@ function SerializedReturnItem({ item, outcomes, pending, onChange }: { item: Non
       <p className="text-sm font-medium text-ink">{item.product_name}</p>
       <ShelfLine location={item.storage_location} />
       <div className="mt-2 grid gap-2">
-        {(item.issued_assets ?? []).map((asset) => <label key={asset.asset_id} className="eyebrow grid gap-1 sm:grid-cols-[1fr_auto] sm:items-center"><span className="font-medium text-ink">{asset.asset_tag}{asset.serial_number ? ` - ${asset.serial_number}` : ""}</span><select className="desk-input" value={outcomes[asset.asset_id] ?? "returned"} disabled={pending} onChange={(event) => onChange(item.id, asset.asset_id, event.target.value as PendingOutcome)}><option value="returned">Returned</option><option value="damaged">Damaged</option><option value="missing">Missing</option><option value="pending">Not returned now</option></select></label>)}
+        {(item.issued_assets ?? []).map((asset) => <label key={asset.asset_id} className="eyebrow grid min-w-0 gap-1 @md:grid-cols-[minmax(0,1fr)_auto] @md:items-center"><span className="font-medium text-ink [overflow-wrap:anywhere]">{asset.asset_tag}{asset.serial_number ? ` - ${asset.serial_number}` : ""}</span><select className="desk-input" value={outcomes[asset.asset_id] ?? "returned"} disabled={pending} onChange={(event) => onChange(item.id, asset.asset_id, event.target.value as PendingOutcome)}><option value="returned">Returned</option><option value="damaged">Damaged</option><option value="missing">Missing</option><option value="pending">Not returned now</option></select></label>)}
       </div>
     </div>
   );
@@ -143,8 +145,8 @@ function QuantityReturnItem({ item, resolution, pending, onChange }: { item: Non
     <div className="rounded-md border border-line p-2">
       <p className="text-sm font-medium text-ink">{item.product_name}</p>
       <ShelfLine location={item.storage_location} />
-      <div className="mt-2 grid gap-2 sm:grid-cols-3">
-        {(["returned", "damaged", "missing"] as const).map((key) => <label key={key} className="eyebrow grid gap-1"><span className="capitalize">{key}</span><input className="desk-input min-w-0" type="number" min="0" max={remainingCount(item)} value={resolution?.[key] ?? 0} disabled={pending} onChange={(event) => onChange(item.id, key, event.target.value)} /></label>)}
+      <div className="mt-2 grid gap-3 @xl:grid-cols-3">
+        {(["returned", "damaged", "missing"] as const).map((key) => <label key={key} className="eyebrow grid min-w-0 gap-1"><span className="capitalize">{key}</span><QuantityStepper label={key} max={remainingCount(item)} value={resolution?.[key] ?? 0} disabled={pending} onValueChange={(value) => onChange(item.id, key, value)} /></label>)}
       </div>
     </div>
   );

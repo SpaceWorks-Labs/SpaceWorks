@@ -1,0 +1,52 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<p><a href="{% url 'admin:makerspaces_makerspace_change' space.pk %}">Back to {{ space.name }}</a>
+ &middot; <a href="{% url 'admin:backup_platformbackupsettings_console' %}">All backups (choose a scope)</a></p>
+<p>Restoring rolls this space back to the chosen restore point. The live audit history,
+payments recorded after the restore point and newer evidence photos are kept. A safety backup
+of the space as it is now is taken first; the restore refuses if that backup fails. Other spaces
+are never changed. Every step needs a recent identity check and is recorded in this space's audit log.</p>
+
+<form method="post">{% csrf_token %}
+  <input type="hidden" name="action" value="backup_now">
+  <button type="submit">Back up now</button>
+</form>
+
+<h2>Restore points</h2>
+<table>
+  <thead><tr><th scope="col">Taken</th><th scope="col">Scope</th><th scope="col">Kind</th><th scope="col">Size</th><th scope="col"></th></tr></thead>
+  <tbody>
+  {% for item in timeline %}
+    <tr>
+      <td>{{ item.archive.completed_at }}</td>
+      <td>{% if item.scope == "space" %}This space{% else %}Whole platform{% endif %}</td>
+      <td>{{ item.archive.get_trigger_display }}</td>
+      <td>{{ item.archive.size_bytes|filesizeformat }}</td>
+      <td>
+        {% if item.restorable %}
+        <form method="post">{% csrf_token %}
+          <input type="hidden" name="action" value="restore"><input type="hidden" name="archive_id" value="{{ item.archive.pk }}">
+          <button type="submit">Restore&hellip;</button>
+        </form>
+        {% elif item.scope == "platform" %}
+          <small>Restore via host command (see docs): <code>extract_space_restore_point</code> turns it into a restore point of this space.</small>
+        {% else %}
+          <small>Not restorable in the app (not encrypted to this server's restore key).</small>
+        {% endif %}
+      </td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="5">No restore points yet.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<h2>Restores</h2>
+<ul>
+{% for row in restores %}
+  <li><a href="{% url 'admin:makerspaces_makerspace_space_restore' space.pk row.pk %}">{{ row.created_at }}: {{ row.get_stage_display }}</a></li>
+{% empty %}
+  <li>No restores yet.</li>
+{% endfor %}
+</ul>
+{% endblock %}

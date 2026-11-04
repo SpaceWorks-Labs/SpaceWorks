@@ -1,11 +1,14 @@
 """The one row-locked path that turns a person into an active member."""
 
+from apps.accounts.account_kind_guards import require_member_account
+
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from apps.audit import services as audit
+from apps.accounts.account_obligations import lock_obligation_owner
 from apps.makerspaces import limits
 from apps.makerspaces.models import (
     Makerspace,
@@ -17,13 +20,21 @@ from apps.makerspaces.models import (
 
 def _activate_membership(actor, makerspace, user, role, *, request=None, source, skip_dues=False):
     """Activate or reactivate exactly one membership in the mandated lock order."""
+    require_member_account(user)
+    if role.slug != "member":
+        raise ValidationError({"role_id": "Community membership requires the Member role."})
     with transaction.atomic():
+        from apps.tenant_migration.gate_runtime import assert_write_allowed
+        assert_write_allowed(makerspace.pk)
         makerspace = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
         from apps.makerspaces.membership_admission_settings import ensure_join_allowed
         ensure_join_allowed(makerspace)
         driving_request = None
         if request is not None:
             driving_request = MembershipRequest.objects.select_for_update().get(pk=request.pk)
+        # Invitation/request rows precede User in the account lifecycle lock order.
+        user = lock_obligation_owner(user)
+        if driving_request is not None:
             if driving_request.makerspace_id != makerspace.pk:
                 raise ValidationError({"detail": "Membership request is for another makerspace."})
             if driving_request.state not in (
@@ -63,15 +74,11 @@ def _activate_membership(actor, makerspace, user, role, *, request=None, source,
             membership = MakerspaceMembership.objects.create(
                 makerspace=makerspace,
                 user=user,
-                assigned_role=role,
-                role=role.legacy_role or MakerspaceMembership.Role.CUSTOM,
                 status="active",
                 activated_at=now,
                 activated_by=actor,
             )
         elif adding:
-            membership.assigned_role = role
-            membership.role = role.legacy_role or MakerspaceMembership.Role.CUSTOM
             membership.status = "active"
             membership.activated_at = now
             membership.activated_by = actor
@@ -86,10 +93,20 @@ def _activate_membership(actor, makerspace, user, role, *, request=None, source,
             membership.can_refer = False
             membership.can_verify = False
             membership.save()
-        elif source == "approval":
-            membership.assigned_role = role
-            membership.role = role.legacy_role or MakerspaceMembership.Role.CUSTOM
-            membership.save(update_fields=["assigned_role", "role"])
+
+        if not role.granted_actions:
+            # Community admissions get the fixed member number (X12); a staff role does
+            # not consume one. A later term opening numbers anyone who holds a term.
+            from apps.makerspaces.membership_number import assign as assign_number
+            assign_number(membership, source=source)
+
+        role_changes = {}
+        if adding or source == "approval":
+            from apps.makerspaces.role_membership_writes import replace_membership_roles
+            role_changes = replace_membership_roles(
+                membership=membership, roles=[role], actor=actor,
+                reason=source, fresh_lifecycle=True,
+            )
 
         open_requests = list(MembershipRequest.objects.select_for_update().filter(
             makerspace=makerspace,
@@ -109,7 +126,7 @@ def _activate_membership(actor, makerspace, user, role, *, request=None, source,
 
         if adding or source == "approval" or open_requests:
             action = "membership.approved" if source == "approval" else "membership.joined"
-            meta = {"role_id": role.id, "source": source}
+            meta = {"role_id": role.id, "source": source, **role_changes}
             if driving_request is not None:
                 meta["request_id"] = driving_request.pk
             audit.record(actor, action, makerspace=makerspace, target=membership, meta=meta)
@@ -123,7 +140,10 @@ def _activate_membership(actor, makerspace, user, role, *, request=None, source,
                 notify_member_joined,
                 send_member_welcome,
             )
-            send_member_welcome(membership, source=source)
+            # Approval already emitted the owner's welcome through the decision
+            # adapter above, including its compatibility email fallback.
+            if source != "approval":
+                send_member_welcome(membership, source=source)
             notify_member_joined(membership)
             from apps.makerspaces.membership_payments import (
                 create_for_active_membership,

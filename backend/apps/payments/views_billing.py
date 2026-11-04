@@ -25,7 +25,18 @@ class BillingSettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = MakerspaceBillingSettings
         fields = ("payment_terms_days", "reminder_days_before", "reminder_days_after", "max_reminders",
-                  "number_prefix", "legal_name", "address", "tax_id", "footer", "account_codes")
+                  "number_prefix", "bill_prefix", "payment_instructions", "legal_name", "address", "tax_id", "footer", "account_codes",
+                  "upi_vpa", "upi_payee_name")
+
+    def validate_upi_vpa(self, value):
+        """Lane L5: the UPI ID the QR pays (blank = no QR). Shown only with billing.offline_claims."""
+        from apps.payments.upi import UpiError, validate_vpa
+        if not value:
+            return ""
+        try:
+            return validate_vpa(value)
+        except UpiError as exc:
+            raise serializers.ValidationError(str(exc))
 
     def validate_account_codes(self, value):
         from django.core.exceptions import ValidationError
@@ -37,11 +48,17 @@ class BillingSettingsSerializer(serializers.ModelSerializer):
         return value
 
     def validate_number_prefix(self, value):
-        if any(ord(char) < 32 or char in "/\\" for char in value):
+        if any(ord(char) < 32 or ord(char) == 127 or char in "/\\" for char in value):
             raise serializers.ValidationError("Use a prefix without control characters or slashes.")
         return value
 
+    validate_bill_prefix = validate_number_prefix
+
     def validate(self, attrs):
+        number_prefix = attrs.get("number_prefix", getattr(self.instance, "number_prefix", ""))
+        bill_prefix = attrs.get("bill_prefix", getattr(self.instance, "bill_prefix", "BILL-"))
+        if number_prefix == bill_prefix:
+            raise serializers.ValidationError({"bill_prefix": "Bill and receipt prefixes must differ."})
         for name in ("reminder_days_before", "reminder_days_after"):
             if name in attrs and len(attrs[name]) != len(set(attrs[name])):
                 raise serializers.ValidationError({name: "Reminder days must be distinct."})

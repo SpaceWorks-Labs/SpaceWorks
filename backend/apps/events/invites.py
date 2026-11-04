@@ -9,10 +9,10 @@ from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import NotFound, ValidationError
 
+from apps.events.feature_gates import require_feature as require_feature
 from apps.events.models import EventInvite
 from apps.events.services import _audit, _locked_event
 from apps.makerspaces.guards import require_module_locked
-from apps.makerspaces.platform import feature_enabled
 
 
 def code_digest(value, purpose):
@@ -20,14 +20,12 @@ def code_digest(value, purpose):
     return hmac.new(settings.SECRET_KEY.encode(), message, hashlib.sha256).hexdigest()
 
 
-def require_feature(event, key):
-    if not feature_enabled(event.makerspace, key):
-        raise ValidationError({"detail": "This events feature is disabled."})
-
-
 @transaction.atomic
 def create_invite(event, *, actor, email="", max_uses=1, expires_at=None):
     event = _locked_event(event.pk)
+    from . import event_authority
+    from .event_permissions import MANAGE_INVITATIONS
+    event_authority.require(actor, event, MANAGE_INVITATIONS)
     event.makerspace = require_module_locked(event.makerspace, "events")
     require_feature(event, "events.invites")
     if max_uses < 1 or (expires_at and expires_at <= timezone.now()):
@@ -42,25 +40,74 @@ def create_invite(event, *, actor, email="", max_uses=1, expires_at=None):
     return invite, code
 
 
-def redeem_invite(event, code, member):
+def _locked_context(event, member):
+    from .programme_locks import current_locks, assert_lock_context
+    from .organization_audience import require_organization_audience
+    locks = current_locks(event.pk)
+    assert_lock_context(locks)
+    if member is not None and member.pk not in locks.account_ids:
+        raise RuntimeError("Declare the invitation member before event locks.")
+    require_organization_audience(event, member)
     require_feature(event, "events.invites")
+
+
+def redeem_invite_locked(event, code, member, *, actor):
+    _locked_context(event, member)
     invite = EventInvite.objects.select_for_update().filter(
         event=event, makerspace=event.makerspace, code_digest=code_digest(code or "", "invite"),
     ).first()
     if not invite or invite.revoked_at or invite.uses >= invite.max_uses or (
         invite.expires_at and invite.expires_at <= timezone.now()
-    ) or (invite.email_digest and (not member or not member.email or not hmac.compare_digest(
+    ) or (invite.email_digest and (not member or not member.email or not member.email_verified_at or not hmac.compare_digest(
         invite.email_digest, code_digest(member.email, "email")
     ))):
         raise NotFound("Invitation not found.")
     invite.uses += 1
     invite.save(update_fields=["uses"])
+    _audit(event, actor, "event.invite_consumed", invite, {"uses": invite.uses})
     return invite
+
+
+def resolve_for_account_locked(event, member, *, actor):
+    _locked_context(event, member)
+    if not member or not member.email or not member.email_verified_at:
+        return None
+    rows = EventInvite.objects.select_for_update().filter(
+        event=event, makerspace=event.makerspace, email_digest=code_digest(member.email, "email"),
+        revoked_at__isnull=True,
+    ).order_by("pk")
+    now = timezone.now()
+    invite = next((row for row in rows if row.uses < row.max_uses
+                   and (row.expires_at is None or row.expires_at > now)), None)
+    if invite:
+        invite.uses += 1
+        invite.save(update_fields=["uses"])
+        _audit(event, actor, "event.invite_consumed", invite, {"uses": invite.uses})
+    return invite
+
+
+def redeem_invite(event, code, member, *, actor):
+    from .services_write_boundary import write_boundary
+    from apps.accounts.models import User
+    with write_boundary(event, actor=actor, account_ids=(member.pk,) if member else ()):
+        member = User.objects.get(pk=member.pk) if member else None
+        return redeem_invite_locked(event, code, member, actor=actor)
+
+
+def resolve_for_account(event, member, *, actor):
+    from .services_write_boundary import write_boundary
+    from apps.accounts.models import User
+    with write_boundary(event, actor=actor, account_ids=(member.pk,) if member else ()):
+        member = User.objects.get(pk=member.pk) if member else None
+        return resolve_for_account_locked(event, member, actor=actor)
 
 
 @transaction.atomic
 def revoke_invite(invite, *, actor):
     event = _locked_event(invite.event_id)
+    from . import event_authority
+    from .event_permissions import MANAGE_INVITATIONS
+    event_authority.require(actor, event, MANAGE_INVITATIONS)
     event.makerspace = require_module_locked(event.makerspace, "events")
     require_feature(event, "events.invites")
     locked = EventInvite.objects.select_for_update().get(pk=invite.pk, event=event)

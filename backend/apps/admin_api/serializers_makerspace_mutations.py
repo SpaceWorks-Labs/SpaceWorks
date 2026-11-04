@@ -3,30 +3,24 @@ from django.utils import timezone
 from rest_framework import serializers
 
 from apps.accounts.models import User
-from apps.backup.activation import (
-    ActivationModuleRequiredError,
-    ActivationRecipientFloorError,
-    set_superadmin_access,
-)
-from apps.backup.custody import with_makerspace_custody_lock
-from apps.integrations.email import platform_email_configured
 from apps.makerspaces import domain_verification
 from apps.makerspaces.models import (
     Makerspace,
-    MakerspaceArchiveRequest,
     default_branding_config,
 )
 
 
-_DISABLE_ACCESS_SEQUENCE = (
-    "Enrol and verify at least two archive recipients before disabling "
-    "superadmin access."
-)
-
-
 class MakerspaceMutationMixin:
+    def _validate_event_default(self, instance, values):
+        if values.get("event_default_registration_audience") == "participating_organizations":
+            from apps.makerspaces.platform import feature_enabled
+            if not feature_enabled(instance, "events.organization_audience"):
+                raise serializers.ValidationError({"event_default_registration_audience": "Enable organization audience first."})
+
     @transaction.atomic
     def create(self, validated_data):
+        organization_id = validated_data.pop("organization_id", None)
+        organization_name = validated_data.pop("organization_name", None)
         setup = validated_data.pop("creation_setup", None)
         install_profile_id = validated_data.pop("install_profile_id", None)
         public_display_name = validated_data.pop("public_display_name", None)
@@ -34,7 +28,13 @@ class MakerspaceMutationMixin:
             branding = default_branding_config()
             branding["display_name"] = public_display_name
             validated_data["branding_config"] = branding
+        provider_values = {key: validated_data.pop(key) for key in ("email_provider", "email_provider_config") if key in validated_data}
         instance = super().create(validated_data)
+        from apps.integrations.email_provider_serializers import apply_provider_update
+        apply_provider_update(instance, provider_values)
+        if provider_values:
+            instance.save(update_fields=["email_provider", "email_provider_config"])
+        self._validate_event_default(instance, validated_data)
         if domain_verification.is_self_host() and instance.frontend_domain:
             instance.frontend_domain_status = Makerspace.DomainStatus.VERIFIED
             instance.domain_verified_at = timezone.now()
@@ -45,8 +45,6 @@ class MakerspaceMutationMixin:
                     "updated_at",
                 ]
             )
-        with with_makerspace_custody_lock(instance.pk) as custody:
-            instance = custody.makerspace
         if install_profile_id is not None:
             from apps.makerspaces.space_pack_services import apply_saved_profile
             apply_saved_profile(self.context["request"].user, instance, install_profile_id)
@@ -54,9 +52,18 @@ class MakerspaceMutationMixin:
         if setup is not None:
             from apps.makerspaces.creation_setup import configure_creation
             configure_creation(self.context["request"].user, instance, setup)
+        from apps.organizations.services_owner import assign_owner_organization
+        assign_owner_organization(
+            self.context["request"].user, instance.pk,
+            organization_id=organization_id, new_name=organization_name,
+        )
         return instance
 
     def update(self, instance, validated_data):
+        owner_fields = {field: "Choose an owner organization only when creating a makerspace."
+                        for field in ("organization_id", "organization_name") if field in validated_data}
+        if owner_fields:
+            raise serializers.ValidationError(owner_fields)
         if "creation_setup" in validated_data:
             raise serializers.ValidationError({"creation_setup": "Use setup only when creating a makerspace."})
         if "install_profile_id" in validated_data:
@@ -68,21 +75,17 @@ class MakerspaceMutationMixin:
         mattermost_webhook_url = validated_data.pop("mattermost_webhook_url", missing)
         discord_webhook_url = validated_data.pop("discord_webhook_url", missing)
         public_display_name = validated_data.pop("public_display_name", missing)
-        new_flag = validated_data.pop("superadmin_access_enabled", None)
 
-        with with_makerspace_custody_lock(instance.pk) as custody:
-            locked = custody.makerspace
+        with transaction.atomic():
+            locked = Makerspace.objects.select_for_update().get(pk=instance.pk)
             old_domain = locked.frontend_domain
             actor = self.context["request"].user
             is_superadmin = actor.is_superuser or actor.role == User.Role.SUPERADMIN
-            access_changes = (
-                new_flag is not None
-                and new_flag != locked.superadmin_access_enabled
-            )
-            if access_changes:
-                self._validate_access_change(locked, new_flag, is_superadmin)
+            from apps.integrations.email_provider_serializers import apply_provider_update
+            apply_provider_update(locked, validated_data)
             for field, value in validated_data.items():
                 setattr(locked, field, value)
+            self._validate_event_default(locked, validated_data)
             if (
                 "frontend_domain" in validated_data
                 and validated_data["frontend_domain"] != old_domain
@@ -107,59 +110,7 @@ class MakerspaceMutationMixin:
             locked.save()
             from apps.makerspaces.membership_admission_settings import sync_legacy_settings
             sync_legacy_settings(actor, locked, validated_data)
-            if access_changes:
-                try:
-                    set_superadmin_access(
-                        custody,
-                        enabled=new_flag,
-                        actor=actor,
-                    )
-                except ActivationRecipientFloorError as exc:
-                    raise serializers.ValidationError(
-                        {"superadmin_access_enabled": _DISABLE_ACCESS_SEQUENCE}
-                    ) from exc
-                except ActivationModuleRequiredError as exc:
-                    raise serializers.ValidationError(
-                        {"superadmin_access_enabled": str(exc)}
-                    ) from exc
             return locked
-
-    def _validate_access_change(self, locked, new_flag, is_superadmin):
-        if new_flag is True and is_superadmin:
-            raise serializers.ValidationError(
-                {
-                    "superadmin_access_enabled": (
-                        "Only the makerspace admin can re-enable superadmin access."
-                    )
-                }
-            )
-        if new_flag is not False:
-            return
-        if (
-            MakerspaceArchiveRequest.objects.select_for_update()
-            .filter(
-                makerspace=locked,
-                status=MakerspaceArchiveRequest.Status.PENDING,
-            )
-            .exists()
-        ):
-            raise serializers.ValidationError(
-                {
-                    "superadmin_access_enabled": (
-                        "Withdraw the pending archive request before disabling "
-                        "superadmin access."
-                    )
-                }
-            )
-        if not platform_email_configured():
-            raise serializers.ValidationError(
-                {
-                    "superadmin_access_enabled": (
-                        "Configure Platform Email before disabling superadmin access, "
-                        "so password recovery remains possible."
-                    )
-                }
-            )
 
     @staticmethod
     def _apply_frontend_domain_change(locked, frontend_domain, is_superadmin):

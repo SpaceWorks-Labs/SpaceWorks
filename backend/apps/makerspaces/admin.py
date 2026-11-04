@@ -1,8 +1,14 @@
+from apps.accounts.reauthentication_control import RecentReauthenticationAdminMixin
+from apps.makerspaces.admin_governance import MakerspaceGovernanceMixin
+from apps.makerspaces.admin_lifecycle_review import MakerspaceLifecycleReviewMixin
 from django.contrib import admin
 from unfold.admin import ModelAdmin, TabularInline
 
 from apps.makerspaces.admin_capabilities import MakerspaceAdminForm, MakerspaceCapabilityAdminMixin
+from apps.makerspaces.admin_console_links import MakerspaceConsoleLinksAdminMixin
+from apps.backup.admin_space_backup import MakerspaceBackupAdminMixin
 from apps.makerspaces.admin_images import MakerspaceImageAdminMixin
+from apps.makerspaces.admin_owner import MakerspaceOwnerAdminMixin
 from apps.makerspaces.admin_lifecycle_actions import MakerspaceLifecycleActionsMixin
 from apps.makerspaces.admin_subdomains import SubdomainRequestAdmin
 from apps.makerspaces.admin_archive_requests import MakerspaceArchiveRequestAdmin
@@ -19,6 +25,8 @@ from apps.makerspaces.models import (
     normalize_frontend_domain,
 )
 from config.admin_access import SuperuserOnlyModelAdmin
+from apps.accounts.admin_staff_lifecycle import ReadOnlyMembershipInlineMixin
+from apps.makerspaces.admin_staff_accounts import MakerspaceStaffAccountAdminMixin
 
 
 class ArchivedFilter(admin.SimpleListFilter):
@@ -39,43 +47,41 @@ class ArchivedFilter(admin.SimpleListFilter):
         return queryset
 
 
-class MakerspaceMembershipInline(TabularInline):
+class MakerspaceMembershipInline(ReadOnlyMembershipInlineMixin, TabularInline):
+    # Compatibility: intentionally writes only the legacy string; null FK = frozen fallback.
     model = MakerspaceMembership
     fk_name = "makerspace"
     fields = ("user", "role")
+    readonly_fields = fields
     autocomplete_fields = ("user",)
     extra = 0
 
-    def has_view_permission(self, request, obj=None):
-        if obj is not None and not obj.superadmin_access_enabled:
-            return False
-        return super().has_view_permission(request, obj)
 
 
 @admin.register(Makerspace)
 class MakerspaceAdmin(
+    RecentReauthenticationAdminMixin,
+    MakerspaceGovernanceMixin,
+    MakerspaceLifecycleReviewMixin,
+    MakerspaceStaffAccountAdminMixin,
+    MakerspaceOwnerAdminMixin,
     MakerspaceLifecycleActionsMixin,
     MakerspaceImageAdminMixin,
     MakerspaceCapabilityAdminMixin,
+    MakerspaceConsoleLinksAdminMixin,
+    MakerspaceBackupAdminMixin,
     SuperuserOnlyModelAdmin,
     ModelAdmin,
 ):
     form = MakerspaceAdminForm
-    actions = ["archive_makerspaces", "unarchive_makerspaces", "purge_makerspaces"]
+    actions = ["archive_makerspaces", "unarchive_makerspaces", "purge_makerspaces",
+               "approve_archive_requests", "decline_archive_requests"]
     list_display = (
-        "name",
-        "public_code",
-        "slug",
-        "location",
-        "public_inventory_enabled",
-        "superadmin_access",
-        "frontend_domain",
-        "hidden_from_central_directory",
-        "frontend_mode",
-        "archived",
-        "updated_at",
+        "name", "public_code", "slug", "location", "public_inventory_enabled",
+        "frontend_domain", "hidden_from_central_directory", "frontend_mode",
+        "lifecycle_state", "archived_at", "archive_request_status", "updated_at",
     )
-    list_filter = ("public_inventory_enabled", "superadmin_access_enabled", ArchivedFilter)
+    list_filter = ("public_inventory_enabled", ArchivedFilter)
     prepopulated_fields = {"slug": ("name",)}
     search_fields = ("name", "public_code", "slug", "location")
     fieldsets = (
@@ -84,6 +90,7 @@ class MakerspaceAdmin(
             {
                 "fields": (
                     "name",
+                    "create_staff_account_link",
                     "public_code",
                     "slug",
                     "location",
@@ -95,6 +102,7 @@ class MakerspaceAdmin(
                     "frontend_domain",
                     "hidden_from_central_directory",
                     "default_loan_days",
+                    "messaging_status",
                 )
             },
         ),
@@ -116,17 +124,18 @@ class MakerspaceAdmin(
             },
         ),
     )
-    readonly_fields = ("logo_preview", "cover_preview")
+    readonly_fields = ("logo_preview", "cover_preview", "create_staff_account_link", "messaging_status")
     inlines = (MakerspaceMembershipInline,)
 
-    def save_model(self, request, obj, form, change):
-        """Initialise archive-custody state for makerspaces created via /control/.
+    @admin.display(description="Addressed messaging")
+    def messaging_status(self, obj):
+        from apps.integrations.messaging.settings_service import settings_payload
+        if not obj.pk:
+            return "Not configured"
+        data = settings_payload(obj)
+        return "; ".join(f"{channel}: {source}" for channel, source in data["effective_source"].items())
 
-        The control-plane admin saves the model directly, so it never reaches the
-        admin-API serializer that seeds this row. Without it a new makerspace has no
-        custody state, which makes readiness UNDERCOUNT below-floor spaces and the API
-        return null until some later recipient mutation happens to create it.
-        """
+    def save_model(self, request, obj, form, change):
         previous_domain = None
         domain_changed = False
         if change and "frontend_domain" in form.changed_data:
@@ -141,22 +150,10 @@ class MakerspaceAdmin(
                 apply_domain_change(obj, new_domain)
         super().save_model(request, obj, form, change)
         if not change:
-            from apps.backup.custody import initialize_custody_state
-
-            initialize_custody_state(obj.pk)
+            self.assign_owner(request, obj, form)
         record_control_save(request.user, obj, form.changed_data, created=not change)
         if domain_changed:
             record_domain_change(request.user, obj, previous_domain)
-
-    def has_change_permission(self, request, obj=None):
-        if obj is not None and not obj.superadmin_access_enabled:
-            return False
-        return super().has_change_permission(request, obj)
-
-    def get_inline_instances(self, request, obj=None):
-        if obj is not None and not obj.superadmin_access_enabled:
-            return []
-        return super().get_inline_instances(request, obj)
 
     def has_delete_permission(self, request, obj=None):
         # The normal admin delete button is a permanent purge entry point. Keep it
@@ -172,8 +169,14 @@ class MakerspaceAdmin(
         # disable ordinary deletes to preserve history, which blocks a whole-space
         # purge even though lifecycle.purge() deletes the complete graph safely.
         objs = list(objs)
+        from .admin_lifecycle_actions import visible_archive_impacts
+        warnings = [
+            f"Advisory unsettled charges for {row['object'].name}: {row['owned_pending']} owned pending, "
+            f"{row['routed_pending']} routed pending, {row['total_pending']} total pending. Counts may change."
+            for row in visible_archive_impacts(objs)
+        ]
         return (
-            [f"{self.opts.verbose_name}: {obj}" for obj in objs],
+            [f"{self.opts.verbose_name}: {obj}" for obj in objs] + warnings,
             {self.opts.verbose_name_plural: len(objs)},
             set(),
             [],
@@ -187,10 +190,6 @@ class MakerspaceAdmin(
     @admin.display(boolean=True, description="Archived")
     def archived(self, obj):
         return obj.archived_at is not None
-
-    @admin.display(description="Superadmin access")
-    def superadmin_access(self, obj):
-        return "Yes" if obj.superadmin_access_enabled else "No"
 
     @admin.display(description="Frontend mode")
     def frontend_mode(self, obj):

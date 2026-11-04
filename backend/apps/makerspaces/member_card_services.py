@@ -4,6 +4,8 @@ Every mutation is audited and every lookup writes an immutable `QrScanEvent` wit
 `member_lookup` context. Authority is by ACTION (`MANAGE_MEMBER_CARDS` / `SCAN_MEMBER_CARDS`),
 never by role name, and a card never resolves through the generic inventory scanner.
 """
+
+from apps.accounts.account_kind_guards import require_member_account
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.db.models import Max
@@ -44,6 +46,7 @@ def _next_card_number(makerspace_id):
 
 @transaction.atomic
 def issue_card(actor, membership, *, printed_name=""):
+    require_member_account(membership.user)
     _require(actor, rbac.Action.MANAGE_MEMBER_CARDS, membership.makerspace_id)
     require_module_locked(membership.makerspace_id, "membership")
     membership = MakerspaceMembership.objects.select_for_update().get(pk=membership.pk)
@@ -73,6 +76,7 @@ def issue_card(actor, membership, *, printed_name=""):
 @transaction.atomic
 def reissue_card(actor, card, *, reason):
     """Rotate the QR: the old payload keeps resolving as REVOKED and stays in scan history."""
+    require_member_account(card.membership.user)
     _require(actor, rbac.Action.MANAGE_MEMBER_CARDS, card.makerspace_id)
     if reason not in REISSUE_REASONS:
         raise PermissionDenied("Unknown reissue reason.")

@@ -1,8 +1,9 @@
 import type { ChangeEvent, Dispatch, SetStateAction } from "react";
-import { useEffect, useState } from "react";
 
-import { Spinner } from "../../components/ui/Spinner";
+import { EmptyState, ErrorBlock, Field, ListRow, ProgressBar, RelativeTime, Skeleton, StatusPill } from "../../components/ui";
 import type { PrintStatus } from "./publicApi";
+import { ServiceRequestEta } from "../machine-service/ServiceRequestEta";
+import { normalizeServiceStatus, serviceStatusLabel } from "../machine-service/types";
 
 export type TextInputProps = {
   label: string;
@@ -20,14 +21,6 @@ const steps = [
   { key: "collected", label: "Collected" },
 ];
 
-const STEP_TONE_CLASSES = [
-  "border-accent bg-accent text-on-accent dark:bg-accent/15 dark:text-accent-ink",
-  "border-warn bg-warn text-on-warn dark:bg-warn/15 dark:text-warn-ink",
-  "border-secondary bg-secondary text-on-secondary dark:bg-secondary/15 dark:text-secondary-ink",
-  "border-success bg-success text-on-success dark:bg-success/15 dark:text-success-ink",
-  "border-success bg-success text-on-success dark:bg-success/15 dark:text-success-ink",
-] as const;
-
 export function TextInput({
   label,
   value,
@@ -35,20 +28,7 @@ export function TextInput({
   required = false,
   type = "text",
 }: TextInputProps) {
-  return (
-    <label className="block">
-      <span className="eyebrow mb-1 block">
-        {label}
-      </span>
-      <input
-        className="desk-input w-full"
-        required={required}
-        type={type}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-      />
-    </label>
-  );
+  return <Field label={label}><input className="desk-input w-full" required={required} type={type} value={value} onChange={event => onChange(event.target.value)} /></Field>;
 }
 
 export function TextArea({
@@ -56,18 +36,7 @@ export function TextArea({
   value,
   onChange,
 }: TextInputProps) {
-  return (
-    <label className="block">
-      <span className="eyebrow mb-1 block">
-        {label}
-      </span>
-      <textarea
-        className="desk-input min-h-24 w-full"
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-      />
-    </label>
-  );
+  return <Field label={label}><textarea className="desk-input min-h-24 w-full" value={value} onChange={event => onChange(event.target.value)} /></Field>;
 }
 
 export function FilePicker({
@@ -87,74 +56,24 @@ export function FilePicker({
     event.target.value = "";
   }
 
-  return (
-    <div>
-      <label className="block">
-        <span className="eyebrow mb-1 block">
-          {label}
-        </span>
-        <input
-          accept={accept}
-          className="desk-input w-full"
-          multiple
-          type="file"
-          onChange={addFiles}
-        />
-      </label>
-      {files.length === 0 ? (
-        <p className="mt-2 text-sm text-muted">No files selected.</p>
-      ) : (
-        <ul className="mt-2 space-y-2">
-          {files.map((file, index) => (
-            <li
-              className="flex min-w-0 items-center justify-between gap-3 rounded-lg border border-line bg-surface px-3 py-2 text-sm"
-              key={`${file.name}-${file.lastModified}-${index}`}
-            >
-              <span className="min-w-0 truncate text-ink">{file.name}</span>
-              <button
-                className="min-h-11 px-2 text-xs font-semibold text-danger"
-                type="button"
-                onClick={() =>
-                  setFiles((current) =>
-                    current.filter((_, fileIndex) => fileIndex !== index),
-                  )
-                }
-              >
-                Remove
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-}
-
-function printTimeLeftLabel(status: PrintStatus, now: number): string | null {
-  if (
-    status.status !== "in_progress" ||
-    !status.started_at ||
-    status.estimated_minutes == null
-  ) {
-    return null;
-  }
-  const finish = new Date(status.started_at).getTime() + status.estimated_minutes * 60_000;
-  const remainingMs = finish - now;
-  if (remainingMs <= 0) {
-    return "Finishing up - past the estimate";
-  }
-  const totalMinutes = Math.ceil(remainingMs / 60_000);
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-  return hours > 0 ? `~${hours}h ${minutes}m left` : `~${minutes}m left`;
+  return <div className="grid gap-3">
+    <Field label={label} className="rounded-xl border border-dashed border-outline p-4">
+      <input accept={accept} className="desk-input w-full" multiple type="file" onChange={addFiles} />
+    </Field>
+    {files.length ? <ul className="grid gap-3">{files.map((file, index) => <li key={`${file.name}-${file.lastModified}-${index}`}>
+      <ListRow title={file.name} right={<button className="desk-button-ghost text-danger" type="button"
+        onClick={() => setFiles(current => current.filter((_, fileIndex) => fileIndex !== index))}>Remove</button>} />
+    </li>)}</ul> : <EmptyState message="No files added yet. Choose your print files above." />}
+  </div>;
 }
 
 function queuePositionDetail(status: PrintStatus): string {
   const approvedAhead = status.queue_approved_ahead ?? 0;
   const awaitingReviewAhead = status.queue_awaiting_review_ahead ?? 0;
-  if (approvedAhead === 0 && awaitingReviewAhead === 0) {
-    return "You're next in line";
-  }
+  const current = normalizeServiceStatus(status.status);
+  // Only an approved job can be "next"; a pending one is still waiting for review.
+  if (current === "accepted" && approvedAhead === 0) return "You're next among approved jobs";
+  if (current === "pending" && approvedAhead === 0 && awaitingReviewAhead === 0) return "Awaiting review";
   return [
     `${approvedAhead} approved job${approvedAhead === 1 ? "" : "s"} ahead`,
     `${awaitingReviewAhead} awaiting review`,
@@ -162,108 +81,28 @@ function queuePositionDetail(status: PrintStatus): string {
 }
 
 export function StatusStepper({ status }: { status: PrintStatus }) {
-  const currentIndex = steps.findIndex((step) => step.key === status.status);
-  const terminalError = status.status === "rejected" || status.status === "failed";
-
-  // Live tick so the printing countdown updates without a refetch.
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    if (status.status !== "in_progress") return;
-    const id = window.setInterval(() => setNow(Date.now()), 30_000);
-    return () => window.clearInterval(id);
-  }, [status.status]);
-  const timeLeft = printTimeLeftLabel(status, now);
-
-  if (terminalError) {
-    return (
-      <div className="status-box status-box-danger w-full justify-start">
-        {status.title} is {status.status}.
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-        {steps.map((step, index) => {
-          const state =
-            index < currentIndex
-              ? STEP_TONE_CLASSES[index] ?? STEP_TONE_CLASSES[0]
-              : index === currentIndex
-                ? STEP_TONE_CLASSES[index] ?? STEP_TONE_CLASSES[0]
-                : "";
-          return (
-            <div
-              className={`status-box w-full ${state}`}
-              key={step.key}
-            >
-              <p className="break-words font-semibold leading-tight">{step.label}</p>
-            </div>
-          );
-        })}
-      </div>
-      {status.queue_position != null ? (
-        <div
-          aria-live="polite"
-          className="rounded-xl border border-line bg-panel px-3 py-2 text-center shadow-soft"
-        >
-          <p className="font-mono text-sm font-semibold text-ink">
-            #{status.queue_position} in the queue
-          </p>
-          <p className="eyebrow mt-1">
-            {queuePositionDetail(status)}
-          </p>
-        </div>
-      ) : null}
-      {timeLeft ? (
-        <p className="rounded-lg border border-accent bg-accent px-3 py-2 text-center font-mono text-sm font-semibold text-on-accent dark:bg-accent/15 dark:text-accent-ink">
-          {timeLeft}
-        </p>
-      ) : null}
-      <p className="text-sm text-muted">
-        Current status:{" "}
-        <span className="font-mono font-semibold capitalize text-ink">
-          {status.status.replace("_", " ")}
-        </span>
-      </p>
-    </div>
-  );
+  const current = normalizeServiceStatus(status.status);
+  // A job waiting on the member (changes asked for, quote to approve) is still before "Accepted".
+  const currentIndex = steps.findIndex(step => step.key === (current === "changes_requested" || current === "quoted" ? "pending" : current));
+  if (current === "cancelled") return <StatusPill tone="neutral" label={`${status.title} was cancelled. Nothing was charged.`} />;
+  if (current === "uncollected") return <StatusPill tone="neutral" label={`${status.title} wasn't collected within 14 days.`} />;
+  if (current === "rejected" || current === "failed") return <StatusPill tone="danger" label={`${status.title} is ${current}.`} />;
+  return <div className="grid gap-4">
+    <ProgressBar value={Math.max(0, currentIndex) / (steps.length - 1)} label="Print progress" />
+    <ol className="grid gap-2">{steps.map((step, index) => <li key={step.key} aria-current={index === currentIndex ? "step" : undefined}>
+      <StatusPill label={step.label} tone={index < currentIndex ? "success" : index === currentIndex ? "accent" : "neutral"} />
+    </li>)}</ol>
+    {status.queue_position != null ? <ListRow title={`#${status.queue_position} in the queue`} meta={queuePositionDetail(status)} /> : null}
+    <ServiceRequestEta eta={status.eta} status={current} showLine={false} />
+    <p className="text-sm text-muted">Current status: <span className="font-semibold text-ink">{["changes_requested", "quoted", "uncollected"].includes(current) ? serviceStatusLabel(current) : current.replace(/_/g, " ")}</span></p>
+  </div>;
 }
 
-export function StatusResult({
-  isPending,
-  error,
-  status,
-}: {
-  isPending: boolean;
-  error: Error | null;
-  status?: PrintStatus;
+export function StatusResult({ isPending, error, status, onRetry }: {
+  isPending: boolean; error: Error | null; status?: PrintStatus; onRetry?: () => void;
 }) {
-  if (isPending) {
-    return (
-      <div className="grid min-h-24 place-items-center">
-        <Spinner />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <p className="rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger">
-        {error.message}
-      </p>
-    );
-  }
-
-  return status ? (
-    <div className="space-y-3">
-      <div>
-        <h3 className="title-section break-words">{status.title}</h3>
-        <p className="eyebrow mt-1">
-          Created {new Date(status.created_at).toLocaleString()}
-        </p>
-      </div>
-      <StatusStepper status={status} />
-    </div>
-  ) : null;
+  if (isPending) return <div role="status" aria-label="Loading print status"><Skeleton className="h-60" /></div>;
+  if (error) return <ErrorBlock error={new Error(error.message || "Couldn't load your print status. Try again.")} onRetry={onRetry} />;
+  return status ? <div className="grid gap-5"><div><h3 className="title-section break-words">{status.title}</h3>
+    <p className="mt-1 text-sm text-muted">Created <RelativeTime date={status.created_at} /></p></div><StatusStepper status={status} /></div> : null;
 }

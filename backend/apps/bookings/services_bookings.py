@@ -1,11 +1,14 @@
 '''Audited mutation boundary for bookings and their lifecycle.'''
 
+from apps.accounts.account_kind_guards import require_member_account
+
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from django.utils import timezone
 from rest_framework import serializers
 
 from apps.audit import services as audit
+from apps.accounts.account_obligations import lock_obligation_owner
 from apps.bookings import notifications
 from apps.bookings.exceptions import BookingConflict, BookingInvalidTransition
 from apps.bookings.models import BookableSpace, Booking
@@ -16,11 +19,12 @@ from apps.bookings.services_schedule import confirmed_overlap as _confirmed_over
 
 
 def _locked_space(space_id):
-    return (
-        BookableSpace.objects.select_for_update()
-        .select_related('makerspace')
-        .get(pk=space_id)
-    )
+    from apps.tenant_migration.gate_runtime import assert_write_allowed
+    candidate = BookableSpace.objects.only("makerspace_id").get(pk=space_id)
+    assert_write_allowed(candidate.makerspace_id)
+    locked = BookableSpace.objects.select_for_update().get(pk=space_id)
+    locked.makerspace = require_module_locked(locked.makerspace_id, "bookings")
+    return locked
 
 
 def _validate(booking):
@@ -76,21 +80,27 @@ def create_booking(
     space, *, starts_at, ends_at, member=None, name=None, email=None, phone=None,
     custom_answers=None, note='', actor=None, certification_override_reason='',
 ):
-    from apps.bookings.services_rules import enforce_booking_rules
+    if member is not None:
+        require_member_account(member)
+    from apps.bookings.admission import admission_status, validate_admission
     from apps.encryption.write_fence import assert_mapped_write_allowed
 
     assert_mapped_write_allowed(space.makerspace_id)
     locked_space = _locked_space(space.pk)
-    if not locked_space.is_active:
-        raise BookingInvalidTransition('Inactive spaces cannot accept bookings.')
-    _require_certification(locked_space, member, actor, certification_override_reason)
-
+    member = lock_obligation_owner(member)
+    if actor is not None and getattr(member, "pk", None) != actor.pk:
+        from .booking_authority import require
+        from apps.presence.guard import require_active_member
+        from apps.makerspaces.models import MakerspaceMembership
+        require(actor, locked_space, "manage_reservations")
+        if member is None or not MakerspaceMembership.objects.filter(
+            makerspace_id=locked_space.makerspace_id, user=member, status="active",
+        ).exists():
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("Staff booking requires an active local member.")
+        require_active_member(member, locked_space.makerspace)
     now = timezone.now()
-    status = (
-        Booking.Status.CONFIRMED
-        if locked_space.approval_mode == BookableSpace.ApprovalMode.INSTANT
-        else Booking.Status.PENDING
-    )
+    status = admission_status(locked_space)
     if member is not None:
         name = member.display_name or member.get_full_name() or member.username
         email = member.email
@@ -106,22 +116,17 @@ def create_booking(
         note=note,
         status=status,
     )
-    _validate(booking)
-    enforce_booking_rules(locked_space, starts_at, ends_at, now)
-    if ends_at <= now:
-        raise serializers.ValidationError(
-            {'ends_at': 'End time must be in the future.'}
-        )
+    validate_admission(locked_space, booking, now=now, actor=actor,
+                       override_reason=certification_override_reason)
     booking.custom_answers = validate_answers(
         locked_space.custom_form, custom_answers
     )
     require_module_locked(locked_space.makerspace, 'bookings')
     limits.check_quota(locked_space.makerspace, 'bookings', adding=1)
-    if status == Booking.Status.CONFIRMED and _confirmed_overlap(
-        locked_space, starts_at, ends_at
-    ):
-        raise BookingConflict('This space is already booked for that time.')
-
+    if status == Booking.Status.PENDING:
+        # L15 (#159): approval charges the price quoted now, never a re-quote.
+        from apps.bookings.service_payments import requested_snapshot
+        booking.pricing_snapshot = requested_snapshot(booking)
     booking.save()
     _audit(
         locked_space,
@@ -139,6 +144,8 @@ def create_booking(
 
 
 def _locked_booking(booking):
+    from apps.encryption.write_fence import assert_mapped_write_allowed
+    assert_mapped_write_allowed(booking.space.makerspace_id)
     space = _locked_space(booking.space_id)
     locked = Booking.objects.select_for_update().get(pk=booking.pk)
     if locked.space_id != space.pk:
@@ -149,6 +156,8 @@ def _locked_booking(booking):
 @transaction.atomic
 def approve_booking(booking, *, actor):
     space, locked = _locked_booking(booking)
+    from .booking_authority import require
+    require(actor, space, "manage_reservations")
     if locked.status != Booking.Status.PENDING:
         raise BookingInvalidTransition(
             f'Cannot transition booking from {locked.status} to confirmed.'
@@ -182,21 +191,26 @@ def approve_booking(booking, *, actor):
     notifications.notify_booking_status(locked, 'confirmed')
     from apps.bookings.service_payments import create_for_confirmed_booking
 
-    create_for_confirmed_booking(locked, actor)
+    create_for_confirmed_booking(locked, actor, approval=True)
     return _refresh(locked)
 
 
 @transaction.atomic
-def reject_booking(booking, *, actor):
+def reject_booking(booking, *, actor, reason=""):
+    from .services_decisions import clean_reason
+    reason = clean_reason(reason, required=True)
     space, locked = _locked_booking(booking)
+    from .booking_authority import require
+    require(actor, space, "manage_reservations")
     if locked.status != Booking.Status.PENDING:
         raise BookingInvalidTransition(
             f'Cannot transition booking from {locked.status} to rejected.'
         )
     locked.status = Booking.Status.REJECTED
+    locked.decision_reason = reason
     locked.calendar_sequence += 1
     locked.calendar_updated_at = timezone.now()
-    locked.save(update_fields=['status', 'calendar_sequence', 'calendar_updated_at'])
+    locked.save(update_fields=['status', 'decision_reason', 'calendar_sequence', 'calendar_updated_at'])
     _audit(
         space,
         actor,
@@ -206,6 +220,7 @@ def reject_booking(booking, *, actor):
             'booking_id': locked.pk,
             'old_status': Booking.Status.PENDING,
             'new_status': Booking.Status.REJECTED,
+            'reason': reason,
         },
     )
     notifications.notify_booking_status(locked, 'rejected')

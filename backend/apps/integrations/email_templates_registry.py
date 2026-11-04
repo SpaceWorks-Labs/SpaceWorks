@@ -11,8 +11,10 @@ from .email_templates_registry_helpers import (
 )
 from .email_templates_registry_fablab import build_entries as _build_fablab_entries
 from .email_templates_registry_wp3 import build_entries as _build_wp3_entries
+from .email_templates_registry_r2_l4 import build_entries as _build_r2_l4_entries
 from .email_templates_registry_devices import build_entries as _build_device_entries
 from .email_templates_registry_research import build_entries as _build_research_entries
+from .email_templates_registry_documents import build_entries as _build_document_entries
 from .email_templates_registry_defaults import (
     HARDWARE_REQUESTER_DEFAULTS,
     HARDWARE_STAFF_DEFAULTS,
@@ -21,6 +23,11 @@ from .email_templates_registry_defaults import (
     PRINTING_REQUESTER_TEXT,
     PRINTING_STAFF_SUBJECTS,
     PRINTING_STAFF_TEXT,
+)
+from .email_templates_registry_service_notices import (
+    SERVICE_NOTICE_HTML,
+    SERVICE_NOTICE_SUBJECTS,
+    SERVICE_NOTICE_TEXT,
 )
 
 STREAMS = {"hardware", "printing", "events", "bookings", "maintenance", "membership",
@@ -46,7 +53,7 @@ HARDWARE_STAFF_KEYS = (
     "closed_with_issue",
     "return_reminder",
 )
-PRINTING_REQUESTER_KEYS = ("submitted", "accepted", "started", "rejected", "completed")
+PRINTING_REQUESTER_KEYS = ("submitted", "accepted", "started", "rejected", "completed", "next", "cancelled")
 PRINTING_STAFF_KEYS = (
     "submitted",
     "accepted",
@@ -144,9 +151,9 @@ def _printing_requester_entry(key):
         label=_label(key),
         description=f"Requester email for printing event '{key}'.",
         fields=PRINTING_FIELDS,
-        default_subject=PRINTING_REQUESTER_SUBJECTS[key],
-        default_text=PRINTING_REQUESTER_TEXT[key],
-        default_html=PRINTING_REQUESTER_HTML[key],
+        default_subject={**PRINTING_REQUESTER_SUBJECTS, **SERVICE_NOTICE_SUBJECTS}[key],
+        default_text={**PRINTING_REQUESTER_TEXT, **SERVICE_NOTICE_TEXT}[key],
+        default_html={**PRINTING_REQUESTER_HTML, **SERVICE_NOTICE_HTML}[key],
         sample_context=_printing_sample_context(),
     )
 
@@ -186,7 +193,9 @@ REGISTRY = {
     **_build_fablab_entries(EmailTemplateRegistryEntry, bag, _label),
     **_build_device_entries(),
     **_build_research_entries(),
+    **_build_document_entries(),
     **_build_wp3_entries(),
+    **_build_r2_l4_entries(),
 }
 
 

@@ -12,11 +12,19 @@ Expiry never touches `MakerspaceMembership.status` or `User.access_status`. The 
 effect an expired term can have is the per-makerspace opt-in
 `Makerspace.lapsed_members_cannot_borrow`, enforced by `request_access.require_current_term`
 through the existing who-may-submit rule -- no new access state.
+
+Release 2 (lane L4, decisions 69/71): a plan has a TYPE (rolling interval, ends at the
+financial-year end, ends on one fixed date, or lifetime), separate new and renewal
+prices, and per-plan overrides of the space's joining fee, rejoin rule, payment timing,
+join mode and application form. A null override inherits the space default.
 """
-from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-from django.db.models import F, Q
+from django.db.models import Q
+
+from apps.forms_schema.validation import validate_form_schema
+
+from apps.makerspaces.models_membership_rules import JoinMode, LateRenewal, PaymentTiming, PlanType, RejoinRule
 
 
 def default_renewal_reminders():
@@ -31,12 +39,15 @@ class MembershipPlan(models.Model):
         YEARLY = "yearly", "Yearly"
         CUSTOM_DAYS = "custom_days", "Custom number of days"
 
+    PlanType = PlanType
+
     makerspace = models.ForeignKey(
         "makerspaces.Makerspace", on_delete=models.CASCADE, related_name="membership_plans"
     )
     name = models.CharField(max_length=120)
     interval = models.CharField(max_length=16, choices=Interval.choices)
     custom_days = models.PositiveIntegerField(null=True, blank=True)
+    # The price a NEW member pays for a term.
     amount = models.DecimalField(
         max_digits=12, decimal_places=2, default=0, validators=[MinValueValidator(0)]
     )
@@ -49,6 +60,29 @@ class MembershipPlan(models.Model):
     renewal_retries = models.PositiveSmallIntegerField(default=0, validators=[MaxValueValidator(3)])
     reminder_days_before = models.JSONField(default=default_renewal_reminders, blank=True)
     reminder_days_after = models.JSONField(default=list, blank=True)
+    plan_type = models.CharField(max_length=16, choices=PlanType.choices, default=PlanType.ROLLING)
+    fixed_end_date = models.DateField(null=True, blank=True)
+    # Null renewal price = renewals cost the same as a new term.
+    renewal_amount = models.DecimalField(
+        max_digits=12, decimal_places=2, null=True, blank=True, validators=[MinValueValidator(0)]
+    )
+    # Overrides of the space defaults; null inherits (decision 71).
+    joining_fee = models.DecimalField(
+        max_digits=12, decimal_places=2, null=True, blank=True, validators=[MinValueValidator(0)]
+    )
+    rejoin_rule = models.CharField(max_length=16, choices=RejoinRule.choices, null=True, blank=True)
+    rejoin_after_days = models.PositiveIntegerField(null=True, blank=True, validators=[MaxValueValidator(3650)])
+    payment_timing = models.CharField(max_length=24, choices=PaymentTiming.choices, null=True, blank=True)
+    join_mode = models.CharField(max_length=16, choices=JoinMode.choices, null=True, blank=True)
+    application_schema = models.JSONField(null=True, blank=True, default=None, validators=[validate_form_schema])
+    late_renewal = models.CharField(max_length=16, choices=LateRenewal.choices, default=LateRenewal.BACKDATE)
+    # Public listing (X5). A plan appears on public surfaces only when `is_public`,
+    # active and not archived; prices are shown with it.
+    slug = models.SlugField(max_length=80, blank=True, default="")
+    description = models.TextField(blank=True, default="")
+    sort_order = models.PositiveIntegerField(default=0)
+    is_public = models.BooleanField(default=False)
+    archived_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     updated_at = models.DateTimeField(auto_now=True)
@@ -58,8 +92,19 @@ class MembershipPlan(models.Model):
             models.UniqueConstraint(
                 fields=["makerspace", "name"], name="uniq_membership_plan_name"
             ),
+            models.UniqueConstraint(
+                fields=["makerspace", "slug"], condition=~Q(slug=""), name="uniq_membership_plan_slug"
+            ),
             models.CheckConstraint(
                 condition=Q(amount__gte=0), name="membership_plan_amount_non_negative"
+            ),
+            models.CheckConstraint(
+                condition=Q(renewal_amount__isnull=True) | Q(renewal_amount__gte=0),
+                name="membership_plan_renewal_amount_non_negative",
+            ),
+            models.CheckConstraint(
+                condition=Q(joining_fee__isnull=True) | Q(joining_fee__gte=0),
+                name="membership_plan_joining_fee_non_negative",
             ),
             # `custom_days` is meaningful for exactly one interval, and required there.
             models.CheckConstraint(
@@ -69,68 +114,38 @@ class MembershipPlan(models.Model):
                 ),
                 name="membership_plan_custom_days_matches_interval",
             ),
+            models.CheckConstraint(
+                condition=Q(plan_type="fixed_end", fixed_end_date__isnull=False)
+                | (~Q(plan_type="fixed_end") & Q(fixed_end_date__isnull=True)),
+                name="membership_plan_fixed_end_matches_type",
+            ),
+            models.CheckConstraint(
+                condition=Q(rejoin_rule="after_lapse", rejoin_after_days__gt=0)
+                | (~Q(rejoin_rule="after_lapse") & Q(rejoin_after_days__isnull=True)),
+                name="membership_plan_rejoin_days_matches_rule",
+            ),
         ]
-        ordering = ["makerspace_id", "name"]
+        ordering = ["makerspace_id", "sort_order", "name"]
 
     def save(self, *args, **kwargs):
         self.currency = (self.currency or "").lower()
         super().save(*args, **kwargs)
 
+    @property
+    def renewal_price(self):
+        return self.amount if self.renewal_amount is None else self.renewal_amount
+
+    @property
+    def renews(self):
+        """Whether a term under this plan can be followed by another one."""
+        return self.plan_type in (PlanType.ROLLING, PlanType.FINANCIAL_YEAR)
+
+    @property
+    def listed(self):
+        return self.is_public and self.is_active and self.archived_at is None
+
     def __str__(self):
         return f"{self.name} ({self.makerspace_id})"
 
 
-class MembershipTerm(models.Model):
-    class Status(models.TextChoices):
-        ACTIVE = "active", "Active"
-        EXPIRED = "expired", "Expired"
-        CANCELLED = "cancelled", "Cancelled"
-
-    membership = models.ForeignKey(
-        "makerspaces.MakerspaceMembership", on_delete=models.CASCADE, related_name="terms"
-    )
-    # PROTECT: a term is the record of what a member was sold; deleting the plan under it
-    # would erase the price history behind a real charge. Deactivate plans instead.
-    plan = models.ForeignKey(MembershipPlan, on_delete=models.PROTECT, related_name="terms")
-    starts_at = models.DateTimeField()
-    ends_at = models.DateTimeField()
-    status = models.CharField(max_length=16, choices=Status.choices, default=Status.ACTIVE)
-    # The ONE renewal charge raised for this term. Money is never deleted, so SET_NULL is
-    # only ever reached by the payments purge path; the Payment row itself stays.
-    renewal_payment = models.ForeignKey(
-        "payments.Payment",
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name="renewed_membership_terms",
-    )
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name="created_membership_terms",
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    renewed_from = models.OneToOneField(
-        "self", null=True, blank=True, on_delete=models.SET_NULL,
-        related_name="next_term",
-    )
-    renewal_attempts = models.PositiveSmallIntegerField(default=0)
-    renewal_retry_at = models.DateTimeField(null=True, blank=True)
-    grace_until = models.DateTimeField(null=True, blank=True)
-
-    class Meta:
-        constraints = [
-            models.CheckConstraint(
-                condition=Q(ends_at__gt=F("starts_at")), name="membership_term_ends_after_start"
-            ),
-        ]
-        indexes = [
-            models.Index(fields=["status", "ends_at"], name="membershipterm_status_ends_idx"),
-        ]
-        ordering = ["-starts_at", "-pk"]
-
-    def __str__(self):
-        return f"term {self.pk} of membership {self.membership_id}"
+from apps.makerspaces.models_membership_terms import MembershipTerm  # noqa: E402,F401

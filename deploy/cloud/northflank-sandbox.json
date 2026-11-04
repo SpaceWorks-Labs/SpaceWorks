@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "status": "verify on signup",
+  "certified_one_click": false,
+  "zero_cost_guarantee": false,
+  "deployment_mode": "managed",
+  "deployment_profile": "free",
+  "resident_services": [
+    "one web only"
+  ],
+  "trigger": "external authenticated ten-minute HTTP tick; native cron may call the same endpoint but cannot launch another scheduler container",
+  "signup_checks": [
+    "Sandbox available to new account; ongoing free allowance separate from credits.",
+    "At least 512 MB usable web RAM, measured workload and request limits.",
+    "Current card/identity requirement, reset rules, suspension/overage behavior and spend controls.",
+    "External PG16/17 direct/session transport and narrow runtime role; reject transaction pooling.",
+    "Private storage/conditional promotion, HTTP sender verification and account-wide mail cap.",
+    "Finite external release; runtime never gets maintenance credentials.",
+    "Actual deployed acceptance receipt, tick concurrency, core flows and full isolation."
+  ],
+  "source": "https://northflank.com/pricing",
+  "source_checked_on": "2026-10-18",
+  "live_validation": null
+}

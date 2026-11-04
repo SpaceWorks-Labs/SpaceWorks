@@ -5,7 +5,7 @@ from django.db import transaction
 logger = logging.getLogger(__name__)
 
 
-def emit_notification(makerspace, *, title, level="info", event="", body="", url_path=""):
+def emit_notification(makerspace, *, title, level="info", event="", body="", url_path="", source_intent=""):
     """Fail-safe emit of a staff Notification row.
 
     A notification write must NEVER break the underlying workflow/dispatch, so
@@ -54,7 +54,7 @@ def emit_notification(makerspace, *, title, level="info", event="", body="", url
                     try:
                         with transaction.atomic():
                             from apps.notifications.legacy_inbox import mirror_legacy_staff
-                            mirror_legacy_staff(current, payload)
+                            mirror_legacy_staff(current, payload, source_intent=source_intent)
                     except Exception:
                         # An optional personal mirror cannot roll back the legacy alert.
                         logger.warning("notification_legacy_mirror_failed", extra={"makerspace_id": makerspace_id})

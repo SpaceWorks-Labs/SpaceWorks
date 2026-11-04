@@ -2,12 +2,19 @@ from django.contrib import admin, messages
 from django.conf import settings
 from unfold.admin import ModelAdmin
 
+from apps.accounts.admin_pii_masking import PiiMaskingAdminMixin
 from apps.integrations.models import EmailLog
 from apps.integrations.services import EmailRetryError, retry_email_log
 from config.admin_access import SuperuserOnlyModelAdmin
 
 @admin.register(EmailLog)
-class EmailLogAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
+class EmailLogAdmin(PiiMaskingAdminMixin, SuperuserOnlyModelAdmin, ModelAdmin):
+    pii_extra_fields = ("recipient_display",)
+
+    def pii_row_visible(self, viewer, obj):
+        # Owner decision #114: mail with no makerspace is platform data, never masked;
+        # a space's mail stays masked for a superadmin without a PII window there.
+        return obj.makerspace_id is None or super().pii_row_visible(viewer, obj)
     actions = ["retry_selected"]
     list_display = ("created_at", "recipient_display", "stream", "event", "status", "makerspace")
     list_filter = ("status", "stream", "makerspace")

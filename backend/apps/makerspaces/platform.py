@@ -7,11 +7,11 @@ from apps.integrations.email import email_enabled
 from apps.makerspaces.models import Makerspace, default_branding_config
 from apps.makerspaces.theme_validation import public_theme_config
 from apps.makerspaces.servability import is_servable, servable_queryset
-from apps.makerspaces.capabilities import FEATURE_MODULES, FEATURES
+from apps.makerspaces.capabilities import FEATURES
+from apps.makerspaces.capability_eligibility import configuration_feature_enabled
 from apps.makerspaces.module_registry import is_frontend_exposed, module_available, module_workflows
-from apps.makerspaces.request_access import ANYONE, effective_policy
 from apps.separability.registry import runtime_active
-from apps.makerspaces.loan_visibility import LOAN_MODULES, LOAN_FEATURES
+from apps.makerspaces.loan_visibility import LOAN_MODULES
 
 # Derived from the module registry, which also decides frontend exposure: an
 # internal master switch declares frontend_exposed=False and is dropped from both
@@ -21,6 +21,10 @@ MODULE_WORKFLOWS = module_workflows()
 FEATURE_WORKFLOWS = {
     "inventory.self_checkout": ["self_checkout", "self_return"],
     "inventory.kiosk": ["kiosk", "kiosk_scanner"],
+    # The retired `maintenance`/`procurement` module keys' workflows, now per parent (#97).
+    "machines.maintenance": ["maintenance"],
+    "machines.tobuy": ["procurement"],
+    "inventory.tobuy": ["procurement"],
 }
 
 
@@ -152,26 +156,11 @@ def feature_enabled(makerspace, key):
     # archived checks and only the new lifecycle states fail closed here.
     if not is_servable(makerspace, allow_archived=True):
         return False
-    if key in LOAN_FEATURES and not feature_enabled(makerspace, "loans.enabled"):
-        return False
-    definition = FEATURES.get(key)
-    if definition is None or key not in set(makerspace.enabled_features or []):
-        return False
-    # A string parent must be a recognised feature-module; None => standalone feature
-    # with no parent-module prerequisite (e.g. self-checkout on a private makerspace).
-    if definition.parent_module is not None and definition.parent_module not in FEATURE_MODULES:
-        return False
-    required_modules = [
-        module
-        for module in (definition.parent_module, *definition.requires_modules)
-        if module is not None
-    ]
-    return all(
-        module_enabled(makerspace, module) for module in required_modules
-    ) and all(feature_enabled(makerspace, feature) for feature in definition.requires_features)
+    return configuration_feature_enabled(makerspace, key)
 
 def bootstrap_payload(makerspace):
     from apps.makerspaces.editions import current_edition
+    from apps.integrations.messaging.resolver import resolve_sender
 
     modules = sorted(key for key in available_modules(makerspace) if is_frontend_exposed(key))
     if not feature_enabled(makerspace, "loans.enabled"):
@@ -208,17 +197,20 @@ def bootstrap_payload(makerspace):
         "public_landing_page": makerspace.public_landing_page,
         "membership_policy": makerspace.membership_policy,
     }
-    # Emitted ONLY for the opt-in `anyone` policy, following the `/api/v1/config`
-    # `member_accounts` precedent: every deployment that has not opted in keeps a
-    # byte-for-byte identical payload. Absent therefore means "an account is required",
-    # which is exactly what every client assumed before this policy existed.
-    #
-    # The public borrow form needs this: an account-less submission must collect contact
-    # details and send an Idempotency-Key, and without knowing the policy the client
-    # cannot tell whether to ask for them -- it would post a members-shaped body and take
-    # a 400.
-    if effective_policy(makerspace) == ANYONE:
-        makerspace_payload["request_access"] = ANYONE
+    # Emitted ONLY for a space without member accounts (#80), so every other deployment
+    # keeps a byte-for-byte identical payload; absent means "sign in to request". The
+    # public form needs it to ask for name, phone, email and the email code instead.
+    from apps.makerspaces.request_access import CONTACT, effective_policy
+
+    if effective_policy(makerspace) == CONTACT:
+        makerspace_payload["request_access"] = CONTACT
+    # #77: emitted only while the switch is on and a notice is set, so every other
+    # space keeps a byte-for-byte identical payload.
+    from apps.makerspaces.closed_notice import public_notice
+
+    notice = public_notice(makerspace)
+    if notice:
+        makerspace_payload["closed_notice"] = notice
     # Advisory geofence: expose the flag ONLY when configured AND the feature is on, so
     # dormant/self-host bootstrap payloads stay byte-for-byte unchanged (self-host
     # invariant) and a disabled feature cannot leave the client asking for coordinates
@@ -246,6 +238,8 @@ def bootstrap_payload(makerspace):
         "theme": theme,
         "branding": branding,
         "email_enabled": email_enabled(),
+        "messaging": {channel: module_enabled(makerspace, channel) and resolve_sender(makerspace, channel) is not None
+                      for channel in ("sms", "whatsapp")},
         "public_api": {
             "base_url": "/api/v1",
             "publishable_key": makerspace.public_api_key,

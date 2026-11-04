@@ -2,6 +2,13 @@ from django.conf import settings
 from django.contrib.postgres.indexes import GinIndex
 from django.db import models
 from django.db.models import Q
+from .models_leave import OrganizationLeaveReceipt  # noqa: F401
+
+from .models_public_pages import (
+    OrganizationPublicPage, OrganizationPublicPageRevision, OrganizationPublicPageAsset,
+    OrganizationPublicPageRevisionAsset, OrganizationPublicPageRevisionMember,
+    OrganizationPublicPageStorage,
+)
 
 
 class Organization(models.Model):
@@ -16,6 +23,10 @@ class Organization(models.Model):
     description = models.TextField(blank=True)
     is_active = models.BooleanField(default=True)
     public_profile_enabled = models.BooleanField(default=False)
+    # Opt-in listing in the staff-only organization directory that event organizers
+    # search when choosing an event's audience. Off by default: an organization that
+    # never asked to be findable must not appear in another tenant's picker.
+    is_discoverable = models.BooleanField(default=False)
     makerspaces = models.ManyToManyField(
         "makerspaces.Makerspace",
         through="OrganizationMakerspace",
@@ -146,6 +157,8 @@ class OrganizationInvitation(models.Model):
         related_name="invitations",
     )
     token_digest = models.CharField(max_length=64, unique=True, editable=False)
+    # Decision #145: an optional invitee email is never stored, only its HMAC digest.
+    invitee_email_digest = models.CharField(max_length=64, blank=True, default="", editable=False)
     granted_actions = models.JSONField(default=list, blank=True)
     governance_actions = models.JSONField(default=list, blank=True)
     expires_at = models.DateTimeField()

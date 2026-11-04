@@ -14,13 +14,15 @@ if [[ -z "$owner" ]]; then
 fi
 
 failed=0
-for package in spaceworks-backend spaceworks-frontend spaceworks-allinone; do
+for package in spaceworks-backend spaceworks-frontend; do
   image="ghcr.io/${owner}/${package}:${tag}"
   echo "Verifying ${image}"
-  if ! docker pull "$image"; then
-    echo "::error::Published release image cannot be pulled: ${image}" >&2
-    failed=1
-  fi
+  for platform in linux/amd64 linux/arm64; do
+    if ! docker pull --platform "$platform" "$image"; then
+      echo "::error::Published release image cannot be pulled for $platform: ${image}" >&2
+      failed=1
+    fi
+  done
 done
 
 exit "$failed"

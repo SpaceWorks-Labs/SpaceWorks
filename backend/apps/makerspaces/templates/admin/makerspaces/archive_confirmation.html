@@ -14,6 +14,10 @@
     Archiving does NOT block on unsettled charges.
   </p>
   <p>
+    Unpaid event payouts stay owed to members, but finance cannot record or settle them
+    while the makerspace is archived. Settlement resumes when it is restored.
+  </p>
+  <p>
     If a makerspace has a pending archive request, direct archival will approve that
     request automatically and notify its requester.
   </p>
@@ -26,6 +30,7 @@
         <th scope="col">Owned pending</th>
         <th scope="col">Routed pending</th>
         <th scope="col">Total pending</th>
+        <th scope="col">Unpaid event payouts</th>
         <th scope="col">Pending archive request</th>
       </tr>
     </thead>
@@ -37,6 +42,7 @@
           <td>{{ row.owned_pending }}</td>
           <td>{{ row.routed_pending }}</td>
           <td>{{ row.total_pending }}</td>
+          <td>{{ row.unpaid_event_payouts }}</td>
           <td>
             {% if row.pending_archive_request %}
               <strong>Will be approved.</strong><br>

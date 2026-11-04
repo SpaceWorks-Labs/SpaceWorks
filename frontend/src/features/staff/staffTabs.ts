@@ -1,4 +1,5 @@
-import { featureEnabled } from "../../lib/features";
+import { currentSessionContext } from "../../lib/api/sessionContext";
+import { capabilityOn, featureEnabled } from "../../lib/features";
 import type { Makerspace } from "./panels/shared";
 import { readStorage, removeStorage, writeStorage } from "../../lib/safeStorage";
 
@@ -32,7 +33,6 @@ const TAB_MODULES: Record<string, string[]> = {
   bookings: ["bookings"],
   // A card belongs to a membership; without that module every member-card endpoint 404s.
   cards: ["membership"],
-  tobuy: ["procurement"],
   transfers: ["stock_transfers"],
   stocktake: ["stocktake"],
   containers: ["containers"],
@@ -45,7 +45,21 @@ const TAB_MODULES: Record<string, string[]> = {
   qr: ["qr_print_batches"],
   scanner: ["scanner"],
   reports: ["reports"],
-  warranty: ["staff_admin"],
+};
+
+// Tabs switched by per-parent capabilities rather than a module key (#97, #128 C-9): one
+// To-Buy list and one warranty app serve two parents, so either parent's switch shows it.
+const TAB_FEATURES: Record<string, string[]> = {
+  tobuy: ["inventory.tobuy", "machines.tobuy"],
+  warranty: ["inventory.warranty", "machines.warranty"],
+  // Lane L5: the finance tab holds the ledger and the money queues, each with its own switch.
+  finance: ["finance.ledger", "billing.offline_claims", "billing.maker_checker", "billing.capture_flags",
+    "billing.disputes"],
+  // Lane L12 (MI-40): the merged consumables list.
+  consumables: ["inventory.consumables"],
+  // Lane L16: repairs, issue reporting and item/room maintenance, under each parent.
+  repairs: ["machines.repairs", "machines.issue_reporting", "inventory.repairs", "inventory.issue_reporting",
+    "bookings.room_repairs", "bookings.issue_reporting", "inventory.maintenance", "bookings.room_maintenance"],
 };
 
 // Tabs whose backing app can be tombstoned out of a deployment but which no module
@@ -74,6 +88,7 @@ const TAB_PATHS: Record<string, string> = {
   migration: "tenant-migration",
   cards: "member-cards",
   organized: "organized-events",
+  granted: "assigned-events",
   "organization-analytics": "organization-analytics",
 };
 
@@ -97,7 +112,8 @@ export function filterTabsByEnabledModules(tabs: readonly string[], makerspace?:
   // Checked before the module gate and outside the early return below: an app the
   // deployment does not ship is unreachable no matter what the tenant enabled, and a
   // makerspace row that has not loaded its modules yet must not show it either.
-  const shipped = tabs.filter((tabName) => !unavailable.has(TAB_APPS[tabName] ?? ""));
+  const shipped = tabs.filter((tabName) => !unavailable.has(TAB_APPS[tabName] ?? "")
+    && !(tabName === "granted" && unavailable.has("events") && unavailable.has("bookings")));
 
   const modules = makerspace?.enabled_modules;
   if (!modules) return shipped;
@@ -108,28 +124,32 @@ export function filterTabsByEnabledModules(tabs: readonly string[], makerspace?:
     if (tabName === "direct") {
       return featureEnabled(makerspace.enabled_features ?? [], "inventory.self_checkout");
     }
+    const switches = TAB_FEATURES[tabName];
+    if (switches && makerspace.enabled_features !== undefined) {
+      return switches.some((key) => capabilityOn(makerspace, key));
+    }
     const required = TAB_MODULES[tabName];
     return !required || required.some((moduleName) => enabled.has(moduleName));
   });
 }
 
-export function readStoredMakerspace() {
-  const value = Number(readStorage(STAFF_SELECTED_MAKERSPACE_KEY));
+export function readStoredMakerspace(context = currentSessionContext()) {
+  const value = Number(readStorage(`${STAFF_SELECTED_MAKERSPACE_KEY}:${context}`));
   return Number.isFinite(value) && value > 0 ? value : null;
 }
 
 export function readStoredStaffTab() {
-  return pathToTab(readStorage(STAFF_ACTIVE_TAB_KEY));
+  return pathToTab(readStorage(`${STAFF_ACTIVE_TAB_KEY}:${currentSessionContext()}`));
 }
 
-export function persistSelectedMakerspace(value: number | null) {
-  if (value === null) removeStorage(STAFF_SELECTED_MAKERSPACE_KEY);
-  else writeStorage(STAFF_SELECTED_MAKERSPACE_KEY, String(value));
+export function persistSelectedMakerspace(value: number | null, context = currentSessionContext()) {
+  if (value === null) removeStorage(`${STAFF_SELECTED_MAKERSPACE_KEY}:${context}`);
+  else writeStorage(`${STAFF_SELECTED_MAKERSPACE_KEY}:${context}`, String(value));
 }
 
-export function persistStaffTab(tab: string) {
-  if (tab) writeStorage(STAFF_ACTIVE_TAB_KEY, tab);
-  else removeStorage(STAFF_ACTIVE_TAB_KEY);
+export function persistStaffTab(tab: string, context = currentSessionContext()) {
+  if (tab) writeStorage(`${STAFF_ACTIVE_TAB_KEY}:${context}`, tab);
+  else removeStorage(`${STAFF_ACTIVE_TAB_KEY}:${context}`);
 }
 
 export function staffBasePath(guestOnly: boolean) {
@@ -141,7 +161,7 @@ export function staffBasePath(guestOnly: boolean) {
 // on the inventory tab, not 404. Relaxing it globally would change how every existing
 // bookmark resolves, so the exception is opt-in and currently holds exactly one tab.
 const TABS_WITH_SUBPATHS = new Set(["machines"]);
-const GLOBAL_TABS = new Set(["organizations", "platform-dashboard"]);
+const GLOBAL_TABS = new Set(["organizations", "platform-dashboard", "granted"]);
 
 export function staffTabPath(
   tab: string,

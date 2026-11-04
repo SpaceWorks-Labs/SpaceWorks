@@ -1,5 +1,6 @@
-import { Card } from "../../components/ui/Card";
+import type { ReactNode } from "react";
 import type { RequestCartItem } from "../../types/inventory";
+import { ContactFields, type ContactDetails } from "./ContactFields";
 
 type BorrowRequestCardProps = {
   canSubmit: boolean;
@@ -12,22 +13,14 @@ type BorrowRequestCardProps = {
   onClear: () => void;
   onRequestedForChange: (value: string) => void;
   onSubmit: () => void;
-  // Account-less mode: the makerspace opted into requests without an account, so the
-  // borrower has no profile to read a name and email from and must supply them here.
-  accountLess?: boolean;
-  contactName?: string;
-  contactEmail?: string;
-  contactPhone?: string;
-  onContactNameChange?: (value: string) => void;
-  onContactEmailChange?: (value: string) => void;
-  onContactPhoneChange?: (value: string) => void;
   // Honeypot, carried by every other public form (booking, printing, events). A bot that
   // autofills it gets the server's decoy response instead of a real request.
   website?: string;
   onWebsiteChange?: (value: string) => void;
-  // The ONLY handle an account-less requester has on their request: their contact details
-  // are unverified so no lifecycle email is sent, and status lookup is by token.
-  publicToken?: string;
+  // Present only for a makerspace without member accounts: the borrower has no account.
+  contact?: ContactDetails;
+  /** Extra request fields (the collection window), placed before the purpose. */
+  extraFields?: ReactNode;
 };
 
 export function BorrowRequestCard({
@@ -41,37 +34,26 @@ export function BorrowRequestCard({
   onClear,
   onRequestedForChange,
   onSubmit,
-  accountLess = false,
-  contactName = "",
-  contactEmail = "",
-  contactPhone = "",
-  onContactNameChange,
-  onContactEmailChange,
-  onContactPhoneChange,
   website = "",
   onWebsiteChange,
-  publicToken,
+  contact,
+  extraFields,
 }: BorrowRequestCardProps) {
   return (
-    <Card>
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="eyebrow text-secondary-ink">
-            Borrow Request
-          </p>
-          <h2 className="title-panel mt-2">
-            Selected equipment
-          </h2>
-        </div>
-        <span className="rounded-lg border border-secondary bg-secondary/15 px-3 py-1 font-mono text-sm font-semibold text-secondary-ink">
+    <div className="min-w-0">
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="title-section min-w-0">
+          Selected equipment
+        </h3>
+        <span className="shrink-0 rounded-lg border border-brand bg-brand-soft px-3 py-1 text-sm font-semibold tabular-nums text-brand-ink">
           {totalItems}
         </span>
       </div>
 
       {items.length === 0 ? (
         <p className="mt-4 text-sm leading-6 text-muted">
-          {accountLess
-            ? "Add public items from the inventory list, then leave your name and email to submit the request."
+          {contact
+            ? "Add public items from the inventory list, then give your name, phone and email to submit the request."
             : "Add public items from the inventory list, then submit the request with your signed-in member account."}
         </p>
       ) : (
@@ -82,8 +64,8 @@ export function BorrowRequestCard({
                 className="flex items-center justify-between gap-3 rounded-lg border border-line bg-surface px-3 py-2"
                 key={item.productId}
               >
-                <span className="text-sm font-medium text-ink">{item.name}</span>
-                <span className="font-mono text-sm text-muted">x{item.quantity}</span>
+                <span className="min-w-0 break-words text-sm font-medium text-ink">{item.name}</span>
+                <span className="shrink-0 tabular-nums text-sm text-muted">x{item.quantity}</span>
               </div>
             ))}
           </div>
@@ -94,46 +76,8 @@ export function BorrowRequestCard({
       )}
 
       <div className="mt-5 space-y-3">
-        {accountLess ? (
-          <div className="space-y-3">
-            <label className="block">
-              <span className="eyebrow mb-1 block">Your name</span>
-              <input
-                autoComplete="name"
-                className="desk-input w-full"
-                maxLength={200}
-                placeholder="Ada Lovelace"
-                type="text"
-                value={contactName}
-                onChange={(event) => onContactNameChange?.(event.target.value)}
-              />
-            </label>
-            <label className="block">
-              <span className="eyebrow mb-1 block">Email</span>
-              <input
-                autoComplete="email"
-                className="desk-input w-full"
-                maxLength={254}
-                placeholder="you@example.com"
-                type="email"
-                value={contactEmail}
-                onChange={(event) => onContactEmailChange?.(event.target.value)}
-              />
-            </label>
-            <label className="block">
-              <span className="eyebrow mb-1 block">Phone (optional)</span>
-              <input
-                autoComplete="tel"
-                className="desk-input w-full"
-                maxLength={32}
-                placeholder="+44 20 1234 5678"
-                type="tel"
-                value={contactPhone}
-                onChange={(event) => onContactPhoneChange?.(event.target.value)}
-              />
-            </label>
-          </div>
-        ) : null}
+        {contact ? <ContactFields contact={contact} /> : null}
+        {extraFields}
         <label
           aria-hidden="true"
           className="absolute left-[-10000px] top-auto h-px w-px overflow-hidden"
@@ -148,7 +92,7 @@ export function BorrowRequestCard({
           />
         </label>
         <label className="block">
-          <span className="eyebrow mb-1 block">
+          <span className="mb-1 block text-sm font-semibold text-ink">
             Request purpose
           </span>
           <textarea
@@ -159,7 +103,7 @@ export function BorrowRequestCard({
           />
         </label>
         <button
-          className="desk-button-secondary w-full disabled:cursor-not-allowed disabled:opacity-50"
+          className="desk-button-brand w-full disabled:cursor-not-allowed"
           disabled={!canSubmit}
           type="button"
           onClick={onSubmit}
@@ -168,29 +112,17 @@ export function BorrowRequestCard({
         </button>
         {submitError ? <Notice tone="danger" text={submitError} /> : null}
         {submitted ? (
-          <div className="rounded-xl border border-success bg-success px-3 py-2 text-on-success dark:bg-success/15 dark:text-success-ink">
+          <div className="rounded-xl border border-success bg-success px-3 py-2 text-on-success dark:bg-success-soft dark:text-success-ink">
             <h3 className="title-section text-on-success dark:text-success-ink">Request submitted</h3>
-            {accountLess ? (
-              <>
-                <p className="mt-1 text-xs">
-                  Save this reference — an account-less request has no sign-in to come back
-                  to, and staff will ask for it.
-                </p>
-                {publicToken ? (
-                  <p className="mt-2 break-all rounded-lg bg-surface px-2 py-1 font-mono text-xs text-ink">
-                    {publicToken}
-                  </p>
-                ) : null}
-              </>
-            ) : (
-              <p className="mt-1 text-xs">
-                Check this page with your email to follow the request.
-              </p>
-            )}
+            <p className="mt-1 text-sm">
+              {contact
+                ? "Staff will contact you by email or phone about the request."
+                : "Check this page with your email to follow the request."}
+            </p>
           </div>
         ) : null}
       </div>
-    </Card>
+    </div>
   );
 }
 
@@ -198,6 +130,6 @@ function Notice({ text, tone }: { text: string; tone: "danger" | "success" }) {
   const colors =
     tone === "success"
       ? "border-success bg-success text-on-success"
-      : "border-danger/40 bg-danger/10 text-danger";
+      : "border-danger/40 bg-panel text-danger";
   return <p className={`rounded-lg border px-3 py-2 text-sm ${colors}`}>{text}</p>;
 }

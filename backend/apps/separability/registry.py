@@ -62,11 +62,6 @@ class _Registry:
     def freeze(self):
         self._frozen = True
 
-    def reset(self):
-        """Test-only: return to a mutable, empty state."""
-        self._entries = {}
-        self._frozen = False
-
     @property
     def frozen(self):
         return self._frozen
@@ -79,9 +74,6 @@ class _Registry:
 
     def items(self):
         return tuple(self._entries.items())
-
-    def values(self):
-        return tuple(self._entries.values())
 
 
 # Retention — survives tombstoning.
@@ -140,10 +132,6 @@ def registered_pii_models():
     return _pii_fields.keys()
 
 
-def all_pii_fields():
-    return tuple(f for fields in _pii_fields.values() for f in fields)
-
-
 def purge_plan_for(module_key):
     return _purge_plans.get(module_key)
 
@@ -184,11 +172,3 @@ def finalize():
 
 def is_finalized():
     return _finalized
-
-
-def reset_for_tests():
-    global _finalized
-    _pii_fields.reset()
-    _purge_plans.reset()
-    _runtime_apps.reset()
-    _finalized = False

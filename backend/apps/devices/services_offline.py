@@ -1,4 +1,6 @@
 """Per-tenant offline edges and bounded retention of mutable auth artifacts."""
+from apps.operations.cloud_jobs import bounded
+
 
 from datetime import timedelta
 import logging
@@ -24,11 +26,11 @@ AUTH_CLEANUP_BATCH_SIZE = 500
 
 def scan_offline_devices(*, now=None, batch_size=AUTH_CLEANUP_BATCH_SIZE):
     now = now or timezone.now()
-    batch_size = min(max(int(batch_size), 1), 1000)
+    batch_size = bounded.limit(min(max(int(batch_size), 1), 1000))
     counts = {"scanned": 0, "skipped": 0, "offline": 0, "nonces": 0, "enrollments": 0}
     if not module_available("devices"):
         return counts
-    for space in servable_queryset().order_by("pk").iterator(chunk_size=100):
+    for space in bounded.page(servable_queryset().order_by("pk"), "device-spaces"):
         if not module_enabled(space, "devices"):
             continue
         with fanout_tenant_write(
@@ -53,7 +55,7 @@ def _scan_tenant(space, now, batch_size, counts):
     devices = Device.objects.select_for_update().filter(
         makerspace=space, status=Device.Status.ACTIVE, offline_since__isnull=True,
     ).order_by("pk")
-    for device in devices.iterator(chunk_size=100):
+    for device in bounded.page(devices, f"devices:{space.pk}"):
         last_activity = device.last_seen_at
         if last_activity is None:
             # Enrollment artifacts expire; the immutable activation event does not.

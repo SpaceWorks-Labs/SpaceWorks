@@ -80,6 +80,10 @@ class RefundRequest:
     reference: str
     idempotency_key: str
     metadata: dict
+    #: Stripe Connect direct charges: return the platform fee pro rata with the refund.
+    refund_application_fee: bool = False
+    #: Destination charges only. Always false here: Connect uses direct charges.
+    reverse_transfer: bool = False
 
 
 @dataclass(frozen=True)
@@ -109,6 +113,18 @@ class WebhookEvent:
     refund_status: str = ""
     refund_amount_minor: int = 0
     is_failed: bool = False
+    #: Captured amount in provider minor units, for excess-collection audit evidence.
+    amount_minor: int = 0
+    currency: str = ""
+    #: Display label for how it was paid ("Visa ••4242"); never card data (lane L5).
+    method_label: str = ""
+    #: Dispute notifications (lane L5). Non-empty `dispute_id` marks a dispute event;
+    #: `dispute_status` is the provider's raw status or phase.
+    dispute_id: str = ""
+    dispute_status: str = ""
+    dispute_reason: str = ""
+    dispute_amount_minor: int = 0
+    event_type: str = ""
 
 
 class PaymentProvider(Protocol):

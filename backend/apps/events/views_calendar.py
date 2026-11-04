@@ -94,7 +94,7 @@ class PublicEventCalendarView(APIView):
             Event.objects.select_related("series").filter(
                 makerspace=makerspace,
                 public_token=public_token,
-                is_public=True,
+                is_public=True, page_state=Event.PageState.LIVE,
                 status__in=(
                     Event.Status.PUBLISHED, Event.Status.COMPLETED, Event.Status.CANCELLED,
                 ),

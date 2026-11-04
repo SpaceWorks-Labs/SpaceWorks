@@ -13,7 +13,7 @@ from .servability import servable_queryset
 from .space_pack_export import scoped_rows
 from .space_pack_format import PackConflict, PackError, open_pack
 from .space_pack_mutations import write_section
-from .space_pack_prepare import prepare, settings_serializer
+from .space_pack_prepare import keep_target_security, prepare, settings_serializer
 from .space_pack_validation import validate_configuration, validate_profile_references
 
 
@@ -37,13 +37,11 @@ def preview_pack(actor, makerspace, pack):
 
 @transaction.atomic
 def apply_pack(actor, makerspace, pack, *, base_checksum=None, creating=False):
-    # Match ordinary settings writers: root then recipient rows, before domain rows.
+    # Match ordinary settings writers: lock the makerspace row before domain rows.
     authorized_space(actor, makerspace.pk)
     from apps.tenant_migration.gate_runtime import assert_write_allowed
     assert_write_allowed(makerspace.pk)
-    from apps.backup.custody import with_makerspace_custody_lock
-    with with_makerspace_custody_lock(makerspace.pk):
-        return _apply_pack_locked(actor, makerspace, pack, base_checksum=base_checksum, creating=creating)
+    return _apply_pack_locked(actor, makerspace, pack, base_checksum=base_checksum, creating=creating)
 
 
 def _apply_pack_locked(actor, makerspace, pack, *, base_checksum, creating):
@@ -54,11 +52,11 @@ def _apply_pack_locked(actor, makerspace, pack, *, base_checksum, creating):
         require_feature(makerspace, "packs.import")
         if not base_checksum:
             raise PackError("pack_preview_required", "Preview this pack before applying it.")
-    config = open_pack(pack)
+    config = keep_target_security(makerspace, validate_configuration(open_pack(pack)))
     steps, preview = prepare(actor, makerspace, config)
     if not creating and preview["base_checksum"] != base_checksum:
         raise PackConflict("stale_pack_preview", "Configuration changed. Preview the pack again.")
-    # The capability service owns dependency validation and the backup custody guard.
+    # The capability service owns module dependency validation.
     if set(makerspace.enabled_modules or []) != set(config["modules"]):
         from .module_install import ModuleInstallError, replace_modules
         try:

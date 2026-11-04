@@ -100,14 +100,15 @@ def _deliveries_by_stream_section(makerspace):
 
 def _smtp_section(makerspace):
     from apps.integrations.email import platform_email_configured
-
-    if (makerspace.smtp_host or "").strip():
-        try:
-            makerspace.get_smtp_password()
-        except Exception:
-            return {"status": "warn", "configured": False}
-        return {"status": "ok", "configured": True}
-    return {"status": "ok", "configured": platform_email_configured()}
+    from .mail_providers.selection import stored_config
+    try:
+        selected = stored_config(makerspace, tenant=True)
+        if selected is not None and selected.provider == "smtp" and makerspace.smtp_password:
+            makerspace.get_smtp_password()  # an unreadable tenant secret is a warning, not "ok"
+        return {"status": "ok", "configured": selected is not None or platform_email_configured(),
+                "provider": selected.provider if selected else "platform"}
+    except Exception:
+        return {"status": "warn", "configured": False}
 
 
 def _sms_section():

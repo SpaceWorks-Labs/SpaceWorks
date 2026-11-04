@@ -3,11 +3,10 @@ from decimal import Decimal, InvalidOperation
 from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
-from apps.audit.services import record
 from apps.accounts import rbac
 from apps.machines import access
 from apps.machines.models import Machine
-from apps.makerspaces.guards import require_module
+from apps.makerspaces.folded_capabilities import MACHINES_MAINTENANCE, require_capability
 from apps.makerspaces.servability import is_servable
 from apps.maintenance.exceptions import (
     MaintenanceStatusConflict,
@@ -25,9 +24,8 @@ def lock_machine(machine, actor):
     return row
 
 
-def prepare_machine(machine, actor, *, manage):
-    require_module(machine.makerspace, "maintenance")
-    require_module(machine.makerspace, "machines")
+def prepare_machine(machine, actor, *, manage, technician=False):
+    require_capability(machine.makerspace, MACHINES_MAINTENANCE)
     # Archived makerspaces are soft-deleted for everyone; reject after the row lock
     # reloads the makerspace so a per-machine operator can't complete an in-flight
     # mutation (and finalize an attachment) during the archive->purge window.
@@ -40,6 +38,10 @@ def prepare_machine(machine, actor, *, manage):
         if manage
         else access.can_operate_machine(actor, machine)
     )
+    if not allowed and technician:
+        # L16: a covering Technician logs and completes maintenance, never edits schedules.
+        from apps.maintenance.repairs.authority import technician_on_machine
+        allowed = technician_on_machine(actor, machine)
     if not allowed:
         raise PermissionDenied()
 
@@ -117,13 +119,5 @@ def ensure_idle_transition(machine, set_idle):
 
 
 def apply_idle_transition(machine, actor):
-    old_status = machine.status
-    machine.status = Machine.Status.IDLE
-    machine.save(update_fields=["status", "updated_at"])
-    record(
-        actor,
-        "machine.status_changed",
-        makerspace=machine.makerspace,
-        target=machine,
-        meta={"old": old_status, "new": Machine.Status.IDLE},
-    )
+    from apps.machines.status_tracking import change_status
+    change_status(machine, Machine.Status.IDLE, source="maintenance", actor=actor)

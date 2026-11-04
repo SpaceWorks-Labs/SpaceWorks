@@ -1,8 +1,12 @@
 import { MfaFlow } from "../auth/MfaFlow";
 import { isMfaChallenge, type MfaChallenge } from "../auth/mfaApi";
-import { useEffect, useState } from "react";
-
-import { SpaceWorksBadge } from "../../components/SpaceWorksLogo";
+import { useEffect, useState, type ReactNode } from "react";
+import { AuthLayout } from "../../components/layouts";
+import { SegmentedControl } from "../../components/ui";
+import { AuthStepCard } from "../auth/AuthStepCard";
+import { AuthShowcase } from "../auth/AuthShowcase";
+import { PasswordInput } from "../auth/PasswordInput";
+import { PasswordStrength } from "../auth/PasswordStrength";
 import {
   publicV1Request,
   setAccessToken,
@@ -15,9 +19,25 @@ import { SocialSignInButtons } from "../auth/SocialSignInButtons";
 export function MemberAuthPanel({
   onAuthenticated,
   makerspaceSlug = "",
+  tenantBrand,
+  embedded = false,
+  eyebrow,
+  context,
+  footer,
+  surface = "member",
 }: {
   onAuthenticated: () => void;
+  surface?: "member" | "delegated";
   makerspaceSlug?: string;
+  tenantBrand?: { name: string; logo?: string };
+  /** true inside another page (an action card, a ticket panel): no logo, no brand panel, no h1. */
+  embedded?: boolean;
+  /** Page variant only: a line naming why sign-in is being asked for (e.g. an invitation). */
+  eyebrow?: string;
+  /** Shown above the form, e.g. the reason for signing in or an error from the host page. */
+  context?: ReactNode;
+  /** Shown after the form, e.g. a way to back out of the host flow. */
+  footer?: ReactNode;
 }) {
   const [mfaChallenge, setMfaChallenge] = useState<MfaChallenge>();
   const [mode, setMode] = useState<"login" | "signup">("login");
@@ -34,7 +54,6 @@ export function MemberAuthPanel({
   // an absent key — and a failed request — mean available.
   const [selfServeAccounts, setSelfServeAccounts] = useState(true);
   const [passwordLogin, setPasswordLogin] = useState(true);
-
   useEffect(() => {
     publicV1Request<{
       member_accounts?: { enabled: boolean };
@@ -53,11 +72,9 @@ export function MemberAuthPanel({
         setPasswordLogin(true);
       });
   }, []);
-
   useEffect(() => {
     if (!selfServeAccounts) setMode("login");
   }, [selfServeAccounts]);
-
   const submit = async () => {
     setPending(true);
     setError("");
@@ -74,7 +91,8 @@ export function MemberAuthPanel({
         const request = {
           username: email,
           password,
-          surface: "member",
+          surface,
+          context: "member",
         } satisfies PasswordLoginRequest;
         const result = await publicV1Request<PasswordLoginResponse | MfaChallenge>("/auth/login", {
           method: "POST",
@@ -82,7 +100,7 @@ export function MemberAuthPanel({
           body: JSON.stringify(request),
         });
         if (isMfaChallenge(result)) { setPassword(""); setMfaChallenge(result); return; }
-        setAccessToken(result.access);
+        setAccessToken(result.access, "person");
         if (result.surface === "verification_only") {
           setVerificationOnly(true);
           setNotice("Enter the verification code sent to your email.");
@@ -96,7 +114,6 @@ export function MemberAuthPanel({
       setPending(false);
     }
   };
-
   const confirmVerification = async () => {
     setPending(true);
     setError("");
@@ -112,7 +129,6 @@ export function MemberAuthPanel({
       setPending(false);
     }
   };
-
   const resendVerification = async () => {
     setPending(true);
     setError("");
@@ -125,117 +141,71 @@ export function MemberAuthPanel({
       setPending(false);
     }
   };
-
-  if (mfaChallenge) return <MfaFlow challenge={mfaChallenge} onCancel={() => setMfaChallenge(undefined)}
-    onComplete={(result) => { setAccessToken(result.access); setMfaChallenge(undefined); if (result.surface === "verification_only") setVerificationOnly(true); else onAuthenticated(); }} />;
-  if (verificationOnly) {
-  return (
-      <main className="desk-shell grid place-items-center px-5 py-8">
-        <form
-          className="desk-panel w-full max-w-md p-6"
-          onSubmit={(event) => { event.preventDefault(); void confirmVerification(); }}
-        >
-          <SpaceWorksBadge className="mb-5" />
-          <h1 className="title-page">Verify your email</h1>
-          <p className="mt-2 text-sm text-muted">
-            This session can only verify the address until email ownership is confirmed.
-          </p>
-          <label className="eyebrow mt-5 block" htmlFor="member-verification-code">Verification code</label>
-          <input
-            id="member-verification-code"
-            className="desk-input mt-1 w-full"
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            value={verificationCode}
-            onChange={(event) => setVerificationCode(event.target.value)}
-            required
-          />
-          {notice ? <p className="mt-3 text-sm text-success-ink">{notice}</p> : null}
-          {error ? <p className="mt-3 text-sm text-danger" role="alert">{error}</p> : null}
-          <button className="desk-button-secondary mt-5 w-full" type="submit" disabled={pending}>
-            {pending ? "Please wait…" : "Verify email"}
-          </button>
-          <button
-            className="desk-button-ghost mt-3 w-full"
-            type="button"
-            disabled={pending}
-            onClick={() => { void resendVerification(); }}
-          >
-            Resend code
-          </button>
-        </form>
-      </main>
-    );
-  }
-
-  return (
-    <main className="desk-shell grid place-items-center px-5 py-8">
-      <div className="desk-panel w-full max-w-md p-6">
-      <form
-        onSubmit={(event) => { event.preventDefault(); void submit(); }}
-      >
-        <SpaceWorksBadge className="mb-5" />
-        <h1 className="title-page">
-          {mode === "login" ? "Member sign in" : "Create a member account"}
-        </h1>
-        <p className="mt-2 text-sm text-muted">
-          {mode === "signup"
-            ? "Use one global account across every makerspace you join."
-            : passwordLogin
-              ? "Sign in to manage memberships, waivers, visits, and payments."
-              : "This space signs members in through an identity provider."}
-        </p>
-        {mode === "signup" ? (
-          <>
-            <label className="eyebrow mt-5 block" htmlFor="member-name">Name</label>
-            <input id="member-name" className="desk-input mt-1 w-full" autoComplete="name" value={displayName} onChange={(event) => setDisplayName(event.target.value)} required />
-            <label className="eyebrow mt-3 block" htmlFor="member-phone">Phone <span className="normal-case tracking-normal text-muted">(optional)</span></label>
-            <input id="member-phone" className="desk-input mt-1 w-full" autoComplete="tel" value={phone} onChange={(event) => setPhone(event.target.value)} />
-          </>
-        ) : null}
-        {/* Sign-up still needs both fields: it sets the password it cannot be used with
-            yet, so the account stays recoverable if the switch is ever turned back on. */}
-        {passwordLogin || mode === "signup" ? (
-          <>
-            <label className={`${mode === "login" ? "mt-5" : "mt-3"} eyebrow block`} htmlFor="member-email">Email</label>
-            <input id="member-email" className="desk-input mt-1 w-full" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
-            <label className="eyebrow mt-3 block" htmlFor="member-password">Password</label>
-            <input id="member-password" className="desk-input mt-1 w-full" type="password" autoComplete={mode === "login" ? "current-password" : "new-password"} value={password} onChange={(event) => setPassword(event.target.value)} required />
-          </>
-        ) : (
-          <>
-            <label className="eyebrow mt-5 block" htmlFor="member-email">Email</label>
-            <input id="member-email" className="desk-input mt-1 w-full" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
-          </>
-        )}
-        {notice ? <p className="mt-3 text-sm text-success-ink">{notice}</p> : null}
-        {error ? <p className="mt-3 text-sm text-danger" role="alert">{error}</p> : null}
-        {passwordLogin || mode === "signup" ? (
-          <button className="desk-button-secondary mt-5 w-full" type="submit" disabled={pending}>
-            {pending ? "Please wait…" : mode === "login" ? "Sign in" : "Create account"}
-          </button>
-        ) : null}
-        {selfServeAccounts ? (
-          <button className="desk-button-ghost mt-3 w-full" type="button" onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(""); }}>
-            {mode === "login" ? "Create a member account" : "Back to sign in"}
-          </button>
-        ) : (
-          <p className="mt-3 text-center text-sm text-muted">
-            This space does not run self sign-up. Ask a staff member to add you.
-          </p>
-        )}
-      </form>
-        <SocialSignInButtons
-          surface="member"
-          email={email}
-          makerspaceSlug={makerspaceSlug}
-          onSuccess={(result) => {
-            if (isMfaChallenge(result)) { setPassword(""); setMfaChallenge(result); return; }
-        setAccessToken(result.access);
-            onAuthenticated();
-          }}
-        />
-      </div>
-    </main>
-  );
+  if (mfaChallenge) return <MfaFlow embedded={embedded} eyebrow={eyebrow} extra={footer} challenge={mfaChallenge} onCancel={() => setMfaChallenge(undefined)}
+    onComplete={(result) => { setAccessToken(result.access, "person"); setMfaChallenge(undefined); if (result.surface === "verification_only") setVerificationOnly(true); else onAuthenticated(); }} />;
+  if (verificationOnly) return <AuthStepCard embedded={embedded} eyebrow={eyebrow} footer={footer} state={{ status: "ready" }}
+    media={{ icon: "Info", tone: "accent" }} title="Verify your email"
+    body={<p>Enter the verification code sent to your email. This session can only verify the address until email ownership is confirmed.</p>}
+    primary={{ label: "Verify email", pending, pendingLabel: "Please wait…", onClick: () => (document.getElementById("member-verify") as HTMLFormElement)?.requestSubmit() }}
+    escape={{ label: "Resend code", disabled: pending, disabledReason: "Wait for verification to finish.", onClick: () => void resendVerification() }}
+    content={<form id="member-verify" className="grid gap-3" onSubmit={(event) => { event.preventDefault(); if (!pending) void confirmVerification(); }}>
+      <label className="grid gap-2 text-sm font-semibold" htmlFor="member-verification-code">Verification code
+        <input id="member-verification-code" className="desk-input w-full" inputMode="numeric" autoComplete="one-time-code"
+          value={verificationCode} onChange={(event) => setVerificationCode(event.target.value)} required />
+      </label>
+      {notice ? <p role="status" className="text-sm text-success-ink">{notice}</p> : null}
+      {error ? <p className="text-sm text-danger" role="alert">{error}</p> : null}
+    <button type="submit" disabled={pending} hidden aria-hidden="true" tabIndex={-1} />
+    </form>} />;
+  const title = mode === "login" ? "Member sign in" : "Create a member account";
+  const modeSwitch = selfServeAccounts ? { label: "Account access", value: mode,
+    options: [{ value: "login", label: "Sign in" }, { value: "signup", label: "Create account" }],
+    onChange: (next: string) => { setMode(next as "login" | "signup"); setError(""); } } : undefined;
+  const social = <SocialSignInButtons surface="member" onMfaChallenge={setMfaChallenge} email={email} makerspaceSlug={makerspaceSlug} onSuccess={(result) => {
+    if (isMfaChallenge(result)) { setPassword(""); setMfaChallenge(result); return; }
+    setAccessToken(result.access, "person"); onAuthenticated();
+  }} />;
+  const legal = selfServeAccounts ? "One account works at every makerspace you join." : "This space does not run self sign-up. Ask a staff member to add you.";
+  const form = <form className="grid gap-4" onSubmit={(event) => { event.preventDefault(); if (!pending) void submit(); }}>
+      <p className="text-sm text-muted">{mode === "signup" ? "Use one global account across every makerspace you join."
+        : passwordLogin ? "Sign in to manage memberships, waivers, visits, and payments."
+        : "This space signs members in through an identity provider."}</p>
+      {mode === "signup" ? <label className="grid gap-2 text-sm font-semibold" htmlFor="member-name">Name
+        <input id="member-name" className="desk-input w-full" autoComplete="name" value={displayName} onChange={(event) => setDisplayName(event.target.value)} required />
+      </label> : null}
+      <label className="grid gap-2 text-sm font-semibold" htmlFor="member-email">Email
+        <input id="member-email" className="desk-input w-full" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
+      </label>
+      {passwordLogin || mode === "signup" ? <>
+        <label className="text-sm font-semibold" htmlFor="member-password">Password</label>
+        <PasswordInput id="member-password" autoComplete={mode === "login" ? "current-password" : "new-password"}
+          value={password} onChange={(event) => setPassword(event.target.value)} required />
+        {mode === "signup" ? <PasswordStrength password={password} /> : null}
+      </> : null}
+      {mode === "signup" ? <label className="grid gap-2 text-sm font-semibold" htmlFor="member-phone">Phone (optional)
+        <input id="member-phone" className="desk-input w-full" autoComplete="tel" value={phone} onChange={(event) => setPhone(event.target.value)} />
+      </label> : null}
+      {notice ? <p role="status" className="text-sm text-success-ink">{notice}</p> : null}
+      {error ? <p className="text-sm text-danger" role="alert">{error}</p> : null}
+      {passwordLogin || mode === "signup" ? <button className="desk-button-brand w-full" type="submit" disabled={pending}>
+        {pending ? "Please wait…" : mode === "login" ? "Sign in" : "Create account"}
+      </button> : null}
+    <button type="submit" disabled={pending} hidden aria-hidden="true" tabIndex={-1} />
+    </form>;
+  // Embedded in another page's card: the same controls under that page's own heading.
+  if (embedded) return <section aria-label={title} className="grid min-w-0 gap-4">
+    {context}
+    {modeSwitch ? <SegmentedControl {...modeSwitch} fullWidth /> : null}
+    <div className="grid gap-3 empty:hidden">{social}</div>
+    <p className="flex items-center gap-3 text-center text-sm text-muted [:empty+&]:hidden">
+      <span className="h-px flex-1 bg-line" />or with email<span className="h-px flex-1 bg-line" /></p>
+    {form}
+    <p className="text-sm text-muted">{legal}</p>
+    {footer}
+  </section>;
+  return <AuthLayout state={{ status: "ready" }} eyebrow={eyebrow} title={title}
+    brand={{ tenant: tenantBrand, showcase: <AuthShowcase /> }}
+    modeSwitch={modeSwitch} social={social}
+    legal={footer ? <div className="grid gap-4"><p>{legal}</p>{footer}</div> : legal}
+    form={context ? <div className="grid gap-4">{context}{form}</div> : form} />;
 }

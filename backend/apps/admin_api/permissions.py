@@ -1,6 +1,7 @@
 from rest_framework.permissions import BasePermission
 from rest_framework.exceptions import PermissionDenied
 
+from apps.accounts.staff_identity import has_staff_role, is_person
 from apps.accounts import rbac
 from apps.accounts.models import User
 from apps.makerspaces.origin_scope import (
@@ -50,39 +51,9 @@ def require_action(user, action, makerspace_id):
 
 
 def require_user_access_mutation(actor, target):
-    hidden_memberships = target.makerspace_memberships.filter(
-        makerspace__superadmin_access_enabled=False,
-    ).values_list("makerspace_id", flat=True)
-    for makerspace_id in hidden_memberships:
-        if not rbac.can(actor, rbac.Action.MANAGE_MAKERSPACE, makerspace_id):
-            raise PermissionDenied(
-                "This user belongs to a makerspace that turned off superadmin access."
-            )
-
-
-def require_makerspace_superadmin_access(actor, makerspace):
-    if (
-        not makerspace.superadmin_access_enabled
-        and not rbac.can(actor, rbac.Action.MANAGE_MAKERSPACE, makerspace.pk)
-    ):
-        raise PermissionDenied("This makerspace turned off superadmin access.")
-
-
-def hidden_space_manager_reset_break_glass(target):
-    memberships = list(target.makerspace_memberships.select_related("makerspace"))
-    hidden = [
-        membership
-        for membership in memberships
-        if not membership.makerspace.superadmin_access_enabled
-    ]
-    if not hidden:
-        return False
-    allowed = len(hidden) == len(memberships) and all(
-        rbac.can(target, rbac.Action.MANAGE_MAKERSPACE, membership.makerspace_id)
-        for membership in memberships
-    )
-    if not allowed:
+    # A person holding staff roles is managed through the staff-role lifecycle, so the
+    # community restrict/restore switch never silently removes someone's staff access.
+    if not is_person(target) or has_staff_role(target):
         raise PermissionDenied(
-            "Cannot reset a user who belongs to a makerspace that turned off superadmin access."
+            "Staff and platform accounts cannot use community access changes."
         )
-    return True

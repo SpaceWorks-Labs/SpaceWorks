@@ -1,12 +1,9 @@
 """All-or-nothing database materialization of one decrypted tenant archive."""
 
-from dataclasses import dataclass
-
 from django.apps import apps
 from django.db import connection, transaction
 
 from apps.audit.keys import advance_attestation_cutover
-from apps.encryption.models import PiiMakerspaceWriteFence
 from apps.encryption.write_fence import fence_operation
 
 from .archive_stream import PortableArchive
@@ -20,7 +17,7 @@ from .identity_resolution import (
 )
 from .import_keys import install_carried_deks
 from .import_finalization import finalize_import_job
-from .insertion_errors import MaterializationAlreadyCommitted
+from .insertion_errors import MaterializationAlreadyCommitted, MaterializationSuperseded
 from .materialization_failure import handle_materialization_failure
 from .models_import_job import TenantImportJob
 from .object_import import (
@@ -28,36 +25,16 @@ from .object_import import (
     promote_import_objects,
 )
 from .pk_maps import TransactionPkMap
-from .raw_repository import RawImportRepository
 from .reference_state import ReferenceState
 from .row_dispositions import ImportAccounting, preallocate_model
-from .row_planning import (
-    final_row,
-    protect_carried_unique_values,
-    update_resolved_row,
+from .materialization_rows import (
+    MaterializationResult,
+    _close_target_import_fence,
+    _insert_models,
+    _report_for,
 )
 from .target_creation import create_target_makerspace
 from .verification import verify_materialization
-
-
-@dataclass(frozen=True)
-class MaterializationResult:
-    target_makerspace_id: int
-    imported: dict[str, int]
-    resolved: dict[str, int]
-    dropped: dict[str, int]
-    preserved: dict[tuple[str, str], int]
-    regenerated: dict[tuple[str, str], int]
-    identities_linked: int
-    identities_created: int
-    preexisting_global_authority: tuple[dict[str, object], ...]
-    installed_dek_versions: tuple[int, ...]
-    blind_indexes_created: int
-    external_references_created: int
-    objects_staged: int
-    object_keys_regenerated: int
-    object_key_regenerations: dict[str, str]
-    objects_promoted: int
 
 
 def materialize_tenant(
@@ -67,6 +44,8 @@ def materialize_tenant(
     *,
     target_identity=None,
     batch_size=500,
+    run_attempt=None,
+    run_lock=None,
 ):
     """Commit database state atomically, then promote its staged objects."""
     archive = PortableArchive(archive_directory)
@@ -80,6 +59,11 @@ def materialize_tenant(
         object_plan = prepare_import_objects(archive, job)
         with transaction.atomic():
             locked_job = TenantImportJob.objects.select_for_update().get(pk=job.pk)
+            if run_attempt is not None and (
+                locked_job.run_attempt != run_attempt
+                or locked_job.status != TenantImportJob.Status.MATERIALIZING
+            ):
+                raise MaterializationSuperseded("A replacement owns this import execution.")
             if locked_job.target_makerspace_id is not None:
                 raise MaterializationAlreadyCommitted(
                     "The import database materialization is already committed."
@@ -121,27 +105,37 @@ def materialize_tenant(
                         required_identities,
                     )
                 preallocate_walk_in_ids(locked_job, pk_map, required_identities)
-                identities = resolve_identities(
-                    archive, locked_job, pk_map, required_identities
-                )
-                installed_versions = install_carried_deks(target, carried)
                 deks = {
                     int(record["version"]): record["dek"]
                     for record in carried
                     if record.get("insert_at_target", True) is not False
                 }
-                regenerated = _insert_models(
-                    ordered,
-                    archive,
-                    locked_job,
-                    pk_map,
-                    references,
-                    target,
-                    deks,
-                    accounting,
-                    batch_size,
-                    object_plan.target_keys,
+                # The credential block (C-18) is sealed under these same carried DEKs.
+                identities = resolve_identities(
+                    archive, locked_job, pk_map, required_identities, deks
                 )
+                installed_versions = install_carried_deks(target, carried)
+                from .semantic_reimbursements import prepare_project_refs, reset_project_refs
+                project_refs = prepare_project_refs(archive, pk_map)
+                try:
+                    regenerated = _insert_models(
+                        ordered,
+                        archive,
+                        locked_job,
+                        pk_map,
+                        references,
+                        target,
+                        deks,
+                        accounting,
+                        batch_size,
+                        object_plan.target_keys,
+                    )
+                finally:
+                    reset_project_refs(project_refs)
+                from .reimbursement_assets_import import register_imported_assets
+                register_imported_assets(target)
+                from .page_pointer_fixups import apply_page_pointer_fixups
+                page_fixups = apply_page_pointer_fixups(archive, pk_map)
                 # Imported audit rows have no target MAC (see
                 # advance_attestation_cutover). Move this tenant's attestation cutover
                 # past them so verification reports them as unattested history rather
@@ -182,9 +176,18 @@ def materialize_tenant(
             )
             locked_job.status = TenantImportJob.Status.FINALIZING
             locked_job.materialization_report = _report_for(result)
+            locked_job.materialization_report["public_page_pointer_fixups"] = page_fixups
+            locked_job.materialization_report["accounts"] = {
+                "shells_created": identities.shells_created, "shells_remapped": identities.shells_remapped,
+                "credentials_installed": identities.credentials_installed,
+            }
+            locked_job.materialization_report["public_page_reconstruction"] = getattr(archive, "public_page_reconstruction", {})
+            locked_job.materialization_report["public_page_warnings"] = getattr(references, "public_page_warnings", [])
             locked_job.save(
                 update_fields=("status", "materialization_report", "updated_at")
             )
+            if run_lock is not None:
+                run_lock.require_retained()
         promoted = promote_import_objects(locked_job)
         finalize_import_job(locked_job, actor=locked_job.actor)
         return MaterializationResult(
@@ -194,79 +197,7 @@ def materialize_tenant(
             }
         )
     except Exception as exc:
-        handle_materialization_failure(job=job, target=target, error=exc)
+        handle_materialization_failure(
+            job=job, target=target, error=exc, run_attempt=run_attempt,
+        )
         raise
-
-
-def _report_for(result):
-    return {
-        "format_version": 1,
-        "target_makerspace_id": result.target_makerspace_id,
-        "imported": result.imported,
-        "resolved": result.resolved,
-        "dropped": result.dropped,
-        "identities_linked": result.identities_linked,
-        "identities_created": result.identities_created,
-        "external_references_created": result.external_references_created,
-    }
-
-
-def _insert_models(
-    ordered, archive, job, pk_map, references, target, deks,
-    accounting, batch_size, object_key_map,
-):
-    repository = RawImportRepository()
-    regenerated = set()
-    for model in ordered:
-        label = model._meta.label
-        if label == "makerspaces.Makerspace":
-            continue
-        pending = []
-        fresh_values = {}
-        for source in archive.rows(label):
-            if update_resolved_row(model, source, target):
-                continue
-            row = final_row(
-                model,
-                source,
-                job=job,
-                pk_map=pk_map,
-                references=references,
-                target=target,
-                deks=deks,
-                fresh_values=fresh_values,
-                object_key_map=object_key_map,
-            )
-            if row is None:
-                continue
-            for field_name, outcome in protect_carried_unique_values(
-                model, row, target, fresh_values
-            ):
-                accounting.increment_field(outcome, label, field_name)
-            pending.append(row)
-            if len(pending) == batch_size:
-                accounting.increment(
-                    "imported", label, repository.insert_rows(model, pending)
-                )
-                regenerated.update((model, name) for _label, name in fresh_values)
-                pending.clear()
-                fresh_values.clear()
-        if pending:
-            accounting.increment(
-                "imported", label, repository.insert_rows(model, pending)
-            )
-            regenerated.update((model, name) for _label, name in fresh_values)
-    return regenerated
-
-
-def _close_target_import_fence(target, operation_id):
-    updated = PiiMakerspaceWriteFence.objects.filter(
-        makerspace=target,
-        state=PiiMakerspaceWriteFence.State.OPEN,
-    ).update(
-        state=PiiMakerspaceWriteFence.State.CLOSED,
-        operation_id=operation_id,
-        operation_kind=PiiMakerspaceWriteFence.OperationKind.TENANT_IMPORT,
-    )
-    if updated != 1:
-        raise RuntimeError("The target tenant import fence could not be closed.")

@@ -28,15 +28,17 @@ import { useEventEligibleMembers, useRegisterMemberForEvent, type StaffEvent } f
 export function EventRegisterMember({
   makerspaceId,
   eventId,
+  visible = true,
   customForm,
   disabled,
   audience = "members", ticketsEnabled = false, promosEnabled = false,
 }: {
   makerspaceId: number;
   eventId: number;
+  visible?: boolean;
   customForm: StaffEvent["custom_form"];
   disabled: boolean;
-  audience?: "members" | "accounts" | "invite"; ticketsEnabled?: boolean; promosEnabled?: boolean;
+  audience?: "members" | "accounts" | "invite" | "participating_organizations"; ticketsEnabled?: boolean; promosEnabled?: boolean;
 }) {
   const [promoCode, setPromoCode] = useState("");
   const [inviteCode, setInviteCode] = useState("");
@@ -60,7 +62,7 @@ export function EventRegisterMember({
     setTicketId(""); setInviteCode(""); setPromoCode("");
   };
 
-  if (disabled) return null;
+  if (disabled || !visible) return null;
 
   const serverAnswerErrors = customAnswerErrors(
     register.error instanceof StructuredApiError
@@ -163,6 +165,8 @@ export function EventRegisterMember({
           </label>
           <input
             id="event-register-phone"
+            type="tel"
+            autoComplete="tel"
             className="desk-input mt-1 w-full"
             value={phone}
             onChange={(event) => setPhone(event.target.value)}

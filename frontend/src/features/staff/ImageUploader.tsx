@@ -187,7 +187,7 @@ export function ImageUploader({
 
   return (
     <div className="min-w-0 space-y-2">
-      <label htmlFor={inputId} className="block font-mono text-xs uppercase tracking-tight text-muted">{label}</label>
+      <label htmlFor={inputId} className="block text-xs uppercase tracking-tight text-muted">{label}</label>
       <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
         <div className={`${previewBox} shrink-0 overflow-hidden rounded-lg border border-line bg-surface`}>
           {preview ? (
@@ -197,13 +197,13 @@ export function ImageUploader({
               className={`h-full w-full ${fit === "contain" ? "object-contain" : "object-cover"}`}
             />
           ) : (
-            <div className="blueprint-bg grid h-full w-full place-items-center font-mono text-[10px] uppercase text-muted">
+            <div className="bg-surface grid h-full w-full place-items-center text-[10px] uppercase text-muted">
               none
             </div>
           )}
         </div>
         <div className="min-w-0 max-w-full space-y-1">
-          <div className="flex min-w-0 items-center gap-2">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
             <input
               id={inputId}
               ref={inputRef}
@@ -214,7 +214,7 @@ export function ImageUploader({
                 const file = event.target.files?.[0];
                 if (file) handleFile(file);
               }}
-              className="block w-full max-w-full min-w-0 flex-1 text-sm text-muted file:mr-3 file:rounded-lg file:border file:border-line file:bg-accent file:px-3 file:py-1.5 file:font-mono file:text-xs file:font-semibold file:text-on-accent"
+              className="block min-h-11 w-full max-w-full min-w-0 flex-1 basis-56 text-sm text-muted file:mr-3 file:min-h-11 file:rounded-lg file:border file:border-line file:bg-accent file:px-3 file:py-2 file:text-sm file:font-semibold file:text-on-accent"
             />
             {cameraSupported ? (
               <button className="desk-button min-h-11" type="button" aria-label={`Take ${label} photo`} disabled={disabled || status === "uploading"} onClick={() => setCameraOpen(true)}>
@@ -226,7 +226,7 @@ export function ImageUploader({
           {preview ? (
             <button
               type="button"
-              className="desk-button-ghost px-0 font-mono text-xs uppercase text-danger"
+              className="desk-button-ghost px-2 text-xs uppercase text-danger"
               disabled={disabled || status === "uploading"}
               onClick={clearImage}
             >
@@ -239,7 +239,7 @@ export function ImageUploader({
           <p
             role="status"
             aria-live="polite"
-            className={status === "error" ? "text-xs text-danger" : "font-mono text-xs text-muted"}
+            className={status === "error" ? "text-xs text-danger" : "tabular-nums text-xs text-muted"}
           >
             {status === "uploading" ? "Working..." : status === "error" ? error : ""}
           </p>

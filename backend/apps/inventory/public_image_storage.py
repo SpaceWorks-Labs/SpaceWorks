@@ -1,5 +1,7 @@
+from apps.storage_clients import s3_client
 from dataclasses import dataclass
 import logging
+import sys
 import time
 import uuid
 
@@ -29,7 +31,7 @@ class FinalizeResult:
 
 
 def _s3_client(endpoint_url):
-    return boto3.client(
+    return s3_client(
         "s3",
         endpoint_url=endpoint_url,
         aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
@@ -51,7 +53,9 @@ def _public_client():
 
 
 def build_object_key(kind, makerspace_id, ext):
-    if kind not in {"event", "items", "machine", "makerspace", "member", "printers"}:
+    if kind not in {
+        "event", "event-series", "items", "machine", "makerspace", "member", "printers",
+    }:
         raise ValueError("Invalid public image kind.")
     return f"{kind}/{makerspace_id}/{uuid.uuid4().hex}{ext}"
 
@@ -229,6 +233,8 @@ def _finalize_result(object_key, size):
 
 
 def finalize_error_message(result):
+    if result.status == "invalid_image":
+        return "Uploaded file is not a valid image or its content type does not match."
     if result.status == "missing":
         return "Uploaded image was not found in storage."
     if result.status == "empty":
@@ -241,6 +247,9 @@ def finalize_error_message(result):
 
 def presigned_upload(object_key, content_type):
     try:
+        if getattr(settings, "STORAGE_CAPABILITIES_FILE", ""):
+            from .public_image_cloud import presign
+            return presign(sys.modules[__name__], object_key, content_type)
         if settings.STORAGE_PRESIGN_METHOD == "put":
             # Presigned PUT cannot enforce content-length at upload time; finalize HEADs staging.
             url = _public_client().generate_presigned_url(
@@ -259,7 +268,7 @@ def presigned_upload(object_key, content_type):
             }
         return _public_client().generate_presigned_post(
             Bucket=settings.PUBLIC_IMAGE_BUCKET,
-            Key=object_key,
+            Key=staging_key(object_key),
             Fields={"Content-Type": content_type},
             Conditions=[
                 {"Content-Type": content_type},
@@ -272,25 +281,9 @@ def presigned_upload(object_key, content_type):
 
 
 def finalize_upload(object_key):
-    max_bytes = settings.PUBLIC_IMAGE_MAX_BYTES
-    if settings.STORAGE_PRESIGN_METHOD != "put":
-        return _finalize_result(object_key, object_size_after_upload(object_key))
+    if getattr(settings, "STORAGE_CAPABILITIES_FILE", ""):
+        from .public_image_cloud import finalize
+        return finalize(sys.modules[__name__], object_key)
+    from .public_image_promotion import finalize
 
-    final_size = object_size(object_key)
-    if final_size is not None:
-        delete_object(staging_key(object_key))
-        return _finalize_result(object_key, final_size)
-
-    upload_staging_key = staging_key(object_key)
-    size = object_size(upload_staging_key)
-    if size is None:
-        return _finalize_result(object_key, None)
-    if not (1 <= size <= max_bytes):
-        return _finalize_result(object_key, size)
-
-    copy_object(upload_staging_key, object_key)
-    delete_object(upload_staging_key)
-    final_size = object_size(object_key)
-    if final_size is None or not (1 <= final_size <= max_bytes):
-        delete_object(object_key)
-    return _finalize_result(object_key, final_size)
+    return finalize(sys.modules[__name__], object_key)

@@ -9,7 +9,10 @@ PUBLIC_ALL = "public:*"
 TARGET_GLOBAL = "global"
 TARGET_TENANT_SLUG = "tenant_slug"
 TARGET_TENANT_TOKEN = "tenant_token"
-TARGET_MODES = frozenset({TARGET_GLOBAL, TARGET_TENANT_SLUG, TARGET_TENANT_TOKEN})
+TARGET_CLIENT_SUBJECT = "client_subject"
+TARGET_PUBLIC_HANDLE = "public_handle"
+TARGET_MODES = frozenset({TARGET_GLOBAL, TARGET_TENANT_SLUG, TARGET_TENANT_TOKEN,
+                          TARGET_CLIENT_SUBJECT, TARGET_PUBLIC_HANDLE})
 
 PUBLIC_READ_SCOPES = frozenset({PUBLIC_READ, PUBLIC_ALL})
 PUBLIC_WRITE_SCOPES = frozenset({PUBLIC_WRITE, PUBLIC_ALL})
@@ -21,6 +24,9 @@ class ScopeRegistryEntry:
     target_mode: str
     tenant_apps_admitted: bool = False
     legacy_v1: bool = False
+    server_only: bool = False
+    tenant_bound: bool = False
+    required_scopes: frozenset[str] = frozenset()
 
 
 _READ = ("GET", "HEAD")
@@ -30,12 +36,37 @@ _WRITE = ("POST",)
 # target mode, tenant-app admission, legacy-v1 admission). Legacy admission is explicit
 # so adding a route cannot silently widen the frozen cutover capability.
 _ROUTE_DEFINITIONS = (
+    ("public-page-handle", _READ, PUBLIC_READ_SCOPES, TARGET_PUBLIC_HANDLE, True, False),
+    ("public-event-code", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_TOKEN, False, False),
+    ("public-event-short-code", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_TOKEN, False, False),
+    *tuple((name, _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False) for name in (
+        "public-makerspace-page", "public-makerspace-page-asset",
+    )),
+    *tuple((name, _READ, PUBLIC_READ_SCOPES, TARGET_GLOBAL, True, False) for name in (
+        "public-organization-page", "public-organization-page-asset", "public-organization-makerspaces",
+    )),
+    # /api/v1/discover/ is outside HMAC_PROTECTED_PATH_PREFIXES, so "website-discover"
+    # must not be registered: an entry there is stale by construction.
+    *tuple((name, _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_TOKEN, False, False) for name in (
+        "public-profile", "public-profile-activity", "public-profile-events", "public-profile-projects", "public-profile-github",
+    )),
+    *tuple((name, _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False) for name in (
+        "public-booking-resource", "public-booking-website", "public-booking-website-image",
+    )),
+    ("member-booking-pass", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False),
+    ("member-booking-confirmation", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False),
+    ("member-booking-confirmation-png", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False),
+    ("member-booking-calendar", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False),
+    ("member-booking-rotate-checkin", _WRITE, PUBLIC_WRITE_SCOPES, TARGET_TENANT_SLUG, False, False),
+    *tuple((name, _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False) for name in ("public-event-website", "public-event-website-section", "public-event-website-session", "public-event-website-image", "public-event-website-schedule", "public-event-website-speaker")),
     ("member-booking-reschedule", _WRITE, PUBLIC_WRITE_SCOPES, TARGET_TENANT_SLUG, False, False),
     ("member-booking-feed-settings", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False),
     ("member-booking-feed-settings", ("POST", "DELETE"), PUBLIC_WRITE_SCOPES, TARGET_TENANT_SLUG, False, False),
     ("public-booking-feed", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False),
     ('member-booking-list', _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False),
     ('member-booking-cancel', _WRITE, PUBLIC_WRITE_SCOPES, TARGET_TENANT_SLUG, False, False),
+    ('member-booking-checkout', _WRITE, PUBLIC_WRITE_SCOPES, TARGET_TENANT_SLUG, False, False),
+    ('public-event-venue', _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False),
     ("public-makerspaces", _READ, PUBLIC_READ_SCOPES, TARGET_GLOBAL, True, True),
     ("v1:public-makerspaces", _READ, PUBLIC_READ_SCOPES, TARGET_GLOBAL, True, True),
     ("public-inventory", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, True),
@@ -58,7 +89,9 @@ _ROUTE_DEFINITIONS = (
         "public-printer-service-request", _WRITE, PUBLIC_WRITE_SCOPES,
         TARGET_TENANT_SLUG, False, True,
     ),
+    ("public-event-organization-eligibility", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False),
     ("public-event-detail", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False),
+    ("public-event-share-image", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False),
     ("public-event-list", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, True),
     ("public-organization-detail", _READ, PUBLIC_READ_SCOPES, TARGET_GLOBAL, True, True),
     ("public-organization-events", _READ, PUBLIC_READ_SCOPES, TARGET_GLOBAL, True, True),
@@ -75,9 +108,22 @@ _ROUTE_DEFINITIONS = (
     ("presence-end", _WRITE, PUBLIC_WRITE_SCOPES, TARGET_TENANT_SLUG, False, True),
     ("public-membership-request", _WRITE, PUBLIC_WRITE_SCOPES, TARGET_TENANT_SLUG, False, True),
     ("public-membership-admission", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False),
+    # Release 2 L4: public plan cards/pages and the invite-link check (reads only).
+    *tuple((name, _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False) for name in (
+        "public-membership-plans", "public-membership-plan-detail", "public-membership-invite",
+    )),
     ("public-invitation-request", _WRITE, PUBLIC_WRITE_SCOPES, TARGET_TENANT_SLUG, False, True),
+    *tuple((name, _WRITE, PUBLIC_WRITE_SCOPES, TARGET_GLOBAL, False, False) for name in (
+        "public-hosting-request-submit", "public-hosting-request-open",
+        "public-hosting-invitation-resolve", "public-hosting-invitation-submit",
+        "public-hosting-request-resubmit",
+    )),
     (
         "hardware_requests:request-submit", _WRITE, PUBLIC_WRITE_SCOPES,
+        TARGET_TENANT_SLUG, False, True,
+    ),
+    (
+        "hardware_requests:request-contact-code", _WRITE, PUBLIC_WRITE_SCOPES,
         TARGET_TENANT_SLUG, False, True,
     ),
     (
@@ -95,6 +141,8 @@ _ROUTE_DEFINITIONS = (
     ("hardware_requests:public-tool-checklist", _WRITE, PUBLIC_READ_SCOPES,
      TARGET_TENANT_SLUG, False, False),
     ("public-printer-service-status", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_TOKEN, False, True),
+    # Generic token status: same public-read/tenant-token rule, NOT admitted to legacy:v1.
+    ("public-machine-service-status", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_TOKEN, False, False),
     (
         "hardware_requests:request-status", _READ, PUBLIC_READ_SCOPES,
         TARGET_TENANT_TOKEN, False, True,
@@ -104,6 +152,37 @@ _ROUTE_DEFINITIONS = (
 
 from .scope_registry_wp4 import definitions as wp4_routes
 _ROUTE_DEFINITIONS += wp4_routes(PUBLIC_READ_SCOPES, PUBLIC_WRITE_SCOPES, TARGET_TENANT_SLUG)
+
+
+from .scope_registry_p2_presence import routes as presence_routes
+_ROUTE_DEFINITIONS += presence_routes(PUBLIC_READ_SCOPES, PUBLIC_WRITE_SCOPES, TARGET_TENANT_SLUG)
+from .scope_registry_messaging import definitions as messaging_denied_routes
+_ROUTE_DEFINITIONS += messaging_denied_routes()
+# Lane L5 pay links: the token is a bearer credential for one charge, so no API-client
+# scope ever reaches them (no scopes = refused); only a browser holding the link pays.
+_ROUTE_DEFINITIONS += (
+    # Lane L15: the price preview reads public prices only; it writes nothing.
+    ("pricing-quote", _WRITE, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False),
+    ("pay-link", ("GET", "HEAD"), frozenset(), TARGET_GLOBAL, False, False),
+    ("pay-link-claim", _WRITE, frozenset(), TARGET_GLOBAL, False, False),
+    ("pay-link-checkout", _WRITE, frozenset(), TARGET_GLOBAL, False, False),
+    # Lane L12: the uniform "Request a job" form, same scopes as the 3D-printer routes.
+    ("public-machine-job-types", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, True),
+    ("public-machine-job-upload", _WRITE, PUBLIC_WRITE_SCOPES, TARGET_TENANT_SLUG, False, True),
+    ("public-machine-job-submit", _WRITE, PUBLIC_WRITE_SCOPES, TARGET_TENANT_SLUG, False, True),
+    # Lane L16: account-less issue reports (email-code verified); the technician opt-in page is a
+    # human consent step, so no API-client scope admits it (like pay links).
+    ("public-issue-report", _WRITE, PUBLIC_WRITE_SCOPES, TARGET_TENANT_SLUG, False, False),
+    ("public-issue-photo-upload", _WRITE, PUBLIC_WRITE_SCOPES, TARGET_TENANT_SLUG, False, False),
+    ("public-technician-opt-in", ("GET", "HEAD", "POST"), frozenset(), TARGET_GLOBAL, False, False),
+)
+
+
+from django.conf import settings
+if getattr(settings, "SPACEWORKS_DEPLOYMENT_PROFILE", "full") == "free":
+    _ROUTE_DEFINITIONS += (("free_tick:tick", _WRITE, frozenset(), TARGET_GLOBAL, False, False),)
+if getattr(settings, "EMAIL_PROVIDER_WEBHOOKS_ENABLED", False):
+    _ROUTE_DEFINITIONS += (("email-provider-webhook", _WRITE, frozenset(), TARGET_GLOBAL, False, False),)
 
 
 def _build_registry():
@@ -118,7 +197,16 @@ def _build_registry():
             if key in registry:
                 raise ValueError(f"Duplicate API-client scope registry key: {key}")
             registry[key] = entry
+    from .scope_registry_reads import read_route_entries
+    for key, entry in read_route_entries().items():
+        if key in registry:
+            raise ValueError(f"Duplicate API-client scope registry key: {key}")
+        registry[key] = entry
     return MappingProxyType(registry)
 
 
+from .scope_registry_programme import definitions as programme_definitions
+_ROUTE_DEFINITIONS += programme_definitions(
+    PUBLIC_READ_SCOPES, PUBLIC_WRITE_SCOPES, TARGET_GLOBAL, TARGET_TENANT_TOKEN,
+)
 SCOPE_REGISTRY = _build_registry()

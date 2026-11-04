@@ -12,11 +12,23 @@ export type EventRegistrationStatus =
   | "attended";
 export type EventRegistrationCounts = Record<EventRegistrationStatus, number>;
 
+export type EventAccent = "" | "maker_teal" | "workshop_orange" | "citron" | "sky_blue" | "warm_yellow";
+
 export type StaffEvent = {
+  accent_preset?: EventAccent;
+  staff_permissions?: import("./eventStaffPermissions").EventPermission[];
+  can_manage_staff?: boolean;
+  can_duplicate?: boolean;
   ticketing_features?: string[];
+  broadcasts_enabled?: boolean;
+  badge_sensitive_fields_allowed?: boolean;
+  report_features?: string[];
+  participating_organizations?: { id: number; name: string }[];
+  audience_label?: string | null;
+  organization_admission_blocked?: boolean;
   id: number;
   makerspace_id: number;
-  registration_audience?: "members" | "accounts" | "invite";
+  registration_audience?: "members" | "accounts" | "invite" | "participating_organizations";
   category_id?: number | null; tags?: string[];
   title: string;
   description: string;
@@ -34,6 +46,14 @@ export type StaffEvent = {
   registration_open: boolean;
   offline_checkin_enabled: boolean;
   is_public: boolean;
+  /** L1: who can find it and whether the public page is up. */
+  listing?: "listed" | "unlisted";
+  page_state?: "live" | "offline";
+  delivery_mode?: "in_person" | "online" | "hybrid";
+  /** Plaintext only for readers with edit_details while online events are on. */
+  join_url?: string | null;
+  join_url_set?: boolean;
+  show_registration_count?: boolean;
   image_url: string | null;
   status: EventStatus;
   custom_form: CustomFormSchema | null;
@@ -42,6 +62,8 @@ export type StaffEvent = {
   updated_at: string;
   registration_counts: EventRegistrationCounts;
   organizers: { id: number; slug: string; name: string }[];
+  /** Selected audience organizations: registration eligibility only, never authority. */
+  audience_organizations?: { id: number; slug: string; name: string }[];
   series_summary: {
     id: number; public_token: string; title: string; timezone: string;
   } | null;
@@ -50,6 +72,7 @@ export type StaffEvent = {
 };
 
 export type EventRegistration = {
+  no_longer_eligible?: boolean;
   id: number;
   event_id: number;
   name: string;
@@ -57,11 +80,16 @@ export type EventRegistration = {
   phone: string;
   status: EventRegistrationStatus;
   payment: PaymentSummary | null;
+  custom_answers?: import("../forms/customFormTypes").CustomAnswerSnapshot;
+  cancelled_at?: string | null;
+  status_before_cancel?: EventRegistrationStatus | null;
+  restore_until?: string | null;
   created_at: string;
 };
 
 export type EventPayload = {
-  registration_audience?: "members" | "accounts" | "invite";
+  accent_preset?: EventAccent;
+  registration_audience?: "members" | "accounts" | "invite" | "participating_organizations";
   category_id?: number | null; tags?: string[];
   title: string;
   description: string;
@@ -76,7 +104,20 @@ export type EventPayload = {
   registration_cutoff_lead_minutes: number | null;
   cancellation_cutoff_hours?: number | null;
   is_public: boolean;
+  show_registration_count?: boolean;
   custom_form: CustomFormSchema;
+  // L1: who can find it, the public page state and online delivery (join link write-only).
+  listing?: "listed" | "unlisted";
+  page_state?: "live" | "offline";
+  delivery_mode?: "in_person" | "online" | "hybrid";
+  join_url?: string;
+};
+
+/** Create-only extras, applied in the same transaction as the new draft. */
+export type EventCreatePayload = EventPayload & {
+  organization_ids?: number[];
+  audience_organization_ids?: number[];
+  collaborator_slugs?: string[];
 };
 
 export type EventPatch = Partial<EventPayload> & { inherit_fields?: string[] };

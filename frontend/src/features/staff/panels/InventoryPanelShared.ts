@@ -12,12 +12,16 @@ export type AdminProduct = Product & MasterData & {
   show_public_count: boolean;
   public_availability_mode: string;
   is_archived: boolean;
+  is_consumable?: boolean;
+  public_show_expected_back?: boolean;
 };
 export type ItemForm = {
   manufacturer: string; model: string; sku: string; barcode: string; supplier: string;
   reorder_point: string; reorder_quantity: string; kit_components?: KitComponent[];
   name: string; tracking_mode: string; category: string; description: string; borrowing_terms: string; total_quantity: string; available_quantity: string;
   storage_location: string; is_public: boolean; public_self_checkout_enabled: boolean; show_public_count: boolean; public_availability_mode: string;
+  // Lane L12: present only once the product payload carries them (or the editor sets them), so they are sent only then.
+  is_consumable?: boolean; public_show_expected_back?: boolean;
 };
 export type AdjustmentForm = { delta_available: string; delta_damaged: string; delta_lost: string; reason: string };
 export type InventoryAssetRow = { id: number; asset_tag: string; serial_number: string; status: string; box: number | null; box_label: string | null; qr_code_id: number | null; qr_payload: string | null; notes: string; public_self_checkout_enabled: boolean };
@@ -42,6 +46,8 @@ export function payloadFromForm(form: ItemForm, includeQuantities: boolean) {
     manufacturer: form.manufacturer.trim(), model: form.model.trim(), sku: form.sku.trim(), barcode: form.barcode.trim(),
     supplier: form.supplier.trim(), reorder_point: Number(form.reorder_point), reorder_quantity: Number(form.reorder_quantity),
     ...(form.kit_components !== undefined ? { kit_components: form.kit_components } : {}),
+    ...(form.is_consumable !== undefined ? { is_consumable: form.is_consumable } : {}),
+    ...(form.public_show_expected_back !== undefined ? { public_show_expected_back: form.public_show_expected_back } : {}),
     ...(includeQuantities ? { total_quantity: Number(form.total_quantity || 0), available_quantity: Number(form.available_quantity || 0) } : {}),
   };
 }
@@ -53,7 +59,8 @@ export function adjustPayload(form: AdjustmentForm) {
 export function formFromProduct(product: AdminProduct): ItemForm {
   return { name: product.name, tracking_mode: product.tracking_mode, category: product.category ? String(product.category) : "", description: product.description, total_quantity: String(product.total_quantity), available_quantity: String(product.available_quantity), storage_location: product.storage_location ?? "", is_public: product.is_public, public_self_checkout_enabled: product.public_self_checkout_enabled, show_public_count: product.show_public_count, public_availability_mode: product.public_availability_mode,
     borrowing_terms: product.borrowing_terms ?? "", manufacturer: product.manufacturer ?? "", model: product.model ?? "", sku: product.sku ?? "", barcode: product.barcode ?? "",
-    supplier: product.supplier ?? "", reorder_point: String(product.reorder_point ?? 0), reorder_quantity: String(product.reorder_quantity ?? 0) };
+    supplier: product.supplier ?? "", reorder_point: String(product.reorder_point ?? 0), reorder_quantity: String(product.reorder_quantity ?? 0),
+    is_consumable: product.is_consumable, public_show_expected_back: product.public_show_expected_back };
 }
 
 export function defaultToBuyQuantity(product: AdminProduct) {

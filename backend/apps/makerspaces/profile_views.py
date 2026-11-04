@@ -56,7 +56,7 @@ class MemberProfileView(MemberProfileBaseView):
     @extend_schema(
         tags=["Member profile"], summary="Update the caller's own profile",
         request=ProfileWriteSerializer,
-        responses={200: ProfileReadSerializer, **ERRORS},
+        responses={200: ProfileReadSerializer, 400: ErrorSerializer, **ERRORS},
     )
     def put(self, request, makerspace_id):
         membership = self.membership(request, makerspace_id)
@@ -66,6 +66,11 @@ class MemberProfileView(MemberProfileBaseView):
         return Response(
             ProfileReadSerializer(profile_services.read_profile(membership)).data
         )
+
+    @extend_schema(tags=["Member profile"], request=ProfileWriteSerializer,
+                   responses={200: ProfileReadSerializer, 400: ErrorSerializer, **ERRORS})
+    def patch(self, request, makerspace_id):
+        return self.put(request, makerspace_id)
 
 
 class MemberDirectoryView(MemberProfileBaseView):

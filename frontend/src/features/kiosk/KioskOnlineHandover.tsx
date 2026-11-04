@@ -1,4 +1,6 @@
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
+import { ListRow, ResultPanel, StatusPill } from "../../components/ui";
+import { FlowLayout } from "../../components/layouts";
 
 import { EvidenceUpload } from "../staff/panels/EvidenceUpload";
 import { KitChecklistCapture, useSuppliedKitChecklist } from "../inventory/KitChecklist";
@@ -17,6 +19,8 @@ type Props = { token: string; lease: KioskLease; makerspaceId: number;
 // issue or return through the lease-checked command route. Evidence goes straight to
 // object storage via the kiosk presign; the server promotes it inside the workflow.
 export function KioskOnlineHandover({ token, lease, makerspaceId, onWorkLoaded }: Props) {
+  const [loadingWork, setLoadingWork] = useState(false);
+  const [running, setRunning] = useState<string | null>(null);
   const [requestId, setRequestId] = useState("");
   const [work, setWork] = useState<KioskWorkPackage | null>(null);
   const [boxCode, setBoxCode] = useState("");
@@ -25,12 +29,13 @@ export function KioskOnlineHandover({ token, lease, makerspaceId, onWorkLoaded }
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [captureSession, setCaptureSession] = useState(0);
+  const actionForm = useRef<HTMLFormElement>(null);
   const kits = useSuppliedKitChecklist(work?.kit_components ?? [], `${work?.id}/${work?.status}/${captureSession}`);
   const allowed = new Set(lease.permitted_operations);
   const presign = (body: object) => prepareEvidence(token, lease.lease_token, body);
 
   async function load(id: number) {
-    setError(null);
+    setLoadingWork(true); setError(null);
     try {
       const loaded = await loadWorkPackage(token, lease.lease_token, "reviewed_request", id);
       setWork(loaded);
@@ -38,22 +43,25 @@ export function KioskOnlineHandover({ token, lease, makerspaceId, onWorkLoaded }
       await onWorkLoaded?.(loaded);
     }
     catch { setWork(null); setError("That request is not available to this Station."); }
+    finally { setLoadingWork(false); }
   }
 
   function submitLoad(event: FormEvent) {
     event.preventDefault();
+    if (loadingWork || running) return;
     setMessage(null);
     void load(Number(requestId));
   }
 
   async function run(kind: string, payload: object, done: string) {
-    if (!work) return;
-    setError(null);
+    if (!work || running) return;
+    setRunning(kind); setError(null);
     try {
       await runOnlineCommand(token, lease.lease_token, kind, { request_id: work.id, ...payload });
       setMessage(done); setRemark(""); setBoxCode(""); setEvidenceId(null);
       await load(work.id);
     } catch { setError("The handover was refused. Check the box, photo and remark, then try again."); }
+    finally { setRunning(null); }
   }
 
   const resolutions = (work?.lines ?? []).filter((line) => line.quantity > line.returned).map((line) => ({
@@ -61,33 +69,46 @@ export function KioskOnlineHandover({ token, lease, makerspaceId, onWorkLoaded }
   }));
   const canIssue = work?.status === "accepted" && Boolean(work.box) && allowed.has("reviewed_issue");
   const canReturn = (work?.status === "issued" || work?.status === "partially_returned") && allowed.has("reviewed_return");
+  const cancel = () => { setWork(null); setEvidenceId(null); setBoxCode(""); setRemark(""); };
 
   return <div className="grid gap-4">
     <form className="flex flex-wrap items-end gap-3" onSubmit={submitLoad}>
-      <label className="grid gap-1 text-sm">Request number<input className="desk-input font-mono" inputMode="numeric" required value={requestId} onChange={(event) => setRequestId(event.target.value.replace(/\D/g, ""))} /></label>
-      <button className="desk-button-secondary" type="submit" disabled={!requestId}>Load request</button>
+      <label className="grid min-w-0 flex-1 basis-48 gap-1 text-sm">Request number<input className="desk-input w-full tabular-nums" inputMode="numeric" required value={requestId} onChange={(event) => setRequestId(event.target.value.replace(/\D/g, ""))} /></label>
+      <button className="desk-button-brand" type="submit" disabled={!requestId || loadingWork || Boolean(running)}>{loadingWork ? "Loading…" : "Load request"}</button>
     </form>
     {work ? <section className="grid gap-3" aria-label={work.display_label}>
-      <p className="text-sm"><strong>{work.display_label}</strong> · {work.person_display || "Requester"} · {work.status}{work.box ? ` · box ${work.box}` : ""}</p>
-      <ul className="text-sm">{work.lines.map((line) => <li key={line.item_id}>{line.label} × {line.quantity} (returned {line.returned})</li>)}</ul>
-      {work.status === "accepted" && !work.box && allowed.has("assign_box") ? <form className="flex flex-wrap items-end gap-3" onSubmit={(event) => { event.preventDefault(); void run("assign_box", { box_code: boxCode.trim() }, "Box assigned."); }}>
-        <label className="grid gap-1 text-sm">Box code<input className="desk-input font-mono" required value={boxCode} onChange={(event) => setBoxCode(event.target.value)} /></label>
-        <button className="desk-button-primary" type="submit">Assign box</button>
-      </form> : null}
-      {canIssue || canReturn ? <form className="grid gap-3" onSubmit={(event) => {
+      <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="title-panel">{work.display_label}</h2><StatusPill label={work.status.replace(/_/g, " ")} tone="accent" /></div>
+      <p className="text-sm text-muted">{work.person_display || "Requester"}{work.box ? ` · box ${work.box}` : ""}</p>
+      <div className="grid gap-3">{work.lines.map(line => <ListRow key={line.item_id} title={line.label} right={<span className="text-sm tabular-nums">{line.returned} / {line.quantity} returned</span>} />)}</div>
+      {work.status === "accepted" && !work.box && allowed.has("assign_box") ? <FlowLayout presentation="kiosk"
+        state={{ status: "ready" }} title="Assign a box" current="box" steps={[{ key: "box", label: "Box", state: "current" }]}
+        pending={loadingWork || Boolean(running)}
+        onCancel={cancel} footer={{ next: { label: "Assign box", pending: Boolean(running), pendingLabel: "Assigning…",
+          onClick: () => actionForm.current?.requestSubmit() } }} work={<form ref={actionForm} className="flex flex-wrap items-end gap-3" onSubmit={(event) => { event.preventDefault(); void run("assign_box", { box_code: boxCode.trim() }, "Box assigned."); }}>
+        <label className="grid min-w-0 flex-1 basis-48 gap-1 text-sm">Box code<input className="desk-input w-full tabular-nums" required value={boxCode} onChange={(event) => setBoxCode(event.target.value)} /></label>
+        <button type="submit" hidden aria-hidden="true" tabIndex={-1} disabled={Boolean(running)} />
+      </form>} /> : null}
+      {canIssue || canReturn ? <FlowLayout presentation="kiosk" state={{ status: "ready" }} title={canIssue ? "Issue items" : "Return items"}
+        pending={loadingWork || Boolean(running)}
+        current="evidence" steps={[{ key: "evidence", label: "Photo and remarks", state: "current" }]}
+        onCancel={cancel} footer={{ next: { label: canIssue ? "Issue items" : "Return all items", pending: Boolean(running),
+          pendingLabel: canIssue ? "Issuing…" : "Returning…", disabled: evidenceId === null || !kits.ready,
+          disabledReason: evidenceId === null ? "Add the evidence photo to continue." : !kits.ready ? "Check every kit part to continue." : undefined,
+          onClick: () => actionForm.current?.requestSubmit() } }} work={<form ref={actionForm} className="grid gap-3" onSubmit={(event) => {
         event.preventDefault();
         if (evidenceId === null || !kits.ready) return;
         if (canIssue) void run("reviewed_issue", { evidence_id: evidenceId, remark, asset_qr_payloads: [], rejects: [], kit_checklist: kits.counts }, "Issued.");
         else void run("reviewed_return", { evidence_id: evidenceId, remark, box_code: boxCode.trim(), resolutions, kit_checklist: kits.counts }, "Returned.");
       }}>
         <EvidenceUpload makerspaceId={makerspaceId} evidenceType={canIssue ? "issue" : "return"} label={canIssue ? "Issue photo" : "Return photo"} presign={presign} onUploaded={setEvidenceId} />
-        {canReturn ? <label className="grid gap-1 text-sm">Scan the box<input className="desk-input font-mono" required value={boxCode} onChange={(event) => setBoxCode(event.target.value)} /></label> : null}
+        {canReturn ? <label className="grid gap-1 text-sm">Scan the box<input className="desk-input tabular-nums" required value={boxCode} onChange={(event) => setBoxCode(event.target.value)} /></label> : null}
         <label className="grid gap-1 text-sm">Remark<input className="desk-input" required={canReturn} value={remark} onChange={(event) => setRemark(event.target.value)} /></label>
         <KitChecklistCapture checklist={kits} />
-        <button className="desk-button-primary" type="submit" disabled={evidenceId === null || !kits.ready}>{canIssue ? "Issue items" : "Return all items"}</button>
-      </form> : null}
+        <p className="text-sm text-muted">{evidenceId === null ? `Add the ${canIssue ? "issue" : "return"} photo${canReturn ? " and a return remark" : ""} to continue.` : !kits.ready ? "Check every kit part to continue." : "Review the details before confirming this handover."}</p>
+        <button type="submit" hidden aria-hidden="true" tabIndex={-1} disabled={evidenceId === null || !kits.ready || Boolean(running)} />
+      </form>} /> : null}
     </section> : null}
-    {message ? <p className="text-sm" role="status">{message}</p> : null}
+    {message ? <ResultPanel tone="success" title={message} summary="The handover is recorded." next={{ label: "Next", onClick: () => setMessage(null) }} /> : null}
     {error ? <p className="text-sm text-danger" role="alert">{error}</p> : null}
   </div>;
 }

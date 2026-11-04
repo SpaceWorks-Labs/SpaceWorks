@@ -124,6 +124,7 @@ class MemberPaymentHistoryView(APIView):
         filters = PaymentListFilterSerializer(data=request.query_params)
         filters.is_valid(raise_exception=True)
         queryset = with_refunds(member_payment_queryset(request.user, makerspace_id).select_related("makerspace"))
+        queryset = queryset.prefetch_related("refund_cases")
         # Collaborative charges use their OWNING space's local day, not this page's zone.
         state = filters.validated_data.get("due_state")
         rows = list(order_by_due(queryset))
@@ -151,8 +152,10 @@ def _member_payment_context(rows):
     """
     from apps.payments.models import ManualSettlement
 
+    from apps.payments.payment_rows_l5 import member_offline_context
+
     if not rows:
-        return {"payment_rails": {}, "payment_settlements": {}}
+        return {"payment_rails": {}, "payment_settlements": {}, "payment_offline": member_offline_context([])}
     receipts = ManualSettlement.effective_for_many(rows)
     # Keyed by OWNING makerspace, not answered once for the page. A collaborative-event
     # charge is owned by the host space and merely routed here through `via_makerspace`,
@@ -164,4 +167,4 @@ def _member_payment_context(rows):
     for row in rows:
         if (row.makerspace_id, row.subject_type) not in rails:
             rails[(row.makerspace_id, row.subject_type)] = online_payments_enabled_for(row)
-    return {"payment_rails": rails, "payment_settlements": receipts}
+    return {"payment_rails": rails, "payment_settlements": receipts, "payment_offline": member_offline_context(rows)}

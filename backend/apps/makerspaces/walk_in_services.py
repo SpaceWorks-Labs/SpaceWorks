@@ -17,6 +17,7 @@ access-restriction flow all take this row exactly as they take a self-registered
 from django.db import transaction
 from rest_framework.exceptions import ValidationError
 
+from apps.accounts.staff_identity import PERSON_KIND, person_q
 from apps.accounts.models import User
 from apps.accounts.username_allocation import allocate_username
 from apps.audit import services as audit
@@ -79,7 +80,7 @@ def _new_user(display_name, email, phone):
     someone deliberately revoked, through the one form whose entire purpose is naming a
     stranger.
     """
-    if email and User.objects.filter(email__iexact=email).exists():
+    if email and User.objects.filter(person_q(), email__iexact=email).exists():
         raise ValidationError(
             {"email": "An account already uses that email. Add them from the members list."}
         )
@@ -87,6 +88,7 @@ def _new_user(display_name, email, phone):
     def create(username):
         user = User(
             username=username,
+            account_kind=PERSON_KIND,
             display_name=display_name[:200],
             email=email,
             # Free-text contact only. NEVER `phone_e164`: that column is a login

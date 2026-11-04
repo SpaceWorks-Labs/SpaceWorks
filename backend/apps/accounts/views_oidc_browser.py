@@ -1,7 +1,6 @@
 from django.conf import settings
 from apps.openapi_errors import errors
-from drf_spectacular.utils import OpenApiResponse, extend_schema, PolymorphicProxySerializer
-from apps.accounts.serializers_mfa import MFAChallengeResponseSerializer
+from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
@@ -11,6 +10,7 @@ from apps.accounts import audit_events
 from apps.accounts.auth_cookies import set_refresh_cookies
 from apps.accounts.login_methods import self_registration_enabled, social_login_enabled
 from apps.accounts.models_oidc import provider_for_slug, slug_from_provider_key
+from apps.accounts.models_social import SocialSurface
 from apps.accounts.oidc_browser_attempts import (
     OidcAttemptRejected,
     consume_attempt,
@@ -31,7 +31,7 @@ from apps.accounts.serializers_oidc_browser import (
     OidcBrowserStartSerializer,
 )
 from apps.accounts.services_social_identity import SocialResolutionError
-from apps.accounts.services_social_login import issue_social_session, social_audit_meta
+from apps.accounts.services_social_login import assert_staff_authority, issue_social_session, social_audit_meta
 from apps.accounts.social_jwt import SocialProviderUnavailable, SocialTokenError
 from apps.accounts.social_oidc import verify_oidc_token
 from apps.hardware_requests.exceptions import ErrorSerializer
@@ -45,6 +45,7 @@ def _error(code, status_code):
         "provider_already_linked": "A different identity from that provider is already linked.",
         "account_link_required": "This provider does not allow automatic account linking.",
         "registration_disabled": "Account registration is not available.",
+        "staff_access_required": "Staff access is required.",
     }
     return Response(
         {"detail": messages.get(code, messages["social_invalid"]), "code": code},
@@ -54,6 +55,7 @@ def _error(code, status_code):
 
 class OidcBrowserStartView(APIView):
     permission_classes = [AllowAny]
+    login_ip_guard = True  # S-C: platform IP rules, automatic blocks, Turnstile
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "social_nonce"
 
@@ -95,6 +97,7 @@ class OidcBrowserStartView(APIView):
 
 class OidcBrowserCallbackView(APIView):
     permission_classes = [AllowAny]
+    login_ip_guard = True  # S-C: platform IP rules, automatic blocks, Turnstile
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "social_login"
 
@@ -103,7 +106,7 @@ class OidcBrowserCallbackView(APIView):
         auth=[],
         request=OidcBrowserCallbackSerializer,
         responses={
-            200: PolymorphicProxySerializer(component_name="OidcBrowserLoginResult", serializers=[OidcBrowserLoginResponseSerializer, MFAChallengeResponseSerializer], resource_type_field_name=None),
+            200: OidcBrowserLoginResponseSerializer,
             400: OpenApiResponse(ErrorSerializer),
             401: OpenApiResponse(ErrorSerializer),
             403: OpenApiResponse(ErrorSerializer),
@@ -136,17 +139,21 @@ class OidcBrowserCallbackView(APIView):
                 attempt,
                 claims,
                 allow_user_creation=self_registration_enabled(),
+                staff_validator=(lambda user: assert_staff_authority(user, request))
+                if attempt.surface == SocialSurface.STAFF else None,
             )
             from apps.accounts.mfa_policy import needs_challenge
             from apps.accounts.mfa_challenges import start
             from apps.accounts.mfa_sessions import context
             if needs_challenge(user):
-                response = Response(start(user, context=context(request, surface="member")))
+                response = Response(start(user, context=context(
+                    request, surface=attempt.surface,
+                )))
                 response["Cache-Control"] = "no-store"
                 return response
             tokens = issue_social_session(
                 user,
-                surface="member",
+                surface=attempt.surface,
                 delivery="web",
                 nonce_row=attempt,
             )
@@ -173,7 +180,7 @@ class OidcBrowserCallbackView(APIView):
         response = Response(
             {
                 "access": tokens["access"],
-                "user": user_payload(user, request=request),
+                "user": user_payload(user, request=request, session_authority=attempt.surface),
                 "outcome": outcome,
             }
         )

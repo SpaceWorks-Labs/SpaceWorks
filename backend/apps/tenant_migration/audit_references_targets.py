@@ -36,14 +36,45 @@ def audit_target_dispositions(models=MODELS):
     dispositions = {}
     for label, model_disposition in models.items():
         key = normalize_audit_target_type(label)
-        if label in {"operations.SavedView", "machines.MachineMaterial", "operations.StocktakeSchedule"}:
-            # Preferences can be deleted while their immutable audit rows survive.
+        if label in {"makerspaces.MakerspacePublicPage", "makerspaces.MakerspacePublicPageRevision",
+                     "events.EventPageRevision"}:
+            dispositions[key] = AuditReference(
+                AuditReferenceDisposition.SOURCE_LOCAL_SNAPSHOT, label, "audit_public_page_history_target")
+            continue
+        if label in {
+            'bookings.BookableSpacePhoto',
+            'bookings.BookingResourcePage',
+            'events.EventCategory',
+            'events.EventCertificateArtwork',
+            'events.EventPage',
+            'events.EventTicketType',
+            'machines.ConsumableCostRecord',
+            'machines.MachineMaterial',
+            'notifications.MemberNotificationPreference',
+            'notifications.NotificationPreference',
+            'operations.SavedView',
+            'operations.StocktakeSchedule',
+            'presence.PresencePreference',
+            'presence.PresenceSession',
+            'presence.PresenceSettings',
+        }:
+            # Preferences can be deleted; unpromoted artwork reservations do not
+            # travel. Their immutable audit history still survives projection.
             # Keep the source ID as typed provenance, never a live target binding
             # requiring a row that may no longer exist in the portable archive.
             dispositions[key] = AuditReference(
                 AuditReferenceDisposition.SOURCE_LOCAL_SNAPSHOT,
                 label,
-                "audit_saved_view_target" if label == "operations.SavedView" else "audit_wp4_preference_target",
+                {
+                    "machines.ConsumableCostRecord": "audit_tracking_cost_target",
+                    "operations.SavedView": "audit_saved_view_target",
+                    "events.EventCertificateArtwork": "audit_unpromoted_artwork_target",
+                    "events.EventPage": "audit_website_page_target",
+                    "bookings.BookingResourcePage": "audit_website_page_target",
+                    "events.EventTicketType": "audit_deletable_ticket_target",
+                    "events.EventCategory": "audit_deletable_category_target",
+                    "bookings.BookableSpacePhoto": "audit_deletable_gallery_target",
+                }.get(label, "audit_wp4_preference_target"),
             )
         elif isinstance(model_disposition, Exported):
             dispositions[key] = AuditReference(

@@ -1,4 +1,6 @@
 """Safe deployment summaries: no provider errors, secrets or tenant snapshots."""
+from apps.operations.cloud_jobs import bounded
+
 
 from django.db.models import Q
 from django.utils import timezone
@@ -28,6 +30,11 @@ def scheduler_snapshot(now=None):
 
 
 def backup_snapshot():
+    from django.conf import settings
+    if settings.SPACEWORKS_DEPLOYMENT_MODE == "managed":
+        return {"automatic_enabled": False, "last_success_at": None,
+                "status": "deployment_backup_requires_host_supervisor", "started_at": None,
+                "finished_at": None, "has_error": False, "cadence_minutes": 1440}
     from apps.backup.models import PlatformBackupSettings
     from apps.backup.models_runs import BackupRun
 
@@ -54,14 +61,14 @@ def offsite_snapshot(visible_ids):
         Q(scope_snapshot="deployment", makerspace_id_snapshot__isnull=True)
         | Q(scope_snapshot="makerspace", makerspace_id_snapshot__in=visible_ids),
     )
-    for destination in BackupDestination.objects.filter(enabled=True, retired_at=None):
+    for destination in bounded.page(BackupDestination.objects.filter(enabled=True, retired_at=None), "offsite-signals"):
         copies = uploads.filter(destination=destination)
         latest = copies.order_by("-created_at").first()
         failing = copies.exclude(state="deleted").filter(
             Q(state="abandoned") | ~Q(last_error_code=""),
         ).exists()
         # Probe results are deployment-global audit events. Do not use the
-        # destination's last_error_code: a hidden tenant's upload can set it.
+        # destination's last_error_code: any tenant's upload can set it.
         probe = AuditLog.objects.filter(
             action="backup.destination_probed", target_type="backup.backupdestination",
             target_id=str(destination.pk), makerspace__isnull=True,

@@ -39,7 +39,7 @@ feature keys or tenant settings surface.
 
 Use `accounts.rbac.scope_for_scheduled_work(queryset, makerspace_id=makerspace.pk,
 field="makerspace_id")` for every source/domain query (adjust `field` for indirect
-ownership). It excludes archived, inactive and hard-hidden tenants; not-restored
+ownership). It excludes archived and inactive tenants; not-restored
 and frozen tenants still reach the write gate and are counted. This internal helper
 does not authorize HTTP users or replace the tenant write gate. Primitives also
 refuse direct writes to unavailable tenants. Discovery must scope every domain query

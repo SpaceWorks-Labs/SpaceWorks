@@ -239,6 +239,8 @@ NON_REFERENCE_JSON_FIELDS = frozenset({
 
 from .classification_wp4 import NON_REFERENCE_JSON_FIELDS as WP4_JSON
 NON_REFERENCE_JSON_FIELDS |= WP4_JSON
+from .classification_r2_l4 import NON_REFERENCE_JSON_FIELDS as R2_L4_JSON  # noqa: E402
+NON_REFERENCE_JSON_FIELDS |= R2_L4_JSON
 
 
 def validate_semantic_references(semantic_references=SEMANTIC_REFERENCES):
@@ -273,10 +275,12 @@ def validate_semantic_references(semantic_references=SEMANTIC_REFERENCES):
 
 
 def validate_user_projection(datasets=DATASETS):
+    user = apps.get_model("accounts.User")
     for fidelity in Fidelity:
         dataset = datasets[(fidelity, "global/users.csv")]
         actual = {column.name for column in dataset.columns}
-        _equal(f"{fidelity} User projection", actual, set(USER_PROJECTIONS[fidelity]))
+        expected = {user._meta.get_field(name).attname for name in USER_PROJECTIONS[fidelity]}
+        _equal(f"{fidelity} User projection", actual, expected)
 
 
 def _field_by_name_or_attname(model, name):

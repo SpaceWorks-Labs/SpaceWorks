@@ -50,6 +50,8 @@ def record_offline_refund(payment, *, amount, reason, receipt, actor, release_de
         reason=data["reason"], created_by=actor, settled_at=timezone.now(),
         **data["receipt"],
     )
+    from apps.payments.services_refund_cases import void_exhausted_cases
+    void_exhausted_cases(locked, actor=actor)
     audit.record(
         actor, "payment.refund_recorded", makerspace=locked.makerspace, target=locked,
         meta={"payment_id": locked.pk, "refund_id": refund.pk, "amount": str(refund.amount),

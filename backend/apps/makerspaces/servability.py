@@ -1,18 +1,15 @@
 """Canonical policy for deciding whether a makerspace may serve traffic."""
 
-from django.db.models import Q, QuerySet, Subquery
+from django.db.models import Q, QuerySet
 
 from apps.makerspaces.models import Makerspace
 
 
 def is_servable(makerspace: Makerspace, *, allow_archived: bool = False) -> bool:
     """Return whether traffic may use it, optionally for archived recovery only."""
-    from apps.backup.not_restored import is_not_restored
-
     return (
         makerspace.lifecycle_state == Makerspace.LifecycleState.ACTIVE
         and (allow_archived or makerspace.archived_at is None)
-        and not is_not_restored(makerspace.pk)
     )
 
 
@@ -24,37 +21,25 @@ def servable_queryset(queryset: QuerySet | None = None, *, relation: str = ""):
 
 def servable_q(relation: str = "") -> Q:
     """Return the canonical policy as a composable relation-aware query predicate."""
-    from apps.backup.not_restored import active_makerspace_ids
-
     prefix = f"{relation}__" if relation else ""
-    ordinary = Q(
+    return Q(
         **{
             f"{prefix}archived_at__isnull": True,
             f"{prefix}lifecycle_state": Makerspace.LifecycleState.ACTIVE,
         }
     )
-    return ordinary & ~Q(
-        **{f"{prefix}pk__in": Subquery(active_makerspace_ids())}
-    )
 
 
 def unservable_makerspace_ids() -> set[int]:
     """Return IDs that every normal authorization scope must exclude."""
-    from apps.backup.not_restored import active_component_states
-
-    ordinary = archived_or_inactive_makerspace_ids()
-    pending = set(
-        active_component_states().values_list("makerspace_id_snapshot", flat=True)
-    )
-    return ordinary | pending
+    return archived_or_inactive_makerspace_ids()
 
 
 def archived_or_inactive_makerspace_ids() -> set[int]:
-    """The archived/inactive half of the policy, without the not-restored half.
+    """Archived or non-active makerspaces: the whole unservable set.
 
-    A caller that must still let a pending (not-restored) tenant reach the
-    not-restored write gate needs this rather than `unservable_makerspace_ids`,
-    which unions both and would filter the tenant out before the gate ran.
+    Kept as its own name because accounts/rbac.py pins callers to it; it equals
+    `unservable_makerspace_ids` now that no opaque, not-restored tenant exists.
     """
     return set(
         Makerspace.objects.exclude(

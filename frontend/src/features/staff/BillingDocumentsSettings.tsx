@@ -1,9 +1,12 @@
+import { SettingsQueryState } from "./SettingsQueryState";
+import { SettingsEditorActions } from "./SettingsEditorActions";
+import { SettingsRow } from "../../components/ui";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Field } from "../../components/ui";
 import { staffRequest } from "../../lib/api";
 
-type Billing = { number_prefix: string; legal_name: string; address: string; tax_id: string; footer: string; account_codes: Record<string, string> };
+type Billing = { number_prefix: string; bill_prefix: string; payment_instructions: string; legal_name: string; address: string; tax_id: string; footer: string; account_codes: Record<string, string>; upi_vpa: string; upi_payee_name: string };
 
 export function BillingDocumentsSettings({ makerspaceId }: { makerspaceId: number }) {
   const client = useQueryClient();
@@ -18,27 +21,29 @@ export function BillingDocumentsSettings({ makerspaceId }: { makerspaceId: numbe
     mutationFn: () => {
       const account_codes: unknown = JSON.parse(codes);
       return staffRequest<Billing>(path, { method: "PATCH", body: JSON.stringify({
-        number_prefix: draft?.number_prefix, legal_name: draft?.legal_name, address: draft?.address,
-        tax_id: draft?.tax_id, footer: draft?.footer, account_codes,
+        number_prefix: draft?.number_prefix, bill_prefix: draft?.bill_prefix,
+        payment_instructions: draft?.payment_instructions, legal_name: draft?.legal_name, address: draft?.address,
+        tax_id: draft?.tax_id, footer: draft?.footer, account_codes, upi_vpa: draft?.upi_vpa, upi_payee_name: draft?.upi_payee_name,
       }) });
     },
     onSuccess: (data) => { client.setQueryData(key, data); void client.invalidateQueries({ queryKey: ["operations-report", "accounting-journal"] }); },
   });
-  return <section className="rounded-md border border-line p-4" aria-label="Billing documents settings">
-    <h3 className="title-section">Receipts and accounting</h3>
-    <p className="text-sm text-muted">Gross-only acknowledgements. Settings apply to new documents. Existing receipt numbers and snapshots remain unchanged.</p>
-    <button className="desk-button-secondary mt-2" type="button" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>Configure documents</button>
-    {expanded ? <>
-      {policy.isLoading ? <p>Loading billing settings...</p> : null}
+  return <SettingsRow label="Billing documents and accounting" helper="Gross-only documents. Settings apply to newly issued bills, receipts and credit notes."><div className="@container grid min-w-0 gap-4">
+
+
+    <button className="desk-button mt-2" type="button" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>Configure documents</button>
+    {expanded ? <SettingsQueryState query={policy} resource="receipt settings"><>
+      {policy.isLoading ? <p>Loading billing settings…</p> : null}
       {policy.error || save.error ? <p role="alert" className="text-danger">{(policy.error || save.error)?.message}</p> : null}
       {draft ? <form className="mt-3 grid gap-3" onSubmit={(event) => { event.preventDefault(); save.mutate(); }}>
-        {([ ["number_prefix", "Number prefix", 32], ["legal_name", "Issuer name", 150], ["address", "Issuer address", 1000], ["tax_id", "Issuer identifier (no tax calculation)", 64], ["footer", "Footer", 1000] ] as const).map(([name, label, length]) =>
+        {([ ["number_prefix", "Number prefix", 32], ["bill_prefix", "Bill prefix", 32], ["legal_name", "Issuer name", 150], ["address", "Issuer address", 1000], ["tax_id", "Issuer identifier (no tax calculation)", 64], ["footer", "Footer", 1000], ["upi_vpa", "UPI ID for the payment QR (name@bank)", 255], ["upi_payee_name", "UPI payee name", 50] ] as const).map(([name, label, length]) =>
           <Field key={name} label={label}><input className="desk-input" maxLength={length} value={draft[name]} onChange={(event) => setDraft({ ...draft, [name]: event.target.value })} /></Field>)}
-        <Field label="Accounting account codes (JSON)"><textarea className="desk-input font-mono" rows={6} value={codes} onChange={(event) => setCodes(event.target.value)} /></Field>
+        <Field label="Payment instructions"><textarea className="desk-input" rows={4} maxLength={2000} value={draft.payment_instructions} onChange={event => setDraft({ ...draft, payment_instructions: event.target.value })} /></Field>
+        <Field label="Accounting account codes (JSON)"><textarea className="desk-input code-text" rows={6} value={codes} onChange={(event) => setCodes(event.target.value)} /></Field>
         <p className="text-xs text-muted">Defaults: income 4000, cash 1000, online 1010, loan-deposit liability 2100. Override individual payment subject types as needed.</p>
-        <button className="desk-button" type="submit" disabled={save.isPending}>Save receipt settings</button>
-        {save.isSuccess ? <p role="status">Receipt settings saved.</p> : null}
+        <SettingsEditorActions dirty={Boolean(draft && policy.data && (JSON.stringify(draft) !== JSON.stringify(policy.data) || codes !== JSON.stringify(policy.data.account_codes, null, 2)))} onDiscard={() => { setDraft(policy.data ?? null); setCodes(JSON.stringify(policy.data?.account_codes ?? {}, null, 2)); }} pending={save.isPending} disabled={save.isPending} />
+        {save.isSuccess ? <p role="status">Document settings saved.</p> : null}
       </form> : null}
-    </> : null}
-  </section>;
+    </></SettingsQueryState> : null}
+  </div></SettingsRow>;
 }

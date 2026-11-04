@@ -1,9 +1,39 @@
 """Explicit source-gate http participation declarations."""
 
 from .gate_policy_replay import REPLAY_HTTP_PARTICIPANTS
+from .gate_policy_p2_wa_twilio import HTTP_ANONYMOUS_PARTICIPANTS as WA_TWILIO_PARTICIPANTS
 
 
+# Signature ingress stays reachable while ordinary tenant mutations are frozen.
+# The provider owner must commit durable receipts/sender STOP protection before
+# acknowledging, and gate tenant status/proof writes inside the processor.
+PROVIDER_INGRESS_ROUTES = frozenset({
+    "messaging-twilio-platform-status", "messaging-twilio-platform-inbound",
+    "messaging-twilio-status", "messaging-twilio-inbound", "messaging-meta-platform", "messaging-meta",
+    "whatsapp-meta-webhook", "whatsapp-twilio-inbound", "whatsapp-twilio-status",
+})
 HTTP_EXEMPTIONS = {
+    "notification-media": (
+        "Single-use GET resolves its tenant from the hashed media grant, then takes "
+        "tenant_write for atomic consumption and audit; closed source gates refuse disclosure."
+    ),
+    **{name: "Signed provider ingress durably records deployment events; status writes gate their resolved tenant; STOP protection must survive frozen tenants."
+       for name in PROVIDER_INGRESS_ROUTES},
+    "auth-account-restore-email": "Global identity recovery never reinstates tenant authority.",
+    "auth-account-restore-phone": "Global identity recovery never reinstates tenant authority.",
+    "auth-account-restore-social-start": "Global provider recovery intent has no tenant mutation.",
+    "auth-account-restore-social-complete": "Global identity recovery never reinstates tenant authority.",
+    "auth-account-deletion": "Global departure discovers and locks every owned tenant gate inside Stage A.",
+    "auth-reauth": "Global browser session proof has no tenant-owned authority.",
+    "auth-reauth-social-start": "Global session-bound credential intent.",
+    "auth-reauth-social-complete": "Global credential verification and browser proof.",
+    "auth-reauth-social-factor": "Global session-bound provider second-factor proof.",
+    "auth-reauth-phone-start": "Global session-bound phone credential challenge.",
+    "auth-reauth-phone-confirm": "Global phone credential verification and session proof.",
+    "auth-reauth-enrollment-email": "Global session-bound MFA enrollment confirmation.",
+    "auth-reauth-enrollment-confirm": "Global enrollment-only proof, never a tenant grant.",
+    "control-reauthentication": "Global control session proof; existing control MFA gate remains.",
+    "auth-organizations-self-service": "Global organization governance; creation confers no tenant authority.",
     "admin-space-pack-profiles": (
         "Platform configuration snapshots have no tenant rows; applying one uses the target tenant gate."
     ),
@@ -23,10 +53,9 @@ HTTP_EXEMPTIONS = {
     "backup-recovery-state": "Deployment recovery must be able to quarantine/recover the deployment.",
     "stripe-connect-webhook": "Connect account events are platform routing state, not one source tenant.",
     "telegram-webhook": (
-        "Acknowledge-and-discard: the callback route was removed when chat stopped being an "
-        "action surface, so this writes nothing and cannot break quiescence. It must keep "
-        "answering 200 even mid-migration, or Telegram retries an already-registered webhook "
-        "for hours against a tenant that is being moved."
+        "Authenticate before opaque proof lookup. Private account linking resolves its tenant "
+        "and consumes under notification_proofs.tenant_write; closed gates refuse linking. "
+        "Other updates and every decision callback are acknowledged without writes."
     ),
     "auth-login": "Global user session state is excluded from tenant quiescence.",
     "auth-mfa": "Global MFA credential state is excluded from tenant quiescence.",
@@ -35,9 +64,16 @@ HTTP_EXEMPTIONS = {
     "auth-mfa-verify": "Global MFA verification and session state is excluded from tenant quiescence.",
     "auth-mfa-recovery": "Global MFA recovery credentials are excluded from tenant quiescence.",
     "auth-mfa-disable": "Global MFA credential state is excluded from tenant quiescence.",
+    # Login security S-A: passkeys are a person's global credentials (web only).
+    **dict.fromkeys((
+        "auth-passkey-detail", "auth-passkeys-register-options", "auth-passkeys-register-verify",
+        "auth-passkeys-authenticate-options", "auth-passkeys-authenticate-verify", "auth-mfa-passkey-options",
+        "auth-reauth-passkey-options", "auth-reauth-passkey",
+    ), "Global passkey credential and session state is excluded from tenant quiescence."),
     "control-mfa": "Global MFA credential and control-session state is excluded from tenant quiescence.",
     "auth-refresh": "Global user session state is excluded from tenant quiescence.",
     "auth-logout": "Global user session state is excluded from tenant quiescence.",
+    "auth-logout-all": "Global user session state is excluded from tenant quiescence.",
     "auth-change-password": "Global credential edits are excluded from tenant quiescence.",
     "auth-forgot-password": "Global account recovery is excluded from tenant quiescence.",
     "auth-reset-password": "Global credential edits are excluded from tenant quiescence.",
@@ -55,6 +91,8 @@ HTTP_EXEMPTIONS = {
     "social-oidc": "Global social identity state is excluded from tenant quiescence.",
     "social-oidc-browser-start": "Global social identity state is excluded from tenant quiescence.",
     "social-oidc-browser-callback": "Global social identity state is excluded from tenant quiescence.",
+    "social-github-browser-start": "Global social identity state is excluded from tenant quiescence.",
+    "social-github-browser-callback": "Global social identity state is excluded from tenant quiescence.",
     "device-attestation-challenge": "Global device authority is excluded from tenant quiescence.",
     "device-login": "Global device authority is excluded from tenant quiescence.",
     "device-refresh": "Global device authority is excluded from tenant quiescence.",
@@ -63,11 +101,14 @@ HTTP_EXEMPTIONS = {
 
 
 HTTP_ANONYMOUS_EXEMPTIONS = {
+    "apps.operations.cloud_jobs.tick_views.FreeTickView.post": "Free-only authenticated deployment coordination, with per-chunk source gates.",
     "apps.accounts.views_device.DeviceAttestationChallengeView.post": "Global device-attestation challenge state.",
     "apps.accounts.views_device.DeviceLoginView.post": "Global user and device-session state.",
     "apps.accounts.views_device.DeviceRefreshView.post": "Global device-session state.",
     "apps.accounts.views_oidc_browser.OidcBrowserStartView.post": "Global OIDC login-attempt state.",
     "apps.accounts.views_oidc_browser.OidcBrowserCallbackView.post": "Global OIDC identity state.",
+    "apps.accounts.views_github.GithubBrowserStartView.post": "Global GitHub login-attempt state.",
+    "apps.accounts.views_github.GithubBrowserCallbackView.post": "Global GitHub identity state.",
     "apps.accounts.views_password.ForgotPasswordView.post": "Global account-recovery state.",
     "apps.accounts.views_password.ResetPasswordConfirmView.post": "Global credential state.",
     "apps.accounts.views_phone.PhoneLoginStartView.post": "Global phone-login challenge state.",
@@ -76,18 +117,37 @@ HTTP_ANONYMOUS_EXEMPTIONS = {
     "apps.accounts.views_login.LoginView.post": "Global user session state.",
     "apps.accounts.views_profile.LogoutView.post": "Global user session state.",
     "apps.accounts.views_mfa.MFAEnrollmentView.post": "Global MFA enrollment challenge state.",
+    # Login security S-A: anonymous passkey ceremonies touch only global challenge and session state.
+    **{f"apps.accounts.passkeys.views.{view}.post": "Global passkey challenge and session state."
+       for view in ("PasskeyAuthenticateOptionsView", "PasskeyAuthenticateVerifyView", "PasskeyMfaOptionsView")},
     "apps.accounts.views_social_login.SocialNonceView.post": "Global social-login nonce state.",
     "apps.accounts.views_social_login.SocialLoginView.post": "Global social identity and session state.",
     "apps.payments_rail.views_connect.StripeConnectWebhookView.post": "Platform Connect routing state.",
-    "apps.integrations.views.TelegramWebhookView.post": (
-        "Writes nothing at all: the callback route was removed when chat stopped being an "
-        "action surface, and the view only acknowledges so an already-registered webhook "
-        "stops retrying. No tenant state is reachable from it to quiesce."
-    ),
+    **{
+        f"apps.hosting_requests.views_public.{view}.post": (
+            "Global platform hosting-request state; no tenant row or authority."
+        )
+        for view in (
+            "HostingRequestSubmitView", "HostingRequestOpenView", "HostingRequestResubmitView",
+            "HostingInvitationResolveView", "HostingInvitationSubmitView",
+        )
+    },
 }
 
 
 HTTP_ANONYMOUS_PARTICIPANTS = {
+    "apps.integrations.views_bounce.ProviderBounceWebhookView.post": "Signed opaque tenant receipt commits in tenant_write.",
+    "apps.integrations.notification_wa_meta_views.MetaWebhookView.post": (
+        "Raw Meta HMAC and URL generation bind one tenant; batch application, "
+        "proofs, consent revocation and delivery updates commit under tenant_write."
+    ),
+    **WA_TWILIO_PARTICIPANTS,
+    "apps.integrations.views.TelegramWebhookView.post": (
+        "Verified secret and single-use private proof resolve one configuration; endpoint "
+        "and audit writes take tenant_write in notification_proofs.verified_callback."
+    ),
+    "apps.integrations.views_messaging_webhooks.TwilioMessagingWebhookView.post": "Signed ingress stores a durable event; status uses tenant_write and STOP uses sender-scoped protection.",
+    "apps.integrations.views_messaging_webhooks.MetaMessagingWebhookView.post": "Sender lock precedes event/correlation row locks; tenant status writes use tenant_write independently of module state.",
     "apps.integrations.views_bounce.BounceWebhookView.post": (
         "Verified tenant HMAC resolves one makerspace; suppression and audit commit under tenant_write."
     ),
@@ -113,6 +173,13 @@ HTTP_ANONYMOUS_PARTICIPANTS = {
 
 
 ADMIN_ACTION_EXEMPTIONS = {
+    "makerspaces.Makerspace.approve_archive_requests": (
+        "Approving a pending lifecycle request performs the excluded tenant archive."
+    ),
+    "makerspaces.Makerspace.decline_archive_requests": (
+        "Declining a governance request grants no authority on the frozen tenant."
+    ),
+
     "makerspaces.MakerspaceArchiveRequest.approve_selected": (
         "Approving the request performs the excluded tenant archive."
     ),
@@ -123,3 +190,6 @@ ADMIN_ACTION_EXEMPTIONS = {
         "Tenant purge is expressly excluded from source quiescence."
     ),
 }
+
+from .gate_policy_p2_p_chat import HTTP_ANONYMOUS_PARTICIPANTS as chat_participants
+HTTP_ANONYMOUS_PARTICIPANTS.update(chat_participants)

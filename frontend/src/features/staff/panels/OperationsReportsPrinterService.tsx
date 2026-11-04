@@ -1,5 +1,6 @@
+import { SelectedReportPanel as Panel } from "./OperationsReportSelection";
 import { BarChart, DataState, ReportTable, StackedBarChart } from "./OperationsReportsParts";
-import { Panel, type Makerspace, useStaffGet } from "./shared";
+import { type Makerspace, useStaffGet } from "./shared";
 
 type PrinterMetric = {
   makerspace_id?: number; machine_id: number; machine_name: string; model: string;
@@ -27,7 +28,7 @@ export function OperationsReportsPrinterService({ makerspace, aggregate, canMana
   const rows = report.data?.printer_metrics ?? [];
   return (
     <Panel title="Printer service">
-      <DataState loading={report.isLoading} error={report.error} empty={!rows.length}>
+      <DataState loading={report.isLoading} error={report.error} onRetry={() => void report.refetch()} empty={!rows.length}>
         {aggregate ? <div className="space-y-5">{groups(rows).map(([id, metrics]) => (
           <section key={id} className="rounded-md border border-line p-4">
             <h4 className="eyebrow">{makerspaceName(id)}</h4><PrinterMetrics rows={metrics} />

@@ -16,7 +16,7 @@ export function StaffLoanRenew({ makerspaceId, requestId }: { makerspaceId: numb
   });
   return <span>
     <button className="desk-button" type="button" disabled={renew.isPending} onClick={() => renew.mutate()}>
-      {renew.isPending ? "Renewing..." : "Renew loan"}
+      {renew.isPending ? "Renewing…" : "Renew loan"}
     </button>
     {renew.error ? <span className="block text-xs text-danger" role="alert">{renew.error.message}</span> : null}
   </span>;

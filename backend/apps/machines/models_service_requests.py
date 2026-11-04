@@ -10,6 +10,7 @@ from django.db.models import Q
 
 from apps.encryption.mappers import ScopedPiiModelMixin, ScopedPiiQuerySet
 from apps.machines.metering import MeteringUnit
+from apps.machines.models_job_fields import JobFlowFields
 
 
 class ServiceQueue(models.Model):
@@ -108,15 +109,22 @@ def get_or_create_default_bucket(machine, *, makerspace=None):
         return bucket
 
 
-class MachineServiceRequest(ScopedPiiModelMixin, models.Model):
+class MachineServiceRequest(ScopedPiiModelMixin, JobFlowFields, models.Model):
     class Status(models.TextChoices):
         PENDING = "pending", "Pending"
+        # #141: staff asked the member for a new file or notes.
+        CHANGES_REQUESTED = "changes_requested", "Needs changes"
+        # #141: a quote waits for the member's approval (or, when prepaid, the payment).
+        QUOTED = "quoted", "Quote sent"
         ACCEPTED = "accepted", "Accepted"
         IN_PROGRESS = "in_progress", "In progress"
         COMPLETED = "completed", "Completed"
         COLLECTED = "collected", "Collected"
+        # #142 OQ-7: never picked up; the item is the space's, any charge stays owed.
+        UNCOLLECTED = "uncollected", "Not collected"
         REJECTED = "rejected", "Rejected"
         FAILED = "failed", "Failed"
+        CANCELLED = "cancelled", "Cancelled"
 
     bucket = models.ForeignKey(ServiceBucket, null=True, blank=True, on_delete=models.PROTECT, related_name="service_requests")
     queue = models.ForeignKey(ServiceQueue, null=True, blank=True, on_delete=models.PROTECT, related_name="service_requests")
@@ -154,6 +162,14 @@ class MachineServiceRequest(ScopedPiiModelMixin, models.Model):
     collected_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="collected_service_requests")
     collected_at = models.DateTimeField(null=True, blank=True)
     failed_at = models.DateTimeField(null=True, blank=True)
+    cancelled_at = models.DateTimeField(null=True, blank=True)
+    # Requester-notice markers: "intent reserved", never "delivered". Written once by
+    # `service_queue_notices` with a queryset update so they never touch updated_at.
+    started_notice_at = models.DateTimeField(null=True, blank=True, editable=False)
+    completed_notice_at = models.DateTimeField(null=True, blank=True, editable=False)
+    cancelled_notice_at = models.DateTimeField(null=True, blank=True, editable=False)
+    # Set by tenant import for rows that arrive accepted: their "next" notice is treated as sent.
+    imported_head_notified = models.BooleanField(default=False, editable=False)
     estimated_minutes = models.PositiveIntegerField(default=0, validators=[MinValueValidator(0)])
     actual_minutes = models.PositiveIntegerField(default=0, validators=[MinValueValidator(0)])
     fail_percent_complete = models.PositiveSmallIntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)])
@@ -231,53 +247,4 @@ class MachineServiceRequest(ScopedPiiModelMixin, models.Model):
         return f"{self.title} ({self.status})"
 
 
-class ServiceRequestFile(models.Model):
-    class Kind(models.TextChoices):
-        ATTACHMENT = "attachment", "Attachment"
-        MODEL = "model", "Model"
-        ESTIMATE = "estimate", "Estimate"
-        PREVIEW = "preview", "Preview"
-        SCREENSHOT = "screenshot", "Screenshot"
-
-    service_request = models.ForeignKey(
-        MachineServiceRequest, null=True, blank=True, on_delete=models.CASCADE, related_name="files"
-    )
-    makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.PROTECT, related_name="service_request_files")
-    machine = models.ForeignKey("machines.Machine", null=True, blank=True, on_delete=models.SET_NULL, related_name="service_request_files")
-    queue = models.ForeignKey(ServiceQueue, null=True, blank=True, on_delete=models.PROTECT, related_name="staged_files")
-    kind = models.CharField(max_length=16, choices=Kind.choices)
-    object_key = models.CharField(max_length=255, unique=True)
-    content_type = models.CharField(max_length=128, blank=True)
-    original_filename = models.CharField(max_length=255, blank=True, default="")
-    size_bytes = models.PositiveBigIntegerField(default=0)
-    owner_user_id = models.BigIntegerField()
-    file_policy_name = models.CharField(max_length=64, default="documents")
-    file_policy_version = models.PositiveSmallIntegerField(default=1)
-    created_at = models.DateTimeField(auto_now_add=True)
-    attached_at = models.DateTimeField(null=True, blank=True)
-    legacy_print_request_file_id = models.PositiveIntegerField(null=True, blank=True, unique=True, editable=False)
-
-    class Meta:
-        ordering = ["created_at"]
-
-    def save(self, *args, **kwargs):
-        if self._state.adding and self.makerspace_id is None and self.machine_id:
-            self.makerspace_id = self.machine.makerspace_id
-        if self.pk:
-            original = type(self).objects.only(
-                "attached_at", "owner_user_id", "object_key", "size_bytes", "content_type", "original_filename",
-                "file_policy_name", "file_policy_version",
-            ).get(pk=self.pk)
-            if original.attached_at and any(
-                getattr(self, field) != getattr(original, field)
-                for field in (
-                    "owner_user_id", "object_key", "size_bytes", "content_type", "original_filename",
-                    "file_policy_name", "file_policy_version",
-                )
-            ):
-                raise RuntimeError("Attached ServiceRequestFile metadata is immutable.")
-        return super().save(*args, **kwargs)
-
-    def __str__(self):
-        return f"{self.kind}:{self.object_key}"
-
+from .models_service_files import ServiceRequestFile  # noqa: E402,F401

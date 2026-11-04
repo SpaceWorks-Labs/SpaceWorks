@@ -1,4 +1,6 @@
 """First-term debt and settlement-driven admission; the payment rail stays optional."""
+from apps.operations.cloud_jobs import bounded
+
 import logging
 
 from django.db import transaction
@@ -16,15 +18,19 @@ SETTLED = ("paid_online", "paid_offline", "waived")
 
 
 def charge_admission(row, actor, policy):
+    from apps.accounts.account_obligations import lock_obligation_owner
+    row.user = lock_obligation_owner(row.user)
     if row.admission_payment_id:
         return Payment.objects.select_for_update().get(pk=row.admission_payment_id, makerspace=row.makerspace, member=row.user)
     plan = row.selected_plan
     if plan and (plan.makerspace_id != row.makerspace_id or not plan.is_active):
         raise AdmissionError("membership_plan_unavailable", "The admission plan is no longer available.")
+    from apps.makerspaces.membership_plan_policy import joining_fee_for
+    fee, fee_currency = joining_fee_for(row.makerspace, policy, plan, row.user, rejoining=row.rejoining)
     row.first_term_amount = plan.amount if plan else 0
-    row.joining_fee = policy.joining_fee if not row.rejoining or policy.rejoin_dues_rule == "each_join" else 0
-    row.charge_currency = plan.currency if plan else policy.joining_fee_currency
-    if plan and row.joining_fee > 0 and plan.currency != policy.joining_fee_currency:
+    row.joining_fee = fee
+    row.charge_currency = plan.currency if plan else fee_currency
+    if plan and row.joining_fee > 0 and plan.currency != fee_currency:
         raise AdmissionError("membership_currency_mismatch", "The joining fee and plan must use the same currency.")
     row.save(update_fields=["first_term_amount", "joining_fee", "charge_currency"])
     amount = row.first_term_amount + row.joining_fee
@@ -61,7 +67,8 @@ def activate_admission(actor, row):
         request=row, source="approval", skip_dues=True,
     )
     if row.selected_plan_id:
-        create_term(actor, membership, row.selected_plan)
+        create_term(actor, membership, row.selected_plan, price=row.first_term_amount,
+                    joining_fee=row.joining_fee, admission_request=row)
     if row.user.is_walk_in and membership.can_refer:
         membership.can_refer = False
         membership.save(update_fields=["can_refer"])
@@ -115,7 +122,7 @@ def cancel_for_admitted_member(actor, membership):
         makerspace=membership.makerspace, user=membership.user, state="active",
         admission_managed=True, admission_payment__status=Payment.Status.PENDING,
     ).order_by("pk")
-    for row in rows:
+    for row in bounded.page(rows, "admission-expiry"):
         cancel_pending(makerspace=membership.makerspace,
                        subject_type=Payment.SubjectType.MEMBERSHIP_REQUEST,
                        subject_id=row.pk, actor=actor)
@@ -132,7 +139,7 @@ def sweep_admissions(*, now=None, limit=200):
     rows = scoped.filter(state__in=OPEN_STATES).filter(
         expires_at__lte=now,
     ).order_by("expires_at", "pk")[:limit]
-    for row in rows:
+    for row in bounded.page(rows, "admission-expiry"):
         with fanout_tenant_write(row.makerspace_id, operation="membership_admission_expiry", counts=counts) as allowed:
             if not allowed:
                 continue
@@ -154,7 +161,7 @@ def sweep_admissions(*, now=None, limit=200):
         state="awaiting_payment", admission_payment__status__in=SETTLED,
         expires_at__gt=now,
     ).order_by("pk")[:limit]
-    for row in settled:
+    for row in bounded.page(settled, "admission-settled"):
         with fanout_tenant_write(row.makerspace_id, operation="membership_admission_settlement", counts=counts) as allowed:
             if not allowed:
                 continue

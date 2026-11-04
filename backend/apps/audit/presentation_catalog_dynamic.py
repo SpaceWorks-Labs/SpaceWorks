@@ -10,6 +10,7 @@ NON_LITERAL_META_ACTIONS = frozenset({
     "backup.destination_created",
     "backup.destination_probed",
     "backup.destination_updated",
+    "storage.capabilities_verified",
     "evidence.abandoned_upload_deleted",
     "kiosk.online_command_executed",
     "kiosk.operator_lease_issued",
@@ -49,13 +50,14 @@ NON_LITERAL_META_ACTIONS = frozenset({
     "makerspace.purged",
     "membership.adopted_from_import",
     "notification.recipients_selected",
-    "presence.started",
     "qr.rebound",
-    "role.deleted",
 })
 
 # Every constant a resolvable dynamic action (``a if x else b``) can produce.
 DYNAMIC_EXACT_ACTIONS = frozenset({
+    "public_page.updated", "public_page.published", "public_page.unpublished",
+    "public_page.handle_claimed", "public_page.handle_released", "public_page.asset_reserved",
+    "public_page.asset_uploaded", "public_page.asset_deleted",
     "backup.destination_created",
     "backup.destination_updated",
     "booking.feed_created",
@@ -64,8 +66,6 @@ DYNAMIC_EXACT_ACTIONS = frozenset({
     "certification.renewed",
     "saved_view.shared",
     "saved_view.unshared",
-    "staff.invitation_resent",
-    "staff.invitation_revoked",
 
     "event.calendar_feed_created",
     "event.calendar_feed_rotated",
@@ -105,9 +105,6 @@ DYNAMIC_EXACT_ACTIONS = frozenset({
     "report_schedule.failed",
     "staff.created",
     "staff.membership_updated",
-    "superadmin.break_glass_space_manager_created",
-    "superadmin.break_glass_space_manager_password_reset",
-    "user.password_reset",
     "warranty.created",
     "warranty.updated",
 })
@@ -115,7 +112,13 @@ DYNAMIC_EXACT_ACTIONS = frozenset({
 # Reviewed namespaces for call sites that take the action from a parameter, an
 # attribute or an f-string (path relative to backend/apps -> denied prefixes).
 WRAPPER_SITE_PREFIXES = {
+    "makerspaces/public_page_services.py": (
+        "public_page.updated", "public_page.published", "public_page.unpublished",
+        "public_page.handle_claimed", "public_page.handle_released", "public_page.asset_reserved",
+        "public_page.asset_uploaded", "public_page.asset_deleted",
+    ),
     "devices/services_events.py": ("devices.",),
+    "payments/services_refund_cases.py": ("payment.refund_case_",),
     "devices/services_label_events.py": ("devices.",),
     "devices/services_printer_events.py": ("devices.",),
     "evidence/services_upload.py": ("evidence.upload_url_issued", "kiosk.evidence_upload_issued"),
@@ -129,11 +132,15 @@ WRAPPER_SITE_PREFIXES = {
     "admin_api/views_assets.py": ("inventory.asset_needs_fix_",),
     "admin_api/views_makerspace_images.py": ("makerspace.logo_", "makerspace.cover_",),
     "admin_api/views_needs_fix.py": ("inventory.needs_fix_",),
-    "backup/recipient_states.py": ("backup.archive_recipient_",),
-    "backup/recipients.py": ("backup.archive_recipient_",),
     "bookings/services_bookings.py": ("booking.",),
+    "bookings/services_broadcasts.py": ("booking.broadcast.",),
     "encryption/services.py": ("encryption.dek_",),
-    "events/services.py": ("event.",),
+    "events/services_core.py": ("event.",),
+    "events/services_broadcasts.py": ("event.broadcast.",),
+    "bookings/services_website.py": ("booking.website_",),
+    "events/services_website.py": ("event.website_",),
+    "integrations/broadcasts_delivery.py": ("event.broadcast.", "booking.broadcast."),
+    "integrations/broadcasts_worker.py": ("event.broadcast.", "booking.broadcast."),
     "hardware_requests/direct_loan_audit.py": ("admin_direct.",),
     "hardware_requests/problem_report_workflow.py": ("item.",),
     "hardware_requests/return_helpers.py": ("item.",),
@@ -155,9 +162,22 @@ WRAPPER_SITE_PREFIXES = {
     "machines/services_consumables.py": ("machine.",),
     "makerspaces/admin_images.py": ("makerspace.logo_", "makerspace.cover_",),
     "makerspaces/membership_verification.py": ("membership.can_",),
+    "makerspaces/resource_grants_services.py": ("event.staff_grant_",),
     "payments/connect.py": ("payments.connect_",),
     "tenant_migration/source_gate.py": ("tenant_migration.source_gate_",),
+    "accounts/account_deletion_grants.py": ("event.staff_grant_", "booking.staff_grant_"),
+    "integrations/messaging/outcomes.py": ("messaging.delivery_", "messaging.provider_status"),
+    "integrations/notification_cutover.py": ("notification.cutover_",),
 }
+
+from .presentation_programme_dynamic import EXACT, NON_LITERAL, WRAPPERS
+DYNAMIC_EXACT_ACTIONS |= EXACT
+NON_LITERAL_META_ACTIONS |= NON_LITERAL
+WRAPPER_SITE_PREFIXES.update(WRAPPERS)
+from .presentation_l16_dynamic import EXACT as _L16_EXACT, NON_LITERAL as _L16_NON_LITERAL, WRAPPERS as _L16_WRAPPERS
+DYNAMIC_EXACT_ACTIONS |= _L16_EXACT
+NON_LITERAL_META_ACTIONS |= _L16_NON_LITERAL
+WRAPPER_SITE_PREFIXES.update(_L16_WRAPPERS)
 
 DENIED_ACTION_PREFIXES = tuple(
     sorted({prefix for group in WRAPPER_SITE_PREFIXES.values() for prefix in group})

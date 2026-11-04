@@ -1,10 +1,12 @@
 """Voluntary departure and stopping future renewal, without changing a plan."""
 
+
 from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied
 
 from apps.accounts import rbac
+from apps.accounts.rbac_roles import additional_roles_prefetch
 from apps.audit import services as audit
 from apps.makerspaces.guards import require_feature_locked, require_module
 from apps.makerspaces.models import MakerspaceMembership, MembershipTerm
@@ -40,18 +42,20 @@ def cancel_renewal(actor, makerspace_id, reason):
         audit.record(actor, "membership.renewal_cancelled", makerspace=makerspace,
                      target=membership, meta={"reason": reason})
         from apps.makerspaces.membership_renewal_notifications import notify_membership
-        transaction.on_commit(lambda: notify_membership(membership, "cancelled"))
+        notify_membership(membership, "cancelled")
     return membership
 
 
 @transaction.atomic
 def leave_makerspace(actor, makerspace_id, reason):
+    from apps.accounts.account_kind_guards import require_member_account
+    require_member_account(actor)
     makerspace, membership = _locked_membership(actor, makerspace_id)
     if rbac.Action.MANAGE_MAKERSPACE in rbac.actions_for_membership(membership):
         others = rbac.scope_by_makerspace(actor, MakerspaceMembership.objects.filter(
             makerspace=makerspace, status="active", user__is_active=True,
             user__access_status="active", user__is_tenant_dump_stub=False,
-        )).exclude(pk=membership.pk)
+        )).exclude(pk=membership.pk).select_related("assigned_role").prefetch_related(additional_roles_prefetch())
         if not any(rbac.Action.MANAGE_MAKERSPACE in rbac.actions_for_membership(row) for row in others):
             raise PermissionDenied("Assign another makerspace manager before leaving.")
     membership.renewal_cancelled_at = membership.renewal_cancelled_at or timezone.now()

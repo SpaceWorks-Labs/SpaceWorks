@@ -12,6 +12,7 @@ from apps.events.models import (
 )
 from apps.events.services_station import credential_for_event
 from apps.makerspaces.guards import require_feature_locked
+from .services_write_boundary import event_write
 
 
 FEATURE_SOURCES = {
@@ -34,7 +35,7 @@ def _lock_registration(event, registration_id):
     return registration
 
 
-@transaction.atomic
+@event_write
 def mark_attended_with_event(
     registration,
     *,
@@ -47,6 +48,24 @@ def mark_attended_with_event(
 ):
     services = _boundary()
     event = services._locked_event(registration.event_id)
+    locked = _lock_registration(event, registration.pk)
+    return mark_attended_locked(event, locked, actor=actor, source=source,
+        operation_id=operation_id, attended_at=attended_at, session_id=session_id,
+        station_version=station_version)
+
+
+def mark_attended_locked(event, locked, *, actor, source=EventCheckInEvent.Source.ONLINE,
+                         operation_id=None, attended_at=None, session_id=None, station_version=None):
+    """Sole attendance writer, reusing scanner-owned locked/prepared registration."""
+    from .programme_locks import current_locks, assert_lock_context
+    context = current_locks(event.pk)
+    assert_lock_context(context)
+    if locked.event_id != event.pk or locked.member_id and locked.member_id not in context.account_ids:
+        raise EventInvalidTransition("Registration scope changed.")
+    services = _boundary()
+    if actor is not None:
+        from .event_authority import require
+        require(actor, event, "check_in")
     if source in FEATURE_SOURCES:
         event.makerspace = require_feature_locked(
             event.makerspace_id, "events.offline_checkin"
@@ -61,12 +80,18 @@ def mark_attended_with_event(
         operation_id=operation_id,
     ).exists():
         raise DuplicateCheckInOperation()
-    locked = _lock_registration(event, registration.pk)
+    from .hackathons.admission_lifecycle import require_attendance_mapping
+    require_attendance_mapping(locked)
     if (
         locked.status != EventRegistration.Status.REGISTERED
         or event.status not in (Event.Status.PUBLISHED, Event.Status.COMPLETED)
     ):
         raise EventInvalidTransition("This registration cannot be marked attended.")
+    if locked.member_id:
+        # A required stage form blocks attendance on every source, offline sync included;
+        # a cached roster is never proof that the form was completed.
+        from .staged_forms.admission_hooks import require_action_locked
+        require_action_locked(event=event, member_id=locked.member_id, action="check_in")
 
     occurred_at = attended_at or timezone.now()
     check_in = EventCheckInEvent(
@@ -86,7 +111,12 @@ def mark_attended_with_event(
     check_in.full_clean(validate_unique=False)
     check_in.save()
     locked.status = EventRegistration.Status.ATTENDED
-    locked.save(update_fields=["status"])
+    locked.version += 1
+    from .attendance_payout_bridge import attended_locked, publish_payout_eligibility_locked
+    locked.save(update_fields=["status", "version", *attended_locked(locked)])
+    from .hackathons.admission_lifecycle import attendance_changed_locked
+    from .programme_locks import current_locks
+    attendance_changed_locked(event=event, registration=locked, actor=actor, locks=current_locks(event.pk))
     services._audit(
         event,
         actor,
@@ -103,7 +133,15 @@ def mark_attended_with_event(
             "station_version": station_version,
         },
     )
+    publish_payout_eligibility_locked(event=event, registration=locked, actor=actor)
     services.notify_event_lifecycle(event, "registration_attended", locked.pk)
+    # Station sync always supplies a reported timestamp, even for live scans.
+    # The bridge rechecks reported/recorded freshness and attendance after commit.
+    if (source == EventCheckInEvent.Source.VENUE_STATION
+            or (source == EventCheckInEvent.Source.QR and attended_at is None)):
+        from apps.presence.event_attendance import event_attendance
+
+        transaction.on_commit(lambda: event_attendance(locked), robust=True)
     return services._refresh(locked), check_in
 
 

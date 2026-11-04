@@ -1,6 +1,6 @@
 import type React from "react";
 
-import { Skeleton, SkeletonRows } from "../../../components/ui";
+import { EmptyState, Skeleton, SkeletonRows, StatCard } from "../../../components/ui";
 
 export type ReportCell = string | number | boolean | null;
 export type TypedReportRow = Record<string, ReportCell | undefined>;
@@ -36,10 +36,13 @@ export function chartRows(data: ReportRows | undefined, labelKey: string, valueK
   }));
 }
 
-export function DataState(props: { loading: boolean; error: unknown; empty: boolean; children: React.ReactNode }) {
+export function DataState(props: { loading: boolean; error: unknown; empty: boolean; onRetry?: () => void; children: React.ReactNode }) {
   if (props.loading) return <ReportSkeleton />;
-  if (props.error) return <p className="mt-3 text-sm text-danger">{props.error instanceof Error ? props.error.message : "Unable to load report."}</p>;
-  if (props.empty) return <p className="mt-3 text-sm text-muted">No records.</p>;
+  if (props.error) return <div role="alert" className="mt-3 rounded-xl border border-danger-line bg-panel p-4 text-sm text-danger">
+    <p>Couldn't load this report. Try again.</p>
+    {props.onRetry ? <button type="button" className="desk-button mt-3" onClick={props.onRetry}>Retry</button> : null}
+  </div>;
+  if (props.empty) return <EmptyState message="No activity in this period. Try a longer range." />;
   return <>{props.children}</>;
 }
 
@@ -61,18 +64,10 @@ function ReportSkeleton() {
 }
 
 export function StatCards({ stats }: { stats: [string, number | undefined][] }) {
-  const tones = [
-    "border-accent bg-accent text-on-accent dark:bg-accent/15 dark:text-accent-ink",
-    "border-success bg-success text-on-success dark:bg-success/15 dark:text-success-ink",
-    "border-warn bg-warn text-on-warn dark:bg-warn/15 dark:text-warn-ink",
-    "border-secondary bg-secondary text-on-secondary dark:bg-secondary/15 dark:text-secondary-ink",
-  ];
   return (
     <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      {stats.map(([label, value], index) => (
-        <div key={label} className={`rounded-md border p-3 ${tones[index % tones.length]}`}>
-          <p className="font-mono text-2xl font-bold">{formatNumber(value ?? 0)}</p><p className="eyebrow opacity-70">{label}</p>
-        </div>
+      {stats.map(([label, value]) => (
+        <StatCard key={label} label={label} value={formatNumber(value ?? 0)} />
       ))}
     </div>
   );

@@ -18,6 +18,7 @@ from apps.makerspaces.models import Makerspace
 from apps.makerspaces.servability import servable_queryset
 from apps.operations.report_registry import ReportDefinition
 from apps.operations.report_scope import ReportScope, combined_report_scope
+from apps.accounts.native_session import is_native_session
 from apps.organizations.models import (
     Organization,
     OrganizationMakerspace,
@@ -26,14 +27,35 @@ from apps.organizations.models import (
 
 
 ORGANIZATION_REPORT_ACTIONS = frozenset({
+    rbac.Action.MANAGE_MEMBERS,
     rbac.Action.VIEW_AUDIT,
     rbac.Action.MANAGE_MAKERSPACE,
     rbac.Action.VIEW_FINANCE,
+    # Event attendance and booking utilisation are keyed to the area actions, so an
+    # organization grant of that action (never a local role) is what admits them.
+    rbac.Action.MANAGE_EVENTS,
+    rbac.Action.MANAGE_BOOKINGS,
+    rbac.Action.VIEW_INVENTORY,
+    rbac.Action.EDIT_INVENTORY,
+    rbac.Action.MANAGE_MACHINES,
 })
 EXCLUDED_ORGANIZATION_REPORT_KEYS = frozenset({
+    "overdue-loans", "longest-loans", "qr-scan-actors",
+    "presence-top-visitors", "audit-top-actors",
+    "presence-activity-hours", "audit-activity-hours",
+    "platform-services", "platform-usage",
+    "active-loans", "returns", "top-borrowers",
+    "machine-usage-members", "machine-usage-heatmap",
+    "booking-top-members",
+    # Tenant-local hour-of-week cells are intentionally not organization totals.
+    "booking-occupancy",
+    "booking-resource-utilization", "booking-resource-utilization-pdf", "booking-reservations", "booking-answers",
+    "event-registrations", "event-feedback", "event-attendance-pdf",
     # Financial detail and accounting custody stay tenant-local. Different local
     # calendars also make a combined revenue/cash period misleading.
     "payments-ledger", "accounting-journal", "revenue-over-time", "cash-book",
+    # Refund cases are tenant-local decisions in each space's own calendar month.
+    "refunds",
     # Tenant accountability data: never flattened across an organization's spaces.
     "audit-trail",
     # Cohort anniversaries and month-end plan projections stay tenant-local; distinct
@@ -65,7 +87,29 @@ EXCLUDED_ORGANIZATION_REPORT_KEYS = frozenset({
     "module-operational-health",
     "machine-service",
     "printer-service",
+    # Medians/percentiles cannot be reconstructed by averaging tenant summaries.
+    "service-queue-times", "booking-lead-time", "event-checkin-times",
 })
+
+# v2 A+B definitions expose additive samples/denominators for these former exclusions.
+EXCLUDED_ORGANIZATION_REPORT_KEYS = EXCLUDED_ORGANIZATION_REPORT_KEYS - {"loan-throughput", "inventory-control", "procurement-performance"}
+
+
+# v2 communications exposes additive cohorts and both rate denominators.
+EXCLUDED_ORGANIZATION_REPORT_KEYS = EXCLUDED_ORGANIZATION_REPORT_KEYS - {"communications-health"}
+EXCLUDED_ORGANIZATION_REPORT_KEYS = EXCLUDED_ORGANIZATION_REPORT_KEYS - {"machine-service"}
+# Release 2 L4: tenant-local membership insights and the two person lists (register, win-back).
+from apps.operations.report_definitions_membership_l4 import L4_MEMBERSHIP_REPORT_KEYS  # noqa: E402
+EXCLUDED_ORGANIZATION_REPORT_KEYS = EXCLUDED_ORGANIZATION_REPORT_KEYS | L4_MEMBERSHIP_REPORT_KEYS
+from apps.operations.report_definitions_machine_sessions import SESSION_REPORT_KEYS  # noqa: E402
+EXCLUDED_ORGANIZATION_REPORT_KEYS = EXCLUDED_ORGANIZATION_REPORT_KEYS | SESSION_REPORT_KEYS
+
+
+# Phase 1f F/G adds explicit local-period strategies and exposed denominators.
+# These totals count memberships (a person in two spaces contributes twice).
+EXCLUDED_ORGANIZATION_REPORT_KEYS = EXCLUDED_ORGANIZATION_REPORT_KEYS - {
+    "member-retention", "membership-revenue", "revenue-over-time", "cash-book",
+}
 
 
 class OrganizationReportScopeError(ValueError):
@@ -90,6 +134,11 @@ def _validate_inputs(
         raise ValueError("organization must be saved before resolving report scope.")
     if not isinstance(definition, ReportDefinition):
         raise TypeError("definition must be a ReportDefinition.")
+    if definition.platform_only:
+        from .report_types import ReportNotFound
+        raise ReportNotFound()
+    if definition.identity_bearing:
+        raise UnsupportedOrganizationReport("Identity-bearing reports are tenant-only.")
     if definition.key in EXCLUDED_ORGANIZATION_REPORT_KEYS:
         raise UnsupportedOrganizationReport(
             f"Report {definition.key!r} is unavailable to organization dashboards."
@@ -119,6 +168,8 @@ def resolve_organization_report_scope(
         actor is None
         or not getattr(actor, "is_authenticated", False)
         or getattr(actor, "pk", None) is None
+        # Native device sessions are membership-only: no organization report scope.
+        or is_native_session(actor)
     ):
         return combined_report_scope(Makerspace.objects.none())
 
@@ -144,19 +195,16 @@ def resolve_organization_report_scope(
     )
     # Term 5: importing, aborted, and archived spaces cannot serve reports.
     makerspaces = servable_queryset(makerspaces)
-    # Term 6 is platform-reach consent, NOT hide -- named precisely because an earlier
-    # draft called this "hard-hide" and that was wrong. It matches eligible_makerspaces()
-    # and the rbac organization branch, so a tenant that has withdrawn platform reach is
-    # absent from organization-level aggregates too.
-    # Two deliberate non-filters, recorded so nobody "fixes" them later:
+    # Term 6 (platform-reach consent) is gone: the superadmin is always on (#110), so
+    # every servable owned space counts. Two deliberate non-filters, recorded so nobody
+    # "fixes" them later:
     #   - hidden_from_central_directory is DIRECTORY visibility, not authorization; an
     #     owning organization still sees a space it owns that is off the central list.
     #   - there is no hidden LifecycleState (only ACTIVE/IMPORTING/ABORTED), so
     #     servable_queryset above already covers importing, aborted and archived.
-    makerspaces = makerspaces.filter(superadmin_access_enabled=True)
     # Term 7: the reports module and every declared source module are required.
     makerspaces = makerspaces.filter(enabled_modules__contains=["reports"])
-    for module in definition.required_modules:
-        makerspaces = makerspaces.filter(enabled_modules__contains=[module])
+    from .report_sources import filter_sources
+    makerspaces = filter_sources(makerspaces, definition.required_modules)
 
     return combined_report_scope(makerspaces)

@@ -1,23 +1,28 @@
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { ListRow, RelativeTime } from "../../components/ui";
+import { QueryContent } from "../../components/layouts/LayoutFrame";
 
 import { memberRequest, memberRequestBlob, staffRequest, staffRequestBlob } from "../../lib/api";
 
 export type PaymentDocument = {
-  id: number; payment: number; number: string; kind: "receipt" | "credit_note";
+  id: number; payment: number; number: string; kind: "receipt" | "credit_note" | "bill";
   amount: string; currency: string; issued_at: string; money_at: string;
+  status: string;
 };
 type DocumentPage = { count: number; next: string | null; previous: string | null; results: PaymentDocument[] };
 
-export function PaymentDocuments({ makerspaceId, audience }: { makerspaceId: number; audience: "member" | "staff" }) {
+export function PaymentDocuments({ makerspaceId, audience, initiallyExpanded = false }: { makerspaceId: number; audience: "member" | "staff"; initiallyExpanded?: boolean }) {
   const [page, setPage] = useState(1);
-  const [expanded, setExpanded] = useState(false);
+  const [kind, setKind] = useState("");
+  const [expanded, setExpanded] = useState(initiallyExpanded);
   const request = audience === "member" ? memberRequest : staffRequest;
   const base = audience === "member" ? `/member/makerspaces/${makerspaceId}` : `/admin/makerspace/${makerspaceId}`;
   const documents = useQuery({
-    queryKey: ["payment-documents", audience, makerspaceId, page],
-    queryFn: () => request<DocumentPage>(`${base}/payment-documents?page=${page}`),
+    queryKey: ["payment-documents", audience, makerspaceId, page, kind],
+    queryFn: () => request<DocumentPage>(`${base}/payment-documents?page=${page}${kind ? `&kind=${kind}` : ""}`),
     enabled: expanded,
+    refetchInterval: expanded ? 30_000 : false,
   });
   const download = useMutation({
     mutationFn: async (document: PaymentDocument) => {
@@ -34,23 +39,30 @@ export function PaymentDocuments({ makerspaceId, audience }: { makerspaceId: num
       URL.revokeObjectURL(url);
     },
   });
-  return <section className="mt-4 border-t border-line pt-4" aria-label="Receipt documents">
-    <h3 className="font-semibold text-ink">Receipts and credit notes</h3>
-    <button className="desk-button-secondary" type="button" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>{expanded ? "Hide documents" : "Show documents"}</button>
-    {expanded ? <>
-    {documents.isLoading ? <p className="text-sm text-muted">Loading documents...</p> : null}
-    {documents.error || download.error ? <p role="alert" className="text-sm text-danger">{(documents.error || download.error)?.message}</p> : null}
-    {documents.data?.count === 0 ? <p className="text-sm text-muted">No issued documents.</p> : null}
-    <ul className="space-y-2">{documents.data?.results.map((document) => <li key={document.id} className="flex flex-wrap items-center gap-2 text-sm">
-      <span>{document.kind === "receipt" ? "Receipt" : "Credit note"} {document.number}</span>
-      <span className="font-mono">{document.currency.toUpperCase()} {document.amount}</span>
-      <button className="desk-button-secondary" type="button" disabled={download.isPending} onClick={() => download.mutate(document)}>Download PDF</button>
-    </li>)}</ul>
-    {documents.data && documents.data.count > 24 ? <div className="mt-2 flex items-center gap-2">
-      <button className="desk-button-secondary" type="button" disabled={!documents.data.previous} onClick={() => setPage(page - 1)}>Previous</button>
-      <span>Page {page}</span>
-      <button className="desk-button-secondary" type="button" disabled={!documents.data.next} onClick={() => setPage(page + 1)}>Next</button>
+  return <section className="grid gap-4" aria-label="Payment documents">
+    {!initiallyExpanded ? <div className="flex flex-wrap items-center justify-between gap-3">
+      <h3 className="title-panel">Bills, receipts and credit notes</h3>
+      <button className="desk-button" type="button" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>{expanded ? "Hide documents" : "Show documents"}</button>
     </div> : null}
-    </> : null}
+    {expanded ? <><label className="grid gap-1 text-sm">Document kind
+      <select className="desk-input" value={kind} onChange={event => { setKind(event.target.value); setPage(1); }}>
+        <option value="">All documents</option><option value="bill">Bills</option>
+        <option value="receipt">Receipts</option><option value="credit_note">Credit notes</option>
+      </select>
+    </label><QueryContent state={documents.isLoading ? { status: "loading" } : documents.error
+      ? { status: "error", error: "Couldn't load documents. Try again.", onRetry: () => { void documents.refetch(); } } : { status: "ready" }}
+      isEmpty={documents.data?.count === 0} empty={{ message: "No issued documents match this filter." }}>
+      <div className="grid gap-3">{documents.data?.results.map(document => <ListRow key={document.id}
+        title={`${{ receipt: "Receipt", credit_note: "Credit note", bill: "Bill" }[document.kind]} ${document.number}`}
+        identity={{ kind: "date", date: document.issued_at }}
+        meta={<><span className="tabular-nums">{document.currency.toUpperCase()} {document.amount}</span>{document.status ? <span>{document.status}</span> : null}<span aria-hidden="true"> · </span><RelativeTime date={document.issued_at} /></>}
+        right={<button className="desk-button" type="button" disabled={download.isPending} onClick={() => download.mutate(document)}>Download PDF</button>} />)}</div>
+      {documents.data && documents.data.count > 24 ? <div className="flex flex-wrap items-center gap-3">
+        <button className="desk-button" type="button" disabled={!documents.data.previous} onClick={() => setPage(page - 1)}>Previous</button>
+        <span className="text-sm text-muted">Page {page}</span>
+        <button className="desk-button" type="button" disabled={!documents.data.next} onClick={() => setPage(page + 1)}>Next</button>
+      </div> : null}
+    </QueryContent></> : null}
+    {download.error ? <p role="alert" className="text-sm text-danger">{download.error.message}</p> : null}
   </section>;
 }

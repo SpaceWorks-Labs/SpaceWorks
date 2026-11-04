@@ -17,8 +17,6 @@ from apps.events.exceptions import (
     RegistrationRejected,
 )
 from apps.hardware_requests.workflow import (
-    AnonymousRequestIdempotencyConflict,
-    AnonymousRequestOutstandingLimit,
     BoxUnavailable,
     BoxValidationError,
     DepositRequired,
@@ -40,7 +38,7 @@ from apps.maintenance.exceptions import (
     MaintenanceStatusConflict,
     RetiredMachineMaintenance,
 )
-from apps.makerspaces.role_services import RoleConflict
+from apps.machines.member_scope_errors import MemberMachineScopeConflict
 from apps.encryption.crypto import PiiUnavailable
 from apps.encryption.write_fence import PiiWriteFenced
 from apps.presence.guard import (
@@ -57,16 +55,9 @@ class ErrorSerializer(serializers.Serializer):
 
 
 _EXCEPTION_MAP = {
-    AnonymousRequestIdempotencyConflict: (
-        status.HTTP_409_CONFLICT,
-        "anonymous_request_idempotency_conflict",
-        "This idempotency key was already used for a different request.",
-    ),
-    AnonymousRequestOutstandingLimit: (
-        status.HTTP_429_TOO_MANY_REQUESTS,
-        "anonymous_request_outstanding_limit",
-        "This makerspace is not accepting more anonymous requests until pending "
-        "requests are reviewed.",
+    MemberMachineScopeConflict: (
+        status.HTTP_409_CONFLICT, "member_machine_scope_conflict",
+        "Machine scope requires a non-exempt Machine Manager membership.",
     ),
     ClaimCodeError: (
         status.HTTP_400_BAD_REQUEST,
@@ -237,11 +228,6 @@ _EXCEPTION_MAP = {
         status.HTTP_503_SERVICE_UNAVAILABLE,
         "evidence_storage_unavailable",
         "Evidence storage is unavailable.",
-    ),
-    RoleConflict: (
-        status.HTTP_409_CONFLICT,
-        "role_conflict",
-        "This role cannot be deleted.",
     ),
 }
 

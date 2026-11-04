@@ -1,5 +1,8 @@
+from decimal import Decimal
+
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
+from rest_framework import serializers
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -8,15 +11,16 @@ from apps.admin_api.permissions import IsActiveStaff
 from apps.makerspaces.guards import require_module
 from apps.procurement import access, services
 from apps.procurement.models import ToBuyItem
+from apps.procurement.services_refill import refill_consumable
 from apps.procurement.serializers import (
     MoveToInventoryRequestSerializer,
     MoveToPrintingRequestSerializer,
     ToBuyItemSerializer,
 )
 from apps.procurement.views_common import (
-    MODULE_KEY,
     PROCUREMENT_ERROR_RESPONSES,
     receipt_queryset_related,
+    require_item_switch,
 )
 
 
@@ -33,7 +37,7 @@ class ToBuyMoveBaseView(APIView):
             makerspace_id,
         ) if makerspace_id is not None else ToBuyItem.objects.none()
         item = get_object_or_404(queryset, pk=pk)
-        require_module(item.makerspace, MODULE_KEY)
+        require_item_switch(item)
         if not access.can_manage_kind(self.request.user, item.makerspace_id, item.kind):
             raise PermissionDenied()
         return item
@@ -72,6 +76,26 @@ class ToBuyMoveToInventoryView(ToBuyMoveBaseView):
             name=data.get("name"),
             description=data.get("description", ""),
         )
+        return self.serialize_item(pk)
+
+
+class RefillConsumableRequestSerializer(serializers.Serializer):
+    amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0.01"))
+
+
+@extend_schema(tags=["Procurement"])
+class ToBuyRefillConsumableView(ToBuyMoveBaseView):
+    @extend_schema(
+        summary="Credit a received grams to-buy item back to its machine consumable",
+        request=RefillConsumableRequestSerializer,
+        responses={200: ToBuyItemSerializer, **PROCUREMENT_ERROR_RESPONSES},
+    )
+    def post(self, request, pk, *args, **kwargs):
+        item = self.get_item(pk)
+        require_module(item.makerspace, "machines")
+        serializer = RefillConsumableRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        refill_consumable(request.user, item, serializer.validated_data["amount"])
         return self.serialize_item(pk)
 
 

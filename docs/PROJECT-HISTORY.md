@@ -6,6 +6,202 @@
 
 ## Condensed changelog (newest first — full detail in `git log`)
 
+- **2026-11-03 -- release 2 S-C, IP blocking, Turnstile and breached passwords (#62, #66, #110c,
+  #128 C-2, #157).** `LoginIPGuardMiddleware` on every sign-in view: superadmin allow/deny rules (allow
+  wins, cached 60 s, deny-self guard) and automatic blocks of one source failing against many accounts
+  (/32 or /64, one fixed hour, private/proxy/short-chain sources never counted, remembered devices bypass
+  auto-blocks only); `/control/` *IP rules* and *Automatic blocks*; `manage.py login_security`. HIBP
+  `BreachedPasswordValidator` in `AUTH_PASSWORD_VALIDATORS` (`code: password_breached`, fail-open);
+  optional Cloudflare Turnstile after failures or instead of an auto-block (`captcha_required`,
+  `captcha_failed`, `turnstile_site_key` in `/api/v1/config`, CSP only when configured); per-space
+  `security.captcha_on_sign_in` and `security.staff_ip_allowlist` (staff routes only,
+  `staff_network_refused`); daily telemetry retention.
+- **2026-11-02 -- release 2 L16, Technician role, issue reporting and repairs (#93, #98, #102, #103,
+  #128 C-3/C-4/C-5/C-6b/C-9).** The Technician is the 8th built-in role (assigned repair jobs,
+  maintenance runs and service state within their coverage; no inventory, money or settings). Members
+  and account-less borrowers report problems from their own loan, booking or machine job; staff triage
+  them onto L12's work order, send them to in-house or outside technicians (email always, chat after a
+  one-time opt-in, every send recorded), log visits, parts (stock out through availability, To-Buy for
+  parts needed), quotes approved by the area manager and payouts through the ledger only. Machines,
+  items, units and rooms go in and out of service (room outages block or warn bookings), and items
+  and rooms get maintenance schedules. Eight per-parent switches; `maintenance/0005`, `makerspaces/0119-0120`.
+
+- **2026-11-02 -- release 2 L12, machines and loans depth (#76, #77, #94, #140-#142).** One "Request a
+  job" flow for every machine type (maker_formats-checked files, checked-in members only) with a visible
+  lifecycle: needs changes, quotes priced by L15 and approved by digest (charged actual, capped at the
+  quote; or prepaid), one queue order with staff reorder and urgent pin, batch runs, failure codes and
+  faults (space faults re-run free at the front, member faults follow the type's failure charge), pickup
+  codes, reminders and Not collected. Machine time booking and the reusable `requires_booking` gate,
+  opening-hours ETAs, maintenance lockout, the downtime ledger and work orders (the one repair model).
+  Consumables with automatic To-Buy, "mark bought" into the finance ledger, vendors; loan withdraw and
+  pickup-deadline expiry, pickup windows, a holding waitlist and public expected-back dates.
+- **2026-11-02 -- release 2 S-A, mandatory staff MFA and passkeys (#62, #66, #74, #128 C-1/C-2,
+  #135 Q-A1-Q-A3, #157).** Two-step sign-in is required for every staff role, independent of the platform
+  switch (now member opt-in only); `security.staff_mfa_required` retired (makerspaces 0119). A 3-day grace
+  per person, ever, with strict routes that still need a factor; staff session length and idle timeout per
+  space; the MFA-reset rule (superadmin always, a Space Manager only inside the rule; `/control/` action,
+  `reset_mfa` host command, API); `staff_mfa_readiness`. Passkeys backend on py_webauthn 3.0.1:
+  registration, passwordless sign-in, second factor, re-authentication, RP ID only from a verified origin,
+  `security.passkeys_allowed`.
+
+- **2026-10-31 -- release 2 L15, paid and free everywhere (#84, #85).** One pricing kernel
+  (`payments/pricing`, `quote()`) behind every charge and every preview: per-area rate cards (free or
+  paid, caps, grace, billing increments), per-item prices, loan rental at checkout or at return, staff-set
+  damage and lost charges gated on the return photo, machine time AND material, hourly rooms, the one best
+  member discount then an event promo, staff loan fee waivers (paid fees open a refund case), a frozen
+  `Payment.pricing_snapshot`, and a public price preview with a `price_changed` digest. Switches
+  `charges.pricing`, `charges.discounts`, `loans.fee_waivers` (payments/0033-0034). Kiosk, direct and
+  self-checkout handouts are charged like reviewed loans.
+
+- **2026-10-29 -- release 2 L1, the public event surface (#21 gaps 10/12, #69, #71, #73, #77).**
+  Short `/e/<code>` links with a PII-free visit counter (`events.short_links`); "who can find"
+  (listed/unlisted, noindex) and offline pages without a lifecycle state; online/hybrid events with a
+  confirmed-only encrypted join link (`events.online_delivery`); a styled embed card behind a per-space
+  allow-list; per-event share images; the ticket venue map link (X1); event report switches under the
+  Event Manager's grant (DY-61); the host-space picker (DY-63); the closed-for-now banner
+  (`public_site.closed_notice`, #77). Guest RSVP stays out and organisations host through an owned space.
+- **2026-10-29 -- pairwise judging (release 2, lane L7; D6, #73).** A third judging mode, `pairwise`,
+  behind `events.pairwise_judging`: judges answer "the one before or this one", ranked by a CrowdBT
+  replay written from the paper, with conflicts, recusal, scope and >=3 coverage reused and results
+  published only through the existing finalize/publish step. Pairwise comparisons count as judging
+  work for judge certificates; the Tinkerspace showcase seeds a pairwise hackathon. D19's KiCad viewer
+  was dropped by the owner: KiCad files stay download-only and X3 is not applicable.
+- **2026-10-27 -- P1b B1: backup teardown for "superadmin always on" (#110/#111).** Archive
+  recipients, challenges, custody states, custody alarms and B1 activation are gone; every archive is
+  encrypted to the platform key (backup/0030-0031). Lane E sovereign slices, delayed merge, B1 restore
+  reservations and the compound restore coordinator are deleted; the deployment manifest is protocol v2
+  with one readable component (backup/0032), which also makes a whole-server backup buildable on a
+  deployment with no hidden space. The `backup` module key is retired (backup/0033): Space Managers see
+  a read-only "Last backup" line. Tenant exit takes one-shot `--recipient` keys plus the platform key
+  (tenant_migration/0013). The superadmin-access toggle has no write path; the field drop is B2.
+- **2026-10-22 -- release-1 fixes.** Exactly two published images (#75a): one `spaceworks-backend`
+  (Dockerfile target `release`) runs every profile, selected at start-up; the common entrypoint hands
+  managed mode to `cloud_entrypoint`, host mode is unchanged (#42). **Release note (#75b): Machine
+  Manager scope is per machine type** -- staff who had per-machine limits now cover all machines of
+  their types. `/control/` module matrix completes missing module dependencies with a notice (MP-28);
+  staff-entered machine-service jobs take an audited certification override reason (MP-96); nightly
+  backups rotate 7 daily + 4 weekly (BK-09) and Space Managers get an archive-status tile (BK-17);
+  lane notes untracked again (IN-26); three docs corrected to match the code.
+
+- **2026-10-22 -- release-1 security (lane/r1-security).** The six authorization races deferred in
+  `a4fa9084` now re-check authority under row lock in the service (`makerspaces/authority_lock`):
+  domain verification, machine-service collect, asset/machine warranty PUT and warranty-document
+  presign/finalize/delete. BK-66: the CLI tenant-archive export refuses the platform key while superadmin
+  access is off. #80 (revising #75f): a space with member accounts requires a signed-in account; one without
+  them takes account-less requests (name, phone, email confirmed by a one-time code), automatically —
+  `makerspaces/0105` drops the old opt-in switch — and `accounts/0043` drops the last Check-In leftover,
+  `external_checkin_user_id`. #75c applies notification object scope to every recipient kind. #75e
+  records PRD §4.4's self-accept rule as dropped.
+- **2026-10-19 -- managed hosting requests (#46-#49).** Public `/hosting` form plus invitations from
+  makerspaces and organizations ("Join" only when the inviter governs the organization); email
+  confirmation before review; `/control/` accept/reject and a pre-filled, re-auth-safe "Create makerspace";
+  daily 48-hour delete / 90-day redaction. Platform-level, no module key, inert on self-host.
+- **2026-10-18 -- mobile/integration reconciliation.** Member/staff/platform account kinds retained;
+  native staff require password/MFA/attestation and fixed tenant; deletion/restore stay member-only.
+  Personal envelopes incorporate SMS, Twilio/Meta WhatsApp and mobile sender/consent/STOP/BSUID
+  protections. Push uses envelope-owned device children; reports read canonical/mapped history and
+  the frontend uses consolidated channels. The former Meta missing-module blocker is resolved.
+  Destructive integrations 0043 and sending activation remain held pending replay sign-off.
+
+- **2026-10-17 — account split.** Separate member/tenant-staff/platform identity, kind-bound auth and browser contexts, audited admin-issued staff lifecycle, shared chat binding and credential-free tenant staff transport; purge/backup shells preserve signed audit actors.
+
+- **2026-10-17 — personal notification delivery.** Transactional envelopes/outbox, encrypted
+  per-space channel configuration, provider-proven connections, multi-select category choices and
+  email fallback; Telegram private /start linking and contract-token room sender, Slack/Mattermost/
+  Discord OAuth adapters and Twilio WhatsApp. Phase 3 wires member JWT personal routes, authenticated
+  actor/challenge-bound OAuth completion and environment-backed provider settings; Meta is registered/
+  mounted; its then-missing module readiness gate was resolved in the 2026-10-18 reconciliation.
+  Equipment/watch/certification and membership/ledger/API/device/operations sources reserve personal
+  intents; maintenance/procurement barrels and member broadcasts now call those adapters. Catalog
+  strings and stocktake/first-failure inbox dedup landed; same-booking-owner contact mail and narrowly
+  whitelisted unverified operational staff email remain supported.
+  Mandatory mail and email-only security proofs keep their existing policy.
+- **2026-10-17 — public maker pages.** Global handles with 30-day rename/retirement rules,
+  independent publication and family consent, counts-only local-day activity, cache-only GitHub
+  calendar and SPOKE/HOSTED/ATTENDED history. Member publication/timeline editor, live-gated share
+  cards, sitemap and reserved-segment crawler routing; viewer_is_owner on the optional-JWT public read,
+  membership-local verified on member profiles; no directory-consent backfill into public pages.
+- **2026-10-17 — presence programme.** Hard-geofenced self check-in with staff alternative,
+  account-only guests, project/visitor/live-event statuses, expiry and revision-bound renewals,
+  privacy settings and anonymous TV endpoint plus /m/<slug>/now. Independent opt-in presence key;
+  makerspaces/0096 installs it for existing spaces, while new spaces opt in. Service/bootstrap defaults
+  are 60/120/180/240 minutes; current-session exposes display policy even when empty. The privacy
+  settings section is mounted for Space Managers; notification-feature editor wiring remains incomplete.
+- **2026-10-17 — event operations.** Account-linked speakers, single-use claim links and scoped
+  speaking history; ticket/category edit with refused referenced deletes; account-only attendee
+  history. Simpler create/drawer, separate staff/owner/delegate envelopes, reminders, certificates
+  and campaign channel delivery; invitation mail/share paths retained.
+- **2026-10-17 — booking operations and place galleries.** Resource-scoped requests queue,
+  decision reasons, append-only encrypted departure remarks and issue resolution; public galleries,
+  shared keyboard Gallery and Hosted at venue block. Personal lifecycle/reminder/campaign adapters;
+  requester alerts default on with audit-aware preservation of explicit tenant choices. Dashboard
+  open_booking_issues counts unresolved issues under current booking authority and links to that queue.
+- **2026-10-17 — Space Manager navigation and settings.** Task groups, Staff & roles under People,
+  settings hub/search/checklist, domain-console settings and communication-channel controls. Loan
+  policy admits EDIT_INVENTORY or MANAGE_MAKERSPACE; fixed Event/Booking Manager actions retained.
+- **2026-10-17 — composed public makerspace page.** Header, Featured activities rail, inventory,
+  machines, spaces, membership and contact reuse public module/projection rules. Automatic
+  multi-family tenants now get the combined page even without a catalogue; explicit non-inventory
+  landing and single-family pages retain their routing.
+
+- **2026-10-16 — events/bookings programme integration (Yuyu).** Typed resource staff grants,
+  registration/reservation tools and cancellation undo, draft cloning, private tickets and booking
+  confirmations/arrival, public resource websites, shared email campaigns, signed integration
+  reads, printable credentials and scoped reporting; shared core mechanisms preserve domain isolation.
+- **2026-10-16 — installer, MFA and provider choices.** The questionnaire now asks control-plane
+  access after storage, organization before makerspace, and platform MFA plus Google/Apple/GitHub
+  selection before areas. Inventory, Machines and Reports default on; provider credentials come
+  later. GitHub browser OAuth is member-only; login-method writes use audited lockout validation
+  and a host recovery command. MFA can be paused without deleting enrollment; superadmins enroll optionally.
+- **2026-10-16 — seven fixed roles:** combinable membership role sets, exclusive Space Manager/Member,
+  per-person machine-type scope, read-only role reference, refreshed console navigation and irreversible
+  preview-first migration from editable roles (`makerspaces/0091` schema, `0092` data, `0093` constraint).
+- **2026-10-16 — event organizers, partners and audiences (`lane/int-events`).** Event creation gains an
+  "Organizers & partners" section: organizer organizations (the actor's own, defaulted), partner makerspaces
+  picked from a search over the central directory, and, for the "Selected organizations" audience, audience
+  organizations from a new opt-in organization directory (`Organization.is_discoverable`, default off) --
+  all applied in the create transaction. `EventAudienceOrganization` separates who may register from who
+  manages: an audience organization gets no authority, and external organizations are audience, never
+  organizers (so no organizer-consent flow). Audience options are renamed "Anyone with an account / Our
+  members / Selected organizations / Invite only", with approval as "Organizer approves each registration".
+  The Check-in tab shows who has checked in (`GET admin/events/<pk>/check-ins/`, `check_in` permission only),
+  and event staff grants gain a display-only `role_label` with a "Speaker" (check-in only) preset.
+  Rules under **Organizers, partners and audience organizations** and **Check-in list and staff role labels**
+  in `docs/INVARIANTS.md`.
+- **2026-10-16 — owner organizations at makerspace creation.** Installer setup asks for the organization name as its own question, before the makerspace name; installer, API, staff console and `/control/` share atomic owner assignment. The console searches and paginates active organizations or accepts a new name. Existing ownerless spaces remain usable without a migration; tenant import and `seed_e2e` are exceptions.
+- **2026-10-16 — opt-in route to the control plane.** `/control/` had no working path on a bundled
+  install: no proxy forwarded it, the backend publishes no port, and with HTTPS on Django redirects a
+  plain-HTTP tunnel to `https://localhost:8000`. `CONTROL_PLANE_PROXY` (default off) now routes `/control/`
+  and `/mfa/control/` through Caddy or the website nginx, with a socket-peer
+  `CONTROL_PLANE_ALLOW_CIDRS` allowlist; `CONTROL_PLANE_TUNNEL_PORT` publishes a `127.0.0.1`-only Caddy HTTPS
+  listener for `ssh -L` (TLS layer, Docker Engine 28+). Setup asks; `scripts/apply-settings.sh` applies a
+  change without changing the release. Rules under **Container / deployment invariants**.
+- **2026-10-15 — approved brand kit + functionality restore (`feature/design-revamp`).** The app adopts the
+  SpaceWorks-Design brand kit: Gilroy 400–700 for all text and headings (Outfit and the free 300/800
+  weights retired), Unbounded accent, and the kit's Figma logo masters, favicon, app icons and OG image
+  (horizontal lockup now has its own reversed and one-colour drawings). Five parallel restore lanes
+  brought back functionality the revamp had buried or dropped across inventory, machines/events/bookings,
+  front desk, public/member and admin/settings, and the member dashboard gained "Find a makerspace".
+- **2026-10-15 — design revamp (`feature/design-revamp`).** Whole frontend rebuilt on Space Works brand
+  guidelines v1 (seven-colour palette with solver-derived inks and soft fills, Gilroy ExtraBold + Outfit +
+  Unbounded, open-box logo extracted verbatim from the guideline PDF, favicons/PWA/OG/Unfold assets) and
+  Yuyu-style UX: a sidebar `AppShell` with workspace switcher replaces the header + floating dock, and every
+  screen composes one of eleven reusable layouts (`components/layouts/`) from shared primitives. No feature
+  added or removed; gating, routing, evidence hard rules and tenant colours unchanged (tenant palettes are
+  never newly rejected). Built in parallel Codex lanes; the plan and lane specs were removed from the repository in release 2.
+
+- **2026-10-15 — standard containers and local tests.** The all-in-one image is no longer built or published; the single-box shape is removed with refusal and switch steps for existing installs. Own-nginx HTTPS setup generates proxy configuration and prints certificate/install steps; API-only setup offers HTTPS only and points to the external website. CI runs no tests: use `./scripts/dev.sh test` and `./scripts/dev.sh e2e` locally; Actions builds/releases backend/frontend images, promotes rolling tags and optionally deploys, with `pip-audit` retained on PRs.
+
+- **2026-10-16 — brokerless tenant-import runs.** Persisted requester/identity requests run from the scheduler; dedicated lifetime advisory locks, attempt fencing and race-safe journal adoption protect interrupted or overlapping executions; the same sweep recovers broker-backed runs that lost their lock.
+- **2026-10-16 — resumable tenant-archive uploads.** The console sends audited 8 MiB chunks to an
+  `uploading` job, resumes from the server's offset after interruption, and completes idempotently
+  into asynchronous staging. Idle expiry slides by 24 hours; cleanup rechecks expiry under lock.
+  Requires the nginx `/api/` 10m limit from `c422fb1a`. Rules: "Import staging is asynchronous".
+- **2026-10-16 — asynchronous tenant-import staging.** The import upload now only writes the archive to
+  the ops work dir and returns 202 with a `pending` job. A Celery task (or, without a broker, the
+  scheduled sweep) checks the digest, decrypts, validates, and seals a rows-only sidecar for the
+  identity-decision endpoints. Sync Gunicorn workers no longer time out decrypting large archives in a
+  request. Rules: "Import staging is asynchronous" in `docs/INVARIANTS.md`.
 - **2026-10-09 — forward plan phase 11: abandoned evidence-upload cleanup.** A durable, Postgres-guarded
   `EvidencePhoto.consumption_state` (legacy rows and imports are permanently ineligible) proves which
   presign rows no workflow ever consumed; a default-off deployment switch plus tenant opt-in lets a
@@ -332,3 +528,12 @@ One line per shipped batch. The rules these introduced live in `docs/INVARIANTS.
 Pending lane integration: 2026-10-10 phase 7d monitoring/notification/identity UI and module-health
 coverage drafted against 7a; local frontend checks complete, database verification and 7b/7c adapter
 UI integration outstanding. This entry is not a shipped-release claim.
+
+2026-10-18: cloud shared integration adds additive coordination/provider migrations, explicit settings/routes, encrypted provider API/admin wiring, durable-dispatch gates, private image staging, managed refusal/guard seams, image variants and scoped presentation. Acceptance, incoming programmes and remaining adapters are incomplete; no launch/recovery pass claimed.
+
+2026-10-18 integration closure source: private object-backed import/capture staging with immutable lineage,
+physical writer/presign drain and supervised pause recovery; qualified application-only portable capture
+with isolated scratch leases; bounded catalog/domain/work/mail drains; storage reservation/inventory and
+provider mail reconciliation; C5 active-target privileged wiring and C17 real scheduler/worker diagnostics.
+Generated schemas/catalog hash remain owner-deferred. Docker/provider/VM/browser acceptance is unexecuted;
+this entry records source work, not a shipped release or completed recovery drill.

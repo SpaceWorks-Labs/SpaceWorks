@@ -1,7 +1,7 @@
 # Space Works — Development
 
 Running Space Works from source for local development or contributing. If you just want to **run** Space Works,
-use the [Quick start](../README.md#quick-start-run-it) instead — you don't need any of this.
+use the [Quick start](../README.md#quick-start) instead — you don't need any of this.
 
 **Toolchain prerequisites:** Python 3.12+ and Node 20.19+ (or 22.12+, for Vite 8). The Docker path
 bundles everything, so these only matter when you run the backend/frontend directly.
@@ -9,7 +9,7 @@ bundles everything, so these only matter when you run the backend/frontend direc
 ## 0. Get the code
 
 ```bash
-git clone https://github.com/SpaceWorks-HQ/SpaceWorks.git
+git clone https://github.com/SpaceWorks-Labs/SpaceWorks.git
 cd SpaceWorks
 ```
 
@@ -62,9 +62,16 @@ npm run dev                     # http://localhost:5000
 
 ## Tests
 
+Run tests locally before pushing; Actions does not run the test suite:
+
 ```bash
-cd backend && pytest
+./scripts/dev.sh test
+./scripts/dev.sh e2e
 ```
+
+The release workflow builds/publishes backend/frontend images, creates the GitHub Release, promotes
+rolling tags and optionally deploys through the self-hosted runner. `security-audit.yml` runs
+`pip-audit` on PRs.
 
 ## Releases (maintainers)
 

@@ -39,13 +39,7 @@ PUBLIC_EVENT_REGISTRATION_ERRORS = {
 }
 
 
-def _public_events(makerspace):
-    return Event.objects.filter(
-        makerspace=makerspace,
-        is_public=True,
-        status=Event.Status.PUBLISHED,
-        ends_at__gte=timezone.now(),
-    )
+from .website_visibility import listed_events as _listed_events, public_events as _public_events
 
 
 class PublicEventListView(APIView):
@@ -71,7 +65,7 @@ class PublicEventListView(APIView):
         makerspace = get_public_makerspace(makerspace_slug)
         require_module_for_servable(makerspace, 'events')
         events = (
-            _public_events(makerspace)
+            _listed_events(makerspace)
             .select_related('series', 'category', 'makerspace__payment_settings')
             .prefetch_related(
                 Prefetch(
@@ -104,6 +98,7 @@ class PublicEventListView(APIView):
         events = list(with_public_tickets(events))
         return Response(PublicEventSerializer(events, many=True, context={
             "request": request, "ticket_membership_ids": ticket_membership_ids(request.user, events),
+            "omit_website": True,
         }).data)
 
 
@@ -115,6 +110,7 @@ class PublicEventRegistrationView(APIView):
     @extend_schema(
         tags=['Public events'],
         request=PublicEventRegistrationInputSerializer,
+        description="Invite-only admission accepts a code or a matching verified account email. Code-free unverified admission returns email_verification_required; all normal admission, capacity and waiver rules apply.",
         responses={
             201: PublicEventRegistrationResponseSerializer,
             **PUBLIC_EVENT_REGISTRATION_ERRORS,
@@ -141,16 +137,21 @@ class PublicEventRegistrationView(APIView):
 
         serializer = PublicEventRegistrationInputSerializer(
             data=request.data,
-            context={'event': event},
+            context={'event': event, 'request': request},
         )
         serializer.is_valid(raise_exception=True)
         registration_data = dict(serializer.validated_data)
-        registration_data['custom_answers'] = request.data.get('custom_answers')
+        from apps.payments.pricing.submit_guard import check_submitted_digest  # L15 (A8): 409 price_changed
+        from apps.events.models import EventTicketType
+        ticket = EventTicketType.objects.filter(event=event, pk=registration_data.get("ticket_type_id")).first()
+        check_submitted_digest(request, event.makerspace, "events", event, {"ticket": ticket})
+        if 'form_payload' not in registration_data:
+            registration_data['custom_answers'] = request.data.get('custom_answers')
         try:
             registration = services.register(
                 event,
                 member=request.user,
-                actor=request.user,
+                actor=request.user, repair_duplicate=True,
                 **registration_data,
             )
         except DuplicateRegistration as exc:

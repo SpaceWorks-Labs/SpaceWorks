@@ -1,18 +1,41 @@
 #!/usr/bin/env bash
 # Space Works - guided first-run setup (Linux, macOS, or Windows Git Bash/WSL).
 # Run it from the project folder:  bash setup.sh
+set +x
 set -euo pipefail
 cd "$(dirname "$0")"
 
 ROOT="$PWD"
+case "${SPACEWORKS_DEPLOYMENT_PROFILE:-full}" in
+  full|free) ;;
+  *) echo 'Use the full (default) or free deployment profile.' >&2; exit 64 ;;
+esac
+source "$ROOT/scripts/compose-deployment.sh"
+if [[ -f "$ROOT/.spaceworks-layer" ]]; then
+  refuse_single_box_layer "$(tr -d '[:space:]' < "$ROOT/.spaceworks-layer")" || exit $?
+fi
 source "$ROOT/scripts/install-owner.sh"
 require_install_owner "$ROOT/setup.sh" "$@"
 COMPOSE=("$ROOT/scripts/spaceworks-compose.sh" bundled)
 BUILD_FROM_SOURCE=0
-case "${1:-}" in
-  "") ;;
-  --build) BUILD_FROM_SOURCE=1 ;;
-  *) printf 'Usage: bash setup.sh [--build]\n' >&2; exit 64 ;;
+SETUP_NON_INTERACTIVE=0
+ANSWERS_ARG=''
+while (($#)); do
+  case "$1" in
+    --build) BUILD_FROM_SOURCE=1 ;;
+    --non-interactive) SETUP_NON_INTERACTIVE=1 ;;
+    --answers-file) (($# > 1)) || exit 64; ANSWERS_ARG="$2"; shift ;;
+    --resume) [[ -f .spaceworks-install.json ]] || { echo 'No private incomplete-install journal.' >&2; exit 64; } ;;
+    --profile) (($# > 1)) || exit 64; SPACEWORKS_DEPLOYMENT_PROFILE="$2"; shift ;;
+    --profile=*) SPACEWORKS_DEPLOYMENT_PROFILE="${1#*=}" ;;
+    *) printf 'Usage: bash setup.sh [--build] [--resume] [--profile full|free] [--non-interactive --answers-file private.json]\n' >&2; exit 64 ;;
+  esac
+  shift
+done
+case "${SPACEWORKS_DEPLOYMENT_PROFILE:-full}" in
+  full) ;;
+  free) export SPACEWORKS_DEPLOYMENT_PROFILE ;;
+  *) echo 'Use --profile full (default) or --profile free.' >&2; exit 64 ;;
 esac
 if [[ "$BUILD_FROM_SOURCE" == 1 ]]; then
   export SPACEWORKS_COMPOSE_BUILD_LAYER=1
@@ -21,7 +44,7 @@ if [[ "$BUILD_FROM_SOURCE" == 1 ]]; then
 else
   unset SPACEWORKS_COMPOSE_BUILD_LAYER
   export SPACEWORKS_HOST_CONFIG_BUILD=0
-  HOST_CONFIG_IMAGE="${MAKERSPACE_BACKEND_IMAGE:-ghcr.io/spaceworks-hq/spaceworks-backend}:${MAKERSPACE_IMAGE_TAG:-latest}"
+  HOST_CONFIG_IMAGE="${MAKERSPACE_BACKEND_IMAGE:-ghcr.io/spaceworks-labs/spaceworks-backend}:${MAKERSPACE_IMAGE_TAG:-latest}"
 fi
 
 say()  { printf '\n\033[1;36m%s\033[0m\n' "$*"; }
@@ -33,15 +56,44 @@ die()  { printf '\033[1;31mERROR: %s\033[0m\n' "$*" >&2; exit 1; }
 source "$ROOT/scripts/setup-host-orchestration.sh"
 source "$ROOT/scripts/spaceworks-repository.sh"
 source "$ROOT/scripts/cleanup-run-once.sh"
+source "$ROOT/scripts/setup-proxy-config.sh"
 
 # Questionnaire precedes Docker checks, image pulls and writes to the checkout.
 source "$ROOT/scripts/setup-questions.sh"
+# Opt-in free profile: write its private environment and stop before any Docker step.
+# Nothing here runs unless the free profile was explicitly selected.
+prepare_free_profile() {
+  source "$ROOT/scripts/setup-write-environment.sh"
+  if [[ -f .env ]]; then
+    grep -qx "SPACEWORKS_DEPLOYMENT_PROFILE='free'" .env \
+      || die 'This directory already holds a full-server installation; prepare the free profile in a new directory.'
+    say 'Found an existing free-profile .env - keeping your settings and secrets.'
+  else
+    write_free_profile_environment
+    say 'Wrote the private free-profile .env with generated secrets.'
+  fi
+  free_profile_notice
+  echo '  Next: replace the placeholder hosts and buckets, add DATABASE_URL, the maintenance database'
+  echo '  URL, storage credentials/capabilities and the email provider in .env, then follow'
+  echo '  docs/deploy/cloud-free.md (release job, docker-compose.free.yml and the external tick).'
+  print_key_backup_notice
+  exit 0
+}
+if [[ "${SPACEWORKS_DEPLOYMENT_PROFILE:-full}" == free ]] \
+    && [[ "$SETUP_NON_INTERACTIVE" == 1 || -f .env ]]; then
+  prepare_free_profile
+fi
+if [[ "$SETUP_NON_INTERACTIVE" == 1 ]]; then
+  [[ -n "$ANSWERS_ARG" ]] || die '--non-interactive requires --answers-file.'
+  load_noninteractive_answers "$ANSWERS_ARG" || exit $?
+fi
 if [[ "${ANSWERS_CONFIRMED:-}" == yes ]]; then
-  : # Confirmed answers inherited by native Windows through process environment.
+  validate_setup_login_answers || die 'Invalid sign-in choices.'
 elif [[ -f .spaceworks-answers ]]; then
   load_setup_answers "$ROOT/.spaceworks-answers" || die 'Invalid private answers file.'
 elif [[ ! -f .env ]]; then
-  ask_setup_questions || exit 0
+  ask_setup_questions || exit $?
+  [[ "${SPACEWORKS_DEPLOYMENT_PROFILE:-full}" != free ]] || prepare_free_profile
   persist_setup_answers "$ROOT/.spaceworks-answers"
 fi
 
@@ -49,32 +101,26 @@ fi
 command -v docker >/dev/null 2>&1 || die "Docker is missing. On Linux, run install.sh to install it; on macOS/Windows, install Docker Desktop."
 docker info >/dev/null 2>&1 || die "Docker is inaccessible. On Linux, run sudo systemctl start docker and sudo usermod -aG docker \$(id -un), then sign out and back in. On macOS/Windows, start Docker Desktop."
 docker compose version >/dev/null 2>&1 || die "The 'docker compose' plugin is missing. Update Docker Desktop."
-
-# Match the membership module to the already-confirmed request policy. This occurs
-# before opening account-less requests, so a failure keeps submission behind auth.
-apply_request_access() {
-  local slug="$1" mode="${REQUEST_ACCESS:-accounts}" membership_command=uninstall_module
-  [[ "$mode" != members ]] || membership_command=install_module
-  ${COMPOSE[@]+"${COMPOSE[@]}"} run --rm --no-deps -T backend --role management \
-    python manage.py "$membership_command" membership --makerspace "$slug" \
-    || die 'Could not apply the confirmed membership/request policy.'
-  if [[ "$mode" == anyone ]]; then
-    if ! ${COMPOSE[@]+"${COMPOSE[@]}"} run --rm --no-deps -T backend --role management \
-      python manage.py set_request_access --makerspace "$slug" --mode anyone; then
-      warn "Account-less borrow requests were NOT enabled (the membership module is on)."
-      warn "Borrow requests will require an account. Turn membership off and re-run:"
-      warn "  ${COMPOSE[*]} run --rm --no-deps backend --role management python manage.py set_request_access --mode anyone"
-      mode=members
-    else
-      return 0
-    fi
-  fi
-  ${COMPOSE[@]+"${COMPOSE[@]}"} run --rm --no-deps -T backend --role management \
-    python manage.py set_request_access --makerspace "$slug" --mode "$mode" \
-    || warn "Could not set who may submit borrow requests; the default (account required) stands."
-}
+source "$ROOT/scripts/installer/compose-capabilities.sh"
+probe_compose_capabilities || die 'Compose lacks the required overlay/CLI capabilities.'
+# Serialize source setup as well as install.sh retries before writing environment.
+source "$ROOT/scripts/installer/setup-lock.sh"
+acquire_setup_lock || die 'Another setup/update is active; inspect the private update lock.'
+trap release_setup_lock EXIT
+# Existing hosts are locked before any environment backfill. A fresh host's shared
+# operation lock is acquired by prepare_compose_wrapper immediately after creation.
+if [[ -f "$ROOT/.env" ]]; then
+  source "$ROOT/scripts/installer/host-paths.sh"
+  resolve_host_paths || exit $?
+  [[ ! -f "$OPS_HOST_DIR/operation.lock" ]] || lock_setup_operation || die 'Another host operation is running.'
+fi
 
 source "$ROOT/scripts/setup-first-run.sh"
+source "$ROOT/scripts/setup-write-environment.sh"
+source "$ROOT/scripts/installer/key-backfill.sh"
+plan_key_backfill
+apply_key_backfill
+backfill_absent_continuity_keys || die 'Could not add the missing encryption keys.'
 source "$ROOT/scripts/retire-update-tombstone.sh"
 retire_update_tombstone
 source "$ROOT/scripts/retire-update-polling.sh"
@@ -97,11 +143,25 @@ fi
 if ! grep -q '^SPACEWORKS_SCHEDULER_MODE=' .env; then
   printf '\nSPACEWORKS_SCHEDULER_MODE=image\n' >> .env
 fi
+source "$ROOT/scripts/setup-write-environment.sh"
+source "$ROOT/scripts/installer/environment-continuity.sh"
+forward_installer_environment || die 'Could not preserve explicit deployment settings.'
+for selector in SPACEWORKS_OPS_HOST_DIR SPACEWORKS_HOST_STATE_DIR; do
+  if ! grep -q "^$selector=" .env; then
+    value="${!selector:-}"
+    if [[ -z "$value" ]]; then
+      [[ "$selector" == SPACEWORKS_OPS_HOST_DIR ]] && value=/var/lib/spaceworks/ops || value=/var/lib/spaceworks/host
+    fi
+    env_setting "$selector" "$value"
+  fi
+done
 chmod 600 .env
 mkdir -p "$ROOT/backups"
 chmod 700 "$ROOT/backups"
+source "$ROOT/scripts/installer/setup-state.sh"
+checkpoint_install environment
 prepare_compose_wrapper
-source "$ROOT/scripts/compose-deployment.sh"
+ensure_station_pepper
 deployment_services
 if [[ "$BUILD_FROM_SOURCE" == 1 ]]; then
   say "Building and starting the app from source (first run can take a few minutes)..."
@@ -121,14 +181,24 @@ if ! grep -q '^BACKUP_AGE_RECIPIENT=' .env; then
   BACKUP_RECIPIENT="$(${COMPOSE[@]+"${COMPOSE[@]}"} exec -T "$APP_SERVICE" age-keygen \
     -y /var/lib/spaceworks/ops/work/age-identity.txt | tr -d '\r\n')"
   printf '\nBACKUP_AGE_RECIPIENT=%s\n' "$BACKUP_RECIPIENT" >> .env
+  checkpoint_install services
   refresh_compose_config
   ${COMPOSE[@]+"${COMPOSE[@]}"} up -d
+  BACKEND_RECREATED=1
 fi
 if ! grep -q '^BACKUP_ARCHIVE_SIGNING_PRIVATE_KEY=' .env; then
   SIGNING_PAIR="$(${COMPOSE[@]+"${COMPOSE[@]}"} exec -T "$APP_SERVICE" python -c 'from apps.ed25519 import encode_key,generate_keypair; p,q=generate_keypair(); print(encode_key(p)); print(encode_key(q))' | tr -d '\r')"
   printf '\nBACKUP_ARCHIVE_SIGNING_PRIVATE_KEY=%s\nBACKUP_ARCHIVE_VERIFY_PUBLIC_KEY=%s\n' "$(printf '%s\n' "$SIGNING_PAIR" | sed -n '1p')" "$(printf '%s\n' "$SIGNING_PAIR" | sed -n '2p')" >> .env
+  checkpoint_install services
   refresh_compose_config
   ${COMPOSE[@]+"${COMPOSE[@]}"} up -d
+  BACKEND_RECREATED=1
+fi
+if [[ "${BACKEND_RECREATED:-0}" == 1 ]]; then
+  # The website edge resolved the backend address when it started; the key steps
+  # above recreated the backend, so recreate the edge as the updater does.
+  source "$ROOT/scripts/update-proxy-edges.sh"
+  refresh_update_proxy_edges
 fi
 install_producer_capability
 
@@ -141,38 +211,26 @@ for _ in $(seq 1 60); do
   sleep 3
 done
 [ "$ready" = 1 ] || die "The app did not become ready in time. Check logs with: ${COMPOSE[*]} logs backend"
+source "$ROOT/scripts/installer/completion.sh"
+verify_full_host_completion "$ROOT/scripts" || die 'Required full-host runtime checks failed.'
+echo 'Platform Email: configure the provider in /control/ and verify a requested test delivery before invitations/recovery. External integration acceptance is separate from core readiness.'
+source "$ROOT/scripts/installer/retention-schedule.sh"
+configure_retention_maintenance install "$ROOT/scripts" || die 'Daily retention maintenance could not be installed; retry setup.'
 
 if [ "$FIRST_RUN" = 1 ]; then
   say "Creating your admin account and makerspace..."
-  SETUP_SUPERADMIN_PASSWORD="$ADMINPASS" \
-  ${COMPOSE[@]+"${COMPOSE[@]}"} run --rm --no-deps -T -e SETUP_SUPERADMIN_PASSWORD backend --role management python manage.py setup_instance \
-    --username "$ADMINUSER" --email "$ADMINEMAIL" \
-    --makerspace-name "$MSNAME" --makerspace-slug "$MS_SUBDOMAIN" --profile "$MSPROFILE"
+  save_bootstrap_credential
+  configure_setup_instance
 
   configure_setup_domain
 
-  echo 'Initial modules were selected before confirmation. Change them later with scripts/update.sh --modules-only.'
-
-  MS_SLUG="$(${COMPOSE[@]+"${COMPOSE[@]}"} run --rm --no-deps -T backend --role management \
-    python manage.py list_modules --json 2>/dev/null \
-    | sed -n 's/.*"makerspace": *"\([^"]*\)".*/\1/p' | head -n 1)"
-  if [ -n "$MS_SLUG" ]; then
-    apply_request_access "$MS_SLUG"
-  else
-    warn "Could not read the makerspace back, so who may submit borrow requests was left at"
-    warn "the default (an account is required). Set it with 'manage.py set_request_access'."
-  fi
-
-  if [ -n "$GOOGLE_WEB_CLIENT_ID" ]; then
-    say "Enabling Google sign-in..."
-    if ! ${COMPOSE[@]+"${COMPOSE[@]}"} run --rm --no-deps -T backend --role management python manage.py configure_social_auth \
-      --google-web-client-id "$GOOGLE_WEB_CLIENT_ID"; then
-      warn "Could not save the Google client ID. Add it later in Platform settings; password login is unaffected."
-    fi
-  fi
+  setup_areas_json | ${COMPOSE[@]+"${COMPOSE[@]}"} run --rm --no-deps -T backend --role management \
+    python manage.py apply_setup_areas --makerspace "$MS_SUBDOMAIN" --actor "$ADMINUSER" --answers-json - \
+    || die 'Could not apply confirmed areas and settings. The private answers are retained for retry.'
+  echo 'Areas and settings applied. Change them later with scripts/update.sh --modules-only or staff settings.'
 
   if [ -n "$STRIPE_SECRET_KEY" ]; then
-    configure_setup_stripe
+    configure_setup_stripe || die 'Could not safely save the online-payment credentials. Private answers are retained; resolve the settings error and retry setup.'
   fi
 
   if [[ "${INSTALL_RUNNER:-N}" =~ ^[Yy] ]]; then
@@ -180,17 +238,41 @@ if [ "$FIRST_RUN" = 1 ]; then
       || die 'Runner installation failed. Retry with bash scripts/install-runner.sh.'
   fi
 
+  checkpoint_install configured
   say "All done!"
   rm -f -- "$ROOT/.spaceworks-answers"
-  echo "  Website: $(deployment_value PUBLIC_APP_BASE_URL) (admin: $ADMINUSER)"
+  if [[ "$(deployment_value SPACEWORKS_RUN_FRONTEND)" == no ]]; then
+    echo "  Website (hosted elsewhere): $(deployment_value PUBLIC_APP_BASE_URL) (admin: $ADMINUSER)"
+  else
+    echo "  Website: $(deployment_value PUBLIC_APP_BASE_URL) (admin: $ADMINUSER)"
+  fi
   echo "  API: $([[ "$HTTPS_MODE" == 1 ]] && echo http || echo https)://$WEBHOST/api"
-  echo "  Control plane: /control/ on the backend only, through a private connection."
-  [ "$GEN_PASS" = 1 ] && warn "  Generated admin password: ${ADMINPASS}   (save this now)"
+  if [[ "$(deployment_value CONTROL_PLANE_PROXY)" == true ]]; then
+    echo "  Control plane: $(deployment_value PUBLIC_APP_BASE_URL)/control/"
+  else
+    echo "  Control plane: off (see docs/self-hosting.md, 'Reaching the control plane')"
+  fi
+  tunnel_port="$(deployment_value CONTROL_PLANE_TUNNEL_PORT)"
+  if [[ -n "$tunnel_port" ]]; then
+    echo "  SSH tunnel: ssh -L 8443:127.0.0.1:$tunnel_port <you>@<this server>, then https://localhost:8443/control/"
+  fi
+  [ "$GEN_PASS" != 1 ] || echo "  Generated credential: $ROOT/.spaceworks-bootstrap-credential.json (private; change it at first sign-in)."
+  print_key_backup_notice
   echo
-  echo   "Next: log into the React staff console at /admin, add inventory, and turn on 'public inventory' for your makerspace."
+  if [[ "$(deployment_value SPACEWORKS_RUN_FRONTEND)" == no ]]; then
+    echo "Next: log into the React staff console at $(deployment_value PUBLIC_APP_BASE_URL)/admin, add inventory, and turn on 'public inventory' for your makerspace."
+  else
+    echo   "Next: log into the React staff console at /admin, add inventory, and turn on 'public inventory' for your makerspace."
+  fi
+  if [[ "$HTTPS_MODE" == 3 ]]; then
+    write_proxy_nginx_config || warn "Could not write the nginx example; see docs/self-hosting.md."
+    print_proxy_nginx_steps
+  fi
 else
   say "App started. To create the first admin (only if you haven't yet), run:"
-  echo "  ${COMPOSE[*]} run --rm --no-deps backend --role management python manage.py setup_instance --username admin --password 'a-strong-password' --makerspace-name 'My Makerspace'"
+  echo "  Configure Platform Email in /control/ and verify a real delivery before using invitations or account recovery."
 fi
 
 cleanup_run_once_jobs || warn "Could not remove finished start-up jobs."
+
+checkpoint_install complete

@@ -2,6 +2,7 @@
 
 SOURCE_LOCAL_AUDIT_EDGES = frozenset(
     {
+        ("consumable.cost_recorded", "source_id"),
         ("event.checkin_roster_downloaded", "lease_id"),
         ("event.checkin_sync_processed", "lease_id"),
         ("event.registration_attended", "operation_id"),
@@ -13,15 +14,24 @@ SOURCE_LOCAL_AUDIT_EDGES = frozenset(
         ("audit.signing_key_rotation_failed", "rotation_id"),
         ("encryption.write_fence_closed", "operation_id"),
         ("encryption.write_fence_opened", "operation_id"),
+        # MessagingWebhookEvent is deployment-local replay state, dropped from tenant dumps.
+        ("messaging.webhook_abandoned", "event_id"),
+        # MessagingDelivery is omitted runtime telemetry; keep only inert source provenance.
+        ("messaging.probe_released", "delivery_id"),
         ("payment.checkout_created", "subject_id"),
         ("payment.created", "subject_id"),
         ("payment.double_paid_refund_required", "event_id"),
+        ("payment.double_paid_refund_required", "provider_payment_id"),
+        ("payment.mobile_order_created", "order_id"),
         ("payment.paid_after_terminal", "event_id"),
         ("payment.paid_online", "event_id"),
         ("payments.connect_authorization_revoked", "connect_account_id"),
         ("payments.connect_previous_authorization_revoked", "connect_account_id"),
         ("procurement.moved_to_printing", "result_id"),
         ("qr.rebound", "new_target_id"),
+        # Managed staging origin of a dump request: deployment-local custody identifiers.
+        ("tenant_migration.tenant_dump_requested", "staging_capture_id"),
+        ("tenant_migration.tenant_dump_requested", "staging_deployment_id"),
         ("tenant_migration.pairing_approved", "migration_id"),
         ("tenant_migration.pairing_approved", "source_deployment_id"),
         ("tenant_migration.pairing_approved", "target_deployment_id"),
@@ -64,9 +74,17 @@ SOURCE_LOCAL_AUDIT_EDGES = frozenset(
         ("tenant_migration.import_created", "import_id"),
         ("tenant_migration.import_read", "import_id"),
         ("tenant_migration.import_run_requested", "import_id"),
+        ("tenant_migration.import_run_refused", "import_id"),
+        ("tenant_migration.import_staging_failed", "import_id"),
+        ("tenant_migration.import_upload_received", "import_id"),
+        ("tenant_migration.import_upload_started", "import_id"),
+        ("tenant_migration.import_upload_chunk_received", "import_id"),
         ("tenant_migration.identity_decisions_submitted", "import_id"),
         ("tenant_migration.identity_decisions_read", "import_id"),
         ("tenant_migration.import_completed", "import_id"),
+        # One account per person: the import job and the person's source-deployment id.
+        ("tenant_migration.staff_roles_granted", "import_id"),
+        ("tenant_migration.staff_roles_granted", "source_user_id"),
         ("tenant_migration.verification_read", "import_id"),
         # Lane E compound-artifact rows are deployment-operational and never travel.
         ("backup.archive_exclusion_activated", "artifact_id"),
@@ -83,5 +101,35 @@ SOURCE_LOCAL_AUDIT_EDGES = frozenset(
         ("backup.offsite_copy_pruned", "destination_id"),
         ("backup.offsite_copy_verified", "archive_id"),
         ("backup.offsite_copy_verified", "destination_id"),
+        # Per-space restore journals and their restore points are deployment-operational.
+        ("backup.space_restore_requested", "restore_id"),
+        ("backup.space_restore_requested", "archive_id"),
+        ("backup.space_restore_preview_ready", "restore_id"),
+        ("backup.space_restore_confirmed", "restore_id"),
+        ("backup.space_restore_confirmed", "archive_id"),
+        ("backup.space_restore_completed", "restore_id"),
+        ("backup.space_restore_completed", "archive_id"),
+        ("backup.space_restore_completed", "safety_archive_id"),
+        ("backup.space_restore_failed", "restore_id"),
+        ("backup.space_restore_aborted", "restore_id"),
+        ("backup.space_restore_point_extracted", "archive_id"),
+        ("backup.space_restore_point_extracted", "source_archive_id"),
+        # Managed-cloud coordination, staging, mail budget and bucket receipts are
+        # deployment-local rows that never travel in a tenant dump.
+        ("cloud.delivery_cancelled", "delivery_id"),
+        ("cloud.tick_started", "tick_id"),
+        ("cloud.tick_finished", "tick_id"),
+        ("deployment.staging_created", "stage_id"),
+        ("deployment.staging_available", "stage_id"),
+        ("deployment.staging_deleted", "stage_id"),
+        ("email.budget_reserved", "reservation_id"),
+        ("email.budget_settled", "reservation_id"),
+        ("email.acceptance_reconciled", "reservation_id"),
+        # Delivery and email-log rows are omitted runtime telemetry.
+        ("notification.email_accepted", "delivery_id"),
+        ("notification.email_accepted", "email_log_id"),
+        ("storage.bucket_binding_migrated", "receipt_id"),
+        ("storage.bucket_handoff_resumed", "receipt_id"),
+        ("storage.legacy_receipt_bound", "receipt_id"),
     }
 )

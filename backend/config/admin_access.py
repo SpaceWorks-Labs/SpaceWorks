@@ -1,4 +1,3 @@
-from django.conf import settings
 from django.contrib.auth import logout
 from django.db import models
 from django.http import HttpResponseForbidden
@@ -26,20 +25,6 @@ class AdminSuperuserOnlyMiddleware:
             self.admin_login_path = f"{self.admin_prefix}login/"
 
     def __call__(self, request):
-        if self._password_login_blocked(request):
-            # `/control/login/` is Django's own AdminSite login, so `LoginView`'s check
-            # never sees it. Refused BEFORE the form authenticates, so no session is
-            # minted; existing sessions are left alone, because a login-method switch is a
-            # policy change and not a revocation (phase 11 report, A2).
-            #
-            # This is enforced only while a superadmin can still get in another way -- see
-            # `_password_login_blocked`. Social sign-in issues JWTs for the React console
-            # and never creates a Django session, so blocking this unconditionally would
-            # make the one page that can re-enable passwords permanently unreachable the
-            # moment the last admin session expired.
-            return HttpResponseForbidden(
-                "Password sign-in is not available on this deployment."
-            )
         if self._is_admin_path(request.path):
             user = getattr(request, "user", None)
             if getattr(user, "is_authenticated", False) and self._has_access(user):
@@ -57,42 +42,33 @@ class AdminSuperuserOnlyMiddleware:
                 return HttpResponseForbidden()
         return self.get_response(request)
 
+    def process_view(self, request, callback, callback_args, callback_kwargs):
+        if request.method != "POST" or not self._is_admin_path(request.path):
+            return None
+        from apps.accounts.reauthentication_control import sensitive_control_request, RecentReauthenticationAdminMixin
+        if sensitive_control_request(request, callback):
+            return RecentReauthenticationAdminMixin()._recent_redirect(request)
+        return None
+
     def _is_admin_path(self, path):
         return path == self.admin_root or path.startswith(self.admin_prefix)
 
     def _password_login_blocked(self, request):
-        """Whether this control-plane login must be refused.
+        """Member method switches never remove the platform password door.
 
-        Two conditions, and the second is what stops the fix becoming the lockout:
-
-        1. Password sign-in is switched off. (`password_login_enabled` fails OPEN, like
-           every other capability read on an auth path.)
-        2. `/control/` is reachable without a password at all — i.e. this deployment has
-           a `PLATFORM_ADMIN_SSO` path. Today it does not: social sign-in mints JWTs for
-           the React console and never a Django session, so with no second route the
-           switch would seal the only page that can undo it. Until such a route exists,
-           the control plane keeps its password door and the switch governs the
-           application surfaces, which is what it is actually for.
-
-        The consequence is stated rather than hidden: with `password_enabled=False` a
-        superadmin can still sign in at `/control/`. That surface is superadmin-only,
-        rate-limited by django-axes, and deliberately not proxied on the public frontend
-        port, so it is the platform's break-glass entry — the same role Platform Email
-        plays for the superadmin-access toggle.
+        In particular, PLATFORM_ADMIN_SSO=False keeps its password fallback;
+        configuring SSO does not turn a member setting into platform policy.
         """
-        if request.method != "POST" or request.path != self.admin_login_path:
-            return False
-        if not settings.PLATFORM_ADMIN_SSO:
-            return False
-        from apps.accounts.login_methods import password_login_enabled
-
-        return not password_login_enabled()
+        return False
 
     def _has_access(self, user):
         from apps.accounts.models import User
+        from apps.accounts.staff_identity import is_platform
 
         return bool(
             user.is_active
+            and is_platform(user)
+            and user.retired_at is None
             and user.is_superuser
             and getattr(user, "access_status", None) == User.AccessStatus.ACTIVE
             # The generated first-run credential must rotate before reaching the admin too,
@@ -103,6 +79,10 @@ class AdminSuperuserOnlyMiddleware:
 
 class SuperuserOnlyModelAdmin(AdminSourceGateMixin):
     def resolve_hidden_lookup(self):
+        """The makerspace-id lookup for this model, or None for a global model.
+
+        The source gate uses it to refuse writes into a tenant that is migrating.
+        """
         from apps.makerspaces.models import Makerspace
 
         model = self.model
@@ -123,79 +103,46 @@ class SuperuserOnlyModelAdmin(AdminSourceGateMixin):
 
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
-        lookup = self.resolve_hidden_lookup()
-        if not lookup:
-            return queryset
+        if self.model._meta.label_lower == "accounts.user":
+            from config.admin_account_scope import scope_account_rows
 
-        from apps.makerspaces.models import Makerspace
-
-        if self.model is Makerspace:
-            # Governance visibility: a superadmin can see that a hidden
-            # makerspace exists in the changelist only. Other admin contexts
-            # such as object pages, autocomplete, and FK widgets stay scoped.
-            url_name = getattr(getattr(request, "resolver_match", None), "url_name", "") or ""
-            if url_name.endswith("_changelist"):
-                return queryset
-
-        from apps.accounts import rbac
-
-        hidden = rbac.superadmin_hidden_makerspace_ids()
-        if hidden:
-            queryset = queryset.exclude(**{f"{lookup}__in": hidden})
+            queryset = scope_account_rows(queryset)
         return queryset
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         # A plain (non-autocomplete) FK ModelChoiceField builds its options from the
-        # target model's default manager, NOT the target admin's get_queryset — so a
-        # makerspace FK widget (e.g. ApiClient/ToBuyItem add/change forms) would still
-        # list and let a superadmin target a hard-hidden makerspace. Scope every
-        # makerspace FK widget to visible makerspaces to close that hard-hide bypass.
-        from apps.makerspaces.models import Makerspace
+        # target model's default manager, NOT the target admin's get_queryset, so a
+        # User FK widget is scoped here the same way the account changelist is.
+        from apps.accounts.models import User
 
-        if (
-            getattr(db_field, "remote_field", None) is not None
-            and db_field.remote_field.model is Makerspace
-            and "queryset" not in kwargs
-        ):
-            from apps.accounts import rbac
+        if getattr(getattr(db_field, "remote_field", None), "model", None) is User:
+            from config.admin_account_scope import scope_account_rows
 
-            queryset = Makerspace.objects.all()
-            hidden = rbac.superadmin_hidden_makerspace_ids()
-            if hidden:
-                queryset = queryset.exclude(id__in=hidden)
-            kwargs["queryset"] = queryset
+            kwargs["queryset"] = scope_account_rows(kwargs.get("queryset", User.objects.all()))
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     def _obj_in_hidden(self, obj):
-        """True if `obj` belongs to a hard-hidden makerspace. Complements
-        get_queryset (which only hides changelists) by blocking the object-level
-        view/change/delete PAGES too, so /control/ can't reach a hidden row by id."""
-        if obj is None:
-            return False
-        lookup = self.resolve_hidden_lookup()
-        if not lookup:
-            return False
+        """True for a retired staff account or one whose makerspace cannot serve.
 
-        from apps.accounts import rbac
-
-        hidden = rbac.superadmin_hidden_makerspace_ids()
-        if not hidden:
+        Complements get_queryset by blocking the object-level view/change/delete
+        pages too, so /control/ cannot reach such an account by id."""
+        if obj is None or self.model._meta.label_lower != "accounts.user":
             return False
-        value = obj
-        for part in lookup.split("__"):
-            value = getattr(value, part, None)
-            if value is None:
-                return False
-        return value in hidden
+        from config.admin_account_scope import staff_account_hidden
+
+        return staff_account_hidden(obj)
 
     def _has_superuser_access(self, request):
         from apps.accounts.models import User
+        from apps.accounts.staff_identity import is_platform
 
         user = getattr(request, "user", None)
         return bool(
             user
             and user.is_authenticated
             and user.is_active
+            and is_platform(user)
+            and user.retired_at is None
             and user.is_superuser
             and getattr(user, "access_status", None) == User.AccessStatus.ACTIVE
             and not getattr(user, "must_change_password", False)

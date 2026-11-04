@@ -1,35 +1,41 @@
-import { SiteFooter } from "../../components/SiteFooter";
+import { plural } from "../../lib/plural";
+import { PublicLayout } from "../../components/layouts";
+import type { PublicActionCardProps } from "../../components/layouts/PublicActionCard";
+import { QueryContent } from "../../components/layouts/LayoutFrame";
+import { publicPageChrome } from "./PublicPageChrome";
 import { PageMetadata } from "../../components/PageMetadata";
 import { useTenantBranding } from "../../lib/useTenantBranding";
 import { useState } from "react";
-import type { FormEvent } from "react";
+import type { FormEvent, ReactNode } from "react";
 import { useParams } from "react-router-dom";
 
-import { Card, Field } from "../../components/ui";
+import { Card, Field, Pagination } from "../../components/ui";
 import { useTenant, useTenantPath } from "../../lib/tenant";
 import type { Product } from "../../types/inventory";
 import { ProductCard } from "./ProductCard";
 import { ProductQuickViewModal } from "./ProductQuickViewModal";
 import {
   CatalogSidebar,
-  EmptyState,
-  ErrorState,
-  LoadingState,
   formatSlug,
   type View,
 } from "./PublicInventoryParts";
-import { PublicRequestPanel } from "./PublicRequestPanel";
-import { SkipLink } from "../../components/SkipLink";
-import { PublicInventoryHeader } from "./publicInventory/PublicInventoryHeader";
+import { PublicRequestPanel, type ActiveTab } from "./PublicRequestPanel";
+import { useRequestDraft } from "./useRequestDraft";
 import { useInventoryCart } from "./publicInventory/useInventoryCart";
 import { usePublicCategories, usePublicInventory, useTenantBootstrap } from "./usePublicInventory";
 
 const PAGE_SIZE = 24;
 
-export function PublicInventoryPage() {
+/** A host that supplies its own chrome (the public desk, the makerspace page) places the catalogue body and
+ * request panel itself; `aside` is the same request card the standalone catalogue docks beside its body. */
+export type EmbeddedCatalogue = (parts: { body: ReactNode; request: ReactNode; aside: PublicActionCardProps }) => ReactNode;
+
+export function PublicInventoryPage({ embedded, resolvedSlug, inheritBranding = false }: {
+  embedded?: EmbeddedCatalogue; resolvedSlug?: string; inheritBranding?: boolean;
+}) {
   const { slug } = useParams();
   const tenant = useTenant();
-  const makerspaceSlug = tenant.mode === "single" ? tenant.slug : slug ?? "";
+  const makerspaceSlug = resolvedSlug ?? (tenant.mode === "single" ? tenant.slug : slug ?? "");
   const tenantPath = useTenantPath(makerspaceSlug);
   const [page, setPage] = useState(1);
   const [searchInput, setSearchInput] = useState("");
@@ -37,6 +43,8 @@ export function PublicInventoryPage() {
   const [view, setView] = useState<View>({ kind: "all" });
   const { cart, selectedItems, incrementItem, decrementItem, clearCart } = useInventoryCart();
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [requestTab, setRequestTab] = useState<ActiveTab>("borrow");
+  const requestDraft = useRequestDraft();
   const categoryParam = view.kind === "category" ? view.slug : "";
   const sortParam = view.kind === "sort" ? view.sort : "name";
   const bootstrapQuery = useTenantBootstrap(makerspaceSlug, tenant.mode === "central");
@@ -75,127 +83,41 @@ export function PublicInventoryPage() {
     setPage(1);
   }
 
-  return (
-    <main style={brandStyle} className="desk-shell">
-      <PageMetadata title={displayName} description={typeof bootstrap?.branding.welcome_body === "string" && bootstrap.branding.welcome_body ? bootstrap.branding.welcome_body : `Browse public tools and equipment at ${displayName}.`} path={tenantPath()} image={bootstrap?.makerspace.cover_image_url || bootstrap?.makerspace.logo_url} siteName={displayName} />
-      <SkipLink />
-      <PublicInventoryHeader
-        displayName={displayName}
-        makerspace={bootstrap?.makerspace}
-        modules={modules}
-        tenantPath={tenantPath}
-        listedCount={inventoryQuery.data?.count}
-      />
+  // A catalogue refresh must not hide search or an already-composed request.
+  const state = inventoryQuery.isLoading ? { status: "loading" as const } : inventoryQuery.isError
+    ? { status: "error" as const, error: "Couldn't load inventory. Try again.", onRetry: () => { void inventoryQuery.refetch(); } } : { status: "ready" as const };
+  const body = <div className="grid min-w-0 gap-6">
+    <CatalogSidebar categories={categories} view={view} onSelect={selectView} />
+    <Card><form className="flex flex-wrap items-end gap-3" onSubmit={submitSearch}>
+      <Field className="min-w-0 flex-1" label="Search inventory"><input className="desk-input w-full bg-success text-on-success placeholder:text-on-success" placeholder="Search tools, machines, kits, or materials" value={searchInput} onChange={event => setSearchInput(event.target.value)} /></Field>
+      <button className="desk-button-brand" type="submit">Search</button>
+      {query ? <button className="desk-button" type="button" onClick={() => { setSearchInput(""); setQuery(""); setPage(1); }}>Clear</button> : null}
+    </form></Card>
+    <QueryContent state={state} isEmpty={!products.length} empty={{ message: query ? "No matching items. Try another search." : "No public items yet. Check back soon.", action: query ? { label: "Clear search", onClick: () => { setSearchInput(""); setQuery(""); setPage(1); } } : undefined }}>
+    {/* Columns come from the space the catalogue actually has (it shares the row with the request panel
+      at xl, and with the request column on the desk kiosk), not from the viewport width. */}
+    <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,15rem),1fr))] gap-4">{products.map(product => <ProductCard key={product.id} product={product}
+      quantity={cart[product.id]?.quantity ?? 0} onDecrement={() => decrementItem(product)} onIncrement={() => incrementItem(product)}
+      onOpenDetails={() => setSelectedProduct(product)} detailUrl={tenantPath(`items/${product.id}`)} />)}</div>
+    <Pagination page={page} totalPages={pageCount} count={inventoryQuery.data?.count} pageSize={PAGE_SIZE} onChange={setPage} disabled={inventoryQuery.isFetching} />
+    </QueryContent>
+  </div>;
+  const request = <PublicRequestPanel items={selectedItems} makerspaceSlug={makerspaceSlug} onClear={clearCart} disabled={!requestEnabled} requestAccess={bootstrap?.makerspace.request_access}
+    activeTab={requestTab} onActiveTabChange={setRequestTab} draft={requestDraft} features={bootstrap?.features} />;
+  const totalItems = selectedItems.reduce((total, item) => total + item.quantity, 0);
+  const aside: PublicActionCardProps = { title: "Your request", form: request, state: "open", mobileBar: { summary: `Request · ${plural(totalItems, "item")}`, label: "Review request", onOpen: () => setRequestTab("borrow"),
+    secondary: requestEnabled ? { label: "Scan a tool", onOpen: () => setRequestTab("scan") } : undefined } };
+  // A composed public page owns its palette; the standalone catalogue and desk still apply tenant branding.
+  return <div style={inheritBranding ? undefined : brandStyle}>
+    {!embedded ? <PageMetadata title={displayName} description={bootstrap?.branding.welcome_body || `Browse public tools and equipment at ${displayName}.`} path={tenantPath()} image={bootstrap?.makerspace.cover_image_url || bootstrap?.makerspace.logo_url} siteName={displayName} /> : null}
+    {embedded ? embedded({ body, request, aside })
+      : <PublicLayout {...publicPageChrome(makerspaceSlug, displayName, tenantPath, bootstrap)} width="wide" state={{ status: "ready" }}
+        header={{ title: `Borrow tools from ${displayName}`, subtitle: `${plural(inventoryQuery.data?.count ?? 0, "tool")} and kits`, primary: { label: "Member area", href: tenantPath("member") } }}
+        isEmpty={false} aside={aside}>
+        {body}
+      </PublicLayout>}
 
-      <section className="mx-auto grid max-w-screen-2xl grid-cols-1 gap-5 px-5 py-6 sm:px-8 lg:grid-cols-[200px_minmax(0,1fr)_360px]" id="main-content" tabIndex={-1}>
-        <CatalogSidebar
-          categories={categories}
-          view={view}
-          onSelect={selectView}
-        />
-
-        <div className="min-w-0 space-y-4">
-          <Card>
-            <form className="flex flex-col gap-3 sm:flex-row" onSubmit={submitSearch}>
-              <Field className="min-w-0 flex-1" label="Search inventory">
-                <input
-                  className="desk-input min-w-0 flex-1"
-                  placeholder="Search tools, machines, kits, or materials"
-                  value={searchInput}
-                  onChange={(event) => setSearchInput(event.target.value)}
-                />
-              </Field>
-              <button className="desk-button-secondary" type="submit">
-                Search
-              </button>
-              {query ? (
-                <button
-                  className="desk-button"
-                  type="button"
-                  onClick={() => {
-                    setSearchInput("");
-                    setQuery("");
-                    setPage(1);
-                  }}
-                >
-                  Clear
-                </button>
-              ) : null}
-            </form>
-          </Card>
-
-          {inventoryQuery.isLoading ? <LoadingState /> : null}
-
-          {inventoryQuery.isError ? (
-            <ErrorState error={inventoryQuery.error} />
-          ) : null}
-
-          {inventoryQuery.data && products.length === 0 ? (
-            <EmptyState query={query} />
-          ) : null}
-
-          {products.length > 0 ? (
-            <>
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-                {products.map((product) => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    quantity={cart[product.id]?.quantity ?? 0}
-                    onDecrement={() => decrementItem(product)}
-                    onIncrement={() => incrementItem(product)}
-                    onOpenDetails={() => setSelectedProduct(product)}
-                    detailUrl={tenantPath(`items/${product.id}`)}
-                  />
-                ))}
-              </div>
-              <div className="desk-panel flex flex-wrap items-center justify-between gap-3 p-3">
-                <p className="min-w-0 font-mono text-sm text-muted">
-                  Page {page} of {pageCount}
-                  {inventoryQuery.isFetching ? " loading..." : ""}
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    className="desk-button"
-                    disabled={!inventoryQuery.data?.previous || page === 1}
-                    type="button"
-                    onClick={() => setPage((current) => Math.max(1, current - 1))}
-                  >
-                    Previous
-                  </button>
-                  <button
-                    className="desk-button"
-                    disabled={!inventoryQuery.data?.next}
-                    type="button"
-                    onClick={() =>
-                      setPage((current) => Math.min(pageCount, current + 1))
-                    }
-                  >
-                    Next
-                  </button>
-                </div>
-              </div>
-            </>
-          ) : null}
-        </div>
-
-        <div className="min-w-0">
-          <PublicRequestPanel
-            items={selectedItems}
-            makerspaceSlug={makerspaceSlug}
-            onClear={clearCart}
-            disabled={!requestEnabled}
-            requestAccess={bootstrap?.makerspace.request_access}
-          />
-        </div>
-      </section>
-
-      <ProductQuickViewModal
-        product={selectedProduct}
-        open={Boolean(selectedProduct)}
-        onClose={() => setSelectedProduct(null)}
-      />
-      <SiteFooter branding={bootstrap?.branding} />
-    </main>
-  );
+    <ProductQuickViewModal product={selectedProduct} open={Boolean(selectedProduct)} onClose={() => setSelectedProduct(null)}
+      makerspaceId={bootstrap?.makerspace.id} features={bootstrap?.features} />
+  </div>;
 }

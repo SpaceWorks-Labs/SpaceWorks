@@ -1,5 +1,8 @@
+import { DataTable, StatusPill } from "../../../components/ui";
+import { STICKY_FIRST_COLUMN } from "../matrixColumns";
+import { SelectedReportPanel as Panel } from "./OperationsReportSelection";
 import { BarChart, DataState, PieChart } from "./OperationsReportsParts";
-import { Panel, useStaffGet } from "./shared";
+import { useStaffGet } from "./shared";
 
 type PaymentReportRow = {
   makerspace_id?: number;
@@ -32,7 +35,7 @@ export function OperationsReportsPayments({ analyticsBase, scopeKey, startDate, 
   return (
     <Panel title="Payment reconciliation">
       <p className="mb-3 text-xs text-muted">Private totals are grouped by makerspace, currency, subject, and status. Pending payments remain visible across date ranges.</p>
-      <DataState loading={report.isLoading} error={report.error} empty={!rows.length}>
+      <DataState loading={report.isLoading} error={report.error} onRetry={() => void report.refetch()} empty={!rows.length}>
         {scopeKey === "all" ? (
           <div className="space-y-5">
             {paymentGroups(rows).map(([makerspaceId, group]) => (
@@ -71,31 +74,18 @@ function PaymentChart({ rows }: { rows: PaymentReportRow[] }) {
 }
 
 function PaymentTable({ rows }: { rows: PaymentReportRow[] }) {
-  return (
-    <div className="mt-4 overflow-x-auto rounded-md border border-line">
-      <table className="w-full text-left text-sm">
-        <thead className="eyebrow bg-surface"><tr>
-          <th scope="col" className="px-3 py-2">Currency</th><th scope="col" className="px-3 py-2">Subject</th>
-          <th scope="col" className="px-3 py-2">Status</th><th scope="col" className="px-3 py-2">Method</th>
-          <th scope="col" className="px-3 py-2">Payments</th>
-          <th scope="col" className="px-3 py-2">Total</th><th scope="col" className="px-3 py-2">Outstanding</th>
-          <th scope="col" className="px-3 py-2">Refunded</th>
-        </tr></thead>
-        <tbody>{rows.map((row, index) => (
-          <tr className="border-t border-line" key={`${row.currency}-${row.subject_type}-${row.status}-${row.settlement_method}-${index}`}>
-            <td className="px-3 py-2 uppercase">{row.currency}</td>
-            <td className="px-3 py-2">{label(row.subject_type)}</td>
-            <td className="px-3 py-2">{label(row.status)}</td>
-            <td className="px-3 py-2">{row.settlement_method ? label(row.settlement_method) : "—"}</td>
-            <td className="px-3 py-2 font-mono">{row.payment_count}</td>
-            <td className="px-3 py-2 font-mono">{money(row.amount_total, row.currency)}</td>
-            <td className="px-3 py-2 font-mono font-semibold">{money(row.outstanding_amount, row.currency)}</td>
-            <td className="px-3 py-2 font-mono">{money(row.refunded_amount, row.currency)}</td>
-          </tr>
-        ))}</tbody>
-      </table>
-    </div>
-  );
+  return <div className="mt-4 min-w-0"><DataTable<PaymentReportRow & { id: number }> data={rows.map((row, id) => ({ ...row, id }))}
+    columns={[
+      { key: "currency", header: "Currency", className: STICKY_FIRST_COLUMN, render: row => row.currency.toUpperCase() },
+      { key: "subject_type", header: "Subject", render: row => label(row.subject_type) },
+      { key: "status", header: "Status", render: row => <StatusPill label={label(row.status)}
+        tone={row.status === "paid" ? "success" : row.status === "pending" ? "warn" : "neutral"} /> },
+      { key: "settlement_method", header: "Method", render: row => row.settlement_method ? label(row.settlement_method) : "—" },
+      { key: "payment_count", header: "Payments", className: "tabular-nums md:text-right" },
+      ...([ ["amount_total", "Total"], ["outstanding_amount", "Outstanding"], ["refunded_amount", "Refunded"] ] as const).map(([key, header]) => ({
+        key, header, className: "tabular-nums md:text-right", render: (row: PaymentReportRow) => money(row[key], row.currency),
+      })),
+    ]} /></div>;
 }
 
 function methodSlices(rows: PaymentReportRow[]) {

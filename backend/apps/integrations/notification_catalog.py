@@ -24,41 +24,71 @@ FEATURE_EVENTS = {
         "submitted", "accepted", "rejected", "issued", "partially_returned",
         "returned", "closed_with_issue", "return_reminder",
         "deposit_raised", "late_fee_raised",
-        "overdue_escalated", "back_available",
+        # Lane L15: rental, damage and lost charges, and staff fee waivers.
+        "rental_raised", "damage_charged", "lost_charged", "fees_waived",
+        "overdue_escalated", "back_available", "problem_report.filed",
+        # Lane L12: withdrawn and expired requests, and a waitlist offer.
+        "cancelled", "expired", "waitlist_offer",
+        # Lane L16: an item problem reported, a repair quote awaiting approval.
+        "issue_reported", "repair_quote_pending",
     ),
     F.PRINTING: (
         "submitted", "accepted", "started", "rejected", "completed", "failed",
-        "collected", "reprinted",
+        "collected", "reprinted", "next", "cancelled",
+        # Lane L12, the uniform job flow (#141): review, quotes, re-queue, pickup.
+        "changes_requested", "resubmitted", "quoted", "quote_reminder", "quote_approved", "quote_declined",
+        "quote_expired", "requeued", "pickup_reminder", "uncollected", "no_show_flagged",
+        # Lane L23: a machine session stopped itself (max length, check-out, closing).
+        "session_auto_stopped",
     ),
     F.EVENTS: (
         "published", "cancelled", "completed", "registration_created",
         "registration_pending_approval", "registration_waitlisted",
         "registration_approved", "registration_rejected",
-        "registration_cancelled", "registration_promoted", "registration_attended",
+        "registration_cancelled", "registration_restored", "registration_promoted", "registration_attended",
         "series_published", "series_cancelled", "series_completed",
         "series_generation_failed",
         "reminder",
     ),
     F.BOOKINGS: (
-        "created", "confirmed", "rejected", "cancelled", "completed", "no_show",
+        "created", "confirmed", "rejected", "cancelled", "restored", "completed", "no_show",
         "reminder",
+        # Lane L16: a room problem reported, a repair quote awaiting approval.
+        "issue_reported", "repair_quote_pending",
     ),
     F.MAINTENANCE: (
         "schedule_created", "schedule_updated", "schedule_deactivated", "logged",
         "schedule_completed",
         "due_soon", "overdue",
+        # Lane L16: a machine problem reported, a repair quote awaiting approval, and the
+        # technician send (only its WhatsApp template binding reads this key).
+        "issue_reported", "repair_quote_pending", "repair_dispatched",
     ),
     # request_pending is the existing application-received event; keep its stable key.
     F.MEMBERS: ("request_pending", "member_joined", "approved", "declined",
                 "renewal_due", "lapsed", "renewal_failed", "awaiting_payment", "payment_due",
-                "renewed", "grace_started", "cancelled", "broadcast"),
-    F.API_ACCESS: ("api_key_request_resolved",),
+                "renewed", "grace_started", "cancelled", "broadcast", "joined", "verified", "invitation", "vouched"),
+    F.API_ACCESS: ("api_key_request_resolved", "subdomain_request_resolved", "email.failed", "scheduled_report",
+                   "space_restore_completed", "space_restore_failed"),
     F.DEVICES: ("offline", "recovered"),
     F.PAYMENTS: ("charge_raised", "payment_due_soon", "payment_due_today", "payment_overdue",
-                 "payment_received", "refund_issued", "payment_failed"),
-    F.STOCK: ("low_stock", "procurement_received"),
+                 "payment_received", "refund_issued", "payment_failed", "document_issued",
+                 "refund_due_opened", "refund_request_received", "refund_request_approved",
+                 "refund_request_declined", "paid_claim_received", "paid_claim_confirmed",
+                 "paid_claim_rejected", "settlement_awaiting_confirmation", "capture_flagged",
+                 "dispute_opened"),
+    F.STOCK: ("low_stock", "procurement_received", "scheduled", "completed", "to_buy_created"),
     F.CERTIFICATIONS: ("granted", "revoked", "expiring", "expired"),
 }
+from .notification_catalog_events_programme import PROGRAMME_EVENTS
+FEATURE_EVENTS[F.EVENTS] += PROGRAMME_EVENTS
+# Release 2 L2 (X37): staff-grant invitations offered on the invitee's own chat channels.
+FEATURE_EVENTS[F.EVENTS] += ("invitation",)
+FEATURE_EVENTS[F.BOOKINGS] += ("invitation",)
+# Release 2 L4 (X29): the member's per-space erasure decision.
+FEATURE_EVENTS[F.MEMBERS] += ("erasure_approved", "erasure_rejected")
+# Release 2 L11: a self-host move's status, told to the space's Space Managers.
+FEATURE_EVENTS[F.API_ACCESS] += ("selfhost_move_status",)
 
 # Exact default on/off per (feature, channel). Preserves today's behavior: hardware/printing
 # email + hardware Telegram on; bookings email (Part J seam) + bookings Telegram on; Slack/
@@ -82,7 +112,14 @@ DEFAULT_CHANNEL_STATE = {
 
 # Hardware/printing already emit directly; their matrix inbox is explicitly opt-in.
 for _feature, _channels in DEFAULT_CHANNEL_STATE.items():
+    _channels[C.SMS] = False
+    _channels[C.WHATSAPP] = False
     _channels[C.IN_APP] = _feature not in {F.HARDWARE_REQUESTS, F.PRINTING}
+    _channels[C.WHATSAPP] = False
+
+
+from .notification_catalog_p2_presence import register as register_presence
+register_presence(FEATURE_EVENTS, DEFAULT_CHANNEL_STATE)
 
 
 def default_state(feature, channel):

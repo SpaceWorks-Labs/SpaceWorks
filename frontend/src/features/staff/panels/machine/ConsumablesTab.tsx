@@ -1,3 +1,5 @@
+import { ListRow, StatusPill, OverflowMenu } from "../../../../components/ui";
+import { MachineTabContent } from "./MachineTabContent";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -66,11 +68,7 @@ export function ConsumablesTab({ machineId, canEdit, canOperate }: {
   return (
     <section className="grid gap-3">
       <h3 className="title-section">Consumables</h3>
-      {consumables.isLoading ? <p className="text-sm text-muted">Loading consumables...</p> : null}
-      {consumables.error instanceof Error ? <p className="text-sm text-danger">{consumables.error.message}</p> : null}
-      {!consumables.isLoading && !consumables.error && !items.length ? (
-        <p className="text-sm text-muted">No consumables linked.</p>
-      ) : null}
+      <MachineTabContent query={consumables} resource="consumables" empty={!items.length} message="No consumables linked. Add the first consumable.">
       <div className="grid gap-2">
         {items.map((item) => (
           <ConsumableRow key={item.id} item={item} machineId={machineId} canOperate={canOperate}
@@ -78,6 +76,7 @@ export function ConsumablesTab({ machineId, canEdit, canOperate }: {
             onLogged={refresh} />
         ))}
       </div>
+      </MachineTabContent>
       {canEdit ? (
         <form className="grid gap-2 rounded-md border border-line bg-bg p-3"
           onSubmit={(event) => { event.preventDefault(); link.mutate(); }}>
@@ -147,14 +146,9 @@ function ConsumableRow({ item, machineId, canOperate, canEdit, removing, onRemov
   });
 
   return (
-    <div className="rounded-md border border-line bg-bg p-3 text-sm">
-      <div className="flex flex-wrap items-center gap-2">
-        <strong className="text-ink">{item.product_name ?? item.label}</strong>
-        <span className="font-mono text-muted">{item.measurement === "count" ? `${item.available ?? 0} available` : `${item.remaining ?? "0.00"} g remaining`}</span>
-        {isLow ? <span className="rounded-md bg-warn/15 px-2 py-0.5 text-xs font-medium text-warn-ink">Low</span> : null}
-        {canEdit ? <button className="desk-button-danger ml-auto" type="button" disabled={removing} onClick={onRemove}>Unlink</button> : null}
-      </div>
-      {item.note ? <p className="mt-1 text-muted">{item.note}</p> : null}
+    <div className="grid gap-3">
+      <ListRow title={item.product_name ?? item.label} meta={<>{item.measurement === "count" ? `${item.available ?? 0} available` : `${item.remaining ?? "0.00"} g remaining`}{item.note ? <span className="block">{item.note}</span> : null}</>}
+        right={<div className="flex flex-wrap gap-2">{isLow ? <StatusPill label="Low" tone="warn" /> : null}{canEdit ? <OverflowMenu actions={[{ label: "Unlink", tone: "danger", disabled: removing, disabledReason: "Wait for the current change to finish.", onClick: onRemove }]} /> : null}</div>} />
       {canOperate ? (
         <form className="mt-2 flex flex-wrap items-end gap-2" onSubmit={(event) => { event.preventDefault(); log.mutate(); }}>
           <label className="eyebrow grid gap-1">Use ({item.measurement})

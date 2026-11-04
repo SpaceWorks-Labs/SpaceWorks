@@ -38,9 +38,19 @@ PUBLIC_API_AUTH_PARAMETERS = [
 PUBLIC_REQUEST_SUBMIT_EXAMPLE = OpenApiExample(
     "Submit public equipment request",
     value={
-        "contact_name": "Shaan Shoukath",
-        "contact_email": "shaans@example.com",
+        "requested_for": "Electronics workshop diagnostics",
+        "items": [{"product_id": 42, "quantity": 2}],
+    },
+    request_only=True,
+)
+
+PUBLIC_REQUEST_CONTACT_SUBMIT_EXAMPLE = OpenApiExample(
+    "Submit without an account (makerspace without member accounts)",
+    value={
+        "contact_name": "Ada Lovelace",
         "contact_phone": "+919876543210",
+        "contact_email": "ada@example.com",
+        "email_code": "123456",
         "requested_for": "Electronics workshop diagnostics",
         "items": [{"product_id": 42, "quantity": 2}],
     },
@@ -163,7 +173,7 @@ PUBLIC_TOOL_CHECKOUT_EXAMPLE = OpenApiExample(
 )
 
 LOGIN_EXAMPLE = OpenApiExample(
-    "Staff login",
-    value={"username": "admin", "password": "secret-password", "surface": "staff"},
+    "Person login",
+    value={"username": "ada", "password": "secret-password"},
     request_only=True,
 )

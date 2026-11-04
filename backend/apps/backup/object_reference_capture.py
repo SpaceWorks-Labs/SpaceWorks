@@ -1,6 +1,9 @@
 """Snapshot enumeration for every typed Lane E object-reference surface."""
 
 from django.apps import apps
+from django.utils import timezone
+
+from .object_reference_retention import RetentionProjection, adapter_for
 
 from apps.backup.archive_objects import module_for_model
 from apps.backup.main_projection_registry import RowDisposition, table_rules
@@ -8,7 +11,6 @@ from apps.backup.object_ownership import (
     MAIN_COMPONENT,
     ObjectOwnershipPlan,
     ObjectReference,
-    slice_component,
 )
 from apps.backup.object_ownership_registry import (
     AUDIT_META_OBJECT_VARIANTS,
@@ -16,11 +18,11 @@ from apps.backup.object_ownership_registry import (
     ReferencePolicy,
     validate_object_reference_registry,
 )
-from apps.backup.recipient_selection import BackupBuildError
+from apps.backup.build_errors import BackupBuildError
 
 
-def build_object_ownership_plan(sovereign_makerspace_ids):
-    sovereign = frozenset(int(value) for value in sovereign_makerspace_ids)
+def build_object_ownership_plan():
+    capture_at = timezone.now()
     rules_by_model = {rule.model._meta.label: rule for rule in table_rules()}
     references = []
     for rule in validate_object_reference_registry():
@@ -34,15 +36,13 @@ def build_object_ownership_plan(sovereign_makerspace_ids):
             query_fields.append(owner_lookup)
         if rule.coordination_path and rule.coordination_path not in query_fields:
             query_fields.append(rule.coordination_path)
-        if rule.retention_aware:
-            query_fields.extend(
-                [
-                    "object_retention_state__status",
-                    "object_retention_state__object_expired_at",
-                    "object_retention_state__expired_size_bytes",
-                ]
-            )
+        adapter = adapter_for(rule)
+        if adapter:
+            query_fields.extend(adapter.query_fields)
+        query_fields = list(dict.fromkeys(query_fields))
         rows = model._base_manager.exclude(**{rule.field_name: ""}).values(*query_fields)
+        if rule.model_label in {"events.EventCertificateArtwork", "events.EventCertificateLibraryArtwork"}:
+            rows = rows.filter(promoted_at__isnull=False)
         for row in rows.iterator(chunk_size=500):
             # A NULL key column survives the exclude() above -- Django keeps NULL rows
             # out of an `exclude(field="")` -- and str(None) would enter the closure as
@@ -59,18 +59,12 @@ def build_object_ownership_plan(sovereign_makerspace_ids):
             if bucket not in {"private", "public_image"}:
                 raise BackupBuildError("An object reference has an unsupported bucket kind.")
             owner_id = row.get(owner_lookup) if owner_lookup else None
-            component = _component_for(table_rule, owner_id, sovereign)
-            if rule.policy == ReferencePolicy.COORDINATION_ONLY:
-                component = None
+            component = None if rule.policy == ReferencePolicy.COORDINATION_ONLY else MAIN_COMPONENT
             coordination_id = row.get(rule.coordination_path) if rule.coordination_path else None
-            retention_state = row.get("object_retention_state__status") or "live"
-            if retention_state in {"expiring", "cleaning"}:
-                raise BackupBuildError(
-                    "Evidence expiry or cleanup is in progress; retry archive capture later."
-                )
-            expired_at = row.get("object_retention_state__object_expired_at")
-            if retention_state == "expired" and expired_at is None:
-                raise BackupBuildError("Expired evidence lacks terminal state.")
+            retention = adapter.project(row, capture_at) if adapter else RetentionProjection()
+            if not retention.capture:
+                continue
+            expired_at = retention.object_expired_at
             references.append(ObjectReference(
                 bucket_kind=str(bucket), object_key=key,
                 site=f"{rule.model_label}:{row['pk']}:{rule.field_name}",
@@ -83,14 +77,16 @@ def build_object_ownership_plan(sovereign_makerspace_ids):
                     else (rule.coordination_reason if coordination_id else "")
                 ),
                 coordination_makerspace_id=coordination_id,
-                retention_state=retention_state,
+                retention_state=retention.retention_state,
                 object_expired_at=(expired_at.isoformat() if expired_at else ""),
-                expired_size_bytes=row.get(
-                    "object_retention_state__expired_size_bytes"
-                ),
+                expired_size_bytes=retention.expired_size_bytes,
+                expected_size_bytes=retention.expected_size_bytes,
+                expected_sha256=retention.expected_sha256,
             ))
     references.extend(_audit_meta_references())
-    return ObjectOwnershipPlan(references, sovereign)
+    from .object_reference_certificates import certificate_snapshot_references
+    references.extend(certificate_snapshot_references())
+    return ObjectOwnershipPlan(references)
 
 
 def _owner_lookup(table_rule):
@@ -98,15 +94,6 @@ def _owner_lookup(table_rule):
         return None
     path = table_rule.predicate.any_paths[0]
     return path if path in {"pk", "id"} else f"{path}_id"
-
-
-def _component_for(table_rule, owner_id, sovereign):
-    if (
-        table_rule.disposition == RowDisposition.COPY_TO_SLICE
-        and owner_id in sovereign
-    ):
-        return slice_component(owner_id)
-    return MAIN_COMPONENT
 
 
 def _audit_meta_references():

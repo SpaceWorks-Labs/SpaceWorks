@@ -28,27 +28,28 @@ def _audit(machine, actor, action, meta=None):
 
 
 @transaction.atomic
-def set_status(machine, actor, status):
+def set_status(machine, actor, status, *, reason="", expected_back_at=None):
     if status not in Machine.Status.values:
         raise ValidationError({"status": "Invalid machine status."})
     _retired(machine)
     machine = Machine.objects.select_for_update().get(pk=machine.pk)
     _retired(machine)
-    old_status = machine.status
-    machine.status = status
-    machine.save(update_fields=["status", "updated_at"])
-    _audit(machine, actor, "machine.status_changed", {"old": old_status, "new": status})
+    from .status_tracking import change_status
+    change_status(machine, status, source="manual", actor=actor, reason=reason, expected_back_at=expected_back_at)
     return machine
 
 
 @transaction.atomic
-def log_usage(machine, actor, hours, note=""):
+def log_usage(machine, actor, hours, note="", *, member=None, started_at=None):
     _retired(machine)
     if hours <= 0:
         raise ValidationError({"hours": "Hours must be greater than zero."})
     machine = Machine.objects.select_for_update().get(pk=machine.pk)
     _retired(machine)
+    from .usage_attribution import validate_attribution
+    member = validate_attribution(machine, member, started_at)
     entry = MachineUsageEntry.objects.create(
+        member=member, started_at=started_at,
         machine=machine,
         hours=hours,
         source=MachineUsageEntry.Source.MANUAL,
@@ -165,8 +166,8 @@ def retire_machine(machine, actor):
     machine = Machine.objects.select_for_update().get(pk=machine.pk)
     old_status = machine.status
     machine.is_active = False
-    machine.status = Machine.Status.OFFLINE
-    machine.save(update_fields=["is_active", "status", "updated_at"])
+    from .status_tracking import change_status
+    change_status(machine, Machine.Status.OFFLINE, source="retire", actor=actor, extra_fields=("is_active",))
     _audit(machine, actor, "machine.retired", {"old_status": old_status})
     return machine
 

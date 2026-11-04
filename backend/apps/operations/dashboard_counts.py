@@ -50,6 +50,11 @@ def build_dashboard(
     revoking other granted actions.
     """
     from apps.operations import views_dashboard
+    from .dashboard_handover import handover_home, queue_only_dashboard
+    from .dashboard_widgets import build_widgets
+
+    if actor is not None and rbac.is_handout_only(actor, makerspace.pk):
+        return queue_only_dashboard(actor, makerspace)
 
     def scope(queryset, field="makerspace_id"):
         return rbac.scope_by_makerspace(actor, queryset, makerspace_field=field) if actor is not None else queryset
@@ -71,7 +76,7 @@ def build_dashboard(
         counts = {
             key: 0
             for key in DashboardSerializer().fields
-            if key != "scope_mode"
+            if key not in {"scope_mode", "widgets", "queue_tiles"}
         }
         counts["scope_mode"] = "full"
         counts["outstanding_by_currency"] = {}
@@ -183,8 +188,10 @@ def build_dashboard(
             warranty_expires_on__isnull=False,
             warranty_expires_on__lte=today + timedelta(days=30),
         ))
-        loans_on = not restricted and include_hardware and feature_enabled(makerspace, "loans.enabled")
-        machines_on = include_machines and module_enabled(makerspace, "machines")
+        # Each host kind follows its own parent's warranty switch (#97, C-9).
+        loans_on = (not restricted and include_hardware and feature_enabled(makerspace, "loans.enabled")
+                    and feature_enabled(makerspace, "inventory.warranty"))
+        machines_on = include_machines and feature_enabled(makerspace, "machines.warranty")
         warranties = warranties.filter(
             (Q(asset__isnull=False) if loans_on else Q(pk__in=[]))
             | (Q(machine__isnull=False) if machines_on else Q(pk__in=[]))
@@ -209,7 +216,7 @@ def build_dashboard(
         counts["warranty_expiring"] = warranties.count()
     except Exception as exc:
         logger.error("Dashboard aggregation failed", extra={"makerspace_id": makerspace.pk, "error_type": type(exc).__name__})
-    if include_machines and module_enabled(makerspace, "maintenance"):
+    if include_machines and feature_enabled(makerspace, "machines.maintenance"):
         try:
             from apps.maintenance.models import MaintenanceSchedule
 
@@ -257,4 +264,6 @@ def build_dashboard(
             counts.update(programme_counts(makerspace, events=include_events, bookings=include_bookings, actor=actor))
         except Exception as exc:
             logger.error("Dashboard programme aggregation failed", extra={"makerspace_id": makerspace.pk, "error_type": type(exc).__name__})
+    counts["widgets"] = build_widgets(actor, makerspace) if actor is not None else []
+    counts["queue_tiles"] = handover_home(actor, makerspace) if actor is not None else {}
     return counts

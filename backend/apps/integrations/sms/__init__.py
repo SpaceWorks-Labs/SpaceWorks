@@ -13,11 +13,11 @@ concern with separate credentials.
 
 import logging
 
-from apps.integrations.sms.base import SmsDeliveryError, SmsProvider
+from apps.integrations.sms.base import SmsProvider
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["SmsDeliveryError", "SmsProvider", "get_sms_provider", "sms_configured", "send_sms"]
+__all__ = ["SmsProvider", "get_sms_provider", "sms_configured", "send_sms"]
 
 
 def _settings_row():
@@ -54,13 +54,16 @@ def sms_configured() -> bool:
 
 def send_sms(*, to: str, body: str) -> bool:
     """Best-effort send. False when SMS is off or the vendor rejected the message."""
-    provider = get_sms_provider()
-    if provider is None:
-        return False
+    from apps.integrations.models_tracking import SmsSendLog
+
+    status = "failed"
     try:
-        return bool(provider.send(to=to, body=body))
-    except Exception:
-        # A provider that raises is a bug in that provider; never let it reach a
-        # request flow. The caller's challenge row is already committed.
-        logger.exception("sms_send_raised", extra={"provider": provider.key})
-        return False
+        provider = get_sms_provider()
+        if provider is None:
+            status = "skipped"
+        else:
+            status = "sent" if provider.send(to=to, body=body) else "failed"
+    except Exception as exc:
+        logger.warning("sms_send_raised", extra={"error_class": type(exc).__name__})
+    SmsSendLog.objects.create(purpose="authentication", provider_source="platform", status=status)
+    return status == "sent"

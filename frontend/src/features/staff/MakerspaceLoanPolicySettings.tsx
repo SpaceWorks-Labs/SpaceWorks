@@ -1,3 +1,6 @@
+import { SettingsQueryState } from "./SettingsQueryState";
+import { SettingsEditorActions } from "./SettingsEditorActions";
+import { SettingsRow } from "../../components/ui";
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -41,9 +44,9 @@ export function MakerspaceLoanPolicySettings({ makerspaceId }: { makerspaceId: n
       client.invalidateQueries({ queryKey: ["staff", "makerspaces"] }),
     ]),
   });
-  if (query.error) return <p role="alert" className="text-danger">{query.error.message}</p>;
-  if (!form) return <p role="status" className="text-muted">Loading loan policy...</p>;
-  return <form className="mt-5 grid gap-3 rounded-md border border-line p-4" onSubmit={(event) => {
+  if (query.error) return <SettingsQueryState query={query} resource="loan policy" />;
+  if (!form) return <SettingsQueryState query={query} resource="loan policy" />;
+  return <SettingsQueryState query={query} resource="loan policy"><SettingsRow label="Loan policy" helper="Enable Loan renewals and Borrow limits in Features to apply those rules. Renewals are refused for lapsed or restricted borrowers and when another borrower is waiting."><form className="@container mt-5 grid gap-3 rounded-md border border-line p-4" onSubmit={(event) => {
     event.preventDefault();
     const parts = offsets.trim() ? offsets.split(",").map((part) => part.trim()) : [];
     const numbers = parts.map(Number);
@@ -54,21 +57,21 @@ export function MakerspaceLoanPolicySettings({ makerspaceId }: { makerspaceId: n
     setProblem("");
     save.mutate({ ...form, loan_reminder_offsets_hours: numbers });
   }}>
-    <h4 className="font-semibold text-ink">Loan policy</h4>
-    <p className="text-sm text-muted">Enable Loan renewals and Borrow limits in Features to apply those rules. Renewals are refused for lapsed or restricted borrowers and when another borrower is waiting.</p>
-    <div className="grid gap-3 sm:grid-cols-2">
+
+
+    <div className="grid gap-3 @md:grid-cols-2">
       {NUMBERS.map(([field, label, min, max]) => <Field key={field} label={label}>
         <input className="desk-input" type="number" required min={min} max={max} step="1" value={form[field]} disabled={save.isPending} onChange={(event) => setForm({ ...form, [field]: Number(event.target.value) })} />
       </Field>)}
-      <Field label="Renewal mode"><select className="desk-input" value={form.loan_renewal_mode} disabled={save.isPending} onChange={(event) => setForm({ ...form, loan_renewal_mode: event.target.value as LoanPolicy["loan_renewal_mode"] })}>
+      <Field label="Renewal mode"><select className="desk-input max-w-full" value={form.loan_renewal_mode} disabled={save.isPending} onChange={(event) => setForm({ ...form, loan_renewal_mode: event.target.value as LoanPolicy["loan_renewal_mode"] })}>
         <option value="off">Off</option><option value="auto">Automatic within policy</option>
       </select></Field>
       <Field label="Reminder offsets in hours" hint="Negative = before due; 0 = due; positive = overdue. Leave empty to disable borrower reminders.">
         <input className="desk-input" value={offsets} disabled={save.isPending} onChange={(event) => setOffsets(event.target.value)} />
       </Field>
     </div>
-    <div><button className="desk-button-primary" type="submit" disabled={save.isPending}>{save.isPending ? "Saving..." : "Save loan policy"}</button></div>
+    <div><SettingsEditorActions dirty={JSON.stringify(form) !== JSON.stringify(query.data) || offsets !== (query.data?.loan_reminder_offsets_hours.join(", ") ?? "0")} onDiscard={() => { setForm(query.data ?? null); setOffsets(query.data?.loan_reminder_offsets_hours.join(", ") ?? "0"); setProblem(""); }} pending={save.isPending} disabled={save.isPending} /></div>
     {problem || save.error ? <p className="text-sm text-danger" role="alert">{problem || save.error?.message}</p> : null}
     {save.isSuccess ? <p className="text-sm text-muted" role="status">Loan policy saved.</p> : null}
-  </form>;
+  </form></SettingsRow></SettingsQueryState>;
 }

@@ -1,3 +1,4 @@
+import { ConfirmDialog, ErrorBlock, SettingsActions, SettingsRow, Skeleton } from "../../components/ui";
 import { useEffect, useId, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -46,6 +47,7 @@ export function WarrantySection({ hostKind, hostId, disabled = false }: Warranty
   });
   const [form, setForm] = useState<WarrantyForm>(emptyForm);
   const [documentError, setDocumentError] = useState("");
+  const [deleteId, setDeleteId] = useState<number | null>(null);
 
   useEffect(() => {
     setForm(formFromWarranty(warranty.data ?? null));
@@ -81,7 +83,7 @@ export function WarrantySection({ hostKind, hostId, disabled = false }: Warranty
 
   const remove = useMutation({
     mutationFn: deleteWarrantyDocument,
-    onSuccess: invalidate,
+    onSuccess: () => { setDeleteId(null); invalidate(); },
   });
 
   const current = warranty.data;
@@ -104,10 +106,10 @@ export function WarrantySection({ hostKind, hostId, disabled = false }: Warranty
         <WarrantyStatusBadge status={current?.status ?? "unknown"} />
       </div>
 
-      {warranty.isLoading ? <p className="mt-2 text-xs text-muted">Loading warranty...</p> : null}
-      {warranty.error instanceof Error ? <p className="mt-2 text-xs text-danger">{warranty.error.message}</p> : null}
+      {warranty.isLoading ? <Skeleton className="mt-4 h-40" /> : null}
+      {warranty.error ? <ErrorBlock resource="warranty details" error={warranty.error} onRetry={() => { void warranty.refetch(); }} /> : null}
 
-      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+      <div className="mt-3 divide-y divide-line">
         <WarrantyInput
           label="Purchased"
           type="date"
@@ -136,14 +138,9 @@ export function WarrantySection({ hostKind, hostId, disabled = false }: Warranty
         />
       </div>
 
-      {!disabled ? (
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          <button type="button" className="desk-button-primary" disabled={save.isPending} onClick={() => save.mutate()}>
-            {save.isPending ? "Saving..." : current ? "Save warranty" : "Create warranty"}
-          </button>
-          {save.error instanceof Error ? <span className="text-xs text-danger">{save.error.message}</span> : null}
-        </div>
-      ) : null}
+      {!disabled && (!current || JSON.stringify(form) !== JSON.stringify(formFromWarranty(current))) ? <SettingsActions pending={save.isPending}
+        onDiscard={() => setForm(formFromWarranty(current ?? null))} onSave={() => save.mutate()} /> : null}
+      {save.error ? <ErrorBlock error={save.error} /> : null}
 
       <div className="mt-3 border-t border-line pt-3">
         <h5 className="title-section">Documents</h5>
@@ -152,7 +149,7 @@ export function WarrantySection({ hostKind, hostId, disabled = false }: Warranty
             {documents.map((document) => (
               <div key={document.id} className="flex min-w-0 flex-wrap items-center gap-2 rounded-md border border-line bg-surface px-2 py-1.5 text-xs">
                 <span className="min-w-0 flex-1 break-words text-ink">{document.original_filename}</span>
-                <span className="font-mono text-muted">{formatBytes(document.size_bytes)}</span>
+                <span className="tabular-nums text-muted">{formatBytes(document.size_bytes)}</span>
                 <button type="button" className="desk-button text-xs" onClick={() => openDocument(document.id)}>
                   View
                 </button>
@@ -161,9 +158,9 @@ export function WarrantySection({ hostKind, hostId, disabled = false }: Warranty
                     type="button"
                     className="desk-button-danger text-xs"
                     disabled={remove.isPending}
-                    onClick={() => remove.mutate(document.id)}
+                    onClick={() => setDeleteId(document.id)}
                   >
-                    Remove
+                    Remove…
                   </button>
                 ) : null}
               </div>
@@ -188,9 +185,9 @@ export function WarrantySection({ hostKind, hostId, disabled = false }: Warranty
                   const files = Array.from(event.target.files ?? []);
                   if (files.length) upload.mutate(files);
                 }}
-                className="block w-full max-w-full min-w-0 text-xs text-muted file:mr-3 file:rounded-lg file:border file:border-line file:bg-accent file:px-3 file:py-1.5 file:font-mono file:text-xs file:font-semibold file:text-on-accent"
+                className="block min-h-11 w-full max-w-full min-w-0 text-xs text-muted file:mr-3 file:rounded-lg file:border file:border-line file:bg-accent file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-on-accent"
               />
-              {upload.isPending ? <p className="mt-1 text-xs text-muted">Uploading...</p> : null}
+              {upload.isPending ? <p className="mt-1 text-xs text-muted">Uploading…</p> : null}
             </div>
           ) : (
             <p className="mt-2 text-xs text-muted">Save warranty details first to attach documents.</p>
@@ -199,6 +196,7 @@ export function WarrantySection({ hostKind, hostId, disabled = false }: Warranty
         {documentError ? <p className="mt-2 text-xs text-danger">{documentError}</p> : null}
         {remove.error instanceof Error ? <p className="mt-2 text-xs text-danger">{remove.error.message}</p> : null}
       </div>
+      <ConfirmDialog open={deleteId !== null} title="Remove warranty document?" message="The file will no longer be attached to this warranty." confirmLabel="Remove" tone="danger" pending={remove.isPending} onCancel={() => setDeleteId(null)} onConfirm={() => { if (deleteId !== null) remove.mutate(deleteId); }} />
     </section>
   );
 }
@@ -217,8 +215,7 @@ function WarrantyInput({
   type?: "text" | "date";
 }) {
   return (
-    <label className="grid min-w-0 gap-1 text-xs text-muted">
-      <span>{label}</span>
+    <SettingsRow label={label}>
       <input
         className="desk-input min-w-0"
         type={type}
@@ -226,7 +223,7 @@ function WarrantyInput({
         disabled={disabled}
         onChange={(event) => onChange(event.target.value)}
       />
-    </label>
+    </SettingsRow>
   );
 }
 

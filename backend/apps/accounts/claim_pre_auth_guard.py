@@ -20,10 +20,26 @@ from rest_framework.views import APIView
 # configured on claim-reachable routes. Exact class+method matching makes a new hook a
 # build failure instead of silently trusting executable pre-auth code.
 POLICY_OVERRIDE_ALLOWLIST = {
+    # Presence TV throttles only declare a scope/rate; DRF owns every hook.
+    "apps.presence.views_public.PresenceTVThrottle": set(),
+    "apps.presence.views_public.PresenceTVUserThrottle": set(),
+    # Release 2 L5: claim and pay-link throttles only declare a scope; DRF owns every hook.
+    "apps.payments.throttles_l5.PaymentClaimThrottle": set(),
+    "apps.payments.throttles_l5.PayLinkThrottle": set(),
+    # Release 2 L15: the price-preview throttle only declares a scope.
+    "apps.payments.views_pricing_quote.PricingQuoteThrottle": set(),
+    "apps.bookings.views_passes.BookingPassRenderThrottle": set(),
+    "apps.bookings.views_confirmation.BookingConfirmationThrottle": set(),
     "apps.bookings.throttles_feed.BookingFeedTokenThrottle": {"get_cache_key"},
     "apps.bookings.throttles_feed.BookingFeedIpThrottle": {"get_cache_key"},
     "apps.accounts.throttles_mfa.MFAChallengeThrottle": {"get_cache_key"},
     "apps.accounts.throttles_mfa.MFAUserThrottle": {"get_cache_key"},
+    "apps.accounts.views_reauthentication.ReauthenticationThrottle": {"get_cache_key"},
+    "apps.accounts.views_account_merge.AccountMergeStartThrottle": {"get_cache_key"},  # U-C, keyed per person
+    "apps.accounts.views_account_merge.AccountMergeProveThrottle": {"get_cache_key"},  # U-C, keyed per person
+    "apps.organizations.views_self_service.OrganizationCreationThrottle": {"get_cache_key"},
+    "apps.organizations.views_self_service.OrganizationCreationIpThrottle": {"get_cache_key"},
+    "apps.admin_api.permissions.IsActiveStaff": {"has_permission", "has_object_permission"},
     # `_authenticate_claim` is the sanctioned claim-session path added in D5. It is listed
     # deliberately: this guard exists so that a NEW method on a configured policy class is a
     # decision rather than an accident, and the claim authenticator is exactly such a decision.
@@ -33,6 +49,8 @@ POLICY_OVERRIDE_ALLOWLIST = {
     },
     "apps.accounts.throttles.DeviceLoginThrottle": {"get_cache_key"},
     "apps.accounts.throttles.DeviceLoginUserThrottle": {"get_cache_key"},
+    # Native social linking keys its budget only for device-grant POSTs.
+    "apps.accounts.throttles.NativeSocialLinkThrottle": {"get_cache_key"},
     "apps.accounts.throttles.MemberVerificationEmailThrottle": {"get_cache_key"},
     "apps.accounts.throttles.PasswordResetEmailThrottle": {"get_cache_key"},
     # Phase 8: the per-email confirm budget, kept distinct from the request budget
@@ -58,19 +76,64 @@ POLICY_OVERRIDE_ALLOWLIST = {
     "apps.events.throttles.PublicFeedbackRateThrottle": {
         "_tier", "allow_request", "get_cache_key"
     },
-    # The account-less borrow-request budgets. Both override `get_cache_key` only, to
-    # return None for an authenticated caller: they sit in `throttle_classes` beside the
-    # member throttle, and DRF applies every class on every request, so without the skip a
-    # makerspace behind one NAT would rate-limit its own signed-in members by egress IP.
+    # The account-less borrow-request budgets (#80). Both override `get_cache_key` only, to
+    # return None for an authenticated caller, so a makerspace behind one NAT never
+    # rate-limits its own signed-in staff by egress IP.
     "apps.hardware_requests.throttles.AnonymousRequestIpBurstThrottle": {"get_cache_key"},
     "apps.hardware_requests.throttles.AnonymousRequestIpHourThrottle": {"get_cache_key"},
     # The subscribable calendar feed is fetched by a calendar client with only its
     # bearer token, so the budget keys on that token rather than the caller.
     "apps.events.throttles.EventCalendarFeedTokenThrottle": {"get_cache_key"},
     "apps.events.throttles.EventCalendarFeedIpThrottle": {"get_cache_key"},
+    # Ticket renders only set a per-user scope/rate; all lifecycle methods are DRF's.
+    "apps.events.views_ticket.TicketRenderThrottle": set(),
+    # Certificate downloads share a principal-keyed render budget. The only hook
+    # selects that cache key; it never authenticates or grants claim authority.
+    "apps.events.throttles.CredentialRenderThrottle": {"get_cache_key"},
+    "apps.events.throttles.SpeakerClaimThrottle": {"get_cache_key"},
     "apps.machines.permissions.IsActiveRequester": {"has_permission"},
     "apps.accounts.views_device.IsDeviceAccessToken": {"has_permission"},
     "apps.makerspaces.throttles.MemberImagePresignThrottle": {"get_cache_key"},
+    # Events programme and saved-detail budgets only declare scope/rate.
+    "apps.accounts.saved_details.views.VaultThrottle": set(),
+    "apps.events.contributions.api_common.ProgrammeThrottle": set(),
+    "apps.events.certificates.verification.VerifyThrottle": set(),
+    "apps.events.profile_photos.views_public.PublicPhotoThrottle": set(),
+    # Keys the member command budget on the principal (or IP before login); grants nothing.
+    "apps.events.hackathons.api_base.ProgrammeCommandThrottle": {"get_cache_key"},
+}
+
+# Reviewed lifecycle overrides on claim-reachable views, keyed by the class that defines
+# them. Each listed hook only narrows access or shapes the response after DRF's own
+# authentication; a hook on any other class, or a new hook on a listed class, stays a
+# build failure.
+LIFECYCLE_OVERRIDE_ALLOWLIST = {
+    # initial: super().initial() first, then refuses API-client sessions and non-owners;
+    # handle_exception: maps key-unavailable/fenced errors to typed 503/423 responses;
+    # finalize_response: private no-store headers.
+    "apps.accounts.saved_details.views.OwnerView": {"initial", "handle_exception", "finalize_response"},
+    # handle_exception: reshapes DRF errors into the programme error envelope;
+    # finalize_response: private no-store, Vary and nosniff headers.
+    "apps.events.hackathons.api_base.ProgrammeView": {"handle_exception", "finalize_response"},
+    # finalize_response: private no-store header only.
+    "apps.events.contributions.api_common.ProgrammeView": {"finalize_response"},
+    # initial: super().initial() first, then validates the command Idempotency-Key;
+    # finalize_response: no-store and nosniff headers.
+    "apps.events.judging.api_common.PrivateView": {"initial", "finalize_response"},
+    # initial: super().initial() first, then refuses a foreign tenant/event pair and a
+    # mismatched command header; finalize_response: private no-store headers.
+    "apps.events.submissions.views_base.PrivateSubmissionView": {"initial", "finalize_response"},
+    # finalize_response: private no-store headers on the public card image.
+    "apps.events.profile_photos.views_public.PublicCardPhotoView": {"finalize_response"},
+    # finalize_response: no-store and nosniff headers on public certificate verification.
+    "apps.events.certificates.verification.CertificateVerificationView": {"finalize_response"},
+    # Event reimbursements, finance payouts and staged forms: ``initial`` calls
+    # ``super().initial()`` first and then refuses claim and API-client sessions;
+    # ``handle_exception`` maps domain errors to typed API errors; ``finalize_response``
+    # adds no-store/nosniff headers.
+    "apps.payments.event_payouts.http.PrivateView": {"handle_exception", "finalize_response"},
+    "apps.events.staged_forms.http.PrivateView": {"initial", "handle_exception", "finalize_response"},
+    "apps.event_reimbursements.http.PrivateView": {"handle_exception"},
 }
 
 POLICY_ATTRIBUTES = (
@@ -98,6 +161,8 @@ def validate_pre_auth_route(route):
     errors = []
     for method_name in framework_lifecycle_methods():
         implementation = _implementation(view_class, method_name)
+        if _allowlisted_override(view_class, method_name):
+            continue
         if implementation is not None and not _is_framework_callable(implementation):
             errors.append(
                 f"{route.view_name} overrides pre-auth lifecycle hook {method_name}"
@@ -207,6 +272,17 @@ def _implementation(view_class, name):
         None,
     )
     return None if owner is None else _function(owner.__dict__[name])
+
+
+def _allowlisted_override(view_class, name):
+    owner = next(
+        (candidate for candidate in view_class.__mro__ if name in candidate.__dict__),
+        None,
+    )
+    if owner is None:
+        return False
+    key = f"{owner.__module__}.{owner.__qualname__}"
+    return name in LIFECYCLE_OVERRIDE_ALLOWLIST.get(key, ())
 
 
 def _function(value):

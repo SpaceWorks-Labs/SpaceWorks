@@ -1,4 +1,4 @@
-import { useId, useMemo, useState } from "react";
+import { useId, useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import type { PrinterPool } from "../../../../generated/api";
@@ -8,12 +8,15 @@ import { PoolColourSelector } from "./PoolColourSelector";
 import { poolPath, poolQueryKey, type PoolUnit } from "./servicePools";
 
 type Props = {
+  visible?: boolean;
+  draft?: PoolDraft;
+  onDraftChange?: Dispatch<SetStateAction<PoolDraft>>;
   makerspaceId: number;
   machineType?: MachineType;
   existingPools: PrinterPool[];
 };
 
-type PoolDraft = {
+export type PoolDraft = {
   material: string;
   color: string;
   colorHex: string;
@@ -24,7 +27,7 @@ type PoolDraft = {
   isPublic: boolean;
 };
 
-const blankPool = (): PoolDraft => ({
+export const blankPool = (): PoolDraft => ({
   material: "",
   color: "",
   colorHex: "",
@@ -35,10 +38,12 @@ const blankPool = (): PoolDraft => ({
   isPublic: true,
 });
 
-export function ConsumablePoolCreateForm({ makerspaceId, machineType, existingPools }: Props) {
+export function ConsumablePoolCreateForm({ makerspaceId, machineType, existingPools, visible = true, draft, onDraftChange }: Props) {
   const queryClient = useQueryClient();
   const brandListId = useId();
-  const [pool, setPool] = useState(blankPool);
+  const [localPool, setLocalPool] = useState(blankPool);
+  const pool = draft ?? localPool;
+  const setPool = onDraftChange ?? setLocalPool;
   const printerType = isBuiltinPrinterType(machineType);
   const materialPresets = machineType?.capability_config?.accepted_materials;
   const brands = useMemo(() => {
@@ -74,13 +79,14 @@ export function ConsumablePoolCreateForm({ makerspaceId, machineType, existingPo
     ? `Type-wide — available to every ${machineType.name} machine.`
     : "Space-wide — available to every compatible machine in this makerspace.";
 
+  if (!visible) return null;
   return (
     <form className="grid gap-3" onSubmit={(event) => { event.preventDefault(); createPool.mutate(); }}>
       <div>
         <h4 className="title-section">{printerType ? "Add filament" : "Create consumable pool"}</h4>
         <p className="mt-1 text-sm text-muted"><span className="eyebrow mr-2">Scope</span>{scopeCopy}</p>
       </div>
-      <div className="grid gap-2 md:grid-cols-3">
+      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
         <label className="eyebrow grid gap-1">
           Material
           {materialPresets ? (

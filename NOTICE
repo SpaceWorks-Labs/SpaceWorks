@@ -26,3 +26,27 @@ Full terms:
 This program is distributed in the hope that it will be useful, but WITHOUT ANY
 WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+
+Self-hosted fonts: Gilroy (Radomir Tinkov Free Font EULA), Outfit and Unbounded
+(SIL OFL 1.1). See frontend/public/fonts/LICENSES/ for the licence texts.
+
+Backend image dependency: pillow-heif (BSD-3-Clause) decodes HEIC/HEIF uploads; its
+wheels bundle libheif and libde265 (LGPL-3.0) and x265 (GPL-2.0-or-later). Their licence
+texts ship inside the installed package (LICENSES_bundled.txt).
+
+Adapted code: the light/dark theme transition (frontend/src/lib/themeTransition.*) is adapted
+from yuyu by twilighty-abhi (https://github.com/twilighty-abhi/yuyu), AGPL-3.0. The 404 pet
+behaviour (frontend/src/components/delight/NotFoundPatch.tsx: trot, follow, wander, nap) is also
+adapted from yuyu by twilighty-abhi (https://github.com/twilighty-abhi/yuyu), AGPL-3.0.
+
+Mascot: Patch, the painted wolf (frontend/public/brand/patch/), is Space Works' own artwork, taken
+unaltered from the SpaceWorks-Design repository (mascot/, and mascot/dark/ for the dark theme's
+sticker-bordered files); the walk sprite sheets are its walk/ and walk-left/ frames laid side by side.
+
+Third-party frontend packages for maker-file previews: three, fflate (MIT), linkedom (ISC),
+@tracespace/core (MIT) and occt-import-js (LGPL-2.1, OpenCascade; loaded as a separate WebAssembly module).
+
+Backend dependencies for passkeys (WebAuthn): webauthn 3.0.1 (py_webauthn, BSD-3-Clause),
+pyOpenSSL 26.4.0 (Apache-2.0), pyasn1 0.6.5 (BSD-2-Clause) and pyasn1-modules 0.4.2 (BSD-2-Clause);
+tldextract 5.4.0 (BSD-3-Clause) with its bundled Public Suffix List snapshot (MPL-2.0, data only),
+filelock 4.2.4 (MIT) and requests-file 3.0.1 (Apache-2.0).

@@ -2,8 +2,9 @@
 
 from collections import defaultdict
 
-from django.db.models import Case, Q, Value, When
+from django.db.models import Q
 
+from apps.machines.job_order import ordering
 from apps.machines.models import MachineServiceRequest
 
 
@@ -14,15 +15,11 @@ WAITING_STATUSES = (
 
 
 def queue_positions_for(requests) -> dict[int, int]:
-    """Return positions within each bucket or pooled queue, accepted work first."""
-    targets = [row for row in requests if row.status in WAITING_STATUSES]
-    if not targets:
-        return {}
-    positions = {}
-    for key in _scope_keys(targets):
-        ranked = _waiting_for_scope(key)
-        positions.update({row.pk: index for index, row in enumerate(ranked, 1)})
-    return {row.pk: positions[row.pk] for row in targets}
+    """Return positions within each bucket or pooled queue, accepted work first.
+
+    Shares the one batched ranking query with ``queue_counts_for``: no per-scope query.
+    """
+    return {pk: counts["position"] for pk, counts in queue_counts_for(requests).items()}
 
 
 def queue_counts_for(requests) -> dict[int, dict]:
@@ -30,25 +27,23 @@ def queue_counts_for(requests) -> dict[int, dict]:
     targets = [row for row in requests if row.status in WAITING_STATUSES]
     if not targets:
         return {}
-    ranked_by_scope = _waiting_rows(_scope_keys(targets))
+    wanted = {row.pk for row in targets}
     counts = {}
-    for row in targets:
-        ranked = ranked_by_scope[_scope_key(row)]
-        accepted = 0
-        pending = 0
+    for ranked in _waiting_rows(_scope_keys(targets)).values():
+        accepted = pending = 0
         for candidate in ranked:
-            if candidate.pk == row.pk:
-                break
+            if candidate.pk in wanted:
+                own_pending = candidate.status != MachineServiceRequest.Status.ACCEPTED
+                counts[candidate.pk] = {
+                    "position": accepted + pending + 1,
+                    "approved_ahead": accepted,
+                    "awaiting_review_ahead": pending if own_pending else 0,
+                }
             if candidate.status == MachineServiceRequest.Status.ACCEPTED:
                 accepted += 1
             else:
                 pending += 1
-        counts[row.pk] = {
-            "position": accepted + pending + 1,
-            "approved_ahead": accepted,
-            "awaiting_review_ahead": pending if row.status == MachineServiceRequest.Status.PENDING else 0,
-        }
-    return counts
+    return {row.pk: counts[row.pk] for row in targets if row.pk in counts}
 
 
 def _scope_key(row):
@@ -59,27 +54,13 @@ def _scope_keys(rows):
     return {_scope_key(row) for row in rows}
 
 
-def _waiting_for_scope(key):
-    field, value = key
-    return list(MachineServiceRequest.objects.filter(
-        **{f"{field}_id": value}, status__in=WAITING_STATUSES,
-    ).order_by(_priority(), "created_at", "id"))
-
-
 def _waiting_rows(keys):
     queue_ids = [value for field, value in keys if field == "queue"]
     bucket_ids = [value for field, value in keys if field == "bucket"]
     rows = MachineServiceRequest.objects.filter(status__in=WAITING_STATUSES).filter(
         Q(queue_id__in=queue_ids) | Q(bucket_id__in=bucket_ids),
-    ).order_by(_priority(), "created_at", "id")
+    ).only("id", "status", "queue_id", "bucket_id", "created_at", "queued_at", "urgent").order_by(*ordering())
     grouped = defaultdict(list)
     for row in rows:
         grouped[_scope_key(row)].append(row)
     return grouped
-
-
-def _priority():
-    return Case(
-        When(status=MachineServiceRequest.Status.ACCEPTED, then=Value(0)),
-        default=Value(1),
-    )

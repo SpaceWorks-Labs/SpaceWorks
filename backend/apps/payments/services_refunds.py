@@ -30,13 +30,21 @@ logger = logging.getLogger(__name__)
 
 def refund_payment(payment, *, amount, reason, actor):
     refund = _open_refund(payment, amount=amount, reason=reason, actor=actor)
+    refund, failed = dispatch_refund(refund, actor=actor)
+    if failed:
+        raise RefundProviderFailure(refund)
+    return refund
+
+
+def dispatch_refund(refund, *, actor):
+    """Steps 2 and 3: provider I/O outside every lock, then settle. Returns (refund, failed)."""
     result, failed = _send_to_provider(refund)
     if failed:
         settle_refund(refund, external_refund_id=None, status=Refund.Status.FAILED, actor=actor)
-        raise RefundProviderFailure(refund)
-    settle_refund(refund, external_refund_id=result.refund_id, status=result.status, actor=actor)
+    else:
+        settle_refund(refund, external_refund_id=result.refund_id, status=result.status, actor=actor)
     refund.refresh_from_db()
-    return refund
+    return refund, failed
 
 
 def _open_refund(payment, *, amount, reason, actor):
@@ -48,25 +56,37 @@ def _open_refund(payment, *, amount, reason, actor):
         raise RefundNotAllowed("Refund amount must be positive.", "refund_amount_invalid")
     with transaction.atomic():
         locked = Payment.objects.select_for_update(of=("self",)).select_related("makerspace").get(pk=payment.pk)
-        if locked.status != Payment.Status.PAID_ONLINE:
-            # Offline charges are refunded through the core manual receipt service;
-            # a provider cannot send back money it did not collect.
-            raise RefundNotAllowed(
-                "Only payments settled online can be refunded through the provider.",
-                "refund_not_online",
-            )
-        if Refund.counted_total(locked) + amount > locked.amount:
-            raise RefundNotAllowed(
-                "Refund exceeds the refundable balance.", "refund_exceeds_balance"
-            )
-        return Refund.objects.create(
-            payment=locked,
-            amount=amount,
-            currency=locked.currency,
-            provider=locked.provider,
-            reason=(reason or "")[:255],
-            created_by=actor,
+        return open_refund_locked(locked, amount=amount, reason=reason, actor=actor)
+
+
+def open_refund_locked(locked, *, amount, reason, actor):
+    """Step 1 for a caller that already holds the Payment row lock.
+
+    `amount` is a validated two-place Decimal. Shared by the direct staff refund and a
+    refund-case approval, so both apply the same status and balance rules.
+    """
+    if locked.status != Payment.Status.PAID_ONLINE:
+        # Offline charges are refunded through the core manual receipt service;
+        # a provider cannot send back money it did not collect.
+        raise RefundNotAllowed(
+            "Only payments settled online can be refunded through the provider.",
+            "refund_not_online",
         )
+    if Refund.counted_total(locked) + amount > locked.amount:
+        raise RefundNotAllowed(
+            "Refund exceeds the refundable balance.", "refund_exceeds_balance"
+        )
+    refund = Refund.objects.create(
+        payment=locked,
+        amount=amount,
+        currency=locked.currency,
+        provider=locked.provider,
+        reason=(reason or "")[:255],
+        created_by=actor,
+    )
+    from apps.payments.services_refund_cases import void_exhausted_cases
+    void_exhausted_cases(locked, actor=actor)
+    return refund
 
 
 def _send_to_provider(refund):
@@ -90,6 +110,12 @@ def _send_to_provider(refund):
                 reference=str(refund.pk),
                 idempotency_key=f"payment-refund-{refund.pk}",
                 metadata={"refund_id": refund.pk, "payment_id": payment.pk},
+                # Connect uses direct charges: the platform fee was taken from this
+                # charge, so it is returned pro rata. There is no transfer to reverse.
+                refund_application_fee=(
+                    payment.stripe_provider == Payment.StripeProvider.CONNECT
+                    and (payment.stripe_application_fee_amount or 0) > 0
+                ),
             ),
         )
         return result, False
@@ -107,8 +133,11 @@ def settle_refund(refund, *, external_refund_id, status, actor):
     Shared by the synchronous path and the webhook path so both write the same audit
     entries with the same meta, whichever one gets there first.
     """
+    from apps.payments.services_refund_cases import approved_cases_for_refund, mark_approval_failed
     with transaction.atomic():
         Payment.objects.select_for_update().get(pk=refund.payment_id)
+        # Lock order Payment -> RefundCase -> Refund, as everywhere a case is touched.
+        cases = approved_cases_for_refund(refund.pk)
         locked = Refund.objects.select_for_update(of=("self",)).select_related("payment__makerspace").get(pk=refund.pk)
         fields = []
         if external_refund_id and not locked.external_refund_id:
@@ -141,4 +170,8 @@ def settle_refund(refund, *, external_refund_id, status, actor):
             issue_credit_note(locked, actor=actor)
             from apps.payments.notifications import notify_payment
             notify_payment(locked.payment, "refund_issued", refund=locked)
+        else:
+            # Synchronous refusal or a later webhook: the approved case goes back to
+            # staff for a retry or a decline (R2), whichever path reports the failure.
+            mark_approval_failed(cases, locked, actor=actor)
         return locked

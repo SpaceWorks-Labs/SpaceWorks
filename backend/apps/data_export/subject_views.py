@@ -1,9 +1,10 @@
+from apps.operations.durable_dispatch import dispatch
 """Authenticated owner-only subject export API."""
 
 import logging
 
 from django.shortcuts import get_object_or_404
-from drf_spectacular.utils import OpenApiResponse, extend_schema
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import serializers
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
@@ -82,7 +83,8 @@ class SubjectExportBaseView(APIView):
 
 class SubjectExportListView(SubjectExportBaseView):
     @extend_schema(tags=["Member account"], summary="List the caller's personal exports",
-                   request=None, responses={200: SubjectExportListSerializer, **ERRORS})
+                   request=None, parameters=[OpenApiParameter("page", int, OpenApiParameter.QUERY, description="Page number (24 rows per page).")],
+                   responses={200: SubjectExportListSerializer, **ERRORS})
     def get(self, request, makerspace_id):
         self.makerspace(request, makerspace_id)
         paginator = PageNumberPagination()
@@ -104,7 +106,7 @@ class SubjectExportListView(SubjectExportBaseView):
             self.throttled(request, throttle.wait())
         job = create_subject_export(request.user, space)
         try:
-            run_subject_export_task.delay(str(job.pk))
+            dispatch(run_subject_export_task, str(job.pk))
         except Exception:
             # Durable pending jobs are recovered by F1 even when the broker is down.
             logger.warning("subject_export_enqueue_failed", extra={"job_id": str(job.pk)})

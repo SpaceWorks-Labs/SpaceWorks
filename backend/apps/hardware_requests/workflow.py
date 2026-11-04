@@ -8,11 +8,14 @@ from apps.hardware_requests.request_workflow import (
     reject_request,
     submit_request,
 )
+from apps.hardware_requests.request_lifecycle import (
+    cancel_request,
+    expire_due_requests,
+    expire_request,
+)
 from apps.hardware_requests.return_workflow import return_items
 from apps.hardware_requests.renewal_workflow import renew_loan
 from apps.hardware_requests.workflow_errors import (
-    AnonymousRequestIdempotencyConflict,
-    AnonymousRequestOutstandingLimit,
     BoxUnavailable,
     BoxValidationError,
     DepositRequired,
@@ -24,8 +27,6 @@ from apps.hardware_requests.workflow_errors import (
 )
 
 __all__ = [
-    "AnonymousRequestIdempotencyConflict",
-    "AnonymousRequestOutstandingLimit",
     "BoxUnavailable",
     "BoxValidationError",
     "DepositRequired",
@@ -36,6 +37,9 @@ __all__ = [
     "ReturnValidationError",
     "accept_request",
     "assign_box",
+    "cancel_request",
+    "expire_due_requests",
+    "expire_request",
     "issue_request",
     "reject_request",
     "return_items",

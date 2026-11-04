@@ -1,6 +1,8 @@
 """Organization-only authority, kept separate from makerspace RBAC grants."""
 
+from apps.accounts.staff_identity import is_person
 from apps.accounts.models import User
+from apps.accounts.native_session import is_native_session
 
 
 MANAGE_ORGANIZATION_PROFILE = "manage_organization_profile"
@@ -10,8 +12,20 @@ GOVERNANCE_ACTIONS = frozenset(
 )
 
 
+def live_account(actor):
+    return bool(actor and getattr(actor, "is_authenticated", False)
+                and actor.is_active and actor.access_status == User.AccessStatus.ACTIVE
+                and not actor.is_tenant_dump_stub and actor.retired_at is None
+                and actor.deletion_requested_at is None)
+
+
+def member_account(actor):
+    return live_account(actor) and is_person(actor)
+
+
 def actions_for_membership(membership) -> set[str]:
-    if membership is None or membership.status != membership.Status.ACTIVE:
+    if (membership is None or membership.status != membership.Status.ACTIVE
+            or not member_account(membership.user)):
         return set()
     value = membership.governance_actions
     if not isinstance(value, list):
@@ -24,11 +38,12 @@ def actions_for_membership(membership) -> set[str]:
 
 
 def actions_for(actor, organization) -> set[str]:
-    if actor is None or not getattr(actor, "is_authenticated", False):
+    if not live_account(actor) or is_native_session(actor):
         return set()
-    if actor.is_superuser or actor.role == User.Role.SUPERADMIN:
+    from .access import is_superadmin
+    if is_superadmin(actor):
         return set(GOVERNANCE_ACTIONS)
-    if not organization.is_active:
+    if not member_account(actor) or not organization.is_active:
         return set()
     membership = organization.memberships.filter(
         user=actor,
@@ -38,10 +53,13 @@ def actions_for(actor, organization) -> set[str]:
 
 
 def has_any_governance(actor) -> bool:
-    if actor is None or not getattr(actor, "is_authenticated", False):
+    if not live_account(actor) or is_native_session(actor):
         return False
-    if actor.is_superuser or actor.role == User.Role.SUPERADMIN:
+    from .access import is_superadmin
+    if is_superadmin(actor):
         return True
+    if not member_account(actor):
+        return False
     from apps.organizations.models import OrganizationMembership
 
     queryset = OrganizationMembership.objects.filter(

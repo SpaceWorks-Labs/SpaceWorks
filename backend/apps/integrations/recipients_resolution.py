@@ -1,5 +1,8 @@
+from apps.accounts.rbac_roles import additional_roles_prefetch
+from apps.accounts.rbac_roles import membership_roles
 from apps.integrations.models_recipients import NotificationRecipientKind
 from apps.integrations.recipient_scope_matching import rule_covers as _rule_covers
+from apps.integrations.recipients_object_scope import person_object_filter
 from apps.integrations.recipients_selection import logger, selection_rows
 
 
@@ -13,8 +16,10 @@ def _eligible_memberships(makerspace):
     from apps.accounts.models import User
     from apps.makerspaces.models import MakerspaceMembership
 
+    # Both tracks: role and action selections reach staff rows, member selections
+    # community rows; addresses are de-duplicated downstream.
     return (
-        MakerspaceMembership.objects.filter(
+        MakerspaceMembership.both_tracks().filter(
             makerspace=makerspace,
             status="active",
             receives_notifications=True,
@@ -23,20 +28,19 @@ def _eligible_memberships(makerspace):
         )
         .exclude(user__is_superuser=True)
         .exclude(user__role=User.Role.SUPERADMIN)
-        .select_related("user", "assigned_role")
+        .select_related("user", "assigned_role").prefetch_related(additional_roles_prefetch())
         .order_by("id")
     )
 
 
 def _role_scope_admits(membership_scopes, membership, scope) -> bool:
-    """Whether the recipient's ROLE could reach this alert's machine at all.
+    """Whether a role-selected recipient's machine reach covers this alert's machine.
 
-    D9's floor, and it applies to `kind=role` rows ONLY. Resolving it is asking "does this
-    role's MANAGE_MACHINES grant reach this machine", which is a question about authority
-    — meaningful when someone was selected *as a role*, meaningless when they were
-    selected as a person. Applying it to the member body or a named individual would make
-    those kinds unusable for maintenance alerts, since a plain member holds no machine
-    grant at all and would resolve to the fail-closed NOTHING.
+    D9's floor for `kind=role` rows: "does this role's MANAGE_MACHINES grant reach this
+    machine". People selected by name or as all members get the same floor through
+    `recipients_object_scope.person_object_filter` (owner decision #75c), which also
+    admits type managers and machine operators, since a person may see a machine through
+    either without holding the role grant.
     """
     if scope is None or (scope.machine_id is None and scope.machine_type_id is None):
         return True
@@ -45,8 +49,8 @@ def _role_scope_admits(membership_scopes, membership, scope) -> bool:
     resolved = membership_scopes.get(membership.pk, machine_role_scope.NOTHING)
     if resolved is machine_role_scope.EXEMPT:
         return True
-    type_ids, machine_ids = resolved
-    return (scope.machine_id is not None and scope.machine_id in machine_ids) or scope.machine_type_id in type_ids
+    type_ids, _ = resolved
+    return scope.machine_type_id in type_ids
 
 
 def reach_filter_for(memberships, scope):
@@ -81,11 +85,11 @@ def reach_filter_for(memberships, scope):
         resolved = scopes.get(membership.pk, machine_role_scope.EXEMPT)
         if resolved is machine_role_scope.EXEMPT:
             return True
-        type_ids, machine_ids = resolved
-        if not (type_ids or machine_ids):
+        type_ids, _ = resolved
+        if not type_ids:
             # Unconfigured, not narrowed -- fail open.
             return True
-        return (scope.machine_id is not None and scope.machine_id in machine_ids) or scope.machine_type_id in type_ids
+        return scope.machine_type_id in type_ids
 
     return admits
 
@@ -100,8 +104,9 @@ def _selected_memberships(makerspace, rows, scope=None):
     role first. The role FK is matched by id under a makerspace-scoped queryset, so a
     row pointing at another space's role is inert rather than a leak.
 
-    Composition is `role_scope AND (rule_scope OR all)` (D9) — narrowing only, never
-    widening, so a recipient can never be alerted about a machine they would 403 on.
+    Composition is `object_scope AND (rule_scope OR all)` (D9) for EVERY kind (#75c) —
+    narrowing only, never widening, so a recipient can never be alerted about a machine
+    they would 403 on, whether they were selected as a role or as a person.
     """
     # Coverage first, precedence second -- see the comment in the loop below.
     rows = [row for row in rows if _rule_covers(row, scope)]
@@ -129,8 +134,9 @@ def _selected_memberships(makerspace, rows, scope=None):
         row = None
         if member_rows:
             row = member_rows[0]
-        elif membership.assigned_role_id in role_rows:
-            row = role_rows[membership.assigned_role_id]
+        elif any(role.pk in role_rows for role in membership_roles(membership)):
+            row = next(role_rows[role.pk] for role in membership_roles(membership)
+                       if role.pk in role_rows)
         elif membership.user_id in user_rows:
             row = user_rows[membership.user_id]
         if row is None:
@@ -152,11 +158,21 @@ def _selected_memberships(makerspace, rows, scope=None):
         if role_selected
         else {}
     )
+    feature = rows[0].feature
+    # A room-scoped booking alert judges role recipients by the same "may see this room"
+    # rule as named people (owner decision #91); every other role keeps its reach floor.
+    rooms = feature == "bookings"
+    person_sees = person_object_filter(
+        [membership for membership, row in candidates
+         if rooms or row.kind != NotificationRecipientKind.ROLE],
+        scope,
+        feature=feature,
+    )
     return [
         membership
         for membership, row in candidates
-        if row.kind != NotificationRecipientKind.ROLE
-        or _role_scope_admits(membership_scopes, membership, scope)
+        if (_role_scope_admits(membership_scopes, membership, scope)
+            if row.kind == NotificationRecipientKind.ROLE and not rooms else person_sees(membership))
     ]
 
 

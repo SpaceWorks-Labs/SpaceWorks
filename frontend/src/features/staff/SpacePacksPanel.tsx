@@ -1,3 +1,4 @@
+import { SettingsRow } from "../../components/ui";
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Field } from "../../components/ui";
@@ -35,12 +36,10 @@ export function SpacePacksPanel({ makerspaceId, isSuperadmin }: { makerspaceId: 
     onSuccess: () => { setMessage("Install profile saved."); void queries.invalidateQueries({ queryKey: ["space-pack-profiles"] }); } });
   const pending = exportPack.isPending || previewPack.isPending || applyPack.isPending || saveProfile.isPending;
   const error = inputError || exportPack.error?.message || previewPack.error?.message || applyPack.error?.message || saveProfile.error?.message;
-  return <section className="grid min-w-0 gap-3 rounded-md border border-line bg-bg p-4" aria-label="Space packs">
-    <h3 className="text-base font-semibold text-ink">Space packs</h3>
-    <p className="text-sm text-muted">Copy configuration between spaces. Packs contain policies, roles, templates and catalogue definitions. Item templates start with zero stock. Review template text before sharing a pack.</p>
+  return <SettingsRow label="Space packs" helper="Copy configuration between spaces. Packs contain policies, templates and catalogue definitions. Item templates start with zero stock. Review template text before sharing a pack."><div className="@container grid min-w-0 gap-4">
     <button type="button" className="desk-button justify-self-start" disabled={pending} onClick={() => exportPack.mutate()}>Export configuration</button>
     <Field label="Space pack JSON">
-      <textarea className="desk-input min-h-48 w-full font-mono text-xs" value={source} disabled={pending}
+      <textarea className="desk-input min-h-48 w-full code-text text-base md:text-xs" value={source} disabled={pending}
         onChange={(event) => setPack(event.target.value)} />
     </Field>
     <div className="flex flex-wrap gap-2">
@@ -59,7 +58,7 @@ export function SpacePacksPanel({ makerspaceId, isSuperadmin }: { makerspaceId: 
       <p className="text-sm">{preview.changes.length} changes. Entries absent from the pack are retained.</p>
       {preview.changes.map((change) => <details key={`${change.section}/${change.key}`} className="min-w-0 text-sm">
         <summary>{change.section}: {change.key}</summary>
-        <div className="grid gap-2 sm:grid-cols-2">
+        <div className="grid gap-2 @md:grid-cols-2">
           <pre className="overflow-auto whitespace-pre-wrap break-all rounded border border-line p-2">Before: {JSON.stringify(change.before, null, 2)}</pre>
           <pre className="overflow-auto whitespace-pre-wrap break-all rounded border border-line p-2">After: {JSON.stringify(change.after, null, 2)}</pre>
         </div>
@@ -74,5 +73,5 @@ export function SpacePacksPanel({ makerspaceId, isSuperadmin }: { makerspaceId: 
       <button type="button" className="desk-button justify-self-start" disabled={pending || !profileName.trim() || !source.trim()}
         onClick={() => saveProfile.mutate()}>Save platform profile</button>
     </div> : null}
-  </section>;
+  </div></SettingsRow>;
 }

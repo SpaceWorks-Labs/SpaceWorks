@@ -72,6 +72,11 @@ OMITTED_TARGET_RELATIONS = {
         "accounts.MemberClaimCode",
         "omitted_target_model",
     ),
+    # Release 2 L5: a claim keeps its row; the bearer pay link it came through is dropped.
+    ("payments.PaymentClaim", "pay_link"): NullWithProvenance(
+        "payments.PaymentPayLink",
+        "omitted_target_model",
+    ),
 }
 
 PAYMENT_SUBJECT_REFERENCES = {
@@ -83,6 +88,12 @@ PAYMENT_SUBJECT_REFERENCES = {
     "membership_request": "makerspaces.MembershipRequest",
     "loan_deposit": "hardware_requests.HardwareRequest",
     "loan_late_fee": "hardware_requests.HardwareRequest",
+    # Lane L15: rental is per loan; damage and lost are per accountability row.
+    "loan_rental": "hardware_requests.HardwareRequest",
+    "loan_damage": "hardware_requests.RequesterAccountability",
+    "loan_lost": "hardware_requests.RequesterAccountability",
+    # Lane L23: one metered machine session.
+    "machine_session": "machines.MachineSession",
 }
 
 NOTIFICATION_URL_ROUTES = (

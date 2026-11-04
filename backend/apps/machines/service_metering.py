@@ -44,6 +44,10 @@ def _apply(pool, actor, *, kind, delta, service_request=None, usage_entry=None, 
         metering_unit=unit, consumed_quantity=delta, service_request=service_request,
         usage_entry=usage_entry, reason=str(reason).strip(), created_by=actor,
     )
+    if kind == MachineConsumableAdjustment.Kind.MANUAL and delta < 0:
+        from .consumable_costs import record_cost
+        record_cost(makerspace=pool.makerspace, source_kind="manual_adjustment", source_id=row.pk,
+                    quantity=-delta, measurement_unit=pool.unit, price_source=pool, actor=actor)
     pool.remaining_grams = after
     pool.save(update_fields=["remaining_grams", "updated_at"])
     audit.record(actor, f"machine_consumable_pool.{kind}", makerspace=pool.makerspace, target=row,

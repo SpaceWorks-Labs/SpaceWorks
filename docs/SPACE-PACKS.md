@@ -7,8 +7,8 @@ module key was added.
 
 Space Managers use their existing `manage_makerspace` authority in their own space.
 Each section also checks the action needed by its normal editor: inventory definitions
-need `edit_inventory`, booking rules need `manage_bookings`, and custom role grants
-use the existing non-escalation service. Hidden and archived spaces stay excluded.
+need `edit_inventory` and booking rules need `manage_bookings`. Roles are fixed built-ins
+and cannot be transferred or changed through packs. Hidden and archived spaces stay excluded.
 Only an active superadmin can change the module set or save platform install profiles.
 The deployment edition, origins, credentials, limits and superadmin-access policy
 cannot be changed by a pack. Self-host module authority is unchanged.
@@ -72,9 +72,9 @@ may still cause apply to refuse even after a valid preview.
 - `settings`: existing public inventory/stats, membership aliases, loan/presence,
   staff/booking notification switches. Tenant identity and routing are excluded.
 - `opening_hours`: IANA timezone and the validated weekly/exception schedule.
-- `roles`: custom role name and granted actions. Protected defaults, memberships and
-  machine scope bindings are excluded. Machine grants remain narrowed until local
-  scopes are assigned through the existing role editor.
+- Roles, memberships, additional-role rows and per-person machine-type assignments are excluded.
+  New packs omit `roles`; legacy `roles: []` is accepted and stripped, while a nonempty section
+  is refused with `pack_roles_removed`. Assign the fixed built-ins and each person's types locally.
 - `loan_policy`: existing loan periods, limits, renewals and reminder policy.
   `null` denotes unconfigured legacy defaults; a configured row remains explicit
   even when its numbers equal the defaults, because its presence enables the ladder.

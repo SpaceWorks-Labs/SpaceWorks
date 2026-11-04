@@ -1,7 +1,6 @@
 from django import forms
 from rest_framework.exceptions import ValidationError as DRFValidationError
 
-from apps.accounts import rbac
 from apps.boxes.models import Box
 from apps.inventory.models import InventoryAsset, InventoryProduct, TrackingMode
 from apps.makerspaces.guards import require_module
@@ -12,9 +11,7 @@ from apps.operations.serializers import StocktakeLineInputSerializer
 
 
 def visible_makerspaces():
-    qs = servable_queryset()
-    hidden = rbac.superadmin_hidden_makerspace_ids()
-    return qs.exclude(id__in=hidden) if hidden else qs
+    return servable_queryset()
 
 
 class StockTransferAdminForm(forms.Form):
@@ -91,7 +88,7 @@ class StockTransferAdminForm(forms.Form):
 
     def _require_visible_enabled(self, makerspace, module):
         if not visible_makerspaces().filter(pk=makerspace.pk).exists():
-            raise forms.ValidationError("Makerspace is hidden or archived.")
+            raise forms.ValidationError("Makerspace is archived or unavailable.")
         try:
             require_module(makerspace, module)
         except DRFValidationError as exc:

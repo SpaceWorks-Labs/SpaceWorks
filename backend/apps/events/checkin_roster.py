@@ -33,6 +33,7 @@ def minimum_roster(event):
         EventRegistration.objects.filter(
             event=event,
             status=EventRegistration.Status.REGISTERED,
+            credential_mode="legacy",
         )
         .select_related("event")
         .order_by("created_at", "id")[: settings.EVENT_CHECKIN_ROSTER_MAX + 1]

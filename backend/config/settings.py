@@ -16,6 +16,22 @@ env = environ.Env(
     DEBUG=(bool, False),
 )
 environ.Env.read_env(BASE_DIR / ".env")
+from cloud_contracts.deployment import parse_selection
+
+try:
+    _deployment = parse_selection({
+        "SPACEWORKS_DEPLOYMENT_MODE": env("SPACEWORKS_DEPLOYMENT_MODE", default="host"),
+        "SPACEWORKS_DEPLOYMENT_PROFILE": env("SPACEWORKS_DEPLOYMENT_PROFILE", default="full"),
+    })
+except ValueError as exc:
+    raise ImproperlyConfigured(str(exc)) from exc
+SPACEWORKS_DEPLOYMENT_MODE = _deployment.mode
+SPACEWORKS_DEPLOYMENT_PROFILE = _deployment.profile
+if _deployment.mode == "managed":
+    from config.cloud_settings.secrets import materialize
+    materialize()
+CLOUD_TASK_PROFILE = env("CLOUD_TASK_PROFILE", default="")
+CLOUD_SCHEDULER = env("CLOUD_SCHEDULER", default="")
 # Imported after read_env: both read TOMBSTONED_APPS straight from the environment,
 # and the sidebar in config.unfold is built at import time.
 from apps.separability.tombstones import tombstoned_app_labels
@@ -70,10 +86,12 @@ BEHIND_TRUSTED_PROXY = env.bool("BEHIND_TRUSTED_PROXY", default=False)
 PLATFORM_ORIGIN_HOST = env("PLATFORM_ORIGIN_HOST", default="")  # e.g. origin.space-works.tech; blank => resolution gate dormant
 DOMAIN_CHANGE_COOLDOWN_SECONDS = env.int("DOMAIN_CHANGE_COOLDOWN_SECONDS", default=0)  # 0 => no cooldown
 if BEHIND_TRUSTED_PROXY:
-    ALLOWED_HOSTS = ["*"]
+    if SPACEWORKS_DEPLOYMENT_MODE == "host":
+        ALLOWED_HOSTS = ["*"]  # Existing host domain middleware remains authoritative.
 PUBLIC_APP_BASE_URL = env("PUBLIC_APP_BASE_URL", default="").rstrip("/")
 STRIPE_CONNECT_REDIRECT_URI = env("STRIPE_CONNECT_REDIRECT_URI", default="")
 MANAGED_POSTGRES = env.bool("MANAGED_POSTGRES", default=False)
+DATABASE_CONNECTION_MODE = env("DATABASE_CONNECTION_MODE", default="direct")
 MANAGED_RESOURCE_LIMITS = {
     "products": 500,
     "assets": 2000,
@@ -92,32 +110,22 @@ MANAGED_RESOURCE_LIMITS = {
     "mattermost": 100,
     "discord": 100,
     "native_push": 500,
+    "sms": 100,
+    "whatsapp": 100,
+    # Release 2 L4 (#77): every limit key has a default; signed webhooks were unlimited.
+    "webhook": 100,
     "api_clients": 1,
-    "custom_roles": 20,
     # Tenant exports retain a long-lived database snapshot while running. This is an
     # active-job ceiling, independent of the byte quota charged when an archive lands.
     "data_exports": 1,
-    "otp_email": 200,
-    "otp_sms": 100,
+    # Platform-wide daily caps (not per space); the deployment may override them (#77).
+    "otp_email": env.int("MANAGED_OTP_EMAIL_DAILY_LIMIT", default=200),
+    "otp_sms": env.int("MANAGED_OTP_SMS_DAILY_LIMIT", default=100),
 }
 # Applies on SELF-HOST TOO, unlike the managed limits above: every auth text is billed
 # by the operator's SMS vendor, so this is a cost ceiling rather than a fair-use quota.
 # Blank disables the cap entirely.
 OTP_SMS_DAILY_CAP = env.int("OTP_SMS_DAILY_CAP", default=200)
-ANONYMOUS_REQUEST_OUTSTANDING_LIMIT = env.int(
-    "ANONYMOUS_REQUEST_OUTSTANDING_LIMIT",
-    default=50,
-)
-ANONYMOUS_REQUEST_IDEMPOTENCY_KEY_MAX_LENGTH = env.int(
-    "ANONYMOUS_REQUEST_IDEMPOTENCY_KEY_MAX_LENGTH",
-    default=128,
-)
-if ANONYMOUS_REQUEST_OUTSTANDING_LIMIT < 1:
-    raise ImproperlyConfigured("ANONYMOUS_REQUEST_OUTSTANDING_LIMIT must be positive.")
-if ANONYMOUS_REQUEST_IDEMPOTENCY_KEY_MAX_LENGTH < 1:
-    raise ImproperlyConfigured(
-        "ANONYMOUS_REQUEST_IDEMPOTENCY_KEY_MAX_LENGTH must be positive."
-    )
 STORAGE_PRESIGN_METHOD = env("STORAGE_PRESIGN_METHOD", default="post")
 CRON_SECRET = env("CRON_SECRET", default="")
 ADMIN_SITE_NAME = env("ADMIN_SITE_NAME", default="Space Works")
@@ -172,12 +180,15 @@ INSTALLED_APPS = [
     "apps.backup",
     "apps.machines",
     "apps.events",
+    "apps.event_reimbursements",
     "apps.bookings",
     "apps.maintenance",
     "apps.roadmap",
     "apps.tenant_migration",
     # Enrolled printers/label printers (phase 7a); separable.
     "apps.devices",
+    # Managed-platform hosting requests; inert on self-host.
+    "apps.hosting_requests",
     # Must stay LAST. Django calls ready() in this order, so being last is what
     # guarantees every other app has registered before finalize() freezes the
     # separability registries.
@@ -201,8 +212,11 @@ MIDDLEWARE = [
     # Binds the per-request correlation id before any layer below can log. The two gates
     # above refuse without logging through it; that is the accepted cost of their position.
     "config.request_id.RequestIdMiddleware",
+    # Clears the per-request native-session marker (accounts.native_session).
+    "apps.accounts.native_session.NativeSessionContextMiddleware",
     "apps.tenant_migration.middleware.SourceMigrationGateMiddleware",
     "apps.makerspaces.middleware.TenantHostValidationMiddleware",
+    "config.cloud_settings.forwarded_host.TrustedForwardedHostMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "apps.accounts.social_csp.SocialCspMiddleware",
     "csp.middleware.CSPMiddleware",
@@ -217,7 +231,12 @@ MIDDLEWARE = [
     "config.admin_access.AdminSuperuserOnlyMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    # Platform IP rules, automatic blocks and Turnstile on sign-in views only (S-C); before
+    # axes so a refused request never reaches a credential check.
+    "apps.accounts.ip_guard_middleware.LoginIPGuardMiddleware",
     "axes.middleware.AxesMiddleware",
+    # Masks tenant PII for a superadmin inside a space's staff routes (owner decision #115).
+    "apps.accounts.platform_tenant_pii.PlatformTenantPiiMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -249,6 +268,9 @@ DATABASES["default"]["CONN_HEALTH_CHECKS"] = env.bool("CONN_HEALTH_CHECKS", defa
 DATABASES["default"]["DISABLE_SERVER_SIDE_CURSORS"] = env.bool(
     "DISABLE_SERVER_SIDE_CURSORS", default=False
 )
+if SPACEWORKS_DEPLOYMENT_MODE == "managed":
+    from config.cloud_settings.wiring import managed_database
+    DATABASES["default"] = managed_database(DATABASES["default"], env)
 SPACEWORKS_HOST_MARKER_PATH = env(
     "SPACEWORKS_HOST_MARKER_PATH",
     default="/run/spaceworks-host/restore-marker.json",
@@ -283,6 +305,10 @@ AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
+    # Last, so the cheap local checks run first: HIBP k-anonymity, fail-open (S-C).
+    {
+        "NAME": "apps.accounts.password_breach.BreachedPasswordValidator",
+    },
 ]
 
 LANGUAGE_CODE = "en-us"
@@ -294,6 +320,7 @@ STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "accounts.User"
+ACCOUNT_DELETION_RETENTION_DAYS = env.int("ACCOUNT_DELETION_RETENTION_DAYS", default=90)
 # PostgreSQL supports 63-character identifiers. The approved Maintenance schema
 # intentionally uses a 32-character descriptive index name.
 SILENCED_SYSTEM_CHECKS = ["models.E034"]
@@ -318,6 +345,8 @@ AXES_ENABLED = env.bool("AXES_ENABLED", default=True)
 # cannot interpret an X-Forwarded-For chain differently.
 AXES_IPWARE_PROXY_COUNT = TRUSTED_PROXY_COUNT
 AXES_CLIENT_IP_CALLABLE = "config.client_ip.get_throttle_client_ip"
+# Only the platform superadmin's own username from an ALLOW-listed address is exempt (S-C).
+AXES_WHITELIST_CALLABLE = "apps.accounts.ip_rules.axes_whitelisted"
 
 AWS_ACCESS_KEY_ID = env("AWS_ACCESS_KEY_ID", default="")
 AWS_SECRET_ACCESS_KEY = env("AWS_SECRET_ACCESS_KEY", default="")
@@ -364,6 +393,26 @@ EVIDENCE_ABANDONED_UPLOAD_CLEANUP_ENABLED = env.bool(
 EVIDENCE_ABANDONED_UPLOAD_RETENTION_DAYS = env.int(
     "EVIDENCE_ABANDONED_UPLOAD_RETENTION_DAYS", default=7
 )
+# Event travel support: private receipts and payee documents (core payouts), and
+# stage-form uploads. Retention counts from the financial/terminal anchor; quotas are
+# per member and per event. Values outside these bounds refuse to start.
+EVENT_REIMBURSEMENT_RECEIPT_RETENTION_DAYS = env.int("EVENT_REIMBURSEMENT_RECEIPT_RETENTION_DAYS", default=2555)
+EVENT_REIMBURSEMENT_PAYEE_PURGE_DAYS = env.int("EVENT_REIMBURSEMENT_PAYEE_PURGE_DAYS", default=30)
+EVENT_REIMBURSEMENT_FILE_MAX_BYTES = env.int("EVENT_REIMBURSEMENT_FILE_MAX_BYTES", default=10485760)
+EVENT_REIMBURSEMENT_MEMBER_STORAGE_BYTES = env.int("EVENT_REIMBURSEMENT_MEMBER_STORAGE_BYTES", default=104857600)
+EVENT_REIMBURSEMENT_EVENT_STORAGE_BYTES = env.int("EVENT_REIMBURSEMENT_EVENT_STORAGE_BYTES", default=1073741824)
+EVENT_STAGE_FILE_RETENTION_DAYS = env.int("EVENT_STAGE_FILE_RETENTION_DAYS", default=365)
+EVENT_STAGE_MEMBER_QUOTA_BYTES = env.int("EVENT_STAGE_MEMBER_QUOTA_BYTES", default=104857600)
+EVENT_STAGE_EVENT_QUOTA_BYTES = env.int("EVENT_STAGE_EVENT_QUOTA_BYTES", default=1073741824)
+for _name, _low, _high in (
+    ("EVENT_REIMBURSEMENT_RECEIPT_RETENTION_DAYS", 1, 36500), ("EVENT_REIMBURSEMENT_PAYEE_PURGE_DAYS", 1, 36500),
+    ("EVENT_REIMBURSEMENT_FILE_MAX_BYTES", 1, 10485760), ("EVENT_STAGE_FILE_RETENTION_DAYS", 1, 36500),
+    ("EVENT_REIMBURSEMENT_MEMBER_STORAGE_BYTES", 1, 2 ** 40), ("EVENT_REIMBURSEMENT_EVENT_STORAGE_BYTES", 1, 2 ** 40),
+    ("EVENT_STAGE_MEMBER_QUOTA_BYTES", 1, 2 ** 40), ("EVENT_STAGE_EVENT_QUOTA_BYTES", 1, 2 ** 40),
+):
+    if not _low <= globals()[_name] <= _high:
+        raise ImproperlyConfigured(f"{_name} must be between {_low} and {_high}.")
+del _name, _low, _high
 WARRANTY_DOC_MAX_BYTES = env.int("WARRANTY_DOC_MAX_BYTES", default=10485760)
 WARRANTY_DOC_ALLOWED_MIME = env.list(
     "WARRANTY_DOC_ALLOWED_MIME",
@@ -407,7 +456,6 @@ PUBLIC_IMAGE_ALLOWED_MIME = {
     "image/webp": [".webp"],
 }
 PRINT_UPLOAD_MAX_BYTES = env.int("PRINT_UPLOAD_MAX_BYTES", default=104857600)  # 100 MB
-PRINT_URL_TTL_SECONDS = env.int("PRINT_URL_TTL_SECONDS", default=300)
 PRINT_ALLOWED_MODEL_EXT = env.list(
     "PRINT_ALLOWED_MODEL_EXT",
     default=[
@@ -440,8 +488,20 @@ PRINT_ALLOWED_SCREENSHOT_MIME = [
 # contribution total onto their maker profile. Unset means the feature is dormant: no
 # call is made and profiles simply omit the section. Never required.
 GITHUB_API_TOKEN = env("GITHUB_API_TOKEN", default="")
+# --- Release 2 L2: browser notifications (W3C Web Push / VAPID). Unset = dormant. ---
+# The private key is the base64url raw P-256 scalar (secret-bearing); the public key is
+# derived from it. The subject is a mailto: or https: contact the push services may use.
+WEB_PUSH_VAPID_PRIVATE_KEY = env("WEB_PUSH_VAPID_PRIVATE_KEY", default="")
+WEB_PUSH_VAPID_SUBJECT = env("WEB_PUSH_VAPID_SUBJECT", default="")
+# Release 2 L2 (X31): applicants may edit and resubmit after "changes requested" (platform switch).
+HOSTING_REQUEST_RESUBMIT_ENABLED = env.bool("HOSTING_REQUEST_RESUBMIT_ENABLED", default=True)
 
 TELEGRAM_BOT_TOKEN = env("TELEGRAM_BOT_TOKEN", default="")
+NOTIFICATION_SLACK_REDIRECT_URI = env("NOTIFICATION_SLACK_REDIRECT_URI", default="")
+NOTIFICATION_MATTERMOST_REDIRECT_URI = env("NOTIFICATION_MATTERMOST_REDIRECT_URI", default="")
+NOTIFICATION_DISCORD_REDIRECT_URI = env("NOTIFICATION_DISCORD_REDIRECT_URI", default="")
+NOTIFICATION_MATTERMOST_ALLOW_PRIVATE_HOSTS = env.bool("NOTIFICATION_MATTERMOST_ALLOW_PRIVATE_HOSTS", default=False)
+WHATSAPP_META_GRAPH_VERSION = env("WHATSAPP_META_GRAPH_VERSION", default="v25.0")
 TELEGRAM_API_URL = env("TELEGRAM_API_URL", default="https://api.telegram.org")
 # Secret passed to Telegram's setWebhook(secret_token=...); Telegram echoes it in
 # the X-Telegram-Bot-Api-Secret-Token header on every callback. The webhook fails
@@ -459,6 +519,15 @@ EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
 EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
 EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="Makerspace <noreply@makerspace.local>")
+EMAIL_PROVIDER = env("EMAIL_PROVIDER", default="")
+EMAIL_PROVIDER_CONFIG_FILE = env("EMAIL_PROVIDER_CONFIG_FILE", default="")
+EMAIL_PROVIDER_WEBHOOKS_ENABLED = env.bool("EMAIL_PROVIDER_WEBHOOKS_ENABLED", default=False)
+if EMAIL_PROVIDER:
+    from config.cloud_settings.wiring import provider_email
+    # Provider routing is per message; preserve Django's legacy fallback backend.
+    _provider_email = provider_email(env)
+    EMAIL_PROVIDER_CONFIG_FILE = _provider_email["EMAIL_PROVIDER_CONFIG_FILE"]
+    EMAIL_PROVIDER_WEBHOOKS_ENABLED = _provider_email["EMAIL_PROVIDER_WEBHOOKS_ENABLED"]
 
 # Async email runs through a Celery worker ONLY when a broker is configured (the Compose
 # stack + prod set CELERY_BROKER_URL). With no broker - e.g. the documented local flow
@@ -554,7 +623,6 @@ TENANT_MIGRATION_PRESIGN_DRAIN_SECONDS = env.int(
     default=max(
         EVIDENCE_URL_TTL_SECONDS,
         PUBLIC_IMAGE_URL_TTL_SECONDS,
-        PRINT_URL_TTL_SECONDS,
     ),
 )
 BACKUP_AGE_RECIPIENT = env("BACKUP_AGE_RECIPIENT", default="")
@@ -573,12 +641,9 @@ TENANT_MIGRATION_AGE_IDENTITY_FILE = env(
 BACKUP_DOWNLOAD_TTL_SECONDS = env.int("BACKUP_DOWNLOAD_TTL_SECONDS", default=5 * 60)
 BACKUP_LEASE_SECONDS = env.int("BACKUP_LEASE_SECONDS", default=2 * 60 * 60)
 BACKUP_DECISION_SECONDS = env.int("BACKUP_DECISION_SECONDS", default=5 * 60)
-BACKUP_RECIPIENT_CHALLENGE_TTL_SECONDS = env.int(
-    "BACKUP_RECIPIENT_CHALLENGE_TTL_SECONDS", default=15 * 60
-)
 BACKUP_PRESIGN_DRAIN_SECONDS = env.int(
     "BACKUP_PRESIGN_DRAIN_SECONDS",
-    default=max(EVIDENCE_URL_TTL_SECONDS, PUBLIC_IMAGE_URL_TTL_SECONDS, PRINT_URL_TTL_SECONDS),
+    default=max(EVIDENCE_URL_TTL_SECONDS, PUBLIC_IMAGE_URL_TTL_SECONDS),
 )
 BACKUP_OPS_DIR = env("BACKUP_OPS_DIR", default="/var/lib/spaceworks/ops")
 TENANT_DUMP_STAGING_DIR = env("TENANT_DUMP_STAGING_DIR", default="")
@@ -590,7 +655,38 @@ REMINDER_SWEEP_BATCH_SIZE = env.int("REMINDER_SWEEP_BATCH_SIZE", default=200)
 if REMINDER_SWEEP_BATCH_SIZE < 1:
     raise ImproperlyConfigured("REMINDER_SWEEP_BATCH_SIZE must be positive.")
 
+# Canonical outbox and per-device recovery share the sending cutover fence.
+# Deployment activation remains an explicit operator checkpoint after replay.
 CELERY_BEAT_SCHEDULE = {
+    "missing-payment-bills": {
+        "task": "apps.payments.tasks.issue_missing_bills_task",
+        "schedule": crontab(minute="*/5"),
+    },
+    # Rebuilds refund cases an events cancellation hook failed to open; idempotent.
+    "rebuild-refund-cases": {
+        "task": "apps.payments.tasks.rebuild_refund_cases_task",
+        "schedule": crontab(minute="17"),
+    },
+    "notification-contract-outbox": {
+        "task": "apps.integrations.notification_tasks.sweep_notification_outbox",
+        "schedule": crontab(minute="*"),
+    },
+    "messaging-credential-wipe": {"task": "apps.integrations.tasks_messaging_settings.wipe_messaging_credentials_task", "schedule": crontab(hour=2, minute=15)},
+    "inventory-stock-snapshot": {"task": "apps.inventory.tasks.snapshot_stock_task", "schedule": crontab(hour=0, minute=15)},
+    "member-push-recovery": {
+        "task": "apps.notifications.tasks.sweep_member_push",
+        "schedule": crontab(minute="*/5"),
+    },
+    "purge-deleted-accounts": {
+        "task": "apps.accounts.tasks.purge_deleted_accounts_task",
+        "schedule": crontab(hour=3, minute=20),
+    },
+    # Superadmin PII windows last 30 minutes (#111 Q12). Reads close lapsed windows
+    # lazily; this sweep writes the expiry audit row for windows nobody reads again.
+    "pii-access-expiry": {
+        "task": "apps.accounts.tasks.expire_pii_access_windows_task",
+        "schedule": crontab(minute="*/5"),
+    },
     "reminder-sweep": {
         "task": "apps.operations.tasks_reminders.run_reminder_sweep_task",
         "schedule": crontab(minute="*/5"),
@@ -642,11 +738,49 @@ CELERY_BEAT_SCHEDULE = {
         "task": "apps.events.tasks.extend_event_series_task",
         "schedule": crontab(minute=10),
     },
+    "event-admission-deadlines": {
+        "task": "apps.events.tasks_programme.sweep_admission_deadlines_task",
+        "schedule": crontab(minute="*/5"),
+    },
+    "event-contributor-maintenance": {
+        "task": "apps.events.tasks_contributions.sweep_contributor_maintenance_task",
+        "schedule": crontab(minute="*"),
+    },
+    "event-scheduled-broadcasts": {
+        "task": "apps.events.programme.broadcast_schedule.resume_scheduled_broadcasts",
+        "schedule": crontab(minute="*"),
+    },
+    "event-asset-work": {"task": "apps.events.tasks_assets.sweep_asset_work_task", "schedule": crontab(minute="*")},
+    "event-asset-deadlines": {"task": "apps.events.tasks_assets.sweep_asset_deadlines_task", "schedule": crontab(minute="*")},
+    "event-asset-retention": {"task": "apps.events.tasks_assets.sweep_asset_retention_task", "schedule": crontab(minute="*/5")},
+    "event-asset-obligations": {"task": "apps.events.tasks_assets.reconcile_asset_obligations_task", "schedule": crontab(minute="*/5")},
+    "event-certificate-batches": {"task": "apps.events.certificates.tasks.resume_batches", "schedule": crontab(minute="*")},
+    "event-certificate-renders": {"task": "apps.events.certificates.tasks.resume_certificates", "schedule": crontab(minute="*/5")},
+    "event-print-cleanup": {"task": "apps.events.tasks_recovery.sweep_print_cleanup_task", "schedule": crontab(minute="*/5")},
+    "event-judging-notices": {"task": "apps.events.tasks_recovery.sweep_judging_notices_task", "schedule": crontab(minute="*")},
+    # Stage forms (Events core), travel-support deadlines (event_reimbursements) and the core
+    # payout ledger's upload recovery and retention. Each per-subject step gates its host.
+    "event-stage-reconcile": {"task": "apps.events.staged_forms.tasks.reconcile_stage_forms_task", "schedule": crontab(minute="*/5")},
+    "event-stage-file-recovery": {"task": "apps.events.staged_forms.tasks.recover_stage_files_task", "schedule": crontab(minute="*/5")},
+    "event-stage-file-retention": {"task": "apps.events.staged_forms.tasks.sweep_stage_file_retention_task", "schedule": crontab(hour=3, minute=50)},
+    "event-reimbursement-deadlines": {"task": "apps.event_reimbursements.tasks.sweep_deadlines_task", "schedule": crontab(minute="*/5")},
+    "finance-event-payout-recovery": {"task": "apps.payments.event_payouts.tasks.recover_finance_work_task", "schedule": crontab(minute="*/5")},
+    "finance-event-payout-retention": {"task": "apps.payments.event_payouts.tasks.sweep_retention_task", "schedule": crontab(hour=3, minute=55)},
+    "account-saved-details": {
+        "task": "apps.accounts.saved_details.tasks.process_saved_details",
+        "schedule": crontab(minute="*/5"),
+    },
     # Spent email/phone verification challenges hold an address or a number and nothing
     # deleted them. Off-peak because it is a pure delete nobody is waiting on.
     "purge-auth-challenges": {
         "task": "apps.accounts.tasks.purge_auth_challenges_task",
         "schedule": crontab(hour=3, minute=30),
+    },
+    # Hosting requests: delete unconfirmed public submissions after 48 h and wipe the
+    # applicant's details from dead requests after 90 days. Runs on self-host too.
+    "hosting-request-retention": {
+        "task": "apps.hosting_requests.tasks.sweep_hosting_requests_task",
+        "schedule": crontab(hour=3, minute=45),
     },
     # Maker-profile GitHub counts. Daily and off-peak: the cache interval is 24h, the
     # data is a vanity number, and nothing is waiting on it. A deployment with no
@@ -654,6 +788,10 @@ CELERY_BEAT_SCHEDULE = {
     "refresh-github-contributions": {
         "task": "apps.makerspaces.tasks.refresh_github_contributions_task",
         "schedule": crontab(hour=4, minute=15),
+    },
+    "cleanup-public-page-assets": {
+        "task": "apps.makerspaces.tasks.cleanup_public_page_assets_task",
+        "schedule": crontab(minute=10),
     },
     "membership-renewals": {
         "task": "apps.makerspaces.tasks_membership.run_membership_renewals_task",
@@ -679,13 +817,16 @@ CELERY_BEAT_SCHEDULE = {
         "task": "apps.backup.tasks.scheduled_deployment_backup_task",
         "schedule": crontab(hour=2, minute=0),
     },
-    "deliver-archive-custody-alarms": {
-        "task": "apps.backup.tasks.deliver_archive_custody_alarms_task",
-        "schedule": crontab(hour=1, minute=30),
+    # Nightly one-space archives (#111 Q4): two due spaces per tick, oldest first, off
+    # the same automatic-backups switch; 01:00-07:50 covers 84 spaces a night.
+    "scheduled-space-backups": {
+        "task": "apps.backup.tasks.scheduled_space_backups_task",
+        "schedule": crontab(hour="1-7", minute="*/10"),
     },
-    "deliver-tenant-exit-custody-alarms": {
-        "task": "apps.backup.tasks.deliver_tenant_exit_custody_alarms_task",
-        "schedule": crontab(minute=45),
+    # Picks up a per-space restore step whose dispatch was lost, one per tick.
+    "resume-space-restores": {
+        "task": "apps.backup.tasks_space_restore.resume_space_restores_task",
+        "schedule": crontab(minute="*/5"),
     },
     "reconcile-backup-artifacts": {
         "task": "apps.backup.tasks.reconcile_backup_artifacts_task",
@@ -722,6 +863,57 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": crontab(minute="*/5"),
     },
 }
+from apps.presence.schedule import beat_entries as presence_beat_entries
+CELERY_BEAT_SCHEDULE.update(presence_beat_entries(TOMBSTONED_APPS))
+# --- Release 2 L2: approval digest, integrity flags, storage reconcile, escalation, room health ---
+CELERY_BEAT_SCHEDULE.update({
+    "event-approval-digest": {"task": "apps.events.approval_digest.send_approval_digests_task",
+                              "schedule": crontab(minute="*/30")},
+    "event-submission-integrity": {"task": "apps.events.submissions.integrity_jobs.sweep_integrity_checks_task",
+                                   "schedule": crontab(minute="*/15")},
+    "event-storage-reconcile": {"task": "apps.events.submissions.storage_reconcile.reconcile_event_storage_task",
+                                "schedule": crontab(hour=4, minute=25)},
+    "notification-escalation": {"task": "apps.notifications.escalation.escalate_unseen_task",
+                                "schedule": crontab(minute="*/5")},
+    "notification-destination-health": {"task": "apps.integrations.destination_health.disable_dead_destinations_task",
+                                        "schedule": crontab(minute=50)},
+})
+# --- lane L5 (release 2): gateway poll of open attempts and pending provider refunds.
+# Read-only provider lookups; the task itself no-ops while payments_rail is tombstoned.
+CELERY_BEAT_SCHEDULE["payment-gateway-poll"] = {
+    "task": "apps.payments.tasks.run_gateway_poll_task", "schedule": crontab(minute="*/5"),
+}
+# --- end lane L5
+# --- lanes L10/L11 (release 2): restore drills (one due space per hourly tick, 7-day default
+# cadence per space, #128 C-22) and a requested re-encryption to rotated keys (BK-68).
+CELERY_BEAT_SCHEDULE["restore-drill"] = {
+    "task": "apps.backup.tasks.run_restore_drill_task", "schedule": crontab(minute=20),
+}
+CELERY_BEAT_SCHEDULE["reencrypt-backup-archives"] = {
+    "task": "apps.backup.tasks.reencrypt_archives_task", "schedule": crontab(minute="*/10"),
+}
+# --- end lanes L10/L11
+# --- lane L12 (release 2): loan pickup expiry and waitlist lapses; machine job quotes,
+# pickup reminders, uncollected flags and prepaid jobs entering the queue. Bounded sweeps.
+CELERY_BEAT_SCHEDULE["loan-pickups"] = {
+    "task": "apps.hardware_requests.tasks_loans.sweep_loan_pickups_task", "schedule": crontab(minute="*/15"),
+}
+CELERY_BEAT_SCHEDULE["machine-job-flow"] = {
+    "task": "apps.machines.tasks_jobs.sweep_job_flow_task", "schedule": crontab(minute="*/15"),
+}
+# --- end lane L12
+# --- lane L23 (release 2): machine sessions that reached their max length, the member's
+# check-out or closing time stop themselves (flagged for staff). Bounded sweep.
+CELERY_BEAT_SCHEDULE["machine-sessions"] = {
+    "task": "apps.machines.tasks_sessions.sweep_machine_sessions_task", "schedule": crontab(minute="*/5"),
+}
+# --- end lane L23
+# --- lane S-C (release 2): IP auto-block rows 7 d after they end, axes rows after 30 d.
+CELERY_BEAT_SCHEDULE["purge-login-security"] = {
+    "task": "apps.accounts.tasks_login_security.purge_login_security_task", "schedule": crontab(hour=3, minute=40),
+}
+# --- end lane S-C
+
 if "tenant_migration" in TOMBSTONED_APPS:
     CELERY_BEAT_SCHEDULE = {
         name: entry
@@ -732,7 +924,15 @@ if "events" in TOMBSTONED_APPS:
     CELERY_BEAT_SCHEDULE = {
         name: entry
         for name, entry in CELERY_BEAT_SCHEDULE.items()
-        if ".events." not in entry["task"]
+        if ".events." not in entry["task"] or name in {
+            "event-asset-work", "event-asset-retention", "event-asset-obligations", "event-print-cleanup",
+            "event-stage-file-retention",
+        }
+    }
+if "event_reimbursements" in TOMBSTONED_APPS:
+    CELERY_BEAT_SCHEDULE = {
+        name: entry for name, entry in CELERY_BEAT_SCHEDULE.items()
+        if ".event_reimbursements." not in entry["task"]
     }
 
 if "devices" in TOMBSTONED_APPS:
@@ -747,6 +947,7 @@ CORS_ALLOWED_ORIGINS = env.list(
 )
 CORS_ALLOW_HEADERS = (
     *default_headers,
+    "upload-offset",
     "x-client-id",
     "x-nonce",
     "x-signature",
@@ -756,6 +957,8 @@ CORS_ALLOW_HEADERS = (
     "x-kiosk-operator-lease",
     "x-publishable-key",
 )
+# --- release 2 lane L1: the SPA marks the first short-link resolve of a page load (one visit) ---
+CORS_ALLOW_HEADERS += ("x-sw-visit",)
 CORS_ALLOW_CREDENTIALS = True
 
 HMAC_CLIENT_ID = env("HMAC_CLIENT_ID", default="")
@@ -773,6 +976,11 @@ HMAC_PROTECTED_PATH_PREFIXES = env.list(
     "HMAC_PROTECTED_PATH_PREFIXES",
     default=["/api/public/", "/api/v1/public/"],
 )
+from apps.apiclients.read_prefixes import mandatory_hmac_prefixes
+HMAC_PROTECTED_PATH_PREFIXES = list(dict.fromkeys([
+    *HMAC_PROTECTED_PATH_PREFIXES, *mandatory_hmac_prefixes(),
+]))
+
 # Fernet key for encrypting ApiClient secrets at rest. Generate with:
 #   python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
 # default="" (review fix #5) so settings import never fails when encryption isn't used;
@@ -866,6 +1074,81 @@ PII_DEK_CACHE_TTL_SECONDS = env.int("PII_DEK_CACHE_TTL_SECONDS", default=300)
 PII_AWS_KMS_KEY_ID = env("PII_AWS_KMS_KEY_ID", default="")
 PII_AWS_KMS_REGION = env("PII_AWS_KMS_REGION", default="")
 PII_AWS_KMS_ENDPOINT_URL = env("PII_AWS_KMS_ENDPOINT_URL", default="")
+# Independent account custody; Events never receives these wrapping secrets.
+ACCOUNT_SAVED_DETAILS_ENABLED = env.bool("ACCOUNT_SAVED_DETAILS_ENABLED", default=False)
+ACCOUNT_PII_KEY_BROKER = env("ACCOUNT_PII_KEY_BROKER", default="local")
+ACCOUNT_PII_MASTER_KEY = env("ACCOUNT_PII_MASTER_KEY", default="")
+ACCOUNT_PII_MASTER_KEY_PREVIOUS = env("ACCOUNT_PII_MASTER_KEY_PREVIOUS", default="")
+ACCOUNT_PII_AWS_KMS_KEY_ID = env("ACCOUNT_PII_AWS_KMS_KEY_ID", default="")
+# --- Release 2 / U-A1: one account per person -------------------------------------------
+# The unification migration converts live staff accounts only when this equals the
+# plan_sha256 that `manage.py account_unification_report` printed for this database.
+ACCOUNT_UNIFICATION_ACK = env("ACCOUNT_UNIFICATION_ACK", default="")
+# --- end U-A1 --------------------------------------------------------------------------
+# --- Release 2 / S0: login security (#62, #66, #128 C-2) --------------------------------
+# Deployment-wide PLATFORM DEFAULTS. A space's security policy may only tighten them
+# (`makerspaces.security_settings_registry` `stricter`); it can never loosen one.
+# Breached-password check (HIBP k-anonymity range API): on, fail-open, bounded timeout.
+PASSWORD_BREACH_CHECK_ENABLED = env.bool("PASSWORD_BREACH_CHECK_ENABLED", default=True)
+PASSWORD_BREACH_CHECK_TIMEOUT_SECONDS = env.int("PASSWORD_BREACH_CHECK_TIMEOUT_SECONDS", default=2)
+# Cloudflare Turnstile. Dormant until BOTH keys are set; the secret is secret-bearing.
+TURNSTILE_SITE_KEY = env("TURNSTILE_SITE_KEY", default="")
+TURNSTILE_SECRET_KEY = env("TURNSTILE_SECRET_KEY", default="")
+TURNSTILE_FAIL_MODE = env("TURNSTILE_FAIL_MODE", default="open")
+TURNSTILE_AFTER_FAILURES = env.int("TURNSTILE_AFTER_FAILURES", default=3)
+TURNSTILE_HOSTNAMES = env.list("TURNSTILE_HOSTNAMES", default=[])
+# Automatic IP blocking for credential stuffing (one source, many accounts).
+LOGIN_IP_BLOCK_ENABLED = env.bool("LOGIN_IP_BLOCK_ENABLED", default=True)
+LOGIN_IP_BLOCK_DISTINCT_ACCOUNTS = env.int("LOGIN_IP_BLOCK_DISTINCT_ACCOUNTS", default=10)
+LOGIN_IP_BLOCK_WINDOW_SECONDS = env.int("LOGIN_IP_BLOCK_WINDOW_SECONDS", default=900)
+LOGIN_IP_BLOCK_SECONDS = env.int("LOGIN_IP_BLOCK_SECONDS", default=3600)
+# Unusual-login check, remembered devices, emailed login codes and alert links.
+LOGIN_RISK_FAILURE_THRESHOLD = env.int("LOGIN_RISK_FAILURE_THRESHOLD", default=3)
+LOGIN_REMEMBERED_DEVICE_DAYS = env.int("LOGIN_REMEMBERED_DEVICE_DAYS", default=90)
+LOGIN_CODE_TTL_SECONDS = env.int("LOGIN_CODE_TTL_SECONDS", default=600)
+SECURITY_ALERT_LINK_TTL_DAYS = env.int("SECURITY_ALERT_LINK_TTL_DAYS", default=14)
+# Passkeys (WebAuthn): the relying-party display name; the RP ID is the request's host.
+WEBAUTHN_RP_NAME = env("WEBAUTHN_RP_NAME", default="Space Works")
+for _name, _low, _high in (
+    ("PASSWORD_BREACH_CHECK_TIMEOUT_SECONDS", 1, 10), ("TURNSTILE_AFTER_FAILURES", 1, 20),
+    ("LOGIN_IP_BLOCK_DISTINCT_ACCOUNTS", 2, 1000), ("LOGIN_IP_BLOCK_WINDOW_SECONDS", 60, 86400),
+    ("LOGIN_IP_BLOCK_SECONDS", 60, 604800), ("LOGIN_RISK_FAILURE_THRESHOLD", 1, 20),
+    ("LOGIN_REMEMBERED_DEVICE_DAYS", 1, 90), ("LOGIN_CODE_TTL_SECONDS", 60, 1800),
+    ("SECURITY_ALERT_LINK_TTL_DAYS", 1, 30),
+):
+    if not _low <= globals()[_name] <= _high:
+        raise ImproperlyConfigured(f"{_name} must be between {_low} and {_high}.")
+del _name, _low, _high
+if TURNSTILE_FAIL_MODE not in {"open", "closed"}:
+    raise ImproperlyConfigured("TURNSTILE_FAIL_MODE must be open or closed.")
+if bool(TURNSTILE_SITE_KEY) != bool(TURNSTILE_SECRET_KEY):
+    raise ImproperlyConfigured("Set TURNSTILE_SITE_KEY and TURNSTILE_SECRET_KEY together, or neither.")
+if not WEBAUTHN_RP_NAME.strip() or len(WEBAUTHN_RP_NAME) > 64:
+    raise ImproperlyConfigured("WEBAUTHN_RP_NAME must be 1 to 64 characters.")
+# --- end S0 ----------------------------------------------------------------------------
+# --- Release 2 / U-A2: minimum native app version (#128 C-6a) ---------------------------
+# Semver x.y.z per platform, compared numerically; empty = no minimum. Device sign-in and
+# refresh refuse an older (or unversioned) app with 426 native_app_update_required.
+MIN_NATIVE_APP_VERSION_IOS = env("MIN_NATIVE_APP_VERSION_IOS", default="").strip()
+MIN_NATIVE_APP_VERSION_ANDROID = env("MIN_NATIVE_APP_VERSION_ANDROID", default="").strip()
+import re as _re  # noqa: E402 -- local to this check
+for _name in ("MIN_NATIVE_APP_VERSION_IOS", "MIN_NATIVE_APP_VERSION_ANDROID"):
+    if globals()[_name] and not _re.fullmatch(r"(0|[1-9][0-9]{0,8})\.(0|[1-9][0-9]{0,8})\.(0|[1-9][0-9]{0,8})",
+                                             globals()[_name]):
+        raise ImproperlyConfigured(f"{_name} must be a version like 1.4.0 (x.y.z), or empty.")
+del _name, _re
+# --- end U-A2 --------------------------------------------------------------------------
+ACCOUNT_SAVED_ASSET_BUDGET_BYTES = env.int("ACCOUNT_SAVED_ASSET_BUDGET_BYTES", default=50 * 1024**2)
+ACCOUNT_SAVED_RESUME_SCAN_REQUIRED = env.bool("ACCOUNT_SAVED_RESUME_SCAN_REQUIRED", default=False)
+ACCOUNT_SAVED_RESUME_SCANNER = env("ACCOUNT_SAVED_RESUME_SCANNER", default="")
+EVENT_REGISTRATION_CREDENTIAL_DIGEST_KEY = env("EVENT_REGISTRATION_CREDENTIAL_DIGEST_KEY", default="")
+EVENT_REGISTRATION_CREDENTIAL_KEY_VERSION = env.int("EVENT_REGISTRATION_CREDENTIAL_KEY_VERSION", default=1)
+EVENT_REGISTRATION_CREDENTIAL_KEYS = env.json("EVENT_REGISTRATION_CREDENTIAL_KEYS", default={})
+EVENT_ASSET_SCAN_BACKEND = env("EVENT_ASSET_SCAN_BACKEND", default="none")
+EVENT_ASSET_CLAMAV_HOST = env("EVENT_ASSET_CLAMAV_HOST", default="")
+EVENT_ASSET_CLAMAV_PORT = env.int("EVENT_ASSET_CLAMAV_PORT", default=3310)
+UI_DELIGHT_ENABLED = env.bool("UI_DELIGHT_ENABLED", default=True)
+UI_EASTER_EGGS_ENABLED = env.bool("UI_EASTER_EGGS_ENABLED", default=True)
 # When True, requests to HMAC_PROTECTED_PATH_PREFIXES must carry a valid signed client.
 API_CLIENT_AUTH_REQUIRED = env.bool("API_CLIENT_AUTH_REQUIRED", default=False)
 
@@ -895,6 +1178,7 @@ REST_FRAMEWORK = {
         "push_device_registration": env("THROTTLE_PUSH_DEVICE_REGISTRATION", default="10/min"),
         "social_nonce": env("THROTTLE_SOCIAL_NONCE", default="10/min"),
         "social_login": env("THROTTLE_SOCIAL_LOGIN", default="10/min"),
+        "social_link": env("THROTTLE_SOCIAL_LINK", default="10/hour"),
         # Issuance and redemption deliberately have independent budgets. A member who
         # mistypes a physically handed code must not consume the staff issue budget (or
         # vice versa), repeating the phone-OTP shared-bucket failure.
@@ -941,19 +1225,23 @@ REST_FRAMEWORK = {
         ),
         "anonymous_request_ip_burst": env(
             "THROTTLE_ANONYMOUS_REQUEST_IP_BURST",
-            default="2/min",
+            default="5/min",
         ),
         "anonymous_request_ip_hour": env(
             "THROTTLE_ANONYMOUS_REQUEST_IP_HOUR",
-            default="10/hour",
+            default="30/hour",
         ),
         "anonymous_request_email": env(
             "THROTTLE_ANONYMOUS_REQUEST_EMAIL",
-            default="3/day",
+            default="5/hour",
         ),
         "public_invitation_request": env(
             "THROTTLE_PUBLIC_INVITATION_REQUEST", default="10/hour"
         ),
+        "hosting_request_submit": env("THROTTLE_HOSTING_REQUEST_SUBMIT", default="5/hour"),
+        "hosting_request_email": env("THROTTLE_HOSTING_REQUEST_EMAIL", default="3/day"),
+        "hosting_request_token": env("THROTTLE_HOSTING_REQUEST_TOKEN", default="30/hour"),
+        "hosting_invitation_create": env("THROTTLE_HOSTING_INVITATION_CREATE", default="20/hour"),
         "print_request_submit": env("THROTTLE_PRINT_REQUEST_SUBMIT", default="10/min"),
         "public_tool_checkout": env("THROTTLE_PUBLIC_TOOL_CHECKOUT", default="10/min"),
         "public_tool_return": env("THROTTLE_PUBLIC_TOOL_RETURN", default="10/min"),
@@ -1020,15 +1308,26 @@ REST_FRAMEWORK = {
         # member can strand. See `makerspaces.throttles.MemberImagePresignThrottle`.
         "member_image_presign": env("THROTTLE_MEMBER_IMAGE_PRESIGN", default="20/hour"),
         "data_export_create": env("THROTTLE_DATA_EXPORT_CREATE", default="3/hour"),
-        "archive_recipient_verify": env(
-            "THROTTLE_ARCHIVE_RECIPIENT_VERIFY", default="10/min"
-        ),
         "tenant_migration_read": env(
             "THROTTLE_TENANT_MIGRATION_READ", default="120/min"
         ),
         "tenant_migration_write": env(
             "THROTTLE_TENANT_MIGRATION_WRITE", default="30/hour"
         ),
+        "tenant_migration_upload": env(
+            "THROTTLE_TENANT_MIGRATION_UPLOAD", default="1200/min"
+        ),
+        # --- release 2 lane L1: event short-link resolution (/e/<code>) ---
+        "event_short_link": env("THROTTLE_EVENT_SHORT_LINK", default="30/min"),
+        # --- release 2 lane S0: login security (codes, passkeys, alert links) ---
+        "login_code_resend": env("THROTTLE_LOGIN_CODE_RESEND", default="5/hour"),
+        "login_code_ip": env("THROTTLE_LOGIN_CODE_IP", default="30/hour"),
+        "passkey_options": env("THROTTLE_PASSKEY_OPTIONS", default="30/min"),
+        "passkey_verify": env("THROTTLE_PASSKEY_VERIFY", default="10/min"),
+        "security_alert_action": env("THROTTLE_SECURITY_ALERT_ACTION", default="10/hour"),
+        # --- release 2 lane U-C: account merge (start/resend, proofs/preview/confirm) ---
+        "account_merge_start": env("THROTTLE_ACCOUNT_MERGE_START", default="10/hour"),
+        "account_merge_prove": env("THROTTLE_ACCOUNT_MERGE_PROVE", default="30/hour"),
     },
     # Proxy-aware client IP for throttling. Production must declare its topology at
     # settings import above; direct DEBUG development defaults to zero trusted proxies.
@@ -1070,7 +1369,7 @@ SECURE_HSTS_PRELOAD = SECURE_HSTS_SECONDS > 0
 # Always-on, transport-independent headers.
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
-SECURE_REFERRER_POLICY = "same-origin"
+SECURE_REFERRER_POLICY = "strict-origin"
 
 # Permissive enough for the current admin and API docs; tighten per deployment later.
 # drf-spectacular's Swagger UI / Redoc load their JS+CSS from the jsDelivr CDN, so the
@@ -1124,6 +1423,7 @@ AUTH_COOKIE_SECURE = env.bool("AUTH_COOKIE_SECURE", default=True)
 # provider verifier URL and bearer credential are configured. Verifiers must perform
 # real Apple App Attest / Google Play Integrity validation and return bound claims.
 DEVICE_ATTESTATION_APPS = env.json("DEVICE_ATTESTATION_APPS", default={})
+DEVICE_ATTESTATION_DEV_INSECURE = env.bool("DEVICE_ATTESTATION_DEV_INSECURE", default=False)
 DEVICE_APPLE_ATTESTATION_VERIFY_URL = env("DEVICE_APPLE_ATTESTATION_VERIFY_URL", default="")
 DEVICE_APPLE_ATTESTATION_VERIFY_TOKEN = env("DEVICE_APPLE_ATTESTATION_VERIFY_TOKEN", default="")
 DEVICE_ANDROID_ATTESTATION_VERIFY_URL = env("DEVICE_ANDROID_ATTESTATION_VERIFY_URL", default="")
@@ -1173,6 +1473,13 @@ SPECTACULAR_SETTINGS = {
     # context and the file does not exist inside the container.
     "VERSION": "0.9.2",
     "ENUM_NAME_OVERRIDES": {
+        "DevicePlatformEnum": "apps.accounts.models_devices.DevicePlatform.choices",
+        # Each anyOf proof branch has a `type` discriminator. Without unique names
+        # spectacular extracts all three as DeviceAttestationPayloadTypeEnum and
+        # silently replaces the iOS/development choices with the Android choice.
+        "PlayIntegrityAttestationTypeEnum": ["play_integrity"],
+        "AppAttestAttestationTypeEnum": ["app_attest"],
+        "DevelopmentAttestationTypeEnum": ["development"],
         # Phase 9b: the kiosk evidence-prepare route shares these choices; pin the
         # existing component name so the generated client type does not rename.
         "EvidenceUrlRequestEvidenceTypeEnum": [("issue", "Issue"), ("return", "Return")],
@@ -1180,6 +1487,20 @@ SPECTACULAR_SETTINGS = {
             ("draft", "Draft"),
             ("printed", "Printed"),
             ("archived", "Archived"),
+        ],
+        # Refund cases: stable names instead of hash-suffixed collision names.
+        "RefundCaseKindEnum": [("due", "Due under policy"), ("request", "Requested by member")],
+        "RefundCaseStatusEnum": [
+            ("open", "Open"), ("approved", "Approved"), ("approval_failed", "Approval failed"),
+            ("declined", "Declined"), ("withdrawn", "Withdrawn"), ("void", "Void"),
+        ],
+        "RefundCaseReasonCodeEnum": [
+            ("event_cancelled", "Event cancelled by the space"), ("registration_cancelled", "Registration cancelled"),
+            ("booking_cancelled", "Booking cancelled"), ("staff_cancelled", "Cancelled by staff"),
+            ("membership_cancelled", "Membership term cancelled"),
+            ("member_request", "Member request"),
+            ("capture_flagged", "Unexpected online capture"),  # lane L5 (capture flags)
+            ("fee_waived", "Loan fee waived by staff"),  # lane L15 (loan fee waivers)
         ],
         "InventoryAssetStatusEnum": [
             ("available", "Available"),
@@ -1273,3 +1594,116 @@ if not 60 <= MFA_CHALLENGE_TTL_SECONDS <= 600:
     raise ImproperlyConfigured("MFA_CHALLENGE_TTL_SECONDS must be between 60 and 600.")
 if not 1 <= MFA_MAX_ATTEMPTS <= 10:
     raise ImproperlyConfigured("MFA_MAX_ATTEMPTS must be between 1 and 10.")
+
+# Lane F infrastructure is always present, independent of separable domain apps.
+from config.web_analytics import analytics_settings
+WEB_ANALYTICS_SCRIPT_URL, WEB_ANALYTICS_COLLECT_URL, WEB_ANALYTICS_DOMAIN = analytics_settings(
+    env, CONTENT_SECURITY_POLICY,
+)
+ROUTE_METRICS_ENABLED = env.bool("ROUTE_METRICS_ENABLED", default=False)
+PROMETHEUS_MULTIPROC_DIR = env("PROMETHEUS_MULTIPROC_DIR", default="")
+MIDDLEWARE.insert(3, "apps.operations.route_metrics.RouteMetricsMiddleware")
+ORGANIZATION_SELF_CREATION_ENABLED = env.bool("ORGANIZATION_SELF_CREATION_ENABLED", default=False)
+ORGANIZATION_SELF_CREATION_MAX_OWNED = env.int("ORGANIZATION_SELF_CREATION_MAX_OWNED", default=3)
+ORGANIZATION_SELF_CREATION_MAX_PER_DAY = env.int("ORGANIZATION_SELF_CREATION_MAX_PER_DAY", default=1)
+if not all(1 <= limit <= 100 for limit in (
+    ORGANIZATION_SELF_CREATION_MAX_OWNED, ORGANIZATION_SELF_CREATION_MAX_PER_DAY,
+)):
+    raise ImproperlyConfigured("Organization creation limits must be between 1 and 100.")
+
+SPECTACULAR_SETTINGS.setdefault("APPEND_COMPONENTS", {}).setdefault("securitySchemes", {})["ServerHMAC"] = {
+    "type": "apiKey", "in": "header", "name": "X-Signature",
+    "description": "Tenant-bound server HMAC over METHOD, full path, timestamp, nonce "
+                   "(when present), body. X-Client-Id and X-Timestamp also required; "
+                   "see API client protocol.",
+}
+
+# Addressed notifications require an operator-owned absolute callback origin.
+MESSAGING_WEBHOOK_BASE_URL = env("MESSAGING_WEBHOOK_BASE_URL", default="").rstrip("/")
+
+CELERY_BEAT_SCHEDULE["messaging-recovery"] = {
+    "task": "apps.integrations.tasks_messaging.sweep_messaging_task", "schedule": 300.0,
+}
+# Bounded canonical addressed-leg and processed-receipt retention (docs/INVARIANTS.md).
+CELERY_BEAT_SCHEDULE["canonical-messaging-retention"] = {
+    "task": "apps.integrations.tasks_messaging.canonical_retention_task", "schedule": crontab(minute=35),
+}
+# Applied after legacy settings so host/full with no explicit task selector is
+# byte-for-byte equivalent in effective values. No free knobs are read under full.
+from config.cloud_settings.tasks import task_settings
+try:
+    _cloud_tasks = task_settings(
+        env, _deployment, profile=CLOUD_TASK_PROFILE, scheduler=CLOUD_SCHEDULER,
+    )
+    CLOUD_TASK_PROFILE = _cloud_tasks.get("CLOUD_TASK_PROFILE", "")
+    CLOUD_SCHEDULER = _cloud_tasks.get("CLOUD_SCHEDULER", "")
+    if _cloud_tasks:
+        CELERY_BROKER_URL = _cloud_tasks["CELERY_BROKER_URL"]
+        CELERY_TASK_ALWAYS_EAGER = _cloud_tasks["CELERY_TASK_ALWAYS_EAGER"]
+        CELERY_RESULT_BACKEND = _cloud_tasks["CELERY_RESULT_BACKEND"]
+        LIVE_REDIS_URL = _cloud_tasks["LIVE_REDIS_URL"]
+        CACHES = {"default": cache_config(_cloud_tasks["CACHE_URL"])}
+    if _deployment.is_free:
+        from config.cloud_settings.free import free_settings
+        globals().update(free_settings({
+            "FREE_TICK_SECRET": env("FREE_TICK_SECRET", default=""),
+            "FREE_TICK_INTERVAL_SECONDS": env.int("FREE_TICK_INTERVAL_SECONDS", default=600),
+            "FREE_TICK_BUDGET_SECONDS": env.int("FREE_TICK_BUDGET_SECONDS", default=20),
+            "FREE_TICK_RATE_LIMIT_PER_MINUTE": env.int("FREE_TICK_RATE_LIMIT_PER_MINUTE", default=6),
+            "FREE_DB_CAP_BYTES": env.int("FREE_DB_CAP_BYTES", default=None),
+            "FREE_OBJECT_CAP_BYTES": env.int("FREE_OBJECT_CAP_BYTES", default=None),
+            "FREE_EMAIL_DAILY_CAP": env.int("FREE_EMAIL_DAILY_CAP", default=None),
+        }))
+        # Free ticks use J's typed catalog, never Celery beat or its whole sweeps.
+        CELERY_BEAT_SCHEDULE = {}
+except ValueError as exc:
+    raise ImproperlyConfigured(str(exc)) from exc
+
+if SPACEWORKS_DEPLOYMENT_MODE == "managed" or CLOUD_TASK_PROFILE:
+    from config.cloud_settings.wiring import cloud_task_modules
+    CELERY_IMPORTS = cloud_task_modules(tombstones=TOMBSTONED_APPS)
+
+from config.cloud_settings.configuration import deployment_settings
+globals().update(deployment_settings(env, _deployment))
+if CLOUD_PROGRAMMES:
+    from apps.operations.cloud_jobs.catalog import assert_no_programme_overlap
+    assert_no_programme_overlap(CLOUD_PROGRAMMES, CELERY_BEAT_SCHEDULE, SPACEWORKS_DEPLOYMENT_MODE)
+if SPACEWORKS_DEPLOYMENT_MODE == "managed" and not _deployment.is_free:
+    from apps.operations.cloud_jobs.catalog import beat_entries
+    # Preserve legacy calendar slots; new reviewed tasks alone acquire intervals.
+    for _name, _entry in beat_entries().items():
+        CELERY_BEAT_SCHEDULE.setdefault(_name, _entry)
+    if CLOUD_SCHEDULER == "beat":
+        CELERY_BEAT_SCHEDULER = "apps.operations.cloud_jobs.beat.DatabaseScheduler"
+if SPACEWORKS_DEPLOYMENT_MODE == "host":
+    # Preserve PersistentScheduler's file/calendar behavior, while exposing real
+    # dispatcher contact to the existing installer completion probe (C17).
+    CELERY_BEAT_SCHEDULER = "apps.operations.cloud_jobs.host_beat.ObservedPersistentScheduler"
+
+# --- lane L5 (release 2): payer-facing throttles for offline claims and pay links.
+REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"].update({
+    "payment_claims": env("THROTTLE_PAYMENT_CLAIMS", default="5/hour"),
+    "pay_links": env("THROTTLE_PAY_LINKS", default="30/min"),
+})
+# --- end lane L5
+
+# --- lane L15 (release 2): the price preview, per account or per IP when signed out.
+REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"].update({
+    "pricing_quote": env("THROTTLE_PRICING_QUOTE", default="60/min"),
+})
+# Stable names for the pricing enums instead of hash-suffixed collision names.
+SPECTACULAR_SETTINGS["ENUM_NAME_OVERRIDES"].update({
+    "PricingDomainEnum": "apps.payments.models_pricing.PricingDomain.choices",
+    "PricingModeEnum": [("free", "Free"), ("paid", "Paid")],
+    "PriceOverrideModeEnum": [("inherit", "Use the space default"), ("free", "Free"), ("custom", "Custom price")],
+})
+# --- end lane L15
+# --- Release 2 / S-C: IP blocking, Turnstile and breached passwords (#62, #66) ----------
+# The middleware, validator, axes and beat lines sit beside their neighbours above.
+# Sign-in routes document 429 ip_blocked, 400 captcha_required/captcha_failed and
+# password_breached without each view repeating them.
+SPECTACULAR_SETTINGS["POSTPROCESSING_HOOKS"] = [
+    *SPECTACULAR_SETTINGS.get("POSTPROCESSING_HOOKS", ["drf_spectacular.hooks.postprocess_schema_enums"]),
+    "apps.accounts.ip_guard_schema.document_login_guard_errors",
+]
+# --- end S-C ---------------------------------------------------------------------------

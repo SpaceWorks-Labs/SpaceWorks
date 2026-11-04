@@ -132,6 +132,12 @@ class BackupArchiveRehydrateView(APIView):
         serializer.is_valid(raise_exception=True)
         destination = serializer.validated_data["destination"]
         validate_rehydration(archive, destination)
+        from apps.operations.durable_dispatch import resident_delivery
+
+        if not resident_delivery():
+            # No durable rehydration request model exists. Never report queued
+            # work which cannot survive this request or execute it eagerly here.
+            return Response({"detail": "The backup worker is unavailable."}, status=503)
         audit.record(
             request.user, "backup.archive_rehydrate_requested", target=archive,
             meta={"destination_id": destination.pk},

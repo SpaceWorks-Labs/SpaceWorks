@@ -9,9 +9,14 @@ from django.db import models
 from django.db.models import F, Q
 from django.utils import timezone
 from apps.forms_schema.validation import validate_form_schema
+from .programme.accent_presets import ACCENT_CHOICES
 
 
 class Event(models.Model):
+    ACCENT_CHOICES = ACCENT_CHOICES
+    version = models.PositiveIntegerField(default=1)
+    event_date_revision = models.PositiveIntegerField(default=1)
+    accent_preset = models.CharField(max_length=24, choices=ACCENT_CHOICES, blank=True, default="")
     class Status(models.TextChoices):
         DRAFT = "draft", "Draft"
         PUBLISHED = "published", "Published"
@@ -22,10 +27,25 @@ class Event(models.Model):
         MEMBERS = "members", "Members"
         ACCOUNTS = "accounts", "Authenticated accounts"
         INVITE = "invite", "Invited accounts"
+        PARTICIPATING_ORGANIZATIONS = "participating_organizations", "Participating organizations"
 
-    registration_audience = models.CharField(max_length=8, choices=RegistrationAudience.choices, default=RegistrationAudience.MEMBERS)
+    organization_admission_blocked = models.BooleanField(default=False, editable=False)
+    registration_audience = models.CharField(max_length=32, choices=RegistrationAudience.choices, default=RegistrationAudience.MEMBERS)
     category = models.ForeignKey("events.EventCategory", on_delete=models.SET_NULL, null=True, blank=True, related_name="events")
     tags = models.JSONField(default=list, blank=True)
+
+    class Listing(models.TextChoices):
+        LISTED = "listed", "Listed"
+        UNLISTED = "unlisted", "Unlisted"
+
+    class PageState(models.TextChoices):
+        LIVE = "live", "Live"
+        OFFLINE = "offline", "Offline"
+
+    class DeliveryMode(models.TextChoices):
+        IN_PERSON = "in_person", "In person"
+        ONLINE = "online", "Online"
+        HYBRID = "hybrid", "Hybrid"
 
     class LocationKind(models.TextChoices):
         INDOOR = 'indoor', 'Indoor'
@@ -89,6 +109,15 @@ class Event(models.Model):
         blank=True,
     )
     is_public = models.BooleanField(default=False)
+    # Release 2 L1, the public surface. "Who can find it" (listing) is independent of
+    # "who can see it" (is_public); page_state takes a published page down without a
+    # lifecycle change; join_url_encrypted is deployment-key ciphertext, released only to
+    # confirmed registrants (events/online_delivery.py).
+    listing = models.CharField(max_length=10, choices=Listing.choices, default=Listing.LISTED)
+    page_state = models.CharField(max_length=8, choices=PageState.choices, default=PageState.LIVE)
+    delivery_mode = models.CharField(max_length=10, choices=DeliveryMode.choices, default=DeliveryMode.IN_PERSON)
+    join_url_encrypted = models.TextField(blank=True, default="")
+    show_registration_count = models.BooleanField(default=True)
     # Public-bucket object key for the event cover image. Managed only by the
     # dedicated image endpoints (never by the generic update path), so it is
     # deliberately absent from services.EVENT_FIELDS.
@@ -113,6 +142,8 @@ class Event(models.Model):
     class Meta:
         ordering = ["starts_at", "id"]
         constraints = [
+            models.CheckConstraint(condition=Q(accent_preset__in=("", *dict(ACCENT_CHOICES))),
+                                   name="event_accent_palette_only"),
             models.CheckConstraint(
                 condition=Q(ends_at__gte=F("starts_at")),
                 name="event_ends_not_before_start",
@@ -154,6 +185,10 @@ class Event(models.Model):
                 ),
                 name="event_series_identity_all_or_none",
             ),
+            models.CheckConstraint(condition=Q(listing__in=("listed", "unlisted")), name="event_listing_valid"),
+            models.CheckConstraint(condition=Q(page_state__in=("live", "offline")), name="event_page_state_valid"),
+            models.CheckConstraint(condition=Q(delivery_mode__in=("in_person", "online", "hybrid")),
+                                   name="event_delivery_mode_valid"),
             models.UniqueConstraint(
                 fields=("series", "series_occurrence_key"),
                 name="uniq_event_series_occurrence_key",
@@ -180,6 +215,9 @@ class Event(models.Model):
 
     def clean(self):
         super().clean()
+        if self.starts_at and self.ends_at:
+            from .website_validation import validate_owner_window
+            validate_owner_window(self)
         from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
         try:
@@ -220,7 +258,10 @@ class Event(models.Model):
             raise ValidationError({"series_override_fields": "Expected a list of field names."})
     def save(self, *args, **kwargs):
         self.title = (self.title or "").strip()
-        if self.pk:
+        # Asset replay inserts with the PK reserved by its rolled-back first pass.
+        # A forced INSERT cannot replace an existing identity; the PK constraint
+        # still refuses collisions. Ordinary saves retain the immutable fields.
+        if self.pk and not kwargs.get("force_insert"):
             original = type(self).objects.only(
                 "public_token", "calendar_uid", "makerspace_id"
             ).get(

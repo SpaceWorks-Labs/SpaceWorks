@@ -15,6 +15,8 @@ class BookableSpace(models.Model):
         BENCH = "bench", "Bench"
         MEETING = "meeting", "Meeting room"
         OTHER = "other", "Other"
+        # Machine time booking (`machines.time_booking`): one machine's time.
+        MACHINE = "machine", "Machine time"
 
     class ApprovalMode(models.TextChoices):
         INSTANT = 'instant', 'Instant confirmation'
@@ -60,6 +62,8 @@ class BookableSpace(models.Model):
         default=None,
         validators=[validate_form_schema],
     )
+    # Fixed field bindings/geometry only; no PII, artwork or credentials.
+    pass_template = models.JSONField(blank=True, default=dict)
     requester_notifications_enabled = models.BooleanField(
         null=True,
         blank=True,
@@ -101,6 +105,16 @@ class BookableSpace(models.Model):
     # `machines` free of a reverse accessor into an app it does not require.
     machine_type = models.ForeignKey(
         "machines.MachineType",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    # Machine time booking (machines D1, MI-43; `machines.time_booking`): this bookable
+    # resource IS one machine's time. Same nullable, reverse-free shape as `machine_type`
+    # so bookings never requires machines; set, it also fixes `machine_type`.
+    machine = models.ForeignKey(
+        "machines.Machine",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,

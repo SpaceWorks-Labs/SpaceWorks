@@ -16,6 +16,7 @@ from apps.hardware_requests.admin_request_review import RequestReviewAdminMixin
 from apps.hardware_requests.models import HardwareRequest, HardwareRequestItem
 from config.admin_access import SuperuserOnlyModelAdmin
 from apps.encryption.admin_search import ScopedPiiAdminSearchMixin
+from apps.accounts.admin_pii_masking import PiiMaskingAdminMixin
 
 
 class ReturnDueForm(forms.Form):
@@ -51,7 +52,7 @@ class HardwareRequestItemInline(TabularInline):
 
 @admin.register(HardwareRequest)
 class HardwareRequestAdmin(
-    RequestReviewAdminMixin, ScopedPiiAdminSearchMixin, SuperuserOnlyModelAdmin, ModelAdmin
+    PiiMaskingAdminMixin, RequestReviewAdminMixin, ScopedPiiAdminSearchMixin, SuperuserOnlyModelAdmin, ModelAdmin
 ):
     # Accepting reserves stock and rejecting closes a person's ask, so neither is a
     # checkbox-column decision any more: both moved to the one-by-one review page
@@ -102,6 +103,7 @@ class HardwareRequestAdmin(
     fields = readonly_fields
     inlines = [HardwareRequestItemInline]
     pii_search_model = "hardware_requests.HardwareRequest"
+    pii_extra_fields = ("requester_identity",)
     pii_search_fields = ("requester_name", "requester_contact_email")
 
     @admin.display(description="Requester")

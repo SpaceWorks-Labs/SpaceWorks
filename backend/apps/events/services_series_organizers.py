@@ -28,6 +28,7 @@ def project_organizer(source, events):
 
 def _lock(series):
     locked = EventSeries.objects.select_for_update().get(pk=series.pk)
+    list(locked.occurrences.select_for_update(of=("self",)).order_by("pk"))
     require_module_locked(locked.makerspace_id, "events")
     return locked
 

@@ -42,15 +42,33 @@ from apps.accounts.views_oidc_browser import (
     OidcBrowserStartView,
 )
 from apps.accounts.views_claim import ClaimRedemptionView
+from apps.accounts.views_device_staff import DeviceStaffGrantView
+from apps.accounts.views_logout_all import LogoutAllView
+from apps.accounts.views_account_deletion import AccountDeletionView
+from apps.accounts.views_account_restore import (
+    AccountRestoreEmailView, AccountRestorePhoneView, AccountRestoreSocialStartView, AccountRestoreSocialCompleteView,
+)
+from apps.accounts.views_github import GithubBrowserCallbackView, GithubBrowserStartView
 from apps.organizations.views_redeem import OrganizationInvitationRedeemView
+from apps.organizations.views_self_service import OrganizationSelfServiceView
 
 from apps.accounts.urls_security import auth_urlpatterns
+from apps.accounts.urls_account_merge import account_merge_urlpatterns
 
 urlpatterns = [
+    path("account/restore/email", AccountRestoreEmailView.as_view(), name="auth-account-restore-email"),
+    path("account/restore/phone", AccountRestorePhoneView.as_view(), name="auth-account-restore-phone"),
+    path("account/restore/social/start", AccountRestoreSocialStartView.as_view(), name="auth-account-restore-social-start"),
+    path("account/restore/social/complete", AccountRestoreSocialCompleteView.as_view(), name="auth-account-restore-social-complete"),
+    path("account/deletion", AccountDeletionView.as_view(), name="auth-account-deletion"),
+    path("organizations/self-service/", OrganizationSelfServiceView.as_view(), name="auth-organizations-self-service"),
     *auth_urlpatterns,
+    *account_merge_urlpatterns,
     path("social/nonce", SocialNonceView.as_view(), name="social-nonce"),
     path("social/google", GoogleSocialLoginView.as_view(), name="social-google"),
     path("social/apple", AppleSocialLoginView.as_view(), name="social-apple"),
+    path("social/github/authorize", GithubBrowserStartView.as_view(), name="social-github-browser-start"),
+    path("social/github/callback", GithubBrowserCallbackView.as_view(), name="social-github-browser-callback"),
     path(
         "social/oidc/callback",
         OidcBrowserCallbackView.as_view(),
@@ -70,6 +88,7 @@ urlpatterns = [
     path("device/login", DeviceLoginView.as_view(), name="device-login"),
     path("device/refresh", DeviceRefreshView.as_view(), name="device-refresh"),
     path("device/logout", DeviceLogoutView.as_view(), name="device-logout"),
+    path("device/staff-grant", DeviceStaffGrantView.as_view(), name="device-staff-grant"),
     path("device/grants", DeviceGrantListView.as_view(), name="device-grants"),
     path("device/grants/<uuid:grant_id>", DeviceGrantDetailView.as_view(), name="device-grant-detail"),
     path("phone/login/start", PhoneLoginStartView.as_view(), name="auth-phone-login-start"),
@@ -86,6 +105,7 @@ urlpatterns = [
     ),
     path("refresh", RefreshView.as_view(), name="auth-refresh"),
     path("logout", LogoutView.as_view(), name="auth-logout"),
+    path("logout-all", LogoutAllView.as_view(), name="auth-logout-all"),
     path("me", MeView.as_view(), name="auth-me"),
     path("change-password", ChangePasswordView.as_view(), name="auth-change-password"),
     path("forgot-password", ForgotPasswordView.as_view(), name="auth-forgot-password"),

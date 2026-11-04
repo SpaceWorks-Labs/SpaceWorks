@@ -21,10 +21,12 @@ from .tenant_dump_cross_tenant import inspect_cross_tenant_source
 from .tenant_dump_model_catalog import FIRST_PARTY_MODEL_RULES
 from .tenant_dump_types import ModelDisposition
 from .tenant_dump_user_closure import build_user_closure
+from .tenant_dump_staff import prepare_staff_rows
 from .tenant_dump_user_rows import (
     apply_user_closure,
     excluded_stub_profile_object_keys,
 )
+from apps.backup.capture_managers import every_row
 
 
 class TenantDumpProjectionError(RuntimeError):
@@ -44,7 +46,8 @@ class TenantDumpSourceProjection:
 def project_makerspace_source(makerspace_id, *, using="default", capture_id=None):
     """Read one tenant with the shared raw producer, then prove live-grant closure."""
     validate_catalog()
-    validate_unowned_tables(connections[using].introspection.table_names())
+    from .cloud_portable import application_table_names
+    validate_unowned_tables(application_table_names(using))
     projected = {}
     with no_decrypt_guard():
         cross_tenant = inspect_cross_tenant_source(makerspace_id, using=using)
@@ -53,7 +56,7 @@ def project_makerspace_source(makerspace_id, *, using="default", capture_id=None
             if rule.disposition is ModelDisposition.DROP:
                 continue
             model = apps.get_model(label)
-            queryset = model._default_manager.using(using).filter(
+            queryset = every_row(model).using(using).filter(
                 predicate.as_q(makerspace_id)
             ).order_by(model._meta.pk.name)
             records = raw_records(queryset, model)
@@ -63,13 +66,17 @@ def project_makerspace_source(makerspace_id, *, using="default", capture_id=None
                 if _source_row_allowed(label, row, makerspace_id, cross_tenant)
             )
 
+        projected = prepare_staff_rows(projected, makerspace_id, using=using)
         _close_conditional_rows(projected)
         user_ids = _referenced_user_ids(projected)
         User = apps.get_model("accounts.User")
+        # Every person holding a staff-track row here (their roster rows name them too).
+        user_ids.update(row["user_id"] for row in projected.get("makerspaces.MakerspaceMembership", ())
+                        if row.get("track") == "staff")
         projected["accounts.User"] = tuple(
             MappingProxyType(dict(row))
             for row in raw_records(
-                User._default_manager.using(using).filter(pk__in=user_ids).order_by(
+                every_row(User).using(using).filter(pk__in=user_ids).order_by(
                     User._meta.pk.name
                 ),
                 User,
@@ -104,6 +111,8 @@ def project_makerspace_source(makerspace_id, *, using="default", capture_id=None
 
 
 def _source_row_allowed(label, row, makerspace_id, cross_tenant):
+    if label == "events.EventCertificateArtwork":
+        return row["promoted_at"] is not None
     if label == "makerspaces.MembershipRequest":
         return row["state"] not in {"requested", "invited", "awaiting_vouches"}
     if label == "apiclients.ApiKeyRequest":

@@ -67,9 +67,12 @@ class OneClickUnsubscribeView(APIView):
     parser_classes = [FormParser, JSONParser]
     http_method_names = ["post", "options"]
 
+    # A dict ``request`` is a media-type -> schema map, so the body schema is keyed by the
+    # two types the parsers accept (RFC 8058 mail clients POST it form-encoded).
     @extend_schema(tags=["Personal notifications"], auth=[], request={
-        "type": "object", "required": ["List-Unsubscribe"],
-        "properties": {"List-Unsubscribe": {"type": "string", "enum": ["One-Click"]}},
+        media_type: {"type": "object", "required": ["List-Unsubscribe"],
+                     "properties": {"List-Unsubscribe": {"type": "string", "enum": ["One-Click"]}}}
+        for media_type in ("application/x-www-form-urlencoded", "application/json")
     }, responses={200: UnsubscribeResultSerializer, **errors(400, 404, 415, 423, 503)})
     def post(self, request, token):
         try:

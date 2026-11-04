@@ -6,14 +6,14 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from apps.accounts import rbac
 from apps.audit import services as audit
 from apps.inventory.models import InventoryProduct
-from apps.makerspaces.guards import require_module_locked
+from apps.makerspaces.folded_capabilities import INVENTORY_TOBUY, require_capability_locked
 from apps.procurement import access
 from apps.procurement.models import ToBuyItem
 
 
 @transaction.atomic
 def create_hardware_draft(actor, makerspace, *, name, quantity, vendor_name="", source_product=None):
-    makerspace = require_module_locked(makerspace, "procurement")
+    makerspace = require_capability_locked(makerspace, INVENTORY_TOBUY)
     if not access.can_manage_kind(actor, makerspace.pk, ToBuyItem.Kind.HARDWARE):
         raise PermissionDenied()
     name = str(name).strip()
@@ -39,7 +39,7 @@ def create_hardware_draft(actor, makerspace, *, name, quantity, vendor_name="", 
 def create_reorder_draft(actor, makerspace, product_id):
     from django.shortcuts import get_object_or_404
 
-    makerspace = require_module_locked(makerspace, "procurement")
+    makerspace = require_capability_locked(makerspace, INVENTORY_TOBUY)
     if not access.can_manage_kind(actor, makerspace.pk, ToBuyItem.Kind.HARDWARE):
         raise PermissionDenied()
     product = get_object_or_404(rbac.scope_by_action(

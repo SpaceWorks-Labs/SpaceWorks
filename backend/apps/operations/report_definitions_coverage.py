@@ -1,5 +1,7 @@
 from apps.accounts import rbac
 from apps.operations.report_types import ReportDefinition
+from apps.operations.report_definitions_hi import COMMUNICATIONS_REPORT_DEFINITION
+from apps.operations.report_charts_remaining import EVIDENCE_CHART, IMPORT_CHART, COMMUNITY_CHART, CERTIFICATION_CHART
 
 
 COVERAGE_REPORT_DEFINITIONS = (
@@ -18,42 +20,41 @@ COVERAGE_REPORT_DEFINITIONS = (
         "evidence-compliance", "apps.evidence.reports.build_evidence_compliance",
         ("period", "evidence_type", "created_count", "attached_count", "unattached_count", "object_live_count", "object_expired_count", "metadata_retained_count", "bytes", "attachment_rate_percent"),
         ("evidence_uploads",), title="Evidence compliance", chart_hint="line", grains=("day", "month"),
+        chart_spec=EVIDENCE_CHART,
     ),
     ReportDefinition(
         "import-quality", "apps.admin_api.reports_imports.build_import_quality",
         ("period", "mode", "status", "jobs", "total_rows", "processed_rows", "created_rows", "updated_rows", "error_rows", "warning_rows", "success_rate_percent", "last_activity_at"),
         ("bulk_import",), required_action=rbac.Action.EDIT_INVENTORY,
         title="Import quality", chart_hint="stacked_bar", grains=("day", "month"),
+        chart_spec=IMPORT_CHART,
     ),
     ReportDefinition(
         "procurement-performance", "apps.procurement.reports.build_procurement_performance",
         ("period", "kind", "status", "items", "units", "estimated_total", "actual_total", "received_items", "inventoried_items", "average_order_hours", "average_receive_hours", "last_activity_at"),
-        ("procurement",), required_action=rbac.Action.EDIT_INVENTORY,
+        ("inventory.tobuy|machines.tobuy",), required_action=rbac.Action.EDIT_INVENTORY,
         title="Procurement performance", chart_hint="stacked_bar", grains=("day", "month"),
     ),
-    ReportDefinition(
-        "communications-health", "apps.integrations.reports_communications.build_communications_health",
-        ("module_key", "channel", "feature", "status", "delivery_count", "attempt_count", "destination_count", "success_rate_percent", "unread_count", "last_activity_at"),
-        required_action=rbac.Action.MANAGE_MAKERSPACE, title="Communications health",
-        chart_hint="stacked_bar", section_modules=("notifications", "email", "telegram", "slack", "mattermost", "discord", "webhook"),
-    ),
+    COMMUNICATIONS_REPORT_DEFINITION,
     ReportDefinition(
         "community-engagement", "apps.makerspaces.reports_community.build_community_engagement",
         ("period", "module_key", "enabled", "activations", "revocations", "active_accounts", "approved_apps", "active_grants", "revoked_grants", "reuse_detected"),
         title="Community engagement", chart_hint="line", grains=("day", "month"),
         section_modules=("membership", "member_accounts", "mobile"),
+        chart_spec=COMMUNITY_CHART,
     ),
     ReportDefinition(
         "certification-coverage", "apps.machines.reports_certifications.build_certification_coverage",
         ("machine_type", "certification_type", "gating_enabled", "required_for_service", "required_for_booking", "active_members", "certified_members", "expiring_30d", "revoked_grants", "coverage_percent"),
         ("machines",), title="Certification coverage", chart_hint="grouped_bar", section_modules=("machines",),
+        chart_spec=CERTIFICATION_CHART,
     ),
     ReportDefinition(
         "module-operational-health", "apps.operations.reports_module_health.build_module_operational_health",
         ("module_key", "enabled", "runtime_available", "coverage_kind", "activity_count", "failure_count", "last_activity_at", "rollup_watermark", "rollup_state"),
         required_action=rbac.Action.MANAGE_MAKERSPACE, title="Module operational health",
         chart_hint="status_grid", section_modules=(
-            "public_inventory", "request_workflow", "staff_admin", "guest_handover", "scanner", "printing", "telegram", "evidence_uploads", "qr_management", "bulk_import", "containers", "stock_transfers", "stocktake", "reports", "qr_print_batches", "asset_units", "procurement", "machines", "machine_service", "events", "bookings", "maintenance", "membership", "notifications", "email", "slack", "mattermost", "discord", "webhook", "payments", "member_accounts", "mobile", "devices", "backup",
+            "public_inventory", "request_workflow", "staff_admin", "guest_handover", "scanner", "printing", "telegram", "evidence_uploads", "qr_management", "bulk_import", "containers", "stock_transfers", "stocktake", "reports", "qr_print_batches", "asset_units", "machines", "machine_service", "events", "bookings", "membership", "notifications", "email", "slack", "mattermost", "discord", "webhook", "payments", "member_accounts", "mobile", "devices",
         ),
     ),
 )

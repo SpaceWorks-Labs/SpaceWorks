@@ -35,7 +35,6 @@ _RECOMMENDED_EXTRAS = frozenset({
     # that merely defaults on is NOT picked up here -- omitting this would hand a
     # freshly provisioned space no way for a member to register.
     "member_accounts",
-    "backup",
 })
 
 # A tool library: the hardware lending lifecycle and nothing else. No machines, no
@@ -45,7 +44,6 @@ _LENDING_EXTRAS = frozenset({
     "reports", "qr_print_batches", "asset_units", "email",
     # A tool library lends to people, so it needs member accounts to lend to.
     "member_accounts",
-    "backup",
 })
 
 # A machine shop: the machine registry, its service queue and the maintenance that keeps
@@ -56,9 +54,8 @@ _LENDING_EXTRAS = frozenset({
 # accounts is one `install_module member_accounts` away if they later want the community
 # layer.
 _WORKSHOP_EXTRAS = frozenset({
-    "machines", "machine_service", "printing", "maintenance", "reports",
+    "machines", "machine_service", "printing", "reports",
     "notifications", "email",
-    "backup",
 })
 
 # The two deployment-shaped profiles. `cloud` is the module set that works on a single
@@ -72,10 +69,9 @@ _WORKSHOP_EXTRAS = frozenset({
 _CLOUD_EXTRAS = frozenset({
     "guest_handover", "containers", "stock_transfers", "stocktake", "reports",
     "asset_units", "bulk_import", "qr_print_batches",
-    "machines", "machine_service", "maintenance",
+    "machines", "machine_service",
     "events", "bookings", "membership", "member_accounts",
     "notifications", "email", "payments",
-    "backup",
 })
 
 _EVENTS_ONLY_EXTRAS = frozenset({
@@ -106,6 +102,26 @@ PROFILES = {
 # TOMBSTONED_APPS, which is a different axis -- `suggest_tombstones` reads the installed
 # modules and names the apps that are safe to drop.
 DEFAULT_PROFILE = RECOMMENDED
+
+
+# Since #97 maintenance and To-Buy are capabilities, not module keys. A profile that used to
+# install the `maintenance`/`procurement` modules switches the same capabilities on, so a
+# profile still means what it meant before the fold. Reserved (L16) switches never appear.
+_PROFILE_FEATURES = {
+    CLOUD: ("machines.maintenance",),
+    WORKSHOP: ("machines.maintenance",),
+}
+
+
+def profile_features(name):
+    """Feature keys a profile switches on in addition to its modules' defaults."""
+    from apps.makerspaces.capability_definitions_r2_l17 import FOLDED_KEYS
+
+    if name not in PROFILES:
+        raise ValueError(f"Unknown profile {name!r}. Choose one of: {', '.join(sorted(PROFILES))}.")
+    if name in (EVERYTHING, FULL):
+        return FOLDED_KEYS
+    return _PROFILE_FEATURES.get(name, ())
 
 
 def profile_modules(name):

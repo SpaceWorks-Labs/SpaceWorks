@@ -4,6 +4,7 @@ from apps.integrations.lifecycle_data import lifecycle_data
 from apps.integrations.notification_catalog import FEATURE_EVENTS
 
 FAMILY_IDS = {
+    "presence": (),
     "hardware_requests": ("request_id", "payment_id"),
     "printing": ("machine_service_request_id", "request_id", "machine_id"),
     "events": ("event_id", "series_id", "registration_id"),

@@ -8,6 +8,26 @@ declare const self: ServiceWorkerGlobalScope & { __WB_MANIFEST: { url: string; r
 const manifest = self.__WB_MANIFEST;
 const paths = new Set(manifest.map((entry) => entry.url));
 const CACHE_PREFIX = "spaceworks-app-shell-";
+// Hashed preview vendors: cache-first, kept at most 30 days and 8 entries.
+const PREVIEW_CACHE = "spaceworks-preview-runtime-v1";
+const PREVIEW_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
+const PREVIEW_MAX_ENTRIES = 8;
+const CACHED_AT = "x-spaceworks-cached-at";
+
+async function previewResponse(request: Request) {
+  const cache = await caches.open(PREVIEW_CACHE);
+  const path = new URL(request.url).pathname;
+  const cached = await cache.match(path);
+  if (cached && Date.now() - Number(cached.headers.get(CACHED_AT)) < PREVIEW_MAX_AGE_MS) return cached;
+  const response = await fetch(request);
+  if (!response.ok || response.redirected) return response;
+  const headers = new Headers(response.headers);
+  headers.set(CACHED_AT, String(Date.now()));
+  await cache.put(path, new Response(await response.clone().blob(), { status: response.status, statusText: response.statusText, headers }));
+  const keys = await cache.keys();
+  await Promise.all(keys.slice(0, Math.max(0, keys.length - PREVIEW_MAX_ENTRIES)).map((key) => cache.delete(key)));
+  return response;
+}
 // Injected revisions produce a version-specific cache without hardcoded chunks.
 const cacheName = async () => CACHE_PREFIX + [...new Uint8Array(await crypto.subtle.digest(
   "SHA-256", new TextEncoder().encode(JSON.stringify(manifest)),
@@ -43,6 +63,10 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const policy = cachePolicy(event.request, self.location.origin, paths);
   if (policy === "network") return;
+  if (policy === "preview") {
+    event.respondWith(previewResponse(event.request).catch(() => Response.error()));
+    return;
+  }
   event.respondWith((async () => {
     const cache = await caches.open(await cacheName());
     if (policy === "kiosk") {

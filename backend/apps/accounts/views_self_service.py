@@ -2,7 +2,7 @@
 
 from django.db import transaction
 from django.utils import timezone
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework.exceptions import NotFound
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
@@ -12,6 +12,7 @@ from rest_framework.views import APIView
 from apps.accounts import audit_events
 from apps.accounts.models import User
 from apps.accounts.models_devices import DeviceGrant
+from apps.accounts.native_app_identity import eligible_registration_q
 from apps.accounts.serializers_self_service import (
     AccountProfileSerializer, AccountSessionPageSerializer,
 )
@@ -53,7 +54,7 @@ class AccountProfileView(APIView):
 class AccountSessionListView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(tags=["Member account"], request=None,
+    @extend_schema(tags=["Member account"], request=None, parameters=[OpenApiParameter("page", int, OpenApiParameter.QUERY, description="Page number (24 rows per page).")],
                    responses={200: AccountSessionPageSerializer, **ERRORS})
     def get(self, request, makerspace_id):
         own_membership(request.user, makerspace_id)
@@ -72,8 +73,8 @@ class AccountSessionListView(APIView):
             "id": f"device:{row.pk}", "kind": "device", "created_at": row.created_at,
             "expires_at": None, "last_used_at": row.last_used_at,
             "current": str(row.pk) == str(token.get("device_grant_id") or ""),
-        } for row in DeviceGrant.objects.filter(user=request.user, status=DeviceGrant.Status.ACTIVE,
-                                               registration__status="approved"))
+        } for row in DeviceGrant.objects.filter(eligible_registration_q("registration__"),
+                                               user=request.user, status=DeviceGrant.Status.ACTIVE))
         rows.sort(key=lambda row: row["created_at"] or timezone.now(), reverse=True)
         paginator = PageNumberPagination()
         page = paginator.paginate_queryset(rows, request, view=self)
@@ -97,6 +98,7 @@ class AccountSessionDetailView(APIView):
             elif kind == "web-legacy":
                 row = revoke_legacy_session(request.user, identifier)
             elif kind == "device":
+                User.objects.select_for_update(no_key=True).get(pk=request.user.pk)
                 import uuid
                 try:
                     grant_id = uuid.UUID(identifier)

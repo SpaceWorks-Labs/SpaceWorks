@@ -4,6 +4,7 @@ import hashlib
 import re
 
 from apps.makerspaces import limits
+from django.conf import settings
 
 from .tenant_restore_types import ObjectEntry, TenantRestoreRefused
 
@@ -82,12 +83,14 @@ def _incomplete_begun(ledger, phase):
 def _charge_accepted_bytes(ledger, makerspace, current_phase):
     """Advance the reset counter to the durable, observed object-byte watermark."""
     accepted = {}
+    details = {}
     for record in ledger.records():
         if record["state"] != "begun" or not record["phase"].startswith("object-load-"):
             continue
         size = record["detail"].get("accepted_size")
         if record["phase"] == current_phase or size is not None:
             accepted[record["phase"]] = size
+            details[record["phase"]] = record["detail"]
     if any(
         isinstance(size, bool) or not isinstance(size, int) or size < 0
         for size in accepted.values()
@@ -100,7 +103,28 @@ def _charge_accepted_bytes(ledger, makerspace, current_phase):
         raise TenantRestoreRefused(
             "Restored object-byte accounting exceeds its durable watermark."
         )
-    limits.add_storage(makerspace, expected - makerspace.storage_bytes_used)
+    delta = expected - makerspace.storage_bytes_used
+    event_total = 0
+    if delta and not limits.is_self_host():
+        from .event_asset_import import canonical_asset
+        event_total = sum(size for phase, size in accepted.items() if canonical_asset(
+            tenant_id=makerspace.pk, key=details[phase]["key"], size=size,
+            digest=details[phase]["digest"], bucket_kind=("private" if
+                details[phase]["bucket"] == settings.AWS_STORAGE_BUCKET_NAME
+                else "public_image")))
+    if not event_total:
+        # No event-pool bytes: the shared limits seam owns the charge, its cap and
+        # its self-host/unlimited no-op, exactly as for any other restore.
+        limits.add_storage(makerspace, delta)
+        return
+    # Imported rows are not yet published into receipts. Prove the ordinary
+    # portion fits its own base allowance while event bytes keep their pool.
+    from apps.makerspaces.limits_core import resource_limit
+    cap = resource_limit(makerspace, "storage")
+    if cap is not None and expected - event_total > cap:
+        raise TenantRestoreRefused("Restored ordinary bytes exceed the target storage allowance.")
+    from django.db.models import F
+    type(makerspace).objects.filter(pk=makerspace.pk).update(storage_bytes_used=F("storage_bytes_used") + delta)
 
 
 def load_object(ledger, store, artifact, entry, *, index, makerspace):

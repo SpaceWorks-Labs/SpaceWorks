@@ -215,7 +215,7 @@ def _aggregate_ledger_makerspace_id(request):
         raise ValidationError({"makerspace": "Enter a makerspace id."}) from exc
     if makerspace_id < 1:
         raise ValidationError({"makerspace": "Enter a makerspace id."})
-    excluded = rbac.superadmin_hidden_makerspace_ids() | rbac.archived_makerspace_ids()
+    excluded = rbac.archived_makerspace_ids()
     queryset = Makerspace.objects.all()
     if excluded:
         queryset = queryset.exclude(pk__in=excluded)

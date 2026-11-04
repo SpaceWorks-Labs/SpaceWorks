@@ -16,6 +16,10 @@ type Props = {
   makerspaceId: number;
   machineType: MachineType;
   onCreated: (machineId: number) => void;
+  /** Called from the post-create step's Done, after photo/warranty details (dialog hosts close here). */
+  onDone?: () => void;
+  /** Hosts that render their own primary (a dialog footer) hide the form's submit button. */
+  hideSubmit?: boolean;
 };
 
 type WarrantyForm = {
@@ -33,7 +37,7 @@ const emptyWarranty: WarrantyForm = {
 };
 const focusRing = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus";
 
-export function MachineCreateForm({ makerspaceId, machineType, onCreated }: Props) {
+export function MachineCreateForm({ makerspaceId, machineType, onCreated, onDone, hideSubmit = false }: Props) {
   const queryClient = useQueryClient();
   const confirmationRef = useRef<HTMLParagraphElement>(null);
   const [name, setName] = useState("");
@@ -90,6 +94,7 @@ export function MachineCreateForm({ makerspaceId, machineType, onCreated }: Prop
     setWarrantyForm(emptyWarranty);
     setCreatedMachine(null);
     create.reset();
+    onDone?.();
     warranty.reset();
   };
 
@@ -103,7 +108,7 @@ export function MachineCreateForm({ makerspaceId, machineType, onCreated }: Prop
 
   return (
     <section className="grid gap-4 border-b border-line p-3" aria-labelledby={`add-machine-${machineType.id}`}>
-      <form
+      <form id="machine-create-form"
         className="grid gap-3 sm:grid-cols-2 sm:items-end"
         onSubmit={(event) => { event.preventDefault(); create.mutate(); }}
       >
@@ -147,7 +152,7 @@ export function MachineCreateForm({ makerspaceId, machineType, onCreated }: Prop
             disabled={!!createdMachine}
           />
         </label>
-        <button
+        <button hidden={hideSubmit}
           className={`desk-button-primary min-h-11 ${focusRing}`}
           type="submit"
           disabled={create.isPending || !name.trim() || !!createdMachine}
@@ -196,7 +201,7 @@ export function MachineCreateForm({ makerspaceId, machineType, onCreated }: Prop
               <WarrantyField label="Vendor contact" value={warrantyForm.vendor_contact} maxLength={200}
                 onChange={(value) => updateWarranty("vendor_contact", value)} />
             </div>
-            <button className={`desk-button-secondary min-h-11 justify-self-start ${focusRing}`} type="submit"
+            <button className={`desk-button min-h-11 justify-self-start ${focusRing}`} type="submit"
               disabled={warranty.isPending || !hasWarrantyDetails}>
               {warranty.isPending ? "Saving warranty..." : "Save warranty"}
             </button>
@@ -208,7 +213,7 @@ export function MachineCreateForm({ makerspaceId, machineType, onCreated }: Prop
             ) : null}
           </form>
 
-          <button className={`desk-button-success min-h-11 justify-self-start ${focusRing}`} type="button" onClick={finish}>
+          <button hidden={hideSubmit} className={`desk-button-success min-h-11 justify-self-start ${focusRing}`} type="button" onClick={finish}>
             Done
           </button>
         </div>

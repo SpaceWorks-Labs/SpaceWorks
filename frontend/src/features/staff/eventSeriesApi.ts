@@ -7,7 +7,7 @@ import { organizedEventKeys } from "./organizedEventsApi";
 
 export type EventSeriesStatus = "draft" | "published" | "cancelled" | "completed";
 export type EventSeriesPayload = {
-  registration_audience?: "members" | "accounts" | "invite";
+  registration_audience?: "members" | "accounts" | "invite" | "participating_organizations";
   ticket_types?: import("./EventTicketTemplates").TicketTemplate[];
   title: string;
   description: string;
@@ -28,6 +28,13 @@ export type EventSeriesPayload = {
   effective_from?: string;
 };
 export type EventSeries = Omit<EventSeriesPayload, "effective_from"> & {
+  participating_organizations?: { id: number; name: string }[];
+  audience_label?: string | null;
+  organization_admission_blocked?: boolean;
+  organization_audience_enabled?: boolean;
+  website_enabled?: boolean;
+  staff_permissions?: import("./eventStaffPermissions").EventPermission[];
+  can_manage_staff?: boolean;
   id: number;
   public_token: string;
   makerspace_id: number;
@@ -63,10 +70,12 @@ function detail(seriesId: number) {
   return `/admin/event-series/${seriesId}/`;
 }
 
-export function useEventSeriesList(makerspaceId: number) {
+export const EVENT_SERIES_PAGE_SIZE = 50;
+
+export function useEventSeriesList(makerspaceId: number, page = 1) {
   return useQuery({
-    queryKey: eventSeriesKeys.list(makerspaceId),
-    queryFn: () => staffRequest<Paginated<EventSeries>>(base(makerspaceId)),
+    queryKey: [...eventSeriesKeys.list(makerspaceId), "list", page],
+    queryFn: () => staffRequest<Paginated<EventSeries>>(`${base(makerspaceId)}?page=${page}&page_size=${EVENT_SERIES_PAGE_SIZE}`),
   });
 }
 export function useEventSeries(seriesId: number) {
@@ -75,10 +84,10 @@ export function useEventSeries(seriesId: number) {
     queryFn: () => staffRequest<EventSeries>(detail(seriesId)),
   });
 }
-export function useEventSeriesOccurrences(seriesId: number) {
+export function useEventSeriesOccurrences(seriesId: number, page = 1) {
   return useQuery({
-    queryKey: eventSeriesKeys.occurrences(seriesId),
-    queryFn: () => staffRequest<Paginated<StaffEvent>>(`${detail(seriesId)}occurrences/`),
+    queryKey: [...eventSeriesKeys.occurrences(seriesId), page],
+    queryFn: () => staffRequest<Paginated<StaffEvent>>(`${detail(seriesId)}occurrences/?page=${page}&page_size=${EVENT_SERIES_PAGE_SIZE}`),
   });
 }
 
@@ -88,7 +97,11 @@ function useInvalidate(makerspaceId: number, seriesId?: number) {
     client.invalidateQueries({ queryKey: eventSeriesKeys.list(makerspaceId) }),
     client.invalidateQueries({ queryKey: eventKeys.list(makerspaceId) }),
     client.invalidateQueries({ queryKey: organizedEventKeys.all }),
+    client.invalidateQueries({ queryKey: ["events", "accessible"] }),
     client.invalidateQueries({ queryKey: ["public-events"] }),
+    client.invalidateQueries({ queryKey: ["public-event"] }),
+    client.invalidateQueries({ queryKey: ["event-organization-eligibility"] }),
+    client.invalidateQueries({ queryKey: ["event"] }),
     client.invalidateQueries({ queryKey: ["member"] }),
     ...(seriesId ? [
       client.invalidateQueries({ queryKey: eventSeriesKeys.detail(seriesId) }),

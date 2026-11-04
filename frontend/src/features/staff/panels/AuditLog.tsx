@@ -1,114 +1,48 @@
+import { ListLayout } from "../../../components/layouts";
+import { DataTable, RelativeTime } from "../../../components/ui";
 import { useUrlListState } from "../../../lib/useUrlListState";
 import { ListViewControls } from "../ListViewControls";
-
-import { Skeleton } from "../../../components/ui";
 import { AuditLogFilters, auditFilterParams, emptyAuditFilters, type AuditFilters } from "./AuditLogFilters";
+import { AuditLogDetails } from "./AuditLogDetails";
 import { AuditVerificationStatus } from "./AuditVerificationStatus";
-import { Panel, useStaffGet } from "./shared";
+import { useStaffGet } from "./shared";
 
 type AuditLogEntry = {
-  id: number;
-  action: string;
-  action_label: string;
-  actor_display: string | null;
-  target_type: string;
-  target_id: string | number | null;
-  meta: Record<string, unknown>;
-  meta_redacted: boolean;
-  created_at: string;
+  id: number; action: string; action_label: string; actor_display: string | null;
+  target_type: string; target_id: string | number | null;
+  meta: Record<string, unknown>; meta_redacted: boolean; created_at: string;
 };
-
-type AuditLogResponse = {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: AuditLogEntry[];
-};
+type AuditLogResponse = { count: number; next: string | null; previous: string | null; results: AuditLogEntry[] };
 
 export function AuditLog({ makerspaceId }: { makerspaceId?: number }) {
   const list = useUrlListState({ ...emptyAuditFilters, makerspace: makerspaceId ? String(makerspaceId) : "", ordering: "-created_at", page: "1" });
   const filters: AuditFilters = list.values;
-  const { page, setPage } = list;
   const filterParams = auditFilterParams(filters);
   const params = new URLSearchParams(filterParams);
-  params.set("page", String(page));
+  params.set("page", String(list.page));
   params.set("ordering", list.values.ordering);
   const query = params.toString();
   const logs = useStaffGet<AuditLogResponse>(["audit", query], `/admin/audit-logs?${query}`);
+  const clear = () => list.update({ ...emptyAuditFilters, makerspace: makerspaceId ? String(makerspaceId) : "" });
+  const chips = Object.entries(filters).filter(([key, value]) => key in emptyAuditFilters && value && !(key === "makerspace" && value === String(makerspaceId)))
+    .map(([key, value]) => ({ key, label: `${key.replace(/_/g, " ")}: ${value}`, onRemove: () => list.update({ [key]: "" }) }));
 
-  // Any filter change resets to the first page; the old page may not exist any more.
-  const updateFilters = (next: AuditFilters) => {
-    list.update(next);
-  };
-
-  return (
-    <Panel title="Audit logs">
-      {makerspaceId ? <ListViewControls state={list} makerspaceId={makerspaceId} entity="audit" search={false} sorts={[["-created_at", "Newest"], ["created_at", "Oldest"], ["action", "Action"]]} /> : null}
-      <AuditLogFilters filters={filters} onChange={updateFilters} />
-      <AuditVerificationStatus key={new URLSearchParams(filterParams).toString()} makerspaceId={filters.makerspace} params={filterParams} />
-      <div className="grid gap-2 text-sm">
-        {logs.error ? <p className="text-sm text-danger">{logs.error.message}</p> : null}
-        {logs.isLoading ? <AuditLogSkeleton /> : null}
-        {logs.data?.results?.map((log) => (
-          <div key={log.id} className="rounded-md border border-line bg-surface p-2">
-            <span className="font-semibold">{log.action_label}</span>
-            <span className="ml-2 font-mono text-xs text-muted">{log.action}</span>
-            {log.actor_display ? <span className="ml-2 text-muted">by {log.actor_display}</span> : null}
-            <span className="ml-2 text-muted">{log.target_type}:{log.target_id}</span>
-            <span className="ml-2 font-mono text-muted">{formatLocalDateTime(log.created_at)}</span>
-            <MetaLine meta={log.meta} redacted={log.meta_redacted} />
-          </div>
-        ))}
-      </div>
-      <div className="mt-3 flex items-center justify-between gap-3 text-sm">
-        <button className="desk-button-ghost" disabled={!logs.data?.previous} onClick={() => setPage((current) => Math.max(1, current - 1))}>
-          Previous
-        </button>
-        <span className="text-muted">
-          Page {page}{" \u2014 "}{logs.data?.count ?? 0} total
-        </span>
-        <button className="desk-button-ghost" disabled={!logs.data?.next} onClick={() => setPage((current) => current + 1)}>
-          Next
-        </button>
-      </div>
-    </Panel>
-  );
-}
-
-// Only the server's projected metadata is ever rendered; there is no raw-meta field.
-function MetaLine({ meta, redacted }: { meta: Record<string, unknown>; redacted: boolean }) {
-  const entries = Object.entries(meta ?? {});
-  if (!entries.length && !redacted) return null;
-  return (
-    <p className="mt-1 text-xs text-muted">
-      {entries.map(([key, value]) => `${key}: ${typeof value === "object" ? JSON.stringify(value) : String(value)}`).join(" · ")}
-      {redacted ? <span className="ml-1 italic">(some details withheld)</span> : null}
-    </p>
-  );
-}
-
-function AuditLogSkeleton() {
-  return (
-    <div className="grid gap-2" aria-hidden="true">
-      {Array.from({ length: 5 }, (_, index) => (
-        <div key={index} className="rounded-md border border-line bg-surface p-2">
-          <div className="flex flex-wrap gap-3">
-            <Skeleton className="h-4 w-40" />
-            <Skeleton className="h-4 w-56" />
-            <Skeleton className="h-4 w-32" />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function formatLocalDateTime(value: string) {
-  return new Date(value).toLocaleString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
+  return <ListLayout width="wide"
+    header={{ title: "Audit log", subtitle: "Every state change in this makerspace, append-only.", meta: <AuditVerificationStatus key={new URLSearchParams(filterParams).toString()} makerspaceId={filters.makerspace} params={filterParams} /> }}
+    state={{ status: logs.isLoading ? "loading" : logs.error ? "error" : "ready", error: `Couldn't load audit entries${logs.error?.message ? ` (${logs.error.message})` : ""}. Try again.`, onRetry: () => void logs.refetch() }}
+    isEmpty={Boolean(logs.data && !logs.data.results.length)} filtered={chips.length > 0}
+    empty={{ message: "No audit entries yet. Complete a workflow to start the trail." }}
+    filteredEmpty={{ message: "No entries match these filters. Clear filters to see the trail.", action: { label: "Clear filters", onClick: clear } }}
+    filters={{ sort: makerspaceId ? <ListViewControls state={list} makerspaceId={makerspaceId} entity="audit" search={false} sorts={[["-created_at", "Newest"], ["created_at", "Oldest"], ["action", "Action"]]} /> : undefined,
+      // Active filters stay visible (and removable) outside the closed popover.
+      activeCount: chips.length, chips, controls: <AuditLogFilters filters={filters} onChange={next => list.update(next)} />, onClear: clear }}
+    body={{ kind: "table", table: <DataTable data={logs.data?.results ?? []} listState={list}
+      ordering={list.values.ordering} onOrderingChange={ordering => list.update({ ordering })}
+      columns={[
+        { key: "action", header: "Activity", sortable: true, render: log => <div><span className="font-semibold">{log.actor_display ?? "System"}</span><p>{log.action_label}</p></div> },
+        { key: "target_type", header: "Target", render: log => <span className="break-all">{log.target_type}:{log.target_id}</span> },
+        { key: "created_at", header: "When", sortable: true, render: log => <div><p className="tabular-nums">{new Date(log.created_at).toLocaleString()}</p><p className="text-muted"><RelativeTime date={log.created_at} /></p></div> },
+        { key: "details", header: "Details", render: log => <AuditLogDetails action={log.action} meta={log.meta} redacted={log.meta_redacted} /> },
+      ]} /> }}
+    pagination={{ page: list.page, pageSize: 24, count: logs.data?.count ?? 0, onChange: page => list.setPage(page) }} />;
 }

@@ -1,144 +1,88 @@
-import { Panel, useStaffGet, type Makerspace } from "./shared";
-import { Link } from "react-router-dom";
+import { NextUpEvents, type NextUpEvent } from "../eventProgramme/NextUpEvents";
+import type { ReactNode } from "react";
+import { consoleSessionHref } from "../../../lib/api/sessionContext";
+import { DashboardLayout, type DashboardLayoutProps } from "../../../components/layouts/DashboardLayout";
+import { useStaffGet, type Makerspace } from "./shared";
 import { dashboardDestination, dashboardHref } from "./dashboardLinks";
 import { filterTabsByEnabledModules } from "../staffTabs";
+import { capabilityOn } from "../../../lib/features";
+import { DashboardActivity, DashboardDueBack } from "./DashboardWidgets";
+import { DashboardQuickAdd } from "./DashboardQuickAdd";
+import { DashboardArchiveStatus } from "./DashboardArchiveStatus";
+import { LateShiftLine } from "../../../components/delight/SneakyLines";
+import { MACHINE_TILE_KEYS, TILES, type DashboardCounts } from "./DashboardStats";
+import { DashboardAnalyticsWidgets, HandoverQueueHome } from "./DashboardAnalyticsWidgets";
+import type { DashboardAnalytics } from "./analyticsApi";
+import { staffTabPath } from "../staffTabs";
 
-type DashboardCounts = {
-  upcoming_events?: number;
-  pending_event_registrations?: number;
-  pending_bookings?: number;
-  upcoming_bookings?: number;
-  scope_mode: "machine" | "full";
-  overdue_loans?: number;
-  pending_requests?: number;
-  awaiting_issue?: number;
-  open_problem_reports?: number;
-  low_stock?: number;
-  pending_prints?: number;
-  active_prints?: number;
-  prints_awaiting_collection?: number;
-  failed_emails?: number;
-  stocktakes_awaiting_approval?: number;
-  warranty_expiring?: number;
-  maintenance_overdue?: number;
-  pending_payments?: number;
+type Props = {
+  makerspace: Makerspace; canManageMakerspace: boolean; allowedTabs?: readonly string[];
+  actions?: readonly string[]; isSuperadmin?: boolean; singleTenantLocked?: boolean;
+  guestOnly?: boolean; progress?: ReactNode;
 };
 
-// Each tile carries a palette tone, so the grid speaks the whole four-colour system instead
-// of reading as a wall of neutral boxes with one alarming red one. The tone is chosen by what
-// the number MEANS -- it is varied, not arbitrary: `danger` is reserved for things that are
-// actually wrong, `warn` for a queue somebody has to work through, `accent` for work in
-// flight, `success` for something finished and waiting to be handed over, and `secondary` for
-// money. Assigning tones at random would make the colour meaningless and would clash with the
-// semantic status colours used everywhere else in the console.
-type Tone = "accent" | "secondary" | "success" | "warn" | "danger";
-
-type Tile = {
-  key: Exclude<keyof DashboardCounts, "scope_mode">;
-  label: string;
-  actionNeeded: boolean;
-  tone: Tone;
-};
-
-const TILES: Tile[] = [
-  { key: "upcoming_events", label: "Upcoming events", actionNeeded: false, tone: "accent" },
-  { key: "pending_event_registrations", label: "Registrations awaiting approval", actionNeeded: true, tone: "warn" },
-  { key: "pending_bookings", label: "Bookings awaiting approval", actionNeeded: true, tone: "warn" },
-  { key: "upcoming_bookings", label: "Upcoming bookings", actionNeeded: false, tone: "accent" },
-  { key: "overdue_loans", label: "Overdue loans", actionNeeded: true, tone: "danger" },
-  { key: "pending_requests", label: "Pending requests", actionNeeded: true, tone: "warn" },
-  { key: "awaiting_issue", label: "Awaiting issue", actionNeeded: true, tone: "warn" },
-  { key: "open_problem_reports", label: "Problem reports", actionNeeded: true, tone: "danger" },
-  { key: "low_stock", label: "Out of stock", actionNeeded: true, tone: "danger" },
-  { key: "pending_prints", label: "Pending prints", actionNeeded: false, tone: "warn" },
-  { key: "active_prints", label: "Active prints", actionNeeded: false, tone: "accent" },
-  { key: "prints_awaiting_collection", label: "Ready to collect", actionNeeded: false, tone: "success" },
-  { key: "failed_emails", label: "Failed emails", actionNeeded: true, tone: "danger" },
-  { key: "stocktakes_awaiting_approval", label: "Stocktakes awaiting approval", actionNeeded: true, tone: "warn" },
-  { key: "warranty_expiring", label: "Warranties expiring", actionNeeded: true, tone: "warn" },
-  { key: "maintenance_overdue", label: "Maintenance overdue", actionNeeded: true, tone: "danger" },
-  { key: "pending_payments", label: "Pending payments", actionNeeded: true, tone: "secondary" },
-];
-
-// Two states per tone, and the INK is the whole point.
-//
-// `fill` is used only when the tile is calling for attention. Its text colours are the FIXED
-// `on-*` tokens, because they sit on a solid pastel and must not go light in dark mode -- the
-// previous version put `text-danger` on `bg-danger` (dark red on red, so the number was
-// invisible) and left the label at `text-muted` (grey on red). That is the tile in the
-// screenshot: not a colour choice, an unreadable one.
-//
-// `rest` keeps the tile neutral and carries the tone in THE NUMBER ITSELF, which is the piece
-// of the tile that actually means something. A thick coloured left edge was tried first and
-// removed: a side-tab accent border is a generated-UI cliche, and colouring a rule beside the
-// data is weaker than colouring the data. Every `rest` value is an `-ink` token, all of which
-// the contrast guard holds at AA against `bg`/`surface`/`panel`.
-const TONE_STYLES: Record<Tone, { fill: string; label: string; rest: string }> = {
-  accent: { fill: "border-accent bg-accent", label: "text-on-accent/75", rest: "text-accent-ink" },
-  secondary: { fill: "border-secondary bg-secondary", label: "text-on-secondary/75", rest: "text-secondary-ink" },
-  success: { fill: "border-success bg-success", label: "text-on-success/75", rest: "text-success-ink" },
-  warn: { fill: "border-warn bg-warn", label: "text-on-warn/75", rest: "text-warn-ink" },
-  // `danger` is the one non-pastel, so it takes the light-on-dark treatment instead of an
-  // `on-*` token -- 164 36 59 against `--color-bg` is a wide margin in both themes.
-  danger: { fill: "border-danger bg-danger", label: "text-bg/80", rest: "text-danger" },
-};
-
-const FILL_INK: Record<Tone, string> = {
-  accent: "text-on-accent",
-  secondary: "text-on-secondary",
-  success: "text-on-success",
-  warn: "text-on-warn",
-  danger: "text-bg",
-};
-
-const MACHINE_TILE_KEYS = new Set<Tile["key"]>([
-  "pending_prints",
-  "active_prints",
-  "prints_awaiting_collection",
-  "warranty_expiring",
-  "maintenance_overdue",
-]);
-
-export function DashboardPanel({ makerspace, canManageMakerspace, allowedTabs, singleTenantLocked = false, guestOnly = false }: { makerspace: Makerspace; canManageMakerspace: boolean; allowedTabs?: readonly string[]; singleTenantLocked?: boolean; guestOnly?: boolean }) {
-  const dashboard = useStaffGet<DashboardCounts>(
-    ["dashboard", makerspace.id],
-    `/admin/makerspace/${makerspace.id}/dashboard`,
+export function DashboardPanel({ makerspace, canManageMakerspace, allowedTabs, actions,
+  isSuperadmin = false, singleTenantLocked = false, guestOnly = false, progress }: Props) {
+  const dashboard = useStaffGet<DashboardCounts & DashboardAnalytics & { next_up_events?: NextUpEvent[] }>(["dashboard", makerspace.id], `/admin/makerspace/${makerspace.id}/dashboard`);
+  if (dashboard.isSuccess && dashboard.data.scope_mode === "handover") return <HandoverQueueHome queues={dashboard.data.queue_tiles}
+    slug={makerspace.slug} singleTenantLocked={singleTenantLocked} guestOnly={guestOnly} />;
+  const permitted = TILES.filter(tile => (
+    (dashboard.data?.scope_mode !== "machine" || MACHINE_TILE_KEYS.has(tile.key))
+    && filterTabsByEnabledModules([dashboardDestination(tile.key).tab], makerspace).length > 0
+    && (tile.key !== "failed_emails" || makerspace.enabled_modules === undefined || makerspace.enabled_modules.includes("email"))
+    // The server returns pending_payments only to finance staff (manage_makerspace or view_finance).
+    // A payments-tab holder without that (an Event Manager settling registrations) would see a false 0.
+    && (tile.key !== "pending_payments" || (dashboard.data !== undefined && "pending_payments" in dashboard.data))
+    && (!allowedTabs || allowedTabs.includes(dashboardDestination(tile.key).tab))
+    && (!tile.key.includes("prints") || makerspace.enabled_modules === undefined || makerspace.enabled_modules.includes("printing"))
+    && (tile.key !== "maintenance_overdue" || makerspace.enabled_features === undefined || capabilityOn(makerspace, "machines.maintenance"))
+  ));
+  const priority = (tile: typeof permitted[number]) => tile.actionNeeded && (dashboard.data?.[tile.key] ?? 0) > 0
+    ? tile.tone === "danger" ? 0 : 1 : 2;
+  const ranked = [...permitted].sort((a, b) => priority(a) - priority(b));
+  const href = (key: string) => dashboardHref(key, makerspace.slug, singleTenantLocked, guestOnly);
+  const alert = ["overdue_loans", "failed_emails", "open_problem_reports", "maintenance_overdue"]
+    .map(key => permitted.find(tile => tile.key === key && (dashboard.data?.[tile.key] ?? 0) > 0)).find(Boolean);
+  const count = alert ? dashboard.data?.[alert.key] ?? 0 : 0;
+  const alertLead: Record<string, string> = {
+    overdue_loans: `${count} loan${count === 1 ? " is" : "s are"} overdue.`,
+    failed_emails: `${count} email${count === 1 ? "" : "s"} could not be delivered.`,
+    open_problem_reports: `${count} problem report${count === 1 ? " needs" : "s need"} review.`,
+    maintenance_overdue: `${count} maintenance task${count === 1 ? " is" : "s are"} overdue.`,
+  };
+  // Widgets need explicit actor authority as well as the already-filtered tab list.
+  const widgetsReady = allowedTabs !== undefined && actions !== undefined && dashboard.isSuccess;
+  const routing = { makerspace, guestOnly, singleTenantLocked };
+  // BK-17: a Space Manager sees their own backup status; the status read needs manage_makerspace.
+  const archiveStatus = (canManageMakerspace || isSuperadmin) && !guestOnly
+    && filterTabsByEnabledModules(["backups"], makerspace).length > 0 && (!allowedTabs || allowedTabs.includes("backups"))
+    ? <DashboardArchiveStatus makerspaceId={makerspace.id} slug={makerspace.slug} guestOnly={guestOnly} singleTenantLocked={singleTenantLocked} />
+    : undefined;
+  const layout = (rail?: DashboardLayoutProps["rail"], main: DashboardLayoutProps["main"] = []) => (
+    <DashboardQuickAdd {...routing} actions={actions} allowedTabs={allowedTabs} isSuperadmin={isSuperadmin}>
+      {primary => <DashboardLayout
+        header={{ title: "Dashboard", eyebrow: new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" }),
+          subtitle: `What's happening at ${makerspace.name}.`, primary }}
+        state={{ status: dashboard.isLoading ? "loading" : dashboard.error ? "error" : "ready",
+          error: "Couldn't load dashboard. Try again.", onRetry: () => { void dashboard.refetch(); } }}
+        progress={<><LateShiftLine />{progress}{dashboard.data?.next_up_events ? <NextUpEvents events={dashboard.data.next_up_events} /> : null}</>}
+        stats={ranked.map(tile => ({ label: tile.label, value: dashboard.data?.[tile.key] ?? 0,
+          // Overdue, problems, out of stock, failed email and overdue maintenance keep their danger signal.
+          tone: tile.actionNeeded && (dashboard.data?.[tile.key] ?? 0) > 0 ? tile.tone === "danger" ? "danger" : "attention" : "neutral",
+          href: href(tile.key) }))}
+        callout={alert ? { size: "banner", tone: "warn", lead: alertLead[alert.key],
+          action: { label: "Review", href: href(alert.key) } } : undefined}
+        main={[...main, ...(dashboard.data?.widgets ? [{ title: "Analytics", empty: { message: "No analytics widgets available." },
+          content: <DashboardAnalyticsWidgets widgets={dashboard.data.widgets.filter(widget => widget.required_modules.every(module =>
+            makerspace.enabled_modules === undefined || makerspace.enabled_modules.includes(module)))} makerspaceId={makerspace.id}
+            reportsHref={consoleSessionHref(staffTabPath("reports", guestOnly, makerspace.slug, singleTenantLocked))} /> }] : [])]} rail={rail}
+        railContent={archiveStatus}
+      />}
+    </DashboardQuickAdd>
   );
-
-  return (
-    <Panel title="Dashboard">
-      {dashboard.isLoading ? <p className="mb-3 text-sm text-muted">Loading dashboard...</p> : null}
-      {dashboard.error ? <p className="mb-3 text-sm text-danger">{dashboard.error.message}</p> : null}
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {TILES.filter((tile) => (
-          (dashboard.data?.scope_mode !== "machine" || MACHINE_TILE_KEYS.has(tile.key))
-          && filterTabsByEnabledModules([dashboardDestination(tile.key).tab], makerspace).length > 0
-          && (tile.key !== "failed_emails" || makerspace.enabled_modules === undefined || makerspace.enabled_modules.includes("email"))
-          && (tile.key !== "pending_payments" || canManageMakerspace || allowedTabs?.includes("payments"))
-          && (!allowedTabs || allowedTabs.includes(dashboardDestination(tile.key).tab))
-          && (!tile.key.includes("prints") || makerspace.enabled_modules === undefined || makerspace.enabled_modules.includes("printing"))
-          && (tile.key !== "maintenance_overdue" || makerspace.enabled_modules === undefined || makerspace.enabled_modules.includes("maintenance"))
-        )).map((tile) => {
-          const value = dashboard.data?.[tile.key] ?? 0;
-          const needsAttention = tile.actionNeeded && value > 0;
-          const tone = TONE_STYLES[tile.tone];
-          return (
-            <Link
-              key={tile.key}
-              to={dashboardHref(tile.key, makerspace.slug, singleTenantLocked, guestOnly)}
-              aria-label={`${tile.label}: ${value}. View list`}
-              className={`flex min-h-24 flex-col items-start justify-center gap-1 rounded-lg border p-4 shadow-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
-                needsAttention ? tone.fill : "border-line bg-panel"
-              }`}
-            >
-              <span className={`font-mono text-3xl font-semibold ${needsAttention ? FILL_INK[tile.tone] : tone.rest}`}>
-                {value}
-              </span>
-              <span className={`eyebrow ${needsAttention ? tone.label : ""}`}>{tile.label}</span>
-            </Link>
-          );
-        })}
-      </div>
-    </Panel>
-  );
+  const withDueBack = (rail?: DashboardLayoutProps["rail"], activitySections: DashboardLayoutProps["main"] = []) => widgetsReady && allowedTabs.includes("requests")
+    && filterTabsByEnabledModules(["requests"], makerspace).length > 0 && (isSuperadmin || actions.includes("issue_request"))
+    ? <DashboardDueBack {...routing}>{main => layout(rail, [...main, ...activitySections])}</DashboardDueBack> : layout(rail, activitySections);
+  return widgetsReady && allowedTabs.includes("audit")
+    ? <DashboardActivity {...routing}>{withDueBack}</DashboardActivity> : withDueBack();
 }

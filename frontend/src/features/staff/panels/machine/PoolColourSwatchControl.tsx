@@ -45,7 +45,7 @@ export function PoolColourSwatchControl({ value, onChange, legend = "Display swa
             onChange={(event) => onChange(event.target.value.toLowerCase())}
           />
         </label>
-        <output className="min-h-11 content-center font-mono text-sm text-ink" htmlFor={`${id}-picker`}>
+        <output className="min-h-11 content-center tabular-nums text-sm text-ink" htmlFor={`${id}-picker`}>
           Display hex: {activeHex || "Not set"}
         </output>
         {activeHex ? (

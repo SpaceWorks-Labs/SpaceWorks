@@ -1,0 +1,34 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+<form method="post">
+  {% csrf_token %}
+  <input type="hidden" name="action" value="{{ action_name }}">
+  <input type="hidden" name="confirm_decision" value="1">
+  {% for row in hosting_requests %}
+    <input type="hidden" name="{{ action_checkbox_name }}" value="{{ row.pk }}">
+  {% endfor %}
+
+  {% if needs_reason %}
+    <p>The reason is required and is emailed to each applicant.</p>
+    <p>
+      <label for="id_rejection_reason">{{ reason_label|default:"Rejection reason" }}</label><br>
+      <textarea id="id_rejection_reason" name="rejection_reason" minlength="10" maxlength="2000" required rows="5" aria-describedby="id_rejection_reason_help"></textarea><br>
+      <small id="id_rejection_reason_help">This reason is kept after the applicant's details are wiped — do not include personal details.</small>
+    </p>
+  {% else %}
+    <p>Accepting only marks each request accepted and emails the applicant. Nothing is created: set up the makerspace afterwards with "Create makerspace" on the request.</p>
+  {% endif %}
+
+  <ul>
+    {% for row in hosting_requests %}
+      <li>{{ row.space_name }} — {{ row.get_status_display }}, received {{ row.created_at }}</li>
+    {% endfor %}
+  </ul>
+
+  <div class="submit-row">
+    <input type="submit" value="{{ submit_label }}" class="default">
+    <a href=".">Cancel</a>
+  </div>
+</form>
+{% endblock %}

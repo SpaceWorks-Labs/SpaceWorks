@@ -1,7 +1,8 @@
 import { useState } from "react";
+import { FlowLayout } from "../../components/layouts";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { Badge, Field, Modal } from "../../components/ui";
+import { EmptyState, Field, ListRow, RelativeTime, StatusPill } from "../../components/ui";
 import {
   formatMoney,
   invalidatePaymentViews,
@@ -9,9 +10,9 @@ import {
   refundPayment,
   remainingRefundable,
   recordOfflineRefund,
-  SETTLEMENT_METHODS,
   type PaymentRow,
 } from "./paymentsApi";
+import { RefundReceiptFields, useRefundReceipt } from "./RefundReceiptFields";
 
 // Client-side mirror of `PaymentRefundRequestSerializer` (positive, two decimals) plus the
 // balance rule the service enforces under the row lock. The server is still the authority:
@@ -42,19 +43,12 @@ export function PaymentRefundDialog({
   const offline = payment.status === "paid_offline";
   const [amount, setAmount] = useState(remaining.toFixed(2));
   const [reason, setReason] = useState("");
-  const [method, setMethod] = useState<string>("cash");
-  const [reference, setReference] = useState("");
-  const [refundedAt, setRefundedAt] = useState(() => {
-    const now = new Date();
-    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-    return now.toISOString().slice(0, 16);
-  });
+  const receiptState = useRefundReceipt();
   const [validationError, setValidationError] = useState<string | null>(null);
   const mutation = useMutation({
     mutationFn: () => offline
       ? recordOfflineRefund(makerspaceId, payment.id, {
-        amount: amount.trim(), reason: reason.trim(),
-        receipt: { method, reference: reference.trim(), refunded_at: new Date(refundedAt).toISOString() },
+        amount: amount.trim(), reason: reason.trim(), receipt: receiptState.receipt(),
       }, releaseDeposit)
       : refundPayment(makerspaceId, payment.id, { amount: amount.trim(), reason: reason.trim() }),
     onSuccess: () => {
@@ -63,36 +57,20 @@ export function PaymentRefundDialog({
     },
   });
   const submit = () => {
-    const date = new Date(refundedAt).getTime();
-    const problem = validateRefundAmount(amount, remaining) ?? (offline &&
-      (!Number.isFinite(date) || date > Date.now() + 5 * 60_000)
-      ? "Enter the date and time the money was returned, without a future date." : null);
+    const problem = validateRefundAmount(amount, remaining) ?? (offline ? receiptState.dateProblem() : null);
     setValidationError(problem);
     if (!problem) mutation.mutate();
   };
   const error = validationError ?? (mutation.error ? refundErrorMessage(mutation.error) : null);
 
   return (
-    <Modal
-      open
-      onClose={onClose}
+    <FlowLayout presentation="dialog" open onCancel={() => { if (!mutation.isPending) onClose(); }} state={{ status: "ready" }}
       title={`${releaseDeposit ? "Release deposit" : "Refund payment"} ${formatMoney(payment.amount, payment.currency)}`}
-      footer={(
-        <div className="desk-actions flex flex-wrap justify-end gap-2">
-          <button className="desk-button" type="button" disabled={mutation.isPending} onClick={onClose}>
-            Cancel
-          </button>
-          <button
-            className="desk-button-primary"
-            type="submit"
-            form="payment-refund-form"
-            disabled={mutation.isPending || remaining <= 0}
-          >
-            {mutation.isPending ? "Refunding…" : releaseDeposit ? "Record deposit release" : offline ? "Record refund" : "Send refund"}
-          </button>
-        </div>
-      )}
-    >
+      steps={[{ key: "receipt", label: "Refund details", state: "current" }]} current="receipt"
+      footer={{ next: { label: releaseDeposit ? "Record deposit release" : `Refund ${formatMoney(Number.isFinite(Number(amount)) ? amount || "0" : "0", payment.currency)}`,
+        pending: mutation.isPending, pendingLabel: "Recording refund…", disabled: remaining <= 0,
+        onClick: () => document.getElementById("payment-refund-form")?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })) } }}
+      work={<>
       <p className="text-sm text-muted">
         {payment.subject_label} · refunded so far {formatMoney(payment.refunded_amount, payment.currency)} ·
         remaining {formatMoney(remaining.toFixed(2), payment.currency)}
@@ -108,17 +86,7 @@ export function PaymentRefundDialog({
         {offline ? (
           <>
             <p className="text-sm text-muted">{releaseDeposit ? "After closing the loan, record the deposit money handed back to the borrower." : "Record money already returned."} This creates a permanent receipt.</p>
-            <Field label="Refund method">
-              <select className="desk-input" value={method} onChange={(event) => setMethod(event.target.value)}>
-                {SETTLEMENT_METHODS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-              </select>
-            </Field>
-            <Field label="Refund reference (optional)">
-              <input className="desk-input" maxLength={64} value={reference} onChange={(event) => setReference(event.target.value)} />
-            </Field>
-            <Field label="Returned at">
-              <input className="desk-input" type="datetime-local" required value={refundedAt} onChange={(event) => { setRefundedAt(event.target.value); setValidationError(null); }} />
-            </Field>
+            <RefundReceiptFields state={receiptState} onEdit={() => setValidationError(null)} />
           </>
         ) : null}
         <Field label="Refund amount" error={validationError ?? undefined}>
@@ -146,35 +114,25 @@ export function PaymentRefundDialog({
         <p className="mt-3 text-sm text-danger" role="alert">{error}</p>
       ) : null}
       <RefundList refunds={payment.refunds} />
-    </Modal>
+      </>}
+    />
   );
 }
 
 function RefundList({ refunds }: { refunds: PaymentRow["refunds"] }) {
-  if (!refunds?.length) {
-    return <p className="mt-4 text-xs text-muted">No refunds recorded for this payment.</p>;
-  }
-  return (
-    <div className="mt-4">
-      <h3 className="eyebrow">Refunds</h3>
-      <ul className="mt-2 divide-y divide-line text-sm">
-        {refunds.map((refund) => (
-          <li key={refund.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
-            <span className="font-mono font-semibold text-ink">{formatMoney(refund.amount, refund.currency)}</span>
-            <Badge tone={refund.status === "succeeded" ? "success" : refund.status === "failed" ? "danger" : "warn"}>
-              {refund.status}
-            </Badge>
-            <span className="text-xs text-muted">
-              {refund.corrected ? "Replaced receipt · " : refund.amends ? "Corrected receipt · " : ""}
-              {new Date(refund.created_at).toLocaleString()}
-              {refund.reason ? ` · ${refund.reason}` : ""}
-              {refund.method ? ` · ${refund.method.replace(/_/g, " ")}` : ""}
-              {refund.reference ? ` · ${refund.reference}` : ""}
-              {refund.refunded_at ? ` · returned ${new Date(refund.refunded_at).toLocaleString()}` : ""}
-            </span>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
+  if (!refunds?.length) return <div className="mt-4"><EmptyState message="No refunds recorded yet. Add the refund details above to record one." /></div>;
+  return <section className="mt-4 grid gap-3" aria-label="Refunds">
+    <h2 className="title-panel">Refunds</h2>
+    {refunds.map(refund => <ListRow key={refund.id} title={formatMoney(refund.amount, refund.currency)}
+      meta={<>
+        {refund.corrected ? "Replaced receipt · " : refund.amends ? "Corrected receipt · " : ""}
+        <RelativeTime date={refund.created_at} />
+        {refund.reason ? ` · ${refund.reason}` : ""}
+        {refund.method ? ` · ${refund.method.replace(/_/g, " ")}` : ""}
+        {refund.reference ? ` · ${refund.reference}` : ""}
+        {refund.refunded_at ? <span> · Returned <RelativeTime date={refund.refunded_at} /></span> : null}
+      </>}
+      right={<StatusPill label={refund.status[0].toUpperCase() + refund.status.slice(1)}
+        tone={refund.status === "succeeded" ? "success" : refund.status === "failed" ? "danger" : "warn"} />} />)}
+  </section>;
 }

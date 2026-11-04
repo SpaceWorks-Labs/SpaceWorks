@@ -15,13 +15,29 @@ Platform SMTP, SMS, push and Stripe Connect credentials normally live encrypted 
 | `EMAIL_HOST_USER` | `''` |  |
 | `EMAIL_PORT` | `587` |  |
 | `EMAIL_USE_TLS` | `True` |  |
-| `GITHUB_API_TOKEN` | `''` | Optional; raises the GitHub rate limit for maker-profile contribution refresh. |
+| `GITHUB_API_TOKEN` | `''` | Optional; raises the GitHub rate limit for maker-profile contribution refresh and the hackathon first-commit flag. |
+| `WEB_PUSH_VAPID_PRIVATE_KEY` | `''` | Secret. Base64url raw P-256 private scalar for browser notifications (W3C Web Push); the public key is derived. Blank = browser notifications dormant. Generate once per deployment and keep it: rotating it invalidates every browser subscription. |
+| `HOSTING_REQUEST_RESUBMIT_ENABLED` | `True` | Managed platforms: applicants may edit and resubmit a hosting request after the superadmin asks for changes. `False` keeps "changes requested" one-way (the applicant reads the note only). |
+| `WEB_PUSH_VAPID_SUBJECT` | `''` | `mailto:` or `https:` contact sent to push services with each browser notification. Required with the key. |
+| `NOTIFICATION_SLACK_REDIRECT_URI` | `''` | Fixed HTTPS frontend notification-settings return, registered byte-for-byte in the provider app; blank refuses personal linking. No placeholders: the signed OAuth state carries the makerspace and challenge. |
+| `NOTIFICATION_MATTERMOST_REDIRECT_URI` | `''` | Same frontend OAuth return policy as Slack. |
+| `NOTIFICATION_DISCORD_REDIRECT_URI` | `''` | Same frontend OAuth return policy as Slack. |
+| `NOTIFICATION_MATTERMOST_ALLOW_PRIVATE_HOSTS` | `False` | Only boolean true allows private self-hosted Mattermost addresses. |
 | `OTP_SMS_DAILY_CAP` | `200` | Platform-wide daily cap on SMS sign-in codes. |
+| `MANAGED_OTP_EMAIL_DAILY_LIMIT` | `200` | Managed mode: platform-wide daily cap on email sign-in codes (#77). |
+| `MANAGED_OTP_SMS_DAILY_LIMIT` | `100` | Managed mode: platform-wide daily cap on SMS sign-in codes, tightening `OTP_SMS_DAILY_CAP` (#77). |
 | `PUSH_TOKEN_HMAC_KEY` | `''` | Keys the device-token digest; push registration answers 503 while unset. |
 | `STRIPE_CONNECT_REDIRECT_URI` | `''` |  |
 | `TELEGRAM_API_URL` | `'https://api.telegram.org'` |  |
 | `TELEGRAM_BOT_TOKEN` | `''` |  |
 | `TELEGRAM_WEBHOOK_SECRET` | `''` | The webhook answers 403 while unset; callbacks are acknowledged and ignored. |
+| `WHATSAPP_META_GRAPH_VERSION` | `'v25.0'` | Canonical Meta HTTP version. Twilio/Meta adapters and the whatsapp module are wired; sender/proof/template gates and the independent cutover activation hold still apply. |
+
+These notification settings are loaded from the environment and forwarded by deployment manifests.
+OAuth returns signed code/state; authenticated endpoints GET resolves `oauth_state` to the current
+account's challenge, then the frontend posts to authenticated personal challenge verification.
+Redirect URIs are fixed registered values, without dynamic challenge IDs or placeholders. Authorization and exchange must use the identical provider-registered URI.
+See the [delivery contract](notification-contract.md#provider-connection-and-deployment) for setup.
 
 ## Sign-in: social, OIDC, native devices, member claims
 
@@ -31,7 +47,8 @@ Platform SMTP, SMS, push and Stripe Connect credentials normally live encrypted 
 | `DEVICE_ANDROID_ATTESTATION_VERIFY_URL` | `''` |  |
 | `DEVICE_APPLE_ATTESTATION_VERIFY_TOKEN` | `''` |  |
 | `DEVICE_APPLE_ATTESTATION_VERIFY_URL` | `''` |  |
-| `DEVICE_ATTESTATION_APPS` | `{}` |  |
+| `DEVICE_ATTESTATION_APPS` | `{}` | Legacy fallback only for approved global native registrations whose signing list is empty; keys map to `signing_identity` and `environments`. New installations enter distribution digests / Apple App ID Prefix and minimum versions on registrations in `/control/`. A system warning lists empty eligible rows. See [mobile integration](mobile-integration.md). |
+| `DEVICE_ATTESTATION_DEV_INSECURE` | `False` | Accept development attestation for development registrations only; requires `DEBUG=True`. External and configured in-process verifiers take priority. |
 | `DEVICE_ATTESTATION_CHALLENGE_TTL_SECONDS` | `180` |  |
 | `DEVICE_ATTESTATION_PROVIDER_TIMEOUT_SECONDS` | `10` |  |
 | `MEMBER_CLAIM_CODE_TTL_SECONDS` | `15 * 60` |  |
@@ -54,12 +71,14 @@ Every `THROTTLE_*` value is a DRF rate string (`<n>/<second|minute|hour|day>`). 
 
 | Variable | Default | Notes |
 |---|---|---|
-| `THROTTLE_ANONYMOUS_REQUEST_EMAIL` | `'3/day'` |  |
-| `THROTTLE_ANONYMOUS_REQUEST_IP_BURST` | `'2/min'` |  |
-| `THROTTLE_ANONYMOUS_REQUEST_IP_HOUR` | `'10/hour'` |  |
-| `THROTTLE_ARCHIVE_RECIPIENT_VERIFY` | `'10/min'` |  |
+| `THROTTLE_ANONYMOUS_REQUEST_EMAIL` | `'5/hour'` | Borrower email-code sends per address (spaces without member accounts). |
+| `THROTTLE_ANONYMOUS_REQUEST_IP_BURST` | `'5/min'` | Account-less borrow requests and code sends per IP. |
+| `THROTTLE_ANONYMOUS_REQUEST_IP_HOUR` | `'30/hour'` | Account-less borrow requests and code sends per IP. |
 | `THROTTLE_AUDIT_VERIFICATION` | `'6/hour'` | On-demand audit chain verification runs. |
 | `THROTTLE_BOOKING_SUBMIT` | `'10/hour'` |  |
+| `THROTTLE_PAYMENT_CLAIMS` | `'5/hour'` | Member "I've paid" offline claims per account (L5). |
+| `THROTTLE_PAY_LINKS` | `'30/min'` | Public pay-link reads, claims and checkouts per IP (L5). |
+| `THROTTLE_PRICING_QUOTE` | `'60/min'` | Price previews (`POST /api/v1/pricing/quote`) per account, or per IP when signed out (L15). |
 | `THROTTLE_DATA_EXPORT_CREATE` | `'3/hour'` |  |
 | `THROTTLE_DEVICE_ATTESTATION_CHALLENGE` | `'5/min'` |  |
 | `THROTTLE_DEVICE_LOGIN` | `'5/min'` |  |
@@ -74,10 +93,15 @@ Every `THROTTLE_*` value is a DRF rate string (`<n>/<second|minute|hour|day>`). 
 | `THROTTLE_EVENT_OFFLINE_SYNC` | `'60/hour'` |  |
 | `THROTTLE_EVENT_REGISTER` | `'10/hour'` |  |
 | `THROTTLE_EVENT_REGISTRATION_RETRY` | `'30/hour'` |  |
+| `THROTTLE_EVENT_SHORT_LINK` | `'30/min'` |  |
 | `THROTTLE_EVENT_STATION_PIN_IP` | `'30/hour'` |  |
 | `THROTTLE_EVENT_STATION_PIN_TOKEN` | `'10/hour'` |  |
 | `THROTTLE_EVENT_STATION_REVEAL` | `'5/hour'` |  |
 | `THROTTLE_EVENT_STATION_SESSION` | `'120/hour'` |  |
+| `THROTTLE_HOSTING_INVITATION_CREATE` | `'20/hour'` | Per staff user: hosting invitations created (managed platform only). |
+| `THROTTLE_HOSTING_REQUEST_EMAIL` | `'3/day'` | Per applicant address: hosting-request submissions; overflow is silently dropped with the usual 202. |
+| `THROTTLE_HOSTING_REQUEST_SUBMIT` | `'5/hour'` | Per client: public hosting-request and invitation-answer submissions. |
+| `THROTTLE_HOSTING_REQUEST_TOKEN` | `'30/hour'` | Per client: hosting-request status and invitation-preview links. |
 | `THROTTLE_KIOSK_OPERATOR_LEASE` | `'30/hour'` |  |
 | `THROTTLE_KIOSK_REPLAY_EXECUTE` | `'240/hour'` |  |
 | `THROTTLE_KIOSK_REPLAY_PREPARE` | `'60/hour'` |  |
@@ -110,11 +134,13 @@ Every `THROTTLE_*` value is a DRF rate string (`<n>/<second|minute|hour|day>`). 
 | `THROTTLE_PUSH_DEVICE_REGISTRATION` | `'10/min'` |  |
 | `THROTTLE_REQUEST_STATUS` | `'60/min'` |  |
 | `THROTTLE_REQUEST_SUBMIT` | `'10/min'` |  |
+| `THROTTLE_SOCIAL_LINK` | `'10/hour'` | Native provider linking only. |
 | `THROTTLE_SOCIAL_LOGIN` | `'10/min'` |  |
 | `THROTTLE_SOCIAL_NONCE` | `'10/min'` |  |
 | `THROTTLE_TELEGRAM_WEBHOOK` | `'60/min'` |  |
 | `THROTTLE_TENANT_MIGRATION_READ` | `'120/min'` |  |
 | `THROTTLE_TENANT_MIGRATION_WRITE` | `'30/hour'` |  |
+| `THROTTLE_TENANT_MIGRATION_UPLOAD` | `'1200/min'` | Resumable tenant-archive chunks (up to 8 MiB per request). |
 | `THROTTLE_MFA_VERIFY` | `10/min` | Per-IP second-factor/enrollment budget; also controls control-panel verification. |
 | `THROTTLE_MFA_CHALLENGE` | `10/min` | Budget for one challenge token. |
 | `THROTTLE_MFA_USER` | `20/hour` | Account budget across challenges and IPs. |

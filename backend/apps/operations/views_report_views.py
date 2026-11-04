@@ -2,9 +2,10 @@
 
 from django.db import transaction
 from django.db.models import Q
+from django.http import Http404
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, extend_schema
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import APIException, PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -34,15 +35,27 @@ def authorize_view(actor, space, state):
     definition = REPORT_REGISTRY.get(state.get("report_key"))
     if definition is None:
         raise PermissionDenied("The saved report is unavailable.")
-    require_action(actor, definition.required_action, space.pk)
+    from .report_subjects import require_report_action
+    require_report_action(actor, definition, space.pk, state.get("filters", {}))
+    from .report_sources import require_source
     for module in definition.required_modules:
-        require_module(space, module)
+        require_source(space, module)
+    from .report_subjects import authorize
+    authorize(actor, space, definition, state.get("filters", {}))
     return definition
+
+
+def _may_save(actor, definition, space):
+    from .report_subjects import report_action_allowed, subject_capable
+    return report_action_allowed(
+        actor, definition, space.pk,
+        {"subject_kind": True} if subject_capable(definition) else None,
+    )
 
 
 def accessible_report_views(actor, space):
     keys = [key for key, definition in REPORT_REGISTRY.items()
-            if definition.previewable and rbac.can(actor, definition.required_action, space.pk)]
+            if definition.previewable and _may_save(actor, definition, space)]
     rows = SavedView.objects.none()
     for action in {definition.required_action for definition in REPORT_REGISTRY.values()}:
         rows = rows | rbac.scope_by_action(actor, action, SavedView.objects.all())
@@ -52,9 +65,11 @@ def accessible_report_views(actor, space):
 
 
 def owner_authorized(row, space):
-    definition = REPORT_REGISTRY.get(row.state.get("report_key"))
-    return bool(definition and active_user(row.owner)
-                and rbac.can(row.owner, definition.required_action, space.pk))
+    try:
+        authorize_view(row.owner, space, row.state)
+    except (APIException, Http404):
+        return False
+    return active_user(row.owner)
 
 
 class SavedReportViewListCreateView(APIView):
@@ -66,10 +81,14 @@ class SavedReportViewListCreateView(APIView):
         space = space_for_views(request.user, makerspace_id)
         owners, rows = {}, []
         for row in accessible_report_views(request.user, space):
-            key = (row.owner_id, row.state.get("report_key"))
+            key = (row.owner_id, row.state.get("report_key"), str(row.state.get("filters", {})))
             if key not in owners:
                 owners[key] = owner_authorized(row, space)
             if owners[key]:
+                try:
+                    authorize_view(request.user, space, row.state)
+                except (APIException, Http404):
+                    continue
                 rows.append(row)
         pager = StaffListPagination()
         page = pager.paginate_queryset(rows, request, view=self)

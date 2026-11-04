@@ -47,4 +47,5 @@ def build_certification_coverage(makerspace_id, *, limit=None, date_range=None, 
             if aggregate:
                 record["makerspace_id"] = space.id
             records.append(record)
-    return ReportResult(FIELDS, limited(records, limit))
+    fields = ("makerspace_id", *FIELDS) if aggregate else FIELDS
+    return ReportResult(fields, limited(records, limit))

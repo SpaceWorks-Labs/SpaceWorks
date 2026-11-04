@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
-from rest_framework.exceptions import NotFound, ValidationError
+from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -21,10 +21,6 @@ from apps.events.serializers_feedback import (
     FeedbackSubmissionSerializer,
 )
 from apps.events.services_certificates import download_url
-from apps.events.services_feedback import (
-    submit_anonymous_feedback,
-    submit_identified_feedback,
-)
 from apps.events.views_feedback_public import feedback_form_payload
 from apps.hardware_requests.exceptions import ErrorSerializer
 from apps.makerspaces.guards import require_module
@@ -84,50 +80,26 @@ class MemberEventFeedbackView(APIView):
         survey, _certificate = _survey_for_registration(registration)
         serializer = FeedbackSubmissionSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        data = serializer.validated_data
-        if survey.certificate_enabled:
-            if "email" not in data:
-                raise ValidationError({"email": "This field is required."})
-            _response, certificate = submit_identified_feedback(
-                registration.event,
-                actor=request.user,
-                email=data["email"],
-                answers=data["answers"],
-                registration=registration,
-            )
-        else:
-            if "email" in data:
-                raise ValidationError({"email": "Email is not accepted for anonymous feedback."})
-            _response, certificate = submit_anonymous_feedback(
-                registration.event, data["answers"],
-            )
+        from apps.events.feedback_modes import submit
+        _response, certificate = submit(registration.event, survey, user=request.user,
+                                        data=serializer.validated_data, registration=registration)
         payload = {"thank_you_text": survey.thank_you_text, "certificate": certificate}
         return Response(FeedbackSubmissionResponseSerializer(payload).data, status=201)
 
 
 class MemberEventCertificateDownloadView(APIView):
     permission_classes = [IsAuthenticated]
+    from apps.events.throttles import CredentialRenderThrottle
+    throttle_classes = [CredentialRenderThrottle]
 
-    @extend_schema(tags=["Member events"], responses={200: CertificateDownloadSerializer, 410: OpenApiResponse(ErrorSerializer, description="Certificate revoked."), 503: OpenApiResponse(ErrorSerializer, description="Certificate storage unavailable."), **ERRORS})
+    @extend_schema(tags=["Member events"], description="Private audited certificate download; configurable renders are bounded to 30/hour per account.", responses={200: CertificateDownloadSerializer, 429: ErrorSerializer, 410: OpenApiResponse(ErrorSerializer, description="Certificate revoked."), 503: OpenApiResponse(ErrorSerializer, description="Certificate storage unavailable."), **ERRORS})
     def get(self, request, makerspace_id, pk):
-        membership = active_membership(request.user, makerspace_id)
-        if membership is None:
-            raise MemberPresenceRequired()
-        require_module(membership.makerspace, "events")
-        certificate = get_object_or_404(
-            EventAttendanceCertificate.objects.select_related(
-                "registration__event__makerspace",
-            ).filter(
-                pk=pk,
-                registration__in=registrations_for_space(
-                    membership.makerspace, request.user,
-                ),
-            )
-        )
+        from .certificates.owner_queries import owner_certificate
+        certificate = owner_certificate(request.user, makerspace_id, pk)
         if certificate.status == EventAttendanceCertificate.Status.REVOKED:
             return Response({"detail": "Certificate revoked.", "code": "certificate_revoked"}, status=status.HTTP_410_GONE)
         try:
-            certificate, url = download_url(certificate)
+            certificate, url = download_url(certificate, actor=request.user)
         except CertificateStorageUnavailable:
             return Response({"detail": "Certificate storage is unavailable.", "code": "storage_unavailable"}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
         return Response({"url": url, "expires_at": timezone.now() + timedelta(seconds=settings.EVIDENCE_URL_TTL_SECONDS)})

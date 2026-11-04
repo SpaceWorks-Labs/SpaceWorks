@@ -11,6 +11,11 @@ LIFECYCLE_EXEMPTIONS = {
 
 
 OBJECT_MUTATION_PARTICIPANTS = {
+    "apps.bookings.services_gallery.presign_photo": "Called by the tenant-resolved gallery upload route behind the authenticated source-gate assertion.",
+    "apps.bookings.services_gallery.cleanup_unattached": "Failed gallery attachment cleanup runs inside the tenant-resolved photo route's source-gate boundary.",
+    "apps.bookings.services_gallery.delete_photo": "Photo removal and post-commit storage release run through the tenant-resolved gallery route.",
+    "apps.makerspaces.website_assets.delete_object": "Private website rollback/replacement cleanup belongs to the tenant-resolved durable website transaction or post-commit cleanup.",
+    "apps.makerspaces.website_assets.copy_object": "Called only by an authorized domain clone/COW adapter inside clone_transaction and its tenant source gate.",
     "apps.data_export.subject_services.run_subject_export": (
         "The subject task or recovery sweep holds subject_boundary through archive upload and finalization."
     ),
@@ -37,7 +42,7 @@ OBJECT_MUTATION_PARTICIPANTS = {
     "apps.events.services_images.update_image": "Called by the tenant-resolved event image route.",
     "apps.events.services_series_images.remove_image": "Called by the tenant-resolved event series image route.",
     "apps.events.services_series_images.update_image": "Called by the tenant-resolved event series image route.",
-    "apps.events.services.update_event": (
+    "apps.events.services_event_details.update_event": (
         "Runs inside the tenant-resolved admin event route's transaction; it can clear "
         "image_key when an occurrence stops overriding its series template."
     ),
@@ -49,9 +54,16 @@ OBJECT_MUTATION_PARTICIPANTS = {
     "apps.machines.services.remove_document": "Runs inside the model-resolved machine document route.",
     "apps.machines.services.remove_image": "Runs inside the model-resolved machine image route.",
     "apps.machines.services.update_image": "Runs inside the model-resolved machine image route.",
+    # Release 2 L12: the one machine job flow's file staging, promotion and attachment.
+    "apps.machines.job_files.stage_job_file": "Runs inside the public-slug job upload route.",
+    "apps.machines.job_files.validate_job_object": "Runs inside finalize_file, under the job route's tenant transaction.",
+    "apps.machines.job_files.attach_job_file": "Runs inside the public-slug job submit and the member resubmit routes.",
+    "apps.machines.service_storage_attach._validated": "Runs inside finalize_file, under the request route's tenant transaction.",
     "apps.maintenance.services_documents.delete_log_document": "Runs inside the model-resolved maintenance document route.",
     "apps.maintenance.services_documents.finalize_log_document": "Runs inside the model-resolved maintenance document route.",
     "apps.makerspaces.lifecycle_storage._delete_public_image_keys": "Tenant purge is an express source-gate exclusion.",
+    "apps.warranty.services.finalize_document": "Runs inside the model-resolved warranty document route.",
+    "apps.warranty.services.presign_document": "Runs inside the model-resolved warranty document route.",
     "apps.operations.report_delivery_storage.delete_report_object": (
         "Reached only inside run_report_schedules' skip-and-count tenant boundary, the "
         "tenant-resolved schedule delete route and the reports module purge."
@@ -78,6 +90,10 @@ OBJECT_MUTATION_PARTICIPANTS = {
     ),
     "apps.hardware_requests.replay_prepare._upload_again": (
         "Called inside replay prepare's Station-resolved source-gate boundary."
+    ),
+    "apps.hardware_requests.self_checkout_contact.issue_upload": (
+        "Called only by the public self-checkout evidence views behind the tenant-resolved "
+        "source-gate assertion (signed-in and account-less paths, #95)."
     ),
     "apps.evidence.services_upload.issue_upload": (
         "Called only by the staff upload-URL and kiosk evidence-prepare views, both behind "

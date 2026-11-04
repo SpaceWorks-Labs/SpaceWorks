@@ -18,8 +18,18 @@ class Payment(models.Model):
         # the one-per-subject constraint gives one deposit and one late fee per loan.
         LOAN_DEPOSIT = "loan_deposit", "Loan deposit"
         LOAN_LATE_FEE = "loan_late_fee", "Loan late fee"
+        # Lane L15 (#84/#85). Rental is one per loan (subject_id = HardwareRequest id);
+        # damage and lost are one per RequesterAccountability row (subject_id = its id).
+        LOAN_RENTAL = "loan_rental", "Loan rental"
+        LOAN_DAMAGE = "loan_damage", "Loan damage charge"
+        LOAN_LOST = "loan_lost", "Lost item charge"
+        # Lane L23 (#158): one metered machine session; subject_id is the MachineSession id.
+        MACHINE_SESSION = "machine_session", "Machine session"
 
-    LOAN_SUBJECT_TYPES = ("loan_deposit", "loan_late_fee")
+    #: Subjects whose subject_id is the HardwareRequest id.
+    LOAN_SUBJECT_TYPES = ("loan_deposit", "loan_late_fee", "loan_rental")
+    #: Subjects whose subject_id is a RequesterAccountability row of a loan.
+    LOAN_ACCOUNTABILITY_SUBJECT_TYPES = ("loan_damage", "loan_lost")
 
     class Status(models.TextChoices):
         PENDING = "pending", "Pending"
@@ -100,6 +110,14 @@ class Payment(models.Model):
     stripe_checkout_url = models.URLField(blank=True, default="")
     stripe_checkout_session_expired_at = models.DateTimeField(null=True, blank=True)
     stripe_payment_intent_id = models.CharField(max_length=255, null=True, blank=True, unique=True)
+    # Lane L5. The tax policy frozen when the charge was raised (NULL with tax off), and
+    # the provider's display label for how it was paid ("Visa ••4242"). Neither is ever
+    # rewritten: the snapshot is insert-only and the label fills once, from blank.
+    tax_snapshot = models.JSONField(null=True, blank=True, default=None)
+    method_label = models.CharField(max_length=64, blank=True, default="")
+    # Lane L15. The frozen quote (lines, discount, waiver, sources, digest) the amount was
+    # computed from; `{}` for charges raised without the pricing kernel. Insert-only.
+    pricing_snapshot = models.JSONField(default=dict, blank=True)
     created_by = models.ForeignKey("accounts.User", on_delete=models.PROTECT, related_name="created_payments")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -157,79 +175,22 @@ class Payment(models.Model):
         self.currency = (self.currency or "").lower()
         currency_validator(self.currency)
         subject_identity_unchanged = self._subject_identity_unchanged()
-        if self.subject_type == self.SubjectType.MEMBERSHIP_REQUEST:
-            from apps.payments.subject_validation import validate_membership_request
+        from apps.payments.subject_validation import validate_subject
 
-            validate_membership_request(self, subject_identity_unchanged)
-        if self.subject_type == self.SubjectType.MACHINE_SERVICE_REQUEST and self.subject_id:
-            from apps.machines.models import MachineServiceRequest
-
-            if not subject_identity_unchanged and not MachineServiceRequest.objects.filter(
-                pk=self.subject_id,
-                makerspace_id=self.makerspace_id,
-            ).exists():
-                raise ValidationError({"subject_id": "Payment subject must belong to the payment makerspace."})
-        if self.subject_type == self.SubjectType.BOOKING and self.subject_id:
-            from apps.bookings.models import Booking
-
-            if not subject_identity_unchanged:
-                booking_exists = Booking.objects.filter(
-                    pk=self.subject_id,
-                    space__makerspace_id=self.makerspace_id,
-                ).exists()
-                if not booking_exists:
-                    raise ValidationError(
-                        {"subject_id": "Payment subject must belong to the payment makerspace."}
-                    )
-        if self.subject_type == self.SubjectType.EVENT_REGISTRATION and self.subject_id:
-            from apps.events.models import EventRegistration
-
-            if not subject_identity_unchanged:
-                registration_exists = EventRegistration.objects.filter(
-                    pk=self.subject_id,
-                    event__makerspace_id=self.makerspace_id,
-                ).exists()
-                if not registration_exists:
-                    raise ValidationError(
-                        {"subject_id": "Payment subject must belong to the payment makerspace."}
-                    )
-        if self.subject_type in self.LOAN_SUBJECT_TYPES and self.subject_id:
-            from apps.hardware_requests.models import HardwareRequest
-
-            if not subject_identity_unchanged and not HardwareRequest.objects.filter(
-                pk=self.subject_id,
-                makerspace_id=self.makerspace_id,
-            ).exists():
-                raise ValidationError({"subject_id": "Payment subject must belong to the payment makerspace."})
-        if self.subject_type == self.SubjectType.MEMBERSHIP_TERM and self.subject_id:
-            from apps.makerspaces.models import MembershipTerm
-
-            if not subject_identity_unchanged and not MembershipTerm.objects.filter(
-                pk=self.subject_id,
-                membership__makerspace_id=self.makerspace_id,
-            ).exists():
-                raise ValidationError({"subject_id": "Payment subject must belong to the payment makerspace."})
-        if self.subject_type == self.SubjectType.MAKERSPACE_MEMBERSHIP and self.subject_id:
-            from apps.makerspaces.models import MakerspaceMembership
-
-            membership = MakerspaceMembership.objects.filter(
-                pk=self.subject_id,
-                makerspace_id=self.makerspace_id,
-            ).only("user_id").first()
-            if membership is None and not subject_identity_unchanged:
-                raise ValidationError(
-                    {"subject_id": "Payment subject must belong to the payment makerspace."}
-                )
-            if membership is not None and self.member_id != membership.user_id:
-                raise ValidationError(
-                    {"member": "Payment member must be the membership user."}
-                )
+        validate_subject(self, subject_identity_unchanged)
 
     def save(self, *args, **kwargs):
         if self.pk:
             original = type(self).objects.filter(pk=self.pk).values(
-                "status", "amount", "provider", "stripe_provider", "stripe_connected_account_id", "stripe_application_fee_amount", "online_rail", "due_at"
+                "status", "amount", "provider", "stripe_provider", "stripe_connected_account_id", "stripe_application_fee_amount", "online_rail", "due_at",
+                "tax_snapshot", "method_label", "pricing_snapshot",
             ).first()
+            if original and original["tax_snapshot"] != self.tax_snapshot:
+                raise ValidationError("A charge's tax snapshot is immutable.")
+            if original and original["pricing_snapshot"] != self.pricing_snapshot:
+                raise ValidationError("A charge's pricing snapshot is immutable.")
+            if original and original["method_label"] and original["method_label"] != self.method_label:
+                raise ValidationError("A payment method label is set once.")
             if original and original["due_at"] != self.due_at:
                 raise ValidationError("A charge due date is immutable.")
             if original and original["status"] != self.Status.PENDING and (

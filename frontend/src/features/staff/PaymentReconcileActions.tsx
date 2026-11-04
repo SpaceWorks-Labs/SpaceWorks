@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { StatusBadge } from "../../components/ui";
+import { OverflowMenu, StatusPill } from "../../components/ui";
 import {
   invalidatePaymentViews,
   reconcilePayment,
@@ -53,29 +53,23 @@ export function PaymentReconcileActions({
   }).format(Number(payment.amount));
   return (
     <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-      <span className="font-mono font-semibold text-ink">Payment {amount}</span>
-      <StatusBadge status={payment.status} />
+      <span className="tabular-nums font-semibold text-ink">Payment {amount}</span>
+      <StatusPill label={payment.status[0].toUpperCase() + payment.status.slice(1).replace(/_/g, " ")} tone={payment.status === "pending" ? "warn" : payment.status.startsWith("paid_") ? "success" : "neutral"} />
       {payment.status === "pending" ? (
         <>
           {canRecordPayment ? <button
-            className="desk-button-success"
+            className="desk-button"
             type="button"
             disabled={mutation.isPending}
             onClick={() => setSettling(true)}
           >
             Mark offline
           </button> : null}
-          {canWaive ? <button
-            className="desk-button-warn"
-            type="button"
-            disabled={mutation.isPending}
-            onClick={() => mutation.mutate({ action: "waive" })}
-          >
-            Waive
-          </button> : null}
+          {canWaive ? <OverflowMenu label="Payment actions" actions={[{ label: "Waive", disabled: mutation.isPending,
+            onClick: () => mutation.mutate({ action: "waive" }) }]} /> : null}
         </>
       ) : null}
-      {mutation.error ? (
+      {mutation.error && !settling ? (
         <span className="text-danger" role="alert">{mutation.error.message}</span>
       ) : null}
       {settling ? (
@@ -83,6 +77,7 @@ export function PaymentReconcileActions({
           <SettlementDialog
             count={1}
             pending={mutation.isPending}
+            error={mutation.error?.message}
             onCancel={() => setSettling(false)}
             onConfirm={(settlement) =>
               mutation.mutate({ action: "mark-offline", settlement })

@@ -1,3 +1,4 @@
+import { consoleSessionHref } from "../../lib/api/sessionContext";
 import { useEffect, useId, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -7,18 +8,21 @@ import { staffRequest } from "../../lib/api";
 import { useDebouncedValue } from "../../lib/useDebouncedValue";
 import { TAB_LABELS } from "./staffAccess";
 import { staffTabPath } from "./staffTabs";
+import { SIDEBAR_LABELS } from "./sidebarSections";
 import { quickCreateCommands } from "./quickCreate";
 
 type Hit = { entity: string; id: number; label: string; tab: string; query: Record<string, string> };
 type Command = { key: string; label: string; tab: string; query?: Record<string, string> };
 
-export function CommandPalette({ makerspaceId, makerspaceSlug, allowedTabs, guestOnly, singleTenantLocked, ownerName, actions = [], isSuperadmin = false }: {
+export function CommandPalette({ makerspaceId, makerspaceSlug, allowedTabs, guestOnly, singleTenantLocked, ownerName, actions = [], isSuperadmin = false, open: controlledOpen, onOpenChange }: {
   makerspaceId: number; makerspaceSlug: string; allowedTabs: readonly string[]; guestOnly: boolean; singleTenantLocked: boolean; ownerName: string;
-  actions?: readonly string[]; isSuperadmin?: boolean;
+  actions?: readonly string[]; isSuperadmin?: boolean; open?: boolean; onOpenChange?: (open: boolean) => void;
 }) {
   const navigate = useNavigate();
   const id = useId();
-  const [open, setOpen] = useState(false);
+  const [localOpen, setLocalOpen] = useState(false);
+  const open = controlledOpen ?? localOpen;
+  const setOpen = (next: boolean) => { setLocalOpen(next); onOpenChange?.(next); };
   const [search, setSearch] = useState("");
   const [active, setActive] = useState(0);
   const term = useDebouncedValue(search, 250).trim();
@@ -28,7 +32,9 @@ export function CommandPalette({ makerspaceId, makerspaceSlug, allowedTabs, gues
     enabled: open && term.length >= 2,
     staleTime: 0,
   });
-  const commands: Command[] = allowedTabs.filter((tab) => (TAB_LABELS[tab] ?? tab).toLowerCase().includes(search.toLowerCase().trim()))
+  // Match the old tab name and the sidebar's name ("Inbox", "Home", "Job pickups") so either finds the page.
+  const needle = search.toLowerCase().trim();
+  const commands: Command[] = allowedTabs.filter((tab) => [TAB_LABELS[tab] ?? tab, SIDEBAR_LABELS[tab]].some(name => name?.toLowerCase().includes(needle)))
     .map((tab) => ({ key: `tab-${tab}`, label: `Go to ${TAB_LABELS[tab] ?? tab}`, tab }));
   commands.push(...quickCreateCommands(actions, allowedTabs, isSuperadmin).filter(command => command.label.toLowerCase().includes(search.toLowerCase().trim())));
   if (term === search.trim() && term.length >= 2) results.data?.results.filter((hit) => allowedTabs.includes(hit.tab)).forEach((hit) => commands.push({ key: `${hit.entity}-${hit.id}`, label: `${TAB_LABELS[hit.tab] ?? hit.entity}: ${hit.label}`, tab: hit.tab, query: hit.query }));
@@ -44,7 +50,7 @@ export function CommandPalette({ makerspaceId, makerspaceSlug, allowedTabs, gues
         event.preventDefault();
         // Keep the existing dialog stack intact when evidence/action dialogs own focus.
         if (!open && document.querySelector('[role="dialog"]')) return;
-        setOpen((value) => !value); setSearch(""); setActive(0);
+        setOpen(!open); setSearch(""); setActive(0);
       }
     };
     document.addEventListener("keydown", keydown);
@@ -54,13 +60,13 @@ export function CommandPalette({ makerspaceId, makerspaceSlug, allowedTabs, gues
 
   const run = (command?: Command) => {
     if (!command) return;
-    const path = staffTabPath(command.tab, guestOnly, makerspaceSlug, singleTenantLocked);
+    const path = staffTabPath(command.tab, guestOnly, isSuperadmin ? undefined : makerspaceSlug, singleTenantLocked);
     const query = command.query ? new URLSearchParams(command.query).toString() : "";
     close();
-    navigate(path + (query ? `?${query}` : ""));
+    navigate(consoleSessionHref(path + (query ? `?${query}` : "")));
   };
   return <>
-    <button type="button" className="desk-button-ghost ml-5" onClick={() => setOpen(true)} aria-haspopup="dialog">Search and commands <kbd>Ctrl/⌘ K</kbd></button>
+    {controlledOpen === undefined ? <button type="button" className="desk-button-ghost ml-5" onClick={() => setOpen(true)} aria-haspopup="dialog">Search and commands <kbd>Ctrl/⌘ K</kbd></button> : null}
     {open ? <Modal open onClose={close} title="Search and commands">
       <label htmlFor={`${id}-input`} className="sr-only">Search staff console</label>
       <input id={`${id}-input`} className="desk-input w-full" role="combobox" aria-autocomplete="list" aria-expanded="true" aria-controls={`${id}-list`} aria-activedescendant={commands.length ? `${id}-option-${current}` : undefined}

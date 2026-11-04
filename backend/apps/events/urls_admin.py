@@ -9,6 +9,7 @@ every `reverse()` are unaffected. No `app_name`, matching `admin_api`.
 """
 
 from django.urls import include, path
+from .urls_website import admin_patterns as website_patterns
 
 from apps.events.views_admin import (
     EventCancelView,
@@ -63,8 +64,18 @@ from apps.events.views_series_image import EventSeriesImageView
 from apps.events.views_badges import EventBadgePdfView, EventBadgeTemplateView
 
 urlpatterns = [
+    path("", include("apps.events.urls_credentials")),
+    *website_patterns,
+    path("", include("apps.events.urls_communications")),
+    path("", include("apps.events.urls_staff_tools")),
+    path("", include("apps.events.urls_staff_grants")),
     path("", include("apps.events.urls_checkin_admin")),
+    path("", include("apps.events.urls_partners")),
     path("", include("apps.events.urls_ticketing")),
+    path("", include("apps.events.urls_speakers")),
+    path("", include("apps.events.urls_public_surface")),
+    # Stage definitions, assignments, milestones and response review (staged_forms/urls_admin.py).
+    path("events/<int:pk>/", include("apps.events.staged_forms.urls_admin")),
     path(
         'makerspaces/<int:makerspace_id>/event-series/',
         EventSeriesListCreateView.as_view(),

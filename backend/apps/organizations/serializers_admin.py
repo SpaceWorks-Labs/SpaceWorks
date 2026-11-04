@@ -24,7 +24,7 @@ class OrganizationSummarySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Organization
-        fields = ("id", "slug", "name", "governance_actions", "granted_actions")
+        fields = ("id", "slug", "name", "is_active", "governance_actions", "granted_actions")
         read_only_fields = fields
 
     @extend_schema_field(serializers.ListField(child=serializers.CharField()))
@@ -52,7 +52,7 @@ class OrganizationDetailSerializer(OrganizationSummarySerializer):
             "website",
             "logo_url",
             "public_profile_enabled",
-            "is_active",
+            "is_discoverable",
             "legal_name",
             "registration_number",
             "contact_email",
@@ -76,7 +76,7 @@ class OrganizationDetailSerializer(OrganizationSummarySerializer):
 class OrganizationProfileUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Organization
-        fields = ("name", "slug", "description", "website", "public_profile_enabled")
+        fields = ("name", "slug", "description", "website", "public_profile_enabled", "is_discoverable")
         extra_kwargs = {field: {"required": False} for field in fields}
 
 
@@ -107,19 +107,23 @@ class OrganizationInvitationSerializer(serializers.ModelSerializer):
     created_by_id = serializers.IntegerField(allow_null=True, read_only=True)
     redeemed_by_id = serializers.IntegerField(allow_null=True, read_only=True)
     state = serializers.SerializerMethodField()
+    sent_to_email = serializers.SerializerMethodField(help_text="True when an invitee email was given.")
 
     class Meta:
         model = OrganizationInvitation
         fields = (
             "id", "organization_id", "governance_actions", "granted_actions",
             "expires_at", "redeemed_at", "revoked_at", "created_by_id",
-            "redeemed_by_id", "created_at", "state",
+            "redeemed_by_id", "created_at", "state", "sent_to_email",
         )
         read_only_fields = fields
 
     @extend_schema_field(
         serializers.ChoiceField(choices=("active", "expired", "revoked", "redeemed"))
     )
+    def get_sent_to_email(self, obj) -> bool:
+        return bool(obj.invitee_email_digest)
+
     def get_state(self, obj):
         from django.utils import timezone
 
@@ -143,6 +147,9 @@ class OrganizationInvitationCreateSerializer(serializers.Serializer):
     governance_actions = serializers.ListField(child=serializers.CharField(), default=list)
     granted_actions = serializers.ListField(child=serializers.CharField(), default=list)
     expires_in_days = serializers.IntegerField(min_value=1, max_value=30, default=7)
+    invitee_email = serializers.EmailField(max_length=254, required=False, allow_blank=True, default="", help_text=(
+        "Optional. The link is also emailed there, and offered on that person's own chat channels when "
+        "the address belongs to a verified account. Only a digest of the address is stored."))
 
 
 class OrganizationInvitationCreatedSerializer(OrganizationInvitationSerializer):

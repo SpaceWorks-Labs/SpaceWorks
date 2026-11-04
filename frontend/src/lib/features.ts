@@ -172,6 +172,13 @@ export const FEATURE_DEFINITIONS: readonly FeatureDefinition[] = [
   { key: "events.crew", parent_module: "events", label: "Event crew" },
   { key: "events.crew_claims", parent_module: "events", label: "Crew expense claims" },
   { key: "events.checkin_lists", parent_module: "events", label: "Custom check-in lists" },
+  // L21b (X40, X50-X54, #128 C-37..C-39): finalists, prize payouts, fees, paid teams, saved views, gallery search.
+  { key: "events.finalists", parent_module: "events", label: "Finalists" },
+  { key: "events.prize_payouts", parent_module: "events", label: "Prize money and payouts" },
+  { key: "events.entry_fees", parent_module: "events", label: "Project entry fees" },
+  { key: "events.paid_teams", parent_module: "events", label: "Paid team registration" },
+  { key: "events.saved_views", parent_module: "events", label: "Saved views and exports for event lists" },
+  { key: "events.gallery_search", parent_module: "events", label: "Gallery search and awards" },
 ];
 
 export function featureEnabled(features: Iterable<string>, key: string) {

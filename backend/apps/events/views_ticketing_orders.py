@@ -4,7 +4,7 @@ from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.throttling import UserRateThrottle
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from apps.hardware_requests.exceptions import ErrorSerializer
@@ -15,8 +15,8 @@ from apps.makerspaces.servability import servable_queryset
 from .models import Event, EventOrder
 from .serializers_admin import EmptyActionSerializer
 from .serializers_ticketing_orders import (
-    AttendeeAssignmentSerializer, ClaimInputSerializer, ClaimResultSerializer, OrderListSerializer,
-    OrderPlacedSerializer, OrderQuoteResponseSerializer, OrderRequestSerializer, OrderSerializer,
+    AttendeeAssignmentSerializer, ClaimResultSerializer, OrderListSerializer, OrderPlacedSerializer,
+    OrderQuoteResponseSerializer, OrderRequestSerializer, OrderSerializer, TicketClaimInputSerializer,
 )
 
 ERRORS = {code: OpenApiResponse(ErrorSerializer, description=text) for code, text in (
@@ -28,14 +28,11 @@ ERRORS = {code: OpenApiResponse(ErrorSerializer, description=text) for code, tex
 )}
 
 
-class OrderThrottle(UserRateThrottle):
-    scope = "event_orders"
-    rate = "60/hour"
-
-
 class MemberOrderView(APIView):
     permission_classes = [IsAuthenticated]
-    throttle_classes = [OrderThrottle]
+    # DRF's own scoped throttle (rate in settings), so the claim-route guard has no custom hook to review.
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "event_orders"
 
     def space(self, makerspace_id):
         space = get_object_or_404(servable_queryset(Makerspace.objects.all()), pk=makerspace_id)
@@ -144,11 +141,11 @@ class MemberOrderCancelView(MemberOrderView):
 
 class MemberOrderSeatClaimView(MemberOrderView):
     @extend_schema(tags=["Member events"], summary="Take my own seat in a paid order (forms and waivers apply)",
-                   request=ClaimInputSerializer, responses={201: ClaimResultSerializer, **ERRORS})
+                   request=TicketClaimInputSerializer, responses={201: ClaimResultSerializer, **ERRORS})
     def post(self, request, makerspace_id, order_id, seat_id):
         from .orders_claims import claim_own_seat
         order = self.order(request, makerspace_id, order_id)
-        body = ClaimInputSerializer(data=request.data)
+        body = TicketClaimInputSerializer(data=request.data)
         body.is_valid(raise_exception=True)
         registration = claim_own_seat(order, seat_id, member=request.user, values=dict(body.validated_data))
         return Response({"registration_id": registration.pk, "event_id": registration.event_id,

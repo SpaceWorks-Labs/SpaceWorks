@@ -101,8 +101,6 @@ POLICY_OVERRIDE_ALLOWLIST = {
     "apps.events.profile_photos.views_public.PublicPhotoThrottle": set(),
     # Keys the member command budget on the principal (or IP before login); grants nothing.
     "apps.events.hackathons.api_base.ProgrammeCommandThrottle": {"get_cache_key"},
-    # Release 2 L6: the ticket-order budget only declares scope/rate.
-    "apps.events.views_ticketing_orders.OrderThrottle": set(),
 }
 
 # Reviewed lifecycle overrides on claim-reachable views, keyed by the class that defines

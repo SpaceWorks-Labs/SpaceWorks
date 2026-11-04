@@ -7,7 +7,7 @@ from rest_framework.response import Response
 
 from .models import EventPassType, EventRegistration, EventSeries
 from .serializers_ticketing_orders import (
-    ClaimInputSerializer, ClaimPreviewSerializer, ClaimResultSerializer, OrderPlacedSerializer, OrderSerializer,
+    ClaimPreviewSerializer, ClaimResultSerializer, OrderPlacedSerializer, OrderSerializer, TicketClaimInputSerializer,
 )
 from .views_ticketing_orders import ERRORS, MemberOrderView
 
@@ -30,10 +30,10 @@ class TicketClaimView(MemberOrderView):
                          "email_matches": bool(email) and email == seat.attendee_email.strip().lower()})
 
     @extend_schema(tags=["Member events"], summary="Claim the seat: it becomes my registration",
-                   request=ClaimInputSerializer, responses={201: ClaimResultSerializer, **ERRORS})
+                   request=TicketClaimInputSerializer, responses={201: ClaimResultSerializer, **ERRORS})
     def post(self, request, token):
         from .orders_claims import claim
-        body = ClaimInputSerializer(data=request.data)
+        body = TicketClaimInputSerializer(data=request.data)
         body.is_valid(raise_exception=True)
         registration = claim(token, user=request.user, values=dict(body.validated_data))
         return Response({"registration_id": registration.pk, "event_id": registration.event_id,

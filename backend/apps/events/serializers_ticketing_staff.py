@@ -63,7 +63,7 @@ class SalesSettingsSerializer(serializers.ModelSerializer):
                   "type_changes_allowed", "transfer_cutoff_hours")
 
 
-class RefundPolicyInputSerializer(serializers.Serializer):
+class EventRefundPolicyInputSerializer(serializers.Serializer):
     enabled = serializers.BooleanField()
     full_before_minutes = serializers.IntegerField(min_value=0, max_value=525600)
     partial_before_minutes = serializers.IntegerField(min_value=0, max_value=525600)
@@ -72,7 +72,7 @@ class RefundPolicyInputSerializer(serializers.Serializer):
     policy_text = serializers.CharField(max_length=2000, required=False, allow_blank=True, default="")
 
 
-class RefundPolicySerializer(serializers.Serializer):
+class EventRefundPolicySerializer(serializers.Serializer):
     overridden = serializers.BooleanField()
     locked = serializers.BooleanField(help_text="True after the first sale: changes may only be more generous.")
     terms = serializers.JSONField(allow_null=True)

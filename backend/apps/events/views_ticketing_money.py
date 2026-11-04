@@ -19,7 +19,7 @@ from .feature_gates import require_feature
 from .models import EventPassType, EventVenueFee
 from .serializers_admin import EmptyActionSerializer
 from .serializers_ticketing_staff import (
-    PassTypeListSerializer, PassTypeStaffSerializer, RefundPolicyInputSerializer, RefundPolicySerializer,
+    EventRefundPolicyInputSerializer, EventRefundPolicySerializer, PassTypeListSerializer, PassTypeStaffSerializer,
     VenueFeeInputSerializer, VenueFeeSerializer,
 )
 from .views_invites import ERRORS, PAGE_PARAMETERS, paginated
@@ -42,7 +42,7 @@ def _policy(event):
 class EventRefundPolicyView(APIView):
     permission_classes = [IsActiveStaff]
 
-    @extend_schema(tags=["Admin events"], request=None, responses={200: RefundPolicySerializer, **ERRORS})
+    @extend_schema(tags=["Admin events"], request=None, responses={200: EventRefundPolicySerializer, **ERRORS})
     def get(self, request, pk):
         event = money_event(request.user, pk)
         require_feature(event, "events.refund_override")
@@ -51,11 +51,11 @@ class EventRefundPolicyView(APIView):
     @extend_schema(tags=["Admin events"], summary="Set this event's own refund policy",
                    description="After the first sale the policy may only become more generous; anything else "
                                "answers 409 `policy_less_generous`.",
-                   request=RefundPolicyInputSerializer, responses={200: RefundPolicySerializer, **ERRORS})
+                   request=EventRefundPolicyInputSerializer, responses={200: EventRefundPolicySerializer, **ERRORS})
     def post(self, request, pk):
         from .cancellation_policy import OVERRIDE_FIELDS, set_override
         event = money_event(request.user, pk)
-        body = RefundPolicyInputSerializer(data=request.data)
+        body = EventRefundPolicyInputSerializer(data=request.data)
         body.is_valid(raise_exception=True)
         values = body.validated_data
         set_override(event, actor=request.user, enabled=values["enabled"],

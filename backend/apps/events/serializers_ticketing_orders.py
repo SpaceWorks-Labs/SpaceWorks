@@ -119,7 +119,7 @@ class AttendeeAssignmentSerializer(serializers.Serializer):
                                         help_text="Seat id -> attendee email (blank clears it).")
 
 
-class ClaimInputSerializer(serializers.Serializer):
+class TicketClaimInputSerializer(serializers.Serializer):
     custom_answers = serializers.JSONField(required=False)
     form_payload = serializers.JSONField(required=False)
     host_waiver_id = serializers.IntegerField(required=False)

@@ -9,8 +9,8 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('events', '0065_l6_ticketing_guards'),
-        ('makerspaces', '0119_l3_member_cards'),
+        ('events', '0066_l18_personal_calendar_feeds'),
+        ('makerspaces', '0124_l18_calendar_feed_switches'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 

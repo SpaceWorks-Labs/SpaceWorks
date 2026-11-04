@@ -757,6 +757,19 @@ identity normalization and production minimum-version comparison. `mobile_associ
   `MembershipAdmissionExtras.tsx`, `refunds/MembershipRefundExtras.tsx`, `members/{MemberAccountLifecycle,
   AdmissionJoinWithPlans}.tsx`, `members/joinPlansApi.ts`, `publicPages/PublicPlanCards.tsx`.
 
+### Release 2 L25 (per-space Metabase analytics)
+
+- `apps/analytics/` -- `models.py` (AnalyticsConnection, PlatformAnalyticsConnection), `catalogue/`
+  (one module per domain + `registry.py` with `VIEWS_VERSION`, `render.py`, `types.py`;
+  `pending_lanes.py` is NOT registered), `db_names.py`, `db_functions.py`, `db_ddl.py`, `db_sync.py`
+  (post/pre-migrate), `provisioning.py`, `embedding.py`, `access.py`, `services.py`, `api.py`,
+  `urls.py`, `purge.py`, `signals.py`, `management/commands/analytics_sync.py`.
+- Registries: `makerspaces/module_registry_r2_l25.py`, `accounts/rbac_actions.py` (`VIEW_ANALYTICS`),
+  `accounts/delegated_route_catalog_r2.py`, `audit/presentation_catalog_r2_l25.py`,
+  `data_export/classification_r2_l25.py`, `tenant_migration/catalog_r2_l25.py`,
+  `makerspaces/module_purge_plans.py`, `operations/report_coverage.py`.
+- Frontend: `features/staff/analytics/*`; docs `docs/analytics-views.md`.
+
 ### Release 2 L3 (ID cards)
 
 - `apps/card_designs/` -- the shared card engine: `layout*.py` (document v2), `stocks.py`, `fonts.py`

@@ -271,22 +271,17 @@ AUDIT_META_REFERENCES.update(_reference(S, None, *(
 )))
 
 from .audit_references_meta_r2_l17 import SETTINGS_AUTHORITY_AUDIT_EDGES  # noqa: E402
-
 AUDIT_META_REFERENCES.update(SETTINGS_AUTHORITY_AUDIT_EDGES)
 
 from .audit_references_meta_r2_l1 import PUBLIC_SURFACE_AUDIT_EDGES  # noqa: E402
-
 AUDIT_META_REFERENCES.update(PUBLIC_SURFACE_AUDIT_EDGES)
 
 from .audit_references_meta_unified_accounts import UNIFIED_ACCOUNT_AUDIT_EDGES  # noqa: E402
-
 AUDIT_META_REFERENCES.update(UNIFIED_ACCOUNT_AUDIT_EDGES)
 from .audit_references_r2_l5 import EDGES as R2_L5_AUDIT_EDGES  # noqa: E402
-
 AUDIT_META_REFERENCES.update(R2_L5_AUDIT_EDGES)
 
 from .audit_references_r2_l15 import EDGES as R2_L15_AUDIT_EDGES  # noqa: E402
-
 AUDIT_META_REFERENCES.update(R2_L15_AUDIT_EDGES)
 from .audit_references_r2_l10 import EDGES as R2_L10_AUDIT_EDGES  # noqa: E402
 AUDIT_META_REFERENCES.update(R2_L10_AUDIT_EDGES)

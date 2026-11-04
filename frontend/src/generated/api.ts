@@ -40,6 +40,8 @@ export const openApiTags = [
   "Booking website",
   "Bookings",
   "Bulk import",
+  "Card designs",
+  "Card jobs",
   "Chat notifications",
   "Containers",
   "Dashboard",
@@ -49,6 +51,7 @@ export const openApiTags = [
   "Devices",
   "Email logs",
   "Email templates",
+  "Event ID cards",
   "Event asset streams",
   "Event certificate library",
   "Event certificates",
@@ -78,6 +81,7 @@ export const openApiTags = [
   "Finance",
   "Health",
   "Hosting requests",
+  "ID programmes",
   "Integration health",
   "Internal",
   "Kiosk stations",
@@ -100,6 +104,7 @@ export const openApiTags = [
   "Messaging",
   "Messaging webhooks",
   "Mobile associations",
+  "My cards",
   "Native push",
   "Notification contract",
   "Notification delivery",
@@ -118,8 +123,10 @@ export const openApiTags = [
   "Presence staff",
   "Pricing",
   "Procurement",
+  "Public ID programmes",
   "Public booking website",
   "Public bookings",
+  "Public cards",
   "Public event website",
   "Public events",
   "Public inventory",
@@ -152,6 +159,7 @@ export const openApiTags = [
   "Telegram",
   "Tenant bootstrap",
   "Tenant migration",
+  "Wallet passes",
   "WhatsApp Twilio",
   "api"
 ] as const;
@@ -191,6 +199,25 @@ export const openApiPaths = [
   "/api/v1/admin/bookings/{id}/reject/",
   "/api/v1/admin/bookings/{id}/restore/",
   "/api/v1/admin/bookings/{id}/time/",
+  "/api/v1/admin/card-designs/{id}",
+  "/api/v1/admin/card-designs/{id}/approve",
+  "/api/v1/admin/card-designs/{id}/assets",
+  "/api/v1/admin/card-designs/{id}/assets/finalize",
+  "/api/v1/admin/card-designs/{id}/assets/{asset_id}",
+  "/api/v1/admin/card-designs/{id}/export",
+  "/api/v1/admin/card-designs/{id}/fonts",
+  "/api/v1/admin/card-designs/{id}/fonts/prepare",
+  "/api/v1/admin/card-designs/{id}/fonts/{family_slug}/{weight}",
+  "/api/v1/admin/card-designs/{id}/import",
+  "/api/v1/admin/card-designs/{id}/preview",
+  "/api/v1/admin/card-designs/{id}/publish",
+  "/api/v1/admin/card-designs/{id}/reject",
+  "/api/v1/admin/card-designs/{id}/reset",
+  "/api/v1/admin/card-designs/{id}/submit",
+  "/api/v1/admin/card-designs/{id}/templates",
+  "/api/v1/admin/card-jobs/{id}",
+  "/api/v1/admin/card-jobs/{id}/cancel",
+  "/api/v1/admin/card-jobs/{id}/result",
   "/api/v1/admin/categories/{id}",
   "/api/v1/admin/certification-grants/{id}/renew",
   "/api/v1/admin/certification-grants/{id}/revoke",
@@ -213,6 +240,9 @@ export const openApiPaths = [
   "/api/v1/admin/event-certificates/{id}/revoke/",
   "/api/v1/admin/event-collaborations/{id}/remove/",
   "/api/v1/admin/event-collaborations/{id}/respond/",
+  "/api/v1/admin/event-id-cards/{id}",
+  "/api/v1/admin/event-id-cards/{id}/download",
+  "/api/v1/admin/event-id-cards/{id}/revoke",
   "/api/v1/admin/event-invites/{id}/revoke/",
   "/api/v1/admin/event-partner-makerspaces/",
   "/api/v1/admin/event-promos/{id}/revoke/",
@@ -284,6 +314,9 @@ export const openApiPaths = [
   "/api/v1/admin/events/{id}/broadcasts/{campaign_id}/tallies/",
   "/api/v1/admin/events/{id}/broadcasts/{campaign_id}/test/",
   "/api/v1/admin/events/{id}/cancel/",
+  "/api/v1/admin/events/{id}/card-designs",
+  "/api/v1/admin/events/{id}/card-jobs",
+  "/api/v1/admin/events/{id}/card-settings",
   "/api/v1/admin/events/{id}/certificate-artwork/",
   "/api/v1/admin/events/{id}/certificate-artwork/{artwork_id}/",
   "/api/v1/admin/events/{id}/certificate-artwork/{artwork_id}/finalize/",
@@ -295,6 +328,7 @@ export const openApiPaths = [
   "/api/v1/admin/events/{id}/certificates/verification-policy/",
   "/api/v1/admin/events/{id}/certificates/{certificate_id}/reissue/",
   "/api/v1/admin/events/{id}/certificates/{certificate_id}/revoke/",
+  "/api/v1/admin/events/{id}/check-in/card-scan",
   "/api/v1/admin/events/{id}/check-in/offline-roster/",
   "/api/v1/admin/events/{id}/check-in/offline-sync/",
   "/api/v1/admin/events/{id}/check-in/resolve/",
@@ -333,6 +367,8 @@ export const openApiPaths = [
   "/api/v1/admin/events/{id}/help/{help_id}/renew/",
   "/api/v1/admin/events/{id}/help/{help_id}/reopen/",
   "/api/v1/admin/events/{id}/help/{help_id}/resolve/",
+  "/api/v1/admin/events/{id}/id-cards",
+  "/api/v1/admin/events/{id}/id-cards/extras",
   "/api/v1/admin/events/{id}/image",
   "/api/v1/admin/events/{id}/invites/",
   "/api/v1/admin/events/{id}/invites/bulk/",
@@ -466,6 +502,18 @@ export const openApiPaths = [
   "/api/v1/admin/events/{id}/website/release/",
   "/api/v1/admin/events/{id}/website/sessions/{slug}/delay/",
   "/api/v1/admin/evidence/{id}",
+  "/api/v1/admin/id-programme-cards/{id}",
+  "/api/v1/admin/id-programme-cards/{id}/download",
+  "/api/v1/admin/id-programme-cards/{id}/email",
+  "/api/v1/admin/id-programme-cards/{id}/photo-request",
+  "/api/v1/admin/id-programmes/{id}",
+  "/api/v1/admin/id-programmes/{id}/approval",
+  "/api/v1/admin/id-programmes/{id}/card-jobs",
+  "/api/v1/admin/id-programmes/{id}/cards",
+  "/api/v1/admin/id-programmes/{id}/cards/decide",
+  "/api/v1/admin/id-programmes/{id}/design",
+  "/api/v1/admin/id-programmes/{id}/imports",
+  "/api/v1/admin/id-programmes/{id}/imports/preview",
   "/api/v1/admin/inventory/needs-fix",
   "/api/v1/admin/inventory/{id}",
   "/api/v1/admin/inventory/{id}/adjust-quantity",
@@ -771,6 +819,7 @@ export const openApiPaths = [
   "/api/v1/admin/makerspaces/{makerspace_id}/booking-issues/",
   "/api/v1/admin/makerspaces/{makerspace_id}/booking-machine-types/",
   "/api/v1/admin/makerspaces/{makerspace_id}/bookings/",
+  "/api/v1/admin/makerspaces/{makerspace_id}/card-designs",
   "/api/v1/admin/makerspaces/{makerspace_id}/erasure-requests",
   "/api/v1/admin/makerspaces/{makerspace_id}/event-categories/",
   "/api/v1/admin/makerspaces/{makerspace_id}/event-categories/{id}/",
@@ -827,9 +876,12 @@ export const openApiPaths = [
   "/api/v1/admin/makerspaces/{makerspace_id}/machines/{machine_id}/maintenance/schedules/",
   "/api/v1/admin/makerspaces/{makerspace_id}/maintenance/feed",
   "/api/v1/admin/makerspaces/{makerspace_id}/maintenance/feed/{raw_token}.ics",
+  "/api/v1/admin/makerspaces/{makerspace_id}/member-card-jobs",
+  "/api/v1/admin/makerspaces/{makerspace_id}/member-card-settings",
   "/api/v1/admin/makerspaces/{makerspace_id}/member-card-template",
   "/api/v1/admin/makerspaces/{makerspace_id}/member-cards",
   "/api/v1/admin/makerspaces/{makerspace_id}/member-cards.pdf",
+  "/api/v1/admin/makerspaces/{makerspace_id}/member-cards/presence-check-in",
   "/api/v1/admin/makerspaces/{makerspace_id}/member-cards/resolve",
   "/api/v1/admin/makerspaces/{makerspace_id}/member-cards/{membership_id}/issue",
   "/api/v1/admin/makerspaces/{makerspace_id}/member-claim-codes",
@@ -881,6 +933,9 @@ export const openApiPaths = [
   "/api/v1/admin/makerspaces/{makerspace_id}/walk-in-members",
   "/api/v1/admin/makerspaces/{makerspace_id}/website-embed-origins/",
   "/api/v1/admin/makerspaces/{makerspace_id}/work-orders",
+  "/api/v1/admin/member-cards/{id}/download",
+  "/api/v1/admin/member-cards/{id}/email",
+  "/api/v1/admin/member-cards/{id}/photo-request",
   "/api/v1/admin/member-cards/{id}/print.pdf",
   "/api/v1/admin/member-cards/{id}/reissue",
   "/api/v1/admin/member-cards/{id}/revoke",
@@ -929,6 +984,7 @@ export const openApiPaths = [
   "/api/v1/admin/organizations/{id}/public-page/revisions/",
   "/api/v1/admin/organizations/{id}/public-page/unpublish/",
   "/api/v1/admin/organizations/{organization_id}/analytics/{report_key}",
+  "/api/v1/admin/organizations/{organization_id}/id-programmes",
   "/api/v1/admin/organized-events/",
   "/api/v1/admin/platform/analytics/makerspaces",
   "/api/v1/admin/platform/analytics/makerspaces/{makerspace_id}/analytics/{report_key}",
@@ -1211,6 +1267,18 @@ export const openApiPaths = [
   "/api/v1/me/messaging",
   "/api/v1/me/messaging/consent",
   "/api/v1/member/archived-payments",
+  "/api/v1/member/card-jobs/{id}",
+  "/api/v1/member/card-jobs/{id}/result",
+  "/api/v1/member/cards",
+  "/api/v1/member/cards/{kind}/{card_id}/download",
+  "/api/v1/member/cards/{kind}/{card_id}/email",
+  "/api/v1/member/cards/{kind}/{card_id}/photo",
+  "/api/v1/member/cards/{kind}/{card_id}/photo/accept",
+  "/api/v1/member/cards/{kind}/{card_id}/photo/cleanup",
+  "/api/v1/member/cards/{kind}/{card_id}/photo/discard",
+  "/api/v1/member/cards/{kind}/{card_id}/rotate-link",
+  "/api/v1/member/cards/{kind}/{card_id}/settings",
+  "/api/v1/member/cards/{kind}/{card_id}/wallet/{platform}",
   "/api/v1/member/event-payouts/",
   "/api/v1/member/event-payouts/{obligation_id}/",
   "/api/v1/member/event-payouts/{obligation_id}/payee-files/",
@@ -1218,7 +1286,9 @@ export const openApiPaths = [
   "/api/v1/member/event-payouts/{obligation_id}/payee-files/{asset_id}/complete/",
   "/api/v1/member/event-payouts/{obligation_id}/payee/",
   "/api/v1/member/event-payouts/{obligation_id}/payee/reveal/",
+  "/api/v1/member/event-registrations/{id}/ticket",
   "/api/v1/member/event-speaker-claims/",
+  "/api/v1/member/id-programme-invites/accept",
   "/api/v1/member/issues",
   "/api/v1/member/issues/loan-items",
   "/api/v1/member/issues/photos",
@@ -1431,6 +1501,7 @@ export const openApiPaths = [
   "/api/v1/procurement/to-buy/{id}/receipts",
   "/api/v1/procurement/to-buy/{id}/receipts/presign",
   "/api/v1/procurement/to-buy/{id}/refill-consumable",
+  "/api/v1/public/card-verifications/{token}",
   "/api/v1/public/event-certificates/{verification_id}/verify/",
   "/api/v1/public/event-codes/{code}/",
   "/api/v1/public/event-codes/{public_token}/",
@@ -1452,6 +1523,10 @@ export const openApiPaths = [
   "/api/v1/public/makerspaces/{makerspace_slug}/presence/now/",
   "/api/v1/public/organizations/{slug}/",
   "/api/v1/public/organizations/{slug}/events/",
+  "/api/v1/public/organizations/{slug}/id-programmes",
+  "/api/v1/public/organizations/{slug}/id-programmes/{programme_slug}",
+  "/api/v1/public/organizations/{slug}/id-programmes/{programme_slug}/join",
+  "/api/v1/public/organizations/{slug}/id-programmes/{programme_slug}/join/photo",
   "/api/v1/public/organizations/{slug}/makerspaces/",
   "/api/v1/public/organizations/{slug}/page/",
   "/api/v1/public/organizations/{slug}/page/assets/{asset_id}/",
@@ -1539,6 +1614,10 @@ export const openApiPaths = [
   "/api/v1/public/{makerspace_slug}/tools/evidence-url",
   "/api/v1/public/{makerspace_slug}/tools/return",
   "/api/v1/recovery",
+  "/api/v1/wallet/apple/v1/devices/{device}/registrations/{pass_type}",
+  "/api/v1/wallet/apple/v1/devices/{device}/registrations/{pass_type}/{serial}",
+  "/api/v1/wallet/apple/v1/log",
+  "/api/v1/wallet/apple/v1/passes/{pass_type}/{serial}",
   "/api/v1/webhooks/razorpay/{public_code}",
   "/api/v1/webhooks/stripe/connect",
   "/api/v1/webhooks/stripe/{public_code}",
@@ -4379,6 +4458,189 @@ export type CaptureLibrary = {
   "template_id"?: number | null;
 };
 
+export type CardAsset = {
+  "asset_id": string;
+  "kind": string;
+  "width_px": number;
+  "height_px": number;
+  "mean_colour": string;
+  "ready": boolean;
+};
+
+export type CardAssetFinalize = {
+  "asset_id": string;
+};
+
+export type CardAssetPresign = {
+  "kind": CardAssetPresignKindEnum;
+  "content_type": ContentType12dEnum;
+};
+
+export type CardAssetPresignKindEnum = "background" | "watermark" | "image";
+
+export type CardDesign = {
+  "id": number;
+  "domain": Domain719Enum;
+  "name": string;
+  "plan_id": number | null;
+  "title_id": number | null;
+  "programme_id": number | null;
+  "organization_id": number | null;
+  "event_id": number | null;
+  "ticket_type_id": number | null;
+  "target_label": string;
+  "status": CardDesignStatusEnum;
+  "document": unknown;
+  "revision": number;
+  "published_revision": number | null;
+  "published_at": string | null;
+  "has_unpublished_changes": boolean;
+  "pending_approval": {
+  [key: string]: unknown;
+} | null;
+  "last_review": {
+  [key: string]: unknown;
+} | null;
+  "needs_approval": boolean;
+  "can_approve": boolean;
+  "can_edit": boolean;
+  "updated_at": string;
+};
+
+export type CardDesignCreate = {
+  "domain"?: Domain719Enum;
+  "plan_id"?: number | null;
+  "title_id"?: number | null;
+  "template"?: TemplateC12Enum;
+};
+
+export type CardDesignDecision = {
+  "note"?: string;
+};
+
+export type CardDesignImport = {
+  "file": unknown;
+};
+
+export type CardDesignImportResult = {
+  "design": CardDesign;
+  "notes": Array<string>;
+};
+
+export type CardDesignReset = {
+  "template": TemplateC12Enum;
+};
+
+export type CardDesignSave = {
+  "document": unknown;
+  "revision": number;
+  "name"?: string;
+};
+
+export type CardDesignStatusEnum = "draft" | "pending_approval" | "published";
+
+export type CardFont = {
+  "family": string;
+  "category": string;
+  "weights": Array<number>;
+  "scripts": Array<string>;
+  "bundled": boolean;
+  "state": string;
+};
+
+export type CardFontPage = {
+  "count": number;
+  "results": Array<CardFont>;
+};
+
+export type CardJob = {
+  "id": number;
+  "kind": CardJobKindEnum;
+  "scope": string;
+  "scope_id": number | null;
+  "state": CardJobStateEnum;
+  "total": number;
+  "done": number;
+  "failed": number;
+  "progress": number;
+  "error_code": string;
+  "download_ready": boolean;
+  "result_expires_at": string | null;
+  "save_url": string;
+  "created_at": string;
+  "started_at": string | null;
+  "finished_at": string | null;
+};
+
+export type CardJobCreate = {
+  "kind": CardJobCreateKindEnum;
+  "card_ids"?: Array<number>;
+  "status"?: CardJobCreateStatusEnum;
+  "plan_id"?: number;
+  "expiring_within_days"?: number;
+  "paper"?: PaperEnum;
+  "order"?: OrderEnum;
+  "crop_marks"?: boolean;
+};
+
+export type CardJobCreateKindEnum = "bulk_sheet" | "bulk_per_person" | "zip" | "email";
+
+export type CardJobCreateStatusEnum = "active" | "all";
+
+export type CardJobKindEnum = "bulk_sheet" | "bulk_per_person" | "zip" | "email" | "wallet_issue" | "wallet_update" | "photo_cleanup";
+
+export type CardJobLink = {
+  "url": string;
+};
+
+export type CardJobStateEnum = "queued" | "running" | "succeeded" | "failed" | "cancelled";
+
+export type CardNote = {
+  "reason"?: string;
+};
+
+export type CardPreview = {
+  "document": unknown;
+  "side"?: SideEnum;
+  "format"?: CardPreviewFormatEnum;
+  "long_names"?: boolean;
+};
+
+export type CardPreviewFormatEnum = "png" | "pdf";
+
+export type CardScan = {
+  "payload": string;
+  "duration_minutes": number;
+};
+
+export type CardSettings = {
+  "verify_show_name"?: boolean;
+  "verify_show_photo"?: boolean;
+  "extras_opted_in"?: boolean;
+  "blood_group"?: string;
+  "emergency_contact_name"?: string;
+  "emergency_contact_phone"?: string;
+  "public_check_on": boolean;
+};
+
+export type CardTemplate = {
+  "key": string;
+  "label": string;
+  "document": unknown;
+};
+
+export type CardVerification = {
+  "status": Status5efEnum;
+  "valid": boolean;
+  "issuer": Issuer;
+  "label": string | null;
+  "number": string | null;
+  "valid_until": string | null;
+  "holder": Holder | null;
+  "note": string;
+  "checked_at": string;
+};
+
 export type CashBookReport = {
   "rows": Array<Array<unknown>>;
   "typed_rows": Array<CashPeriod>;
@@ -5409,7 +5671,7 @@ export type ContainerScanHistoryItem = {
   "created_at": string;
 };
 
-export type ContentType12dEnum = "image/jpeg" | "image/png" | "image/webp";
+export type ContentType12dEnum = "image/png" | "image/jpeg" | "image/webp";
 
 export type Context = {
   "context_version": number;
@@ -5638,13 +5900,15 @@ export type CorrectClaimDecisionCommand = {
   "expected_pool_version": number;
   "expected_decision_sequence": number;
   "expected_obligation_version": number | null;
-  "outcome": Outcome329Enum;
+  "outcome": CorrectClaimDecisionCommandOutcomeEnum;
   "line_decisions": Array<LineDecision>;
   "eligibility_revision": number;
   "reason_code": ReasonCode1c6Enum;
   "note"?: string;
   "info_due_at"?: string;
 };
+
+export type CorrectClaimDecisionCommandOutcomeEnum = "approved" | "partially_approved" | "rejected";
 
 export type Count = {
   "count": number;
@@ -5886,14 +6150,15 @@ export type DateReviewInput = {
 };
 
 export type Decision = {
-  "outcome": Outcome329Enum;
-  "decided_at": string;
-  "actor_id": number | null;
-  "reason_code": string;
-  "reason": string;
+  "action": DecisionActionEnum;
+  "ids"?: Array<number>;
+  "all"?: boolean;
+  "reason"?: string;
 };
 
 export type Decision25cEnum = "accept" | "decline" | "waitlist";
+
+export type DecisionActionEnum = "approve" | "reject" | "revoke" | "reinstate" | "renew";
 
 export type DecisionDetail = {
   "id": number;
@@ -6405,6 +6670,8 @@ export type DocumentPresign = {
   "filename": string;
   "content_type": string;
 };
+
+export type Domain719Enum = "member_cards" | "id_programme" | "event_card" | "event_ticket";
 
 export type Domain773Enum = "bookings" | "events" | "inventory" | "machines";
 
@@ -7204,6 +7471,22 @@ export type EventHistory = {
   "speaking": Array<HistorySpeaking>;
 };
 
+export type EventIdCard = {
+  "id": number;
+  "event": number;
+  "registration": number;
+  "role": EventIdCardRoleEnum;
+  "printed_name": string;
+  "status": Status37fEnum;
+  "valid_until": string;
+  "issued_at": string;
+  "revoked_at": string | null;
+  "last_emailed_at": string | null;
+  "photo_set": boolean;
+};
+
+export type EventIdCardRoleEnum = "attendee" | "speaker" | "mentor" | "judge" | "volunteer" | "crew";
+
 export type EventListResponse = {
   "count": number;
   "next"?: string | null;
@@ -7802,8 +8085,10 @@ export type FeedbackSurveyWrite = {
 };
 
 export type FeedbackTemplate = {
-  "template": TemplateEnum;
+  "template": FeedbackTemplateTemplateEnum;
 };
+
+export type FeedbackTemplateTemplateEnum = "quick_pulse" | "event_review" | "session_speaker";
 
 export type FeedIssued = {
   "feed_url": string;
@@ -8733,6 +9018,11 @@ export type HistorySpeaking = {
 
 export type HistorySpeakingRoleEnum = "speaker";
 
+export type Holder = {
+  "name": string | null;
+  "photo_url": string | null;
+};
+
 export type HostingAck = {
   "detail": string;
 };
@@ -8892,6 +9182,77 @@ export type IdentityDisclosureDecision = {
 };
 
 export type IdentityResolutionEnum = "link_existing" | "create_walk_in";
+
+export type IdProgramme = {
+  "id": number;
+  "organization": number;
+  "organization_slug": string;
+  "makerspace": number;
+  "name": string;
+  "slug": string;
+  "description"?: string;
+  "status"?: IdProgrammeStatusEnum;
+  "registration_open"?: boolean;
+  "requires_approval"?: boolean;
+  "id_prefix": string;
+  "next_sequence": number;
+  "validity_mode"?: ValidityModeEnum;
+  "valid_until"?: string | null;
+  "validity_days"?: number | null;
+  "photo_mode"?: PhotoModeEnum;
+  "form_schema"?: unknown;
+  "public_verify"?: boolean;
+  "email_daily_cap"?: number;
+  "counts": {
+  [key: string]: unknown;
+};
+  "can_manage": boolean;
+  "created_at": string;
+  "updated_at": string;
+};
+
+export type IdProgrammeCard = {
+  "id": number;
+  "programme": number;
+  "name": string;
+  "email": string;
+  "answers": {
+  [key: string]: unknown;
+};
+  "status": IdProgrammeCardStatusEnum;
+  "status_reason": string;
+  "source": IdProgrammeCardSourceEnum;
+  "id_number": string | null;
+  "issued_at": string | null;
+  "expires_at": string | null;
+  "revoked_at": string | null;
+  "last_emailed_at": string | null;
+  "linked": boolean;
+  "photo_set": boolean;
+  "created_at": string;
+};
+
+export type IdProgrammeCardCreate = {
+  "name": string;
+  "email": string;
+  "answers"?: {
+  [key: string]: string;
+};
+};
+
+export type IdProgrammeCardSourceEnum = "form" | "import" | "manual";
+
+export type IdProgrammeCardStatusEnum = "pending" | "approved" | "rejected" | "revoked";
+
+export type IdProgrammeCreate = {
+  "makerspace_id": number;
+  "name": string;
+  "preset"?: IdProgrammeCreatePresetEnum | BlankEnum;
+};
+
+export type IdProgrammeCreatePresetEnum = "students" | "volunteers" | "staff";
+
+export type IdProgrammeStatusEnum = "draft" | "active" | "closed";
 
 export type ImportCommit = {
   "operation_id": string;
@@ -9437,6 +9798,11 @@ export type Invite = {
   "code": string;
 };
 
+export type InviteAccept = {
+  "card": number;
+  "invite": string;
+};
+
 export type InviteInput = {
   "email"?: string;
   "max_uses"?: number;
@@ -9551,6 +9917,12 @@ export type IssuePhotoUploadResponse = {
   "max_bytes": number;
 };
 
+export type Issuer = {
+  "kind": IssuerKindEnum;
+  "name": string;
+  "logo_url": string | null;
+};
+
 export type IssueReject = {
   "item_id": number;
   "broken"?: number;
@@ -9650,6 +10022,8 @@ export type IssueResolve = {
   "note"?: string;
 };
 
+export type IssuerKindEnum = "space" | "organisation" | "event";
+
 export type IssueTriage = {
   "priority"?: PriorityEnum;
   "note"?: string;
@@ -9724,6 +10098,10 @@ export type JobQuoteRequest = {
   "quantity"?: string | null;
   "consumable_pool_id"?: number | null;
   "note"?: string;
+};
+
+export type JobRef = {
+  "job_id": number;
 };
 
 export type JobReport = {
@@ -9808,6 +10186,14 @@ export type JobUploadResponse = {
   "group": string;
   "max_bytes": number;
   "preview": string;
+};
+
+export type Join = {
+  "answers"?: {
+  [key: string]: string;
+};
+  "photo_object_key"?: string;
+  "photo_consent"?: boolean;
 };
 
 export type JoinModeEnum = "open" | "approval" | "invite_only" | "vouch" | "closed";
@@ -11553,6 +11939,7 @@ export type MemberCalendarFeedState = {
 export type MemberCard = {
   "id": number;
   "card_number": number;
+  "number_display": string;
   "printed_name": string;
   "membership_id": number | null;
   "is_active": boolean;
@@ -11562,6 +11949,9 @@ export type MemberCard = {
   "print_count": number;
   "last_printed_at": string | null;
   "issued_at": string;
+  "valid_until": string;
+  "photo_request_open": boolean;
+  "last_emailed_at": string | null;
   "revoked_at": string | null;
   "revoked_reason": string;
   "created_at": string;
@@ -11584,8 +11974,10 @@ export type MemberCardPhotoPresign = {
 
 export type MemberCardPrint = {
   "card_ids"?: Array<number>;
-  "preset"?: PresetEnum;
+  "preset"?: MemberCardPrintPresetEnum;
 };
+
+export type MemberCardPrintPresetEnum = "sheet" | "single";
 
 export type MemberCardReissue = {
   "reason": MemberCardReissueReasonEnum;
@@ -11611,6 +12003,18 @@ export type MemberCardResolveResultOutcomeEnum = "ok" | "revoked" | "inactive";
 
 export type MemberCardRevoke = {
   "reason"?: string;
+  "note": string;
+};
+
+export type MemberCardSettings = {
+  "auto_issue"?: boolean;
+  "email_on_issue"?: boolean;
+  "public_verify"?: boolean;
+  "verify_show_plan"?: boolean;
+  "design_approval_required"?: boolean;
+  "email_available": boolean;
+  "photo_cleanup_available": boolean;
+  "wallet_platforms": Array<string>;
 };
 
 export type MemberCardTemplate = {
@@ -12939,6 +13343,27 @@ export type MuteResult = {
   "muted_until": string | null;
 };
 
+export type MyCard = {
+  "kind": MyCardKindEnum;
+  "id": number;
+  "makerspace_id": number;
+  "issuer": string;
+  "title": string;
+  "name": string;
+  "number": string;
+  "label": string;
+  "valid_until": string;
+  "status": Status5efEnum;
+  "has_back": boolean;
+  "check_url": string;
+  "photo_request_open": boolean;
+  "wallet_platforms": Array<string>;
+  "email_available": boolean;
+  "qr_image": string | null;
+};
+
+export type MyCardKindEnum = "member_card" | "programme_card" | "event_card";
+
 export type MyMaintenance = {
   "machine_schedules": Array<MachineDue>;
   "schedules": Array<SubjectSchedule>;
@@ -13346,6 +13771,8 @@ export type OptionalConsents = {
   "mlh_data_sharing"?: boolean;
 };
 
+export type OrderEnum = "duplex" | "fronts_then_backs";
+
 export type OrganizationArchiveEvent = {
   "kind": KindDa9Enum;
   "title": string;
@@ -13651,8 +14078,6 @@ export type OutboxHealth = {
 
 export type OutboxHealthKindEnum = "email" | "personal_envelope" | "personal_delivery";
 
-export type Outcome329Enum = "approved" | "partially_approved" | "rejected";
-
 export type Outcome860Enum = "all_good" | "issue" | "damaged" | "left_early";
 
 export type OutcomeA1aEnum = "succeeded" | "retryable_failed" | "failed";
@@ -13707,6 +14132,7 @@ export type OwnerPayeeContext = {
 export type OwnMemberCard = {
   "id": number;
   "card_number": number;
+  "number_display": string;
   "printed_name": string;
   "membership_id": number | null;
   "is_active": boolean;
@@ -13716,6 +14142,9 @@ export type OwnMemberCard = {
   "print_count": number;
   "last_printed_at": string | null;
   "issued_at": string;
+  "valid_until": string;
+  "photo_request_open": boolean;
+  "last_emailed_at": string | null;
   "revoked_at": string | null;
   "revoked_reason": string;
   "created_at": string;
@@ -14329,6 +14758,8 @@ export type PaletteChoices = {
   "warm_yellow": string;
 };
 
+export type PaperEnum = "a4" | "letter";
+
 export type PaperSizeEnum = "A4" | "LETTER" | "custom";
 
 export type PartialModeEnum = "percent" | "pro_rata";
@@ -14870,6 +15301,16 @@ export type PatchedBroadcastDraft = {
   "draft"?: BroadcastDraftContent;
 };
 
+export type PatchedCardSettings = {
+  "verify_show_name"?: boolean;
+  "verify_show_photo"?: boolean;
+  "extras_opted_in"?: boolean;
+  "blood_group"?: string;
+  "emergency_contact_name"?: string;
+  "emergency_contact_phone"?: string;
+  "public_check_on"?: boolean;
+};
+
 export type PatchedCategoryAdmin = {
   "id"?: number;
   "makerspace"?: number;
@@ -15254,6 +15695,41 @@ export type PatchedHelpTypeWrite = {
   "claim_minutes"?: number;
   "expiry_minutes"?: number;
   "organizer_contact_action"?: string;
+};
+
+export type PatchedIdProgramme = {
+  "id"?: number;
+  "organization"?: number;
+  "organization_slug"?: string;
+  "makerspace"?: number;
+  "name"?: string;
+  "slug"?: string;
+  "description"?: string;
+  "status"?: IdProgrammeStatusEnum;
+  "registration_open"?: boolean;
+  "requires_approval"?: boolean;
+  "id_prefix"?: string;
+  "next_sequence"?: number;
+  "validity_mode"?: ValidityModeEnum;
+  "valid_until"?: string | null;
+  "validity_days"?: number | null;
+  "photo_mode"?: PhotoModeEnum;
+  "form_schema"?: unknown;
+  "public_verify"?: boolean;
+  "email_daily_cap"?: number;
+  "counts"?: {
+  [key: string]: unknown;
+};
+  "can_manage"?: boolean;
+  "created_at"?: string;
+  "updated_at"?: string;
+};
+
+export type PatchedIdProgrammeCardEdit = {
+  "name"?: string;
+  "answers"?: {
+  [key: string]: string;
+};
 };
 
 export type PatchedInventoryAssetAdminUpdate = {
@@ -16793,6 +17269,17 @@ export type PhoneStatus = {
   "verified": boolean;
 };
 
+export type PhotoFinalize = {
+  "object_key": string;
+  "consent": boolean;
+};
+
+export type PhotoModeEnum = "none" | "optional" | "required";
+
+export type PhotoPresign = {
+  "content_type": ContentType12dEnum;
+};
+
 export type PiiAccessGrant = {
   "id": string;
   "scope": PiiAccessGrantScopeEnum;
@@ -17209,8 +17696,6 @@ export type Presentation = {
   "public_card_consent": boolean;
   "public_card_scopes": Array<string>;
 };
-
-export type PresetEnum = "sheet" | "single";
 
 export type Preview = {
   "counts": Capacity;
@@ -18923,6 +19408,17 @@ export type PublicProfile = {
   "photo_url"?: string;
 };
 
+export type PublicProgramme = {
+  "name": string;
+  "slug": string;
+  "description": string;
+  "organization_name": string;
+  "photo_mode": PhotoModeEnum;
+  "requires_approval": boolean;
+  "registration_open": boolean;
+  "questions": Array<unknown>;
+};
+
 export type PublicProject = {
   "title": string;
   "subtitle": string;
@@ -19787,7 +20283,7 @@ export type RecentlyAddedReportRow = {
 
 export type RecipeEnum = "free_open" | "free_vouch" | "paid_approval" | "paid_invite_only" | "closed";
 
-export type RecipientActionsEnum = "accept_request" | "assign_box" | "collect_service_request" | "edit_inventory" | "issue_direct_loan" | "issue_request" | "manage_bookings" | "manage_devices" | "manage_events" | "manage_machines" | "manage_makerspace" | "manage_member_cards" | "manage_members" | "manage_printing" | "manage_qr" | "record_payment" | "record_reimbursement_payout" | "reject_request" | "return_request" | "run_maintenance" | "scan_member_cards" | "set_service_state" | "upload_evidence" | "view_audit" | "view_finance" | "view_inventory" | "work_repairs";
+export type RecipientActionsEnum = "accept_request" | "approve_card_designs" | "assign_box" | "collect_service_request" | "edit_inventory" | "issue_direct_loan" | "issue_request" | "manage_bookings" | "manage_devices" | "manage_events" | "manage_id_programmes" | "manage_machines" | "manage_makerspace" | "manage_member_cards" | "manage_members" | "manage_printing" | "manage_qr" | "record_payment" | "record_reimbursement_payout" | "reject_request" | "return_request" | "run_maintenance" | "scan_member_cards" | "set_service_state" | "upload_evidence" | "view_audit" | "view_finance" | "view_id_programmes" | "view_inventory" | "work_repairs";
 
 export type RecipientEnum = "self";
 
@@ -20420,7 +20916,7 @@ export type ReportError = {
   "code"?: string;
 };
 
-export type ReportKeyEnum = "payment-cash-book" | "taken-items" | "active-loans" | "returns" | "damaged-missing" | "top-borrowers" | "recently-added" | "event-attendance" | "booking-utilization" | "member-activity" | "printer-service" | "fablab-health" | "payment-reconciliation" | "evidence-compliance" | "import-quality" | "communications-health" | "community-engagement" | "certification-coverage" | "audit-trail" | "membership-growth" | "member-retention" | "membership-revenue" | "membership-renewals" | "membership-bridge" | "membership-breakdown" | "membership-expiry-calendar" | "membership-applications-funnel" | "membership-win-back" | "member-register" | "membership-monthly-summary" | "payments-ledger" | "revenue-over-time" | "cash-book" | "payments-ageing" | "accounting-journal" | "refunds" | "income-spending" | "finance-inventory" | "finance-machines" | "finance-bookings" | "finance-events" | "event-finance" | "receipts-payments" | "subscription-income" | "money-methods" | "gstr1" | "gstr3b" | "tax-summary" | "documents-register" | "event-registrations" | "event-feedback" | "event-attendance-pdf" | "booking-resource-utilization" | "booking-resource-utilization-pdf" | "booking-reservations" | "booking-answers" | "mobile-devices" | "mobile-auth" | "booking-occupancy" | "booking-lead-time" | "booking-top-members" | "event-signups" | "event-revenue" | "event-funnel" | "event-checkin-times" | "event-feedback-scores" | "most-lent" | "asset-usage" | "loan-throughput" | "inventory-utilisation" | "overdue-loans" | "damaged-lost" | "longest-loans" | "stock-health" | "request-funnel" | "problem-reports" | "inventory-watch-demand" | "summary" | "qr-scans" | "qr-scan-actors" | "inventory-control" | "consumable-usage" | "consumable-pools" | "procurement-performance" | "stock-transfers" | "stocktake-variance" | "machine-usage" | "machine-usage-members" | "machine-usage-heatmap" | "machine-downtime" | "maintenance-activity" | "machine-service" | "service-queue-times" | "printer-jobs" | "machine-errors" | "warranty-expiry" | "machine-sessions" | "machine-session-utilisation" | "machine-session-busiest" | "machine-session-idle" | "machine-session-flagged" | "device-health" | "presence-activity" | "presence-top-visitors" | "presence-activity-hours" | "audit-activity" | "audit-top-actors" | "audit-activity-hours" | "organization-membership" | "module-operational-health" | "platform-services" | "platform-usage";
+export type ReportKeyEnum = "payment-cash-book" | "taken-items" | "active-loans" | "returns" | "damaged-missing" | "top-borrowers" | "recently-added" | "event-attendance" | "booking-utilization" | "member-activity" | "printer-service" | "fablab-health" | "payment-reconciliation" | "evidence-compliance" | "import-quality" | "communications-health" | "community-engagement" | "certification-coverage" | "audit-trail" | "membership-growth" | "member-retention" | "membership-revenue" | "membership-renewals" | "membership-bridge" | "membership-breakdown" | "membership-expiry-calendar" | "membership-applications-funnel" | "membership-win-back" | "member-register" | "membership-monthly-summary" | "member-card-issuance" | "payments-ledger" | "revenue-over-time" | "cash-book" | "payments-ageing" | "accounting-journal" | "refunds" | "income-spending" | "finance-inventory" | "finance-machines" | "finance-bookings" | "finance-events" | "event-finance" | "receipts-payments" | "subscription-income" | "money-methods" | "gstr1" | "gstr3b" | "tax-summary" | "documents-register" | "event-registrations" | "event-feedback" | "event-attendance-pdf" | "booking-resource-utilization" | "booking-resource-utilization-pdf" | "booking-reservations" | "booking-answers" | "mobile-devices" | "mobile-auth" | "booking-occupancy" | "booking-lead-time" | "booking-top-members" | "event-signups" | "event-revenue" | "event-funnel" | "event-checkin-times" | "event-feedback-scores" | "most-lent" | "asset-usage" | "loan-throughput" | "inventory-utilisation" | "overdue-loans" | "damaged-lost" | "longest-loans" | "stock-health" | "request-funnel" | "problem-reports" | "inventory-watch-demand" | "summary" | "qr-scans" | "qr-scan-actors" | "inventory-control" | "consumable-usage" | "consumable-pools" | "procurement-performance" | "stock-transfers" | "stocktake-variance" | "machine-usage" | "machine-usage-members" | "machine-usage-heatmap" | "machine-downtime" | "maintenance-activity" | "machine-service" | "service-queue-times" | "printer-jobs" | "machine-errors" | "warranty-expiry" | "machine-sessions" | "machine-session-utilisation" | "machine-session-busiest" | "machine-session-idle" | "machine-session-flagged" | "device-health" | "presence-activity" | "presence-top-visitors" | "presence-activity-hours" | "audit-activity" | "audit-top-actors" | "audit-activity-hours" | "organization-membership" | "module-operational-health" | "platform-services" | "platform-usage";
 
 export type ReportSchedule = {
   "id": number;
@@ -21873,6 +22369,8 @@ export type ShortlistSignalReadPage = {
   "results": Array<ShortlistSignalRead>;
 };
 
+export type SideEnum = "front" | "back";
+
 export type Signup = {
   "id": number;
   "event_id": number;
@@ -22929,6 +23427,8 @@ export type Status568Enum = "submitted" | "awaiting_confirmation" | "confirmed" 
 
 export type Status5beEnum = "waiting" | "offered" | "claimed" | "fulfilled" | "lapsed" | "cancelled";
 
+export type Status5efEnum = "valid" | "expired" | "revoked";
+
 export type Status66aEnum = "pending" | "paid_online" | "paid_offline" | "waived" | "canceled";
 
 export type Status83eEnum = "ok" | "warn" | "error" | "unknown";
@@ -23486,7 +23986,7 @@ export type Temperatures = {
   "chamber"?: string | null;
 };
 
-export type TemplateEnum = "quick_pulse" | "event_review" | "session_speaker";
+export type TemplateC12Enum = "classic" | "bold" | "minimal" | "community" | "student" | "event_pass";
 
 export type TemplateField = {
   "key": string;
@@ -24115,6 +24615,8 @@ export type User = {
 };
 
 export type UserRoleEnum = "superadmin" | "space_manager" | "requester";
+
+export type ValidityModeEnum = "none" | "fixed_date" | "days";
 
 export type Vendor = {
   "id": number;

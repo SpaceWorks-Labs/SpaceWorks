@@ -80,8 +80,9 @@ class TenantDumpCatalogError(AssertionError):
 # lane/r2-l23: machines/0032 and payments/0035 metered machine sessions; re-pinned.
 # lane/r2-l26: makerspaces/0120 (renumbered after S-A's 0119) public stats settings; re-pinned.
 # lane/r2-l16: makerspaces/0121-0122 (renumbered) Technician role, maintenance/0005 repairs; re-pinned.
+# lane/r2-l3: card_designs/0001-0003, id_programmes/0001, events/0063, makerspaces/0123 (renumbered) ID cards; re-pinned.
 # Orchestrator re-pins the live catalog after final schema/migration verification.
-CATALOG_SCHEMA_SHA256 = "8e3acca80aa259789147bc8d0e40fef310cbbfb7cc3a80e839ab0e21c7dcc0e1"
+CATALOG_SCHEMA_SHA256 = "4900dea1d3b707ff1baf32a9e8af8363ff7e26f89d664e6fdf941798169cb5ed"
 
 
 def catalog_models(apps_registry=apps):

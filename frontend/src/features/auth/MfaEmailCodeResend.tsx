@@ -18,7 +18,7 @@ export function MfaEmailCodeResend({ challenge, initialResends = 2, turnstileSit
   const resend = useMutation({
     mutationFn: (token?: string) => resendLoginCode(challenge, tokenHeaders(token)),
     onSuccess: result => {
-      const next = typeof result.resends_left === "number" ? result.resends_left : Math.max(0, left - 1);
+      const next = result.resends_left;
       setLeft(next);
       setNotice(`We sent a new code. ${next === 0 ? "That was the last resend." : `${next} ${next === 1 ? "resend" : "resends"} left.`}`);
       captcha.reset();

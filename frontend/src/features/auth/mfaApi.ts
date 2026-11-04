@@ -10,12 +10,12 @@ export type MfaChallenge = {
   enrollment_required: boolean;
   challenge: string;
   expires_in: number;
-  // STUB(S-B): S-B adds these to the challenge (its brief: "the challenge gains `purpose` and
-  // `factors[]`"; codes allow <=2 resends). Until then they are absent and the flow behaves as
-  // before (authenticator or recovery code).
-  purpose?: string;
+  // STUB(S-B): S-B's `MFAChallengeResponseSerializer` (lane/r2-s-b efae28ce) adds these; swap
+  // for the generated type at the S-B merge. A challenge from before S-B has neither, and the
+  // flow then behaves as before (authenticator or recovery code). `risk` is the unusual-sign-in
+  // check: a 6-digit code was emailed (factor `email_code`, two resends).
+  purpose?: "login" | "risk";
   factors?: MfaFactor[];
-  resends_left?: number;
 };
 export type MfaCompleted = PasswordLoginResponse<StaffAuthUser> & { recovery_codes?: string[] };
 export type Enrollment = { secret: string; provisioning_uri: string; qr_data_url: string };
@@ -38,6 +38,7 @@ export async function mfaRequest<T>(path: string, body: object, headers: Record<
   return data as T;
 }
 
-/** STUB(S-B): `POST auth/login-code/resend` from S-B's brief; the response shape is assumed. */
+/** STUB(S-B): `POST auth/login-code/resend`, typed from S-B's `LoginCodeResentSerializer` (efae28ce). */
+export type LoginCodeResent = { sent: boolean; expires_in: number; resends_left: number };
 export const resendLoginCode = (challenge: string, headers?: Record<string, string>) =>
-  mfaRequest<{ resends_left?: number }>("/auth/login-code/resend", { challenge }, headers);
+  mfaRequest<LoginCodeResent>("/auth/login-code/resend", { challenge }, headers);

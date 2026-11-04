@@ -32,8 +32,8 @@ export async function finishPasskeySignIn({ ceremony, options }: PasskeyOptions,
     { ...post({ ceremony, credential }), credentials: "include" });
 }
 
-/** The second factor of a pending challenge. `mfa/verify` with `factor=passkey` is S-B's change:
- *  STUB(S-B) until S-B lands -- the `factor` and `webauthn` body fields follow S-B's brief. */
+/** The second factor of a pending challenge: `mfa/verify` with `factor=passkey` and `webauthn`.
+ *  STUB(S-B): matches S-B's `MFAVerifySerializer` on lane/r2-s-b (efae28ce); live once S-B merges. */
 export async function verifyPasskeyFactor<T>(challenge: string) {
   const { ceremony, options } = await mfaRequest<PasskeyOptions>("/auth/mfa/passkey/options", { challenge });
   const credential = await getPasskeyAssertion(options);

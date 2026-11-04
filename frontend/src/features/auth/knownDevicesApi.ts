@@ -1,24 +1,28 @@
 /**
- * STUB(S-B): `GET auth/devices` and `DELETE auth/devices/<id>` from S-B's brief. They are not in
- * `generated/api.ts` yet, so this one shape is hand-typed from S0's `KnownDevice` model
- * (`ua_label`, `last_verified_at`); swap it for the generated type when the coordinator
- * regenerates the client at the S-B merge. A list or a paginated page are both accepted.
+ * STUB(S-B): `GET auth/devices` and `DELETE auth/devices/<id>`. Hand-typed from S-B's
+ * `KnownDeviceListSerializer` on lane/r2-s-b (efae28ce) because they are not in
+ * `generated/api.ts` yet; swap both types for the generated ones when the coordinator
+ * regenerates the client at the S-B merge.
  */
 import { staffRequest } from "../../lib/api";
 
 export type KnownDevice = {
   id: number;
-  ua_label: string | null;
+  /** A coarse label such as "Firefox on Windows". */
+  label: string;
+  created_at: string;
+  /** The last completed sign-in on this device. */
   last_verified_at: string;
-  /** True for the browser making the request, when the server can tell. */
-  current?: boolean;
+  /** This browser or app. */
+  current: boolean;
 };
 
-type DevicesResponse = KnownDevice[] | { results?: KnownDevice[]; devices?: KnownDevice[] };
+export type KnownDevices = {
+  devices: KnownDevice[];
+  /** How long a device stays remembered without a sign-in (strictest across the person's staff spaces). */
+  remembered_days: number;
+};
 
-export async function listKnownDevices(): Promise<KnownDevice[]> {
-  const data = await staffRequest<DevicesResponse>("/auth/devices");
-  return Array.isArray(data) ? data : data.results ?? data.devices ?? [];
-}
+export const listKnownDevices = () => staffRequest<KnownDevices>("/auth/devices");
 
 export const forgetKnownDevice = (id: number) => staffRequest<void>(`/auth/devices/${id}`, { method: "DELETE" });

@@ -81,8 +81,7 @@ export function MfaFlow({ challenge, onComplete, onCancel, embedded = false, eye
           inputMode={factor === "recovery" || !challenge.factors ? undefined : "numeric"} onChange={(event) => setCode(event.target.value)} />
         <button type="submit" disabled={verify.isPending} hidden aria-hidden="true" tabIndex={-1} />
       </form> : null}
-      {factor === "email_code" && !challenge.enrollment_required ? <MfaEmailCodeResend challenge={challenge.challenge}
-        initialResends={challenge.resends_left} turnstileSiteKey={turnstileSiteKey} /> : null}
+      {factor === "email_code" && !challenge.enrollment_required ? <MfaEmailCodeResend challenge={challenge.challenge} turnstileSiteKey={turnstileSiteKey} /> : null}
       {!challenge.enrollment_required && factors.length > 1 ? <div className="grid gap-2" role="group" aria-label="Other ways to verify">
         {factors.filter(other => other !== factor).map(other => {
           const Glyph = FACTOR_ICONS[other];

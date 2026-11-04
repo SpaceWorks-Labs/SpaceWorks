@@ -62,6 +62,7 @@ AUTH_CLAIM_ROUTES = {
     **_refused("device-refresh", ("POST",), "claim sessions cannot use device refresh families"),
     **_refused("device-logout", ("POST",), "claim sessions cannot mutate device grants"),
     **_refused("device-staff-grant", ("POST",), "claim sessions cannot create device grants"),
+    **_refused("device-event-grant", ("POST",), "claim sessions cannot create device grants"),
     **_refused("device-grants", ("GET", "HEAD"), "claim sessions cannot enumerate device grants"),
     **_refused("device-grant-detail", ("DELETE",), "claim sessions cannot revoke device grants"),
     **_refused("auth-phone-login-start", ("POST",), "claim sessions cannot change login identity"),

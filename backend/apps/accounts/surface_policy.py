@@ -109,8 +109,8 @@ def _delegated(user, targets, name, *, native=False):
 # Native member sessions never use these, even though their classes would admit a person.
 _NATIVE_MEMBER_REFUSED = frozenset({
     "auth-organization-invitation-redeem", "auth-organizations-self-service",
-    "booking-staff-invite-redeem", "event-staff-invite-redeem",
-})
+    "booking-staff-invite-redeem",
+})  # #173: a native member grant may redeem an event staff invite (it then steps up natively).
 _STAFF_CLASSES = frozenset({MEMBERSHIP_ONLY, DELEGABLE})
 
 
@@ -165,6 +165,9 @@ def enforce_request(user, token, request, *, grant=None):
                 and not admits(user, request, classification, targets, invalid, native=native)):
             raise PermissionDenied("Platform account context is required.")
         return
+    from apps.accounts.native_event_grants import admits_event_route
+    if native and admits_event_route(user, token, request, name, grant):
+        return  # #173: an event grant reaches its own event's programme routes and nothing staff.
     if native and staff_grant is None and (
         (classification == DELEGABLE and name != "payment-document-download") or name in _NATIVE_MEMBER_REFUSED
     ):

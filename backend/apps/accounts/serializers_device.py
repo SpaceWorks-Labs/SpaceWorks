@@ -55,6 +55,20 @@ class DeviceStaffGrantSerializer(serializers.Serializer):
         return value
 
 
+class DeviceEventGrantSerializer(serializers.Serializer):
+    """Step up an active device session of this person to an event-role grant (#173)."""
+    event_id = serializers.IntegerField(min_value=1, help_text="The one event the grant is limited to.")
+    challenge = serializers.CharField(max_length=512, trim_whitespace=False,
+                                      help_text="A fresh attestation challenge for this device's app.")
+    attestation = AttestationPayloadField()
+    app_version = serializers.CharField(max_length=32, required=False, help_text=APP_VERSION_HELP)
+
+    def validate_attestation(self, value):
+        if not isinstance(value, dict) or not value or len(value) > 16:
+            raise serializers.ValidationError("Invalid attestation payload.")
+        return value
+
+
 class DeviceRefreshSerializer(serializers.Serializer):
     refresh = serializers.CharField(max_length=4096, write_only=True, trim_whitespace=False)
     app_version = serializers.CharField(max_length=32, required=False, help_text=APP_VERSION_HELP)
@@ -66,8 +80,10 @@ class DeviceGrantSerializer(serializers.Serializer):
     app_id = serializers.CharField()
     environment = serializers.CharField()
     status = serializers.CharField()
-    authority = serializers.ChoiceField(choices=("member", "staff"))
+    authority = serializers.ChoiceField(choices=("member", "staff", "event"))
     staff_makerspace_id = serializers.IntegerField(allow_null=True)
+    event_id = serializers.IntegerField(allow_null=True, required=False,
+                                        help_text="The one event an event-role grant is limited to (#173).")
     login_method = serializers.CharField()
     attested_at = serializers.DateTimeField()
     last_used_at = serializers.DateTimeField()

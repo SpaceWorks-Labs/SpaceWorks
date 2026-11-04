@@ -42,7 +42,7 @@ class MFAStatusView(APIView):
         from rest_framework.exceptions import AuthenticationFailed, PermissionDenied
         mfa_policy.assert_available()
         grant = getattr(request, "device_grant", None)
-        if grant is not None and grant.authority == "staff":
+        if grant is not None and grant.authority in ("staff", "event"):
             # A native staff grant is only ever issued behind an enrolled factor.
             raise PermissionDenied({"detail": "Staff enroll an authenticator during device sign-in.",
                                     "code": "native_staff_mfa_managed"})

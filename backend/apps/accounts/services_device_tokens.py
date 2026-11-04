@@ -56,10 +56,10 @@ def issue_device_token_pair(user, grant, *, family=None):
         raise AuthenticationFailed("Invalid device authorization.")
     assert_token_issuance_allowed(user)
     staff = grant.authority == DeviceGrant.Authority.STAFF
-    if staff:
+    if staff or grant.authority == DeviceGrant.Authority.EVENT:
         from apps.accounts.mfa_policy import VERIFIED, source_for
         if source_for(user) != VERIFIED:
-            raise AuthenticationFailed("Native staff sessions require MFA.")
+            raise AuthenticationFailed("Native staff and event sessions require MFA.")
     grant = DeviceGrant.objects.select_for_update().filter(pk=grant.pk, user=user).first()
     if (grant is None or grant.status != grant.Status.ACTIVE
             or grant.revoked_at is not None or not registration_is_eligible(grant.registration)
@@ -158,6 +158,9 @@ def rotate_device_refresh(raw, *, app_version=None):
             raise AuthenticationFailed("Invalid device refresh token.")
         staff_state = (staff_role_state(user, grant.staff_makerspace_id)
                        if grant.authority == DeviceGrant.Authority.STAFF else None)
+        if grant.authority == DeviceGrant.Authority.EVENT:  # #173: the event role is the grant's life.
+            from apps.accounts.services_event_grants import event_role_state
+            staff_state = LOST if event_role_state(user, grant.event_id) != "active" else None
         unusable = bool(
             row.rotated_at or row.blacklisted_at or family.revoked_at
             or str(grant.pk) != str(grant_id)
@@ -177,6 +180,9 @@ def rotate_device_refresh(raw, *, app_version=None):
             or not registration_is_eligible(grant.registration)
         ):
             blacklist_device_family(family)
+        elif staff_state == LOST and grant.authority == DeviceGrant.Authority.EVENT:
+            from apps.accounts.services_event_grants import revoke_event_grants
+            revoke_event_grants(user, grant.event_id, reason="event_role_ended")
         elif staff_state == LOST:
             revoke_staff_grants(user, grant.staff_makerspace_id, reason="staff_role_revoked")
         elif staff_state == UNSERVABLE:

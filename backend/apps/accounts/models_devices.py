@@ -101,6 +101,7 @@ class DeviceGrant(models.Model):
     class Authority(models.TextChoices):
         MEMBER = 'member', 'Member'
         STAFF = 'staff', 'Staff'
+        EVENT = 'event', 'Event role'  # #173: a step-up limited to one event's programme routes.
 
     class Status(models.TextChoices):
         ACTIVE = 'active', 'Active'
@@ -122,6 +123,8 @@ class DeviceGrant(models.Model):
     # Immutable provenance, including after the tenant/account is retired. This is
     # an identifier snapshot rather than a FK that would block tenant purge.
     staff_makerspace_id = models.PositiveBigIntegerField(null=True, blank=True, editable=False)
+    # #173 (L21b): the one event an ``event`` grant may act in; a snapshot, like the staff tenant.
+    event_id = models.PositiveBigIntegerField(null=True, blank=True, editable=False)
     credential_generation = models.PositiveIntegerField(default=0, editable=False)
     login_method = models.CharField(max_length=16, blank=True, default="", choices=[
         ("password", "Password"), ("phone", "Phone"), ("social", "Social"),
@@ -142,8 +145,10 @@ class DeviceGrant(models.Model):
         indexes = [models.Index(fields=['user', 'status'], name='device_grant_user_idx')]
         constraints = [models.CheckConstraint(
             condition=(models.Q(status="revoked") | models.Q(
-                authority="member", staff_makerspace_id__isnull=True,
-            ) | models.Q(authority="staff", staff_makerspace_id__isnull=False, login_method="password")),
+                authority="member", staff_makerspace_id__isnull=True, event_id__isnull=True,
+            ) | models.Q(authority="staff", staff_makerspace_id__isnull=False, event_id__isnull=True,
+                         login_method="password")
+              | models.Q(authority="event", staff_makerspace_id__isnull=True, event_id__isnull=False)),
             name="device_grant_account_context",
         )]
 

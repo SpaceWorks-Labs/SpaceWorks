@@ -40,6 +40,11 @@ def validated_device_grant(user, token, *, lock=False):
         state = staff_role_state(user, grant.staff_makerspace_id) if lock else revoke_if_role_lost(
             user, grant.staff_makerspace_id)
         valid = state == ACTIVE
+    if valid and grant.authority == DeviceGrant.Authority.EVENT:
+        # #173: an event grant lives only as long as the event role it stepped up to.
+        from apps.accounts.services_event_grants import ACTIVE as EVENT_ACTIVE, event_role_state, revoke_if_event_role_lost
+        state = event_role_state(user, grant.event_id) if lock else revoke_if_event_role_lost(user, grant.event_id)
+        valid = state == EVENT_ACTIVE
     if not valid:
         raise AuthenticationFailed("Device authorization is no longer active.")
     return grant

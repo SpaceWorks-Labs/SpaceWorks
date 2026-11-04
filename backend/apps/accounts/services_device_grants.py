@@ -47,7 +47,7 @@ def audit_grant_refusal(exc):
     })
 
 
-def authority_for_login(user, *, login_method, staff_makerspace_id=None):
+def authority_for_login(user, *, login_method, staff_makerspace_id=None, event_id=None):
     """Member authority for any person; staff authority is a step-up (Q12): a fixed
     makerspace where the person holds a staff role, proven with a real second factor
     under ``require_staff_mfa``, after any primary login method. Provenance comes from
@@ -55,6 +55,9 @@ def authority_for_login(user, *, login_method, staff_makerspace_id=None):
     assert_grant_user_allowed(user)
     if not is_person(user):
         raise AuthenticationFailed("Invalid device authorization.")
+    if event_id is not None and staff_makerspace_id is None:
+        from apps.accounts.services_event_grants import event_authority_for_login
+        return event_authority_for_login(user, event_id)
     if staff_makerspace_id is None:
         return DeviceGrant.Authority.MEMBER
     from apps.accounts.mfa_policy import VERIFIED, source_for
@@ -95,11 +98,13 @@ def issue_first_device_session(user, challenge, verified_attestation, *, login_m
     return access, refresh, grant
 
 
-def create_device_grant(user, challenge, *, metadata, subject_hash, login_method, staff_makerspace_id=None):
+def create_device_grant(user, challenge, *, metadata, subject_hash, login_method, staff_makerspace_id=None,
+                        event_id=None):
     """Caller holds User; every first grant uses this registration/provenance policy."""
     now = timezone.now()
     assert_grant_user_allowed(user)
-    authority = authority_for_login(user, login_method=login_method, staff_makerspace_id=staff_makerspace_id)
+    authority = authority_for_login(user, login_method=login_method, staff_makerspace_id=staff_makerspace_id,
+                                    event_id=event_id)
     registration = (
         NativeAppRegistration.objects.select_for_update()
         .filter(
@@ -113,11 +118,15 @@ def create_device_grant(user, challenge, *, metadata, subject_hash, login_method
     if (registration is None or authority == DeviceGrant.Authority.STAFF
             and registration.makerspace_id not in (None, staff_makerspace_id)):
         raise AuthenticationFailed("Device registration is no longer approved.")
+    if authority == DeviceGrant.Authority.EVENT:
+        from apps.accounts.services_event_grants import assert_registration_for_event
+        assert_registration_for_event(registration, event_id)
     grant = DeviceGrant.objects.create(
         registration=registration,
         user=user,
         authority=authority,
         staff_makerspace_id=staff_makerspace_id if authority == DeviceGrant.Authority.STAFF else None,
+        event_id=event_id if authority == DeviceGrant.Authority.EVENT else None,
         credential_generation=user.credential_generation,
         login_method=login_method,
         platform=challenge.platform,
@@ -133,4 +142,7 @@ def create_device_grant(user, challenge, *, metadata, subject_hash, login_method
     if authority == DeviceGrant.Authority.STAFF:
         from apps.accounts.services_staff_grants import audit_issued
         audit_issued(user, grant)
+    elif authority == DeviceGrant.Authority.EVENT:
+        from apps.accounts.services_event_grants import audit_issued as audit_event_issued
+        audit_event_issued(user, grant)
     return grant

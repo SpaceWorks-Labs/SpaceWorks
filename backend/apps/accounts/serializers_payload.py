@@ -87,6 +87,11 @@ def user_payload(user, request=None, *, session_authority=None):
         payload_entries(user, makerspace_ids=org_space_ids)
         if include_organizations and claim_context is None else {}
     )
+    if not include_organizations and claim_context is None:
+        # #173: native sessions list event roles (an event grant: its own event only). Listing
+        # grants no authority; the route gate admits a programme route only on an event grant.
+        from apps.accounts.native_event_grants import native_event_grant_entries
+        resource_grants = native_event_grant_entries(user, getattr(request, "device_grant", None))
     person = is_person(user)
     return {
         **resource_grants,
@@ -126,7 +131,8 @@ def _session_authority(user, request, issued_surface):
         return VERIFICATION_ONLY_SURFACE
     grant = getattr(request, "device_grant", None)
     if grant is not None:
-        return "native_staff" if getattr(grant, "authority", None) == "staff" else "member"
+        from apps.accounts.native_event_grants import session_authority_for
+        return session_authority_for(grant)
     surface = issued_surface or getattr(request, "session_authority", None)
     if surface is None:
         token = getattr(request, "auth", None)

@@ -42,3 +42,9 @@ class EventsConfig(AppConfig):
             register(ResourceGrantSource(
                 "event_grants", has_grant_authority, granted_event_entries, GrantedEventEntrySerializer,
             ))
+            # #173 (L21b): a native event grant ends when its event role does.
+            from apps.accounts.services_event_grants import connect_signals as connect_event_grant_signals
+            connect_event_grant_signals()
+            # L21b: leader-pays team charges follow the cohort and team lifecycle.
+            from .hackathons.team_payments import connect_signals as connect_team_payment_signals
+            connect_team_payment_signals()

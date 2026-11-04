@@ -14,5 +14,6 @@ def lane_edges():
     from .audit_references_r2_l5 import EDGES as l5
     from .audit_references_r2_l6 import EDGES as l6
     from .audit_references_r2_l21a import EDGES as l21a
+    from .audit_references_r2_l21b import EDGES as l21b
 
-    return {**l5, **l15, **l10, **l12, **l3, **l6, **l21a}
+    return {**l5, **l15, **l10, **l12, **l3, **l6, **l21a, **l21b}

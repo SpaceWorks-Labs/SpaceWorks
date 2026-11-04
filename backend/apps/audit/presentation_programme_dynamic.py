@@ -13,4 +13,5 @@ WRAPPERS = {
     'events/submissions/asset_workflow.py': ('event.',),
     'events/submissions/workflow.py': ('event.',),
     'events/staged_forms/transactions.py': ('event.',),
+    'events/programme_charges.py': ('event.',),  # L21b: entry-fee and team charges pick their action.
 }

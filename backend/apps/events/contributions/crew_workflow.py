@@ -138,8 +138,8 @@ def end(event, *, actor, crew_id, own):
     """A member withdraws their own crew role, or staff remove someone; the free place goes."""
     from apps.events import event_authority
     require_feature(event)
-    crew = get_object_or_404(EventCrewMember.objects.select_for_update().select_related("registration"),
-                             pk=crew_id, event=event)
+    # No select_related here: FOR UPDATE cannot cover the nullable side of the registration join.
+    crew = get_object_or_404(EventCrewMember.objects.select_for_update(), pk=crew_id, event=event)
     if own and crew.member_id != actor.pk:
         fail("not_found", "Not found.", status=404)
     if not own:

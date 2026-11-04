@@ -45,7 +45,7 @@ def stage_for_staging(event, subject, item):
 
 def required_stage(event, subject, decision):
     """The stage whose coverage gates this decision, or None for the single-round review."""
-    if decision.stage_id:
+    if getattr(decision, "stage_id", None):
         return decision.stage
     if isinstance(subject, HackathonApplication) and stages_active(event):
         return current_stage(subject)

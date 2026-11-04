@@ -124,6 +124,8 @@ class CrewSignupView(ProgrammeView):
 
 
 class CrewWithdrawView(CrewSignupView):
+    http_method_names = ["post", "options"]
+
     @extend_schema(tags=TAGS, request=None, responses={200: CrewSignupStateSerializer, **ERRORS})
     def post(self, request, pk):
         event = self.event(pk)

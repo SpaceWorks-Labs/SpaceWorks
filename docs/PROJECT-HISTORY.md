@@ -6,6 +6,13 @@
 
 ## Condensed changelog (newest first — full detail in `git log`)
 
+- **2026-11-04 -- release 2 L24, price-drop refunds and prepaid-job difference cases (#163A, #171).**
+  A price lowered after payment previews and opens one staff-approved `price_drop` refund case per
+  paid, not-yet-used booking, ticket, prepaid job or membership term (`charges.price_drop_refunds`,
+  off by default); the Space Manager or a finance admin approves. A member cancelling a prepaid job
+  before it starts opens a `job_cancelled` case, and a prepaid job cheaper than its quote a
+  `quote_difference` case (always on with machine charging). Nothing refunds automatically; a rise
+  never charges more (payments/0036).
 - **2026-11-04 -- release 2 L6, paid ticketing v2 and venue fees (#69, #71, #94, #128 C-20, #169).**
   Multi-ticket orders (one `event_order` Payment, one registration per attendee claimed by signing in),
   checkout seat holds, tiers, pay-what-you-want, group and hidden tickets, promo limits and a booking fee,

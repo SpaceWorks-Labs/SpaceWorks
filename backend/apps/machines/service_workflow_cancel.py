@@ -123,9 +123,13 @@ def cancel(service_request, actor, *, reason="", by_owner=False, consumed_quanti
                 record_service_cost(locked, actor)
             # Only the cancelled RUNNING job frees its machine; maintenance/offline stay put.
             _release_queue_machine(locked, actor)
-        if locked.prepay and not by_owner:
-            # The space is not running a job the member paid for: a refund case opens for
-            # staff to approve (#59); nothing is paid back automatically.
+        if locked.prepay and not running:
+            # A prepaid job that never ran: a refund case opens for staff to approve (#59;
+            # #171 (2) when the member cancelled), or a still-unpaid charge is voided.
+            from apps.machines.job_refunds import on_cancel_before_start
+            on_cancel_before_start(locked, actor, by_owner=by_owner)
+        elif locked.prepay and not by_owner:
+            # The space stopped a running job the member paid for: staff decide the refund (#59).
             from apps.machines.job_charges import open_refund_due
             open_refund_due(locked, actor)
         _audit_transition(actor, locked, "cancelled", extra={

@@ -79,6 +79,9 @@ def raise_prepay(job, actor):
 def charge_completed(job, actor):
     from apps.machines import service_payments
     if job.prepay:
+        # #171 (3): a prepaid job that came in cheaper than its quote opens a difference case.
+        from apps.machines.job_refunds import open_difference
+        open_difference(job, actor)
         return prepaid_payment(job)
     quote = frozen(job)
     if quote is not None:

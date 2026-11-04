@@ -76,7 +76,10 @@ def after_fail(row, actor):
         payment = job_charges.charge_failed(row, actor, charge)
         _set_outcome(row, "charged" if payment is not None else "free")
         if row.prepay:
-            job_charges.open_refund_due(row, actor)
+            # #171 (3): the member-fault failure charge is the job's actual cost; whatever the
+            # prepaid quote took above it opens a difference case for staff to approve.
+            from apps.machines.job_refunds import open_difference
+            open_difference(row, actor, outcome="failed", failure_charge=charge)
         return payment
     _set_outcome(row, "staff_decide")
     return None

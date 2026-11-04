@@ -68,6 +68,7 @@ from .presentation_catalog_r2_l10 import ENTRIES as _R2_L10
 from .presentation_catalog_r2_l11 import ENTRIES as _R2_L11
 from .presentation_catalog_r2_l8 import ENTRIES as _R2_L8
 from .presentation_catalog_account_merge import ENTRIES as _ACCOUNT_MERGE
+from .presentation_catalog_r2_l25 import ENTRIES as _R2_L25
 
 PRESENTATION_CATALOG = _compose(
     _PROGRAMME,
@@ -89,6 +90,7 @@ PRESENTATION_CATALOG = _compose(
     _ACCOUNTS, _MAKERSPACES, _HARDWARE, _MACHINES, _COMMUNITY, _MIGRATION, _PAYMENTS,
     _PLATFORM, _MEMBER_ACCOUNT, _MERGED, _PROFILES, _WA_TWILIO, _WA_META, _P2_P_CHAT, _P2_BOOKINGS, _P2_EVENTS,
     _MESSAGING, _R2_L4, _L12, _L3, _R2_L6,
+    _R2_L25,
 )
 
 

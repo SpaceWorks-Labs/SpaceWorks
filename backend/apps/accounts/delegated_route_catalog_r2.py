@@ -85,3 +85,12 @@ admin-event-orders admin-event-order-detail admin-event-registration-collect-pay
 admin-event-registration-pay-link""".split())
 MEMBERSHIP_ROUTES |= frozenset("""admin-event-refund-policy admin-event-venue-fee admin-event-venue-fee-charge
 admin-event-series-pass-types admin-event-pass-type-detail""".split())
+# Release-2 lane L25 (#163B), Metabase analytics: opening dashboards needs view_analytics, which
+# an organization grant may carry (delegable); the login, the secret and the dashboards list are
+# the space's own Space Manager or the superadmin (membership-only); the platform connection is
+# the superadmin's (platform-only). Every view re-checks its own authority (analytics.access).
+DELEGABLE_ROUTES |= frozenset("""admin-makerspace-analytics admin-makerspace-analytics-embed""".split())
+MEMBERSHIP_ROUTES |= frozenset("""admin-makerspace-analytics-connection admin-makerspace-analytics-login
+admin-makerspace-analytics-login-rotate""".split())
+PLATFORM_ONLY_ROUTES = frozenset("""admin-platform-analytics admin-platform-analytics-connection
+admin-platform-analytics-login admin-platform-analytics-login-rotate admin-platform-analytics-embed""".split())

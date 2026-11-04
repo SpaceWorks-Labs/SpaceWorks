@@ -186,6 +186,8 @@ urlpatterns = [
     *separable("id_programmes", "api/v1/member/", "apps.id_programmes.urls_member"),
     *separable("events", "api/v1/admin/", "apps.events.urls_id_cards"),
     *separable("events", "api/v1/member/", "apps.events.urls_id_cards_member"),
+    # Release 2 L25 (#163B): per-space and platform Metabase analytics.
+    path("api/v1/admin/", include("apps.analytics.urls")),
     # Mounted at admin_api's own prefix so the paths and route names are unchanged by
     # the relocation, and *after* it so a relocated route can never shadow one that
     # stayed behind. Every warranty pattern is a distinct literal, so ordering is

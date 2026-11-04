@@ -227,6 +227,7 @@ export const openApiPaths = [
   "/api/v1/admin/direct-loans/{id}/return",
   "/api/v1/admin/erasure-requests/{id}/approve",
   "/api/v1/admin/erasure-requests/{id}/reject",
+  "/api/v1/admin/event-addons/{id}/",
   "/api/v1/admin/event-certificates/{id}/download/",
   "/api/v1/admin/event-certificates/{id}/reissue/",
   "/api/v1/admin/event-certificates/{id}/revoke/",
@@ -236,13 +237,17 @@ export const openApiPaths = [
   "/api/v1/admin/event-id-cards/{id}/download",
   "/api/v1/admin/event-id-cards/{id}/revoke",
   "/api/v1/admin/event-invites/{id}/revoke/",
+  "/api/v1/admin/event-orders/{id}/",
   "/api/v1/admin/event-partner-makerspaces/",
+  "/api/v1/admin/event-pass-types/{id}/",
   "/api/v1/admin/event-promos/{id}/revoke/",
   "/api/v1/admin/event-registrations/{id}/answers/",
   "/api/v1/admin/event-registrations/{id}/approve/",
   "/api/v1/admin/event-registrations/{id}/cancel/",
+  "/api/v1/admin/event-registrations/{id}/collect-payment/",
   "/api/v1/admin/event-registrations/{id}/correct-attendance/",
   "/api/v1/admin/event-registrations/{id}/mark-attended/",
+  "/api/v1/admin/event-registrations/{id}/pay-link/",
   "/api/v1/admin/event-registrations/{id}/promote/",
   "/api/v1/admin/event-registrations/{id}/reject/",
   "/api/v1/admin/event-registrations/{id}/restore/",
@@ -256,6 +261,7 @@ export const openApiPaths = [
   "/api/v1/admin/event-series/{id}/guests/",
   "/api/v1/admin/event-series/{id}/image",
   "/api/v1/admin/event-series/{id}/occurrences/",
+  "/api/v1/admin/event-series/{id}/pass-types/",
   "/api/v1/admin/event-series/{id}/publish/",
   "/api/v1/admin/event-series/{id}/staff-grants/",
   "/api/v1/admin/event-series/{id}/staff-invites/",
@@ -272,6 +278,7 @@ export const openApiPaths = [
   "/api/v1/admin/event-ticket-types/{id}/",
   "/api/v1/admin/events/host-options/",
   "/api/v1/admin/events/{id}/",
+  "/api/v1/admin/events/{id}/addons/",
   "/api/v1/admin/events/{id}/analytics/extras/",
   "/api/v1/admin/events/{id}/application-decisions/cancel/",
   "/api/v1/admin/events/{id}/application-decisions/preview/",
@@ -403,6 +410,7 @@ export const openApiPaths = [
   "/api/v1/admin/events/{id}/mentor-rounds/{round_id}/teams/{team_id}/heartbeat/",
   "/api/v1/admin/events/{id}/mentor-rounds/{round_id}/teams/{team_id}/release/",
   "/api/v1/admin/events/{id}/mentor-rounds/{round_id}/teams/{team_id}/submit/",
+  "/api/v1/admin/events/{id}/orders/",
   "/api/v1/admin/events/{id}/organizers/",
   "/api/v1/admin/events/{id}/pairwise-rounds/",
   "/api/v1/admin/events/{id}/prizes/",
@@ -412,6 +420,7 @@ export const openApiPaths = [
   "/api/v1/admin/events/{id}/programme/readiness/",
   "/api/v1/admin/events/{id}/promo-codes/",
   "/api/v1/admin/events/{id}/publish/",
+  "/api/v1/admin/events/{id}/refund-policy/",
   "/api/v1/admin/events/{id}/registrations/",
   "/api/v1/admin/events/{id}/registrations/{registration_id}/credential/revoke/",
   "/api/v1/admin/events/{id}/registrations/{registration_id}/credential/rotate/",
@@ -440,6 +449,7 @@ export const openApiPaths = [
   "/api/v1/admin/events/{id}/roles/{assignment_id}/requirement-completions/",
   "/api/v1/admin/events/{id}/roles/{assignment_id}/requirement-overrides/",
   "/api/v1/admin/events/{id}/roles/{assignment_id}/revoke/",
+  "/api/v1/admin/events/{id}/sales-settings/",
   "/api/v1/admin/events/{id}/shift-signups/{signup_id}/adjust-hours/",
   "/api/v1/admin/events/{id}/shift-signups/{signup_id}/approve/",
   "/api/v1/admin/events/{id}/shift-signups/{signup_id}/check-in/",
@@ -486,6 +496,8 @@ export const openApiPaths = [
   "/api/v1/admin/events/{id}/ticket-types/",
   "/api/v1/admin/events/{id}/tracks/",
   "/api/v1/admin/events/{id}/tracks/{track_id}/",
+  "/api/v1/admin/events/{id}/venue-fee/",
+  "/api/v1/admin/events/{id}/venue-fee/charge/",
   "/api/v1/admin/events/{id}/volunteer-postings/",
   "/api/v1/admin/events/{id}/volunteer-postings/{posting_id}/",
   "/api/v1/admin/events/{id}/website/",
@@ -1156,6 +1168,8 @@ export const openApiPaths = [
   "/api/v1/event-checkin-stations/{public_token}/session/",
   "/api/v1/event-checkin-stations/{public_token}/sync/",
   "/api/v1/events/",
+  "/api/v1/events/orders/",
+  "/api/v1/events/orders/{id}/",
   "/api/v1/events/{id}/",
   "/api/v1/events/{id}/participants/",
   "/api/v1/guest-admin/makerspace/{makerspace_id}/active-loans",
@@ -1272,10 +1286,15 @@ export const openApiPaths = [
   "/api/v1/member/makerspaces/{makerspace_id}/event-registrations/calendar.ics",
   "/api/v1/member/makerspaces/{makerspace_id}/event-registrations/{id}/calendar.ics",
   "/api/v1/member/makerspaces/{makerspace_id}/event-registrations/{id}/cancel/",
+  "/api/v1/member/makerspaces/{makerspace_id}/event-registrations/{id}/change-type/",
   "/api/v1/member/makerspaces/{makerspace_id}/event-registrations/{id}/feedback/",
   "/api/v1/member/makerspaces/{makerspace_id}/event-registrations/{id}/qr",
   "/api/v1/member/makerspaces/{makerspace_id}/event-registrations/{id}/ticket.png",
   "/api/v1/member/makerspaces/{makerspace_id}/event-registrations/{id}/ticket/",
+  "/api/v1/member/makerspaces/{makerspace_id}/event-registrations/{id}/transfer/",
+  "/api/v1/member/makerspaces/{makerspace_id}/event-series/{series_id}/passes/",
+  "/api/v1/member/makerspaces/{makerspace_id}/events/{event_id}/orders/",
+  "/api/v1/member/makerspaces/{makerspace_id}/events/{event_id}/orders/quote/",
   "/api/v1/member/makerspaces/{makerspace_id}/events/{id}/application/",
   "/api/v1/member/makerspaces/{makerspace_id}/events/{id}/application/date-review/",
   "/api/v1/member/makerspaces/{makerspace_id}/events/{id}/application/rsvp/",
@@ -1369,6 +1388,12 @@ export const openApiPaths = [
   "/api/v1/member/makerspaces/{makerspace_id}/member-card/preview.pdf",
   "/api/v1/member/makerspaces/{makerspace_id}/membership-history",
   "/api/v1/member/makerspaces/{makerspace_id}/my-usage",
+  "/api/v1/member/makerspaces/{makerspace_id}/orders/",
+  "/api/v1/member/makerspaces/{makerspace_id}/orders/{order_id}/",
+  "/api/v1/member/makerspaces/{makerspace_id}/orders/{order_id}/attendees/",
+  "/api/v1/member/makerspaces/{makerspace_id}/orders/{order_id}/cancel/",
+  "/api/v1/member/makerspaces/{makerspace_id}/orders/{order_id}/chase/",
+  "/api/v1/member/makerspaces/{makerspace_id}/orders/{order_id}/seats/{seat_id}/claim/",
   "/api/v1/member/makerspaces/{makerspace_id}/payment-documents",
   "/api/v1/member/makerspaces/{makerspace_id}/payment-documents/{document_id}/download-url",
   "/api/v1/member/makerspaces/{makerspace_id}/payments",
@@ -1404,6 +1429,8 @@ export const openApiPaths = [
   "/api/v1/member/saved-details/save-intents/{operation_uuid}/",
   "/api/v1/member/saved-details/{field_key}/",
   "/api/v1/member/security-activity/",
+  "/api/v1/member/ticket-claims/{token}/",
+  "/api/v1/member/ticket-transfers/{token}/",
   "/api/v1/memberships/invitations",
   "/api/v1/memberships/invitations/{id}/claim",
   "/api/v1/memberships/me",
@@ -1490,6 +1517,7 @@ export const openApiPaths = [
   "/api/v1/public/{makerspace_slug}/events/{public_token}/feedback/",
   "/api/v1/public/{makerspace_slug}/events/{public_token}/register/",
   "/api/v1/public/{makerspace_slug}/events/{public_token}/share.png",
+  "/api/v1/public/{makerspace_slug}/events/{public_token}/tickets/",
   "/api/v1/public/{makerspace_slug}/events/{public_token}/venue/",
   "/api/v1/public/{makerspace_slug}/events/{public_token}/website/",
   "/api/v1/public/{makerspace_slug}/events/{public_token}/website/assets/{asset_id}/",
@@ -1665,6 +1693,10 @@ export type AcceptRequest = {
   "accepted_quantities"?: Array<AcceptQuantity>;
 };
 
+export type AccessCodes = {
+  "access_codes": Array<string>;
+};
+
 export type AccessLevelEnum = "operate" | "manage" | "full";
 
 export type AccessStatusEnum = "active" | "restricted" | "suspended";
@@ -1811,6 +1843,37 @@ export type ActiveLoansReportRow = {
   "status": string;
   "issued_at": string | null;
   "count": number;
+};
+
+export type Addon = {
+  "id": number;
+  "name": string;
+  "description"?: string;
+  "kind"?: AddonKindEnum;
+  "amount"?: string;
+  "stock"?: number;
+  "per_order_limit"?: number;
+  "is_active"?: boolean;
+  "variants"?: Array<AddonVariant>;
+  "remaining": number | null;
+  "sold": number;
+};
+
+export type AddonKindEnum = "kit" | "meal" | "merch" | "session" | "other";
+
+export type AddonList = {
+  "count": number;
+  "next": string | null;
+  "previous": string | null;
+  "results": Array<Addon>;
+};
+
+export type AddonVariant = {
+  "id": number;
+  "label": string;
+  "stock"?: number;
+  "is_active"?: boolean;
+  "remaining": number | null;
 };
 
 export type AddressingStyleEnum = "auto" | "path" | "virtual";
@@ -2838,6 +2901,12 @@ export type AttendedEvent = {
   "starts_at": string;
 };
 
+export type AttendeeAssignment = {
+  "assignments": {
+  [key: string]: string;
+};
+};
+
 export type Attention = {
   "team_id": number;
   "reason": AttentionReasonEnum;
@@ -3186,6 +3255,8 @@ export type BadgeTemplate = {
   "grid_mm"?: number;
   "elements"?: Array<PositionedElement>;
 };
+
+export type BasisEnum = "flat" | "per_hour";
 
 export type Batch = {
   "id": number;
@@ -4969,6 +5040,16 @@ export type ClaimPage = {
   "results": Array<ClaimSummary>;
 };
 
+export type ClaimPreview = {
+  "event_id": number;
+  "makerspace_id": number;
+  "event_title": string;
+  "starts_at": string;
+  "ticket_type": string;
+  "from_name": string;
+  "email_matches": boolean;
+};
+
 export type ClaimRecommendationCommand = {
   "operation_id": string;
   "expected_version": number;
@@ -4989,6 +5070,12 @@ export type ClaimRedemption = {
 export type ClaimRedemptionResponse = {
   "user": AuthUserPayload;
   "access": string;
+};
+
+export type ClaimResult = {
+  "registration_id": number;
+  "event_id": number;
+  "status": string;
 };
 
 export type ClaimScreeningDetail = {
@@ -6214,6 +6301,19 @@ export type DepositModeEnum = "none" | "fixed" | "per_product";
 
 export type Design224Enum = "classic" | "bold" | "minimal" | "accent_band" | "photo_header" | "letter";
 
+export type DeskCollect = {
+  "terminal"?: boolean;
+  "method"?: Method2edEnum;
+  "reference"?: string;
+  "received_at"?: string;
+};
+
+export type DeskCollectResult = {
+  "payment_id": number;
+  "payment_status": string;
+  "checkout_url": string;
+};
+
 export type DestinationDispatch = {
   "detail": string;
 };
@@ -7416,6 +7516,22 @@ export type EventOrganizerSummary = {
   "id": number;
   "slug": string;
   "name": string;
+};
+
+export type EventRefundPolicy = {
+  "overridden": boolean;
+  "locked": boolean;
+  "terms": unknown | null;
+  "text": string;
+};
+
+export type EventRefundPolicyInput = {
+  "enabled": boolean;
+  "full_before_minutes": number;
+  "partial_before_minutes": number;
+  "partial_percent": number;
+  "cancellation_fee": string;
+  "policy_text"?: string;
 };
 
 export type EventRegistrationAdmin = {
@@ -9432,6 +9548,40 @@ export type IntegrationLastFailure = {
   "stream": string;
 };
 
+export type IntegrationOrder = {
+  "id": number;
+  "event_id": number | null;
+  "series_id": number | null;
+  "kind": string;
+  "status": string;
+  "currency": string;
+  "subtotal": string;
+  "discount_total": string;
+  "fee_total": string;
+  "total": string;
+  "seats": number;
+  "seats_claimed": number;
+  "created_at": string;
+  "paid_at": string | null;
+  "lines": Array<IntegrationOrderLine>;
+};
+
+export type IntegrationOrderLine = {
+  "kind": string;
+  "label": string;
+  "quantity": number;
+  "unit_amount": string;
+  "discount_amount": string;
+  "line_total": string;
+  "ticket_type_id": number | null;
+  "addon_id": number | null;
+};
+
+export type IntegrationOrderPage = {
+  "next_cursor": string | null;
+  "results": Array<IntegrationOrder>;
+};
+
 export type IntegrationParticipant = {
   "id": number;
   "display_name": string;
@@ -9970,6 +10120,8 @@ export type Kind181Enum = "receipt" | "expense";
 export type Kind1c7Enum = "dev_room" | "bench" | "meeting" | "other" | "machine";
 
 export type Kind274Enum = "badge" | "certificate";
+
+export type Kind32aEnum = "tickets" | "pass" | "type_change";
 
 export type Kind33cEnum = "makerspace" | "organization";
 
@@ -11989,7 +12141,7 @@ export type MemberNotice = {
 
 export type MemberPayment = {
   "id": number;
-  "subject_type": SubjectTypeB27Enum;
+  "subject_type": SubjectTypeE0cEnum;
   "subject_label": string;
   "status"?: Status66aEnum;
   "amount": string;
@@ -12938,6 +13090,8 @@ export type MobileReadiness = {
 
 export type Mode087Enum = "preview" | "apply";
 
+export type Mode500Enum = "inherit" | "free" | "custom";
+
 export type ModeE8dEnum = "host" | "managed";
 
 export type ModuleAction = {
@@ -13447,7 +13601,102 @@ export type OptionalConsents = {
   "mlh_data_sharing"?: boolean;
 };
 
+export type Order = {
+  "id": number;
+  "kind": Kind32aEnum;
+  "status": Status910Enum;
+  "event": number | null;
+  "series": number | null;
+  "event_title": string;
+  "currency": string;
+  "subtotal": string;
+  "discount_total": string;
+  "fee_total": string;
+  "total": string;
+  "created_at": string;
+  "paid_at": string | null;
+  "closed_at": string | null;
+  "lines": Array<OrderLine>;
+  "seats": Array<OrderSeat>;
+  "checkout_url": string;
+  "payment_status": string | null;
+  "payment_disputed": boolean;
+  "hold_expires_at": string | null;
+};
+
+export type OrderAddonItem = {
+  "addon_id": number;
+  "variant_id"?: number | null;
+  "quantity": number;
+};
+
 export type OrderEnum = "duplex" | "fronts_then_backs";
+
+export type OrderLine = {
+  "id": number;
+  "kind": OrderLineKindEnum;
+  "label": string;
+  "quantity": number;
+  "seats_per_unit": number;
+  "unit_amount": string;
+  "discount_amount": string;
+  "line_total": string;
+  "ticket_type": number | null;
+  "addon": number | null;
+  "variant": number | null;
+  "pass_type": number | null;
+};
+
+export type OrderLineKindEnum = "ticket" | "addon" | "pass" | "type_change";
+
+export type OrderList = {
+  "count": number;
+  "next": string | null;
+  "previous": string | null;
+  "results": Array<Order>;
+};
+
+export type OrderPlaced = {
+  "order": Order;
+  "checkout_url": string;
+};
+
+export type OrderQuoteResponse = {
+  "quote": PricingQuote;
+  "promo_saving": string | null;
+  "seats": number;
+  "policy": unknown;
+};
+
+export type OrderRequest = {
+  "tickets": Array<OrderTicketItem>;
+  "addons"?: Array<OrderAddonItem>;
+  "promo_code"?: string;
+  "access_codes"?: Array<string>;
+  "buyer_attends"?: boolean;
+  "attendees"?: Array<string>;
+  "digest"?: string;
+};
+
+export type OrderSeat = {
+  "id": number;
+  "event_id": number;
+  "ticket_type_id": number | null;
+  "status": OrderSeatStatusEnum;
+  "attendee_email": string;
+  "registration_id": number | null;
+  "invited_at": string | null;
+  "reminded_at": string | null;
+  "claimed_at": string | null;
+};
+
+export type OrderSeatStatusEnum = "unclaimed" | "claimed" | "void";
+
+export type OrderTicketItem = {
+  "ticket_type_id": number;
+  "quantity": number;
+  "amount"?: string;
+};
 
 export type OrganizationArchiveEvent = {
   "kind": KindDa9Enum;
@@ -14471,6 +14720,39 @@ export type PartsResponse = {
   "parts": Array<PartResponse>;
 };
 
+export type PassBuy = {
+  "pass_type_id": number;
+  "digest"?: string;
+};
+
+export type PassType = {
+  "id": number;
+  "name": string;
+  "amount": string;
+  "capacity"?: number;
+  "occurrence_refund_amount"?: string;
+  "sales_end_at"?: string | null;
+  "is_active"?: boolean;
+};
+
+export type PassTypeList = {
+  "count": number;
+  "next": string | null;
+  "previous": string | null;
+  "results": Array<PassTypeStaff>;
+};
+
+export type PassTypeStaff = {
+  "id": number;
+  "name": string;
+  "amount": string;
+  "capacity"?: number;
+  "occurrence_refund_amount"?: string;
+  "sales_end_at"?: string | null;
+  "is_active"?: boolean;
+  "sold": number;
+};
+
 export type PasswordLoginResult = LoginResponse | MFAChallengeResponse;
 
 export type PasswordResetAcknowledgement = {
@@ -14494,6 +14776,20 @@ export type PatchedAccountProfile = {
   "first_name"?: string;
   "last_name"?: string;
   "phone"?: string;
+};
+
+export type PatchedAddon = {
+  "id"?: number;
+  "name"?: string;
+  "description"?: string;
+  "kind"?: AddonKindEnum;
+  "amount"?: string;
+  "stock"?: number;
+  "per_order_limit"?: number;
+  "is_active"?: boolean;
+  "variants"?: Array<AddonVariant>;
+  "remaining"?: number | null;
+  "sold"?: number;
 };
 
 export type PatchedAdminRole = {
@@ -15894,6 +16190,17 @@ export type PatchedOrganizationProfileUpdate = {
   "is_discoverable"?: boolean;
 };
 
+export type PatchedPassTypeStaff = {
+  "id"?: number;
+  "name"?: string;
+  "amount"?: string;
+  "capacity"?: number;
+  "occurrence_refund_amount"?: string;
+  "sales_end_at"?: string | null;
+  "is_active"?: boolean;
+  "sold"?: number;
+};
+
 export type PatchedPlatformBackupSettings = {
   "automatic_backups_enabled"?: boolean;
   "retention_days"?: number;
@@ -16362,6 +16669,14 @@ export type PatchedTicketPatch = {
   "sales_start_at"?: string | null;
   "sales_end_at"?: string | null;
   "is_active"?: boolean;
+  "tier_group"?: string;
+  "tier_rank"?: number;
+  "pricing_mode"?: TicketPricingModeEnum;
+  "min_amount"?: string;
+  "seats_per_ticket"?: number;
+  "is_hidden"?: boolean;
+  "min_quantity"?: number;
+  "per_order_limit"?: number;
 };
 
 export type PatchedTimelineWrite = {
@@ -16542,6 +16857,15 @@ export type PayLinkCreate = {
   "email"?: string;
 };
 
+export type PayLinkInput = {
+  "send"?: boolean;
+};
+
+export type PayLinkResult = {
+  "pay_link": string;
+  "sent": boolean;
+};
+
 export type PayloadVersion6daEnum = 1 | 2;
 
 export type PaymentAgeingRow = {
@@ -16638,7 +16962,7 @@ export type PaymentProviderConflictCodeEnum = "payment_provider_conflict";
 
 export type PaymentReconciliation = {
   "id": number;
-  "subject_type": SubjectTypeB27Enum;
+  "subject_type": SubjectTypeE0cEnum;
   "subject_id": number;
   "subject_label": string;
   "status": Status66aEnum;
@@ -18109,15 +18433,29 @@ export type Promo = {
   "revoked_at": string | null;
   "created_at": string;
   "code": string;
+  "kind": PromoKindEnum;
+  "applies_per": PromoAppliesPerEnum;
+  "ticket_type": number | null;
 };
+
+export type PromoAppliesPerEnum = "ticket" | "order";
 
 export type PromoInput = {
   "code"?: string;
+  "kind"?: PromoInputKindEnum;
+  "applies_per"?: PromoInputAppliesPerEnum;
+  "ticket_type_id"?: number | null;
   "percent_off"?: number;
   "amount_off"?: string;
   "max_uses"?: number;
   "expires_at"?: string | null;
 };
+
+export type PromoInputAppliesPerEnum = "ticket" | "order";
+
+export type PromoInputKindEnum = "discount" | "access";
+
+export type PromoKindEnum = "discount" | "access";
 
 export type PromoList = {
   "count": number;
@@ -19978,7 +20316,7 @@ export type RefundCasePayment = {
   "member_name": string;
 };
 
-export type RefundCaseReasonCodeEnum = "event_cancelled" | "registration_cancelled" | "booking_cancelled" | "staff_cancelled" | "membership_cancelled" | "member_request" | "capture_flagged" | "fee_waived";
+export type RefundCaseReasonCodeEnum = "event_cancelled" | "registration_cancelled" | "booking_cancelled" | "staff_cancelled" | "membership_cancelled" | "member_request" | "capture_flagged" | "fee_waived" | "order_unfulfilled" | "ticket_type_changed" | "pass_occurrence_cancelled";
 
 export type RefundCaseStatusEnum = "open" | "approved" | "approval_failed" | "declined" | "withdrawn" | "void";
 
@@ -20380,7 +20718,7 @@ export type ReportScheduleFilters = {
   "end"?: string;
   "window_days"?: number;
   "status"?: Status66aEnum;
-  "subject_type"?: SubjectTypeB27Enum;
+  "subject_type"?: SubjectTypeE0cEnum;
   "months"?: number;
   "subject_kind"?: string;
   "subject_id"?: number;
@@ -20997,6 +21335,15 @@ export type RsvpInput = {
   "operation_id": string;
   "expected_version": number;
   "decision": Decision25cEnum;
+};
+
+export type SalesSettings = {
+  "booking_fee_fixed"?: string;
+  "booking_fee_bps"?: number;
+  "max_tickets_per_order"?: number;
+  "transfers_allowed"?: boolean;
+  "type_changes_allowed"?: boolean;
+  "transfer_cutoff_hours"?: number;
 };
 
 export type SavedReadiness = {
@@ -21668,6 +22015,43 @@ export type ShiftWrite = {
   "reason"?: string;
 };
 
+export type ShopAddon = {
+  "id": number;
+  "name": string;
+  "description": string;
+  "kind": string;
+  "amount": string;
+  "per_order_limit": number;
+  "sold_out": boolean;
+  "variants": Array<ShopVariant>;
+};
+
+export type ShopTicket = {
+  "id": number;
+  "name": string;
+  "amount": string;
+  "audience": string;
+  "pricing_mode": string;
+  "min_amount": string;
+  "seats_per_ticket": number;
+  "min_quantity": number;
+  "per_order_limit": number;
+  "spots_left": number | null;
+  "sold_out": boolean;
+  "next_tier": ShopTier | null;
+};
+
+export type ShopTier = {
+  "name": string;
+  "amount": string;
+};
+
+export type ShopVariant = {
+  "id": number;
+  "label": string;
+  "sold_out": boolean;
+};
+
 export type ShortLink = {
   "code": string | null;
   "url": string | null;
@@ -22241,9 +22625,41 @@ export type StaffMembership = {
   "created_at": string;
 };
 
+export type StaffOrder = {
+  "id": number;
+  "kind": Kind32aEnum;
+  "status": Status910Enum;
+  "event": number | null;
+  "series": number | null;
+  "event_title": string;
+  "currency": string;
+  "subtotal": string;
+  "discount_total": string;
+  "fee_total": string;
+  "total": string;
+  "created_at": string;
+  "paid_at": string | null;
+  "closed_at": string | null;
+  "lines": Array<OrderLine>;
+  "seats": Array<OrderSeat>;
+  "checkout_url": string;
+  "payment_status": string | null;
+  "payment_disputed": boolean;
+  "hold_expires_at": string | null;
+  "buyer": number;
+  "buyer_name": string;
+};
+
+export type StaffOrderList = {
+  "count": number;
+  "next": string | null;
+  "previous": string | null;
+  "results": Array<StaffOrder>;
+};
+
 export type StaffPayment = {
   "id": number;
-  "subject_type": SubjectTypeB27Enum;
+  "subject_type": SubjectTypeE0cEnum;
   "subject_label": string;
   "status"?: Status66aEnum;
   "amount": string;
@@ -22715,6 +23131,8 @@ export type Status66aEnum = "pending" | "paid_online" | "paid_offline" | "waived
 
 export type Status83eEnum = "ok" | "warn" | "error" | "unknown";
 
+export type Status910Enum = "pending" | "paid" | "cancelled" | "expired" | "unfulfilled";
+
 export type StatusA39Enum = "pending" | "verified" | "failed";
 
 export type StatusAf3Enum = "requested" | "approved" | "rejected" | "withdrawn";
@@ -22927,7 +23345,7 @@ export type SubjectExportList = {
 
 export type SubjectType0b3Enum = "machine" | "inventory_product" | "inventory_asset" | "bookable_space";
 
-export type SubjectTypeB27Enum = "machine_service_request" | "booking" | "event_registration" | "makerspace_membership" | "membership_term" | "membership_request" | "loan_deposit" | "loan_late_fee" | "loan_rental" | "loan_damage" | "loan_lost";
+export type SubjectTypeE0cEnum = "machine_service_request" | "booking" | "event_registration" | "makerspace_membership" | "membership_term" | "membership_request" | "loan_deposit" | "loan_late_fee" | "loan_rental" | "loan_damage" | "loan_lost" | "event_order" | "event_venue_fee";
 
 export type SubmissionIntegrity = {
   "submission_id": number;
@@ -23281,6 +23699,14 @@ export type Ticket = {
   "sales_end_at": string | null;
   "purpose": Purpose18eEnum;
   "contributor_capacity_policy": ContributorCapacityPolicyEnum;
+  "tier_group": string;
+  "tier_rank": number;
+  "pricing_mode": TicketPricingModeEnum;
+  "min_amount": string;
+  "seats_per_ticket": number;
+  "is_hidden": boolean;
+  "min_quantity": number;
+  "per_order_limit": number;
   "is_active": boolean;
   "registration_count": number;
 };
@@ -23291,6 +23717,14 @@ export type TicketChoice = {
   "amount": string;
   "audience": string;
   "spots_left": number | null;
+};
+
+export type TicketClaimInput = {
+  "custom_answers"?: unknown;
+  "form_payload"?: unknown;
+  "host_waiver_id"?: number;
+  "host_waiver_version"?: string;
+  "host_waiver_accepted"?: boolean;
 };
 
 export type TicketEvent = {
@@ -23314,6 +23748,14 @@ export type TicketInput = {
   "sales_end_at"?: string | null;
   "purpose"?: Purpose18eEnum;
   "contributor_capacity_policy"?: ContributorCapacityPolicyEnum;
+  "tier_group"?: string;
+  "tier_rank"?: number;
+  "pricing_mode"?: TicketPricingModeEnum;
+  "min_amount"?: string;
+  "seats_per_ticket"?: number;
+  "is_hidden"?: boolean;
+  "min_quantity"?: number;
+  "per_order_limit"?: number;
 };
 
 export type TicketList = {
@@ -23321,6 +23763,21 @@ export type TicketList = {
   "next": string | null;
   "previous": string | null;
   "results": Array<Ticket>;
+};
+
+export type TicketPricingModeEnum = "fixed" | "pwyw";
+
+export type TicketShop = {
+  "event_id": number;
+  "orders_enabled": boolean;
+  "currency": string;
+  "ticket_types": Array<ShopTicket>;
+  "addons": Array<ShopAddon>;
+  "booking_fee_fixed": string;
+  "booking_fee_bps": number;
+  "max_tickets_per_order": number;
+  "promo_codes_enabled": boolean;
+  "policy": unknown;
 };
 
 export type TickStatus = {
@@ -23548,6 +24005,16 @@ export type TrackReadPage = {
 
 export type TracksEnum = "community" | "staff";
 
+export type TransferInput = {
+  "email": string;
+};
+
+export type TransferResult = {
+  "id": number;
+  "status": string;
+  "expires_at": string;
+};
+
 export type Triage = {
   "operation_id": string;
   "expected_version": number;
@@ -23583,6 +24050,20 @@ export type Type7f5Enum = "upcoming_events";
 export type Type8daEnum = "functional_content";
 
 export type TypeB6aEnum = "stats";
+
+export type TypeChangeInput = {
+  "ticket_type_id": number;
+  "digest"?: string;
+};
+
+export type TypeChangeResult = {
+  "status": TypeChangeResultStatusEnum;
+  "registration_id": number;
+  "order": Order | null;
+  "checkout_url": string;
+};
+
+export type TypeChangeResultStatusEnum = "changed" | "payment_required";
 
 export type TypeD44Enum = "organization_events";
 
@@ -23776,6 +24257,32 @@ export type Vendor = {
   "created_at": string;
   "updated_at": string;
 };
+
+export type VenueFee = {
+  "id": number;
+  "payer": number;
+  "payer_name": string;
+  "organization": number | null;
+  "room": number | null;
+  "mode": Mode500Enum;
+  "basis": BasisEnum;
+  "amount": string | null;
+  "status": VenueFeeStatusEnum;
+  "charged_at": string | null;
+  "quote_total": string;
+  "payment_id": number | null;
+};
+
+export type VenueFeeInput = {
+  "payer_id": number;
+  "organization_id"?: number | null;
+  "room_id"?: number | null;
+  "mode": Mode500Enum;
+  "basis"?: BasisEnum;
+  "amount"?: string | null;
+};
+
+export type VenueFeeStatusEnum = "configured" | "charged" | "free";
 
 export type VenueHost = {
   "name": string;

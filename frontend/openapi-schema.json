@@ -52102,6 +52102,9 @@
                     },
                     "404": {
                         "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    },
+                    "502": {
+                        "description": "`sheet_unreachable`: Google Sheets did not answer in time."
                     }
                 }
             }
@@ -52109,7 +52112,7 @@
         "/api/v1/admin/id-programmes/{id}/imports/preview": {
             "post": {
                 "operationId": "api_v1_admin_id_programmes_imports_preview_create",
-                "summary": "Preview a CSV import: headers, 20 rows, automatic mapping, counts",
+                "summary": "Preview a CSV or public Google Sheet import: headers, 20 rows, mapping, counts",
                 "parameters": [
                     {
                         "in": "path",
@@ -52171,6 +52174,9 @@
                     },
                     "404": {
                         "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    },
+                    "502": {
+                        "description": "`sheet_unreachable`: Google Sheets did not answer in time."
                     }
                 }
             }
@@ -92408,7 +92414,7 @@
         "/api/v1/admin/makerspaces/{makerspace_id}/members/import/apply": {
             "post": {
                 "operationId": "api_v1_admin_makerspaces_members_import_apply_create",
-                "description": "Creates pending memberships. Each is emailed an invitation unless marked record only; nothing links to an account until the person signs in with that verified email and accepts. Audited as membership.imported.",
+                "description": "Creates pending memberships. Each is emailed an invitation unless marked record only; nothing links to an account until the person signs in with that verified email and accepts. Audited as membership.imported. A Google Sheet source is fetched again and refused with `sheet_changed` if it no longer matches the preview's `sheet_sha256`.",
                 "summary": "Apply a member import",
                 "parameters": [
                     {
@@ -92430,8 +92436,7 @@
                                 "$ref": "#/components/schemas/MemberImportUpload"
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "security": [
                     {
@@ -92498,6 +92503,9 @@
                             }
                         },
                         "description": ""
+                    },
+                    "502": {
+                        "description": "`sheet_unreachable`: Google Sheets did not answer in time."
                     }
                 }
             }
@@ -92505,7 +92513,7 @@
         "/api/v1/admin/makerspaces/{makerspace_id}/members/import/preview": {
             "post": {
                 "operationId": "api_v1_admin_makerspaces_members_import_preview_create",
-                "description": "Maps columns (a mapping is suggested), normalises rows and reports what would be created, updated or skipped and why. Writes nothing. CSV, TSV or .xlsx, parsed on the server.",
+                "description": "Maps columns (a mapping is suggested), normalises rows and reports what would be created, updated or skipped and why. Writes nothing. CSV, TSV or .xlsx, parsed on the server, or a public Google Sheet (`source=google_sheet`, `url`; the response then carries `source` and `sheet_sha256`).",
                 "summary": "Preview a member import (dry run)",
                 "parameters": [
                     {
@@ -92527,8 +92535,7 @@
                                 "$ref": "#/components/schemas/MemberImportUpload"
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "security": [
                     {
@@ -92595,6 +92602,9 @@
                             }
                         },
                         "description": ""
+                    },
+                    "502": {
+                        "description": "`sheet_unreachable`: Google Sheets did not answer in time."
                     }
                 }
             }
@@ -204221,6 +204231,7 @@
             },
             "EventIdCard": {
                 "type": "object",
+                "description": "Printed names and revoke reasons are scoped PII: masked for a superadmin without a window.",
                 "properties": {
                     "id": {
                         "type": "integer",
@@ -213808,6 +213819,14 @@
                         "additionalProperties": {}
                     }
                 }
+            },
+            "ImportSourceKindEnum": {
+                "enum": [
+                    "file",
+                    "google_sheet"
+                ],
+                "type": "string",
+                "description": "* `file` - file\n* `google_sheet` - google_sheet"
             },
             "ImportUpload": {
                 "type": "object",
@@ -225182,6 +225201,12 @@
                     },
                     "total_rows": {
                         "type": "integer"
+                    },
+                    "source": {
+                        "type": "string"
+                    },
+                    "sheet_sha256": {
+                        "type": "string"
                     }
                 },
                 "required": [
@@ -225219,10 +225244,32 @@
             },
             "MemberImportUpload": {
                 "type": "object",
+                "description": "Mixed into an importer's request serializer; `upload_field` names its file field.",
                 "properties": {
+                    "source": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/ImportSourceKindEnum"
+                            }
+                        ],
+                        "default": "file",
+                        "description": "`file` (the upload) or `google_sheet` (a public sheet's link in `url`).\n\n* `file` - file\n* `google_sheet` - google_sheet"
+                    },
+                    "url": {
+                        "type": "string",
+                        "description": "With `google_sheet`: the sheet's share link. It must be shared as “Anyone with the link can view”; SpaceWorks reads it once per request.",
+                        "maxLength": 2048
+                    },
+                    "sheet_sha256": {
+                        "type": "string",
+                        "description": "With `google_sheet` on apply: the `sheet_sha256` the preview returned. A sheet changed since then is refused with `sheet_changed`.",
+                        "pattern": "^[0-9a-f]{64}$"
+                    },
                     "file": {
                         "type": "string",
-                        "format": "uri"
+                        "format": "uri",
+                        "nullable": true,
+                        "description": "With source `file` (the default): CSV, TSV or .xlsx."
                     },
                     "mapping": {
                         "type": "string"
@@ -225233,10 +225280,7 @@
                     "skip_rows": {
                         "type": "string"
                     }
-                },
-                "required": [
-                    "file"
-                ]
+                }
             },
             "MemberJob": {
                 "type": "object",

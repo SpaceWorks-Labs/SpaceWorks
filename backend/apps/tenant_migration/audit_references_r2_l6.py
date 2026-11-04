@@ -40,5 +40,6 @@ EDGES = {
     ("event.ticket_transferred", "from_member_id"): AuditReference(S, "accounts.User"),
     ("event.venue_fee_configured", "payer_id"): AuditReference(S, "accounts.User"),
     **_remap("bookings.BookableSpace", ("event.venue_fee_configured", "room_id")),
-    **_remap("organizations.Organization", ("event.venue_fee_configured", "organization_id")),
+    # Organizations are deployment-global and never travel: the paying org is source-local provenance.
+    ("event.venue_fee_configured", "organization_id"): AuditReference(S, "organizations.Organization"),
 }

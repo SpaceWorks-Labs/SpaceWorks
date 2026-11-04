@@ -34,6 +34,8 @@ website-discover public-config health readiness announcement-feed one-click-unsu
 NON_ACCOUNT_ROUTES |= {"device-integration-queue", "device-integration-job-report"}
 # Release 2 L3: Apple's pass web service, authenticated by the pass's own token (PassKit protocol).
 NON_ACCOUNT_ROUTES |= {"wallet-apple-registration", "wallet-apple-serials", "wallet-apple-pass", "wallet-apple-log"}
+# Release 2 L6: signed server reads of ticket orders (`orders:read`).
+NON_ACCOUNT_ROUTES |= {"integration-order-list", "integration-order-detail"}
 
 NON_STAFF_ROUTES = PROVIDER_ONLY_ROUTES | NON_ACCOUNT_ROUTES | PUBLIC_ROUTES
 

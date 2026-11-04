@@ -27,6 +27,9 @@ export const REASON_LABELS: Record<RefundCase["reason_code"] | "capture_flagged"
   member_request: "Member asked",
   fee_waived: "Loan fee waived",
   capture_flagged: "Unexpected online payment",
+  order_unfulfilled: "Order could not be seated",
+  ticket_type_changed: "Changed to a cheaper ticket",
+  pass_occurrence_cancelled: "Pass occurrence cancelled",
 };
 
 export function caseTone(status: RefundCaseStatusEnum): "success" | "warn" | "danger" | "neutral" {

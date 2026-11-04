@@ -20,7 +20,7 @@ class AttachmentReference:
     revision: str
 
     def __post_init__(self):
-        if (self.source_kind not in {"payments.document", "events.certificate", "card_designs.card"}
+        if (self.source_kind not in {"payments.document", "events.certificate", "card_designs.card", "events.ticket"}
                 or type(self.document_id) is not int or self.document_id < 1
                 or not isinstance(self.kind, str) or not 1 <= len(self.kind) <= 32
                 or not isinstance(self.revision, str) or not 1 <= len(self.revision) <= 64):
@@ -42,7 +42,8 @@ _SOURCES = {}
 
 
 def register_source(kind, source):
-    expected = {"payments.document": "document", "events.certificate": "certificate", "card_designs.card": None}
+    expected = {"payments.document": "document", "events.certificate": "certificate", "card_designs.card": None,
+                "events.ticket": None}
     if not isinstance(source, AttachmentSource) or kind not in expected or expected[kind] != source.media_field:
         raise ValueError("Use a typed attachment media subject.")
     if kind in _SOURCES and _SOURCES[kind] != source:

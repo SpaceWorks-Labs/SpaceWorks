@@ -69,6 +69,12 @@ BOOKINGS = (
 EVENTS = (
     Component("per_registration", "Per registration", "registration", "event_registration", prefill_only=True,
               legacy_item="Event.payment_amount / EventTicketType.amount"),
+    # Lane L6 (#128 C-20, Q-V1): venue fees an outside organiser pays for hosting, flat and/or
+    # per hour; a room may override either, and the event's own venue-fee row comes first.
+    Component("venue_fee", "Venue fee", "event", "event_venue_fee", discountable=False,
+              targets=(T.BOOKABLE_SPACE,), legacy_item="EventVenueFee.amount (flat)"),
+    Component("venue_fee_per_hour", "Venue fee per hour", "hour", "event_venue_fee", has_increment=True,
+              discountable=False, targets=(T.BOOKABLE_SPACE,), legacy_item="EventVenueFee.amount (per hour)"),
 )
 MEMBERSHIP = (
     Component("dues", "Membership dues", "term", "membership_term", read_only=True,

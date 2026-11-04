@@ -115,3 +115,14 @@ __all__ += ["MentorAlertRoute", "SubmissionIntegrityCheck", "SubmissionStorageCl
 # Release 2 L3: event ID cards (one live card per confirmed registration).
 from .models_id_cards import EventCardSettings, EventIdCard  # noqa: E402
 __all__ += ["EventCardSettings", "EventIdCard"]
+
+# Release 2 L6: paid ticketing v2 (orders, seats, holds, add-ons, passes, transfers) and venue fees.
+from .models_orders import EventOrder, EventOrderDue, EventOrderLine, EventOrderSeat, EventSalesSettings  # noqa: E402
+from .models_checkout_holds import EventCheckoutHold  # noqa: E402
+from .models_addons import EventAddon, EventAddonVariant  # noqa: E402
+from .models_passes import EventPassType  # noqa: E402
+from .models_transfers import EventTicketTransfer  # noqa: E402
+from .models_venue_fees import EventVenueFee  # noqa: E402
+__all__ += ["EventOrder", "EventOrderDue", "EventOrderLine", "EventOrderSeat", "EventSalesSettings",
+            "EventCheckoutHold", "EventAddon", "EventAddonVariant", "EventPassType", "EventTicketTransfer",
+            "EventVenueFee"]

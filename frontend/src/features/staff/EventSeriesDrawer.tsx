@@ -5,6 +5,7 @@ import { ConfirmDialog, EmptyState, ErrorText, ListRow, Pagination, Skeleton, St
 import { DetailLayout } from "../../components/layouts";
 import { opsQueryState, useOpsTabs, opsStatusLabel } from "./opsPresentation";
 import { EventSeriesCollaborators } from "./EventSeriesCollaborators";
+import { SeriesPassTypes, useStaffCapability } from "./eventTicketing/SeriesPassTypes";
 import { EventWebsiteEditor } from "./EventWebsiteEditor";
 import { EventOrganizationAudience } from "./EventOrganizationAudience";
 import { EventStaffAccess } from "./EventStaffAccess";
@@ -53,9 +54,11 @@ export function EventSeriesDrawer({ seriesId, makerspaceId, onClose, onSelectOcc
   // Tabs and lifecycle actions follow the series staff grant the API enforces (eventStaffPermissions).
   const showWebsite = Boolean(query.data?.website_enabled) && (access.edit || access.publish);
   const showSettings = access.edit || access.publish;
+  const showPasses = useStaffCapability(makerspaceId, "events.series_passes") && access.manager;
   const tabs = useOpsTabs("seriesTab", [{ key: "occurrences", label: "Occurrences", count: occurrences.data?.count },
     ...(access.registrations ? [{ key: "guests", label: "Guests" }] : []),
     ...(showWebsite ? [{ key: "website", label: "Website" }] : []),
+    ...(showPasses ? [{ key: "passes", label: "Passes" }] : []),
     ...(access.manager ? [{ key: "team", label: "Team" }] : []),
     ...(showSettings ? [{ key: "settings", label: "Settings" }] : [])], "occurrences");
   return <>
@@ -72,6 +75,7 @@ export function EventSeriesDrawer({ seriesId, makerspaceId, onClose, onSelectOcc
       danger={tabs.active === "settings" && query.data?.status === "published" && access.publish ? [{ title: "Cancel series", consequence: "Future occurrences close and registrants are notified.", action: { label: "Cancel series", onClick: () => setConfirm("cancel") } }] : []}
       main={query.data ? <div className="grid gap-5">
         {access.registrations && tabs.active === "guests" ? <SeriesGuestList seriesId={seriesId} /> : null}
+        {showPasses && tabs.active === "passes" ? <SeriesPassTypes seriesId={seriesId} disabled={terminal} /> : null}
         {tabs.active === "occurrences" ? <EventOrganizationAudience event={query.data} pending={update.isPending} onReconfigure={access.edit ? () => update.mutate({ registration_audience: "participating_organizations" }) : undefined} /> : null}
         {showSettings && tabs.active === "settings" ? <div className="grid gap-5">
         {access.edit ? <ImageUploader endpoint={`/admin/event-series/${seriesId}/image`} currentUrl={query.data.image_url} label="Series photo (inherited by occurrences)" shape="wide" disabled={terminal} onChanged={() => query.refetch()} /> : null}

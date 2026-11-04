@@ -15,6 +15,9 @@ logger = logging.getLogger(__name__)
 
 
 def resume_admission_after_settlement(payment):
+    if payment.subject_type == Payment.SubjectType.EVENT_ORDER:
+        _resume_event_order(payment)
+        return
     if payment.subject_type != Payment.SubjectType.MEMBERSHIP_REQUEST or payment.status not in {
         Payment.Status.PAID_ONLINE, Payment.Status.PAID_OFFLINE, Payment.Status.WAIVED,
     }:
@@ -29,6 +32,25 @@ def resume_admission_after_settlement(payment):
         except Exception as exc:
             logger.warning("membership_admission_resume_failed", extra={
                 "payment_id": payment_id, "failure_type": type(exc).__name__,
+            })
+
+    transaction.on_commit(resume)
+
+
+def _resume_event_order(payment):
+    """Lane L6: a paid ticket order seats its attendees after the payment lock is released."""
+    if payment.status not in {Payment.Status.PAID_ONLINE, Payment.Status.PAID_OFFLINE, Payment.Status.WAIVED}:
+        return
+    order_id = payment.subject_id
+
+    def resume():
+        try:
+            from apps.events.orders_settlement import settle_paid_order
+
+            settle_paid_order(order_id)
+        except Exception as exc:
+            logger.warning("event_order_settlement_failed", extra={
+                "order_id": order_id, "failure_type": type(exc).__name__,
             })
 
     transaction.on_commit(resume)

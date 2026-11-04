@@ -8,6 +8,7 @@ import { EventBroadcastsPanel } from "./EventBroadcastsPanel";
 import { EventAnalyticsPanel } from "./EventAnalyticsPanel";
 import { EventTicketsPanel } from "./EventTicketsPanel";
 import { EventPromosPanel } from "./EventPromosPanel";
+import { EventOrderTools } from "./eventTicketing/EventOrderTools";
 import { EventCollaborators } from "./EventCollaborators";
 import { EventOrganizers } from "./EventOrganizers";
 import { EventFeedbackPanel } from "./EventFeedbackPanel";
@@ -45,6 +46,7 @@ export function EventDrawerMore({ event, makerspaceId, access, surfaces, section
     {surfaces.invites ? <EventInvitesPanel key={eventId} visible={section === "tickets"} eventId={eventId} disabled={readOnly} /> : null}
     {surfaces.ticketTypes ? <EventTicketsPanel key={eventId} visible={section === "tickets"} eventId={eventId} disabled={readOnly} /> : null}
     {surfaces.promos ? <EventPromosPanel key={eventId} visible={section === "tickets"} eventId={eventId} disabled={readOnly} /> : null}
+    {section === "tickets" && access.manager ? <EventOrderTools eventId={eventId} features={ticketing} manager={access.manager} disabled={readOnly} /> : null}
     {sections.speakers && section === "speakers" ? <EventSpeakersPanel eventId={eventId} makerspaceId={makerspaceId} websiteEnabled={sections.website} disabled={readOnly} /> : null}
     {section === "feedback" ? access.edit ? <>
       <EventFeedbackPanel eventId={eventId} makerspaceId={makerspaceId} canViewResponses={access.registrations} canManageCertificates={access.manager} />

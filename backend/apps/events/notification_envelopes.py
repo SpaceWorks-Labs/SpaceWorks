@@ -154,6 +154,8 @@ def owner_envelope(event, event_name, registration, intent):
     context["join_url"] = join_url_value(event_name, registration)
     rendered = with_join_url(_rendered(render(space, "events", "requester", event_name, context),
                                        _owner_link(space, registration)), event_name, registration)
+    from .registration_invites import with_links  # #169 (lane L6): add-to-calendar links, no join link
+    rendered = with_links(rendered, event_name, registration)
     return _emit(space, registration.member, audience="requester", event_name=event_name,
                  source_kind=LIFECYCLE_SOURCE, source_id=f"r{registration.pk}", intent=intent,
                  event=event, registration=registration, rendered=rendered)

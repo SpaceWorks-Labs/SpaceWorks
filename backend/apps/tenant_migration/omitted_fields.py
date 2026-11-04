@@ -162,3 +162,8 @@ OMITTED_FIELD_RECONSTRUCTIONS = {
         ("payments.Payment", "stripe_payment_intent_id"),
     ),
 }
+
+# Release 2 L6: claim and transfer token digests are bearer material. The target mints
+# fresh unclaimable values; the buyer or sender re-sends the invite.
+OMITTED_FIELD_RECONSTRUCTIONS.update(_rules(
+    FRESH, ("events.EventOrderSeat", "claim_token_digest"), ("events.EventTicketTransfer", "token_digest")))

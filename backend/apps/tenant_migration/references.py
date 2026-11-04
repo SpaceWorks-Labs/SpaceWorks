@@ -94,6 +94,9 @@ PAYMENT_SUBJECT_REFERENCES = {
     "loan_lost": "hardware_requests.RequesterAccountability",
     # Lane L23: one metered machine session.
     "machine_session": "machines.MachineSession",
+    # Lane L6: one order of several tickets; one hosting fee per event.
+    "event_order": "events.EventOrder",
+    "event_venue_fee": "events.EventVenueFee",
 }
 
 NOTIFICATION_URL_ROUTES = (

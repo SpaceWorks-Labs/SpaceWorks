@@ -6,6 +6,13 @@
 
 ## Condensed changelog (newest first — full detail in `git log`)
 
+- **2026-11-04 -- release 2 L6, paid ticketing v2 and venue fees (#69, #71, #94, #128 C-20, #169).**
+  Multi-ticket orders (one `event_order` Payment, one registration per attendee claimed by signing in),
+  checkout seat holds, tiers, pay-what-you-want, group and hidden tickets, promo limits and a booking fee,
+  add-ons with event-local stock, series passes, transfers and type changes, desk collection, a per-event
+  refund override that only gets more generous after the first sale, venue fees charged on publish,
+  `orders:read`, and calendar invites plus the ticket PDF in confirmation emails. Every refund is a
+  staff-approved refund case.
 - **2026-11-04 -- release 2 S-B, login doors, unusual sign-ins and security alerts (#62, #66, #128 C-2,
   #157, #162(3)).** Staff signing in with Google, Apple, GitHub or OIDC still pass their factor (web and
   device); provider proof is members-only. `mfa/verify` takes `factor` (totp, recovery, passkey with

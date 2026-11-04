@@ -25,11 +25,17 @@ class Payment(models.Model):
         LOAN_LOST = "loan_lost", "Lost item charge"
         # Lane L23 (#158): one metered machine session; subject_id is the MachineSession id.
         MACHINE_SESSION = "machine_session", "Machine session"
+        # Lane L6. An order is one buyer's several tickets (subject_id = EventOrder id); a
+        # venue fee is an outside organiser's hosting charge (subject_id = EventVenueFee id).
+        EVENT_ORDER = "event_order", "Event ticket order"
+        EVENT_VENUE_FEE = "event_venue_fee", "Event venue fee"
 
     #: Subjects whose subject_id is the HardwareRequest id.
     LOAN_SUBJECT_TYPES = ("loan_deposit", "loan_late_fee", "loan_rental")
     #: Subjects whose subject_id is a RequesterAccountability row of a loan.
     LOAN_ACCOUNTABILITY_SUBJECT_TYPES = ("loan_damage", "loan_lost")
+    #: Lane L6: event money that is not one registration's own charge.
+    EVENT_SUBJECT_TYPES = ("event_registration", "event_order", "event_venue_fee")
 
     class Status(models.TextChoices):
         PENDING = "pending", "Pending"

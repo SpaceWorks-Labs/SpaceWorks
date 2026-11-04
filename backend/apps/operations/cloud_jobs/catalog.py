@@ -117,6 +117,8 @@ LEGACY_ENTRIES = (
     ("event-id-cards", "apps.events.tasks_id_cards.reconcile_event_id_cards_task", 15),
     # Lane L8: one bounded chunk of each running per-space key rotation, re-key or re-index.
     ("advance-key-jobs", "apps.encryption.rekey_tasks.advance_key_jobs_task", 1),
+    # Lane L6: expired checkout holds, missed order settlements and one payment reminder.
+    ("event-order-checkouts", "apps.events.reminders_payments.sweep_order_checkouts_task", 1),
 )
 _RETAINED = frozenset({
     "evidence-object-expiry", "evidence-abandoned-upload-cleanup",

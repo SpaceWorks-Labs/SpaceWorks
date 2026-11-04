@@ -50,6 +50,8 @@ from .classification_l16 import NON_CREDENTIAL as L16_NON_CREDENTIAL  # noqa: E4
 REVIEWED_NON_CREDENTIAL.update(L16_NON_CREDENTIAL)
 from .classification_l3 import NON_CREDENTIAL as L3_NON_CREDENTIAL  # noqa: E402
 REVIEWED_NON_CREDENTIAL.update(L3_NON_CREDENTIAL)
+from .classification_r2_l6 import NON_CREDENTIAL as R2_L6_NON_CREDENTIAL  # noqa: E402
+REVIEWED_NON_CREDENTIAL.update(R2_L6_NON_CREDENTIAL)
 
 
 def validate_credentials(fields=None):

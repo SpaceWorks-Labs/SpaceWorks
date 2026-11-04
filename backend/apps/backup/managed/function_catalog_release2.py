@@ -24,4 +24,7 @@ RELEASE2_FUNCTIONS = frozenset({
     "payments_l15_append_only",
     # L23: a closed machine session is final (machines 0032).
     "machines_session_guard",
+    # Lane L6: the frozen order quote and append-only order dues.
+    "events_order_l6_guard",
+    "events_orderdue_l6_guard",
 })

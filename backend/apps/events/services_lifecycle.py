@@ -80,6 +80,8 @@ def publish(event, *, actor, publish_website=False, website_revision=None):
     meta = {"old_status": Event.Status.DRAFT, "new_status": Event.Status.PUBLISHED}
     services._audit(locked, actor, "event.published", locked, meta)
     services.notify_event_lifecycle(locked, "published")
+    from .venue_fees import on_event_published  # lane L6: confirming the event charges its venue fee
+    on_event_published(locked, actor)
     return services._refresh(locked)
 
 
@@ -160,7 +162,9 @@ def _cancel_open_charges_after_commit(event, actor, *, registration_ids=None):
     from apps.events.models import EventRegistration
     from apps.events.service_payments import cancel_for_registration
     from apps.payments.models import Payment
+    from apps.events.orders_refunds import after_event_charges  # lane L6: ticket orders and their seats
 
+    after_event_charges(event, actor, registration_ids=registration_ids)
     single = registration_ids is not None
     registration_ids = registration_ids if single else list(
         EventRegistration.objects.filter(event=event).values_list("pk", flat=True)

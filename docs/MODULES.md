@@ -29,7 +29,7 @@ govern sign-in availability. Membership adds plans, vouching, renewals and the m
 | --- | --- | --- |
 | Inventory & lending | `public_inventory`, `request_workflow`, `staff_admin`, `scanner`, `evidence_uploads`, `qr_management` (core); `guest_handover`, `asset_units`, `containers`, `bulk_import`, `stock_transfers`, `qr_print_batches`, `stocktake`, `devices` | `loans.enabled`, `loans.limits`, `loans.renewals`, `loans.kit_checklist`, `loans.reservations`, `loans.pickup_windows`, `loans.waitlist`, `loans.withdrawals`, `inventory.notify_when_back`, `inventory.expected_back`, `inventory.consumables`, `inventory.vendors`, `inventory.tobuy`, `inventory.warranty`, `inventory.self_checkout`, `inventory.contact_self_checkout`, `inventory.kiosk`, `stocktake.discipline`, `packs.import`, `charges.loans`; `payments.loans` with Online payments |
 | Machines | `machines`, `machine_service`, `printing` | `machines.job_requests`, `machines.job_quotes`, `machines.batch_start`, `machines.pay_before_pickup`, `machines.time_booking`, `machines.sessions`, `machines.maintenance`, `machines.tobuy`, `machines.warranty`, `machines.certifications`, `machines.certification_reminders`, `machines.public_detail`, `machines.material_catalogue`, `machines.structured_intake`, `maintenance.reminders`, `maintenance.meters`, `maintenance.calendar_feed`, `charges.machines`, `notifications.delegated_recipients`; `payments.machines` with Online payments |
-| Events | `events` | `events.api_read`, `events.certificate_designer`, `events.website`, `events.embed`, `events.short_links`, `events.online_delivery`, `events.anonymous_feedback`; `events.broadcasts` with Notifications and Email; `events.organization_audience`, `events.offline_checkin`, `events.invites`, `events.account_registration`, `events.ticket_types`, `events.promo_codes`, `charges.events`; `payments.events` with Online payments; `events.id_cards`, `events.ticket_designs`, `events.wallet_passes` |
+| Events | `events` | `events.api_read`, `events.certificate_designer`, `events.website`, `events.embed`, `events.short_links`, `events.online_delivery`, `events.anonymous_feedback`; `events.broadcasts` with Notifications and Email; `events.organization_audience`, `events.offline_checkin`, `events.invites`, `events.account_registration`, `events.ticket_types`, `events.promo_codes`, `charges.events`; `payments.events` with Online payments; `events.id_cards`, `events.ticket_designs`, `events.wallet_passes`, `events.orders`, `events.seat_holds`, `events.addons`, `events.series_passes`, `events.transfers`, `events.desk_collect`, `events.refund_override`, `events.venue_fees` |
 | Bookings | `bookings` | `bookings.recurring`, `bookings.staff_grants`, `bookings.clone`, `bookings.staff_tools`, `bookings.confirmations`, `bookings.checkin`, `bookings.passes`, `bookings.api_read`, `bookings.website`, `bookings.embed`, `charges.bookings`; `bookings.broadcasts` with Notifications and Email; `bookings.analytics`, `bookings.utilization_pdf`, `bookings.exports` with Reports; `payments.bookings` with Online payments |
 | Membership | `membership`, `mobile` | `membership.auto_renew`, `membership.lifecycle_mail`, `membership.self_service`, `membership.self_export`, `membership.vouching`, `membership.application_form`, `membership.broadcasts`, the 14 release-2 lifecycle switches (`membership.plan_rules` … `membership.monthly_summary`), `mobile.push`, `mobile.watch_actions`, `charges.membership`; `payments.membership` with Online payments; `membership.id_programmes`, `membership.wallet_passes`; `membership.import_sheets`, `membership.id_programmes_import_sheets` |
 | Online payments | `payments` | `payments.enabled` plus the online-payment feature of each selected domain |
@@ -307,6 +307,17 @@ approved archive fields and do not reopen expired event websites.
 ### events
 
 [Read the events module reference](MODULES-WORKSHOPS.md#events).
+
+**Paid ticketing v2 (release 2 L6).** Eight capabilities, all off by default, keep their data when
+turned off: `events.orders` (with `events.seat_holds`, `events.addons`, `events.series_passes` and
+`events.transfers` under it), `events.desk_collect`, `events.refund_override` and `events.venue_fees`.
+A buyer must be signed in; each seat becomes one registration for one attendee account, claimed by
+signing in with the address it names. Money owed is one `event_order` (or `event_venue_fee`)
+`Payment`, events income, recorded by `charges.events`; every refund is a staff-approved refund
+case. Registration and booking confirmation emails carry an `.ics` invite (and, with
+`events.ticket_designs`, the ticket PDF) and "add to calendar" links; the private join link never
+rides the invite. A purge of Events deletes orders, seats, dues and holds with their events;
+the payment ledger rows stay (they are permanently core).
 
 **Programme checkpoint (2026-10-18, `f1ef7736`): keep the new features off.** Hackathons
 are features inside Events, not a separate module. Five declared switches default off:
@@ -926,6 +937,14 @@ its parent module is off.
 | `events.id_cards` | `events` | | An ID card for every confirmed registrant, designed and published by the event's organisers (no approval by default), valid until the day after the event; the door scan identifies the card | No event cards; issued cards and designs are kept |
 | `events.ticket_designs` | `events` | | Design tickets per event and ticket type; one check-in QR; the PDF can go with the confirmation email | Tickets use no custom design |
 | `events.wallet_passes` | `events` (needs `events.id_cards`) | | Wallet passes for event ID cards | No wallet buttons on event cards |
+| `events.orders` | `events` (needs `events.ticket_types`) | | One order buys several tickets (tiers that open on sell-out or end, pay-what-you-want with a minimum, group tickets, hidden tickets behind access codes, per-order limits, a booking fee); one `Payment` per order; every seat becomes its attendee's own registration once they sign in and claim it | The order shop and order routes answer 400/404; single registration is unchanged; orders, seats and their money are kept |
+| `events.seat_holds` | `events` (needs `events.orders`) | | A checkout holds its seats for 30 minutes and releases them on expiry or failure | Seats are taken only when payment lands; a paid order with no room left opens a staff-approved refund |
+| `events.addons` | `events` (needs `events.orders`) | | Kit, lunch, T-shirts with sizes and session seats sold with tickets, with event-local stock (never hardware inventory) | Add-ons are hidden and refused; sold lines are kept |
+| `events.series_passes` | `events` (needs `events.orders`) | | One pass for every future occurrence of a series; a cancelled occurrence opens the organiser's partial amount as a refund case | Pass routes answer 400; issued passes keep their registrations |
+| `events.transfers` | `events` (needs `events.orders`) | | Attendees hand a ticket to another account (credential rotated, card re-issued) or change ticket type (pay the difference, or a refund case for it), when the organiser allows | Transfers and type changes are refused |
+| `events.desk_collect` | `events` | | Check-in staff record a pending ticket payment at the desk (receipt) or open a pay-now checkout | Settlement stays in the payments console |
+| `events.refund_override` | `events` | | An event's own refund policy, shown before payment; after the first sale it may only become more generous | The space's events refund policy applies |
+| `events.venue_fees` | `events` | | The space charges an outside organiser for hosting: flat and/or per hour from the space default, a room override or the event's own amount, charged once on publish | No venue fee is configured or charged; raised charges are kept |
 
 The `payments.<area>` switches are **off by default and stay inert until credentials resolve** —
 turning one on cannot start charging anyone by itself. They only put a card rail behind a debt the

@@ -64,7 +64,20 @@ def reference_time(payment):
     if payment.subject_type == Payment.SubjectType.BOOKING:
         from apps.bookings.models import Booking
         return Booking.objects.filter(pk=payment.subject_id).values_list("starts_at", flat=True).first()
+    if payment.subject_type in (Payment.SubjectType.EVENT_ORDER, Payment.SubjectType.EVENT_VENUE_FEE):
+        from apps.events.cancellation_policy import subject_starts_at
+        return subject_starts_at(payment)
     return None
+
+
+def area_policy(payment, area):
+    """The space's policy for `area`, or an event's own override (lane L6, G34: the one hook)."""
+    if area == RefundPolicy.Area.EVENTS:
+        from apps.events.cancellation_policy import override_policy
+        override = override_policy(payment)
+        if override is not None:
+            return override
+    return RefundPolicy.objects.filter(makerspace_id=payment.makerspace_id, area=area, plan__isnull=True).first()
 
 
 def _space_currency(makerspace):
@@ -94,8 +107,7 @@ def assess(payment, *, reason_code, cancelled_at=None):
         if policy is None:
             return ZERO, {**snapshot, "rule": "no_policy"}
     else:
-        policy = RefundPolicy.objects.filter(makerspace_id=payment.makerspace_id, area=area,
-                                             plan__isnull=True).first()
+        policy = area_policy(payment, area)
         starts_at = reference_time(payment)
         if policy is None or starts_at is None:
             return ZERO, {**snapshot, "rule": "no_policy" if policy is None else "no_reference_time"}

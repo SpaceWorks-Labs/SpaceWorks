@@ -53,7 +53,7 @@ def member_payment_queryset(user, makerspace_id):
     payments = Payment.objects.filter(
         Q(makerspace_id=makerspace_id)
         | Q(
-            subject_type=Payment.SubjectType.EVENT_REGISTRATION,
+            subject_type__in=Payment.EVENT_SUBJECT_TYPES,
             via_makerspace_id=makerspace_id,
         ),
         member_id__in=actor_ids_for(user),

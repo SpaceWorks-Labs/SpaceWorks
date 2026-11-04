@@ -15,7 +15,8 @@ Targets and params by domain:
   `machine_type`, `pool`, `minutes`, `quantity`; plus `outcome` (`completed`|`failed`)
   and `failure_charge` (`none`|`material_only`|`full`, default the space's choice).
 * `bookings` -- target: a `BookableSpace`; params `starts_at`, `ends_at`.
-* `events` -- target: an `Event`; params `ticket` (an `EventTicketType`).
+* `events` -- target: an `Event`; params `ticket` (an `EventTicketType`), or `venue_fee`
+  (its `EventVenueFee`, lane L6) for the hosting fee instead of a registration.
 * `membership` -- target: a `MembershipPlan` or None; params `joining`.
 
 `member` decides the automatic discount (None: no discount). A total of 0 means the
@@ -60,6 +61,9 @@ def _build(card, domain, target, params):
         return build_other.booking_lines(card, target, starts_at=params.get("starts_at"),
                                          ends_at=params.get("ends_at")), ()
     if domain == "events":
+        if params.get("venue_fee") is not None:
+            from apps.payments.pricing.build_venue import venue_fee_lines  # lane L6
+            return venue_fee_lines(card, target, fee=params["venue_fee"]), ()
         return build_other.event_lines(card, target, ticket=params.get("ticket")), ()
     return build_other.membership_lines(card, target, joining=bool(params.get("joining"))), ()
 

@@ -26,6 +26,8 @@ def calendar_event_changed(event, *, now=None):
         calendar_updated_at=now,
     )
     event.refresh_from_db(fields=("calendar_sequence", "calendar_updated_at"))
+    from .registration_invites import event_changed  # #169 (lane L6): updated invites, SEQUENCE+1
+    event_changed(event)
     return event
 
 

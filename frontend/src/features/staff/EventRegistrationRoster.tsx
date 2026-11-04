@@ -10,6 +10,7 @@ import { EventBadgeActions } from "./EventBadgeActions";
 import { EventDisclosure } from "./EventDisclosure";
 import { EventRegisterMember } from "./EventRegisterMember";
 import { PaymentReconcileActions } from "./PaymentReconcileActions";
+import { DeskCollectPanel } from "./eventTicketing/DeskCollectPanel";
 import { useCorrectAttendance } from "./eventFeedbackApi";
 import {
   useApproveEventRegistration,
@@ -88,7 +89,8 @@ export function EventRegistrationRoster({ visible = true, event, makerspaceId, o
             {access.checkIn && row.status === "attended" ? <button className="desk-button-danger" type="button" disabled={pending} onClick={() => correct.mutate(row.id)}>Correct attendance</button> : null}
             {!hasAction ? "—" : null}
             {access.registrations ? <EventRegistrationAnswers row={row} schema={event.custom_form} makerspaceId={makerspaceId} eventId={event.id} /> : null}
-          </div>{rowError ? <p className="mt-1 text-xs text-danger" role="alert">{eventErrorText(rowError)}</p> : null}</>;
+          </div>{access.checkIn && row.payment?.status === "pending" && event.ticketing_features?.includes("events.desk_collect")
+            ? <EventDisclosure title="Collect payment"><DeskCollectPanel registrationId={row.id} onCollected={() => void rows.refetch()} /></EventDisclosure> : null}{rowError ? <p className="mt-1 text-xs text-danger" role="alert">{eventErrorText(rowError)}</p> : null}</>;
       } },
     ]} /> : null}
     <div className="mt-3 flex items-center justify-between gap-2"><span className="tabular-nums text-xs text-muted">Page {page}</span><div className="flex flex-wrap gap-2"><button className="desk-button" type="button" disabled={!rows.data?.previous} onClick={() => setPage((value) => Math.max(1, value - 1))}>Previous</button><button className="desk-button" type="button" disabled={!rows.data?.next} onClick={() => setPage((value) => value + 1)}>Next</button></div></div>

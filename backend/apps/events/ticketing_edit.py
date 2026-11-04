@@ -17,8 +17,10 @@ from .feature_gates import require_feature
 from .capacity import CONFIRMED_STATUSES
 from .models import EventCategory, EventRegistration, EventTicketType
 
-TICKET_FIELDS = ("name", "amount", "audience", "capacity", "sales_start_at", "sales_end_at", "is_active")
-FROZEN_WHEN_USED = ("amount", "audience")
+TICKET_FIELDS = ("name", "amount", "audience", "capacity", "sales_start_at", "sales_end_at", "is_active",
+                 "tier_group", "tier_rank", "pricing_mode", "min_amount", "seats_per_ticket", "is_hidden",
+                 "min_quantity", "per_order_limit")
+FROZEN_WHEN_USED = ("amount", "audience", "pricing_mode", "seats_per_ticket")
 
 
 class ReferencedConflict(APIException):
@@ -42,8 +44,10 @@ def update_ticket(ticket, *, actor, **values):
     from .services import _validate
     event, row = _locked_ticket(ticket)
     used = EventRegistration.objects.filter(ticket_type=row)
+    from .models import EventOrderLine
+    sold = used.exists() or EventOrderLine.objects.filter(ticket_type=row).exists()
     changed = sorted(field for field in TICKET_FIELDS if field in values and values[field] != getattr(row, field))
-    if any(field in changed for field in FROZEN_WHEN_USED) and used.exists():
+    if any(field in changed for field in FROZEN_WHEN_USED) and sold:
         raise ReferencedConflict("Price and audience are fixed once people registered with this ticket. "
                                  "Deactivate it and create a new ticket type instead.", "ticket_type_referenced")
     capacity = values.get("capacity", row.capacity)
@@ -63,8 +67,10 @@ def update_ticket(ticket, *, actor, **values):
 @transaction.atomic
 def delete_ticket(ticket, *, actor):
     event, row = _locked_ticket(ticket)
-    if EventRegistration.objects.filter(ticket_type=row).exists():
-        raise ReferencedConflict("Registrations use this ticket type. Deactivate it instead of deleting it.",
+    from .models import EventOrderLine
+    if (EventRegistration.objects.filter(ticket_type=row).exists()
+            or EventOrderLine.objects.filter(ticket_type=row).exists()):
+        raise ReferencedConflict("Registrations or orders use this ticket type. Deactivate it instead of deleting it.",
                                  "ticket_type_referenced")
     record(actor, "event.ticket_deleted", makerspace=event.makerspace, target=row)
     row.delete()

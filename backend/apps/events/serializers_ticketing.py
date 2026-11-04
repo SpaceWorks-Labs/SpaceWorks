@@ -20,6 +20,10 @@ class InviteSerializer(serializers.ModelSerializer):
 
 class PromoInputSerializer(serializers.Serializer):
     code = serializers.CharField(max_length=128, min_length=8, required=False, write_only=True)
+    # Release 2 L6 (G29): access codes unlock one hidden ticket type; discounts per ticket or order.
+    kind = serializers.ChoiceField(choices=("discount", "access"), default="discount", required=False)
+    applies_per = serializers.ChoiceField(choices=("ticket", "order"), default="ticket", required=False)
+    ticket_type_id = serializers.IntegerField(min_value=1, required=False, allow_null=True)
     percent_off = serializers.IntegerField(min_value=0, max_value=100, default=0, required=False)
     amount_off = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=0, default=0, required=False)
     max_uses = serializers.IntegerField(min_value=1, default=1, required=False)
@@ -31,7 +35,8 @@ class PromoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = EventPromoCode
-        fields = ("id", "percent_off", "amount_off", "max_uses", "uses", "expires_at", "revoked_at", "created_at", "code")
+        fields = ("id", "percent_off", "amount_off", "max_uses", "uses", "expires_at", "revoked_at", "created_at", "code",
+                  "kind", "applies_per", "ticket_type")
         read_only_fields = fields
 
 
@@ -39,7 +44,9 @@ class TicketInputSerializer(serializers.ModelSerializer):
     class Meta:
         model = EventTicketType
         fields = ("name", "amount", "audience", "capacity", "sales_start_at", "sales_end_at",
-                  "purpose", "contributor_capacity_policy")
+                  "purpose", "contributor_capacity_policy",
+                  # Release 2 L6 (G29): tiers, pay-what-you-want, group seats, hidden tickets, order limits.
+                  "tier_group", "tier_rank", "pricing_mode", "min_amount", "seats_per_ticket", "is_hidden", "min_quantity", "per_order_limit")
 
 
 class TicketSerializer(TicketInputSerializer):

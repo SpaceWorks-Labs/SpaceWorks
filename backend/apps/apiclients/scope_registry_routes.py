@@ -181,6 +181,9 @@ _ROUTE_DEFINITIONS += (
     ("public-issue-report", _WRITE, PUBLIC_WRITE_SCOPES, TARGET_TENANT_SLUG, False, False),
     ("public-issue-photo-upload", _WRITE, PUBLIC_WRITE_SCOPES, TARGET_TENANT_SLUG, False, False),
     ("public-technician-opt-in", ("GET", "HEAD", "POST"), frozenset(), TARGET_GLOBAL, False, False),
+    # Lane L6: the public ticket shop reads only what the event page already shows.
+    ("public-event-ticket-shop", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False),
+    ("public-event-ticket-shop", _WRITE, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False),
 )
 
 

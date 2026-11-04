@@ -32,6 +32,9 @@ SUBJECT_ACTIONS = {
     Payment.SubjectType.LOAN_LOST: rbac.Action.RETURN_REQUEST,
     # Lane L23: a machine session is settled by whoever manages that machine's type.
     Payment.SubjectType.MACHINE_SESSION: rbac.Action.MANAGE_MACHINES,
+    # Lane L6: event money follows the Event Manager, like a registration charge.
+    Payment.SubjectType.EVENT_ORDER: rbac.Action.MANAGE_EVENTS,
+    Payment.SubjectType.EVENT_VENUE_FEE: rbac.Action.MANAGE_EVENTS,
 }
 
 
@@ -48,7 +51,7 @@ def payment_list_action(actor, makerspace_id, *, for_recording=False, subject_ty
     """
     finance = rbac.Action.RECORD_PAYMENT if for_recording else rbac.Action.VIEW_FINANCE
     if (
-        subject_type == Payment.SubjectType.EVENT_REGISTRATION
+        subject_type in Payment.EVENT_SUBJECT_TYPES
         and not rbac.can(actor, finance, makerspace_id)
         and rbac.can(actor, rbac.Action.MANAGE_EVENTS, makerspace_id)
     ):

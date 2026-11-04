@@ -947,6 +947,12 @@ CELERY_BEAT_SCHEDULE["advance-key-jobs"] = {
 }
 # --- end lane L8 beat
 
+# --- lane L6 (release 2): expired checkout holds, missed order settlements, one payment reminder.
+CELERY_BEAT_SCHEDULE["event-order-checkouts"] = {
+    "task": "apps.events.reminders_payments.sweep_order_checkouts_task", "schedule": crontab(minute="*"),
+}
+# --- end lane L6
+
 if "tenant_migration" in TOMBSTONED_APPS:
     CELERY_BEAT_SCHEDULE = {
         name: entry
@@ -1542,6 +1548,9 @@ SPECTACULAR_SETTINGS = {
             ("member_request", "Member request"),
             ("capture_flagged", "Unexpected online capture"),  # lane L5 (capture flags)
             ("fee_waived", "Loan fee waived by staff"),  # lane L15 (loan fee waivers)
+            ("order_unfulfilled", "Order could not be seated"),  # lane L6 (ticket orders)
+            ("ticket_type_changed", "Changed to a cheaper ticket"),  # lane L6
+            ("pass_occurrence_cancelled", "Pass occurrence cancelled"),  # lane L6
         ],
         "InventoryAssetStatusEnum": [
             ("available", "Available"),
@@ -1775,3 +1784,13 @@ SPECTACULAR_SETTINGS["ENUM_NAME_OVERRIDES"].update({
     "ImportSourceKindEnum": [("file", "file"), ("google_sheet", "google_sheet")],
 })
 # --- end lane L13
+# --- lane L6 (release 2): a stable name for the ticket type's pricing mode, so it never
+# takes over L15's rate-card PricingModeEnum (free | paid) in the OpenAPI schema.
+SPECTACULAR_SETTINGS["ENUM_NAME_OVERRIDES"].update({
+    "TicketPricingModeEnum": [("fixed", "Fixed price"), ("pwyw", "Pay what you want")],
+})
+# The member ticket-order budget (quote, place, attendees, chase, cancel, claim), per account.
+REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"].update({
+    "event_orders": "60/hour",
+})
+# --- end lane L6

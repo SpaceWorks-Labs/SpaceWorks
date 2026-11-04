@@ -115,6 +115,9 @@ def money_fingerprint(makerspace_id, *, using="default"):
     from .money_digest_r2_l15 import l15_money_rows
 
     payload.update(l15_money_rows(makerspace_id, using))
+    from .money_digest_r2_l6 import l6_money_rows
+
+    payload.update(l6_money_rows(makerspace_id, using))
     encoded = json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str).encode()
     return hashlib.sha256(encoded).hexdigest()
 

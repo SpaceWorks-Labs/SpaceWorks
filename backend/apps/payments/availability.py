@@ -70,6 +70,9 @@ SUBJECT_DOMAINS = {
     "loan_lost": "loans",
     # Lane L23: a metered machine session is machine money.
     "machine_session": "machines",
+    # Lane L6: ticket orders and venue fees are events income.
+    "event_order": "events",
+    "event_venue_fee": "events",
 }
 
 

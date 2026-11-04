@@ -25,6 +25,8 @@ const PublicBookingsPage = lazy(() => import("./features/bookings/PublicBookings
 const PublicItemPage = lazy(() => import("./features/inventory/PublicItemPage").then((m) => ({ default: m.PublicItemPage })));
 const PublicEventFeedbackPage = lazy(() => import("./features/inventory/PublicEventFeedbackPage").then((m) => ({ default: m.PublicEventFeedbackPage })));
 const PublicEventDetailPage = lazy(() => import("./features/inventory/PublicEventDetailPage").then((m) => ({ default: m.PublicEventDetailPage })));
+const TicketClaimPage = lazy(() => import("./features/events/ticketing/TicketClaimPage").then((m) => ({ default: m.TicketClaimPage })));
+const MemberOrdersPage = lazy(() => import("./features/events/ticketing/MemberOrdersPage").then((m) => ({ default: m.MemberOrdersPage })));
 const MemberEventTicketPage = lazy(() => import("./features/events/MemberEventTicketPage").then((m) => ({ default: m.MemberEventTicketPage })));
 const MemberEventHistoryPage = lazy(() => import("./features/events/MemberEventHistoryPage").then((m) => ({ default: m.MemberEventHistoryPage })));
 const SpeakerClaimPage = lazy(() => import("./features/events/SpeakerClaimPage").then((m) => ({ default: m.SpeakerClaimPage })));
@@ -195,6 +197,10 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
       <Route path="/member/events/:registrationId/ticket" element={<MemberEventTicketPage />} />
       <Route path="/member/events/history" element={<MemberEventHistoryPage />} />
       <Route path="/member/speaker-claim" element={<SpeakerClaimPage />} />
+      <Route path="/member/orders" element={<MemberOrdersPage />} />
+      <Route path="/member/orders/:orderId" element={<MemberOrdersPage />} />
+      <Route path="/member/ticket-claims/:token" element={<TicketClaimPage kind="claim" />} />
+      <Route path="/member/ticket-transfers/:token" element={<TicketClaimPage kind="transfer" />} />
       <Route path="/member/:memberTab" element={<MemberTabRoute />} />
       <Route path="/stats" element={<PublicStatsPage />} />
       <Route path="/stats/tv" element={<PublicStatsTvPage />} />
@@ -245,6 +251,14 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
       <Route path="/member" element={<MemberArea />} />
       <Route path="/member/account" element={<MemberAccountPage />} />
       <Route path="/member/events/:registrationId/ticket" element={<MemberEventTicketPage />} />
+      <Route path="/m/:slug/member/orders" element={<MemberOrdersPage />} />
+      <Route path="/m/:slug/member/orders/:orderId" element={<MemberOrdersPage />} />
+      <Route path="/m/:slug/member/ticket-claims/:token" element={<TicketClaimPage kind="claim" />} />
+      <Route path="/m/:slug/member/ticket-transfers/:token" element={<TicketClaimPage kind="transfer" />} />
+      <Route path="/member/orders" element={<MemberOrdersPage />} />
+      <Route path="/member/orders/:orderId" element={<MemberOrdersPage />} />
+      <Route path="/member/ticket-claims/:token" element={<TicketClaimPage kind="claim" />} />
+      <Route path="/member/ticket-transfers/:token" element={<TicketClaimPage kind="transfer" />} />
       <Route path="/m/:slug/member/:memberTab" element={<MemberTabRoute />} />
       <Route path="/member/:memberTab" element={<MemberTabRoute />} />
       <Route path="/m/:slug/stats" element={<PublicStatsPage />} />

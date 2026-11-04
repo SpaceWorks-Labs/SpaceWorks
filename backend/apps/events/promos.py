@@ -13,12 +13,23 @@ from apps.makerspaces.guards import require_module_locked
 
 
 @transaction.atomic
-def create_promo(event, *, actor, code="", percent_off=0, amount_off=0, max_uses=1, expires_at=None):
+def create_promo(event, *, actor, code="", percent_off=0, amount_off=0, max_uses=1, expires_at=None,
+                 kind="discount", applies_per="ticket", ticket_type_id=None):
     event = _locked_event(event.pk)
     event.makerspace = require_module_locked(event.makerspace, "events")
     require_feature(event, "events.promo_codes")
     amount_off = Decimal(str(amount_off))
-    if not (0 <= percent_off <= 100) or amount_off < 0 or bool(percent_off) == bool(amount_off):
+    ticket_type = None
+    if ticket_type_id is not None:
+        ticket_type = event.ticket_types.filter(pk=ticket_type_id).first()
+        if ticket_type is None:
+            raise ValidationError({"ticket_type_id": "Choose a ticket type of this event."})
+    if kind == "access":
+        # Release 2 L6 (G29): an access code unlocks one hidden ticket type and discounts nothing.
+        require_feature(event, "events.orders")
+        if ticket_type is None or percent_off or amount_off:
+            raise ValidationError("An access code names one ticket type and gives no discount.")
+    elif not (0 <= percent_off <= 100) or amount_off < 0 or bool(percent_off) == bool(amount_off):
         raise ValidationError("Choose one positive percentage or amount discount.")
     if max_uses < 1 or (expires_at and expires_at <= timezone.now()):
         raise ValidationError("Use a positive limit and future expiry.")
@@ -29,6 +40,7 @@ def create_promo(event, *, actor, code="", percent_off=0, amount_off=0, max_uses
     promo = EventPromoCode.objects.create(
         event=event, makerspace=event.makerspace, code_digest=digest,
         percent_off=percent_off, amount_off=amount_off, max_uses=max_uses, expires_at=expires_at,
+        kind=kind, applies_per=applies_per, ticket_type=ticket_type,
     )
     _audit(event, actor, "event.promo_created", promo)
     return promo, code
@@ -39,7 +51,7 @@ def redeem_promo(event, code, amount):
     promo = EventPromoCode.objects.select_for_update().filter(
         event=event, makerspace=event.makerspace, code_digest=code_digest(code, "promo"),
     ).first()
-    if not promo or promo.revoked_at or promo.uses >= promo.max_uses or (
+    if not promo or promo.kind != "discount" or promo.revoked_at or promo.uses >= promo.max_uses or (
         promo.expires_at and promo.expires_at <= timezone.now()
     ):
         raise NotFound("Promo code not found.")

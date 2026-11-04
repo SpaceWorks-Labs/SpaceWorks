@@ -10,7 +10,8 @@ balance, are settled by provider webhooks and block account deletion. An entitle
 that nobody has approved must do none of those things.
 
 `RefundPolicy` is one row per (makerspace, area). With no row the computed due is zero
-and staff decide case by case. There is no per-event override in v1 (owner decision 60).
+and staff decide case by case. An event may carry its own override (lane L6, #69/#71), read
+through `refund_policy.area_policy`; after its first sale it may only become more generous.
 """
 
 from django.core.validators import MaxValueValidator
@@ -59,6 +60,11 @@ class RefundCase(models.Model):
         CAPTURE_FLAGGED = "capture_flagged", "Unexpected online capture"
         #: Staff waived a loan fee the member had already paid (lane L15, A14).
         FEE_WAIVED = "fee_waived", "Loan fee waived by staff"
+        #: Lane L6: a paid order that could not be seated, a cheaper ticket type, and a
+        #: series-pass occurrence the space cancelled (the organiser's partial amount).
+        ORDER_UNFULFILLED = "order_unfulfilled", "Order could not be seated"
+        TICKET_TYPE_CHANGED = "ticket_type_changed", "Changed to a cheaper ticket"
+        PASS_OCCURRENCE_CANCELLED = "pass_occurrence_cancelled", "Pass occurrence cancelled"
 
     payment = models.ForeignKey(Payment, on_delete=models.PROTECT, related_name="refund_cases")
     kind = models.CharField(max_length=16, choices=Kind.choices)

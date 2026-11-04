@@ -151,3 +151,5 @@ from .origin_scope_routes_r2_l16 import MODEL_LOOKUPS as R2_L16_LOOKUPS
 MODEL_LOOKUPS.update(R2_L16_LOOKUPS)
 from .origin_scope_routes_r2_l3 import MODEL_LOOKUPS as R2_L3_LOOKUPS  # noqa: E402
 MODEL_LOOKUPS.update(R2_L3_LOOKUPS)
+from .origin_scope_routes_r2_l6 import MODEL_LOOKUPS as R2_L6_LOOKUPS
+MODEL_LOOKUPS.update(R2_L6_LOOKUPS)

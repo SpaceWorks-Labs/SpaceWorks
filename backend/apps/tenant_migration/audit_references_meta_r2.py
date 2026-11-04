@@ -16,8 +16,9 @@ def lane_edges():
     from .audit_references_r2_l10 import EDGES as l10
     from .audit_references_r2_l15 import EDGES as l15
     from .audit_references_r2_l8 import EDGES as l8
+    from .audit_references_r2_l6 import EDGES as l6
 
     edges = {}
-    for lane in (l5, l15, l10, l12, account_merge, l23, l16, l3, l8):
+    for lane in (l5, l15, l10, l12, account_merge, l23, l16, l3, l8, l6):
         edges.update(lane)
     return edges

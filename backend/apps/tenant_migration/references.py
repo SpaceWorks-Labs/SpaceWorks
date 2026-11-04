@@ -95,6 +95,9 @@ PAYMENT_SUBJECT_REFERENCES = {
     # Lane L6: one order of several tickets; one hosting fee per event.
     "event_order": "events.EventOrder",
     "event_venue_fee": "events.EventVenueFee",
+    # Lane L18: one gift (or one pledge period); one sponsor payment.
+    "donation": "payments.Donation",
+    "sponsorship": "payments.SponsorshipCharge",
 }
 
 NOTIFICATION_URL_ROUTES = (

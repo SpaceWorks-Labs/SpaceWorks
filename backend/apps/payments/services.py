@@ -42,11 +42,17 @@ def create_payment(
     # from being able to collect it online: a space that takes cash still needs the debt
     # on the books, visible in the member area and settleable by staff. The row is stamped
     # `unclaimed` and the first checkout that reaches a provider claims it.
-    require_member_account(member)
+    # Lane L18: a guest's donation and a sponsor organisation's payment belong to no account.
+    if member is not None or subject_type not in Payment.ACCOUNTLESS_SUBJECT_TYPES:
+        require_member_account(member)
     # Tax is frozen once, here, the single seam every domain raises charges through. With
     # `billing.tax` off this returns the amount unchanged and no snapshot (release 1).
+    # A gift (lane L18) is never a taxable supply.
     from apps.payments.tax.snapshot import freeze_for_charge
-    amount, tax_snapshot = freeze_for_charge(makerspace, amount, currency, member)
+    if subject_type in Payment.UNTAXED_SUBJECT_TYPES:
+        tax_snapshot = None
+    else:
+        amount, tax_snapshot = freeze_for_charge(makerspace, amount, currency, member)
     source = resolve_payment_source(makerspace)
     if source is None:
         vendor = Payment.Provider.UNCLAIMED

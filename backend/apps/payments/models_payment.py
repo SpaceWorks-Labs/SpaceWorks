@@ -27,6 +27,10 @@ class Payment(models.Model):
         # venue fee is an outside organiser's hosting charge (subject_id = EventVenueFee id).
         EVENT_ORDER = "event_order", "Event ticket order"
         EVENT_VENUE_FEE = "event_venue_fee", "Event venue fee"
+        # Lane L18. A donation (one-off, or one period of a pledge; subject_id = Donation id)
+        # and a sponsor's agreed payment (subject_id = SponsorshipCharge id).
+        DONATION = "donation", "Donation"
+        SPONSORSHIP = "sponsorship", "Sponsorship"
 
     #: Subjects whose subject_id is the HardwareRequest id.
     LOAN_SUBJECT_TYPES = ("loan_deposit", "loan_late_fee", "loan_rental")
@@ -34,6 +38,10 @@ class Payment(models.Model):
     LOAN_ACCOUNTABILITY_SUBJECT_TYPES = ("loan_damage", "loan_lost")
     #: Lane L6: event money that is not one registration's own charge.
     EVENT_SUBJECT_TYPES = ("event_registration", "event_order", "event_venue_fee")
+    #: Lane L18: money that may belong to no account (a guest donor, a sponsor organisation).
+    ACCOUNTLESS_SUBJECT_TYPES = ("donation", "sponsorship")
+    #: Lane L18: a gift is never a taxable supply, so no tax is frozen on top of it.
+    UNTAXED_SUBJECT_TYPES = ("donation",)
 
     class Status(models.TextChoices):
         PENDING = "pending", "Pending"

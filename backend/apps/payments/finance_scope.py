@@ -45,6 +45,10 @@ PAYMENT_DOMAINS = {
     # Lane L6: ticket orders and venue fees are events income.
     "event_order": "events",
     "event_venue_fee": "events",
+    # Lane L18: donations and sponsorship are the ledger's `donations` domain (#94), which only
+    # finance staff and the Space Manager see.
+    "donation": "donations",
+    "sponsorship": "donations",
 }
 
 

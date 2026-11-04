@@ -165,6 +165,17 @@ export const FEATURE_DEFINITIONS: readonly FeatureDefinition[] = [
   { key: "events.desk_collect", parent_module: "events", label: "Collect payment at the desk" },
   { key: "events.refund_override", parent_module: "events", label: "Per-event refund policy" },
   { key: "events.venue_fees", parent_module: "events", label: "Venue fees for hosting" },
+  // L18 (#94, #96, #128 C-14): donations, sponsors and calendar sync.
+  { key: "finance.donations", parent_module: null, label: "Donations" },
+  { key: "finance.recurring_donations", parent_module: null, label: "Recurring donations" },
+  { key: "finance.sponsors", parent_module: null, label: "Sponsors" },
+  { key: "finance.tax_exempt_receipts", parent_module: null, label: "Tax-exempt donation receipts" },
+  { key: "payments.donations", parent_module: "payments", label: "Donation payments" },
+  { key: "bookings.calendar_feed", parent_module: "bookings", label: "Booking calendar feed" },
+  { key: "events.calendar_feed", parent_module: "events", label: "Event calendar feed" },
+  { key: "events.shifts_feed", parent_module: "events", label: "Shift calendar feed" },
+  { key: "calendar.combined_feed", parent_module: null, label: "Combined personal calendar" },
+  { key: "events.public_feed", parent_module: "events", label: "Public events calendar" },
 ];
 
 export function featureEnabled(features: Iterable<string>, key: string) {

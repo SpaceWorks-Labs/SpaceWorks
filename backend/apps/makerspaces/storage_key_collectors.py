@@ -88,6 +88,8 @@ def collect_public_image_keys(makerspace, *, include_coordination=True):
     )
     from apps.bookings.purge_p2 import photo_keys
     keys.extend(photo_keys(makerspace))
+    from apps.payments.models import Sponsor  # release 2 L18: sponsor logos
+    keys.extend(Sponsor.objects.filter(makerspace=makerspace).values_list("logo_key", flat=True))
     if include_coordination:
         keys.extend(_public_coordination_keys(makerspace))
     return [str(key) for key in dict.fromkeys(keys) if key]

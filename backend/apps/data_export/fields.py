@@ -114,6 +114,8 @@ from .classification_r2_l1 import ALWAYS_OMITTED as _R2_L1_OMITTED  # noqa: E402
 ALWAYS_OMITTED.update(_R2_L1_OMITTED)
 from .classification_r2_l6 import ALWAYS_OMITTED as _R2_L6_OMITTED  # noqa: E402
 ALWAYS_OMITTED.update(_R2_L6_OMITTED)
+from .classification_r2_l18 import ALWAYS_OMITTED as _R2_L18_OMITTED  # noqa: E402
+ALWAYS_OMITTED.update(_R2_L18_OMITTED)
 
 FIVE_CONFIG_FIELDS = {
     ("makerspaces.Makerspace", "branding_config"),

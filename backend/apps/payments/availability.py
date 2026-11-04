@@ -71,6 +71,9 @@ SUBJECT_DOMAINS = {
     # Lane L6: ticket orders and venue fees are events income.
     "event_order": "events",
     "event_venue_fee": "events",
+    # Lane L18: gifts and sponsor money. The rail is `payments.donations`.
+    "donation": "donations",
+    "sponsorship": "donations",
 }
 
 

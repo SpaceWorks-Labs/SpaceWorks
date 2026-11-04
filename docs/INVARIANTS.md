@@ -5452,8 +5452,9 @@ responsibility; local purges never delete shared global organizations or foreign
 - **Anyone may give, but nobody in someone else's name.** A guest proves the email with the #80
   contact code; their contact details live only in the gift's scoped-PII columns and their status
   or pledge link is a Django-signed value binding the row's random secret (FRESH on a tenant move).
-- **The 80G PAN is ALWAYS encrypted** (`encryption_required` in `encryption/registry_r2_l18.py`),
-  collected only with an 80G request, shown as its last four characters (masked entirely for a
+- **The 80G PAN is ALWAYS encrypted** (`encryption_required` in `encryption/registry_r2_l18.py`) on its
+  own `DonorTaxDetail` row (a mandatory field needs the tenant key prepared outside any transaction on
+  every save of its row, so it never sits on the gift or pledge), collected only with an 80G request, shown as its last four characters (masked entirely for a
   superadmin without a PII window), printed in full only on the receipt PDF for the giver and for
   staff who may read the space's PII, and never in an audit row, a frozen receipt snapshot or a
   report. The frozen 80G receipt is insert-once (model guard).

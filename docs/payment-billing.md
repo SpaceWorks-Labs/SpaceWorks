@@ -321,7 +321,7 @@ for gifts and sponsor money is `payments.donations` (needs the `payments` module
   `finance.tax_exempt_receipts` on and the space's registration number and validity set
   (`donations/settings`, Space Manager only), a gift whose giver asked for one freezes an 80G
   receipt (registration, validity, number, amount, date) when it is received; the PDF prints the
-  giver's name, address and PAN from their encrypted columns. The PAN is asked only for an 80G
+  giver's name, address and PAN from their encrypted columns (`DonorTaxDetail`, shared by a pledge's gifts). The PAN is asked only for an 80G
   receipt, validated, always encrypted, shown elsewhere as its last four characters, masked for a
   superadmin without a PII window, and never part of a report.
 - **Money.** Gifts and sponsor money are the ledger's `donations` area, visible to the Space Manager

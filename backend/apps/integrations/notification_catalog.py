@@ -91,6 +91,8 @@ FEATURE_EVENTS[F.EVENTS] += ("order_confirmed", "order_payment_reminder", "order
 # Release 2 L21a: stage advances, attendance confirmation and its replies, crew invites and decisions.
 FEATURE_EVENTS[F.EVENTS] += ("application_stage_advanced", "attendance_confirmation", "attendance_reminder",
                              "attendance_replied", "crew_invited", "crew_decided")
+# Release 2 L21b: published finalists (a per-event switch) and a recorded prize payout to its winner.
+FEATURE_EVENTS[F.EVENTS] += ("finalists_announced", "prize_payout_recorded")
 
 # Exact default on/off per (feature, channel). Preserves today's behavior: hardware/printing
 # email + hardware Telegram on; bookings email (Part J seam) + bookings Telegram on; Slack/

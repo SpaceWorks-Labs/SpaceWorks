@@ -22,7 +22,8 @@ class PrizeRead(TrackRead):
     class Meta:
         model = HackathonPrize
         fields = ("id", "event_id", "version", "allowed_actions", "name", "description", "website_section_id",
-                  "track_id", "sponsor_id", "criteria", "form", "eligibility_rules", "order", "award_count", "winner_selection_mode")
+                  "track_id", "sponsor_id", "criteria", "form", "eligibility_rules", "order", "award_count", "winner_selection_mode",
+                  "amount_per_winner")
 
 
 class CalculationRow(ClosedSerializer):
@@ -62,6 +63,10 @@ class RoundRead(ResultEnvelope, CalculationRead):
     guidance = serializers.CharField(allow_blank=True, required=False)
     exploration = serializers.FloatField(allow_null=True, required=False)
     skipped = serializers.IntegerField()
+    visibility = serializers.CharField(required=False)
+    fresh_eyes = serializers.BooleanField(required=False)
+    panel = IdList(required=False)
+    advanced_from_id = serializers.IntegerField(allow_null=True, required=False)
 
 
 class AssignmentRead(ResultEnvelope):
@@ -122,6 +127,8 @@ class AssignmentPlanRead(ResultEnvelope):
     deficits = serializers.DictField(child=serializers.IntegerField())
     loads = serializers.DictField(child=serializers.IntegerField())
     coverage_complete = serializers.BooleanField()
+    strategy = serializers.CharField(required=False)
+    seed = serializers.CharField(required=False)
 
 
 class ConsentCommandRead(ResultEnvelope):

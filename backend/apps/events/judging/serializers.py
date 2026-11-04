@@ -68,6 +68,8 @@ class TrackInput(CommandInput):
 
 class PrizeInput(TrackInput):
     capacity = None
+    amount_per_winner = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0.01"),
+                                                 allow_null=True, required=False)
     track_id = serializers.IntegerField(min_value=1, allow_null=True, required=False)
     sponsor_id = serializers.IntegerField(min_value=1, allow_null=True, required=False)
     award_count = serializers.IntegerField(min_value=1, max_value=100, required=False)
@@ -101,6 +103,9 @@ class RoundInput(CommandInput):
     exploration = serializers.DecimalField(max_digits=3, decimal_places=2, min_value=Decimal("0"),
                                            max_value=Decimal("0.30"), required=False,
                                            help_text="Pairwise only: share of picks made at random among projects still needing coverage.")
+    visibility = serializers.ChoiceField(choices=("assigned", "all"), required=False)  # L21b round settings
+    fresh_eyes = serializers.BooleanField(required=False)
+    panel = IdList(required=False, help_text="Judge role assignment IDs; empty means every active judge.")
 
     def validate_criteria(self, value):
         if len({row["key"] for row in value}) != len(value):
@@ -109,7 +114,7 @@ class RoundInput(CommandInput):
 
 
 class AssignInput(CommandInput):
-    strategy = serializers.ChoiceField(choices=("balanced", "track", "room"), default="balanced")
+    strategy = serializers.ChoiceField(choices=("balanced", "track", "room", "random"), default="balanced")
     judge_role_assignment_ids = IdList(allow_empty=False)
     max_load = serializers.IntegerField(min_value=1, max_value=2000, default=100)
     seed = serializers.CharField(max_length=64, default="0")

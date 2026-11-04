@@ -20,6 +20,7 @@ def save_definition(event_id, *, actor, kind, data, object_id=None):
             payload = {key: value for key, value in values.items() if key not in ("operation_id", "expected_version")}
             criteria = payload.pop("criteria", None) if model is JudgingRound else None
             options = {key: payload.pop(key) for key in ("guidance", "exploration") if key in payload}
+            panel = payload.pop("panel", None) if model is JudgingRound else None
             row = owned(model, event_id, object_id, expected=values["expected_version"]) if object_id else model(event=event)
             previous_mode = getattr(row, "mode", None) if object_id else None
             if not object_id and values["expected_version"] != 0:
@@ -42,6 +43,9 @@ def save_definition(event_id, *, actor, kind, data, object_id=None):
             else:
                 row.save()
                 audit(event, actor, "definition_created", row, version=row.version)
+            if panel is not None:
+                from .round_settings import replace_panel
+                replace_panel(event, row, panel)
             if criteria is not None:
                 row.criteria.all().delete()
                 for priority, criterion in enumerate(criteria):

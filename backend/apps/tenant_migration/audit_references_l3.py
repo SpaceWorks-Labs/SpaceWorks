@@ -34,8 +34,10 @@ EDGES = {
                  "created", "updated", "fields_updated", "closed", "deleted", "card_requested", "card_added",
                  "card_deleted", "card_linked", "cards_approved", "cards_rejected", "cards_revoked",
                  "cards_reinstated", "cards_renewed", "cards_imported"))),
-    **_remap("organizations.Organization", *((f"card_design.{action}", "acted_for_organization_id")
-                                             for action in ("saved", "published"))),
+    # Organizations are deployment-global and never travel: the acting org is source-local provenance.
+    **{(f"card_design.{action}", "acted_for_organization_id"): AuditReference(
+        AuditReferenceDisposition.SOURCE_LOCAL_SNAPSHOT, "organizations.Organization")
+       for action in ("saved", "published")},
     **_remap("makerspaces.MemberCard", *((f"member_card.{action}", "card_id")
                                          for action in ("auto_issued", "downloaded", "emailed"))),
     **_remap("id_programmes.IdProgrammeCard", *((f"id_programme.{action}", "card_id") for action in (

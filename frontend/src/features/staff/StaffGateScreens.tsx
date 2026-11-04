@@ -1,5 +1,6 @@
+import { Fingerprint, Smartphone } from "lucide-react";
 import { CenteredCardLayout } from "../../components/layouts";
-import { Callout } from "../../components/ui";
+import { MfaReadinessBanner } from "../../components/shell/MfaReadinessBanner";
 import { ThemeToggle } from "../../components/ThemeToggle";
 
 /** Where the console sends someone to set up two-step sign-in, and back again afterwards. */
@@ -17,20 +18,28 @@ export function NoStaffRoleScreen({ memberHref, onSignOut }: { memberHref: strin
     footer={<ThemeToggle />} />;
 }
 
+const FACTORS = [
+  { Glyph: Fingerprint, title: "A passkey", body: "Your fingerprint, face or device PIN. Nothing to type." },
+  { Glyph: Smartphone, title: "An authenticator app", body: "A 6-digit code from an app on your phone." },
+];
+
 /** #128 C-1, after the 3-day grace: staff screens wait for two-step sign-in; member features never do. */
 export function MfaEnrollmentScreen({ memberHref, onSignOut }: { memberHref: string; onSignOut: () => void }) {
   return <CenteredCardLayout state={{ status: "ready" }} media={{ icon: "ShieldCheck", tone: "accent" }}
     eyebrow="Staff console" title="Set up two-step sign-in"
-    body="Staff screens need an authenticator or passkey on your account. It takes a minute; you'll come straight back here. Your member area keeps working meanwhile."
+    body="Staff screens need a second step at sign-in. It takes a minute and you'll come straight back here. Your member area keeps working meanwhile."
+    content={<ul className="grid gap-3" aria-label="Ways to add a second step">
+      {FACTORS.map(({ Glyph, title, body }) => <li key={title} className="flex items-start gap-3 rounded-xl border border-line bg-surface p-4">
+        <Glyph aria-hidden="true" size={20} className="mt-0.5 shrink-0 text-accent-ink" />
+        <span className="grid gap-1"><span className="font-semibold text-ink">{title}</span><span className="text-sm text-muted">{body}</span></span>
+      </li>)}
+    </ul>}
     primary={{ label: "Set up two-step sign-in", href: enrolmentHref() }}
     escape={{ label: "Go to your member area", href: memberHref }}
     footer={<div className="flex flex-wrap items-center justify-between gap-3"><button type="button" className="desk-button-ghost min-h-11" onClick={onSignOut}>Sign out</button><ThemeToggle /></div>} />;
 }
 
-/** The banner shown at each sign-in during the grace (S-D may restyle it; the contract stays). */
+/** The banner shown at each sign-in during the grace (the shell's readiness banner). */
 export function MfaGraceBanner({ endsAt }: { endsAt: string }) {
-  const date = new Date(endsAt).toLocaleString(undefined, { weekday: "long", day: "numeric", month: "long", hour: "numeric", minute: "2-digit" });
-  return <div className="mb-4"><Callout size="banner" tone="warn" lead="Set up two-step sign-in"
-    body={`Staff screens need it from ${date}. Member features are not affected.`}
-    action={{ label: "Set it up now", href: enrolmentHref() }} /></div>;
+  return <div className="mb-4"><MfaReadinessBanner endsAt={endsAt} href={enrolmentHref()} /></div>;
 }

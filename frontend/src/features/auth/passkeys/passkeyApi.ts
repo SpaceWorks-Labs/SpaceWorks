@@ -6,8 +6,6 @@ import { publicV1Request, staffRequest } from "../../../lib/api";
 import { mfaRequest } from "../mfaApi";
 import { createPasskey, getPasskeyAssertion } from "./webauthn";
 
-export const passkeysKey = ["passkeys"] as const;
-
 const post = (body: unknown) => ({ method: "POST", body: JSON.stringify(body) });
 
 export const listPasskeys = () => staffRequest<PasskeyList>("/auth/passkeys");

@@ -1,5 +1,5 @@
-"""Analytics routes: one set per space (``admin/makerspaces/<id>/analytics/...``) and one for
-the platform (``admin/platform/analytics/...``), sharing every handler. Failures the
+"""Analytics routes: one set per space (``admin/makerspaces/<id>/metabase/...``) and one for
+the platform (``admin/platform/metabase/...``), sharing every handler. Failures the
 console must explain (not available here, could not create the login, not configured) are
 typed 409/503 bodies, never a 500."""
 

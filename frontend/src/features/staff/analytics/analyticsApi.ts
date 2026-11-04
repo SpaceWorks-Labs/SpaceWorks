@@ -39,7 +39,7 @@ export type AnalyticsCredentials = {
 export type AnalyticsEmbed = { url: string; expires_at: string };
 
 export function analyticsBase(scope: AnalyticsScope) {
-  return scope.kind === "platform" ? "/admin/platform/analytics" : `/admin/makerspaces/${scope.makerspaceId}/analytics`;
+  return scope.kind === "platform" ? "/admin/platform/metabase" : `/admin/makerspaces/${scope.makerspaceId}/metabase`;
 }
 
 const scopeKey = (scope: AnalyticsScope) => (scope.kind === "platform" ? "platform" : scope.makerspaceId);

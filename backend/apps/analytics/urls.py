@@ -9,8 +9,8 @@ from .api import (
     AnalyticsSummaryView, platform,
 )
 
-SPACE = "makerspaces/<int:makerspace_id>/analytics"
-PLATFORM = "platform/analytics"
+SPACE = "makerspaces/<int:makerspace_id>/metabase"
+PLATFORM = "platform/metabase"
 
 urlpatterns = [
     path(SPACE, AnalyticsSummaryView.as_view(), name="admin-makerspace-analytics"),

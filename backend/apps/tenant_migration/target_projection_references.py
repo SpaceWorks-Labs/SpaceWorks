@@ -72,3 +72,7 @@ FK_POLICIES.update(_r2_l5_fk_policies(ForeignKeyPolicy, ReferenceDisposition))
 # Release 2 L23: a machine session's type resolves through the built-in/custom type map.
 FK_POLICIES[("machines.MachineSession", "machine_type")] = ForeignKeyPolicy(
     ReferenceDisposition.REMAP_RESOLVED, "Use the built-in/custom machine type map.")
+# Release 2 L16: technician coverage and default recipients resolve their type the same way.
+for _l16_model in ("maintenance.TechnicianCoverage", "maintenance.TechnicianDefault"):
+    FK_POLICIES[(_l16_model, "machine_type")] = ForeignKeyPolicy(
+        ReferenceDisposition.REMAP_RESOLVED, "Use the built-in/custom machine type map.")

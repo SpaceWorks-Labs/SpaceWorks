@@ -103,6 +103,10 @@ from apps.operations.report_definitions_membership_l4 import L4_MEMBERSHIP_REPOR
 EXCLUDED_ORGANIZATION_REPORT_KEYS = EXCLUDED_ORGANIZATION_REPORT_KEYS | L4_MEMBERSHIP_REPORT_KEYS
 from apps.operations.report_definitions_machine_sessions import SESSION_REPORT_KEYS  # noqa: E402
 EXCLUDED_ORGANIZATION_REPORT_KEYS = EXCLUDED_ORGANIZATION_REPORT_KEYS | SESSION_REPORT_KEYS
+# RP-5 repairs family: rows are narrowed to one viewer's areas and jobs in one space, the
+# workload names technicians, and median repair hours cannot be summed across spaces.
+from apps.operations.report_definitions_repairs import REPAIRS_REPORT_KEYS  # noqa: E402
+EXCLUDED_ORGANIZATION_REPORT_KEYS = EXCLUDED_ORGANIZATION_REPORT_KEYS | REPAIRS_REPORT_KEYS
 
 
 # Phase 1f F/G adds explicit local-period strategies and exposed denominators.

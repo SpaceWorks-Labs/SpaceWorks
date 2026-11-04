@@ -17,6 +17,7 @@ from apps.operations.reports_inventory import (
 from apps.operations.reports_typed import typed_report_rows, typed_result_rows
 from apps.operations.report_output import project_report_output
 from apps.operations.report_definitions_finance_l5 import L5_ACTOR_REPORT_KEYS
+from apps.operations.report_definitions_repairs import REPAIRS_ACTOR_REPORT_KEYS
 
 
 DEFAULT_REPORT_LIMIT = 100
@@ -41,7 +42,7 @@ def report_data(
         kwargs["actor"] = actor
     if report_key in {"member-retention", "membership-revenue", "membership-growth", "payments-ageing", "revenue-over-time", "cash-book", "payment-reconciliation", "refunds"}:
         kwargs["actor"] = actor
-    if report_key in L5_ACTOR_REPORT_KEYS:
+    if report_key in L5_ACTOR_REPORT_KEYS or report_key in REPAIRS_ACTOR_REPORT_KEYS:
         kwargs["actor"] = actor
     from .report_definitions_machines import MACHINE_REPORT_KEYS
     if report_key in MACHINE_REPORT_KEYS or report_key in {"consumable-usage", "consumable-pools", "procurement-performance", "overdue-loans", "longest-loans", "qr-scan-actors"}:
@@ -96,7 +97,7 @@ def report_rows(
         kwargs["actor"] = actor
     if report_key in {"member-retention", "membership-revenue", "membership-growth", "payments-ageing", "revenue-over-time", "cash-book", "payment-reconciliation", "refunds"}:
         kwargs["actor"] = actor
-    if report_key in L5_ACTOR_REPORT_KEYS:
+    if report_key in L5_ACTOR_REPORT_KEYS or report_key in REPAIRS_ACTOR_REPORT_KEYS:
         kwargs["actor"] = actor
     from .report_definitions_machines import MACHINE_REPORT_KEYS
     if report_key in MACHINE_REPORT_KEYS or report_key in {"consumable-usage", "consumable-pools", "procurement-performance", "overdue-loans", "longest-loans", "qr-scan-actors"}:

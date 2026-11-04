@@ -96,6 +96,13 @@ REPORT_MODULE_COVERAGE.update({
     "payments": ModuleReportCoverage("substantive", (*REPORT_MODULE_COVERAGE["payments"].reports, "revenue-over-time", "payments-ageing", "cash-book")),
 })
 REPORT_MODULE_COVERAGE["devices"] = ModuleReportCoverage("substantive", ("device-health", "module-operational-health"))
+# RP-5: the repairs family documents the per-parent repair and maintenance switches (#128 C-9),
+# whose machine side lives with the machines module and the retired `maintenance` area.
+from apps.operations.report_definitions_repairs import REPAIRS_REPORT_KEYS as _REPAIRS_KEYS  # noqa: E402
+for _module in ("maintenance", "machines"):
+    REPORT_MODULE_COVERAGE[_module] = ModuleReportCoverage(
+        REPORT_MODULE_COVERAGE[_module].kind,
+        tuple(dict.fromkeys((*REPORT_MODULE_COVERAGE[_module].reports, *sorted(_REPAIRS_KEYS)))))
 
 
 @checks.register(checks.Tags.models)

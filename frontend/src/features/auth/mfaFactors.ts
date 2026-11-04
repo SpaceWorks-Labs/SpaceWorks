@@ -31,7 +31,7 @@ export function stepCopy(challenge: MfaChallenge, factor: MfaFactor) {
   const risk = challenge.purpose === "risk" ? `${RISK} ` : "";
   if (challenge.enrollment_required) {
     return { title: "Set up two-step sign-in", label: "Authenticator code",
-      body: "Add Space Works to your authenticator app to secure this account. Staff need two-step sign-in before the staff console opens." };
+      body: "Add Space Works to your authenticator app to secure this account. Staff need two-step sign-in before the staff console opens. Once you're signed in you can also add a passkey from Account security." };
   }
   if (factor === "passkey") {
     return { title: "Use your passkey", label: "",

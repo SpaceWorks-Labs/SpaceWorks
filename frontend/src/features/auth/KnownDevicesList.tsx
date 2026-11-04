@@ -22,10 +22,11 @@ export function KnownDevicesList() {
   } });
   if (query.isLoading) return <p role="status" className="text-sm text-muted">Loading devices…</p>;
   if (query.error) return <ErrorText message={authErrorMessage(query.error, "Couldn't load your devices. Try again.")} onRetry={() => void query.refetch()} />;
-  const devices = query.data ?? [];
-  const label = (device: KnownDevice) => device.ua_label || "Unknown device";
+  const devices = query.data?.devices ?? [];
+  const days = query.data?.remembered_days;
+  const label = (device: KnownDevice) => device.label || "Unknown device";
   return <div className="grid gap-4">
-    <p className="text-sm text-muted">After a sign-in passes the extra check, we remember that browser so it isn't asked every time. Forget any you don't recognise.</p>
+    <p className="text-sm text-muted">After a sign-in passes the extra check, we remember that browser so it isn't asked every time{days ? ` (for ${days} ${days === 1 ? "day" : "days"} after its last sign-in)` : ""}. A remembered device never skips two-step sign-in. Forget any you don't recognise.</p>
     {devices.length ? <ul className="grid gap-3">{devices.map(device => <li key={device.id}><ListRow title={label(device)}
       identityContent={<span aria-hidden="true" className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-line bg-surface text-accent-ink"><Smartphone size={20} /></span>}
       meta={<>Last checked <RelativeTime date={device.last_verified_at} /></>}

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { CenteredCardLayout } from "../../components/layouts";
 import { authErrorMessage } from "../../lib/api/authErrorCopy";
-import { reportNotMe } from "./notMeApi";
+import { reportNotMe, type NotMeResult } from "./notMeApi";
 
 // The token survives a second render (React's strict mode runs state initialisers twice) but
 // never the address bar: it is read from `#token=` and the fragment is dropped at once.
@@ -25,8 +25,12 @@ function useNoReferrer() {
   }, []);
 }
 
-const RESET_RULE = "Your two-step sign-in was not changed. If you can't use it, the platform administrator can reset it; "
-  + "a Space Manager can too when all your staff roles are in their space and you are not a Space Manager there.";
+/** Who the MFA-reset rule lets reset two-step sign-in for this person, from the server's answer. */
+function resetRule(result: NotMeResult) {
+  const spaces = result.mfa_reset.space_managers_of.map(space => space.name);
+  const managers = spaces.length ? ` or the Space Manager of ${spaces.join(", ")}` : "";
+  return `Your passkeys and authenticator app were not changed. If you can't use them, ask the platform administrator${managers} to reset two-step sign-in.`;
+}
 
 /**
  * "This wasn't me" from a security alert email (`/security/not-me#token=...`). Nothing happens on
@@ -35,29 +39,31 @@ const RESET_RULE = "Your two-step sign-in was not changed. If you can't use it, 
 export function NotMePage() {
   useNoReferrer();
   const [token] = useState(takeFragmentToken);
-  const [state, setState] = useState<"ready" | "sending" | "done">("ready");
+  const [state, setState] = useState<"ready" | "sending">("ready");
+  const [result, setResult] = useState<NotMeResult>();
   const [error, setError] = useState("");
   const send = async () => {
     setState("sending"); setError("");
-    try { await reportNotMe(token); heldToken = ""; setState("done"); }
+    try { setResult(await reportNotMe(token)); heldToken = ""; }
     catch (failure) { setState("ready"); setError(authErrorMessage(failure, "We couldn't secure your account just now. Try again, or reset your password.")); }
   };
+  if (result) {
+    return <CenteredCardLayout state={{ status: "ready" }} media={{ icon: "ShieldCheck", tone: "success" }} title="Your account is secured"
+      body={<div className="grid gap-3" role="status"><p>We signed you out on every device, forgot your remembered devices and turned off your old password.</p>
+        <p>{result.password_reset_requested ? "We emailed you a code to choose a new password. Use it to sign in again."
+          : "Choose a new password from the reset page to sign in again."}</p><p>{resetRule(result)}</p></div>}
+      primary={{ label: "Choose a new password", href: "/reset-password" }} />;
+  }
   if (!token) {
     return <CenteredCardLayout state={{ status: "ready" }} media={{ icon: "ShieldAlert", tone: "warn" }} title="This link is incomplete"
       body="Open the link from the security email again. If it still doesn't work, reset your password to secure your account."
       primary={{ label: "Reset your password", href: "/reset-password" }} />;
   }
-  if (state === "done") {
-    return <CenteredCardLayout state={{ status: "ready" }} media={{ icon: "ShieldCheck", tone: "success" }} title="Your account is secured"
-      body={<div className="grid gap-3" role="status"><p>We signed you out on every device, forgot your remembered devices and turned off your old password.</p>
-        <p>We emailed you a link to choose a new password. Use it to sign in again.</p><p>{RESET_RULE}</p></div>}
-      primary={{ label: "Go to sign-in", href: "/member" }} />;
-  }
   return <CenteredCardLayout state={{ status: "ready" }} media={{ icon: "ShieldAlert", tone: "warn" }} eyebrow="Security alert"
     title="Didn't do this?"
     body={<div className="grid gap-3"><p>If you don't recognise the activity in the email, secure your account now. This will:</p>
       <ul className="grid list-disc gap-1 pl-5"><li>sign you out on every device and app;</li><li>forget the devices we remembered for you;</li>
-        <li>turn off your current password and email you a link to choose a new one.</li></ul>
+        <li>turn off your current password and email you a code to choose a new one.</li></ul>
       <p>Your passkeys and authenticator app stay as they are.</p></div>}
     content={error ? <p role="alert" className="text-sm text-danger">{error}</p> : undefined}
     primary={{ label: "Secure my account", pending: state === "sending", pendingLabel: "Securing your account…", onClick: () => void send() }}

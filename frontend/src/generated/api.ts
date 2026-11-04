@@ -73,6 +73,7 @@ export const openApiTags = [
   "Event reimbursements",
   "Event resumes",
   "Event series",
+  "Event staff lists",
   "Event stage files",
   "Event stage forms",
   "Event submissions",
@@ -368,6 +369,10 @@ export const openApiPaths = [
   "/api/v1/admin/events/{id}/feedback-survey/close/",
   "/api/v1/admin/events/{id}/feedback-survey/open/",
   "/api/v1/admin/events/{id}/feedback-survey/templates/",
+  "/api/v1/admin/events/{id}/finalists/",
+  "/api/v1/admin/events/{id}/finalists/apply/",
+  "/api/v1/admin/events/{id}/finalists/preview/",
+  "/api/v1/admin/events/{id}/finalists/publish/",
   "/api/v1/admin/events/{id}/forms/{form_key}/",
   "/api/v1/admin/events/{id}/forms/{form_key}/validate/",
   "/api/v1/admin/events/{id}/gallery/",
@@ -403,6 +408,7 @@ export const openApiPaths = [
   "/api/v1/admin/events/{id}/judging-rounds/{round_id}/assign/",
   "/api/v1/admin/events/{id}/judging-rounds/{round_id}/close/",
   "/api/v1/admin/events/{id}/judging-rounds/{round_id}/finalize/",
+  "/api/v1/admin/events/{id}/judging-rounds/{round_id}/next-project/",
   "/api/v1/admin/events/{id}/judging-rounds/{round_id}/open/",
   "/api/v1/admin/events/{id}/judging-rounds/{round_id}/pairwise/",
   "/api/v1/admin/events/{id}/judging-rounds/{round_id}/pairwise/compare/",
@@ -410,7 +416,10 @@ export const openApiPaths = [
   "/api/v1/admin/events/{id}/judging-rounds/{round_id}/pairwise/recuse/",
   "/api/v1/admin/events/{id}/judging-rounds/{round_id}/pairwise/skip/",
   "/api/v1/admin/events/{id}/judging-rounds/{round_id}/pairwise/standings/",
+  "/api/v1/admin/events/{id}/judging-rounds/{round_id}/progress/",
   "/api/v1/admin/events/{id}/judging-signals/",
+  "/api/v1/admin/events/{id}/lists/{list_key}/",
+  "/api/v1/admin/events/{id}/lists/{list_key}/export/",
   "/api/v1/admin/events/{id}/mentor-alert-routes/",
   "/api/v1/admin/events/{id}/mentor-analytics/",
   "/api/v1/admin/events/{id}/mentor-assignments/",
@@ -435,8 +444,11 @@ export const openApiPaths = [
   "/api/v1/admin/events/{id}/organizers/",
   "/api/v1/admin/events/{id}/pairwise-rounds/",
   "/api/v1/admin/events/{id}/participation-settings/",
+  "/api/v1/admin/events/{id}/prize-payouts/",
+  "/api/v1/admin/events/{id}/prize-payouts/{payout_id}/reverse/",
   "/api/v1/admin/events/{id}/prizes/",
   "/api/v1/admin/events/{id}/prizes/{prize_id}/",
+  "/api/v1/admin/events/{id}/programme-options/",
   "/api/v1/admin/events/{id}/programme/live/",
   "/api/v1/admin/events/{id}/programme/publishing/",
   "/api/v1/admin/events/{id}/programme/readiness/",
@@ -461,6 +473,7 @@ export const openApiPaths = [
   "/api/v1/admin/events/{id}/results/finalize/",
   "/api/v1/admin/events/{id}/results/preview/",
   "/api/v1/admin/events/{id}/results/publish/",
+  "/api/v1/admin/events/{id}/results/send-email/",
   "/api/v1/admin/events/{id}/roles/",
   "/api/v1/admin/events/{id}/roles/{assignment_id}/",
   "/api/v1/admin/events/{id}/roles/{assignment_id}/admit/",
@@ -1119,6 +1132,7 @@ export const openApiPaths = [
   "/api/v1/auth/change-password",
   "/api/v1/auth/claim/redeem",
   "/api/v1/auth/device/attestation-challenge",
+  "/api/v1/auth/device/event-grant",
   "/api/v1/auth/device/grants",
   "/api/v1/auth/device/grants/{grant_id}",
   "/api/v1/auth/device/login",
@@ -1399,6 +1413,8 @@ export const openApiPaths = [
   "/api/v1/member/makerspaces/{makerspace_id}/events/{id}/teams/{team_id}/assets/{asset_id}/parts/",
   "/api/v1/member/makerspaces/{makerspace_id}/events/{id}/teams/{team_id}/assets/{asset_id}/resume/",
   "/api/v1/member/makerspaces/{makerspace_id}/events/{id}/teams/{team_id}/cancel/",
+  "/api/v1/member/makerspaces/{makerspace_id}/events/{id}/teams/{team_id}/charges/",
+  "/api/v1/member/makerspaces/{makerspace_id}/events/{id}/teams/{team_id}/charges/entry-fee/",
   "/api/v1/member/makerspaces/{makerspace_id}/events/{id}/teams/{team_id}/comments/",
   "/api/v1/member/makerspaces/{makerspace_id}/events/{id}/teams/{team_id}/gallery-consent/",
   "/api/v1/member/makerspaces/{makerspace_id}/events/{id}/teams/{team_id}/gallery-consent/grant/",
@@ -2820,7 +2836,7 @@ export type AssignInput = {
   "dry_run"?: boolean;
 };
 
-export type AssignInputStrategyEnum = "balanced" | "track" | "room";
+export type AssignInputStrategyEnum = "balanced" | "track" | "room" | "random";
 
 export type AssignmentDecision = {
   "team_id": number;
@@ -2882,6 +2898,8 @@ export type AssignmentPlanRead = {
   [key: string]: number;
 };
   "coverage_complete": boolean;
+  "strategy"?: string;
+  "seed"?: string;
 };
 
 export type AssignmentPreview = {
@@ -3091,7 +3109,7 @@ export type AuthMembership = {
 
 export type AuthMembershipSourceEnum = "membership" | "organization";
 
-export type AuthorityEnum = "member" | "staff";
+export type Authority817Enum = "member" | "staff";
 
 export type AuthStaffRole = {
   "id": number;
@@ -6594,19 +6612,29 @@ export type DeviceError = {
   "detail": string;
 };
 
+export type DeviceEventGrant = {
+  "event_id": number;
+  "challenge": string;
+  "attestation": DeviceAttestationPayload;
+  "app_version"?: string;
+};
+
 export type DeviceGrant = {
   "id": string;
   "platform": DevicePlatformEnum;
   "app_id": string;
   "environment": string;
   "status": string;
-  "authority": AuthorityEnum;
+  "authority": DeviceGrantAuthorityEnum;
   "staff_makerspace_id": number | null;
+  "event_id"?: number | null;
   "login_method": string;
   "attested_at": string;
   "last_used_at": string;
   "created_at": string;
 };
+
+export type DeviceGrantAuthorityEnum = "member" | "staff" | "event";
 
 export type DeviceGrantPage = {
   "count": number;
@@ -6638,7 +6666,7 @@ export type DeviceLogin = {
   "platform": DevicePlatformEnum;
   "app_id": string;
   "environment": EnvironmentEnum;
-  "authority"?: AuthorityEnum;
+  "authority"?: Authority817Enum;
   "makerspace"?: string;
   "username": string;
   "password": string;
@@ -8056,6 +8084,16 @@ export type EventSpeakerList = {
 
 export type EventSpeakerStatusEnum = "linked" | "invited" | "removed";
 
+export type EventStaffListPage = {
+  "count": number;
+  "next": string | null;
+  "previous": string | null;
+  "columns": Array<string>;
+  "results": Array<{
+  [key: string]: unknown;
+}>;
+};
+
 export type EventStaffRegistration = {
   "custom_answers"?: unknown | null;
   "answers"?: unknown | null;
@@ -8378,6 +8416,60 @@ export type FileStatus = {
   "sha256": string;
   "scan_status": string;
   "error_code": string;
+};
+
+export type FinalistAdvanceRead = {
+  "id": number;
+  "event_id": number;
+  "source_round_id": number;
+  "target_round_id": number;
+  "selection": string;
+  "top_n": number | null;
+  "created_at": string;
+  "current": boolean;
+  "published_at": string | null;
+  "finalists": Array<FinalistRow>;
+  "allowed_actions": Array<string>;
+};
+
+export type FinalistAdvanceReadPage = {
+  "count": number;
+  "next": string | null;
+  "previous": string | null;
+  "results": Array<FinalistAdvanceRead>;
+};
+
+export type FinalistApplyInput = {
+  "operation_id": string;
+  "expected_version": number;
+  "source_round_id": number;
+  "target_round_id": number;
+  "selection": SelectionEnum;
+  "top_n"?: number;
+  "snapshot_ids"?: Array<number>;
+  "fingerprint": string;
+};
+
+export type FinalistPreviewRead = {
+  "source_round_id": number;
+  "target_round_id": number;
+  "selection": string;
+  "top_n": number | null;
+  "tied_at_cutoff": boolean;
+  "fingerprint": string;
+  "finalists": Array<FinalistRow>;
+};
+
+export type FinalistPublishInput = {
+  "operation_id": string;
+  "expected_version": number;
+  "advance_id": number;
+};
+
+export type FinalistRow = {
+  "snapshot_id": number;
+  "title": string;
+  "source_rank": number | null;
 };
 
 export type FinalizeRoundInput = {
@@ -8903,6 +8995,9 @@ export type GalleryEntryRead = {
   "links": Array<GalleryLinkRead>;
   "members": Array<GalleryMemberRead>;
   "content_sha256": string;
+  "awards"?: Array<{
+  [key: string]: unknown;
+}>;
 };
 
 export type GalleryEntryReadPage = {
@@ -10324,6 +10419,15 @@ export type JournalLine = {
   "debit": string;
   "credit": string;
   "settlement_method": string;
+};
+
+export type JudgeProgressRow = {
+  "judge_role_assignment_id": number;
+  "name": string;
+  "assigned": number;
+  "submitted": number;
+  "withdrawn": number;
+  "completion": number;
 };
 
 export type Key292Enum = "in_app" | "email" | "telegram" | "slack" | "mattermost" | "discord" | "webhook" | "native_push" | "sms" | "whatsapp";
@@ -12356,7 +12460,7 @@ export type MemberNotice = {
 
 export type MemberPayment = {
   "id": number;
-  "subject_type": SubjectTypeE0cEnum;
+  "subject_type": SubjectType724Enum;
   "subject_label": string;
   "status"?: Status66aEnum;
   "amount": string;
@@ -13507,6 +13611,14 @@ export type NeedsFixActionActionEnum = "repair" | "scrap" | "shelve";
 
 export type NegativesEnum = "allow" | "clip";
 
+export type NextProjectRead = {
+  "assignment_id": number | null;
+  "snapshot_id": number | null;
+  "reason": NextProjectReadReasonEnum;
+};
+
+export type NextProjectReadReasonEnum = "started" | "fewest_reviews" | "none";
+
 export type NextUpEvent = {
   "id": number;
   "title": string;
@@ -13814,6 +13926,23 @@ export type OptionalConsent = {
 
 export type OptionalConsents = {
   "mlh_data_sharing"?: boolean;
+};
+
+export type OptionsRead = {
+  "id": number;
+  "event_id": number;
+  "version": number;
+  "state"?: string;
+  "allowed_actions": Array<string>;
+  "results_email": boolean;
+  "submission_receipt_email": boolean;
+  "finalists_email": boolean;
+  "refund_on_disqualification": boolean;
+  "entry_fee": string | null;
+  "team_fee": string | null;
+  "currency": string;
+  "results_email_sent": boolean;
+  "published_result_version": number | null;
 };
 
 export type Order = {
@@ -14221,6 +14350,14 @@ export type OutboxHealthKindEnum = "email" | "personal_envelope" | "personal_del
 export type Outcome860Enum = "all_good" | "issue" | "damaged" | "left_early";
 
 export type OutcomeA1aEnum = "succeeded" | "retryable_failed" | "failed";
+
+export type OutlierRow = {
+  "snapshot_id": number;
+  "judge_role_assignment_id": number;
+  "score": string;
+  "project_mean": string;
+  "rule": RuleEnum;
+};
 
 export type OverdueSchedule = {
   "id": number;
@@ -16425,6 +16562,17 @@ export type PatchedNotificationRulesPatch = {
   "preferences"?: Array<NotificationPreferenceChange>;
 };
 
+export type PatchedOptionsInput = {
+  "operation_id"?: string;
+  "expected_version"?: number;
+  "results_email"?: boolean;
+  "submission_receipt_email"?: boolean;
+  "finalists_email"?: boolean;
+  "refund_on_disqualification"?: boolean;
+  "entry_fee"?: string | null;
+  "team_fee"?: string | null;
+};
+
 export type PatchedOrganizationMembershipUpdate = {
   "status"?: StatusE75Enum;
   "governance_actions"?: Array<string>;
@@ -16608,6 +16756,7 @@ export type PatchedPrizeInput = {
   [key: string]: Array<string>;
 };
   "order"?: number;
+  "amount_per_winner"?: string | null;
   "track_id"?: number | null;
   "sponsor_id"?: number | null;
   "award_count"?: number;
@@ -16798,6 +16947,9 @@ export type PatchedRoundInput = {
   "criteria"?: Array<CriterionInput>;
   "guidance"?: string;
   "exploration"?: string;
+  "visibility"?: RoundInputVisibilityEnum;
+  "fresh_eyes"?: boolean;
+  "panel"?: Array<number>;
 };
 
 export type PatchedRoundWrite = {
@@ -17234,7 +17386,7 @@ export type PaymentProviderConflictCodeEnum = "payment_provider_conflict";
 
 export type PaymentReconciliation = {
   "id": number;
-  "subject_type": SubjectTypeE0cEnum;
+  "subject_type": SubjectType724Enum;
   "subject_id": number;
   "subject_label": string;
   "status": Status66aEnum;
@@ -17346,11 +17498,44 @@ export type PayoutHoldReleaseCommand = {
   "hold_id": string;
 };
 
+export type PayoutInput = {
+  "operation_id": string;
+  "expected_version": number;
+  "award_id": number;
+  "recipient_id"?: number;
+  "amount"?: string;
+  "method": PayoutInputMethodEnum;
+  "reference"?: string;
+  "paid_on": string;
+  "receipt_id"?: number | null;
+};
+
+export type PayoutInputMethodEnum = "cash" | "upi" | "bank_transfer" | "card" | "cheque" | "online" | "other";
+
 export type PayoutPage = {
   "count": number;
   "next": string | null;
   "previous": string | null;
   "results": Array<PayoutSummary>;
+};
+
+export type PayoutRead = {
+  "id": number;
+  "event_id": number;
+  "award_id": number;
+  "prize_id": number;
+  "prize_name": string;
+  "recipient_id": number | null;
+  "kind": string;
+  "reverses_id": number | null;
+  "amount": string;
+  "currency": string;
+  "method": string;
+  "reference": string;
+  "paid_on": string;
+  "ledger_entry_id": number;
+  "created_at": string;
+  "allowed_actions": Array<string>;
 };
 
 export type PayoutRecordCommand = {
@@ -17378,6 +17563,12 @@ export type PayoutResult = {
   "sequence"?: number;
   "terminal_financial_at"?: string | null;
   "hold_id"?: string;
+};
+
+export type PayoutReverseInput = {
+  "operation_id": string;
+  "expected_version": number;
+  "reason": string;
 };
 
 export type PayoutSummary = {
@@ -18330,6 +18521,7 @@ export type PrizeInput = {
   [key: string]: Array<string>;
 };
   "order"?: number;
+  "amount_per_winner"?: string | null;
   "track_id"?: number | null;
   "sponsor_id"?: number | null;
   "award_count"?: number;
@@ -18337,6 +18529,23 @@ export type PrizeInput = {
 };
 
 export type PrizeInputWinnerSelectionModeEnum = "manager" | "sponsor_proposal";
+
+export type PrizePayableAwardRead = {
+  "id": number;
+  "prize_name": string;
+  "rank": number;
+  "title": string;
+  "amount_per_winner": string | null;
+  "paid": boolean;
+};
+
+export type PrizePayoutPage = {
+  "count": number;
+  "next": string | null;
+  "previous": string | null;
+  "results": Array<PayoutRead>;
+  "awards": Array<PrizePayableAwardRead>;
+};
 
 export type PrizeRead = {
   "id": number;
@@ -18354,6 +18563,7 @@ export type PrizeRead = {
   "order"?: number;
   "award_count"?: number;
   "winner_selection_mode"?: PrizeReadWinnerSelectionModeEnum;
+  "amount_per_winner"?: string | null;
 };
 
 export type PrizeReadPage = {
@@ -18506,6 +18716,19 @@ export type ProgrammeApplicationPage = {
   "results": Array<ReviewApplication>;
 };
 
+export type ProgrammeChargeRead = {
+  "required": boolean;
+  "amount": string | null;
+  "payment_id": number | null;
+  "status": string;
+  "currency": string;
+};
+
+export type ProgrammeChargesRead = {
+  "entry_fee": ProgrammeChargeRead;
+  "team_charge": ProgrammeChargeRead;
+};
+
 export type ProgrammeCommentPage = {
   "count": number;
   "next": string | null;
@@ -18624,6 +18847,17 @@ export type ProgrammeTicket = {
 
 export type ProgrammeTicketDeliveryModeEnum = "in_person" | "online" | "hybrid";
 
+export type ProgressRead = {
+  "round_id": number;
+  "state": string;
+  "mode": string;
+  "target": number;
+  "below_target": Array<ProjectProgressRow>;
+  "judges": Array<JudgeProgressRow>;
+  "outliers": Array<OutlierRow>;
+  "stale_drafts": Array<StaleDraftRow>;
+};
+
 export type ProgressRow = {
   "application_id": number;
   "alias": string;
@@ -18659,6 +18893,13 @@ export type ProjectPrize = {
   [key: string]: unknown;
 };
   "track_id": number | null;
+};
+
+export type ProjectProgressRow = {
+  "snapshot_id": number;
+  "title": string;
+  "reviews": number;
+  "target": number;
 };
 
 export type ProjectRead = {
@@ -19091,6 +19332,10 @@ export type PublicEventVenue = {
   "host": VenueHost;
   "space": VenueSpace | null;
   "photos": Array<PublicSpacePhoto>;
+};
+
+export type PublicFinalistRead = {
+  "title": string;
 };
 
 export type PublicFunctional = {
@@ -19683,9 +19928,11 @@ export type PublicRequestSubmitSchema = {
 
 export type PublicResultsRead = {
   "event_id": number;
-  "version": number;
-  "published_at": string;
+  "version": number | null;
+  "published_at": string | null;
   "awards": Array<PublicAwardRead>;
+  "finalists"?: Array<PublicFinalistRead>;
+  "finalists_published_at"?: string | null;
 };
 
 export type PublicSpaceAvailability = {
@@ -20633,7 +20880,7 @@ export type RefundCasePayment = {
   "member_name": string;
 };
 
-export type RefundCaseReasonCodeEnum = "event_cancelled" | "registration_cancelled" | "booking_cancelled" | "staff_cancelled" | "membership_cancelled" | "member_request" | "capture_flagged" | "fee_waived" | "order_unfulfilled" | "ticket_type_changed" | "pass_occurrence_cancelled";
+export type RefundCaseReasonCodeEnum = "event_cancelled" | "registration_cancelled" | "booking_cancelled" | "staff_cancelled" | "membership_cancelled" | "member_request" | "capture_flagged" | "fee_waived" | "order_unfulfilled" | "ticket_type_changed" | "pass_occurrence_cancelled" | "submission_disqualified" | "team_rejected";
 
 export type RefundCaseStatusEnum = "open" | "approved" | "approval_failed" | "declined" | "withdrawn" | "void";
 
@@ -21035,7 +21282,7 @@ export type ReportScheduleFilters = {
   "end"?: string;
   "window_days"?: number;
   "status"?: Status66aEnum;
-  "subject_type"?: SubjectTypeE0cEnum;
+  "subject_type"?: SubjectType724Enum;
   "months"?: number;
   "subject_kind"?: string;
   "subject_id"?: number;
@@ -21603,9 +21850,14 @@ export type RoundInput = {
   "criteria"?: Array<CriterionInput>;
   "guidance"?: string;
   "exploration"?: string;
+  "visibility"?: RoundInputVisibilityEnum;
+  "fresh_eyes"?: boolean;
+  "panel"?: Array<number>;
 };
 
 export type RoundInputModeEnum = "weighted_1_5" | "top3" | "pairwise";
+
+export type RoundInputVisibilityEnum = "assigned" | "all";
 
 export type RoundProgress = {
   "round_id": number;
@@ -21638,6 +21890,10 @@ export type RoundRead = {
   "guidance"?: string;
   "exploration"?: number | null;
   "skipped": number;
+  "visibility"?: string;
+  "fresh_eyes"?: boolean;
+  "panel"?: Array<number>;
+  "advanced_from_id"?: number | null;
 };
 
 export type RoundReadPage = {
@@ -21688,6 +21944,8 @@ export type RsvpInput = {
   "expected_version": number;
   "decision": Decision25cEnum;
 };
+
+export type RuleEnum = "two_sd" | "spread_25";
 
 export type SalesSettings = {
   "booking_fee_fixed"?: string;
@@ -21877,7 +22135,7 @@ export type SavedView = {
   "updated_at": string;
 };
 
-export type SavedViewEntityEnum = "requests" | "inventory" | "members" | "payments" | "bookings" | "events" | "audit";
+export type SavedViewEntityEnum = "requests" | "inventory" | "members" | "payments" | "bookings" | "events" | "audit" | "event_guests" | "event_teams" | "event_submissions" | "event_results" | "event_progress";
 
 export type SavedViewList = {
   "count": number;
@@ -22052,6 +22310,8 @@ export type SegmentChoice = {
 };
 
 export type SegmentSourceEnum = "billed" | "estimated" | "not_applicable";
+
+export type SelectionEnum = "top_n" | "manual";
 
 export type SelfHostMoveCreate = {
   "note"?: string;
@@ -22287,7 +22547,7 @@ export type ServiceStart = {
   "planned_quantity"?: string;
 };
 
-export type SessionAuthorityEnum = "member" | "native_staff" | "platform" | "verification_only";
+export type SessionAuthorityEnum = "member" | "native_staff" | "native_event" | "platform" | "verification_only";
 
 export type SessionContext = {
   "context"?: string;
@@ -23011,7 +23271,7 @@ export type StaffOrderList = {
 
 export type StaffPayment = {
   "id": number;
-  "subject_type": SubjectTypeE0cEnum;
+  "subject_type": SubjectType724Enum;
   "subject_label": string;
   "status"?: Status66aEnum;
   "amount": string;
@@ -23464,6 +23724,13 @@ export type StageVirtualContext = {
   "response_id": number | null;
 };
 
+export type StaleDraftRow = {
+  "assignment_id": number;
+  "judge_role_assignment_id": number;
+  "snapshot_id": number;
+  "saved_at": string;
+};
+
 export type State5c1Enum = "open" | "settled" | "cancelled";
 
 export type State766Enum = "applied";
@@ -23748,7 +24015,7 @@ export type SubjectExportList = {
 
 export type SubjectType0b3Enum = "machine" | "inventory_product" | "inventory_asset" | "bookable_space";
 
-export type SubjectTypeE0cEnum = "machine_service_request" | "booking" | "event_registration" | "makerspace_membership" | "membership_term" | "membership_request" | "loan_deposit" | "loan_late_fee" | "loan_rental" | "loan_damage" | "loan_lost" | "event_order" | "event_venue_fee";
+export type SubjectType724Enum = "machine_service_request" | "booking" | "event_registration" | "makerspace_membership" | "membership_term" | "membership_request" | "loan_deposit" | "loan_late_fee" | "loan_rental" | "loan_damage" | "loan_lost" | "event_order" | "event_venue_fee" | "submission_fee" | "team_registration";
 
 export type SubmissionIntegrity = {
   "submission_id": number;

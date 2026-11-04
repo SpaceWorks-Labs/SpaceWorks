@@ -17,10 +17,10 @@ export const SIDEBAR_SECTIONS: readonly Definition[] = [
   { key: "inventory", label: "Inventory", tabs: ["inventory", "ledger", "scanner", "needsfix", "stocktake", "transfers", "tobuy", "consumables"], more: ["categories", "containers", "warranty", "qr", "bulk"] },
   { key: "machines", label: "Machines", tabs: ["machines", "devices"] },
   { key: "community", label: "Community", tabs: ["members", "events", "bookings", "granted"], more: ["cards"] },
-  { key: "insights", label: "Insights", tabs: ["reports", "audit", "accountability"] },
+  { key: "insights", label: "Insights", tabs: ["reports", "analytics", "audit", "accountability"] },
   { key: "organizations", label: "Organizations", caption: "Across venues", tabs: ["organizations", "organized", "organization-analytics"] },
   { key: "settings", tabs: ["settings", "security", "users", "emailtemplates", "email-logs", "api", "exports", "backups", "usage", "modules", "migration"] },
-  { key: "platform", label: "Platform", tabs: ["platform-dashboard", "platform"] },
+  { key: "platform", label: "Platform", tabs: ["platform-dashboard", "platform", "platform-analytics"] },
 ];
 export const SIDEBAR_LABELS: Readonly<Record<string, string>> = {
   dashboard: "Home", notifications: "Inbox", handover: "Job pickups", inventory: "Items",
@@ -37,7 +37,7 @@ const ICONS: Record<string, LucideIcon> = {
   "organization-analytics": Network, settings: Settings, security: Lock, users: Users, emailtemplates: Mail,
   "email-logs": Mail, api: KeyRound, exports: Download, backups: DatabaseBackup, usage: Gauge,
   modules: Puzzle, migration: MoveRight, "platform-dashboard": Globe, platform: Settings,
-  consumables: PackageMinus,
+  consumables: PackageMinus, analytics: ChartNoAxesCombined, "platform-analytics": ChartNoAxesCombined,
 };
 
 /**
@@ -55,9 +55,9 @@ export const SPACE_MANAGER_SECTIONS: readonly Definition[] = [
   { key: "machines", label: "Machines", tabs: ["machines", "devices"] },
   { key: "events", label: "Events", tabs: ["events", "granted"], more: ["organized"] },
   { key: "bookings", label: "Bookings", tabs: ["bookings"] },
-  { key: "money", label: "Money", tabs: ["payments", "refunds", "finance", "reports"] },
+  { key: "money", label: "Money", tabs: ["payments", "refunds", "finance", "reports", "analytics"] },
   { key: "settings", label: "Space settings", tabs: ["settings", "security", "emailtemplates", "email-logs", "api", "audit", "exports", "backups", "usage", "modules", "migration"] },
-  { key: "platform", label: "Platform", tabs: ["platform-dashboard", "platform"] },
+  { key: "platform", label: "Platform", tabs: ["platform-dashboard", "platform", "platform-analytics"] },
 ];
 const SPACE_MANAGER_LABELS: Readonly<Record<string, string>> = { settings: "Settings hub" };
 

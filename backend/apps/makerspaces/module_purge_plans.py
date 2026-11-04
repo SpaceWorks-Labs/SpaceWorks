@@ -207,4 +207,8 @@ PLANS += (ModulePurgePlan(
     "finance receipts and stage forms survive.",
     reimbursement_delete, pii_labels=REIMBURSEMENT_PII_LABELS,
 ),)
+from apps.shop.purge import delete as shop_delete, public_images as shop_public_images  # noqa: E402
+PLANS += (ModulePurgePlan("shop", "Shop catalogue, stock history, orders, returns and cash-ups. Shop charges, their "
+                          "receipts and refunds are core ledger and stay.", shop_delete, pii_labels=("shop.ShopOrder",),
+                          public_image_keys=shop_public_images),)
 BY_KEY = {plan.key: plan for plan in PLANS}

@@ -46,6 +46,8 @@ SEPARABLE_APPS = frozenset({
     "tenant_migration",
     # Enrolled printers/label printers: identity rows stay readable and purgeable.
     "devices",
+    # Release 2 L3: organisation ID programmes (no module key; `membership.id_programmes`).
+    "id_programmes",
 })
 
 

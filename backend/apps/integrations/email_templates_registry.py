@@ -12,6 +12,7 @@ from .email_templates_registry_helpers import (
 from .email_templates_registry_fablab import build_entries as _build_fablab_entries
 from .email_templates_registry_wp3 import build_entries as _build_wp3_entries
 from .email_templates_registry_r2_l4 import build_entries as _build_r2_l4_entries
+from .email_templates_registry_r2_l3 import build_entries as _build_r2_l3_entries
 from .email_templates_registry_devices import build_entries as _build_device_entries
 from .email_templates_registry_research import build_entries as _build_research_entries
 from .email_templates_registry_documents import build_entries as _build_document_entries
@@ -196,6 +197,7 @@ REGISTRY = {
     **_build_document_entries(),
     **_build_wp3_entries(),
     **_build_r2_l4_entries(),
+    **_build_r2_l3_entries(),
 }
 
 

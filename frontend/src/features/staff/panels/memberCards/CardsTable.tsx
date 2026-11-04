@@ -13,6 +13,7 @@ export function CardsTable({
   onPrint,
   onReissue,
   onRevoke,
+  rowActions,
 }: {
   cards: MemberCard[];
   status: CardStatus;
@@ -23,15 +24,22 @@ export function CardsTable({
   onPrint: (card: MemberCard) => void;
   onReissue: (card: MemberCard) => void;
   onRevoke: (card: MemberCard) => void;
+  /** Card-engine actions for an active card (download, email, photo request). */
+  rowActions?: (card: MemberCard) => { label: string; onClick: () => void; confirms?: boolean }[];
 }) {
   const columns: DataTableColumn<MemberCard>[] = [
     {
       key: "card_number",
       header: "Card number",
       sortable: true,
-      render: (card) => <span className="tabular-nums text-xs">{card.card_number}</span>,
+      render: (card) => <span className="tabular-nums text-xs">{card.number_display || card.card_number}</span>,
     },
     { key: "printed_name", header: "Name", sortable: true },
+    {
+      key: "valid_until",
+      header: "Valid until",
+      render: (card) => <span className="text-xs text-muted">{card.valid_until || "—"}</span>,
+    },
     {
       key: "is_active",
       header: "Status",
@@ -62,7 +70,8 @@ export function CardsTable({
       key: "photo_set",
       header: "Photo",
       render: (card) =>
-        card.photo_set ? <Badge tone="neutral">on file</Badge> : <span className="text-xs text-muted">none</span>,
+        card.photo_request_open ? <Badge tone="warn">update asked</Badge>
+          : card.photo_set ? <Badge tone="neutral">on file</Badge> : <span className="text-xs text-muted">none</span>,
     },
     {
       key: "actions",
@@ -80,6 +89,7 @@ export function CardsTable({
           {card.is_active ? (
             <>
               <OverflowMenu label={"Actions for " + card.printed_name} actions={[
+                ...(rowActions ? rowActions(card) : []),
                 { label: "Reissue", confirms: true, onClick: () => onReissue(card) },
                 { label: "Revoke", confirms: true, tone: "danger", onClick: () => onRevoke(card) },
               ]} />
@@ -102,7 +112,7 @@ export function CardsTable({
       columns={columns}
       data={cards}
       loading={loading}
-      skeletonCols={6}
+      skeletonCols={7}
       emptyTitle={status === "active" ? "No active cards" : "No revoked cards"}
       emptyDescription={
         status === "active"

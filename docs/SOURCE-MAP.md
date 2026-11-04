@@ -774,6 +774,30 @@ identity normalization and production minimum-version comparison. `mobile_associ
   (`SessionsScreen` = Machines › Sessions, `StaffSessionCard`, `SessionQrCard`,
   `SessionSettingsEditor`).
 
+### Release 2 L3 (ID cards)
+
+- `apps/card_designs/` -- the shared card engine: `layout*.py` (document v2), `stocks.py`, `fonts.py`
+  + `font_catalog.json` + `font_fetch.py`/`font_store.py`, `contrast.py`, `rendering*.py`, `raster.py`,
+  `sheets.py`, `symbol.py`, `default_templates/`, `design_file.py`; `holders*.py` (holder-kind registry),
+  `resolution.py`, `approval.py`, `designs.py`, `tokens.py`, `lifecycle.py`, `cards.py`, `jobs.py` +
+  `job_runner.py` + `job_outputs.py` + `tasks.py`, `email*.py`, `photos.py`, `photo_cleanup.py`,
+  `segmentation.py`, `extras.py`, `verification.py`, `scan.py`, `wallet/`; views `views_*.py`, URLs
+  `urls_{admin,member,public,wallet}.py`.
+- `apps/id_programmes/` (separable) -- programmes, cards, numbering, questions, import, invites, join.
+- Events: `events/models_id_cards.py`, `id_cards*.py`, `services_checkin_cards.py`,
+  `id_cards_tickets.py` (`render_ticket(registration, fmt)`), `urls_id_cards*.py`, `tasks_id_cards.py`.
+- Makerspaces: `models_member_card_settings.py`, `member_card_admin_views_l3.py`,
+  `capability_definitions_r2_l3.py`, `origin_scope_routes_r2_l3.py`, `capability_purge_plans_l3.py`,
+  `storage_keys_cards.py`.
+- Registries: `accounts/{merge_registry_rows_l3,claim_routes_l3}.py`, `encryption/registry_r2_l3.py`,
+  `data_export/classification_l3.py`, `tenant_migration/{catalog_l3,unique_values_l3,audit_references_l3,
+  gate_policy_r2_l3}.py` (authority entries in `tenant_dump_authority_r2.py`), `audit/presentation_catalog_l3.py`,
+  `backup/object_ownership_l3.py`, `operations/{reports_cards,report_definitions_cards}.py`.
+- Frontend: `components/card-designer/*` (the free canvas designer), `features/cards/*` (verify page,
+  routes, bulk jobs), `features/members/wallet/*` (My cards), `features/organizations/idProgrammes/*`,
+  `features/staff/eventCards/*`, `features/staff/panels/memberCards/{DesignTab,SettingsTab,apiCards,
+  CardsRowDialogs,PresenceCheckIn}.tsx`.
+
 ### Release 2 L12 (machines and loans depth)
 
 - Switches: `makerspaces/capability_definitions_r2_l12.py` (12 keys); per-type job settings on

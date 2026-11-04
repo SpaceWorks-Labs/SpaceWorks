@@ -147,3 +147,25 @@ Every `THROTTLE_*` value is a DRF rate string (`<n>/<second|minute|hour|day>`). 
 | `THROTTLE_MFA_MANAGE` | `10/hour` | Authenticated enrollment and recovery/disable management. |
 | `THROTTLE_STAFF_INVITE` | `20/hour` | Scoped staff invitation list/create/revoke/resend. |
 | `THROTTLE_STAFF_INVITE_ACCEPT` | `10/min` | Public invitation acceptance budget. |
+| `THROTTLE_CARD_VERIFY` | `'30/min'` | Public card checks (`/api/v1/public/card-verifications/<token>`) per IP (L3). |
+| `THROTTLE_MEMBER_CARD_RESOLVE` | `'60/min'` | Staff member-card scans at the desk, per account (L3). |
+| `THROTTLE_ID_JOIN` | `'10/min'` | ID-programme join requests and invite acceptances per account (L3). |
+| `THROTTLE_ID_JOIN_UPLOAD` | `'12/hour'` | ID-programme join photo uploads per account (L3). |
+
+## ID cards: card fonts, photo clean-up and wallet passes (L3)
+
+The card font library is the open Google Fonts catalogue, fetched **by the server** on first use and served by this app; browsers never call Google. Wallet-pass credentials are platform-level (one Apple Pass Type ID, one Google Wallet issuer); the buttons stay hidden until set. Key and certificate values are FILE paths to secrets mounted into the container.
+
+| Variable | Default | Notes |
+|---|---|---|
+| `CARD_FONT_DOWNLOADS_ENABLED` | `True` | `False` keeps cards to the bundled faces (Gilroy, Unbounded, Noto) on air-gapped servers. |
+| `CARD_FONT_SOURCE_URL` | `'https://fonts.googleapis.com/css2'` | CSS endpoint the server asks for static TrueType faces; point it at a mirror if you run one. |
+| `CARD_FONT_CACHE_DIR` | `''` | Local cache for fetched font files; empty uses the system temp directory. |
+| `CARD_PHOTO_MODEL_PATH` | `''` | The background clean-up model (`manage.py fetch_card_photo_model`); empty uses the temp directory. |
+| `WALLET_APPLE_PASS_TYPE_ID` | `''` | Apple Pass Type ID (e.g. `pass.org.example.cards`). |
+| `WALLET_APPLE_TEAM_ID` | `''` | Apple developer team id. |
+| `WALLET_APPLE_CERT_FILE` | `''` | Path to the Pass Type ID certificate (PEM). |
+| `WALLET_APPLE_KEY_FILE` | `''` | Path to its private key (unencrypted PEM, mounted as a secret file). |
+| `WALLET_APPLE_WWDR_FILE` | `''` | Path to Apple's WWDR intermediate certificate (PEM). |
+| `WALLET_GOOGLE_ISSUER_ID` | `''` | Google Wallet issuer id. |
+| `WALLET_GOOGLE_SERVICE_ACCOUNT_FILE` | `''` | Path to the Wallet API service-account JSON key. |

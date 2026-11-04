@@ -109,6 +109,12 @@ LEGACY_ENTRIES = (
     ("machine-sessions", "apps.machines.tasks_sessions.sweep_machine_sessions_task", 5),
     # Release 2 S-C: IP auto-block rows 7 d after they end; axes rows after 30 d.
     ("purge-login-security", "apps.accounts.tasks_login_security.purge_login_security_task", 1440),
+    # Lane L3: card jobs (one chunk per job per tick), 7-day result purge, wallet refresh, photo reminders.
+    ("card-jobs", "apps.card_designs.tasks.resume_card_jobs", 1),
+    ("card-job-results", "apps.card_designs.tasks.purge_expired_card_job_results", 60),
+    ("card-wallet-refresh", "apps.card_designs.tasks.refresh_wallet_passes", 30),
+    ("card-photo-reminders", "apps.card_designs.tasks.remind_photo_requests", 60),
+    ("event-id-cards", "apps.events.tasks_id_cards.reconcile_event_id_cards_task", 15),
 )
 _RETAINED = frozenset({
     "evidence-object-expiry", "evidence-abandoned-upload-cleanup",
@@ -131,6 +137,7 @@ _HEAVY = frozenset({
     "reconcile-backup-artifacts", "push-offsite-backups",
     "resume-expired-tenant-import-finalizations", "finalize-report-rollups",
     "restore-drill", "reencrypt-backup-archives",
+    "card-jobs", "card-wallet-refresh",
 })
 _CRITICAL = frozenset({
     "reminder-sweep", "notification-contract-outbox", "drain-password-reset-envelopes",

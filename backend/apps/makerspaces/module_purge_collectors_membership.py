@@ -81,6 +81,13 @@ def membership_delete(makerspace, cursor):
         status=QrCode.Status.ACTIVE,
     ).update(status=QrCode.Status.REVOKED)
     cards, card_labels = _delete(MemberCard.objects.filter(makerspace=makerspace))
+    # Release 2 L3: member-card designs, their settings and the space-level approval switch.
+    from apps.card_designs.models import CardApprovalSetting, CardDesign
+    from apps.makerspaces.models import MemberCardSettings
+    _designs, design_labels = _delete(CardDesign.objects.filter(makerspace=makerspace, domain="member_cards"))
+    _settings, settings_labels = _delete(MemberCardSettings.objects.filter(makerspace=makerspace))
+    _approval, approval_labels = _delete(CardApprovalSetting.objects.filter(makerspace=makerspace, group="membership"))
+    card_labels = card_labels | design_labels | settings_labels | approval_labels
     # Terms before plans: a term PROTECTs its plan. Renewal Payment rows are money and
     # stay (the FK to them lives on the term side); the leads queue goes with the module.
     terms, term_labels = _delete(

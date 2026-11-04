@@ -69,6 +69,36 @@ def finalize_photo(actor, card, *, object_key, content_type, consent):
     )
     if old_key:
         transaction.on_commit(lambda: _release(card.makerspace, old_key, old_size))
+    from apps.card_designs.photos import resolve_requests
+    resolve_requests("member_card", card)
+    audit.record(actor, "member_card.photo_updated", makerspace=card.makerspace, target=card, meta={"card_id": card.pk})
+    return card
+
+
+@transaction.atomic
+def replace_photo_bytes(actor, card, data):
+    """Release 2 L3: store a server-made photo (an accepted background clean-up).
+
+    The holder consented to the original; the clean-up keeps that consent version. The
+    original object is deleted once the replacement commits (Q-I3).
+    """
+    from apps.tenant_migration.gate_runtime import assert_write_allowed
+    assert_write_allowed(card.makerspace_id)
+    from apps.card_designs.images import normalise
+    from apps.card_designs.storage import put_bytes
+    png, _w, _h, _mean = normalise(data, max_edge=1200, keep_alpha=False)
+    key = _final_key(card.makerspace_id)
+    put_bytes(key, png, "image/png")
+    card = type(card).objects.select_for_update().get(pk=card.pk)
+    old_key, old_size = card.photo_object_key, card.photo_size_bytes or 0
+    add_storage(card.makerspace, len(png))
+    card.photo_object_key, card.photo_content_type, card.photo_size_bytes = key, "image/png", len(png)
+    card.photo_consent_at = card.photo_consent_at or timezone.now()
+    card.photo_consent_version = card.photo_consent_version or PHOTO_CONSENT_VERSION
+    card.save(update_fields=["photo_object_key", "photo_content_type", "photo_size_bytes",
+                             "photo_consent_at", "photo_consent_version", "updated_at"])
+    if old_key:
+        transaction.on_commit(lambda: _release(card.makerspace, old_key, old_size))
     audit.record(actor, "member_card.photo_updated", makerspace=card.makerspace, target=card, meta={"card_id": card.pk})
     return card
 

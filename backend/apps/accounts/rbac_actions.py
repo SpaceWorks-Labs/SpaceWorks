@@ -54,6 +54,13 @@ class Action:
     WORK_REPAIRS = "work_repairs"
     RUN_MAINTENANCE = "run_maintenance"
     SET_SERVICE_STATE = "set_service_state"
+    # Release 2 L3: organisation ID programmes on the HOST space (VIEW masks holder PII),
+    # and approving card designs saved by others (#128 C-28, #136). Grantable to custom
+    # roles and through the organisation branch; the Space Manager holds all three
+    # through MANAGE_MAKERSPACE below, so no stored role changes.
+    VIEW_ID_PROGRAMMES = "view_id_programmes"
+    MANAGE_ID_PROGRAMMES = "manage_id_programmes"
+    APPROVE_CARD_DESIGNS = "approve_card_designs"
 
 
 IMPLIED_ACTIONS = {
@@ -64,6 +71,9 @@ IMPLIED_ACTIONS = {
     Action.MANAGE_MACHINES: {Action.MANAGE_PRINTING, Action.COLLECT_SERVICE_REQUEST},
     Action.MANAGE_MEMBER_CARDS: {Action.SCAN_MEMBER_CARDS},
     Action.MANAGE_MEMBERS: {Action.MANAGE_MEMBER_CARDS},
+    # Release 2 L3.
+    Action.MANAGE_ID_PROGRAMMES: {Action.VIEW_ID_PROGRAMMES},
+    Action.MANAGE_MAKERSPACE: {Action.MANAGE_ID_PROGRAMMES, Action.APPROVE_CARD_DESIGNS},
 }
 
 

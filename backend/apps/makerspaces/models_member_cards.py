@@ -50,6 +50,14 @@ class MemberCard(ScopedPiiModelMixin, models.Model):
     issued_at = models.DateTimeField(default=timezone.now)
     revoked_at = models.DateTimeField(null=True, blank=True)
     revoked_reason = models.CharField(max_length=32, blank=True, default="")
+    # Release 2 L3: the staff reason for a revocation (scoped PII, never in audit meta),
+    # the holder's public-check opt-ins, and the email cooldown stamp.
+    revoked_note = models.TextField(blank=True, default="")
+    last_emailed_at = models.DateTimeField(null=True, blank=True)
+    verify_show_name = models.BooleanField(default=False)
+    verify_show_photo = models.BooleanField(default=False)
+    verify_consent_at = models.DateTimeField(null=True, blank=True)
+    verify_consent_version = models.CharField(max_length=16, blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

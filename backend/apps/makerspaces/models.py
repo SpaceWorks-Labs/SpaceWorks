@@ -133,3 +133,5 @@ from apps.makerspaces.models_settings_authority import (  # noqa: E402,F401
     ModuleSettingLock,
     ModuleSettingsGrant,
 )
+# Release 2 L3: member-card settings (auto-issue, email on issue, public check page).
+from apps.makerspaces.models_member_card_settings import MemberCardSettings  # noqa: E402,F401

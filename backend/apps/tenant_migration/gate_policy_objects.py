@@ -38,6 +38,9 @@ OBJECT_MUTATION_PARTICIPANTS = {
     "apps.events.services_images.remove_image": "Called by the tenant-resolved event image route.",
     "apps.makerspaces.member_card_storage.presign_photo": "Called only by the tenant-resolved member-card photo route.",
     "apps.makerspaces.member_card_storage.finalize_photo": "Called only by the tenant-resolved member-card photo route.",
+    "apps.card_designs.font_fetch.fetch_family": (
+        "Platform card-font library: writes only shared font objects and CardFont rows, never tenant data."
+    ),
     "apps.makerspaces.member_card_storage._release": "Reached only through the member-card photo route, revoke and the membership purge.",
     "apps.events.services_images.update_image": "Called by the tenant-resolved event image route.",
     "apps.events.services_series_images.remove_image": "Called by the tenant-resolved event series image route.",

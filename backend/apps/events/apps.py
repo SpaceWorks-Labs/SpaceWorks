@@ -17,6 +17,9 @@ class EventsConfig(AppConfig):
         if not app_is_tombstoned("events"):
             from .integration_targets import register_targets
             register_targets()
+            # Release 2 L3: the event_card holder kind for the shared card engine.
+            from .id_cards_holder import register as register_event_cards
+            register_event_cards()
             from .website_adapter import register_website
             register_website()
             from .broadcasts import register_broadcasts

@@ -9,6 +9,7 @@ def lane_entries(authority, D):
     from .catalog_l12 import authority_entries as _l12
     from .catalog_l16 import authority_entries as _l16
     from .catalog_l23 import authority_entries as _l23
+    from .catalog_l3 import authority_entries as _l3
     from .catalog_login_security import authority_entries as _s0_authority
     from .catalog_r2_l1 import authority_entries as _r2_l1_authority
     from .catalog_r2_l2 import authority_entries as _r2_l2_authority
@@ -24,4 +25,5 @@ def lane_entries(authority, D):
     entries += _l12(authority, D)
     entries += _l16(authority, D)
     entries += _l23(authority, D)
+    entries += _l3(authority, D)
     return entries

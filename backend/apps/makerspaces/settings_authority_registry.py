@@ -78,6 +78,14 @@ EXTRA_SETTING_KEYS = (
     ("machines", "charges.machines_failure"),
     # L23: the per-type maximum machine-session length (#158.5).
     ("machines", "sessions.max_minutes"),
+    # L3: member-card settings and the card-design approval switch at the space level
+    # (#128 C-28, #136); event card approval sits under events (the Event Manager's grant).
+    ("membership", "member_cards.auto_issue"),
+    ("membership", "member_cards.email_on_issue"),
+    ("membership", "member_cards.public_verify"),
+    ("membership", "member_cards.verify_show_plan"),
+    ("membership", "card_designs.approval"),
+    ("events", "card_designs.approval"),
 )
 
 

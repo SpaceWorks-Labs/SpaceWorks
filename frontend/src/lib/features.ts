@@ -161,6 +161,12 @@ export const FEATURE_DEFINITIONS: readonly FeatureDefinition[] = [
   { key: "bookings.room_maintenance", parent_module: "bookings", label: "Room maintenance" },
   { key: "bookings.room_repairs", parent_module: "bookings", label: "Room repairs" },
   { key: "bookings.issue_reporting", parent_module: "bookings", label: "Room issue reporting" },
+  // L3 (#128, #132, #133): ID cards, programmes, event cards, tickets, wallet passes.
+  { key: "membership.id_programmes", parent_module: "membership", label: "ID programmes" },
+  { key: "membership.wallet_passes", parent_module: "membership", label: "Wallet passes for member cards" },
+  { key: "events.id_cards", parent_module: "events", label: "Event ID cards" },
+  { key: "events.ticket_designs", parent_module: "events", label: "Ticket designs" },
+  { key: "events.wallet_passes", parent_module: "events", label: "Wallet passes for event cards" },
 ];
 
 export function featureEnabled(features: Iterable<string>, key: string) {

@@ -38,6 +38,8 @@ def collect_private_object_keys(makerspace, *, include_coordination=True):
     collect_service(makerspace, add)
     from .storage_keys_events_programme import collect_programme_keys
     collect_programme_keys(makerspace, add, include_coordination=include_coordination)
+    from .storage_keys_cards import collect_card_keys
+    collect_card_keys(makerspace, add, include_coordination=include_coordination)
     from apps.payments.models import PaymentDocument
     for key in PaymentDocument.objects.filter(makerspace=makerspace).values_list("branding_logo_key", flat=True):
         add(key)

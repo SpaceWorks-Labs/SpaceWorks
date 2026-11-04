@@ -94,6 +94,8 @@ class Command(BaseCommand):
                 # collected by purge, but absent here until 2026-10-09 -- the same
                 # silent under-count as the maintenance documents above.
                 "member_card_photos": self._sum(MemberCard.objects.filter(makerspace=makerspace).values_list("photo_object_key", "photo_size_bytes"), evidence_storage.object_size, True),
+                # Release 2 L3: design artwork and programme/event card photos (private bucket).
+                **self._card_values(makerspace, evidence_storage),
                 "booking_website_assets": self._sum(BookingResourcePageAsset.objects.filter(page__space__makerspace=makerspace).values_list("object_key", "size_bytes"), evidence_storage.object_size, True),
                 "event_website_assets": self._sum(EventPageAsset.objects.filter(page__makerspace=makerspace).values_list("object_key", "size_bytes"), evidence_storage.object_size, True),
                 "makerspace_page_assets": self._sum(MakerspacePublicPageAsset.objects.filter(page__makerspace=makerspace).values_list("object_key", "size_bytes"), evidence_storage.object_size, True),
@@ -143,6 +145,19 @@ class Command(BaseCommand):
     def _pending_page_assets(makerspace):
         from apps.makerspaces.website_asset_journal import accounted_pending_bytes
         return accounted_pending_bytes(makerspace.pk)
+
+    def _card_values(self, makerspace, storage):
+        from apps.card_designs.models import CardDesignAsset
+        from apps.events.models import EventIdCard
+        from apps.id_programmes.models import IdProgrammeCard
+        return {
+            "card_design_assets": self._sum(CardDesignAsset.objects.filter(makerspace=makerspace, ready=True)
+                                            .values_list("object_key", "size_bytes"), storage.object_size, True),
+            "card_photos": self._sum([*IdProgrammeCard.objects.filter(makerspace=makerspace).exclude(photo_object_key="")
+                                      .values_list("photo_object_key", "photo_size_bytes"),
+                                      *EventIdCard.objects.filter(makerspace=makerspace).exclude(photo_object_key="")
+                                      .values_list("photo_object_key", "photo_size_bytes")], storage.object_size, True),
+        }
 
     @staticmethod
     def _sum(rows, object_size, fallback=False):

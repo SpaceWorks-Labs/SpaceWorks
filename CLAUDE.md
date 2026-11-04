@@ -227,6 +227,10 @@ the Auth module** — forgetting this is a cross-tenant data leak, not just a bu
   a REVOKED member is still refused.
 - Evidence photo **rows** and QR scan records are **immutable**; audit logs are **append-only**. Evidence retention may delete every final and staging object version only after the configured window, but it does not update or delete the retained `EvidencePhoto` row.
 - **Attached evidence is never deleted.** The only photo UPDATE is the one-way `consumption_state → consumed` mark (`evidence/consumption.py`) every consuming workflow makes in its attachment transaction; legacy and imported rows are `legacy_unknown` and never eligible. Abandoned-upload cleanup (deployment switch **and** tenant opt-in, both default off) may delete only an old `unconsumed` presign with no inbound FK and no consumption audit, through an exact-ID GUC the trigger re-checks against a permanent, FK-free `EvidenceAbandonedUploadReceipt`. Receipts can never be deleted, reserve their object key against tenant-import reuse, and keep re-deleting both keys every 360 minutes (720 after a failure) across source `MIGRATED_OUT` and tenant purge. The staging/final-key rule above is unchanged.
+- **The public card check (`/verify/c/<token>`) never shows the desk QR or any holder extra**, shows
+  the holder's name and photo only with their opt-in, answers every hidden case with the same 404, and
+  marks revoked or expired cards as not valid. A card scan only identifies; it never signs anyone in. No
+  card route charges a fee. Detail: **Member cards, ID programmes and event cards** in `docs/INVARIANTS.md`.
 - Public inventory must never expose: storage locations, box IDs, QR codes, scan history, evidence photos,
   requester history, or hidden counts. Public visibility is governed per-item by `is_public`,
   `show_public_count`, and `public_availability_mode` (`exact_count | status_only | hidden`).
@@ -484,6 +488,7 @@ because none are quoted here — this index is a router, not a summary.
 | **Backup, restore and tenant migration** | `apps/backup/` (platform-key-only deployment archives, the single-component deployment manifest, no recipients/custody/`backup` module; per-space backup and restore: nightly one-space raw slices, preview/confirm/apply with identity ids, the safety backup, the `/control/` console), `apps/data_export/`, `apps/tenant_migration/` (one-shot `--recipient` tenant exit), the deployment recovery gate, the source gate lock protocol, archive projection |
 | **Organization accounts and organization-derived authority** | `apps/organizations/`, `OrganizationMembership`, the rbac org branch, `resolve_scope` vs `scope_by_action`, the auth payload `source` field, `EventOrganizer`, org purge scoping |
 | **API client scopes and the protected-route registry** | `apps/apiclients/scope_registry*.py`, `legacy:v1`, unknown-route denial, target resolution, the system check, the HMAC signed message and nonce namespace. The client-facing protocol is written up in `docs/api-client-protocol.md` |
+| **Member cards, ID programmes and event cards** | `apps/card_designs/`, `apps/id_programmes/`, `events/id_cards*.py`, member cards, card designs and approval, the public card check, door scans, wallet passes, card fonts and photos |
 | **Container / deployment invariants** | `Dockerfile`, the compose files, Celery beat, MinIO/CORS, browser-facing storage URLs, production compose defaults, the opt-in `/control/` proxy route and SSH-tunnel listener (`CONTROL_PLANE_*`, `scripts/apply-settings.sh`) |
 
 Two rules are repeated here because they bite outside their own area: **a new model must be classified in

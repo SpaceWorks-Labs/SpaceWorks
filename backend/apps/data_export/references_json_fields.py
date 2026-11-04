@@ -122,3 +122,5 @@ from .classification_l23 import JSON_FIELDS as _L23_JSON  # noqa: E402
 JSON_REFERENCE_FIELDS |= _L23_JSON
 from .classification_l16 import JSON_FIELDS as _L16_JSON  # noqa: E402
 JSON_REFERENCE_FIELDS |= _L16_JSON
+from .classification_l3 import JSON_FIELDS as _L3_JSON  # noqa: E402
+JSON_REFERENCE_FIELDS |= _L3_JSON

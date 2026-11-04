@@ -181,7 +181,7 @@ export function StaffTabContent({
         />
       ) : null}
       {activeTab === "cards" && canUseMemberCards ? (
-        <MemberCardsPanel key={makerspaceKey} makerspaceId={activeMakerspace.id} />
+        <MemberCardsPanel key={makerspaceKey} makerspaceId={activeMakerspace.id} enabledFeatures={activeMakerspace.enabled_features ?? []} />
       ) : null}
       {activeTab === "payments" && (has("view_finance") || has("record_payment") || has("manage_events")) ? <PaymentsPanel key={makerspaceKey} makerspaceId={activeMakerspace.id} makerspaceName={activeMakerspace.name} actorActions={actorActions} isSuperadmin={isSuperadmin} /> : null}
       {activeTab === "refunds" && allowedTabs.includes("refunds") ? <RefundQueue key={makerspaceKey} makerspaceId={activeMakerspace.id}

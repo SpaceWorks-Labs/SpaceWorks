@@ -173,6 +173,17 @@ urlpatterns = [
     path("api/v1/admin/", include("apps.admin_api.urls")),
     path("api/v1/admin/", include("apps.organizations.urls_admin")),
     path("api/v1/admin/", include("apps.hosting_requests.urls_staff")),
+    # Release 2 L3: the shared card engine (designs, jobs, member-card extras).
+    path("api/v1/admin/", include("apps.card_designs.urls_admin")),
+    path("api/v1/member/", include("apps.card_designs.urls_member")),
+    path("api/v1/public/", include("apps.card_designs.urls_public")),
+    # Apple's pass web service: pass-token auth, outside the HMAC-protected public prefixes.
+    path("api/v1/wallet/", include("apps.card_designs.urls_wallet")),
+    *separable("id_programmes", "api/v1/admin/", "apps.id_programmes.urls_admin"),
+    *separable("id_programmes", "api/v1/public/", "apps.id_programmes.urls_public"),
+    *separable("id_programmes", "api/v1/member/", "apps.id_programmes.urls_member"),
+    *separable("events", "api/v1/admin/", "apps.events.urls_id_cards"),
+    *separable("events", "api/v1/member/", "apps.events.urls_id_cards_member"),
     # Mounted at admin_api's own prefix so the paths and route names are unchanged by
     # the relocation, and *after* it so a relocated route can never shadow one that
     # stayed behind. Every warranty pattern is a distinct literal, so ordering is

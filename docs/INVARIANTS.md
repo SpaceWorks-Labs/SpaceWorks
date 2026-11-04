@@ -7297,3 +7297,48 @@ the global owner is gone, every writer lock is free and the provider-qualified t
 drained; age alone proves none of those facts. Presigns are journalled before signature generation.
 Unknown provider acceptance remains charged across new mail attempt keys. Only evidence-backed supervised
 reconciliation may release it. Full never consults free accounting caps or free input limits.
+
+## Member cards, ID programmes and event cards (release 2 L3)
+
+- **One card engine.** `apps/card_designs` owns every card and ticket layout (CardDesignDocument v2:
+  front/back sides, ≤ 40 layers each, ≤ 256 KB), rendering (`rendering.py` PDF, `raster.py` PNG),
+  bulk jobs and the public check. Holder kinds plug in through `holders.register` (`member_card`,
+  `programme_card`, `event_card`); no domain renders a card any other way. The old
+  `makerspaces/member_card_printing.py` is gone.
+- **Design resolution is most-specific-first and reads only published documents**: member cards use
+  title → plan → space default; programmes their own design; event cards the event's; tickets ticket
+  type → event → organisation library. An unpublished design never prints — cards fall back to the
+  built-in template until a publish. Saves are compare-and-swap on `revision` (409 on a stale save).
+- **Approval at four levels** (space, organisation, programme, event; most specific wins). Member-card
+  designs default to approval required, event designs to none. `APPROVE_CARD_DESIGNS` is implied by
+  `MANAGE_MAKERSPACE`; approvers are always host-space approvers. A draft saves with unreadable text
+  (the designer warns); **publish and submit refuse any text under 4.5:1 contrast** unless the design is
+  black-and-white.
+- **QR layers are never decorative**: ≥ 18 mm on CR stocks (20 mm otherwise), opacity 100, right-angle
+  rotation only. The desk QR (member cards) is a bare random code; **it never appears on the public check
+  page**. Tickets carry exactly one QR, the registration's check-in payload.
+- **Public check `/verify/c/<token>`**: 43-character random tokens, one live per card, retired on
+  reissue, revoke, rotation or expiry. Every hidden case answers the same 404; responses carry
+  `no-store`, `noindex`, `no-referrer`, `nosniff`; throttle `card_verify`. It shows valid / expired /
+  revoked, issuer, label, number and valid-until; **the holder's name and photo only with their
+  opt-in**, never extras. `/verify/` is reserved as a handle and disallowed in robots.
+- **A scan only identifies (Q-I10).** The door scan (`admin-event-card-scan`, needs events + check-in)
+  and the desk presence check-in record the staff member as the actor; a card never signs anyone in.
+- **Extras (blood group, emergency contact) are holder-only**: encrypted in `CardHolderExtras`, printed
+  on the holder's own card and shown to them; organisers see them only behind
+  `EventCardSettings.extras_visible_to_organizers` plus `require_pii_access`. Deleted on revoke.
+- **Card files stay private.** Uploaded artwork (`CardDesignAsset`), photos and job results go through
+  the staging → final presign; final keys are never client-writable. Bulk results are kept 7 days
+  (Q-I1) then purged; a result link is the requester's only (superadmin needs `require_pii_access`).
+  Photo clean-up runs on this server (u2netp via onnxruntime) and deletes the original only when the
+  holder accepts the result (Q-I3).
+- **Fonts never load from Google in the browser.** The catalogue manifest lists the Google Fonts
+  families; the server fetches a family into private storage (`CARD_FONT_DOWNLOADS_ENABLED`) and the
+  designer loads the bytes through the authenticated design route. Gilroy, Unbounded and Noto are
+  bundled.
+- **No fee on any ID card (C-20).** No card route raises a charge.
+- **Lifecycle**: event cards are issued automatically by reconcile (on publish, on "issue now", every
+  15 minutes) and expire the day after the event ends (Q-I6); programme holders need no host-space
+  membership (Q-I7); a "new photo" request keeps the card valid with one reminder after 7 days (Q-I4).
+- **Tokens, wallet passes, extras, jobs and fonts are omitted from exports and tenant moves**; tokens
+  re-mint after a move. Designs, cards and programmes travel.

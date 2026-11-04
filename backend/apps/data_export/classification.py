@@ -86,6 +86,9 @@ OMITTED_MODELS.update(L23_OMITTED)
 from .classification_l16 import extend as extend_l16, OMITTED_MODELS as L16_OMITTED  # noqa: E402
 extend_l16(EXPORTED_MODEL_FIELDS)
 OMITTED_MODELS.update(L16_OMITTED)
+from .classification_l3 import extend as extend_l3, OMITTED_MODELS as L3_OMITTED  # noqa: E402
+extend_l3(EXPORTED_MODEL_FIELDS)
+OMITTED_MODELS.update(L3_OMITTED)
 from .classification_messaging import EXPORTED_FIELDS as MESSAGING_FIELDS, OMITTED_MODELS as MESSAGING_OMITTED
 EXPORTED_MODEL_FIELDS.update(MESSAGING_FIELDS)
 OMITTED_MODELS.update(MESSAGING_OMITTED)

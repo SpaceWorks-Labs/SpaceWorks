@@ -1,0 +1,88 @@
+import { useEffect, useState, type CSSProperties } from "react";
+
+import { staffRequestBlob } from "../../lib/api";
+import type { Background, Layer } from "./cardTypes";
+import { PT_TO_MM } from "./cardGeometry";
+import { merge } from "./dataFields";
+import { cssFamily } from "./fontLoader";
+import { assetUrlPath } from "./designerApi";
+
+const assetCache = new Map<string, Promise<string>>();
+
+export function useAssetUrl(designId: number, assetId: string | undefined | null) {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (!assetId) { setUrl(null); return; }
+    const key = `${designId}:${assetId}`;
+    if (!assetCache.has(key)) {
+      assetCache.set(key, staffRequestBlob(assetUrlPath(designId, assetId)).then((blob) => URL.createObjectURL(blob)));
+    }
+    let live = true;
+    assetCache.get(key)!.then((value) => { if (live) setUrl(value); }).catch(() => { if (live) setUrl(null); });
+    return () => { live = false; };
+  }, [designId, assetId]);
+  return url;
+}
+
+export function backgroundStyle(background: Background, imageUrl: string | null): CSSProperties {
+  if (background.kind === "colour") return { background: background.colour };
+  if (background.kind === "gradient") {
+    const stops = background.stops.map((stop) => `${stop.colour} ${stop.at}%`).join(", ");
+    return { background: background.type === "radial" ? `radial-gradient(circle, ${stops})`
+      : `linear-gradient(${background.angle_deg}deg, ${stops})` };
+  }
+  const dim = background.dim_pct / 100;
+  return { backgroundColor: background.fallback ?? "#FFFFFF",
+    backgroundImage: imageUrl ? `linear-gradient(rgba(0,0,0,${dim}), rgba(0,0,0,${dim})), url(${imageUrl})` : undefined,
+    backgroundSize: background.fit, backgroundPosition: "center", backgroundRepeat: "no-repeat" };
+}
+
+function QrPlaceholder() {
+  return <div className="grid h-full w-full place-items-center bg-white p-[8%]" aria-hidden="true">
+    <svg viewBox="0 0 21 21" className="h-full w-full" shapeRendering="crispEdges">
+      {Array.from({ length: 21 * 21 }, (_v, i) => [i % 21, Math.floor(i / 21)] as const)
+        .filter(([x, y]) => (x * 7 + y * 3) % 5 < 2 || ((x < 7 || x > 13) && y < 7) || (x < 7 && y > 13))
+        .map(([x, y]) => <rect key={`${x}-${y}`} x={x} y={y} width="1" height="1" fill="#142C2A" />)}
+    </svg>
+  </div>;
+}
+
+/** One layer drawn to scale: `px` converts millimetres to CSS pixels. Static; the canvas adds interaction. */
+export function CardLayerView({ layer, px, values, designId, mono }: { layer: Layer; px: number;
+  values: Record<string, string>; designId: number; mono: boolean }) {
+  const imageUrl = useAssetUrl(designId, layer.kind === "image" ? layer.asset_id : null);
+  const grey = mono ? "grayscale(1)" : undefined;
+  if (layer.kind === "text" || layer.kind === "data_field") {
+    const text = merge(layer.text ?? "", values);
+    return <div className="h-full w-full overflow-hidden" style={{
+      fontFamily: `${cssFamily(layer.font_family ?? "Gilroy")}, ${layer.font_family ?? "Gilroy"}, sans-serif`,
+      fontWeight: layer.font_weight, fontSize: (layer.font_size_pt ?? 10) * PT_TO_MM * px,
+      lineHeight: layer.line_height ?? 1.2, color: mono ? "#000000" : layer.colour, textAlign: layer.align,
+      textTransform: layer.uppercase ? "uppercase" : undefined, letterSpacing: (layer.tracking_pt ?? 0) * PT_TO_MM * px,
+      display: "flex", flexDirection: "column", overflowWrap: "anywhere",
+      justifyContent: { top: "flex-start", middle: "center", bottom: "flex-end" }[layer.valign ?? "top"] }}>{text}</div>;
+  }
+  if (layer.kind === "shape" || layer.kind === "band") {
+    if (layer.shape === "line") return <div className="h-full w-full" style={{ borderTop: `${Math.max(1, (layer.stroke_mm ?? 0.3) * px)}px solid ${layer.stroke ?? layer.fill}`, marginTop: "50%" }} />;
+    return <div className="h-full w-full" style={{ background: layer.fill ?? "transparent",
+      border: layer.stroke ? `${Math.max(1, (layer.stroke_mm ?? 0.3) * px)}px solid ${layer.stroke}` : undefined,
+      borderRadius: layer.shape === "ellipse" ? "50%" : (layer.radius_mm ?? 0) * px }} />;
+  }
+  if (layer.kind === "perforation") {
+    const vertical = layer.orientation !== "horizontal";
+    return <div className="h-full w-full" style={{ [vertical ? "borderLeft" : "borderTop"]: `1px dashed ${layer.colour}`,
+      marginLeft: vertical ? "50%" : undefined, marginTop: vertical ? undefined : "50%" }} />;
+  }
+  if (layer.kind === "desk_qr" || layer.kind === "verify_qr") return <QrPlaceholder />;
+  if (layer.kind === "photo") {
+    const initials = (values.name ?? "").split(/\s+/).slice(0, 2).map((word) => word[0] ?? "").join("").toUpperCase();
+    return <div className="grid h-full w-full place-items-center bg-[#FFF4E8] font-bold text-[#142C2A]" style={{
+      borderRadius: layer.shape === "circle" ? "50%" : layer.shape === "rounded" ? "14%" : 0, fontSize: layer.h_mm * px * 0.36 }}>{initials}</div>;
+  }
+  if (layer.kind === "image") {
+    return imageUrl ? <img src={imageUrl} alt="" className="h-full w-full" style={{ objectFit: layer.fit ?? "contain", filter: grey }} />
+      : <div className="h-full w-full bg-surface" />;
+  }
+  return <div className="grid h-full w-full place-items-center rounded-control border border-dashed border-line text-[10px] text-muted"
+    style={{ background: layer.tile ? "#FFFFFF" : undefined }}>{layer.source === "symbol" ? "Symbol" : `${layer.source} logo`}</div>;
+}

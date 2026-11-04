@@ -19,6 +19,7 @@ import { ProgrammeFormEditor } from './ProgrammeFormEditor'
 import { EventPublishingPanel } from './EventPublishingPanel'
 import { EventCertificateDesigner } from '../EventCertificateDesigner'
 import { BulkCertificates } from '../eventCredentials/BulkCertificates'
+import { EventCardsPanel } from '../eventCards/EventCardsPanel'
 import { DeskBadgePanel } from '../eventCredentials/DeskBadgePanel'
 import { ProgrammeTeamsPanel } from './ProgrammeTeamsPanel'
 import { sessionScope } from './sessionScope'
@@ -46,6 +47,7 @@ export function EventProgrammePanel({ event, makerspaceId, section, access, feat
   if (section === 'certificates') return <div className="grid gap-6">
     {access.edit ? <EventCertificateDesigner makerspaceId={makerspaceId} eventId={event.id} /> : access.manager ? <BulkCertificates eventId={event.id} /> : null}
     <DeskBadgePanel eventId={event.id} registrationIds={[]} canEdit={access.edit} canPrint={access.checkIn} />
+    {access.edit && (features.includes('events.id_cards') || features.includes('events.ticket_designs')) ? <EventCardsPanel eventId={event.id} features={features} /> : null}
   </div>
   if (section === 'settings') return <div className="grid gap-6">
     {access.edit ? <ProgrammeFormEditor eventId={event.id} formKey="registration" /> : null}

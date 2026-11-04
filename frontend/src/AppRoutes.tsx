@@ -27,6 +27,7 @@ const PublicEventFeedbackPage = lazy(() => import("./features/inventory/PublicEv
 const PublicEventDetailPage = lazy(() => import("./features/inventory/PublicEventDetailPage").then((m) => ({ default: m.PublicEventDetailPage })));
 const TicketClaimPage = lazy(() => import("./features/events/ticketing/TicketClaimPage").then((m) => ({ default: m.TicketClaimPage })));
 const MemberOrdersPage = lazy(() => import("./features/events/ticketing/MemberOrdersPage").then((m) => ({ default: m.MemberOrdersPage })));
+const MemberSeriesPassPage = lazy(() => import("./features/events/ticketing/MemberSeriesPassPage").then((m) => ({ default: m.MemberSeriesPassPage })));
 const MemberEventTicketPage = lazy(() => import("./features/events/MemberEventTicketPage").then((m) => ({ default: m.MemberEventTicketPage })));
 const MemberEventHistoryPage = lazy(() => import("./features/events/MemberEventHistoryPage").then((m) => ({ default: m.MemberEventHistoryPage })));
 const SpeakerClaimPage = lazy(() => import("./features/events/SpeakerClaimPage").then((m) => ({ default: m.SpeakerClaimPage })));
@@ -196,6 +197,7 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
       <Route path="/member/speaker-claim" element={<SpeakerClaimPage />} />
       <Route path="/member/orders" element={<MemberOrdersPage />} />
       <Route path="/member/orders/:orderId" element={<MemberOrdersPage />} />
+      <Route path="/member/series/:seriesId/passes" element={<MemberSeriesPassPage />} />
       <Route path="/member/ticket-claims/:token" element={<TicketClaimPage kind="claim" />} />
       <Route path="/member/ticket-transfers/:token" element={<TicketClaimPage kind="transfer" />} />
       <Route path="/member/:memberTab" element={<MemberTabRoute />} />
@@ -249,10 +251,12 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
       <Route path="/member/events/:registrationId/ticket" element={<MemberEventTicketPage />} />
       <Route path="/m/:slug/member/orders" element={<MemberOrdersPage />} />
       <Route path="/m/:slug/member/orders/:orderId" element={<MemberOrdersPage />} />
+      <Route path="/m/:slug/member/series/:seriesId/passes" element={<MemberSeriesPassPage />} />
       <Route path="/m/:slug/member/ticket-claims/:token" element={<TicketClaimPage kind="claim" />} />
       <Route path="/m/:slug/member/ticket-transfers/:token" element={<TicketClaimPage kind="transfer" />} />
       <Route path="/member/orders" element={<MemberOrdersPage />} />
       <Route path="/member/orders/:orderId" element={<MemberOrdersPage />} />
+      <Route path="/member/series/:seriesId/passes" element={<MemberSeriesPassPage />} />
       <Route path="/member/ticket-claims/:token" element={<TicketClaimPage kind="claim" />} />
       <Route path="/member/ticket-transfers/:token" element={<TicketClaimPage kind="transfer" />} />
       <Route path="/m/:slug/member/:memberTab" element={<MemberTabRoute />} />

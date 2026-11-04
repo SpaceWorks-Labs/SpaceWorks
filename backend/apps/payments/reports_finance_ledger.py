@@ -24,6 +24,8 @@ AREAS = {
     "finance-machines": ("machines",),
     "finance-bookings": ("bookings",),
     "finance-events": ("events",),
+    # Lane L22 (#137, Q-S10): the shop's money, for the Shop Manager without view_finance.
+    "finance-shop": ("shop",),
 }
 
 
@@ -94,6 +96,7 @@ build_finance_inventory = _area_builder("finance-inventory")
 build_finance_machines = _area_builder("finance-machines")
 build_finance_bookings = _area_builder("finance-bookings")
 build_finance_events = _area_builder("finance-events")
+build_finance_shop = _area_builder("finance-shop")
 
 
 def event_finance(space, date_range=None, actor=None, event_id=None):

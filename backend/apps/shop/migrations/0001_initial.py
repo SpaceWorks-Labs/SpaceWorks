@@ -61,7 +61,7 @@ class Migration(migrations.Migration):
                 ('amount_due', models.DecimalField(decimal_places=2, default=0, max_digits=12)),
                 ('pricing_snapshot', models.JSONField(blank=True, default=dict)),
                 ('digest', models.CharField(blank=True, default='', max_length=64)),
-                ('status_secret', models.CharField(default=apps.shop.models_orders.new_status_secret, editable=False, max_length=32)),
+                ('status_secret', models.CharField(default=apps.shop.models_orders.new_status_secret, editable=False, max_length=32, unique=True)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('expires_at', models.DateTimeField(blank=True, null=True)),
                 ('paid_at', models.DateTimeField(blank=True, null=True)),

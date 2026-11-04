@@ -83,9 +83,12 @@ def record_return(order, *, actor, rows, reason=""):
         order.status, order.closed_at, order.close_reason = ShopOrder.Status.REFUNDED, timezone.now(), "returned"
         order.save(update_fields=["status", "closed_at", "close_reason"])
     for row in made:
-        action = "shop.stock_returned" if row.disposition == "restock" else "shop.stock_written_off"
-        audit.record(actor, action, makerspace=order.makerspace, target=order, meta={
-            "order_id": order.pk, "line_id": row.line_id, "variant_id": row.line.variant_id, "quantity": row.quantity})
+        if row.disposition == "restock":
+            audit.record(actor, "shop.stock_returned", makerspace=order.makerspace, target=order,
+                         meta={"order_id": order.pk, "line_id": row.line_id, "variant_id": row.line.variant_id, "quantity": row.quantity})
+        else:
+            audit.record(actor, "shop.stock_written_off", makerspace=order.makerspace, target=order,
+                         meta={"order_id": order.pk, "line_id": row.line_id, "variant_id": row.line.variant_id, "quantity": row.quantity})
     audit.record(actor, "shop.refund_requested", makerspace=order.makerspace, target=order, meta={
         "order_id": order.pk, "case_id": getattr(case, "pk", None), "amount": str(owed),
         "restocked": sum(r.quantity for r in made if r.disposition == "restock"),

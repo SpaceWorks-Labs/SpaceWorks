@@ -17,6 +17,7 @@ from apps.admin_api.permissions import IsActiveStaff
 from .gates import MANAGE, SELL, require_feature, staff_space
 from .models import ShopCashSession
 from .serializers_public import ShopErrorSerializer, ShopQuoteSerializer
+from .serializers_reports import ShopReportSerializer
 from .serializers_staff import (
     ShopCashCloseSerializer, ShopCashOpenSerializer, ShopCashSessionSerializer, ShopMemberHitSerializer, ShopPosQuoteSerializer,
     ShopPosSaleSerializer, ShopStaffOrderSerializer,
@@ -138,3 +139,21 @@ class ShopCashSessionConfirmView(APIView):
     def post(self, request, pk):
         from .services_cash import confirm_cash
         return Response(ShopCashSessionSerializer(confirm_cash(_session(request, pk), actor=request.user)).data)
+
+
+class ShopReportView(APIView):
+    permission_classes = [IsActiveStaff]
+
+    @extend_schema(tags=TAGS, parameters=[OpenApiParameter("from", str, OpenApiParameter.QUERY),
+                                          OpenApiParameter("to", str, OpenApiParameter.QUERY)],
+                   responses={200: ShopReportSerializer, **ERRORS},
+                   summary="Shop money and sales for the Shop Manager (no view_finance needed, #137)")
+    def get(self, request, makerspace_id):
+        from apps.makerspaces.local_time import local_day_bounds
+        from apps.operations.reports_shop import shop_summary
+        from django.utils.dateparse import parse_date
+        space = staff_space(request.user, makerspace_id, MANAGE)
+        start, end = (parse_date(request.query_params.get(key) or "") for key in ("from", "to"))
+        start = local_day_bounds(space, start)[0] if start else None
+        end = local_day_bounds(space, end)[1] if end else None
+        return Response(ShopReportSerializer(shop_summary(space, start, end)).data)

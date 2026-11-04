@@ -8,6 +8,7 @@ from apps.operations.report_charts_fg import REVENUE_CHART, CASH_CHART, AGEING_C
 from apps.operations.report_charts_remaining import LEDGER_CHART, JOURNAL_CHART
 from apps.operations.org_report_aggregate import register_combine
 from apps.operations.report_definitions_finance_l5 import L5_FINANCE_REPORT_DEFINITIONS
+from apps.operations.report_definitions_shop import SHOP_REPORT_DEFINITIONS
 from apps.operations.org_report_fg import combine_revenue, combine_cash, combine_ageing, combine_reconciliation
 
 FINANCE_REPORT_DEFINITIONS = (
@@ -31,6 +32,7 @@ FINANCE_REPORT_DEFINITIONS = (
                      required_action=rbac.Action.VIEW_FINANCE, title="Refunds by area and reason",
                      deployment_aggregate=False, chart_hint="grouped_bar", chart_spec=REFUNDS_CHART),
     *L5_FINANCE_REPORT_DEFINITIONS,
+    *SHOP_REPORT_DEFINITIONS,
 )
 
 # Money tracking is core: none of these requires the removable online rail.

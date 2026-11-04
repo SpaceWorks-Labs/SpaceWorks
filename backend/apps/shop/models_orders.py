@@ -74,7 +74,7 @@ class ShopOrder(ScopedPiiModelMixin, models.Model):
     pricing_snapshot = models.JSONField(default=dict, blank=True)
     digest = models.CharField(max_length=64, blank=True, default="")
     #: Bearer secret of the guest's signed status link; never exported (a moved space re-sends).
-    status_secret = models.CharField(max_length=32, default=new_status_secret, editable=False)
+    status_secret = models.CharField(max_length=32, default=new_status_secret, editable=False, unique=True)
     cash_session = models.ForeignKey("shop.ShopCashSession", null=True, blank=True, on_delete=models.SET_NULL,
                                      related_name="orders")
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.PROTECT,

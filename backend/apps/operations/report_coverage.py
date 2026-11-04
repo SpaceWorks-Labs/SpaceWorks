@@ -96,9 +96,8 @@ REPORT_MODULE_COVERAGE.update({
     "payments": ModuleReportCoverage("substantive", (*REPORT_MODULE_COVERAGE["payments"].reports, "revenue-over-time", "payments-ageing", "cash-book")),
 })
 REPORT_MODULE_COVERAGE["devices"] = ModuleReportCoverage("substantive", ("device-health", "module-operational-health"))
-# Release 2 L22: every shop sale is a ledger charge (domain `shop`), so its money is in the
-# income-vs-spending and cash-book reports; the module's health row covers the rest.
-REPORT_MODULE_COVERAGE["shop"] = ModuleReportCoverage("health_row", ("module-operational-health",))
+# Release 2 L22: shop sales by month and channel, and the shop's own ledger money.
+REPORT_MODULE_COVERAGE["shop"] = ModuleReportCoverage("substantive", ("shop-sales", "finance-shop"))
 
 
 @checks.register(checks.Tags.models)

@@ -28,4 +28,5 @@ EDGES = {
     **_remap("payments.RefundCase", ("shop.refund_requested", "case_id"), ("shop.order_unfulfilled", "case_id"),
              ("shop.order_cancelled", "case_id")),
     **_remap("procurement.ToBuyItem", ("shop.stock_restocked", "to_buy_item_id")),
+    ("procurement.bought", "credited_shop_variant_id"): AuditReference(R, "shop.ShopVariant"),
 }

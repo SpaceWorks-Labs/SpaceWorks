@@ -67,8 +67,8 @@ RELATIONAL_USER_FIELDS = frozenset({
     ("shop.ShopCashSession", "closed_by"),
     ("shop.ShopCashSession", "confirmed_by"),
 })
-# The frozen order quote: component, item names and variant ids, prices and the digest only.
-JSON_FIELDS = frozenset({("shop.ShopOrder", "pricing_snapshot")})
+# The frozen order quote (item names, variant ids, prices, the digest) and a variant's option pairs.
+JSON_FIELDS = frozenset({("shop.ShopOrder", "pricing_snapshot"), ("shop.ShopVariant", "options")})
 
 
 def extend(fields):

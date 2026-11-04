@@ -14,11 +14,13 @@ _ROUTES = (
     ("member-shop-order-cancel", ("POST",)),
     ("public-shop-orders", ("POST",)),
 )
-_ANONYMOUS = ("public-shop", "public-shop-products", "public-shop-product", "public-shop-quote",
-              "public-shop-email-code", "public-shop-order-status")
+_ANONYMOUS = {
+    "public-shop": ("GET", "HEAD"), "public-shop-products": ("GET", "HEAD"), "public-shop-product": ("GET", "HEAD"),
+    "public-shop-order-status": ("GET", "HEAD"), "public-shop-quote": ("POST",), "public-shop-email-code": ("POST",),
+}
 
 L22_CLAIM_ROUTES = {
     **{(name, method): Refused(_REASON) for name, methods in _ROUTES for method in methods},
     **{(name, "OPTIONS"): AnonymousRead() for name, _methods in _ROUTES},
-    **{(name, method): AnonymousRead() for name in _ANONYMOUS for method in ("GET", "HEAD", "POST", "OPTIONS")},
+    **{(name, method): AnonymousRead() for name, methods in _ANONYMOUS.items() for method in (*methods, "OPTIONS")},
 }

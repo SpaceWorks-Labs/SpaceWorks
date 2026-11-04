@@ -30,6 +30,7 @@ urlpatterns = [
     path("makerspaces/<int:makerspace_id>/shop/pos/sale/", p.ShopPosSaleView.as_view(), name="admin-shop-pos-sale"),
     path("makerspaces/<int:makerspace_id>/shop/members/", p.ShopMemberLookupView.as_view(),
          name="admin-shop-member-lookup"),
+    path("makerspaces/<int:makerspace_id>/shop/report/", p.ShopReportView.as_view(), name="admin-shop-report"),
     path("makerspaces/<int:makerspace_id>/shop/cash-sessions/", p.ShopCashSessionListView.as_view(),
          name="admin-shop-cash-sessions"),
     path("shop/cash-sessions/<int:pk>/close/", p.ShopCashSessionCloseView.as_view(),

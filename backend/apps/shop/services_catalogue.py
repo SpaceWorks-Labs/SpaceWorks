@@ -77,9 +77,12 @@ def _save_variant(space, product, data, actor, variant=None):
     if variant.sku and ShopVariant.objects.filter(makerspace=space, sku=variant.sku).exclude(pk=variant.pk).exists():
         raise ShopRefused("variant_invalid", "That SKU is already used in this shop.")
     variant.save()
-    audit.record(actor, "shop.variant_created" if created else "shop.variant_updated", makerspace=space,
-                 target=variant, meta={"variant_id": variant.pk, "product_id": product.pk, "price": str(variant.price),
-                                       "linked": bool(variant.linked_product_id)})
+    if created:
+        audit.record(actor, "shop.variant_created", makerspace=space, target=variant,
+                     meta={"variant_id": variant.pk, "product_id": product.pk, "price": str(variant.price), "linked": bool(variant.linked_product_id)})
+    else:
+        audit.record(actor, "shop.variant_updated", makerspace=space, target=variant,
+                     meta={"variant_id": variant.pk, "product_id": product.pk, "price": str(variant.price), "linked": bool(variant.linked_product_id)})
     return variant
 
 
@@ -95,7 +98,8 @@ def _components(space, product, rows, actor):
     if len(parts) != len(set(ids)):
         raise ShopRefused("variant_invalid", "A bundle part must be another item of this shop.")
     product.components.all().delete()
-    ShopKitComponent.objects.bulk_create([ShopKitComponent(makerspace=space, kit=product, component=parts[int(r["variant_id"])],
+    ShopKitComponent.objects.bulk_create([
+        ShopKitComponent(makerspace=space, kit=product, component=parts[int(r["variant_id"])],
                                                            quantity=max(int(r.get("quantity") or 1), 1)) for r in rows])
 
 
@@ -121,8 +125,12 @@ def save_product(space, data, *, actor, product=None):
         _save_variant(space, product, row, actor, existing.get(row.get("id")))
     if "components" in data:
         _components(space, product, data["components"] or [], actor)
-    audit.record(actor, "shop.product_created" if created else "shop.product_updated", makerspace=space,
-                 target=product, meta={"product_id": product.pk, "kind": product.kind, "is_public": product.is_public})
+    if created:
+        audit.record(actor, "shop.product_created", makerspace=space, target=product,
+                     meta={"product_id": product.pk, "kind": product.kind, "is_public": product.is_public})
+    else:
+        audit.record(actor, "shop.product_updated", makerspace=space, target=product,
+                     meta={"product_id": product.pk, "kind": product.kind, "is_public": product.is_public})
     return product
 
 
@@ -153,12 +161,14 @@ def move_stock(variant, *, actor, kind, quantity, reason=""):
     try:
         if kind == "restock":
             row = restock_shop(variant, int(quantity), actor=actor, reason=reason)
-            action = "shop.stock_restocked"
         else:
             row = adjust_shop_stock(variant, int(quantity), kind=kind, actor=actor, reason=reason)
-            action = "shop.stock_adjusted"
     except InsufficientStock as exc:
         raise ShopRefused("out_of_stock", str(exc) or "Stock cannot go below zero or below what is held.") from None
-    audit.record(actor, action, makerspace=variant.makerspace, target=row, meta={
-        "variant_id": row.pk, "kind": kind, "quantity": int(quantity), "on_hand": row.on_hand})
+    if kind == "restock":
+        audit.record(actor, "shop.stock_restocked", makerspace=variant.makerspace, target=row,
+                     meta={"variant_id": row.pk, "kind": kind, "quantity": int(quantity), "on_hand": row.on_hand})
+    else:
+        audit.record(actor, "shop.stock_adjusted", makerspace=variant.makerspace, target=row,
+                     meta={"variant_id": row.pk, "kind": kind, "quantity": int(quantity), "on_hand": row.on_hand})
     return row

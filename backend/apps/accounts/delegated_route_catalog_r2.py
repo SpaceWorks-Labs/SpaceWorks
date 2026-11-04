@@ -91,4 +91,5 @@ MEMBERSHIP_ROUTES |= frozenset("""admin-shop-settings admin-shop-products admin-
 admin-shop-variant admin-shop-variant-stock admin-shop-movements admin-shop-orders admin-shop-order
 admin-shop-order-ready admin-shop-order-collect admin-shop-order-take-payment admin-shop-order-cancel
 admin-shop-order-returns admin-shop-order-receipt admin-shop-pos-quote admin-shop-pos-sale admin-shop-member-lookup
-admin-shop-cash-sessions admin-shop-cash-session-close admin-shop-cash-session-confirm""".split())
+admin-shop-cash-sessions admin-shop-cash-session-close admin-shop-cash-session-confirm
+admin-shop-report""".split())

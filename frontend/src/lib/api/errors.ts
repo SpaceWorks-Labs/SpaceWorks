@@ -8,8 +8,10 @@ export class StructuredApiError extends Error {
   readonly detail?: string;
   readonly code?: string;
   readonly body: ApiErrorBody;
+  /** Seconds from a `Retry-After` header (429 `ip_blocked`), when the response sent one. */
+  readonly retryAfterSeconds?: number;
 
-  constructor(status: number, body: ApiErrorBody) {
+  constructor(status: number, body: ApiErrorBody, headers?: Headers) {
     const flattenMessages = (value: unknown): string[] => {
       if (typeof value === "string") return value.trim() ? [value.trim()] : [];
       if (Array.isArray(value)) return value.flatMap(flattenMessages);
@@ -23,14 +25,16 @@ export class StructuredApiError extends Error {
     this.detail = detail || undefined;
     this.code = typeof body.code === "string" ? body.code : undefined;
     this.body = body;
+    const retryAfter = Number(headers?.get("Retry-After") ?? Number.NaN);
+    this.retryAfterSeconds = Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter : undefined;
   }
 }
 
-export function apiError(status: number, value: unknown) {
+export function apiError(status: number, value: unknown, headers?: Headers) {
   const body = value && typeof value === "object" && !Array.isArray(value)
     ? value as ApiErrorBody
     : {};
-  return new StructuredApiError(status, body);
+  return new StructuredApiError(status, body, headers);
 }
 
 export function messageForStatus(status: number): string {

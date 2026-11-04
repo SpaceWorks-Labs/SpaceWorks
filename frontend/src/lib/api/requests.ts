@@ -48,7 +48,7 @@ async function publicV1Json<T>(path: string, options: RequestInit, publishableKe
   });
 
   if (!response.ok) {
-    throw apiError(response.status, await response.json().catch(() => ({})));
+    throw apiError(response.status, await response.json().catch(() => ({})), response.headers);
   }
 
   return (await response.json()) as T;
@@ -69,7 +69,7 @@ export async function staffRequestBlob(
 ): Promise<Blob> {
   const response = await staffFetch(path, options);
   if (!response.ok) {
-    throw apiError(response.status, await response.json().catch(() => ({})));
+    throw apiError(response.status, await response.json().catch(() => ({})), response.headers);
   }
   return await response.blob();
 }
@@ -82,7 +82,7 @@ export async function staffRequest<T>(
   const response = await staffFetch(path, options, false, context);
 
   if (!response.ok) {
-    throw apiError(response.status, await response.json().catch(() => ({})));
+    throw apiError(response.status, await response.json().catch(() => ({})), response.headers);
   }
   // 204 No Content (e.g. DRF destroy) has an empty body - parsing it as JSON
   // would throw and surface a successful mutation as a failure.
@@ -98,7 +98,7 @@ export async function memberRequest<T>(
 ): Promise<T> {
   const response = await staffFetch(path, options, true, "person");
   if (!response.ok) {
-    throw apiError(response.status, await response.json().catch(() => ({})));
+    throw apiError(response.status, await response.json().catch(() => ({})), response.headers);
   }
   if (response.status === 204) return undefined as T;
   return (await response.json()) as T;
@@ -106,7 +106,7 @@ export async function memberRequest<T>(
 
 export async function memberRequestBlob(path: string): Promise<Blob> {
   const response = await staffFetch(path, {}, true, "person");
-  if (!response.ok) throw apiError(response.status, await response.json().catch(() => ({})));
+  if (!response.ok) throw apiError(response.status, await response.json().catch(() => ({})), response.headers);
   return response.blob();
 }
 

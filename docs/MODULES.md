@@ -252,6 +252,8 @@ The Django apps stay internal and separable (`TOMBSTONED_APPS` still removes the
 | `bookings.room_maintenance` | `bookings` | | Maintenance schedules and logs on bookable rooms, and their work orders (L16) |
 | `bookings.room_repairs` | `bookings` | | Repair jobs on rooms, and taking a room out of service (block new bookings, the default, or warn). Requires `bookings.room_maintenance` |
 | `bookings.issue_reporting` | `bookings` | | Bookers report a problem from their own booking; the Booking Manager and the Space Manager are notified |
+| `inventory.maintenance_reminders` | — (Inventory) | ● | Tell the Inventory Manager (the `hardware_requests` family) the day before item or unit maintenance is due and the day after it goes overdue. Requires `inventory.maintenance` and Notifications; off sends nothing and keeps every schedule |
+| `bookings.room_maintenance_reminders` | `bookings` | ● | The same for room maintenance, to the Booking Manager (the `bookings` family). Requires `bookings.room_maintenance` and Notifications |
 
 `maintenance.meters`, `maintenance.calendar_feed`, `maintenance.reminders` and
 `notifications.delegated_recipients` keep their keys and now sit under `machines`, each
@@ -916,6 +918,8 @@ its parent module is off.
 | `maintenance.reminders` | `machines` (needs `notifications`, `machines.maintenance`) | | Notify scoped maintainers before and after maintenance is due | No maintenance reminders |
 | `maintenance.meters` | `machines` (needs `machines.maintenance`) | | Usage-based schedules (hours, job counts) | Calendar schedules only |
 | `maintenance.calendar_feed` | `machines` (needs `machines.maintenance`) | | Personal iCal feed of scoped maintenance | No feed |
+| `inventory.maintenance_reminders` | — (needs `notifications`, `inventory.maintenance`) | ● | Due-soon and overdue notices for item and unit maintenance to the Inventory Manager | No item maintenance reminders; schedules stay |
+| `bookings.room_maintenance_reminders` | `bookings` (needs `notifications`, `bookings.room_maintenance`) | ● | Due-soon and overdue notices for room maintenance to the Booking Manager | No room maintenance reminders; schedules stay |
 | `inventory.self_checkout` | — | ● | Member self-checkout and staff direct handouts | Every handover goes through a staff-issued request |
 | `inventory.contact_self_checkout` | — + `inventory.self_checkout` | | Without Member accounts, borrowers check tools out with name, phone and an emailed code (#91); evidence rules unchanged | Account-less checkout is refused; account-less returns always stay open |
 | `presence.geofence` | — | ● | Required location check for self check-in | Self check-in refuses when disabled/unconfigured; authorized staff check-in remains available. Coordinates are not stored |

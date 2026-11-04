@@ -161,6 +161,9 @@ export const FEATURE_DEFINITIONS: readonly FeatureDefinition[] = [
   { key: "bookings.room_maintenance", parent_module: "bookings", label: "Room maintenance" },
   { key: "bookings.room_repairs", parent_module: "bookings", label: "Room repairs" },
   { key: "bookings.issue_reporting", parent_module: "bookings", label: "Room issue reporting" },
+  // GAP2 M2: due and overdue reminders for item and room maintenance.
+  { key: "inventory.maintenance_reminders", parent_module: null, label: "Item maintenance reminders" },
+  { key: "bookings.room_maintenance_reminders", parent_module: "bookings", label: "Room maintenance reminders" },
   // L3 (#128, #132, #133): ID cards, programmes, event cards, tickets, wallet passes.
   { key: "membership.id_programmes", parent_module: "membership", label: "ID programmes" },
   { key: "membership.wallet_passes", parent_module: "membership", label: "Wallet passes for member cards" },

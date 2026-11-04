@@ -3439,6 +3439,14 @@ Release 2 lane L16 (#93, #94, #98, #100, #102, #103, #128 C-3/C-4/C-5/C-6b/C-9, 
   `ledger_api.record_expense(..., source_kind="repairs.payout", category="repair")` tagged with the
   area's domain and machine type (#100). Nothing is ever paid automatically; a Technician never
   records a payout.
+- **Item and room maintenance reminders (GAP2 M2).** `maintenance/reminders_subjects.py` adds two
+  sources to the shared reminder sweeper (`maintenance.items`, `maintenance.rooms`), each behind its
+  own default-on switch (`inventory.maintenance_reminders`, `bookings.room_maintenance_reminders`,
+  which need the parent maintenance key and Notifications). One "due soon" notice at the start of the
+  local day before an occurrence (schedule id + due date) is due, one "overdue" the day after; a run
+  moves the date on and starts a new occurrence. Notices go to the area's family
+  (`hardware_requests` / `bookings`, events `maintenance_due_soon` / `maintenance_overdue`) with the
+  subject's name and date only, and delivery re-checks the switch, the schedule and the occurrence.
 - **Maintenance spend reaches the ledger (#100, #102; GAP2 M1).** A maintenance run with a cost above
   zero -- a machine log, a completed machine schedule, a closed work order, an item or room run
   (`SubjectMaintenanceLog.cost`) -- posts exactly one `record_expense(..., category="maintenance")` in

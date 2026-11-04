@@ -855,6 +855,9 @@ identity normalization and production minimum-version comparison. `mobile_associ
 - Seams outside the package: `maintenance/work_orders.may_manage`, `maintenance/services_shared.
   prepare_machine(technician=)`, `bookings/admission._refuse_room_outage`,
   `integrations/notification_telegram_callbacks._technician_opt_in`.
+- Item and room maintenance reminders (GAP2 M2): `maintenance/reminders_subjects.py` (two reminder
+  sources registered in `operations/reminder_registry.py`, plus its notification source registered in
+  `maintenance/apps.py`); switches in `makerspaces/capability_definitions_gap2.py`.
 - Maintenance spend (GAP2 M1): `maintenance/ledger.py` posts a run's cost to L5's ledger (machine logs,
   schedules and work orders through `services_workflows._append_log`, item/room runs through
   `maintenance_subjects.run`); `maintenance/serializers_cost.py` holds the shared `cost_method` and

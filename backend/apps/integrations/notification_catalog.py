@@ -95,6 +95,9 @@ FEATURE_EVENTS[F.API_ACCESS] += ("selfhost_move_status",)
 # a "photo needs update" request, a finished card job, and ID-programme decisions.
 FEATURE_EVENTS[F.MEMBERS] += ("card_issued", "card_design_pending", "card_photo_requested", "card_job_finished",
                               "programme_card_decided", "event_card_issued")
+# Release 2 GAP2 M2: item maintenance reaches the Inventory Manager's family, rooms the Booking Manager's.
+FEATURE_EVENTS[F.HARDWARE_REQUESTS] += ("maintenance_due_soon", "maintenance_overdue")
+FEATURE_EVENTS[F.BOOKINGS] += ("maintenance_due_soon", "maintenance_overdue")
 
 # Exact default on/off per (feature, channel). Preserves today's behavior: hardware/printing
 # email + hardware Telegram on; bookings email (Part J seam) + bookings Telegram on; Slack/

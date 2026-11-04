@@ -108,12 +108,10 @@ export type StaffAuthUser = {
 
 export type PasswordLoginRequestedSurface = "member" | "staff" | "delegated";
 export type PasswordLoginSurface = PasswordLoginRequestedSurface | "verification_only";
+/** Release 2: one sign-in per person, so the server no longer reads a surface, context or space. */
 export type PasswordLoginRequest = {
   username: string;
   password: string;
-  surface: PasswordLoginRequestedSurface;
-  context?: "member" | "staff" | "platform";
-  makerspace?: string;
 };
 export type PasswordLoginResponse<TUser = unknown> = {
   access: string;

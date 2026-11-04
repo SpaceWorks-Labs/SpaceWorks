@@ -2958,7 +2958,10 @@ Owner decisions #62, #66, #74, #110c, #111 Q9-Q11, #128 C-1/C-2 and #135 Q-A1-Q-
   AND enrolled) and complete at `auth/mfa/verify`, web and device alike; `issue_social_session` stamps
   PROVIDER proof only when the person is NOT required, so "an IdP sign-in skips local TOTP" is members-only
   (#62). The OIDC browser callback and the phone doors keep challenging every enrolled account. Staff
-  device grants already accept any primary method behind a verified factor (`authority_for_login`).
+  device grants accept any primary method behind a verified factor (`authority_for_login`, the 0049
+  trigger, and since accounts `0054` the `device_grant_account_context` constraint, which until then still
+  demanded `login_method = 'password'` and turned a staff step-up from a Google, Apple, GitHub or phone
+  device session into an IntegrityError).
 - **Triggers (any one).** No valid remembered device for this person; the client's IPv4 /24 (IPv6 /64,
   #157) unseen for them in 90 days; `LOGIN_RISK_FAILURE_THRESHOLD` (3) failed steps naming the account in
   the last hour from any address (`login_risk_signals`: `user_login_failed` and `login_refused`, cache-only,

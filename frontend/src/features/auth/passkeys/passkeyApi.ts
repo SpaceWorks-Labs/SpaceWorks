@@ -1,6 +1,6 @@
 /** S-A's passkey routes (`/api/v1/auth/passkeys*`, `auth/mfa/passkey/options`, `auth/reauth/passkey*`). */
 import type {
-  PasskeyList, PasskeyLogin, PasskeyOptions, PasskeyReauthenticated, PasskeyRegistered, PasskeyRemoved, Passkey,
+  MFAVerify, PasskeyList, PasskeyLogin, PasskeyOptions, PasskeyReauthenticated, PasskeyRegistered, PasskeyRemoved, Passkey,
 } from "../../../generated/api";
 import { publicV1Request, staffRequest } from "../../../lib/api";
 import { mfaRequest } from "../mfaApi";
@@ -32,12 +32,12 @@ export async function finishPasskeySignIn({ ceremony, options }: PasskeyOptions,
     { ...post({ ceremony, credential }), credentials: "include" });
 }
 
-/** The second factor of a pending challenge: `mfa/verify` with `factor=passkey` and `webauthn`.
- *  STUB(S-B): matches S-B's `MFAVerifySerializer` on lane/r2-s-b (efae28ce); live once S-B merges. */
+/** The second factor of a pending challenge: `mfa/verify` with `factor=passkey` and `webauthn` (S-B). */
 export async function verifyPasskeyFactor<T>(challenge: string) {
   const { ceremony, options } = await mfaRequest<PasskeyOptions>("/auth/mfa/passkey/options", { challenge });
   const credential = await getPasskeyAssertion(options);
-  return mfaRequest<T>("/auth/mfa/verify", { challenge, factor: "passkey", webauthn: { ceremony, credential } });
+  const body: MFAVerify = { challenge, factor: "passkey", webauthn: { ceremony, credential } };
+  return mfaRequest<T>("/auth/mfa/verify", body);
 }
 
 /** Re-authentication for the ten-minute window. */

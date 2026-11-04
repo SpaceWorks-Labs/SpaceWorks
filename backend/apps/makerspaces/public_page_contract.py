@@ -17,7 +17,8 @@ REQUIRED = {"makerspace": ("functional_content",),
 SECTION_TYPES = {"makerspace": (*BASE_TYPES, "upcoming_events", "stats", "location", "functional_content",
                                 "membership_plans"),
                  "organization": (*BASE_TYPES, "location", "linked_makerspaces", "organization_events"),
-                 "event": BASE_TYPES}
+                 # Release 2 (#128 C-36): the opt-in public crew section on an event's page.
+                 "event": (*BASE_TYPES, "crew")}
 # Stable required-group identity across virtual GETs and first save.
 GROUP_NAMESPACE = uuid.UUID("b3fa19d5-784c-4324-9e45-8c54b0bf9af5")
 

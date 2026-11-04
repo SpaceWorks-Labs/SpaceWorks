@@ -101,6 +101,10 @@ def derived_payload(kind, owner, key, payload, *, request=None):
                 user__access_status="active", user__is_tenant_dump_stub=False).count()
         # An empty metrics block would render a bare heading; omit the section instead.
         return {"title": title, "metrics": metrics} if metrics else None
+    if key == "crew":
+        # Release 2 (#128 C-36): only on an event's page, only while `events.crew` is on.
+        from .public_page_crew import crew_section
+        return crew_section(kind, owner, title)
     if key == "membership_plans":
         from .public_page_plans import plan_cards
         return plan_cards(owner, title)

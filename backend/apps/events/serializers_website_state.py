@@ -2,12 +2,13 @@
 
 from drf_spectacular.utils import extend_schema_field, PolymorphicProxySerializer
 from rest_framework import serializers as s
-from apps.makerspaces.public_page_contract import BASE_TYPES, Document, SectionsField, INPUT_SECTION_TYPES
+from apps.makerspaces.public_page_contract import Document, SECTION_TYPES, SectionsField, INPUT_SECTION_TYPES
 from apps.makerspaces.public_page_projected_serializers import ProjectedDocument, ProjectedSections, PROJECTED_TYPES
 
 
 @extend_schema_field(PolymorphicProxySerializer(component_name="EventEditorialSectionInput",
-    serializers={key: INPUT_SECTION_TYPES[key] for key in BASE_TYPES}, resource_type_field_name="type", many=True))
+    serializers={key: INPUT_SECTION_TYPES[key] for key in SECTION_TYPES["event"]}, resource_type_field_name="type",
+    many=True))
 class EventEditorialSections(SectionsField):
     pass
 
@@ -17,7 +18,8 @@ class EventEditorialDocument(Document):
 
 
 @extend_schema_field(PolymorphicProxySerializer(component_name="PublicEventEditorialSection",
-    serializers={key: PROJECTED_TYPES[key] for key in BASE_TYPES}, resource_type_field_name="type", many=True))
+    serializers={key: PROJECTED_TYPES[key] for key in SECTION_TYPES["event"]}, resource_type_field_name="type",
+    many=True))
 class PublicEventEditorialSections(ProjectedSections):
     pass
 

@@ -49,6 +49,8 @@ class PaymentRefundView(APIView):
         if payment is None:
             raise NotFound("Payment not found.")
         _require_subject_authority(request.user, [payment])
+        from apps.payments.donations.refunds import refuse_direct_refund  # lane L18: gifts only via a case
+        refuse_direct_refund(payment)
         refund_payment(
             payment,
             amount=payload.validated_data["amount"],

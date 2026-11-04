@@ -113,6 +113,9 @@ LEGACY_ENTRIES = (
     ("event-id-cards", "apps.events.tasks_id_cards.reconcile_event_id_cards_task", 15),
     # Lane L6: expired checkout holds, missed order settlements and one payment reminder.
     ("event-order-checkouts", "apps.events.reminders_payments.sweep_order_checkouts_task", 1),
+    # Lane L18: due pledge periods raise their gift and charge; sponsor perks due tell staff once.
+    ("donation-pledges", "apps.payments.donations.tasks.raise_pledges_task", 60),
+    ("sponsor-perk-reminders", "apps.payments.donations.tasks.remind_perks_task", 1440),
 )
 _RETAINED = frozenset({
     "evidence-object-expiry", "evidence-abandoned-upload-cleanup",

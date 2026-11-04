@@ -16,6 +16,8 @@ class PaymentsConfig(AppConfig):
         register_l5()
         from .event_payout_bridge import install
         install()
+        from .donations.notices import register as register_donations  # lane L18
+        register_donations()
 
     # No `register_separable_app`: the payment ledger is permanently core. Its surfaces
     # are the record of money owed and taken, and a deployment that cannot read or settle

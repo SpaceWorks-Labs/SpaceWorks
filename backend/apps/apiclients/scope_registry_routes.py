@@ -179,6 +179,20 @@ _ROUTE_DEFINITIONS += (
     # Lane L6: the public ticket shop reads only what the event page already shows.
     ("public-event-ticket-shop", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False),
     ("public-event-ticket-shop", _WRITE, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False),
+    # Lane L18: the donation page, the sponsor walls and the listed-events calendar read only public
+    # fields; personal feeds are bearer links like the booking feed. Giving, pledging and a guest's
+    # own signed links are browser flows no API-client scope reaches (no scopes = refused).
+    *tuple((name, _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False) for name in (
+        "public-donation-page", "public-sponsor-wall", "public-event-sponsors", "public-listed-events-calendar",
+        "public-shift-calendar-feed", "public-combined-calendar-feed",
+    )),
+    *tuple((name, _WRITE, frozenset(), TARGET_TENANT_SLUG, False, False) for name in (
+        "public-donation-email-code", "public-donations", "public-donation-pledges",
+    )),
+    ("public-donation-status", _READ, frozenset(), TARGET_GLOBAL, False, False),
+    ("public-donation-tax-receipt", _READ, frozenset(), TARGET_GLOBAL, False, False),
+    ("public-donation-checkout", _WRITE, frozenset(), TARGET_GLOBAL, False, False),
+    ("public-pledge-manage", ("GET", "HEAD", "POST"), frozenset(), TARGET_GLOBAL, False, False),
 )
 
 

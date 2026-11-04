@@ -18,7 +18,7 @@ def private_event_response(request, response):
 
 
 _FEED_PATH = re.compile(
-    r"(/api/v1/(?:public/[^/\s]+/(?:event-calendar|bookings/calendar)|"
+    r"(/api/v1/(?:public/[^/\s]+/(?:event-calendar|bookings/calendar|calendar/shifts|calendar/mine)|"
     r"admin/makerspaces/[0-9]+/maintenance/feed)/)[^/?\s]+(\.ics)"
 )
 # Compatibility export; shared HMAC infrastructure imports the core helper.

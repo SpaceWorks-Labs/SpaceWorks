@@ -18,6 +18,11 @@ def resume_admission_after_settlement(payment):
     if payment.subject_type == Payment.SubjectType.EVENT_ORDER:
         _resume_event_order(payment)
         return
+    if payment.subject_type in Payment.ACCOUNTLESS_SUBJECT_TYPES:
+        from apps.payments.donations.settlement import after_settlement  # lane L18
+
+        after_settlement(payment)
+        return
     if payment.subject_type != Payment.SubjectType.MEMBERSHIP_REQUEST or payment.status not in {
         Payment.Status.PAID_ONLINE, Payment.Status.PAID_OFFLINE, Payment.Status.WAIVED,
     }:

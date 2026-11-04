@@ -19,3 +19,7 @@ def rebuild_refund_cases_task():
 def run_gateway_poll_task():
     from .gateway_poll import run_gateway_poll
     return run_gateway_poll()
+
+
+# Release 2 lane L18: pledge periods and sponsor perk reminders (registered under their own names).
+from apps.payments.donations.tasks import raise_pledges_task, remind_perks_task  # noqa: E402,F401

@@ -52,3 +52,17 @@ urlpatterns = [
         name='public-event-calendar-feed',
     ),
 ]
+
+# Release 2 L18: shift and combined bearer feeds, and the public listed-events calendar.
+from apps.events.views_calendar_feeds_r2 import (  # noqa: E402
+    PublicCombinedFeedView, PublicListedEventsFeedView, PublicShiftFeedView,
+)
+
+urlpatterns += [
+    path("<slug:makerspace_slug>/calendar/shifts/<str:raw_token>.ics", PublicShiftFeedView.as_view(),
+         name="public-shift-calendar-feed"),
+    path("<slug:makerspace_slug>/calendar/mine/<str:raw_token>.ics", PublicCombinedFeedView.as_view(),
+         name="public-combined-calendar-feed"),
+    path("<slug:makerspace_slug>/events-calendar.ics", PublicListedEventsFeedView.as_view(),
+         name="public-listed-events-calendar"),
+]

@@ -88,6 +88,8 @@ FEATURE_EVENTS[F.MEMBERS] += ("card_issued", "card_design_pending", "card_photo_
 FEATURE_EVENTS[F.EVENTS] += ("order_confirmed", "order_payment_reminder", "order_abandoned", "ticket_type_changed",
                              "pass_occurrence_cancelled", "ticket_claim_invite", "ticket_transfer_received",
                              "registration_updated", "ticket_pay_link")
+# Release 2 L18: the giver's receipt and pledge reminder, and sponsor perks coming due (staff).
+FEATURE_EVENTS[F.PAYMENTS] += ("donation_received", "pledge_due", "perk_due")
 
 # Exact default on/off per (feature, channel). Preserves today's behavior: hardware/printing
 # email + hardware Telegram on; bookings email (Part J seam) + bookings Telegram on; Slack/

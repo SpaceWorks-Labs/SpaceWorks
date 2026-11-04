@@ -923,6 +923,15 @@ CELERY_BEAT_SCHEDULE["event-order-checkouts"] = {
 }
 # --- end lane L6
 
+# --- lane L18 (release 2): pledge periods (hourly) and sponsor perk reminders (daily).
+CELERY_BEAT_SCHEDULE["donation-pledges"] = {
+    "task": "apps.payments.donations.tasks.raise_pledges_task", "schedule": crontab(minute=7),
+}
+CELERY_BEAT_SCHEDULE["sponsor-perk-reminders"] = {
+    "task": "apps.payments.donations.tasks.remind_perks_task", "schedule": crontab(hour=6, minute=17),
+}
+# --- end lane L18
+
 if "tenant_migration" in TOMBSTONED_APPS:
     CELERY_BEAT_SCHEDULE = {
         name: entry

@@ -15,8 +15,8 @@ from apps.apiclients.throttling import ClientTierRateThrottle
 
 from .gates import public_space
 from .serializers_public import (
-    BuyerOrderSerializer, EmailCodeSerializer, OrderCreateSerializer, OrderPlacedSerializer, PublicProductSerializer,
-    QuoteRequestSerializer, ShopErrorSerializer, ShopQuoteSerializer, ShopSummarySerializer,
+    ShopBuyerOrderSerializer, ShopEmailCodeSerializer, ShopOrderCreateSerializer, ShopOrderPlacedSerializer, ShopPublicProductSerializer,
+    ShopQuoteRequestSerializer, ShopErrorSerializer, ShopQuoteSerializer, ShopSummarySerializer,
 )
 
 TAGS = ["Public shop"]
@@ -38,7 +38,7 @@ class PublicShopView(_Public):
 
 
 class PublicProductListView(_Public):
-    @extend_schema(tags=TAGS, auth=[], parameters=PAGE, responses={200: PublicProductSerializer(many=True), **ERRORS})
+    @extend_schema(tags=TAGS, auth=[], parameters=PAGE, responses={200: ShopPublicProductSerializer(many=True), **ERRORS})
     def get(self, request, makerspace_slug):
         from .public import product_payload, public_products
         space = public_space(makerspace_slug)
@@ -52,7 +52,7 @@ class PublicProductListView(_Public):
 
 
 class PublicProductDetailView(_Public):
-    @extend_schema(tags=TAGS, auth=[], responses={200: PublicProductSerializer, **ERRORS})
+    @extend_schema(tags=TAGS, auth=[], responses={200: ShopPublicProductSerializer, **ERRORS})
     def get(self, request, makerspace_slug, product_slug):
         from .public import product_payload, public_products
         space = public_space(makerspace_slug)
@@ -63,12 +63,12 @@ class PublicProductDetailView(_Public):
 class PublicShopQuoteView(_Public):
     throttle_scope = "pricing_quote"
 
-    @extend_schema(tags=TAGS, auth=[], request=QuoteRequestSerializer, responses={200: ShopQuoteSerializer, **ERRORS},
+    @extend_schema(tags=TAGS, auth=[], request=ShopQuoteRequestSerializer, responses={200: ShopQuoteSerializer, **ERRORS},
                    summary="Price a basket (the same quote the order is charged at)")
     def post(self, request, makerspace_slug):
         from .pricing import priced_basket, quote_payload
         space = public_space(makerspace_slug)
-        body = QuoteRequestSerializer(data=request.data)
+        body = ShopQuoteRequestSerializer(data=request.data)
         body.is_valid(raise_exception=True)
         basket = priced_basket(space, body.validated_data["lines"], person=request.user, public=True)
         return Response(ShopQuoteSerializer(quote_payload(space, basket)).data)
@@ -77,12 +77,12 @@ class PublicShopQuoteView(_Public):
 class PublicShopEmailCodeView(_Public):
     throttle_scope = "shop_codes"
 
-    @extend_schema(tags=TAGS, auth=[], request=EmailCodeSerializer, responses={204: None, **ERRORS},
+    @extend_schema(tags=TAGS, auth=[], request=ShopEmailCodeSerializer, responses={204: None, **ERRORS},
                    summary="Email a one-time code so a guest can order (#80 machinery)")
     def post(self, request, makerspace_slug):
         from .checkout import send_code
         space = public_space(makerspace_slug)
-        body = EmailCodeSerializer(data=request.data)
+        body = ShopEmailCodeSerializer(data=request.data)
         body.is_valid(raise_exception=True)
         send_code(space, body.validated_data["email"])
         return Response(status=204)
@@ -91,25 +91,25 @@ class PublicShopEmailCodeView(_Public):
 class PublicShopOrderView(_Public):
     throttle_scope = "shop_orders"
 
-    @extend_schema(tags=TAGS, auth=[], request=OrderCreateSerializer, responses={201: OrderPlacedSerializer, **ERRORS},
+    @extend_schema(tags=TAGS, auth=[], request=ShopOrderCreateSerializer, responses={201: ShopOrderPlacedSerializer, **ERRORS},
                    summary="Place an order: hold the stock, then pay online or at the desk")
     def post(self, request, makerspace_slug):
         from .checkout import buyer_for, checkout_url, place_online_order
         from .notices import status_token
         space = public_space(makerspace_slug)
-        body = OrderCreateSerializer(data=request.data)
+        body = ShopOrderCreateSerializer(data=request.data)
         body.is_valid(raise_exception=True)
         data = body.validated_data
         buyer = buyer_for(request, space, data)
         order, payment = place_online_order(space, buyer, data)
         order.refresh_from_db()
-        return Response(OrderPlacedSerializer({
+        return Response(ShopOrderPlacedSerializer({
             "order": order, "checkout_url": checkout_url(payment),
             "status_token": status_token(order) if buyer.is_guest else ""}).data, status=201)
 
 
 class PublicShopOrderStatusView(_Public):
-    @extend_schema(tags=TAGS, auth=[], responses={200: BuyerOrderSerializer, **ERRORS},
+    @extend_schema(tags=TAGS, auth=[], responses={200: ShopBuyerOrderSerializer, **ERRORS},
                    summary="A guest's order, by the signed link in their email")
     def get(self, request, makerspace_slug, token):
         from .errors import ShopRefused
@@ -118,4 +118,4 @@ class PublicShopOrderStatusView(_Public):
         order = order_for_token(token, makerspace=space)
         if order is None:
             raise ShopRefused("not_found", "Order not found.")
-        return Response(BuyerOrderSerializer(order).data)
+        return Response(ShopBuyerOrderSerializer(order).data)

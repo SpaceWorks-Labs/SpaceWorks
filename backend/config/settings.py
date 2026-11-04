@@ -1755,7 +1755,16 @@ REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"].update({
 })
 # --- end lane L6
 
-# --- lane L22 (release 2): the public shop's order and guest email-code budgets, per client/IP.
+# --- lane L22 (release 2): stable OpenAPI names for the shop's choice sets.
+SPECTACULAR_SETTINGS["ENUM_NAME_OVERRIDES"].update({
+    "ShopProductKindEnum": "apps.shop.models_catalogue.ShopProduct.Kind",
+    "ShopOrderStatusEnum": "apps.shop.models_orders.ShopOrder.Status",
+    "ShopStockMovementKindEnum": "apps.shop.models_stock.ShopStockMovement.Kind",
+    "ShopStockMoveKindEnum": [("restock", "restock"), ("count", "count"), ("damage", "damage"),
+                              ("internal_use", "internal_use")],
+    "ShopCashSessionStatusEnum": "apps.shop.models_pos.ShopCashSession.Status",
+})
+# The public shop's order and guest email-code budgets, per client/IP.
 REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"].update({
     "shop_orders": "30/hour",
     "shop_codes": "10/hour",

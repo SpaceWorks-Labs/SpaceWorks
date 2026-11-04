@@ -9,12 +9,12 @@ from rest_framework import serializers
 from apps.accounts.pii_presentation import PiiMaskingSerializerMixin
 
 from .models import ShopCashSession, ShopOrder, ShopProduct, ShopSettings, ShopStockMovement, ShopVariant
-from .serializers_public import LineInputSerializer, OrderLineSerializer
+from .serializers_public import ShopLineInputSerializer, ShopOrderLineSerializer
 
 MONEY = {"max_digits": 12, "decimal_places": 2}
 
 
-class VariantSerializer(serializers.ModelSerializer):
+class ShopStaffVariantSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
     linked_product_id = serializers.IntegerField(required=False, allow_null=True)
     available = serializers.SerializerMethodField()
@@ -30,15 +30,15 @@ class VariantSerializer(serializers.ModelSerializer):
         return shop_sellable(variant)
 
 
-class ComponentSerializer(serializers.Serializer):
+class ShopComponentSerializer(serializers.Serializer):
     variant_id = serializers.IntegerField(min_value=1)
     quantity = serializers.IntegerField(min_value=1, max_value=999, default=1)
 
 
-class ProductSerializer(serializers.ModelSerializer):
-    variants = VariantSerializer(many=True, required=False)
+class ShopProductSerializer(serializers.ModelSerializer):
+    variants = ShopStaffVariantSerializer(many=True, required=False)
     components = serializers.SerializerMethodField()
-    component_input = ComponentSerializer(many=True, required=False, write_only=True, source="components_in")
+    component_input = ShopComponentSerializer(many=True, required=False, write_only=True, source="components_in")
     image_url = serializers.SerializerMethodField()
     price = serializers.DecimalField(**MONEY, required=False, write_only=True, min_value=0)
 
@@ -59,7 +59,7 @@ class ProductSerializer(serializers.ModelSerializer):
         return public_image_storage.public_url(product.image_key) or ""
 
 
-class StockMoveSerializer(serializers.Serializer):
+class ShopStockMoveSerializer(serializers.Serializer):
     kind = serializers.ChoiceField(choices=("restock", "count", "damage", "internal_use"))
     quantity = serializers.IntegerField(min_value=-100000, max_value=100000)
     reason = serializers.CharField(max_length=200, allow_blank=True, required=False, default="")
@@ -74,7 +74,7 @@ class StockMoveSerializer(serializers.Serializer):
         return attrs
 
 
-class MovementSerializer(serializers.ModelSerializer):
+class ShopMovementSerializer(serializers.ModelSerializer):
     actor_name = serializers.SerializerMethodField()
 
     class Meta:
@@ -85,18 +85,18 @@ class MovementSerializer(serializers.ModelSerializer):
         return getattr(row.actor, "username", "") if row.actor_id else ""
 
 
-class ReturnRowSerializer(serializers.Serializer):
+class ShopReturnRowSerializer(serializers.Serializer):
     line_id = serializers.IntegerField(min_value=1)
     quantity = serializers.IntegerField(min_value=1, max_value=999)
     disposition = serializers.ChoiceField(choices=("restock", "write_off"))
 
 
-class ReturnSerializer(serializers.Serializer):
-    rows = ReturnRowSerializer(many=True, min_length=1, max_length=50)
+class ShopReturnSerializer(serializers.Serializer):
+    rows = ShopReturnRowSerializer(many=True, min_length=1, max_length=50)
     reason = serializers.CharField(max_length=200, allow_blank=True, required=False, default="")
 
 
-class StaffReturnSerializer(serializers.Serializer):
+class ShopStaffReturnSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     line_id = serializers.IntegerField()
     quantity = serializers.IntegerField()
@@ -106,9 +106,9 @@ class StaffReturnSerializer(serializers.Serializer):
     created_at = serializers.DateTimeField()
 
 
-class StaffOrderSerializer(PiiMaskingSerializerMixin, serializers.ModelSerializer):
-    lines = OrderLineSerializer(many=True, read_only=True)
-    returns = StaffReturnSerializer(many=True, read_only=True)
+class ShopStaffOrderSerializer(PiiMaskingSerializerMixin, serializers.ModelSerializer):
+    lines = ShopOrderLineSerializer(many=True, read_only=True)
+    returns = ShopStaffReturnSerializer(many=True, read_only=True)
     buyer_name = serializers.SerializerMethodField()
     buyer_email = serializers.SerializerMethodField()
     payment_status = serializers.SerializerMethodField()
@@ -140,46 +140,46 @@ class StaffOrderSerializer(PiiMaskingSerializerMixin, serializers.ModelSerialize
         return order.pickup_event.title if order.pickup_event_id and order.pickup_event else ""
 
 
-class DeskPaymentSerializer(serializers.Serializer):
+class ShopDeskPaymentSerializer(serializers.Serializer):
     method = serializers.ChoiceField(choices=("cash", "upi", "card_machine"), default="cash")
     reference = serializers.CharField(max_length=64, allow_blank=True, required=False, default="")
     received_at = serializers.DateTimeField(required=False, allow_null=True)
     hand_over = serializers.BooleanField(required=False, default=True)
 
 
-class PosQuoteSerializer(serializers.Serializer):
-    lines = LineInputSerializer(many=True, min_length=1, max_length=50)
+class ShopPosQuoteSerializer(serializers.Serializer):
+    lines = ShopLineInputSerializer(many=True, min_length=1, max_length=50)
     member_id = serializers.IntegerField(required=False, allow_null=True)
 
 
-class PosSaleSerializer(PosQuoteSerializer, DeskPaymentSerializer):
+class ShopPosSaleSerializer(ShopPosQuoteSerializer, ShopDeskPaymentSerializer):
     quote_digest = serializers.CharField(required=False, allow_blank=True, max_length=64)
     receipt_email = serializers.EmailField(required=False, allow_blank=True, max_length=254)
 
 
-class CollectSerializer(serializers.Serializer):
+class ShopCollectSerializer(serializers.Serializer):
     pickup_code = serializers.CharField(max_length=12)
 
 
-class CancelSerializer(serializers.Serializer):
+class ShopCancelSerializer(serializers.Serializer):
     reason = serializers.CharField(max_length=200, allow_blank=True, required=False, default="")
 
 
-class MemberHitSerializer(serializers.Serializer):
+class ShopMemberHitSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField()
 
 
-class CashOpenSerializer(serializers.Serializer):
+class ShopCashOpenSerializer(serializers.Serializer):
     opening_float = serializers.DecimalField(**MONEY, min_value=0)
 
 
-class CashCloseSerializer(serializers.Serializer):
+class ShopCashCloseSerializer(serializers.Serializer):
     counted_cash = serializers.DecimalField(**MONEY, min_value=0)
     note = serializers.CharField(max_length=300, allow_blank=True, required=False, default="")
 
 
-class CashSessionSerializer(serializers.ModelSerializer):
+class ShopCashSessionSerializer(serializers.ModelSerializer):
     expected_now = serializers.SerializerMethodField()
 
     class Meta:
@@ -201,7 +201,7 @@ class ShopSettingsSerializer(serializers.ModelSerializer):
         read_only_fields = ("updated_at",)
 
 
-class ReceiptLineSerializer(serializers.Serializer):
+class ShopReceiptLineSerializer(serializers.Serializer):
     label = serializers.CharField()
     sku = serializers.CharField(allow_blank=True)
     quantity = serializers.IntegerField()
@@ -213,7 +213,7 @@ class ReceiptLineSerializer(serializers.Serializer):
     tax_amount = serializers.DecimalField(**MONEY, allow_null=True)
 
 
-class ReceiptSerializer(serializers.Serializer):
+class ShopReceiptSerializer(serializers.Serializer):
     order_id = serializers.IntegerField()
     space_name = serializers.CharField()
     supplier_gstin = serializers.CharField(allow_blank=True)
@@ -224,7 +224,7 @@ class ReceiptSerializer(serializers.Serializer):
     pickup_code = serializers.CharField()
     channel = serializers.CharField()
     currency = serializers.CharField()
-    lines = ReceiptLineSerializer(many=True)
+    lines = ShopReceiptLineSerializer(many=True)
     subtotal = serializers.DecimalField(**MONEY)
     discount_total = serializers.DecimalField(**MONEY)
     tax_total = serializers.DecimalField(**MONEY)
@@ -235,5 +235,5 @@ class ReceiptSerializer(serializers.Serializer):
     notes = serializers.ListField(child=serializers.CharField())
 
 
-class ReceiptEmailSerializer(serializers.Serializer):
+class ShopReceiptEmailSerializer(serializers.Serializer):
     email = serializers.EmailField(required=False, allow_blank=True, max_length=254)

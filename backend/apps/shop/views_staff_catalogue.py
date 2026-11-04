@@ -18,7 +18,7 @@ from .gates import MANAGE, VIEW, staff_space
 from .models import ShopProduct, ShopSettings, ShopStockMovement, ShopVariant
 from .serializers_public import ShopErrorSerializer
 from .serializers_staff import (
-    MovementSerializer, ProductSerializer, ShopSettingsSerializer, StockMoveSerializer, VariantSerializer,
+    ShopMovementSerializer, ShopProductSerializer, ShopSettingsSerializer, ShopStockMoveSerializer, ShopStaffVariantSerializer,
 )
 
 TAGS = ["Admin shop"]
@@ -51,46 +51,46 @@ class ShopProductListView(APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(tags=TAGS, parameters=[*PAGE, OpenApiParameter("archived", bool, OpenApiParameter.QUERY)],
-                   responses={200: ProductSerializer(many=True), **ERRORS})
+                   responses={200: ShopProductSerializer(many=True), **ERRORS})
     def get(self, request, makerspace_id):
         space = staff_space(request.user, makerspace_id, VIEW)
         rows = ShopProduct.objects.filter(makerspace=space).prefetch_related("variants", "components")
         rows = rows.filter(archived_at__isnull=request.query_params.get("archived") != "true")
-        return page(request, rows, ProductSerializer)
+        return page(request, rows, ShopProductSerializer)
 
-    @extend_schema(tags=TAGS, request=ProductSerializer, responses={201: ProductSerializer, **ERRORS})
+    @extend_schema(tags=TAGS, request=ShopProductSerializer, responses={201: ShopProductSerializer, **ERRORS})
     def post(self, request, makerspace_id):
         from .services_catalogue import save_product
         space = staff_space(request.user, makerspace_id, MANAGE)
-        body = ProductSerializer(data=request.data)
+        body = ShopProductSerializer(data=request.data)
         body.is_valid(raise_exception=True)
         product = save_product(space, _write_data(body.validated_data), actor=request.user)
-        return Response(ProductSerializer(product, context={"request": request}).data, status=201)
+        return Response(ShopProductSerializer(product, context={"request": request}).data, status=201)
 
 
 class ShopProductDetailView(APIView):
     permission_classes = [IsActiveStaff]
 
-    @extend_schema(tags=TAGS, responses={200: ProductSerializer, **ERRORS})
+    @extend_schema(tags=TAGS, responses={200: ShopProductSerializer, **ERRORS})
     def get(self, request, pk):
-        return Response(ProductSerializer(product_for(request, pk), context={"request": request}).data)
+        return Response(ShopProductSerializer(product_for(request, pk), context={"request": request}).data)
 
-    @extend_schema(tags=TAGS, request=ProductSerializer, responses={200: ProductSerializer, **ERRORS})
+    @extend_schema(tags=TAGS, request=ShopProductSerializer, responses={200: ShopProductSerializer, **ERRORS})
     def patch(self, request, pk):
         from .services_catalogue import save_product
         product = product_for(request, pk, MANAGE)
-        body = ProductSerializer(product, data=request.data, partial=True)
+        body = ShopProductSerializer(product, data=request.data, partial=True)
         body.is_valid(raise_exception=True)
         product = save_product(product.makerspace, _write_data(body.validated_data), actor=request.user,
                                product=product)
-        return Response(ProductSerializer(product, context={"request": request}).data)
+        return Response(ShopProductSerializer(product, context={"request": request}).data)
 
-    @extend_schema(tags=TAGS, request=None, responses={200: ProductSerializer, **ERRORS},
+    @extend_schema(tags=TAGS, request=None, responses={200: ShopProductSerializer, **ERRORS},
                    summary="Archive a product and its variants (orders keep them)")
     def delete(self, request, pk):
         from .services_catalogue import archive_product
         product = archive_product(product_for(request, pk, MANAGE), actor=request.user)
-        return Response(ProductSerializer(product, context={"request": request}).data)
+        return Response(ShopProductSerializer(product, context={"request": request}).data)
 
 
 class ShopVariantDetailView(APIView):
@@ -101,39 +101,39 @@ class ShopVariantDetailView(APIView):
         staff_space(request.user, variant.makerspace_id, action)
         return variant
 
-    @extend_schema(tags=TAGS, request=None, responses={200: VariantSerializer, **ERRORS},
+    @extend_schema(tags=TAGS, request=None, responses={200: ShopStaffVariantSerializer, **ERRORS},
                    summary="Archive one variant")
     def delete(self, request, pk):
         from .services_catalogue import archive_variant
-        return Response(VariantSerializer(archive_variant(self.variant(request, pk, MANAGE), actor=request.user)).data)
+        return Response(ShopStaffVariantSerializer(archive_variant(self.variant(request, pk, MANAGE), actor=request.user)).data)
 
 
 class ShopVariantStockView(APIView):
     permission_classes = [IsActiveStaff]
 
-    @extend_schema(tags=TAGS, request=StockMoveSerializer, responses={200: VariantSerializer, **ERRORS},
+    @extend_schema(tags=TAGS, request=ShopStockMoveSerializer, responses={200: ShopStaffVariantSerializer, **ERRORS},
                    summary="Restock, or correct the count (count, damage, internal use)")
     def post(self, request, pk):
         from .services_catalogue import move_stock
         variant = get_object_or_404(ShopVariant.objects.select_related("makerspace"), pk=pk)
         staff_space(request.user, variant.makerspace_id, MANAGE)
-        body = StockMoveSerializer(data=request.data)
+        body = ShopStockMoveSerializer(data=request.data)
         body.is_valid(raise_exception=True)
         row = move_stock(variant, actor=request.user, **body.validated_data)
-        return Response(VariantSerializer(row).data)
+        return Response(ShopStaffVariantSerializer(row).data)
 
 
 class ShopMovementListView(APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(tags=TAGS, parameters=[*PAGE, OpenApiParameter("variant_id", int, OpenApiParameter.QUERY)],
-                   responses={200: MovementSerializer(many=True), **ERRORS})
+                   responses={200: ShopMovementSerializer(many=True), **ERRORS})
     def get(self, request, makerspace_id):
         space = staff_space(request.user, makerspace_id, VIEW)
         rows = ShopStockMovement.objects.filter(makerspace=space).select_related("actor")
         if request.query_params.get("variant_id", "").isdigit():
             rows = rows.filter(variant_id=int(request.query_params["variant_id"]))
-        return page(request, rows, MovementSerializer)
+        return page(request, rows, ShopMovementSerializer)
 
 
 class ShopSettingsView(APIView):

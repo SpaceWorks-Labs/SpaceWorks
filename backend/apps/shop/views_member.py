@@ -15,7 +15,7 @@ from rest_framework.views import APIView
 from apps.accounts.staff_identity import actor_ids_for
 
 from .models import ShopOrder
-from .serializers_public import BuyerOrderSerializer, ShopErrorSerializer
+from .serializers_public import ShopBuyerOrderSerializer, ShopErrorSerializer
 
 TAGS = ["Member shop"]
 ERRORS = {code: ShopErrorSerializer for code in (400, 403, 404, 409)}
@@ -35,7 +35,7 @@ class MemberShopOrderListView(APIView):
 
     @extend_schema(tags=TAGS, parameters=[OpenApiParameter("makerspace_id", int, OpenApiParameter.QUERY),
                                           OpenApiParameter("page", int, OpenApiParameter.QUERY)],
-                   responses={200: BuyerOrderSerializer(many=True), **ERRORS})
+                   responses={200: ShopBuyerOrderSerializer(many=True), **ERRORS})
     def get(self, request):
         rows = my_orders(request.user)
         if request.query_params.get("makerspace_id", "").isdigit():
@@ -43,23 +43,23 @@ class MemberShopOrderListView(APIView):
         paginator = PageNumberPagination()
         paginator.page_size = 24
         page = paginator.paginate_queryset(rows.order_by("-created_at", "-pk"), request)
-        return paginator.get_paginated_response(BuyerOrderSerializer(page, many=True).data)
+        return paginator.get_paginated_response(ShopBuyerOrderSerializer(page, many=True).data)
 
 
 class MemberShopOrderDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(tags=TAGS, responses={200: BuyerOrderSerializer, **ERRORS})
+    @extend_schema(tags=TAGS, responses={200: ShopBuyerOrderSerializer, **ERRORS})
     def get(self, request, pk):
-        return Response(BuyerOrderSerializer(get_object_or_404(my_orders(request.user), pk=pk)).data)
+        return Response(ShopBuyerOrderSerializer(get_object_or_404(my_orders(request.user), pk=pk)).data)
 
 
 class MemberShopOrderCancelView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(tags=TAGS, request=None, responses={200: BuyerOrderSerializer, **ERRORS},
+    @extend_schema(tags=TAGS, request=None, responses={200: ShopBuyerOrderSerializer, **ERRORS},
                    summary="Cancel my unpaid order (its stock goes back; nothing is charged)")
     def post(self, request, pk):
         from .services_orders import cancel_unpaid
         order = cancel_unpaid(get_object_or_404(my_orders(request.user), pk=pk), actor=request.user)
-        return Response(BuyerOrderSerializer(order).data)
+        return Response(ShopBuyerOrderSerializer(order).data)

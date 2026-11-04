@@ -16,8 +16,8 @@ from .gates import MANAGE, SELL, VIEW, require_feature, staff_space
 from .models import ShopOrder
 from .serializers_public import ShopErrorSerializer
 from .serializers_staff import (
-    CancelSerializer, CollectSerializer, DeskPaymentSerializer, ReceiptEmailSerializer, ReceiptSerializer,
-    ReturnSerializer, StaffOrderSerializer,
+    ShopCancelSerializer, ShopCollectSerializer, ShopDeskPaymentSerializer, ShopReceiptEmailSerializer, ShopReceiptSerializer,
+    ShopReturnSerializer, ShopStaffOrderSerializer,
 )
 from .views_staff_catalogue import PAGE, page
 
@@ -37,13 +37,13 @@ def order_for(request, pk, action=VIEW):
 def _out(request, order):
     order = ShopOrder.objects.select_related("buyer", "pickup_event").prefetch_related("lines", "returns").get(
         pk=order.pk)
-    return Response(StaffOrderSerializer(order, context={"request": request}).data)
+    return Response(ShopStaffOrderSerializer(order, context={"request": request}).data)
 
 
 class ShopOrderListView(APIView):
     permission_classes = [IsActiveStaff]
 
-    @extend_schema(tags=TAGS, parameters=FILTERS, responses={200: StaffOrderSerializer(many=True), **ERRORS})
+    @extend_schema(tags=TAGS, parameters=FILTERS, responses={200: ShopStaffOrderSerializer(many=True), **ERRORS})
     def get(self, request, makerspace_id):
         space = staff_space(request.user, makerspace_id, VIEW)
         rows = ShopOrder.objects.filter(makerspace=space).select_related("buyer", "pickup_event").prefetch_related(
@@ -55,13 +55,13 @@ class ShopOrderListView(APIView):
             rows = rows.filter(channel=query["channel"])
         if query.get("code"):
             rows = rows.filter(pickup_code=query["code"].strip().upper()[:12])
-        return page(request, rows, StaffOrderSerializer)
+        return page(request, rows, ShopStaffOrderSerializer)
 
 
 class ShopOrderDetailView(APIView):
     permission_classes = [IsActiveStaff]
 
-    @extend_schema(tags=TAGS, responses={200: StaffOrderSerializer, **ERRORS})
+    @extend_schema(tags=TAGS, responses={200: ShopStaffOrderSerializer, **ERRORS})
     def get(self, request, pk):
         return _out(request, order_for(request, pk))
 
@@ -69,7 +69,7 @@ class ShopOrderDetailView(APIView):
 class ShopOrderReadyView(APIView):
     permission_classes = [IsActiveStaff]
 
-    @extend_schema(tags=TAGS, request=None, responses={200: StaffOrderSerializer, **ERRORS},
+    @extend_schema(tags=TAGS, request=None, responses={200: ShopStaffOrderSerializer, **ERRORS},
                    summary="Put a paid order on the pickup shelf (the buyer is told)")
     def post(self, request, pk):
         from .services_orders import mark_ready
@@ -79,11 +79,11 @@ class ShopOrderReadyView(APIView):
 class ShopOrderCollectView(APIView):
     permission_classes = [IsActiveStaff]
 
-    @extend_schema(tags=TAGS, request=CollectSerializer, responses={200: StaffOrderSerializer, **ERRORS},
+    @extend_schema(tags=TAGS, request=ShopCollectSerializer, responses={200: ShopStaffOrderSerializer, **ERRORS},
                    summary="Hand a paid order over against its pickup code")
     def post(self, request, pk):
         from .services_orders import collect
-        body = CollectSerializer(data=request.data)
+        body = ShopCollectSerializer(data=request.data)
         body.is_valid(raise_exception=True)
         return _out(request, collect(order_for(request, pk, SELL), actor=request.user,
                                      code=body.validated_data["pickup_code"]))
@@ -92,11 +92,11 @@ class ShopOrderCollectView(APIView):
 class ShopOrderTakePaymentView(APIView):
     permission_classes = [IsActiveStaff]
 
-    @extend_schema(tags=TAGS, request=DeskPaymentSerializer, responses={200: StaffOrderSerializer, **ERRORS},
+    @extend_schema(tags=TAGS, request=ShopDeskPaymentSerializer, responses={200: ShopStaffOrderSerializer, **ERRORS},
                    summary="Take payment at the desk for a pay-at-desk order (cash, UPI or card)")
     def post(self, request, pk):
         from .services_pos import collect_payment
-        body = DeskPaymentSerializer(data=request.data)
+        body = ShopDeskPaymentSerializer(data=request.data)
         body.is_valid(raise_exception=True)
         return _out(request, collect_payment(order_for(request, pk, SELL), actor=request.user,
                                              **body.validated_data))
@@ -105,11 +105,11 @@ class ShopOrderTakePaymentView(APIView):
 class ShopOrderCancelView(APIView):
     permission_classes = [IsActiveStaff]
 
-    @extend_schema(tags=TAGS, request=CancelSerializer, responses={200: StaffOrderSerializer, **ERRORS},
+    @extend_schema(tags=TAGS, request=ShopCancelSerializer, responses={200: ShopStaffOrderSerializer, **ERRORS},
                    summary="Cancel an unpaid order, or (shop managers) a paid order never collected")
     def post(self, request, pk):
         from .services_orders import cancel_uncollected, cancel_unpaid
-        body = CancelSerializer(data=request.data)
+        body = ShopCancelSerializer(data=request.data)
         body.is_valid(raise_exception=True)
         order = order_for(request, pk, SELL)
         if order.status in ShopOrder.OPEN_STATUSES:
@@ -121,13 +121,13 @@ class ShopOrderCancelView(APIView):
 class ShopOrderReturnView(APIView):
     permission_classes = [IsActiveStaff]
 
-    @extend_schema(tags=TAGS, request=ReturnSerializer, responses={200: StaffOrderSerializer, **ERRORS},
+    @extend_schema(tags=TAGS, request=ShopReturnSerializer, responses={200: ShopStaffOrderSerializer, **ERRORS},
                    summary="Take items back (restock or write off) and open the refund case")
     def post(self, request, pk):
         from .services_returns import record_return
         order = order_for(request, pk, MANAGE)
         require_feature(order.makerspace, "shop.returns")
-        body = ReturnSerializer(data=request.data)
+        body = ShopReturnSerializer(data=request.data)
         body.is_valid(raise_exception=True)
         record_return(order, actor=request.user, rows=body.validated_data["rows"],
                       reason=body.validated_data["reason"])
@@ -137,21 +137,21 @@ class ShopOrderReturnView(APIView):
 class ShopOrderReceiptView(APIView):
     permission_classes = [IsActiveStaff]
 
-    @extend_schema(tags=TAGS, responses={200: ReceiptSerializer, **ERRORS},
+    @extend_schema(tags=TAGS, responses={200: ShopReceiptSerializer, **ERRORS},
                    summary="The receipt or tax invoice, itemised for 80 mm and A4 printing")
     def get(self, request, pk):
         from .receipts import receipt_payload
         order = order_for(request, pk, VIEW)
         require_feature(order.makerspace, "shop.receipts")
-        return Response(ReceiptSerializer(receipt_payload(order)).data)
+        return Response(ShopReceiptSerializer(receipt_payload(order)).data)
 
-    @extend_schema(tags=TAGS, request=ReceiptEmailSerializer, responses={204: None, **ERRORS},
+    @extend_schema(tags=TAGS, request=ShopReceiptEmailSerializer, responses={204: None, **ERRORS},
                    summary="Email the receipt to the buyer")
     def post(self, request, pk):
         from .receipts import email_receipt
         order = order_for(request, pk, SELL)
         require_feature(order.makerspace, "shop.receipts")
-        body = ReceiptEmailSerializer(data=request.data)
+        body = ShopReceiptEmailSerializer(data=request.data)
         body.is_valid(raise_exception=True)
         email_receipt(order, body.validated_data.get("email", ""))
         return Response(status=204)

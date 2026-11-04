@@ -23,7 +23,7 @@ from apps.inventory import public_image_storage
 
 from .gates import MANAGE
 from .serializers_public import ShopErrorSerializer
-from .serializers_staff import ProductSerializer
+from .serializers_staff import ShopProductSerializer
 from .views_staff_catalogue import product_for
 
 TAGS = ["Admin shop"]
@@ -54,7 +54,7 @@ class ShopProductImageView(APIView):
         return Response(PublicImageUploadResponseSerializer({"object_key": object_key, **upload}).data,
                         status=status.HTTP_201_CREATED)
 
-    @extend_schema(tags=TAGS, request=PublicImageAttachRequestSerializer, responses={200: ProductSerializer, **ERRORS})
+    @extend_schema(tags=TAGS, request=PublicImageAttachRequestSerializer, responses={200: ShopProductSerializer, **ERRORS})
     @transaction.atomic
     def put(self, request, pk):
         from apps.makerspaces.limits import add_storage
@@ -85,9 +85,9 @@ class ShopProductImageView(APIView):
             public_image_storage.release_public_image_on_commit(product.makerspace, old_key)
         audit.record(request.user, "shop.product_image_set", makerspace=product.makerspace, target=product,
                      meta={"product_id": product.pk})
-        return Response(ProductSerializer(product, context={"request": request}).data)
+        return Response(ShopProductSerializer(product, context={"request": request}).data)
 
-    @extend_schema(tags=TAGS, request=None, responses={200: ProductSerializer, **ERRORS})
+    @extend_schema(tags=TAGS, request=None, responses={200: ShopProductSerializer, **ERRORS})
     def delete(self, request, pk):
         product = product_for(request, pk, MANAGE)
         if product.image_key:
@@ -96,4 +96,4 @@ class ShopProductImageView(APIView):
             public_image_storage.release_public_image_on_commit(product.makerspace, old_key)
             audit.record(request.user, "shop.product_image_cleared", makerspace=product.makerspace,
                          target=product, meta={"product_id": product.pk})
-        return Response(ProductSerializer(product, context={"request": request}).data)
+        return Response(ShopProductSerializer(product, context={"request": request}).data)

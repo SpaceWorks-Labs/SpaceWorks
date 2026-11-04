@@ -156,13 +156,16 @@ def revoke_login(scope, actor):
         if not row.login_role:
             raise AnalyticsError("analytics_login_missing", "There is no login to revoke.")
         role = row.login_role
-        if provisioning.login_exists(role):
-            _require_available()
+        available, _reason = provisioning.availability()
+        if available:
+            # Also clears a FixedRoleScope row a restore left behind without its role.
             try:
                 provisioning.drop_login(role)
             except provisioning.ProvisioningFailed:
                 raise AnalyticsError("analytics_login_failed",
                                      "Could not remove the database login. Nothing was changed.") from None
+        elif provisioning.login_exists(role):
+            _require_available()
         row.login_role, row.login_password = "", ""
         row.login_created_at = row.login_rotated_at = None
         row.save()

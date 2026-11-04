@@ -771,7 +771,10 @@ identity normalization and production minimum-version comparison. `mobile_associ
   `services_catalogue.py`, `reorder.py` + `restock.py` (To-Buy), `notices.py`, `tasks.py` (minute sweep),
   `receipts.py`, `public.py`, views/urls for public, member and staff. Stock math lives in
   `apps/inventory/availability_shop.py`; reports in `apps/operations/reports_shop.py` and
-  `payments/reports_finance_ledger.py` (`finance-shop`).
+  `payments/reports_finance_ledger.py` (`finance-shop`). Frontend: `features/shop/` (public shop, basket,
+  checkout, guest status page), `features/staff/shop/` (orders, till, cash-up, receipt at 80 mm/A4,
+  catalogue, stock, settings, reports; `ShopPanel.tsx` is the tab), `features/members/shopOrders/`, and
+  `features/publicPages/PublicShopCards.tsx` (the Pages `shop` section).
 - Events: `events/models_id_cards.py`, `id_cards*.py`, `services_checkin_cards.py`,
   `id_cards_tickets.py` (`render_ticket(registration, fmt)`), `urls_id_cards*.py`, `tasks_id_cards.py`.
 - Makerspaces: `models_member_card_settings.py`, `member_card_admin_views_l3.py`,

@@ -90,6 +90,7 @@ function FamilyHome() {
   }
 }
 const MfaAccountPage = lazy(() => import("./features/auth/MfaAccountPage").then((m) => ({ default: m.MfaAccountPage })));
+const NotMePage = lazy(() => import("./features/auth/NotMePage").then((m) => ({ default: m.NotMePage })));
 const StaffInvitationAcceptPage = lazy(() => import("./features/auth/StaffInvitationAcceptPage").then((m) => ({ default: m.StaffInvitationAcceptPage })));
 const BookingStaffInvitePage = lazy(() => import("./features/staff/BookingStaffInvitePage").then((m) => ({ default: m.BookingStaffInvitePage })));
 const EventStaffInvitePage = lazy(() => import("./features/staff/EventStaffInvitePage").then((m) => ({ default: m.EventStaffInvitePage })));
@@ -136,6 +137,8 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
     routes = <Routes><Route path="/account/restore" element={<AccountRestorePage />} /></Routes>;
   } else if (location.pathname === "/mfa") {
     routes = <Routes><Route path="/mfa" element={<MfaAccountPage />} /></Routes>;
+  } else if (location.pathname === "/security/not-me") {
+    routes = <Routes><Route path="/security/not-me" element={<NotMePage />} /></Routes>;
   } else if (location.pathname === "/staff-invitations/accept") {
     routes = <Routes><Route path="/staff-invitations/accept" element={<StaffInvitationAcceptPage />} /></Routes>;
   } else if (location.pathname === "/staff/booking-invite") {

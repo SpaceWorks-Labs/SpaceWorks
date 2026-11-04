@@ -297,3 +297,5 @@ from .audit_references_account_merge import EDGES as ACCOUNT_MERGE_AUDIT_EDGES  
 AUDIT_META_REFERENCES.update(ACCOUNT_MERGE_AUDIT_EDGES)
 from .audit_references_l23 import EDGES as L23_AUDIT_EDGES  # noqa: E402
 AUDIT_META_REFERENCES.update(L23_AUDIT_EDGES)
+from .audit_references_l16 import EDGES as L16_AUDIT_EDGES  # noqa: E402
+AUDIT_META_REFERENCES.update(L16_AUDIT_EDGES)

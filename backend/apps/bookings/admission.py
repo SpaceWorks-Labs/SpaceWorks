@@ -26,6 +26,7 @@ def validate_admission(space, booking, *, now, actor, override_reason="", check_
     booking.space = space
     if not space.is_active:
         raise BookingInvalidTransition("Inactive spaces cannot accept bookings.")
+    _refuse_room_outage(space, booking)
     if booking.member_id:
         # Reload account standing rather than trusting a caller's cached relation.
         booking.member = type(booking.member).objects.get(pk=booking.member_id)
@@ -41,6 +42,14 @@ def validate_admission(space, booking, *, now, actor, override_reason="", check_
         space, booking.starts_at, booking.ends_at, exclude=booking.pk,
     ):
         raise BookingConflict("This space is already booked for that time.")
+
+
+def _refuse_room_outage(space, booking):
+    """L16 (#128 C-6b): a room out of service in block mode refuses overlapping bookings."""
+    from apps.separability.registry import runtime_active
+    if runtime_active("maintenance") and booking.starts_at and booking.ends_at:
+        from apps.maintenance.repairs.room_outages import refuse_if_blocked
+        refuse_if_blocked(space, booking.starts_at, booking.ends_at)
 
 
 def require_feature(space, key):

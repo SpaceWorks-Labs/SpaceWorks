@@ -240,7 +240,7 @@ export function MemberArea() {
     {unauthenticated && !showSignIn && policy?.startsWith("invite") ? <p className="text-sm text-muted">Sign in to view memberships or claim an invitation.</p> : null}
     {error ? <p className="text-sm text-danger" role="alert">{message(error)}</p> : null}
     {memberships.isError && !unauthenticated ? <Link className="desk-button-brand inline-flex" to="/admin">Sign in</Link> : null}
-    {activeTab === "bookings" && !unauthenticated && memberships.isSuccess && bootstrap.data?.modules.includes("bookings") ? <MyBookings slug={resolvedSlug} /> : null}
+    {activeTab === "bookings" && !unauthenticated && memberships.isSuccess && bootstrap.data?.modules.includes("bookings") ? <MyBookings slug={resolvedSlug} canReport={(bootstrap.data?.features ?? []).includes("bookings.issue_reporting")} /> : null}
     {/* Event history needs only an account: an attendee without a membership reaches it from Home. */}
     {!unauthenticated && memberships.isSuccess && bootstrap.data?.modules.includes("events") && (activeTab === "events" || activeTab === "overview" && membership?.membership_status !== "active") ? <MemberEventHistoryLink slug={slug} /> : null}
     {unauthenticated ? <button type="button" className="desk-button-brand" onClick={() => setShowSignIn(true)}>Sign in to your account</button> : null}

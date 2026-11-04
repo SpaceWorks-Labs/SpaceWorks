@@ -7,6 +7,7 @@ each lane keeps its own `catalog_*.py` and adds one line here.
 
 def lane_entries(authority, D):
     from .catalog_l12 import authority_entries as _l12
+    from .catalog_l16 import authority_entries as _l16
     from .catalog_l23 import authority_entries as _l23
     from .catalog_login_security import authority_entries as _s0_authority
     from .catalog_r2_l1 import authority_entries as _r2_l1_authority
@@ -21,5 +22,6 @@ def lane_entries(authority, D):
     entries += _s0_authority(authority, D)
     entries += _r2_l15_authority(authority, D)
     entries += _l12(authority, D)
+    entries += _l16(authority, D)
     entries += _l23(authority, D)
     return entries

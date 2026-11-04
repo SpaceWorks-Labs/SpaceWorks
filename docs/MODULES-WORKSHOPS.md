@@ -62,7 +62,8 @@ Required by `printing`.
 See [the per-parent switches](MODULES.md#maintenance-to-buy-warranty-and-repairs-switches-under-each-parent).
 
 - **What it is** — preventive maintenance schedules and immutable logs of completed maintenance,
-  including reactive repairs. Work orders with status, assignee and priority are not available.
+  including reactive repairs. Work orders (L12) carry status, assignee and priority; reported
+  issues and repair jobs live under `machines.repairs` (L16).
 - **What it adds** — the `maintenance` workflow, the maintenance section of the dashboard, and log
   documents. Completing a schedule sets its next due date to the recorded completion date plus its
   interval; a late completion starts a fresh interval. Backdated logs use their recorded date.

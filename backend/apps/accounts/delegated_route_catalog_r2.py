@@ -62,3 +62,12 @@ MEMBERSHIP_ROUTES |= frozenset("""admin-machine-sessions admin-machine-session-s
 admin-machine-session-assign admin-machine-session-confirm admin-machine-type-session-settings""".split())
 # Release 2 L26 (#170): Settings › Public stats, a Space-Manager-only settings group.
 DELEGABLE_ROUTES |= {"admin-makerspace-public-stats-settings"}
+# Release-2 lane L16: issues, repairs, technicians, service state and item/room maintenance.
+# Per-makerspace staff authority only (the Technician actions are never organization-grantable);
+# every service re-checks the area manager's action or the Technician's assignment/coverage.
+MEMBERSHIP_ROUTES |= frozenset("""admin-issues admin-issue-photo-upload admin-my-repair-jobs admin-service-state
+admin-technicians admin-technician-candidates admin-technician-defaults admin-subject-maintenance admin-my-maintenance admin-room-outages
+admin-issue-detail admin-issue-triage admin-issue-reject admin-issue-assign admin-issue-unassign admin-issue-dispatch
+admin-issue-start admin-issue-work-log admin-issue-parts admin-issue-quote admin-issue-approve admin-issue-payout
+admin-issue-fix admin-issue-close admin-technician-detail admin-technician-opt-in-link admin-technician-consent
+admin-subject-maintenance-detail admin-subject-maintenance-run admin-machine-maintenance-run""".split())

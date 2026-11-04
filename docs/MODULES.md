@@ -244,9 +244,14 @@ The Django apps stay internal and separable (`TOMBSTONED_APPS` still removes the
 | `machines.warranty` | `machines` | | Warranty records and documents on machines |
 | `inventory.tobuy` | — (Inventory) | | To-Buy rows for inventory items (the `hardware` stream), reorder drafts and, later, the shop |
 | `inventory.warranty` | — (Inventory) | | Warranty records and documents on inventory assets |
-| `machines.repairs`, `machines.issue_reporting` | `machines` | | Reserved for repairs and issue reporting (L16); no effect yet |
-| `inventory.maintenance`, `inventory.repairs`, `inventory.issue_reporting` | — (Inventory) | | Reserved (L16); the work-order model already accepts item subjects behind `inventory.maintenance` |
-| `bookings.room_maintenance`, `bookings.room_repairs`, `bookings.issue_reporting` | `bookings` | | Reserved (L16); no effect yet |
+| `machines.repairs` | `machines` | | Repair jobs on machines (L16): the Repairs queue, triage onto L12's work order, the technician directory, sends by email/chat, visits, parts, quotes and ledger payouts. Requires `machines.maintenance` |
+| `machines.issue_reporting` | `machines` | | Members report a problem from their own machine job; the type-scoped Machine Manager and the Space Manager are notified (works without repairs: notify only) |
+| `inventory.maintenance` | — (Inventory) | | Maintenance schedules and logs on inventory items and units, and their work orders (L16) |
+| `inventory.repairs` | — (Inventory) | | Repair jobs on items and units, as for machines. Requires `inventory.maintenance` |
+| `inventory.issue_reporting` | — (Inventory) | | Borrowers report a problem from their own loan (account-less borrowers by their verified email, #80); the Inventory Manager and the Space Manager are notified |
+| `bookings.room_maintenance` | `bookings` | | Maintenance schedules and logs on bookable rooms, and their work orders (L16) |
+| `bookings.room_repairs` | `bookings` | | Repair jobs on rooms, and taking a room out of service (block new bookings, the default, or warn). Requires `bookings.room_maintenance` |
+| `bookings.issue_reporting` | `bookings` | | Bookers report a problem from their own booking; the Booking Manager and the Space Manager are notified |
 
 `maintenance.meters`, `maintenance.calendar_feed`, `maintenance.reminders` and
 `notifications.delegated_recipients` keep their keys and now sit under `machines`, each
@@ -272,6 +277,15 @@ requiring `machines.maintenance`.
   purging `machines.tobuy` never deletes an inventory row.
 - **Who switches them.** The Space Manager; a module's manager with that module's settings
   grant (see [Settings authority](INVARIANTS.md#settings-authority)).
+- **Repairs and issue reporting (L16).** A report needs its area's `*.issue_reporting`
+  switch; everything after it needs `*.repairs`, which needs the area's maintenance switch
+  because the repair job is the L12 work order. With repairs off a report is notify-only and
+  the manager fixes, closes or rejects it. Off answers 404 and keeps every report. Purging
+  `*.repairs` deletes that area's issues with their history, photos, technician sends and
+  parts; `*.issue_reporting` owns no rows of its own; the shared technician directory goes
+  only with a tenant purge. Purging `inventory.maintenance` / `bookings.room_maintenance`
+  deletes that kind's schedules, logs and work orders (rooms also their outages). See
+  [Repairs and technicians](INVARIANTS.md#repairs-and-technicians).
 
 
 ## Events

@@ -131,3 +131,10 @@ class MaintenanceLogDocument(models.Model):
 
 
 from .models_work_orders import WorkOrder  # noqa: E402,F401
+# Release 2 L16: technicians, issue reports, repairs and item/room maintenance.
+from .repairs.models_contacts import TechnicianContact, TechnicianCoverage, TechnicianDefault  # noqa: E402,F401
+from .repairs.models_issues import IssueAssignment, IssueReport  # noqa: E402,F401
+from .repairs.models_records import IssueEvent, IssuePhoto, RepairPart, TechnicianDispatch  # noqa: E402,F401
+from .repairs.models_service import (  # noqa: E402,F401
+    RoomOutage, SubjectMaintenanceLog, SubjectMaintenanceSchedule,
+)

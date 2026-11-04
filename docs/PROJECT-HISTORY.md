@@ -16,6 +16,15 @@
   `captcha_failed`, `turnstile_site_key` in `/api/v1/config`, CSP only when configured); per-space
   `security.captcha_on_sign_in` and `security.staff_ip_allowlist` (staff routes only,
   `staff_network_refused`); daily telemetry retention.
+- **2026-11-02 -- release 2 L16, Technician role, issue reporting and repairs (#93, #98, #102, #103,
+  #128 C-3/C-4/C-5/C-6b/C-9).** The Technician is the 8th built-in role (assigned repair jobs,
+  maintenance runs and service state within their coverage; no inventory, money or settings). Members
+  and account-less borrowers report problems from their own loan, booking or machine job; staff triage
+  them onto L12's work order, send them to in-house or outside technicians (email always, chat after a
+  one-time opt-in, every send recorded), log visits, parts (stock out through availability, To-Buy for
+  parts needed), quotes approved by the area manager and payouts through the ledger only. Machines,
+  items, units and rooms go in and out of service (room outages block or warn bookings), and items
+  and rooms get maintenance schedules. Eight per-parent switches; `maintenance/0005`, `makerspaces/0119-0120`.
 
 - **2026-11-02 -- release 2 L12, machines and loans depth (#76, #77, #94, #140-#142).** One "Request a
   job" flow for every machine type (maker_formats-checked files, checked-in members only) with a visible

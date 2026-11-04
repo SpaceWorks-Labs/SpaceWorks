@@ -126,6 +126,8 @@ FIELD_OBJECT_RULES = (
     FieldObjectRule("machines.MachineDocument", "object_key", BucketRule.PRIVATE),
     FieldObjectRule("machines.ServiceRequestFile", "object_key", BucketRule.PRIVATE),
     FieldObjectRule("maintenance.MaintenanceLogDocument", "object_key", BucketRule.PRIVATE),
+    # L16: a private repair photo (staging-key presign, promoted once on attach).
+    FieldObjectRule("maintenance.IssuePhoto", "object_key", BucketRule.PRIVATE),
     FieldObjectRule("makerspaces.Makerspace", "cover_image_key", BucketRule.PUBLIC_IMAGE),
     FieldObjectRule("makerspaces.Makerspace", "logo_key", BucketRule.PUBLIC_IMAGE),
     FieldObjectRule("makerspaces.MemberProfile", "avatar_key", BucketRule.PUBLIC_IMAGE),

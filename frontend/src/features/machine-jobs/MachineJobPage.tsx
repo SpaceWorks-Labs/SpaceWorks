@@ -14,6 +14,7 @@ import { JobQuoteCard } from "./JobQuoteCard";
 import { JobTimeline } from "./JobTimeline";
 import { MemberJobsShell, type MemberJobsContext } from "./MemberJobsShell";
 import { failureText, jobLabel, jobRefetchInterval, type MemberJob } from "./types";
+import { ReportProblem } from "../repairs/ReportProblem";
 
 const day = (iso: string) => new Date(iso.length === 10 ? `${iso}T12:00:00` : iso).toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
 
@@ -58,6 +59,8 @@ function JobDetail({ id, context }: { id: number; context: MemberJobsContext }) 
         <h2 id="job-timeline-title" className="title-panel">Timeline</h2>
         <JobTimeline timeline={job.timeline} />
       </section>
+      {job.machine_name && (context.features ?? []).includes("machines.issue_reporting") ? <div className="justify-self-start">
+        <ReportProblem source={{ makerspace_id: job.makerspace_id, machine_job_id: job.id }} label="Report a problem with the machine" /></div> : null}
       {job.can_cancel ? <div className="justify-self-start"><ServiceCancelButton title={job.title} onCancel={() => cancelOwnServiceRequest(job.id)}
         invalidate={[jobKeys.detail(id), jobKeys.all, activityKey]} /></div> : null}
     </div> : null}

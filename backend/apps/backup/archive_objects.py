@@ -262,6 +262,7 @@ def module_for_model(label):
         "bookings.BookableSpace": "bookings",
         "bookings.BookableSpacePhoto": "bookings",
         "maintenance.MaintenanceLogDocument": "maintenance",
+        "maintenance.IssuePhoto": "maintenance",
         "procurement.ToBuyReceipt": "procurement",
         "makerspaces.MemberProfile": "membership",
         "makerspaces.MemberProject": "membership",

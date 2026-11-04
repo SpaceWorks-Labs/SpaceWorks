@@ -152,6 +152,15 @@ export const FEATURE_DEFINITIONS: readonly FeatureDefinition[] = [
   { key: "mobile.watch_actions", parent_module: "mobile", label: "Watch-friendly push actions" },
   // L23 (#158): metered machine sessions.
   { key: "machines.sessions", parent_module: "machines", label: "Machine sessions" },
+  // L16 (#128 C-3/C-9): repairs, issue reporting and maintenance under each parent.
+  { key: "machines.repairs", parent_module: "machines", label: "Machine repairs & technicians" },
+  { key: "machines.issue_reporting", parent_module: "machines", label: "Machine issue reporting" },
+  { key: "inventory.maintenance", parent_module: null, label: "Inventory maintenance" },
+  { key: "inventory.repairs", parent_module: null, label: "Inventory repairs & technicians" },
+  { key: "inventory.issue_reporting", parent_module: null, label: "Inventory issue reporting" },
+  { key: "bookings.room_maintenance", parent_module: "bookings", label: "Room maintenance" },
+  { key: "bookings.room_repairs", parent_module: "bookings", label: "Room repairs" },
+  { key: "bookings.issue_reporting", parent_module: "bookings", label: "Room issue reporting" },
 ];
 
 export function featureEnabled(features: Iterable<string>, key: string) {

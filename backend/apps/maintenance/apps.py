@@ -9,3 +9,7 @@ class MaintenanceConfig(AppConfig):
         from apps.separability.tombstones import register_separable_app
 
         register_separable_app("maintenance")
+        # L16: the issue-report notification source (recovery re-checks live authority).
+        from .repairs.notify import register
+
+        register()

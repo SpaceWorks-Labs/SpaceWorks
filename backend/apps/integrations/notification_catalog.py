@@ -29,6 +29,8 @@ FEATURE_EVENTS = {
         "overdue_escalated", "back_available", "problem_report.filed",
         # Lane L12: withdrawn and expired requests, and a waitlist offer.
         "cancelled", "expired", "waitlist_offer",
+        # Lane L16: an item problem reported, a repair quote awaiting approval.
+        "issue_reported", "repair_quote_pending",
     ),
     F.PRINTING: (
         "submitted", "accepted", "started", "rejected", "completed", "failed",
@@ -51,11 +53,16 @@ FEATURE_EVENTS = {
     F.BOOKINGS: (
         "created", "confirmed", "rejected", "cancelled", "restored", "completed", "no_show",
         "reminder",
+        # Lane L16: a room problem reported, a repair quote awaiting approval.
+        "issue_reported", "repair_quote_pending",
     ),
     F.MAINTENANCE: (
         "schedule_created", "schedule_updated", "schedule_deactivated", "logged",
         "schedule_completed",
         "due_soon", "overdue",
+        # Lane L16: a machine problem reported, a repair quote awaiting approval, and the
+        # technician send (only its WhatsApp template binding reads this key).
+        "issue_reported", "repair_quote_pending", "repair_dispatched",
     ),
     # request_pending is the existing application-received event; keep its stable key.
     F.MEMBERS: ("request_pending", "member_joined", "approved", "declined",

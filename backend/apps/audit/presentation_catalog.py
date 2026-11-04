@@ -35,6 +35,7 @@ from .presentation_catalog_programme import ENTRIES as _PROGRAMME
 from .presentation_catalog_reimbursements import ENTRIES as _REIMBURSEMENTS
 from .presentation_catalog_l12 import ENTRIES as _L12
 from .presentation_catalog_l23 import ENTRIES as _L23
+from .presentation_catalog_l16 import ENTRIES as _L16
 
 # Closed name -> callable registry for target links. Phase 10 ships no resolver: a link
 # needs a real route and query-level tenant authorization, which no generic one has.
@@ -91,7 +92,7 @@ PRESENTATION_CATALOG = _compose(
     _STAFF_ROLES,
     _ACCOUNTS, _MAKERSPACES, _HARDWARE, _MACHINES, _COMMUNITY, _MIGRATION, _PAYMENTS,
     _PLATFORM, _MEMBER_ACCOUNT, _MERGED, _PROFILES, _WA_TWILIO, _WA_META, _P2_P_CHAT, _P2_BOOKINGS, _P2_EVENTS,
-    _MESSAGING, _R2_L4, _L12, _L23,
+    _MESSAGING, _R2_L4, _L12, _L23, _L16,
 )
 
 

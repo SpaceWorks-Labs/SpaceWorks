@@ -14,7 +14,7 @@ import type { Makerspace } from "./panels/shared";
 import { StaffPanelErrorBoundary } from "./StaffPanelErrorBoundary";
 import { PlatformProgrammeDashboard } from "./eventProgramme/PlatformProgrammeDashboard";
 import { GrantedResourcesPanel } from "./GrantedResourcesPanel";
-import { ConsumablesPanel } from "./StaffTabLoaders";
+import { ConsumablesPanel, RepairsPanel } from "./StaffTabLoaders";
 
 import { PaymentsPanel, RefundQueue, FinancePanel, EventPayoutsSection, DevicesPanel, DashboardPanel, NotificationInbox, DirectLoans, Inventory, Ledger, MachinesPanel, EventsPanel, OrganizedEventsPanel, OrganizationAnalyticsPanel, OrganizationsPanel, BookingsPanel, MembersPanel, MemberCardsPanel, QrTools, RequestsPanel, OperationsReports, AuditLog, BulkImport, ScannerPanel, ContainersPanel, StocktakePanel, StockTransferPanel, ProcurementPanel, WarrantyPanel, AccountabilityPanel, Categories, NeedsFixShelf, HandoverConsole } from "./StaffTabLoaders";
 
@@ -199,6 +199,8 @@ export function StaffTabContent({
         />
       ) : null}
       {activeTab === "consumables" && allowedTabs.includes("consumables") ? <ConsumablesPanel key={makerspaceKey} makerspace={activeMakerspace} canEditInventory={canEditInventory} /> : null}
+      {activeTab === "repairs" && allowedTabs.includes("repairs") ? <RepairsPanel key={makerspaceKey} makerspace={activeMakerspace}
+        actions={isSuperadmin ? [...actorActions, "manage_makerspace", "manage_machines", "edit_inventory", "manage_bookings"] : actorActions} /> : null}
       {activeTab === "transfers" && (canEditInventory || isSuperadmin) ? (
         <StockTransferPanel
           key={makerspaceKey}

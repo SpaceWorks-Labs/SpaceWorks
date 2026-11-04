@@ -30,10 +30,14 @@ FEATURES = {WorkOrder.Subject.MACHINE: "machines.maintenance", WorkOrder.Subject
 def may_manage(actor, order):
     if order.subject_type == WorkOrder.Subject.MACHINE:
         from apps.machines import access
-        return access.can_manage_machine(actor, order.machine)
-    if order.subject_type == WorkOrder.Subject.SPACE:
-        return rbac.can(actor, rbac.Action.MANAGE_BOOKINGS, order.makerspace_id)
-    return rbac.can(actor, rbac.Action.EDIT_INVENTORY, order.makerspace_id)
+        allowed = access.can_manage_machine(actor, order.machine)
+    elif order.subject_type == WorkOrder.Subject.SPACE:
+        allowed = rbac.can(actor, rbac.Action.MANAGE_BOOKINGS, order.makerspace_id)
+    else:
+        allowed = rbac.can(actor, rbac.Action.EDIT_INVENTORY, order.makerspace_id)
+    # L16: a Technician works the orders assigned to them (#128 C-3).
+    from .repairs.authority import technician_may_work_order
+    return allowed or technician_may_work_order(actor, order)
 
 
 def _check(actor, order):
@@ -126,7 +130,7 @@ def assign(actor, order, assignee):
     if order.status not in WorkOrder.OPEN_STATUSES:
         raise ValidationError({"status": "Only an open work order can be reassigned."})
     staff = (rbac.Action.MANAGE_MACHINES, rbac.Action.EDIT_INVENTORY, rbac.Action.MANAGE_BOOKINGS,
-             rbac.Action.MANAGE_MAKERSPACE)
+             rbac.Action.MANAGE_MAKERSPACE, rbac.Action.WORK_REPAIRS)
     if assignee is not None and not any(rbac.can(assignee, action, order.makerspace_id) for action in staff):
         raise ValidationError({"assignee_id": "Assign a staff member of this makerspace."})
     order.assignee = assignee

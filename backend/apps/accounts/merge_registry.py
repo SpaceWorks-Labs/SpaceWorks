@@ -25,12 +25,13 @@ from .merge_registry_rows_membership import ROWS as _MEMBERSHIP
 from .merge_registry_rows_pricing import ROWS as _PRICING
 from .merge_registry_rows_l12 import ROWS as _L12
 from .merge_registry_rows_l23 import ROWS as _L23
+from .merge_registry_rows_l16 import ROWS as _L16
 from .merge_registry_rows_operations import ROWS as _OPERATIONS
 from .merge_registry_types import (  # noqa: F401 -- re-exported
     KEEP_ON_SHELL, REPOINT, UNIQUE_RESOLVE, compose,
 )
 
-USER_REFERENCES, USER_ID_COLUMNS = compose(_ACCOUNTS, _COMMUNITY, _EVENTS, _OPERATIONS, _MEMBERSHIP, _FINANCE, _PRICING, _L12, _L23)
+USER_REFERENCES, USER_ID_COLUMNS = compose(_ACCOUNTS, _COMMUNITY, _EVENTS, _OPERATIONS, _MEMBERSHIP, _FINANCE, _PRICING, _L12, _L23, _L16)
 
 
 def disposition_for(label, field_name):

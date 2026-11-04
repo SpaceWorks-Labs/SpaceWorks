@@ -31,6 +31,7 @@ class MakerspaceMembership(models.Model):
         EVENT_MANAGER = "event_manager", "Event Manager"
         BOOKING_MANAGER = "booking_manager", "Booking Manager"
         HANDOVER = "handover", "Handover"
+        TECHNICIAN = "technician", "Technician"
         CUSTOM = "custom", "Custom"
 
     objects = CommunityMembershipManager()

@@ -35,6 +35,11 @@ ROLE_CATALOG = (
         "view_inventory", "assign_box", "issue_request", "issue_direct_loan",
         "return_request", "upload_evidence", "collect_service_request",
     }), True),
+    # Release 2 L16 (#128 C-3): works assigned repair jobs, runs scheduled maintenance and
+    # sets service state within the person's coverage. No inventory, money or settings.
+    RoleDefinition("technician", "Technician", "technician", frozenset({
+        "work_repairs", "run_maintenance", "set_service_state",
+    }), True),
     RoleDefinition("member", "Member", None, frozenset()),
 )
 ROLE_BY_SLUG = {role.slug: role for role in ROLE_CATALOG}

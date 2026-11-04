@@ -147,3 +147,5 @@ from .origin_scope_routes_r2_l23 import MODEL_LOOKUPS as R2_L23_LOOKUPS
 MODEL_LOOKUPS.update(R2_L23_LOOKUPS)
 from .origin_scope_routes_r2_l26 import MAKERSPACE_ROUTES as R2_L26_MAKERSPACE_ROUTES  # noqa: E402
 MAKERSPACE_KWARG_ROUTES.update(R2_L26_MAKERSPACE_ROUTES)
+from .origin_scope_routes_r2_l16 import MODEL_LOOKUPS as R2_L16_LOOKUPS
+MODEL_LOOKUPS.update(R2_L16_LOOKUPS)

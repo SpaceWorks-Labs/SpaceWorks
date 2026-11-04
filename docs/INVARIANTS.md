@@ -3190,9 +3190,9 @@ Owner decisions #62, #66, #74, #110c, #111 Q9-Q11, #128 C-1/C-2 and #135 Q-A1-Q-
 - **The `maintenance` and `procurement` module keys are retired.** Their surfaces, and warranty,
   are capabilities under each parent (`capability_definitions_r2_l17.py`): `machines.maintenance`,
   `machines.tobuy`, `machines.warranty`, `inventory.tobuy`, `inventory.warranty` (parentless
-  inventory family), plus reserved `machines.repairs|issue_reporting`,
+  inventory family), plus `machines.repairs|issue_reporting`,
   `inventory.maintenance|repairs|issue_reporting`, `bookings.room_maintenance|room_repairs|
-  issue_reporting` (frontend_exposed=False, no surface until L12/L16). Rooms have no To-Buy or
+  issue_reporting`, built by L16 (see [Repairs and technicians](#repairs-and-technicians)). Rooms have no To-Buy or
   warranty switch in release 2 (#137 Q-C3). Do not reintroduce the old keys; new features join
   their parent as capabilities (#97).
 - **A switch-off is a 404, not a 400.** Folded routes gate through
@@ -3220,6 +3220,67 @@ Owner decisions #62, #66, #74, #110c, #111 Q9-Q11, #128 C-1/C-2 and #135 Q-A1-Q-
   closure carries a fair-use limit (`module_switch_authority.LIMIT_GATED_MODULES` with a non-null
   `resource_limit`) is installed by the superadmin only. Every purge stays superadmin-only. The
   generic makerspace PATCH still refuses `enabled_modules`.
+
+## Repairs and technicians
+
+Release 2 lane L16 (#93, #94, #98, #100, #102, #103, #128 C-3/C-4/C-5/C-6b/C-9, #137 Q-T1–Q-T3). Code:
+`apps/maintenance/repairs/` (an internal package of the `maintenance` app, #97).
+
+- **One repair model.** A reported issue (`IssueReport`) is linked, when staff triage it with the
+  area's `*.repairs` switch on, to L12's single `maintenance.WorkOrder` for its subject (machine,
+  item, unit or room). Never add a second repair/job table: starting and fixing an issue move the
+  work order through `work_orders.move`, so a fixed machine repair also writes the immutable
+  `MaintenanceLog`. `*.repairs` requires the area's maintenance switch for that reason; reporting
+  (`*.issue_reporting`) works alone as notify-only, and a manager then fixes, closes or rejects it.
+- **Who reports.** Only the person who used the thing: the borrower of that loan, the booker of
+  that booking, the owner of that machine job (`repairs/reporting.py`). An account-less borrower
+  or guest booker proves their email with the borrow-request code first (`consume_code`, before
+  any eligibility answer, so an unproven caller learns nothing). Everything else is
+  `reporter_not_eligible` (403); claim sessions are refused.
+- **Technician role (8th default).** `technician` holds exactly `work_repairs`,
+  `run_maintenance`, `set_service_state`: never inventory editing, money, settings, staff or
+  members, and none of the three is organization-grantable. Scope (Q-T1 a): the jobs assigned to
+  them (`IssueAssignment` by person or by their in-house `TechnicianContact`), plus maintenance
+  runs and service state for the machine types / inventory / rooms their in-house contact's
+  coverage names. No coverage means nothing beyond assigned jobs (fails closed, like a Machine
+  Manager without type links). Only the Space Manager sets an in-house contact's coverage.
+- **Managers act themselves (#102).** The type-scoped Machine Manager, the Inventory Manager and
+  the Booking Manager do every step in their own area with no grant; the Space Manager everywhere.
+  Two small seams admit the Technician into L12's/maintenance's own services, each fail-closed:
+  `work_orders.may_manage` (an existing order assigned to them or to their issue) and
+  `services_shared.prepare_machine(..., technician=True)` (logging and completing — never editing —
+  machine schedules in coverage).
+- **Reporter privacy (Q-T2).** A Technician sees the issue, photos and the reporter's first name
+  only; the area manager also sees the reporter's name and email (to relay). Reporter name and
+  email, and a contractor's phone, email, Telegram handle and chat id, are scoped PII.
+- **Dispatch is notify-only (#98, C-4).** Email always; Telegram, WhatsApp and SMS only after the
+  contractor's one-time opt-in (a 7-day link; Telegram by `/start <code>` to the bot, WhatsApp/SMS on
+  the web page), SMS only with the `sms` module, WhatsApp only through a bound approved template
+  (`maintenance / repair_dispatched / staff`). Asking for a channel without consent refuses the whole
+  send (`technician_no_consent`). Every send is an append-only `TechnicianDispatch` (delivered or
+  failed with a code, provider message id); a provider failure is recorded, never raised. No message
+  carries a button or link to act on; the Telegram webhook still accepts no decision.
+- **Money only through the ledger (#93, #94, C-5).** Parts USED leave stock only through
+  `inventory/availability.consume_available` (bulk-tracked items); parts NEEDED become To-Buy rows
+  under `machines.tobuy` / `inventory.tobuy` when on (rooms record only). A quote is approved by the
+  area manager or the Space Manager, no threshold. A payout needs an approved quote
+  (`quote_not_approved`) and `finance_view(...).may_record(domain, machine_type)`, and is exactly one
+  `ledger_api.record_expense(..., source_kind="repairs.payout", category="repair")` tagged with the
+  area's domain and machine type (#100). Nothing is ever paid automatically; a Technician never
+  records a payout.
+- **Out of service (#93, C-6b).** A machine goes to `maintenance` (refused while running) through
+  `status_tracking.change_status`; the queue/ETA kernel counts only machines with capacity, so it
+  recomputes on its next read. Units and items move only through `availability`. A room outage
+  (`RoomOutage`, one open per room) BLOCKS new overlapping bookings by default through
+  `bookings/admission.validate_admission` (or WARNS); bookings already inside it are listed to staff
+  with booking authority and their bookers are emailed; a staff cancel owes the full amount (#72).
+- **Records.** Every step writes an append-only `IssueEvent` and an audit row (`issue.*`,
+  `repair.*`, `dispatch.sent`, `technician.*`, `service_state.changed`, `maintenance.subject_*`).
+  Photos are private, presigned to the STAGING key and promoted once on attach, and charge managed
+  storage. The fixed notice reaches the reporter by email.
+- **Per-parent switches and purge.** Off answers 404 and keeps every row. Purging `*.repairs` deletes
+  that area's issues and their whole record; `*.issue_reporting` owns no rows; the technician
+  directory is shared and goes only with a tenant purge.
 
 ## Machines and loans depth (release 2, lane L12; #76, #77, #94, #140–#142)
 
@@ -3602,7 +3663,8 @@ under their own retention. The operator-facing
 
 ## Handover roles and the retired Guest Admin
 
-**Handover is a fixed built-in again** (`makerspaces/0092_fixed_roles_data`, after schema `0091`
+**The Technician (release 2 L16) is the 8th fixed built-in**, combinable with every staff role; see
+[Repairs and technicians](#repairs-and-technicians). **Handover is a fixed built-in again** (`makerspaces/0092_fixed_roles_data`, after schema `0091`
 and before constraint `0093`), combinable with Inventory, Machine,
 Event and Booking Manager. Its grants are `view_inventory`, `assign_box`, `issue_request`,
 `issue_direct_loan`, `return_request`, `upload_evidence` and `collect_service_request`. On its own

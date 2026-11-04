@@ -8,6 +8,7 @@ import type { Makerspace } from "../panels/shared";
 import { opsQueryState } from "../opsPresentation";
 import { StepDialog } from "./StepDialog";
 import { useSubjectOptions } from "./subjectsApi";
+import { COST_METHODS } from "../panels/machine/MaintenanceCostInput";
 
 type Schedule = { id: number; subject_type: string; subject_id: number; subject_label: string; description: string;
   interval_days: number; next_due: string; is_active: boolean };
@@ -45,7 +46,9 @@ export function MaintenanceView({ makerspace, manager }: { makerspace: Makerspac
         identity={{ kind: "icon", icon: "Wrench", tone: "accent" }} meta={`${row.label} · due ${new Date(`${row.next_due}T00:00:00`).toLocaleDateString()}`}
         right={row.next_due < today() ? <StatusPill tone="danger" label="Overdue" /> : row.next_due === today() ? <StatusPill tone="warn" label="Due today" /> : null} />) }} />
     {running ? <StepDialog title={`Log: ${running.description}`} submitLabel="Log maintenance" makerspaceId={makerspace.id}
-      fields={[{ name: "summary", label: "What was done", kind: "textarea", required: true }, { name: "parts_note", label: "Parts and notes (optional)", kind: "textarea" }]}
+      fields={[{ name: "summary", label: "What was done", kind: "textarea", required: true }, { name: "parts_note", label: "Parts and notes (optional)", kind: "textarea" },
+        { name: "cost", label: "Cost (optional)", kind: "number" }, { name: "cost_method", label: "Paid by", kind: "select", options: COST_METHODS }]}
+      note="A cost is recorded as maintenance spending in the finance ledger."
       pending={run.isPending} error={run.error?.message} onClose={() => setRunning(null)} onSubmit={body => run.mutate({ due: running, body })} /> : null}
     {adding ? <NewSchedule kind={adding} makerspaceId={makerspace.id} onClose={() => setAdding(null)}
       onSaved={() => { setAdding(null); void client.invalidateQueries({ queryKey: key }); }} /> : null}

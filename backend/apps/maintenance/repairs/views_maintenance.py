@@ -8,6 +8,7 @@ from rest_framework.views import APIView
 
 from apps.accounts import rbac
 from apps.admin_api.permissions import IsActiveStaff
+from apps.maintenance.serializers_cost import MaintenanceCostFields
 
 from . import areas, authority, maintenance_subjects as svc
 from .models_service import RoomOutage, SubjectMaintenanceLog, SubjectMaintenanceSchedule
@@ -43,15 +44,17 @@ class SubjectScheduleWriteSerializer(serializers.Serializer):
     is_active = serializers.BooleanField(required=False)
 
 
-class MaintenanceRunSerializer(serializers.Serializer):
+class MaintenanceRunSerializer(MaintenanceCostFields):
     summary = serializers.CharField(max_length=4000)
     parts_note = serializers.CharField(max_length=2000, required=False, allow_blank=True, default="")
+    cost = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=0, allow_null=True, required=False,
+                                    default=None, help_text="What the run cost; above zero it reaches the ledger.")
 
 
 class SubjectLogSerializer(serializers.ModelSerializer):
     class Meta:
         model = SubjectMaintenanceLog
-        fields = ["id", "schedule_id", "subject_type", "performed_at", "summary", "parts_note"]
+        fields = ["id", "schedule_id", "subject_type", "performed_at", "summary", "parts_note", "cost"]
 
 
 class MachineDueSerializer(serializers.Serializer):
@@ -149,7 +152,8 @@ class MachineScheduleRunView(APIView):
             makerspace_field="machine__makerspace_id"), pk=pk)
         log = svc.run_machine_schedule(request.user, schedule, **body.validated_data)
         return Response({"id": log.pk, "schedule_id": schedule.pk, "subject_type": "machine",
-                         "performed_at": log.performed_at, "summary": log.summary, "parts_note": log.parts_note},
+                         "performed_at": log.performed_at, "summary": log.summary, "parts_note": log.parts_note,
+                         "cost": log.cost},
                         status=status.HTTP_201_CREATED)
 
 

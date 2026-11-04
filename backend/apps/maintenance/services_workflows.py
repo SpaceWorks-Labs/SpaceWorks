@@ -22,12 +22,14 @@ from apps.maintenance.services_shared import (
 )
 
 
-def _append_log(machine, actor, values):
+def _append_log(machine, actor, values, ledger=None):
     log = MaintenanceLog.objects.create(
         machine=machine,
         performed_by=actor,
         **values,
     )
+    from .ledger import post_machine_log
+    post_machine_log(actor, log, **(ledger or {}))  # its own `ledger.expense_recorded` audit
     metadata = {"machine_id": machine.pk}
     if values["cost"] is not None:
         metadata["cost"] = str(values["cost"])
@@ -44,7 +46,7 @@ def _append_log(machine, actor, values):
 @transaction.atomic
 def log_maintenance(
     machine, *, actor, summary, performed_at=None, cost=None,
-    parts_note="", set_idle=False,
+    parts_note="", set_idle=False, cost_method=None, cost_currency=None,
 ):
     machine = lock_machine(machine, actor)
     prepare_machine(machine, actor, manage=False, technician=True)
@@ -53,7 +55,7 @@ def log_maintenance(
         summary=summary, performed_at=performed_at, cost=cost,
         parts_note=parts_note,
     )
-    log = _append_log(machine, actor, values)
+    log = _append_log(machine, actor, values, {"method": cost_method, "currency": cost_currency})
     if set_idle:
         apply_idle_transition(machine, actor)
     notify_maintenance_lifecycle(log, "logged")
@@ -160,7 +162,7 @@ def deactivate_schedule(schedule, *, actor):
 @transaction.atomic
 def complete_due(
     schedule, *, actor, summary, performed_at=None, cost=None,
-    parts_note="", set_idle=False,
+    parts_note="", set_idle=False, cost_method=None, cost_currency=None,
 ):
     machine = lock_machine(schedule.machine, actor)
     prepare_machine(machine, actor, manage=True, technician=True)
@@ -177,7 +179,7 @@ def complete_due(
         parts_note=parts_note,
     )
     old_due = schedule.next_due
-    log = _append_log(machine, actor, values)
+    log = _append_log(machine, actor, values, {"method": cost_method, "currency": cost_currency})
     schedule.next_due = next_due_after_completion(schedule, log.performed_at)
     from .meters import completed_meter
     completed_meter(schedule, log.performed_at)

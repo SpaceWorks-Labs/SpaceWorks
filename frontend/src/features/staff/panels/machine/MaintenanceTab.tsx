@@ -13,6 +13,7 @@ import {
   type LogInput,
   type MaintenanceSchedule,
 } from "./maintenanceApi";
+import { costBody, EMPTY_COST, MaintenanceCostInput, type CostValue } from "./MaintenanceCostInput";
 
 type MaintenanceTabProps = {
   metersEnabled?: boolean;
@@ -119,7 +120,7 @@ function ScheduleCompletionForm({ makerspaceId, machineId, schedule, onCancel, o
 }) {
   const [summary, setSummary] = useState(schedule.description);
   const [performedAt, setPerformedAt] = useState("");
-  const [cost, setCost] = useState("");
+  const [cost, setCost] = useState<CostValue>(EMPTY_COST);
   const [partsNote, setPartsNote] = useState("");
   const [setIdle, setSetIdle] = useState(false);
   const complete = useLogMaintenance(makerspaceId, machineId);
@@ -136,7 +137,7 @@ function ScheduleCompletionForm({ makerspaceId, machineId, schedule, onCancel, o
           complete.mutate({
             summary: summary.trim(),
             performed_at: performedAt ? new Date(performedAt).toISOString() : undefined,
-            cost: cost.trim() || null,
+            ...costBody(cost),
             parts_note: partsNote.trim(),
             set_idle: setIdle,
             schedule_id: schedule.id,
@@ -153,11 +154,7 @@ function ScheduleCompletionForm({ makerspaceId, machineId, schedule, onCancel, o
           <input className="desk-input w-full min-w-0" type="datetime-local" value={performedAt}
             onChange={(event) => setPerformedAt(event.target.value)} />
         </label>
-        <label className="eyebrow grid gap-1">
-          Cost (optional)
-          <input className="desk-input" type="number" min="0" step="0.01" value={cost}
-            onChange={(event) => setCost(event.target.value)} />
-        </label>
+        <MaintenanceCostInput value={cost} onChange={setCost} />
         <label className="eyebrow grid gap-1 sm:col-span-2">
           Parts and notes (optional)
           <textarea className="desk-input min-h-20" value={partsNote}
@@ -191,7 +188,7 @@ function MaintenanceLogForm({ makerspaceId, machineId }: {
 }) {
   const [summary, setSummary] = useState("");
   const [performedAt, setPerformedAt] = useState("");
-  const [cost, setCost] = useState("");
+  const [cost, setCost] = useState<CostValue>(EMPTY_COST);
   const [partsNote, setPartsNote] = useState("");
   const [setIdle, setSetIdle] = useState(false);
   const log = useLogMaintenance(makerspaceId, machineId);
@@ -199,7 +196,7 @@ function MaintenanceLogForm({ makerspaceId, machineId }: {
   const reset = () => {
     setSummary("");
     setPerformedAt("");
-    setCost("");
+    setCost(EMPTY_COST);
     setPartsNote("");
     setSetIdle(false);
   };
@@ -216,7 +213,7 @@ function MaintenanceLogForm({ makerspaceId, machineId }: {
           const input: LogInput = {
             summary: summary.trim(),
             performed_at: performedAt ? new Date(performedAt).toISOString() : undefined,
-            cost: cost.trim() || null,
+            ...costBody(cost),
             parts_note: partsNote.trim(),
             set_idle: setIdle,
           };
@@ -233,11 +230,7 @@ function MaintenanceLogForm({ makerspaceId, machineId }: {
           <input className="desk-input w-full min-w-0" type="datetime-local" value={performedAt}
             onChange={(event) => setPerformedAt(event.target.value)} />
         </label>
-        <label className="eyebrow grid gap-1">
-          Cost (optional)
-          <input className="desk-input" type="number" min="0" step="0.01" value={cost}
-            onChange={(event) => setCost(event.target.value)} />
-        </label>
+        <MaintenanceCostInput value={cost} onChange={setCost} />
         <label className="eyebrow grid gap-1 sm:col-span-2">
           Parts and notes (optional)
           <textarea className="desk-input min-h-20" value={partsNote}

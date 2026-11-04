@@ -54,7 +54,7 @@ export function useCreateWorkOrder(makerspaceId: number) {
 export function useMoveWorkOrder() {
   const refresh = useRefresh();
   return useMutation({
-    mutationFn: ({ id, ...body }: { id: number; status: Exclude<WorkOrderStatus, "open">; resolution?: string; cost?: string | null; parts_note?: string }) =>
+    mutationFn: ({ id, ...body }: { id: number; status: Exclude<WorkOrderStatus, "open">; resolution?: string; cost?: string | null; cost_method?: string; parts_note?: string }) =>
       staffRequest<WorkOrder>(`/admin/work-orders/${id}/status`, { method: "POST", body: JSON.stringify(body) }),
     onSuccess: () => { void refresh(); },
   });

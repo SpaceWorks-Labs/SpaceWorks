@@ -32,6 +32,10 @@ def _subject(row):
     return getattr(row, FIELDS[row.subject_type])
 
 
+def _name(subject):
+    return getattr(subject, "name", "") or getattr(subject, "asset_tag", "") or str(subject)
+
+
 def _clean_interval(value):
     if type(value) is not int or not 1 <= value <= 3650:
         raise ValidationError({"interval_days": "Use a whole number of days from 1 to 3650."})
@@ -85,8 +89,9 @@ def _may_run(actor, space_id, subject_type, subject):
 
 
 @transaction.atomic
-def run(actor, schedule, *, summary, parts_note="", performed_at=None):
-    """Log one run of a schedule and move its next due date on by the interval."""
+def run(actor, schedule, *, summary, parts_note="", performed_at=None, cost=None, cost_method=None,
+        cost_currency=None):
+    """Log one run of a schedule and move its next due date on by the interval; a cost reaches the ledger."""
     from apps.maintenance.models import SubjectMaintenanceLog
     from apps.tenant_migration.gate_runtime import assert_write_allowed
     assert_write_allowed(schedule.makerspace_id)
@@ -104,7 +109,9 @@ def run(actor, schedule, *, summary, parts_note="", performed_at=None):
     log = SubjectMaintenanceLog.objects.create(
         makerspace=schedule.makerspace, schedule=schedule, subject_type=schedule.subject_type,
         performed_by=actor, performed_at=performed_at, summary=summary[:4000], parts_note=str(parts_note)[:2000],
-        **{FIELDS[schedule.subject_type]: subject})
+        cost=cost, **{FIELDS[schedule.subject_type]: subject})
+    from apps.maintenance.ledger import post_subject_log
+    post_subject_log(actor, log, _name(subject), method=cost_method, currency=cost_currency)
     schedule.next_due = timezone.localdate(performed_at) + timedelta(days=schedule.interval_days)
     schedule.save(update_fields=["next_due", "updated_at"])
     audit.record(actor, "maintenance.subject_logged", makerspace=schedule.makerspace, target=log,
@@ -112,10 +119,11 @@ def run(actor, schedule, *, summary, parts_note="", performed_at=None):
     return log
 
 
-def run_machine_schedule(actor, schedule, *, summary, parts_note=""):
+def run_machine_schedule(actor, schedule, *, summary, parts_note="", cost=None, cost_method=None, cost_currency=None):
     """A Technician (or manager) completing a machine schedule: L12's own service."""
     from apps.maintenance.services_workflows import complete_due
-    return complete_due(schedule, actor=actor, summary=summary, parts_note=parts_note)
+    return complete_due(schedule, actor=actor, summary=summary, parts_note=parts_note, cost=cost,
+                        cost_method=cost_method, cost_currency=cost_currency)
 
 
 def visible_schedules(actor, space):

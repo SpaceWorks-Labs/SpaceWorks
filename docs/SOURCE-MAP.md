@@ -855,6 +855,11 @@ identity normalization and production minimum-version comparison. `mobile_associ
 - Seams outside the package: `maintenance/work_orders.may_manage`, `maintenance/services_shared.
   prepare_machine(technician=)`, `bookings/admission._refuse_room_outage`,
   `integrations/notification_telegram_callbacks._technician_opt_in`.
+- Maintenance spend (GAP2 M1): `maintenance/ledger.py` posts a run's cost to L5's ledger (machine logs,
+  schedules and work orders through `services_workflows._append_log`, item/room runs through
+  `maintenance_subjects.run`); `maintenance/serializers_cost.py` holds the shared `cost_method` and
+  `cost_currency` fields; `maintenance/0006` adds `SubjectMaintenanceLog.cost`. Frontend
+  `staff/panels/machine/MaintenanceCostInput.tsx` (cost plus "Paid by").
 - Switches: `makerspaces/capability_definitions_r2_l17.py` (the 8 keys), purge plans
   `makerspaces/capability_purge_plans_l16.py`.
 - Classification: `data_export/classification_l16.py`, `tenant_migration/{catalog,audit_references,

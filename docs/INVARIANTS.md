@@ -3439,6 +3439,14 @@ Release 2 lane L16 (#93, #94, #98, #100, #102, #103, #128 C-3/C-4/C-5/C-6b/C-9, 
   `ledger_api.record_expense(..., source_kind="repairs.payout", category="repair")` tagged with the
   area's domain and machine type (#100). Nothing is ever paid automatically; a Technician never
   records a payout.
+- **Maintenance spend reaches the ledger (#100, #102; GAP2 M1).** A maintenance run with a cost above
+  zero -- a machine log, a completed machine schedule, a closed work order, an item or room run
+  (`SubjectMaintenanceLog.cost`) -- posts exactly one `record_expense(..., category="maintenance")` in
+  the log's own transaction (`maintenance/ledger.py`; source `maintenance.log` or
+  `maintenance.subject_log` + log id). Domain machines (with the machine type), inventory or bookings,
+  so the Booking and Machine Managers see their maintenance spend and nobody else's. Whoever may log the
+  run records its cost (spending is always recorded, C-15); `cost_method` defaults to `other`, the
+  currency to the space's default payment currency.
 - **Out of service (#93, C-6b).** A machine goes to `maintenance` (refused while running) through
   `status_tracking.change_status`; the queue/ETA kernel counts only machines with capacity, so it
   recomputes on its next read. Units and items move only through `availability`. A room outage

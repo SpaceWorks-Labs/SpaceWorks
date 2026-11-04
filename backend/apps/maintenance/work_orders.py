@@ -99,7 +99,8 @@ def _machine_status(order, actor, status, reason=""):
 
 
 @transaction.atomic
-def move(actor, order, status, *, resolution="", log_cost=None, parts_note=""):
+def move(actor, order, status, *, resolution="", log_cost=None, parts_note="", log_cost_method=None,
+         log_cost_currency=None):
     order = WorkOrder.objects.select_for_update().select_related("makerspace").get(pk=order.pk)
     _check(actor, order)
     if status not in EDGES.get(order.status, set()):
@@ -113,7 +114,8 @@ def move(actor, order, status, *, resolution="", log_cost=None, parts_note=""):
     if status == S.DONE and order.subject_type == WorkOrder.Subject.MACHINE:
         from .services_workflows import log_maintenance
         order.log = log_maintenance(order.machine, actor=actor, summary=order.resolution or order.title,
-                                    cost=log_cost, parts_note=parts_note)
+                                    cost=log_cost, parts_note=parts_note, cost_method=log_cost_method,
+                                    cost_currency=log_cost_currency)
     order.save()
     if order.takes_machine_down and status == S.IN_PROGRESS:
         _machine_status(order, actor, "maintenance", order.title)

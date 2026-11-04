@@ -7,6 +7,7 @@ import { WorkOrderAssignee } from "./WorkOrderAssignee";
 import {
   OPEN_STATUSES, PRIORITY_LABELS, STATUS_LABELS, priorityTone, statusTone, useMoveWorkOrder, type WorkOrder,
 } from "./workOrdersApi";
+import { costBody, EMPTY_COST, MaintenanceCostInput, type CostValue } from "../MaintenanceCostInput";
 
 const date = (iso: string | null) => iso ? new Date(iso).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }) : "Not yet";
 
@@ -47,13 +48,13 @@ export function WorkOrderDetail({ order, state, onBack }: { order: WorkOrder | u
 function CloseDialog({ order, onClose }: { order: WorkOrder; onClose: () => void }) {
   const move = useMoveWorkOrder();
   const [resolution, setResolution] = useState("");
-  const [cost, setCost] = useState("");
+  const [cost, setCost] = useState<CostValue>(EMPTY_COST);
   const [parts, setParts] = useState("");
   return <Modal open title="Close work order" onClose={onClose}>
     <form className="grid gap-3" onSubmit={event => { event.preventDefault();
-      move.mutate({ id: order.id, status: "done", resolution: resolution.trim(), cost: cost.trim() || null, parts_note: parts.trim() }, { onSuccess: onClose }); }}>
+      move.mutate({ id: order.id, status: "done", resolution: resolution.trim(), ...costBody(cost), parts_note: parts.trim() }, { onSuccess: onClose }); }}>
       <label className="eyebrow grid gap-1">What was done<textarea className="desk-input min-h-24" value={resolution} onChange={event => setResolution(event.target.value)} autoFocus /></label>
-      <label className="eyebrow grid gap-1">Cost (optional)<input className="desk-input" type="number" min="0" step="0.01" value={cost} onChange={event => setCost(event.target.value)} /></label>
+      <MaintenanceCostInput value={cost} onChange={setCost} />
       <label className="eyebrow grid gap-1">Parts and notes (optional)<textarea className="desk-input min-h-20" value={parts} onChange={event => setParts(event.target.value)} /></label>
       <p className="text-sm text-muted">Closing logs this as maintenance on the machine{order.takes_machine_down ? " and returns it to idle" : ""}.</p>
       {move.error ? <p role="alert" className="text-sm text-danger">{move.error.message}</p> : null}

@@ -8,7 +8,7 @@ app is absent, but nothing here is imported until then.
 
 Never exposed (coordinator instruction for L18): ``payments.DonorTaxDetail``, every ``donor_*``
 and ``contact_*`` column, ``access_secret``, ``manage_secret``, ``tax_receipt`` and the whole
-personal calendar feed table. L22: never ``pickup_code``, ``status_secret``, ``digest``,
+personal calendar feed table (so donations carry no donor id either). L22: never ``pickup_code``, ``status_secret``, ``digest``,
 ``guest_*``, ``pricing_snapshot`` or image keys. L21a: never answers, dietary notes or
 consents. L24 adds refund reasons only: the registered ``refund_cases`` view already covers
 them (its ``reason_code`` column), so L24 needs no new view.
@@ -30,12 +30,11 @@ L18_DONATIONS = (
              Col("is_public", "c.is_public", "Public."),
              Col("created_at", "c.created_at", "Created."),
          ), since=2),
-    View("donations", "donations", "Donations: amount, campaign and state; the donor is a member id only.",
+    View("donations", "donations", "Donations: amount, campaign and state; no donor column at all.",
          "FROM {payments.Donation} d", "d.makerspace_id", (
              Col("donation_id", "d.id", "Donation id."),
              Col("campaign_id", "d.campaign_id", "Campaign (donation_campaigns)."),
              Col("pledge_id", "d.pledge_id", "Recurring pledge it came from."),
-             Col("member_id", "d.donor_id", "Donor with an account (members); empty for a guest."),
              Col("amount", "d.amount", "Amount."),
              Col("currency", "d.currency", "Currency."),
              Col("source", "d.source", "Online, cash and so on."),
@@ -50,7 +49,6 @@ L18_DONATIONS = (
          "FROM {payments.DonationPledge} p", "p.makerspace_id", (
              Col("pledge_id", "p.id", "Pledge id."),
              Col("campaign_id", "p.campaign_id", "Campaign (donation_campaigns)."),
-             Col("member_id", "p.donor_id", "Donor with an account (members)."),
              Col("amount", "p.amount", "Amount per period."),
              Col("currency", "p.currency", "Currency."),
              Col("interval", "p.interval", "Monthly, yearly and so on."),
@@ -93,7 +91,6 @@ L18_DONATIONS = (
              Col("perk_id", "k.id", "Perk id."),
              Col("tier_id", "k.tier_id", "Tier template (sponsor_tiers)."),
              Col("sponsor_id", "k.sponsor_id", "Sponsor (sponsors)."),
-             Col("description", "k.description", "Perk."),
              Col("due_on", "k.due_on", "Due."),
              Col("fulfilled_at", "k.fulfilled_at", "Delivered."),
              Col("created_at", "k.created_at", "Created."),

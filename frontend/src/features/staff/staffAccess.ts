@@ -140,7 +140,7 @@ export function getStaffAccess(
   // Central organization governance is independent of makerspace actions. An
   // event grant adds a workspace without replacing that existing global surface.
   const allowedTabs: readonly string[] = isSuperadmin && actions.length === 0
-    ? PLATFORM_TABS.filter(tab => !singleTenantLocked || !["platform-dashboard", "platform", "organizations"].includes(tab))
+    ? PLATFORM_TABS.filter(tab => !singleTenantLocked || !["platform-dashboard", "platform", "organizations", "platform-analytics"].includes(tab))
     : grantOnly ? (singleTenantLocked ? ["granted"] : ["granted", "organizations"]) : governanceOnly ? ["organizations"] : baseTabs.filter((tabName) => {
     if (tabName === "granted") return hasGrants;
     if (tabName === "platform-dashboard") return isSuperadmin && !singleTenantLocked;

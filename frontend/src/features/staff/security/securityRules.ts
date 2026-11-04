@@ -28,11 +28,11 @@ export function describeValue(setting: SecuritySetting, value: unknown) {
   return rule ? `${String(value)} ${rule.unit}` : String(value);
 }
 
-/** What a lock allows, e.g. "at most 30 days" or "at least After failed attempts". */
+/** What a lock allows, e.g. "at most 30 days" or "After failed attempts or stricter". */
 export function describeFloor(setting: SecuritySetting, floor: unknown) {
   if (setting.kind === "bool") return describeValue(setting, floor);
-  if (setting.kind === "choice") return `at least ${choiceLabel(floor)}`;
-  if (setting.kind === "list") return asList(floor).length ? `within ${asList(floor).join(", ")}` : "any network";
+  if (setting.kind === "choice") return `${choiceLabel(floor)} or stricter`;
+  if (setting.kind === "list") return asList(floor).length ? `only networks within ${asList(floor).join(", ")}` : "any network";
   const rule = INT_RULES[setting.key];
   if (rule?.zeroOff && Number(floor) === 0) return "any value";
   return `at most ${describeValue(setting, floor)}`;
@@ -66,7 +66,7 @@ export function strictnessProblem(setting: SecuritySetting, value: unknown): str
     const floors = asList(floor).map(parseCidr).filter(entry => entry !== null);
     if (!floors.length) return null;
     if (!entries.length || entries.some(entry => !floors.some(outer => within(entry!, outer)))) {
-      return `The platform lock allows only networks ${describeFloor(setting, floor)}.`;
+      return `The platform lock allows ${describeFloor(setting, floor)}.`;
     }
   }
   return null;

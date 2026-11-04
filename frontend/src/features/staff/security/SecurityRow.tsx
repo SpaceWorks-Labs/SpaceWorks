@@ -24,7 +24,7 @@ export function SecurityRow({ setting, data, pending, onChange, onLock, onUnlock
       <SecurityValueControl key={JSON.stringify(setting.value)} setting={setting} id={id} disabled={!data.can_edit || pending} onChange={onChange} />
       {!bool ? <p className="text-sm text-muted">Now: {describeValue(setting, setting.value)}</p> : null}
       {setting.lock ? <div><StatusPill tone="info" icon="Lock"
-        label={bool ? `Locked by platform${lockNote}` : `Locked by platform at ${describeFloor(setting, setting.lock.floor)}${lockNote}`} /></div> : null}
+        label={bool ? `Locked by platform${lockNote}` : `Locked by platform, allows ${describeFloor(setting, setting.lock.floor)}${lockNote}`} /></div> : null}
       {data.can_lock ? (setting.lock
         ? <div><button className="desk-button min-h-11" type="button" disabled={pending} onClick={onUnlock}>Remove platform lock</button></div>
         : <form className="flex flex-wrap items-end gap-2" onSubmit={event => { event.preventDefault(); onLock(floor, note.trim()); setNote(""); }}>

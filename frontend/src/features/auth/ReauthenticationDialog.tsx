@@ -51,14 +51,14 @@ export function ReauthenticationDialog() {
     footer={<div className="flex justify-end"><button type="button" className="desk-button w-full sm:w-auto" onClick={() => finish(false)}>Cancel</button></div>}>
     <div className="grid gap-4">
       <p className="text-sm text-muted">Verify this browser session before changing permissions or credentials. Verification lasts ten minutes.</p>
-      {status.isLoading ? <p role="status" className="text-sm text-muted">Loading verification options...</p> : null}
+      {status.isLoading ? <p role="status" className="text-sm text-muted">Loading verification options…</p> : null}
       {passkeyOption ? <button type="button" className="desk-button-primary min-h-11 w-full gap-2" disabled={pending} onClick={() => passkey.mutate()}>
         <Fingerprint aria-hidden="true" size={20} />{passkey.isPending ? "Waiting for your passkey…" : "Use a passkey"}</button> : null}
       {data ? <form className="grid gap-3" onSubmit={(event) => { event.preventDefault(); verify.mutate(); }}>
         {passkeyOption && !data.mfa_enabled ? null : <>
           {data.password_available ? <Field label="Current password"><input className="desk-input w-full" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} /></Field> : null}
           {data.mfa_enabled ? <Field label="Authenticator code"><input className="desk-input w-full" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} onChange={(event) => setCode(event.target.value)} /></Field> : null}
-          {data.password_available || data.mfa_enabled ? <button className={`${passkeyOption ? "desk-button" : "desk-button-primary"} w-full`} disabled={pending}>{verify.isPending ? "Verifying..." : "Verify identity"}</button> : passkeyOption ? null : <p className="text-sm text-muted">Google and Apple accounts: confirm the emailed enrollment link, then enroll an authenticator to verify this action. Configured OIDC providers may also verify a fresh sign-in.</p>}
+          {data.password_available || data.mfa_enabled ? <button className={`${passkeyOption ? "desk-button" : "desk-button-primary"} w-full`} disabled={pending}>{verify.isPending ? "Verifying…" : "Verify identity"}</button> : passkeyOption ? null : <p className="text-sm text-muted">Google and Apple accounts: confirm the emailed enrollment link, then enroll an authenticator to verify this action. Configured OIDC providers may also verify a fresh sign-in.</p>}
         </>}
         {data.providers.map((provider) => <button key={provider} type="button" className="desk-button w-full" disabled={pending} onClick={() => social.mutate(provider)}>Verify with {provider}</button>)}
         {!data.password_available && !data.mfa_enabled && !passkeyOption ? <button type="button" className="desk-button w-full" disabled={pending} onClick={() => email.mutate()}>Email a confirmation link to enroll an authenticator</button> : null}

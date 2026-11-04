@@ -1,7 +1,8 @@
 """Gallery routes have their own live publication gate, not EventPage expiry."""
 
 from django.http import Http404
-from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema, extend_schema_view
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema, extend_schema_view, inline_serializer
+from rest_framework import serializers
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
@@ -74,6 +75,14 @@ class GalleryConsentGrant(MemberView):
         return Response(consent.grant(pk, team_id, actor=request.user, data=request.data))
 
 
+GALLERY_PARAMS = [OpenApiParameter("page", int, OpenApiParameter.QUERY), OpenApiParameter("q", str, OpenApiParameter.QUERY),
+                  OpenApiParameter("sort", str, OpenApiParameter.QUERY, enum=("newest", "az", "awards")),
+                  OpenApiParameter("awards", str, OpenApiParameter.QUERY, enum=("only",))]
+GalleryEntryPage = inline_serializer(name="GalleryEntryReadPage", fields={
+    "count": serializers.IntegerField(), "next": serializers.URLField(allow_null=True),
+    "previous": serializers.URLField(allow_null=True), "results": GalleryEntryRead(many=True)})
+
+
 class PublicGalleryBase(PrivateView):
     permission_classes = [AllowAny]
     authentication_classes = []
@@ -81,14 +90,18 @@ class PublicGalleryBase(PrivateView):
 
 
 class GalleryList(PublicGalleryBase):
-    @schema(response=GalleryEntryRead(many=True), page=True, public=True)
+    @extend_schema(tags=["Event programme judging"], auth=[], responses={200: GalleryEntryPage, **ERRORS},
+                   parameters=GALLERY_PARAMS, description="Publishable entries. With events.gallery_search: q, "
+                   "sort (newest, az, awards) and awards=only; award badges appear only after results are published.")
     def get(self, request, public_token):
+        from .gallery_search import query
         event = public_event(public_token=public_token, request_context=request)
-        rows = GalleryEntry.objects.filter(event=event, hidden_at__isnull=True).select_related("event").order_by("pk")
+        rows = GalleryEntry.objects.filter(event=event, hidden_at__isnull=True).select_related("event")
+        rows, badges = query(event, rows, request.query_params)
         result = []
         for row in rows:
             try:
-                result.append(project_entry(row))
+                result.append({**project_entry(row), "awards": badges.get(row.snapshot_id, [])})
             except Http404:
                 continue
         # Counts are over currently publishable entries only, never private rows.

@@ -116530,6 +116530,83 @@
                 }
             }
         },
+        "/api/v1/auth/devices": {
+            "get": {
+                "operationId": "api_v1_auth_devices_retrieve",
+                "summary": "List your remembered devices",
+                "tags": [
+                    "Auth"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/KnownDeviceList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/devices/{device_id}": {
+            "delete": {
+                "operationId": "api_v1_auth_devices_destroy",
+                "description": "Its next sign-in is checked as unusual again. 404 when it is not yours.",
+                "summary": "Forget one of your remembered devices",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "device_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No response body"
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
+                    }
+                }
+            }
+        },
         "/api/v1/auth/email-verification/confirm": {
             "post": {
                 "operationId": "api_v1_auth_email_verification_confirm_create",
@@ -116793,6 +116870,68 @@
                     },
                     "503": {
                         "description": "Authentication write boundary unavailable."
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/login-code/resend": {
+            "post": {
+                "operationId": "api_v1_auth_login_code_resend_create",
+                "description": "For a challenge with `purpose: risk` (factor `email_code`). The new code replaces the old one and lasts 10 minutes; a challenge allows two resends. `login_code_invalid` (400) when the challenge is not a live risk challenge or has no resends left.",
+                "summary": "Email a new code for an unusual sign-in",
+                "tags": [
+                    "MFA"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/LoginCodeResend"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/LoginCodeResend"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/LoginCodeResend"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LoginCodeResent"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "`login_code_invalid`. `captcha_required` / `captcha_failed`: Cloudflare Turnstile is on for this origin and needs a token in the `X-Turnstile-Token` header (after failed sign-ins, a space's `always` setting, or instead of an automatic block)."
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After. `ip_blocked`: a platform deny rule or an automatic block (many accounts failing from one address) covers this client; `Retry-After` gives the seconds left when the block ends.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LoginGuardError"
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -117080,7 +117219,7 @@
         "/api/v1/auth/mfa/confirm": {
             "post": {
                 "operationId": "api_v1_auth_mfa_confirm_create",
-                "description": "Complete the server-owned login context. Native staff authority requires a staff account, its fixed tenant, password, authenticator MFA and approved app attestation. Consumer login methods remain member-only. Platform device grants return device_superadmin_not_supported (403). Attestation outages return attestation_unavailable (503).",
+                "description": "Complete the server-owned login context. `factor` picks totp, recovery, passkey (with `webauthn` from `auth/mfa/passkey/options`) or email_code (a `purpose: risk` challenge; wrong code: `login_code_invalid`, 400; a failed passkey: `passkey_failed`, 400). Native completions return `device_trust`. Native staff authority requires a staff account, its fixed tenant, authenticator MFA and approved app attestation, after any primary sign-in method. Consumer login methods remain member-only. Platform device grants return device_superadmin_not_supported (403). Attestation outages return attestation_unavailable (503).",
                 "tags": [
                     "MFA"
                 ],
@@ -117383,7 +117522,7 @@
         "/api/v1/auth/mfa/verify": {
             "post": {
                 "operationId": "api_v1_auth_mfa_verify_create",
-                "description": "Complete the server-owned login context. Native staff authority requires a staff account, its fixed tenant, password, authenticator MFA and approved app attestation. Consumer login methods remain member-only. Platform device grants return device_superadmin_not_supported (403). Attestation outages return attestation_unavailable (503).",
+                "description": "Complete the server-owned login context. `factor` picks totp, recovery, passkey (with `webauthn` from `auth/mfa/passkey/options`) or email_code (a `purpose: risk` challenge; wrong code: `login_code_invalid`, 400; a failed passkey: `passkey_failed`, 400). Native completions return `device_trust`. Native staff authority requires a staff account, its fixed tenant, authenticator MFA and approved app attestation, after any primary sign-in method. Consumer login methods remain member-only. Platform device grants return device_superadmin_not_supported (403). Attestation outages return attestation_unavailable (503).",
                 "tags": [
                     "MFA"
                 ],
@@ -119084,10 +119223,65 @@
                 }
             }
         },
+        "/api/v1/auth/security-alerts/not-me": {
+            "post": {
+                "operationId": "api_v1_auth_security_alerts_not_me_create",
+                "description": "Signs the account out everywhere, forgets every remembered device, turns the password off and requests a reset code to the account email. Second factors are kept. The link works once; using any alert, or completing a password reset, expires every other alert. Refusals are `security_alert_used` (400).",
+                "summary": "Report a security alert as not you",
+                "tags": [
+                    "Auth"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/NotMeRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/NotMeRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/NotMeRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/NotMeResult"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "`security_alert_used`."
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
+                    }
+                }
+            }
+        },
         "/api/v1/auth/social/apple": {
             "post": {
                 "operationId": "api_v1_auth_social_apple_create",
-                "description": "Social sign-in with web or attested device delivery. Native Apple audiences bind to the approved iOS app ID on the attestation challenge (or existing grant). New device grants derive staff authority from active local memberships. Superadmin device creation returns device_superadmin_not_supported (403); existing grants remain usable. Attestation outages return attestation_unavailable (503); obtain a new nonce and challenge before retrying.",
+                "description": "Social sign-in with web or attested device delivery. A person MFA is mandatory for (any staff role) gets the MFA challenge shape instead of tokens and finishes at auth/mfa/verify (#62); members sign in directly. Device delivery returns `device_trust`; an app older than the platform minimum gets 426 native_app_update_required. Native Apple audiences bind to the approved iOS app ID on the attestation challenge (or existing grant). New device grants derive staff authority from active local memberships. Superadmin device creation returns device_superadmin_not_supported (403); existing grants remain usable. Attestation outages return attestation_unavailable (503); obtain a new nonce and challenge before retrying.",
                 "tags": [
                     "Social auth"
                 ],
@@ -119116,7 +119310,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/SocialLoginResponse"
+                                    "$ref": "#/components/schemas/SocialLoginResult"
                                 }
                             }
                         },
@@ -119156,6 +119350,16 @@
                     },
                     "503": {
                         "description": "A required dependency is unavailable."
+                    },
+                    "426": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "native_app_update_required"
                     }
                 }
             }
@@ -119250,7 +119454,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/OidcBrowserLoginResponse"
+                                    "$ref": "#/components/schemas/GithubBrowserLoginResult"
                                 }
                             }
                         },
@@ -119287,7 +119491,7 @@
         "/api/v1/auth/social/google": {
             "post": {
                 "operationId": "api_v1_auth_social_google_create",
-                "description": "Social sign-in with web or attested device delivery. Native Apple audiences bind to the approved iOS app ID on the attestation challenge (or existing grant). New device grants derive staff authority from active local memberships. Superadmin device creation returns device_superadmin_not_supported (403); existing grants remain usable. Attestation outages return attestation_unavailable (503); obtain a new nonce and challenge before retrying.",
+                "description": "Social sign-in with web or attested device delivery. A person MFA is mandatory for (any staff role) gets the MFA challenge shape instead of tokens and finishes at auth/mfa/verify (#62); members sign in directly. Device delivery returns `device_trust`; an app older than the platform minimum gets 426 native_app_update_required. Native Apple audiences bind to the approved iOS app ID on the attestation challenge (or existing grant). New device grants derive staff authority from active local memberships. Superadmin device creation returns device_superadmin_not_supported (403); existing grants remain usable. Attestation outages return attestation_unavailable (503); obtain a new nonce and challenge before retrying.",
                 "tags": [
                     "Social auth"
                 ],
@@ -119316,7 +119520,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/SocialLoginResponse"
+                                    "$ref": "#/components/schemas/SocialLoginResult"
                                 }
                             }
                         },
@@ -119356,6 +119560,16 @@
                     },
                     "503": {
                         "description": "A required dependency is unavailable."
+                    },
+                    "426": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "native_app_update_required"
                     }
                 }
             }
@@ -119422,7 +119636,7 @@
         "/api/v1/auth/social/oidc/{slug}": {
             "post": {
                 "operationId": "api_v1_auth_social_oidc_create",
-                "description": "Social sign-in with web or attested device delivery. Native Apple audiences bind to the approved iOS app ID on the attestation challenge (or existing grant). New device grants derive staff authority from active local memberships. Superadmin device creation returns device_superadmin_not_supported (403); existing grants remain usable. Attestation outages return attestation_unavailable (503); obtain a new nonce and challenge before retrying.",
+                "description": "Social sign-in with web or attested device delivery. A person MFA is mandatory for (any staff role) gets the MFA challenge shape instead of tokens and finishes at auth/mfa/verify (#62); members sign in directly. Device delivery returns `device_trust`; an app older than the platform minimum gets 426 native_app_update_required. Native Apple audiences bind to the approved iOS app ID on the attestation challenge (or existing grant). New device grants derive staff authority from active local memberships. Superadmin device creation returns device_superadmin_not_supported (403); existing grants remain usable. Attestation outages return attestation_unavailable (503); obtain a new nonce and challenge before retrying.",
                 "parameters": [
                     {
                         "in": "path",
@@ -119461,7 +119675,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/SocialLoginResponse"
+                                    "$ref": "#/components/schemas/SocialLoginResult"
                                 }
                             }
                         },
@@ -119501,6 +119715,16 @@
                     },
                     "503": {
                         "description": "A required dependency is unavailable."
+                    },
+                    "426": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "native_app_update_required"
                     }
                 }
             }
@@ -174346,6 +174570,11 @@
                         ],
                         "writeOnly": true
                     },
+                    "app_version": {
+                        "type": "string",
+                        "description": "The app's own version (x.y.z). Refused with 426 native_app_update_required when it is older than the deployment's minimum for this platform, or missing while a minimum is set.",
+                        "maxLength": 32
+                    },
                     "new_password": {
                         "type": "string",
                         "writeOnly": true,
@@ -193658,6 +193887,11 @@
                     },
                     "device_grant": {
                         "$ref": "#/components/schemas/DeviceGrant"
+                    },
+                    "device_trust": {
+                        "type": "string",
+                        "nullable": true,
+                        "description": "Keep it and send it back in the `X-Device-Trust` header on later sign-ins, so this device is recognised by the unusual-sign-in check (S-B)."
                     }
                 },
                 "required": [
@@ -201183,6 +201417,16 @@
                     "makerspace_id"
                 ]
             },
+            "FactorEnum": {
+                "enum": [
+                    "totp",
+                    "passkey",
+                    "recovery",
+                    "email_code"
+                ],
+                "type": "string",
+                "description": "* `totp` - totp\n* `passkey` - passkey\n* `recovery` - recovery\n* `email_code` - email_code"
+            },
             "FactorRequiredEnum": {
                 "enum": [
                     "totp",
@@ -201191,6 +201435,16 @@
                 ],
                 "type": "string",
                 "description": "* `totp` - totp\n* `phone` - phone\n* `email_code` - email_code"
+            },
+            "FactorsEnum": {
+                "enum": [
+                    "totp",
+                    "passkey",
+                    "recovery",
+                    "email_code"
+                ],
+                "type": "string",
+                "description": "* `totp` - totp\n* `passkey` - passkey\n* `recovery` - recovery\n* `email_code` - email_code"
             },
             "FailedDeliveries": {
                 "type": "object",
@@ -205708,6 +205962,16 @@
                 "required": [
                     "count",
                     "date"
+                ]
+            },
+            "GithubBrowserLoginResult": {
+                "oneOf": [
+                    {
+                        "$ref": "#/components/schemas/OidcBrowserLoginResponse"
+                    },
+                    {
+                        "$ref": "#/components/schemas/MFAChallengeResponse"
+                    }
                 ]
             },
             "GithubBrowserStart": {
@@ -211311,6 +211575,58 @@
                     }
                 }
             },
+            "KnownDevice": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "label": {
+                        "type": "string",
+                        "description": "A coarse label such as \"Firefox on Windows\"."
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "last_verified_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "The last completed sign-in on this device."
+                    },
+                    "current": {
+                        "type": "boolean",
+                        "readOnly": true,
+                        "description": "This browser or app."
+                    }
+                },
+                "required": [
+                    "created_at",
+                    "current",
+                    "id",
+                    "label",
+                    "last_verified_at"
+                ]
+            },
+            "KnownDeviceList": {
+                "type": "object",
+                "properties": {
+                    "devices": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/KnownDevice"
+                        }
+                    },
+                    "remembered_days": {
+                        "type": "integer",
+                        "description": "How long a device stays remembered without a sign-in (the strictest across your staff spaces)."
+                    }
+                },
+                "required": [
+                    "devices",
+                    "remembered_days"
+                ]
+            },
             "LabelCommand": {
                 "type": "object",
                 "properties": {
@@ -213390,6 +213706,40 @@
                     "hours"
                 ]
             },
+            "LoginCodeResend": {
+                "type": "object",
+                "properties": {
+                    "challenge": {
+                        "type": "string",
+                        "writeOnly": true,
+                        "maxLength": 200,
+                        "minLength": 20
+                    }
+                },
+                "required": [
+                    "challenge"
+                ]
+            },
+            "LoginCodeResent": {
+                "type": "object",
+                "properties": {
+                    "sent": {
+                        "type": "boolean"
+                    },
+                    "expires_in": {
+                        "type": "integer",
+                        "description": "Seconds the new code stays valid."
+                    },
+                    "resends_left": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "expires_in",
+                    "resends_left",
+                    "sent"
+                ]
+            },
             "LoginRequest": {
                 "type": "object",
                 "properties": {
@@ -213481,6 +213831,21 @@
                     },
                     "expires_in": {
                         "type": "integer"
+                    },
+                    "purpose": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/MFAChallengeResponsePurposeEnum"
+                            }
+                        ],
+                        "description": "`login`: a second factor (or enrolment). `risk`: an unusual sign-in; a 6-digit code was emailed (factor `email_code`; resend with `POST auth/login-code/resend`).\n\n* `login` - login\n* `risk` - risk"
+                    },
+                    "factors": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/FactorsEnum"
+                        },
+                        "description": "What this person may answer with, in this order. Empty while enrolment is required."
                     }
                 },
                 "required": [
@@ -213489,6 +213854,14 @@
                     "expires_in",
                     "mfa_required"
                 ]
+            },
+            "MFAChallengeResponsePurposeEnum": {
+                "enum": [
+                    "login",
+                    "risk"
+                ],
+                "type": "string",
+                "description": "* `login` - login\n* `risk` - risk"
             },
             "MFACompleted": {
                 "type": "object",
@@ -213514,6 +213887,10 @@
                         "items": {
                             "type": "string"
                         }
+                    },
+                    "device_trust": {
+                        "type": "string",
+                        "description": "Native sign-ins only: keep it and send it back in the `X-Device-Trust` header on later sign-ins, so this device is recognised by the unusual-sign-in check."
                     }
                 },
                 "required": [
@@ -213615,11 +213992,45 @@
                         "writeOnly": true,
                         "maxLength": 64,
                         "minLength": 6
+                    },
+                    "factor": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/FactorEnum"
+                            }
+                        ],
+                        "writeOnly": true,
+                        "description": "Which factor answers. Omitted: an authenticator code, then a recovery code.\n\n* `totp` - totp\n* `passkey` - passkey\n* `recovery` - recovery\n* `email_code` - email_code"
+                    },
+                    "webauthn": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/MFAWebAuthn"
+                            }
+                        ],
+                        "writeOnly": true,
+                        "description": "Required with `factor: passkey`."
                     }
                 },
                 "required": [
-                    "challenge",
-                    "code"
+                    "challenge"
+                ]
+            },
+            "MFAWebAuthn": {
+                "type": "object",
+                "properties": {
+                    "ceremony": {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "From `POST auth/mfa/passkey/options`."
+                    },
+                    "credential": {
+                        "description": "The PublicKeyCredential as JSON, as the browser returned it."
+                    }
+                },
+                "required": [
+                    "ceremony",
+                    "credential"
                 ]
             },
             "Machine": {
@@ -223412,6 +223823,41 @@
                     "without_mfa"
                 ]
             },
+            "MfaResetContact": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "slug": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "name",
+                    "slug"
+                ]
+            },
+            "MfaResetContacts": {
+                "type": "object",
+                "properties": {
+                    "superadmin": {
+                        "type": "boolean",
+                        "description": "The platform administrator can always reset two-step sign-in."
+                    },
+                    "space_managers_of": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/MfaResetContact"
+                        },
+                        "description": "Spaces whose Space Manager may reset it for this person (the MFA-reset rule)."
+                    }
+                },
+                "required": [
+                    "space_managers_of",
+                    "superadmin"
+                ]
+            },
             "MigrationExportCreate": {
                 "type": "object",
                 "properties": {
@@ -224321,6 +224767,40 @@
                 ],
                 "type": "string",
                 "description": "* `none` - none\n* `zscore` - zscore"
+            },
+            "NotMeRequest": {
+                "type": "object",
+                "properties": {
+                    "token": {
+                        "type": "string",
+                        "writeOnly": true,
+                        "description": "The value after `#token=` in the alert link.",
+                        "maxLength": 512
+                    }
+                },
+                "required": [
+                    "token"
+                ]
+            },
+            "NotMeResult": {
+                "type": "object",
+                "properties": {
+                    "signed_out": {
+                        "type": "boolean"
+                    },
+                    "password_reset_requested": {
+                        "type": "boolean",
+                        "description": "A reset code was requested for the account email (sent unless recovery mail is off)."
+                    },
+                    "mfa_reset": {
+                        "$ref": "#/components/schemas/MfaResetContacts"
+                    }
+                },
+                "required": [
+                    "mfa_reset",
+                    "password_reset_requested",
+                    "signed_out"
+                ]
             },
             "Notification": {
                 "type": "object",
@@ -241741,6 +242221,11 @@
                             }
                         ],
                         "writeOnly": true
+                    },
+                    "app_version": {
+                        "type": "string",
+                        "description": "The app's own version (x.y.z). Refused with 426 native_app_update_required when it is older than the deployment's minimum for this platform, or missing while a minimum is set.",
+                        "maxLength": 32
                     }
                 },
                 "required": [
@@ -261744,6 +262229,11 @@
                             }
                         ],
                         "writeOnly": true
+                    },
+                    "app_version": {
+                        "type": "string",
+                        "description": "The app's own version (x.y.z). Refused with 426 native_app_update_required when it is older than the deployment's minimum for this platform, or missing while a minimum is set.",
+                        "maxLength": 32
                     }
                 },
                 "required": [
@@ -261773,12 +262263,26 @@
                     },
                     "outcome": {
                         "type": "string"
+                    },
+                    "device_trust": {
+                        "type": "string",
+                        "description": "Device delivery only: send it back in the `X-Device-Trust` header on later sign-ins (the unusual-sign-in check)."
                     }
                 },
                 "required": [
                     "access",
                     "outcome",
                     "user"
+                ]
+            },
+            "SocialLoginResult": {
+                "oneOf": [
+                    {
+                        "$ref": "#/components/schemas/SocialLoginResponse"
+                    },
+                    {
+                        "$ref": "#/components/schemas/MFAChallengeResponse"
+                    }
                 ]
             },
             "SocialNonce": {

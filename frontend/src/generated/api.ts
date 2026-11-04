@@ -1032,10 +1032,13 @@ export const openApiPaths = [
   "/api/v1/auth/device/logout",
   "/api/v1/auth/device/refresh",
   "/api/v1/auth/device/staff-grant",
+  "/api/v1/auth/devices",
+  "/api/v1/auth/devices/{device_id}",
   "/api/v1/auth/email-verification/confirm",
   "/api/v1/auth/email-verification/resend",
   "/api/v1/auth/forgot-password",
   "/api/v1/auth/login",
+  "/api/v1/auth/login-code/resend",
   "/api/v1/auth/logout",
   "/api/v1/auth/logout-all",
   "/api/v1/auth/me",
@@ -1072,6 +1075,7 @@ export const openApiPaths = [
   "/api/v1/auth/reauth/social/start",
   "/api/v1/auth/refresh",
   "/api/v1/auth/reset-password",
+  "/api/v1/auth/security-alerts/not-me",
   "/api/v1/auth/social/apple",
   "/api/v1/auth/social/github/authorize",
   "/api/v1/auth/social/github/callback",
@@ -1675,6 +1679,7 @@ export type AccountRestorePhone = {
   "challenge"?: string;
   "code": string;
   "attestation"?: DeviceAttestationPayload;
+  "app_version"?: string;
   "new_password": string;
 };
 
@@ -6113,6 +6118,7 @@ export type DeviceTokenResponse = {
   [key: string]: unknown;
 };
   "device_grant": DeviceGrant;
+  "device_trust"?: string | null;
 };
 
 export type DirectLoan = {
@@ -7625,7 +7631,11 @@ export type FabLabHealthRow = {
   "maintenance_overdue_schedules": number | null;
 };
 
+export type FactorEnum = "totp" | "passkey" | "recovery" | "email_code";
+
 export type FactorRequiredEnum = "totp" | "phone" | "email_code";
+
+export type FactorsEnum = "totp" | "passkey" | "recovery" | "email_code";
 
 export type FailedDeliveries = {
   "email": number;
@@ -8390,6 +8400,8 @@ export type Generosity = {
   "mean": number | null;
   "z_score": number | null;
 };
+
+export type GithubBrowserLoginResult = OidcBrowserLoginResponse | MFAChallengeResponse;
 
 export type GithubBrowserStart = {
   "redirect_uri": string;
@@ -9770,6 +9782,19 @@ export type KitPreviewInput = {
   "resolutions"?: Array<ReturnItemResolution>;
 };
 
+export type KnownDevice = {
+  "id": number;
+  "label": string;
+  "created_at": string;
+  "last_verified_at": string;
+  "current": boolean;
+};
+
+export type KnownDeviceList = {
+  "devices": Array<KnownDevice>;
+  "remembered_days": number;
+};
+
 export type LabelCommand = {
   "id": string;
   "command_id": string;
@@ -10262,6 +10287,16 @@ export type LockUpdate = {
 export type LogError = {
   "severity": string;
   "message": string;
+};
+
+export type LoginCodeResend = {
+  "challenge": string;
+};
+
+export type LoginCodeResent = {
+  "sent": boolean;
+  "expires_in": number;
+  "resends_left": number;
 };
 
 export type LoginGuardError = {
@@ -12469,7 +12504,11 @@ export type MFAChallengeResponse = {
   "enrollment_required": boolean;
   "challenge": string;
   "expires_in": number;
+  "purpose"?: MFAChallengeResponsePurposeEnum;
+  "factors"?: Array<FactorsEnum>;
 };
+
+export type MFAChallengeResponsePurposeEnum = "login" | "risk";
 
 export type MFACompleted = {
   "user": AuthUserPayload;
@@ -12480,6 +12519,7 @@ export type MFACompleted = {
   [key: string]: unknown;
 };
   "recovery_codes"?: Array<string>;
+  "device_trust"?: string;
 };
 
 export type MFAEnrollment = {
@@ -12500,6 +12540,16 @@ export type MFARecovery = {
   "recovery_codes": Array<string>;
 };
 
+export type MfaResetContact = {
+  "name": string;
+  "slug": string;
+};
+
+export type MfaResetContacts = {
+  "superadmin": boolean;
+  "space_managers_of": Array<MfaResetContact>;
+};
+
 export type MFAStatus = {
   "available": boolean;
   "password_available"?: boolean;
@@ -12509,7 +12559,14 @@ export type MFAStatus = {
 
 export type MFAVerify = {
   "challenge": string;
-  "code": string;
+  "code"?: string;
+  "factor"?: FactorEnum;
+  "webauthn"?: MFAWebAuthn;
+};
+
+export type MFAWebAuthn = {
+  "ceremony": string;
+  "credential": unknown;
 };
 
 export type MigrationExportCreate = {
@@ -12858,6 +12915,16 @@ export type NotificationRulesResponse = {
 
 export type NotificationUnreadCount = {
   "count": number;
+};
+
+export type NotMeRequest = {
+  "token": string;
+};
+
+export type NotMeResult = {
+  "signed_out": boolean;
+  "password_reset_requested": boolean;
+  "mfa_reset": MfaResetContacts;
 };
 
 export type Nudge = {
@@ -16441,6 +16508,7 @@ export type PhoneLoginConfirm = {
   "challenge"?: string;
   "code": string;
   "attestation"?: DeviceAttestationPayload;
+  "app_version"?: string;
 };
 
 export type PhoneLoginResult = MFACompleted | MFAChallengeResponse | DeviceTokenResponse;
@@ -21356,6 +21424,7 @@ export type SocialLogin = {
   "apple_name"?: string;
   "challenge"?: string;
   "attestation"?: DeviceAttestationPayload;
+  "app_version"?: string;
 };
 
 export type SocialLoginResponse = {
@@ -21368,7 +21437,10 @@ export type SocialLoginResponse = {
   [key: string]: unknown;
 };
   "outcome": string;
+  "device_trust"?: string;
 };
+
+export type SocialLoginResult = SocialLoginResponse | MFAChallengeResponse;
 
 export type SocialNonce = {
   "provider": string;

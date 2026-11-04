@@ -8,6 +8,8 @@ DOMAIN_ID_FIELDS = frozenset({
     "refund_id", "to_buy_item_id", "pool_id", "certification_grant_id",
     "certification_type_id",
     "product_id",
+    # Lane L21a: application status and review stage identifiers.
+    "application_id", "stage_id", "stage_position",
 })
 
 

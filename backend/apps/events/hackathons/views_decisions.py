@@ -17,7 +17,7 @@ def project_batch(row):
     return {"id": row.pk, "event_id": row.event_id, "version": row.version, "state": row.state,
             "allowed_actions": ["release", "cancel"] if row.state == "draft" else [],
             "decisions": [{"id": d.pk, "application_id": d.application_id, "cohort_id": d.cohort_id,
-                           "outcome": d.outcome, "reason_code": d.reason_code,
+                           "outcome": d.outcome, "reason_code": d.reason_code, "stage_id": d.stage_id,
                            "expected_version": d.expected_subject_version, "sent_revision": d.sent_revision}
                           for d in row.decisions.order_by("pk")]}
 

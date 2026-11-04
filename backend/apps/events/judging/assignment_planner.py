@@ -17,9 +17,11 @@ class AssignmentPlan:
 
 
 def plan_assignments(snapshot_ids, judge_ids, *, target_views=3, blocked=frozenset(),
-                     existing=frozenset(), max_load=100, seed="0"):
+                     existing=frozenset(), max_load=100, seed="0", minimum_views=3):
+    # Judging rounds keep their floor of three (#128 C-33); application review stages
+    # (lane L21a) pass minimum_views=1 for their 1-20 reviews per application.
     projects, judges = sorted(set(snapshot_ids)), sorted(set(judge_ids))
-    if (type(target_views) is not int or not 3 <= target_views <= 20
+    if (minimum_views not in (1, 3) or type(target_views) is not int or not minimum_views <= target_views <= 20
             or type(max_load) is not int or not 1 <= max_load <= 2000
             or len(projects) > 2000 or len(judges) > 500):
         raise ValueError("Assignment limits exceeded.")

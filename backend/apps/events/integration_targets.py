@@ -10,3 +10,5 @@ def register_targets():
     # Release 2 L6 (G35): ticket orders, tenant-bound by the order row.
     register_read_target("integration-order-list", ReadTarget())
     register_read_target("integration-order-detail", ReadTarget("events.EventOrder"))
+    # Release 2 L21a: application counts per event (`applications:read`), tenant-bound list.
+    register_read_target("integration-application-counts", ReadTarget())

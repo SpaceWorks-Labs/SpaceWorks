@@ -4,6 +4,7 @@ from .views_integration import (
     IntegrationEventDetailView, IntegrationEventListView, IntegrationEventParticipantsView,
 )
 from .views_integration_orders import IntegrationOrderDetailView, IntegrationOrderListView
+from .views_integration_applications import IntegrationApplicationCountsView
 
 urlpatterns = [
     path("", IntegrationEventListView.as_view(), name="integration-event-list"),
@@ -12,4 +13,5 @@ urlpatterns = [
          name="integration-event-participants"),
     path("orders/", IntegrationOrderListView.as_view(), name="integration-order-list"),
     path("orders/<int:pk>/", IntegrationOrderDetailView.as_view(), name="integration-order-detail"),
+    path("applications/", IntegrationApplicationCountsView.as_view(), name="integration-application-counts"),
 ]

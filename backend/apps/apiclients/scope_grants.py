@@ -54,6 +54,8 @@ _CATALOG += tuple(ScopeGrantOption(value, label, description, "Staff integration
         ("participants:read", "Participants read", "Read participant IDs, display names and registration dates; requires events:read."),
         ("participants:attendance:read", "Attendance read", "Include attendance dates; requires events:read and participants:read."),
         ("orders:read", "Ticket orders read", "Read ticket orders: totals, lines and seat counts; no buyer contacts."),
+        ("applications:read", "Application counts read",
+         "Read application counts per event, by status and review stage; never applicants or answers."),
     ) if value in read_scope_vocabulary())
 _CATALOG += tuple(ScopeGrantOption(value, label, description, "Staff integration (operator-only)")
                   for value, label, description in booking_read_catalog())

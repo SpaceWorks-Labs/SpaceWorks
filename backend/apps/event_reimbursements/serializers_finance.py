@@ -22,6 +22,7 @@ class PolicySettings(ClosedSerializer):
     min_distance_km = s.DecimalField(max_digits=8, decimal_places=3, min_value=0, max_value=40075, required=False, allow_null=True)
     eligible_countries = s.ListField(child=s.RegexField(r"^[A-Z]{2}$"), max_length=250, required=False)
     eligible_cohorts = s.ListField(child=s.CharField(max_length=64), max_length=250, required=False)
+    min_application_stage = StrictInteger(min_value=1, max_value=20, required=False, allow_null=True)
     award_accept_days = StrictInteger(min_value=1, max_value=365, required=False)
     claim_due_at = s.DateTimeField(required=False)
     attendance_required = s.BooleanField(required=False)

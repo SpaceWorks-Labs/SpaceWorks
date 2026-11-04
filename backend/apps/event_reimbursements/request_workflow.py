@@ -61,6 +61,7 @@ def _create_locked(*, event, actor, prepared, programme, registration, applicati
     itinerary = value["itinerary"]
     row = draft or GrantRequest(programme=programme, event=event, member=actor, currency=programme.currency)
     row.registration, row.application, row.request_phase = registration, application, phase
+    row.kind = "crew" if registration is not None and registration.is_crew else "participant"
     row.creation_operation_id = prepared.operation_id
     row.origin, row.destination, row.mode = itinerary["origin"] or "", itinerary["destination"] or "", itinerary["mode"]
     row.need_statement, row.itinerary = value["need_statement"], json.dumps(itinerary)

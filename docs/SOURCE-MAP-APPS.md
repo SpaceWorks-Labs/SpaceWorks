@@ -56,7 +56,7 @@ Continuation of [SOURCE-MAP.md](SOURCE-MAP.md).
   without importing event policy.
   `role_services.py` re-exports `role_authority.py` (locked grant validation),
   and `role_assignments.py` (staff and community role-set assignment); role CRUD is removed.
-  `role_catalog.py` fixes the seven built-ins; `role_membership_writes.py` owns complete-set writes.
+  `role_catalog.py` fixes the nine built-ins (Technician and Shop Manager joined in release 2); `role_membership_writes.py` owns complete-set writes.
   `accounts/rbac_roles.py` shares valid-role union rules between object and SQL readers.
   Per-person type scope lives in `machines/models_membership_scope.py` and `member_scope_services.py`. The RBAC vocabulary remains in `accounts/rbac_actions.py`.
   The tenant-migration authority guard scans the split role-authority/assignment modules.
@@ -71,7 +71,8 @@ Continuation of [SOURCE-MAP.md](SOURCE-MAP.md).
   eligibility, batched SQL and membership-source locks. No separable-domain imports or RBAC
   grants. `admin_links.py` routes owner-link admin mutations through `services_console.change_link`;
   the original admin barrel preserves registration/import compatibility.
-- `backend/apps/makerspaces/capability_definitions_yuyu.py` — parity feature definitions,
+- `backend/apps/makerspaces/capability_definitions_yuyu.py` — the 2026-10 parity programme's feature definitions
+  (the file name is historical),
   composed by the canonical capability catalogue and installer area discovery.
 - `backend/apps/organizations/` — `Organization` (platform entity, creatable before any makerspace, NOT a
   module_registry key), its opt-in public profile and cross-makerspace event catalogue,

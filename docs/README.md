@@ -115,7 +115,5 @@ Every guide in this repository, grouped by what you are trying to do. Start with
 - [Notifications v2 contract](notification-contract.md) — the personal delivery contract and its integration limits.
 - [Notification coverage](notification-coverage.md) — the complete notification trigger inventory.
 - [Reminder schedules](reminder-schedules.md) — the shared reminder sweeper.
-- [Report infrastructure](report-infrastructure.md) — the report registry and output allowlist.
-- Report builders: [bookings and events](report-builders-de.md), [areas H and I](report-builders-hi.md),
-  [area J](report-builders-j.md), [machines](report-machines-1f2.md) and
-  [communications and messaging](report-builders-messaging.md).
+- [Reports and measurement notes](SOURCE-MAP-REPORTS.md) — the report registry, output allowlist and the
+  measurement rules of every report family.

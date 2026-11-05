@@ -9,7 +9,7 @@ Every switch is off by default and keeps its data when turned off (#95, #128 C-8
   page (#77; no lifecycle state). Parentless, like `presence.geofence`: the public page is
   `Makerspace.public_site_enabled`, not a module key, and #97 forbids a new module.
 
-`events.embed` already exists (yuyu parity); L1's styled card reuses that switch and adds
+`events.embed` already exists (parity programme); L1's styled card reuses that switch and adds
 the per-space `EventEmbedPolicy` allow-list (`events/embed_policy.py`).
 """
 

@@ -86,7 +86,7 @@ class MFAVerifyView(MFAEnrollmentView):
     enrolling = False
 
     @extend_schema(tags=["MFA"], auth=[], request=MFAVerifySerializer,
-                   description="Complete the server-owned login context. `factor` picks totp, recovery, passkey (with `webauthn` from `auth/mfa/passkey/options`) or email_code (a `purpose: risk` challenge; wrong code: `login_code_invalid`, 400; a failed passkey: `passkey_failed`, 400). Native completions return `device_trust`. Native staff authority requires a staff account, its fixed tenant, authenticator MFA and approved app attestation, after any primary sign-in method. Consumer login methods remain member-only. Platform device grants return device_superadmin_not_supported (403). Attestation outages return attestation_unavailable (503).",
+                   description="Complete the server-owned login context. `factor` picks totp, recovery, passkey (with `webauthn` from `auth/mfa/passkey/options`) or email_code (a `purpose: risk` challenge; wrong code: `login_code_invalid`, 400; a failed passkey: `passkey_failed`, 400). Native completions return `device_trust`. Native staff authority requires a staff role in the grant's fixed makerspace, authenticator MFA and approved app attestation, after any primary sign-in method. Consumer login methods remain member-only. Platform device grants return device_superadmin_not_supported (403). Attestation outages return attestation_unavailable (503).",
                    responses={200: MFACompletedSerializer, **errors(400, 401, 403, 429, 503)})
     def post(self, request):
         data = _validated(MFAVerifySerializer, request)

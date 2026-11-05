@@ -110,7 +110,8 @@ The integration itself (an on-device agent, a vendor adapter, fleet scheduling, 
 camera, shelf pointer) is **deferred** (owner decision #76). These routes are the server side a future
 agent would use. They are **off by default**: unless the makerspace has the `machines.integrations`
 capability (which needs `devices`, `machines` and `machine_service`), every route below answers
-**404**, for staff and devices alike. The signature protocol is unchanged (v1); there is no second,
+**404** to staff and to devices. One exception: when the `devices` module itself is off, a signed device
+request fails earlier, at authentication, with 400 `{"module": ...}`. The signature protocol is unchanged (v1); there is no second,
 shared bearer token.
 
 A device reaches them only as an **active printer** whose enabled printer binding names an active
@@ -125,7 +126,8 @@ manage those per-type bindings (`MANAGE_DEVICES` plus a machine scope covering t
   `config_schema_version` change. Bind, change and removal are audited
   (`devices.integration_bound|updated|unbound`).
 - `GET /api/v1/admin/makerspace/{makerspace_id}/machine-types/{type_id}/integration-status` —
-  read-only: each bound printer of the type, its last-seen time and latest snapshot.
+  read-only: each printer with an ENABLED binding on a machine of the type, its last-seen time and latest
+  snapshot.
 
 ### Status snapshot on the heartbeat
 

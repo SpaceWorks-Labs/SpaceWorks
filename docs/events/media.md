@@ -1,7 +1,10 @@
 # Upload formats, limits and retention
 
-**Checkpoint `f1ef7736`: providers, real maker exports and storage fault tests are still
-pending. Keep features off; these are code limits, not an acceptance claim.**
+**Checkpoint `f1ef7736`: these are code limits, not an acceptance claim.** The upload features are
+per-space switches, off for a new space. The real-tool export test (open-source tools: Inkscape,
+PrusaSlicer, arduino-cli, FreeCAD, KiCad) runs in release 2's final test phase; proprietary formats
+with no owner samples (SolidWorks, Inventor, F3D, Altium, Eagle, LightBurn, CDR, SKP, DWG, and
+embroidery PES/DST unless Ink/Stitch installs) are waived for this release.
 
 `maker_formats/registry.py` defines the opt-in `hackathon-maker-v1` policy. The existing
 machine/service policy remains in `maker_formats/legacy.py`; enabling a hackathon policy

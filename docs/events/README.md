@@ -1,11 +1,9 @@
 # Events programme guide
 
-**Integration checkpoint: `f1ef7736`, 2026-10-18. Keep programme features OFF.**
-The domain code, additive migrations, route mounts and generated API are present in this
-checkout. This is not an accepted release: real providers, lifecycle closure, PostgreSQL
-tests and browser/print acceptance remain incomplete. These guides describe the authored
-workflows; a mounted route or a component is not proof of an operable journey.
-See [integration status](integration-status.md) before enabling or advertising anything.
+**Integration checkpoint: `f1ef7736`, 2026-10-18.** The programme features are ordinary
+per-space switches, off for a new space, that a Space Manager may turn on. These guides describe
+the workflows; release 2's final flow audit records the runtime and browser evidence for each
+journey in the [integration status](integration-status.md) and [acceptance](acceptance.md) pages.
 
 | Reader | Guide |
 | --- | --- |

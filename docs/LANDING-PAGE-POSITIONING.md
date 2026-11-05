@@ -102,8 +102,8 @@ tier is suitable for demos or pilots, not dependable production.
 
 - **Evidence-backed handovers, enforced rather than suggested.** Photos, scans, remarks and audit entries
   are prerequisites of the lending workflow, not fields staff may forget to fill in.
-- **One workflow regardless of interface.** Web staff, front desk, self-checkout and Telegram actions all
-  reach the same state and inventory controls.
+- **One workflow regardless of interface.** Web staff, front desk, self-checkout, kiosk and `/control/`
+  actions all reach the same state and inventory controls; chat channels only notify.
 - **Per-makerspace encrypted integrations.** Each tenant owns its notification credentials; secrets are
   encrypted at rest, write-only and absent from frontend bootstrap data.
 - **Modules that can be installed, hidden, restored and deliberately purged.** Uninstall retains history;
@@ -124,7 +124,8 @@ These items must not appear as current capabilities in landing-page copy:
 
 - **Direct hardware integration:** SpaceWorks does not yet read live job state from printers or CNC
   controllers, drive label printers, or control doors and access hardware. Machine queues are operated by
-  people, and the presence geofence is advisory.
+  people. Only the server side of a device protocol ships (enrolment, signed heartbeats, job reports),
+  off by default; no device agent or vendor adapter ships.
 - **Invitation requests:** a prospective member cannot yet ask to receive an invitation. Staff invitation
   and membership-application paths are separate existing flows.
 - **First-party native applications:** the server-side device-session, push and payment-sheet substrate

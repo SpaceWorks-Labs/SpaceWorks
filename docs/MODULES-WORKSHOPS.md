@@ -79,8 +79,8 @@ See [the per-parent switches](MODULES.md#maintenance-to-buy-warranty-and-repairs
 
 The 2026-10-18 programme adds five **off-by-default Events features**, not another
 module: hackathons, mentoring, mentor rounds, volunteering and project gallery.
-Their schema/routes are authored but runtime integration and acceptance are pending;
-keep them off. [Switches, disable/purge/storage semantics](MODULES.md#events),
+They are ordinary per-space switches, off for a new space, that a Space Manager may turn
+on; release 2's final flow audit records the runtime evidence. [Switches, disable/purge/storage semantics](MODULES.md#events),
 [role runbooks](events/README.md) and [remaining work](events/integration-status.md)
 describe this checkpoint without changing the existing ordinary-event guarantees below.
 

@@ -42,7 +42,7 @@ _NOT_FOUND = OpenApiResponse(
         summary="List makerspaces the actor has a staff surface in",
         responses={
             200: MakerspaceSerializer(many=True),
-            403: OpenApiResponse(description="Not an active staff account."),
+            403: OpenApiResponse(description="Not an active account, or outside this origin's scope."),
         },
     ),
     post=extend_schema(

@@ -110,7 +110,7 @@ Grouped the way a space actually works. The full list lives in [Features](docs/F
 
 - **Append-only audit logs** and immutable evidence records; photo bytes can expire under a per-space
   retention policy while the metadata, remarks and scans remain.
-- **Seven built-in roles**, scoped per makerspace and per action, plus a separate superadmin control plane.
+- **Nine built-in roles**, scoped per makerspace and per action, plus a separate superadmin control plane.
 - Live staff queues over Server-Sent Events, full-text search with typo tolerance, request IDs across
   logs and a token-protected Prometheus endpoint.
 - Platform backups, single-space restore points, and an encrypted export to move a space onto its own server.
@@ -249,7 +249,7 @@ system, read the [API client protocol](docs/api-client-protocol.md) (scoped, sig
 ## Roles and access
 
 Access is per makerspace and per action. The platform **Super Admin** is global; each makerspace has
-seven fixed built-in roles:
+nine fixed built-in roles:
 
 | Role | Scope |
 | --- | --- |
@@ -259,11 +259,13 @@ seven fixed built-in roles:
 | **Event Manager** | Events and registration workflows |
 | **Booking Manager** | Resources and reservation workflows |
 | **Handover** | Issue accepted requests/direct handouts, return tools, upload evidence and collect completed jobs |
+| **Technician** | Assigned repair jobs, scheduled maintenance and machine service state |
+| **Shop Manager** | The shop: products, stock, orders, the front desk and cash-ups |
 | **Member** | Community services without staff management actions |
 
-Space Manager and Member each stand alone; the other five combine. Organizations can grant actions
-across linked spaces without conferring membership. Staff accounts, passwords, invitations and machine
-scope are covered in [Roles & access](docs/README-HOSTING.md#roles--access).
+Space Manager and Member each stand alone; the other seven combine. One person has one account; staff
+roles are added to it, and staff always use two-step sign-in. Organizations can grant actions across
+linked spaces without conferring membership. Staff roles, invitations and machine scope are covered in [Roles & access](docs/README-HOSTING.md#roles--access).
 
 ## Design system
 

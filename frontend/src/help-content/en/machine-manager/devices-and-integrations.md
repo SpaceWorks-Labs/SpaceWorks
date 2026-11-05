@@ -13,7 +13,8 @@ actions: manage_devices
 
 ![Screenshot: the one-time device enrollment panel](screenshot:mm-devices)
 
-The token is shown once. If you lose it, create the device again.
+The token is shown once. If you lose it before the device enrols, open the device and press **Issue
+enrollment**: the old token stops working and a new one is shown once.
 
 ## Watch them
 

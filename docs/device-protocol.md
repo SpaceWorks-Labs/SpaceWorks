@@ -2,8 +2,8 @@
 
 Enrolled devices (printers, label printers; module `devices`) authenticate with an **Ed25519** key
 they generated themselves. A device is never a user account. The reference implementation and the
-vectors below live in `backend/apps/devices/protocol.py`; `backend/tests/devices/test_protocol.py`
-pins them.
+vectors below live in `backend/apps/devices/protocol.py`; a local test (`tests/devices/test_protocol.py`,
+not published with the repository) pins them.
 
 ## Encodings
 
@@ -55,8 +55,11 @@ whose server exposes neither fails closed. Failures are `401` with
 `WWW-Authenticate: SpaceWorks-Device-v1`; a revoked or rotated key, a stale `key_version`, a replay and a
 tampered body all fail the same way.
 
-7a defines one signed route: `POST /api/v1/device/heartbeat` (empty body) → `{device_id, makerspace_id,
-status, key_version, last_seen_at}`.
+The first signed route was `POST /api/v1/device/heartbeat` → `{device_id, makerspace_id, status,
+key_version, last_seen_at}`. The device surface now has more signed routes (printer commands, label
+commands and the machine-integration routes), and the heartbeat may carry a printer status snapshot;
+see [device-printer-protocol.md](device-printer-protocol.md), [device-label-commands.md](device-label-commands.md)
+and the route table in [machine-integrations/INTEGRATION.md](machine-integrations/INTEGRATION.md).
 
 ## Rotation, revocation, restore
 

@@ -13,7 +13,8 @@ derived only for pending charges: `upcoming`, `due_today` or `overdue`, using th
 makerspace's local day. The server also returns `due_date`, so the browser never shifts
 the date into its own timezone. Staff and member lists sort dated rows before nulls.
 
-Managers configure `GET/PATCH admin/makerspace/<id>/billing-settings` (core, audited).
+Managers configure `GET/PATCH admin/makerspace/<id>/billing-settings` (core, audited). The reminder
+schedule is API only: there is no console screen for it yet.
 Defaults follow the research policy: due on raise, 3 days before, on the due day,
 7 days after, and a cap of 2 steps. Increase the cap to 3 to include the default
 overdue step, or configure a longer ladder. `billing.reminders` defaults OFF. Delivery additionally
@@ -213,7 +214,8 @@ Inventory Manager sees inventory and lending money, the Booking Manager bookings
 Manager their machine types, the Event Manager events money (#128 C-16). The same areas record
 spending; finance staff with `view_finance` + `record_payment` record anywhere. Routes:
 `finance/access`, `finance/summary`, `finance/entries` (+ `/<id>`, `/void`, `/receipt-url`),
-`finance/receipt-upload`, `finance/opening-balances` and `finance/events/<event>` (+ `/budget`,
+`finance/receipt-upload`, `finance/opening-balances` (API only: no console screen yet) and
+`finance/events/<event>` (+ `/budget`,
 `?format=csv`). Reports: `income-spending`, `finance-inventory|machines|bookings|events`,
 `event-finance`, `receipts-payments`, `subscription-income` and `money-methods` (provider and
 method splits with the failed-online rate).

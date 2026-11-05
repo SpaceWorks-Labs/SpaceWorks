@@ -146,4 +146,4 @@ not reuse a member's consent or claim that staff can subscribe through member AP
 Managed defaults allow 100 logical SMS and 100 WhatsApp messages per tenant/day (self-host
 bypasses those quotas). Eligible diagnostics spend quota once. SMS may bill multiple segments;
 local GSM-7/UCS-2 estimates cap at three and remain distinct from provider bills, including zero.
-Reports read canonical delivery/history records; see [measurement notes](report-builders-messaging.md).
+Reports read canonical delivery/history records; see [measurement notes](SOURCE-MAP-REPORTS.md#communications-and-messaging).

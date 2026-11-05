@@ -3,7 +3,7 @@
 Access is scoped **per makerspace and per action**. Super Admin is global; every other role is a
 per-makerspace membership.
 
-Authority comes from **actions, not role names**. Each makerspace has seven fixed built-in role
+Authority comes from **actions, not role names**. Each makerspace has nine fixed built-in role
 instances. Their names and grants cannot be edited, and roles cannot be created or deleted.
 
 | Role | What it can do |
@@ -14,18 +14,22 @@ instances. Their names and grants cannot be edited, and roles cannot be created 
 | **Event Manager** | Manages events, registrations, event reports and email templates |
 | **Booking Manager** | Manages bookable spaces, bookings, booking rules, reports and email templates |
 | **Handover** | Issues accepted requests/direct handouts, takes returns, uploads evidence and collects completed machine jobs |
+| **Technician** | Works the repair jobs assigned to them, runs scheduled maintenance and sets machine service state; no inventory, money or settings |
+| **Shop Manager** | Runs the shop: products, stock, prices, orders, the front desk, cash-ups, shop refunds and shop reports; nothing else |
 | **Member** | Uses community services without staff management actions |
 
 A membership has a primary role and optional additional roles. **Space Manager and Member must each
-stand alone**; the other five combine freely, such as Event Manager + Booking Manager. The console
-assigns the complete set on a separate tenant staff account with checkboxes. Initial-setup invitations
-snapshot the full role set and machine scopes. With platform access on, only the superadmin manages
-Space Managers; with it off, another local Space Manager may manage them. Never self or the last active
-Space Manager. Members cannot receive built-in staff roles. Staff resets are admin-issued; staff and
-platform sign-in uses password (+ local authenticator MFA), while delegated helpers use member accounts.
+stand alone**; the other seven combine freely, such as Event Manager + Booking Manager. There is one
+account per person: staff roles are added to a person's own account (a staff-track membership), either
+by picking an active member of the space or by an emailed invitation the person accepts while signed in.
+Invitations snapshot the full role set and machine scopes. Only the superadmin grants, changes or revokes
+the Space Manager role, in every space; nobody changes their own staff roles, and the last active Space
+Manager cannot be removed. Anyone with a staff role must use two-step sign-in (an authenticator or a
+passkey); a person who gains a role without one gets a single 3-day grace. A Space Manager no longer sets
+staff passwords or resets their factors; MFA resets follow the reset rule in `docs/INVARIANTS.md`.
 
 Machine Manager types are assigned **per person**, not per role or individual machine. Save the role
-and types together under **Staff & roles**; member accounts cannot become Machine Managers.
+and types together under **Staff & roles**.
 No selected types means no machines. A type includes machines added to it later; **All machine types**
 selects today's available types, so newly created types need explicit assignment. Space Manager is
 exempt and covers future types too. Existing direct type authority and per-machine operator grants
@@ -40,12 +44,11 @@ before running migrations.
 
 **Organizations reach across makerspaces.** A network, a university or a chain can be registered as an
 organization, linked to any number of makerspaces as owner, manager or affiliate, and grant member
-accounts specific actions across those spaces without tenant staff accounts or memberships. An
+accounts specific actions across those spaces without staff roles or memberships. An
 organization grant confers **actions, never identity**: an organization administrator can hold
 `manage_events` across the network's spaces while being Space Manager of none of them, and staff lists
 still show only that space's own people, with a separate read-only view of which organizations reach in.
-A makerspace that has hidden itself from the platform superadmin stays hidden — authority cannot be
-routed in through an organization.
+No makerspace can hide from the platform superadmin, who is always on and sees every space.
 
 Outside this system entirely: **Public** users browse, submit requests, and — where enabled —
 self-checkout and return eligible QR tools, gated on member presence and photo evidence.
@@ -55,24 +58,26 @@ Staff work in the **React console** at `/admin`; the superadmin-only **Django co
 Request Workflow module is the single source of truth for state transitions, and the Inventory
 Availability module owns all quantity math. Details in **[.github/CONTRIBUTING.md](../.github/CONTRIBUTING.md)**.
 
-### Staff accounts and passwords
+### Staff sign-in, invitations and recovery
 
-Staff accounts belong to one makerspace and are created under **Staff & roles** by its Space Manager
-(non-Space-Manager staff) or a permitted superadmin (including Space Managers). A staff email can
-also have a separate member account and separate staff accounts in other spaces. Staff sign in at
-`/m/<slug>/admin` with username/email + password (+ authenticator MFA); member and staff sessions
-can stay open together, with independent sign-out. Event/booking helpers and organization delegates
-continue to use their member login and only their granted workspace actions.
+There are no separate staff accounts. A person signs in once (username or email + password, or any
+member method the deployment offers) and the console shows the spaces where they hold a staff role.
+Staff routes need a verified second factor (an authenticator or a passkey); during the 3-day grace a
+banner asks the person to enrol, and a few sensitive screens refuse until they do. Each space can
+tighten staff session length, idle timeout, passkey use and a staff IP allow-list; a person gets the
+strictest value across the spaces where they are staff.
 
-Staff invitations set the initial password of that exact new staff account. With Email or invitations
-off, an administrator sets or generates a password and hands it over; Membership and MFA need not
-be enabled. Admin-issued reset ends sessions and forces password change. Separate staff/platform
-email OTP recovery ends sessions, clears forced password change and preserves enrolled MFA; it needs
-configured Platform Email, including when tenant Email is off. Deactivation retains history and
-revokes credentials; reactivation needs new credentials. Only the platform superadmin manages Space
-Managers; local Space Managers manage the other staff. Nobody can manage self or remove the last
-active manager. Member sign-in methods and recovery are described in
-[Sign-in, identity and borrowing](sign-in-and-borrowing.md).
+A Space Manager grants roles to an active member of the space, or sends an emailed invitation. The
+invitee accepts it while signed in to their own account, with a fresh code sent to the invited address;
+an invitation never creates an account. Revoking a role keeps the person's account and member features.
+Only the superadmin grants, changes or revokes the Space Manager role, and only the superadmin can
+disable a whole account (`/control/` "Disable account"). Nobody changes their own staff roles, and the
+last active Space Manager cannot be removed.
+
+Password recovery is the same for everyone with an account: `/reset-password` mails a six-digit code
+(the member sign-in screen has no link to it yet). The platform superadmin recovers through the platform
+sign-in screen, and the operator keeps a host break-glass command. Member sign-in methods are described
+in [Sign-in, identity and borrowing](sign-in-and-borrowing.md).
 
 ## Hosting
 

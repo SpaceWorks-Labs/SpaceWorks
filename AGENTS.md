@@ -17,8 +17,8 @@ Guidance for Claude Code (claude.ai/code) when working with code in this reposit
 > - **`docs/INVARIANTS.md`** — the long-form load-bearing "do not regress" rules, read **per area, on
 >   demand**. The "Invariants" section below is the index of which section to open.
 > - **`docs/SOURCE-MAP.md`** — what each backend app and frontend directory owns.
-> - **`docs/DEV-WORKFLOW.md`** — program state, the Codex gates, worktrees, the test harness and the dev stack
->   and isolated test runner. Read it **before starting a build**.
+> - **`docs/DEV-WORKFLOW.md`** — program state, who does the work (Claude agents; Codex is off), worktrees,
+>   the test harness and the dev stack and isolated test runner. Read it **before starting a build**.
 > - **`docs/PROJECT-STATUS.md`** — what exists today: control plane, security posture, installer, releases.
 > - **`docs/PROJECT-HISTORY.md`** — the condensed changelog.
 >
@@ -62,16 +62,17 @@ verified private account-link proofs, never workflow decisions. Two architectura
   separate platform account; `account_kind="staff"` survives only for inert retired/merged shells.
   Identity questions go through `accounts/staff_identity.py` (`is_person`, `has_staff_role`,
   `actor_ids_for`, `require_staff_mfa`), never `account_kind`/`staff_makerspace`. The default
-  membership manager is community-only; staff authority reads `staff_tracks`. Until U-A2/U-B land,
-  the login/session surface, staff lifecycle and recovery code still follow the old split
-  (staff/platform password + authenticator MFA, context-bound recovery, native staff grants with
-  password, MFA, attestation and a fixed tenant; platform native grants forbidden).
+  membership manager is community-only; staff authority reads `staff_tracks`. The account split is
+  gone everywhere: one sign-in door (`POST auth/login`, username + password) issues person or
+  platform tokens, staff routes are admitted per request, staff roles are granted to existing
+  people or by emailed invitation, recovery is person or platform only, and a native staff grant
+  is a step-up on the person fixed to one space (platform native grants stay forbidden).
   Accounts `0032_account_context` is a development-data role reset, never an authorized
   live-authority migration. Resource helpers and organization delegates are the person's.
-  Super Admin is global; each makerspace has eight fixed built-in `MakerspaceRole` instances: Space Manager, Inventory
+  Super Admin is global; each makerspace has nine fixed built-in `MakerspaceRole` instances: Space Manager, Inventory
   Manager, Machine Manager, Event Manager, Booking Manager, Handover, Technician, Shop Manager and Member. No custom roles or role
   editing. A membership holds a primary role plus combinable additional roles; Space Manager and Member
-  must each stand alone. Authority is the union of the valid role set's actions. Machine Manager reach is
+  must each stand alone, and the other seven combine. Authority is the union of the valid role set's actions. Machine Manager reach is
   assigned per person by machine type; no type links means no machines, and a type covers machines added
   later. Space Manager is exempt. Inventory Manager covers the full hardware lifecycle but not printing,
   staff or makerspace settings. Also blocks restricted/suspended users. Interface:
@@ -177,6 +178,18 @@ rows inside a request or job bound to a makerspace, but views must still scope e
 - Sensitive browser changes (staff role-set assignments/grants, API-client management and organization
   governance/deletion) require recent, server-owned session reauthentication. Refresh never renews
   that proof; `/control/` keeps its separate MFA and reauthentication surface.
+- **Staff screens always need a second factor (#62, #128 C-1/C-2).** Two-step sign-in (an authenticator
+  or a passkey) is a platform rule for anyone with elevated authority, never a per-space switch; every
+  staff route goes through `staff_identity.require_staff_mfa`. A person who gains a staff role without a
+  factor gets ONE 3-day grace (`StaffMfaGrace`, once per person ever) with a banner at each sign-in;
+  after it, staff screens refuse until they enrol, and `mfa_grace.STRICT_ROUTES` never accept the grace.
+  Member features are never blocked. Per-space security settings (risk check, remembered-device days,
+  staff session length and idle timeout, CAPTCHA, passkeys allowed, staff IP allow-list) are rows in
+  `makerspaces/security_settings_registry.py`, written only through `makerspaces/security_settings.py`
+  by that space's Space Manager or the superadmin, with recent re-auth and an audit row; a person gets
+  the strictest value across their staff spaces, and a superadmin lock is a floor (tighten only, #111
+  Q9). A remembered device never skips the second factor. See **Login security** and **Per-space
+  security settings** in `docs/INVARIANTS.md`.
 - Inventory Managers can run the full hardware lifecycle but **cannot** manage printing, staff, or
   makerspace settings.
 - Evidence endpoints require per-makerspace `UPLOAD_EVIDENCE` plus active status; QR management also checks
@@ -249,11 +262,20 @@ rows inside a request or job bound to a makerspace, but views must still scope e
   on and off (data kept); limit-gated installs on the managed platform and every purge stay
   superadmin-only. Full rules: **Settings authority** and **Folded modules** in
   `docs/INVARIANTS.md`.
-- **Money owed is priced through the pricing kernel** (#84, #85): every charge seam asks it for
-  the amount, never a stored constant. A fee waiver never reverses a paid charge without a
-  staff-approved `RefundCase`; a price that moved since the quote returns 409 `price_changed`;
-  a booking awaiting approval keeps the price quoted at request. Full rules: **Pricing** in
-  `docs/INVARIANTS.md`.
+- **Money owed is priced through the pricing kernel** (#84, #85, L15): every charge seam and every
+  preview asks `payments.pricing.quote()` for the amount, never a stored constant, and the quote is
+  frozen on the charge (`Payment.pricing_snapshot`). Preview = charge: a price that moved since the
+  quote returns 409 `price_changed`, and nobody is charged more than they were shown. With nothing
+  configured everything is free (the release-1 price columns still apply); a total of 0 raises no
+  `Payment`. A fee waiver is append-only and never reverses a paid charge without a staff-approved
+  `RefundCase`; a damage or lost charge needs the return photo; a booking awaiting approval keeps the
+  price quoted at request. A price drop after people paid only offers staff-approved refund cases
+  (`charges.price_drop_refunds`, L24); a price rise never charges anyone more. Full rules: **Pricing**
+  and **Price-drop refunds** in `docs/INVARIANTS.md`.
+- **The shop's stock moves only through the availability module** (`inventory/availability_shop.py`,
+  re-exported by `inventory/availability.py`): never below zero or below live holds, every change an
+  append-only `ShopStockMovement`. Every sale is one ledger `Payment`; shop refunds go only through a
+  refund case. See **Shop** in `docs/INVARIANTS.md`.
 
 > The machine-scoping program (`MANAGE_MACHINES` per person by machine type, the Machines console, procurement and dashboard
 > narrowing) is documentation of an invariant, not a workflow rule, and lives under **Machine scoping** in
@@ -264,9 +286,10 @@ rows inside a request or job bound to a makerspace, but views must still scope e
 - **Every edit to this file must be made to BOTH `CLAUDE.md` and `AGENTS.md`, in the same commit.** They are
   one document under two filenames; `diff CLAUDE.md AGENTS.md` must print nothing. `docs/INVARIANTS.md` has
   no twin — both names point at that one path, so edit it in place.
-- **Follow the global Claude config.** The gated workflow in `~/.claude/CLAUDE.md` (Stages 1–6, Codex
-  delegation, mandatory review/QA gates) governs all work in this repo. Repo-specific rules below add to it;
-  they do not override it.
+- **Follow the global Claude config.** The gated workflow in `~/.claude/CLAUDE.md` (Stages 1–6, the
+  mandatory review/QA gates) governs all work in this repo. Repo-specific rules below add to it; they do
+  not override it, except that the stages which name Codex are done by Claude agents while Codex is off
+  (see "Working in this repo").
 - **Document every API endpoint in Swagger / OpenAPI.** Every route in the API surface (PRD §14) must have
   an OpenAPI spec entry — request/response schemas, auth requirements, and error responses. Keep the spec in
   sync with the code; an undocumented endpoint is incomplete.
@@ -281,12 +304,10 @@ rows inside a request or job bound to a makerspace, but views must still scope e
   **CI enforces it too:** the `rules` job of the Checks workflow runs `scripts/ci/check_rules.py`
   (`python scripts/ci/check_rules.py` locally) over tracked, non-migration, non-test, non-generated files in
   `backend/apps`, `backend/config` and `frontend/src`; its `ALLOWLIST` is the only exception list, and
-  today it holds just `config/settings.py` (Django settings conventionally use one file). Measured
-  2026-10-28: **four `backend/apps/` files exceed 300 lines** -- `tenant_migration/row_planning.py` (325),
-  `makerspaces/module_purge.py` (305), `tenant_migration/materialization.py` (302),
-  `tenant_migration/source_gate_guards.py` (301) -- and the P2 split sweep owns them; frontend has none.
-  (`machines/access.py`, `apiclients/scope_registry.py` and `tenant_migration/authority_guards.py` were
-  split behind barrels on 2026-10-28.) `backend/tests/` is not held to the ceiling.
+  today it holds just `config/settings.py`. Measured 2026-11-05 on the combined release-2 tree: **no
+  `backend/apps/` or `frontend/src/` file is over 300 lines**; the only file over the ceiling is
+  `backend/config/settings.py` (1834 lines), and it is split in the release phase (P16), after which the
+  allowlist entry goes. `backend/tests/` is not held to the ceiling.
   **Split an over-ceiling file in its own commit before adding to it**, and when splitting one that other
   modules import from, check for guards pinned to its path: `tests/makerspaces/test_tenant_servability_guard.py`
   pins two function *bodies* to `accounts/rbac.py` by `(path, function)`, and
@@ -320,21 +341,25 @@ The goal is not just to ship code, but to understand why each production-quality
 
 ## Working in this repo — the standing rules
 
-**The full account — program state, the Codex gates, worktrees, the dev stack, the isolated test runner
+**The full account — program state, who does the work, worktrees, the dev stack, the isolated test runner
 and every trap that has already cost a session — is in `docs/DEV-WORKFLOW.md`. Read it before starting
 a build.** These are the rules you must not violate without having read it:
 
-- **The Codex gates are LIVE** (Stages 1/2/4 of `~/.claude/CLAUDE.md`), but **re-check `codex doctor`**
-  rather than trusting any written claim — that one line has gone stale silently for weeks before.
+- **Codex is off; Claude agents do all the work (#119, 2026-10-27).** The owner reversed the Codex
+  switch: every build, plan review, code review and fix is done by Claude agents, and no Codex run is
+  started unless the owner asks for it again. Where `~/.claude/CLAUDE.md` sends Stage 1, 2 or 4 to
+  `/run-codex`, a Claude agent does that stage instead. If the owner turns Codex back on, check
+  `codex doctor` first and read the Codex notes in `docs/DEV-WORKFLOW.md`.
 - **Name Codex in a `Co-Authored-By` trailer only on work Codex actually wrote.** Attribution, not
   ceremony: this overrides the unconditional three-trailer rule in the global config, and the trailer set
-  is decided per commit by who really wrote the code.
-- **Never `git add`/stage before a Codex workspace-write run** — a non-empty index makes `apply_patch`
-  silently fail with a misleading "read-only" error and no files written.
+  is decided per commit by who really wrote the code. With Codex off, commits carry the Claude trailer
+  only.
+- **If Codex is used again, never `git add`/stage before a Codex workspace-write run** — a non-empty
+  index makes `apply_patch` silently fail with a misleading "read-only" error and no files written.
 - **The test baseline is ZERO reds** — any failure is a NEW regression, not background noise. Run
   `./scripts/dev.sh test`; each invocation provisions its own disposable Postgres, Redis and MinIO.
-  **Never run two `pytest` procs against one DB**, and never run the full suite concurrently with
-  `codex review` (it runs its own).
+  **Never run two `pytest` procs against one DB**, and never run two full suites at once (a background
+  review that runs its own tests counts).
 - **`tests/backup` and `tests/tenant_migration` need a pg client whose MAJOR equals the server's (16),
   and the host may not have one.** `postgres_client.client_binary` resolves
   `/usr/lib/postgresql/{major}/bin` (Debian/PGDG) or `/usr/pgsql-{major}/bin` (RHEL) and otherwise
@@ -396,6 +421,14 @@ mandatory for every staff role** (an authenticator or a passkey, a platform rule
 per-space switch) — staff routes go through `staff_identity.require_staff_mfa`, see **Login security** in
 `docs/INVARIANTS.md`.
 
+The project lives under the **SpaceWorks-Labs** GitHub organization (renamed from SpaceWorks-HQ, #107):
+the repository is `SpaceWorks-Labs/SpaceWorks` and the images are `ghcr.io/spaceworks-labs/*`; the
+installer and updater switch a saved old name automatically. The native-app contract is
+`docs/mobile/MOBILE-APP-PRD.md`. Release 2 is a **clean break** for the apps (one account per person):
+release-1 builds must update, and an app older than `MIN_NATIVE_APP_VERSION_IOS` / `_ANDROID` is
+refused with 426 `native_app_update_required`. The device protocol for machine integrations is in
+`docs/machine-integrations/INTEGRATION.md`.
+
 Stack (in use):
 
 - **Backend:** Django 6 + Django REST Framework (`backend/`). Requires Python 3.12+.
@@ -404,9 +437,10 @@ Stack (in use):
   theme:** django-unfold; site name via `ADMIN_SITE_NAME` (default "Space Works").
 - **Styling:** Tailwind CSS 4 (CSS-first; `src/index.css` uses `@import "tailwindcss"` + `@config
   "../tailwind.config.ts"`; PostCSS via `@tailwindcss/postcss`) with CSS-variable light/dark theme tokens.
-  Light default; dark toggle persisted locally.
+  The theme follows the OS theme until the user chooses (`frontend/src/lib/theme.ts`); the choice is
+  persisted locally and an OS change is followed only while there is no choice (#77).
 - **Design system:** Space Works brand guidelines v1 (`docs/brand/`) for all colour, type, logo and icons;
-  UX patterns from the Yuyu reference boards. Fonts (approved brand kit, 2026-10-15): Gilroy 400–700 for all text
+  UX patterns from the owner's design reference boards. Fonts (approved brand kit, 2026-10-15): Gilroy 400–700 for all text
   and headings, Unbounded for one accent per layout — no other family. Icons: `lucide-react`. Every screen composes one layout from
   `frontend/src/components/layouts/` inside the sidebar `AppShell` (`components/shell/`); shared UI
   primitives are exported from `frontend/src/components/ui/index.ts`.
@@ -488,11 +522,20 @@ because none are quoted here — this index is a router, not a summary.
 | **Machine scoping** | `MANAGE_MACHINES`, `machines/role_scope.py`, the Machines console, machine-service surfaces, procurement narrowing, dashboard scoping, delegated recipient rules |
 | **Machines and loans depth** | the uniform machine job flow (`machines/job_*`, `service_workflow_review|board|batch|failure`), quotes and job charges, `booking_gate`, `lockout`, the downtime ledger, work orders, `makerspaces/opening_hours.py`, consumables and auto To-Buy, mark bought and vendors, loan cancel/expiry, pickup windows, the waitlist, expected-back dates |
 | **Events program invariants** | `apps/events/`, registration vs presence, member history and provenance, collaborative events, host waivers, QR check-in |
+| **Release 2 owner decisions on record** | where each #128 answer, the #77 answers (platform Q8 billing and Q9 org self-creation, fixed-role E1/E2, the D2/D5 keep-as-built answers) and the #161–#176 rules are written down |
+| **Account deletion** | `accounts/account_deletion*.py`, self-deletion, the archive window and comeback, the 90-day purge, merged-shell scrubs, what is kept |
+| **Price-drop refunds and prepaid-job difference cases** | `payments/price_drop/`, `charges.price_drop_refunds`, `machines/job_refunds.py`, the preview on every price save |
+| **Repairs and technicians** | `apps/maintenance/repairs/`, issue reports and the one work order per subject, who may report, the Technician role (`work_repairs`/`run_maintenance`/`set_service_state`) and its coverage, quotes |
+| **Machine sessions** | `machines.sessions`, metered start/stop (member QR, staff, device), auto-stop, session charges |
+| **Public stats page** | `/m/<slug>/stats`, its sections, period and the small-number suppression |
+| **Shop** | `apps/shop/`, `inventory/availability_shop.py`, the Shop Manager, desk sales, cash-ups, guest checkout, shop refunds |
+| **Paid ticketing v2 and venue fees**, **Donations, sponsors and calendar sync**, **Applications, review stages, attendance, crew and check-in lists**, **Judging extras, hackathon money, staff lists and the gallery** (subsections of the Events program) | event orders, seats, add-ons, series passes, venue fees; `payments/donations/`, sponsors, 80G receipts, iCal feeds; `events.applications`, review stages, crew; finalists, rounds, prizes, entry and team fees, native event-role grants |
 | **Row-level security backstop** and **Per-space key rotation** | `apps/tenant_rls/`, the RLS GUCs and capabilities, the runtime-role contract, `encryption/rotation.py`, search keys, publishable-key rotation |
+| **Per-space analytics** | `apps/analytics/`, the `analytics` module, `view_analytics`, the per-space read-only Postgres login, the curated views (`docs/analytics-views.md`), Metabase embedding |
 | **Backup, restore and tenant migration** | `apps/backup/` (platform-key-only deployment archives, the single-component deployment manifest, no recipients/custody/`backup` module; per-space backup and restore: nightly one-space raw slices, preview/confirm/apply with identity ids, the safety backup, the `/control/` console), `apps/data_export/`, `apps/tenant_migration/` (one-shot `--recipient` tenant exit), the deployment recovery gate, the source gate lock protocol, archive projection |
 | **Organization accounts and organization-derived authority** | `apps/organizations/`, `OrganizationMembership`, the rbac org branch, `resolve_scope` vs `scope_by_action`, the auth payload `source` field, `EventOrganizer`, org purge scoping |
 | **API client scopes and the protected-route registry** | `apps/apiclients/scope_registry*.py`, `legacy:v1`, unknown-route denial, target resolution, the system check, the HMAC signed message and nonce namespace. The client-facing protocol is written up in `docs/api-client-protocol.md` |
-| **Member cards, ID programmes and event cards** | `apps/card_designs/`, `apps/id_programmes/`, `events/id_cards*.py`, member cards, card designs and approval, the public card check, door scans, wallet passes, card fonts and photos |
+| **Member cards, ID programmes and event cards** (and its **Google Sheets import source** subsection) | `apps/card_designs/`, `apps/id_programmes/`, `events/id_cards*.py`, member cards, card designs and approval, the public card check, door scans, wallet passes, card fonts and photos; member and ID-programme imports from a public Google Sheet |
 | **Container / deployment invariants** | `Dockerfile`, the compose files, Celery beat, MinIO/CORS, browser-facing storage URLs, production compose defaults, the opt-in `/control/` proxy route and SSH-tunnel listener (`CONTROL_PLANE_*`, `scripts/apply-settings.sh`) |
 
 Two rules are repeated here because they bite outside their own area: **a new model must be classified in
@@ -503,7 +546,7 @@ it outright.
 ## Condensed changelog — in `docs/PROJECT-HISTORY.md`
 
 **The condensed changelog lives in `docs/PROJECT-HISTORY.md`** — one line per shipped batch, newest first,
-from Phase 5B (2026-08-17/18) back to the first production deploy (2026-06-19). It was split out with the
+from the release-2 lanes (2026-11) back to the first production deploy (2026-06-19). It was split out with the
 invariants when this file crossed the harness's memory-file size limit; nothing was dropped. Like
 `docs/INVARIANTS.md` it has no `AGENTS.md` twin — both names of this document point at that one path.
 

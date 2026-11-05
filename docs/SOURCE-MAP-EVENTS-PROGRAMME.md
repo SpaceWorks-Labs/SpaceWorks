@@ -2,8 +2,8 @@
 
 GF4 authored integration, `lane/events-g2` (2026-10-18). Continued from [SOURCE-MAP.md](SOURCE-MAP.md).
 Paths below are relative to `backend/apps/` unless prefixed otherwise. Presence means
-authored code, not integration acceptance; [remaining work](events/integration-status.md)
-must close before enabling the off-default programme features.
+authored code, not integration acceptance; the [integration status](events/integration-status.md)
+records the runtime evidence. The programme features are per-space switches, off for a new space.
 
 | Responsibility | Sole writer / adapter source |
 | --- | --- |

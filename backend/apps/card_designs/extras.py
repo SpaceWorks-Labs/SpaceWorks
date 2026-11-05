@@ -3,7 +3,7 @@
 Only the holder reads or writes them, and only the printed card shows them, where
 the design places them. They never appear in staff lists, exports (other than none),
 reports, the public check, wallet passes or audit meta, and are deleted on revoke
-and erasure. (Organiser first-aid access behind a per-event switch is not built.)
+and erasure. Organisers see them only behind the per-event switch (events/id_cards_views_settings.py).
 """
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError

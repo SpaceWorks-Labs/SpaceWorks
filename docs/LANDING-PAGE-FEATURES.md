@@ -29,13 +29,13 @@ These counts were checked against the current sources rather than copied as mark
 
 | What was counted | Result | Source |
 | --- | --- | --- |
-| Module keys and customer-facing areas | **32 modules in 12 areas** | `backend/apps/makerspaces/module_registry.py` |
-| Module modes | **6 core, 4 optional default-on, 22 opt-in; 26 non-core total** | `backend/apps/makerspaces/module_registry.py` |
-| User-facing module entries | **32**, with no missing registry key and no extra entry | `docs/MODULES.md` |
-| Seeded default roles | **7**: Space Manager, Inventory Manager, Machine Manager, Event Manager, Booking Manager, Handover and Member | Roles table in `README.md` |
+| Module keys and customer-facing areas | **37 modules in 13 areas** | `backend/apps/makerspaces/module_registry.py` |
+| Module modes | **6 core, 1 on by default (member accounts), 30 opt-in; 31 non-core total** | `docs/MODULES.md` |
+| User-facing module entries | **37**, one per registry key | `docs/MODULES.md` |
+| Seeded default roles | **9**: Space Manager, Inventory Manager, Machine Manager, Event Manager, Booking Manager, Handover, Technician, Shop Manager and Member | `backend/apps/makerspaces/role_catalog.py` |
 
 The six core keys counted in the registry are Public inventory, Request workflow, Staff admin, Evidence
-uploads, QR management and Scanner. The seven built-ins are fixed; five staff roles combine, while Space Manager and Member each stand alone.
+uploads, QR management and Scanner. The nine built-ins are fixed; seven staff roles combine, while Space Manager and Member each stand alone.
 
 ## Hardware lending and returns
 
@@ -87,7 +87,12 @@ printer directly.
 
 ## Members, identity and access
 
-- Offer username/password sign-in out of the box.
+- Give each person one account across every space; staff roles are added to that account.
+- Offer username/password sign-in out of the box, with passkeys and an authenticator for two-step sign-in.
+- Require two-step sign-in for anyone with a staff role, with one 3-day grace to enrol.
+- Check unusual sign-ins, alert the person and offer a "this wasn't me" link that signs them out everywhere.
+- Block abusive IPs, add CAPTCHA (Turnstile) and refuse breached passwords.
+- Let each space set staff session length, idle timeout, passkey use and a staff IP allow-list.
 - Add Google, Apple, generic OpenID Connect providers such as Keycloak, Authentik, Azure AD or Okta, and phone sign-in with SMS codes.
 - Switch password, identity-provider, phone-code and self-sign-up methods independently at platform level.
 - Refuse login-method changes that would leave a person with no usable credential or lock every
@@ -98,17 +103,21 @@ printer directly.
 - Offer opt-in maker profiles with projects, interests, education and, when configured, a GitHub
   contribution count.
 - Publish only profiles whose owners chose to appear in the member directory.
-- Record presence and optionally perform an advisory geofence check.
-- Restrict or suspend a member when accountability or access problems require it.
+- Record presence; self check-in needs an in-range location reading when the space sets a geofence.
+- Restrict or suspend a person when accountability or access problems require it (a superadmin action).
 
 **Honest limits:** Google, Apple, OpenID Connect and SMS sign-in need credentials from the chosen provider;
-only password sign-in works without external setup. Geofencing is advisory and never blocks entry. Changing
-a login policy does not revoke existing sessions; restriction or suspension is the revocation path.
+only password sign-in works without external setup. Browser location can be spoofed, so the geofence is a
+deterrent, not proof. Changing a login policy does not revoke existing sessions; restriction or suspension is
+the revocation path. The member sign-in screen has no "Forgot password?" link yet; the reset page is
+`/reset-password`.
 
 ## Staff roles and permissions
 
 - Scope staff access by makerspace and by action, not by a hard-coded role name.
-- Provide seven fixed built-in roles; assign combinable staff role sets within the acting manager’s action ceiling.
+- Provide nine fixed built-in roles; assign combinable staff role sets within the acting manager’s action ceiling.
+- Give the Technician assigned repair jobs, scheduled maintenance and machine service state, with no inventory, money or settings.
+- Give the Shop Manager the shop's products, stock, prices, orders, front desk, cash-ups and shop reports, and nothing else.
 - Give Inventory Managers the full hardware lifecycle without machine, staff or settings access.
 - Assign Machine Managers per person by machine type; no types means no machines, and linked types include machines added later.
 - Use built-in Handover for the narrow request handover, direct handout and job collection surfaces.
@@ -128,11 +137,13 @@ Handover can combine with the other four operational manager roles; its own gran
 - Narrow machine access per staff role rather than exposing every machine to every maintainer.
 - Schedule preventive maintenance and record completed repairs in maintenance logs with supporting documents.
 - Hand completed machine jobs back to their owners through the scoped handover workflow.
+- Run one job flow for every machine type, with quotes, a "needs a booking" rule, lockout, downtime and work orders.
+- Let members report issues on what they used; triage them into work orders for a Technician or an outside contact.
+- Meter machine time in sessions started by a QR scan or by staff, with auto-stop and staff-confirmed charges.
 
 **Honest limits:** without the Machine service module, machines are records rather than a job queue. The
-system records machine work but does not read live state from printers, CNC controllers or other hardware.
-Machine time bookings and reactive work orders are not available. The machine-type booking flag is not
-yet enforced and does not block service requests or job starts.
+system records machine work but does not read live state from printers, CNC controllers or other hardware:
+only the server side of a device protocol ships (see `docs/machine-integrations/INTEGRATION.md`).
 
 ## 3D printing and filament
 
@@ -154,6 +165,10 @@ disappear.
 - Define bookable resources and rules, manage reservations, and offer public self-booking.
 - Include bookings in member activity history.
 - Optionally charge for event registrations and bookings through the same payment system used by other parts of the platform.
+- Sell tickets with orders, seats, tiers, add-ons, series passes and transfers; charge venue fees for hosting.
+- Take applications for any event through review stages; manage crew and custom check-in lists.
+- Run hackathon finalists, prize payouts, entry fees and leader-pays teams.
+- Attach a calendar invite to registration and booking confirmation emails.
 
 **Honest limits:** Events and Bookings are separate optional modules. Removing either removes its public
 listing and staff workflow, and makes its matching payment switch inert.
@@ -167,6 +182,11 @@ listing and staff workflow, and makes its matching payment switch inert.
 - Support managed Stripe Connect resolution and an in-app PaymentSheet when the mobile substrate is also
   enabled.
 - Enable payments globally and then independently for machines, bookings, events and membership.
+- Price every charge through one pricing kernel: rate cards, item prices, member discounts and fee waivers.
+- Record tax (GST), offline income with an optional two-person check, pay links, disputes and a finance ledger.
+- Refund only through staff-approved refund cases, including offers when a price drops after people paid.
+- Take donations and recurring pledges, issue optional 80G receipts and show sponsors on a sponsor wall.
+- Run an optional per-space shop with online checkout, a front-desk till and cash-ups.
 
 **Honest limits:** installing Payments does not begin charging. The master switch, the relevant area switch
 and valid provider credentials must all be present. Payment records are deliberately not erased by a
@@ -197,6 +217,8 @@ support ship on the server, but a first-party native app does not.
 - Report what is issued, who holds it, overdue items and problem records.
 - Use a central report registry so inventory, machine and event reporting can share one export surface.
 - Export registered reports as CSV or XLSX.
+- Give each space an optional read-only Metabase login over curated views, embedded in the console.
+- Publish a public stats page per space with a TV mode and small-number suppression.
 - Keep Reports independent from Inventory so machine and event reports do not vanish because an inventory
   option changed.
 
@@ -205,7 +227,7 @@ underlying operational records remain owned by their original modules.
 
 ## Multiple makerspaces and organization accounts
 
-- Host many makerspaces on one deployment. Each tenant owns its inventory, public URL, staff memberships, seven built-in role instances, integrations, QR namespace and audit scope.
+- Host many makerspaces on one deployment. Each tenant owns its inventory, public URL, staff memberships, nine built-in role instances, integrations, QR namespace and audit scope.
 - Keep public and staff queries scoped to the selected makerspace.
 - Move stock through an explicit cross-makerspace transfer rather than silently changing another tenant's
   count.

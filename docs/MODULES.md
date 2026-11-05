@@ -103,7 +103,7 @@ uses the registry rather than scalar JSONField choices. Follow the independent
 **Stocktake**: [stocktake](#stocktake) — **Machines**: [machines](#machines) ·
 [machine_service](#machine_service) · [printing](#printing) —
 **Per parent**: [maintenance, To-Buy, warranty and repairs](#maintenance-to-buy-warranty-and-repairs-switches-under-each-parent) —
-**Events**: [events](#events) — **Bookings**: [bookings](#bookings) —
+**Events**: [events](#events) · [event_reimbursements](#event_reimbursements) — **Bookings**: [bookings](#bookings) —
 **Membership**: [membership](#membership) · [presence](#presence)
 **Notifications**: [notifications](#notifications) · [email](#email) · [sms](#sms) · [whatsapp](#whatsapp) · [telegram](#telegram) ·
 [slack](#slack) · [mattermost](#mattermost) · [discord](#discord) · [webhook](#webhook) — **Reports**: [reports](#reports) · [analytics](#analytics) —
@@ -278,7 +278,7 @@ requiring `machines.maintenance`.
   rows, the key typed back, audited `makerspace.capability_purged`), split per parent:
   purging `machines.tobuy` never deletes an inventory row.
 - **Who switches them.** The Space Manager; a module's manager with that module's settings
-  grant (see [Settings authority](INVARIANTS.md#settings-authority)).
+  grant (see [Settings authority](INVARIANTS.md#settings-authority-release-2-lane-l17-101-128-c-11)).
 - **Repairs and issue reporting (L16).** A report needs its area's `*.issue_reporting`
   switch; everything after it needs `*.repairs`, which needs the area's maintenance switch
   because the repair job is the L12 work order. With repairs off a report is notify-only and
@@ -340,8 +340,8 @@ lets crew claim expenses. `events.checkin_lists` adds swag, meal and workshop li
 check-in. Turning any of them off hides its screens and its routes answer 404; a purge of Events
 deletes this data with its events.
 
-**Programme checkpoint (2026-10-18, `f1ef7736`): keep the new features off.** Hackathons
-are features inside Events, not a separate module. Five declared switches default off:
+**Programme checkpoint (2026-10-18, `f1ef7736`).** Hackathons
+are features inside Events, not a separate module. Five declared switches are ordinary per-space switches, off for a new space, that a Space Manager may turn on:
 `events.hackathons`, `events.mentoring` (since release 2 it no longer requires hackathons: Mentor Desk
 works on any event), `events.mentor_rounds` (requires mentoring and hackathons), `events.volunteering`, and `events.project_gallery` (requires
 hackathons). Release 2 adds one more, off and requiring hackathons: `events.pairwise_judging` (a third
@@ -728,7 +728,7 @@ with a current tenant tie may consent; revoked/restricted accounts remain exclud
 Provisioning, verified callbacks, quotas and recovery: [messaging operator guide](messaging-channels.md).
 With reports enabled, communications health includes scoped SMS delivery cohorts,
 segment estimates/bills and a labelled current consent snapshot. Platform metering
-separates notification usage from OTP counts; [measurement notes](report-builders-messaging.md).
+separates notification usage from OTP counts; [measurement notes](SOURCE-MAP-REPORTS.md#communications-and-messaging).
 
 ### whatsapp
 
@@ -741,7 +741,7 @@ until the operator enables them.
 Provisioning and the shared sender correlation barrier: [messaging operator guide](messaging-channels.md).
 With reports enabled, communications health includes scoped WhatsApp progress and
 delivery/read rates plus a labelled current consent snapshot. Platform usage exposes
-counts only; [measurement notes](report-builders-messaging.md).
+counts only; [measurement notes](SOURCE-MAP-REPORTS.md#communications-and-messaging).
 
 ### telegram
 

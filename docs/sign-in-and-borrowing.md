@@ -1,7 +1,8 @@
 # Sign-in, identity and borrowing
 
 How people sign in to Space Works, how a space runs without member accounts, who may ask to borrow
-something, and how a superadmin chooses which ways in are offered. Staff roles and staff accounts are
+something, and how a superadmin chooses which ways in are offered. There is one account per person:
+staff roles are granted to a person's own account, never to a separate staff account. Staff roles are
 covered in [Roles & access](README-HOSTING.md#roles--access).
 
 ## Sign-in methods
@@ -14,6 +15,11 @@ without that token the count stays hidden.
 
 Sign-in providers resolve before a makerspace is chosen, so they are configured once for the whole
 deployment (chat channels, by contrast, are configured per makerspace).
+
+**Forgotten passwords.** A person resets their password at `/reset-password` (a six-digit code by
+email, then a new password). The member sign-in screen has no "Forgot password?" link yet, so link to
+that page from your own site or help text; the platform sign-in screen does have one. Anyone who holds
+a staff role must still pass their second factor after a reset.
 
 ## Running without member accounts
 
@@ -52,6 +58,11 @@ public name. Every such request is recorded against the makerspace's single shar
 which every per-person ranking excludes. Borrower history and identity-based lookup use the
 authenticated owner, never matching submitted email/phone. Existing request status links remain
 bearer-token reads.
+
+**Restricting a borrower is a superadmin action.** Restricting or suspending a person
+(`admin/users/<id>/restrict`) is refused to everyone but the platform superadmin; a Space Manager
+cannot do it from the staff console. Lost or damaged hardware still feeds the requester's
+`access_status` through `closed_with_issue`.
 
 ## Choosing which ways in you offer
 

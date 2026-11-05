@@ -7248,6 +7248,147 @@
                 }
             }
         },
+        "/api/v1/admin/event-id-cards/{id}/photo": {
+            "post": {
+                "operationId": "api_v1_admin_event_id_cards_photo_create",
+                "summary": "Start a holder photo upload for this card (staging presign only)",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Card photos (staff)"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffPhotoPresign"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffPhotoPresign"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffPhotoPresign"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    },
+                    "503": {
+                        "description": "A required dependency is unavailable."
+                    }
+                }
+            },
+            "put": {
+                "operationId": "api_v1_admin_event_id_cards_photo_update",
+                "summary": "Attach the uploaded photo; the holder must have agreed",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Card photos (staff)"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffPhotoFinalize"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffPhotoFinalize"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffPhotoFinalize"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StaffPhotoResult"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    },
+                    "503": {
+                        "description": "A required dependency is unavailable."
+                    }
+                }
+            }
+        },
         "/api/v1/admin/event-id-cards/{id}/revoke": {
             "post": {
                 "operationId": "api_v1_admin_event_id_cards_revoke_create",
@@ -51406,6 +51547,147 @@
                 }
             }
         },
+        "/api/v1/admin/id-programme-cards/{id}/photo": {
+            "post": {
+                "operationId": "api_v1_admin_id_programme_cards_photo_create",
+                "summary": "Start a holder photo upload for this card (staging presign only)",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Card photos (staff)"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffPhotoPresign"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffPhotoPresign"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffPhotoPresign"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    },
+                    "503": {
+                        "description": "A required dependency is unavailable."
+                    }
+                }
+            },
+            "put": {
+                "operationId": "api_v1_admin_id_programme_cards_photo_update",
+                "summary": "Attach the uploaded photo; the holder must have agreed",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Card photos (staff)"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffPhotoFinalize"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffPhotoFinalize"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffPhotoFinalize"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StaffPhotoResult"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    },
+                    "503": {
+                        "description": "A required dependency is unavailable."
+                    }
+                }
+            }
+        },
         "/api/v1/admin/id-programme-cards/{id}/photo-request": {
             "post": {
                 "operationId": "api_v1_admin_id_programme_cards_photo_request_create",
@@ -51624,9 +51906,55 @@
             }
         },
         "/api/v1/admin/id-programmes/{id}/approval": {
+            "get": {
+                "operationId": "api_v1_admin_id_programmes_approval_retrieve",
+                "description": "The programme level of the approval switch (#136): on, off, or null to follow the\norganisation and then the space. `inherited` is what null currently means.",
+                "summary": "Whether this programme's design edits need approval (#136)",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "ID programmes"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    }
+                }
+            },
             "put": {
                 "operationId": "api_v1_admin_id_programmes_approval_update",
-                "summary": "Whether this programme's design edits need approval (#136)",
+                "description": "The programme level of the approval switch (#136): on, off, or null to follow the\norganisation and then the space. `inherited` is what null currently means.",
+                "summary": "Set this programme's approval level (true, false, or null to inherit)",
                 "parameters": [
                     {
                         "in": "path",
@@ -51647,7 +51975,8 @@
                                 "type": "object",
                                 "properties": {
                                     "required": {
-                                        "type": "boolean"
+                                        "type": "boolean",
+                                        "nullable": true
                                     }
                                 }
                             }
@@ -84525,6 +84854,114 @@
                 }
             }
         },
+        "/api/v1/admin/makerspaces/{makerspace_id}/card-approval-levels": {
+            "get": {
+                "operationId": "api_v1_admin_makerspaces_card_approval_levels_retrieve",
+                "summary": "The space and organisation approval levels for card designs (#136)",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Card designs"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApprovalLevels"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    }
+                }
+            },
+            "put": {
+                "operationId": "api_v1_admin_makerspaces_card_approval_levels_update",
+                "summary": "Set or clear one approval level (space or organisation)",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Card designs"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ApprovalLevelWrite"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ApprovalLevelWrite"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ApprovalLevelWrite"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApprovalLevels"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    }
+                }
+            }
+        },
         "/api/v1/admin/makerspaces/{makerspace_id}/card-designs": {
             "get": {
                 "operationId": "api_v1_admin_makerspaces_card_designs_list",
@@ -103549,6 +103986,147 @@
                     },
                     "404": {
                         "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/member-cards/{id}/photo": {
+            "post": {
+                "operationId": "api_v1_admin_member_cards_photo_create",
+                "summary": "Start a holder photo upload for this card (staging presign only)",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Card photos (staff)"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffPhotoPresign"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffPhotoPresign"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffPhotoPresign"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    },
+                    "503": {
+                        "description": "A required dependency is unavailable."
+                    }
+                }
+            },
+            "put": {
+                "operationId": "api_v1_admin_member_cards_photo_update",
+                "summary": "Attach the uploaded photo; the holder must have agreed",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Card photos (staff)"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffPhotoFinalize"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffPhotoFinalize"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffPhotoFinalize"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StaffPhotoResult"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    },
+                    "503": {
+                        "description": "A required dependency is unavailable."
                     }
                 }
             }
@@ -139729,7 +140307,80 @@
         "/api/v1/member/cards/{kind}/{card_id}/email": {
             "post": {
                 "operationId": "api_v1_member_cards_email_create",
-                "summary": "Email me my card (PDF attached)",
+                "summary": "Email me my card (PDF, or PNG images of each side)",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "card_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "kind",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "My cards"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CardEmail"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CardEmail"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CardEmail"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    }
+                }
+            }
+        },
+        "/api/v1/member/cards/{kind}/{card_id}/face": {
+            "get": {
+                "operationId": "api_v1_member_cards_face_retrieve",
+                "summary": "My card's published design and values, for the printed-card view",
                 "parameters": [
                     {
                         "in": "path",
@@ -139757,7 +140408,7 @@
                     }
                 ],
                 "responses": {
-                    "202": {
+                    "200": {
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -139768,11 +140419,81 @@
                         },
                         "description": ""
                     },
-                    "400": {
-                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    }
+                }
+            }
+        },
+        "/api/v1/member/cards/{kind}/{card_id}/fonts/{family_slug}/{weight}": {
+            "get": {
+                "operationId": "member_card_font_file",
+                "summary": "A card font my card's design uses (served by this app, never Google)",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "card_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "family_slug",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "kind",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "weight",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "My cards"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "font/ttf": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        },
+                        "description": ""
                     },
                     "401": {
                         "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
                     },
                     "404": {
                         "description": "Not found, not visible to this actor, or the surface is not enabled here."
@@ -183175,6 +183896,80 @@
                 }
             }
         },
+        "/api/v1/public/organizations/{slug}/id-programmes/{programme_slug}/prefill": {
+            "get": {
+                "operationId": "api_v1_public_organizations_id_programmes_prefill_retrieve",
+                "description": "Opt-in Saved-details prefill for the join form: the owner's own values, never stored.",
+                "summary": "Fill the join form from my Saved details (only when I ask)",
+                "parameters": [
+                    {
+                        "in": "header",
+                        "name": "X-Nonce",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Unique, unpredictable nonce for HMAC-authenticated server API clients (1-128 characters: letters, digits, `.`, `_`, `~`, or `-`). Include it between `X-Timestamp` and the raw body in the signed bytes: `METHOD\\nFULL_PATH\\nTIMESTAMP\\nNONCE\\nBODY`. It is optional only for publishable-key/browser authentication and during the temporary legacy rollout while `APICLIENT_REQUIRE_NONCE` is disabled."
+                    },
+                    {
+                        "in": "header",
+                        "name": "X-Publishable-Key",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Public API key for a makerspace public client. Required when API_CLIENT_AUTH_REQUIRED is enabled."
+                    },
+                    {
+                        "in": "path",
+                        "name": "programme_slug",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "slug",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Public ID programmes"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
+                    }
+                }
+            }
+        },
         "/api/v1/public/organizations/{slug}/makerspaces/": {
             "get": {
                 "operationId": "api_v1_public_organizations_makerspaces_retrieve",
@@ -189264,6 +190059,72 @@
                     "category_caps"
                 ]
             },
+            "ApprovalGroupLevel": {
+                "type": "object",
+                "properties": {
+                    "group": {
+                        "$ref": "#/components/schemas/Group4d3Enum"
+                    },
+                    "available": {
+                        "type": "boolean"
+                    },
+                    "default": {
+                        "type": "boolean"
+                    },
+                    "space": {
+                        "type": "boolean",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "available",
+                    "default",
+                    "group",
+                    "space"
+                ]
+            },
+            "ApprovalLevelWrite": {
+                "type": "object",
+                "properties": {
+                    "group": {
+                        "$ref": "#/components/schemas/Group4d3Enum"
+                    },
+                    "organization_id": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "nullable": true
+                    },
+                    "required": {
+                        "type": "boolean",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "group",
+                    "required"
+                ]
+            },
+            "ApprovalLevels": {
+                "type": "object",
+                "properties": {
+                    "groups": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ApprovalGroupLevel"
+                        }
+                    },
+                    "organisations": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ApprovalOrganisation"
+                        }
+                    }
+                },
+                "required": [
+                    "groups",
+                    "organisations"
+                ]
+            },
             "ApprovalModeE35Enum": {
                 "enum": [
                     "instant",
@@ -189271,6 +190132,31 @@
                 ],
                 "type": "string",
                 "description": "* `instant` - Instant confirmation\n* `approve` - Staff approval required"
+            },
+            "ApprovalOrganisation": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "membership": {
+                        "type": "boolean",
+                        "nullable": true
+                    },
+                    "event": {
+                        "type": "boolean",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "event",
+                    "id",
+                    "membership",
+                    "name"
+                ]
             },
             "ApprovalRequest": {
                 "type": "object",
@@ -191872,7 +192758,7 @@
                         "$ref": "#/components/schemas/BadgeDocument"
                     },
                     "stock": {
-                        "$ref": "#/components/schemas/StockEnum"
+                        "$ref": "#/components/schemas/StockA31Enum"
                     }
                 },
                 "required": [
@@ -191892,7 +192778,7 @@
                         "$ref": "#/components/schemas/BadgeDocument"
                     },
                     "stock": {
-                        "$ref": "#/components/schemas/StockEnum"
+                        "$ref": "#/components/schemas/StockA31Enum"
                     },
                     "event_version": {
                         "type": "integer"
@@ -191973,7 +192859,7 @@
                         "$ref": "#/components/schemas/BadgeDocument"
                     },
                     "stock": {
-                        "$ref": "#/components/schemas/StockEnum"
+                        "$ref": "#/components/schemas/StockA31Enum"
                     }
                 },
                 "required": [
@@ -197759,6 +198645,19 @@
                 "type": "string",
                 "description": "* `draft` - Draft\n* `pending_approval` - Waiting for approval\n* `published` - Published"
             },
+            "CardEmail": {
+                "type": "object",
+                "properties": {
+                    "format": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/Format519Enum"
+                            }
+                        ],
+                        "description": "Also remembered as my choice for later card emails.\n\n* `pdf` - pdf\n* `png` - png"
+                    }
+                }
+            },
             "CardFont": {
                 "type": "object",
                 "properties": {
@@ -198050,7 +198949,7 @@
                     "format": {
                         "allOf": [
                             {
-                                "$ref": "#/components/schemas/CardPreviewFormatEnum"
+                                "$ref": "#/components/schemas/Format519Enum"
                             }
                         ],
                         "default": "png"
@@ -198063,14 +198962,6 @@
                 "required": [
                     "document"
                 ]
-            },
-            "CardPreviewFormatEnum": {
-                "enum": [
-                    "png",
-                    "pdf"
-                ],
-                "type": "string",
-                "description": "* `png` - png\n* `pdf` - pdf"
             },
             "CardScan": {
                 "type": "object",
@@ -198117,6 +199008,9 @@
                     "public_check_on": {
                         "type": "boolean",
                         "readOnly": true
+                    },
+                    "email_format": {
+                        "$ref": "#/components/schemas/EmailFormatEnum"
                     }
                 },
                 "required": [
@@ -198178,6 +199072,10 @@
                     "checked_at": {
                         "type": "string",
                         "format": "date-time"
+                    },
+                    "timezone": {
+                        "type": "string",
+                        "description": "The issuing space's time zone, for the 'Checked at' footnote."
                     }
                 },
                 "required": [
@@ -198188,6 +199086,7 @@
                     "note",
                     "number",
                     "status",
+                    "timezone",
                     "valid",
                     "valid_until"
                 ]
@@ -207255,6 +208154,14 @@
                     "reset_timezone",
                     "uncertain"
                 ]
+            },
+            "EmailFormatEnum": {
+                "enum": [
+                    "pdf",
+                    "png"
+                ],
+                "type": "string",
+                "description": "* `pdf` - pdf\n* `png` - png"
             },
             "EmailLog": {
                 "type": "object",
@@ -217134,6 +218041,14 @@
                     "schema"
                 ]
             },
+            "Format519Enum": {
+                "enum": [
+                    "pdf",
+                    "png"
+                ],
+                "type": "string",
+                "description": "* `pdf` - pdf\n* `png` - png"
+            },
             "FreeUsage": {
                 "type": "object",
                 "properties": {
@@ -218046,24 +218961,13 @@
                     "module"
                 ]
             },
-            "GroupEnum": {
+            "Group4d3Enum": {
                 "enum": [
-                    "fab-2d",
-                    "fab-3dprint",
-                    "fab-cnc",
-                    "hardware-cad",
-                    "hardware-pcb",
-                    "firmware",
-                    "source",
-                    "embroidery",
-                    "archives",
-                    "video",
-                    "deck",
-                    "images",
-                    "model"
+                    "membership",
+                    "event"
                 ],
                 "type": "string",
-                "description": "* `fab-2d` - fab-2d\n* `fab-3dprint` - fab-3dprint\n* `fab-cnc` - fab-cnc\n* `hardware-cad` - hardware-cad\n* `hardware-pcb` - hardware-pcb\n* `firmware` - firmware\n* `source` - source\n* `embroidery` - embroidery\n* `archives` - archives\n* `video` - video\n* `deck` - deck\n* `images` - images\n* `model` - model"
+                "description": "* `membership` - membership\n* `event` - event"
             },
             "Growth": {
                 "type": "object",
@@ -237807,6 +238711,17 @@
                     "qr_image": {
                         "type": "string",
                         "nullable": true
+                    },
+                    "photo_set": {
+                        "type": "boolean"
+                    },
+                    "photo_cleanup_available": {
+                        "type": "boolean"
+                    },
+                    "photo_aspect": {
+                        "type": "number",
+                        "format": "double",
+                        "description": "Width / height of the design's photo frame, for the crop step."
                     }
                 },
                 "required": [
@@ -237820,7 +238735,10 @@
                     "makerspace_id",
                     "name",
                     "number",
+                    "photo_aspect",
+                    "photo_cleanup_available",
                     "photo_request_open",
+                    "photo_set",
                     "qr_image",
                     "status",
                     "title",
@@ -246852,6 +247770,9 @@
                     "public_check_on": {
                         "type": "boolean",
                         "readOnly": true
+                    },
+                    "email_format": {
+                        "$ref": "#/components/schemas/EmailFormatEnum"
                     }
                 }
             },
@@ -258980,7 +259901,7 @@
                         "minimum": 1
                     },
                     "stock": {
-                        "$ref": "#/components/schemas/StockEnum"
+                        "$ref": "#/components/schemas/StockA31Enum"
                     },
                     "include_photo": {
                         "type": "boolean",
@@ -274988,7 +275909,7 @@
                         "nullable": true,
                         "oneOf": [
                             {
-                                "$ref": "#/components/schemas/StockEnum"
+                                "$ref": "#/components/schemas/Stock88dEnum"
                             },
                             {
                                 "$ref": "#/components/schemas/NullEnum"
@@ -275097,7 +276018,7 @@
                         "nullable": true,
                         "oneOf": [
                             {
-                                "$ref": "#/components/schemas/StockEnum"
+                                "$ref": "#/components/schemas/Stock88dEnum"
                             },
                             {
                                 "$ref": "#/components/schemas/NullEnum"
@@ -279070,6 +279991,52 @@
                     "status"
                 ]
             },
+            "StaffPhotoFinalize": {
+                "type": "object",
+                "properties": {
+                    "object_key": {
+                        "type": "string",
+                        "maxLength": 300
+                    },
+                    "content_type": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/ContentType12dEnum"
+                            }
+                        ],
+                        "default": "image/jpeg"
+                    },
+                    "holder_consented": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "holder_consented",
+                    "object_key"
+                ]
+            },
+            "StaffPhotoPresign": {
+                "type": "object",
+                "properties": {
+                    "content_type": {
+                        "$ref": "#/components/schemas/ContentType12dEnum"
+                    }
+                },
+                "required": [
+                    "content_type"
+                ]
+            },
+            "StaffPhotoResult": {
+                "type": "object",
+                "properties": {
+                    "photo_set": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "photo_set"
+                ]
+            },
             "StaffPresenceEnd": {
                 "type": "object",
                 "properties": {
@@ -281469,7 +282436,7 @@
                 "type": "string",
                 "description": "* `pending_approval` - Pending approval\n* `registered` - Registered\n* `waitlisted` - Waitlisted\n* `rejected` - Rejected\n* `cancelled` - Cancelled\n* `attended` - Attended"
             },
-            "StockEnum": {
+            "Stock88dEnum": {
                 "enum": [
                     "a6-portrait",
                     "4x6",
@@ -281480,6 +282447,20 @@
                 ],
                 "type": "string",
                 "description": "* `a6-portrait` - a6-portrait\n* `4x6` - 4x6\n* `3x4` - 3x4\n* `4x3` - 4x3\n* `cr80-portrait` - cr80-portrait\n* `cr80-landscape` - cr80-landscape"
+            },
+            "StockA31Enum": {
+                "enum": [
+                    "a6-portrait",
+                    "4x6",
+                    "3x4",
+                    "4x3",
+                    "cr80-portrait",
+                    "cr80-landscape",
+                    "a6-landscape",
+                    "custom"
+                ],
+                "type": "string",
+                "description": "* `a6-portrait` - a6-portrait\n* `4x6` - 4x6\n* `3x4` - 3x4\n* `4x3` - 4x3\n* `cr80-portrait` - cr80-portrait\n* `cr80-landscape` - cr80-landscape\n* `a6-landscape` - a6-landscape\n* `custom` - custom"
             },
             "StockTransfer": {
                 "type": "object",
@@ -285777,7 +286758,7 @@
                         "format": "int64"
                     },
                     "group": {
-                        "$ref": "#/components/schemas/GroupEnum"
+                        "$ref": "#/components/schemas/UploadGroupEnum"
                     },
                     "subtype": {
                         "type": "string",
@@ -285838,6 +286819,25 @@
                 ],
                 "type": "string",
                 "description": "* `put` - put\n* `post` - post"
+            },
+            "UploadGroupEnum": {
+                "enum": [
+                    "fab-2d",
+                    "fab-3dprint",
+                    "fab-cnc",
+                    "hardware-cad",
+                    "hardware-pcb",
+                    "firmware",
+                    "source",
+                    "embroidery",
+                    "archives",
+                    "video",
+                    "deck",
+                    "images",
+                    "model"
+                ],
+                "type": "string",
+                "description": "* `fab-2d` - fab-2d\n* `fab-3dprint` - fab-3dprint\n* `fab-cnc` - fab-cnc\n* `hardware-cad` - hardware-cad\n* `hardware-pcb` - hardware-pcb\n* `firmware` - firmware\n* `source` - source\n* `embroidery` - embroidery\n* `archives` - archives\n* `video` - video\n* `deck` - deck\n* `images` - images\n* `model` - model"
             },
             "UploadResponse": {
                 "type": "object",

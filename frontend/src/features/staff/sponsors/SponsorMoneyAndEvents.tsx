@@ -2,7 +2,14 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { financeError } from "../../finance/financeApi";
-import { PAYMENT_STATUS, sponsorApi, sponsorKeys } from "./staffSponsorsApi";
+import { useEvents } from "../eventsApi";
+import { PAYMENT_STATUS, sponsorApi, sponsorKeys, type ChargeInput } from "./staffSponsorsApi";
+
+/** Hack-money G8: the body for "record as owed"; a prize-pool earmark always names its event. */
+export function chargeBody(amount: string, description: string, eventId: string, prizePool: boolean): ChargeInput {
+  const event_id = eventId ? Number(eventId) : null;
+  return { amount, description, event_id, earmark: event_id && prizePool ? "prize_pool" : "general" };
+}
 
 /** What the sponsor agreed to pay: each is an account-less charge, settled offline or by a pay link. */
 export function SponsorCharges({ makerspaceId, sponsorId, canRecord }: { makerspaceId: number; sponsorId: number; canRecord: boolean }) {
@@ -11,8 +18,12 @@ export function SponsorCharges({ makerspaceId, sponsorId, canRecord }: { makersp
   const charges = useQuery({ queryKey: key, queryFn: () => sponsorApi.charges(makerspaceId, sponsorId) });
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
-  const raise = useMutation({ mutationFn: () => sponsorApi.raiseCharge(makerspaceId, sponsorId, { amount, description }),
-    onSuccess: () => { setAmount(""); setDescription(""); void client.invalidateQueries({ queryKey: key }); } });
+  const [eventId, setEventId] = useState("");
+  const [prizePool, setPrizePool] = useState(false);
+  const events = useEvents(makerspaceId);
+  const titles = new Map((events.data?.results ?? []).map(row => [row.id, row.title]));
+  const raise = useMutation({ mutationFn: () => sponsorApi.raiseCharge(makerspaceId, sponsorId, chargeBody(amount, description, eventId, prizePool)),
+    onSuccess: () => { setAmount(""); setDescription(""); setEventId(""); setPrizePool(false); void client.invalidateQueries({ queryKey: key }); } });
   const back = useMutation({ mutationFn: (charge: number) => sponsorApi.returnCharge(makerspaceId, charge),
     onSuccess: () => void client.invalidateQueries({ queryKey: key }) });
   return <section className="grid gap-3" aria-label="Sponsorship money">
@@ -23,6 +34,8 @@ export function SponsorCharges({ makerspaceId, sponsorId, canRecord }: { makersp
       className="flex flex-wrap items-center gap-3 text-sm">
       <span className="font-semibold tabular-nums text-ink">{charge.currency.toUpperCase()} {charge.amount}</span>
       <span className="text-muted">{charge.description}</span>
+      {charge.event ? <span className="text-xs">{titles.get(charge.event) ?? `Event #${charge.event}`}{charge.earmark === "prize_pool"
+        ? " · prize pool" : ""}</span> : null}
       <span className="ml-auto text-xs">{PAYMENT_STATUS[charge.payment_status] ?? charge.payment_status}</span>
       {canRecord && ["paid_online", "paid_offline"].includes(charge.payment_status) ? <button type="button"
         className="desk-button-ghost" disabled={back.isPending}
@@ -33,6 +46,13 @@ export function SponsorCharges({ makerspaceId, sponsorId, canRecord }: { makersp
         required pattern="[0-9]+(\.[0-9]{1,2})?" value={amount} onChange={event => setAmount(event.target.value)} /></label>
       <label className="grid flex-1 gap-1 text-sm font-semibold text-ink">For<input className="desk-input" maxLength={200}
         value={description} onChange={event => setDescription(event.target.value)} /></label>
+      <label className="grid gap-1 text-sm font-semibold text-ink">Event (optional)<select className="desk-input" value={eventId}
+        onChange={event => { setEventId(event.target.value); if (!event.target.value) setPrizePool(false); }}>
+        <option value="">No particular event</option>
+        {(events.data?.results ?? []).map(row => <option key={row.id} value={row.id}>{row.title}</option>)}
+      </select></label>
+      <label className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" disabled={!eventId} checked={prizePool}
+        onChange={event => setPrizePool(event.target.checked)} />Earmark for this event&apos;s prize pool</label>
       <button type="submit" className="desk-button" disabled={raise.isPending}>Record as owed</button>
     </form> : null}
     {raise.error || back.error ? <p role="alert" className="text-sm text-danger">{financeError(raise.error || back.error)}</p> : null}

@@ -6,6 +6,7 @@ import { commandError, type EventScope } from "../../events/stagedForms/privateQ
 import { utcInstant } from "../../events/stagedForms/formPayload";
 import { reimbursementAdminPath, useAwardCommand, useRequestQueue } from "./api";
 import type { AwardCommand, RequestReviewRow } from "./types";
+import { BookedTravelActions, type ScreeningRow } from "./TravelAndCrewPool";
 
 export function ReimbursementRequests({ scope }: { scope: EventScope }) {
   const [page, setPage] = useState(1);
@@ -17,7 +18,8 @@ export function ReimbursementRequests({ scope }: { scope: EventScope }) {
     body={{ kind: "rows", rows: query.data?.results.map(row => <article key={row.id} className="grid gap-3 rounded-2xl border border-line bg-panel p-5">
       <h2 className="title-section">{row.owner_label}</h2><p>{row.state} · Estimated {row.estimated_total_minor} minor units ({row.currency})</p>
       <p>Categories: {row.categories.join(", ")}</p><p>Available pool: {row.pool.available_minor} minor units ({row.pool.currency}). Reserved: {row.pool.reserved_minor}. Committed: {row.pool.committed_minor}.</p>
-      {row.allowed_actions.includes("request_decide") ? <button type="button" className="desk-button justify-self-start" onClick={() => setSelected(row)}>Review request</button> : null}</article>) }}
+      {row.allowed_actions?.includes("request_decide") ? <button type="button" className="desk-button justify-self-start" onClick={() => setSelected(row)}>Review request</button> : null}
+      <BookedTravelActions scope={scope} row={row as unknown as ScreeningRow} /></article>) }}
     detail={selected && !query.error ? <AwardDecision key={`${selected.id}:${selected.version}`} scope={scope} row={selected} onClose={() => setSelected(null)} /> : null} />;
 }
 function AwardDecision({ scope, row, onClose }: { scope: EventScope; row: RequestReviewRow; onClose: () => void }) {

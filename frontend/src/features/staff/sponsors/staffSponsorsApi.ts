@@ -17,7 +17,10 @@ export type Perk = {
 export type Charge = {
   id: number; sponsor: number; amount: string; currency: string; description: string; payment_id: number | null;
   payment_status: string; created_at: string;
+  /** Hack-money G8: the event this money is for, and whether it funds that event's prize pool. */
+  event?: number | null; earmark?: "general" | "prize_pool";
 };
+export type ChargeInput = { amount: string; description: string; event_id?: number | null; earmark?: "general" | "prize_pool" };
 export type EventLink = {
   id: number; sponsor: number; event_sponsor: number; event_id: number; event_title: string; label: string; created_at: string;
 };
@@ -56,7 +59,7 @@ export const sponsorApi = {
   fulfil: (id: number, perk: number, fulfilled: boolean) =>
     staffRequest<Perk>(`${base(id)}/perks/${perk}/fulfil`, json("POST", { fulfilled })),
   charges: (id: number, sponsor: number) => staffRequest<Charge[]>(`${base(id)}/${sponsor}/charges`),
-  raiseCharge: (id: number, sponsor: number, body: { amount: string; description: string }) =>
+  raiseCharge: (id: number, sponsor: number, body: ChargeInput) =>
     staffRequest<Charge>(`${base(id)}/${sponsor}/charges`, json("POST", body)),
   returnCharge: (id: number, charge: number) => staffRequest<Charge>(`${base(id)}/charges/${charge}/return`, json("POST", {})),
   links: (id: number, sponsor: number) => staffRequest<EventLink[]>(`${base(id)}/${sponsor}/event-links`),

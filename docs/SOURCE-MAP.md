@@ -358,7 +358,8 @@ Donations, sponsors and calendar sync (release 2 L18): the internal package `pay
 (models `models_donations.py`, `models_sponsors.py`; giving `services.py`, `identity.py` (guest code and
 signed links), pledges `pledges.py`, 80G `tax_receipts.py` + `tax_receipt_pdf.py`, settlement `settlement.py`
 (from `payments/admission_settlement.py`), returns `refunds.py`, sponsors `sponsors.py`, the wall `wall.py`,
-notices `notices.py`, beat jobs `tasks.py`; routes `urls.py`, views `views_public|guest|member|staff|sponsors|
+notices `notices.py`, beat jobs `tasks.py`, report builders `reports.py` + `reports_sponsors.py` (registered in
+`operations/report_definitions_donations.py`; the `finance-donations` area is in `payments/reports_finance_ledger.py`); routes `urls.py`, views `views_public|guest|member|staff|sponsors|
 sponsor_logo.py`). Calendar: `events/models_calendar_personal.py`, `calendar_feed_tokens.py`,
 `calendar_feed_shifts.py`, `calendar_feed_combined.py`, `views_calendar_feeds_r2.py`; the feed switches in
 `bookings/views_feed.py` and `events/views_calendar.py`. The Pages `sponsors` section is in

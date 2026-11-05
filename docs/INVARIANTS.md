@@ -6087,6 +6087,14 @@ responsibility; local purges never delete shared global organizations or foreign
   on the wall, not archived and inside their window. Contacts, amounts, perks and charges never
   leave the staff console. Event-level sponsors stay `events.EventSponsor`; `SponsorEventLink` points
   at one (L18 never writes `events/contributions/*`).
+- **Donations reports are finance-only and carry no person (RP-3).** `donations-campaign-progress`,
+  `donations-pledges`, `donations-sponsor-perks` (`operations/report_definitions_donations.py`, builders in
+  `payments/donations/reports*.py`) and the ledger area `finance-donations` need `view_finance`, run per
+  space only (never deployment-wide or organization-combined), and sit behind their own switches
+  (`finance.donations`, `finance.recurring_donations`, `finance.sponsors`, `finance.ledger`). Their builders
+  read counts and money through `values_list`/`only`, so a donor's name, email or note, the
+  `DonorTaxDetail` PAN/address, `access_secret`/`manage_secret` and a sponsor's `contact_*` are never
+  loaded into a row; donor counts are distinct accounts plus one per guest gift.
 - **Calendar feeds are bearer links with switches.** `bookings.calendar_feed` and
   `events.calendar_feed` gate the existing feeds (on by default, backfilled on); the shift feed
   (`calendar_feed_shifts.py`, reading L21a's shift models only) and the combined feed carry only the

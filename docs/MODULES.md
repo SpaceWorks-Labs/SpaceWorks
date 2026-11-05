@@ -853,7 +853,9 @@ checklists, sponsorship charges and an opt-in sponsor wall on Pages and the even
 `payments.donations` puts the online rail behind gifts and sponsor money. Every gift is income in
 the finance ledger's `donations` area; returning one is a staff-approved refund case. Turning a
 switch off hides its screens and routes and stops its jobs; gifts, pledges and sponsors are kept, and
-their charges stay in the ledger (they are never purged). See
+their charges stay in the ledger (they are never purged). Finance staff get reports for each switch:
+campaign progress, pledges (active, missed, paused, cancelled) and sponsor perks due or fulfilled, plus
+the `finance-donations` money area; none of them shows a donor's name, contact or PAN. See
 [donations and sponsors](payment-billing.md#donations-and-sponsors).
 
 ## Mobile apps

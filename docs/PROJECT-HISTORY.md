@@ -6,6 +6,9 @@
 
 ## Condensed changelog (newest first — full detail in `git log`)
 
+- **2026-11-05 -- RP-3 donations reports (gap lane, after L18).** Finance-only reports for campaign
+  progress, pledges (active, missed, paused, cancelled) and sponsor perks due or fulfilled, plus the
+  `finance-donations` ledger area; per space, organization-excluded, never a donor name, contact or PAN.
 - **2026-11-05 -- release 2 gap RP-5, repairs reports.** A repairs/technician report family (open and
   overdue work orders, technician workload, repair time per area, parts used), each narrowed to the
   viewer through the L16 repairs authority; `ReportDefinition.alternate_actions` admits the area managers

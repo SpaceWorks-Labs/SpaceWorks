@@ -26,6 +26,8 @@ AREAS = {
     "finance-events": ("events",),
     # Lane L22 (#137, Q-S10): the shop's money, for the Shop Manager without view_finance.
     "finance-shop": ("shop",),
+    # RP-3: gifts, pledge periods, sponsorship and donation receipts; only view_finance sees them (#100).
+    "finance-donations": ("donations",),
 }
 
 
@@ -97,6 +99,7 @@ build_finance_machines = _area_builder("finance-machines")
 build_finance_bookings = _area_builder("finance-bookings")
 build_finance_events = _area_builder("finance-events")
 build_finance_shop = _area_builder("finance-shop")
+build_finance_donations = _area_builder("finance-donations")
 
 
 def event_finance(space, date_range=None, actor=None, event_id=None):

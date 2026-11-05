@@ -110,6 +110,10 @@ EXCLUDED_ORGANIZATION_REPORT_KEYS = EXCLUDED_ORGANIZATION_REPORT_KEYS | CARD_REP
 # workload names technicians, and median repair hours cannot be summed across spaces.
 from apps.operations.report_definitions_repairs import REPAIRS_REPORT_KEYS  # noqa: E402
 EXCLUDED_ORGANIZATION_REPORT_KEYS = EXCLUDED_ORGANIZATION_REPORT_KEYS | REPAIRS_REPORT_KEYS
+# RP-3: donations money, campaigns, pledges and sponsor perks are tenant-local finance
+# (each space's own causes, calendar and sponsors); never combined across an organization.
+from apps.operations.report_definitions_donations import DONATION_REPORT_KEYS  # noqa: E402
+EXCLUDED_ORGANIZATION_REPORT_KEYS = EXCLUDED_ORGANIZATION_REPORT_KEYS | DONATION_REPORT_KEYS | {"finance-donations"}
 
 
 # Phase 1f F/G adds explicit local-period strategies and exposed denominators.

@@ -957,7 +957,9 @@ identity normalization and production minimum-version comparison. `mobile_associ
   `PlatformAnnouncementTarget`); `write_policy.py` is the ONE paused/read-only write guard, called from
   `tenant_migration/gate_runtime._assert_gate_state` (and the per-request / per-sweep contexts from
   `tenant_migration/middleware.py` and `fanout_tenant_write`); `errors.py` (`space_suspended`,
-  `space_read_only`, typed 409s); `services_access.py` (suspend/unblock, read-only on/off: the only
+  `space_read_only`, typed 409s); `superadmin_bypass.py` (#195: the audited superadmin admission, wired
+  into the gate middleware, `gate_runtime.assert_request_write_allowed`, `config/admin_source_gate.py`,
+  `TenantGateTask` and a Celery `before_task_publish` handler); `services_access.py` (suspend/unblock, read-only on/off: the only
   writers), `services_schedule.py` + `schedule_mail.py` + `tasks.py` (scheduled archive/purge and
   reminders), `services_ownership.py` (transfer), `onboarding.py` (approve -> create -> invite),
   `announcements.py`, `notices.py` (the signed-in banner/paused feed), `health.py` (+ `plan_hook.py`),
@@ -976,7 +978,7 @@ identity normalization and production minimum-version comparison. `mobile_associ
   `tenant_migration/{catalog,gate_policy}_r2_superadmin.py`, `apiclients/scope_registry_routes.py`.
 - Frontend: `features/staff/platformSpaces/` (the superadmin **Spaces** tab: health, onboarding,
   announcements, plans, invoices, billing settings), `features/platformNotices/` (banners, the paused
-  page and the public `PausedTenantGate`), `features/staff/hostingPlan/` (the Space Manager's plan usage
+  page, the public `PausedTenantGate` and `SuperadminSpaceGuard`, which sets `lib/api/requests.setStaffWriteGuard`), `features/staff/hostingPlan/` (the Space Manager's plan usage
   and invoices inside `TenantUsagePanel`).
 
 ## Domain and frontend map

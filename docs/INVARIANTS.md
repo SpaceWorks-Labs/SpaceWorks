@@ -687,13 +687,26 @@ every write, audited (`space_control.*`), the web console primary and `/control/
   refusals subclass `SourceMigrationGateClosed` (`space_suspended`, `space_read_only`, HTTP 423), so every
   existing frozen-tenant handler applies. Never patch a view to check these states.
   - SUSPENDED refuses every write in every context except permits: `CONTROL_ROUTES` (the superadmin's own
-    controls), `/control/`, `SETTLEMENT_ROUTES` (payment and hosting-invoice webhooks) and
-    `SETTLEMENT_OPERATIONS` sweeps. Queued messages are held, never dropped, and go after unblocking.
-  - READ-ONLY is enforced only where `enforcing_read_only()` is active: unsafe HTTP requests (everyone,
-    the superadmin included; exports, PII windows, the controls and `/control/` excepted) and fan-out
-    sweeps not in `READ_ONLY_OPERATIONS` (renewals, bulk imports). Delivery, expiry, retention and
-    settlement continue. New sweeps default to "skip in read-only"; add an operation to the allowlist
-    only if it creates nothing.
+    controls), `SETTLEMENT_ROUTES` (payment and hosting-invoice webhooks) and `SETTLEMENT_OPERATIONS`
+    sweeps. Queued messages are held, never dropped, and go after unblocking.
+  - READ-ONLY is enforced only where `enforcing_read_only()` is active: unsafe HTTP requests (exports,
+    PII windows, opt-outs and the controls excepted) and fan-out sweeps not in `READ_ONLY_OPERATIONS`
+    (renewals, bulk imports). Delivery, expiry, retention and settlement continue. New sweeps default
+    to "skip in read-only"; add an operation to the allowlist only if it creates nothing.
+  - **The superadmin is never switched off (#195, applying #110/#190).** `superadmin_bypass` admits a
+    live platform superadmin's writes in either state, and audits each one once per space and request
+    or job as `space_control.superadmin_bypass` with `bypass_space_control` = `read_only` | `suspended`.
+    The gate middleware recognises a valid platform-superadmin bearer token before authentication
+    (`pending`: it admits only the middleware's own boundary check); the authenticated late DRF guard
+    (`assert_request_write_allowed(request, user=...)`) confirms it or revokes it; `/control/` is
+    confirmed by `AdminSourceGateMixin`. A Celery job queued by a confirmed superadmin action carries
+    the actor in a publish header and re-verifies it on the worker. Everyone else is refused exactly as
+    before. The web console shows a warning banner and confirms before the first write (once per space
+    every ten minutes). A paused space stays unservable, so its own screens still 404 for the
+    superadmin too; the bypass covers every write that reaches the gate.
+- **Notices name only the viewer's own spaces.** `platform-notices` lists, per announcement, the viewer's
+  spaces it reaches (`makerspace_ids`) and those where it reaches them as a member
+  (`member_makerspace_ids`); member pages show only the latter. Never another target space's id.
 - **Reasons never enter the audit log** (append-only). A paused space's private reason is shown only to
   the superadmin; everyone else gets the generic sentence. Mail to Space Managers is platform mail
   (`makerspace=None`), sent after commit, so a paused space's gate or `email` module can never mute it.

@@ -230,7 +230,8 @@ rows inside a request or job bound to a makerspace, but views must still scope e
   a REVOKED member is still refused.
 - **A paused (suspended) or read-only space is refused in ONE place** (#185): `space_controls.write_policy`,
   called from the source gate's single `_assert_gate_state`, which every tenant write already passes. Never
-  add a per-view or per-task check. Money a payer already sent still settles in every state, and a new
+  add a per-view or per-task check. The live platform superadmin is admitted there and audited (#195,
+  `superadmin_bypass`); everyone else is refused. Money a payer already sent still settles in every state, and a new
   fan-out sweep is skipped in read-only unless its operation is listed in `READ_ONLY_OPERATIONS`. The
   managed-hosting limiter (`MANAGED_PLANS_ENABLED`, #187A) is off by default and must change nothing while
   off: every hook checks the switch before any query. See **Superadmin space controls** in

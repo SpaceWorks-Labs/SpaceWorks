@@ -23,6 +23,8 @@ def _component(subject_type):
     from apps.payments.pricing.components import Component
     if subject_type == "submission_fee":
         return Component("entry_fee", "Project entry fee", "project", "submission_fee", discountable=False)
+    if subject_type == "event_deposit":  # hack-money G10
+        return Component("deposit", "Refundable deposit", "registration", "event_deposit", discountable=False)
     return Component("team_fee", "Team registration", "team", "team_registration", discountable=False)
 
 
@@ -115,10 +117,12 @@ def close_for_cancelled_event(event, actor):
     opens a full-amount DUE case (`event_cancelled`, decision 60) for staff to decide.
     A charge a cohort signal or a disqualification already closed is left alone.
     """
-    from apps.events.models import HackathonSubmission, HackathonTeam
+    from apps.events.models import EventRegistration, HackathonSubmission, HackathonTeam
     from apps.payments.models import Payment
     owned = {"submission_fee": HackathonSubmission.objects.filter(event_id=event.pk).values("pk"),
-             "team_registration": HackathonTeam.objects.filter(event_id=event.pk).values("pk")}
+             "team_registration": HackathonTeam.objects.filter(event_id=event.pk).values("pk"),
+             # Hack-money G10: a cancelled event returns every deposit (staff still decide the case).
+             "event_deposit": EventRegistration.objects.filter(event_id=event.pk).values("pk")}
     rows = []
     for subject_type, subjects in owned.items():
         rows += list(Payment.objects.filter(
@@ -126,7 +130,8 @@ def close_for_cancelled_event(event, actor):
             status__in=(Payment.Status.PENDING, *SETTLED)).values_list("subject_type", "subject_id"))
     if not rows:
         return
-    actions = {"submission_fee": "event.submission.fee_closed", "team_registration": "event.team.payment_closed"}
+    actions = {"submission_fee": "event.submission.fee_closed", "team_registration": "event.team.payment_closed",
+               "event_deposit": "event.deposit.closed"}
     event_id = event.pk
 
     def close_all():

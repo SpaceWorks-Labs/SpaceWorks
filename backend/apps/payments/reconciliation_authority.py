@@ -41,6 +41,7 @@ SUBJECT_ACTIONS = {
     # Lane L21b: entry fees and team charges, like every other events charge.
     Payment.SubjectType.SUBMISSION_FEE: rbac.Action.MANAGE_EVENTS,
     Payment.SubjectType.TEAM_REGISTRATION: rbac.Action.MANAGE_EVENTS,
+    Payment.SubjectType.EVENT_DEPOSIT: rbac.Action.MANAGE_EVENTS,  # hack-money G10
     # Lane L22 (Q-S7, #137): the Shop Manager settles and decides refunds on shop orders.
     Payment.SubjectType.SHOP_ORDER: rbac.Action.MANAGE_SHOP,
 }

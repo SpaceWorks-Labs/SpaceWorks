@@ -77,6 +77,9 @@ urlpatterns = [
     # Hack-money (#180): team-charge retry (G15).
     route(ADMIN, "team-charges/missing/", money.MissingTeamCharges, "admin-team-charges-missing"),
     route(ADMIN, "team-charges/<int:team_id>/raise/", money.TeamChargeRaise, "admin-team-charges-raise"),
+    # Hack-money G10: the staff-approved deposit settlement batch.
+    route(ADMIN, "deposits/", money.DepositSettlement, "admin-deposits"),
+    route(ADMIN, "deposits/settle/", money.DepositSettle, "admin-deposits-settle"),
     # Hack-money (#180 G3-G6/G8/G16, #181 G7): prize splits, claims, outcomes and the prize pool.
     route(ADMIN, "prize-awards/<int:award_id>/split/", prize.AdminPrizeSplit, "admin-prize-split"),
     route(ADMIN, "prize-awards/<int:award_id>/fulfil/", prize.PrizeFulfil, "admin-prize-fulfil"),

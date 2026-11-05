@@ -24,6 +24,12 @@ class HackathonProgrammeOptions(EventOwned):
     show_prize_amounts = models.BooleanField(default=False)
     # Hack-money G4: days after results are announced in which winners claim; after it staff may forfeit.
     prize_claim_days = models.PositiveSmallIntegerField(null=True, blank=True)
+    # Hack-money G10 (`events.deposits`): an optional refundable commitment deposit, raised when a place
+    # is confirmed. After the event staff approve ONE settlement batch: attendees (who also submitted,
+    # when required) get a refund DUE case, no-shows keep the charge. Money moves only on staff approval.
+    deposit_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    deposit_requires_submission = models.BooleanField(default=False)
+    deposits_settled_at = models.DateTimeField(null=True, blank=True)
     entry_fee = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     team_fee = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -32,4 +38,6 @@ class HackathonProgrammeOptions(EventOwned):
         constraints = [
             models.CheckConstraint(condition=Q(entry_fee__isnull=True) | Q(entry_fee__gt=0), name="ev_options_entry_fee"),
             models.CheckConstraint(condition=Q(team_fee__isnull=True) | Q(team_fee__gt=0), name="ev_options_team_fee"),
+            models.CheckConstraint(condition=Q(deposit_amount__isnull=True) | Q(deposit_amount__gt=0),
+                                   name="ev_options_deposit"),
         ]

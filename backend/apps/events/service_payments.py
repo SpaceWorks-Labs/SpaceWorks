@@ -61,6 +61,9 @@ from apps.payments.services import create_checkout, create_payment
 def create_for_registered_registration(registration, actor):
     event = registration.event
     member = registration.member
+    # Hack-money G10: a confirmed place may also owe a refundable deposit, even at a free event.
+    from apps.events.judging.deposits import raise_deposit
+    raise_deposit(registration, actor)
     if (member is None or registration.is_crew or registration_amount(registration) <= 0
             or not charge_tracking_enabled(event.makerspace, "events")):
         return None  # a crew place (lane L21a) is never charged

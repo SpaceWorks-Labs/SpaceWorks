@@ -8,6 +8,8 @@ ITS event; member routes work on any member grant.
 HACKMONEY_ROUTES = (
     ('events-programme-admin-team-charges-missing', ('GET', 'HEAD'), 'event'),
     ('events-programme-admin-team-charges-raise', ('POST',), 'event'),
+    ('events-programme-admin-deposits', ('GET', 'HEAD'), 'event'),
+    ('events-programme-admin-deposits-settle', ('POST',), 'event'),
     # G3-G6/G8/G16 and #181 G7: prize splits, claims, outcomes and the prize pool.
     ('events-programme-admin-prize-split', ('POST',), 'event'),
     ('events-programme-admin-prize-fulfil', ('POST',), 'event'),

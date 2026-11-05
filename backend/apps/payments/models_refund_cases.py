@@ -90,6 +90,8 @@ class RefundCase(models.Model):
         #: at a published shortlist, each behind its own per-event switch (off by default).
         SUBMISSION_WITHDRAWN = "submission_withdrawn", "Project withdrawn"
         NOT_SHORTLISTED = "not_shortlisted", "Team not shortlisted"
+        # Hack-money G10: a staff-approved deposit settlement returns an attendee's deposit.
+        DEPOSIT_RETURNED = "deposit_returned", "Deposit returned after the event"
 
     payment = models.ForeignKey(Payment, on_delete=models.PROTECT, related_name="refund_cases")
     kind = models.CharField(max_length=16, choices=Kind.choices)

@@ -1,7 +1,8 @@
 """Hack-money rows in the capture-bound money fingerprint.
 
 A prize share is money a winner is owed; an outcome may carry a recovered amount and its ledger
-receipt; the event money settings decide the tax a payout proposes. Each key is omitted when
+receipt; the event money settings decide the tax a payout proposes; a deposit amount decides
+what a confirmed place is charged. Each key is omitted when
 empty, so a space that never used them keeps its existing fingerprint.
 """
 
@@ -21,5 +22,9 @@ def hackmoney_money_rows(makerspace_id, using="default"):
         "event_money_settings": _rows(get("payments.EventMoneySettings"), using,
                                       ("id", "prize_tds_enabled", "prize_tds_rate", "prize_tds_threshold"),
                                       makerspace_id=makerspace_id),
+        # G10: the deposit a confirmed place is charged, and whether its settlement batch ran.
+        "event_deposit_options": [row for row in _rows(
+            get("events.HackathonProgrammeOptions"), using, ("id", "event_id", "deposit_amount", "deposits_settled_at"),
+            event__makerspace_id=makerspace_id) if row["deposit_amount"] != "None"],
     }
     return {key: rows for key, rows in parts.items() if rows}

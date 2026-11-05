@@ -24,4 +24,7 @@ ENTRIES = (
     P("event.prize.recovery_opened", "Prize money owed back after a disqualification"),
     P("event.prize.recovery_repaid", "Prize money repaid"),
     P("event.prize.recovery_waived", "Prize money recovery waived"),
+    # Deposits (G10). Raising and closing go through the reviewed programme-charge wrapper.
+    P("event.deposit.settled", "Event deposits settled by staff"),
+    P("event.deposit.forfeited", "Deposit kept after a no-show"),
 )

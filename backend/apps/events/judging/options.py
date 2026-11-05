@@ -15,7 +15,9 @@ from .serializers import validated
 from .serializers_l21b import OptionsInput
 
 FIELDS = ("results_email", "submission_receipt_email", "finalists_email", "refund_on_disqualification",
-          "refund_on_withdrawal", "refund_if_not_shortlisted", "entry_fee", "team_fee")
+          "refund_on_withdrawal", "refund_if_not_shortlisted", "entry_fee", "team_fee",
+          # Hack-money: public prize amounts (G6), the claim window (G4) and the deposit (G10).
+          "show_prize_amounts", "prize_claim_days", "deposit_amount", "deposit_requires_submission")
 
 
 def options_for(event_id):
@@ -49,7 +51,8 @@ def projection(event):
     return {"id": row.pk if row else 0, "event_id": event.pk, "version": row.version if row else 0,
             "allowed_actions": ["edit", "send_results_email"], "currency": currency(event.makerspace),
             "results_email_sent": results_email_sent(event),
-            "published_result_version": getattr(_current_result(event), "version", None), **values}
+            "published_result_version": getattr(_current_result(event), "version", None),
+            "deposits_settled_at": row.deposits_settled_at if row else None, **values}
 
 
 def read(event_id, *, actor):
@@ -71,7 +74,10 @@ def update(event_id, *, actor, data):
                 row = HackathonProgrammeOptions(event=event, version=0)
             changes = {key: values[key] for key in FIELDS if key in values and values[key] != getattr(row, key)}
             from .feature import ENTRY_FEES, PAID_TEAMS, enabled
-            for key, feature in (("entry_fee", ENTRY_FEES), ("team_fee", PAID_TEAMS)):
+            from .deposits import DEPOSITS
+            if "deposit_amount" in changes and row.deposits_settled_at is not None:
+                raise ProgrammeError("already_settled", "Deposits for this event were already settled.")
+            for key, feature in (("entry_fee", ENTRY_FEES), ("team_fee", PAID_TEAMS), ("deposit_amount", DEPOSITS)):
                 if changes.get(key) and not enabled(event.makerspace, feature):
                     raise ProgrammeError("feature_disabled", "Switch this fee on for the space first.", status=403)
             for key, value in changes.items():

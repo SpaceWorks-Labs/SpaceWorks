@@ -1657,7 +1657,10 @@
         "refund_on_withdrawal": "models.BooleanField(default=False)",
         "refund_if_not_shortlisted": "models.BooleanField(default=False)",
         "show_prize_amounts": "models.BooleanField(default=False)",
-        "prize_claim_days": "models.PositiveSmallIntegerField(null=True, blank=True)"
+        "prize_claim_days": "models.PositiveSmallIntegerField(null=True, blank=True)",
+        "deposit_amount": "models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)",
+        "deposit_requires_submission": "models.BooleanField(default=False)",
+        "deposits_settled_at": "models.DateTimeField(null=True, blank=True)"
       },
       "foreign_keys": {
         "event": {
@@ -1668,7 +1671,8 @@
       "user_edges": {},
       "constraints": [
         "ev_options_entry_fee",
-        "ev_options_team_fee"
+        "ev_options_team_fee",
+        "ev_options_deposit"
       ],
       "unique_fields": [
         "event"

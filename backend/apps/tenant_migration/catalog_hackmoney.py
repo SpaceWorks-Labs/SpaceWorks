@@ -24,7 +24,8 @@ FIELD_NAMES = {
 #: New columns on existing programme models.
 EXTRA_FIELDS = {
     'events.HackathonProgrammeOptions': frozenset({'refund_on_withdrawal', 'refund_if_not_shortlisted',
-                                                   'show_prize_amounts', 'prize_claim_days'}),
+                                                   'show_prize_amounts', 'prize_claim_days', 'deposit_amount',
+                                                   'deposit_requires_submission', 'deposits_settled_at'}),
     'events.HackathonPrize': frozenset({'kind', 'value_text', 'estimated_value', 'funding'}),
     'events.HackathonPrizePayout': frozenset({'tds_amount', 'net_amount'}),
 }
@@ -35,7 +36,9 @@ DATASETS = {
 }
 AUTHORITY_FIELDS = {
     **{('events.HackathonProgrammeOptions', name): _DEF for name in (
-        'refund_on_withdrawal', 'refund_if_not_shortlisted', 'show_prize_amounts', 'prize_claim_days')},
+        'refund_on_withdrawal', 'refund_if_not_shortlisted', 'show_prize_amounts', 'prize_claim_days',
+        'deposit_amount', 'deposit_requires_submission')},
+    ('events.HackathonProgrammeOptions', 'deposits_settled_at'): _EVIDENCE,
     **{('events.HackathonPrize', name): _DEF for name in ('kind', 'value_text', 'estimated_value', 'funding')},
     **{('events.HackathonPrizePayout', name): _EVIDENCE for name in ('tds_amount', 'net_amount')},
     **{('events.HackathonPrizeShare', name): _EVIDENCE for name in (

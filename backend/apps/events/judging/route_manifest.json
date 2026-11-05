@@ -1778,6 +1778,55 @@
         429,
         503
       ]
+    },
+    {
+      "name": "events-programme-admin-deposits",
+      "path": "/api/v1/admin/events/{pk}/deposits/",
+      "view": "money.DepositSettlement",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "authority": "record_payment or manage_events in the space; events.deposits",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-deposits-settle",
+      "path": "/api/v1/admin/events/{pk}/deposits/settle/",
+      "view": "money.DepositSettle",
+      "methods": [
+        "POST"
+      ],
+      "authority": "record_payment or manage_events in the space; events.deposits",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
     }
   ],
   "binary_owned_by_B": {

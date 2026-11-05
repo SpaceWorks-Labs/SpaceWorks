@@ -17,6 +17,16 @@ def finance_event(actor, event_id):
     return event
 
 
+def event_for_money(actor, event_id):
+    """An event in a space where this actor records money (no capability check: the caller has its own)."""
+    from apps.events.models import Event
+    from .payouts import may_record
+    event = Event.objects.select_related("makerspace").filter(pk=event_id).first()
+    if event is None or not may_record(actor, event.makerspace_id):
+        raise Http404
+    return event
+
+
 def read_key(makerspace_id):
     """Best-effort decryption context for masked reads; a missing key only hides the masks."""
     from contextlib import nullcontext

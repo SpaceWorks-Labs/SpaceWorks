@@ -196,6 +196,13 @@ class OptionsInput(CommandInput):
                                          allow_null=True, required=False)
     team_fee = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0.01"),
                                         allow_null=True, required=False)
+    show_prize_amounts = serializers.BooleanField(required=False, help_text="G6: prizes on the public page.")
+    prize_claim_days = serializers.IntegerField(min_value=1, max_value=365, allow_null=True, required=False,
+                                                help_text="G4: days after results in which winners claim.")
+    deposit_amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0.01"),
+                                              allow_null=True, required=False,
+                                              help_text="G10: refundable deposit (events.deposits).")
+    deposit_requires_submission = serializers.BooleanField(required=False)
 
 
 class OptionsRead(ResultEnvelope):
@@ -207,6 +214,11 @@ class OptionsRead(ResultEnvelope):
     refund_if_not_shortlisted = serializers.BooleanField()
     entry_fee = serializers.DecimalField(max_digits=12, decimal_places=2, allow_null=True)
     team_fee = serializers.DecimalField(max_digits=12, decimal_places=2, allow_null=True)
+    show_prize_amounts = serializers.BooleanField()
+    prize_claim_days = serializers.IntegerField(allow_null=True)
+    deposit_amount = serializers.DecimalField(max_digits=12, decimal_places=2, allow_null=True)
+    deposit_requires_submission = serializers.BooleanField()
+    deposits_settled_at = serializers.DateTimeField(allow_null=True)
     currency = serializers.CharField()
     results_email_sent = serializers.BooleanField()
     published_result_version = serializers.IntegerField(allow_null=True, help_text="Send-now's expected_version.")

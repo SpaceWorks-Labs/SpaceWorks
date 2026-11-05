@@ -37,6 +37,8 @@ class Payment(models.Model):
         # paid team's one charge on its leader (subject_id = HackathonTeam id, C-39).
         SUBMISSION_FEE = "submission_fee", "Project entry fee"
         TEAM_REGISTRATION = "team_registration", "Team registration"
+        # Hack-money G10: an optional refundable commitment deposit (subject_id = EventRegistration id).
+        EVENT_DEPOSIT = "event_deposit", "Event deposit"
         # Lane L22. One shop order (online or a front-desk sale; subject_id = ShopOrder id).
         SHOP_ORDER = "shop_order", "Shop order"
 
@@ -45,7 +47,8 @@ class Payment(models.Model):
     #: Subjects whose subject_id is a RequesterAccountability row of a loan.
     LOAN_ACCOUNTABILITY_SUBJECT_TYPES = ("loan_damage", "loan_lost")
     #: Lane L6: event money that is not one registration's own charge.
-    EVENT_SUBJECT_TYPES = ("event_registration", "event_order", "event_venue_fee", "submission_fee", "team_registration")
+    EVENT_SUBJECT_TYPES = ("event_registration", "event_order", "event_venue_fee", "submission_fee", "team_registration",
+                           "event_deposit")
     #: Lanes L18 and L22: money that may belong to no account (a guest donor, a sponsor
     #: organisation, a guest shop buyer or an anonymous desk sale).
     ACCOUNTLESS_SUBJECT_TYPES = ("donation", "sponsorship", "shop_order")

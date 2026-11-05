@@ -31,6 +31,7 @@ class ReadOnlyBackupAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
 class BackupArchiveAdmin(ReadOnlyBackupAdmin):
     list_display = ("id", "scope", "makerspace", "status", "size_bytes", "created_at")
     list_filter = ("scope", "makerspace", "status", "created_at")
+    search_fields = ("makerspace__name",)
     readonly_fields = tuple(field.name for field in BackupArchive._meta.fields)
 
     def get_urls(self):

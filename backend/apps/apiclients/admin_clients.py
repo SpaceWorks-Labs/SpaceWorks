@@ -24,6 +24,7 @@ from apps.accounts.reauthentication_control import RecentReauthenticationAdminMi
 @admin.register(ApiClient)
 class ApiClientAdmin(RecentReauthenticationAdminMixin, SuperuserOnlyModelAdmin, ModelAdmin):
     form = ApiClientAdminForm
+    search_fields = ("label", "client_id", "makerspace__name")
     list_display = (
         "label",
         "client_id",

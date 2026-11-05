@@ -25,6 +25,21 @@ form/Saved details and runtime/retention adapters at `f1ef7736`. It includes inc
 provider installation explicitly; see the [closure ledger](events/integration-status.md)
 before interpreting a mounted route as an enabled/accepted workflow.
 
+The Postgres row-level-security backstop (L8): `apps/tenant_rls/` -- `policies.py` and `sql.py` generate
+the policies from the data-export classification, `context.py`/`middleware.py`/`wrapper.py` bind the
+transaction-local GUCs (`app.rls_bound`, `app.makerspace_id`, `app.rls_capability`, `app.rls_mode`),
+`capabilities.py` and `scope_registry.py` list the cross-tenant capabilities, `role_contract.py` and
+`checks.py` hold the runtime-role contract and system checks, and the `rls_sync`/`rls_status` commands
+install and report the policies. Per-space key rotation: `encryption/rotation.py`, `models_rotation.py`,
+`rekey_rows.py`/`rekey_tasks.py`/`rekey_finish.py` (emergency re-key), `search_keys.py` (the blind-index
+key) and `publishable_keys.py` (publishable-key rotation with a grace window).
+
+The help centre (L20): articles are Markdown under `frontend/src/help-content/en/<audience>/` (member,
+each staff role, finance, organisation, host operator, superadmin); `features/help/` renders them
+(`HelpPage`, `HelpIndex`, `HelpArticleView`, `helpContent.ts`, `helpAudience.ts` for role gating,
+`helpSearch.ts`, `HelpLink` for the links on staff screens). Routes `/help`, `/help/:sectionId` and
+`/help/:sectionId/:articleSlug`.
+
 The public stats page (#170, L26): `inventory/public_stats.py` assembles it from
 `public_stats_period.py` (fixed period, small-number suppression), `public_stats_events.py`,
 `public_stats_community.py`, `public_stats_activity.py` (period figures) and the legacy

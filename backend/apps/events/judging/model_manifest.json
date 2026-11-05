@@ -1708,7 +1708,7 @@
         "id": "models.BigAutoField(primary_key=True)",
         "makerspace": "models.ForeignKey('makerspaces.Makerspace', on_delete=models.CASCADE, related_name='+')",
         "event": "models.ForeignKey('events.Event', on_delete=models.CASCADE, related_name='+')",
-        "award": "models.ForeignKey('events.EventAward', on_delete=models.PROTECT, related_name='+')",
+        "award": "models.ForeignKey('events.EventAward', null=True, blank=True, on_delete=models.PROTECT, related_name='+')",
         "prize": "models.ForeignKey('events.HackathonPrize', on_delete=models.PROTECT, related_name='+')",
         "recipient": "models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name='+')",
         "kind": "models.CharField(max_length=8, default='payout', choices=(('payout', 'Payout'), ('reversal', 'Reversal')))",
@@ -1722,7 +1722,8 @@
         "recorded_by": "models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name='+')",
         "created_at": "models.DateTimeField(auto_now_add=True)",
         "tds_amount": "models.DecimalField(max_digits=12, decimal_places=2, default=0)",
-        "net_amount": "models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)"
+        "net_amount": "models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)",
+        "peoples_choice_standing": "models.ForeignKey('events.PeoplesChoiceStanding', null=True, blank=True, on_delete=models.PROTECT, related_name='+')"
       },
       "foreign_keys": {
         "makerspace": {
@@ -1734,8 +1735,12 @@
           "target": "events.Event"
         },
         "award": {
-          "definition": "models.ForeignKey('events.EventAward', on_delete=models.PROTECT, related_name='+')",
+          "definition": "models.ForeignKey('events.EventAward', null=True, blank=True, on_delete=models.PROTECT, related_name='+')",
           "target": "events.EventAward"
+        },
+        "peoples_choice_standing": {
+          "definition": "models.ForeignKey('events.PeoplesChoiceStanding', null=True, blank=True, on_delete=models.PROTECT, related_name='+')",
+          "target": "events.PeoplesChoiceStanding"
         },
         "prize": {
           "definition": "models.ForeignKey('events.HackathonPrize', on_delete=models.PROTECT, related_name='+')",
@@ -1767,7 +1772,8 @@
         "ev_payout_kind",
         "ev_payout_reversal_shape",
         "ev_payout_tds_bounds",
-        "ev_payout_net_shape"
+        "ev_payout_net_shape",
+        "ev_payout_one_award"
       ],
       "unique_fields": [
         "reverses"
@@ -1990,6 +1996,191 @@
       "immutable": true,
       "purge": "event host only; explicit dependency graph and lifecycle purge capability",
       "tenant_scope": "makerspace_id"
+    },
+    {
+      "model": "events.PeoplesChoiceConfig",
+      "module": "backend/apps/events/judging/models_peoples_choice.py",
+      "fields": {
+        "id": "models.BigAutoField(primary_key=True)",
+        "event": "models.OneToOneField('events.Event', on_delete=models.CASCADE, related_name='peoples_choice')",
+        "version": "models.PositiveIntegerField(default=1)",
+        "enabled": "models.BooleanField(default=False)",
+        "audience": "models.CharField(max_length=10, default='members', choices=AUDIENCES)",
+        "opens_at": "models.DateTimeField(null=True, blank=True)",
+        "closes_at": "models.DateTimeField(null=True, blank=True)",
+        "prize": "models.ForeignKey('events.HackathonPrize', null=True, blank=True, on_delete=models.PROTECT, related_name='+')",
+        "open_email": "models.BooleanField(default=False)",
+        "updated_at": "models.DateTimeField(auto_now=True)"
+      },
+      "foreign_keys": {
+        "event": {
+          "definition": "models.OneToOneField('events.Event', on_delete=models.CASCADE, related_name='peoples_choice')",
+          "target": "events.Event"
+        },
+        "prize": {
+          "definition": "models.ForeignKey('events.HackathonPrize', null=True, blank=True, on_delete=models.PROTECT, related_name='+')",
+          "target": "events.HackathonPrize"
+        }
+      },
+      "user_edges": {},
+      "constraints": [
+        "ev_pc_audience",
+        "ev_pc_window_order"
+      ],
+      "unique_fields": [
+        "event"
+      ],
+      "uniqueness_policy": "Remap composite FK keys; OneToOne scope remaps (lane r2-peoples-choice).",
+      "tenant_export": "PRESERVE typed refs, ballots and append-only award evidence (lane r2-peoples-choice)",
+      "tenant_import_reset": {},
+      "deployment_backup": "preserve under existing encrypted archive custody",
+      "pii_fields": [],
+      "pii_scope": null,
+      "owned_object_fields": [],
+      "immutable": false,
+      "purge": "event host only; explicit dependency graph and lifecycle purge capability",
+      "tenant_scope": "event.makerspace_id"
+    },
+    {
+      "model": "events.PeoplesChoiceVote",
+      "module": "backend/apps/events/judging/models_peoples_choice.py",
+      "fields": {
+        "id": "models.BigAutoField(primary_key=True)",
+        "event": "models.ForeignKey('events.Event', on_delete=models.CASCADE, related_name='+')",
+        "voter": "models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name='+')",
+        "team": "models.ForeignKey('events.HackathonTeam', on_delete=models.CASCADE, related_name='+')",
+        "handle": "models.UUIDField(default=uuid4, editable=False)",
+        "version": "models.PositiveIntegerField(default=1)",
+        "cast_at": "models.DateTimeField(auto_now_add=True)",
+        "changed_at": "models.DateTimeField(null=True, blank=True)",
+        "voided_at": "models.DateTimeField(null=True, blank=True)",
+        "void_reason": "models.ForeignKey('events.JudgingReason', null=True, blank=True, on_delete=models.PROTECT, related_name='+')",
+        "voided_by": "models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='+')"
+      },
+      "foreign_keys": {
+        "event": {
+          "definition": "models.ForeignKey('events.Event', on_delete=models.CASCADE, related_name='+')",
+          "target": "events.Event"
+        },
+        "voter": {
+          "definition": "models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name='+')",
+          "target": "accounts.User"
+        },
+        "team": {
+          "definition": "models.ForeignKey('events.HackathonTeam', on_delete=models.CASCADE, related_name='+')",
+          "target": "events.HackathonTeam"
+        },
+        "void_reason": {
+          "definition": "models.ForeignKey('events.JudgingReason', null=True, blank=True, on_delete=models.PROTECT, related_name='+')",
+          "target": "events.JudgingReason"
+        },
+        "voided_by": {
+          "definition": "models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='+')",
+          "target": "accounts.User"
+        }
+      },
+      "user_edges": {
+        "voter": "models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name='+')",
+        "voided_by": "models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='+')"
+      },
+      "constraints": [
+        "ev_pc_one_vote_per_person",
+        "ev_pc_void_shape"
+      ],
+      "unique_fields": [],
+      "uniqueness_policy": "Remap composite FK keys; OneToOne scope remaps (lane r2-peoples-choice).",
+      "tenant_export": "PRESERVE typed refs, ballots and append-only award evidence (lane r2-peoples-choice)",
+      "tenant_import_reset": {},
+      "deployment_backup": "preserve under existing encrypted archive custody",
+      "pii_fields": [],
+      "pii_scope": null,
+      "owned_object_fields": [],
+      "immutable": false,
+      "purge": "event host only; explicit dependency graph and lifecycle purge capability",
+      "tenant_scope": "event.makerspace_id"
+    },
+    {
+      "model": "events.PeoplesChoiceResult",
+      "module": "backend/apps/events/judging/models_peoples_choice.py",
+      "fields": {
+        "id": "models.BigAutoField(primary_key=True)",
+        "event": "models.OneToOneField('events.Event', on_delete=models.CASCADE, related_name='peoples_choice_result')",
+        "prize": "models.ForeignKey('events.HackathonPrize', null=True, blank=True, on_delete=models.PROTECT, related_name='+')",
+        "prize_name": "models.CharField(max_length=160)",
+        "total_votes": "models.PositiveIntegerField()",
+        "published_at": "models.DateTimeField()",
+        "published_by": "models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name='+')"
+      },
+      "foreign_keys": {
+        "event": {
+          "definition": "models.OneToOneField('events.Event', on_delete=models.CASCADE, related_name='peoples_choice_result')",
+          "target": "events.Event"
+        },
+        "prize": {
+          "definition": "models.ForeignKey('events.HackathonPrize', null=True, blank=True, on_delete=models.PROTECT, related_name='+')",
+          "target": "events.HackathonPrize"
+        },
+        "published_by": {
+          "definition": "models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name='+')",
+          "target": "accounts.User"
+        }
+      },
+      "user_edges": {
+        "published_by": "models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name='+')"
+      },
+      "constraints": [],
+      "unique_fields": [
+        "event"
+      ],
+      "uniqueness_policy": "Remap composite FK keys; OneToOne scope remaps (lane r2-peoples-choice).",
+      "tenant_export": "PRESERVE typed refs, ballots and append-only award evidence (lane r2-peoples-choice)",
+      "tenant_import_reset": {},
+      "deployment_backup": "preserve under existing encrypted archive custody",
+      "pii_fields": [],
+      "pii_scope": null,
+      "owned_object_fields": [],
+      "immutable": true,
+      "purge": "event host only; explicit dependency graph and lifecycle purge capability",
+      "tenant_scope": "event.makerspace_id"
+    },
+    {
+      "model": "events.PeoplesChoiceStanding",
+      "module": "backend/apps/events/judging/models_peoples_choice.py",
+      "fields": {
+        "id": "models.BigAutoField(primary_key=True)",
+        "result": "models.ForeignKey(PeoplesChoiceResult, on_delete=models.CASCADE, related_name='standings')",
+        "submission_snapshot": "models.ForeignKey('events.SubmissionSnapshot', on_delete=models.PROTECT, related_name='+')",
+        "votes": "models.PositiveIntegerField()",
+        "rank": "models.PositiveSmallIntegerField()",
+        "winner": "models.BooleanField(default=False)"
+      },
+      "foreign_keys": {
+        "result": {
+          "definition": "models.ForeignKey(PeoplesChoiceResult, on_delete=models.CASCADE, related_name='standings')",
+          "target": "events.PeoplesChoiceResult"
+        },
+        "submission_snapshot": {
+          "definition": "models.ForeignKey('events.SubmissionSnapshot', on_delete=models.PROTECT, related_name='+')",
+          "target": "events.SubmissionSnapshot"
+        }
+      },
+      "user_edges": {},
+      "constraints": [
+        "ev_pc_standing_once",
+        "ev_pc_standing_rank",
+        "ev_pc_winner_rank"
+      ],
+      "unique_fields": [],
+      "uniqueness_policy": "Remap composite FK keys; OneToOne scope remaps (lane r2-peoples-choice).",
+      "tenant_export": "PRESERVE typed refs, ballots and append-only award evidence (lane r2-peoples-choice)",
+      "tenant_import_reset": {},
+      "deployment_backup": "preserve under existing encrypted archive custody",
+      "pii_fields": [],
+      "pii_scope": null,
+      "owned_object_fields": [],
+      "immutable": true,
+      "purge": "event host only; explicit dependency graph and lifecycle purge capability",
+      "tenant_scope": "result.event.makerspace_id"
     }
   ],
   "json_typed_id_slots": {

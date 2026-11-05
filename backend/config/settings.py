@@ -1839,3 +1839,19 @@ SPECTACULAR_SETTINGS["ENUM_NAME_OVERRIDES"].update({
     "OverviewMetricTimingEnum": [("period", "period"), ("snapshot", "snapshot")],
 })
 # --- end lane r2-platform-overview
+# --- lane r2-peoples-choice (release 2, #181 S3): the People's choice vote budget, per account,
+# and a stable OpenAPI name for its audience choice.
+REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"].update({
+    "peoples_choice_vote": "20/hour",
+})
+SPECTACULAR_SETTINGS["ENUM_NAME_OVERRIDES"].update({
+    "PeoplesChoiceAudienceEnum": [("members", "Any signed-in member"), ("attendees", "Checked-in attendees only")],
+    "PeoplesChoiceStateEnum": [("off", "off"), ("scheduled", "scheduled"), ("open", "open"), ("closed", "closed"),
+                               ("published", "published")],
+    # The prize payout method is now shared with the People's choice payout input: keep L21b's name.
+    "PayoutInputMethodEnum": [(value, value) for value in (
+        "cash", "upi", "bank_transfer", "card", "cheque", "online", "other")],
+    "PeoplesChoiceRefusalEnum": [(value, value) for value in (
+        "off", "not_open", "closed", "published", "attendees_only", "voided")],
+})
+# --- end lane r2-peoples-choice

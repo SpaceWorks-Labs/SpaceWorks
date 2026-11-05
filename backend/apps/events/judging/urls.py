@@ -11,6 +11,7 @@ from . import views_sponsors as sponsors
 from . import views_l21b as l21b
 from . import views_money as money
 from . import views_prize as prize
+from . import views_peoples_choice as peoples_choice
 from .views_signals import ShortlistSignals
 from .views_sponsor_discovery import AssignedSponsorListView
 
@@ -97,6 +98,17 @@ urlpatterns = [
     route(MEMBER, "prize-awards/<int:award_id>/claim/remove/", prize.MemberPrizeClaimRemove, "member-prize-claim-remove"),
     route("member/makerspaces/<int:makerspace_id>/", "prizes/", prize.MyPrizes, "member-my-prizes"),
     route(PUBLIC, "prizes/", prize.PublicPrizes, "public-prizes"),
+    # r2-peoples-choice (#181 S3): the optional People's choice award.
+    route(ADMIN, "peoples-choice/", peoples_choice.PeoplesChoiceSettings, "admin-peoples-choice"),
+    route(ADMIN, "peoples-choice/standings/", peoples_choice.PeoplesChoiceStandings, "admin-peoples-choice-standings"),
+    route(ADMIN, "peoples-choice/publish/", peoples_choice.PeoplesChoicePublish, "admin-peoples-choice-publish"),
+    route(ADMIN, "peoples-choice/votes/", peoples_choice.PeoplesChoiceVotes, "admin-peoples-choice-votes"),
+    route(ADMIN, "peoples-choice/votes/<uuid:handle>/void/", peoples_choice.PeoplesChoiceVoteVoid,
+          "admin-peoples-choice-vote-void"),
+    route(ADMIN, "peoples-choice/payouts/", peoples_choice.PeoplesChoicePayouts, "admin-peoples-choice-payouts"),
+    route(MEMBER, "peoples-choice/", peoples_choice.MemberPeoplesChoice, "member-peoples-choice"),
+    route(MEMBER, "peoples-choice/vote/", peoples_choice.MemberPeoplesChoiceVote, "member-peoples-choice-vote"),
+    route(PUBLIC, "peoples-choice/", peoples_choice.PublicPeoplesChoice, "public-peoples-choice"),
     route(MEMBER, "resume-consents/", sponsors.ResumeConsents, "member-resume-consents"),
     route(MEMBER, "resume-consents/<int:consent_id>/revoke/", sponsors.ResumeConsentRevoke, "member-resume-consent-revoke"),
     route(MEMBER, "teams/<int:team_id>/gallery-consent/", gallery.GalleryConsentDetail, "member-gallery-consent-detail"),

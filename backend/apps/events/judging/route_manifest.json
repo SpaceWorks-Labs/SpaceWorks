@@ -1827,6 +1827,230 @@
         429,
         503
       ]
+    },
+    {
+      "name": "events-programme-admin-peoples-choice",
+      "path": "/api/v1/admin/events/{pk}/peoples-choice/",
+      "view": "peoples_choice.PeoplesChoiceSettings",
+      "methods": [
+        "GET",
+        "HEAD",
+        "PATCH"
+      ],
+      "authority": "manage_hackathon; events.peoples_choice",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-peoples-choice-standings",
+      "path": "/api/v1/admin/events/{pk}/peoples-choice/standings/",
+      "view": "peoples_choice.PeoplesChoiceStandings",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "authority": "manage_hackathon; events.peoples_choice",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-peoples-choice-publish",
+      "path": "/api/v1/admin/events/{pk}/peoples-choice/publish/",
+      "view": "peoples_choice.PeoplesChoicePublish",
+      "methods": [
+        "POST"
+      ],
+      "authority": "manage_hackathon; events.peoples_choice",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-peoples-choice-votes",
+      "path": "/api/v1/admin/events/{pk}/peoples-choice/votes/",
+      "view": "peoples_choice.PeoplesChoiceVotes",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "authority": "manage_hackathon; events.peoples_choice",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-peoples-choice-vote-void",
+      "path": "/api/v1/admin/events/{pk}/peoples-choice/votes/{handle}/void/",
+      "view": "peoples_choice.PeoplesChoiceVoteVoid",
+      "methods": [
+        "POST"
+      ],
+      "authority": "manage_hackathon; events.peoples_choice",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-peoples-choice-payouts",
+      "path": "/api/v1/admin/events/{pk}/peoples-choice/payouts/",
+      "view": "peoples_choice.PeoplesChoicePayouts",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "authority": "record_payment or manage_events in the space (C-38); events.prize_payouts; events.peoples_choice",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-member-peoples-choice",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/peoples-choice/",
+      "view": "peoples_choice.MemberPeoplesChoice",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "authority": "active member; events.peoples_choice",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "public:read / public:write + owner checks",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-member-peoples-choice-vote",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/peoples-choice/vote/",
+      "view": "peoples_choice.MemberPeoplesChoiceVote",
+      "methods": [
+        "POST"
+      ],
+      "authority": "active member, one ballot per event, never own team; throttle peoples_choice_vote",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "public:read / public:write + owner checks",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-public-peoples-choice",
+      "path": "/api/v1/public/event-programmes/{public_token}/peoples-choice/",
+      "view": "peoples_choice.PublicPeoplesChoice",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "authority": "public live gate; events.peoples_choice",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "public:read",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
     }
   ],
   "binary_owned_by_B": {

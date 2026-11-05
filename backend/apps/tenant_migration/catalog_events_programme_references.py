@@ -220,3 +220,5 @@ from .catalog_r2_submit_content import DATASETS as _SC_DATASETS  # noqa: E402
 DATASETS.update(_SC_DATASETS)
 from .catalog_hackmoney import DATASETS as _HM_DATASETS  # noqa: E402
 DATASETS.update(_HM_DATASETS)
+from .catalog_r2_peoples_choice import DATASETS as _PC_DATASETS  # noqa: E402
+DATASETS.update(_PC_DATASETS)

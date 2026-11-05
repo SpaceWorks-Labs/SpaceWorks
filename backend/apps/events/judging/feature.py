@@ -10,6 +10,8 @@ ENTRY_FEES = "events.entry_fees"
 PAID_TEAMS = "events.paid_teams"
 SAVED_VIEWS = "events.saved_views"
 GALLERY_SEARCH = "events.gallery_search"
+# r2-peoples-choice (#181 S3): the optional People's choice award on the public gallery.
+PEOPLES_CHOICE = "events.peoples_choice"
 
 
 def enabled(makerspace, key):

@@ -100,10 +100,13 @@ class GalleryList(PublicGalleryBase):
         event = public_event(public_token=public_token, request_context=request)
         rows = GalleryEntry.objects.filter(event=event, hidden_at__isnull=True).select_related("event")
         rows, badges = query(event, rows, request.query_params)
+        from apps.events.judging.peoples_choice_results import winning_snapshot_ids
+        winners = winning_snapshot_ids(event)
         result = []
         for row in rows:
             try:
-                result.append({**project_entry(row), "awards": badges.get(row.snapshot_id, [])})
+                result.append({**project_entry(row), "awards": badges.get(row.snapshot_id, []),
+                               **({"peoples_choice": True} if row.snapshot_id in winners else {})})
             except Http404:
                 continue
         # Counts are over currently publishable entries only, never private rows.
@@ -117,7 +120,9 @@ class GalleryDetail(PublicGalleryBase):
         row = GalleryEntry.objects.filter(event=event, public_id=entry_public_id).select_related("event").first()
         if row is None:
             raise Http404
-        return Response(GalleryEntryRead(project_entry(row)).data)
+        from apps.events.judging.peoples_choice_results import winning_snapshot_ids
+        winner = row.snapshot_id in winning_snapshot_ids(event)
+        return Response(GalleryEntryRead({**project_entry(row), **({"peoples_choice": True} if winner else {})}).data)
 
 
 class GalleryAsset(PublicGalleryBase):

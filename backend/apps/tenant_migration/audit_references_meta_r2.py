@@ -24,8 +24,9 @@ def lane_edges():
     from .audit_references_r2_l22 import EDGES as l22
     from .audit_references_r2_submit_content import EDGES as submit_content
     from .audit_references_r2_hackmoney import EDGES as hackmoney
+    from .audit_references_r2_peoples_choice import EDGES as peoples_choice
 
     edges = {}
-    for lane in (l5, l15, l10, l12, account_merge, l23, l16, l3, l8, l6, l18, l21a, l21b, l24, l22, submit_content, hackmoney):
+    for lane in (l5, l15, l10, l12, account_merge, l23, l16, l3, l8, l6, l18, l21a, l21b, l24, l22, submit_content, hackmoney, peoples_choice):
         edges.update(lane)
     return edges

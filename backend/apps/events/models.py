@@ -79,6 +79,7 @@ from .models_programme import (
     JudgingPanelSeat, FinalistAdvance, JudgingFinalist, FinalistAnnouncement,
     HackathonProgrammeOptions, HackathonPrizePayout,
     HackathonPrizeShare, HackathonPrizeClaim, HackathonPrizeOutcome,
+    PeoplesChoiceConfig, PeoplesChoiceVote, PeoplesChoiceResult, PeoplesChoiceStanding,
     MentorAttentionPreference, MentorProfile, MentorTeamAssignment, EventHelpType,
     EventHelpRequest, EventHelpAction, EventHelpComment, OfficeHoursBooking,
     OfficeHoursChange, MentorRound, MentorRoundLock, MentorRoundCheckin,

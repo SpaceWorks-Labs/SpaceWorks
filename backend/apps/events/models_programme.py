@@ -56,6 +56,9 @@ from apps.events.judging.models_payouts import (
 from apps.events.judging.models_prize_money import (
     HackathonPrizeClaim, HackathonPrizeOutcome, HackathonPrizeShare,
 )
+from apps.events.judging.models_peoples_choice import (
+    PeoplesChoiceConfig, PeoplesChoiceVote, PeoplesChoiceResult, PeoplesChoiceStanding,
+)
 from apps.events.judging.models_results import (
     EventResultRevision, EventResultRound, EventAward, ResultAnnouncement, ResultPublicationState, SponsorWinnerProposal, JudgingNotice,
 )
@@ -125,6 +128,7 @@ __all__ = [
     'JudgingPanelSeat', 'FinalistAdvance', 'JudgingFinalist', 'FinalistAnnouncement',
     'HackathonProgrammeOptions', 'HackathonPrizePayout',
     'HackathonPrizeShare', 'HackathonPrizeClaim', 'HackathonPrizeOutcome',
+    'PeoplesChoiceConfig', 'PeoplesChoiceVote', 'PeoplesChoiceResult', 'PeoplesChoiceStanding',
     'MentorAttentionPreference', 'MentorProfile', 'MentorTeamAssignment', 'EventHelpType',
     'EventHelpRequest', 'EventHelpAction', 'EventHelpComment', 'OfficeHoursBooking',
     'OfficeHoursChange', 'MentorRound', 'MentorRoundLock', 'MentorRoundCheckin',

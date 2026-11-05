@@ -211,6 +211,8 @@ export const FEATURE_DEFINITIONS: readonly FeatureDefinition[] = [
   { key: "events.prize_claims", parent_module: "events", label: "Prize splits and winner claims" },
   { key: "events.deposits", parent_module: "events", label: "Refundable hackathon deposits" },
   { key: "events.accepted_addons", parent_module: "events", label: "Add-ons for accepted participants" },
+  // r2-peoples-choice (#181 S3): an optional People's choice award voted on the public gallery.
+  { key: "events.peoples_choice", parent_module: "events", label: "People's choice award" },
   // L24 (#163A): price-drop refunds.
   { key: "charges.price_drop_refunds", parent_module: null, label: "Price-drop refunds" },
   // L22 (#128 C-7, #129, #135, #137): the per-space shop.

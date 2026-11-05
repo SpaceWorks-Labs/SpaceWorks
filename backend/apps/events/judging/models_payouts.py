@@ -14,7 +14,10 @@ from .models_base import AppendOnly
 class HackathonPrizePayout(AppendOnly):
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE, related_name="+")
     event = models.ForeignKey("events.Event", on_delete=models.CASCADE, related_name="+")
-    award = models.ForeignKey("events.EventAward", on_delete=models.PROTECT, related_name="+")
+    # A judged award, or (#181) a People's choice winning standing: exactly one of the two.
+    award = models.ForeignKey("events.EventAward", null=True, blank=True, on_delete=models.PROTECT, related_name="+")
+    peoples_choice_standing = models.ForeignKey("events.PeoplesChoiceStanding", null=True, blank=True,
+                                                on_delete=models.PROTECT, related_name="+")
     prize = models.ForeignKey("events.HackathonPrize", on_delete=models.PROTECT, related_name="+")
     recipient = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+")
     kind = models.CharField(max_length=8, default="payout", choices=(("payout", "Payout"), ("reversal", "Reversal")))
@@ -40,4 +43,6 @@ class HackathonPrizePayout(AppendOnly):
             models.CheckConstraint(condition=Q(kind__in=("payout", "reversal")), name="ev_payout_kind"),
             models.CheckConstraint(condition=(Q(kind="payout") & Q(reverses__isnull=True))
                                    | (Q(kind="reversal") & Q(reverses__isnull=False)), name="ev_payout_reversal_shape"),
+            models.CheckConstraint(condition=Q(award__isnull=False, peoples_choice_standing__isnull=True)
+                                   | Q(award__isnull=True, peoples_choice_standing__isnull=False), name="ev_payout_one_award"),
         ]

@@ -39,6 +39,8 @@ class GalleryEntryRead(ClosedSerializer):
                                    help_text="Award badges ({prize, rank}); only after results are published (L21b).")
     answers = serializers.ListField(child=serializers.DictField(), required=False,
                                     help_text="S7: the final stage's public custom answers ({key, label, value}).")
+    peoples_choice = serializers.BooleanField(required=False,
+                                              help_text="A published People's choice winner (#181); absent before publication.")
 
 
 class GalleryConsentRead(ClosedSerializer):

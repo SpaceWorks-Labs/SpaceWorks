@@ -42,6 +42,7 @@ from .presentation_catalog_r2_l18 import ENTRIES as _R2_L18
 from .presentation_catalog_r2_l21a import ENTRIES as _R2_L21A
 from .presentation_catalog_r2_l21b import ENTRIES as _R2_L21B
 from .presentation_catalog_hackmoney import ENTRIES as _HACKMONEY
+from .presentation_catalog_r2_peoples_choice import ENTRIES as _R2_PEOPLES_CHOICE
 from .presentation_catalog_r2_l24 import ENTRIES as _R2_L24
 from .presentation_catalog_r2_l22 import ENTRIES as _R2_L22
 from .presentation_catalog_r2_submit_content import ENTRIES as _R2_SUBMIT_CONTENT
@@ -111,6 +112,7 @@ PRESENTATION_CATALOG = _compose(
     _R2_L25,
     _R2_SUBMIT_CONTENT,
     _PLATFORM_OVERVIEW,
+    _R2_PEOPLES_CHOICE,
 )
 
 

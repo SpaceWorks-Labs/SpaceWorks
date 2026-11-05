@@ -28,6 +28,9 @@ def recipients(row):
         if announcement is None or announcement.pk != row.source_id:
             return ()
         return tuple(sorted({pk for snapshot in snapshots for pk in snapshot.member_ids}))
+    if row.kind == "peoples_choice_open":
+        from .peoples_choice import notice_recipients
+        return notice_recipients(row)
     if row.kind != "results_published" or not ResultPublicationState.objects.filter(event_id=row.event_id,
             current_announcement__result_id=row.source_id,
             current_announcement__result__version=row.revision).exists():
@@ -78,6 +81,10 @@ def render(envelope):
         return stage_render(envelope)
     if envelope.event == "finalists_announced":
         return {"subject": "Your project is a finalist", "text": "Open the event to see the published finalists.",
+                "link": local_link(envelope.makerspace, "member")}
+    if envelope.event == "peoples_choice_open":
+        return {"subject": "People's choice voting is on", "text": "Open the event's project gallery to vote for "
+                "your favourite project. You have one vote, and you can change it until voting closes.",
                 "link": local_link(envelope.makerspace, "member")}
     return {"subject": "Event results are available", "text": "Open the event to review the published results.",
             "link": local_link(envelope.makerspace, "member")}

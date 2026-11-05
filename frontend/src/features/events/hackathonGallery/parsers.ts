@@ -52,7 +52,9 @@ export function galleryEntry(value: unknown): GalleryEntry {
     return { prize: award.prize, rank: award.rank }; }) : [];
   return { public_id: String(row.public_id), title: String(row.title), description: String(row.description),
     content_sha256: String(row.content_sha256), consent_version: row.consent_version,
-    files_state: row.files_state as GalleryEntry['files_state'], assets, links, members, awards };
+    files_state: row.files_state as GalleryEntry['files_state'], assets, links, members, awards,
+    // #181: present (true) only on a published People's choice winner.
+    ...(row.peoples_choice === true ? { peoples_choice: true } : {}) };
 }
 export function galleryConsent(value: unknown): GalleryConsent {
   const row = object(value); integer(row.team_id); integer(row.version);

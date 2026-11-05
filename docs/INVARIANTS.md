@@ -6411,6 +6411,33 @@ responsibility; local purges never delete shared global organizations or foreign
   from it when it exists. Organiser-booked travel closes the award as `direct_booking` with a ledger expense
   in the same transaction; cancelling voids it. A cash advance is not offered.
 
+### People's choice (release 2 r2-peoples-choice; #181 S3)
+
+- **It is an extra award and never touches judging (#6).** Nothing in `events/judging/peoples_choice*.py`
+  reads or writes rounds, scores, judged results or `EventAward`. It sits behind `events.peoples_choice`
+  (needs `events.project_gallery`, off by default) AND a per-event config row (no row = off, so new events
+  start off). Off answers 404 and keeps every row.
+- **One ballot per person per event, enforced by the database** (`ev_pc_one_vote_per_person`). A ballot may
+  be changed until voting closes; it is never deleted by the voter. A staff void needs a reason (a
+  `JudgingReason`), keeps the row and blocks a new vote by that person. The vote route has its own per-account
+  throttle (`peoples_choice_vote`, 20/hour). Only a live, consented, eligible public gallery project can be
+  chosen, and never one of the voter's own team (snapshot members or an active team membership).
+- **Audience** (`members` default | `attendees`): any active signed-in member account, or only one whose
+  registration for the event is ATTENDED (checked in). A staff-only account cannot vote (`require_member_account`).
+- **No count before publication, anywhere but the staff count.** The public block and the member ballot
+  carry no per-project number; gallery badges read only the published result. The staff ballot list shows
+  who voted, never which project each person chose, and is ordered by the opaque handle, not by time. Audit
+  rows for a ballot name the event only (`event.peoples_choice.ballot_cast`, target the event).
+- **Publish once, after voting closes.** Publishing needs the window closed (`closes_at` passed), freezes the
+  count into the append-only `PeoplesChoiceResult` + `PeoplesChoiceStanding` rows (Postgres history guard),
+  ends voting for good and makes the settings and ballots final. Only projects still live in the gallery at
+  publication are counted; ranking is competition ranking and every project tied at the top wins.
+- **A prize it carries is paid like any prize (C-38).** `HackathonPrizePayout` names a judged award OR a
+  winning standing, exactly one (`ev_payout_one_award`, and the scope trigger checks the standing's result,
+  event and prize). Same recorders, ledger expense, reversal route and winner notice as L21b.
+- **The voting-open email is off by default (C-37)** and is sent only when staff switch the award on with it
+  ticked; recipients (registrants, or checked-in attendees for an attendees-only award) are rechecked at send.
+
 ## Backup, restore and tenant migration (Phase 5A/5B and Lane D D1-D4/D6 built)
 
 - **A restored `DataExportJob` download bearer is never usable.** The download route is anonymous,

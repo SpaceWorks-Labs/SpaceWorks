@@ -458,6 +458,12 @@ export const openApiPaths = [
   "/api/v1/admin/events/{id}/organizers/",
   "/api/v1/admin/events/{id}/pairwise-rounds/",
   "/api/v1/admin/events/{id}/participation-settings/",
+  "/api/v1/admin/events/{id}/peoples-choice/",
+  "/api/v1/admin/events/{id}/peoples-choice/payouts/",
+  "/api/v1/admin/events/{id}/peoples-choice/publish/",
+  "/api/v1/admin/events/{id}/peoples-choice/standings/",
+  "/api/v1/admin/events/{id}/peoples-choice/votes/",
+  "/api/v1/admin/events/{id}/peoples-choice/votes/{handle}/void/",
   "/api/v1/admin/events/{id}/prize-payouts/",
   "/api/v1/admin/events/{id}/prize-payouts/{payout_id}/reverse/",
   "/api/v1/admin/events/{id}/prizes/",
@@ -1488,6 +1494,8 @@ export const openApiPaths = [
   "/api/v1/member/makerspaces/{makerspace_id}/events/{id}/participant-resumes/{asset_id}/abort/",
   "/api/v1/member/makerspaces/{makerspace_id}/events/{id}/participant-resumes/{asset_id}/complete/",
   "/api/v1/member/makerspaces/{makerspace_id}/events/{id}/participant-resumes/{asset_id}/download/",
+  "/api/v1/member/makerspaces/{makerspace_id}/events/{id}/peoples-choice/",
+  "/api/v1/member/makerspaces/{makerspace_id}/events/{id}/peoples-choice/vote/",
   "/api/v1/member/makerspaces/{makerspace_id}/events/{id}/presentation/",
   "/api/v1/member/makerspaces/{makerspace_id}/events/{id}/profile-photo-options/",
   "/api/v1/member/makerspaces/{makerspace_id}/events/{id}/reimbursement/",
@@ -1660,6 +1668,7 @@ export const openApiPaths = [
   "/api/v1/public/event-programmes/{public_token}/gallery/assets/{public_asset_id}/",
   "/api/v1/public/event-programmes/{public_token}/gallery/{entry_public_id}/",
   "/api/v1/public/event-programmes/{public_token}/member-cards/{card_public_id}/photo/",
+  "/api/v1/public/event-programmes/{public_token}/peoples-choice/",
   "/api/v1/public/event-programmes/{public_token}/results/",
   "/api/v1/public/event-programmes/{public_token}/volunteer-postings/",
   "/api/v1/public/hosting/invitations/resolve",
@@ -9353,6 +9362,7 @@ export type GalleryEntryRead = {
   "awards"?: Array<{
   [key: string]: unknown;
 }>;
+  "peoples_choice"?: boolean;
 };
 
 export type GalleryEntryReadPage = {
@@ -17463,6 +17473,17 @@ export type PatchedPassTypeStaff = {
   "sold"?: number;
 };
 
+export type PatchedPeoplesChoiceConfigInput = {
+  "operation_id"?: string;
+  "expected_version"?: number;
+  "enabled"?: boolean;
+  "audience"?: PeoplesChoiceAudienceEnum;
+  "opens_at"?: string | null;
+  "closes_at"?: string | null;
+  "prize_id"?: number | null;
+  "open_email"?: boolean;
+};
+
 export type PatchedPlatformBackupSettings = {
   "automatic_backups_enabled"?: boolean;
   "retention_days"?: number;
@@ -18470,7 +18491,8 @@ export type PayoutPage = {
 export type PayoutRead = {
   "id": number;
   "event_id": number;
-  "award_id": number;
+  "award_id": number | null;
+  "peoples_choice_standing_id"?: number | null;
   "prize_id": number;
   "prize_name": string;
   "recipient_id": number | null;
@@ -18548,6 +18570,135 @@ export type PayoutUploadDescriptor = {
 export type PendingClosure = {
   "digest": string;
   "identities": Array<ClosureIdentity>;
+};
+
+export type PeoplesChoiceAudienceEnum = "members" | "attendees";
+
+export type PeoplesChoiceAwardRead = {
+  "prize_name": string;
+  "total_votes": number;
+  "published_at": string;
+  "winners": Array<PeoplesChoiceWinnerRead>;
+};
+
+export type PeoplesChoiceBallotRead = {
+  "event_id": number;
+  "state": PeoplesChoiceStateEnum;
+  "audience": PeoplesChoiceAudienceEnum;
+  "opens_at": string | null;
+  "closes_at": string | null;
+  "can_vote": boolean;
+  "refusal": PeoplesChoiceRefusalEnum | NullEnum | null;
+  "entry_public_id": string | null;
+  "own_entry_public_ids": Array<string>;
+  "version": number;
+};
+
+export type PeoplesChoiceConfigRead = {
+  "id": number;
+  "event_id": number;
+  "version": number;
+  "enabled": boolean;
+  "audience": PeoplesChoiceAudienceEnum;
+  "opens_at": string | null;
+  "closes_at": string | null;
+  "prize_id": number | null;
+  "prize_name": string | null;
+  "open_email": boolean;
+  "state": PeoplesChoiceStateEnum;
+  "ballots": number;
+  "allowed_actions": Array<string>;
+};
+
+export type PeoplesChoicePayableWinnerRead = {
+  "id": number;
+  "prize_name": string;
+  "title": string;
+  "amount_per_winner": string | null;
+  "paid": boolean;
+};
+
+export type PeoplesChoicePayableWinnersRead = {
+  "winners": Array<PeoplesChoicePayableWinnerRead>;
+};
+
+export type PeoplesChoicePayoutInput = {
+  "operation_id": string;
+  "expected_version": number;
+  "recipient_id"?: number;
+  "amount"?: string;
+  "method": PayoutInputMethodEnum;
+  "reference"?: string;
+  "paid_on": string;
+  "receipt_id"?: number | null;
+  "standing_id": number;
+};
+
+export type PeoplesChoicePublicRead = {
+  "event_id": number;
+  "state": PeoplesChoiceStateEnum;
+  "audience": PeoplesChoiceAudienceEnum;
+  "opens_at": string | null;
+  "closes_at": string | null;
+  "award": PeoplesChoiceAwardRead | null;
+};
+
+export type PeoplesChoiceRefusalEnum = "off" | "not_open" | "closed" | "published" | "attendees_only" | "voided";
+
+export type PeoplesChoiceStandingRead = {
+  "id": number | null;
+  "snapshot_id": number;
+  "title": string;
+  "votes": number;
+  "rank": number;
+  "winner": boolean;
+};
+
+export type PeoplesChoiceStandingsRead = {
+  "published": boolean;
+  "published_at": string | null;
+  "prize_name": string;
+  "total_votes": number;
+  "standings": Array<PeoplesChoiceStandingRead>;
+};
+
+export type PeoplesChoiceStateEnum = "off" | "scheduled" | "open" | "closed" | "published";
+
+export type PeoplesChoiceVoidInput = {
+  "operation_id": string;
+  "expected_version": number;
+  "reason": string;
+};
+
+export type PeoplesChoiceVoteInput = {
+  "operation_id": string;
+  "expected_version": number;
+  "entry_public_id": string;
+};
+
+export type PeoplesChoiceVoteRowRead = {
+  "handle": string;
+  "voter_name": string;
+  "attended": boolean;
+  "changed": boolean;
+  "voided": boolean;
+  "void_reason": string | null;
+  "version": number;
+  "allowed_actions": Array<string>;
+  "pii_masked"?: boolean;
+};
+
+export type PeoplesChoiceVoteRowReadPage = {
+  "count": number;
+  "next": string | null;
+  "previous": string | null;
+  "results": Array<PeoplesChoiceVoteRowRead>;
+};
+
+export type PeoplesChoiceWinnerRead = {
+  "title": string;
+  "entry_public_id": string | null;
+  "votes": number;
 };
 
 export type PeriodEnum = "upcoming" | "past";
@@ -22502,7 +22653,7 @@ export type ReportError = {
   "code"?: string;
 };
 
-export type ReportKeyEnum = "payment-cash-book" | "taken-items" | "active-loans" | "returns" | "damaged-missing" | "top-borrowers" | "recently-added" | "event-attendance" | "booking-utilization" | "member-activity" | "printer-service" | "fablab-health" | "payment-reconciliation" | "evidence-compliance" | "import-quality" | "communications-health" | "community-engagement" | "certification-coverage" | "audit-trail" | "membership-growth" | "member-retention" | "membership-revenue" | "membership-renewals" | "membership-bridge" | "membership-breakdown" | "membership-expiry-calendar" | "membership-applications-funnel" | "membership-win-back" | "member-register" | "membership-monthly-summary" | "member-card-issuance" | "payments-ledger" | "revenue-over-time" | "cash-book" | "payments-ageing" | "accounting-journal" | "refunds" | "income-spending" | "finance-inventory" | "finance-machines" | "finance-bookings" | "finance-events" | "event-finance" | "receipts-payments" | "subscription-income" | "money-methods" | "gstr1" | "gstr3b" | "tax-summary" | "documents-register" | "finance-shop" | "shop-sales" | "event-registrations" | "event-feedback" | "event-attendance-pdf" | "booking-resource-utilization" | "booking-resource-utilization-pdf" | "booking-reservations" | "booking-answers" | "mobile-devices" | "mobile-auth" | "booking-occupancy" | "booking-lead-time" | "booking-top-members" | "event-signups" | "event-revenue" | "event-funnel" | "event-checkin-times" | "event-feedback-scores" | "most-lent" | "asset-usage" | "loan-throughput" | "inventory-utilisation" | "overdue-loans" | "damaged-lost" | "longest-loans" | "stock-health" | "request-funnel" | "problem-reports" | "inventory-watch-demand" | "summary" | "qr-scans" | "qr-scan-actors" | "inventory-control" | "consumable-usage" | "consumable-pools" | "procurement-performance" | "stock-transfers" | "stocktake-variance" | "machine-usage" | "machine-usage-members" | "machine-usage-heatmap" | "machine-downtime" | "maintenance-activity" | "machine-service" | "service-queue-times" | "printer-jobs" | "machine-errors" | "warranty-expiry" | "machine-sessions" | "machine-session-utilisation" | "machine-session-busiest" | "machine-session-idle" | "machine-session-flagged" | "device-health" | "presence-activity" | "presence-top-visitors" | "presence-activity-hours" | "audit-activity" | "audit-top-actors" | "audit-activity-hours" | "organization-membership" | "module-operational-health" | "platform-services" | "platform-usage";
+export type ReportKeyEnum = "payment-cash-book" | "taken-items" | "active-loans" | "returns" | "damaged-missing" | "top-borrowers" | "recently-added" | "event-attendance" | "booking-utilization" | "member-activity" | "printer-service" | "fablab-health" | "payment-reconciliation" | "evidence-compliance" | "import-quality" | "communications-health" | "community-engagement" | "certification-coverage" | "audit-trail" | "membership-growth" | "member-retention" | "membership-revenue" | "membership-renewals" | "membership-bridge" | "membership-breakdown" | "membership-expiry-calendar" | "membership-applications-funnel" | "membership-win-back" | "member-register" | "membership-monthly-summary" | "member-card-issuance" | "payments-ledger" | "revenue-over-time" | "cash-book" | "payments-ageing" | "accounting-journal" | "refunds" | "income-spending" | "finance-inventory" | "finance-machines" | "finance-bookings" | "finance-events" | "finance-donations" | "event-finance" | "receipts-payments" | "subscription-income" | "money-methods" | "gstr1" | "gstr3b" | "tax-summary" | "documents-register" | "finance-shop" | "shop-sales" | "donations-campaign-progress" | "donations-pledges" | "donations-sponsor-perks" | "event-registrations" | "event-feedback" | "event-attendance-pdf" | "booking-resource-utilization" | "booking-resource-utilization-pdf" | "booking-reservations" | "booking-answers" | "mobile-devices" | "mobile-auth" | "booking-occupancy" | "booking-lead-time" | "booking-top-members" | "event-signups" | "event-revenue" | "event-funnel" | "event-checkin-times" | "event-feedback-scores" | "repairs-work-orders" | "repairs-technician-workload" | "repairs-time-by-area" | "repairs-parts-used" | "most-lent" | "asset-usage" | "loan-throughput" | "inventory-utilisation" | "overdue-loans" | "damaged-lost" | "longest-loans" | "stock-health" | "request-funnel" | "problem-reports" | "inventory-watch-demand" | "summary" | "qr-scans" | "qr-scan-actors" | "inventory-control" | "consumable-usage" | "consumable-pools" | "procurement-performance" | "stock-transfers" | "stocktake-variance" | "machine-usage" | "machine-usage-members" | "machine-usage-heatmap" | "machine-downtime" | "maintenance-activity" | "machine-service" | "service-queue-times" | "printer-jobs" | "machine-errors" | "warranty-expiry" | "machine-sessions" | "machine-session-utilisation" | "machine-session-busiest" | "machine-session-idle" | "machine-session-flagged" | "device-health" | "presence-activity" | "presence-top-visitors" | "presence-activity-hours" | "audit-activity" | "audit-top-actors" | "audit-activity-hours" | "organization-membership" | "module-operational-health" | "platform-services" | "platform-usage";
 
 export type ReportSchedule = {
   "id": number;

@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { Badge, EmptyState, ErrorBlock, Skeleton } from "../../../components/ui";
+import { ScreenHelp } from "../../help/HelpLink";
 import { useOrganizations } from "../../staff/organizationsApi";
 import { ProgrammePage } from "./ProgrammePage";
 import { useCreateProgramme, useProgrammes, type Programme } from "./api";
@@ -26,6 +27,7 @@ export function ProgrammesTab({ makerspaceId, sheetImport = false }: { makerspac
     description="ID programmes belong to an organisation that owns this space. Add one under Organisations first." />;
 
   return <div className="grid gap-4">
+    <ScreenHelp screen="cards.programmes" />
     <label className="grid max-w-sm gap-1 text-xs font-semibold text-muted"><span>Organisation</span>
       <select className="desk-input min-h-11" value={chosen ?? ""} onChange={(event) => setOrganizationId(Number(event.target.value))}>
         {organizations.data.results.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}

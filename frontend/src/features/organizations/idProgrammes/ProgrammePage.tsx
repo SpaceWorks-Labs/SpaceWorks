@@ -3,6 +3,7 @@ import { useState } from "react";
 
 import { CardDesigner } from "../../../components/card-designer/CardDesigner";
 import { ErrorBlock, Skeleton, Tabs } from "../../../components/ui";
+import { ScreenHelp } from "../../help/HelpLink";
 import { CardJobList } from "../../cards/cardJobs";
 import { ProgrammeImport } from "./ProgrammeImport";
 import { ProgrammeMembers } from "./ProgrammeMembers";
@@ -24,6 +25,7 @@ export function ProgrammePage({ programmeId, onBack, sheetImport = false }: {
   const tabs = [{ key: "members", label: "Members", count: row.counts.all }, ...(row.can_manage ? [{ key: "import", label: "Import" }] : []),
     { key: "design", label: "Card design" }, ...(row.can_manage ? [{ key: "settings", label: "Settings" }] : [])];
   return <div className="grid gap-4">
+    <ScreenHelp screen="cards.programmes" />
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div className="grid gap-1">
         <button type="button" className="w-fit text-sm text-muted underline" onClick={onBack}>All programmes</button>

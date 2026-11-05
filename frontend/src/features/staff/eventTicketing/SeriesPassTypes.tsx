@@ -2,6 +2,7 @@ import { useContext, useState } from "react";
 import { QueryClientContext } from "@tanstack/react-query";
 import { Repeat } from "lucide-react";
 import { Card } from "../../../components/ui";
+import { ScreenHelp } from "../../help/HelpLink";
 import { capabilityOn } from "../../../lib/features";
 import { panelEmpty, panelField, panelInput, panelRow } from "../eventPanelStyles";
 import { usePassTypes, type PassType } from "./staffTicketingApi";
@@ -25,7 +26,9 @@ export function SeriesPassTypes({ seriesId, disabled = false }: { seriesId: numb
   const [draft, setDraft] = useState<PassType>(blank);
   const set = <K extends keyof PassType>(key: K, value: PassType[K]) => setDraft(current => ({ ...current, [key]: value }));
   return <section className="grid gap-3" aria-label="Series passes">
-    <h3 className="title-section flex items-center gap-2"><Repeat aria-hidden="true" size={18} />Series passes</h3>
+    <div className="flex flex-wrap items-center justify-between gap-2">
+      <h3 className="title-section flex items-center gap-2"><Repeat aria-hidden="true" size={18} />Series passes</h3>
+      <ScreenHelp screen="events.series-passes" className="" /></div>
     <Card><form className="grid gap-4" onSubmit={event => { event.preventDefault(); save.mutate(draft, { onSuccess: () => setDraft(blank) }); }}>
       <label className={panelField}>Name<input className={panelInput} required maxLength={100} value={draft.name} disabled={disabled} onChange={event => set("name", event.target.value)} /></label>
       <label className={panelField}>Price<input className={panelInput} type="number" min="0" step="0.01" value={draft.amount} disabled={disabled} onChange={event => set("amount", event.target.value)} /></label>

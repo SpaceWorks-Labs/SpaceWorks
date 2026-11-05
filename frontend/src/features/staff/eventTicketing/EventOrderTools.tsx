@@ -1,3 +1,4 @@
+import { ScreenHelp } from "../../help/HelpLink";
 import { EventDisclosure } from "../EventDisclosure";
 import { EventAddonsEditor } from "./EventAddonsEditor";
 import { EventOrdersList } from "./EventOrdersList";
@@ -14,6 +15,7 @@ export function EventOrderTools({ eventId, features, manager, disabled = false }
   const on = (key: string) => features.includes(key);
   if (!on("events.orders") && !on("events.refund_override") && !on("events.venue_fees")) return null;
   return <section className="grid gap-4" aria-label="Ticket orders and money">
+    <ScreenHelp screen="events.orders" />
     {on("events.orders") ? <>
       <EventOrdersList eventId={eventId} />
       <EventDisclosure title="Ticket order options"><TicketOrderOptions eventId={eventId} disabled={disabled} /></EventDisclosure>

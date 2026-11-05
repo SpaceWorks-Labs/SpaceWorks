@@ -2,6 +2,7 @@ import { lazy, Suspense, useState } from "react";
 
 import { ListLayout } from "../../../components/layouts";
 import { Skeleton, Tabs } from "../../../components/ui";
+import { ScreenHelp } from "../../help/HelpLink";
 import type { Makerspace } from "../panels/shared";
 import { shopAccess, shopViews, type ShopView } from "./shopAccess";
 import { ShopOrders } from "./ShopOrders";
@@ -24,6 +25,7 @@ export function ShopPanel({ makerspace, actions, isSuperadmin }: { makerspace: M
   const ms = makerspace.id;
   return <div className="grid min-w-0 gap-4">
     <Tabs label="Shop sections" tabs={views} activeKey={active} onChange={key => setView(key as ShopView)}>
+      <ScreenHelp screen={`shop.${active}`} />
       <Suspense fallback={<Skeleton className="h-40 w-full" />}>
         {active === "orders" ? <ShopOrders makerspaceId={ms} access={access} /> : null}
         {active === "pos" ? <ShopPos makerspaceId={ms} access={access} /> : null}

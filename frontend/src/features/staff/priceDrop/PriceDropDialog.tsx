@@ -1,4 +1,5 @@
 import { Modal } from "../../../components/ui";
+import { ScreenHelp } from "../../help/HelpLink";
 import { formatMoney } from "../paymentsApi";
 import { AREA_LABELS, type PriceDropReport } from "./priceDropApi";
 
@@ -15,7 +16,8 @@ export function PriceDropDialog({ report, onConfirm, onClose }: {
 }) {
   const hidden = report.count - report.items.length;
   const totals = report.totals.map(row => formatMoney(row.difference, row.currency)).join(" + ");
-  return <Modal open onClose={onClose} title="Lower this price?" footer={<div className="flex flex-wrap justify-end gap-3">
+  return <Modal open onClose={onClose} title="Lower this price?" footer={<div className="flex flex-wrap items-center justify-end gap-3">
+    <ScreenHelp screen="finance.price-drop" className="mr-auto" />
     <button type="button" className="desk-button" onClick={onClose}>Keep editing</button>
     <button type="button" className="desk-button-primary" onClick={onConfirm}>Save and open refunds</button>
   </div>}>

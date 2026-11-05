@@ -126,10 +126,11 @@ def _locked_pair(state_id):
     return space, state
 
 
-def run_archive(state_id):
+def run_archive(state_id, now=None):
+    now = now or timezone.now()
     with transaction.atomic(), control_context():
         space, state = _locked_pair(state_id)
-        if state is None or state.archive_on is None or state.archive_on > timezone.now():
+        if state is None or state.archive_on is None or state.archive_on > now:
             return False
         actor = _runner(state)
         if actor is None:
@@ -141,7 +142,7 @@ def run_archive(state_id):
         archived = direct_archive(space, actor)
         state.refresh_from_db()
         state.archive_on = None
-        state.purge_due_at = timezone.now() + timedelta(days=state.purge_grace_days)
+        state.purge_due_at = now + timedelta(days=state.purge_grace_days)
         state.reminders_sent = []
         state.save(update_fields=["archive_on", "purge_due_at", "reminders_sent", "updated_at"])
         audit.record(actor, "space_control.scheduled_archive_ran", makerspace=archived, target=archived,
@@ -151,10 +152,11 @@ def run_archive(state_id):
     return True
 
 
-def run_purge(state_id):
+def run_purge(state_id, now=None):
+    now = now or timezone.now()
     with transaction.atomic(), control_context():
         space, state = _locked_pair(state_id)
-        if state is None or state.purge_due_at is None or state.purge_due_at > timezone.now():
+        if state is None or state.purge_due_at is None or state.purge_due_at > now:
             return False
         if not is_archived(space):
             # Unarchived (or paused) since: the purge no longer applies.

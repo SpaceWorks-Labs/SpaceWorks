@@ -52,8 +52,11 @@ def save_plan(actor, data, plan=None):
             if name in data:
                 setattr(plan, name, data[name])
         plan.save()
-        audit.record(actor, "managed_hosting.plan_created" if created else "managed_hosting.plan_updated",
-                     makerspace=None, target=plan, meta={"fields": sorted(name for name in PLAN_FIELDS if name in data)})
+        fields = sorted(name for name in PLAN_FIELDS if name in data)
+        if created:
+            audit.record(actor, "managed_hosting.plan_created", makerspace=None, target=plan, meta={"fields": fields})
+        else:
+            audit.record(actor, "managed_hosting.plan_updated", makerspace=None, target=plan, meta={"fields": fields})
     return plan
 
 

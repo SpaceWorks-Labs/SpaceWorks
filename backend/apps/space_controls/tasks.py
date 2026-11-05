@@ -21,7 +21,7 @@ def run_schedules(now=None):
     counts = {"archived": 0, "purged": 0, "reminded": 0, "failed": 0}
     due_archives = SpaceControlState.objects.filter(archive_on__lte=now).values_list("pk", flat=True)[:BATCH]
     for state_id in list(due_archives):
-        counts["archived"] += _step(run_archive, state_id, counts)
+        counts["archived"] += _step(lambda pk: run_archive(pk, now), state_id, counts)
     upcoming = SpaceControlState.objects.filter(
         Q(archive_on__gt=now) | Q(purge_due_at__gt=now),
     ).select_related("makerspace").order_by("pk")[:BATCH * 4]
@@ -29,7 +29,7 @@ def run_schedules(now=None):
         counts["reminded"] += _step(lambda _id, row=state: send_reminder(row, now), state.pk, counts)
     due_purges = SpaceControlState.objects.filter(purge_due_at__lte=now).values_list("pk", flat=True)[:BATCH]
     for state_id in list(due_purges):
-        counts["purged"] += _step(run_purge, state_id, counts)
+        counts["purged"] += _step(lambda pk: run_purge(pk, now), state_id, counts)
     logger.info("space_control_schedules_swept", extra=counts)
     return counts
 

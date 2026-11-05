@@ -35,8 +35,10 @@ SETTLEMENT_ROUTES = frozenset("""
 stripe-webhook razorpay-webhook managed-hosting-stripe-webhook managed-hosting-razorpay-webhook
 """.split())
 # Read-only means "view and export": producing an export file or opening a PII window
-# creates no domain record.
+# creates no domain record. Opt-outs and provider bounce receipts only PROTECT people
+# (stop mail to them), so they keep working too.
 READ_ONLY_ROUTES = frozenset("""
+one-click-unsubscribe email-bounce-webhook email-provider-webhook telegram-webhook
 data-export-list-create data-export-detail data-export-download-url member-subject-export-list
 member-subject-export-detail member-saved-details-export-create admin-makerspace-pii-access
 admin-inventory-export to-buy-export report-export ledger-export finance-event-payout-export

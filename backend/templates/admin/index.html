@@ -1,0 +1,84 @@
+{% extends "admin/base.html" %}
+{% load i18n unfold %}
+{% comment %}
+  The /control/ home (#188): config.control_dashboard fills control_*; counts only, no names.
+{% endcomment %}
+
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block branding %}
+    {% include "unfold/helpers/site_branding.html" %}
+{% endblock %}
+
+{% block content %}
+<div class="flex flex-col gap-6" data-testid="control-home">
+    <p class="text-sm">
+        This is the server-side control plane: a power tool and fallback. Day-to-day platform work is in the web
+        superadmin console, which offers every operation here except the few that need the server itself
+        (platform key rotation, whole-platform restore, recovery commands).
+        {% if control_server_only %}It answers only on this server and its SSH tunnel.{% endif %}
+    </p>
+
+    {% component "unfold/components/card.html" with title=_("Needs attention") %}
+        {% if control_attention %}
+            <table class="w-full text-sm">
+                <thead><tr><th scope="col" class="text-left">What</th><th scope="col" class="text-left">How many</th>
+                    <th scope="col" class="text-left">In the web console</th></tr></thead>
+                <tbody>
+                {% for row in control_attention %}
+                    <tr>
+                        <td>{% if row.link %}<a class="underline" href="{{ row.link }}">{{ row.label }}</a>{% else %}{{ row.label }}{% endif %}</td>
+                        <td class="font-semibold">{{ row.count }}</td>
+                        <td>{{ row.console }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p class="text-sm">Nothing needs attention right now.</p>
+        {% endif %}
+    {% endcomponent %}
+
+    {% component "unfold/components/card.html" with title=_("Spaces and accounts") %}
+        <div class="flex flex-wrap gap-6">
+            {% for figure in control_space_totals %}
+                <div>
+                    <div class="text-sm">{% if figure.link %}<a class="underline" href="{{ figure.link }}">{{ figure.label }}</a>{% else %}{{ figure.label }}{% endif %}</div>
+                    <div class="text-2xl font-semibold text-important">{{ figure.value }}</div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endcomponent %}
+
+    {% component "unfold/components/card.html" with title=_("This month across every space") %}
+        {% if control_overview.status == "ready" %}
+            <div class="flex flex-wrap gap-6">
+                {% for block in control_overview.blocks %}
+                    <div>
+                        <h3 class="font-semibold mb-2">{{ block.label }}</h3>
+                        {% for figure in block.figures %}
+                            <div class="text-sm">{{ figure.label }}: <span class="font-semibold">{{ figure.value|default_if_none:"0" }}</span></div>
+                        {% endfor %}
+                        {% if block.off_in %}<div class="text-sm text-base-500">Module off in {{ block.off_in }} space{{ block.off_in|pluralize }}</div>{% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+            <p class="text-sm mt-2">Computed {{ control_overview.computed_at|date:"j M Y, H:i" }}. Archived and hidden spaces are left out.</p>
+        {% elif control_overview.status == "computing" %}
+            <p class="text-sm">The totals are being computed in the background. Reload this page in a minute.</p>
+        {% elif control_overview.status == "failed" %}
+            <p class="text-sm">The totals could not be computed just now. See Scheduled task runs, or try again later.</p>
+        {% else %}
+            <p class="text-sm">No totals yet. Open the platform overview in the web superadmin console to compute them.</p>
+        {% endif %}
+    {% endcomponent %}
+
+    {% component "unfold/components/card.html" with title=_("Quick links") %}
+        <ul class="flex flex-wrap gap-4 text-sm">
+            {% for link in control_links %}
+                <li><a class="underline" href="{{ link.link }}"{% if link.external %} rel="noopener"{% endif %}>{{ link.label }}</a></li>
+            {% endfor %}
+        </ul>
+    {% endcomponent %}
+</div>
+{% endblock %}

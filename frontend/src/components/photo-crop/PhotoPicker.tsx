@@ -14,7 +14,7 @@ export function PhotoPicker({ aspect, disabled = false, busy = false, onPhoto, c
   const [picked, setPicked] = useState<Blob | null>(null);
   const off = disabled || busy;
   return <div className="flex flex-wrap items-center gap-2">
-    <label className={`desk-button min-h-11 cursor-pointer ${off ? "pointer-events-none opacity-60" : ""}`}>
+    <label className={`desk-button min-h-11 cursor-pointer focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-focus ${off ? "pointer-events-none opacity-60" : ""}`}>
       {busy ? "Uploading…" : chooseLabel}
       <input type="file" accept={PHOTO_TYPES} className="sr-only" disabled={off}
         onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ""; if (file) setPicked(file); }} />

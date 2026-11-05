@@ -80,7 +80,7 @@ export function PhotoCropDialog({ file, aspect, onCancel, onDone, title = "Crop 
     </div>}>
     <div className="grid justify-items-center gap-3">
       {error ? <p role="alert" className="text-sm text-danger">{error}</p> : null}
-      <canvas ref={canvas} width={PREVIEW_WIDTH} height={height} tabIndex={0} role="img"
+      <canvas ref={canvas} width={PREVIEW_WIDTH} height={height} tabIndex={0} role="application" aria-roledescription="photo crop"
         aria-label="Photo crop. Drag or use the arrow keys to move the picture; plus and minus zoom."
         className="max-w-full cursor-move touch-none rounded-control border border-line bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
         onKeyDown={onKey}

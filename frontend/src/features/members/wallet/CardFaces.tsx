@@ -6,6 +6,8 @@ import { useQuery } from "@tanstack/react-query";
 
 import type { CardDocument, SideName } from "../../../components/card-designer/cardTypes";
 import { backgroundStyle, CardLayerView, type LiveImages } from "../../../components/card-designer/CardLayerView";
+import { merge } from "../../../components/card-designer/dataFields";
+import { WatermarkView } from "../../../components/card-designer/WatermarkView";
 import { loadCardFontWith } from "../../../components/card-designer/fontLoader";
 import { memberRequest, memberRequestBlob } from "../../../lib/api";
 import { cardPath, type MyCard } from "./api";
@@ -31,6 +33,22 @@ export function useCardFaceFonts(card: MyCard, face: CardFace | undefined) {
   }, [card, fonts]);
 }
 
+/** What a screen reader hears for one face: the card's readable text in layer order, then its codes. */
+export function describeFace(face: CardFace, side: SideName) {
+  const layers = face.document[side].layers.filter((layer) => !layer.hidden);
+  const text = layers.filter((layer) => layer.kind === "text" || layer.kind === "data_field")
+    .map((layer) => merge(layer.text ?? "", face.values).replace(/\s+/g, " ").trim()).filter(Boolean);
+  const codes = layers.flatMap((layer) => layer.kind === "desk_qr" ? ["a desk QR code"] : layer.kind === "verify_qr"
+    ? ["a QR code that opens the public check page"] : layer.kind === "barcode" ? ["a barcode"] : []);
+  const photo = layers.some((layer) => layer.kind === "photo") ? (face.photo ? "Your photo." : "Your initials in place of a photo.") : "";
+  return [text.join(". "), photo, codes.length ? `It carries ${codes.join(" and ")}.` : ""].filter(Boolean).join(" ");
+}
+
+export function faceAspect(face: CardFace | undefined) {
+  const page = face?.document.front;
+  return page ? `${page.page_width_mm} / ${page.page_height_mm}` : "85.6 / 53.98";
+}
+
 export function CardFaceSvg({ face, side, label }: { face: CardFace; side: SideName; label?: string }) {
   const page = face.document[side];
   const width = page.page_width_mm * PX, height = page.page_height_mm * PX;
@@ -42,9 +60,8 @@ export function CardFaceSvg({ face, side, label }: { face: CardFace; side: SideN
     aria-label={label} aria-hidden={label ? undefined : true}>
     <foreignObject x="0" y="0" width={width} height={height}>
       <div className="relative h-full w-full overflow-hidden" style={backgroundStyle(background, backgroundUrl)}>
-        {watermark?.kind === "text" && watermark.text ? <div aria-hidden="true" className="absolute inset-0 grid place-items-center font-bold"
-          style={{ opacity: watermark.opacity_pct / 100, transform: `rotate(${watermark.angle_deg}deg)`, color: watermark.colour,
-            fontSize: height / 6 }}>{watermark.text}</div> : null}
+        <WatermarkView watermark={watermark} widthMm={page.page_width_mm} heightMm={page.page_height_mm} px={PX} mono={mono}
+          designId={0} imageUrl={watermark?.kind === "image" && watermark.asset_id ? face.assets[watermark.asset_id] ?? null : null} />
         {page.layers.map((layer) => layer.hidden ? null : <div key={layer.id} className="absolute"
           style={{ left: layer.x_mm * PX, top: layer.y_mm * PX, width: layer.w_mm * PX, height: layer.h_mm * PX,
             transform: `rotate(${layer.rotation}deg)`, opacity: (layer.opacity ?? 100) / 100 }}>

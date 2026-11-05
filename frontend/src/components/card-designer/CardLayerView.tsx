@@ -4,8 +4,8 @@ import { staffRequestBlob } from "../../lib/api";
 import type { Background, Layer } from "./cardTypes";
 import { PT_TO_MM } from "./cardGeometry";
 import { merge } from "./dataFields";
-import { cssFamily } from "./fontLoader";
 import { assetUrlPath } from "./designerApi";
+import { BarcodeView, useFittedText, usePhotoFilter } from "./layerExtras";
 
 const assetCache = new Map<string, Promise<string>>();
 
@@ -49,7 +49,27 @@ function QrPlaceholder() {
 
 /** Real images for a holder's own card (the printed-card view); the designer passes none and shows placeholders. */
 export type LiveImages = { photo: string | null; logos: Record<string, string | null>; assets: Record<string, string | null>;
-  desk_qr: string | null; verify_qr: string | null };
+  desk_qr: string | null; verify_qr: string | null; barcodes?: Record<string, string | null> };
+
+function TextLayerView({ layer, px, values, mono }: { layer: Layer; px: number; values: Record<string, string>; mono: boolean }) {
+  const text = merge(layer.text ?? "", values);
+  const fitted = useFittedText(layer, text, px);
+  return <div className="h-full w-full overflow-hidden" style={{ ...fitted,
+    lineHeight: layer.line_height ?? 1.2, color: mono ? "#000000" : layer.colour, textAlign: layer.align,
+    textTransform: layer.uppercase ? "uppercase" : undefined, letterSpacing: (layer.tracking_pt ?? 0) * PT_TO_MM * px,
+    display: "flex", flexDirection: "column", overflowWrap: "anywhere",
+    justifyContent: { top: "flex-start", middle: "center", bottom: "flex-end" }[layer.valign ?? "top"] }}>{text}</div>;
+}
+
+function PhotoLayerView({ layer, px, values, mono, photo }: { layer: Layer; px: number; values: Record<string, string>;
+  mono: boolean; photo: string | null }) {
+  const { filter, defs } = usePhotoFilter(layer, mono);
+  const radius = layer.shape === "circle" ? "50%" : layer.shape === "rounded" ? "14%" : 0;
+  if (photo) return <>{defs}<img src={photo} alt="" className="h-full w-full object-cover" style={{ filter, borderRadius: radius }} /></>;
+  const initials = (values.name ?? "").split(/\s+/).slice(0, 2).map((word) => word[0] ?? "").join("").toUpperCase();
+  return <div className="grid h-full w-full place-items-center font-bold" style={{ borderRadius: radius,
+    fontSize: layer.h_mm * px * 0.36, background: mono ? "#E6E6E6" : "#D7E9E5", color: mono ? "#000000" : "#142C2A" }}>{initials}</div>;
+}
 
 /** One layer drawn to scale: `px` converts millimetres to CSS pixels. Static; the canvas adds interaction. */
 export function CardLayerView({ layer, px, values, designId, mono, live }: { layer: Layer; px: number;
@@ -57,16 +77,11 @@ export function CardLayerView({ layer, px, values, designId, mono, live }: { lay
   const fetched = useAssetUrl(designId, !live && layer.kind === "image" ? layer.asset_id : null);
   const imageUrl = live ? (layer.asset_id ? live.assets[layer.asset_id] ?? null : null) : fetched;
   const grey = mono ? "grayscale(1)" : undefined;
-  if (layer.kind === "text" || layer.kind === "data_field") {
-    const text = merge(layer.text ?? "", values);
-    return <div className="h-full w-full overflow-hidden" style={{
-      fontFamily: `${cssFamily(layer.font_family ?? "Gilroy")}, ${layer.font_family ?? "Gilroy"}, sans-serif`,
-      fontWeight: layer.font_weight, fontSize: (layer.font_size_pt ?? 10) * PT_TO_MM * px,
-      lineHeight: layer.line_height ?? 1.2, color: mono ? "#000000" : layer.colour, textAlign: layer.align,
-      textTransform: layer.uppercase ? "uppercase" : undefined, letterSpacing: (layer.tracking_pt ?? 0) * PT_TO_MM * px,
-      display: "flex", flexDirection: "column", overflowWrap: "anywhere",
-      justifyContent: { top: "flex-start", middle: "center", bottom: "flex-end" }[layer.valign ?? "top"] }}>{text}</div>;
+  if (layer.kind === "text" || layer.kind === "data_field") return <TextLayerView layer={layer} px={px} values={values} mono={mono} />;
+  if (layer.kind === "barcode") {
+    return <BarcodeView layer={layer} values={values} image={live ? live.barcodes?.[layer.source ?? "number"] ?? null : null} />;
   }
+  if (layer.kind === "photo") return <PhotoLayerView layer={layer} px={px} values={values} mono={mono} photo={live?.photo ?? null} />;
   if (layer.kind === "shape" || layer.kind === "band") {
     if (layer.shape === "line") return <div className="h-full w-full" style={{ borderTop: `${Math.max(1, (layer.stroke_mm ?? 0.3) * px)}px solid ${layer.stroke ?? layer.fill}`, marginTop: "50%" }} />;
     return <div className="h-full w-full" style={{ background: layer.fill ?? "transparent",
@@ -82,19 +97,10 @@ export function CardLayerView({ layer, px, values, designId, mono, live }: { lay
     const qr = live?.[layer.kind];
     return qr ? <div className="h-full w-full bg-white"><img src={qr} alt="" className="h-full w-full" /></div> : <QrPlaceholder />;
   }
-  if (layer.kind === "photo" && live?.photo) {
-    return <img src={live.photo} alt="" className="h-full w-full object-cover" style={{ filter: grey,
-      borderRadius: layer.shape === "circle" ? "50%" : layer.shape === "rounded" ? "14%" : 0 }} />;
-  }
   if (layer.kind === "logo" && live) {
     const logo = live.logos[layer.source ?? "space"];
     return logo ? <div className="h-full w-full" style={{ background: layer.tile ? "#FFFFFF" : undefined }}>
       <img src={logo} alt="" className="h-full w-full object-contain" style={{ filter: grey }} /></div> : null;
-  }
-  if (layer.kind === "photo") {
-    const initials = (values.name ?? "").split(/\s+/).slice(0, 2).map((word) => word[0] ?? "").join("").toUpperCase();
-    return <div className="grid h-full w-full place-items-center bg-[#FFF4E8] font-bold text-[#142C2A]" style={{
-      borderRadius: layer.shape === "circle" ? "50%" : layer.shape === "rounded" ? "14%" : 0, fontSize: layer.h_mm * px * 0.36 }}>{initials}</div>;
   }
   if (layer.kind === "image") {
     return imageUrl ? <img src={imageUrl} alt="" className="h-full w-full" style={{ objectFit: layer.fit ?? "contain", filter: grey }} />

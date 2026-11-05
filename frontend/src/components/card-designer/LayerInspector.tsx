@@ -2,22 +2,25 @@
 import type { Layer, Side } from "./cardTypes";
 import { qrMinimum } from "./cardGeometry";
 import { layerContrast, MINIMUM_RATIO } from "./contrast";
-import { DATA_FIELDS } from "./dataFields";
-import { layerName } from "./designDocument";
+import { fieldsFor } from "./dataFields";
+import { BARCODE_MIN_HEIGHT_MM, BARCODE_MIN_WIDTH_MM, layerName } from "./designDocument";
 import { FontPicker } from "./FontPicker";
 import { ColourInput, NumberInput, SelectInput, Toggle } from "./inspectorFields";
 
 const TEXT_KINDS = new Set(["text", "data_field"]);
 
-export function LayerInspector({ side, layer, designId, stock, assetColours, onChange, readOnly }: {
+export function LayerInspector({ side, layer, designId, stock, assetColours, onChange, readOnly, answerFields }: {
   side: Side; layer: Layer; designId: number; stock: string; assetColours: Record<string, string>;
+  answerFields?: { key: string; label: string }[];
   onChange: (patch: Partial<Layer>) => void; readOnly: boolean;
 }) {
   const qr = layer.kind === "desk_qr" || layer.kind === "verify_qr";
+  const barcode = layer.kind === "barcode";
+  const barcodeMin = BARCODE_MIN_WIDTH_MM[layer.source === "desk" ? "desk" : "number"];
   const index = side.layers.findIndex((item) => item.id === layer.id);
   const contrast = layerContrast(side, index, assetColours);
   const disabled = readOnly || layer.locked;
-  const minSize = qr ? qrMinimum(stock) : 0.5;
+  const minSize = qr ? qrMinimum(stock) : barcode ? barcodeMin : 0.5;
   return <div className="grid gap-4" aria-label={`${layerName(layer)} settings`} role="group">
     <label className="grid gap-1 text-xs font-semibold text-muted">
       <span>Layer name</span>
@@ -31,17 +34,41 @@ export function LayerInspector({ side, layer, designId, stock, assetColours, onC
         disabled={disabled} onChange={(y_mm) => onChange({ y_mm })} />
       <NumberInput label="Width" unit="mm" value={layer.w_mm} min={minSize} max={side.page_width_mm} disabled={disabled}
         onChange={(w_mm) => onChange(qr ? { w_mm, h_mm: w_mm } : { w_mm })} />
-      <NumberInput label="Height" unit="mm" value={layer.h_mm} min={qr ? minSize : 0.3} max={side.page_height_mm}
+      <NumberInput label="Height" unit="mm" value={layer.h_mm} min={qr ? minSize : barcode ? BARCODE_MIN_HEIGHT_MM : 0.3}
+        max={side.page_height_mm}
         disabled={disabled} onChange={(h_mm) => onChange(qr ? { w_mm: h_mm, h_mm } : { h_mm })} />
-      <NumberInput label="Rotation" unit="°" value={layer.rotation} min={0} max={359} step={qr ? 90 : 1}
-        disabled={disabled} onChange={(value) => onChange({ rotation: qr ? Math.round(value / 90) * 90 % 360 : value })} />
-      {!qr ? <NumberInput label="Opacity" unit="%" value={layer.opacity} min={0} max={100} step={5} disabled={disabled}
+      <NumberInput label="Rotation" unit="°" value={layer.rotation} min={0} max={359} step={qr || barcode ? 90 : 1}
+        disabled={disabled}
+        onChange={(value) => onChange({ rotation: qr || barcode ? Math.round(value / 90) * 90 % 360 : value })} />
+      {!qr && !barcode ? <NumberInput label="Opacity" unit="%" value={layer.opacity} min={0} max={100} step={5} disabled={disabled}
         onChange={(opacity) => onChange({ opacity })} /> : null}
     </div>
     {qr ? <p className="text-xs text-muted">QR codes stay at least {qrMinimum(stock)} mm, fully opaque and square-on so
       every phone can read them. {layer.kind === "desk_qr" ? "The desk QR is scanned at the front desk; it is never shown on the public check page."
         : "The check QR opens the public page that says whether this card is valid."}</p> : null}
-    {TEXT_KINDS.has(layer.kind) ? <TextSettings layer={layer} designId={designId} disabled={disabled} onChange={onChange} /> : null}
+    {barcode ? <div className="grid gap-2">
+      <SelectInput label="Barcode carries" value={layer.source === "desk" ? "desk" : "number"} disabled={disabled}
+        options={[{ value: "number", label: "The card number" }, { value: "desk", label: "The desk code (USB scanners)" }]}
+        onChange={(source) => onChange(source === "desk" ? { source, w_mm: Math.max(layer.w_mm, BARCODE_MIN_WIDTH_MM.desk) } : { source })} />
+      <Toggle label="Print the code under the bars" checked={layer.show_text !== false} disabled={disabled}
+        onChange={(show_text) => onChange({ show_text })} />
+      <p className="text-xs text-muted">Code128, black on a white plate. It needs at least {barcodeMin} × {BARCODE_MIN_HEIGHT_MM} mm
+        so a scanner reads it{layer.source === "desk" ? "; the desk code is the same private code as the desk QR, for barcode scanners at the desk" : ""}.
+        {barcodeMin > side.page_width_mm - 6 ? " This card is too narrow for it: use a landscape or larger card." : ""}</p>
+    </div> : null}
+    {layer.kind === "photo" ? <div className="grid gap-2">
+      <SelectInput label="Photo look" value={layer.filter ?? "none"} disabled={disabled}
+        options={[{ value: "none", label: "Original colours" }, { value: "grey", label: "Black and white" },
+          { value: "duotone", label: "Duotone (two colours)" }]} onChange={(filter) => onChange({ filter })} />
+      {layer.filter === "duotone" ? <div className="grid grid-cols-2 gap-2">
+        <ColourInput label="Shadows" value={layer.duotone_dark ?? "#142C2A"} disabled={disabled}
+          onChange={(duotone_dark) => duotone_dark && onChange({ duotone_dark })} />
+        <ColourInput label="Highlights" value={layer.duotone_light ?? "#DFFF8F"} disabled={disabled}
+          onChange={(duotone_light) => duotone_light && onChange({ duotone_light })} />
+      </div> : null}
+    </div> : null}
+    {TEXT_KINDS.has(layer.kind) ? <TextSettings layer={layer} designId={designId} disabled={disabled} onChange={onChange}
+      answerFields={answerFields} /> : null}
     {TEXT_KINDS.has(layer.kind) && contrast !== null && contrast < MINIMUM_RATIO
       ? <p role="status" className="rounded-control border border-warn bg-warn-soft p-2 text-sm text-warn-ink">
         Hard to read: contrast {contrast.toFixed(1)}:1 against what is behind it. Publishing needs at least {MINIMUM_RATIO}:1.
@@ -84,13 +111,14 @@ export function LayerInspector({ side, layer, designId, stock, assetColours, onC
   </div>;
 }
 
-function TextSettings({ layer, designId, disabled, onChange }: {
+function TextSettings({ layer, designId, disabled, onChange, answerFields }: {
   layer: Layer; designId: number; disabled: boolean; onChange: (patch: Partial<Layer>) => void;
+  answerFields?: { key: string; label: string }[];
 }) {
   return <div className="grid gap-2">
     {layer.kind === "data_field"
       ? <SelectInput label="Data field" value={layer.field ?? "name"} disabled={disabled}
-        options={DATA_FIELDS.map((field) => ({ value: field.key, label: field.label }))}
+        options={fieldsFor(answerFields).map((field) => ({ value: field.key, label: field.label }))}
         onChange={(field) => onChange({ field, text: `{{${field}}}` })} />
       : <label className="grid gap-1 text-xs font-semibold text-muted">
         <span>Text</span>

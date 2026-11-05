@@ -3,6 +3,9 @@ import type { CardDocument, Layer, LayerKind, Side, SideName } from "./cardTypes
 import { newLayerId, qrMinimum, round1, stockSize } from "./cardGeometry";
 
 export const MAX_LAYERS = 40;
+/** Mirrors apps/card_designs/layout_layers.py: Code128 at a 0.19 mm module. */
+export const BARCODE_MIN_WIDTH_MM = { number: 30, desk: 75 } as const;
+export const BARCODE_MIN_HEIGHT_MM = 6;
 
 export function withSide(document: CardDocument, side: SideName, change: (current: Side) => Side): CardDocument {
   return { ...document, [side]: change(document[side]) };
@@ -68,7 +71,7 @@ export function applyStock(document: CardDocument, stock: string, width?: number
 
 const NAMES: Record<LayerKind, string> = {
   text: "Text", data_field: "Data field", image: "Image", logo: "Logo", photo: "Photo", desk_qr: "Desk QR",
-  verify_qr: "Check QR", shape: "Shape", band: "Band", perforation: "Perforation",
+  verify_qr: "Check QR", barcode: "Barcode", shape: "Shape", band: "Band", perforation: "Perforation",
 };
 
 export function layerName(layer: Layer) {
@@ -91,8 +94,14 @@ export function newLayer(kind: LayerKind, side: Side, stock: string, extra: Part
     }
     case "image": return { ...base, ...at(width * 0.3, height * 0.3), fit: "contain", ...extra } as Layer;
     case "logo": return { ...base, ...at(14, 14), source: "space", tile: false, ...extra };
-    case "photo": return { ...base, ...at(Math.min(22, width * 0.3), Math.min(28, height * 0.5)), shape: "rounded", ...extra };
+    case "photo": return { ...base, ...at(Math.min(22, width * 0.3), Math.min(28, height * 0.5)), shape: "rounded",
+      filter: "none", duotone_dark: "#142C2A", duotone_light: "#DFFF8F", ...extra };
     case "desk_qr": case "verify_qr": { const size = qrMinimum(stock); return { ...base, ...at(size, size), ...extra }; }
+    case "barcode": {
+      const desk = extra.source === "desk";
+      const w = Math.min(width - 6, desk ? BARCODE_MIN_WIDTH_MM.desk : Math.max(BARCODE_MIN_WIDTH_MM.number, width * 0.45));
+      return { ...base, ...at(w, 9), source: "number", show_text: true, ...extra };
+    }
     case "shape": return { ...base, ...at(width * 0.3, height * 0.2), shape: "rect", fill: "#E7F3F1", stroke: null,
       stroke_mm: 0.3, radius_mm: 0, ...extra };
     case "band": return { ...base, w_mm: width, h_mm: round1(height * 0.18), x_mm: 0, y_mm: 0, fill: "#006E63",

@@ -8,6 +8,7 @@ import type { CardDesign } from "../../../components/card-designer/cardTypes";
 import { Badge, ErrorBlock, OverflowMenu, SegmentedControl, Skeleton } from "../../../components/ui";
 import { staffRequest, staffRequestBlob } from "../../../lib/api";
 import { CardJobList, JOB_LABELS, useStartCardJob } from "../../cards/cardJobs";
+import { SheetPreviewDialog } from "../../cards/SheetPreviewDialog";
 import { StaffPhotoDialog } from "../../cards/StaffPhotoDialog";
 import { EventCardApproval } from "./EventCardApproval";
 
@@ -58,6 +59,7 @@ function EventCardList({ eventId, published }: { eventId: number; published: boo
   const [revoking, setRevoking] = useState<EventCard | null>(null);
   const [reason, setReason] = useState("");
   const [photoFor, setPhotoFor] = useState<EventCard | null>(null);
+  const [previewing, setPreviewing] = useState(false);
   const download = async (row: EventCard) => {
     const url = URL.createObjectURL(await staffRequestBlob(`/admin/event-id-cards/${row.id}/download?format=pdf`));
     Object.assign(document.createElement("a"), { href: url, download: `event-card-${row.id}.pdf` }).click();
@@ -69,12 +71,16 @@ function EventCardList({ eventId, published }: { eventId: number; published: boo
     <div className="flex flex-wrap gap-2">
       <button type="button" className="desk-button-primary min-h-11" disabled={!published || issue.isPending} onClick={() => issue.mutate()}>
         {issue.isPending ? "Issuing…" : "Issue cards now"}</button>
-      {(["bulk_sheet", "zip"] as const).map((kind) => <button key={kind} type="button" className="desk-button min-h-11"
-        disabled={!rows.length} onClick={() => startJob.mutate({ kind })}>{JOB_LABELS[kind]}</button>)}
+      <button type="button" className="desk-button min-h-11" disabled={!rows.length} onClick={() => setPreviewing(true)}>
+        {JOB_LABELS.bulk_sheet}…</button>
+      <button type="button" className="desk-button min-h-11" disabled={!rows.length} onClick={() => startJob.mutate({ kind: "zip" })}>
+        {JOB_LABELS.zip}</button>
     </div>
     {issue.data ? <p role="status" className="text-sm text-muted">{issue.data.issued} issued, {issue.data.revoked} withdrawn.</p> : null}
     {[issue.error, revoke.error, role.error, startJob.error, cards.error].find(Boolean) ? <ErrorBlock error={[issue.error, revoke.error, role.error, startJob.error, cards.error].find(Boolean)} /> : null}
     <CardJobList listPath={jobsPath} />
+    <SheetPreviewDialog open={previewing} onClose={() => setPreviewing(false)} filter={{ status: "active" }} jobsPath={jobsPath}
+      previewPath={`${jobsPath}/preview`} title="Print sheet: all active event cards" />
     <StaffPhotoDialog holderName={photoFor?.printed_name ?? null} photoPath={`/admin/event-id-cards/${photoFor?.id}/photo`}
       onClose={() => setPhotoFor(null)} onSaved={() => { setPhotoFor(null); void refresh(); }} />
     {revoking ? <form className="flex flex-wrap items-end gap-2" onSubmit={(event) => { event.preventDefault();

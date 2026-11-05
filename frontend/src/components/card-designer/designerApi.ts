@@ -31,9 +31,9 @@ export const useApproveDesign = (id: number) => useDesignAction(id, "approve");
 export const useRejectDesign = (id: number) => useDesignAction(id, "reject");
 export const useResetDesign = (id: number) => useDesignAction(id, "reset");
 
-export function useTemplates(id: number) {
+export function useTemplates(id: number, enabled = true) {
   return useQuery({ queryKey: ["card-design-templates", id], queryFn: () => staffRequest<CardTemplate[]>(`${base(id)}/templates`),
-    staleTime: Infinity });
+    staleTime: Infinity, enabled });
 }
 
 export function useFonts(id: number, query: string, script: string) {

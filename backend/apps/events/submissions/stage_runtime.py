@@ -21,13 +21,14 @@ def stages_for(event_id):
     return list(SubmissionStage.objects.filter(event_id=event_id).order_by("position"))
 
 
-def ensure_stages(event, config):
-    """Write paths only: an event without stages gets the "Single submission" stage from its window."""
+def ensure_stages(event, config, *, context=None):
+    """Write paths only: an event without stages gets the "Single submission" stage from its window
+    (the config's, or the boundary context's when a programme has no config row)."""
     rows = stages_for(event.pk)
     if rows:
         return rows
     from .stage_presets import default_stage
-    values = default_stage(config)
+    values = default_stage(config, context=context)
     return [SubmissionStage.objects.create(event=event, position=1, **{key: values[key] for key in STAGE_FIELDS})]
 
 

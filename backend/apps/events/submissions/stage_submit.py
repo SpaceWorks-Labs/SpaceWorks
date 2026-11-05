@@ -15,7 +15,8 @@ from .stage_rules import field_answer
 
 def _stages(context):
     from apps.events.hackathons.admission_models import HackathonConfig
-    return runtime.ensure_stages(context.event, HackathonConfig.objects.get(event=context.event))
+    config = HackathonConfig.objects.filter(event=context.event).first()
+    return runtime.ensure_stages(context.event, config, context=context)
 
 
 def check_draft(project, context, patch, *, now=None):

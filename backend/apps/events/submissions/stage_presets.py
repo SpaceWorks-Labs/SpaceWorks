@@ -75,7 +75,12 @@ PRESETS = (
 PRESET_KEYS = frozenset(row["key"] for row in PRESETS)
 
 
-def default_stage(config):
+def default_stage(config, *, context=None):
     """The "Single submission" stage for an event's current window (the #178 default and backfill)."""
+    if config is None:
+        return {**_stage("Submission"), "opens_at": None,
+                "deadline": context.deadline if context is not None else None,
+                "grace_minutes": (context.grace_seconds // 60) if context is not None else 0,
+                "late_policy": context.late_policy if context is not None else "reject"}
     return {**_stage("Submission"), "opens_at": config.submission_opens_at, "deadline": config.submission_deadline,
             "grace_minutes": config.submission_grace_minutes, "late_policy": config.late_policy}

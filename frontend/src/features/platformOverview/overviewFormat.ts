@@ -23,9 +23,9 @@ export function formatValue(unit: string, value: number | null | undefined) {
 export function formatMoney(currency: string, amount: string) {
   const value = Number(amount);
   try {
-    return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(value);
+    return new Intl.NumberFormat(undefined, { style: "currency", currency: currency.toUpperCase() }).format(value);
   } catch {
-    return `${currency} ${amount}`;
+    return `${currency.toUpperCase()} ${amount}`;
   }
 }
 

@@ -23,11 +23,11 @@ function CurrencyTable({ money, entry, spaces }: { money: OverviewMoney; entry: 
   ];
   const headingId = `overview-money-${entry.currency}`;
   return <section aria-labelledby={headingId} className="grid min-w-0 gap-3">
-    <h3 id={headingId} className="title-panel">{entry.currency}</h3>
+    <h3 id={headingId} className="title-panel">{entry.currency.toUpperCase()}</h3>
     <dl className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
       {money.metrics.map(metric => <Figure key={metric.key} label={metric.label} value={value(entry.currency, metric.key, entry.totals)} />)}
     </dl>
-    <DataTable caption={`Money in ${entry.currency} per space, with the ${entry.currency} total`} data={rows}
+    <DataTable caption={`Money in ${entry.currency.toUpperCase()} per space, with the ${entry.currency.toUpperCase()} total`} data={rows}
       getRowId={row => row.id} columns={columns} />
   </section>;
 }

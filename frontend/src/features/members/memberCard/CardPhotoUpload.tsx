@@ -1,7 +1,11 @@
 import { useId, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
+import { PhotoCropDialog } from "../../../components/photo-crop/PhotoCropDialog";
 import { memberCardKey, uploadCardPhoto, useDeleteCardPhoto } from "./api";
+
+// The Classic member card's photo frame (18 x 22 mm); My cards uses the live design's frame.
+const PHOTO_ASPECT = 18 / 22;
 
 const CONSENT_TEXT =
   "I agree to my photo being stored privately for staff to check my card at the door. It is never shown publicly, and it is deleted when this card is revoked.";
@@ -24,6 +28,8 @@ export function CardPhotoUpload({
   const inputId = useId();
   const consentId = useId();
   const [file, setFile] = useState<File | null>(null);
+  const [cropping, setCropping] = useState<File | null>(null);
+  const [cropped, setCropped] = useState(false);
   const [consent, setConsent] = useState(false);
   const [status, setStatus] = useState<"idle" | "uploading" | "done" | "error">("idle");
   const [error, setError] = useState("");
@@ -72,9 +78,21 @@ export function CardPhotoUpload({
         type="file"
         accept="image/jpeg,image/png,image/webp"
         disabled={status === "uploading"}
-        onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+        onChange={(event) => { setFile(event.target.files?.[0] ?? null); setCropped(false); }}
         className="mt-1 block w-full min-w-0 text-sm text-muted file:mr-3 file:min-h-11 file:rounded-md file:border-0 file:bg-accent file:px-3 file:py-2 file:text-sm file:font-semibold file:text-on-accent"
       />
+
+      {file ? (
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted">
+          <span>{cropped ? "Cropped to the card's photo spot." : "Crop it so your face fills the card's photo spot."}</span>
+          <button className="desk-button-ghost min-h-11" type="button" onClick={() => setCropping(file)}>
+            {cropped ? "Crop again" : "Crop the photo"}
+          </button>
+        </div>
+      ) : null}
+      <PhotoCropDialog file={cropping} aspect={PHOTO_ASPECT} onCancel={() => setCropping(null)}
+        onDone={(blob) => { setCropping(null); setCropped(true);
+          setFile(new File([blob], "card-photo.jpg", { type: blob.type || "image/jpeg" })); }} />
 
       <label className="mt-3 flex items-start gap-3 text-sm text-ink" htmlFor={consentId}>
         <input

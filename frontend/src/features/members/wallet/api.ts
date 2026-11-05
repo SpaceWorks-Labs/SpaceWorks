@@ -3,17 +3,21 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { getAccessToken, memberRequest, memberRequestBlob, refreshAccessToken } from "../../../lib/api";
+import { uploadCardPhoto as uploadMemberPhoto } from "../memberCard/api";
 
 export type CardKind = "member_card" | "programme_card" | "event_card";
 export type MyCard = {
   kind: CardKind; id: number; makerspace_id: number; issuer: string; title: string; name: string; number: string;
   label: string; valid_until: string; status: "valid" | "expired" | "revoked"; has_back: boolean; check_url: string;
   photo_request_open: boolean; wallet_platforms: string[]; email_available: boolean; qr_image: string | null;
+  photo_set: boolean; photo_cleanup_available: boolean; photo_aspect: number;
 };
+export type EmailFormat = "pdf" | "png";
 export type CardSettings = { verify_show_name: boolean; verify_show_photo: boolean; extras_opted_in: boolean;
-  blood_group: string; emergency_contact_name: string; emergency_contact_phone: string; public_check_on: boolean };
+  blood_group: string; emergency_contact_name: string; emergency_contact_phone: string; public_check_on: boolean;
+  email_format: EmailFormat };
 
-const cardPath = (card: Pick<MyCard, "kind" | "id">) => `/member/cards/${card.kind}/${card.id}`;
+export const cardPath = (card: Pick<MyCard, "kind" | "id">) => `/member/cards/${card.kind}/${card.id}`;
 export const myCardsKey = ["member", "cards"] as const;
 
 /** Restore a session from the refresh cookie before asking who is signed in. */
@@ -44,7 +48,8 @@ export async function downloadMyCard(card: MyCard, format: "pdf" | "png") {
 }
 
 export function useEmailMyCard() {
-  return useMutation({ mutationFn: (card: MyCard) => memberRequest(`${cardPath(card)}/email`, { method: "POST" }) });
+  return useMutation({ mutationFn: ({ card, format }: { card: MyCard; format?: EmailFormat }) =>
+    memberRequest(`${cardPath(card)}/email`, format ? { method: "POST", body: JSON.stringify({ format }) } : { method: "POST" }) });
 }
 
 export function useCardSettings(card: MyCard, enabled: boolean) {
@@ -73,6 +78,9 @@ type Presign = { object_key?: string; url: string; fields?: Record<string, strin
 
 /** Presign -> upload the photo to private storage -> attach it with the holder's consent. */
 export async function uploadCardPhoto(card: MyCard, file: Blob) {
+  if (card.kind === "member_card") {
+    return uploadMemberPhoto(card.makerspace_id, new File([file], "card-photo.jpg", { type: file.type || "image/jpeg" }));
+  }
   const type = file.type || "image/jpeg";
   const presign = await memberRequest<Presign>(`${cardPath(card)}/photo`, { method: "POST", body: JSON.stringify({ content_type: type }) });
   const upload = presign.method === "PUT"

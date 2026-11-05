@@ -97,9 +97,9 @@ write_setup_environment() {
     env_setting PLATFORM_STAFF_ORIGINS "https://$PLATFORM_DOMAIN${SITE_ORIGINS:+,${SITE_ORIGINS%%,*}}"
     env_setting INFRA_HOSTS "localhost,127.0.0.1,backend,origin.$PLATFORM_DOMAIN,files.$PLATFORM_DOMAIN,$MS_SUBDOMAIN.$PLATFORM_DOMAIN,$PLATFORM_DOMAIN"
   fi
-  if [[ "$HOSTING_MODEL" == 2 && -n "$SITE_ORIGINS" ]]; then
-    env_setting PLATFORM_STAFF_ORIGINS "${SITE_ORIGINS%%,*}"
-  fi
+  # The superadmin signs in only from a platform origin (release 2). On a self-host the
+  # platform console is the site itself; a hosted platform sets its own above.
+  [[ "$HOSTING_MODEL" == 3 ]] || env_setting PLATFORM_STAFF_ORIGINS "$app_url"
   env_setting SPACEWORKS_WEB_UPSTREAM "$([[ "$RUN_FRONTEND" == 1 ]] && echo frontend:80 || echo api-edge:80)"
   if [[ "$STORAGE" == 2 ]]; then
     env_setting AWS_S3_ENDPOINT_URL "$S3_ENDPOINT"
@@ -166,6 +166,20 @@ backfill_absent_continuity_keys() {
       env_setting EVENT_REGISTRATION_CREDENTIAL_KEY_VERSION 1 "$ROOT/.env" || return
     fi
   done
+  chmod 600 "$ROOT/.env"
+}
+
+# Release 2 lets the superadmin sign in only from PLATFORM_STAFF_ORIGINS. A self-host set up
+# before it has none, which would lock the superadmin out of the web console after the
+# update: add the site's own origin once. A hosted platform (model 3) already has its own.
+backfill_platform_staff_origin() {
+  local origin
+  grep -q '^PLATFORM_STAFF_ORIGINS=' "$ROOT/.env" && return 0
+  [[ "$(deployment_value SPACEWORKS_HOSTING_MODEL)" != 3 ]] || return 0
+  origin="$(deployment_value PUBLIC_APP_BASE_URL)"
+  [[ "$origin" =~ ^https?://[^/[:space:],]+$ ]] || return 0
+  [[ ! -s "$ROOT/.env" || -z "$(tail -c 1 "$ROOT/.env")" ]] || printf '\n' >> "$ROOT/.env"
+  env_setting PLATFORM_STAFF_ORIGINS "$origin" "$ROOT/.env"
   chmod 600 "$ROOT/.env"
 }
 

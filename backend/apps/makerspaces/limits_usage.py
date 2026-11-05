@@ -262,8 +262,14 @@ def check_quota(makerspace, key, *, adding=1) -> None:
     # to upgrade to FOR UPDATE (which would wait on commit-time FOR KEY SHARE holders).
     locked = Makerspace.objects.select_for_update(no_key=True).get(pk=makerspace.pk)
     current = counter(locked)
+    from apps.managed_hosting.enforcement import check_monthly, plan_limit_error, plan_name_for_limit
+    if key == "events":
+        check_monthly(locked, "events_monthly", adding=adding)  # #187A; a no-op with plans off
     if current + adding > limit:
         resource = RESOURCE_LABELS.get(key, key.replace("_", " "))
+        plan_name = plan_name_for_limit(locked, key)
+        if plan_name is not None:
+            raise plan_limit_error(plan_name, resource, limit)
         message = (
             f"You've reached the free {resource} limit for this space — "
             "ask the operator to raise it or self-host."

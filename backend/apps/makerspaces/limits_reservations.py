@@ -12,6 +12,9 @@ def reserve_notification_quota(makerspace, channel) -> bool:
 
     if limits.is_self_host():
         return True
+    from apps.managed_hosting.enforcement import monthly_refusal
+    if channel in ("sms", "whatsapp") and monthly_refusal(makerspace, f"{channel}_monthly"):
+        return False  # #187A: the plan's monthly allowance is used up (no-op with plans off)
     try:
         # Inside the try: a malformed override makes the lookup itself raise, and that
         # must fail open like every other quota failure here rather than drop the fan-out.

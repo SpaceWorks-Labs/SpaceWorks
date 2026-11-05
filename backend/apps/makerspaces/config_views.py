@@ -20,6 +20,9 @@ class PublicConfigSerializer(serializers.Serializer):
     self_registration = serializers.DictField(required=False)
     member_accounts = serializers.DictField(required=False)
     hosting_requests = serializers.DictField(required=False)
+    managed_plans = serializers.DictField(
+        required=False, help_text="Present only while the managed-hosting limiter is on (#187A): "
+                                  "{enabled: true, online_billing: bool}. Absent = render nothing of it.")
     passkeys_enabled = serializers.BooleanField(
         help_text="Passkey sign-in and registration are offered (the platform switch; a person's staff spaces "
                   "may still turn them off for that person). Passkeys are never required.")
@@ -129,6 +132,10 @@ class PublicConfigView(APIView):
 
         if public_available():
             payload["hosting_requests"] = {"enabled": True}
+        from apps.managed_hosting.availability import online_billing_enabled, plans_enabled
+
+        if plans_enabled():  # #187A: absent while MANAGED_PLANS_ENABLED is off (byte-for-byte unchanged)
+            payload["managed_plans"] = {"enabled": True, "online_billing": online_billing_enabled()}
         from apps.accounts.turnstile import configured as turnstile_configured
 
         if turnstile_configured():  # omitted until both keys are set, like social_auth

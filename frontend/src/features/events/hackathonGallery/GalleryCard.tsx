@@ -3,13 +3,17 @@ import { Download, ExternalLink, Users } from 'lucide-react';
 import { ErrorBlock, StatusPill } from '../../../components/ui';
 import type { GalleryAsset, GalleryEntry } from './types';
 
-export function GalleryCard({ entry, onDownload, href, renderMemberCard }: { entry: GalleryEntry; onDownload: (asset: GalleryAsset) => Promise<void>; href?: string;
+export function GalleryCard({ entry, onDownload, href, renderMemberCard, action }: { entry: GalleryEntry; onDownload: (asset: GalleryAsset) => Promise<void>; href?: string;
   renderMemberCard?: (member: GalleryEntry['members'][number]) => ReactNode;
+  /** #181: the People's choice vote control, when voting is open to this member. */
+  action?: ReactNode;
 }) {
   const [pending, setPending] = useState(false); const [error, setError] = useState<unknown>(null);
   return <article className="grid min-w-0 gap-4 rounded-xl border border-line bg-panel p-5" aria-label={entry.title}>
     <div className="flex flex-wrap items-start justify-between gap-3"><h2 className="title-section break-words">{href ? <a className="underline underline-offset-4" href={href}>{entry.title}</a> : entry.title}</h2>
       <StatusPill label={entry.files_state === 'expired' ? 'Files expired' : entry.files_state === 'withdrawn' ? 'Files private' : 'Project files available'} tone={entry.files_state === 'available' ? 'success' : 'neutral'} /></div>
+    {entry.peoples_choice ? <p><StatusPill label="People’s choice winner" tone="success" /></p> : null}
+    {action ? <div className="flex flex-wrap items-center gap-3">{action}</div> : null}
     {entry.awards?.length ? <ul className="flex flex-wrap gap-2" aria-label="Awards">{entry.awards.map((award, index) =>
       <li key={index}><StatusPill label={`${String(award.prize)} · rank ${String(award.rank)}`} tone="success" /></li>)}</ul> : null}
     <p className="whitespace-pre-wrap break-words text-sm text-ink">{entry.description}</p>

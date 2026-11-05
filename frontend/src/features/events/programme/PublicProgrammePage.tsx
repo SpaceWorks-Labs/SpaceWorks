@@ -20,12 +20,17 @@ export function PublicProgrammePage({ results = false }: { results?: boolean }) 
   const name = bootstrap?.branding.display_name || bootstrap?.makerspace.name || formatSlug(makerspaceSlug) || 'Makerspace'
   const base = tenantPath(`events/${encodeURIComponent(publicToken)}`)
   const here = results ? 'Results' : 'Project gallery'
+  // #181: People's choice voting and its award, only where the space has it on.
+  const peoplesChoice = bootstrap?.features.includes('events.peoples_choice') ? bootstrap.makerspace.id : undefined
+  const projectHref = (id: string) => `${base}/gallery/${encodeURIComponent(id)}`
   return <div style={brandStyle}><PublicLayout {...publicPageChrome(makerspaceSlug, name, tenantPath, bootstrap)} state={{ status: 'ready' }}
     breadcrumb={[{ label: 'All events', href: tenantPath('events') }, { label: 'Event', href: base },
       ...(entryPublicId && !results ? [{ label: here, href: `${base}/gallery` }, { label: 'Project' }] : [{ label: here }])]}>
-    {results ? <ResultsPage makerspaceSlug={makerspaceSlug} publicToken={publicToken} eventTitle="Event" /> : <GalleryPage
+    {results ? <ResultsPage makerspaceSlug={makerspaceSlug} publicToken={publicToken} eventTitle="Event"
+      peoplesChoice={peoplesChoice !== undefined} projectHref={projectHref} /> : <GalleryPage
+      peoplesChoice={peoplesChoice !== undefined ? { makerspaceId: peoplesChoice } : undefined}
       makerspaceSlug={makerspaceSlug} publicToken={publicToken} eventTitle="Event" entryPublicId={entryPublicId}
-      projectHref={id => `${base}/gallery/${encodeURIComponent(id)}`}
+      projectHref={projectHref}
       renderMemberCard={member => <a className="inline-flex min-h-11 items-center gap-3 underline" href={member.profile_url}>
         {member.photo_url ? <img src={member.photo_url} alt="" className="size-11 rounded-full object-cover" loading="lazy" referrerPolicy="no-referrer" /> : null}{member.display_name}</a>}
       onDownload={async asset => {

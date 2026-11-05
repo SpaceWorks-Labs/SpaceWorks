@@ -1,4 +1,5 @@
 import { PublicProgrammeEntry } from '../events/programme/PublicProgrammeEntry';
+import { PublishedPeoplesChoice } from '../events/peoplesChoice/PeoplesChoiceAward';
 import { PublicVolunteerCards } from '../events/contributions/PublicVolunteerCards';
 import { PublicCrewSection } from '../events/participation/PublicCrewSection';
 import { programmeHref } from '../events/programme/routeNames';
@@ -84,7 +85,10 @@ export function PublicEventDetailPage({ resolvedSlug, resolvedToken, canonicalUr
           ...(bootstrap?.features.includes('events.crew') ? [{ id: 'crew', label: 'Crew', content: <PublicCrewSection publicToken={event.public_token} profileHref={handle => `/${encodeURIComponent(handle)}`} /> }] : []),
           ...(bootstrap?.features.includes('events.volunteering') ? [{ id: 'volunteers', label: 'Volunteers needed', content: <PublicVolunteerCards publicToken={event.public_token} onApply={id => window.location.assign(programmeHref(event.public_token, `roles/${id}`, makerspaceSlug))} /> }] : []),
           ...(sponsors.length ? [{ id: 'sponsors', label: 'Sponsors', content: <PublicSponsorCards rows={sponsors} /> }] : []),
-          ...(bootstrap?.features.includes('events.project_gallery') ? [{ id: 'projects', label: 'Projects and results', content: <div className="flex flex-wrap gap-3"><a className="desk-button" href={tenantPath(`events/${event.public_token}/gallery`)}>Project gallery</a><a className="desk-button" href={tenantPath(`events/${event.public_token}/results`)}>Results</a></div> }] : []), ...venueSection] : []}
+          ...(bootstrap?.features.includes('events.project_gallery') ? [{ id: 'projects', label: 'Projects and results', content: <div className="grid gap-4"><div className="flex flex-wrap gap-3"><a className="desk-button" href={tenantPath(`events/${event.public_token}/gallery`)}>Project gallery</a><a className="desk-button" href={tenantPath(`events/${event.public_token}/results`)}>Results</a></div>
+            {/* #181: the published People's choice award, beside (never instead of) the judged results. */}
+            <PublishedPeoplesChoice slug={makerspaceSlug} token={event.public_token} enabled={Boolean(bootstrap?.features.includes('events.peoples_choice'))}
+              projectHref={id => tenantPath(`events/${event.public_token}/gallery/${encodeURIComponent(id)}`)} /></div> }] : []), ...venueSection] : []}
         actionCard={{ title: event?.registration_requires_approval ? "Apply to join" : event?.availability === "Full" ? "Join waitlist" : "Join this event",
           state: event?.registration_open || organizationAudience ? "open" : "closed", note: event?.registration_open ? undefined : closedNote,
           summary: event ? <div className="flex flex-wrap items-end gap-6">

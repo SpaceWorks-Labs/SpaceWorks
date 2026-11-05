@@ -24,6 +24,7 @@ import {
   ProgrammeRoutes, CardRoutes, MemberEventAddonRoutes, DonationRoutes, HelpPage,
   TechnicianOptInPage, MyMachineJobsPage, AttendanceReplyPage, CrewSignupPage, ApplicationReviewsPage,
   MachineJobPage, UseMachinePage, MySessionsPage,
+  SpeakerClaimPage, EventDiscoverPage, PublicSelfCheckoutPage, ArchivedPayments, MemberAccountPage, PublicPrintRequestPage, PublicMachineServiceStatusPage, JobRequestPage,
 } from "./AppRoutesLazyPages";
 // Every public surface below is its own chunk. The makerspace page (which holds the catalogue) and the staff shell stay eager
 // because they are the two pages almost every visit lands on; everything else loads when its
@@ -41,18 +42,9 @@ const MemberOrdersPage = lazy(() => import("./features/events/ticketing/MemberOr
 const MemberSeriesPassPage = lazy(() => import("./features/events/ticketing/MemberSeriesPassPage").then((m) => ({ default: m.MemberSeriesPassPage })));
 const MemberEventTicketPage = lazy(() => import("./features/events/MemberEventTicketPage").then((m) => ({ default: m.MemberEventTicketPage })));
 const MemberEventHistoryPage = lazy(() => import("./features/events/MemberEventHistoryPage").then((m) => ({ default: m.MemberEventHistoryPage })));
-const SpeakerClaimPage = lazy(() => import("./features/events/SpeakerClaimPage").then((m) => ({ default: m.SpeakerClaimPage })));
-const EventDiscoverPage = lazy(() => import("./features/events/EventDiscoverPage").then((m) => ({ default: m.EventDiscoverPage })));
 const PublicEventsPage = lazy(() => import("./features/inventory/PublicEventsPage").then((m) => ({ default: m.PublicEventsPage })));
 const PublicMachinesPage = lazy(() => import("./features/inventory/PublicMachinesPage").then((m) => ({ default: m.PublicMachinesPage })));
-const PublicSelfCheckoutPage = lazy(() => import("./features/inventory/PublicSelfCheckoutPage").then((m) => ({ default: m.PublicSelfCheckoutPage })));
-const ArchivedPayments = lazy(() => import("./features/members/ArchivedPayments").then((m) => ({ default: m.ArchivedPayments })));
 const MemberArea = lazy(() => import("./features/members/MemberArea").then((m) => ({ default: m.MemberArea })));
-const MemberAccountPage = lazy(() => import("./features/members/MemberAccountPage").then((m) => ({ default: m.MemberAccountPage })));
-// `/print` is an alias now: tracking links open the status page, new requests the uniform job form (#140).
-const PublicPrintRequestPage = lazy(() => import("./features/machine-jobs/PrintRequestAlias").then((m) => ({ default: m.PrintRequestAlias })));
-const PublicMachineServiceStatusPage = lazy(() => import("./features/machine-service/PublicMachineServiceStatusPage").then((m) => ({ default: m.PublicMachineServiceStatusPage })));
-const JobRequestPage = lazy(() => import("./features/machine-jobs/JobRequestPage").then((m) => ({ default: m.JobRequestPage })));
 
 // Tenant capabilities choose the home independently of the deployment edition.
 

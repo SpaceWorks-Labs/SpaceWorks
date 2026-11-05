@@ -43,3 +43,12 @@ export const ApplicationReviewsPage = lazy(() => import("./features/events/parti
 export const MachineJobPage = lazy(() => import("./features/machine-jobs/MachineJobPage").then((m) => ({ default: m.MachineJobPage })));
 export const UseMachinePage = lazy(() => import("./features/machine-sessions/UseMachinePage").then((m) => ({ default: m.UseMachinePage })));
 export const MySessionsPage = lazy(() => import("./features/machine-sessions/MySessionsPage").then((m) => ({ default: m.MySessionsPage })));
+export const SpeakerClaimPage = lazy(() => import("./features/events/SpeakerClaimPage").then((m) => ({ default: m.SpeakerClaimPage })));
+export const EventDiscoverPage = lazy(() => import("./features/events/EventDiscoverPage").then((m) => ({ default: m.EventDiscoverPage })));
+export const PublicSelfCheckoutPage = lazy(() => import("./features/inventory/PublicSelfCheckoutPage").then((m) => ({ default: m.PublicSelfCheckoutPage })));
+export const ArchivedPayments = lazy(() => import("./features/members/ArchivedPayments").then((m) => ({ default: m.ArchivedPayments })));
+export const MemberAccountPage = lazy(() => import("./features/members/MemberAccountPage").then((m) => ({ default: m.MemberAccountPage })));
+// `/print` is an alias now: tracking links open the status page, new requests the uniform job form (#140).
+export const PublicPrintRequestPage = lazy(() => import("./features/machine-jobs/PrintRequestAlias").then((m) => ({ default: m.PrintRequestAlias })));
+export const PublicMachineServiceStatusPage = lazy(() => import("./features/machine-service/PublicMachineServiceStatusPage").then((m) => ({ default: m.PublicMachineServiceStatusPage })));
+export const JobRequestPage = lazy(() => import("./features/machine-jobs/JobRequestPage").then((m) => ({ default: m.JobRequestPage })));

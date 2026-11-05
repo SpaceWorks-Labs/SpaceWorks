@@ -13,7 +13,9 @@
   Ideathon, Case competition). Each stage has its own window, late policy, resubmission mode, extensions and
   triage, and may end in a shortlist gate on the finalists engine. Rounds judge a chosen stage, the gallery
   shows the final stage, the entry fee is due from a chosen stage and travel grants can require a stage, a
-  shortlist or the finals. Every existing event became one "Submission" stage with today's rules.
+  shortlist or the finals. Phase 2 adds released judge feedback, promoting the next team after a
+  withdrawal, judge reminders, a push-after-deadline signal, early public stages and a stage funnel.
+  Every existing event became one "Submission" stage with today's rules.
 
 - **2026-11-04 -- release 2 L6, paid ticketing v2 and venue fees (#69, #71, #94, #128 C-20, #169).**
   Multi-ticket orders (one `event_order` Payment, one registration per attendee claimed by signing in),

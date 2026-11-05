@@ -828,7 +828,11 @@ identity normalization and production minimum-version comparison. `mobile_associ
 - `events/submissions/stage_judging.py` -- round stage, finalist carry-over, the award invariant;
   `stage_evidence.py` -- stage-aware submission evidence (reimbursement G11 and any stage-based money);
   `stage_notices.py` -- reminders and shortlist notices; `stage_public.py` -- event page and calendar deadlines;
-  `stage_gallery.py` -- public field filters.
+  `stage_gallery.py` -- public field filters, early public stages, `final_stage_entries`;
+  phase 2: `stage_feedback.py` (S4), `stage_promotion.py` (S12), `stage_judge_reminders.py` (S15),
+  `stage_integrity.py` (S14), `stage_analytics.py` (S16); migration `events/0071`.
+- Frontend: `features/staff/submissionStages/` (editor, presets, shortlist, promote, extensions, triage, funnel),
+  `features/events/stageTime.tsx`, the participant stage tracker under `features/events/hackathonSubmissions/`.
 - Registries: `tenant_migration/catalog_r2_submit_content.py`, `audit_references_r2_submit_content.py`,
   `audit/presentation_catalog_r2_submit_content.py`, `accounts/merge_registry_rows_submit_content.py`.
 

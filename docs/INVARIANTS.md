@@ -5605,6 +5605,18 @@ responsibility; local purges never delete shared global organizations or foreign
   default) ride the per-minute deadline sweep and the judging notice source; recipients are recomputed at
   delivery (teams that may enter the stage and have not submitted it). Stage deadlines appear on the public
   event page and in the event's and a registered member's calendar feeds.
+- **Phase 2 (#180).** Judges' `team_feedback` (scoped PII, separate from private notes) reaches a team only
+  from a round with `share_feedback` (off) once that round is finalized AND its stage shortlist or a result
+  including it is published, never with a judge's name (S4). A shortlisted team that withdraws before the
+  next stage opens may be replaced by staff only: the next rank of the shortlist's SOURCE ROUND (ties
+  together) becomes a new, already-published shortlist that `amends` the old one (S12; a hand-picked list
+  has no "next"). Judge reminders are per round (`judge_reminders`, off): open, midpoint, 24 hours before
+  close (S15). After a stage closes, one more GitHub look records an informational
+  `github_push_after_stage_deadline` flag, never a disqualification (S14). A stage with
+  `public_after_publish` (off) lets the work of teams that PASSED it join the gallery once published;
+  eliminated teams' work never does, and `stage_gallery.final_stage_entries` is the final-stage-only seam
+  (people's choice, #181, reads it) (S18). Event analytics carry per-stage submitted / eligible /
+  shortlisted / advanced counts (S16).
 
 ## Backup, restore and tenant migration (Phase 5A/5B and Lane D D1-D4/D6 built)
 

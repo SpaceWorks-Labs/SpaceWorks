@@ -1,4 +1,5 @@
 import { useOptionalTenant } from "../../../lib/tenant";
+import { PageHelp } from "../../help/PageHelp";
 import { useTenantBootstrap } from "../../inventory/usePublicInventory";
 import { MemberCalendarActions } from "../MemberCalendarActions";
 import { bookingFeed, personalFeed, publicEventsFeedUrl } from "./calendarFeedsApi";
@@ -24,6 +25,7 @@ export function MemberCalendarLinks({ makerspaceId, makerspaceSlug }: { makerspa
   const on = useSpaceSwitches(makerspaceSlug);
   const publicFeed = on("events.public_feed", "events");
   return <div className="mt-3 grid gap-3" aria-label="Calendar links">
+    <PageHelp article="member/calendar-links" topic="calendar links" slug={makerspaceSlug} />
     {/* Before the switches are known, keep today's event calendar (the server still answers 404 when off). */}
     {!on.known || on("events.calendar_feed", "events") ? <MemberCalendarActions makerspaceId={makerspaceId} makerspaceSlug={makerspaceSlug} /> : null}
     {on("bookings.calendar_feed", "bookings") ? <CalendarFeedLink title="My bookings calendar" description="your bookings"

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { CenteredCardLayout } from "../../components/layouts";
 import { authErrorMessage } from "../../lib/api/authErrorCopy";
+import { PageHelp } from "../help/PageHelp";
 import { reportNotMe, type NotMeResult } from "./notMeApi";
 
 // The token survives a second render (React's strict mode runs state initialisers twice) but
@@ -38,6 +39,7 @@ function resetRule(result: NotMeResult) {
  */
 export function NotMePage() {
   useNoReferrer();
+  const help = <PageHelp article="member/security-alerts" topic="security alerts" className="flex justify-center" />;
   const [token] = useState(takeFragmentToken);
   const [state, setState] = useState<"ready" | "sending">("ready");
   const [result, setResult] = useState<NotMeResult>();
@@ -52,12 +54,12 @@ export function NotMePage() {
       body={<div className="grid gap-3" role="status"><p>We signed you out on every device, forgot your remembered devices and turned off your old password.</p>
         <p>{result.password_reset_requested ? "We emailed you a code to choose a new password. Use it to sign in again."
           : "Choose a new password from the reset page to sign in again."}</p><p>{resetRule(result)}</p></div>}
-      primary={{ label: "Choose a new password", href: "/reset-password" }} />;
+      primary={{ label: "Choose a new password", href: "/reset-password" }} footer={help} />;
   }
   if (!token) {
     return <CenteredCardLayout state={{ status: "ready" }} media={{ icon: "ShieldAlert", tone: "warn" }} title="This link is incomplete"
       body="Open the link from the security email again. If it still doesn't work, reset your password to secure your account."
-      primary={{ label: "Reset your password", href: "/reset-password" }} />;
+      primary={{ label: "Reset your password", href: "/reset-password" }} footer={help} />;
   }
   return <CenteredCardLayout state={{ status: "ready" }} media={{ icon: "ShieldAlert", tone: "warn" }} eyebrow="Security alert"
     title="Didn't do this?"
@@ -67,5 +69,5 @@ export function NotMePage() {
       <p>Your passkeys and authenticator app stay as they are.</p></div>}
     content={error ? <p role="alert" className="text-sm text-danger">{error}</p> : undefined}
     primary={{ label: "Secure my account", pending: state === "sending", pendingLabel: "Securing your account…", onClick: () => void send() }}
-    escape={{ label: "It was me", href: "/" }} />;
+    escape={{ label: "It was me", href: "/" }} footer={help} />;
 }

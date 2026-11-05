@@ -216,7 +216,15 @@ spending; finance staff with `view_finance` + `record_payment` record anywhere. 
 `finance/receipt-upload`, `finance/opening-balances` and `finance/events/<event>` (+ `/budget`,
 `?format=csv`). Reports: `income-spending`, `finance-inventory|machines|bookings|events`,
 `event-finance`, `receipts-payments`, `subscription-income` and `money-methods` (provider and
-method splits with the failed-online rate).
+method splits with the failed-online rate), and `prizes-owed` (hack-money G6: announced prizes not yet
+paid, handed over or forfeited, and prize money owed back after a disqualification).
+
+**Hackathon money (hack-money lane, #180/#181).** A refundable deposit is subject `event_deposit` (domain
+`events`, one per registration), raised at confirmation and returned only through a staff-approved
+settlement batch that opens `deposit_returned` refund cases. Prize payouts store gross, tax deducted and
+net; the gross is the ledger expense. The Space Manager's `admin/makerspace/<id>/event-money-settings`
+holds the record-only prize-tax proposal (off; 30% above 10,000) and the accepted payee country/method
+pairs, inside the deployment ceiling. A sponsorship charge may be earmarked to one event's prize pool.
 
 ## Pricing: paid and free everywhere
 

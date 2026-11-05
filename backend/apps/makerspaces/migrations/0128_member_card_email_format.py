@@ -6,12 +6,12 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('events', '0063_l3_event_id_cards'),
+        ('makerspaces', '0127_help_centre_default_on'),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='eventidcard',
+            model_name='membercard',
             name='email_format',
             field=models.CharField(choices=[('pdf', 'PDF'), ('png', 'PNG')], default='pdf', max_length=3),
         ),

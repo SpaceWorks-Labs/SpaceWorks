@@ -5,7 +5,9 @@ import type { SessionContext } from "../../lib/api/sessionContext";
 import { readStorage, writeStorage } from "../../lib/safeStorage";
 
 export type NoticeAnnouncement = { id: number; title: string; body: string; severity: "info" | "maintenance" | "policy" | "warning";
-  starts_at: string; ends_at: string | null; makerspace_ids: number[] };
+  starts_at: string; ends_at: string | null; makerspace_ids: number[];
+  /** The viewer's spaces where it reaches them as a member; member pages show only these. */
+  member_makerspace_ids?: number[] };
 export type NoticeSpace = { id: number; name: string; slug: string; state: "read_only" | "suspended"; reason: string; since: string };
 export type PlatformNotices = { announcements: NoticeAnnouncement[]; spaces: NoticeSpace[] };
 

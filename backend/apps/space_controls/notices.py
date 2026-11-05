@@ -38,14 +38,17 @@ def notices_for(user, now=None):
     rows = PlatformAnnouncement.objects.filter(live_q(now)).prefetch_related("targets").order_by("-starts_at")
     announcements = []
     for row in rows:
-        targets = {target.makerspace_id for target in row.targets.all()}
         everywhere = row.audience == PlatformAnnouncement.Audience.ALL_SPACES
-        reach = staff | (community if row.show_to_members else set())
-        if superadmin or (everywhere and reach) or (targets & reach):
+        targets = {target.makerspace_id for target in row.targets.all()}
+        # Only ever the VIEWER's own spaces: never another target space's id (#195).
+        as_member = (community if row.show_to_members else set()) & (community if everywhere else targets)
+        as_staff = staff & (staff if everywhere else targets)
+        if superadmin or as_member or as_staff:
             announcements.append({
                 "id": row.pk, "title": row.title, "body": row.body, "severity": row.severity,
                 "starts_at": row.starts_at, "ends_at": row.ends_at,
-                "makerspace_ids": sorted(targets if not everywhere else reach),
+                "makerspace_ids": sorted(as_staff | as_member) if not superadmin else sorted(targets),
+                "member_makerspace_ids": sorted(as_member),
             })
     return {"announcements": announcements, "spaces": _space_states(mine, superadmin)}
 

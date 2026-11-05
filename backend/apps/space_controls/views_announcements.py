@@ -105,7 +105,12 @@ class PlatformNoticeAnnouncementSerializer(serializers.Serializer):
     severity = serializers.CharField()
     starts_at = serializers.DateTimeField()
     ends_at = serializers.DateTimeField(allow_null=True)
-    makerspace_ids = serializers.ListField(child=serializers.IntegerField())
+    makerspace_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        help_text="The viewer's spaces this announcement reaches (empty for the superadmin = every space).")
+    member_makerspace_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        help_text="The viewer's spaces where it reaches them as a member; member pages show only these.")
 
 
 class PlatformNoticeSpaceSerializer(serializers.Serializer):

@@ -58,7 +58,7 @@ export function MemberPortalTabs({ modules, active, children, workspace, user, s
     <div className="min-w-0 space-y-5 [&_:is(input,select,textarea)]:scroll-mb-28 [&_.sticky.bottom-0]:bottom-[calc(var(--shell-bottom-tabs,0px)+env(safe-area-inset-bottom,0px))] lg:[&_.sticky.bottom-0]:bottom-0 [&_.rounded-2xl.flex-wrap>:first-child]:basis-48">
       {/* Visible on every member screen, as the old header's toggle was; the user menu keeps its copy. */}
       <div className="flex justify-end"><ThemeToggle variant="icon" /></div>
-      <PlatformNoticeBanners data={notices.data} space={space} />
+      <PlatformNoticeBanners data={notices.data} space={space} surface="member" />
       {children}</div>
   </AppShell>;
 }

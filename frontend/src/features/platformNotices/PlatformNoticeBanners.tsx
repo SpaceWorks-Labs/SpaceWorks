@@ -18,9 +18,21 @@ function Banner({ tone, children, onDismiss, dismissLabel }: { tone: Tone; child
   </div>;
 }
 
-/** Announcements that apply here: every-space ones, plus those naming this space. Without a space, all of them. */
-export function applicableAnnouncements(data: PlatformNotices | undefined, spaceId?: number) {
-  return (data?.announcements ?? []).filter(row => spaceId === undefined || !row.makerspace_ids.length || row.makerspace_ids.includes(spaceId));
+export type NoticeSurface = "staff" | "member";
+
+/**
+ * Announcements that apply here. The server already limits both id lists to the VIEWER's own spaces.
+ * Staff screens: those reaching this space (an empty list is the superadmin's "every space").
+ * Member screens: only those that reach the viewer as a member, of this space when one is shown.
+ */
+export function applicableAnnouncements(data: PlatformNotices | undefined, spaceId?: number, surface: NoticeSurface = "staff") {
+  return (data?.announcements ?? []).filter(row => {
+    if (surface === "member") {
+      const ids = row.member_makerspace_ids ?? [];
+      return ids.length > 0 && (spaceId === undefined || ids.includes(spaceId));
+    }
+    return spaceId === undefined || !row.makerspace_ids.length || row.makerspace_ids.includes(spaceId);
+  });
 }
 
 /**
@@ -28,10 +40,12 @@ export function applicableAnnouncements(data: PlatformNotices | undefined, space
  * and, when this space is read-only, why nothing new can be created. Paused spaces never reach here:
  * their shells render the paused page instead.
  */
-export function PlatformNoticeBanners({ data, space }: { data: PlatformNotices | undefined; space?: { id?: number; slug?: string } }) {
+export function PlatformNoticeBanners({ data, space, surface = "staff" }: {
+  data: PlatformNotices | undefined; space?: { id?: number; slug?: string }; surface?: NoticeSurface;
+}) {
   const { ids, dismiss } = useDismissedAnnouncements();
   const readOnly = space ? spaceNotice(data, space) : undefined;
-  const announcements = applicableAnnouncements(data, space?.id).filter(row => !ids.includes(row.id));
+  const announcements = applicableAnnouncements(data, space?.id, surface).filter(row => !ids.includes(row.id));
   if (!announcements.length && readOnly?.state !== "read_only") return null;
   return <div className="mb-4 grid gap-3" aria-label="Platform notices" role="region">
     {readOnly?.state === "read_only" ? <Banner tone="warn">

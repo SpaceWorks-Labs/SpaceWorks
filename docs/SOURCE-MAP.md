@@ -344,7 +344,8 @@ the frozen per-ticket price `orders_pricing.py` (L24 contract), `orders_type_cha
 `bookings/confirmation_invites.py`, `makerspaces/calendar_invites.py` and
 `integrations/inline_attachments.py`, and `orders:read` in `views_integration_orders.py`. Routes:
 `urls_ticketing.py` (staff), `urls_ticketing_member.py`, the shop in `views_ticketing_shop.py`. Frontend:
-`features/events/ticketing/` (shop, order summary, claim page, my orders) and
+`features/events/ticketing/` (shop, order summary, claim page, my orders; the member transfer and
+type-change card `TicketManageActions.tsx` and the series-pass page `MemberSeriesPassPage.tsx`) and
 `features/staff/eventTicketing/` (orders, sales rules, add-ons, refund policy, venue fee, passes, desk).
 Organizer, audience and partner pickers share `features/staff/AsyncSearchPicker.tsx` through
 `EventPartnerPickers.tsx`; `EventPartnersSection.tsx` is the create form's "Organizers & partners" step,
@@ -712,6 +713,11 @@ identity normalization and production minimum-version comparison. `mobile_associ
 - `events/programme/analytics_{extras,org,views,serializers}.py` -- per-event extras and k>=10
   organisation insights (read by `operations/platform_insights.py`).
 - `events/mentoring/chat_alerts.py`, `views_chat_alerts.py` -- room alerts and the room picker.
+- `events/mentoring/policy.py` `drop_in_allowed` / `request_eligible` / `request_alias` -- drop-in Mentor
+  Desk help and office hours on events without teams; member UI `features/events/programme/DropInJourney.tsx`.
+- `events/contributions/crew_reads.py` `crew_labels` -- the crew chip for cards, tickets and badges;
+  `makerspaces/public_page_crew.py` -- the event page's Crew section; `features/publicPages/PublicCrewCards.tsx`.
+- `events/hackathons/admission_stage_funnel.py` -- application stages as event-funnel steps.
 - `events/submissions/integrity_{jobs,http}.py`, `views_integrity.py`, `storage_reconcile.py`,
   `storage_cleanup.record_receipts` -- GitHub flag job, receipts and reconciliation.
 - `events/feedback_modes.py` -- certificate / anonymous / identified feedback.

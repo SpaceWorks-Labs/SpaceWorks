@@ -6,6 +6,12 @@
 
 ## Condensed changelog (newest first — full detail in `git log`)
 
+- **2026-11-05 -- release 2 GAP crew lane (#128 C-36, E2-f, AN-c1, L6 member UI).** Mentor Desk works on
+  any event (drop-in help and office hours without teams; `events.mentoring` no longer needs hackathons),
+  the crew chip on event ID cards, tickets and badges, opt-in Saved-details catering prefill on crew
+  sign-up, a Crew section for event pages, L21a application stages in the event funnel, and member
+  screens to buy a series pass, transfer a ticket and change its type.
+
 - **2026-11-04 -- release 2 L6, paid ticketing v2 and venue fees (#69, #71, #94, #128 C-20, #169).**
   Multi-ticket orders (one `event_order` Payment, one registration per attendee claimed by signing in),
   checkout seat holds, tiers, pay-what-you-want, group and hidden tickets, promo limits and a booking fee,

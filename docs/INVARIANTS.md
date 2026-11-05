@@ -5487,7 +5487,23 @@ responsibility; local purges never delete shared global organizations or foreign
   never part of an order or a team. A person who already holds a participant registration keeps it.
   Crew membership grants NO event staff permission. Dietary needs are scoped PII and appear only as
   counts in the catering summary; the public crew section lists opted-in crew with a live public
-  profile only (#25).
+  profile only (#25). The Pages `crew` section (event pages only, `makerspaces/public_page_crew.py`) is
+  its own opt-in, so it skips the per-event `crew_public_section` switch but never the person's
+  `show_publicly` choice or the live-profile check. Saved-details catering prefill is client-side and
+  on request only: the vault is read when the member presses the button and only `dietary_needs` is
+  copied into the form.
+- **The crew chip reads one place.** `crew_reads.crew_labels(event, registration_ids)` is the only
+  source for badges (`crew_role` field), credential badges (`{{crewRole}}`), the ticket's role line and
+  the event card role (Mentor or Crew, set at issue); it is empty while `events.crew` is off.
+- **Mentor Desk on any event (C-36, E2-f).** `events.mentoring` no longer requires hackathons. On an
+  event that is not a team hackathon (`mentoring/policy.drop_in_allowed`: no enabled `HackathonConfig`
+  while `events.hackathons` is on), a confirmed registrant raises a drop-in help request
+  (`team=None`, `origin="attendee"`, audit `event.programme.help.raise_drop_in`) or books an office-hour
+  slot for themself; only the asker reads or cancels it, mentors see a first name only and never claim
+  their own. A hackathon keeps the team-only path unchanged; check-in rounds stay hackathon-only.
+- **Application stages in the funnel (AN-c1).** `hackathons/admission_stage_funnel.stage_counts` adds
+  one counts-only `application_stage` step per open or closed stage between responded and going: stage
+  1 counts every submitted application, a later stage those with an entry at it or beyond.
 - **Check-in lists never touch entry.** A list scan is its own append-only row; it never marks
   attendance, changes a registration or writes evidence. "After entry" admits `attended` only; an
   add-on list admits the BUYER of that add-on on a PAID order, once per unit bought. Archived lists

@@ -1053,6 +1053,24 @@ per-makerspace breakdown is always present in the same response; (4) `ReportScop
 mode permitted to flatten, and only for that resolved set. Anything wider is still a regression. Deployment
 -wide aggregates are unchanged: they stay grouped by `makerspace_id`.
 
+**The superadmin platform overview is the second, owner-decided exception (#183A, 2026-11-05).** It
+shows combined platform totals, under four conditions that must all hold: (1) every total
+ACCOMPANIES its per-space rows in the same payload and CSV, never replaces them, and is computed as
+the sum of those rows (`platform_overview_blocks.count_by_space` and friends), so a total can never
+disagree with its breakdown; percent figures are recomputed from the summed parts, never summed;
+(2) money is grouped per currency and never added across currencies; (3) counts and money only: no
+collector selects a name, email, username, contact or free-text field, so no PII window applies, and
+deployment telemetry with no tenant (IP blocks, unusual sign-in alerts, platform email, whole-platform
+backups) is shown as platform-only figures, never attributed to a space; (4) only an active platform
+superadmin in a browser session reads it (`IsActiveSuperAdmin` + `_platform_context_for_view`, both
+routes `PLATFORM_ONLY_ROUTES`), and every CSV export is audited as `platform.overview_exported`.
+The space set is every space except archived and importing/aborted ones, which a toggle adds back;
+directory-hidden live spaces are always counted (#110: nothing is hidden from the superadmin). A
+block follows its switch per space: a space with it off shows "off" and adds nothing; a block off in
+every space is omitted and listed in `hidden_blocks`. The builder holds no actor (authority is the
+view's), so the Celery task computes it; results are cached per (period, toggle) for 10 minutes and
+a read answers 202 `computing` until ready. A cache or broker outage computes inline, never fails.
+
 **Addressed messaging analytics** reads canonical `NotificationDelivery` and immutable
 `NotificationLegacyMapping` observations, never the retired `MessagingDelivery` send table.
 `operations.reports_communications.build_communications_health` is the registered version-4 builder.

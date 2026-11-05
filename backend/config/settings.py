@@ -227,6 +227,9 @@ MIDDLEWARE = [
     # Binds the per-request correlation id before any layer below can log. The two gates
     # above refuse without logging through it; that is the accepted cost of their position.
     "config.request_id.RequestIdMiddleware",
+    # #189/#191: with CONTROL_PLANE_PROXY off, /control/ answers only the server and its
+    # SSH tunnel; the public origin gets a plain 404 before any session or login layer runs.
+    "config.control_plane_access.ControlPlaneReachMiddleware",
     # Clears the per-request native-session marker (accounts.native_session).
     "apps.accounts.native_session.NativeSessionContextMiddleware",
     "apps.tenant_migration.middleware.SourceMigrationGateMiddleware",
@@ -1890,3 +1893,10 @@ OAUTH2_PROVIDER = _oauth_settings.provider_settings(env)
 _oauth_settings.apply(REST_FRAMEWORK, SPECTACULAR_SETTINGS, env)
 PERSON_CREDENTIAL_RATE_PER_MINUTE = env.int("PERSON_CREDENTIAL_RATE_PER_MINUTE", default=120)
 # --- end lane r2-gap-api
+# --- lane r2-control-restructure (#189 as revised by #191): who may reach /control/ at all.
+# false (default) = server-only: loopback, or the SSH-tunnel listener when the tunnel overlay
+# (docker/compose.control-tunnel.yml) sets CONTROL_PLANE_TUNNEL=on. true = the opt-in website
+# route, exactly as before (the proxy's CIDR allowlist applies at the edge).
+CONTROL_PLANE_PROXY = env.bool("CONTROL_PLANE_PROXY", default=False)
+CONTROL_PLANE_TUNNEL = env.str("CONTROL_PLANE_TUNNEL", default="off").strip().lower() == "on"
+# --- end lane r2-control-restructure

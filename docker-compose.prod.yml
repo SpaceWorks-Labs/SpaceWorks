@@ -209,6 +209,8 @@ services:
       ENABLE_HTTPS: ${ENABLE_HTTPS:-false}
       TRUST_X_FORWARDED_PROTO: ${TRUST_X_FORWARDED_PROTO:-false}
       TRUSTED_PROXY_COUNT: ${TRUSTED_PROXY_COUNT:-1}
+      # #189/#191: Django's own reach check follows the same switch as the proxy route.
+      CONTROL_PLANE_PROXY: ${CONTROL_PLANE_PROXY:-false}
       CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:-}
       AXES_FAILURE_LIMIT: ${AXES_FAILURE_LIMIT:-5}
       EMAIL_BACKEND: ${EMAIL_BACKEND:-django.core.mail.backends.smtp.EmailBackend}

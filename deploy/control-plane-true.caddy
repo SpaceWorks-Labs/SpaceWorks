@@ -1,9 +1,11 @@
 # Opt-in control-plane access uses the socket peer for the allowlist.
-@control_plane path /control /control/* /mfa/control/*
+@control_plane path /control /control/* /mfa/control/* /mfa/reauth /mfa/reauth/*
 handle @control_plane {
     @control_plane_denied not remote_ip {$CONTROL_PLANE_ALLOW_CIDRS}
     respond @control_plane_denied 403
     reverse_proxy backend:8000 {
         header_up X-Forwarded-Proto https
+        # Only the tunnel listener may stamp this; never pass a client's copy through.
+        header_up -X-SpaceWorks-Control-Tunnel
     }
 }

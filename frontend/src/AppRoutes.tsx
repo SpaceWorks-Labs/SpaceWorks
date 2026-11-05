@@ -15,6 +15,14 @@ import { useTenant } from "./lib/tenant";
 import { publicFamilies, publicHome } from "./lib/publicHome";
 import { NotFoundPage } from "./features/NotFoundPage";
 import { FamilyProfileLink } from "./features/publicPages/FamilyProfileLink";
+import {
+  PublicOrganizationPage, OrganizationInvitationRedeemPage, ResetPasswordPage, ConsolePasswordResetPage,
+  AccountRestorePage, EventCheckInStationPage, KioskStationPage, PublicStatsPage, PublicStatsTvPage,
+  PublicHandlePage, PublicEventCodePage, PayLinkPage, PresenceNowPage, PublicWebsiteDetailPage, HostingRequestPage,
+  HostingInvitePage, HostingRequestStatusPage, PublicShopPage, PublicShopProductPage, ShopOrderStatusPage,
+  MemberShopOrdersPage, MfaAccountPage, NotMePage, StaffInvitationAcceptPage, BookingStaffInvitePage, EventStaffInvitePage,
+  ProgrammeRoutes, CardRoutes, MemberEventAddonRoutes, DonationRoutes
+} from "./AppRoutesLazyPages";
 // Every public surface below is its own chunk. The makerspace page (which holds the catalogue) and the staff shell stay eager
 // because they are the two pages almost every visit lands on; everything else loads when its
 // route is first visited, so a lending-only install never downloads events, bookings or
@@ -51,28 +59,6 @@ const ApplicationReviewsPage = lazy(() => import("./features/events/participatio
 const MachineJobPage = lazy(() => import("./features/machine-jobs/MachineJobPage").then((m) => ({ default: m.MachineJobPage })));
 const UseMachinePage = lazy(() => import("./features/machine-sessions/UseMachinePage").then((m) => ({ default: m.UseMachinePage })));
 const MySessionsPage = lazy(() => import("./features/machine-sessions/MySessionsPage").then((m) => ({ default: m.MySessionsPage })));
-const PublicOrganizationPage = lazy(() => import("./features/organizations/PublicOrganizationPage").then((m) => ({ default: m.PublicOrganizationPage })));
-const OrganizationInvitationRedeemPage = lazy(() => import("./features/organizations/OrganizationInvitationRedeemPage").then((m) => ({ default: m.OrganizationInvitationRedeemPage })));
-const ResetPasswordPage = lazy(() => import("./features/staff/ResetPasswordPage").then((m) => ({ default: m.ResetPasswordPage })));
-const ConsolePasswordResetPage = lazy(() => import("./features/auth/ConsolePasswordResetPage").then((m) => ({ default: m.ConsolePasswordResetPage })));
-const AccountRestorePage = lazy(() => import("./features/auth/AccountRestorePage").then((m) => ({ default: m.AccountRestorePage })));
-const EventCheckInStationPage = lazy(() => import("./features/events/EventCheckInStationPage").then((m) => ({ default: m.EventCheckInStationPage })));
-const KioskStationPage = lazy(() => import("./features/kiosk/KioskStationPage").then((m) => ({ default: m.KioskStationPage })));
-const PublicStatsPage = lazy(() => import("./features/stats/PublicStatsPage").then((m) => ({ default: m.PublicStatsPage })));
-const PublicStatsTvPage = lazy(() => import("./features/stats/PublicStatsTvPage").then((m) => ({ default: m.PublicStatsTvPage })));
-const PublicHandlePage = lazy(() => import("./features/publicPages/PublicHandlePage").then((m) => ({ default: m.PublicHandlePage })));
-const PublicEventCodePage = lazy(() => import("./features/events/PublicEventCodePage").then((m) => ({ default: m.PublicEventCodePage })));
-const PayLinkPage = lazy(() => import("./features/finance/PayLinkPage").then((m) => ({ default: m.PayLinkPage })));
-const PresenceNowPage = lazy(() => import("./features/presence/PresenceNowPage").then((m) => ({ default: m.PresenceNowPage })));
-const PublicWebsiteDetailPage = lazy(() => import("./features/events/PublicWebsiteDetailPage").then((m) => ({ default: m.PublicWebsiteDetailPage })));
-const HostingRequestPage = lazy(() => import("./features/hosting/HostingRequestPage").then((m) => ({ default: m.HostingRequestPage })));
-const HostingInvitePage = lazy(() => import("./features/hosting/HostingInvitePage").then((m) => ({ default: m.HostingInvitePage })));
-const HostingRequestStatusPage = lazy(() => import("./features/hosting/HostingRequestStatusPage").then((m) => ({ default: m.HostingRequestStatusPage })));
-// L22: the per-space shop and a buyer's shop orders.
-const PublicShopPage = lazy(() => import("./features/shop/PublicShopPage").then((m) => ({ default: m.PublicShopPage })));
-const PublicShopProductPage = lazy(() => import("./features/shop/PublicShopProductPage").then((m) => ({ default: m.PublicShopProductPage })));
-const ShopOrderStatusPage = lazy(() => import("./features/shop/ShopOrderStatusPage").then((m) => ({ default: m.ShopOrderStatusPage })));
-const MemberShopOrdersPage = lazy(() => import("./features/members/shopOrders/MemberShopOrdersPage").then((m) => ({ default: m.MemberShopOrdersPage })));
 
 // Tenant capabilities choose the home independently of the deployment edition.
 
@@ -103,11 +89,6 @@ function FamilyHome() {
       header={{ title: bootstrap.branding.display_name || bootstrap.makerspace.name }} footer={{ credit: "Powered by Space Works", links: [] }}><span /></PublicLayout>;
   }
 }
-const MfaAccountPage = lazy(() => import("./features/auth/MfaAccountPage").then((m) => ({ default: m.MfaAccountPage })));
-const NotMePage = lazy(() => import("./features/auth/NotMePage").then((m) => ({ default: m.NotMePage })));
-const StaffInvitationAcceptPage = lazy(() => import("./features/auth/StaffInvitationAcceptPage").then((m) => ({ default: m.StaffInvitationAcceptPage })));
-const BookingStaffInvitePage = lazy(() => import("./features/staff/BookingStaffInvitePage").then((m) => ({ default: m.BookingStaffInvitePage })));
-const EventStaffInvitePage = lazy(() => import("./features/staff/EventStaffInvitePage").then((m) => ({ default: m.EventStaffInvitePage })));
 
 function RouteFallback() {
   return <div role="status"><CenteredCardLayout state={{ status: "loading" }} title="Opening Space Works…" body=""
@@ -131,11 +112,6 @@ function MemberTabRoute() {
     to={`${slug ? `/m/${slug}` : ""}/member/account-portal?${search}`} />;
   return <MemberArea />;
 }
-
-const ProgrammeRoutes = lazy(() => import("./features/events/programme/ProgrammeRoutes").then(m => ({ default: m.ProgrammeRoutes })));
-const CardRoutes = lazy(() => import("./features/cards/CardRoutes").then(m => ({ default: m.CardRoutes })));
-const MemberEventAddonRoutes = lazy(() => import("./features/events/eventAddons/MemberEventAddonRoutes").then(m => ({ default: m.MemberEventAddonRoutes })));
-const DonationRoutes = lazy(() => import("./features/donations/DonationRoutes").then(m => ({ default: m.DonationRoutes })));
 
 export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landing: ReactNode }) {
   const location = useLocation();

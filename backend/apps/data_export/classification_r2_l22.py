@@ -51,7 +51,7 @@ DATASET_SPECS = {
     "shop.ShopStockMovement": ("shop/stock_movements.csv", P(("makerspace",))),
     "shop.ShopCheckoutHold": ("shop/checkout_holds.csv", P(("makerspace",))),
     "shop.ShopOrder": ("shop/orders.csv", P(("makerspace",))),
-    "shop.ShopOrderLine": ("shop/order_lines.csv", P(("order", "makerspace"))),
+    "shop.ShopOrderLine": ("shop/order_lines.csv", P(("order__makerspace",))),
     "shop.ShopOrderReturn": ("shop/order_returns.csv", P(("makerspace",))),
     "shop.ShopCashSession": ("shop/cash_sessions.csv", P(("makerspace",))),
 }

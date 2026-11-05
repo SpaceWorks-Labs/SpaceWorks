@@ -61,7 +61,8 @@ def score(event_id, assignment_id, *, actor, data):
                 row.version += 1
             row.criterion_values = values.get("scores", {})
             row.notes = values["notes"]
-            row.submitted_at = timezone.now() if values["submit"] else None
+            row.saved_at = timezone.now()
+            row.submitted_at = row.saved_at if values["submit"] else None
             row.save()
             if values["submit"]:
                 assignment.state = "scored"

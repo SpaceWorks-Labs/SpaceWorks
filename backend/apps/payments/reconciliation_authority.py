@@ -38,6 +38,9 @@ SUBJECT_ACTIONS = {
     # Lane L18: no area manager owns gifts or sponsor money; finance staff do.
     Payment.SubjectType.DONATION: rbac.Action.RECORD_PAYMENT,
     Payment.SubjectType.SPONSORSHIP: rbac.Action.RECORD_PAYMENT,
+    # Lane L21b: entry fees and team charges, like every other events charge.
+    Payment.SubjectType.SUBMISSION_FEE: rbac.Action.MANAGE_EVENTS,
+    Payment.SubjectType.TEAM_REGISTRATION: rbac.Action.MANAGE_EVENTS,
 }
 
 

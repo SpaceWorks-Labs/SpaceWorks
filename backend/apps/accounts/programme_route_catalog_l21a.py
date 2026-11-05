@@ -32,16 +32,12 @@ L21A_ROUTES = (
     ('events-programme-member-crew-withdraw', ('POST',), 'event'),
     ('events-programme-public-crew', ('GET', 'HEAD'), 'public_event'),
 )
-# The native-app decision for each L21a route (#173). Event-role desks -- the crew desk and
-# the review-panel workspace -- stay WEB-ONLY until L21b's native event-role authority
-# contract exists: native member grants refuse delegated authority (#162(2)). A person's own
-# attendance reply and crew sign-up, staff tools and the public section work natively.
+# The native-app decision for each L21a route (#173). L21b's native event-role grant opens the
+# crew desk and the per-event review-panel workspace to an ``event`` grant for THAT event (member
+# grants still refuse delegated authority, #162(2)). Only the cross-event "my application reviews"
+# list stays web-only: an event grant is limited to one event and that list spans every event.
 WEB_ONLY = "web_only"
 NATIVE = "native"
-DESKS = (
-    'events-programme-admin-crew', 'events-programme-admin-crew-catering', 'events-programme-admin-crew-decide',
-    'events-programme-admin-crew-remove', 'events-programme-admin-my-application-reviews',
-    'events-programme-admin-application-stage-my-reviews', 'events-programme-admin-application-stage-review-submit',
-)
+DESKS = ('events-programme-admin-my-application-reviews',)
 NATIVE_DECISIONS = {name: WEB_ONLY if name in DESKS else NATIVE for name, methods, target in L21A_ROUTES}
 NATIVE_WEB_ONLY = frozenset(name for name, decision in NATIVE_DECISIONS.items() if decision == WEB_ONLY)

@@ -16,7 +16,12 @@ ENTITY_ACTIONS = {
     "events": (rbac.Action.MANAGE_EVENTS,),
     "audit": (rbac.Action.VIEW_AUDIT,),
 }
-ENTITY_MODULES = {"inventory": "staff_admin", "bookings": "bookings", "events": "events"}
+# Release 2 L21b (X40): the five staff event lists. A saved view restores filters only; each list
+# re-checks the reader's event permission, so sharing a view never grants access.
+EVENT_LIST_ENTITIES = ("event_guests", "event_teams", "event_submissions", "event_results", "event_progress")
+ENTITY_ACTIONS.update({entity: (rbac.Action.MANAGE_EVENTS,) for entity in EVENT_LIST_ENTITIES})
+ENTITY_MODULES = {"inventory": "staff_admin", "bookings": "bookings", "events": "events",
+                  **{entity: "events" for entity in EVENT_LIST_ENTITIES}}
 
 
 def visible_space(actor, makerspace_id):
@@ -39,6 +44,9 @@ def require_entity(actor, space, entity):
         require_module(space, "request_workflow")
     elif entity in ENTITY_MODULES:
         require_module(space, ENTITY_MODULES[entity])
+    if entity in EVENT_LIST_ENTITIES:
+        from apps.makerspaces.guards import require_feature
+        require_feature(space, "events.saved_views")
 
 
 def request_scope(actor, makerspace_id):

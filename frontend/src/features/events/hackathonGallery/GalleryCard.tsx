@@ -10,6 +10,8 @@ export function GalleryCard({ entry, onDownload, href, renderMemberCard }: { ent
   return <article className="grid min-w-0 gap-4 rounded-xl border border-line bg-panel p-5" aria-label={entry.title}>
     <div className="flex flex-wrap items-start justify-between gap-3"><h2 className="title-section break-words">{href ? <a className="underline underline-offset-4" href={href}>{entry.title}</a> : entry.title}</h2>
       <StatusPill label={entry.files_state === 'expired' ? 'Files expired' : entry.files_state === 'withdrawn' ? 'Files private' : 'Project files available'} tone={entry.files_state === 'available' ? 'success' : 'neutral'} /></div>
+    {entry.awards?.length ? <ul className="flex flex-wrap gap-2" aria-label="Awards">{entry.awards.map((award, index) =>
+      <li key={index}><StatusPill label={`${String(award.prize)} · rank ${String(award.rank)}`} tone="success" /></li>)}</ul> : null}
     <p className="whitespace-pre-wrap break-words text-sm text-ink">{entry.description}</p>
     {entry.members.length ? <div className="flex flex-wrap items-center gap-3 text-sm"><Users size={18} aria-hidden="true" /><span className="sr-only">Public maker profiles</span>
       {entry.members.map(member => renderMemberCard ? <div key={member.profile_url}>{renderMemberCard(member)}</div>

@@ -76,6 +76,9 @@ SUBJECT_DOMAINS = {
     # Lane L18: gifts and sponsor money. The rail is `payments.donations`.
     "donation": "donations",
     "sponsorship": "donations",
+    # Lane L21b: a project's entry fee and a paid team's one charge are events income.
+    "submission_fee": "events",
+    "team_registration": "events",
 }
 
 

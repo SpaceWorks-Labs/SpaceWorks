@@ -77,6 +77,13 @@ def award_eligible(*, event_id, member_id, award_id, result_revision_id, kind):
             s.current and s.eligible and member_id in s.member_ids for s in runtime().snapshots(event_id))
     if kind not in ("winner", "finalist") or not award_id or not result_revision_id:
         return False
+    if kind == "finalist":
+        # L21b: finalist certificates follow the finalist publication (award_id = the advance,
+        # result_revision_id = its announcement); an award in the announced result still counts.
+        from .finalists import member_is_published_finalist
+        if member_is_published_finalist(event_id=event_id, member_id=member_id, advance_id=award_id,
+                                        announcement_id=result_revision_id):
+            return True
     publication = ResultPublicationState.objects.filter(event_id=event_id,
         current_announcement__result_id=result_revision_id).first()
     if publication is None:

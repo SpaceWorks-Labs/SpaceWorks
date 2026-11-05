@@ -150,3 +150,6 @@ def register_event_sources():
     # Release 2 L21a: stage advances, attendance confirmation and crew decisions.
     from .notices_r2_l21a import register as register_participation_notices
     register_participation_notices()
+    # Release 2 L21b: a recorded prize payout tells its winner.
+    from .judging.payout_notices import register as register_payout_notices
+    register_payout_notices()

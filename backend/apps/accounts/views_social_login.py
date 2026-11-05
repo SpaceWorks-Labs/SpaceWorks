@@ -208,7 +208,8 @@ class SocialLoginView(APIView):
         trust = record_success(request, user, method="social", web=data["delivery"] == "web")  # Q4: no step-up
         if data["delivery"] == "device":
             grant = tokens["device_grant"]
-            authority = "native_staff" if grant.authority == "staff" else "member"
+            from apps.accounts.native_event_grants import session_authority_for
+            authority = session_authority_for(grant)
         else:
             authority = data["surface"]
         payload = {"access": tokens["access"], "user": user_payload(user, request=request,

@@ -35,6 +35,8 @@ class GalleryEntryRead(ClosedSerializer):
     links = GalleryLinkRead(many=True)
     members = GalleryMemberRead(many=True)
     content_sha256 = serializers.CharField()
+    awards = serializers.ListField(child=serializers.DictField(), required=False,
+                                   help_text="Award badges ({prize, rank}); only after results are published (L21b).")
 
 
 class GalleryConsentRead(ClosedSerializer):
@@ -58,11 +60,17 @@ class PublicAwardRead(ClosedSerializer):
     title = serializers.CharField()
 
 
+class PublicFinalistRead(ClosedSerializer):
+    title = serializers.CharField()
+
+
 class PublicResultsRead(ClosedSerializer):
     event_id = serializers.IntegerField()
-    version = serializers.IntegerField()
-    published_at = serializers.DateTimeField()
+    version = serializers.IntegerField(allow_null=True, help_text="Null while only finalists are published.")
+    published_at = serializers.DateTimeField(allow_null=True)
     awards = PublicAwardRead(many=True)
+    finalists = PublicFinalistRead(many=True, required=False, help_text="L21b: the published finalists block.")
+    finalists_published_at = serializers.DateTimeField(allow_null=True, required=False)
 
 
 class AdminGalleryEntryRead(ClosedSerializer):

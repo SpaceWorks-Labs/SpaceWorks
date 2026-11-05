@@ -44,6 +44,9 @@ def finalize(event_id, *, actor, data, correction=False):
                 event=event, pk__in=values["round_ids"]).order_by("pk"))
             if len(rounds) != len(values["round_ids"]):
                 raise Http404
+            from .models_finalists import FinalistAdvance
+            if FinalistAdvance.objects.filter(event=event, source_round__in=rounds).exists():
+                invalid("Results come from the final round; a selected round advanced finalists.")
             calculations = []
             for round in rounds:
                 if round.state != "finalized":
@@ -134,7 +137,9 @@ def publish(event_id, *, actor, data):
                 if first is None:
                     runtime().publish_retention_locked(event_id=event_id, first_published_at=at, locks=locks)
                 audit(event, actor, "results_published", row, version=result.version)
-                notice(event, "results_published", result.pk, result.version)
+                from .options import option
+                if option(event, "results_email"):  # C-37: a per-event switch, off for new events.
+                    notice(event, "results_published", result.pk, result.version)
                 prior = row
             state, created = ResultPublicationState.objects.get_or_create(event=event)
             if state.current_announcement_id != prior.pk:

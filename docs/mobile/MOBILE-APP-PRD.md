@@ -807,18 +807,17 @@ For later phases, reuse the same prompt with the phase name, e.g. "Implement **p
 
 Superadmin/control-plane features, organization-derived native staff authority (staff use a
 staff step-up grant of their own person account, fixed to one makerspace where they hold a staff role), kiosk and printer device protocols, offline mode beyond showing cached data read-only,
-tablets-specific layouts, GitHub sign-in.
+tablets-specific layouts, GitHub sign-in. A member's own attendance reply
+(`/events/{id}/attendance/`) and crew sign-up (`/events/{id}/crew-signup/`) work natively.
 
-Event programme desks are web-only for now (verified by X57, lane L19): judging, the mentor desk,
-volunteer management and check-in by an on-duty volunteer, event crew and the application review
-panel (#173).
-- Their staff routes refuse a member grant: 403 "Native member sessions cannot use delegated
-  authority".
-- A staff grant can reach them only for a person who also holds a makerspace staff role.
-- A person who only judges, mentors or volunteers for one event has no native path. `/auth/me`
-  on a device does not list event grants.
-- Do not build these screens until the server publishes a native event-role contract. The
-  participant side works today on a member grant: raising help requests, office hours, shift
-  sign-up and self check-in/out, and role applications.
-- A member's own attendance reply (`/events/{id}/attendance/`) and crew sign-up
-  (`/events/{id}/crew-signup/`) work natively.
+**Event-role desks natively (#173, L21b).** A person with an active event role (judge, mentor,
+volunteer or crew lead: a live event staff grant) steps a device session up with
+`POST /api/v1/auth/device/event-grant` (`event_id`, a fresh attestation `challenge`, `attestation`,
+`app_version`) and finishes through `auth/mfa/verify`, exactly like the staff step-up. The new grant
+has `authority: "event"`, `event_id`, and `session_authority: "native_event"`; it reaches only that
+event's admin programme routes (`/api/v1/admin/events/{event_id}/...`: judging, score next, crew desk,
+review stages, mentor and volunteer tools) and never a staff route. Send no `X-Makerspace-Id` on those
+routes. `/auth/me` lists `event_grants` on every native session (an event grant: only its event), so
+the app can offer the step-up. The grant is revoked when the role ends (expect 401 and fall back to the
+member grant). The cross-event "my application reviews" list stays web-only. A native member grant may
+redeem an event staff invite (`/api/v1/admin/event-staff-invites/redeem/`).

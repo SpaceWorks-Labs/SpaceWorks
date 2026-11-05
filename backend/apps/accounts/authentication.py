@@ -91,8 +91,8 @@ class SpaceWorksJWTAuthentication(JWTAuthentication):
             request.session_authority = surface
             return authenticated
         staff = grant.authority == "staff"
-        if staff and token.get("mfa_source") != "verified":
-            raise AuthenticationFailed("Native staff sessions require MFA.")
+        if grant.authority in ("staff", "event") and token.get("mfa_source") != "verified":
+            raise AuthenticationFailed("Native staff and event sessions require MFA.")
         request.device_grant = grant
         request.native_app_registration = grant.registration
         from apps.makerspaces.origin_scope import validate_native_makerspace_scope
@@ -112,7 +112,8 @@ class SpaceWorksJWTAuthentication(JWTAuthentication):
         request.device_grant = grant
         from apps.accounts.device_activity import record_device_activity
         record_device_activity(grant, getattr(request, "selected_makerspace_membership", None))
-        request.session_authority = "native_staff" if staff else surface
+        from apps.accounts.native_event_grants import session_authority_for
+        request.session_authority = session_authority_for(grant) if grant.authority != "member" else surface
         return user, token
 
     def _authenticate_claim(self, request):

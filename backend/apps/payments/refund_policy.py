@@ -67,6 +67,9 @@ def reference_time(payment):
     if payment.subject_type in (Payment.SubjectType.EVENT_ORDER, Payment.SubjectType.EVENT_VENUE_FEE):
         from apps.events.cancellation_policy import subject_starts_at
         return subject_starts_at(payment)
+    if payment.subject_type in (Payment.SubjectType.SUBMISSION_FEE, Payment.SubjectType.TEAM_REGISTRATION):
+        from apps.events.hackathons.team_payments import subject_starts_at as programme_starts_at
+        return programme_starts_at(payment)
     return None
 
 

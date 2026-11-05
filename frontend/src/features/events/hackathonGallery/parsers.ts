@@ -47,9 +47,12 @@ export function galleryEntry(value: unknown): GalleryEntry {
       ? card.photo_url : undefined;
     return { display_name: card.display_name, profile_url: card.profile_url, ...(photo ? { photo_url: photo } : {}) };
   });
+  // L21b: award badges arrive only after results are published (and only with gallery search on).
+  const awards = Array.isArray(row.awards) ? row.awards.map(value => { const award = object(value); text(award.prize); integer(award.rank);
+    return { prize: award.prize, rank: award.rank }; }) : [];
   return { public_id: String(row.public_id), title: String(row.title), description: String(row.description),
     content_sha256: String(row.content_sha256), consent_version: row.consent_version,
-    files_state: row.files_state as GalleryEntry['files_state'], assets, links, members };
+    files_state: row.files_state as GalleryEntry['files_state'], assets, links, members, awards };
 }
 export function galleryConsent(value: unknown): GalleryConsent {
   const row = object(value); integer(row.team_id); integer(row.version);
@@ -71,8 +74,13 @@ export function sponsorConsent(value: unknown): SponsorConsent {
     consented_at: row.consented_at, expires_at: row.expires_at as string | null };
 }
 export function publicResults(value: unknown): PublicResults {
-  const row = object(value); integer(row.event_id); integer(row.version); text(row.published_at); array(row.awards);
-  return { event_id: row.event_id, version: row.version, published_at: row.published_at,
+  const row = object(value); integer(row.event_id); array(row.awards);
+  // L21b: published finalists may come before results, so version and published_at may be null.
+  if (row.version !== null) integer(row.version);
+  if (row.published_at !== null) text(row.published_at);
+  const finalists = Array.isArray(row.finalists) ? row.finalists.map(value => { const item = object(value); text(item.title); return { title: item.title }; }) : [];
+  return { event_id: row.event_id, version: row.version as number | null, published_at: row.published_at as string | null,
     awards: row.awards.map(value => { const award = object(value); text(award.prize); text(award.title); integer(award.rank);
-      return { prize: award.prize, title: award.title, rank: award.rank }; }) };
+      return { prize: award.prize, title: award.title, rank: award.rank }; }),
+    finalists, finalists_published_at: typeof row.finalists_published_at === 'string' ? row.finalists_published_at : null };
 }

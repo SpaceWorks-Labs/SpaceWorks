@@ -6,20 +6,21 @@ import { CoverageTable } from './CoverageTable';
 import { DefinitionEditor } from './DefinitionEditor';
 import { ResultsPanel } from './ResultsPanel';
 import { MentorShortlistBoard } from './MentorShortlistBoard';
+import { ManagerExtras } from './ManagerExtras';
 import type { Round, Scope } from './types';
 import { PrivateProgrammeBoundary } from '../../events/hackathonGallery/PrivateProgrammeBoundary';
 
 const METHOD = { top3: 'Top-three ranking · fixed six points per ballot', pairwise: 'Pairwise comparison · judges pick the better of two projects' } as const;
 
-function JudgingPanelContent({ scope, timezone = 'UTC', fullManager = false, galleryEnabled = false, pairwiseEnabled = false }: {
-  scope: Scope; timezone?: string; fullManager?: boolean; galleryEnabled?: boolean; pairwiseEnabled?: boolean }) {
+function JudgingPanelContent({ scope, timezone = 'UTC', fullManager = false, galleryEnabled = false, pairwiseEnabled = false, features = [] }: {
+  scope: Scope; timezone?: string; fullManager?: boolean; galleryEnabled?: boolean; pairwiseEnabled?: boolean; features?: readonly string[] }) {
   const [page, setPage] = useState(1); const { query, mutate, denied } = useJudging(scope, true, false, page);
   const [judges, setJudges] = useState(''); const [reason, setReason] = useState('');
   const [strategy, setStrategy] = useState('balanced'); const [maxLoad, setMaxLoad] = useState(100);
   const [confirm, setConfirm] = useState<{ round: Round; action: string } | null>(null);
-  const [plan, setPlan] = useState('');
+  const [plan, setPlan] = useState(''); const [seed, setSeed] = useState('0');
   const run = (round: Round, action: string, dry = false) => {
-    const fields = action === 'assign' ? { strategy, max_load: maxLoad, dry_run: dry, seed: '0',
+    const fields = action === 'assign' ? { strategy, max_load: maxLoad, dry_run: dry, seed,
       judge_role_assignment_ids: judges.split(',').map(value => Number(value.trim())).filter(value => Number.isSafeInteger(value) && value > 0) }
       : action === 'finalize' && reason.trim() ? { coverage_exception_reason: reason.trim() } : {};
     mutate.mutate({ suffix: `judging-rounds/${round.id}/${action}/`, version: round.version, fields }, {
@@ -37,7 +38,10 @@ function JudgingPanelContent({ scope, timezone = 'UTC', fullManager = false, gal
       <legend className="px-1 font-semibold">Assignment planning</legend>
       <Field label="Judge role assignment IDs" hint="Choose approved judges from the event Team tab; separate their IDs with commas."><input className="desk-input min-h-11" value={judges} onChange={e => setJudges(e.target.value)} /></Field>
       <Field label="Partition"><select className="desk-input min-h-11" value={strategy} onChange={e => setStrategy(e.target.value)}>
-        <option value="balanced">Balanced within judge scope</option><option value="track">By track</option><option value="room">By room</option></select></Field>
+        <option value="balanced">Balanced within judge scope</option><option value="track">By track</option><option value="room">By room</option>
+        <option value="random">Random (seeded, reproducible)</option></select></Field>
+      {strategy === 'random' ? <p className="text-sm text-muted">Seed {seed}. <button type="button" className="desk-button min-h-11"
+        onClick={() => { setSeed(crypto.randomUUID().slice(0, 8)); setPlan(''); }}>Re-roll</button> Then preview again; assigning uses the same seed.</p> : null}
       <Field label="Maximum projects per judge"><input className="desk-input min-h-11" type="number" min={1} max={2000} value={maxLoad} onChange={e => setMaxLoad(Number(e.target.value))} /></Field>
     </fieldset>
     <p role="status" className="text-sm text-muted">{plan}</p>
@@ -65,6 +69,7 @@ function JudgingPanelContent({ scope, timezone = 'UTC', fullManager = false, gal
     </article>)}
     <Pagination page={page} count={query.data?.count ?? 0} pageSize={24} totalPages={Math.ceil((query.data?.count ?? 0) / 24)} onChange={setPage} disabled={mutate.isPending} />
     {fullManager ? <><MentorShortlistBoard scope={scope} /><ResultsPanel scope={scope} rounds={query.data?.results ?? []} galleryEnabled={galleryEnabled} /></> : null}
+    <ManagerExtras scope={scope} rounds={query.data?.results ?? []} features={features} fullManager={fullManager} />
     <ConfirmDialog open={!!confirm} title={confirm?.action === 'open' ? 'Freeze this judging rubric?' : confirm?.action === 'close' ? 'Close scoring?' : 'Finalize this round?'}
       message={confirm?.action === 'open' ? 'Opening freezes the method, criteria and eligible submission set.' : 'This action is recorded in the event history. Review coverage before continuing.'}
       pending={mutate.isPending} onCancel={() => setConfirm(null)} onConfirm={() => confirm && run(confirm.round, confirm.action)} />

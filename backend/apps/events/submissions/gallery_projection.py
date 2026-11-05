@@ -121,8 +121,11 @@ def asset_download(public_token, public_asset_id, *, request):
 
 def public_results(event):
     state = ResultPublicationState.objects.filter(event=event).select_related("current_announcement__result").first()
+    finalists = public_finalists(event)
     if state is None or not state.current_announcement_id:
-        raise Http404
+        if finalists is None:
+            raise Http404
+        return {"event_id": event.pk, "version": None, "published_at": None, "awards": [], **finalists}
     announcement = state.current_announcement
     awards = []
     for award in announcement.result.awards.select_related("prize").filter(public_requested=True).order_by("prize_id", "rank"):
@@ -131,4 +134,18 @@ def public_results(event):
         if snapshot.current and snapshot.eligible and snapshot.event_id == event.pk and consent:
             awards.append({"prize": award.prize_name, "rank": award.rank, "title": snapshot.title})
     return {"event_id": event.pk, "version": announcement.result.version,
-            "published_at": announcement.published_at, "awards": awards}
+            "published_at": announcement.published_at, "awards": awards, **(finalists or {})}
+
+
+def public_finalists(event):
+    """L21b: the published finalists block, behind events.finalists, gallery consent applied like awards."""
+    from apps.events.judging.feature import FINALISTS, enabled
+    from apps.events.judging.finalists import published_finalists
+    if not enabled(event.makerspace, FINALISTS):
+        return None
+    announcement, snapshots = published_finalists(event)
+    if announcement is None:
+        return None
+    titles = [{"title": s.title} for s in snapshots
+              if GalleryConsent.objects.filter(event=event, snapshot_id=s.id, metadata_public=True).exists()]
+    return {"finalists": titles, "finalists_published_at": announcement.published_at}

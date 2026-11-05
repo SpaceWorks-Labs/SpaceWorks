@@ -42,7 +42,16 @@ from apps.events.judging.models_consent import (
     ParticipantSponsorResumeConsent, SponsorResumeConsentHistory,
 )
 from apps.events.judging.models_definitions import (
-    HackathonTrack, HackathonPrize, JudgingRound, JudgingCriterion,
+    HackathonTrack, HackathonPrize, JudgingRound, JudgingCriterion, JudgingPanelSeat,
+)
+from apps.events.judging.models_finalists import (
+    FinalistAdvance, JudgingFinalist, FinalistAnnouncement,
+)
+from apps.events.judging.models_options import (
+    HackathonProgrammeOptions,
+)
+from apps.events.judging.models_payouts import (
+    HackathonPrizePayout,
 )
 from apps.events.judging.models_results import (
     EventResultRevision, EventResultRound, EventAward, ResultAnnouncement, ResultPublicationState, SponsorWinnerProposal, JudgingNotice,
@@ -107,6 +116,8 @@ __all__ = [
     'JudgingReason', 'JudgeAssignment', 'JudgingRoundProject', 'JudgeScore',
     'JudgeRankingBallot', 'JudgeRankingChoice', 'JudgeConflict', 'MentorAssignmentRun',
     'JudgePairwiseComparison', 'JudgePairwiseInvalidation', 'JudgePairwiseCursor',
+    'JudgingPanelSeat', 'FinalistAdvance', 'JudgingFinalist', 'FinalistAnnouncement',
+    'HackathonProgrammeOptions', 'HackathonPrizePayout',
     'MentorAttentionPreference', 'MentorProfile', 'MentorTeamAssignment', 'EventHelpType',
     'EventHelpRequest', 'EventHelpAction', 'EventHelpComment', 'OfficeHoursBooking',
     'OfficeHoursChange', 'MentorRound', 'MentorRoundLock', 'MentorRoundCheckin',

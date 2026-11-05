@@ -50,6 +50,9 @@ PAYMENT_DOMAINS = {
     # finance staff and the Space Manager see.
     "donation": "donations",
     "sponsorship": "donations",
+    # Lane L21b: a project's entry fee and a paid team's one charge are events income.
+    "submission_fee": "events",
+    "team_registration": "events",
 }
 
 

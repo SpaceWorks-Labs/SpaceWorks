@@ -47,6 +47,7 @@ class JudgeScore(ScopedPiiModelMixin, PrivateRecord, EventOwned):
     criterion_values = models.JSONField(default=dict)
     notes = models.TextField(blank=True, max_length=4000)
     submitted_at = models.DateTimeField(null=True, blank=True)
+    saved_at = models.DateTimeField(null=True, blank=True)  # L21b: the progress view's stale-draft clock.
 
 
 class JudgeRankingBallot(EventOwned):

@@ -49,13 +49,14 @@ def binding(request):
                     grant__status="active", grant__revoked_at__isnull=True).first()
             except (ValidationError, ValueError, TypeError) as exc:
                 raise PermissionDenied("A current device session is required.") from exc
-            staff_grant = family is not None and family.grant.authority == "staff"
+            staff_grant = family is not None and family.grant.authority in ("staff", "event")
             if (family is None or not registration_is_eligible(family.grant.registration)
                     or token.get("surface") != "member" or not is_person(user)
                     or family.grant.credential_generation != user.credential_generation
                     or staff_grant and (
                         token.get("mfa_source") != "verified"
-                        or family.grant.registration.makerspace_id not in (None, family.grant.staff_makerspace_id))):
+                        or family.grant.authority == "staff"
+                        and family.grant.registration.makerspace_id not in (None, family.grant.staff_makerspace_id))):
                 raise PermissionDenied("A current device session is required.")
             return "device:" + str(family.pk), token["surface"]
         if token.get("surface") not in {"member", "platform"}:

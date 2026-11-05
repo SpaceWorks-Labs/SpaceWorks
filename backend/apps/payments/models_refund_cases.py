@@ -69,6 +69,10 @@ class RefundCase(models.Model):
         PASS_OCCURRENCE_CANCELLED = "pass_occurrence_cancelled", "Pass occurrence cancelled"
         #: Lane L18: staff opened a case to return a gift or a sponsor's payment.
         DONATION_RETURNED = "donation_returned", "Gift returned to the giver"
+        #: Lane L21b (#59): a paid project disqualified with "refund on disqualification" set, and a
+        #: rejected or closed paid team. Each opens a DUE case for the full amount; staff decide.
+        SUBMISSION_DISQUALIFIED = "submission_disqualified", "Project disqualified"
+        TEAM_REJECTED = "team_rejected", "Team rejected"
 
     payment = models.ForeignKey(Payment, on_delete=models.PROTECT, related_name="refund_cases")
     kind = models.CharField(max_length=16, choices=Kind.choices)

@@ -43,6 +43,26 @@ def validate_event_money(payment, identity_unchanged):
         raise ValidationError({"member": "Payment member must be the payer."})
 
 
+def validate_programme_money(payment, identity_unchanged):
+    """Lane L21b: an entry fee or a team charge belongs to this space and is raised on the team leader."""
+    from apps.events.models import HackathonSubmission, HackathonTeam
+
+    if payment.subject_type == "submission_fee":
+        row = HackathonSubmission.objects.filter(pk=payment.subject_id, event__makerspace_id=payment.makerspace_id
+                                                 ).values("team__leader_id").first()
+        leader = row and row["team__leader_id"]
+    else:
+        row = HackathonTeam.objects.filter(pk=payment.subject_id, event__makerspace_id=payment.makerspace_id
+                                           ).values("leader_id").first()
+        leader = row and row["leader_id"]
+    if identity_unchanged:
+        return
+    if row is None:
+        raise ValidationError({"subject_id": "Payment subject must belong to the payment makerspace."})
+    if payment.member_id != leader:
+        raise ValidationError({"member": "The team leader pays this charge."})
+
+
 def validate_subject(payment, identity_unchanged):
     """Every subject must belong to the payment's makerspace (and its member)."""
     from apps.payments.models_payment import Payment
@@ -104,6 +124,8 @@ def validate_subject(payment, identity_unchanged):
         from apps.payments.donations.validation import validate_gift_subject  # lane L18
 
         validate_gift_subject(payment, identity_unchanged)
+    if payment.subject_type in ("submission_fee", "team_registration") and payment.subject_id:
+        validate_programme_money(payment, identity_unchanged)
     if payment.subject_type == Payment.SubjectType.MEMBERSHIP_TERM and payment.subject_id:
         from apps.makerspaces.models import MembershipTerm
 

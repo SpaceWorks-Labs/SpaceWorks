@@ -17,6 +17,12 @@ def recipients(row):
         return ()
     if row.kind in ("judge_assigned", "assignment_invalidated"):
         return assignment_recipients(row)
+    if row.kind == "finalists_announced":
+        from .finalists import published_finalists
+        announcement, snapshots = published_finalists(row.event)
+        if announcement is None or announcement.pk != row.source_id:
+            return ()
+        return tuple(sorted({pk for snapshot in snapshots for pk in snapshot.member_ids}))
     if row.kind != "results_published" or not ResultPublicationState.objects.filter(event_id=row.event_id,
             current_announcement__result_id=row.source_id,
             current_announcement__result__version=row.revision).exists():
@@ -61,6 +67,9 @@ def render(envelope):
     from apps.integrations.notification_links import local_link
     if envelope.event in ("judge_assigned", "assignment_invalidated"):
         return {"subject": "Your judging work has changed", "text": "Open the event to review your current judging assignments.",
+                "link": local_link(envelope.makerspace, "member")}
+    if envelope.event == "finalists_announced":
+        return {"subject": "Your project is a finalist", "text": "Open the event to see the published finalists.",
                 "link": local_link(envelope.makerspace, "member")}
     return {"subject": "Event results are available", "text": "Open the event to review the published results.",
             "link": local_link(envelope.makerspace, "member")}

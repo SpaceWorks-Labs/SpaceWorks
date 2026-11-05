@@ -71,7 +71,10 @@ def progress(round, *, actor=None):
             "allowed_actions": actions, "assigned": assignments.filter(state__in=("assigned", "scored")).count(),
             "submitted": sum(row["n"] for row in calculation["rows"]),
             "recused": assignments.filter(state="recused").count(),
-            "skipped": assignments.filter(state="skipped").count(), **calculation}
+            "skipped": assignments.filter(state="skipped").count(), "visibility": round.visibility,
+            "fresh_eyes": round.fresh_eyes, "advanced_from_id": round.advanced_from_id,
+            "panel": list(round.panel_seats.order_by("judge_role_assignment_id").values_list("judge_role_assignment_id", flat=True)),
+            **calculation}
 
 
 def summary(event_id, *, actor):

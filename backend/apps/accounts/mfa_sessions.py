@@ -59,11 +59,12 @@ def issue_session(user, data, request):
             grant = create_device_grant(user, attestation,
                 metadata=device.get("attestation_metadata", {}),
                 subject_hash=device["subject_hash"], login_method=device.get("login_method"),
-                staff_makerspace_id=device.get("staff_makerspace_id"))
+                staff_makerspace_id=device.get("staff_makerspace_id"), event_id=device.get("event_id"))
         if grant is None:
             raise AuthenticationFailed("Device authorization is no longer active.")
         access, refresh, _ = issue_device_token_pair(user, grant)
-        surface = "native_staff" if grant.authority == DeviceGrant.Authority.STAFF else "member"
+        from apps.accounts.native_event_grants import session_authority_for
+        surface = session_authority_for(grant)
         request.device_grant = grant
         audit_events.record_auth_event(user, "auth.device_login_succeeded", target=user)
         return {"access": access, "refresh": refresh, "surface": surface,

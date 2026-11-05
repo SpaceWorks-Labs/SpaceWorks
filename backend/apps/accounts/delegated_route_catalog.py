@@ -233,6 +233,7 @@ messaging-twilio-status messaging-twilio-inbound messaging-meta-platform messagi
 SHARED_ROUTES |= {"auth-logout-all", "member-messaging", "member-messaging-consent"}
 # Release 2 U-A2: a person's device session asks for a staff step-up grant (Q12).
 SHARED_ROUTES |= {"device-staff-grant"}
+SHARED_ROUTES |= {"device-event-grant"}  # #173 (L21b): the native event-role step-up.
 # Refund cases follow each charge's subject authority, like the reconciliation routes.
 MEMBERSHIP_ROUTES |= {"refund-case-list", "refund-case-detail", "refund-case-approve", "refund-case-decline",
                       "refund-policy-list", "refund-policy-detail", "refund-policy-plan"}

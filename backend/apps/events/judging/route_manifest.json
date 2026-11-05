@@ -1093,6 +1093,253 @@
         429,
         503
       ]
+    },
+    {
+      "name": "events-programme-admin-finalists-list",
+      "path": "/api/v1/admin/events/{pk}/finalists/",
+      "view": "l21b.FinalistList",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "authority": "manage_hackathon; events.finalists",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-finalists-preview",
+      "path": "/api/v1/admin/events/{pk}/finalists/preview/",
+      "view": "l21b.FinalistPreview",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "authority": "manage_hackathon; events.finalists",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-finalists-apply",
+      "path": "/api/v1/admin/events/{pk}/finalists/apply/",
+      "view": "l21b.FinalistApply",
+      "methods": [
+        "POST"
+      ],
+      "authority": "manage_hackathon; events.finalists",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-finalists-publish",
+      "path": "/api/v1/admin/events/{pk}/finalists/publish/",
+      "view": "l21b.FinalistPublish",
+      "methods": [
+        "POST"
+      ],
+      "authority": "full event manager; events.finalists",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-judging-rounds-progress",
+      "path": "/api/v1/admin/events/{pk}/judging-rounds/{round_id}/progress/",
+      "view": "l21b.RoundProgress",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "authority": "manage_hackathon",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-judging-rounds-next-project",
+      "path": "/api/v1/admin/events/{pk}/judging-rounds/{round_id}/next-project/",
+      "view": "l21b.NextProject",
+      "methods": [
+        "POST"
+      ],
+      "authority": "judge (own active judge role, panel when set)",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-programme-options",
+      "path": "/api/v1/admin/events/{pk}/programme-options/",
+      "view": "l21b.ProgrammeOptions",
+      "methods": [
+        "GET",
+        "HEAD",
+        "PATCH"
+      ],
+      "authority": "manage_hackathon",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-results-send-email",
+      "path": "/api/v1/admin/events/{pk}/results/send-email/",
+      "view": "l21b.ResultsSendEmail",
+      "methods": [
+        "POST"
+      ],
+      "authority": "full event manager",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-prize-payouts",
+      "path": "/api/v1/admin/events/{pk}/prize-payouts/",
+      "view": "l21b.PrizePayouts",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "authority": "record_payment or manage_events in the space (C-38); events.prize_payouts",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-prize-payouts-reverse",
+      "path": "/api/v1/admin/events/{pk}/prize-payouts/{payout_id}/reverse/",
+      "view": "l21b.PrizePayoutReverse",
+      "methods": [
+        "POST"
+      ],
+      "authority": "record_payment or manage_events in the space (C-38); events.prize_payouts",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
     }
   ],
   "binary_owned_by_B": {

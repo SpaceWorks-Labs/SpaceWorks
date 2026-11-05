@@ -161,6 +161,9 @@ OMITTED_MODELS = {
 }
 from .catalog_r2_l7 import FIELD_NAMES as _L7_FIELD_NAMES  # noqa: E402
 FIELD_NAMES.update(_L7_FIELD_NAMES)
+from .catalog_r2_l21b import EXTRA_FIELDS as _L21B_EXTRA, FIELD_NAMES as _L21B_FIELD_NAMES  # noqa: E402
+FIELD_NAMES.update(_L21B_FIELD_NAMES)
+FIELD_NAMES.update({label: FIELD_NAMES[label] | extra for label, extra in _L21B_EXTRA.items()})
 EXPORTED_FIELDS = {label: " ".join(sorted(names)) for label, names in FIELD_NAMES.items() if label not in OMITTED_MODELS}
 
 EXTRA_FIELDS = {

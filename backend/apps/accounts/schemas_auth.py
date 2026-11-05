@@ -49,10 +49,11 @@ class AuthUserPayload(serializers.Serializer):
     """Frozen release-2 auth payload (one account per person, #62/#63)."""
 
     session_authority = serializers.ChoiceField(
-        choices=("member", "native_staff", "platform", "verification_only"),
+        choices=("member", "native_staff", "native_event", "platform", "verification_only"),
         help_text="What this session is: member (a person's browser or native member session; staff routes are "
                   "admitted per request from the person's staff roles), native_staff (a native staff grant fixed to one "
-                  "makerspace; tenant operations require a matching X-Makerspace-Id), platform (the superadmin) or "
+                  "makerspace; tenant operations require a matching X-Makerspace-Id), native_event (a native event-role "
+                  "grant limited to one event's programme routes, no staff authority), platform (the superadmin) or "
                   "verification_only (email not yet confirmed).",
     )
     id = serializers.IntegerField()

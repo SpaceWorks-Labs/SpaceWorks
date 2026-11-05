@@ -100,6 +100,9 @@ PAYMENT_SUBJECT_REFERENCES = {
     # Lane L18: one gift (or one pledge period); one sponsor payment.
     "donation": "payments.Donation",
     "sponsorship": "payments.SponsorshipCharge",
+    # Lane L21b: an entry fee per project; one leader-paid charge per team.
+    "submission_fee": "events.HackathonSubmission",
+    "team_registration": "events.HackathonTeam",
 }
 
 NOTIFICATION_URL_ROUTES = (

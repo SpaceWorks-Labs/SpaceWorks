@@ -178,7 +178,8 @@
         "eligibility_rules": "models.JSONField(default=dict)",
         "order": "models.PositiveIntegerField(default=0)",
         "award_count": "models.PositiveSmallIntegerField(default=1)",
-        "winner_selection_mode": "models.CharField(max_length=20, default='manager', choices=(('manager', 'Manager'), ('sponsor_proposal', 'Sponsor proposal')))"
+        "winner_selection_mode": "models.CharField(max_length=20, default='manager', choices=(('manager', 'Manager'), ('sponsor_proposal', 'Sponsor proposal')))",
+        "amount_per_winner": "models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)"
       },
       "foreign_keys": {
         "event": {
@@ -200,7 +201,8 @@
       },
       "user_edges": {},
       "constraints": [
-        "ev_prize_awards_positive"
+        "ev_prize_awards_positive",
+        "ev_prize_amount_positive"
       ],
       "unique_fields": [],
       "uniqueness_policy": "Remap composite FK keys; public UUIDs preserve and refuse collision preflight; OneToOne scope remaps. Never regenerate an announced identity.",
@@ -233,7 +235,10 @@
         "closes_at": "models.DateTimeField(null=True, blank=True)",
         "configuration": "models.JSONField(default=dict, editable=False)",
         "algorithm_version": "models.CharField(max_length=40, default='spaceworks-judging-v1', editable=False)",
-        "coverage_exception": "models.ForeignKey('events.JudgingReason', null=True, blank=True, on_delete=models.PROTECT, related_name='+')"
+        "coverage_exception": "models.ForeignKey('events.JudgingReason', null=True, blank=True, on_delete=models.PROTECT, related_name='+')",
+        "visibility": "models.CharField(max_length=12, default='assigned', choices=(('assigned', 'Assigned only'), ('all', 'All judges see all')))",
+        "fresh_eyes": "models.BooleanField(default=False)",
+        "advanced_from": "models.ForeignKey('self', null=True, blank=True, on_delete=models.PROTECT, related_name='+')"
       },
       "foreign_keys": {
         "event": {
@@ -243,6 +248,10 @@
         "coverage_exception": {
           "definition": "models.ForeignKey('events.JudgingReason', null=True, blank=True, on_delete=models.PROTECT, related_name='+')",
           "target": "events.JudgingReason"
+        },
+        "advanced_from": {
+          "definition": "models.ForeignKey('self', null=True, blank=True, on_delete=models.PROTECT, related_name='+')",
+          "target": "events.JudgingRound"
         }
       },
       "user_edges": {},
@@ -253,7 +262,8 @@
         "ev_round_state",
         "ev_round_normalization",
         "ev_round_timing",
-        "ev_round_window"
+        "ev_round_window",
+        "ev_round_visibility"
       ],
       "unique_fields": [],
       "uniqueness_policy": "Remap composite FK keys; public UUIDs preserve and refuse collision preflight; OneToOne scope remaps. Never regenerate an announced identity.",
@@ -765,7 +775,8 @@
         "assignment": "models.OneToOneField(JudgeAssignment, on_delete=models.CASCADE, related_name='score')",
         "criterion_values": "models.JSONField(default=dict)",
         "notes": "models.TextField(blank=True, max_length=4000)",
-        "submitted_at": "models.DateTimeField(null=True, blank=True)"
+        "submitted_at": "models.DateTimeField(null=True, blank=True)",
+        "saved_at": "models.DateTimeField(null=True, blank=True)"
       },
       "foreign_keys": {
         "makerspace": {
@@ -1458,6 +1469,287 @@
       "immutable": true,
       "purge": "event host only; explicit dependency graph and lifecycle purge capability; never delete referenced global organizations or account vault",
       "tenant_scope": "publication.event.makerspace_id"
+    },
+    {
+      "model": "events.JudgingPanelSeat",
+      "module": "backend/apps/events/judging/models_definitions.py",
+      "fields": {
+        "id": "models.BigAutoField(primary_key=True)",
+        "round": "models.ForeignKey(JudgingRound, on_delete=models.CASCADE, related_name='panel_seats')",
+        "judge_role_assignment": "models.ForeignKey('events.EventRoleAssignment', on_delete=models.PROTECT, related_name='+')"
+      },
+      "foreign_keys": {
+        "round": {
+          "definition": "models.ForeignKey(JudgingRound, on_delete=models.CASCADE, related_name='panel_seats')",
+          "target": "events.JudgingRound"
+        },
+        "judge_role_assignment": {
+          "definition": "models.ForeignKey('events.EventRoleAssignment', on_delete=models.PROTECT, related_name='+')",
+          "target": "events.EventRoleAssignment"
+        }
+      },
+      "user_edges": {},
+      "constraints": [
+        "ev_round_panel_seat"
+      ],
+      "unique_fields": [],
+      "uniqueness_policy": "Remap composite FK keys; OneToOne scope remaps (lane L21b).",
+      "tenant_export": "PRESERVE typed refs and append-only money/selection evidence (lane L21b)",
+      "tenant_import_reset": {},
+      "deployment_backup": "preserve under existing encrypted archive custody",
+      "pii_fields": [],
+      "pii_scope": null,
+      "owned_object_fields": [],
+      "immutable": false,
+      "purge": "event host only; explicit dependency graph and lifecycle purge capability",
+      "tenant_scope": "event.makerspace_id"
+    },
+    {
+      "model": "events.FinalistAdvance",
+      "module": "backend/apps/events/judging/models_finalists.py",
+      "fields": {
+        "id": "models.BigAutoField(primary_key=True)",
+        "event": "models.ForeignKey('events.Event', on_delete=models.CASCADE, related_name='+')",
+        "source_round": "models.ForeignKey('events.JudgingRound', on_delete=models.PROTECT, related_name='+')",
+        "target_round": "models.ForeignKey('events.JudgingRound', on_delete=models.PROTECT, related_name='+')",
+        "selection": "models.CharField(max_length=8, choices=(('top_n', 'Top N'), ('manual', 'Hand-picked')))",
+        "top_n": "models.PositiveSmallIntegerField(null=True, blank=True)",
+        "fingerprint": "models.CharField(max_length=64)",
+        "created_by": "models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name='+')",
+        "created_at": "models.DateTimeField(auto_now_add=True)"
+      },
+      "foreign_keys": {
+        "event": {
+          "definition": "models.ForeignKey('events.Event', on_delete=models.CASCADE, related_name='+')",
+          "target": "events.Event"
+        },
+        "source_round": {
+          "definition": "models.ForeignKey('events.JudgingRound', on_delete=models.PROTECT, related_name='+')",
+          "target": "events.JudgingRound"
+        },
+        "target_round": {
+          "definition": "models.ForeignKey('events.JudgingRound', on_delete=models.PROTECT, related_name='+')",
+          "target": "events.JudgingRound"
+        },
+        "created_by": {
+          "definition": "models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name='+')",
+          "target": "accounts.User"
+        }
+      },
+      "user_edges": {
+        "created_by": "models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name='+')"
+      },
+      "constraints": [
+        "ev_finalist_selection",
+        "ev_finalist_distinct_rounds",
+        "ev_finalist_top_n"
+      ],
+      "unique_fields": [],
+      "uniqueness_policy": "Remap composite FK keys; OneToOne scope remaps (lane L21b).",
+      "tenant_export": "PRESERVE typed refs and append-only money/selection evidence (lane L21b)",
+      "tenant_import_reset": {},
+      "deployment_backup": "preserve under existing encrypted archive custody",
+      "pii_fields": [],
+      "pii_scope": null,
+      "owned_object_fields": [],
+      "immutable": true,
+      "purge": "event host only; explicit dependency graph and lifecycle purge capability",
+      "tenant_scope": "event.makerspace_id"
+    },
+    {
+      "model": "events.JudgingFinalist",
+      "module": "backend/apps/events/judging/models_finalists.py",
+      "fields": {
+        "id": "models.BigAutoField(primary_key=True)",
+        "advance": "models.ForeignKey(FinalistAdvance, on_delete=models.CASCADE, related_name='finalists')",
+        "snapshot": "models.ForeignKey('events.SubmissionSnapshot', on_delete=models.PROTECT, related_name='+')",
+        "source_rank": "models.PositiveSmallIntegerField(null=True, blank=True)"
+      },
+      "foreign_keys": {
+        "advance": {
+          "definition": "models.ForeignKey(FinalistAdvance, on_delete=models.CASCADE, related_name='finalists')",
+          "target": "events.FinalistAdvance"
+        },
+        "snapshot": {
+          "definition": "models.ForeignKey('events.SubmissionSnapshot', on_delete=models.PROTECT, related_name='+')",
+          "target": "events.SubmissionSnapshot"
+        }
+      },
+      "user_edges": {},
+      "constraints": [
+        "ev_finalist_once"
+      ],
+      "unique_fields": [],
+      "uniqueness_policy": "Remap composite FK keys; OneToOne scope remaps (lane L21b).",
+      "tenant_export": "PRESERVE typed refs and append-only money/selection evidence (lane L21b)",
+      "tenant_import_reset": {},
+      "deployment_backup": "preserve under existing encrypted archive custody",
+      "pii_fields": [],
+      "pii_scope": null,
+      "owned_object_fields": [],
+      "immutable": true,
+      "purge": "event host only; explicit dependency graph and lifecycle purge capability",
+      "tenant_scope": "event.makerspace_id"
+    },
+    {
+      "model": "events.FinalistAnnouncement",
+      "module": "backend/apps/events/judging/models_finalists.py",
+      "fields": {
+        "id": "models.BigAutoField(primary_key=True)",
+        "event": "models.ForeignKey('events.Event', on_delete=models.CASCADE, related_name='+')",
+        "advance": "models.OneToOneField(FinalistAdvance, on_delete=models.PROTECT, related_name='announcement')",
+        "published_at": "models.DateTimeField()",
+        "published_by": "models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name='+')"
+      },
+      "foreign_keys": {
+        "event": {
+          "definition": "models.ForeignKey('events.Event', on_delete=models.CASCADE, related_name='+')",
+          "target": "events.Event"
+        },
+        "advance": {
+          "definition": "models.OneToOneField(FinalistAdvance, on_delete=models.PROTECT, related_name='announcement')",
+          "target": "events.FinalistAdvance"
+        },
+        "published_by": {
+          "definition": "models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name='+')",
+          "target": "accounts.User"
+        }
+      },
+      "user_edges": {
+        "published_by": "models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name='+')"
+      },
+      "constraints": [],
+      "unique_fields": [
+        "advance"
+      ],
+      "uniqueness_policy": "Remap composite FK keys; OneToOne scope remaps (lane L21b).",
+      "tenant_export": "PRESERVE typed refs and append-only money/selection evidence (lane L21b)",
+      "tenant_import_reset": {},
+      "deployment_backup": "preserve under existing encrypted archive custody",
+      "pii_fields": [],
+      "pii_scope": null,
+      "owned_object_fields": [],
+      "immutable": true,
+      "purge": "event host only; explicit dependency graph and lifecycle purge capability",
+      "tenant_scope": "event.makerspace_id"
+    },
+    {
+      "model": "events.HackathonProgrammeOptions",
+      "module": "backend/apps/events/judging/models_options.py",
+      "fields": {
+        "id": "models.BigAutoField(primary_key=True)",
+        "event": "models.OneToOneField('events.Event', on_delete=models.CASCADE, related_name='programme_options')",
+        "version": "models.PositiveIntegerField(default=1)",
+        "results_email": "models.BooleanField(default=False)",
+        "submission_receipt_email": "models.BooleanField(default=False)",
+        "finalists_email": "models.BooleanField(default=False)",
+        "refund_on_disqualification": "models.BooleanField(default=False)",
+        "entry_fee": "models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)",
+        "team_fee": "models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)",
+        "updated_at": "models.DateTimeField(auto_now=True)"
+      },
+      "foreign_keys": {
+        "event": {
+          "definition": "models.OneToOneField('events.Event', on_delete=models.CASCADE, related_name='programme_options')",
+          "target": "events.Event"
+        }
+      },
+      "user_edges": {},
+      "constraints": [
+        "ev_options_entry_fee",
+        "ev_options_team_fee"
+      ],
+      "unique_fields": [
+        "event"
+      ],
+      "uniqueness_policy": "Remap composite FK keys; OneToOne scope remaps (lane L21b).",
+      "tenant_export": "PRESERVE typed refs and append-only money/selection evidence (lane L21b)",
+      "tenant_import_reset": {},
+      "deployment_backup": "preserve under existing encrypted archive custody",
+      "pii_fields": [],
+      "pii_scope": null,
+      "owned_object_fields": [],
+      "immutable": false,
+      "purge": "event host only; explicit dependency graph and lifecycle purge capability",
+      "tenant_scope": "event.makerspace_id"
+    },
+    {
+      "model": "events.HackathonPrizePayout",
+      "module": "backend/apps/events/judging/models_payouts.py",
+      "fields": {
+        "id": "models.BigAutoField(primary_key=True)",
+        "makerspace": "models.ForeignKey('makerspaces.Makerspace', on_delete=models.CASCADE, related_name='+')",
+        "event": "models.ForeignKey('events.Event', on_delete=models.CASCADE, related_name='+')",
+        "award": "models.ForeignKey('events.EventAward', on_delete=models.PROTECT, related_name='+')",
+        "prize": "models.ForeignKey('events.HackathonPrize', on_delete=models.PROTECT, related_name='+')",
+        "recipient": "models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name='+')",
+        "kind": "models.CharField(max_length=8, default='payout', choices=(('payout', 'Payout'), ('reversal', 'Reversal')))",
+        "reverses": "models.OneToOneField('self', null=True, blank=True, on_delete=models.PROTECT, related_name='reversal')",
+        "amount": "models.DecimalField(max_digits=12, decimal_places=2)",
+        "currency": "models.CharField(max_length=3)",
+        "method": "models.CharField(max_length=16)",
+        "reference": "models.CharField(max_length=64, blank=True)",
+        "paid_on": "models.DateField()",
+        "ledger_entry": "models.ForeignKey('payments.LedgerEntry', on_delete=models.PROTECT, related_name='+')",
+        "recorded_by": "models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name='+')",
+        "created_at": "models.DateTimeField(auto_now_add=True)"
+      },
+      "foreign_keys": {
+        "makerspace": {
+          "definition": "models.ForeignKey('makerspaces.Makerspace', on_delete=models.CASCADE, related_name='+')",
+          "target": "makerspaces.Makerspace"
+        },
+        "event": {
+          "definition": "models.ForeignKey('events.Event', on_delete=models.CASCADE, related_name='+')",
+          "target": "events.Event"
+        },
+        "award": {
+          "definition": "models.ForeignKey('events.EventAward', on_delete=models.PROTECT, related_name='+')",
+          "target": "events.EventAward"
+        },
+        "prize": {
+          "definition": "models.ForeignKey('events.HackathonPrize', on_delete=models.PROTECT, related_name='+')",
+          "target": "events.HackathonPrize"
+        },
+        "recipient": {
+          "definition": "models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name='+')",
+          "target": "accounts.User"
+        },
+        "reverses": {
+          "definition": "models.OneToOneField('self', null=True, blank=True, on_delete=models.PROTECT, related_name='reversal')",
+          "target": "events.HackathonPrizePayout"
+        },
+        "ledger_entry": {
+          "definition": "models.ForeignKey('payments.LedgerEntry', on_delete=models.PROTECT, related_name='+')",
+          "target": "payments.LedgerEntry"
+        },
+        "recorded_by": {
+          "definition": "models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name='+')",
+          "target": "accounts.User"
+        }
+      },
+      "user_edges": {
+        "recipient": "models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name='+')",
+        "recorded_by": "models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name='+')"
+      },
+      "constraints": [
+        "ev_payout_amount_positive",
+        "ev_payout_kind",
+        "ev_payout_reversal_shape"
+      ],
+      "unique_fields": [
+        "reverses"
+      ],
+      "uniqueness_policy": "Remap composite FK keys; OneToOne scope remaps (lane L21b).",
+      "tenant_export": "PRESERVE typed refs and append-only money/selection evidence (lane L21b)",
+      "tenant_import_reset": {},
+      "deployment_backup": "preserve under existing encrypted archive custody",
+      "pii_fields": [],
+      "pii_scope": null,
+      "owned_object_fields": [],
+      "immutable": true,
+      "purge": "event host only; explicit dependency graph and lifecycle purge capability",
+      "tenant_scope": "event.makerspace_id"
     }
   ],
   "json_typed_id_slots": {

@@ -57,3 +57,39 @@ Routes under `/api/v1/admin/events/{event_id}/` include `judge-assignments/`,
 `sponsors/{sponsor_id}/resumes/{participant_asset_id}/`. Public gallery/results are under
 `/api/v1/public/event-programmes/{public_token}/`. Consult mounted OpenAPI for exact
 methods; authority is enforced server-side on every attempt and stream recheck.
+
+## Judging extras (release 2 L21b)
+
+**Score next project.** In an open weighted round, "Score next project" opens a project you
+already started, otherwise the eligible project with the fewest reviews. When the organizer sets
+the round to "every project", it may hand you a project nobody assigned to you; it is then
+assigned exactly like a planned one. A round may have a panel (only those judges score it) and
+"fresh eyes" (you never get a team you reviewed in an earlier round). Each project still needs at
+least three reviews.
+
+**On your phone.** With an active judge, mentor, volunteer or crew role, the app can step your
+session up to an event grant for that one event (attestation and your second factor, like a staff
+step-up). It opens that event's desks and nothing else, and ends when your role ends.
+
+**For organizers.**
+- *Progress* lists projects below the review target, each judge's completion, scores more than two
+  standard deviations from the project mean or more than 25 points apart (on a 0-100 scale), and
+  drafts saved but not submitted for over a day.
+- *Assignment* can be balanced, by track, by room or random. Random is seeded: preview, Re-roll for a
+  new seed, then assign with the seed you previewed.
+- *Finalists*: from a finalized round, preview the top N (ties at the cutoff all advance) or
+  hand-pick projects, then advance them into a draft round, which opens on the finalists alone.
+  Disqualified and withdrawn projects never advance. Publish finalists separately; the public
+  results page shows them, finalists may get an email, and finalist certificates follow the
+  publication. Results and prizes come from the final round.
+- *Emails*: the results announcement and the submission receipt are per-event switches, off for
+  new events. "Send results email now" sends it once for the published results.
+- *Prize payouts*: set a prize amount per winner, then record each payout by hand after paying
+  (record_payment or the Event Manager). Each payout is an expense in the finance ledger; a mistake
+  is reversed, never edited. Nothing is paid automatically.
+
+Routes (L21b) under `/api/v1/admin/events/{event_id}/`: `finalists/`, `finalists/preview/`,
+`finalists/apply/`, `finalists/publish/`, `judging-rounds/{round_id}/progress/`,
+`judging-rounds/{round_id}/next-project/`, `programme-options/`, `results/send-email/`,
+`prize-payouts/`, `prize-payouts/{payout_id}/reverse/`, `lists/{list}/` and `lists/{list}/export/`.
+The public gallery takes `q`, `sort` (`newest`, `az`, `awards`) and `awards=only`.

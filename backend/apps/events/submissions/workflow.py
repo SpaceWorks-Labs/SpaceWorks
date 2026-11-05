@@ -62,6 +62,9 @@ def command(*, actor, event_id, team_id, operation_id, expected_version, action,
                 raise SubmissionError("leader_required", 403)
             if action == "submit" and project.state not in {"draft", "submitted"}:
                 raise SubmissionError("invalid_transition", 409)
+            if action == "submit":  # L21b: a draft until the entry fee and a paid team's charge are settled.
+                from .entry_fees import require_submit_paid
+                require_submit_paid(project, context.event, project.team)
             if now > cutoff and action != "amend" and context.late_policy != "accept_flagged":
                 raise SubmissionError("submission_deadline", 409)
             reason = data.get("reason", "")
@@ -185,6 +188,8 @@ def transition_review_locked(*, actor, context, submission_id, snapshot_id, expe
             raise SubmissionError("disqualification_reason_required")
         boundary().invalidate_snapshot(context=context, snapshot_id=snapshot_id)
         project.triage, project.triage_reason = "ineligible", reason
+        from .entry_fees import on_disqualified
+        on_disqualified(event=context.event, project=project, actor=actor)
     project.state, project.version = state, project.version + 1
     project.save(update_fields=["state", "version", "triage", "triage_reason"])
     record(actor, "event.submission_review_transition", makerspace=context.event.makerspace, target=project,

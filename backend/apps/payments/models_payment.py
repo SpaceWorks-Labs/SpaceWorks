@@ -33,13 +33,17 @@ class Payment(models.Model):
         # and a sponsor's agreed payment (subject_id = SponsorshipCharge id).
         DONATION = "donation", "Donation"
         SPONSORSHIP = "sponsorship", "Sponsorship"
+        # Lane L21b. A hackathon project's entry fee (subject_id = HackathonSubmission id) and a
+        # paid team's one charge on its leader (subject_id = HackathonTeam id, C-39).
+        SUBMISSION_FEE = "submission_fee", "Project entry fee"
+        TEAM_REGISTRATION = "team_registration", "Team registration"
 
     #: Subjects whose subject_id is the HardwareRequest id.
     LOAN_SUBJECT_TYPES = ("loan_deposit", "loan_late_fee", "loan_rental")
     #: Subjects whose subject_id is a RequesterAccountability row of a loan.
     LOAN_ACCOUNTABILITY_SUBJECT_TYPES = ("loan_damage", "loan_lost")
     #: Lane L6: event money that is not one registration's own charge.
-    EVENT_SUBJECT_TYPES = ("event_registration", "event_order", "event_venue_fee")
+    EVENT_SUBJECT_TYPES = ("event_registration", "event_order", "event_venue_fee", "submission_fee", "team_registration")
     #: Lane L18: money that may belong to no account (a guest donor, a sponsor organisation).
     ACCOUNTLESS_SUBJECT_TYPES = ("donation", "sponsorship")
     #: Lane L18: a gift is never a taxable supply, so no tax is frozen on top of it.

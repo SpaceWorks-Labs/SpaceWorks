@@ -41,6 +41,16 @@ def tax_key(space, tax):
     return tenant_key_context(prepare_tenant_key(space.pk))
 
 
+def require_tracking(space):
+    """#184 G10: gifts and sponsor money are recorded only while `charges.enabled` and
+    `charges.donations` are on. Off, the space takes no donation or sponsor money at all."""
+    from apps.payments.availability import charge_tracking_enabled
+
+    if not charge_tracking_enabled(space, "donations"):
+        raise DonationRefused("This space is not recording donation or sponsor money right now.", "charges_off")
+    return space
+
+
 def require_feature(space, key):
     if not feature_enabled(space, key):
         raise FeatureOff(key)

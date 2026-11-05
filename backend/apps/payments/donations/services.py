@@ -12,7 +12,7 @@ from decimal import Decimal, InvalidOperation
 
 from django.db import transaction
 from django.utils import timezone
-from .gates import DonationRefused
+from .gates import DonationRefused, require_tracking
 
 from apps.audit import services as audit
 
@@ -60,6 +60,7 @@ def create_gift(space, donor, *, amount, campaign=None, note="", tax=(False, "",
     from apps.tenant_migration.gate_runtime import assert_write_allowed
 
     assert_write_allowed(space.pk)
+    require_tracking(space)
     wants, pan, address = tax
     if wants and tax_detail is None:
         tax_detail = tax_detail_for(space, pan, address)

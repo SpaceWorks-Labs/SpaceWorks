@@ -126754,6 +126754,272 @@
                 }
             }
         },
+        "/api/v1/admin/platform/overview": {
+            "get": {
+                "operationId": "api_v1_admin_platform_overview_retrieve",
+                "description": "Combined totals across every live makerspace with the per-space breakdown beside them, per domain block (shown only where its module is on somewhere) and money per currency. Counts and money only; no person data. Cached; heavy work runs in Celery.",
+                "summary": "Get the superadmin platform overview",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "end",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        },
+                        "description": "Last UTC day, inclusive; custom period only."
+                    },
+                    {
+                        "in": "query",
+                        "name": "include_excluded",
+                        "schema": {
+                            "type": "boolean"
+                        },
+                        "description": "Also count archived and not-serving (importing/aborted) spaces. Default false."
+                    },
+                    {
+                        "in": "query",
+                        "name": "period",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "all_time",
+                                "custom",
+                                "this_month",
+                                "this_year"
+                            ]
+                        },
+                        "description": "Default this_month. UTC periods."
+                    },
+                    {
+                        "in": "query",
+                        "name": "refresh",
+                        "schema": {
+                            "type": "boolean"
+                        },
+                        "description": "Recompute now."
+                    },
+                    {
+                        "in": "query",
+                        "name": "start",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        },
+                        "description": "First UTC day; custom period only."
+                    }
+                ],
+                "tags": [
+                    "Platform overview"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PlatformOverview"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "202": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PlatformOverviewComputing"
+                                }
+                            }
+                        },
+                        "description": "Still computing in the background; retry after Retry-After seconds."
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PlatformOverviewError"
+                                }
+                            }
+                        },
+                        "description": "The computation failed; retry shortly."
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PlatformOverviewError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PlatformOverviewError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PlatformOverviewError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PlatformOverviewError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/overview/export": {
+            "get": {
+                "operationId": "api_v1_admin_platform_overview_export_retrieve",
+                "description": "The same figures as the overview, one row per figure. Every export is audited.",
+                "summary": "Export the superadmin platform overview as CSV",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "end",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        },
+                        "description": "Last UTC day, inclusive; custom period only."
+                    },
+                    {
+                        "in": "query",
+                        "name": "include_excluded",
+                        "schema": {
+                            "type": "boolean"
+                        },
+                        "description": "Also count archived and not-serving (importing/aborted) spaces. Default false."
+                    },
+                    {
+                        "in": "query",
+                        "name": "period",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "all_time",
+                                "custom",
+                                "this_month",
+                                "this_year"
+                            ]
+                        },
+                        "description": "Default this_month. UTC periods."
+                    },
+                    {
+                        "in": "query",
+                        "name": "start",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        },
+                        "description": "First UTC day; custom period only."
+                    }
+                ],
+                "tags": [
+                    "Platform overview"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "text/csv": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "description": "CSV file."
+                    },
+                    "202": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PlatformOverviewComputing"
+                                }
+                            }
+                        },
+                        "description": "Still computing in the background; retry after Retry-After seconds."
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PlatformOverviewError"
+                                }
+                            }
+                        },
+                        "description": "The computation failed; retry shortly."
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PlatformOverviewError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PlatformOverviewError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PlatformOverviewError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PlatformOverviewError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/v1/admin/platform/payment-settings": {
             "get": {
                 "operationId": "api_v1_admin_platform_payment_settings_retrieve",
@@ -267596,6 +267862,415 @@
                     "original_amount_minor"
                 ]
             },
+            "OverviewBlock": {
+                "type": "object",
+                "properties": {
+                    "key": {
+                        "type": "string"
+                    },
+                    "label": {
+                        "type": "string"
+                    },
+                    "switches": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Module or capability keys that gate it."
+                    },
+                    "on_in": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "off_in": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "metrics": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/OverviewMetric"
+                        }
+                    },
+                    "totals": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "number",
+                            "format": "double",
+                            "nullable": true
+                        },
+                        "description": "Sum of the per-space rows; percent metrics are recomputed from sums."
+                    },
+                    "rows": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/OverviewBlockRow"
+                        }
+                    },
+                    "platform_metrics": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/OverviewPlatformMetric"
+                        },
+                        "description": "Deployment-wide numbers with no space."
+                    }
+                },
+                "required": [
+                    "key",
+                    "label",
+                    "metrics",
+                    "off_in",
+                    "on_in",
+                    "platform_metrics",
+                    "rows",
+                    "switches",
+                    "totals"
+                ]
+            },
+            "OverviewBlockRow": {
+                "type": "object",
+                "properties": {
+                    "makerspace_id": {
+                        "type": "integer"
+                    },
+                    "values": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "number",
+                            "format": "double",
+                            "nullable": true
+                        },
+                        "nullable": true,
+                        "description": "Null when the block's module is off in this space."
+                    }
+                },
+                "required": [
+                    "makerspace_id",
+                    "values"
+                ]
+            },
+            "OverviewCurrency": {
+                "type": "object",
+                "properties": {
+                    "currency": {
+                        "type": "string",
+                        "maxLength": 3
+                    },
+                    "totals": {
+                        "$ref": "#/components/schemas/OverviewMoneyFigures"
+                    },
+                    "rows": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/OverviewMoneyRow"
+                        }
+                    }
+                },
+                "required": [
+                    "currency",
+                    "rows",
+                    "totals"
+                ]
+            },
+            "OverviewHiddenBlock": {
+                "type": "object",
+                "properties": {
+                    "key": {
+                        "type": "string"
+                    },
+                    "label": {
+                        "type": "string"
+                    },
+                    "switches": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "on_in": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "off_in": {
+                        "type": "integer",
+                        "minimum": 0
+                    }
+                },
+                "required": [
+                    "key",
+                    "label",
+                    "off_in",
+                    "on_in",
+                    "switches"
+                ]
+            },
+            "OverviewMetric": {
+                "type": "object",
+                "properties": {
+                    "key": {
+                        "type": "string"
+                    },
+                    "label": {
+                        "type": "string"
+                    },
+                    "unit": {
+                        "$ref": "#/components/schemas/OverviewMetricUnitEnum"
+                    },
+                    "timing": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/OverviewMetricTimingEnum"
+                            }
+                        ],
+                        "description": "snapshot = the state now; period = inside the window.\n\n* `period` - period\n* `snapshot` - snapshot"
+                    }
+                },
+                "required": [
+                    "key",
+                    "label",
+                    "timing",
+                    "unit"
+                ]
+            },
+            "OverviewMetricTimingEnum": {
+                "enum": [
+                    "period",
+                    "snapshot"
+                ],
+                "type": "string",
+                "description": "* `period` - period\n* `snapshot` - snapshot"
+            },
+            "OverviewMetricUnitEnum": {
+                "enum": [
+                    "count",
+                    "hours",
+                    "bytes",
+                    "percent",
+                    "money"
+                ],
+                "type": "string",
+                "description": "* `count` - count\n* `hours` - hours\n* `bytes` - bytes\n* `percent` - percent\n* `money` - money"
+            },
+            "OverviewModule": {
+                "type": "object",
+                "properties": {
+                    "key": {
+                        "type": "string"
+                    },
+                    "label": {
+                        "type": "string"
+                    },
+                    "on_in": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "off_in": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "space_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "required": [
+                    "key",
+                    "label",
+                    "off_in",
+                    "on_in",
+                    "space_ids"
+                ]
+            },
+            "OverviewMoney": {
+                "type": "object",
+                "properties": {
+                    "key": {
+                        "type": "string"
+                    },
+                    "label": {
+                        "type": "string"
+                    },
+                    "switches": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "on_in": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "off_in": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "metrics": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/OverviewMetric"
+                        }
+                    },
+                    "currencies": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/OverviewCurrency"
+                        },
+                        "description": "One entry per currency; never summed across."
+                    }
+                },
+                "required": [
+                    "currencies",
+                    "key",
+                    "label",
+                    "metrics",
+                    "off_in",
+                    "on_in",
+                    "switches"
+                ]
+            },
+            "OverviewMoneyFigures": {
+                "type": "object",
+                "properties": {
+                    "charges": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "amounts": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "string",
+                            "format": "decimal",
+                            "pattern": "^-?\\d{0,14}(?:\\.\\d{0,2})?$"
+                        }
+                    }
+                },
+                "required": [
+                    "amounts",
+                    "charges"
+                ]
+            },
+            "OverviewMoneyRow": {
+                "type": "object",
+                "properties": {
+                    "charges": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "amounts": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "string",
+                            "format": "decimal",
+                            "pattern": "^-?\\d{0,14}(?:\\.\\d{0,2})?$"
+                        }
+                    },
+                    "makerspace_id": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "amounts",
+                    "charges",
+                    "makerspace_id"
+                ]
+            },
+            "OverviewPlatformMetric": {
+                "type": "object",
+                "properties": {
+                    "key": {
+                        "type": "string"
+                    },
+                    "label": {
+                        "type": "string"
+                    },
+                    "unit": {
+                        "$ref": "#/components/schemas/OverviewMetricUnitEnum"
+                    },
+                    "timing": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/OverviewMetricTimingEnum"
+                            }
+                        ],
+                        "description": "snapshot = the state now; period = inside the window.\n\n* `period` - period\n* `snapshot` - snapshot"
+                    },
+                    "value": {
+                        "type": "integer",
+                        "minimum": 0
+                    }
+                },
+                "required": [
+                    "key",
+                    "label",
+                    "timing",
+                    "unit",
+                    "value"
+                ]
+            },
+            "OverviewSpace": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "slug": {
+                        "type": "string"
+                    },
+                    "excluded_reason": {
+                        "type": "string",
+                        "nullable": true,
+                        "description": "archived, importing or aborted; null when live."
+                    },
+                    "directory_hidden": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "directory_hidden",
+                    "excluded_reason",
+                    "id",
+                    "name",
+                    "slug"
+                ]
+            },
+            "OverviewWindow": {
+                "type": "object",
+                "properties": {
+                    "preset": {
+                        "$ref": "#/components/schemas/OverviewWindowPresetEnum"
+                    },
+                    "starts_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true,
+                        "description": "Null for all time."
+                    },
+                    "ends_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "ends_at",
+                    "preset",
+                    "starts_at"
+                ]
+            },
+            "OverviewWindowPresetEnum": {
+                "enum": [
+                    "this_month",
+                    "this_year",
+                    "all_time",
+                    "custom"
+                ],
+                "type": "string",
+                "description": "* `this_month` - this_month\n* `this_year` - this_year\n* `all_time` - all_time\n* `custom` - custom"
+            },
             "OwnAttendance": {
                 "type": "object",
                 "properties": {
@@ -284760,6 +285435,117 @@
                     "state",
                     "verified_at"
                 ]
+            },
+            "PlatformOverview": {
+                "type": "object",
+                "properties": {
+                    "status": {
+                        "$ref": "#/components/schemas/PlatformOverviewStatusEnum"
+                    },
+                    "computed_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "window": {
+                        "$ref": "#/components/schemas/OverviewWindow"
+                    },
+                    "include_excluded": {
+                        "type": "boolean"
+                    },
+                    "excluded_count": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "spaces": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/OverviewSpace"
+                        }
+                    },
+                    "blocks": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/OverviewBlock"
+                        }
+                    },
+                    "money": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/OverviewMoney"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "hidden_blocks": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/OverviewHiddenBlock"
+                        },
+                        "description": "Blocks whose module is off in every space."
+                    },
+                    "modules": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/OverviewModule"
+                        }
+                    }
+                },
+                "required": [
+                    "blocks",
+                    "computed_at",
+                    "excluded_count",
+                    "hidden_blocks",
+                    "include_excluded",
+                    "modules",
+                    "money",
+                    "spaces",
+                    "status",
+                    "window"
+                ]
+            },
+            "PlatformOverviewComputing": {
+                "type": "object",
+                "properties": {
+                    "status": {
+                        "$ref": "#/components/schemas/PlatformOverviewComputingStatusEnum"
+                    },
+                    "retry_after_seconds": {
+                        "type": "integer",
+                        "minimum": 1
+                    }
+                },
+                "required": [
+                    "retry_after_seconds",
+                    "status"
+                ]
+            },
+            "PlatformOverviewComputingStatusEnum": {
+                "enum": [
+                    "computing"
+                ],
+                "type": "string",
+                "description": "* `computing` - computing"
+            },
+            "PlatformOverviewError": {
+                "type": "object",
+                "properties": {
+                    "detail": {
+                        "type": "string"
+                    },
+                    "code": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "detail"
+                ]
+            },
+            "PlatformOverviewStatusEnum": {
+                "enum": [
+                    "ready"
+                ],
+                "type": "string",
+                "description": "* `ready` - ready"
             },
             "PlatformProblem": {
                 "type": "object",

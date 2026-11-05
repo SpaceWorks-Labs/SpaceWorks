@@ -128,6 +128,7 @@ export const openApiTags = [
   "Personal notifications",
   "Platform",
   "Platform insights",
+  "Platform overview",
   "Platform tenant reports",
   "Presence",
   "Presence staff",
@@ -1117,6 +1118,8 @@ export const openApiPaths = [
   "/api/v1/admin/platform/metabase/login",
   "/api/v1/admin/platform/metabase/login/rotate",
   "/api/v1/admin/platform/mobile-readiness",
+  "/api/v1/admin/platform/overview",
+  "/api/v1/admin/platform/overview/export",
   "/api/v1/admin/platform/payment-settings",
   "/api/v1/admin/platform/problems",
   "/api/v1/admin/platform/restores",
@@ -15255,6 +15258,109 @@ export type OverrideAllocation = {
   "original_amount_minor": number;
 };
 
+export type OverviewBlock = {
+  "key": string;
+  "label": string;
+  "switches": Array<string>;
+  "on_in": number;
+  "off_in": number;
+  "metrics": Array<OverviewMetric>;
+  "totals": {
+  [key: string]: number | null;
+};
+  "rows": Array<OverviewBlockRow>;
+  "platform_metrics": Array<OverviewPlatformMetric>;
+};
+
+export type OverviewBlockRow = {
+  "makerspace_id": number;
+  "values": {
+  [key: string]: number | null;
+} | null;
+};
+
+export type OverviewCurrency = {
+  "currency": string;
+  "totals": OverviewMoneyFigures;
+  "rows": Array<OverviewMoneyRow>;
+};
+
+export type OverviewHiddenBlock = {
+  "key": string;
+  "label": string;
+  "switches": Array<string>;
+  "on_in": number;
+  "off_in": number;
+};
+
+export type OverviewMetric = {
+  "key": string;
+  "label": string;
+  "unit": OverviewMetricUnitEnum;
+  "timing": OverviewMetricTimingEnum;
+};
+
+export type OverviewMetricTimingEnum = "period" | "snapshot";
+
+export type OverviewMetricUnitEnum = "count" | "hours" | "bytes" | "percent" | "money";
+
+export type OverviewModule = {
+  "key": string;
+  "label": string;
+  "on_in": number;
+  "off_in": number;
+  "space_ids": Array<number>;
+};
+
+export type OverviewMoney = {
+  "key": string;
+  "label": string;
+  "switches": Array<string>;
+  "on_in": number;
+  "off_in": number;
+  "metrics": Array<OverviewMetric>;
+  "currencies": Array<OverviewCurrency>;
+};
+
+export type OverviewMoneyFigures = {
+  "charges": number;
+  "amounts": {
+  [key: string]: string;
+};
+};
+
+export type OverviewMoneyRow = {
+  "charges": number;
+  "amounts": {
+  [key: string]: string;
+};
+  "makerspace_id": number;
+};
+
+export type OverviewPlatformMetric = {
+  "key": string;
+  "label": string;
+  "unit": OverviewMetricUnitEnum;
+  "timing": OverviewMetricTimingEnum;
+  "value": number;
+};
+
+export type OverviewSpace = {
+  "id": number;
+  "name": string;
+  "slug": string;
+  "excluded_reason": string | null;
+  "directory_hidden": boolean;
+};
+
+export type OverviewWindow = {
+  "preset": OverviewWindowPresetEnum;
+  "starts_at": string | null;
+  "ends_at": string;
+};
+
+export type OverviewWindowPresetEnum = "this_month" | "this_year" | "all_time" | "custom";
+
 export type OwnAttendance = {
   "event_id": number;
   "event_title": string;
@@ -18917,6 +19023,33 @@ export type PlatformOffsiteHealth = {
   "verified_at": string | null;
   "has_error": boolean;
 };
+
+export type PlatformOverview = {
+  "status": PlatformOverviewStatusEnum;
+  "computed_at": string;
+  "window": OverviewWindow;
+  "include_excluded": boolean;
+  "excluded_count": number;
+  "spaces": Array<OverviewSpace>;
+  "blocks": Array<OverviewBlock>;
+  "money": OverviewMoney | null;
+  "hidden_blocks": Array<OverviewHiddenBlock>;
+  "modules": Array<OverviewModule>;
+};
+
+export type PlatformOverviewComputing = {
+  "status": PlatformOverviewComputingStatusEnum;
+  "retry_after_seconds": number;
+};
+
+export type PlatformOverviewComputingStatusEnum = "computing";
+
+export type PlatformOverviewError = {
+  "detail": string;
+  "code"?: string;
+};
+
+export type PlatformOverviewStatusEnum = "ready";
 
 export type PlatformProblem = {
   "key": string;

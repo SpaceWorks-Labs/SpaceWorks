@@ -119,3 +119,5 @@ from apps.tenant_migration.catalog_r2_l7 import PURGE_ORDER as _L7_PURGE_ORDER  
 PURGE_ORDER = _L7_PURGE_ORDER + PURGE_ORDER  # Pairwise rows are leaves of JudgeAssignment/JudgingRound.
 from apps.tenant_migration.catalog_r2_l21b import PURGE_ORDER as _L21B_PURGE_ORDER  # noqa: E402
 PURGE_ORDER = _L21B_PURGE_ORDER + PURGE_ORDER  # L21b rows are leaves of rounds, awards and snapshots.
+from apps.tenant_migration.catalog_hackmoney import PURGE_ORDER as _HM_PURGE_ORDER  # noqa: E402
+PURGE_ORDER = _HM_PURGE_ORDER + PURGE_ORDER  # hack-money rows are leaves of awards, payouts and events.

@@ -1646,7 +1646,9 @@
         "refund_on_disqualification": "models.BooleanField(default=False)",
         "entry_fee": "models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)",
         "team_fee": "models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)",
-        "updated_at": "models.DateTimeField(auto_now=True)"
+        "updated_at": "models.DateTimeField(auto_now=True)",
+        "refund_on_withdrawal": "models.BooleanField(default=False)",
+        "refund_if_not_shortlisted": "models.BooleanField(default=False)"
       },
       "foreign_keys": {
         "event": {

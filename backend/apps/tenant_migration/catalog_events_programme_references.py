@@ -216,3 +216,5 @@ from .catalog_r2_l7 import DATASETS as _L7_DATASETS  # noqa: E402
 DATASETS.update(_L7_DATASETS)
 from .catalog_r2_l21b import DATASETS as _L21B_DATASETS  # noqa: E402
 DATASETS.update(_L21B_DATASETS)
+from .catalog_hackmoney import DATASETS as _HM_DATASETS  # noqa: E402
+DATASETS.update(_HM_DATASETS)

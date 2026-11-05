@@ -68,3 +68,29 @@ def on_disqualified(*, event, project, actor):
     close_charge(event=event, subject_type="submission_fee", subject_id=project.pk, actor=actor,
                  reason_code="submission_disqualified", audit_action="event.submission.fee_closed",
                  open_due=bool(option(event, "refund_on_disqualification")))
+
+
+def on_withdrawn(*, event, project, actor):
+    """Hack-money G2, inside the withdrawing transaction: void a pending fee; a paid one opens a DUE
+    case only with the event's "refund on withdrawal" switch on."""
+    from apps.events.judging.options import option
+    from apps.events.programme_charges import close_charge
+    close_charge(event=event, subject_type="submission_fee", subject_id=project.pk, actor=actor,
+                 reason_code="submission_withdrawn", audit_action="event.submission.fee_closed",
+                 open_due=bool(option(event, "refund_on_withdrawal")))
+
+
+def on_shortlist_published(*, event, actor):
+    """Hack-money G2: with "refund if not shortlisted" on, a published shortlist opens a DUE case on
+    every PAID entry fee of a submitted project that did not advance. Off: paid fees stand.
+
+    Who advanced is asked through `judging.shortlist_seam`, the one place the stage engine replaces.
+    """
+    from apps.events.judging.options import option
+    from apps.events.judging.shortlist_seam import not_shortlisted_project_ids
+    from apps.events.programme_charges import close_charge
+    if not entry_fee(event) or not option(event, "refund_if_not_shortlisted"):
+        return
+    for project_id in not_shortlisted_project_ids(event):
+        close_charge(event=event, subject_type="submission_fee", subject_id=project_id, actor=actor,
+                     reason_code="not_shortlisted", audit_action="event.submission.fee_closed")

@@ -9,6 +9,7 @@ from . import views_results as results
 from . import views_scoring as scoring
 from . import views_sponsors as sponsors
 from . import views_l21b as l21b
+from . import views_money as money
 from .views_signals import ShortlistSignals
 from .views_sponsor_discovery import AssignedSponsorListView
 
@@ -72,6 +73,9 @@ urlpatterns = [
     route(ADMIN, "results/send-email/", l21b.ResultsSendEmail, "admin-results-send-email"),
     route(ADMIN, "prize-payouts/", l21b.PrizePayouts, "admin-prize-payouts"),
     route(ADMIN, "prize-payouts/<int:payout_id>/reverse/", l21b.PrizePayoutReverse, "admin-prize-payouts-reverse"),
+    # Hack-money (#180): team-charge retry (G15).
+    route(ADMIN, "team-charges/missing/", money.MissingTeamCharges, "admin-team-charges-missing"),
+    route(ADMIN, "team-charges/<int:team_id>/raise/", money.TeamChargeRaise, "admin-team-charges-raise"),
     route(MEMBER, "resume-consents/", sponsors.ResumeConsents, "member-resume-consents"),
     route(MEMBER, "resume-consents/<int:consent_id>/revoke/", sponsors.ResumeConsentRevoke, "member-resume-consent-revoke"),
     route(MEMBER, "teams/<int:team_id>/gallery-consent/", gallery.GalleryConsentDetail, "member-gallery-consent-detail"),

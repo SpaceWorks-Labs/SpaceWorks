@@ -1340,6 +1340,55 @@
         429,
         503
       ]
+    },
+    {
+      "name": "events-programme-admin-team-charges-missing",
+      "path": "/api/v1/admin/events/{pk}/team-charges/missing/",
+      "view": "money.MissingTeamCharges",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "authority": "manage_hackathon; events.paid_teams",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-team-charges-raise",
+      "path": "/api/v1/admin/events/{pk}/team-charges/{team_id}/raise/",
+      "view": "money.TeamChargeRaise",
+      "methods": [
+        "POST"
+      ],
+      "authority": "manage_hackathon; events.paid_teams",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
     }
   ],
   "binary_owned_by_B": {

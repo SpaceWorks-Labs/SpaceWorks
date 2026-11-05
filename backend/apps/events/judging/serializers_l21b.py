@@ -164,6 +164,8 @@ class OptionsInput(CommandInput):
     submission_receipt_email = serializers.BooleanField(required=False)
     finalists_email = serializers.BooleanField(required=False)
     refund_on_disqualification = serializers.BooleanField(required=False)
+    refund_on_withdrawal = serializers.BooleanField(required=False)
+    refund_if_not_shortlisted = serializers.BooleanField(required=False)
     entry_fee = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0.01"),
                                          allow_null=True, required=False)
     team_fee = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0.01"),
@@ -175,6 +177,8 @@ class OptionsRead(ResultEnvelope):
     submission_receipt_email = serializers.BooleanField()
     finalists_email = serializers.BooleanField()
     refund_on_disqualification = serializers.BooleanField()
+    refund_on_withdrawal = serializers.BooleanField()
+    refund_if_not_shortlisted = serializers.BooleanField()
     entry_fee = serializers.DecimalField(max_digits=12, decimal_places=2, allow_null=True)
     team_fee = serializers.DecimalField(max_digits=12, decimal_places=2, allow_null=True)
     currency = serializers.CharField()

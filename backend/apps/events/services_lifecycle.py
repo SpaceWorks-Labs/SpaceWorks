@@ -140,6 +140,8 @@ def cancel(event, *, actor, notify=True):
     if notify:
         services.notify_event_lifecycle(locked, "cancelled")
     _cancel_open_charges_after_commit(locked, actor)
+    from .programme_charges import close_for_cancelled_event  # hack-money G1: entry and team fees too
+    close_for_cancelled_event(locked, actor)
     return services._refresh(locked)
 
 

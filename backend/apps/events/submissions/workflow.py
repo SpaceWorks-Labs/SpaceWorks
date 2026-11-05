@@ -92,6 +92,8 @@ def command(*, actor, event_id, team_id, operation_id, expected_version, action,
                 return result
             if project.current_snapshot_id:
                 port.invalidate_snapshot(context=context, snapshot_id=project.current_snapshot_id)
+            from .entry_fees import on_withdrawn  # hack-money G2: void or (switch on) refund case
+            on_withdrawn(event=context.event, project=project, actor=actor)
             project.state = "withdrawn"
         project.version += 1
         project.save()

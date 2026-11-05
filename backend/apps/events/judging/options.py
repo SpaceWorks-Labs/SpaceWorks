@@ -15,7 +15,7 @@ from .serializers import validated
 from .serializers_l21b import OptionsInput
 
 FIELDS = ("results_email", "submission_receipt_email", "finalists_email", "refund_on_disqualification",
-          "entry_fee", "team_fee")
+          "refund_on_withdrawal", "refund_if_not_shortlisted", "entry_fee", "team_fee")
 
 
 def options_for(event_id):

@@ -86,6 +86,10 @@ class RefundCase(models.Model):
         SHOP_RETURN = "shop_return", "Shop items returned"
         SHOP_UNCOLLECTED = "shop_uncollected", "Shop order not collected"
         SHOP_UNFULFILLED = "shop_unfulfilled", "Shop order could not be filled"
+        #: Hack-money G2: a paid entry fee of a withdrawn project, or of a team that did not advance
+        #: at a published shortlist, each behind its own per-event switch (off by default).
+        SUBMISSION_WITHDRAWN = "submission_withdrawn", "Project withdrawn"
+        NOT_SHORTLISTED = "not_shortlisted", "Team not shortlisted"
 
     payment = models.ForeignKey(Payment, on_delete=models.PROTECT, related_name="refund_cases")
     kind = models.CharField(max_length=16, choices=Kind.choices)

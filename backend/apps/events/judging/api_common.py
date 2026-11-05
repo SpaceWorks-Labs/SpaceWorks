@@ -94,3 +94,10 @@ def admin_event(request, pk, permission="manage_hackathon"):
     event = event_authority.get_event(request.user, pk, permission)
     runtime().require_programme(event)
     return event
+
+
+def admin_event_for(actor, pk, permission="manage_hackathon"):
+    """`admin_event` for a service that holds the actor, not the request."""
+    event = event_authority.get_event(actor, pk, permission)
+    runtime().require_programme(event)
+    return event

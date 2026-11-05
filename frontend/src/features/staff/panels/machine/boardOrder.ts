@@ -27,6 +27,21 @@ export function reorderPosition(job: StaffJob, direction: "up" | "down", column:
   return direction === "up" ? at + 1 : at + 2;
 }
 
+/**
+ * The 1-based `position` for dropping `job` onto `target`'s card in `column` (#141 drag to reorder):
+ * dragged upwards it lands just before the target, downwards just after it -- the same placement the
+ * move buttons use. Null when the drop is not allowed (itself, another queue or another urgency).
+ */
+export function dropPosition(job: StaffJob, target: StaffJob, column: StaffJob[], board: JobBoard): number | null {
+  const from = column.findIndex(row => row.id === job.id), to = column.findIndex(row => row.id === target.id);
+  if (from < 0 || to < 0 || from === to || !samePeers(job, target)) return null;
+  const peers = acceptedJobs(board).filter(row => row.id !== job.id && samePeers(job, row))
+    .sort((a, b) => anchor(a).localeCompare(anchor(b)) || a.id - b.id);
+  const at = peers.findIndex(row => row.id === target.id);
+  if (at < 0) return null;
+  return to < from ? at + 1 : at + 2;
+}
+
 /** Proportional split of a batch total by each job's estimate share, matching the server's default split. */
 export function splitByEstimate(jobs: Pick<StaffJob, "id" | "estimated_minutes">[], total: number): Record<number, number> {
   const weights = jobs.map(job => job.estimated_minutes || 1);

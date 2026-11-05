@@ -16,6 +16,8 @@ export type StaffJob = Omit<MachineServiceRequest, "status"> & {
   quote_expires_at?: string | null; quote_approved_at?: string | null; prepay?: boolean; fail_code?: string;
   fail_fault?: string; failure_outcome?: string; auto_requeue_count?: number; pickup_location?: string;
   pickup_reminders_sent?: number; uncollected_at?: string | null; collected_by_name?: string; reprint_of_id?: number | null;
+  /** #142 OQ-6: why the job may miss its needed-by date (a flag only; empty when on track). */
+  at_risk_reasons?: string[];
 };
 
 export type BoardLane = { machine_id: number; machine_name: string; status: string; locked_out: boolean; running: StaffJob[]; assigned: StaffJob[] };

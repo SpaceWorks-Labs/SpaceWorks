@@ -833,7 +833,11 @@ identity normalization and production minimum-version comparison. `mobile_associ
   `MyMachineJobsPage`; one job `MachineJobPage` with quote, changes, pickup cards; `PrintRequestAlias`
   keeps `/print` working). Loans: `inventory/{PickupWindowFields,WaitlistJoin,ExpectedBack,waitlistApi}`,
   `members/{MemberWaitlist,MemberRequestWithdraw}.tsx`.
-- Frontend, staff: `staff/panels/machine/JobBoard*.tsx` (per-type queue board), `JobAction*`,
+- Frontend, staff: `staff/panels/machine/JobBoard*.tsx` (per-type queue board; `boardDrag.ts` drag to
+  reorder, `boardOrder.dropPosition`), `filePreview/` (GAP2 M5: `JobFilesDialog`, `JobFilePreview`,
+  `jobPreview.worker.ts`, `drawings.ts` G-code/DXF to SVG, `svgFile.ts`, `previewKinds.ts`; mesh
+  parsing shared with the hackathon preview through `events/hackathonSubmissions/previewMesh.ts`),
+  backend `machines/job_risk.py` (the at-risk flag, GAP2 M3), `JobAction*`,
   `BatchDialogs.tsx`, `JobSettingsEditor.tsx`, `DowntimePanel.tsx` (+ lockout badge), `workOrders/`;
   `staff/BookableSpaceMachine.tsx`; `staff/panels/{ConsumablesPanel,VendorsPanel,MarkBoughtDialog,
   ItemWaitlist,RequestCancelDialog,InventoryLendingFlags}.tsx`, `staff/LoanReservationPolicySettings.tsx`.

@@ -22,6 +22,13 @@ export const FILE_GROUPS: [string, string][] = [
   ["hardware-cad", "Mechanical CAD"], ["hardware-pcb", "Circuit boards"], ["embroidery", "Embroidery"],
 ];
 
+/** #142 OQ-6: the at-risk flag's wording per reason (the needed-by date never reorders the queue). */
+export const AT_RISK_LABELS: Record<string, string> = {
+  needed_by_passed: "Past its needed-by date",
+  eta_after_needed_by: "At risk: finishes after its needed-by date",
+  needed_by_soon: "At risk: needed by tomorrow, no estimate yet",
+};
+
 /** Staff-facing explanation for a refused job action, keyed by the API error code. */
 export const ACTION_ERROR_HELP: Record<string, string> = {
   quote_required: "This machine type needs a quote the member approves first. Send a quote instead.",

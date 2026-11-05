@@ -1,10 +1,11 @@
-import { ArrowDown, ArrowUp } from "lucide-react";
+import { ArrowDown, ArrowUp, GripVertical } from "lucide-react";
 
 import { OverflowMenu, StatusBadge, StatusPill } from "../../../../components/ui";
 import type { MachineServiceRequest } from "../../../../generated/api";
 import type { DialogAction } from "./jobActionBody";
-import { CHANGE_CODES } from "./jobLabels";
+import { AT_RISK_LABELS, CHANGE_CODES } from "./jobLabels";
 import { machineStatusLabel } from "./machineStatusLabel";
+import type { CardDrag } from "./boardDrag";
 import type { BoardAction, StaffJob } from "./machineJobsApi";
 import { ServiceEtaLine } from "./ServiceEtaLine";
 
@@ -12,18 +13,20 @@ export type CardHandlers = {
   onDialog: (job: StaffJob, action: DialogAction) => void;
   onDirect: (job: StaffJob, action: BoardAction, body?: object) => void;
   onUncollected: (job: StaffJob) => void;
+  onFiles: (job: StaffJob) => void;
 };
 type Props = CardHandlers & {
   job: StaffJob; overdue?: boolean; noShow?: boolean; pending?: boolean;
   move?: { up: number | null; down: number | null };
   select?: { checked: boolean; onChange: (checked: boolean) => void };
+  drag?: CardDrag;
 };
 
 const PAID = new Set(["paid_online", "paid_offline", "waived"]);
 const changeLabel = (code?: string) => CHANGE_CODES.find(([value]) => value === code)?.[1];
 
 /** One job on the queue board: what it is, why it needs attention, and the next step as the primary button. */
-export function JobBoardCard({ job, overdue, noShow, pending, move, select, onDialog, onDirect, onUncollected }: Props) {
+export function JobBoardCard({ job, overdue, noShow, pending, move, select, drag, onDialog, onDirect, onUncollected, onFiles }: Props) {
   const quoteTotal = job.quote_snapshot?.total ? `${job.quote_snapshot.total} ${(job.quote_snapshot.currency ?? "").toUpperCase()}`.trim() : "";
   const paid = PAID.has(job.payment?.status ?? "");
   const meta = [job.requester_name || "Member", job.copies && job.copies > 1 ? `${job.copies} copies` : "",
@@ -31,9 +34,14 @@ export function JobBoardCard({ job, overdue, noShow, pending, move, select, onDi
     job.needed_by ? `Needed by ${new Date(`${job.needed_by}T00:00:00`).toLocaleDateString()}` : "",
     job.own_material ? "Own material" : ""].filter(Boolean).join(" · ");
   const action = primaryAction(job, paid);
-  const overflow = overflowActions(job, overdue, { onDialog, onDirect, onUncollected });
-  return <li className="grid gap-2 rounded-2xl border border-line bg-panel p-3">
+  const files = job.files?.length ? [{ label: `Files (${job.files.length})`, onClick: () => onFiles(job) }] : [];
+  const overflow = [...files, ...overflowActions(job, overdue, { onDialog, onDirect, onUncollected, onFiles })];
+  const { dragging = false, over = false, ...dragHandlers } = drag ?? ({} as Partial<CardDrag>);
+  const frame = over ? "border-accent outline-2 outline-dashed outline-focus" : "border-line";
+  return <li className={`grid gap-2 rounded-2xl border bg-panel p-3 ${frame}${dragging ? " opacity-60" : ""}${drag ? " cursor-grab" : ""}`}
+    {...dragHandlers}>
     <div className="flex min-w-0 items-start gap-2">
+      {drag ? <GripVertical aria-hidden="true" size={18} className="mt-1 shrink-0 text-muted" /> : null}
       {select ? <label className="-my-2 -ml-2 grid size-11 shrink-0 cursor-pointer place-items-center">
         <input type="checkbox" className="size-5" aria-label={`Select ${job.title} for a batch`} checked={select.checked}
           onChange={event => select.onChange(event.target.checked)} /></label> : null}
@@ -45,6 +53,7 @@ export function JobBoardCard({ job, overdue, noShow, pending, move, select, onDi
     </div>
     <div className="flex flex-wrap gap-1.5">
       {job.urgent ? <StatusPill tone="danger" label={job.urgent_reason ? `Urgent: ${job.urgent_reason}` : "Urgent"} /> : null}
+      {job.at_risk_reasons?.length ? <StatusPill tone="warn" label={AT_RISK_LABELS[job.at_risk_reasons[0]] ?? "At risk"} /> : null}
       {overdue ? <StatusPill tone="danger" label="Waiting over 14 days" /> : null}
       {noShow ? <StatusPill tone="warn" label="Member has missed pickups before" /> : null}
       {job.status === "changes_requested" && job.changes_code ? <StatusPill tone="warn" label={changeLabel(job.changes_code) ?? "Changes asked"} /> : null}

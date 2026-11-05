@@ -112,9 +112,7 @@ def bookers_machine_repair(machine, bookings, expected_back_at=None):
         if not booking.email:
             continue
         back = f" It is expected back {expected_back_at:%Y-%m-%d %H:%M}." if expected_back_at else ""
-        body = (f"{machine.name} at {machine.makerspace.name} is out of service for repair.{back}
-
-"
+        body = (f"{machine.name} at {machine.makerspace.name} is out of service for repair.{back}\n\n"
                 f"Your booking #{booking.pk} falls in this time. The space will contact you about it.")
         sent += _email(machine.makerspace, booking.email, f"{machine.name} is out of service"[:200], body,
                        event="machine_repair", feature="bookings", recipient_id=booking.member_id)

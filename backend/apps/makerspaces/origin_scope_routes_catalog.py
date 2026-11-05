@@ -23,11 +23,6 @@ QR_PAYLOAD_ROUTES = {"qr-resolve", "qr-scan"}
 BODY_SCOPED_ROUTES = {"qr-boxes", "qr-containers", "qr-tools"}
 
 MAKERSPACE_KWARG_ROUTES = {
-    **{name: "makerspace_id" for name in (
-        "admin-staff-accounts", "admin-staff-account-policy", "admin-staff-account-change",
-        "admin-staff-account-deactivate", "admin-staff-account-reactivate",
-        "admin-staff-account-set-password", "admin-staff-account-resend-invite",
-    )},
     "whatsapp-meta-webhook": "makerspace_id",
     "email-provider-webhook": "makerspace_id",
     "website-origins": "makerspace_id",

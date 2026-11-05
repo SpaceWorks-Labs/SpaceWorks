@@ -39,8 +39,7 @@ STRICT_ROUTES = frozenset({
     # Credential resets and role changes.
     "admin-staff-roles", "admin-staff-roles-detail", "admin-staff-roles-revoke", "admin-staff-roles-restore",
     "admin-staff-roles-mfa-reset", "admin-staff-invitations", "admin-staff-invitation-revoke",
-    "admin-staff-invitation-resend", "admin-staff-accounts", "admin-staff-account-change",
-    "admin-staff-account-set-password", "admin-staff-account-deactivate", "admin-staff-account-reactivate",
+    "admin-staff-invitation-resend",
 })
 
 

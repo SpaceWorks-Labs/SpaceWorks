@@ -73,9 +73,6 @@ def policy_for(view_name, method):
 # Outside CLAIM_REACHABLE_PREFIXES: keep these explicit denials separate from the
 # exact reachable-route matrix so it does not acquire stale entries.
 STAFF_ACCOUNT_REFUSALS = frozenset({
-    "admin-staff-accounts", "admin-staff-account-policy", "admin-staff-account-change",
-    "admin-staff-account-deactivate", "admin-staff-account-reactivate",
-    "admin-staff-account-set-password", "admin-staff-account-resend-invite",
     # Release 2: staff roles and account merges are never reachable from a claim session.
     *STAFF_ROLE_ROUTES, *ACCOUNT_MERGE_ROUTES,
 })

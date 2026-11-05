@@ -5,14 +5,9 @@
 # Session-only lifecycle routes lie outside the HMAC protected prefixes. Explicit
 # exclusion also refuses deployments that extend those prefixes; legacy:v1 never
 # grants staff lifecycle authority.
-STAFF_ACCOUNT_EXCLUSIONS = frozenset({
-    "admin-staff-accounts", "admin-staff-account-policy", "admin-staff-account-change",
-    "admin-staff-account-deactivate", "admin-staff-account-reactivate",
-    "admin-staff-account-set-password", "admin-staff-account-resend-invite",
-})
 from .scope_registry_programme import SESSION_ONLY
-STAFF_ACCOUNT_EXCLUSIONS |= SESSION_ONLY
-# Release 2 (U-B): staff roles on people replace the staff-account routes; still session-only.
+STAFF_ACCOUNT_EXCLUSIONS = frozenset(SESSION_ONLY)
+# Release 2 (U-B): staff roles on people replaced the staff-account routes; still session-only.
 from apps.accounts.delegated_route_catalog import STAFF_ROLE_ROUTES
 STAFF_ACCOUNT_EXCLUSIONS |= STAFF_ROLE_ROUTES
 # Reimbursement, stage-form and payout routes are full-session only: no API-key scope may

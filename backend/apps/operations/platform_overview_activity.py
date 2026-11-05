@@ -61,23 +61,38 @@ MACHINES = Block(
 
 def _events(ids, window, now):
     from apps.events.models import Event, EventCheckInEvent, EventRegistration
-    from apps.events.submissions.models_projects import HackathonSubmission
 
     events = Event.objects.filter(makerspace_id__in=ids)
     held = in_window(events.filter(status__in=("published", "completed"), ends_at__lte=now), "ends_at", window)
     registrations = EventRegistration.objects.filter(event__makerspace_id__in=ids).exclude(
         status__in=("cancelled", "rejected"))
     check_ins = in_window(EventCheckInEvent.objects.filter(makerspace_id__in=ids), "attended_at", window)
-    submissions = HackathonSubmission.objects.filter(event__makerspace_id__in=ids, submitted_at__isnull=False)
     return {
         "events_held": count_by_space(held),
         "events_upcoming": count_by_space(events.filter(status="published", starts_at__gt=now)),
         "registrations": count_by_space(in_window(registrations, "created_at", window), "event__makerspace_id"),
         "check_ins": count_by_space(check_ins, distinct="registration_id"),
-        "hackathon_submissions": count_by_space(
-            in_window(submissions.exclude(state__in=("draft", "withdrawn")), "submitted_at", window),
-            "event__makerspace_id"),
+        "hackathon_submissions": _submissions(ids, window),
     }
+
+
+def _submissions(ids, window):
+    """One per submitted STAGE entry on staged events (#178); one per project on events without stages."""
+    from apps.events.submissions.models_projects import HackathonSubmission
+    from apps.events.submissions.models_stages import SubmissionStage, SubmissionStageEntry
+
+    staged = SubmissionStage.objects.filter(event__makerspace_id__in=ids).values("event_id")
+    excluded = ("draft", "withdrawn")
+    entries = SubmissionStageEntry.objects.filter(
+        stage__event__makerspace_id__in=ids, current_snapshot__isnull=False, submitted_at__isnull=False,
+    ).exclude(submission__state__in=excluded)
+    projects = HackathonSubmission.objects.filter(
+        event__makerspace_id__in=ids, submitted_at__isnull=False,
+    ).exclude(state__in=excluded).exclude(event_id__in=staged)
+    per_space = count_by_space(in_window(entries, "submitted_at", window), "stage__event__makerspace_id")
+    for space_id, n in count_by_space(in_window(projects, "submitted_at", window), "event__makerspace_id").items():
+        per_space[space_id] = per_space.get(space_id, 0) + n
+    return per_space
 
 
 EVENTS = Block(
@@ -88,7 +103,8 @@ EVENTS = Block(
         Metric("events_upcoming", "Upcoming events", timing="snapshot"),
         Metric("registrations", "Registrations"),
         Metric("check_ins", "People checked in"),
-        Metric("hackathon_submissions", "Hackathon submissions"),
+        # Per stage entry where an event has submission stages, so a two-stage project counts twice.
+        Metric("hackathon_submissions", "Hackathon submissions (per stage; per project without stages)"),
     ),
     collect=_events,
 )

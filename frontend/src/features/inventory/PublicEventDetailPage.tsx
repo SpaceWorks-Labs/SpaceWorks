@@ -1,3 +1,4 @@
+import { PublicStageDeadlines, type PublicStage } from "../events/stageTime";
 import { PublicProgrammeEntry } from '../events/programme/PublicProgrammeEntry';
 import { PublicVolunteerCards } from '../events/contributions/PublicVolunteerCards';
 import { PublicCrewSection } from '../events/participation/PublicCrewSection';
@@ -28,6 +29,9 @@ import { useEventVenueSection } from "../bookings/EventVenueBlock";
 import { PageShare } from "../publicPages/PageShare";
 
 /** WP2 mounts this component on both central and tenant-domain event routes. */
+/** #178: the hackathon's stage deadlines (event detail only; hand-typed until the client is regenerated). */
+const stagesOf = (event: object) => ((event as { submission_stages?: PublicStage[] }).submission_stages ?? []);
+
 export function PublicEventDetailPage({ resolvedSlug, resolvedToken, canonicalUrl }: { resolvedSlug?: string; resolvedToken?: string; canonicalUrl?: string } = {}) {
   const { slug, publicToken: routeToken } = useParams();
   const publicToken = resolvedToken ?? routeToken;
@@ -73,6 +77,7 @@ export function PublicEventDetailPage({ resolvedSlug, resolvedToken, canonicalUr
         facts={event ? [{ identity: { kind: "date", date: event.starts_at }, primary: new Date(event.starts_at).toLocaleString(), secondary: `Until ${new Date(event.ends_at).toLocaleString()}` },
           ...(event.location ? [{ identity: { kind: "icon" as const, icon: "Info" as const, tone: "neutral" as const }, primary: event.location }] : [])] : []}
         sections={event ? [{ id: "about", label: "About", content: <p className="whitespace-pre-wrap leading-7">{event.description}</p> },
+          ...(stagesOf(event).length ? [{ id: "submission-deadlines", label: "Submission deadlines", content: <PublicStageDeadlines stages={stagesOf(event)} timeZone={(event as { timezone_name?: string }).timezone_name ?? "UTC"} /> }] : []),
           ...(canonicalUrl ? [{ id: "share", label: "Share", content: <PageShare title={event.title} description={event.description} canonicalUrl={canonicalUrl} /> }] : []),
           ...(event.website ? [{ id: "website", label: "Event details", content: <PublicEventWebsite website={event.website}
             links={{ schedule: tenantPath(`events/${event.public_token}/schedule`), speaker: (value: string) => tenantPath(`events/${event.public_token}/speakers/${encodeURIComponent(value)}`), session: (value: string) => tenantPath(`events/${event.public_token}/sessions/${encodeURIComponent(value)}`) }}

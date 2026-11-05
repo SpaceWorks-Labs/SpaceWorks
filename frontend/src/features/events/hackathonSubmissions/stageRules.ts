@@ -13,6 +13,8 @@ export type ParticipantStage = {
   submitted: boolean; snapshot_id: number | null; submitted_at: string | null;
   blocked: "previous_stage_required" | "shortlist_pending" | "not_shortlisted" | null;
   shortlist_status: "pending" | "shortlisted" | "not_shortlisted" | null;
+  /** S4: judge feedback the organisers released for this stage, without judge names. */
+  feedback?: string[];
 };
 
 /** What the form shows for a stage's content mode. */

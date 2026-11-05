@@ -20,6 +20,8 @@ export function StageTracker({ stages, activeId, timezone }: { stages: readonly 
       <p className="text-sm text-ink">{`Deadline: ${deadlineText(stage.effective_deadline, timezone)}${stage.extended ? " (extended for your team)" : ""}`}</p>
       {stage.id === activeId && stage.status !== "closed" ? <Countdown deadline={stage.effective_deadline} /> : null}
       {stage.blocked ? <p className="text-sm text-warn-ink">{BLOCKED[stage.blocked]}</p> : null}
+      {stage.feedback?.length ? <div className="grid gap-1"><p className="text-sm font-semibold text-ink">Feedback from the judges</p>
+        <ul className="grid gap-1">{stage.feedback.map((text, i) => <li key={i} className="whitespace-pre-wrap rounded-2xl bg-surface p-3 text-sm text-ink">{text}</li>)}</ul></div> : null}
     </li>)}</ol></section>;
 }
 

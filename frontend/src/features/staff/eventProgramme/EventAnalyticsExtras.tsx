@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card } from "../../../components/ui";
 import { staffRequest } from "../../../lib/api";
 import { sessionScope, useClearDeniedQuery } from "./sessionScope";
+import { StageFunnel, type StageFunnelRow } from "./StageFunnel";
 
 type Count = { label: string; count: number };
 export type AnalyticsExtras = {
@@ -12,6 +13,8 @@ export type AnalyticsExtras = {
   waitlist: { ever_waitlisted: number; promoted: number; still_waiting: number; conversion_percent: number | null };
   series: { event_id: number; title: string; starts_at: string; registered: number; attended: number }[];
   short_link_visits: { day: string; count: number }[] | null;
+  /** S16: per submission stage (hand-typed until the client is regenerated). */
+  submission_stages?: StageFunnelRow[];
 };
 const METHOD: Record<string, string> = { online: "Staff confirmed", qr: "QR scan", offline_sync: "Offline sync", venue_station: "Venue station", legacy: "Earlier records" };
 
@@ -55,6 +58,7 @@ export function EventAnalyticsExtras({ makerspaceId, eventId }: { makerspaceId: 
     {data.series.length > 1 ? <div className="overflow-x-auto"><table className="w-full text-left text-sm"><caption className="mb-2 text-left font-semibold">Turnout across the series</caption>
       <thead><tr><th scope="col" className="p-2">Date</th><th scope="col" className="p-2">Going</th><th scope="col" className="p-2">Came</th></tr></thead>
       <tbody>{data.series.map(row => <tr key={row.event_id}><th scope="row" className="p-2 font-normal">{new Date(row.starts_at).toLocaleDateString()}</th><td className="p-2 tabular-nums">{row.registered}</td><td className="p-2 tabular-nums">{row.attended}</td></tr>)}</tbody></table></div> : null}
+    {data.submission_stages?.length ? <StageFunnel rows={data.submission_stages} /> : null}
     {data.short_link_visits ? <p className="text-sm">Short link: {visits} {visits === 1 ? "visit" : "visits"} in the last 30 days. Only a daily count is kept, never who visited.</p> : null}
   </section></Card>;
 }

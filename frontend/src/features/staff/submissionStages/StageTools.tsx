@@ -24,7 +24,7 @@ function Extensions({ eventId, stage, timezone }: { eventId: number; stage: Save
   const { extend } = useStageCommands(eventId, stage.id);
   const [team, setTeam] = useState(""); const [until, setUntil] = useState(""); const [reason, setReason] = useState("");
   return <div className="grid gap-3">
-    <ul className="grid gap-1 text-sm">{(stage.extensions ?? []).map(row => <li key={row.id}>{`Team ${row.team_id}: until ${deadlineText(row.until, timezone)}. ${row.reason}`}</li>)}</ul>
+    <ul className="grid gap-1 text-sm">{(stage.extensions ?? []).map(row => <li key={row.id}>{`${row.team_name ?? `Team ${row.team_id}`}: until ${deadlineText(row.until, timezone)}. ${row.reason}`}</li>)}</ul>
     <form className="grid gap-3 md:grid-cols-3" onSubmit={event => { event.preventDefault();
       extend.mutate({ team_id: Number(team), until: fromInput(until)!, reason }, { onSuccess: () => { setTeam(""); setUntil(""); setReason(""); } }); }}>
       <Field label="Team ID"><input className="desk-input min-h-11" type="number" min={1} required value={team} onChange={e => setTeam(e.target.value)} /></Field>

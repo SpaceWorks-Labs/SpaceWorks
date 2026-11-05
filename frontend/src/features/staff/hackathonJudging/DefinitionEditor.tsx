@@ -37,7 +37,9 @@ export function DefinitionEditor({ scope, pairwiseEnabled = false }: { scope: Sc
     if ('mode' in row) { setName(row.key); setMode(row.mode); setViews(row.min_reviews); setNormalization(row.normalization); setCriteria(row.criteria);
       setOpensAt(row.opens_at ? new Date(row.opens_at).toISOString().slice(0, 16) : ''); setClosesAt(row.closes_at ? new Date(row.closes_at).toISOString().slice(0, 16) : ''); setMinutesPerView(row.minutes_per_view); setJudgingMinutes(row.judging_minutes);
       setGuidance(row.guidance ?? ''); setExploration((row.exploration ?? 0.1).toFixed(2));
-      setSettings({ visibility: row.visibility === 'all' ? 'all' : 'assigned', fresh_eyes: Boolean(row.fresh_eyes), panel: (row.panel ?? []).join(', ') });
+      const extra = row as Round & { share_feedback?: boolean; judge_reminders?: boolean };
+      setSettings({ visibility: row.visibility === 'all' ? 'all' : 'assigned', fresh_eyes: Boolean(row.fresh_eyes), panel: (row.panel ?? []).join(', '),
+        share_feedback: Boolean(extra.share_feedback), judge_reminders: Boolean(extra.judge_reminders) });
       setStageId(String((row as Round & { submission_stage_id?: number | null }).submission_stage_id ?? '')); setRoundState(row.state ?? 'draft'); }
   };
   const load = (value: string) => loadRecord(rows?.find(row => row.id === Number(value)));
@@ -51,6 +53,7 @@ export function DefinitionEditor({ scope, pairwiseEnabled = false }: { scope: Sc
     const fields = kind === 'judging-rounds' ? { key: name, mode, min_reviews: views, normalization: mode === 'weighted_1_5' ? normalization : 'none',
       opens_at: opensAt ? `${opensAt}:00Z` : null, closes_at: closesAt ? `${closesAt}:00Z` : null, minutes_per_view: minutesPerView, judging_minutes: judgingMinutes,
       visibility: settings.visibility, fresh_eyes: settings.fresh_eyes, panel: panelIds(settings.panel),
+      share_feedback: Boolean(settings.share_feedback), judge_reminders: Boolean(settings.judge_reminders),
       submission_stage_id: stageId ? Number(stageId) : null,
       ...(mode === 'weighted_1_5' ? { criteria } : {}), ...(mode === 'pairwise' ? { guidance, exploration } : {}) } : { name, description, ...(kind === 'tracks' ? { capacity } : {
         amount_per_winner: amount.trim() ? amount.trim() : null,

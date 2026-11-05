@@ -1,8 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { staffRequest } from "../../../lib/api";
-import type { Page } from "../../events/hackathonGallery/types";
 import { sessionScope } from "../eventProgramme/sessionScope";
-import type { Extension, OrganizerProject, Shortlist, ShortlistPlan, ShortlistSelection, StagePlan } from "./types";
+import type { Extension, Shortlist, ShortlistPlan, ShortlistSelection, StagePlan } from "./types";
 
 export const stagesKey = (eventId: number) => ["staff-submission-stages", eventId, ...sessionScope()] as const;
 const base = (eventId: number) => `/admin/events/${eventId}/submission-stages/`;
@@ -50,20 +49,9 @@ export function useStageCommands(eventId: number, stageId: number) {
   return { extend, triage };
 }
 
-/** The organiser project list (up to 20 pages), used to find a stage's pending entries for bulk triage. */
-export function useOrganizerProjects(eventId: number, enabled: boolean) {
-  return useQuery({ queryKey: [...stagesKey(eventId), "projects"], enabled, retry: false, queryFn: async () => {
-    const rows: OrganizerProject[] = [];
-    for (let page = 1; page <= 20; page += 1) {
-      const data = await staffRequest<Page<OrganizerProject>>(`/admin/events/${eventId}/submissions/?page=${page}`);
-      rows.push(...data.results);
-      if (!data.next) break;
-    }
-    return rows;
-  } });
-}
-
-export function pendingSubmissionIds(projects: readonly OrganizerProject[], stageId: number) {
-  return projects.filter(row => row.stages?.some(entry => entry.stage_id === stageId && entry.snapshot_id && entry.triage === "pending"))
-    .map(row => row.id);
+export function usePromoteNext(eventId: number, stageId: number) {
+  const client = useQueryClient();
+  return useMutation({ retry: false, onSuccess: () => { void client.invalidateQueries({ queryKey: stagesKey(eventId) }); },
+    mutationFn: (withdrawnSubmissionId: number) => sendCommand<Shortlist>(`${base(eventId)}${stageId}/shortlist/promote/`, "POST",
+      { withdrawn_submission_id: withdrawnSubmissionId }) });
 }

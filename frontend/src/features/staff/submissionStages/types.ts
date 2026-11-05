@@ -12,12 +12,14 @@ export type StageRules = {
   content_mode: ContentMode; required_link_kinds: string[]; min_files: number; max_files: number | null;
   max_links: number | null; accepted_families: string[]; max_bytes_per_file: number | null; video_hosts: string[];
   custom_fields: CustomField[]; shortlist_after: boolean; shortlist_label: string;
+  /** S18: show this stage's work in the gallery once published (only teams that passed it). */
+  public_after_publish?: boolean;
 };
 
 /** A row in the editor. `id` is null for a stage that is not saved yet; `key` is a local React key. */
 export type StageDraft = StageRules & { id: number | null; key: string };
 
-export type Extension = { id: number; team_id: number; until: string; reason: string; created_at: string };
+export type Extension = { id: number; team_id: number; team_name?: string; until: string; reason: string; created_at: string };
 
 export type SavedStage = StageRules & {
   id: number | null; position: number; version: number; submissions?: number; pending_triage?: number;
@@ -35,12 +37,10 @@ export type StagePlan = {
 export type ShortlistEntry = { submission_id: number; team_id: number; snapshot_id: number; title: string; source_rank: number | null };
 export type ShortlistPlan = { stage_id: number; source_round_id: number | null; selection: "top_n" | "manual"; top_n: number | null;
   tied_at_cutoff: boolean; fingerprint: string; entries: ShortlistEntry[]; candidates: number; not_shortlisted: number; email_enabled: boolean };
+export type StageEntryRead = { submission_id: number; team_id: number; team_name: string; snapshot_id: number; triage: string;
+  submitted_at: string | null };
 export type Shortlist = { stage_id: number; label: string; pending_triage: number; candidates: number; email_enabled: boolean;
+  stage_entries: StageEntryRead[];
   current: { id: number; selection: string; top_n: number | null; source_round_id: number | null; created_at: string;
     published_at: string | null; entries: ShortlistEntry[] } | null; allowed_actions: string[] };
 export type ShortlistSelection = { selection: "top_n" | "manual"; top_n?: number; source_round_id?: number | null; submission_ids?: number[] };
-
-/** One project in the organiser list, with its per-stage entries (S5 triage). */
-export type StageEntryRow = { stage_id: number; position: number; name: string; snapshot_id: number | null; triage: string;
-  submitted_at: string | null; late: boolean };
-export type OrganizerProject = { id: number; team_id: number; team_name: string; title: string; state: string; stages?: StageEntryRow[] };

@@ -48,6 +48,7 @@ export function StageFields({ stage, index, last, plan, onChange }: Props) {
     <CustomFieldsEditor label={label} value={stage.custom_fields} onChange={custom_fields => set({ custom_fields })} />
     {!last ? <div className="grid gap-3 md:grid-cols-2">
       <label className="flex min-h-11 items-center gap-3"><input type="checkbox" checked={stage.shortlist_after} onChange={e => set({ shortlist_after: e.target.checked })} />End with a shortlist: only chosen teams continue</label>
+      <label className="flex min-h-11 items-center gap-3"><input type="checkbox" checked={Boolean(stage.public_after_publish)} onChange={e => set({ public_after_publish: e.target.checked })} />Show this stage's work in the gallery once published (only teams that passed it)</label>
       {stage.shortlist_after ? <Field label="Shortlist name"><input className="desk-input min-h-11" maxLength={60} placeholder="Shortlist" value={stage.shortlist_label} onChange={e => set({ shortlist_label: e.target.value })} /></Field> : null}
     </div> : null}
   </div>;

@@ -3,12 +3,12 @@ import type { ContentMode, Preset, SavedStage, StageDraft, StageRules } from "./
 
 const RULE_KEYS: (keyof StageRules)[] = ["name", "description", "opens_at", "deadline", "grace_minutes", "late_policy",
   "resubmission", "requires_previous", "content_mode", "required_link_kinds", "min_files", "max_files", "max_links",
-  "accepted_families", "max_bytes_per_file", "video_hosts", "custom_fields", "shortlist_after", "shortlist_label"];
+  "accepted_families", "max_bytes_per_file", "video_hosts", "custom_fields", "shortlist_after", "shortlist_label", "public_after_publish"];
 
 export const BLANK_RULES: StageRules = { name: "", description: "", opens_at: null, deadline: null, grace_minutes: 0,
   late_policy: "reject", resubmission: "until_deadline", requires_previous: false, content_mode: "files_and_links",
   required_link_kinds: [], min_files: 0, max_files: null, max_links: null, accepted_families: [], max_bytes_per_file: null,
-  video_hosts: [], custom_fields: [], shortlist_after: false, shortlist_label: "" };
+  video_hosts: [], custom_fields: [], shortlist_after: false, shortlist_label: "", public_after_publish: false };
 
 let counter = 0;
 const localKey = () => `stage-${++counter}`;
@@ -53,7 +53,8 @@ export function saveBody(rows: readonly StageDraft[], fingerprint: string, prese
     const clean = cleanForMode(row);
     return { ...(row.id ? { id: row.id } : {}), ...pick(clean),
       requires_previous: index === 0 ? false : clean.requires_previous,
-      shortlist_after: index === rows.length - 1 ? false : clean.shortlist_after };
+      shortlist_after: index === rows.length - 1 ? false : clean.shortlist_after,
+      public_after_publish: index === rows.length - 1 ? false : Boolean(clean.public_after_publish) };
   }) };
 }
 
@@ -88,6 +89,10 @@ export function stageErrorMessage(error: unknown) {
   if (error.code === "stage_in_use") return "A stage that has submissions, a shortlist, an extension or a judging round cannot be removed. Edit it instead.";
   if (error.code === "stale_version") return "Someone else changed the stages. Reload to see the latest plan, then make your changes again.";
   if (error.code === "invalid_stage_count") return `An event needs between 1 and ${String(body.limit ?? 10)} stages.`;
+  const promote: Record<string, string> = { next_stage_open: "The next stage is already open, so the list can no longer change.",
+    not_a_withdrawn_shortlisted_team: "That team has not withdrawn, or is not on the list.",
+    no_ranked_source: "This list was hand-picked, so there is no ranked next team.", no_next_team: "There is no next ranked team left." };
+  if (error.code && promote[error.code]) return promote[error.code];
   if (error.code === "submission_window_by_stage") return "This event has several submission stages. Edit each stage's window in the stage editor.";
   return error.message;
 }

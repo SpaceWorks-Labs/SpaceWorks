@@ -5,7 +5,8 @@ import { judgingKey } from './api';
 import type { Scope } from './types';
 
 type Flagged = { snapshot_id: number; submission_id: number; rule_keys: string[] };
-const RULES: Record<string, string> = { github_commit_before_kickoff: 'repository has commits from before kickoff' };
+const RULES: Record<string, string> = { github_commit_before_kickoff: 'repository has commits from before kickoff',
+  github_push_after_stage_deadline: 'pushed to GitHub after the stage deadline (for information only)' };
 
 /** Information only (#8): an info chip, never a warning colour, never an action or a verdict. */
 export function IntegrityFlag({ scope, snapshotIds }: { scope: Scope; snapshotIds: number[] }) {

@@ -53,3 +53,30 @@ X-SpaceWorks-Edge-Secret on upstream requests and remove any browser-supplied co
 in server-only edge/backend secret stores. Every static adapter strips the browser copy and overwrites
 the upstream secret. Exact raw health GET/HEAD and
 the separately secret-authenticated free tick can reach backend ingress without a forwarded host.
+
+## Release 2 (0.11.0) settings
+
+Every one of these is off or empty by default and leaving it unset changes nothing; full values, the
+tuning knobs (TTLs, thresholds) and the reasoning are in the [environment reference](../environment-reference.md)
+and [delivery settings](../environment-reference-delivery.md). The wizard renders the non-secret ones at
+their defaults into every recipe (`OPERATOR_DEFAULTS` in `scripts/cloud_setup/environment.py`) and accepts
+an override for each in the answers file; the Render blueprints list the same keys.
+
+| Variable | Default | Where it goes |
+| --- | --- | --- |
+| TURNSTILE_SITE_KEY / TURNSTILE_FAIL_MODE / TURNSTILE_HOSTNAMES | empty / `open` / empty | Answers file. The static frontend's CSP must also allow `https://challenges.cloudflare.com` ([static adapters](cloud-static.md)). |
+| TURNSTILE_SECRET_KEY | empty | Secrets file only. Turnstile stays dormant until both keys are set. |
+| LOGIN_IP_BLOCK_ENABLED / PASSWORD_BREACH_CHECK_ENABLED | `True` / `True` | Answers file. The breach check calls the HIBP range API with a 2 s timeout and fails open. |
+| WEBAUTHN_RP_NAME | `Space Works` | Answers file. The passkey relying-party ID is always the site's own host. |
+| WEB_PUSH_VAPID_SUBJECT | empty | Answers file (`mailto:` or `https:`). |
+| WEB_PUSH_VAPID_PRIVATE_KEY | empty | Secrets file only. Generate once and keep it: rotating it drops every browser subscription. |
+| MESSAGING_WEBHOOK_BASE_URL, NOTIFICATION_*_REDIRECT_URI, WHATSAPP_META_GRAPH_VERSION | empty, empty, `v25.0` | Answers file. |
+| MIN_NATIVE_APP_VERSION_IOS / _ANDROID | empty | Answers file. |
+| CARD_FONT_DOWNLOADS_ENABLED | `True` | Answers file; `False` keeps cards to the bundled faces. |
+| CARD_PHOTO_MODEL_PATH | empty (temp directory) | Not rendered. Photo clean-up needs the model in BOTH the web and worker containers on durable storage, which managed roles do not share; the button stays hidden until it is there. Use the full VPS for this feature. |
+| MANAGED_PLANS_ENABLED / MANAGED_BILLING_ONLINE_ENABLED | `False` / `False` | The managed-hosting limiter. Off unless you run a hosting platform for other spaces; nothing is visible or enforced while it is off. Never set it on a self-host. |
+
+Analytics (Metabase) logins and the control plane need no environment key on a managed recipe:
+`CONTROL_PLANE_PROXY` is pinned `false`, and day-to-day superadmin work runs in the web console. Every
+Celery beat entry is part of the scheduled-task catalogue, so the cron, loop and free-tick schedulers run
+all of them (checked against `CELERY_BEAT_SCHEDULE` for host/full, managed/full and managed/free).

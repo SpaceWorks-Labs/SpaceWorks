@@ -33,3 +33,7 @@ Plain `docker build backend` builds the default full target for host installs, w
 Such a source-built image cannot run managed mode (owner decision #82); managed deployments use the published image.
 Both install versioned clients 16/17 and ffprobe. Runtime/arm64/static checks must
 pass before publication; source metadata alone is not evidence. Client-major build arguments stay explicit.
+
+## Release 2 (0.11.0)
+
+See [the release-2 settings](cloud-environment.md#release-2-0110-settings) and [choose your hosting](../choose-your-hosting.md). `docker-compose.managed.yml` now passes the release-1 programme block and the release-2 settings (Turnstile, login IP block, breach check, passkey name, VAPID, messaging webhook base URL, native app minimums, card fonts) through to every role, each at its settings default. `docker-compose.managed-brokerless.yml` and `docker-compose.free.yml` read the protected runtime env file whole, so any key you put there reaches the backend.

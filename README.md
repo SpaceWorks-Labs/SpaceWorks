@@ -189,7 +189,8 @@ with live reload, `./scripts/dev.sh test` runs the backend tests against disposa
 
 ## Hosting
 
-Space Works is built to be **self-hosted inside the makerspace, on your own server**. The supported
+Space Works is built to be **self-hosted inside the makerspace, on your own server**.
+[Choose your hosting](docs/choose-your-hosting.md) compares every shape side by side. The supported
 shapes are:
 
 - **One server with Docker Compose** (the installer's default): app, PostgreSQL, Redis, Silo object

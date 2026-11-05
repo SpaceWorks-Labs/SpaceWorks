@@ -24,3 +24,6 @@ into a new non-routable deployment and attach DB/object/decryption evidence. Ord
 Signup, provider schema/CLI validation and live acceptance remain required; this guide claims no price or SLA.
 [Provider reference](https://docs.digitalocean.com/products/app-platform/how-to/deploy-from-container-images/) reviewed 2026-10-18; recheck before provisioning.
 
+## Release 2 (0.11.0)
+
+See [the release-2 settings](cloud-environment.md#release-2-0110-settings) and [choose your hosting](../choose-your-hosting.md). The rendered app spec now carries every non-secret release-2 setting at its default; add `TURNSTILE_SECRET_KEY` and `WEB_PUSH_VAPID_PRIVATE_KEY` as `SECRET` envs only when you turn those features on.

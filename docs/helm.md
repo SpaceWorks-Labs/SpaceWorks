@@ -59,6 +59,9 @@ remains a private backend access surface, and `/api/v1/internal/` is denied by n
 timeouts/buffering for SSE and trust exactly the real ingress proxy count. Terminate TLS at ingress.
 
 For optional analytics populate `frontendEnv` and matching backend runtime-secret settings described in
-`docs/monitoring-and-analytics.md`. Metrics use one per-pod emptyDir and the Gunicorn multi-process
+`docs/monitoring-and-analytics.md`. Release-2 settings (Turnstile, login IP blocking, breach check, passkey name, browser
+alerts, card fonts) also go in the runtime secret and default safely when absent; Turnstile additionally
+needs `frontendEnv.TURNSTILE_SITE_KEY` so nginx allows the widget. `helm lint` passes, and `helm template`
+renders host, managed Redis and managed brokerless; the free profile is refused by design. Metrics use one per-pod emptyDir and the Gunicorn multi-process
 hooks; use Prometheus pod/endpoint discovery rather than one randomly balanced service scrape.
 The chart never stores Prometheus retention data or installs a monitoring stack.

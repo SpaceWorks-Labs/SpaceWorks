@@ -1,5 +1,6 @@
 # Hosting Space Works
 
+Start with [choose your hosting](../choose-your-hosting.md), which compares these with the self-hosted shapes.
 Choose the operational contract before the provider. These recipes remain under integration;
 source checks do not certify a deployment. Review the release acceptance report before enabling traffic.
 

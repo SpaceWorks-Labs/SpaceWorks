@@ -93,3 +93,7 @@ acceptance remains required before launch.
 Sources checked 2026-10-18: [Render free services](https://render.com/docs/free),
 [Supabase connections](https://supabase.com/docs/guides/database/connecting-to-postgres),
 [Cloudflare limits](https://developers.cloudflare.com/workers/platform/limits/).
+
+## Release 2 (0.11.0)
+
+See [the release-2 settings](cloud-environment.md#release-2-0110-settings) and [choose your hosting](../choose-your-hosting.md). Free renders the same non-secret release-2 defaults as full. The breach check and card font downloads make outbound calls that count against cold-start time; set `CARD_FONT_DOWNLOADS_ENABLED=False` to keep cards to the bundled faces. Photo clean-up is not available on free (no durable shared storage for the model); there is no live process, so the console polls.

@@ -6,6 +6,7 @@ Every guide in this repository, grouped by what you are trying to do. Start with
 ## Getting started
 
 - [Setting up Space Works](setup-for-makerspaces.md) — plain-language setup walkthrough for organisers who are not developers.
+- [Choose your hosting](choose-your-hosting.md) — every way to run Space Works compared, self-host first: full VPS, API on your server with the website elsewhere, static website, managed cloud, free profile and hosting platform.
 - [Install and update](install-and-update.md) — the one-line installer, every setup question, forks, automatic deploys and Windows support.
 - [Features](FEATURES.md) — everything Space Works runs today, area by area.
 - [Hosting and roles](README-HOSTING.md) — roles and staff accounts, first-run access, split deployments and moving a space to its own server.

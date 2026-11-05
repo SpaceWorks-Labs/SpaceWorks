@@ -31,5 +31,5 @@ def unseed(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-    dependencies = [("makerspaces", "0120_shop_manager_role_schema")]
+    dependencies = [("makerspaces", "0125_shop_manager_role_schema")]
     operations = [migrations.RunPython(seed, unseed)]

@@ -12,10 +12,10 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('events', '0065_l6_ticketing_guards'),
+        ('events', '0069_l21b_guards_and_options'),
         ('inventory', '0017_l12_consumables_expected_back'),
-        ('makerspaces', '0121_shop_manager_role_seed'),
-        ('payments', '0036_l22_shop_subject'),
+        ('makerspaces', '0126_shop_manager_role_seed'),
+        ('payments', '0040_l22_shop_subject'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 

@@ -1,6 +1,7 @@
 """Release 2 L22 (#137): the Shop Manager joins the fixed role catalogue.
 
-Schema first -- the role vocabulary and the fixed-catalogue constraint -- so the next
+Renumbered from 0120 after L16's Technician (0121-0122), L3's 0123 and L18's 0124; the vocabulary
+and the fixed catalogue keep the Technician. Schema first -- the role vocabulary and the fixed-catalogue constraint -- so the next
 migration can seed one Shop Manager row into every existing makerspace.
 """
 
@@ -10,14 +11,14 @@ ROLE_CHOICES = [
     ("space_manager", "Space Manager"), ("inventory_manager", "Inventory Manager"),
     ("print_manager", "Print Manager"), ("machine_manager", "Machine Manager"),
     ("event_manager", "Event Manager"), ("booking_manager", "Booking Manager"),
-    ("handover", "Handover"), ("shop_manager", "Shop Manager"),
+    ("handover", "Handover"), ("technician", "Technician"), ("shop_manager", "Shop Manager"),
 ]
 FIXED = ("space_manager", "inventory_manager", "machine_manager", "event_manager", "booking_manager",
-         "handover", "shop_manager", "member")
+         "handover", "technician", "shop_manager", "member")
 
 
 class Migration(migrations.Migration):
-    dependencies = [("makerspaces", "0119_l3_member_cards")]
+    dependencies = [("makerspaces", "0124_l18_calendar_feed_switches")]
 
     operations = [
         migrations.RemoveConstraint(model_name="makerspacerole", name="makerspacerole_fixed_catalogue"),

@@ -35,6 +35,11 @@ FREE_FORM = {
         "response": "The holder's own role record, as the forms module's owner export document."},
     ("apps.payments.views_tax.Gstr1JsonView", "GET"): {
         "response": "The GSTR-1 return in the GST portal's offline-tool JSON format."},
+    # r2-superadmin-controls (#187A): managed-hosting invoice callbacks.
+    ("apps.managed_hosting.views_space.StripeHostingCallbackView", "POST"): {
+        "request": _STRIPE},
+    ("apps.managed_hosting.views_space.RazorpayHostingCallbackView", "POST"): {
+        "request": "A Razorpay webhook event, verified by its X-Razorpay-Signature header."},
 }
 
 EMPTY_SUCCESS = {

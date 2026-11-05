@@ -2,7 +2,8 @@
 provider callbacks for online payment. All 404 while MANAGED_PLANS_ENABLED is off."""
 
 from django.shortcuts import get_object_or_404
-from drf_spectacular.utils import OpenApiResponse, extend_schema
+from drf_spectacular.utils import OpenApiResponse, extend_schema, inline_serializer
+from rest_framework import serializers
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -90,6 +91,9 @@ class _ProviderCallbackView(APIView):
         return Response({"received": True})
 
 
+_RECEIVED = inline_serializer("HostingCallbackReceived", {"received": serializers.BooleanField()})
+
+
 class StripeHostingCallbackView(_ProviderCallbackView):
     authentication_classes = []
     permission_classes = [AllowAny]
@@ -98,7 +102,7 @@ class StripeHostingCallbackView(_ProviderCallbackView):
     signature_header = "Stripe-Signature"
 
     @extend_schema(tags=TAGS, summary="Stripe callback for hosting invoices (signed)", request=None,
-                   responses={200: OpenApiResponse(description="Received."), **errors(400, 404)})
+                   responses={200: OpenApiResponse(_RECEIVED, description="Received."), **errors(400, 404)})
     def post(self, request):
         return self.receive(request)
 
@@ -111,6 +115,6 @@ class RazorpayHostingCallbackView(_ProviderCallbackView):
     signature_header = "X-Razorpay-Signature"
 
     @extend_schema(tags=TAGS, summary="Razorpay callback for hosting invoices (signed)", request=None,
-                   responses={200: OpenApiResponse(description="Received."), **errors(400, 404)})
+                   responses={200: OpenApiResponse(_RECEIVED, description="Received."), **errors(400, 404)})
     def post(self, request):
         return self.receive(request)

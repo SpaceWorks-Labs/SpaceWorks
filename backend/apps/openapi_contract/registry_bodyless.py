@@ -147,10 +147,16 @@ BODYLESS_POSTS = {
     "apps.payments.views_reconciliation": ("PaymentWaiveView",),
     "apps.payments.views_refund_member": ("MemberRefundWithdrawView",),
     "apps.payments_rail.views_member_checkout": ("MemberPaymentCheckoutView",),
+    # r2-superadmin-controls (#185, #187A): start a hosting-invoice checkout.
+    "apps.managed_hosting.views_space": ("SpaceInvoiceCheckoutView",),
     "apps.payments_rail.views_member_mobile": ("MemberMobilePaymentIntentView",),
     "apps.payments_rail.views_pay_link_checkout": ("PublicPayLinkCheckoutView",),
     "apps.presence.views": ("PresenceEndView",),
     "apps.shop.views_member": ("MemberShopOrderCancelView",),
+    # r2-superadmin-controls (#185): the space-control actions whose path names the act.
+    "apps.space_controls.views_announcements": ("AnnouncementCancelView",),
+    "apps.space_controls.views_controls": ("ReadOnlyLiftView", "ScheduleCancelView", "UnsuspendView",),
+    "apps.space_controls.views_lifecycle": ("ArchiveNowView", "UnarchiveView",),
     "apps.shop.views_staff_orders": ("ShopOrderReadyView",),
     "apps.shop.views_staff_pos": ("ShopCashSessionConfirmView",),
     "apps.tenant_migration.views_admission_export": (

@@ -3,7 +3,7 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-    dependencies = [("makerspaces", "0128_member_card_email_format")]
+    dependencies = [("makerspaces", "0130_charges_donations_default_on")]
 
     operations = [
         migrations.AlterField(

@@ -11,7 +11,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('makerspaces', '0129_makerspace_suspended_state'),
+        ('makerspaces', '0131_makerspace_suspended_state'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 

@@ -16,7 +16,7 @@ from apps.admin_api.permissions import IsActiveStaff
 from apps.makerspaces.platform import feature_enabled
 from apps.openapi_errors import errors
 from apps.payments.models_pricing_rules import LoanFeeWaiver
-from apps.payments.pricing.errors import PricingDisabled
+from apps.payments.pricing.errors import ChargesOff, PricingDisabled
 from apps.payments.pricing.loan_charges_payload import charge_row, loan_charges_payload
 from apps.payments.pricing.serializers_rules import (
     LoanAccountabilityChargeResultSerializer, LoanAccountabilityChargeSerializer, LoanChargesSerializer, LoanFeeWaiverCreateSerializer,
@@ -112,7 +112,8 @@ class AccountabilityChargeView(APIView):
                    description="return_request (handover roles included). One charge per damage/lost row; a "
                                "second is 409 `charge_exists`. An amount above 0 needs the return photo that "
                                "recorded the item (409 `return_photo_required`). 0 means no charge. A waived "
-                               "loan raises nothing.",
+                               "loan raises nothing. 404 `charges_off` when loan charges are not tracked "
+                               "(charges.enabled or charges.loans off).",
                    request=LoanAccountabilityChargeSerializer,
                    responses={200: LoanAccountabilityChargeResultSerializer, **errors(400, 401, 403, 404, 409, 423)})
     def post(self, request, makerspace_id, request_id, accountability_id):
@@ -122,6 +123,9 @@ class AccountabilityChargeView(APIView):
         loan = _request(request.user, makerspace_id, request_id, rbac.Action.RETURN_REQUEST)
         if not feature_enabled(loan.makerspace, "charges.pricing"):
             raise PricingDisabled()
+        from apps.hardware_requests.loan_charges_common import loans_enabled
+        if not loans_enabled(loan.makerspace):
+            raise ChargesOff("loans")
         row = get_object_or_404(RequesterAccountability.objects.select_related("request_item__product", "makerspace"),
                                 pk=accountability_id, request=loan)
         body = LoanAccountabilityChargeSerializer(data=request.data)

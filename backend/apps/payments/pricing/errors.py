@@ -31,6 +31,18 @@ class PricingDisabled(PricingError):
     message = "Price lists are switched off for this space."
 
 
+class ChargesOff(PricingError):
+    """#184: the area's money is not tracked here (`charges.enabled` or `charges.<domain>` off),
+    so it is free: nothing is priced, previewed or charged, and the route leaves no surface (#95)."""
+
+    status_code = status.HTTP_404_NOT_FOUND
+    code = "charges_off"
+    message = "Charges are switched off for this area in this space, so it is free."
+
+    def __init__(self, domain=None):
+        super().__init__(domain=domain)
+
+
 class ComponentNotAllowed(PricingError):
     code = "component_not_allowed"
     message = "That price component does not apply here."

@@ -129,6 +129,12 @@ def public_quote(space, domain, viewer, data):
 
     if not module_enabled(space, DOMAIN_MODULES.get(domain, "")):
         raise Http404
+    from apps.payments.availability import charge_tracking_enabled
+    from apps.payments.pricing.errors import ChargesOff
+
+    if not charge_tracking_enabled(space, domain):
+        # #184 G2: a free domain has no price to preview -- not even "members pay X".
+        raise ChargesOff(domain)
     card = resolver.rate_card(space, domain)
     target, params = _target(space, domain, viewer, data)
     member = _member(space, viewer)

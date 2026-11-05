@@ -148,6 +148,9 @@ class LoanChargesSerializer(serializers.Serializer):
     request_id = serializers.IntegerField()
     currency = serializers.CharField()
     pricing_enabled = serializers.BooleanField()
+    charges_enabled = serializers.BooleanField(help_text="Loan charges are tracked (charges.enabled + "
+                                               "charges.loans). False: the space lends for free and no "
+                                               "damage/lost charge can be raised.")
     waivers_enabled = serializers.BooleanField()
     can_waive = serializers.BooleanField()
     charges = LoanChargeSerializer(many=True)

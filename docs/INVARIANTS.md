@@ -538,12 +538,25 @@ admission and requires externally prepared state, never inventing recovery autho
 **Self-host vs managed SaaS (all managed features dormant by default).** `PLATFORM_DOMAIN_SUFFIX`
 blank/whitespace ⇒ `domain_verification.is_self_host()` is True ⇒ **every managed feature is inert**
 and single-domain behavior is byte-for-byte unchanged (self-hosters unaffected). Self-host trusts a
-superadmin-set custom `frontend_domain` immediately (no DNS TXT challenge — the challenge only ever
-defended the shared managed box). The self-host branch is strictly superadmin-only (the staff-origin/
-CORS allowlist is process-global; letting any tenant set a trusted origin is a cross-tenant token-theft
-vector). Managed mode adds `<slug>.space-works.tech` provisioning + tenant self-serve custom domains on one
+SUPERADMIN-set custom `frontend_domain` immediately (no DNS TXT challenge: the operator's word is
+proof). Since #192 a Space Manager may set the domain on self-host too, but theirs is PENDING and
+gets no trust until the same DNS TXT challenge managed mode uses passes (`domain_verification`:
+`apply_domain_change(operator_trusted=...)`, `verify_domain` runs the TXT check for a non-superadmin
+and never downgrades an already VERIFIED self-host domain). The staff-origin/CORS allowlist is
+process-global, so a tenant-set origin trusted without proof would be a cross-tenant token-theft
+vector: nothing may trust a self-host domain on save any more (the old `post_save` auto-verify is
+gone); only the superadmin's writers, `verify_domain` and the operator's explicit
+`reconcile_selfhost_domains` command set VERIFIED. Managed mode adds `<slug>.space-works.tech` provisioning + tenant self-serve custom domains on one
 shared instance (no per-tenant DB). **VERIFIED is the trust gate** — a `frontend_domain` grants CORS/
 staff-origin/bootstrap/Host/TLS trust only when `frontend_domain_status=VERIFIED` and non-archived.
+**Hide from the platform (#192)** is `hidden_from_central_directory`, independent of any domain (the
+old `ck_makerspace_hidden_requires_domain` constraint is gone). It is a Space-Manager setting written
+through `settings_authority.assert_setting_write(..., "public_site", "hidden_from_central_directory")`
+and audited as `settings.changed`. Every central listing reads it: `website_directory.directory_spaces`
+(Discover, cross-space search, sitemap, organization catalogue), `PublicMakerspaceListView` and
+`events.directories.partner_makerspaces`. It is a discovery hide, never authorization: slug and
+verified-domain routes keep serving the space, and the superadmin keeps seeing it (#110); the platform
+overview counts it only with the excluded toggle (#183A).
 
 **Managed hosting requests (platform-level, dormant on self-host).** `apps/hosting_requests/` lets anyone
 ask to host a makerspace (`/hosting`) and lets an existing makerspace or organization send an invitation

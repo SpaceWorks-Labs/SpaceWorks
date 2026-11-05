@@ -595,11 +595,13 @@ box; it stays dormant here.) End-to-end:
 
    Caddy (`deploy/Caddyfile`) terminates HTTPS and forwards both the public site and the `/admin`
    staff console to this deployment.
-3. **Set the domain in Settings.** As a **superadmin**, open the makerspace's Settings → **Custom
-   domain**, enter the hostname, and Save. It shows **Active** immediately (no TXT record, no Verify
-   step). Only a superadmin may set it — the staff-auth/CORS allowlist is process-global (not
-   tenant-scoped), so on a multi-makerspace box an untrusted Space Manager must never be able to inject
-   a globally-trusted origin.
+3. **Set the domain in Settings.** As a **superadmin**, open the makerspace's Settings → **Your own
+   domain or frontend**, enter the hostname, and Save. It is **Verified** immediately (no TXT record,
+   no Verify step): the operator's word is enough. A **Space Manager** may set a domain too (#192),
+   but theirs stays **Waiting for DNS proof** — no CORS, staff-origin, Host or TLS trust — until the
+   DNS TXT record the page shows is found by **Verify domain**. The staff-auth/CORS allowlist is
+   process-global (not tenant-scoped), so an unproven tenant-set origin is never trusted. See
+   [own-domain-and-frontend.md](own-domain-and-frontend.md).
 4. **Point the branded frontend at this backend.** Set the frontend container's
    `TENANT_ORIGIN_BOOTSTRAP=true` (resolve the makerspace by request origin) **or**
    `TENANT_TOKEN=<public_code>`, plus `TENANT_API_URL=/api`. See
@@ -607,7 +609,9 @@ box; it stays dormant here.) End-to-end:
 
 If an instance flips from managed → self-host after deploy, run
 `python manage.py reconcile_selfhost_domains` once to promote any existing custom domains to trusted
-(the migration does this automatically on a fresh self-host deploy).
+(the migration does this automatically on a fresh self-host deploy). Running it is the operator
+vouching for every domain it promotes, including any a Space Manager has set but not yet proven, so
+check the list in `/control/` first. Saving a makerspace no longer trusts its domain on its own.
 
 ## Environment reference
 

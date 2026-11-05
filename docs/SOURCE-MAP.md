@@ -910,6 +910,9 @@ identity normalization and production minimum-version comparison. `mobile_associ
   `room_outages.py`, `maintenance_subjects.py`, `photos.py` + `storage.py` (staging-key photos),
   `notify.py`; routes `urls_staff.py` (admin prefix) and `urls_public.py` (member/public), views
   `views_{issues,staff,contacts,maintenance,member,public}.py`.
+- RP-5 reports: builders `maintenance/repairs/reports.py` (columns in `report_fields.py`, viewer scope in
+  `report_scope.py`), registered by `operations/report_definitions_repairs.py`; `ReportDefinition.alternate_actions`
+  and `report_types.definition_actions` let the family admit each area's managers beside the Technician.
 - Seams outside the package: `maintenance/work_orders.may_manage`, `maintenance/services_shared.
   prepare_machine(technician=)`, `bookings/admission._refuse_room_outage`,
   `integrations/notification_telegram_callbacks._technician_opt_in`.

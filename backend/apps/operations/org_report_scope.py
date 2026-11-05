@@ -106,6 +106,10 @@ EXCLUDED_ORGANIZATION_REPORT_KEYS = EXCLUDED_ORGANIZATION_REPORT_KEYS | SESSION_
 # Release 2 L3: the member-card issuance tile is tenant-local.
 from apps.operations.report_definitions_cards import CARD_REPORT_KEYS  # noqa: E402
 EXCLUDED_ORGANIZATION_REPORT_KEYS = EXCLUDED_ORGANIZATION_REPORT_KEYS | CARD_REPORT_KEYS
+# RP-5 repairs family: rows are narrowed to one viewer's areas and jobs in one space, the
+# workload names technicians, and median repair hours cannot be summed across spaces.
+from apps.operations.report_definitions_repairs import REPAIRS_REPORT_KEYS  # noqa: E402
+EXCLUDED_ORGANIZATION_REPORT_KEYS = EXCLUDED_ORGANIZATION_REPORT_KEYS | REPAIRS_REPORT_KEYS
 
 
 # Phase 1f F/G adds explicit local-period strategies and exposed denominators.

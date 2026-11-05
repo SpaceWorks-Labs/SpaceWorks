@@ -286,6 +286,10 @@ requiring `machines.maintenance`.
   only with a tenant purge. Purging `inventory.maintenance` / `bookings.room_maintenance`
   deletes that kind's schedules, logs and work orders (rooms also their outages). See
   [Repairs and technicians](INVARIANTS.md#repairs-and-technicians).
+- **Repairs reports (RP-5).** While any `*.repairs` switch is on (the work-order list also with any
+  maintenance switch), Reports offers open and overdue work orders, technician workload, repair time
+  per area and parts used, with CSV export. A Technician sees their own jobs; each manager sees their
+  own area (a Machine Manager only their machine types).
 
 
 ## Events

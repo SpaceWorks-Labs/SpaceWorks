@@ -43,6 +43,11 @@ class ReportDefinition:
     platform_only: bool = False
     identity_bearing: bool = False
     chart_spec: dict | None = None
+    # Further tenant actions that admit a viewer besides `required_action`. Used where one
+    # report serves several areas' managers and their workers at once (the repairs family:
+    # Technicians plus the Machine, Inventory and Booking Managers); its builder then
+    # narrows the rows to what that viewer may see. Keep it empty for an ordinary report.
+    alternate_actions: tuple[str, ...] = ()
 
     def builder(self) -> Callable:
         builder = import_string(self.builder_path)
@@ -57,6 +62,11 @@ class ReportDefinition:
             return builder(makerspace_id, platform_context=platform_context, **kwargs)
 
         return platform_builder
+
+
+def definition_actions(definition):
+    """Every tenant action that admits a viewer to this report (the primary one first)."""
+    return (definition.required_action, *definition.alternate_actions)
 
 
 class ReportNotFound(APIException):

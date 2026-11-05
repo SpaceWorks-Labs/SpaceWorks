@@ -57,7 +57,8 @@ def accessible_report_views(actor, space):
     keys = [key for key, definition in REPORT_REGISTRY.items()
             if definition.previewable and _may_save(actor, definition, space)]
     rows = SavedView.objects.none()
-    for action in {definition.required_action for definition in REPORT_REGISTRY.values()}:
+    from .report_types import definition_actions
+    for action in {action for definition in REPORT_REGISTRY.values() for action in definition_actions(definition)}:
         rows = rows | rbac.scope_by_action(actor, action, SavedView.objects.all())
     return rows.filter(makerspace=space, entity="report", state__report_key__in=keys).filter(
         Q(owner=actor) | Q(shared=True),

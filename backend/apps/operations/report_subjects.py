@@ -80,7 +80,8 @@ def report_action_allowed(actor, definition, makerspace_id, filters=None):
     subject-capable report also admits the resource-grant path: tenant VIEW_AUDIT here,
     then the per-resource grant in `authorize` (the conjunction yuyu introduced).
     """
-    if rbac.can(actor, definition.required_action, makerspace_id):
+    from .report_types import definition_actions
+    if any(rbac.can(actor, action, makerspace_id) for action in definition_actions(definition)):
         return True
     filters = filters or {}
     subject_request = bool(definition.subject_kind) or any(

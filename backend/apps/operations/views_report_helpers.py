@@ -84,9 +84,9 @@ def _makerspace_for_report_view(user, makerspace_id, report_key):
     if definition is not None and definition.platform_only:
         raise reports.ReportNotFound()
     if definition is not None:
-        queryset = queryset | rbac.scope_by_action(
-            user, definition.required_action, spaces, field="id"
-        )
+        from .report_types import definition_actions
+        for action in definition_actions(definition):
+            queryset = queryset | rbac.scope_by_action(user, action, spaces, field="id")
         from .report_subjects import subject_capable
         if subject_capable(definition):
             # The resource-grant path: tenant VIEW_AUDIT plus the subject's own grant.
@@ -98,7 +98,10 @@ def _makerspace_for_report_view(user, makerspace_id, report_key):
 
 def _makerspace_for_catalog(user, makerspace_id):
     queryset = Makerspace.objects.none()
-    for action in {definition.required_action for definition in REPORT_DEFINITIONS if not definition.platform_only}:
+    from .report_types import definition_actions
+    actions = {action for definition in REPORT_DEFINITIONS if not definition.platform_only
+               for action in definition_actions(definition)}
+    for action in actions:
         queryset = queryset | rbac.scope_by_action(
             user, action, Makerspace.objects.all(), field="id"
         )

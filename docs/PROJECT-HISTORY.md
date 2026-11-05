@@ -6,6 +6,10 @@
 
 ## Condensed changelog (newest first — full detail in `git log`)
 
+- **2026-11-05 -- release 2 gap RP-5, repairs reports.** A repairs/technician report family (open and
+  overdue work orders, technician workload, repair time per area, parts used), each narrowed to the
+  viewer through the L16 repairs authority; `ReportDefinition.alternate_actions` admits the area managers
+  beside the Technician. Tenant-local, unschedulable, organization-excluded.
 - **2026-11-05 -- release 2 L25, per-space Metabase analytics (#163B).** New module `analytics` (off by
   default) and action `view_analytics`. Each space gets a read-only database login over 26 curated,
   versioned views (catalogue version 1), pinned to its space by L8's fixed-role RLS seam; the superadmin

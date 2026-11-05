@@ -121,7 +121,8 @@ class ReportCatalogView(APIView):
             # Subject-only reports remain available from their resource's UI.
             if definition.subject_kind or definition.platform_only:
                 continue
-            if not rbac.can(request.user, definition.required_action, makerspace.id):
+            from .report_types import definition_actions
+            if not any(rbac.can(request.user, action, makerspace.id) for action in definition_actions(definition)):
                 continue
             if definition.key in {"machine-usage-members", "booking-top-members"} and not rbac.can(request.user, rbac.Action.VIEW_AUDIT, makerspace.id):
                 continue

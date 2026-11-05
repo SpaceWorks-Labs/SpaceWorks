@@ -100,6 +100,13 @@ REPORT_MODULE_COVERAGE["devices"] = ModuleReportCoverage("substantive", ("device
 REPORT_MODULE_COVERAGE["shop"] = ModuleReportCoverage("substantive", ("shop-sales", "finance-shop"))
 # Lane L25 (#163B): analytics is reported as a health row; its audit actions count as activity.
 REPORT_MODULE_COVERAGE["analytics"] = ModuleReportCoverage("health_row", ("module-operational-health",))
+# RP-5: the repairs family documents the per-parent repair and maintenance switches (#128 C-9),
+# whose machine side lives with the machines module and the retired `maintenance` area.
+from apps.operations.report_definitions_repairs import REPAIRS_REPORT_KEYS as _REPAIRS_KEYS  # noqa: E402
+for _module in ("maintenance", "machines"):
+    REPORT_MODULE_COVERAGE[_module] = ModuleReportCoverage(
+        REPORT_MODULE_COVERAGE[_module].kind,
+        tuple(dict.fromkeys((*REPORT_MODULE_COVERAGE[_module].reports, *sorted(_REPAIRS_KEYS)))))
 
 
 @checks.register(checks.Tags.models)

@@ -5,6 +5,7 @@ import { StructuredApiError } from "../../lib/api";
 import { useTicketTypeChanges, type StaffTicket, type StaffTicketPatch, type TicketOrderFields } from "./eventTicketingApi";
 import { usePriceDropOn } from "./priceDrop/priceDropApi";
 import { usePriceDropCheck } from "./priceDrop/usePriceDropCheck";
+import { useStaffChargesOn } from "./useStaffChargesOn";
 import { panelField, panelInput } from "./eventPanelStyles";
 import { eventErrorText } from "./eventUi";
 
@@ -28,6 +29,7 @@ export function EventTicketRow({ row, eventId, disabled }: { row: StaffTicket; e
   // Lane L24 (#163A): with price-drop refunds on, a sold fixed-price ticket may only get cheaper.
   const drop = usePriceDropCheck();
   const dropOn = usePriceDropOn();
+  const chargesOn = useStaffChargesOn("events"); // #184: free events show and edit no ticket price
   const lowerable = used && dropOn && ((row as Partial<TicketOrderFields>).pricing_mode ?? "fixed") === "fixed";
   const open = () => { update.reset(); remove.reset(); setDraft({ name: row.name, amount: row.amount, audience: row.audience, capacity: row.capacity, start: local(row.sales_start_at), end: local(row.sales_end_at), active }); setEditing(true); };
   // Only changed fields travel, so an untouched price on a ticket in use never trips the 409.
@@ -46,7 +48,7 @@ export function EventTicketRow({ row, eventId, disabled }: { row: StaffTicket; e
   return <li className="grid min-w-0 gap-3 rounded-2xl border border-line bg-panel p-4">
     <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
       <div className="min-w-0"><p className="title-section break-words">{row.name}</p>
-        <p className="mt-1 text-sm tabular-nums text-muted">{row.amount} · {row.audience} · {row.capacity || "Unlimited"} places · {row.registration_count ?? 0} registered</p></div>
+        <p className="mt-1 text-sm tabular-nums text-muted">{chargesOn ? `${row.amount} · ` : ""}{row.audience} · {row.capacity || "Unlimited"} places · {row.registration_count ?? 0} registered</p></div>
       <div className="flex flex-wrap items-center gap-2">
         {!active ? <StatusPill label="Inactive" /> : null}
         {!disabled && !editing ? <><button className="desk-button" type="button" onClick={open}>Edit {name}</button>
@@ -55,13 +57,13 @@ export function EventTicketRow({ row, eventId, disabled }: { row: StaffTicket; e
     </div>
     {editing ? <form className="grid gap-4 sm:grid-cols-2" aria-label={`Edit ${name}`} onSubmit={(e) => { e.preventDefault(); void save(); }}>
       <label className={panelField}>Ticket name<input className={panelInput} required maxLength={100} value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} /></label>
-      <label className={panelField}>Price<input className={panelInput} type="number" min="0" step="0.01" required value={draft.amount} disabled={used && !lowerable} max={lowerable ? row.amount : undefined} onChange={(e) => setDraft({ ...draft, amount: e.target.value })} /></label>
+      {chargesOn ? <label className={panelField}>Price<input className={panelInput} type="number" min="0" step="0.01" required value={draft.amount} disabled={used && !lowerable} max={lowerable ? row.amount : undefined} onChange={(e) => setDraft({ ...draft, amount: e.target.value })} /></label> : null}
       <label className={panelField}>Ticket audience<select className={panelInput} value={draft.audience} disabled={used} onChange={(e) => setDraft({ ...draft, audience: e.target.value as StaffTicket["audience"] })}><option value="public">All accounts</option><option value="member">Active members</option></select></label>
       <label className={panelField}>Ticket capacity (0 = unlimited)<input className={panelInput} type="number" min="0" value={draft.capacity} onChange={(e) => setDraft({ ...draft, capacity: Number(e.target.value) })} /></label>
       <label className={panelField}>Sales start<input className={panelInput} type="datetime-local" value={draft.start} onChange={(e) => setDraft({ ...draft, start: e.target.value })} /></label>
       <label className={panelField}>Sales end<input className={panelInput} type="datetime-local" value={draft.end} onChange={(e) => setDraft({ ...draft, end: e.target.value })} /></label>
       <label className="flex min-h-11 items-center gap-2 text-sm text-ink sm:col-span-2"><input type="checkbox" checked={draft.active} onChange={(e) => setDraft({ ...draft, active: e.target.checked })} />Available for new registrations</label>
-      {used ? <p className="text-sm text-muted sm:col-span-2">{lowerable
+      {used ? <p className="text-sm text-muted sm:col-span-2">{!chargesOn ? "Audience is fixed because registrations already use this ticket type." : lowerable
         ? "Registrations already use this ticket type: its audience is fixed and its price can only be lowered. Each paid seat for an event not yet held then gets a refund for staff to approve."
         : "Price and audience are fixed because registrations already use this ticket type."}</p> : null}
       <div className="flex flex-wrap justify-end gap-2 sm:col-span-2">

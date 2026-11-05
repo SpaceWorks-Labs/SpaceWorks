@@ -6,7 +6,8 @@ import { capabilityOn } from "../../../lib/features";
 import { DiscountsPanel } from "./DiscountsPanel";
 import { PricingCurrency } from "./PricingCurrency";
 import { PricingDomainCard } from "./PricingDomainCard";
-import { installedDomains, pricingApi, pricingKeys } from "./pricingApi";
+import { installedDomains, pricingApi, pricingKeys, type PricingDomain } from "./pricingApi";
+import { staffChargesOn } from "../useStaffChargesOn";
 
 type Space = { id: number; enabled_modules?: string[]; enabled_features?: string[] };
 
@@ -28,7 +29,9 @@ export function PricingSettings({ makerspace, canManageMakerspace }: { makerspac
     <PricingCurrency makerspaceId={makerspace.id} canEdit={canManageMakerspace} />
     <Tabs label="Pricing areas" tabs={domains.map(entry => ({ key: entry.domain, label: entry.label }))} activeKey={active}
       onChange={setActive}>
-      <PricingDomainCard key={active} makerspaceId={makerspace.id} domain={active} />
+      {/* #184: a domain whose charges are off is free, so its rate card gives way to one line (the switches stay in feature settings). */}
+      {staffChargesOn(makerspace, active as PricingDomain) ? <PricingDomainCard key={active} makerspaceId={makerspace.id} domain={active} />
+        : <p className="text-sm text-muted">{domains.find(entry => entry.domain === active)?.label ?? "This area"} charges are off in this space, so it is free.</p>}
     </Tabs>
     {discountsOn ? <DiscountsPanel makerspaceId={makerspace.id}
       currency={code} domains={domains.map(entry => entry.domain)}

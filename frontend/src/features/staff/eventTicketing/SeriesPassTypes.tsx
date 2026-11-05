@@ -6,6 +6,7 @@ import { ScreenHelp } from "../../help/HelpLink";
 import { capabilityOn } from "../../../lib/features";
 import { panelEmpty, panelField, panelInput, panelRow } from "../eventPanelStyles";
 import { usePassTypes, type PassType } from "./staffTicketingApi";
+import { useStaffChargesOn } from "../useStaffChargesOn";
 
 type SpaceFlags = { id: number; enabled_modules?: string[]; enabled_features?: string[] };
 
@@ -25,6 +26,9 @@ export function SeriesPassTypes({ seriesId, disabled = false }: { seriesId: numb
   const { rows, save } = usePassTypes(seriesId);
   const [draft, setDraft] = useState<PassType>(blank);
   const set = <K extends keyof PassType>(key: K, value: PassType[K]) => setDraft(current => ({ ...current, [key]: value }));
+  // #184: a series pass is only ever sold, so a free events domain has nothing to set up here.
+  const chargesOn = useStaffChargesOn("events");
+  if (!chargesOn) return <p className="text-sm text-muted">Event charges are off in this space, so events are free.</p>;
   return <section className="grid gap-3" aria-label="Series passes">
     <div className="flex flex-wrap items-center justify-between gap-2">
       <h3 className="title-section flex items-center gap-2"><Repeat aria-hidden="true" size={18} />Series passes</h3>

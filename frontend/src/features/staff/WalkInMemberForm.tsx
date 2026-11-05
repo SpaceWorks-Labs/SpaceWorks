@@ -6,6 +6,7 @@ import { staffRequest, StructuredApiError } from "../../lib/api";
 import { CustomFormFields } from "../forms/CustomFormFields";
 import { customAnswerErrors, validateCustomAnswers, type CustomAnswers } from "../forms/customFormTypes";
 import type { AdmissionRequest, PublicAdmission } from "../members/membershipAdmissionApi";
+import { useStaffChargesOn } from "./useStaffChargesOn";
 
 type WalkInMember = { user_id: number; display_name: string; username: string; admission_request?: AdmissionRequest };
 
@@ -34,6 +35,7 @@ export function WalkInMemberForm({
   const [answerErrors, setAnswerErrors] = useState<Record<string, string>>({});
   const [application, setApplication] = useState<AdmissionRequest | null>(null);
   const admission = useQuery({ queryKey: ["walk-in-admission", makerspaceId], queryFn: () => staffRequest<PublicAdmission>(`/admin/makerspaces/${makerspaceId}/walk-in-members`), enabled: open, retry: false });
+  const chargesOn = useStaffChargesOn("membership", makerspaceId); // #184: free membership shows no plan price or fee
 
   const create = useMutation({
     mutationFn: () =>
@@ -95,9 +97,9 @@ export function WalkInMemberForm({
       {admission.error ? <p className="mt-2 text-sm text-danger" role="alert">{admission.error.message}</p> : null}
       {admission.data?.join_mode === "closed" ? <p className="mt-2 text-sm text-muted">Membership applications are closed.</p> : null}
       {admission.data?.join_mode === "vouch" ? <p className="mt-2 text-sm text-muted">This application needs {admission.data.vouches_required} member vouch(es).</p> : null}
-      {admission.data?.default_plan ? <p className="mt-2 text-sm text-ink">Default plan: {admission.data.default_plan.name} · {admission.data.default_plan.amount} {admission.data.default_plan.currency.toUpperCase()}</p> : null}
-      {admission.data && Number(admission.data.joining_fee) > 0 ? <p className="mt-2 text-sm text-ink">Joining fee: {admission.data.joining_fee} {(admission.data.joining_fee_currency ?? "").toUpperCase()}</p> : null}
-      {admission.data?.payment_timing === "before_activation" ? <p className="mt-2 text-sm text-muted">Any admission charge must be settled before membership activates.</p> : null}
+      {admission.data?.default_plan ? <p className="mt-2 text-sm text-ink">Default plan: {admission.data.default_plan.name}{chargesOn ? ` · ${admission.data.default_plan.amount} ${admission.data.default_plan.currency.toUpperCase()}` : ""}</p> : null}
+      {chargesOn && admission.data && Number(admission.data.joining_fee) > 0 ? <p className="mt-2 text-sm text-ink">Joining fee: {admission.data.joining_fee} {(admission.data.joining_fee_currency ?? "").toUpperCase()}</p> : null}
+      {chargesOn && admission.data?.payment_timing === "before_activation" ? <p className="mt-2 text-sm text-muted">Any admission charge must be settled before membership activates.</p> : null}
       <label className="mt-3 block text-sm font-medium text-ink" htmlFor="walk-in-name">
         Name
       </label>

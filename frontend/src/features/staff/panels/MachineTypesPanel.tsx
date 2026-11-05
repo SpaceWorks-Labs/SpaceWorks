@@ -16,6 +16,7 @@ import {
 } from "../machinesApi";
 import { CapabilityPresetListEditor } from "./machine/CapabilityPresetListEditor";
 import { usePriceDropCheck } from "../priceDrop/usePriceDropCheck";
+import { useStaffChargesOn } from "../useStaffChargesOn";
 
 const meteringUnits: Array<{ value: MeteringUnit; label: string }> = [
   { value: "weight", label: "Weight (grams)" },
@@ -97,8 +98,10 @@ function PricingEditor({ makerspaceId, machineType, currency, canConfigure, draf
   const shownRate = rate || row?.rate_per_unit || "0.00";
   const shownFlatFee = flatFee || row?.flat_fee || "0.00";
   const shownEnabled = paymentEnabled ?? row?.payment_enabled ?? false;
+  // #184: with machine charges off the rate card is not edited here (stored rates stay).
+  const chargesOn = useStaffChargesOn("machines", makerspaceId);
 
-  if (!canConfigure) return null;
+  if (!canConfigure || !chargesOn) return null;
   return <div className="grid gap-2 rounded-lg bg-bg p-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto_auto] md:items-end">
     <label className="eyebrow grid gap-1">Rate per unit ({currency})
       <input className="desk-input" type="number" min="0" step="0.01" value={shownRate} onChange={(event) => setRate(event.target.value)} />
@@ -161,12 +164,14 @@ export function MachineTypesPanel({ makerspaceId, canConfigureMachineTypes, visi
   });
   const types = collectionResults(machineTypes.data);
   const currency = pricing.data?.currency ?? "Currency";
+  const chargesOn = useStaffChargesOn("machines", makerspaceId);
 
   if (!visible) return null;
   return <details id="machine-type-settings" className="mb-4 overflow-hidden rounded-xl border border-line bg-panel">
     <summary className="min-h-11 cursor-pointer bg-surface px-4 py-3 text-sm font-semibold text-ink">Machine types and pricing</summary>
     <div className="grid gap-3 p-3">
-      <p className="text-sm text-muted">Structural configuration is fixed for built-in types. Prices are makerspace-specific and use the default currency shown beside each amount.</p>
+      <p className="text-sm text-muted">Structural configuration is fixed for built-in types.{chargesOn ? " Prices are makerspace-specific and use the default currency shown beside each amount." : ""}</p>
+      {chargesOn ? null : <p className="text-sm text-muted">Machine charges are off in this space, so machine use is free.</p>}
       <p className="text-sm text-muted">Machine time bookings are not available. The requires booking flag does not block service requests or job starts.</p>
       {canConfigureMachineTypes ? <form className="grid gap-2 rounded-xl border border-line bg-bg p-3 md:grid-cols-4 md:items-end" onSubmit={(event) => { event.preventDefault(); create.mutate(); }}>
         <label className="eyebrow grid gap-1">Slug<input className="desk-input" value={slug} onChange={(event) => setSlug(event.target.value)} placeholder="laser-cutter" required /></label>

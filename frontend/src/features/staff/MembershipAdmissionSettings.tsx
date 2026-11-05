@@ -7,6 +7,7 @@ import { CustomFormBuilder } from "../forms/CustomFormBuilder";
 import { admissionKeys, admissionSettings, saveAdmissionSettings, type AdmissionRecipe, type AdmissionSettings, type JoinMode, type PaymentTiming } from "../members/membershipAdmissionApi";
 import { listPlans, membershipPlanKeys } from "./membershipPlansApi";
 import { MembershipAdmissionExtras } from "./MembershipAdmissionExtras";
+import { useStaffChargesOn } from "./useStaffChargesOn";
 
 export const ADMISSION_RECIPES: [AdmissionRecipe, string][] = [
   ["free_open", "Free + open"], ["free_vouch", "Free + vouch"], ["paid_approval", "Paid + approval"], ["paid_invite_only", "Paid + invite-only"], ["closed", "Closed"],
@@ -25,6 +26,8 @@ export function MembershipAdmissionSettings({ makerspaceId, features = [] }: { m
   const plans = useQuery({ queryKey: membershipPlanKeys.plans(makerspaceId), queryFn: () => listPlans(makerspaceId) });
   const [draft, setDraft] = useState<AdmissionSettings | null>(null);
   const [recipe, setRecipe] = useState<AdmissionRecipe | "">("");
+  // #184: with membership charges off there is no fee, payment timing or paid recipe to offer.
+  const chargesOn = useStaffChargesOn("membership", makerspaceId);
   const value = draft ?? settings.data;
   const save = useMutation({ mutationFn: () => saveAdmissionSettings(makerspaceId, { ...value!, ...(recipe ? { recipe } : {}) }), onSuccess: (data) => {
     client.setQueryData(admissionKeys.settings(makerspaceId), data);
@@ -47,17 +50,18 @@ export function MembershipAdmissionSettings({ makerspaceId, features = [] }: { m
           setRecipe(next);
           if (next) setDraft(admissionRecipeDraft(value, next));
           save.reset();
-        }}><option value="">Custom settings</option>{ADMISSION_RECIPES.map(([id, label]) => <option key={id} value={id}>{label}</option>)}</select></label>
+        }}><option value="">Custom settings</option>{ADMISSION_RECIPES.filter(([id]) => chargesOn || !id.startsWith("paid_")).map(([id, label]) => <option key={id} value={id}>{label}</option>)}</select></label>
         <label className="grid gap-1 text-sm text-ink">Join mode<select className="desk-input max-w-full" value={value.join_mode} onChange={(event) => update("join_mode", event.target.value as JoinMode)}><option value="open">Open</option><option value="approval">Approval</option><option value="invite_only">Invite-only</option><option value="vouch">Vouch</option><option value="closed">Closed</option></select></label>
-        <label className="grid gap-1 text-sm text-ink">Payment timing<select className="desk-input max-w-full" value={value.payment_timing} onChange={(event) => update("payment_timing", event.target.value as PaymentTiming)}><option value="after_activation">Activate then charge</option><option value="before_activation">Pay before activation</option></select></label>
-        <label className="grid gap-1 text-sm text-ink">Default admission plan<select className="desk-input max-w-full" value={value.default_plan ?? ""} disabled={plans.isPending || plans.isError} onChange={(event) => update("default_plan", event.target.value ? Number(event.target.value) : null)}><option value="">No default plan</option>{activePlans.map((plan) => <option key={plan.id} value={plan.id}>{plan.name} · {plan.amount} {plan.currency.toUpperCase()}</option>)}</select></label>
-        <label className="grid gap-1 text-sm text-ink">Joining fee<input className="desk-input" type="number" required min="0" step="0.01" value={value.joining_fee} onChange={(event) => update("joining_fee", event.target.value)} /></label>
+        {chargesOn ? <label className="grid gap-1 text-sm text-ink">Payment timing<select className="desk-input max-w-full" value={value.payment_timing} onChange={(event) => update("payment_timing", event.target.value as PaymentTiming)}><option value="after_activation">Activate then charge</option><option value="before_activation">Pay before activation</option></select></label> : null}
+        <label className="grid gap-1 text-sm text-ink">Default admission plan<select className="desk-input max-w-full" value={value.default_plan ?? ""} disabled={plans.isPending || plans.isError} onChange={(event) => update("default_plan", event.target.value ? Number(event.target.value) : null)}><option value="">No default plan</option>{activePlans.map((plan) => <option key={plan.id} value={plan.id}>{plan.name}{chargesOn ? ` · ${plan.amount} ${plan.currency.toUpperCase()}` : ""}</option>)}</select></label>
+        {chargesOn ? <><label className="grid gap-1 text-sm text-ink">Joining fee<input className="desk-input" type="number" required min="0" step="0.01" value={value.joining_fee} onChange={(event) => update("joining_fee", event.target.value)} /></label>
         <label className="grid gap-1 text-sm text-ink">Joining fee currency<input className="desk-input" required pattern="[a-zA-Z]{3}" maxLength={3} value={value.joining_fee_currency} onChange={(event) => update("joining_fee_currency", event.target.value.toLowerCase())} /></label>
-        <label className="grid gap-1 text-sm text-ink">Re-join dues<select className="desk-input max-w-full" value={value.rejoin_dues_rule} onChange={(event) => { const rule = event.target.value as AdmissionSettings["rejoin_dues_rule"]; setDraft({ ...value, rejoin_dues_rule: rule, rejoin_after_days: rule === "after_lapse" ? value.rejoin_after_days ?? 365 : null }); save.reset(); }}><option value="once">Once per person</option><option value="each_join">On every re-join</option>{features.includes("membership.plan_rules") || ["never", "after_lapse"].includes(value.rejoin_dues_rule) ? <><option value="never">Never</option><option value="after_lapse">Again after a lapse</option></> : null}</select></label>
+        <label className="grid gap-1 text-sm text-ink">Re-join dues<select className="desk-input max-w-full" value={value.rejoin_dues_rule} onChange={(event) => { const rule = event.target.value as AdmissionSettings["rejoin_dues_rule"]; setDraft({ ...value, rejoin_dues_rule: rule, rejoin_after_days: rule === "after_lapse" ? value.rejoin_after_days ?? 365 : null }); save.reset(); }}><option value="once">Once per person</option><option value="each_join">On every re-join</option>{features.includes("membership.plan_rules") || ["never", "after_lapse"].includes(value.rejoin_dues_rule) ? <><option value="never">Never</option><option value="after_lapse">Again after a lapse</option></> : null}</select></label></> : null}
         <NumberField label="Application expiry (days)" value={value.request_expiry_days} min={1} onChange={(next) => update("request_expiry_days", next)} />
       </div>
       <SettingsQueryState query={plans} resource="admission plans" />
-      {recipe.startsWith("paid_") && !Number(value.joining_fee) && !activePlans.some((plan) => plan.id === value.default_plan && Number(plan.amount) > 0) ? <p className="text-sm text-warn-ink">Choose a priced default plan or joining fee for this paid recipe.</p> : null}
+      {chargesOn ? null : <p className="text-sm text-muted">Membership charges are off in this space, so membership is free.</p>}
+      {chargesOn && recipe.startsWith("paid_") && !Number(value.joining_fee) && !activePlans.some((plan) => plan.id === value.default_plan && Number(plan.amount) > 0) ? <p className="text-sm text-warn-ink">Choose a priced default plan or joining fee for this paid recipe.</p> : null}
       <fieldset className="grid gap-3 rounded border border-line p-3"><legend className="text-sm font-semibold text-ink">Vouch rules</legend>
         <p className="text-sm text-muted">Vouchers must be active, unrestricted members. Vouches record accountability without automatically restricting anyone.</p>
         <div className="grid gap-3 @md:grid-cols-2">

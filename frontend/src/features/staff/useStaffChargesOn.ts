@@ -7,7 +7,7 @@ import { capabilityOn } from "../../lib/features";
 type SpaceFlags = { id: number; enabled_modules?: string[]; enabled_features?: string[] };
 
 /** The backend's `charge_tracking_enabled`: the `charges.enabled` master switch AND the domain's key. */
-export function staffChargesOn(space: SpaceFlags, domain: ChargeDomain) {
+export function staffChargesOn(space: Omit<SpaceFlags, "id">, domain: ChargeDomain) {
   return capabilityOn(space, "charges.enabled") && capabilityOn(space, `charges.${domain}`);
 }
 

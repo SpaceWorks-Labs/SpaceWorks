@@ -19,6 +19,7 @@ import { formatMoney } from "./paymentsApi";
 import { usePriceDropCheck } from "./priceDrop/usePriceDropCheck";
 import { Panel } from "./panels/shared";
 import { PlanPriceNote } from "./pricing/PricingNote";
+import { useStaffChargesOn } from "./useStaffChargesOn";
 import { MembershipRenewalFields, emptyRenewal, planRenewal, renewalInput, validateRenewal } from "./MembershipRenewalFields";
 import { MembershipPlanRulesFields, emptyRules, rulesFromPlan, rulesInput, validateRules } from "./MembershipPlanRulesFields";
 
@@ -103,6 +104,8 @@ export function MembershipPlansSection({ makerspaceId, features = [] }: { makers
   };
   // Lane L24: a cheaper plan may owe terms paid but not started yet a refund.
   const drop = usePriceDropCheck(makerspaceId);
+  // #184: with membership charges off no price is asked for or shown (stored values stay as they are).
+  const chargesOn = useStaffChargesOn("membership", makerspaceId);
   const submit = async () => {
     const next = validatePlanForm(form) ?? validateRenewal(renewal) ?? validateRules(rules);
     setProblem(next);
@@ -133,12 +136,13 @@ export function MembershipPlansSection({ makerspaceId, features = [] }: { makers
         Plans price a membership term. Members are put on a plan from the roster ("Terms"); a plan with terms cannot be deleted, only deactivated.
       </p>
       <PlanPriceNote makerspaceId={makerspaceId} />
+      {chargesOn ? null : <p className="mb-3 text-sm text-muted">Membership charges are off in this space, so membership is free.</p>}
       {plans.isLoading ? <p className="text-sm text-muted">Loading plans…</p> : null}
       {plans.isError ? <p className="text-sm text-danger" role="alert">{planErrorText(plans.error, "Could not load plans.")}</p> : null}
       {plans.data?.length === 0 ? <EmptyState message="No plans yet. Add your first membership plan below." /> : null}
       {plans.data?.map((plan) => (
         <ListRow key={plan.id} title={plan.name} identity={{ kind: "icon", icon: "Calendar", tone: "accent" }}
-          meta={<>{planIntervalLabel(plan)} · {formatMoney(plan.amount, plan.currency)}</>}
+          meta={<>{planIntervalLabel(plan)}{chargesOn ? ` · ${formatMoney(plan.amount, plan.currency)}` : ""}</>}
           right={<div className="flex flex-wrap items-center gap-2">
             <StatusPill tone={plan.archived_at ? "neutral" : plan.is_active ? "success" : "neutral"} label={plan.archived_at ? "Archived" : plan.is_active ? "Active" : "Inactive"} />
             {plan.is_public ? <StatusPill tone="info" label="Public" /> : null}
@@ -180,12 +184,12 @@ export function MembershipPlansSection({ makerspaceId, features = [] }: { makers
           <input className="h-4 w-4" type="checkbox" checked={form.is_active} onChange={(event) => set("is_active", event.target.checked)} />
           Active
         </label>
-        <Field label="Amount">
+        {chargesOn ? <><Field label="Amount">
           <input className="desk-input" inputMode="decimal" value={form.amount} onChange={(event) => set("amount", event.target.value)} />
         </Field>
         <Field label="Currency">
           <input className="desk-input" maxLength={3} value={form.currency} onChange={(event) => set("currency", event.target.value.toLowerCase())} />
-        </Field>
+        </Field></> : null}
         <div className="flex flex-wrap items-end gap-2">
           <button className="desk-button-primary" type="submit" disabled={save.isPending}>
             {save.isPending ? "Saving…" : editing ? "Save plan" : "Create plan"}
@@ -193,7 +197,7 @@ export function MembershipPlansSection({ makerspaceId, features = [] }: { makers
           {editing ? <button className="desk-button" type="button" onClick={cancelEdit}>Cancel</button> : null}
         </div>
         <MembershipRenewalFields value={renewal} onChange={(value) => { setRenewal(value); setProblem(null); }} />
-        <MembershipPlanRulesFields value={rules} onChange={(value) => { setRules(value); setProblem(null); }} planRulesOn={planRulesOn} publicPlansOn={publicPlansOn} />
+        <MembershipPlanRulesFields value={rules} onChange={(value) => { setRules(value); setProblem(null); }} planRulesOn={planRulesOn} publicPlansOn={publicPlansOn} chargesOn={chargesOn} />
       </form>
       {error ? <p className="mt-2 text-sm text-danger" role="alert">{error}</p> : null}
       {drop.dialog}

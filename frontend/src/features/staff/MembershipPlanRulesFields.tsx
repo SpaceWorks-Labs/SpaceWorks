@@ -56,8 +56,9 @@ export function rulesInput(rules: PlanRules, planRulesOn: boolean, publicPlansOn
   };
 }
 
-export function MembershipPlanRulesFields({ value, onChange, planRulesOn, publicPlansOn }: {
-  value: PlanRules; onChange: (value: PlanRules) => void; planRulesOn: boolean; publicPlansOn: boolean;
+/** `chargesOn` false (membership charges off, #184) hides every price, fee and payment-timing rule. */
+export function MembershipPlanRulesFields({ value, onChange, planRulesOn, publicPlansOn, chargesOn = true }: {
+  value: PlanRules; onChange: (value: PlanRules) => void; planRulesOn: boolean; publicPlansOn: boolean; chargesOn?: boolean;
 }) {
   const set = <K extends keyof PlanRules>(key: K, next: PlanRules[K]) => onChange({ ...value, [key]: next });
   const type = TYPES.find((item) => item.value === value.plan_type) ?? TYPES[0];
@@ -72,12 +73,12 @@ export function MembershipPlanRulesFields({ value, onChange, planRulesOn, public
         <p className="text-sm text-muted">{type.explain}</p>
       </div>
       {value.plan_type === "fixed_end" ? <Field label="Ends on"><input className="desk-input" type="date" value={value.fixed_end_date} onChange={(event) => set("fixed_end_date", event.target.value)} /></Field> : null}
-      <Field label="Renewal price" hint="Blank: same as a new term."><input className="desk-input" inputMode="decimal" value={value.renewal_amount} onChange={(event) => set("renewal_amount", event.target.value)} /></Field>
+      {chargesOn ? <><Field label="Renewal price" hint="Blank: same as a new term."><input className="desk-input" inputMode="decimal" value={value.renewal_amount} onChange={(event) => set("renewal_amount", event.target.value)} /></Field>
       <Field label="Joining fee" hint="Blank: the space default."><input className="desk-input" inputMode="decimal" value={value.joining_fee} onChange={(event) => set("joining_fee", event.target.value)} /></Field>
       {select("rejoin_rule", "Joining fee on rejoin", [["", "Space default"], ["never", "No joining fee"], ["once", "First join only"], ["each_join", "Every join"], ["after_lapse", "Again after a lapse"]])}
-      {value.rejoin_rule === "after_lapse" ? <Field label="Lapse after (days)"><input className="desk-input" inputMode="numeric" value={value.rejoin_after_days} onChange={(event) => set("rejoin_after_days", event.target.value)} /></Field> : null}
+      {value.rejoin_rule === "after_lapse" ? <Field label="Lapse after (days)"><input className="desk-input" inputMode="numeric" value={value.rejoin_after_days} onChange={(event) => set("rejoin_after_days", event.target.value)} /></Field> : null}</> : null}
       {select("join_mode", "How people join", [["", "Space default"], ["open", "Open"], ["approval", "Staff approve"], ["invite_only", "Invite only"], ["vouch", "Members vouch"], ["closed", "Closed"]])}
-      {select("payment_timing", "When they pay", [["", "Space default"], ["after_activation", "After activation"], ["before_activation", "Before activation"]])}
+      {chargesOn ? select("payment_timing", "When they pay", [["", "Space default"], ["after_activation", "After activation"], ["before_activation", "Before activation"]]) : null}
       {select("late_renewal", "Late renewal starts", [["backdate", "At the old end date"], ["payment_day", "On the renewal day"]])}
     </> : null}
     {publicPlansOn ? <>

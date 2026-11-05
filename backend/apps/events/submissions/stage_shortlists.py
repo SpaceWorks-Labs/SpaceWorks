@@ -162,12 +162,14 @@ def projection(event, stage):
     pool = candidates(stage)
     published = announcement is not None
     return {"stage_id": stage.pk, "label": stage.shortlist_label, "pending_triage": pending_count(stage),
+            "stage_entries": stage_entries(stage),
             "candidates": len(pool), "email_enabled": bool(option(event, "shortlist_email")),
             "current": {"id": current.pk, "selection": current.selection, "top_n": current.top_n,
                         "source_round_id": current.source_round_id, "created_at": current.created_at,
                         "published_at": announcement.published_at if announcement else None,
                         "entries": entries} if current else None,
-            "allowed_actions": [] if published else (["apply", "publish"] if current else ["apply"])}
+            "allowed_actions": ((["promote"] if current.source_round_id else []) if published
+                                else (["apply", "publish"] if current else ["apply"]))}
 
 
 def recipients(kind, announcement_id):
@@ -181,3 +183,11 @@ def recipients(kind, announcement_id):
                                                submission__state__in=LIVE)
     picked = [r for r in rows if (r.submission_id in chosen) == (kind == "stage_shortlisted")]
     return tuple(sorted({pk for r in picked for pk in runtime().snapshot(r.current_snapshot_id).member_ids}))
+
+
+def stage_entries(stage, limit=2000):
+    """Every live submission of the stage with its triage, for hand-picking and bulk triage."""
+    rows = (SubmissionStageEntry.objects.select_related("submission__team").filter(
+        stage=stage, current_snapshot__isnull=False, submission__state__in=LIVE).order_by("submission_id")[:limit])
+    return [{"submission_id": r.submission_id, "team_id": r.submission.team_id, "team_name": r.submission.team.name,
+             "snapshot_id": r.current_snapshot_id, "triage": r.triage, "submitted_at": r.submitted_at} for r in rows]

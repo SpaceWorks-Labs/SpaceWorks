@@ -11,6 +11,7 @@ SUBMIT_CONTENT_ROUTES = (
     ('events-programme-admin-submission-stage-shortlist-preview', ('POST',), 'event'),
     ('events-programme-admin-submission-stage-shortlist-apply', ('POST',), 'event'),
     ('events-programme-admin-submission-stage-shortlist-publish', ('POST',), 'event'),
+    ('events-programme-admin-submission-stage-shortlist-promote', ('POST',), 'event'),
     ('events-programme-admin-submission-stage-extensions', ('POST',), 'event'),
     ('events-programme-admin-submission-stage-triage', ('POST',), 'event'),
 )

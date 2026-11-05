@@ -114,4 +114,10 @@ def extras(event):
             "checkin_methods": methods, "answers": answer_charts(event),
             "waitlist": waitlist_conversion(event), "series": series_turnout(event),
             "short_link_visits": short_link_visits(event),
+            "submission_stages": _stage_funnel(event),
             "window_minutes": WINDOW_MINUTES}
+
+
+def _stage_funnel(event):
+    from apps.events.submissions.stage_analytics import stage_funnel  # #180 S16.
+    return stage_funnel(event)

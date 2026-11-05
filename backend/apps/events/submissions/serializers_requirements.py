@@ -76,6 +76,8 @@ class ParticipantStageSerializer(serializers.Serializer):
     blocked = serializers.ChoiceField(choices=("previous_stage_required", "shortlist_pending", "not_shortlisted"),
                                       allow_null=True)
     shortlist_status = serializers.ChoiceField(choices=("pending", "shortlisted", "not_shortlisted"), allow_null=True)
+    feedback = serializers.ListField(child=serializers.CharField(), required=False,
+                                     help_text="S4: judges' released feedback for this stage, never with a judge's name.")
 
 
 class ProjectRequirementsSerializer(serializers.Serializer):

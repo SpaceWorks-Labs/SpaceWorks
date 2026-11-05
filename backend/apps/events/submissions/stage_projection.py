@@ -8,6 +8,7 @@ from .models_stages import MAX_STAGES, StageExtension, SubmissionStageEntry
 from .stage_presets import PRESETS
 from .stage_rules import FAMILIES, FIELD_TYPES, FIELD_VISIBILITY, VIDEO_HOSTS
 from . import stage_runtime as runtime
+from .stage_feedback import released_feedback
 
 RULE_FIELDS = ("content_mode", "required_link_kinds", "min_files", "max_files", "max_links", "accepted_families",
                "max_bytes_per_file", "video_hosts", "resubmission", "late_policy")
@@ -44,9 +45,10 @@ def staff_stage(event, stage):
     entries = SubmissionStageEntry.objects.filter(stage=stage, current_snapshot__isnull=False)
     published = runtime.published_shortlist(stage)
     applied = stage.shortlists.order_by("-pk").first()
-    extensions = [{"id": row.pk, "team_id": row.team_id, "until": row.until, "reason": row.reason,
-                   "created_at": row.created_at}
-                  for row in StageExtension.objects.filter(stage=stage).order_by("-created_at", "-pk")[:200]]
+    extensions = [{"id": row.pk, "team_id": row.team_id, "team_name": row.team.name, "until": row.until,
+                   "reason": row.reason, "created_at": row.created_at}
+                  for row in StageExtension.objects.filter(stage=stage).select_related("team")
+                  .order_by("-created_at", "-pk")[:200]]
     warning = deadline_warning(event, stage)
     return {**definition(stage), "submissions": entries.count(), "pending_triage": pending_count(stage),
             "shortlist": {"applied_id": applied.pk if applied else None, "published": published is not None,
@@ -80,5 +82,6 @@ def participant_stages(event, project, team_id, now=None):
             "submitted_at": entry.submitted_at if entry else None,
             "blocked": runtime.gate(stage, stages, project),
             "shortlist_status": runtime.shortlist_status(stage, project),
+            "feedback": released_feedback(stage, project),
         })
     return rows, active.pk if active else None

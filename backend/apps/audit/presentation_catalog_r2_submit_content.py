@@ -12,4 +12,5 @@ ENTRIES = (
     P("event.submission_stage.shortlist_applied", "Stage shortlist chosen"),
     P("event.submission_stage.shortlist_published", "Stage shortlist published"),
     P("event.submission_stage.extension_granted", "Stage deadline extended for a team"),
+    P("event.submission_stage.shortlist_promoted", "Next team promoted onto a stage shortlist"),
 )

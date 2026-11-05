@@ -33,7 +33,7 @@ def panel_ids(round):
 def frozen_settings(round):
     return {"visibility": round.visibility, "fresh_eyes": round.fresh_eyes,
             "panel": sorted(panel_ids(round) or ()), "advanced_from_id": round.advanced_from_id,
-            "submission_stage_id": round.submission_stage_id}
+            "submission_stage_id": round.submission_stage_id, "share_feedback": round.share_feedback}
 
 
 def prior_reviews(round):

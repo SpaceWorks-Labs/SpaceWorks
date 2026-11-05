@@ -35,8 +35,8 @@ def extend(*, actor, event_id, stage_id, values):
                                             created_by=actor)
         record(actor, "event.submission_stage.extension_granted", makerspace=ctx.event.makerspace, target=row,
                meta={"event_id": ctx.event.pk, "stage_id": stage.pk, "team_id": team.pk, "until": values["until"].isoformat()})
-        result = {"id": row.pk, "stage_id": stage.pk, "team_id": team.pk, "until": row.until, "reason": row.reason,
-                  "created_at": row.created_at}
+        result = {"id": row.pk, "stage_id": stage.pk, "team_id": team.pk, "team_name": team.name, "until": row.until,
+                  "reason": row.reason, "created_at": row.created_at}
         port.store_receipt(event_id=event_id, actor_id=actor.pk, operation_id=str(values["operation_id"]), digest=digest,
                            result=result)
         return result

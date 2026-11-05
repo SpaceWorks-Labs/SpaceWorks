@@ -11,7 +11,7 @@ from . import stage_service, stage_shortlists, stage_staff
 from .serializers import ErrorSerializer
 from .serializers_stages import (BulkTriageInput, BulkTriageSerializer, ExtensionInput, ExtensionSerializer,
                                  ShortlistApplyInput, ShortlistPlanSerializer, ShortlistPreviewInput,
-                                 ShortlistPublishInput, ShortlistSerializer, StagePlanInput, StagePlanSerializer)
+                                 ShortlistPromoteInput, ShortlistPublishInput, ShortlistSerializer, StagePlanInput, StagePlanSerializer)
 from .views_base import PrivateSubmissionView
 
 ERRORS = {code: ErrorSerializer for code in (400, 401, 403, 404, 409, 429, 503)}
@@ -79,6 +79,18 @@ class StageShortlistPublishView(PrivateSubmissionView):
     def post(self, request, pk, stage_id):
         values = _valid(ShortlistPublishInput, request)
         return Response(stage_shortlists.publish(actor=request.user, event_id=pk, stage_id=stage_id, values=values))
+
+
+class StageShortlistPromoteView(PrivateSubmissionView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(request=ShortlistPromoteInput, responses={200: ShortlistSerializer, **ERRORS}, tags=TAGS,
+                   description="S12: a shortlisted team withdrew before the next stage opened; promote the next "
+                               "ranked team(s) from the shortlist's source round as a published amendment.")
+    def post(self, request, pk, stage_id):
+        from .stage_promotion import promote_next
+        values = _valid(ShortlistPromoteInput, request)
+        return Response(promote_next(actor=request.user, event_id=pk, stage_id=stage_id, values=values))
 
 
 class StageExtensionView(PrivateSubmissionView):

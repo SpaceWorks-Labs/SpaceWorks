@@ -14,7 +14,7 @@ from .models_stages import (SubmissionStage, SubmissionStageEntry, StageExtensio
 STAGE_FIELDS = ("name", "description", "opens_at", "deadline", "grace_minutes", "late_policy", "resubmission",
                 "requires_previous", "content_mode", "required_link_kinds", "min_files", "max_files", "max_links",
                 "accepted_families", "max_bytes_per_file", "video_hosts", "custom_fields", "shortlist_after",
-                "shortlist_label")
+                "shortlist_label", "public_after_publish")
 
 
 def stages_for(event_id):

@@ -58,6 +58,7 @@ class PublicStageSerializer(serializers.Serializer):
 
 class PublicEventSerializer(OrganizationAudienceFields, EventTicketingPublicSerializer):
     accent_preset = serializers.CharField(read_only=True, allow_blank=True)
+    timezone_name = serializers.CharField(read_only=True, help_text="The event's time zone (S13: deadlines show in it).")
     website = serializers.SerializerMethodField()
     # How people attend is public; the join link itself never is (online_delivery.py).
     delivery_mode = serializers.SerializerMethodField(

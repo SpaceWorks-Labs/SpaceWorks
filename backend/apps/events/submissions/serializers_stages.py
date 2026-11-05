@@ -51,6 +51,8 @@ class SubmissionStageInput(ClosedSerializer):
     custom_fields = StageCustomFieldInput(many=True, required=False, default=list, max_length=20)
     shortlist_after = serializers.BooleanField(required=False, default=False)
     shortlist_label = serializers.CharField(max_length=60, allow_blank=True, required=False, default="")
+    public_after_publish = serializers.BooleanField(required=False, default=False,
+                                                    help_text="S18: this stage's work may join the gallery once published.")
 
     def validate(self, data):
         for key in ("required_link_kinds", "accepted_families", "video_hosts"):
@@ -88,6 +90,7 @@ class StaffStageSerializer(serializers.Serializer):
     custom_fields = serializers.ListField(child=serializers.DictField())
     shortlist_after = serializers.BooleanField()
     shortlist_label = serializers.CharField(allow_blank=True)
+    public_after_publish = serializers.BooleanField(required=False)
     submissions = serializers.IntegerField(required=False)
     pending_triage = serializers.IntegerField(required=False)
     shortlist = serializers.DictField(required=False)
@@ -136,6 +139,11 @@ class ShortlistPublishInput(ClosedSerializer):
     shortlist_id = serializers.IntegerField(min_value=1)
 
 
+class ShortlistPromoteInput(ClosedSerializer):
+    operation_id = serializers.UUIDField()
+    withdrawn_submission_id = serializers.IntegerField(min_value=1)
+
+
 class ShortlistEntrySerializer(serializers.Serializer):
     submission_id = serializers.IntegerField()
     team_id = serializers.IntegerField()
@@ -167,10 +175,20 @@ class ShortlistCurrentSerializer(serializers.Serializer):
     entries = ShortlistEntrySerializer(many=True)
 
 
+class StageEntryRowSerializer(serializers.Serializer):
+    submission_id = serializers.IntegerField()
+    team_id = serializers.IntegerField()
+    team_name = serializers.CharField()
+    snapshot_id = serializers.IntegerField()
+    triage = serializers.CharField()
+    submitted_at = serializers.DateTimeField(allow_null=True)
+
+
 class ShortlistSerializer(serializers.Serializer):
     stage_id = serializers.IntegerField()
     label = serializers.CharField(allow_blank=True)
     pending_triage = serializers.IntegerField()
+    stage_entries = StageEntryRowSerializer(many=True, help_text="Live submissions of the stage, for picks and triage.")
     candidates = serializers.IntegerField()
     email_enabled = serializers.BooleanField()
     current = ShortlistCurrentSerializer(allow_null=True)
@@ -188,6 +206,7 @@ class ExtensionSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     stage_id = serializers.IntegerField()
     team_id = serializers.IntegerField()
+    team_name = serializers.CharField()
     until = serializers.DateTimeField()
     reason = serializers.CharField()
     created_at = serializers.DateTimeField()

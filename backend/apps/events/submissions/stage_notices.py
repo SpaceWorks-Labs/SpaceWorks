@@ -17,6 +17,12 @@ def recipients(row):
     from .stage_shortlists import recipients as shortlist_recipients
     if row.kind in ("stage_shortlisted", "stage_not_shortlisted"):
         return shortlist_recipients(row.kind, row.source_id)
+    if row.kind == "stage_promoted":
+        from .stage_promotion import promoted_recipients
+        return promoted_recipients(row.source_id)
+    if row.kind == "judge_reminder":
+        from .stage_judge_reminders import recipients as judge_recipients
+        return judge_recipients(row)
     return reminder_recipients(row)
 
 
@@ -53,6 +59,14 @@ def reminder_recipients(row):
 def render(envelope):
     from apps.integrations.notification_links import local_link
     link = local_link(envelope.makerspace, "member")
+    if envelope.event == "stage_promoted":
+        return {"subject": "A place opened up: your team is through",
+                "text": "A shortlisted team withdrew and your team takes its place. Open the event for the next stage.",
+                "link": link}
+    if envelope.event == "judge_reminder":
+        return {"subject": "Judging is waiting for you",
+                "text": "You still have projects to review in an open judging round. Open the event to continue.",
+                "link": link}
     if envelope.event == "stage_shortlisted":
         return {"subject": "Your team made the shortlist",
                 "text": "Your team was shortlisted. Open the event to see the next stage and its deadline.", "link": link}
@@ -86,4 +100,5 @@ def remind_due_stages(now=None, limit=100):
                 queued += 1
         except Exception:
             logger.warning("event_stage_reminder_deferred", extra={"event_id": stage.event_id, "stage_id": stage.pk})
-    return queued
+    from .stage_judge_reminders import remind_judges  # S15 rides the same sweep.
+    return queued + remind_judges(now)

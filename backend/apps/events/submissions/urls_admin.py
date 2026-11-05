@@ -6,7 +6,7 @@ from .views_downloads import AssetDownloadView
 from .views_admin_reads import OrganizerProjectListView, OrganizerProjectDetailView
 from .views_integrity import SubmissionIntegrityListView, SubmissionIntegrityView
 from .views_stages import (SubmissionStagesView, StageShortlistView, StageShortlistPreviewView, StageShortlistApplyView,
-                           StageShortlistPublishView, StageExtensionView, StageTriageView)
+                           StageShortlistPublishView, StageShortlistPromoteView, StageExtensionView, StageTriageView)
 
 STAGE = "events/<int:pk>/submission-stages/<int:stage_id>/"
 
@@ -25,6 +25,7 @@ urlpatterns = [
     path(STAGE + "shortlist/preview/", StageShortlistPreviewView.as_view(), name="events-programme-admin-submission-stage-shortlist-preview"),
     path(STAGE + "shortlist/apply/", StageShortlistApplyView.as_view(), name="events-programme-admin-submission-stage-shortlist-apply"),
     path(STAGE + "shortlist/publish/", StageShortlistPublishView.as_view(), name="events-programme-admin-submission-stage-shortlist-publish"),
+    path(STAGE + "shortlist/promote/", StageShortlistPromoteView.as_view(), name="events-programme-admin-submission-stage-shortlist-promote"),
     path(STAGE + "extensions/", StageExtensionView.as_view(), name="events-programme-admin-submission-stage-extensions"),
     path(STAGE + "triage/", StageTriageView.as_view(), name="events-programme-admin-submission-stage-triage"),
 ]

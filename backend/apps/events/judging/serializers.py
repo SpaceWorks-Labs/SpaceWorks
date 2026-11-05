@@ -106,6 +106,8 @@ class RoundInput(CommandInput):
     visibility = serializers.ChoiceField(choices=("assigned", "all"), required=False)  # L21b round settings
     fresh_eyes = serializers.BooleanField(required=False)
     panel = IdList(required=False, help_text="Judge role assignment IDs; empty means every active judge.")
+    share_feedback = serializers.BooleanField(required=False, help_text="S4: release judges' team feedback (off).")
+    judge_reminders = serializers.BooleanField(required=False, help_text="S15: remind judges with open work (off).")
     submission_stage_id = serializers.IntegerField(min_value=1, allow_null=True, required=False,
                                                    help_text="The submission stage this round judges; empty means the last stage.")
 
@@ -130,6 +132,8 @@ class FinalizeRoundInput(CommandInput):
 class ScoreInput(CommandInput):
     scores = serializers.DictField(child=serializers.IntegerField(min_value=1, max_value=5), required=False)
     notes = serializers.CharField(max_length=4000, allow_blank=True, default="")
+    team_feedback = serializers.CharField(max_length=4000, allow_blank=True, required=False,
+                                          help_text="S4: written for the team; shown to it only if the round shares feedback.")
     submit = serializers.BooleanField(default=True)
 
     def validate_scores(self, value):

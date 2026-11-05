@@ -9,6 +9,8 @@ from .models_scoring import JudgeAssignment
 from .ports import runtime
 
 SOURCE = "events.judging"
+# #178-#180: stage notices on this source (recipients and copy live in submissions/stage_notices.py).
+STAGE_KINDS = ("stage_shortlisted", "stage_not_shortlisted", "stage_deadline_reminder", "stage_promoted", "judge_reminder")
 
 
 def recipients(row):
@@ -17,7 +19,7 @@ def recipients(row):
         return ()
     if row.kind in ("judge_assigned", "assignment_invalidated"):
         return assignment_recipients(row)
-    if row.kind in ("stage_shortlisted", "stage_not_shortlisted", "stage_deadline_reminder"):
+    if row.kind in STAGE_KINDS:
         from apps.events.submissions.stage_notices import recipients as stage_recipients
         return stage_recipients(row)
     if row.kind == "finalists_announced":
@@ -71,7 +73,7 @@ def render(envelope):
     if envelope.event in ("judge_assigned", "assignment_invalidated"):
         return {"subject": "Your judging work has changed", "text": "Open the event to review your current judging assignments.",
                 "link": local_link(envelope.makerspace, "member")}
-    if envelope.event in ("stage_shortlisted", "stage_not_shortlisted", "stage_deadline_reminder"):
+    if envelope.event in STAGE_KINDS:
         from apps.events.submissions.stage_notices import render as stage_render
         return stage_render(envelope)
     if envelope.event == "finalists_announced":

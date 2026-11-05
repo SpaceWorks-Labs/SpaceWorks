@@ -52,3 +52,6 @@ export const MemberAccountPage = lazy(() => import("./features/members/MemberAcc
 export const PublicPrintRequestPage = lazy(() => import("./features/machine-jobs/PrintRequestAlias").then((m) => ({ default: m.PrintRequestAlias })));
 export const PublicMachineServiceStatusPage = lazy(() => import("./features/machine-service/PublicMachineServiceStatusPage").then((m) => ({ default: m.PublicMachineServiceStatusPage })));
 export const JobRequestPage = lazy(() => import("./features/machine-jobs/JobRequestPage").then((m) => ({ default: m.JobRequestPage })));
+// #196: the app-connection consent screen and personal API access (rarely visited; own chunks).
+export const OAuthConsentPage = lazy(() => import("./features/members/apiAccess/OAuthConsentPage").then((m) => ({ default: m.OAuthConsentPage })));
+export const PersonalApiAccessPage = lazy(() => import("./features/members/apiAccess/PersonalApiAccessPage").then((m) => ({ default: m.PersonalApiAccessPage })));

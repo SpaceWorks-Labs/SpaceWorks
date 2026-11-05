@@ -1,6 +1,4 @@
 import { isProgrammePath } from "./features/events/programme/routeNames";
-import { OAuthConsentPage } from "./features/members/apiAccess/OAuthConsentPage";
-import { PersonalApiAccessPage } from "./features/members/apiAccess/PersonalApiAccessPage";
 import { isEventAddonPath } from "./features/events/eventAddons/routeNames";
 import { isCardPath } from "./features/cards/routeNames";
 import { isDonationPath } from "./features/donations/routeNames";
@@ -26,7 +24,7 @@ import {
   MemberShopOrdersPage, MfaAccountPage, NotMePage, StaffInvitationAcceptPage, BookingStaffInvitePage, EventStaffInvitePage,
   ProgrammeRoutes, CardRoutes, MemberEventAddonRoutes, DonationRoutes, HelpPage,
   TechnicianOptInPage, MyMachineJobsPage, AttendanceReplyPage, CrewSignupPage, ApplicationReviewsPage,
-  MachineJobPage, UseMachinePage, MySessionsPage,
+  MachineJobPage, UseMachinePage, MySessionsPage, OAuthConsentPage, PersonalApiAccessPage,
   SpeakerClaimPage, EventDiscoverPage, PublicSelfCheckoutPage, ArchivedPayments, MemberAccountPage, PublicPrintRequestPage, PublicMachineServiceStatusPage, JobRequestPage,
 } from "./AppRoutesLazyPages";
 // Every public surface below is its own chunk. The makerspace page (which holds the catalogue) and the staff shell stay eager

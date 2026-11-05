@@ -30,6 +30,22 @@ PASS = Component("series_pass", "Series pass", "pass", "event_order", discountab
 TYPE_CHANGE = Component("type_change", "Ticket type change", "ticket", "event_order", discountable=False)
 
 
+def free_unless_tracked(makerspace, quote):
+    """#184 G6: with event charges off (`charges.enabled` / `charges.events`) every line is free.
+
+    The same zeroed quote is shown and frozen (A8: preview = charge), so the placed order totals 0
+    and settles at once through the free-order path instead of being refused as not payable. Lines
+    keep their labels and quantities (what was ordered); the booking fee and any promo go away.
+    """
+    from apps.payments.availability import charge_tracking_enabled
+    if charge_tracking_enabled(makerspace, "events"):
+        return quote
+    zero = Decimal("0")
+    lines = tuple(replace(row, unit_amount=zero, gross=zero, discount=zero, cap_applied=False)
+                  for row in quote.lines if row.component != FEE.key)
+    return replace(quote, lines=lines, discount=None, promo=None, mode="free", notes=("charges_off",))
+
+
 @dataclass
 class PricedOrder:
     quote: Quote
@@ -155,5 +171,10 @@ def build_quote(event, member, request, *, lock=False, addons_only=False):
     saving = sum(discounts.values(), Decimal("0"))
     priced = replace(priced, lines=tuple(lines),
                      promo={"id": promo.pk, "saving": str(saving)} if promo is not None and saving > 0 else None)
+    free = free_unless_tracked(event.makerspace, priced)
+    if free is not priced:
+        tickets = [(ticket, quantity, Decimal("0")) for ticket, quantity, _unit in tickets]
+        return PricedOrder(quote=free, tickets=tickets, addons=addons, promo=None, promo_uses=0,
+                           access_promos=access, seats=seats)
     return PricedOrder(quote=priced, tickets=tickets, addons=addons, promo=promo if uses else None,
                        promo_uses=uses, access_promos=access, seats=seats)

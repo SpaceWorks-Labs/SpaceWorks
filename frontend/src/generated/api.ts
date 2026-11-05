@@ -32,6 +32,7 @@ export const openApiTags = [
   "Admin users",
   "Admin warranty",
   "Analytics",
+  "App connections",
   "Asset units",
   "Audit verification",
   "Auth",
@@ -77,6 +78,7 @@ export const openApiTags = [
   "Event programme teams",
   "Event reimbursements",
   "Event resumes",
+  "Event roles",
   "Event series",
   "Event staff lists",
   "Event stage files",
@@ -86,6 +88,7 @@ export const openApiTags = [
   "Event uploads",
   "Event website",
   "Events",
+  "Evidence",
   "Evidence retention",
   "Finance",
   "Health",
@@ -124,6 +127,7 @@ export const openApiTags = [
   "Page editor",
   "Passkeys",
   "Payments",
+  "Personal access tokens",
   "Personal notification contract",
   "Personal notifications",
   "Platform",
@@ -173,8 +177,7 @@ export const openApiTags = [
   "Tenant bootstrap",
   "Tenant migration",
   "Wallet passes",
-  "WhatsApp Twilio",
-  "api"
+  "WhatsApp Twilio"
 ] as const;
 
 export const openApiPaths = [
@@ -810,6 +813,7 @@ export const openApiPaths = [
   "/api/v1/admin/makerspace/{makerspace_id}/notification-recipient-rules",
   "/api/v1/admin/makerspace/{makerspace_id}/notification-recipients",
   "/api/v1/admin/makerspace/{makerspace_id}/notification-rules",
+  "/api/v1/admin/makerspace/{makerspace_id}/oauth-apps",
   "/api/v1/admin/makerspace/{makerspace_id}/paid-claims",
   "/api/v1/admin/makerspace/{makerspace_id}/paid-claims/{claim_id}/confirm",
   "/api/v1/admin/makerspace/{makerspace_id}/paid-claims/{claim_id}/reject",
@@ -1086,6 +1090,7 @@ export const openApiPaths = [
   "/api/v1/admin/memberships/{id}/verify",
   "/api/v1/admin/memberships/{id}/waiver/witness",
   "/api/v1/admin/my-application-reviews/",
+  "/api/v1/admin/oauth-apps/{id}",
   "/api/v1/admin/organization-invitations/{id}/",
   "/api/v1/admin/organizations/",
   "/api/v1/admin/organizations/directory/",
@@ -1256,6 +1261,9 @@ export const openApiPaths = [
   "/api/v1/admin/warranty/{id}/documents/presign",
   "/api/v1/admin/work-orders/{id}/assign",
   "/api/v1/admin/work-orders/{id}/status",
+  "/api/v1/auth/access-token-scopes",
+  "/api/v1/auth/access-tokens",
+  "/api/v1/auth/access-tokens/{id}",
   "/api/v1/auth/account-merge/start",
   "/api/v1/auth/account-merge/{intent_id}/cancel",
   "/api/v1/auth/account-merge/{intent_id}/confirm",
@@ -1270,6 +1278,8 @@ export const openApiPaths = [
   "/api/v1/auth/account/restore/social/start",
   "/api/v1/auth/change-password",
   "/api/v1/auth/claim/redeem",
+  "/api/v1/auth/connected-apps",
+  "/api/v1/auth/connected-apps/{application_id}",
   "/api/v1/auth/device/attestation-challenge",
   "/api/v1/auth/device/event-grant",
   "/api/v1/auth/device/grants",
@@ -1296,6 +1306,7 @@ export const openApiPaths = [
   "/api/v1/auth/mfa/passkey/options",
   "/api/v1/auth/mfa/recovery",
   "/api/v1/auth/mfa/verify",
+  "/api/v1/auth/oauth/authorize",
   "/api/v1/auth/organization-invitations/redeem/",
   "/api/v1/auth/organizations/self-service/",
   "/api/v1/auth/passkeys",
@@ -1975,6 +1986,61 @@ export type AccessLevelEnum = "operate" | "manage" | "full";
 
 export type AccessStatusEnum = "active" | "restricted" | "suspended";
 
+export type AccessToken = {
+  "id": number;
+  "name": string;
+  "scopes": unknown;
+  "makerspace": number | null;
+  "created_at": string;
+  "expires_at": string;
+  "last_used_at": string | null;
+  "revoked_at": string | null;
+};
+
+export type AccessTokenCreate = {
+  "name": string;
+  "scopes": Array<string>;
+  "makerspace"?: number | null;
+  "expires_in_days"?: number;
+};
+
+export type AccessTokenCreated = {
+  "id": number;
+  "name": string;
+  "scopes": unknown;
+  "makerspace": number | null;
+  "created_at": string;
+  "expires_at": string;
+  "last_used_at": string | null;
+  "revoked_at": string | null;
+  "token": string;
+};
+
+export type AccountabilityReport = {
+  "repeat_offenders": Array<{
+  [key: string]: unknown;
+}>;
+  "anonymous_accountability": {
+  [key: string]: unknown;
+};
+  "overdue": Array<{
+  [key: string]: unknown;
+}>;
+  "restrictions": Array<{
+  [key: string]: unknown;
+}>;
+  "problem_reports": Array<{
+  [key: string]: unknown;
+}>;
+  "truncated": AccountabilityTruncation;
+};
+
+export type AccountabilityTruncation = {
+  "repeat_offenders": boolean;
+  "overdue": boolean;
+  "problem_reports": boolean;
+};
+
 export type AccountDeletionBlocker = {
   "code": string;
   "makerspace_id": number | null;
@@ -2406,7 +2472,7 @@ export type AdmissionRequirements = {
   "invite_code_allowed": boolean;
   "verified_email_invite_supported": boolean;
   "contact_requirements": ContactRequirements;
-  "host_waiver": HostWaiver | null;
+  "host_waiver": HackathonHostWaiver | null;
 };
 
 export type AdmissionResult = {
@@ -2677,7 +2743,7 @@ export type ApiClient = {
   "id": number;
   "label": string;
   "client_id": string;
-  "client_type"?: ClientTypeEnum;
+  "client_type"?: ClientType0bdEnum;
   "scopes": Array<string>;
   "rate_limit_tier"?: RateLimitTierEnum;
   "makerspace": number | null;
@@ -2697,7 +2763,7 @@ export type ApiClientCreateResponse = {
   "label": string;
   "client_id": string;
   "client_secret": string;
-  "client_type"?: ClientTypeEnum;
+  "client_type"?: ClientType0bdEnum;
   "scopes": Array<string>;
   "rate_limit_tier"?: RateLimitTierEnum;
   "makerspace": number | null;
@@ -2726,6 +2792,7 @@ export type ApiClientScopeOption = {
   "group": string;
   "grantable": boolean;
   "lock_reason": string | null;
+  "client_types": Array<ClientTypesEnum>;
 };
 
 export type ApiIntegrationSettings = {
@@ -2874,6 +2941,15 @@ export type ApprovalGroupLevel = {
   "available": boolean;
   "default": boolean;
   "space": boolean | null;
+};
+
+export type ApprovalLevel = {
+  "required": boolean | null;
+  "inherited": boolean | null;
+};
+
+export type ApprovalLevelRequest = {
+  "required": boolean | null;
 };
 
 export type ApprovalLevels = {
@@ -3627,6 +3703,8 @@ export type BadgeDocument = {
   "layers": Array<CertificateLayer>;
 };
 
+export type BadgeEnum = "ATTENDED" | "HOSTED" | "SPOKE";
+
 export type BadgePdfRequest = {
   "registration_ids": Array<number>;
   "template_override"?: BadgeTemplate | null;
@@ -4121,6 +4199,16 @@ export type BookingEligibleMemberList = {
   "next": string | null;
   "previous": string | null;
   "results": Array<BookingEligibleMember>;
+};
+
+export type BookingFeedIssued = {
+  "feed_url": string;
+  "token_hint": string;
+};
+
+export type BookingFeedState = {
+  "enabled": boolean;
+  "token_hint": string | null;
 };
 
 export type BookingInput = {
@@ -4665,6 +4753,21 @@ export type BulkDecideResult = {
   "code": string;
 };
 
+export type BulkImportApplyResult = {
+  "mapping": {
+  [key: string]: string;
+};
+  "valid": boolean;
+  "errors": Array<BulkImportRowMessages>;
+  "warnings": Array<BulkImportRowMessages>;
+  "rows": Array<BulkImportPlannedRow>;
+  "summary": BulkImportSummary;
+  "applied": boolean;
+  "partial"?: boolean;
+  "created"?: number;
+  "updated"?: number;
+};
+
 export type BulkImportJob = {
   "id": number;
   "mode": Mode087Enum;
@@ -4693,12 +4796,44 @@ export type BulkImportJobCreate = {
 
 export type BulkImportJobStatusEnum = "pending" | "running" | "completed" | "failed";
 
+export type BulkImportPlannedRow = {
+  "row": number;
+  "action": BulkImportPlannedRowActionEnum;
+  "data": unknown;
+  "warnings": {
+  [key: string]: string;
+};
+};
+
+export type BulkImportPlannedRowActionEnum = "create" | "update" | "error";
+
 export type BulkImportPreview = {
   "file"?: string | null;
   "rows"?: Array<{
   [key: string]: unknown;
 }>;
   "mapping"?: unknown;
+};
+
+export type BulkImportPreviewResult = {
+  "mapping": {
+  [key: string]: string;
+};
+  "valid": boolean;
+  "errors": Array<BulkImportRowMessages>;
+  "warnings": Array<BulkImportRowMessages>;
+  "rows": Array<BulkImportPlannedRow>;
+  "summary": BulkImportSummary;
+};
+
+export type BulkImportRowMessages = {
+  "row": number;
+  "errors"?: {
+  [key: string]: string;
+};
+  "warnings"?: {
+  [key: string]: string;
+};
 };
 
 export type BulkImportSheet = {
@@ -4709,6 +4844,14 @@ export type BulkImportSheetResult = {
   "rows": Array<{
   [key: string]: unknown;
 }>;
+};
+
+export type BulkImportSummary = {
+  "create": number;
+  "update": number;
+  "errors": number;
+  "warnings": number;
+  "total": number;
 };
 
 export type BulkInviteInput = {
@@ -4902,6 +5045,18 @@ export type CardAssetPresign = {
 
 export type CardAssetPresignKindEnum = "background" | "watermark" | "image";
 
+export type CardAssetUpload = {
+  "url": string;
+  "method"?: string;
+  "headers"?: {
+  [key: string]: string;
+};
+  "fields"?: {
+  [key: string]: string;
+};
+  "asset_id": string;
+};
+
 export type CardDesign = {
   "id": number;
   "domain": Domain719Enum;
@@ -4942,6 +5097,13 @@ export type CardDesignDecision = {
   "note"?: string;
 };
 
+export type CardDesignFile = {
+  "kind": string;
+  "version": number;
+  "domain": string;
+  "document": unknown;
+};
+
 export type CardDesignImport = {
   "file": unknown;
 };
@@ -4949,6 +5111,11 @@ export type CardDesignImport = {
 export type CardDesignImportResult = {
   "design": CardDesign;
   "notes": Array<string>;
+};
+
+export type CardDesignPair = {
+  "event_card"?: CardDesign;
+  "event_ticket"?: CardDesign;
 };
 
 export type CardDesignReset = {
@@ -4965,6 +5132,30 @@ export type CardDesignStatusEnum = "draft" | "pending_approval" | "published";
 
 export type CardEmail = {
   "format"?: Format519Enum;
+};
+
+export type CardExtrasRow = {
+  "card_id": number;
+  "name": string;
+  "blood_group": string;
+  "emergency_contact_name": string;
+  "emergency_contact_phone": string;
+};
+
+export type CardFace = {
+  "document": unknown;
+  "values": {
+  [key: string]: string;
+};
+  "photo": string | null;
+  "logos": {
+  [key: string]: string | null;
+};
+  "assets": {
+  [key: string]: string | null;
+};
+  "desk_qr": string | null;
+  "verify_qr": string | null;
 };
 
 export type CardFont = {
@@ -5037,6 +5228,23 @@ export type CardPreview = {
 export type CardScan = {
   "payload": string;
   "duration_minutes": number;
+};
+
+export type CardScanRequest = {
+  "payload": string;
+  "check_in"?: boolean;
+};
+
+export type CardScanResult = {
+  "checked_in": number | null;
+  "registrations": Array<CardScanRow>;
+};
+
+export type CardScanRow = {
+  "registration_id": number;
+  "name": string;
+  "status": string;
+  "confirmable": boolean;
 };
 
 export type CardSettings = {
@@ -5405,6 +5613,10 @@ export type ChargeCreateEarmarkEnum = "general" | "prize_pool";
 
 export type ChargeEarmarkEnum = "general" | "prize_pool";
 
+export type ChargeReturn = {
+  "reason"?: string;
+};
+
 export type CheckInList = {
   "id": number;
   "event_id": number;
@@ -5450,6 +5662,11 @@ export type CheckinMethod = {
 };
 
 export type CheckinMethodMethodEnum = "online" | "qr" | "offline_sync" | "venue_station" | "legacy";
+
+export type CheckLink = {
+  "check_url": string;
+  "reprint_needed": string;
+};
 
 export type CheckoutUrl = {
   "checkout_url": string;
@@ -5674,7 +5891,11 @@ export type ClaimSummary = {
 
 export type ClientPlatformEnum = "web" | "ios" | "android";
 
-export type ClientTypeEnum = "browser" | "server";
+export type ClientType0bdEnum = "browser" | "server" | "peer";
+
+export type ClientType9b6Enum = "confidential" | "public";
+
+export type ClientTypesEnum = "server" | "browser" | "peer";
 
 export type ClosedNotice = {
   "public_closed_notice": string;
@@ -6025,6 +6246,14 @@ export type ConflictWrite = {
 
 export type ConflictWriteKindEnum = "declared" | "affiliation";
 
+export type ConnectedApp = {
+  "application_id": number;
+  "app_name": string;
+  "space_name": string;
+  "scopes": Array<string>;
+  "granted_at": string;
+};
+
 export type ConnectedDeviceIdentity = {
   "device_id": string;
   "makerspace_id": number;
@@ -6047,6 +6276,10 @@ export type ConsentCommandRead = {
   "revoked_at"?: string | null;
 };
 
+export type ConsentDecision = {
+  "allow": boolean;
+};
+
 export type ConsentLedger = {
   "purposes": Array<ConsentPurpose>;
   "notice_version": string;
@@ -6059,6 +6292,13 @@ export type ConsentPage = {
   "previous": string | null;
   "results": Array<ConsentRead>;
   "sponsors": Array<SponsorOptionRead>;
+};
+
+export type ConsentPreview = {
+  "app_name": string;
+  "space_name": string;
+  "redirect_uri": string;
+  "scopes": Array<ConsentScope>;
 };
 
 export type ConsentPurpose = {
@@ -6085,6 +6325,10 @@ export type ConsentRead = {
 
 export type ConsentReadStateEnum = "granted" | "revoked";
 
+export type ConsentRedirect = {
+  "redirect_to": string;
+};
+
 export type ConsentRow = {
   "id": number;
   "purpose": string;
@@ -6095,6 +6339,12 @@ export type ConsentRow = {
 };
 
 export type ConsentRowSourceEnum = "member" | "join";
+
+export type ConsentScope = {
+  "value": string;
+  "label": string;
+  "description": string;
+};
 
 export type ConsentWrite = {
   "makerspace": number;
@@ -6431,15 +6681,13 @@ export type CorrectClaimDecisionCommand = {
   "expected_pool_version": number;
   "expected_decision_sequence": number;
   "expected_obligation_version": number | null;
-  "outcome": CorrectClaimDecisionCommandOutcomeEnum;
+  "outcome": Outcome329Enum;
   "line_decisions": Array<LineDecision>;
   "eligibility_revision": number;
   "reason_code": ReasonCode1c6Enum;
   "note"?: string;
   "info_due_at"?: string;
 };
-
-export type CorrectClaimDecisionCommandOutcomeEnum = "approved" | "partially_approved" | "rejected";
 
 export type CostMethodEnum = "cash" | "upi" | "bank_transfer" | "card" | "cheque" | "online" | "other";
 
@@ -6460,6 +6708,15 @@ export type CreateBoxQr = {
   "location"?: string;
   "description"?: string;
   "parent_id"?: number | null;
+};
+
+export type CreatedId = {
+  "id": number;
+};
+
+export type CreatedNote = {
+  "id": number;
+  "created_at": string;
 };
 
 export type CreateToolQr = {
@@ -6796,6 +7053,10 @@ export type DecisionNote = {
   "note"?: string;
 };
 
+export type DecisionResult = {
+  "changed": number;
+};
+
 export type DecisionSubjectInput = {
   "application_id"?: number;
   "cohort_id"?: number;
@@ -6811,7 +7072,7 @@ export type DecisionSubjectInputOutcomeEnum = "offer" | "waitlist" | "reject" | 
 export type DecisionSummary = {
   "schema_version": number;
   "source": Source;
-  "decision": Decision;
+  "decision": PayoutDecision;
   "award": Award;
   "totals": Totals;
   "lines": Array<DecisionLine>;
@@ -6876,12 +7137,24 @@ export type DepartureInput = {
   "remark"?: string;
 };
 
+export type DeploymentApp = {
+  "app_label": string;
+  "shipped": boolean;
+  "note": string;
+};
+
 export type DeploymentIdentity = {
   "algorithm": string;
   "deployment_id": string;
   "public_key": string;
   "fingerprint": string;
   "age_recipient": string;
+};
+
+export type DeploymentStatus = {
+  "apps": Array<DeploymentApp>;
+  "env_line": string;
+  "requires_restart": boolean;
 };
 
 export type DeploymentSummary = {
@@ -7342,6 +7615,11 @@ export type DocumentPresign = {
   "content_type": string;
 };
 
+export type DocumentUploadResponse = {
+  "object_key": string;
+  "upload": StagedUpload;
+};
+
 export type Domain719Enum = "member_cards" | "id_programme" | "event_card" | "event_ticket";
 
 export type DomainF9dEnum = "bookings" | "events" | "inventory" | "machines" | "shop";
@@ -7709,10 +7987,13 @@ export type ErasureRequest = {
 export type Error = {
   "code": string;
   "detail": string;
-  "fields"?: {
-  [key: string]: unknown;
-};
-  "current_version"?: number;
+  "kinds"?: Array<string>;
+  "fields"?: Array<string>;
+  "families"?: Array<string>;
+  "hosts"?: Array<string>;
+  "limit"?: string;
+  "stage"?: string;
+  "reason"?: string;
 };
 
 export type Estimate = {
@@ -7892,6 +8173,17 @@ export type EventCard = {
   "starts_at": string;
   "ends_at": string;
   "event_url": string;
+};
+
+export type EventCardSettings = {
+  "extras_visible_to_organizers": boolean;
+  "design_approval_required": boolean | null;
+  "design_approval_inherited": boolean | null;
+};
+
+export type EventCardSettingsRequest = {
+  "extras_visible_to_organizers"?: boolean;
+  "design_approval_required"?: boolean | null;
 };
 
 export type EventCheckInPage = {
@@ -8287,6 +8579,21 @@ export type EventOrganizerSummary = {
   "name": string;
 };
 
+export type EventProgrammeError = {
+  "code": string;
+  "detail": string;
+  "fields"?: {
+  [key: string]: unknown;
+};
+  "current_version"?: number;
+};
+
+export type EventPublicCrew = {
+  "handle": string;
+  "display_name": string;
+  "crew_role": string;
+};
+
 export type EventRefundPolicy = {
   "overridden": boolean;
   "locked": boolean;
@@ -8373,6 +8680,23 @@ export type EventRevenueRow = {
   "refunded_amount": string;
   "outstanding_amount": string;
   "net_amount": string;
+};
+
+export type EventRoleAggregate = {
+  "id": number;
+  "event_id": number;
+  "version": number;
+  "state"?: string;
+  "allowed_actions": Array<string>;
+};
+
+export type EventRoleError = {
+  "code": string;
+  "detail": string;
+  "fields"?: {
+  [key: string]: unknown;
+};
+  "current_version"?: number;
 };
 
 export type EventSeriesDetail = {
@@ -9110,6 +9434,21 @@ export type Finder = {
   "skills": Array<string>;
 };
 
+export type FinderCard = {
+  "id": number;
+  "event_id": number;
+  "version": number;
+  "kind": FinderCardKindEnum;
+  "intro": string;
+  "skills": Array<string>;
+  "name"?: string;
+  "slots"?: number;
+  "profile"?: PublicProfile | null;
+  "profiles"?: Array<PublicProfile>;
+};
+
+export type FinderCardKindEnum = "person" | "team";
+
 export type FirstStaffInvite = {
   "email": string;
   "role_slug": RoleSlugEnum;
@@ -9136,6 +9475,16 @@ export type FlagResolveResolutionEnum = "issue_received" | "refund_case" | "ackn
 export type FontEnum = "sans" | "serif";
 
 export type FontFamilyEnum = "Gilroy" | "Unbounded";
+
+export type FontPrepareRequest = {
+  "family": string;
+};
+
+export type FontPrepareResult = {
+  "family": string;
+  "pending_weights": Array<number>;
+  "state": string;
+};
 
 export type FontWeightEnum = 400 | 500 | 600 | 700;
 
@@ -9801,6 +10150,50 @@ export type GuestOccurrence = {
   "custom_answers_unavailable_reason"?: string;
 };
 
+export type HackathonAdmissionCommandInput = {
+  "operation_id": string;
+  "expected_version": number;
+};
+
+export type HackathonComment = {
+  "id": number;
+  "team_id": number;
+  "body": string;
+  "created_at": string;
+  "team_version": number;
+};
+
+export type HackathonCommentInput = {
+  "operation_id": string;
+  "expected_version": number;
+  "body": string;
+};
+
+export type HackathonHostWaiver = {
+  "id": number;
+  "version": string;
+  "body": string;
+  "acceptance_required": boolean;
+  "accepted_version": string | null;
+  "accepted_at": string | null;
+};
+
+export type HackathonInvite = {
+  "id": number;
+  "team_id": number;
+  "team_version": number;
+  "token": string;
+  "expires_at": string;
+};
+
+export type HackathonInviteInput = {
+  "operation_id": string;
+  "expected_version": number;
+  "email"?: string;
+  "rotate"?: boolean;
+  "revoke_only"?: boolean;
+};
+
 export type Handle = {
   "handle": string;
 };
@@ -9840,6 +10233,11 @@ export type HeadlineEnum = "events.upcoming" | "events.held" | "events.attendees
 
 export type Health = {
   "status": string;
+};
+
+export type HealthReadiness = {
+  "status": string;
+  "database": string;
 };
 
 export type Help = {
@@ -10189,6 +10587,37 @@ export type IdProgrammeCreate = {
 
 export type IdProgrammeCreatePresetEnum = "students" | "volunteers" | "staff";
 
+export type IdProgrammeDetail = {
+  "name": string;
+  "slug": string;
+  "description": string;
+  "organization_name": string;
+  "photo_mode": PhotoModeEnum;
+  "requires_approval": boolean;
+  "registration_open": boolean;
+  "questions": Array<unknown>;
+  "state": State595Enum;
+};
+
+export type IdProgrammeImportCommit = {
+  "source"?: ImportSourceKindEnum;
+  "url"?: string;
+  "sheet_sha256"?: string;
+  "content"?: string;
+  "mapping": {
+  [key: string]: number | null;
+};
+  "approve"?: boolean;
+  "dry_run"?: boolean;
+};
+
+export type IdProgrammeImportPreview = {
+  "source"?: ImportSourceKindEnum;
+  "url"?: string;
+  "sheet_sha256"?: string;
+  "content"?: string;
+};
+
 export type IdProgrammeStatusEnum = "draft" | "active" | "closed";
 
 export type ImportCommit = {
@@ -10196,6 +10625,14 @@ export type ImportCommit = {
   "expected_version": number;
   "preview_token": string;
   "mapping_sha256": string;
+};
+
+export type ImportCommitResult = {
+  "rows_total": number;
+  "created": number;
+  "would_create": number;
+  "skipped": Array<SkippedRow>;
+  "dry_run": boolean;
 };
 
 export type ImportCreate = {
@@ -10264,6 +10701,19 @@ export type ImportPreview = {
   "expected_version": number;
   "rows": Array<ImportRow>;
   "practice_run_id"?: string | null;
+};
+
+export type ImportPreviewResult = {
+  "headers": Array<string>;
+  "rows": Array<Array<string>>;
+  "mapping": {
+  [key: string]: number | null;
+};
+  "rows_total": number;
+  "to_create": number;
+  "skipped": Array<SkippedRow>;
+  "source"?: string;
+  "sheet_sha256"?: string;
 };
 
 export type ImportResult = {
@@ -10778,6 +11228,11 @@ export type InviteAccept = {
   "invite": string;
 };
 
+export type InviteAcceptResult = {
+  "card_id": number;
+  "status": string;
+};
+
 export type InviteInput = {
   "email"?: string;
   "max_uses"?: number;
@@ -10999,6 +11454,11 @@ export type IssueResolve = {
   "note"?: string;
 };
 
+export type IssueResult = {
+  "issued": number;
+  "revoked": number;
+};
+
 export type IssuerKindEnum = "space" | "organisation" | "event";
 
 export type IssueTriage = {
@@ -11175,9 +11635,18 @@ export type Join = {
 
 export type JoinModeEnum = "open" | "approval" | "invite_only" | "vouch" | "closed";
 
+export type JoinPhotoRequest = {
+  "content_type": string;
+};
+
 export type JoinRequest = {
   "id": number;
   "profile": PublicProfile | null;
+};
+
+export type JoinResult = {
+  "state": State595Enum;
+  "card_id": number;
 };
 
 export type JournalLine = {
@@ -12559,6 +13028,31 @@ export type MaintenanceScheduleWrite = {
 
 export type MaintenanceScheduleWriteTriggerEnum = "days" | "usage" | "both";
 
+export type MakerProfile = {
+  "viewer_is_owner": boolean;
+  "handle": string;
+  "display_name": string;
+  "avatar_url": string | null;
+  "verified": boolean;
+  "headline": string;
+  "institution": string;
+  "bio": string;
+  "domains": Array<string>;
+  "skills": Array<Skill>;
+  "links": Array<HttpsLink>;
+  "timeline": Array<PublicTimeline>;
+  "projects": Array<PublicProject>;
+  "vouched_by": Array<PublicVouch>;
+  "vouched_count": number;
+  "show_activity_graph": boolean;
+  "show_events": boolean;
+  "show_speaking": boolean;
+  "show_projects": boolean;
+  "show_machine_activity": boolean;
+  "show_bookings": boolean;
+  "show_loans": boolean;
+};
+
 export type Makerspace = {
   "organization_id"?: number;
   "organization_name"?: string;
@@ -12802,6 +13296,22 @@ export type MakerspaceProfile = {
   "default_currency": string;
   "timezone_choices": Array<string>;
   "country_choices": Array<string>;
+};
+
+export type MakerspaceRoleDefinition = {
+  "id": number;
+  "makerspace_id": number;
+  "name": string;
+  "slug": string;
+  "granted_actions": Array<string>;
+  "legacy_role": LegacyRoleEnum | NullEnum | null;
+  "is_default": boolean;
+  "is_protected": boolean;
+  "combinable": boolean;
+  "exclusive": boolean;
+  "member_count": number;
+  "created_at": string;
+  "updated_at": string;
 };
 
 export type MakerspaceUsage = {
@@ -14404,6 +14914,11 @@ export type MobileReadiness = {
 };
 };
 
+export type MobileReadinessItem = {
+  "ready": boolean;
+  "hint": string;
+};
+
 export type Mode087Enum = "preview" | "apply";
 
 export type Mode500Enum = "inherit" | "free" | "custom";
@@ -14416,7 +14931,53 @@ export type ModuleAction = {
 
 export type ModuleEnum = "bookings" | "events" | "inventory" | "machines" | "shop";
 
+export type ModuleGroup = {
+  "key": string;
+  "label": string;
+  "description": string;
+  "always_on": boolean;
+  "installed_count": number;
+  "module_count": number;
+  "modules": Array<ModuleRow>;
+};
+
+export type ModuleGroupList = {
+  "groups": Array<ModuleGroup>;
+  "deployment": DeploymentStatus | null;
+  "profiles": Array<ModuleProfile>;
+};
+
+export type ModuleInstallResult = {
+  "installed": Array<string>;
+  "groups": Array<ModuleGroup>;
+};
+
+export type ModuleProfile = {
+  "key": string;
+  "description": string;
+};
+
+export type ModuleRow = {
+  "key": string;
+  "label": string;
+  "description": string;
+  "installed": boolean;
+  "core": boolean;
+  "available": boolean;
+  "requires": Array<string>;
+  "pulls_in": Array<string>;
+  "required_by": Array<string>;
+  "workflows": Array<string>;
+  "install_requires_superadmin": boolean;
+  "limits": Array<string>;
+};
+
 export type ModulesEnum = "analytics" | "asset_units" | "bookings" | "bulk_import" | "containers" | "devices" | "discord" | "email" | "event_reimbursements" | "events" | "evidence_uploads" | "guest_handover" | "machine_service" | "machines" | "mattermost" | "member_accounts" | "membership" | "mobile" | "notifications" | "payments" | "presence" | "printing" | "public_inventory" | "qr_management" | "qr_print_batches" | "reports" | "request_workflow" | "scanner" | "shop" | "slack" | "sms" | "staff_admin" | "stock_transfers" | "stocktake" | "telegram" | "webhook" | "whatsapp";
+
+export type ModuleUninstallResult = {
+  "uninstalled": Array<string>;
+  "groups": Array<ModuleGroup>;
+};
 
 export type MostLentReport = {
   "rows": Array<Array<unknown>>;
@@ -14806,6 +15367,29 @@ export type Nudge = {
 export type NudgeReasonEnum = "quiet" | "long_visit" | "check_in_due";
 
 export type NullEnum = null;
+
+export type OAuthApp = {
+  "id": number;
+  "name": string;
+  "client_id": string;
+  "client_type": ClientType9b6Enum;
+  "redirect_uris": Array<string>;
+  "allowed_scopes": Array<string>;
+  "is_active"?: boolean;
+  "created_at": string;
+};
+
+export type OAuthAppCreated = {
+  "id": number;
+  "name": string;
+  "client_id": string;
+  "client_type": ClientType9b6Enum;
+  "redirect_uris": Array<string>;
+  "allowed_scopes": Array<string>;
+  "is_active"?: boolean;
+  "created_at": string;
+  "client_secret": string;
+};
 
 export type OAuthCallback = {
   "code": string;
@@ -15412,6 +15996,8 @@ export type OutboxHealth = {
 };
 
 export type OutboxHealthKindEnum = "email" | "personal_envelope" | "personal_delivery";
+
+export type Outcome329Enum = "approved" | "partially_approved" | "rejected";
 
 export type Outcome860Enum = "all_good" | "issue" | "damaged" | "left_early";
 
@@ -16597,7 +17183,7 @@ export type PatchedApiClient = {
   "id"?: number;
   "label"?: string;
   "client_id"?: string;
-  "client_type"?: ClientTypeEnum;
+  "client_type"?: ClientType0bdEnum;
   "scopes"?: Array<string>;
   "rate_limit_tier"?: RateLimitTierEnum;
   "makerspace"?: number | null;
@@ -16895,6 +17481,10 @@ export type PatchedCampaign = {
   "is_public"?: boolean;
   "created_at"?: string;
   "updated_at"?: string;
+};
+
+export type PatchedCardRoleRequest = {
+  "role"?: string;
 };
 
 export type PatchedCardSettings = {
@@ -17882,6 +18472,17 @@ export type PatchedNotificationRecipientsPatch = {
 export type PatchedNotificationRulesPatch = {
   "changes"?: Array<NotificationRuleChange>;
   "preferences"?: Array<NotificationPreferenceChange>;
+};
+
+export type PatchedOAuthApp = {
+  "id"?: number;
+  "name"?: string;
+  "client_id"?: string;
+  "client_type"?: ClientType9b6Enum;
+  "redirect_uris"?: Array<string>;
+  "allowed_scopes"?: Array<string>;
+  "is_active"?: boolean;
+  "created_at"?: string;
 };
 
 export type PatchedOptionsInput = {
@@ -18895,6 +19496,14 @@ export type PayoutAmendCommand = {
   "is_void"?: boolean;
 };
 
+export type PayoutDecision = {
+  "outcome": Outcome329Enum;
+  "decided_at": string;
+  "actor_id": number | null;
+  "reason_code": string;
+  "reason": string;
+};
+
 export type PayoutEntry = {
   "id": string;
   "amount_minor": number;
@@ -18907,6 +19516,14 @@ export type PayoutEntry = {
   "payee_revision_id"?: string | null;
   "recorded_at"?: string;
   "recorded_by_id"?: number;
+};
+
+export type PayoutError = {
+  "code": string;
+  "detail": string;
+  "fields"?: {
+  [key: string]: unknown;
+};
 };
 
 export type PayoutHoldCommand = {
@@ -19071,6 +19688,21 @@ export type PersonalFeedState = {
   "rotated_at": string | null;
 };
 
+export type PersonScope = {
+  "value": string;
+  "label": string;
+  "description": string;
+  "group": string;
+  "needs_space": boolean;
+};
+
+export type PersonScopeCatalog = {
+  "scopes": Array<PersonScope>;
+  "staff_spaces": Array<{
+  [key: string]: string;
+}>;
+};
+
 export type PhaseEnum = "issue" | "return";
 
 export type PhoneConfirm = {
@@ -19110,6 +19742,10 @@ export type PhoneStatus = {
   "verified": boolean;
 };
 
+export type PhotoDecisionResult = {
+  "accepted": boolean;
+};
+
 export type PhotoFinalize = {
   "object_key": string;
   "consent": boolean;
@@ -19119,6 +19755,23 @@ export type PhotoModeEnum = "none" | "optional" | "required";
 
 export type PhotoPresign = {
   "content_type": ContentType12dEnum;
+};
+
+export type PhotoSet = {
+  "photo_set": boolean;
+};
+
+export type PhotoUpload = {
+  "url": string;
+  "method"?: string;
+  "headers"?: {
+  [key: string]: string;
+};
+  "fields"?: {
+  [key: string]: string;
+};
+  "object_key": string;
+  "content_type": string;
 };
 
 export type PiiAccessGrant = {
@@ -19238,11 +19891,16 @@ export type PlatformEmailSettings = {
 };
 
 export type PlatformInsights = {
-  "window": Window;
+  "window": PlatformInsightsWindow;
   "growth": Array<Growth>;
   "organizations": Array<OrganizationInsight>;
   "staff_mfa": Mfa;
   "outbox": Array<OutboxHealth>;
+};
+
+export type PlatformInsightsWindow = {
+  "starts_at": string;
+  "ends_at": string;
 };
 
 export type PlatformOffsiteHealth = {
@@ -19546,6 +20204,17 @@ export type PreferenceCell = {
 
 export type PreferenceResponse = {
   "cells": Array<PreferenceCell>;
+};
+
+export type Prefill = {
+  "values": {
+  [key: string]: string;
+};
+};
+
+export type PresenceCheckInResult = {
+  "session_id": number;
+  "account_id": number;
 };
 
 export type PresenceCurrent = {
@@ -20181,6 +20850,11 @@ export type PrizeTaxProposal = {
   "threshold": string;
 };
 
+export type ProblemReportResolved = {
+  "id": number;
+  "resolved": boolean;
+};
+
 export type ProblemReportTriage = {
   "outcome": ProblemReportTriageOutcomeEnum;
   "resolutions"?: Array<ProblemReportTriageResolution>;
@@ -20199,6 +20873,10 @@ export type ProblemReportTriageResponse = {
   "id": number;
   "outcome": string;
   "resolved": boolean;
+};
+
+export type ProcurementError = {
+  "detail"?: string;
 };
 
 export type ProductQrHistory = {
@@ -20252,6 +20930,14 @@ export type ProfileOptions = {
   "selected_profile_id": number | null;
   "options": Array<ProfileOption>;
   "no_photo_allowed": boolean;
+};
+
+export type ProfilePublicEvent = {
+  "title": string;
+  "starts_at": string;
+  "ends_at": string;
+  "badge": BadgeEnum;
+  "host": string;
 };
 
 export type ProfileRead = {
@@ -20340,7 +21026,7 @@ export type ProgrammeCommentPage = {
   "count": number;
   "next": string | null;
   "previous": string | null;
-  "results": Array<Comment>;
+  "results": Array<HackathonComment>;
 };
 
 export type ProgrammeCreateOrGetCommand = {
@@ -20427,7 +21113,7 @@ export type ProgrammeFinanceDetail = {
   "pools"?: Array<PoolDetail>;
 };
 
-export type ProgrammeInviteResult = Invite | Aggregate;
+export type ProgrammeInviteResult = HackathonInvite | Aggregate;
 
 export type ProgrammeSection = {
   "kind": string;
@@ -20930,7 +21616,7 @@ export type PublicEventPage = {
   "count": number;
   "next": string | null;
   "previous": string | null;
-  "results": Array<PublicEvent>;
+  "results": Array<ProfilePublicEvent>;
 };
 
 export type PublicEventRegistrationInput = {
@@ -21904,6 +22590,17 @@ export type PublicTestimonialsSection = {
   "payload": Testimonials;
 };
 
+export type PublicTimeline = {
+  "kind": string;
+  "title": string;
+  "organization": string;
+  "location": string;
+  "start": string;
+  "end": string | null;
+  "description": string;
+  "order": number;
+};
+
 export type PublicToolCheckout = {
   "kit_checklist"?: Array<KitCount>;
   "payload": string;
@@ -21976,6 +22673,11 @@ export type PublicVolunteerPostingPage = {
   "next": string | null;
   "previous": string | null;
   "results": Array<Posting>;
+};
+
+export type PublicVouch = {
+  "handle": string;
+  "display_name": string;
 };
 
 export type PublicWebsite = {
@@ -22063,6 +22765,14 @@ export type QrHistoryItem = {
   "context": string;
   "actor": number | null;
   "created_at": string;
+};
+
+export type QrLabel = {
+  "payload": string;
+  "svg": string;
+  "target": {
+  [key: string]: unknown;
+};
 };
 
 export type QrPrintBatch = {
@@ -22189,6 +22899,10 @@ export type Queue = {
   "jobs": Array<QueueJob>;
 };
 
+export type Queued = {
+  "queued": boolean;
+};
+
 export type QueueJob = {
   "service_request_id": number;
   "status": QueueJobStatusEnum;
@@ -22270,6 +22984,10 @@ export type ReadinessItem = {
 };
 
 export type ReadinessItemStatusEnum = "ready" | "missing" | "action" | "unavailable";
+
+export type Reason = {
+  "reason"?: string;
+};
 
 export type Reason870Enum = "bounce" | "complaint";
 
@@ -22759,10 +23477,10 @@ export type RegistrationReadiness = {
   "production": boolean;
   "login_ready": boolean;
   "login": {
-  [key: string]: ReadinessItem;
+  [key: string]: MobileReadinessItem;
 };
   "optional": {
-  [key: string]: ReadinessItem;
+  [key: string]: MobileReadinessItem;
 };
 };
 
@@ -22773,6 +23491,11 @@ export type Rehydrate = {
 export type ReimbursementClaimDetail = ClaimScreeningDetail | ClaimFinanceDetail;
 
 export type ReimbursementClaimReviewCommand = ClaimRecommendationCommand | ClaimDecisionCommand;
+
+export type ReimbursementCommand = {
+  "operation_id": string;
+  "expected_version": number;
+};
 
 export type ReimbursementCommandResult = {
   "id": number;
@@ -25146,8 +25869,13 @@ export type ShortLink = {
   "code": string | null;
   "url": string | null;
   "created_at": string | null;
-  "visits_30d": Array<VisitDay>;
+  "visits_30d": Array<ShortLinkVisitDay>;
   "total_visits": number;
+};
+
+export type ShortLinkVisitDay = {
+  "day": string;
+  "count": number;
 };
 
 export type Shortlist = {
@@ -25246,6 +25974,10 @@ export type ShortlistStatusEnum = "pending" | "shortlisted" | "not_shortlisted";
 
 export type SideEnum = "front" | "back";
 
+export type SignedUrl = {
+  "url": string;
+};
+
 export type Signup = {
   "id": number;
   "event_id": number;
@@ -25271,6 +26003,13 @@ export type SkipInput = {
   "expected_version": number;
   "notes"?: string;
 };
+
+export type SkippedRow = {
+  "row": number;
+  "reason": SkippedRowReasonEnum;
+};
+
+export type SkippedRowReasonEnum = "no_name" | "bad_email" | "duplicate_in_file" | "already_in_programme";
 
 export type Snapshot = {
   "schema_version": number;
@@ -26232,6 +26971,17 @@ export type StageDraftCommand = {
   "creation_operation_id"?: string;
 };
 
+export type StagedUpload = {
+  "url": string;
+  "method"?: string;
+  "headers"?: {
+  [key: string]: string;
+};
+  "fields"?: {
+  [key: string]: string;
+};
+};
+
 export type StageEntryRow = {
   "submission_id": number;
   "team_id": number;
@@ -26522,6 +27272,8 @@ export type StaleDraftRow = {
   "snapshot_id": number;
   "saved_at": string;
 };
+
+export type State595Enum = "signed_out" | "open" | "closed" | "waiting" | "approved" | "not_approved" | "revoked";
 
 export type State5c1Enum = "open" | "settled" | "cancelled";
 
@@ -27058,6 +27810,13 @@ export type TeamEntry = {
 
 export type TeamEntryKindEnum = "explicit" | "member";
 
+export type TeamFinderPage = {
+  "count": number;
+  "next": string | null;
+  "previous": string | null;
+  "results": Array<FinderCard>;
+};
+
 export type TeamInput = {
   "operation_id": string;
   "expected_version": number;
@@ -27171,6 +27930,11 @@ export type TechnicianOptInPage = {
 export type TelegramTestAlert = {
   "makerspace_id": number;
   "message"?: string;
+};
+
+export type TelegramTestAlertResult = {
+  "delivered": boolean;
+  "detail"?: string;
 };
 
 export type TelegramWebhook = {

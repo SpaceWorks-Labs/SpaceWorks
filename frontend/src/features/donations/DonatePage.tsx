@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 
 import { Card, Field, SegmentedControl } from "../../components/ui";
 import { StructuredApiError } from "../../lib/api";
+import { chargesOn } from "../../lib/charges";
 import { AmountPicker, CampaignPicker } from "./AmountPicker";
 import { DonationShell, useDonationSpace } from "./DonationShell";
 import {
@@ -21,9 +22,11 @@ type Frequency = "once" | Interval;
  * gift waits for an offline payment the space records.
  */
 export function DonatePage() {
-  const { slug, path } = useDonationSpace();
+  const { slug, path, bootstrap } = useDonationSpace();
+  // #184: with donation charges off the server refuses every gift, so the form never shows.
+  const giving = chargesOn(bootstrap, "donations");
   const navigate = useNavigate();
-  const page = useQuery({ queryKey: donationKeys.page(slug), queryFn: () => donationsApi.page(slug), enabled: Boolean(slug),
+  const page = useQuery({ queryKey: donationKeys.page(slug), queryFn: () => donationsApi.page(slug), enabled: Boolean(slug) && giving,
     retry: false });
   const [amount, setAmount] = useState("");
   const [campaign, setCampaign] = useState<number | null>(null);
@@ -50,10 +53,10 @@ export function DonatePage() {
       setDone(result);
     },
   });
-  const off = page.error instanceof StructuredApiError && page.error.status === 404;
+  const off = !giving || (page.error instanceof StructuredApiError && page.error.status === 404);
   if (off) {
     return <DonationShell title="Support this space" state={{ status: "ready" }}>
-      <Card><p className="text-sm">This space isn't taking donations online right now.</p></Card>
+      <Card><p className="text-sm">This space isn't taking donations{giving ? " online" : ""} right now.</p></Card>
     </DonationShell>;
   }
   const data = page.data;

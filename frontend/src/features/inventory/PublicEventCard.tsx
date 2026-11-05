@@ -19,10 +19,11 @@ export function registrationClosedLabel(event: PublicEventDetail) {
   return `Registration closed${event.effective_registration_cutoff_at ? ` · ${new Date(event.effective_registration_cutoff_at).toLocaleString()}` : ""}`;
 }
 
-type Props = { event: PublicEventDetail; href: string; time: string; calendarPending: boolean; calendarError?: string; onCalendar: () => void };
+// `showPrice` is false when event charges are off in this space (#184): no price line at all.
+type Props = { event: PublicEventDetail; href: string; time: string; calendarPending: boolean; calendarError?: string; onCalendar: () => void; showPrice?: boolean };
 
 /** One public event: cover, status, description, price, capacity and availability, then the two actions. */
-export function PublicEventCard({ event, href, time, calendarPending, calendarError, onCalendar }: Props) {
+export function PublicEventCard({ event, href, time, calendarPending, calendarError, onCalendar, showPrice = true }: Props) {
   return <article id={`event-${event.public_token}`} tabIndex={-1} className="min-w-0">
     <div className="desk-panel grid gap-4 overflow-hidden">
       {/* Decorative: the title already names the event. */}
@@ -44,7 +45,7 @@ export function PublicEventCard({ event, href, time, calendarPending, calendarEr
         <EventCountdown startsAt={event.starts_at} endsAt={event.ends_at} />
         {event.description ? <p className="line-clamp-3 whitespace-pre-wrap text-sm leading-6 text-ink">{event.description}</p> : null}
         <dl className="flex flex-wrap gap-6 text-sm">
-          <div><dt className="text-muted">Price</dt><dd><EventPrice inline amount={event.payment_amount} currency={event.currency} tickets={event.ticket_types} ticketRequired={event.ticket_selection_required} /></dd></div>
+          {showPrice ? <div><dt className="text-muted">Price</dt><dd><EventPrice inline amount={event.payment_amount} currency={event.currency} tickets={event.ticket_types} ticketRequired={event.ticket_selection_required} /></dd></div> : null}
           <div><dt className="text-muted">Capacity</dt><dd className="font-semibold tabular-nums text-ink">{eventCapacityLabel(event.capacity)}</dd></div>
           <div><dt className="text-muted">Availability</dt><dd className="font-semibold text-ink">{event.availability}</dd></div>
           {event.show_registration_count !== false && event.registration_count != null ? <div><dt className="text-muted">Registered</dt><dd className="font-semibold tabular-nums text-ink">{event.registration_count}</dd></div> : null}

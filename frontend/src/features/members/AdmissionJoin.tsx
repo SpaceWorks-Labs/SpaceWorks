@@ -5,7 +5,7 @@ import { StructuredApiError } from "../../lib/api";
 import type { PublicAdmission } from "./membershipAdmissionApi";
 import type { InviteCheck, JoinExtras, PublicPlan } from "./joinPlansApi";
 
-export function AdmissionJoin({ settings, signedIn, pending, error, onJoin, onSignIn, plans = [], invite = null, inviteCode = "" }: {
+export function AdmissionJoin({ settings, signedIn, pending, error, onJoin, onSignIn, plans = [], invite = null, inviteCode = "", showPrice = true }: {
   settings: PublicAdmission;
   signedIn: boolean;
   pending: boolean;
@@ -17,6 +17,8 @@ export function AdmissionJoin({ settings, signedIn, pending, error, onJoin, onSi
   /** X11: a checked invite link from the page URL. */
   invite?: InviteCheck | null;
   inviteCode?: string;
+  /** #184: false while membership charges are off -- no plan price, joining fee or payment copy. */
+  showPrice?: boolean;
 }) {
   const [answers, setAnswers] = useState<CustomAnswers>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -27,7 +29,7 @@ export function AdmissionJoin({ settings, signedIn, pending, error, onJoin, onSi
   const invited = Boolean(invite?.valid);
   const blocked = mode === "closed" || (mode === "invite_only" && !invited);
   const plan = chosen ? { name: chosen.name, amount: chosen.amount, currency: chosen.currency } : settings.default_plan;
-  const paid = Number(plan?.amount ?? 0) > 0 || Number(chosen?.joining_fee ?? settings.joining_fee) > 0;
+  const paid = showPrice && (Number(plan?.amount ?? 0) > 0 || Number(chosen?.joining_fee ?? settings.joining_fee) > 0);
   const payFirst = paid && settings.payment_timing === "before_activation";
   const label = mode === "open" ? payFirst ? "Apply to join" : "Join instantly" : "Request to join";
   const join: JoinExtras = { ...(chosen ? { plan_id: chosen.id } : {}), ...(invited ? { invite_code: inviteCode } : {}) };
@@ -39,12 +41,12 @@ export function AdmissionJoin({ settings, signedIn, pending, error, onJoin, onSi
       <legend className="text-sm font-semibold text-ink">Choose a plan</legend>
       {plans.map((option) => <label key={option.id} className="flex min-h-11 items-start gap-2 text-sm">
         <input type="radio" name="join-plan" className="mt-1" checked={planId === option.id} onChange={() => setPlanId(option.id)} />
-        <span><span className="font-semibold text-ink">{option.name}</span> · {option.amount} {option.currency.toUpperCase()}
+        <span><span className="font-semibold text-ink">{option.name}</span>{showPrice ? ` · ${option.amount} ${option.currency.toUpperCase()}` : ""}
           {option.description ? <span className="block text-muted">{option.description}</span> : null}</span>
       </label>)}
     </fieldset> : null}
-    {!blocked && plan ? <p className="mt-2 text-sm text-ink">Plan: {plan.name} · {plan.amount} {plan.currency.toUpperCase()}</p> : null}
-    {!blocked && Number(settings.joining_fee) > 0 ? <p className="mt-2 text-sm text-ink">Joining fee: {settings.joining_fee} {(settings.joining_fee_currency ?? settings.default_plan?.currency ?? "").toUpperCase()}</p> : null}
+    {!blocked && plan ? <p className="mt-2 text-sm text-ink">Plan: {plan.name}{showPrice ? ` · ${plan.amount} ${plan.currency.toUpperCase()}` : ""}</p> : null}
+    {!blocked && showPrice && Number(settings.joining_fee) > 0 ? <p className="mt-2 text-sm text-ink">Joining fee: {settings.joining_fee} {(settings.joining_fee_currency ?? settings.default_plan?.currency ?? "").toUpperCase()}</p> : null}
     {!blocked && paid ? <p className="mt-2 text-sm text-muted">{payFirst ? "Payment is required before activation. You can pay online when available, or at the space." : "Charges are recorded when your membership activates."}</p> : null}
     {!blocked && signedIn ? <form className="mt-4 grid gap-4" onSubmit={(event) => {
       event.preventDefault();

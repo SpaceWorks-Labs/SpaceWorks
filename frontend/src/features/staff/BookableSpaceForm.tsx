@@ -9,6 +9,7 @@ import { getBookingMachineTypes } from "./staffBookingApi";
 import { FormPageLayout } from "../../components/layouts";
 import { ErrorBlock, SettingsActions } from "../../components/ui";
 import { BookableSpaceFields } from "./BookableSpaceFields";
+import { useStaffChargesOn } from "./useStaffChargesOn";
 import { BookableSpaceMachine, useMachineTimeBookingOn } from "./BookableSpaceMachine";
 
 type FormValues = BookableSpacePayload;
@@ -67,6 +68,7 @@ export function BookableSpaceForm({ makerspaceId, initialValues = EMPTY_SPACE_FO
   });
   const machineTypes = types.data?.results ?? [];
   const machineTimeOn = useMachineTimeBookingOn(makerspaceId);
+  const chargesOn = useStaffChargesOn("bookings", makerspaceId);
   const set =<K extends keyof FormValues>(key: K, value: FormValues[K]) => setValues((current) => ({ ...current, [key]: value }));
   const submitPayload = () => {
     const payload: BookableSpacePayload = {
@@ -94,7 +96,7 @@ export function BookableSpaceForm({ makerspaceId, initialValues = EMPTY_SPACE_FO
   const fields = <>
     <fieldset className="min-w-0 grid gap-6" disabled={disabled || pending}>
       <BookableSpaceFields values={values} set={set} machineTypes={machineTypes} typesError={types.error?.message}
-        changeAvailability={changeAvailability}
+        changeAvailability={changeAvailability} chargesOn={chargesOn}
         machineTime={{ available: machineTimeOn !== false, picker: pickerId => <BookableSpaceMachine makerspaceId={makerspaceId} id={pickerId}
           value={values.machine ?? null} onChange={machine => set("machine", machine)} /> }} pagination={<div className="mt-2 flex flex-wrap gap-2">
           <button className="desk-button-ghost" type="button" disabled={!types.data?.previous || types.isFetching} onClick={() => setTypePage(page => page - 1)}>Previous types</button>

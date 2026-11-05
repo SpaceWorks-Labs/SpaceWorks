@@ -1,5 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { Clock, Users } from 'lucide-react'
+import { useParams } from 'react-router-dom'
+import { useChargesOn } from '../../../lib/charges'
 import { DetailLayout } from '../../../components/layouts'
 import { Card, ErrorText, StatusBadge } from '../../../components/ui'
 import { readMember } from './transport'
@@ -17,6 +19,7 @@ export function ApplicationStatus({ application, pending, error, onAction, onRep
     queryFn: () => readMember<{ state: string }>(application.save_intent!.status_url), enabled: Boolean(application.save_intent),
     refetchInterval: q => q.state.data?.state === 'pending' ? 2000 : false, staleTime: 0, gcTime: 0, retry: false })
   const offered = application.state === 'offered'
+  const showPrice = useChargesOn('events', useParams().slug) // #184: free events show no quote
   return <DetailLayout title="Your application" state={{ status: 'ready' }} status={<StatusBadge status={application.state} label={application.state.replace(/_/g, ' ')} />}
     main={<div className="grid gap-4">
       {error ? <ErrorText message={error.message} /> : null}
@@ -38,7 +41,7 @@ export function ApplicationStatus({ application, pending, error, onAction, onRep
       </div> : null}
       {application.allowed_actions.includes('withdraw') ? <button className="desk-button-danger-outline justify-self-start" type="button" disabled={pending}
         onClick={() => onAction('withdraw')}>Withdraw application</button> : null}
-      {application.admission.quote ? <p className="text-sm text-ink">Ticket quote: {application.admission.quote.currency} {application.admission.quote.amount}. Charges are recorded when your place is confirmed.</p> : null}
+      {showPrice && application.admission.quote ? <p className="text-sm text-ink">Ticket quote: {application.admission.quote.currency} {application.admission.quote.amount}. Charges are recorded when your place is confirmed.</p> : null}
       {application.save_intent ? <p role="status" className="text-sm text-muted">Saved details: {intent.data?.state ?? application.save_intent.state}.
         {['conflict', 'failed'].includes(intent.data?.state ?? '') ? ' Your application succeeded. Review your Saved details to resolve the separate save.' : ''}</p> : null}
       {intent.error ? <ErrorText message="Your application succeeded. Saved-detail status is temporarily unavailable." /> : null}

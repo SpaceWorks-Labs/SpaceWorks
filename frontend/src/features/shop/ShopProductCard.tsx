@@ -11,9 +11,12 @@ function productStock(product: ShopPublicProduct) {
   return product.variants.length === 1 ? stockLabel(product.variants[0]) : null;
 }
 
-/** A card links to the product page; a single-variant product can go straight into the basket. */
-export function ShopProductCard({ product, currency, href, onAdd }: {
-  product: ShopPublicProduct; currency: string; href: string; onAdd: (line: Omit<CartLine, "quantity">) => void;
+/**
+ * A card links to the product page; a single-variant product can go straight into the basket.
+ * `selling` false (shop charges off, #184) drops the price and the basket button.
+ */
+export function ShopProductCard({ product, currency, href, onAdd, selling = true }: {
+  product: ShopPublicProduct; currency: string; href: string; onAdd: (line: Omit<CartLine, "quantity">) => void; selling?: boolean;
 }) {
   const stock = productStock(product);
   const only = product.variants.length === 1 ? product.variants[0] : null;
@@ -28,11 +31,11 @@ export function ShopProductCard({ product, currency, href, onAdd }: {
       <RouteLink href={href} className="rounded-control text-ink underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">{product.name}</RouteLink>
     </h2>
     {product.category ? <p className="text-sm text-muted">{product.category}</p> : null}
-    <p className="font-semibold tabular-nums text-ink">{priceRange(product, currency)}{product.unit ? <span className="ml-1 text-sm font-normal text-muted">per {product.unit}</span> : null}</p>
-    {only && !product.sold_out && !only.sold_out ? <button type="button" className="desk-button min-h-11 justify-self-start"
+    {selling ? <p className="font-semibold tabular-nums text-ink">{priceRange(product, currency)}{product.unit ? <span className="ml-1 text-sm font-normal text-muted">per {product.unit}</span> : null}</p> : null}
+    {selling && only && !product.sold_out && !only.sold_out ? <button type="button" className="desk-button min-h-11 justify-self-start"
       aria-label={`Add ${product.name} to basket`}
       onClick={() => onAdd({ variantId: only.id, label: product.name, price: only.price, productSlug: product.slug, max: product.max_per_order })}>
       Add to basket</button>
-      : <RouteLink href={href} className="desk-button min-h-11 justify-self-start">{product.sold_out ? "View item" : "Choose options"}</RouteLink>}
+      : <RouteLink href={href} className="desk-button min-h-11 justify-self-start">{product.sold_out || !selling ? "View item" : "Choose options"}</RouteLink>}
   </li>;
 }

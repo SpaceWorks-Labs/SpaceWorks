@@ -22,10 +22,11 @@ export function quoteReady(request: PricingQuoteRequest) {
  * previous quote stays on screen while the next one loads, and a 4xx is never retried -- 404 means
  * price lists are off or the thing is not public, 429 means the per-visitor throttle tripped.
  * Signed-in members get their own price: the shared public client sends the member session.
+ * `enabled` false (the domain's charges are off, #184) never asks: the server would answer 404.
  */
-export function usePriceQuote(slug: string, request: PricingQuoteRequest, delay = 400) {
+export function usePriceQuote(slug: string, request: PricingQuoteRequest, delay = 400, enabled = true) {
   const body = useDebouncedValue(JSON.stringify(request), delay);
-  const ready = Boolean(slug) && quoteReady(JSON.parse(body) as PricingQuoteRequest) && quoteReady(request);
+  const ready = enabled && Boolean(slug) && quoteReady(JSON.parse(body) as PricingQuoteRequest) && quoteReady(request);
   const query = useQuery({
     queryKey: ["pricing-quote", slug, body],
     queryFn: () => tenantPublicRequest<PricingPublicQuote>(slug, `/public/${encodeURIComponent(slug)}/pricing/quote`, {

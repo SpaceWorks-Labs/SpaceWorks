@@ -7,6 +7,13 @@ import {
   type PriceTargetType,
 } from "./priceOverrideApi";
 import { PriceOverrideRow } from "./PriceOverrideRow";
+import { useStaffChargesOn } from "../useStaffChargesOn";
+import type { ChargeDomain } from "../../../lib/charges";
+
+/** #184: which money domain an override prices; a free domain shows no price card at all. */
+const DOMAIN: Record<PriceTargetType, ChargeDomain> = {
+  inventory_product: "loans", machine: "machines", consumable_pool: "machines", bookable_space: "bookings",
+};
 
 const statusOf = (error: unknown) => (error && typeof error === "object" ? (error as { status?: number }).status : undefined);
 
@@ -20,7 +27,9 @@ export function PriceOverrideCard({ makerspaceId, targetType, targetId, compact 
   makerspaceId: number; targetType: PriceTargetType; targetId: number; compact?: boolean;
 }) {
   const id = useId();
-  const pricingOn = useStaffPricingOn(makerspaceId);
+  const chargesOn = useStaffChargesOn(DOMAIN[targetType], makerspaceId);
+  const pricesOn = useStaffPricingOn(makerspaceId);
+  const pricingOn = chargesOn ? pricesOn : false;
   const card = usePriceOverride(makerspaceId, targetType, targetId, pricingOn !== false);
   const save = useSavePriceOverride(makerspaceId, targetType, targetId);
   const drop = usePriceDropCheck(makerspaceId);

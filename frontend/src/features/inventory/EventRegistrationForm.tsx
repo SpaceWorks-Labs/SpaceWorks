@@ -7,6 +7,7 @@ import { EventContactFallback } from "../events/EventContactFallback";
 import { EventTicketPicker } from "../events/EventTicketPicker";
 import type { EventTicket } from "../events/eventTicketTypes";
 import { StructuredApiError, tenantPublicRequest } from "../../lib/api";
+import { useChargesOn } from "../../lib/charges";
 import { CustomFormFields } from "../forms/CustomFormFields";
 import { PricePreview } from "../payments/PricePreview";
 import { isPriceChanged, PriceChangedNotice } from "../payments/PriceChangedNotice";
@@ -51,6 +52,7 @@ export function EventRegistrationForm({ makerspaceSlug, publicToken, waitlist, a
   paymentsHref?: string;
 }) {
   const queryClient = useQueryClient();
+  const showPrice = useChargesOn("events", makerspaceSlug); // #184: free events show no money at all
   const [waiverAccepted, setWaiverAccepted] = useState(false);
   useEffect(() => { setWaiverAccepted(false); }, [hostWaiver?.id, hostWaiver?.version]);
   const [phone, setPhone] = useState("");
@@ -98,7 +100,7 @@ export function EventRegistrationForm({ makerspaceSlug, publicToken, waitlist, a
         fields={[{ label: "Status", value: pending ? "Pending review" : waitlisted ? "Waitlisted" : "Registered" }, { label: "Next step", value: pending ? "Wait for confirmation" : waitlisted ? "Wait for a place" : "See you there" }]}
         qr={<div className="grid h-full place-items-center rounded-xl bg-success-soft text-success-ink"><Icon name="CheckCircle" className="h-16 w-16" /></div>}
         caption={pending ? "You will only be charged if a place is confirmed." : waitlisted ? "The makerspace has recorded your waitlist request." : "The makerspace has recorded your registration."} />
-      {paymentsHref && registration.data.status === "registered" ? <p className="mt-3 text-sm text-muted">Any fee for this event is listed under <a className="font-semibold text-ink underline" href={paymentsHref}>Payments</a> in your member area. Pay online there when it is offered, or pay at the space.</p> : null}
+      {paymentsHref && showPrice && registration.data.status === "registered" ? <p className="mt-3 text-sm text-muted">Any fee for this event is listed under <a className="font-semibold text-ink underline" href={paymentsHref}>Payments</a> in your member area. Pay online there when it is offered, or pay at the space.</p> : null}
     </div>;
   }
 
@@ -122,7 +124,7 @@ export function EventRegistrationForm({ makerspaceSlug, publicToken, waitlist, a
       <input name="website" tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} />
     </label>
     <EventContactFallback needsPhone={needsPhone} needsEmail={needsEmail} phone={phone} email={email} onPhone={setPhone} onEmail={setEmail} disabled={registration.isPending} />
-    <EventTicketPicker tickets={tickets} value={ticketId} onChange={setTicketId} currency={currency} disabled={registration.isPending} />
+    <EventTicketPicker tickets={tickets} value={ticketId} onChange={setTicketId} currency={currency} disabled={registration.isPending} showPrice={showPrice} />
     {audience === "invite" ? <><label className="grid gap-1 text-sm">Invitation code<input className="desk-input" maxLength={128} autoComplete="off" value={inviteCode} onChange={(e) => setInviteCode(e.target.value)} /></label><p className="text-sm text-muted">Leave blank if your verified account email was invited.</p></> : null}
     {hostWaiver ? <fieldset className="grid gap-2 rounded-xl border border-line bg-panel p-3"><legend className="px-1 text-sm font-semibold">Host waiver</legend><p className="whitespace-pre-wrap text-sm leading-6">{hostWaiver.body}</p><label className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={waiverAccepted} onChange={(e) => setWaiverAccepted(e.target.checked)} />I accept this host waiver (version {hostWaiver.version}).</label>{clientErrors.waiver ? <p className="text-sm text-danger" role="alert">{clientErrors.waiver}</p> : null}</fieldset> : null}
     {promoEnabled ? <label className="grid gap-1 text-sm">Promo code (optional)<input className="desk-input" maxLength={128} autoComplete="off" value={promoCode} onChange={(e) => setPromoCode(e.target.value)} /></label> : null}

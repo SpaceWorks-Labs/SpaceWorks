@@ -14,6 +14,7 @@ import { EmptyState } from "../../components/ui";
 import type { ApiPath } from "../../generated/api";
 import { StructuredApiError, tenantPublicRequest } from "../../lib/api";
 import { useTenant, useTenantPath } from "../../lib/tenant";
+import { chargesOn } from "../../lib/charges";
 import { PublicEventCard } from "./PublicEventCard";
 import { publicErrorState } from "./publicErrorState";
 import { formatSlug } from "./PublicInventoryParts";
@@ -42,6 +43,7 @@ export function PublicEventsPage() {
   const bootstrapQuery = useTenantBootstrap(makerspaceSlug, tenant.mode === "central");
   const bootstrap = tenant.mode === "single" ? tenant.bootstrap : bootstrapQuery.data;
   const brandStyle = useTenantBranding(bootstrap);
+  const showPrice = chargesOn(bootstrap, "events");
   const discovery = useDiscoveryState(bootstrap?.makerspace.timezone);
   const [category, setCategory] = useState("");
   const [tag, setTag] = useState("");
@@ -59,8 +61,9 @@ export function PublicEventsPage() {
     if (!text.includes(discovery.query.trim().toLowerCase())) return false;
     if (category && item.category?.slug !== category) return false;
     if (tag && !item.tags?.includes(tag)) return false;
-    if (discovery.facet === "free" && item.ticket_selection_required && !item.ticket_types?.length) return false;
-    if (discovery.facet === "free" && (item.ticket_types?.length ? item.ticket_types.every((ticket) => Number(ticket.amount) !== 0) : Number(item.payment_amount) !== 0)) return false;
+    // #184: with event charges off every event is free, so the "Free events" facet keeps them all.
+    if (discovery.facet === "free" && showPrice && item.ticket_selection_required && !item.ticket_types?.length) return false;
+    if (discovery.facet === "free" && showPrice && (item.ticket_types?.length ? item.ticket_types.every((ticket) => Number(ticket.amount) !== 0) : Number(item.payment_amount) !== 0)) return false;
     if (discovery.facet === "open" && !item.registration_open) return false;
     if (discovery.month) {
       const { start, end } = monthWindow(discovery.month, discovery.timeZone);
@@ -96,7 +99,7 @@ export function PublicEventsPage() {
       header={{ title: "Upcoming events", subtitle: `What's on at ${displayName}`, primary: { label: "My events", href: tenantPath("member/events") },
         ...(tenant.mode === "central" ? { secondary: { label: "Discover across makerspaces", href: "/discover" } } : {}) }}
       state={events.isLoading ? { status: "loading" } : events.error ? publicErrorState(events.error, { noun: "Events" }, () => { void events.refetch(); }) : { status: "ready" }}>
-      <DiscoveryControls state={discovery} searchLabel="Search events" filters={[{ value: "free", label: "Free events" }, { value: "open", label: "Registration open" }]} />
+      <DiscoveryControls state={discovery} searchLabel="Search events" filters={[...(showPrice ? [{ value: "free", label: "Free events" }] : []), { value: "open", label: "Registration open" }]} />
       <div className="mb-5 flex flex-wrap gap-3"><label className="grid min-w-0 flex-1 basis-48 gap-1 text-sm font-semibold sm:max-w-xs">Category<select className="desk-input w-full font-normal" value={category} onChange={e => setCategory(e.target.value)}><option value="">All categories</option>{[...new Map((events.data ?? []).flatMap(item => item.category ? [[item.category.slug, item.category] as const] : [])).values()].map(row => <option key={row.slug} value={row.slug}>{row.name}</option>)}</select></label>
       <label className="grid min-w-0 flex-1 basis-48 gap-1 text-sm font-semibold sm:max-w-xs">Tag<select className="desk-input w-full font-normal" value={tag} onChange={e => setTag(e.target.value)}><option value="">All tags</option>{[...new Set((events.data ?? []).flatMap(item => item.tags ?? []))].sort().map(value => <option key={value}>{value}</option>)}</select></label></div>
       <p role="status" className="mb-4 text-sm text-muted">{visibleEvents.length} matching event(s)</p>
@@ -104,11 +107,11 @@ export function PublicEventsPage() {
       {!visibleEvents.length ? <EmptyState message={events.data?.length ? "No matching events. Try another search, filter or month." : "No upcoming events. Check back soon."} /> : null}
       <div className="grid gap-7">{groupedEvents.map(group => <section key={group.key} aria-label={group.title ?? undefined}>
         {group.title ? <div className="mb-3"><p className="text-sm text-muted">Recurring series</p><h2 className="title-panel">{group.title}</h2>
-          {group.items[0]?.series?.id && group.items[0].series.passes_enabled ? <a className="mt-2 inline-flex text-sm font-semibold text-brand-ink underline"
+          {showPrice && group.items[0]?.series?.id && group.items[0].series.passes_enabled ? <a className="mt-2 inline-flex text-sm font-semibold text-brand-ink underline"
             href={tenantPath(`member/series/${group.items[0].series.id}/passes`)}>Buy a series pass</a> : null}</div> : null}
         <div className="grid gap-5">{group.items.map(item => <PublicEventCard key={item.public_token} event={item} href={tenantPath(`events/${item.public_token}`)}
           time={eventTime(item, discovery.timeZone)} calendarPending={calendarToken === item.public_token} onCalendar={() => downloadCalendar(item)}
-          calendarError={calendarError?.token === item.public_token ? calendarError.message : undefined} />)}</div>
+          calendarError={calendarError?.token === item.public_token ? calendarError.message : undefined} showPrice={showPrice} />)}</div>
       </section>)}</div>
     </PublicLayout>
   </div>;

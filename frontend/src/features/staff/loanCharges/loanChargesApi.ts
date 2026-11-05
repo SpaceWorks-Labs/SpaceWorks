@@ -1,12 +1,20 @@
 import type { QueryClient } from "@tanstack/react-query";
 
 import type {
-  LoanAccountabilityChargeResult, LoanAccountabilityRow, LoanCharge, LoanCharges, LoanFeeWaiver, LoanFeeWaiverResult,
+  LoanAccountabilityChargeResult, LoanAccountabilityRow, LoanCharge, LoanCharges as GeneratedLoanCharges, LoanFeeWaiver,
+  LoanFeeWaiverResult,
 } from "../../../generated/api";
 import { StructuredApiError, staffRequest } from "../../../lib/api";
 import { invalidatePaymentViews } from "../paymentsApi";
 
-export type { LoanAccountabilityChargeResult, LoanAccountabilityRow, LoanCharge, LoanCharges, LoanFeeWaiver, LoanFeeWaiverResult };
+export type { LoanAccountabilityChargeResult, LoanAccountabilityRow, LoanCharge, LoanFeeWaiver, LoanFeeWaiverResult };
+
+/** #184: `charges_enabled` is false when loan charges are off; absent on older backends (treated as on). */
+export type LoanCharges = GeneratedLoanCharges & { charges_enabled?: boolean };
+
+export function loanChargesOn(data: LoanCharges | undefined) {
+  return data?.charges_enabled !== false;
+}
 
 export type WaiverComponent = "rental" | "late" | "damage" | "lost";
 
@@ -84,6 +92,7 @@ const ERRORS: Record<string, string> = {
   waiver_reason_required: "Give a reason. It is kept with the waiver for the audit trail.",
   waiver_exists: "One of these fees is already waived on this loan. Leave it out, or revoke that waiver first.",
   charge_exists: "This item already has a charge. The panel has been refreshed.",
+  charges_off: "Loan charges are off in this space.",
   return_photo_required: "This item has no return photo, so only No charge can be saved.",
 };
 
@@ -104,5 +113,5 @@ export function suggestionHint(source: string) {
 
 /** Rows a return recorded that still need a decision: no charge raised and "No charge" not decided. */
 export function undecidedRows(data: LoanCharges | undefined) {
-  return data?.pricing_enabled ? data.accountability.filter(row => !row.charge && !row.no_charge_decided) : [];
+  return data?.pricing_enabled && loanChargesOn(data) ? data.accountability.filter(row => !row.charge && !row.no_charge_decided) : [];
 }

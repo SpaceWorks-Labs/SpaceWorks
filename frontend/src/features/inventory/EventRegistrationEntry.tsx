@@ -3,15 +3,18 @@ import { Modal } from "../../components/ui";
 import type { PublicEventDetail } from "../events/eventTicketTypes";
 import { EventRegistrationForm } from "./EventRegistrationForm";
 import { tenantPath, useOptionalTenant } from "../../lib/tenant";
+import { useChargesOn } from "../../lib/charges";
 import { TicketShopEntry } from "../events/ticketing/TicketShopEntry";
 
 export function EventRegistrationEntry({ event, makerspaceSlug, organisation, ordersEnabled = false }: { event: PublicEventDetail; makerspaceSlug: string; organisation: string; ordersEnabled?: boolean }) {
   const [open, setOpen] = useState(false);
+  // #184: with event charges off nothing is sold, so the priced order shop gives way to the plain form.
+  const chargesOn = useChargesOn("events", makerspaceSlug);
   // Release 2 L6: spaces selling ticket orders get the order shop for open, no-approval events.
-  const orderable = ordersEnabled && !event.registration_requires_approval
+  const orderable = chargesOn && ordersEnabled && !event.registration_requires_approval
     && ["members", "accounts"].includes(event.registration_audience ?? "members");
   const mode = useOptionalTenant()?.mode ?? "central";
-  const paid = Number(event.payment_amount) > 0 || Boolean(event.ticket_types?.some(ticket => Number(ticket.amount) > 0));
+  const paid = chargesOn && (Number(event.payment_amount) > 0 || Boolean(event.ticket_types?.some(ticket => Number(ticket.amount) > 0)));
   const label = event.registration_requires_approval ? "Apply" : event.availability === "Full" ? "Join waitlist" : "Register";
   const form = <EventRegistrationForm makerspaceSlug={makerspaceSlug} publicToken={event.public_token}
     waitlist={event.availability === "Full"} approvalRequired={event.registration_requires_approval}

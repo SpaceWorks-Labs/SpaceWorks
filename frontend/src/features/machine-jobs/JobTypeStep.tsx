@@ -24,13 +24,16 @@ export function preselectType(types: JobType[], params: URLSearchParams): JobTyp
   return types.find(type => String(type.machine_type_id) === wanted || type.machine_type_slug.toLowerCase() === wanted);
 }
 
-/** Step 1: which machine type. Each option says what it accepts and how it is run and priced. */
-export function JobTypeStep({ types, value, onChange }: { types: JobType[]; value: number | null; onChange: (queueId: number) => void }) {
+/**
+ * Step 1: which machine type. Each option says what it accepts and how it is run and priced.
+ * `showPrice` false (machine charges off, #184) drops the quote and prepay lines.
+ */
+export function JobTypeStep({ types, value, onChange, showPrice = true }: { types: JobType[]; value: number | null; onChange: (queueId: number) => void; showPrice?: boolean }) {
   return <fieldset className="grid gap-3">
     <legend className="title-section mb-1">What should make it?</legend>
     <p className="text-sm text-muted">Pick the kind of machine. Staff choose the exact machine when your job runs.</p>
     {types.map(type => {
-      const hints = [QUOTE_HINT[type.quotes], type.prepay ? "Paid before the job runs." : "",
+      const hints = [showPrice ? QUOTE_HINT[type.quotes] : "", showPrice && type.prepay ? "Paid before the job runs." : "",
         type.runs_unattended ? "Runs unattended — it may finish while nobody is at the machine." : "",
         type.max_open_jobs ? `Up to ${type.max_open_jobs} open job${type.max_open_jobs === 1 ? "" : "s"} per member.` : ""].filter(Boolean);
       const selected = value === type.queue_id;

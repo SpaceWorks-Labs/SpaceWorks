@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { PublicLayout } from "../../components/layouts";
 import { PageMetadata } from "../../components/PageMetadata";
 import { Pagination, type QueryState } from "../../components/ui";
+import { chargesOn } from "../../lib/charges";
 import { ShopCartDrawer } from "./ShopCartDrawer";
 import { fetchProducts, fetchShop, shopErrorMessage, shopKeys } from "./shopApi";
 import { ShopProductCard } from "./ShopProductCard";
@@ -16,6 +17,8 @@ const PAGE_SIZE = 24;
 export function PublicShopPage() {
   const space = useShopSpace();
   const cart = useShopCart(space.slug);
+  // #184: with shop charges off the server sells nothing, so no prices, basket or checkout show.
+  const selling = chargesOn(space.bootstrap, "shop");
   const [category, setCategory] = useState("");
   const [page, setPage] = useState(1);
   const [open, setOpen] = useState(false);
@@ -42,7 +45,7 @@ export function PublicShopPage() {
       empty={{ message: category ? "Nothing in this category right now." : "Nothing is on sale right now. Check back soon." }}
       breadcrumb={[{ label: space.name, href: space.path() }, { label: "Shop" }]}
       header={{ title: "Shop", subtitle: `Order online and collect at ${space.name}.`,
-        primary: { label: cart.count ? `Basket (${cart.count})` : "Basket", onClick: () => setOpen(true) } }}>
+        primary: selling ? { label: cart.count ? `Basket (${cart.count})` : "Basket", onClick: () => setOpen(true) } : undefined }}>
       <div className="grid gap-6">
         {categories.length ? <div role="group" aria-label="Filter by category" className="flex flex-wrap gap-2">
           {["", ...categories].map(name => <button key={name || "all"} type="button" aria-pressed={category === name}
@@ -50,12 +53,12 @@ export function PublicShopPage() {
         </div> : null}
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {rows.map(product => <ShopProductCard key={product.id} product={product} currency={currency}
-            href={space.path(`shop/${product.slug}`)} onAdd={line => { cart.add(line); setOpen(true); }} />)}
+            href={space.path(`shop/${product.slug}`)} selling={selling} onAdd={line => { cart.add(line); setOpen(true); }} />)}
         </ul>
         <Pagination page={page} totalPages={Math.ceil((products.data?.count ?? 0) / PAGE_SIZE)} count={products.data?.count}
           pageSize={PAGE_SIZE} onChange={setPage} disabled={products.isFetching} />
       </div>
     </PublicLayout>
-    {shop.data ? <ShopCartDrawer open={open} onClose={() => setOpen(false)} slug={space.slug} shop={shop.data} cart={cart} path={space.path} /> : null}
+    {shop.data && selling ? <ShopCartDrawer open={open} onClose={() => setOpen(false)} slug={space.slug} shop={shop.data} cart={cart} path={space.path} /> : null}
   </div>;
 }

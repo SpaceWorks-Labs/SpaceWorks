@@ -1923,7 +1923,7 @@
         "id": "models.BigAutoField(primary_key=True)",
         "makerspace": "models.ForeignKey('makerspaces.Makerspace', on_delete=models.CASCADE, related_name='+')",
         "event": "models.ForeignKey('events.Event', on_delete=models.CASCADE, related_name='+')",
-        "award": "models.ForeignKey('events.EventAward', on_delete=models.PROTECT, related_name='+')",
+        "award": "models.ForeignKey('events.EventAward', null=True, blank=True, on_delete=models.PROTECT, related_name='+')",
         "share": "models.ForeignKey(HackathonPrizeShare, null=True, blank=True, on_delete=models.PROTECT, related_name='+')",
         "payout": "models.ForeignKey('events.HackathonPrizePayout', null=True, blank=True, on_delete=models.PROTECT, related_name='+')",
         "resolves": "models.OneToOneField('self', null=True, blank=True, on_delete=models.PROTECT, related_name='resolution')",
@@ -1948,7 +1948,7 @@
           "target": "events.Event"
         },
         "award": {
-          "definition": "models.ForeignKey('events.EventAward', on_delete=models.PROTECT, related_name='+')",
+          "definition": "models.ForeignKey('events.EventAward', null=True, blank=True, on_delete=models.PROTECT, related_name='+')",
           "target": "events.EventAward"
         },
         "share": {
@@ -1983,7 +1983,8 @@
         "ev_prize_outcome_kind",
         "ev_prize_outcome_amount",
         "ev_prize_outcome_resolves",
-        "ev_prize_outcome_ledger"
+        "ev_prize_outcome_ledger",
+        "ev_prize_outcome_subject"
       ],
       "unique_fields": [],
       "uniqueness_policy": "Remap composite FK keys; tenant-owned parents only (hack-money lane).",

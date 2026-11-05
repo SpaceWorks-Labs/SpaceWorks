@@ -113,12 +113,15 @@ def forfeit(event_id, award_id, *, actor, data):
 def open_recoveries_locked(*, event, project, actor):
     """G16, inside the disqualifying transaction: every standing payout to this project's winning
     snapshots opens one recovery (amount owed back). It never charges the member."""
+    from django.db.models import Q
     from .models_results import EventAward
     from apps.events.models import SubmissionSnapshot
     snapshots = SubmissionSnapshot.objects.filter(submission_id=project.pk).values("pk")
     awards = EventAward.objects.filter(submission_snapshot_id__in=snapshots).values("pk")
-    payouts = HackathonPrizePayout.objects.filter(event=event, award_id__in=awards, kind="payout",
-                                                  reversal__isnull=True).select_related("award")
+    # A People's choice payout (#181) names its winning standing instead of an award; it is recovered too.
+    payouts = HackathonPrizePayout.objects.filter(
+        Q(award_id__in=awards) | Q(peoples_choice_standing__submission_snapshot_id__in=snapshots),
+        event=event, kind="payout", reversal__isnull=True).select_related("award")
     opened = []
     for payout in payouts.order_by("pk"):
         if HackathonPrizeOutcome.objects.filter(payout=payout, kind="recovery_opened").exists():
@@ -139,7 +142,8 @@ def resolve_recovery(event_id, outcome_id, *, actor, data):
         require_recorder(actor, event)
 
         def run():
-            opened = HackathonPrizeOutcome.objects.select_related("award", "payout").filter(
+            opened = HackathonPrizeOutcome.objects.select_related(
+                "award", "payout__peoples_choice_standing__result").filter(
                 event=event, pk=outcome_id, kind="recovery_opened").first()
             if opened is None:
                 raise Http404
@@ -151,7 +155,7 @@ def resolve_recovery(event_id, outcome_id, *, actor, data):
                 entry = record_receipt(event.makerspace, "events", None, opened.amount, opened.currency,
                                        values["method"], values.get("reference", ""), values.get("receipt_id"),
                                        SOURCE_KIND, f"outcome:{opened.pk}", actor, category="prize_recovery",
-                                       description=f"Prize repaid: {opened.award.prize_name}"[:300],
+                                       description=f"Prize repaid: {_prize_name(opened)}"[:300],
                                        entry_date=values["happened_on"], event=event)
             kind = "recovery_repaid" if entry is not None else "recovery_waived"
             row = _row(event, opened.award, kind, actor, payout=opened.payout, resolves=opened, amount=opened.amount,
@@ -165,6 +169,12 @@ def resolve_recovery(event_id, outcome_id, *, actor, data):
                        meta={"event_id": event.pk, "outcome_id": row.pk, "ledger_entry_id": None})
             return projection(row)
         return command(event, actor, values, path=f"prize-outcomes/{outcome_id}/resolve", run=run)
+
+
+def _prize_name(outcome):
+    if outcome.award_id:
+        return outcome.award.prize_name
+    return outcome.payout.peoples_choice_standing.result.prize_name
 
 
 def projection(row):

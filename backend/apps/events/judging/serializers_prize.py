@@ -107,7 +107,7 @@ class ClaimRead(ClosedSerializer):
 class OutcomeRead(ClosedSerializer):
     id = serializers.IntegerField()
     event_id = serializers.IntegerField()
-    award_id = serializers.IntegerField()
+    award_id = serializers.IntegerField(allow_null=True)
     share_id = serializers.IntegerField(allow_null=True)
     payout_id = serializers.IntegerField(allow_null=True)
     resolves_id = serializers.IntegerField(allow_null=True)

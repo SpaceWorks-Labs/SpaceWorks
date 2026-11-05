@@ -6434,7 +6434,11 @@ responsibility; local purges never delete shared global organizations or foreign
   publication are counted; ranking is competition ranking and every project tied at the top wins.
 - **A prize it carries is paid like any prize (C-38).** `HackathonPrizePayout` names a judged award OR a
   winning standing, exactly one (`ev_payout_one_award`, and the scope trigger checks the standing's result,
-  event and prize). Same recorders, ledger expense, reversal route and winner notice as L21b.
+  event and prize). Same recorders, ledger expense, reversal route and winner notice as L21b, and the same
+  hack-money rules: the space's prize-tax proposal (gross, TDS, net; record only), a recovery opened on
+  the payout when the winning project is later disqualified (the recovery row names the payout, with no
+  award: `ev_prize_outcome_subject`, events/0080), and unpaid cash winners in the prize pool's owed total
+  and the "Prizes owed" report (`judging/peoples_choice_money.py`).
 - **The voting-open email is off by default (C-37)** and is sent only when staff switch the award on with it
   ticked; recipients (registrants, or checked-in attendees for an attendees-only award) are rechecked at send.
 

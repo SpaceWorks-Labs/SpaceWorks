@@ -2,7 +2,7 @@
 
 One row per award of an event's CURRENT published result whose prize is not paid, fulfilled,
 sponsor-paid or forfeited, plus every award with an open recovery (money owed back after a
-disqualification, G16). Names no winner and no payee: only the event, prize, rank, kind, amount
+disqualification, G16); People's choice winners (#181) appear the same way. Names no winner and no payee: only the event, prize, rank, kind, amount
 outstanding and the claim deadline. Behind `events.prize_payouts`; never combined across an
 organization (each space's own prizes and books).
 """
@@ -56,6 +56,9 @@ def rows_for(space):
                          "kind": award.prize.kind, "funding": award.prize.funding, "status": status,
                          "currency": money, "amount_outstanding": outstanding, "open_recoveries": recoveries,
                          "claim_deadline": deadline.isoformat() if deadline else None})
+        # #181: People's choice winners owe or are owed like judged awards (no winner named).
+        from apps.events.judging.peoples_choice_money import report_rows
+        rows.extend(report_rows(event, money, lambda: deadline or claim_deadline(event)))
     return rows
 
 

@@ -8,7 +8,7 @@ from rest_framework import serializers
 
 from apps.accounts.pii_presentation import is_platform_superadmin, mask_data, pii_visible
 from .serializers import ClosedSerializer, CommandInput
-from .serializers_l21b import PayoutInput
+from .serializers_l21b import PayoutInput, PrizeTaxProposal
 
 AUDIENCES = (("members", "Any signed-in member"), ("attendees", "Checked-in attendees only"))
 STATES = ("off", "scheduled", "open", "closed", "published")
@@ -139,6 +139,7 @@ class PeoplesChoicePayableWinnerRead(ClosedSerializer):
     title = serializers.CharField()
     amount_per_winner = serializers.DecimalField(max_digits=12, decimal_places=2, allow_null=True)
     paid = serializers.BooleanField()
+    tax_proposal = PrizeTaxProposal(help_text="The space's prize-tax proposal (#181 G7, record only).")
 
 
 class PeoplesChoicePayableWinnersRead(ClosedSerializer):

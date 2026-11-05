@@ -61,7 +61,8 @@ class HackathonPrizeClaim(ScopedPiiModelMixin, EventOwned):
 class HackathonPrizeOutcome(AppendOnly):
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE, related_name="+")
     event = models.ForeignKey("events.Event", on_delete=models.CASCADE, related_name="+")
-    award = models.ForeignKey("events.EventAward", on_delete=models.PROTECT, related_name="+")
+    # Null only on a People's choice recovery (#181), which names the payout of a winning standing instead.
+    award = models.ForeignKey("events.EventAward", null=True, blank=True, on_delete=models.PROTECT, related_name="+")
     share = models.ForeignKey(HackathonPrizeShare, null=True, blank=True, on_delete=models.PROTECT, related_name="+")
     payout = models.ForeignKey("events.HackathonPrizePayout", null=True, blank=True, on_delete=models.PROTECT,
                                related_name="+")
@@ -87,4 +88,6 @@ class HackathonPrizeOutcome(AppendOnly):
                                                  & Q(resolves__isnull=True))), name="ev_prize_outcome_resolves"),
             models.CheckConstraint(condition=Q(ledger_entry__isnull=True) | Q(kind="recovery_repaid"),
                                    name="ev_prize_outcome_ledger"),
+            models.CheckConstraint(condition=Q(award__isnull=False) | (Q(payout__isnull=False) & Q(
+                kind__in=("recovery_opened", "recovery_repaid", "recovery_waived"))), name="ev_prize_outcome_subject"),
         ]

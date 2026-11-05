@@ -1017,7 +1017,7 @@ identity normalization and production minimum-version comparison. `mobile_associ
 - Workflows in `events/judging/`: `peoples_choice.py` (settings, state, the voting-open notice recipients),
   `peoples_choice_votes.py` (the member ballot and vote), `peoples_choice_ballots.py` (staff ballot list and
   void), `peoples_choice_results.py` (count, publish once, the public block, gallery badges),
-  `peoples_choice_payouts.py` (paying a winner through L21b's payout row). HTTP: `views_peoples_choice.py`,
+  `peoples_choice_payouts.py` (paying a winner through L21b's payout row, with the prize-tax proposal), `peoples_choice_money.py` (owed totals, prizes-owed rows, recoveries). HTTP: `views_peoples_choice.py`,
   `serializers_peoples_choice.py`, routes in `judging/urls.py`; route catalogue
   `accounts/programme_route_catalog_peoples_choice.py`; throttle `peoples_choice_vote` in `config/settings.py`.
 - Seams outside the package: `submissions/gallery_views.py` (the winner badge), `judging/provider_notices.py`

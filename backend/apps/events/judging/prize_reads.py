@@ -127,6 +127,8 @@ def prize_pool(event):
     for award in current_awards(event):
         if award.prize.kind == "cash" and award.prize.funding == "space" and award_status(award) == "owed":
             owed += award.prize.amount_per_winner or ZERO
+    from .peoples_choice_money import owed as peoples_choice_owed
+    owed += peoples_choice_owed(event)  # #181: a People's choice cash prize is owed like a judged one.
     recovered = HackathonPrizeOutcome.objects.filter(event=event, kind="recovery_repaid").aggregate(
         total=Sum("amount"))["total"]
     return {"currency": currency(event.makerspace), "announced_total": announced, "sponsor_funded": funded or ZERO,

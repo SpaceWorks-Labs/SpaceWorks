@@ -3,7 +3,9 @@
 Only a PUBLISHED result that carries a prize can be paid, and only its winners (joint winners are
 each paid once). The payout row, its L5 ledger expense, the reversal path and the winner's notice are
 L21b's; the row names the winning standing instead of a judged award (the database requires exactly
-one of the two). Nothing moves money automatically.
+one of the two). Nothing moves money automatically. The space's prize-tax proposal (#181 G7, record
+only) applies as it does to a judged prize: the ledger expense is the gross, with tax deducted and net
+stored on the row.
 """
 
 from django.http import Http404
@@ -16,15 +18,11 @@ from .errors import ProgrammeError
 from .models_payouts import HackathonPrizePayout
 from .models_peoples_choice import PeoplesChoiceStanding
 from .peoples_choice import require_live, result_for
+from .peoples_choice_money import standing_paid as _standing_paid, tax_proposal
 from .ports import runtime
 from .serializers import validated
 from .serializers_l21b import PayoutRead
 from .serializers_peoples_choice import PeoplesChoicePayoutInput
-
-
-def _standing_paid(standing):
-    return HackathonPrizePayout.objects.filter(peoples_choice_standing=standing, kind="payout",
-                                               reversal__isnull=True).exists()
 
 
 def payable(event_id, *, actor):
@@ -38,7 +36,8 @@ def payable(event_id, *, actor):
     if result is None or result.prize_id is None:
         return []
     return [{"id": row.pk, "prize_name": result.prize_name, "title": runtime().snapshot(row.submission_snapshot_id).title,
-             "amount_per_winner": result.prize.amount_per_winner, "paid": _standing_paid(row)}
+             "amount_per_winner": result.prize.amount_per_winner, "paid": _standing_paid(row),
+             "tax_proposal": tax_proposal(event.makerspace)}
             for row in result.standings.filter(winner=True).order_by("pk")]
 
 
@@ -68,18 +67,23 @@ def record_payout(event_id, *, actor, data):
             amount = values.get("amount") or prize.amount_per_winner
             if not amount:
                 raise ValidationError({"amount": "This prize has no amount; enter what was paid."})
+            from .prize_tax import proposed_tds
+            tds = values["tds_amount"] if values.get("tds_amount") is not None else proposed_tds(event.makerspace, amount)
+            if tds >= amount:
+                raise ValidationError({"tds_amount": "Tax deducted must be less than the gross prize."})
             from apps.payments.ledger_api import record_expense
             from .options import currency
             money = currency(event.makerspace)
             attempt = HackathonPrizePayout.objects.filter(peoples_choice_standing=standing, kind="payout").count() + 1
             payout = HackathonPrizePayout(makerspace=event.makerspace, event=event, peoples_choice_standing=standing,
-                                          prize=prize, recipient_id=recipient, amount=amount, currency=money,
-                                          method=values["method"], reference=values["reference"],
-                                          paid_on=values["paid_on"], recorded_by=actor)
+                                          prize=prize, recipient_id=recipient, amount=amount, tds_amount=tds,
+                                          net_amount=amount - tds, currency=money, method=values["method"],
+                                          reference=values["reference"], paid_on=values["paid_on"], recorded_by=actor)
+            memo = f" (gross; tax deducted {tds} {money.upper()})" if tds else ""
             payout.ledger_entry = record_expense(
                 event.makerspace, "events", None, amount, money, values["method"], values["reference"],
                 values.get("receipt_id"), payouts.SOURCE_KIND, f"peoples_choice:{standing.pk}:{attempt}", actor,
-                category="prize", description=f"Prize: {standing.result.prize_name}"[:300],
+                category="prize", description=f"Prize: {standing.result.prize_name}{memo}"[:300],
                 entry_date=values["paid_on"], event=event)
             payout.save()
             record(actor, "event.prize.payout_recorded", makerspace=event.makerspace, target=payout,

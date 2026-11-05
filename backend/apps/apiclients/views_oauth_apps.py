@@ -53,7 +53,7 @@ def _clean(data):
         if not uri.startswith("https://") and not uri.startswith("http://localhost"):
             raise ValidationError({"redirect_uris": "Use https:// redirect URIs (http://localhost for development)."})
         uris.append(uri.strip())
-    unknown = set(data["allowed_scopes"]) - person_scopes.person_scope_vocabulary()
+    unknown = set(data["allowed_scopes"]) - person_scopes.person_scope_vocabulary() - {"openid"}
     if unknown:
         raise ValidationError({"allowed_scopes": f"Unknown scope(s): {', '.join(sorted(unknown))}."})
     validate_exact_origins([uri.split("/", 3)[0] + "//" + uri.split("/", 3)[2] for uri in uris])

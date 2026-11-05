@@ -64,6 +64,17 @@ vocabulary is:
 
 `public:read` · `public:write` · `public:*` · `legacy:v1`
 
+Release 2 (#193) adds **area scopes** `public:<area>:read` / `public:<area>:write`: each
+public registry entry belongs to exactly one area (`apps/apiclients/scope_registry_areas.py`)
+and also accepts its area scope, so a client can hold, say, `public:catalogue:read` alone.
+`public:read`, `public:write` and `public:*` keep their meaning. Area scopes are tenant
+grantable. A **peer** client (`client_type="peer"`, another space's backend) signs like a
+server client but may hold only `public:catalogue:read`, `public:events:read` and
+`public:stats:read`, reaches GET/HEAD only, and only its own space's routes -- enforced at
+grant time and again on every request (`scope_registry_verdicts.peer_may_reach`).
+Every URL route outside the protected prefixes is listed with the credential that serves it
+in `scope_registry_coverage.py`; `apiclients.E003` refuses startup on an unlisted one.
+
 `admin:read`, `admin:write`, `admin:*` and `reports:read` are retired: no protected route
 ever used them. They are absent from the grant catalog and new grants are rejected.
 Existing stored values confer no access and are reported as outside the vocabulary by

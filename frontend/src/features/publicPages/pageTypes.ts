@@ -15,6 +15,8 @@ export type SectionPayloads = {
   // Release 2 L18: the opt-in sponsor wall (derived live from the space's public sponsor rows).
   sponsors: Api.Titled;
   shop: Api.Titled;
+  // Release 2 (#128 C-36): event pages only; approved crew who opted in, derived live.
+  crew: Api.Titled;
 };
 export type SectionType = keyof SectionPayloads;
 export type PageSection = { [K in SectionType]: { id: string; type: K; enabled: boolean; payload: SectionPayloads[K] } }[SectionType];

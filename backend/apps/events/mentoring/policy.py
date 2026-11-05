@@ -75,3 +75,33 @@ def is_conflicted(*, member_id, team_id, round_id=None):
     return MentorConflict.objects.filter(mentor__in=roles, team_id=team_id, active=True).exists() or (
         MentorTeamAssignment.objects.filter(mentor_assignment__in=roles, team_id=team_id,
                                             state__in=["active", "ended"]).exists())
+
+
+def drop_in_allowed(event):
+    """Mentor help without a team (#128 C-36, E2-f): any event that is not a team hackathon.
+
+    A hackathon here is what the programme context calls one: an enabled `HackathonConfig`
+    while `events.hackathons` is on. Hackathons keep their team-only queue unchanged.
+    """
+    from apps.events.hackathons.admission_feature import hackathon_enabled
+    from apps.events.hackathons.admission_models import HackathonConfig
+    return not (hackathon_enabled(event.makerspace) and HackathonConfig.objects.filter(event=event, enabled=True).exists())
+
+
+def request_eligible(*, assignment, profile, row, **kwargs):
+    """`visit_eligible` for a team request; a drop-in only refuses the requester themself."""
+    if row.team_id is None:
+        if assignment.member_id == row.raised_by_id:
+            return False
+        tags = kwargs.get("skill_tags") or ()
+        return not tags or bool(set(profile.skills) & set(tags))
+    return visit_eligible(assignment=assignment, profile=profile, team_id=row.team_id, **kwargs)
+
+
+def request_alias(row, event):
+    """What mentors see for the asker: the team's alias, or a drop-in's first name only."""
+    if row.team_id is not None:
+        return ports().teams.alias(event_id=event.pk, team_id=row.team_id)
+    user = row.raised_by
+    first = ((getattr(user, "first_name", "") or getattr(user, "display_name", "") or "").split(" ") or [""])[0]
+    return f"{first or 'Attendee'} (drop-in)"

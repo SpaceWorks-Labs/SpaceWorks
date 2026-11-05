@@ -176,11 +176,23 @@ class PublicShop(Titled):
     collection_url = s.CharField()
 
 
+class PublicCrewCard(s.Serializer):
+    handle = s.CharField()
+    display_name = s.CharField(allow_blank=True)
+    crew_role = s.CharField(allow_blank=True)
+
+
+class PublicCrew(Titled):
+    """Release 2 (#128 C-36): approved crew who opted in and keep a live public profile."""
+
+    results = PublicCrewCard(many=True)
+
+
 PUBLIC_PAYLOADS = {"about": About, "gallery": PublicGallery, "team": PublicTeam,
     "testimonials": Testimonials, "links": Links, "upcoming_events": PublicUpcoming,
     "organization_events": PublicOrganizationEvents, "linked_makerspaces": PublicLinkedSpaces,
     "stats": PublicStats, "location": PublicLocation, "functional_content": PublicFunctional,
-    "membership_plans": PublicMembershipPlans, "sponsors": PublicSponsors, "shop": PublicShop}
+    "membership_plans": PublicMembershipPlans, "sponsors": PublicSponsors, "shop": PublicShop, "crew": PublicCrew}
 
 
 class ProjectedSection(s.Serializer):

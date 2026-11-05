@@ -23,6 +23,8 @@ DEFAULT_BADGE_TEMPLATE = {
 }
 SAFE_FIELDS = frozenset({
     "name", "event_title", "date_time", "location", "registration_number",
+    # Release 2 (#128 C-36): the crew chip; blank for participants and while `events.crew` is off.
+    "crew_role",
 })
 SENSITIVE_FIELDS = frozenset({"email", "phone"})
 MAX_BADGES = 200

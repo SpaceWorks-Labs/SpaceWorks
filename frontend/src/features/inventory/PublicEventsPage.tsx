@@ -103,7 +103,9 @@ export function PublicEventsPage() {
       {discovery.view === "calendar" && discovery.month ? <MonthCalendar month={discovery.month} timeZone={discovery.timeZone} label="Upcoming public events" entries={visibleEvents.map(item => ({ id: item.public_token, startsAt: item.starts_at, endsAt: item.ends_at, label: item.title, href: `#event-${item.public_token}` }))} /> : null}
       {!visibleEvents.length ? <EmptyState message={events.data?.length ? "No matching events. Try another search, filter or month." : "No upcoming events. Check back soon."} /> : null}
       <div className="grid gap-7">{groupedEvents.map(group => <section key={group.key} aria-label={group.title ?? undefined}>
-        {group.title ? <div className="mb-3"><p className="text-sm text-muted">Recurring series</p><h2 className="title-panel">{group.title}</h2></div> : null}
+        {group.title ? <div className="mb-3"><p className="text-sm text-muted">Recurring series</p><h2 className="title-panel">{group.title}</h2>
+          {group.items[0]?.series?.id && group.items[0].series.passes_enabled ? <a className="mt-2 inline-flex text-sm font-semibold text-brand-ink underline"
+            href={tenantPath(`member/series/${group.items[0].series.id}/passes`)}>Buy a series pass</a> : null}</div> : null}
         <div className="grid gap-5">{group.items.map(item => <PublicEventCard key={item.public_token} event={item} href={tenantPath(`events/${item.public_token}`)}
           time={eventTime(item, discovery.timeZone)} calendarPending={calendarToken === item.public_token} onCalendar={() => downloadCalendar(item)}
           calendarError={calendarError?.token === item.public_token ? calendarError.message : undefined} />)}</div>

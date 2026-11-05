@@ -1,3 +1,4 @@
+from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
 from rest_framework.response import Response
@@ -18,12 +19,13 @@ class HelpCollectionView(ProgrammeView):
         rows = EventHelpRequest.objects.filter(event=event, practice_run_id__isnull=True).select_related("type").order_by("-priority", "created_at", "pk")
         if not self.admin:
             ids = ports().teams.own_ids(actor_id=request.user.pk, event_id=pk)
-            rows = rows.filter(team_id__in=ids)
+            # A drop-in asker (no team) sees only the requests they raised themself.
+            rows = rows.filter(Q(team_id__in=ids) | Q(team__isnull=True, raised_by=request.user))
         elif not policy.queue_manager(request.user, event):
             mentor, profile = policy.mentor_for(request.user, event)
             ids = [row.pk for row in rows if row.claimed_by_id == mentor.pk or (
-                row.state == "open" and policy.visit_eligible(assignment=mentor, profile=profile,
-                    team_id=row.team_id, skill_tags=row.type.skill_tags, priority_until=row.exclusive_until))]
+                row.state == "open" and policy.request_eligible(assignment=mentor, profile=profile,
+                    row=row, skill_tags=row.type.skill_tags, priority_until=row.exclusive_until))]
             rows = rows.filter(pk__in=ids)
         return paginated(request, rows, lambda row: projections.help_request(row, actor=request.user,
             event=event, member=not self.admin))

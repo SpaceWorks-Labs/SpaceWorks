@@ -6,6 +6,12 @@
 
 ## Condensed changelog (newest first — full detail in `git log`)
 
+- **2026-11-05 -- release 2 GAP crew lane (#128 C-36, E2-f, AN-c1, L6 member UI).** Mentor Desk works on
+  any event (drop-in help and office hours without teams; `events.mentoring` no longer needs hackathons),
+  the crew chip on event ID cards, tickets and badges, opt-in Saved-details catering prefill on crew
+  sign-up, a Crew section for event pages, L21a application stages in the event funnel, and member
+  screens to buy a series pass, transfer a ticket and change its type.
+
 - **2026-11-05 -- RP-3 donations reports (gap lane, after L18).** Finance-only reports for campaign
   progress, pledges (active, missed, paused, cancelled) and sponsor perks due or fulfilled, plus the
   `finance-donations` ledger area; per space, organization-excluded, never a donor name, contact or PAN.

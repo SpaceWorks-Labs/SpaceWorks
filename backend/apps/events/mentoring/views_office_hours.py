@@ -1,3 +1,4 @@
+from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema
@@ -16,13 +17,14 @@ from .serializers import BookingSerializer, BookingInputSerializer
 class OfficeHoursListView(ProgrammeView):
     @extend_schema(responses={200: page_schema("OfficeHoursSlotPage", ShiftSerializer), **ERRORS})
     def get(self, request, pk, makerspace_id):
-        self.event(request, pk, makerspace_id)
+        event = self.event(request, pk, makerspace_id)
         own = ports().teams.own_ids(actor_id=request.user.pk, event_id=pk)
         for team_id in own:
             ports().teams.require_eligible(event_id=pk, team_id=team_id, at=timezone.now())
         if not own:
-            from rest_framework.exceptions import PermissionDenied
-            raise PermissionDenied()
+            # A drop-in attendee of an event without teams (#128 C-36, E2-f); refuses everyone else.
+            from .help_workflow import _attendee
+            _attendee(request.user, event)
         rows = EventShift.objects.filter(event_id=pk, kind="office_hours", state="open").order_by("starts_at", "pk")
         return paginated(request, rows, shift)
 
@@ -32,8 +34,8 @@ class OfficeHoursBookingListView(ProgrammeView):
     def get(self, request, pk, makerspace_id):
         self.event(request, pk, makerspace_id)
         own = ports().teams.own_ids(actor_id=request.user.pk, event_id=pk)
-        return paginated(request, OfficeHoursBooking.objects.filter(event_id=pk,
-            team_id__in=own).order_by("pk"), booking)
+        return paginated(request, OfficeHoursBooking.objects.filter(event_id=pk).filter(
+            Q(team_id__in=own) | Q(team__isnull=True, booked_by=request.user)).order_by("pk"), booking)
 
 
 class OfficeHoursBookingCreateView(ProgrammeView):

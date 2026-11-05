@@ -27,11 +27,36 @@ def _team(actor, event, team_id):
     ports().teams.require_eligible(event_id=event.pk, team_id=team_id, at=timezone.now())
 
 
+def _attendee(actor, event):
+    """A drop-in asker (#128 C-36, E2-f): a confirmed registrant of an event without teams."""
+    from apps.events.models import EventRegistration
+    commands.active_member(actor)
+    if not policy.drop_in_allowed(event):
+        raise ProgrammeError("team_required", "Ask for help from your team's page.", status=400)
+    if not EventRegistration.objects.filter(event=event, member=actor, status__in=("registered", "attended")).exists():
+        raise ProgrammeError("registration_required", "Only confirmed attendees can ask a mentor.", status=403)
+
+
+def _asker(actor, event, row):
+    """Member-surface access to one request: its team, or the drop-in who raised it."""
+    if row.team_id is None:
+        _attendee(actor, event)
+        if row.raised_by_id != actor.pk:
+            raise ProgrammeError("not_found", "Not found.", status=404)
+    else:
+        _team(actor, event, row.team_id)
+
+
 def create(*, actor, event_id, payload, mentor_origin=False):
-    team_id = payload["team_id"]
+    team_id = payload.get("team_id")
+    drop_in = team_id is None and not mentor_origin
 
     def authorize(event):
-        if mentor_origin:
+        if team_id is None and mentor_origin:
+            raise ProgrammeError("team_required", "Choose the team you are raising help for.", status=400)
+        if drop_in:
+            _attendee(actor, event)
+        elif mentor_origin:
             assignment, profile = policy.mentor_for(actor, event)
             if not policy.visit_eligible(assignment=assignment, profile=profile, team_id=team_id):
                 raise ProgrammeError("mentor_not_eligible", "You cannot visit this team.", status=403)
@@ -45,12 +70,18 @@ def create(*, actor, event_id, payload, mentor_origin=False):
         if payload["expected_version"] != 0:
             raise ProgrammeError("stale_version", "Use version zero for a new request.")
         practice = payload.get("practice_run_id")
-        ports().teams.require_practice(event_id=event.pk, team_id=team_id,
-                                       practice_run_id=str(practice) if practice else None)
-        rows = EventHelpRequest.objects.filter(event=event, team_id=team_id, type=help_type,
-            practice_run_id=practice, state__in=["open", "claimed"])
+        if drop_in:
+            if practice:
+                raise ProgrammeError("practice_scope_mismatch", "Practice runs use teams.", status=404)
+            rows = EventHelpRequest.objects.filter(event=event, team__isnull=True, raised_by=actor, type=help_type,
+                                                   state__in=["open", "claimed"])
+        else:
+            ports().teams.require_practice(event_id=event.pk, team_id=team_id,
+                                           practice_run_id=str(practice) if practice else None)
+            rows = EventHelpRequest.objects.filter(event=event, team_id=team_id, type=help_type,
+                practice_run_id=practice, state__in=["open", "claimed"])
         if rows.count() >= help_type.open_limit:
-            raise ProgrammeError("help_limit_reached", "This team already has an open request in this category.")
+            raise ProgrammeError("help_limit_reached", "There is already an open request in this category.")
         assignment = policy.mentor_for(actor, event)[0] if mentor_origin else None
         if mentor_origin:
             _, profile = policy.mentor_for(actor, event)
@@ -59,7 +90,7 @@ def create(*, actor, event_id, payload, mentor_origin=False):
                 raise ProgrammeError("mentor_not_eligible", "This category needs another mentor.", status=403)
         row = commands.new_row(EventHelpRequest, event, team_id=team_id, type=help_type,
             raised_by=actor, raised_by_role_assignment=assignment,
-            origin="mentor" if mentor_origin else "team", structured_zone=payload.get("zone", {}),
+            origin="mentor" if mentor_origin else "attendee" if drop_in else "team", structured_zone=payload.get("zone", {}),
             summary=payload["summary"], priority=help_type.priority,
             exclusive_until=timezone.now() + timedelta(minutes=5), practice_run_id=practice,
             expires_at=min(event.ends_at, timezone.now() + timedelta(minutes=help_type.expiry_minutes)))
@@ -67,13 +98,14 @@ def create(*, actor, event_id, payload, mentor_origin=False):
         return row
 
     return commands.run(actor=actor, event_id=event_id, operation_id=payload["operation_id"], payload=payload,
-        action="help.raise_mentor" if mentor_origin else "help.raise_team", feature="events.mentoring",
+        action=("help.raise_mentor" if mentor_origin else "help.raise_drop_in" if drop_in else "help.raise_team"),
+        feature="events.mentoring",
         permission="mentor_queue" if mentor_origin else False, authorize=authorize, mutate=mutate, status=201)
 
 
 def _detail_access(actor, event, row, *, member_surface=False):
     if member_surface:
-        _team(actor, event, row.team_id)
+        _asker(actor, event, row)
     elif not policy.queue_manager(actor, event):
         assignment, _ = policy.mentor_for(actor, event)
         if row.claimed_by_id != assignment.pk:
@@ -91,7 +123,7 @@ def command(*, actor, event_id, help_id, payload, action, member_surface=False):
     def authorize(event):
         current = get_object_or_404(EventHelpRequest, pk=help_id, event=event)
         if member_surface:
-            _team(actor, event, current.team_id)
+            _asker(actor, event, current)
         elif action in ("reopen", "assign"):
             policy.require_queue_manager(actor, event)
         elif action != "claim":
@@ -117,7 +149,7 @@ def command(*, actor, event_id, help_id, payload, action, member_surface=False):
                 assignment, profile = policy.mentor_for(target.member, event, assignment_id=target.pk)
             else:
                 assignment, profile = policy.mentor_for(actor, event)
-            if not policy.visit_eligible(assignment=assignment, profile=profile, team_id=row.team_id,
+            if not policy.request_eligible(assignment=assignment, profile=profile, row=row,
                     skill_tags=row.type.skill_tags, priority_until=row.exclusive_until):
                 raise ProgrammeError("mentor_not_eligible", "This request needs another mentor.", status=403)
             if EventHelpRequest.objects.filter(state="claimed", claimed_by=assignment,
@@ -136,7 +168,7 @@ def command(*, actor, event_id, help_id, payload, action, member_surface=False):
             assignment, profile = policy.mentor_for(actor, event)
             if row.claimed_by_id != assignment.pk or str(row.claim_uuid) != str(payload["claim_uuid"]) or row.claim_generation != payload["claim_generation"]:
                 raise ProgrammeError("lease_lost", "This claim belongs to another visit.")
-            if not policy.visit_eligible(assignment=assignment, profile=profile, team_id=row.team_id,
+            if not policy.request_eligible(assignment=assignment, profile=profile, row=row,
                     skill_tags=row.type.skill_tags):
                 raise ProgrammeError("mentor_not_eligible", "This claim is no longer eligible.", status=403)
             commands.changed(row, claim_expires_at=min(help_expiry.deadline(row, event),

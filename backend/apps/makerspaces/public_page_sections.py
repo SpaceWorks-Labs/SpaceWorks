@@ -132,4 +132,6 @@ PAYLOADS = {"about": About, "gallery": Gallery, "team": Team, "testimonials": Te
             # Release 2 L18: the opt-in sponsor wall (live public sponsor fields, `finance.sponsors`).
             "sponsors": Titled,
             # Release 2 L22: public shop items (live, `shop.online`).
-            "shop": Titled}
+            "shop": Titled,
+            # Release 2 (#128 C-36): event pages only; live crew cards, `events.crew`.
+            "crew": Titled}

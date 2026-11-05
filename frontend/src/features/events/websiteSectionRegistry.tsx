@@ -4,7 +4,7 @@ import type { PublicPageSection } from "../publicPages/pageTypes";
 import type { PublicEventEditorialDocument } from "../../generated/api";
 
 export const eventSectionProviderVersion = 1;
-export const eventEditorialTypes = ["about", "gallery", "team", "testimonials", "links"] as const;
+export const eventEditorialTypes = ["about", "gallery", "team", "testimonials", "links", "crew"] as const;
 type EditorialType = typeof eventEditorialTypes[number];
 export type EventSectionProvider<K extends EditorialType> = {
   schema_version: 1; key: K;
@@ -16,6 +16,7 @@ function provider<K extends EditorialType>(key: K): EventSectionProvider<K> {
 /** Only server-projected, registered sections render. Adding a provider also requires its backend schema/gates. */
 export const eventSectionProviders = {
   about: provider("about"), gallery: provider("gallery"), team: provider("team"), testimonials: provider("testimonials"), links: provider("links"),
+  crew: provider("crew"),
 } satisfies { [K in EditorialType]: EventSectionProvider<K> };
 // Reserved names are documentation, never writable provider registrations.
 export const futureEventProviders = ["prizes", "judges", "mentors", "project_gallery", "results"] as const;
@@ -29,6 +30,7 @@ export function EventEditorialSections({ projection, image }: { projection: Pick
       case "team": content = eventSectionProviders.team.render(section, image); break;
       case "testimonials": content = eventSectionProviders.testimonials.render(section, image); break;
       case "links": content = eventSectionProviders.links.render(section, image); break;
+      case "crew": content = eventSectionProviders.crew.render(section, image); break;
       default: return null;
     }
     return <div key={section.id}>{content}</div>;

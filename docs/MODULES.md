@@ -340,8 +340,8 @@ deletes this data with its events.
 
 **Programme checkpoint (2026-10-18, `f1ef7736`): keep the new features off.** Hackathons
 are features inside Events, not a separate module. Five declared switches default off:
-`events.hackathons`, `events.mentoring` (requires hackathons), `events.mentor_rounds`
-(requires mentoring), `events.volunteering`, and `events.project_gallery` (requires
+`events.hackathons`, `events.mentoring` (since release 2 it no longer requires hackathons: Mentor Desk
+works on any event), `events.mentor_rounds` (requires mentoring and hackathons), `events.volunteering`, and `events.project_gallery` (requires
 hackathons). Release 2 adds one more, off and requiring hackathons: `events.pairwise_judging` (a third
 judging mode). KiCad files stay download-only (owner, 2026-10-29). Each hackathon also needs its disabled-by-default event config enabled.
 Volunteering can serve ordinary events. Schema, routes and generated API exist; live
@@ -1009,8 +1009,8 @@ its parent module is off.
 | `bookings.exports` | `bookings` (needs `reports`) | | Tenant-local reservation contacts and custom-answer previews/CSV/XLSX, requiring resource management AND audit | New detail exports refuse; booking history stays |
 | `events.organization_audience` | `events` | | Live organizer/venue-owner membership audience; no membership or account-registration prerequisite | Configuration and new admission refuse; existing owned tickets remain |
 | `events.hackathons` | `events` | | Off-default programme applications, RSVP, teams and submissions; event config also required; integration pending | Programme actions refuse; history retained |
-| `events.mentoring` | `events` | `events.hackathons` feature | Off-default mentor assignments/help/office hours; integration pending | Mentor surfaces refuse; retained work/history remain |
-| `events.mentor_rounds` | `events` | `events.mentoring` feature | Off-default leased mentor check-in rounds; integration pending | Round actions refuse; history retained |
+| `events.mentoring` | `events` | | Off-default Mentor Desk: mentor assignments, the help queue and office hours. A hackathon's teams ask as teams; on any other event a confirmed attendee drops in on their own (release 2, #128 C-36) | Mentor surfaces refuse; retained work/history remain |
+| `events.mentor_rounds` | `events` | `events.mentoring` and `events.hackathons` features | Off-default leased mentor check-in rounds (they visit teams) | Round actions refuse; history retained |
 | `events.volunteering` | `events` | | Off-default ordinary-event/hackathon postings/shifts/verified hours; integration pending | Volunteer actions refuse; retained hours/history remain |
 | `events.project_gallery` | `events` | `events.hackathons` feature | Off-default frozen public project selections with live consent; integration pending | Public gallery/bytes refuse; private snapshots retained |
 | `events.pairwise_judging` | `events` | `events.hackathons` feature | Off-default third judging mode: judges say which of two projects was better (CrowdBT ranking, at least three comparisons per project) | Pairwise routes 404, new pairwise rounds and their open/close/finalize refuse with 403; rounds, comparisons and cursors are kept and resume when switched back on |
@@ -1063,7 +1063,7 @@ its parent module is off.
 | `events.applications` | `events` | | Applications for any one-off event: a form, review, offer, RSVP and waitlist, like hackathon admission without teams; paid places are charged after confirming | Application routes answer 404 on events without hackathons; applications are kept |
 | `events.application_stages` | `events` (needs `events.applications`) | | Review stages: a panel per stage, at most ten criteria scored 1 to 5, blind review, 1 to 20 reviews per application, a seeded BALANCED or RANDOM assignment and an "advance" decision; an optional stage-advanced email per event | One review round per application; stages, panels and reviews are kept |
 | `events.attendance_confirmation` | `events` | | Staff ask registered people "Are you still coming?" (12 hours apart, never automatic); replies show in the guest list, at the desk and in the export; per event, a No can free the place | No attendance emails or reply page; replies are kept |
-| `events.crew` | `events` | | The event crew: a reviewed sign-up link, free crew places outside capacity, a catering count, an opt-in public crew section and a crew chip on badges and cards; crew gain no staff access | No crew screens or sign-up; crew rows and places are kept |
+| `events.crew` | `events` | | The event crew: a reviewed sign-up link (dietary needs can be filled from Saved details when the member asks), free crew places outside capacity, a catering count, an opt-in public crew section (per event, and as a Crew section on the event's page), and a crew chip (Mentor or the crew role) on event ID cards, tickets and badges; crew gain no staff access | No crew screens or sign-up; no chip; the page section renders nothing; crew rows and places are kept |
 | `events.crew_claims` | `events` (needs `events.crew` and `event_reimbursements`) | | Crew members claim expenses through event reimbursements; money out goes through the expense ledger | Crew expense requests are refused |
 | `events.checkin_lists` | `events` | | Swag, meal and workshop lists beside entry check-in, optionally only after entry or only for buyers of an add-on (counted by quantity); online only | No lists; scans are kept |
 | `events.finalists` | `events` (needs `events.hackathons`) | | Advance the top N (ties kept) or hand-picked projects of a finalized round into a draft round, then publish them separately: a finalists block on the public results page, an optional finalists email and finalist certificates; results and prizes come from the final round | Finalist routes answer 404; advances and announcements are kept |

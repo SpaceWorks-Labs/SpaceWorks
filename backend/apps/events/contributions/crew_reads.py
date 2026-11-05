@@ -39,12 +39,13 @@ def catering(event):
             "needs": [{"label": label, "count": count} for label, count in sorted(needs.items())]}
 
 
-def public_crew(event):
+def public_crew(event, *, require_switch=True):
     from apps.makerspaces.models_profiles import PublicHandle
     from apps.makerspaces.profile_services import display_name_for
     from apps.makerspaces.public_profile_access import profile_is_public
     from apps.events.models_participation import EventParticipationSettings
-    if not EventParticipationSettings.for_event(event).crew_public_section:
+    # The per-event block reads the event's switch; a Pages section is its own opt-in (#165 auto).
+    if require_switch and not EventParticipationSettings.for_event(event).crew_public_section:
         return []
     rows = EventCrewMember.objects.filter(event=event, state="approved", show_publicly=True).order_by("pk")
     handles = {claim.user_id: claim for claim in PublicHandle.objects.filter(
@@ -63,3 +64,20 @@ def crew_flags(registration_ids):
     """Registration id -> crew role, for badges, tickets and event cards (L3 reads the flag)."""
     rows = EventCrewMember.objects.filter(state="approved").filter(registration_id__in=registration_ids)
     return {row.registration_id: row.crew_role or "Crew" for row in rows}
+
+
+def crew_label(crew_role):
+    """The chip text: "Mentor" for a mentor crew ticket, else the crew's own label, else "Crew"."""
+    role = (crew_role or "").strip()
+    if role.casefold() == "mentor":
+        return "Mentor"
+    return role[:60] or "Crew"
+
+
+def crew_labels(event, registration_ids):
+    """Registration id -> chip text for badges, tickets and event cards; empty while `events.crew` is off."""
+    from apps.makerspaces.platform import feature_enabled
+    if not registration_ids or not feature_enabled(event.makerspace, "events.crew"):
+        return {}
+    rows = EventCrewMember.objects.filter(event=event, state="approved", registration_id__in=list(registration_ids))
+    return {row.registration_id: crew_label(row.crew_role) for row in rows}

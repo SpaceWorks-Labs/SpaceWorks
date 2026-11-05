@@ -26,6 +26,7 @@ def render_ticket(registration, *, fmt="pdf"):
     from apps.card_designs.rendering import RenderContext, render_pdf, render_png
     from apps.card_designs.resolution import resolve
     from apps.card_designs.switches import domain_on
+    from .contributions.crew_reads import crew_labels
     from .id_cards_holder import _organisers
     event = registration.event
     if not domain_on(event.makerspace, "event_ticket"):
@@ -37,7 +38,8 @@ def render_ticket(registration, *, fmt="pdf"):
     values = {"name": registration.name, "event": event.title, "number": f"EV-{event.pk}-{registration.pk}",
               "plan": registration.ticket_type.name if registration.ticket_type_id else "Ticket",
               "valid_until": fmt_date(event.ends_at), "issued_on": fmt_date(registration.created_at),
-              "space": event.makerspace.name, "role": "Attendee"}
+              "space": event.makerspace.name,
+              "role": crew_labels(event, [registration.pk]).get(registration.pk, "Attendee")}
     context = RenderContext(values=values, desk_qr=ticket_payload(registration))
     name = slugify(f"ticket-{event.pk}-{registration.name}")[:80] or f"ticket-{registration.pk}"
     if fmt == "png":

@@ -14,6 +14,7 @@ import { ContributionsPage } from '../contributions/ContributionsPage'
 import type { EventScope } from '../contributions/types'
 import { ProgrammeRolePage } from './ProgrammeRolePage'
 import { TeamJourney } from './TeamJourney'
+import { DropInJourney } from './DropInJourney'
 import { PhotoChoice } from '../eventPresentation/PhotoChoice'
 import { EventResumePanel } from './EventResumePanel'
 import { TakeTeamInvitation } from './TakeTeamInvitation'
@@ -53,6 +54,8 @@ function MemberContent({ publicToken, accountId }: { publicToken: string; accoun
         {['project', 'help', 'office-hours', 'sharing'].map(section => <Route key={section} path={`${section}/*`}
           element={<TeamJourney context={current} scope={scope} section={section} base={base} />} />)}
       </> : null}
+      {current.programme.kind !== 'hackathon' && current.programme.capabilities['events.mentoring'] ? ['help', 'office-hours'].map(section =>
+        <Route key={section} path={`${section}/*`} element={<DropInJourney scope={scope} section={section} />} />) : null}
       {current.routes.role_postings ? <>
         <Route path="contribute" element={<ContributionsPage scope={scope} onApply={posting => navigate(`${base}/roles/${posting.id}`)}
           onOpenApplication={application => navigate(`${base}/role-applications/${application.id}`)}
@@ -78,7 +81,9 @@ export function availableJourneys(context: ProgrammeContext) {
   const hackathon = programme.kind === 'hackathon' && programme.capabilities['events.hackathons']
   return [programmeRoutes.application, ...(hackathon ? [programmeRoutes.team,
     ...(programme.finder_enabled ? [programmeRoutes.finder] : []), programmeRoutes.project,
-    ...(programme.capabilities['events.mentoring'] ? [programmeRoutes.help, programmeRoutes.officeHours] : []), programmeRoutes.sharing] : []),
+    ...(programme.capabilities['events.mentoring'] ? [programmeRoutes.help, programmeRoutes.officeHours] : []), programmeRoutes.sharing]
+    // Mentor Desk on any event (#128 C-36, E2-f): attendees drop in without a team.
+    : programme.capabilities['events.mentoring'] ? [programmeRoutes.help, programmeRoutes.officeHours] : []),
     ...(routes.role_postings ? [programmeRoutes.contribute] : []), programmeRoutes.presentation, ...(programme.capabilities['events.volunteering'] ? [{ suffix: 'shifts', label: 'Available shifts', name: 'event-programme-shifts' }] : [])]
 }
 function RoleRoute({ scope, context, base }: { scope: EventScope; context: ProgrammeContext; base: string }) {

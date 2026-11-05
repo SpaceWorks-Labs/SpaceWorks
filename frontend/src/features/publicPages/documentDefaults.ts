@@ -6,6 +6,7 @@ export const sectionLabels: Record<SectionType, string> = {
   organization_events: "Organization events", functional_content: "Tools, spaces and activities",
   membership_plans: "Membership plans", sponsors: "Sponsors",
   shop: "Shop",
+  crew: "Crew",
 };
 export const emptyDocument = (): PageDocument => ({ schema_version: 1, cover_mode: "inherit", cover_asset_id: null, accent_choice: "inherit", sections: [] });
 export function newSection<K extends SectionType>(type: K): Extract<PageSection, { type: K }> {
@@ -17,6 +18,7 @@ export function newSection<K extends SectionType>(type: K): Extract<PageSection,
     linked_makerspaces: { title: "" }, organization_events: { title: "" }, functional_content: {},
     membership_plans: { title: "" }, sponsors: { title: "" },
     shop: { title: "" },
+    crew: { title: "" },
   };
   return { id: crypto.randomUUID(), type, enabled: true, payload: defaults[type] } as Extract<PageSection, { type: K }>;
 }

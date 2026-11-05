@@ -9,6 +9,7 @@ import { ProjectedEventCollection } from "./ProjectedEventCollection";
 import { PublicPlanCards } from "./PublicPlanCards";
 import { PublicSponsorCards } from "./PublicSponsorCards";
 import { PublicShopCards } from "./PublicShopCards";
+import { PublicCrewCards } from "./PublicCrewCards";
 const metricLabels = {
   public_exact_count_subset_units: "Exact-count inventory subset",
   published_event_count: "Published events",
@@ -36,6 +37,7 @@ function Content({ section, image, functional, organizationCollections, token, s
     case "membership_plans": return <PublicPlanCards rows={section.payload.results} slug={slug} />;
     case "sponsors": return <PublicSponsorCards rows={section.payload.results} />;
     case "shop": return <PublicShopCards shop={section.payload} slug={slug} />;
+    case "crew": return <PublicCrewCards rows={section.payload.results} />;
     case "organization_events": return organizationCollections ?? <div className="grid gap-6"><section><h3 className="title-section mb-3">Upcoming events</h3><PublicEventCards rows={section.payload.upcoming.results} /></section><section><h3 className="title-section mb-3">Past event archive</h3><PublicEventCards rows={section.payload.past.results} past /></section></div>;
     case "functional_content": return functional ?? <ul className="flex flex-wrap gap-2">{section.payload.links.map(link => <li key={link.url}><RouteLink className="desk-button" href={safePublicLink(link.url)}>{({ inventory: "Browse inventory", events: "See events", bookings: "Book a space", machines: "Explore machines", membership: "Member area" })[link.family]}</RouteLink></li>)}</ul>;
     default: return null;
@@ -46,7 +48,7 @@ function Content({ section, image, functional, organizationCollections, token, s
 function isEmptyDerived(section: PublicPageSection) {
   if (section.type === "stats") return Object.keys(section.payload.metrics).length === 0;
   if (section.type === "location") return !section.payload.enabled_publicly;
-  if (section.type === "sponsors") return !section.payload.results?.length;
+  if (section.type === "sponsors" || section.type === "crew") return !section.payload.results?.length;
   return false;
 }
 

@@ -15,6 +15,7 @@ import { MemberAuthPanel } from "../members/MemberAuthPanel";
 import { googleCalendarUrl, saveTicketBlob, type CalendarFields } from "./eventConfirmation";
 import { LiveTicketState } from "./eventPresentation/LiveTicketState";
 import { PhotoChoice } from "./eventPresentation/PhotoChoice";
+import { TicketManageActions } from "./ticketing/TicketManageActions";
 
 export type MemberEventTicket = Omit<import('../../generated/api').ProgrammeTicket, 'event'> & {
   event: CalendarFields & { id?: number; public_token: string; timezone_name: string; status: string };
@@ -95,6 +96,7 @@ export function MemberEventTicketPage() {
           {confirmed(current.status) && ["published", "completed"].includes(current.event.status) ? <a className="desk-button flex-1" href={googleCalendarUrl(current.event)} target="_blank" rel="noopener noreferrer">Add to Google Calendar</a> : null}
           <button className="desk-button flex-1" type="button" disabled={calendar.isPending} onClick={() => calendar.mutate()}>Download registration calendar</button>
         </div>
+        {makerspaceId ? <TicketManageActions makerspaceId={makerspaceId} makerspaceSlug={makerspaceSlug} registrationId={current.registration_id} status={current.status} event={current.event} /> : null}
         <RouteLink className="desk-button" href={tenantPath("member/events/history")}>Your event history</RouteLink>
         {current.event.id && makerspaceId ? <PhotoChoice actorId={identity.data?.id} makerspaceId={makerspaceId} eventId={current.event.id} eventName={current.event.title} /> : null}
         {calendar.error ? <ErrorText message="Could not download this calendar." /> : null}

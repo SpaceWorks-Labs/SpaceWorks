@@ -8,7 +8,8 @@ class ZoneSerializer(StrictSerializer):
 
 
 class HelpCreateSerializer(CommandSerializer):
-    team_id = serializers.IntegerField(min_value=1)
+    # Omit for a drop-in request on an event without hackathon teams (#128 C-36, E2-f).
+    team_id = serializers.IntegerField(min_value=1, required=False, allow_null=True)
     type_key = serializers.SlugField(max_length=40)
     summary = serializers.CharField(max_length=2000)
     zone = ZoneSerializer(required=False)
@@ -33,8 +34,8 @@ class AssignHelpSerializer(ReopenInputSerializer):
 
 class HelpSerializer(AggregateSerializer):
     state = serializers.ChoiceField(choices=["open", "claimed", "resolved", "cancelled", "expired"])
-    origin = serializers.ChoiceField(choices=["team", "mentor", "round"], required=False)
-    team_id = serializers.IntegerField(required=False)
+    origin = serializers.ChoiceField(choices=["team", "mentor", "round", "attendee"], required=False)
+    team_id = serializers.IntegerField(required=False, allow_null=True)
     team_alias = serializers.CharField(required=False)
     category = serializers.CharField(required=False)
     priority = serializers.IntegerField(required=False)
@@ -62,12 +63,13 @@ class CommentSerializer(serializers.Serializer):
 
 
 class BookingInputSerializer(CommandSerializer):
-    team_id = serializers.IntegerField(min_value=1)
+    # Omit for a drop-in booking on an event without hackathon teams (#128 C-36, E2-f).
+    team_id = serializers.IntegerField(min_value=1, required=False, allow_null=True)
 
 
 class BookingSerializer(AggregateSerializer):
     state = serializers.ChoiceField(choices=["booked", "cancelled"])
-    team_id = serializers.IntegerField()
+    team_id = serializers.IntegerField(allow_null=True)
     slot_id = serializers.IntegerField()
 
 

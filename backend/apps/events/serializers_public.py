@@ -158,12 +158,17 @@ class PublicEventSerializer(OrganizationAudienceFields, EventTicketingPublicSeri
         'properties': {
             'public_token': {'type': 'string', 'format': 'uuid'},
             'title': {'type': 'string'},
+            'id': {'type': 'integer'},
+            'passes_enabled': {'type': 'boolean'},
         },
     })
     def get_series(self, obj):
         if not obj.series_id:
             return None
-        return {'public_token': obj.series.public_token, 'title': obj.series.title}
+        # Release 2 L6 member UI: the id opens the series-pass page while `events.series_passes` is on.
+        from apps.makerspaces.platform import feature_enabled
+        return {'public_token': obj.series.public_token, 'title': obj.series.title, 'id': obj.series_id,
+                'passes_enabled': feature_enabled(obj.makerspace, 'events.series_passes')}
 
 
 class PublicEventRegistrationInputSerializer(

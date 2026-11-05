@@ -21,7 +21,9 @@ import {
   PublicHandlePage, PublicEventCodePage, PayLinkPage, PresenceNowPage, PublicWebsiteDetailPage, HostingRequestPage,
   HostingInvitePage, HostingRequestStatusPage, PublicShopPage, PublicShopProductPage, ShopOrderStatusPage,
   MemberShopOrdersPage, MfaAccountPage, NotMePage, StaffInvitationAcceptPage, BookingStaffInvitePage, EventStaffInvitePage,
-  ProgrammeRoutes, CardRoutes, MemberEventAddonRoutes, DonationRoutes
+  ProgrammeRoutes, CardRoutes, MemberEventAddonRoutes, DonationRoutes, HelpPage,
+  TechnicianOptInPage, MyMachineJobsPage, AttendanceReplyPage, CrewSignupPage, ApplicationReviewsPage,
+  MachineJobPage, UseMachinePage, MySessionsPage,
 } from "./AppRoutesLazyPages";
 // Every public surface below is its own chunk. The makerspace page (which holds the catalogue) and the staff shell stay eager
 // because they are the two pages almost every visit lands on; everything else loads when its
@@ -50,15 +52,6 @@ const MemberAccountPage = lazy(() => import("./features/members/MemberAccountPag
 const PublicPrintRequestPage = lazy(() => import("./features/machine-jobs/PrintRequestAlias").then((m) => ({ default: m.PrintRequestAlias })));
 const PublicMachineServiceStatusPage = lazy(() => import("./features/machine-service/PublicMachineServiceStatusPage").then((m) => ({ default: m.PublicMachineServiceStatusPage })));
 const JobRequestPage = lazy(() => import("./features/machine-jobs/JobRequestPage").then((m) => ({ default: m.JobRequestPage })));
-const TechnicianOptInPage = lazy(() => import("./features/repairs/TechnicianOptInPage").then((m) => ({ default: m.TechnicianOptInPage })));
-const MyMachineJobsPage = lazy(() => import("./features/machine-jobs/MyMachineJobsPage").then((m) => ({ default: m.MyMachineJobsPage })));
-// Lane L21a: the "still coming?" reply page, the crew sign-up link and the review-panel workspace.
-const AttendanceReplyPage = lazy(() => import("./features/events/participation/AttendanceReplyPage").then((m) => ({ default: m.AttendanceReplyPage })));
-const CrewSignupPage = lazy(() => import("./features/events/participation/CrewSignupPage").then((m) => ({ default: m.CrewSignupPage })));
-const ApplicationReviewsPage = lazy(() => import("./features/events/participation/ApplicationReviewsPage").then((m) => ({ default: m.ApplicationReviewsPage })));
-const MachineJobPage = lazy(() => import("./features/machine-jobs/MachineJobPage").then((m) => ({ default: m.MachineJobPage })));
-const UseMachinePage = lazy(() => import("./features/machine-sessions/UseMachinePage").then((m) => ({ default: m.UseMachinePage })));
-const MySessionsPage = lazy(() => import("./features/machine-sessions/MySessionsPage").then((m) => ({ default: m.MySessionsPage })));
 
 // Tenant capabilities choose the home independently of the deployment edition.
 
@@ -211,6 +204,9 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
       <Route path="/guest-admin/*" element={<StaffApp guestOnly />} />
       <Route path="/scanner" element={<ScannerPage />} />
       <Route path="/kiosk/:stationToken" element={<KioskStationPage />} />
+      <Route path="/help" element={<HelpPage />} />
+      <Route path="/help/:sectionId" element={<HelpPage />} />
+      <Route path="/help/:sectionId/:articleSlug" element={<HelpPage />} />
       {/* Public profiles: after every explicit route, before the catch-all. */}
       <Route path="/:handle" element={<PublicHandlePage />} />
       <Route path="*" element={<NotFoundPage />} />
@@ -286,6 +282,12 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
       <Route path="/hosting" element={<HostingRequestPage />} />
       <Route path="/hosting/invite" element={<HostingInvitePage />} />
       <Route path="/hosting/request" element={<HostingRequestStatusPage />} />
+      <Route path="/help" element={<HelpPage />} />
+      <Route path="/help/:sectionId" element={<HelpPage />} />
+      <Route path="/help/:sectionId/:articleSlug" element={<HelpPage />} />
+      <Route path="/m/:slug/help" element={<HelpPage />} />
+      <Route path="/m/:slug/help/:sectionId" element={<HelpPage />} />
+      <Route path="/m/:slug/help/:sectionId/:articleSlug" element={<HelpPage />} />
       {/* Public profiles: after every explicit route, before the catch-all. */}
       <Route path="/:handle" element={<PublicHandlePage />} />
       <Route path="*" element={<NotFoundPage />} />

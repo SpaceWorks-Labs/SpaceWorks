@@ -223,6 +223,8 @@ export const FEATURE_DEFINITIONS: readonly FeatureDefinition[] = [
   { key: "shop.consumable_link", parent_module: "shop", label: "Sell inventory consumables" },
   { key: "charges.shop", parent_module: null, label: "Track shop sales" },
   { key: "payments.shop", parent_module: "shop", label: "Online shop payments" },
+  // L20 (#69, #128 C-31): the in-app help centre.
+  { key: "platform.help_centre", parent_module: null, label: "Help centre" },
 ];
 
 export function featureEnabled(features: Iterable<string>, key: string) {

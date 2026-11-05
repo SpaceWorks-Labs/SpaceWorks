@@ -1031,12 +1031,30 @@ its parent module is off.
 | `events.paid_teams` | `events` (needs `events.hackathons`) | | One fixed price per team, charged once on the leader after the team is confirmed; the team is held until paid; a rejected team opens a refund case for the leader's payment | Nothing is charged or held; raised charges are kept |
 | `events.saved_views` | `events` | | Filtered staff lists of guests, teams, submissions, results and judging progress, with saved views and a CSV export of exactly the filtered rows | List and export routes answer 404; saved views are kept |
 | `events.gallery_search` | `events` (needs `events.project_gallery`) | on | Search, sort (newest, A to Z, award winners first) and an award-winners filter on the public gallery, with award badges once results are published | The plain gallery list; search parameters answer 404 |
+| `platform.help_centre` | — | ● | The [in-app help centre](#the-help-centre-platformhelp_centre): role-gated guide articles and a "Help" link beside each staff console screen | No Help links in the console; the space's `/help` routes answer "page not found". Nothing is stored, so nothing is lost |
 
 The `payments.<area>` switches are **off by default and stay inert until credentials resolve** —
 turning one on cannot start charging anyone by itself. They only put a card rail behind a debt the
 matching `charges.<area>` switch records: with `charges.<area>` off, turning `payments.<area>` on records
 nothing and offers nothing (the two are deliberately independent switches, the A6 rule). `inventory.self_checkout` and `presence.geofence`
 belong to no module: they are standalone capabilities that apply whenever you enable them.
+
+## The help centre (`platform.help_centre`)
+
+A standalone feature, on by default. The guide lives at `/help` (and `/m/<slug>/help` on the central
+origin); every staff console screen carries a "Help" link that opens the matching article in a new tab.
+
+- **Who sees what.** Everyone reads the member and organisation sections. Staff sections follow the
+  reader's actions in any space (Inventory Manager, Machine Manager, Booking Manager, Event Manager,
+  finance, Technician, Shop Manager, handover); a Space Manager sees every staff section; the platform
+  superadmin also sees the superadmin and host-operator sections. Search only covers the articles the
+  reader can see. The gating chooses what is relevant; it is not a security boundary, so articles never
+  hold secrets or anything a member must not read.
+- **Content.** Articles are content files under `frontend/src/help-content/<locale>/<section>/`, one
+  Markdown file each, so translations add a locale folder rather than code (L9). Screenshots are
+  placeholders until the release phase takes them from the `seed_showcase` space.
+- **Without it.** The console shows no Help links and the space's help routes answer "page not found".
+  The platform-wide `/help` on the central origin belongs to no space and stays available.
 
 ## The public stats page (not a module)
 

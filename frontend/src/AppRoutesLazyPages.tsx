@@ -32,3 +32,14 @@ export const ProgrammeRoutes = lazy(() => import("./features/events/programme/Pr
 export const CardRoutes = lazy(() => import("./features/cards/CardRoutes").then(m => ({ default: m.CardRoutes })));
 export const MemberEventAddonRoutes = lazy(() => import("./features/events/eventAddons/MemberEventAddonRoutes").then(m => ({ default: m.MemberEventAddonRoutes })));
 export const DonationRoutes = lazy(() => import("./features/donations/DonationRoutes").then(m => ({ default: m.DonationRoutes })));
+// L20: the in-app help centre.
+export const HelpPage = lazy(() => import("./features/help/HelpPage").then((m) => ({ default: m.HelpPage })));
+export const TechnicianOptInPage = lazy(() => import("./features/repairs/TechnicianOptInPage").then((m) => ({ default: m.TechnicianOptInPage })));
+export const MyMachineJobsPage = lazy(() => import("./features/machine-jobs/MyMachineJobsPage").then((m) => ({ default: m.MyMachineJobsPage })));
+// Lane L21a: the "still coming?" reply page, the crew sign-up link and the review-panel workspace.
+export const AttendanceReplyPage = lazy(() => import("./features/events/participation/AttendanceReplyPage").then((m) => ({ default: m.AttendanceReplyPage })));
+export const CrewSignupPage = lazy(() => import("./features/events/participation/CrewSignupPage").then((m) => ({ default: m.CrewSignupPage })));
+export const ApplicationReviewsPage = lazy(() => import("./features/events/participation/ApplicationReviewsPage").then((m) => ({ default: m.ApplicationReviewsPage })));
+export const MachineJobPage = lazy(() => import("./features/machine-jobs/MachineJobPage").then((m) => ({ default: m.MachineJobPage })));
+export const UseMachinePage = lazy(() => import("./features/machine-sessions/UseMachinePage").then((m) => ({ default: m.UseMachinePage })));
+export const MySessionsPage = lazy(() => import("./features/machine-sessions/MySessionsPage").then((m) => ({ default: m.MySessionsPage })));

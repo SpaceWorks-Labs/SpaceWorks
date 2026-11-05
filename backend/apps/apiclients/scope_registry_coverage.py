@@ -39,6 +39,8 @@ OUT_OF_SCOPE = (
     ("api/v1/metrics", "Prometheus metrics: a static bearer token."),
     ("api/v1/oauth/", "OAuth 2.0 / OIDC protocol endpoints: client authentication and PKCE (#196)."),
     ("api/v1/discover/", "Anonymous public discovery of live sites; no client needed."),
+    ("api/v1/platform-notices", "The signed-in person's own platform announcements and paused spaces (#185)."),
+    ("api/v1/managed-hosting/webhooks/", "Managed-hosting billing webhooks, verified by the provider's signature (#187A)."),
     ("control/", "The Django control plane: superadmin session only."),
     ("mfa/", "Control-plane MFA and re-authentication."),
     ("schema/", "The OpenAPI document."),

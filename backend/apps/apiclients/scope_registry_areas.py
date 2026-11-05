@@ -41,6 +41,8 @@ _NAMES = {
         "public-inventory-categories", "v1:public-inventory-categories", "public-inventory-detail",
         "v1:public-inventory-detail", "public-inventory-watch", "v1:public-inventory-watch",
         "public-machines", "public-machine-detail", "public-machine-details", "public-machine-intake",
+        # #185: whether a listed space is paused (the SPA's paused page).
+        "public-makerspace-availability",
     ),
     "events": (
         "public-event-code", "public-event-short-code", "public-event-website", "public-event-website-section",

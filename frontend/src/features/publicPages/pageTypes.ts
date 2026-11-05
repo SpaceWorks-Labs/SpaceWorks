@@ -14,6 +14,7 @@ export type SectionPayloads = {
   functional_content: Record<string, never>; membership_plans: Api.Titled;
   // Release 2 L18: the opt-in sponsor wall (derived live from the space's public sponsor rows).
   sponsors: Api.Titled;
+  shop: Api.Titled;
 };
 export type SectionType = keyof SectionPayloads;
 export type PageSection = { [K in SectionType]: { id: string; type: K; enabled: boolean; payload: SectionPayloads[K] } }[SectionType];

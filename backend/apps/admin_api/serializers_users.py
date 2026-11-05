@@ -70,6 +70,7 @@ class StaffCreateSerializer(serializers.Serializer):
             MakerspaceMembership.Role.BOOKING_MANAGER,
             MakerspaceMembership.Role.HANDOVER,
             MakerspaceMembership.Role.TECHNICIAN,
+            MakerspaceMembership.Role.SHOP_MANAGER,
         ]
     )
     password = serializers.CharField(write_only=True, required=False, allow_blank=True)

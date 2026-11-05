@@ -31,6 +31,7 @@ _SM_DELEGABLE_ROLES = (
     MakerspaceMembership.Role.BOOKING_MANAGER,
     MakerspaceMembership.Role.HANDOVER,
     MakerspaceMembership.Role.TECHNICIAN,
+    MakerspaceMembership.Role.SHOP_MANAGER,
 )
 
 

@@ -29,6 +29,8 @@ export const COMPONENT_LABELS: Record<PricingDomain, [string, string][]> = {
   bookings: [["per_booking", "Per booking"], ["per_hour", "Per hour"]],
   events: [["per_registration", "Per registration"]],
   membership: [["dues", "Membership dues"], ["joining_fee", "Joining fee"]],
+  // L22: a shop item is priced on its own variant; only member discounts scope to it.
+  shop: [["item", "Item price"]],
 };
 
 export function componentLabel(key: string) {

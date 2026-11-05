@@ -383,3 +383,17 @@ declined by the Space Manager or a finance admin (`view_finance` plus `record_pa
 it never ends a membership. A `job_cancelled` case is decided like any staff cancellation, by the
 job's Machine Manager. Each save that opens cases writes one `pricing.price_drop_refunds_opened`
 audit row; each case writes its own `payment.refund_case_opened`.
+
+## Shop sales (release 2 L22)
+
+A shop order is one `Payment` (subject `shop_order`, domain `shop`); its line prices come from
+`pricing.quote(space, "shop", params={"lines": [(variant, quantity), ...]})` with the buyer's one best
+member discount when `shop.member_prices` is on. Online, the charge is put on the rail only with
+`payments.shop` and credentials; otherwise the order waits "pay at the desk", holding its stock for 48
+hours (`shop.holds`). At the desk the sale and its offline receipt (cash, UPI, card on an external
+terminal) are one transaction, and the L5 receipt or tax invoice is issued in the space's FY series; the
+receipt screen prints at 80 mm and A4. Refunds are refund cases in area `shop`, decided by the Shop
+Manager or finance staff; the direct refund routes refuse shop charges. Restock purchases are To-Buy
+rows (inventory stream) whose "mark bought" records the expense and puts the units on the shop shelf.
+Cash sessions (`shop.cash_up`) expect the float plus the session's cash sales minus shop cash refunds,
+and with `billing.maker_checker` a second person confirms the close.

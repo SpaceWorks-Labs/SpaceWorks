@@ -33,5 +33,6 @@ export const ROLE_DESCRIPTIONS: Record<string, string> = {
   booking_manager: "Manages bookable spaces, bookings, booking rules, reports and email templates.",
   handover: "Issues accepted requests and direct handouts, processes returns and hands over completed machine jobs.",
   technician: "Works the repair jobs assigned to them, runs scheduled maintenance and marks machines, items and rooms in or out of service within their coverage. No inventory, money or settings.",
+  shop_manager: "Runs the shop: products, stock, prices, orders, the front desk, cash-ups, returns, shop reports and the shop's own settings. No other inventory, money or settings.",
   member: "Uses member services without staff management access.",
 };

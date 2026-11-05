@@ -36,20 +36,24 @@ logger = logging.getLogger(__name__)
 @transaction.atomic
 def create_payment(
     *, makerspace, subject_type, subject_id, member, amount, currency, created_by,
-    via_makerspace=None, subject_label="", due_at=None, pricing_snapshot=None,
+    via_makerspace=None, subject_label="", due_at=None, pricing_snapshot=None, frozen_tax=None,
 ):
     # A missing source is NOT fatal any more. Recording what a member owes is separate
     # from being able to collect it online: a space that takes cash still needs the debt
     # on the books, visible in the member area and settleable by staff. The row is stamped
     # `unclaimed` and the first checkout that reaches a provider claims it.
-    # Lane L18: a guest's donation and a sponsor organisation's payment belong to no account.
+    # Lanes L18 and L22: a guest's donation or shop order and a sponsor organisation's payment belong to no account.
     if member is not None or subject_type not in Payment.ACCOUNTLESS_SUBJECT_TYPES:
         require_member_account(member)
     # Tax is frozen once, here, the single seam every domain raises charges through. With
     # `billing.tax` off this returns the amount unchanged and no snapshot (release 1).
+    # Lane L22: a shop order with per-product tax classes hands in its own frozen
+    # `(amount, snapshot)`, built from the same engine line by line (`shop/tax_lines.py`).
     # A gift (lane L18) is never a taxable supply.
     from apps.payments.tax.snapshot import freeze_for_charge
-    if subject_type in Payment.UNTAXED_SUBJECT_TYPES:
+    if frozen_tax is not None:
+        amount, tax_snapshot = frozen_tax
+    elif subject_type in Payment.UNTAXED_SUBJECT_TYPES:
         tax_snapshot = None
     else:
         amount, tax_snapshot = freeze_for_charge(makerspace, amount, currency, member)

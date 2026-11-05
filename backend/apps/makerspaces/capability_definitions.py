@@ -27,6 +27,7 @@ from .capability_definitions_r2_l18 import definitions as r2_l18_definitions
 from .capability_definitions_r2_l21a import definitions as r2_l21a_definitions
 from .capability_definitions_r2_l21b import definitions as r2_l21b_definitions
 from .capability_definitions_r2_l24 import definitions as r2_l24_definitions
+from .capability_definitions_r2_l22 import definitions as r2_l22_definitions
 
 
 @dataclass(frozen=True)
@@ -269,6 +270,7 @@ FEATURE_DEFINITIONS += r2_l18_definitions(FeatureDefinition)
 FEATURE_DEFINITIONS += r2_l21a_definitions(FeatureDefinition)
 FEATURE_DEFINITIONS += r2_l21b_definitions(FeatureDefinition)
 FEATURE_DEFINITIONS += r2_l24_definitions(FeatureDefinition)
+FEATURE_DEFINITIONS += r2_l22_definitions(FeatureDefinition)
 FEATURES = {definition.key: definition for definition in FEATURE_DEFINITIONS}
 # A feature's parent/required modules are validated against the module registry
 # rather than a hand-kept set, so adding a module can no longer leave a valid

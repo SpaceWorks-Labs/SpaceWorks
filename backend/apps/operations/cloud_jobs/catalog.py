@@ -122,6 +122,8 @@ LEGACY_ENTRIES = (
     # Lane L18: due pledge periods raise their gift and charge; sponsor perks due tell staff once.
     ("donation-pledges", "apps.payments.donations.tasks.raise_pledges_task", 60),
     ("sponsor-perk-reminders", "apps.payments.donations.tasks.remind_perks_task", 1440),
+    # Lane L22: lapsed shop holds, missed shop settlements and uncollected-order reminders.
+    ("shop-sweep", "apps.shop.tasks.sweep_shop_task", 1),
 )
 _RETAINED = frozenset({
     "evidence-object-expiry", "evidence-abandoned-upload-cleanup",

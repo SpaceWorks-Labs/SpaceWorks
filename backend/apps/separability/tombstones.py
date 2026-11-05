@@ -48,6 +48,8 @@ SEPARABLE_APPS = frozenset({
     "devices",
     # Release 2 L3: organisation ID programmes (no module key; `membership.id_programmes`).
     "id_programmes",
+    # Release 2 L22: the per-space shop (module key `shop`); sales stay in the core ledger.
+    "shop",
 })
 
 

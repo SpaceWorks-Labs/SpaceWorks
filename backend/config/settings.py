@@ -195,6 +195,8 @@ INSTALLED_APPS = [
     "apps.id_programmes",
     # Lane L8 (#75d/#120): the Postgres row-level-security backstop (core, never tombstoned).
     "apps.tenant_rls",
+    # Release 2 L22: the per-space shop; separable, switched by the `shop` module key.
+    "apps.shop",
     # Must stay LAST. Django calls ready() in this order, so being last is what
     # guarantees every other app has registered before finalize() freezes the
     # separability registries.
@@ -961,6 +963,11 @@ CELERY_BEAT_SCHEDULE["sponsor-perk-reminders"] = {
     "task": "apps.payments.donations.tasks.remind_perks_task", "schedule": crontab(hour=6, minute=17),
 }
 # --- end lane L18
+# --- lane L22 (release 2): shop holds that lapsed, missed settlements, uncollected-order reminders.
+CELERY_BEAT_SCHEDULE["shop-sweep"] = {
+    "task": "apps.shop.tasks.sweep_shop_task", "schedule": crontab(minute="*"),
+}
+# --- end lane L22
 
 if "tenant_migration" in TOMBSTONED_APPS:
     CELERY_BEAT_SCHEDULE = {
@@ -987,6 +994,10 @@ if "devices" in TOMBSTONED_APPS:
     CELERY_BEAT_SCHEDULE = {
         name: entry for name, entry in CELERY_BEAT_SCHEDULE.items()
         if ".devices." not in entry["task"]
+    }
+if "shop" in TOMBSTONED_APPS:
+    CELERY_BEAT_SCHEDULE = {
+        name: entry for name, entry in CELERY_BEAT_SCHEDULE.items() if ".shop." not in entry["task"]
     }
 
 CORS_ALLOWED_ORIGINS = env.list(
@@ -1803,3 +1814,19 @@ REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"].update({
     "event_orders": "60/hour",
 })
 # --- end lane L6
+
+# --- lane L22 (release 2): stable OpenAPI names for the shop's choice sets.
+SPECTACULAR_SETTINGS["ENUM_NAME_OVERRIDES"].update({
+    "ShopProductKindEnum": "apps.shop.models_catalogue.ShopProduct.Kind",
+    "ShopOrderStatusEnum": "apps.shop.models_orders.ShopOrder.Status",
+    "ShopStockMovementKindEnum": "apps.shop.models_stock.ShopStockMovement.Kind",
+    "ShopStockMoveKindEnum": [("restock", "restock"), ("count", "count"), ("damage", "damage"),
+                              ("internal_use", "internal_use")],
+    "ShopCashSessionStatusEnum": "apps.shop.models_pos.ShopCashSession.Status",
+})
+# The public shop's order and guest email-code budgets, per client/IP.
+REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"].update({
+    "shop_orders": "30/hour",
+    "shop_codes": "10/hour",
+})
+# --- end lane L22

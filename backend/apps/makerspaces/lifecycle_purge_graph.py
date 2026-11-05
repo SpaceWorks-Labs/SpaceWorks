@@ -174,6 +174,9 @@ def _delete_object_graph(makerspace):
         membership_delete(makerspace, cursor)
         from apps.presence.purge import delete as presence_delete
         presence_delete(makerspace, cursor)
+        # Release 2 L22: shop returns PROTECT their refund cases and variants PROTECT linked items.
+        from apps.shop.purge import delete as shop_delete
+        shop_delete(makerspace, cursor)
         # Both tracks: the default manager is community-only (one account per person).
         from apps.backup.capture_managers import every_row
         every_row(MakerspaceMembership).filter(makerspace=makerspace).delete()

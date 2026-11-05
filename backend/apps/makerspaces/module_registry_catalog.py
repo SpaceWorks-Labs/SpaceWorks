@@ -228,3 +228,5 @@ MODULES = (
 
 from .module_registry_p2_presence import MODULES as PRESENCE_MODULES
 MODULES += PRESENCE_MODULES
+from .module_registry_r2_l22 import MODULES as SHOP_MODULES  # noqa: E402
+MODULES += SHOP_MODULES

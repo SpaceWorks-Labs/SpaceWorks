@@ -5,6 +5,7 @@ import {
   ScrollText, CircleAlert, Building2, Network, Settings, Mail, KeyRound, Download,
   DatabaseBackup, Gauge, Puzzle, MoveRight, Globe, CalendarCheck, Undo2, Lock, Landmark, type LucideIcon,
   PackageMinus, HardHat,
+  Store,
 } from "lucide-react";
 import type { ShellItem, ShellSection } from "../../components/shell";
 import { TAB_LABELS } from "./staffAccess";
@@ -14,6 +15,7 @@ type Definition = { key: string; label?: string; caption?: string; tabs: string[
 export const SIDEBAR_SECTIONS: readonly Definition[] = [
   { key: "home", tabs: ["dashboard", "notifications", "channels"] },
   { key: "desk", label: "Front desk", tabs: ["requests", "direct", "handover", "payments", "refunds", "finance"] },
+  { key: "shop", label: "Shop", tabs: ["shop"] },
   { key: "inventory", label: "Inventory", tabs: ["inventory", "ledger", "scanner", "needsfix", "stocktake", "transfers", "tobuy", "consumables"], more: ["categories", "containers", "warranty", "qr", "bulk"] },
   { key: "machines", label: "Machines", tabs: ["machines", "devices", "repairs"] },
   { key: "community", label: "Community", tabs: ["members", "events", "bookings", "granted"], more: ["cards"] },
@@ -38,6 +40,7 @@ const ICONS: Record<string, LucideIcon> = {
   "email-logs": Mail, api: KeyRound, exports: Download, backups: DatabaseBackup, usage: Gauge,
   modules: Puzzle, migration: MoveRight, "platform-dashboard": Globe, platform: Settings,
   consumables: PackageMinus, repairs: HardHat,
+  shop: Store,
 };
 
 /**
@@ -55,6 +58,7 @@ export const SPACE_MANAGER_SECTIONS: readonly Definition[] = [
   { key: "machines", label: "Machines", tabs: ["machines", "devices", "repairs"] },
   { key: "events", label: "Events", tabs: ["events", "granted"], more: ["organized"] },
   { key: "bookings", label: "Bookings", tabs: ["bookings"] },
+  { key: "shop", label: "Shop", tabs: ["shop"] },
   { key: "money", label: "Money", tabs: ["payments", "refunds", "finance", "reports"] },
   { key: "settings", label: "Space settings", tabs: ["settings", "security", "emailtemplates", "email-logs", "api", "audit", "exports", "backups", "usage", "modules", "migration"] },
   { key: "platform", label: "Platform", tabs: ["platform-dashboard", "platform"] },

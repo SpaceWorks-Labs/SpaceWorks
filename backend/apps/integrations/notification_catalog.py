@@ -106,6 +106,10 @@ FEATURE_EVENTS[F.EVENTS] += ("application_stage_advanced", "attendance_confirmat
                              "attendance_replied", "crew_invited", "crew_decided")
 # Release 2 L21b: published finalists (a per-event switch) and a recorded prize payout to its winner.
 FEATURE_EVENTS[F.EVENTS] += ("finalists_announced", "prize_payout_recorded")
+# Release 2 L22: the shop buyer's order notices and the shop staff's alerts (payments matrix).
+FEATURE_EVENTS[F.PAYMENTS] += ("shop_order_placed", "shop_order_paid", "shop_order_ready", "shop_order_lapsed",
+                               "shop_order_cancelled", "shop_order_unfulfilled", "shop_order_reminder",
+                               "shop_order_receipt", "shop_order_new", "shop_low_stock")
 
 # Exact default on/off per (feature, channel). Preserves today's behavior: hardware/printing
 # email + hardware Telegram on; bookings email (Part J seam) + bookings Telegram on; Slack/

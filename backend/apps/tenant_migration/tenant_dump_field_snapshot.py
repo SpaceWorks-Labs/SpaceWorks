@@ -203,3 +203,7 @@ from .catalog_r2_l21a import FIELD_NAMES as R2_L21A_FIELDS, EXTRA_FIELDS as R2_L
 FIRST_PARTY_FIELD_NAMES.update(R2_L21A_FIELDS)
 for _label, _names in R2_L21A_EXTRA.items():
     FIRST_PARTY_FIELD_NAMES[_label] |= _names
+from .catalog_r2_l22 import FIELD_NAMES as R2_L22_FIELDS, EXTRA_FIELDS as R2_L22_EXTRA  # noqa: E402
+FIRST_PARTY_FIELD_NAMES.update(R2_L22_FIELDS)
+for _label, _names in R2_L22_EXTRA.items():
+    FIRST_PARTY_FIELD_NAMES[_label] |= _names

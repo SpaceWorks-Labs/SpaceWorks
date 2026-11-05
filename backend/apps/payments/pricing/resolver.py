@@ -18,6 +18,7 @@ Targets and params by domain:
 * `events` -- target: an `Event`; params `ticket` (an `EventTicketType`), or `venue_fee`
   (its `EventVenueFee`, lane L6) for the hosting fee instead of a registration.
 * `membership` -- target: a `MembershipPlan` or None; params `joining`.
+* `shop` -- target None; params `lines`, a list of `(ShopVariant, quantity)` (lane L22).
 
 `member` decides the automatic discount (None: no discount). A total of 0 means the
 caller raises NO `Payment` and audits `charge.free_by_pricing`.
@@ -65,6 +66,9 @@ def _build(card, domain, target, params):
             from apps.payments.pricing.build_venue import venue_fee_lines  # lane L6
             return venue_fee_lines(card, target, fee=params["venue_fee"]), ()
         return build_other.event_lines(card, target, ticket=params.get("ticket")), ()
+    if domain == "shop":
+        from apps.payments.pricing.build_shop import shop_lines  # lane L22
+        return shop_lines(card, params.get("lines") or ()), ()
     return build_other.membership_lines(card, target, joining=bool(params.get("joining"))), ()
 
 

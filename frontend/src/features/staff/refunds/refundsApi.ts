@@ -36,6 +36,9 @@ export const REASON_LABELS: Record<RefundCase["reason_code"] | "capture_flagged"
   price_drop: "Price lowered after payment",
   job_cancelled: "Prepaid job cancelled before it started",
   quote_difference: "Job cost less than its prepaid quote",
+  shop_return: "Shop items returned",
+  shop_uncollected: "Shop order not collected",
+  shop_unfulfilled: "Shop order could not be filled",
 };
 
 export function caseTone(status: RefundCaseStatusEnum): "success" | "warn" | "danger" | "neutral" {

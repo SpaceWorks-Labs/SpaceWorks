@@ -109,6 +109,11 @@ def derived_payload(kind, owner, key, payload, *, request=None):
         from apps.payments.donations.wall import wall
         cards = wall(owner)
         return {"title": title, "results": cards} if cards else None
+    if key == "shop":
+        # Release 2 L22: a few public shop items; nothing renders while the online shop is off.
+        from apps.shop.public import page_cards
+        cards = page_cards(owner)
+        return {"title": title, "results": cards, "collection_url": f"/m/{owner.slug}/shop"} if cards else None
     if key == "location":
         if not payload["enabled_publicly"]:
             return None

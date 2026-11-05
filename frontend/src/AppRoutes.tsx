@@ -68,6 +68,11 @@ const PublicWebsiteDetailPage = lazy(() => import("./features/events/PublicWebsi
 const HostingRequestPage = lazy(() => import("./features/hosting/HostingRequestPage").then((m) => ({ default: m.HostingRequestPage })));
 const HostingInvitePage = lazy(() => import("./features/hosting/HostingInvitePage").then((m) => ({ default: m.HostingInvitePage })));
 const HostingRequestStatusPage = lazy(() => import("./features/hosting/HostingRequestStatusPage").then((m) => ({ default: m.HostingRequestStatusPage })));
+// L22: the per-space shop and a buyer's shop orders.
+const PublicShopPage = lazy(() => import("./features/shop/PublicShopPage").then((m) => ({ default: m.PublicShopPage })));
+const PublicShopProductPage = lazy(() => import("./features/shop/PublicShopProductPage").then((m) => ({ default: m.PublicShopProductPage })));
+const ShopOrderStatusPage = lazy(() => import("./features/shop/ShopOrderStatusPage").then((m) => ({ default: m.ShopOrderStatusPage })));
+const MemberShopOrdersPage = lazy(() => import("./features/members/shopOrders/MemberShopOrdersPage").then((m) => ({ default: m.MemberShopOrdersPage })));
 
 // Tenant capabilities choose the home independently of the deployment edition.
 
@@ -213,6 +218,14 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
       <Route path="/member/ticket-claims/:token" element={<TicketClaimPage kind="claim" />} />
       <Route path="/member/ticket-transfers/:token" element={<TicketClaimPage kind="transfer" />} />
       <Route path="/member/:memberTab" element={<MemberTabRoute />} />
+      <Route path="/shop" element={<PublicShopPage />} />
+      <Route path="/shop/order/:token" element={<ShopOrderStatusPage />} />
+      <Route path="/shop/:productSlug" element={<PublicShopProductPage />} />
+      <Route path="/m/:slug/shop" element={<PublicShopPage />} />
+      <Route path="/m/:slug/shop/order/:token" element={<ShopOrderStatusPage />} />
+      <Route path="/m/:slug/shop/:productSlug" element={<PublicShopProductPage />} />
+      <Route path="/member/shop-orders" element={<MemberShopOrdersPage />} />
+      <Route path="/member/shop-orders/:orderId" element={<MemberShopOrdersPage />} />
       <Route path="/stats" element={<PublicStatsPage />} />
       <Route path="/stats/tv" element={<PublicStatsTvPage />} />
       <Route path="/now" element={<PresenceNowPage />} />
@@ -275,6 +288,13 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
       <Route path="/member/ticket-transfers/:token" element={<TicketClaimPage kind="transfer" />} />
       <Route path="/m/:slug/member/:memberTab" element={<MemberTabRoute />} />
       <Route path="/member/:memberTab" element={<MemberTabRoute />} />
+      <Route path="/m/:slug/shop" element={<PublicShopPage />} />
+      <Route path="/m/:slug/shop/order/:token" element={<ShopOrderStatusPage />} />
+      <Route path="/m/:slug/shop/:productSlug" element={<PublicShopProductPage />} />
+      <Route path="/m/:slug/member/shop-orders" element={<MemberShopOrdersPage />} />
+      <Route path="/m/:slug/member/shop-orders/:orderId" element={<MemberShopOrdersPage />} />
+      <Route path="/member/shop-orders" element={<MemberShopOrdersPage />} />
+      <Route path="/member/shop-orders/:orderId" element={<MemberShopOrdersPage />} />
       <Route path="/m/:slug/stats" element={<PublicStatsPage />} />
       <Route path="/m/:slug/stats/tv" element={<PublicStatsTvPage />} />
       <Route path="/m/:slug/now" element={<PresenceNowPage />} />

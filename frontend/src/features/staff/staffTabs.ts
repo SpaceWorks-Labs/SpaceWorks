@@ -45,6 +45,8 @@ const TAB_MODULES: Record<string, string[]> = {
   qr: ["qr_print_batches"],
   scanner: ["scanner"],
   reports: ["reports"],
+  // L22: the per-space shop is its own module, off by default.
+  shop: ["shop"],
 };
 
 // Tabs switched by per-parent capabilities rather than a module key (#97, #128 C-9): one

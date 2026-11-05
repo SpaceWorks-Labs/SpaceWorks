@@ -59,4 +59,4 @@ L5_FINANCE_REPORT_DEFINITIONS = (
 )
 #: Builders that narrow rows to the viewer's finance areas, so the runner passes `actor`.
 L5_ACTOR_REPORT_KEYS = frozenset({"income-spending", "finance-inventory", "finance-machines", "finance-bookings",
-                                  "finance-events", "event-finance"})
+                                  "finance-events", "event-finance", "finance-shop"})

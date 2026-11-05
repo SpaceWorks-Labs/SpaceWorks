@@ -1,7 +1,7 @@
 # Member and finance delegation (F6)
 
 Membership roles are fixed and local to one makerspace: Space Manager, Inventory Manager, Machine
-Manager, Event Manager, Booking Manager, Handover, Technician and Member (eight built-ins). Space
+Manager, Event Manager, Booking Manager, Handover, Technician, Shop Manager and Member (nine built-ins). Space
 Manager and Member stand alone; the other six combine freely. There is no custom-role editor or editable grant list. The action
 checks below remain the authorization contract, including organization-derived grants. See
 [roles and access](README-HOSTING.md#roles--access) for assignment and machine-type scope.
@@ -20,6 +20,12 @@ Technician (release 2 L16) holds only `work_repairs`, `run_maintenance` and `set
 repair jobs assigned to them, plus maintenance and service state within the machine types, items and
 rooms their in-house technician entry covers. It never records money; payouts need finance authority
 in the area (see [Repairs and technicians](INVARIANTS.md#repairs-and-technicians)).
+
+Shop Manager (release 2 L22, #137) holds only `manage_shop`, `sell_shop` and `view_shop`: the shop's
+catalogue, stock, prices, orders, front desk, cash-ups, returns and its own settings, plus the shop's
+money in the ledger (domain `shop`). It records cash only for shop sales and shop refunds, never other
+money; the Space Manager reaches the shop through `manage_makerspace`. See
+[Shop](INVARIANTS.md#shop).
 Machine Manager reach is assigned per person by type; combining roles unions actions without
 widening that machine reach.
 

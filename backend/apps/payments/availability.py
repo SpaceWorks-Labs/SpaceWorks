@@ -79,6 +79,8 @@ SUBJECT_DOMAINS = {
     # Lane L21b: a project's entry fee and a paid team's one charge are events income.
     "submission_fee": "events",
     "team_registration": "events",
+    # Lane L22: shop orders, online and at the front desk.
+    "shop_order": "shop",
 }
 
 

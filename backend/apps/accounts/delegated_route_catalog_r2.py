@@ -108,3 +108,11 @@ admin-donation-tax-receipt admin-sponsors admin-sponsor-tiers admin-sponsor-tier
 admin-sponsor-perk-fulfil admin-sponsor-charge-return admin-sponsor-event-link admin-sponsor admin-sponsor-archive
 admin-sponsor-restore admin-sponsor-logo admin-sponsor-charges admin-sponsor-event-links
 admin-sponsor-event-sponsors""".split())
+# Release-2 lane L22, the shop: its till, stock and money stay inside ONE space, so every route
+# needs a staff role in the target space (the shop actions are never organization-grantable).
+MEMBERSHIP_ROUTES |= frozenset("""admin-shop-settings admin-shop-products admin-shop-product admin-shop-product-image
+admin-shop-variant admin-shop-variant-stock admin-shop-movements admin-shop-orders admin-shop-order
+admin-shop-order-ready admin-shop-order-collect admin-shop-order-take-payment admin-shop-order-cancel
+admin-shop-order-returns admin-shop-order-receipt admin-shop-pos-quote admin-shop-pos-sale admin-shop-member-lookup
+admin-shop-cash-sessions admin-shop-cash-session-close admin-shop-cash-session-confirm
+admin-shop-report""".split())

@@ -6,6 +6,15 @@
 
 ## Condensed changelog (newest first — full detail in `git log`)
 
+- **2026-11-05 -- release 2 L22, the per-space shop (#128 C-7, #129, #135-#137).** A new top-level
+  module `shop` (owner exception to #97) with fourteen optional switches: a catalogue of consumables,
+  kits and merch with variants, stock kept only by the inventory availability module (holds, sales,
+  returns, write-offs, an inventory consumable link, bundle kits), online orders for pickup at the space
+  or an event (signed-in or guest with an emailed code; the rail with `payments.shop`, else pay at the
+  desk), the front-desk POS (cash, UPI, card on an external terminal; one transaction with its receipt),
+  cash-up with the two-person check, returns and uncollected orders through refund cases, per-product
+  tax classes with HSN, low-stock To-Buy drafts, receipts at 80 mm and A4, shop reports, and the new
+  built-in Shop Manager role. Every sale is a `shop_order` Payment in the ledger.
 - **2026-11-04 -- release 2 L24, price-drop refunds and prepaid-job difference cases (#163A, #171).**
   A price lowered after payment previews and opens one staff-approved `price_drop` refund case per
   paid, not-yet-used booking, ticket, prepaid job or membership term (`charges.price_drop_refunds`,

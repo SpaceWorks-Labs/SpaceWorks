@@ -184,6 +184,10 @@ urlpatterns = [
     *separable("id_programmes", "api/v1/admin/", "apps.id_programmes.urls_admin"),
     *separable("id_programmes", "api/v1/public/", "apps.id_programmes.urls_public"),
     *separable("id_programmes", "api/v1/member/", "apps.id_programmes.urls_member"),
+    # Release 2 L22: the per-space shop (public page, the buyer's orders, staff and the desk).
+    *separable("shop", "api/v1/public/", "apps.shop.urls_public"),
+    *separable("shop", "api/v1/member/", "apps.shop.urls_member"),
+    *separable("shop", "api/v1/admin/", "apps.shop.urls_admin"),
     *separable("events", "api/v1/admin/", "apps.events.urls_id_cards"),
     *separable("events", "api/v1/member/", "apps.events.urls_id_cards_member"),
     # Mounted at admin_api's own prefix so the paths and route names are unchanged by

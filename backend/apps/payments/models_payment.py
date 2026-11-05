@@ -37,6 +37,8 @@ class Payment(models.Model):
         # paid team's one charge on its leader (subject_id = HackathonTeam id, C-39).
         SUBMISSION_FEE = "submission_fee", "Project entry fee"
         TEAM_REGISTRATION = "team_registration", "Team registration"
+        # Lane L22. One shop order (online or a front-desk sale; subject_id = ShopOrder id).
+        SHOP_ORDER = "shop_order", "Shop order"
 
     #: Subjects whose subject_id is the HardwareRequest id.
     LOAN_SUBJECT_TYPES = ("loan_deposit", "loan_late_fee", "loan_rental")
@@ -44,8 +46,9 @@ class Payment(models.Model):
     LOAN_ACCOUNTABILITY_SUBJECT_TYPES = ("loan_damage", "loan_lost")
     #: Lane L6: event money that is not one registration's own charge.
     EVENT_SUBJECT_TYPES = ("event_registration", "event_order", "event_venue_fee", "submission_fee", "team_registration")
-    #: Lane L18: money that may belong to no account (a guest donor, a sponsor organisation).
-    ACCOUNTLESS_SUBJECT_TYPES = ("donation", "sponsorship")
+    #: Lanes L18 and L22: money that may belong to no account (a guest donor, a sponsor
+    #: organisation, a guest shop buyer or an anonymous desk sale).
+    ACCOUNTLESS_SUBJECT_TYPES = ("donation", "sponsorship", "shop_order")
     #: Lane L18: a gift is never a taxable supply, so no tax is frozen on top of it.
     UNTAXED_SUBJECT_TYPES = ("donation",)
 

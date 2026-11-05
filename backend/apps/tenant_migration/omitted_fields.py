@@ -172,3 +172,5 @@ OMITTED_FIELD_RECONSTRUCTIONS.update(_rules(
 # mints fresh values (guests get fresh links).
 OMITTED_FIELD_RECONSTRUCTIONS.update(_rules(
     FRESH, ("payments.Donation", "access_secret"), ("payments.DonationPledge", "manage_secret")))
+# Release 2 L22: a guest's status-link secret is bearer material; the target mints a fresh one.
+OMITTED_FIELD_RECONSTRUCTIONS.update(_rules(FRESH, ("shop.ShopOrder", "status_secret")))

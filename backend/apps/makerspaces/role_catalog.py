@@ -40,6 +40,12 @@ ROLE_CATALOG = (
     RoleDefinition("technician", "Technician", "technician", frozenset({
         "work_repairs", "run_maintenance", "set_service_state",
     }), True),
+    # Release 2 L22 (#137): products, stock, prices, orders, the front desk, cash-ups,
+    # returns, shop reports and the shop's own settings. No other inventory, no money
+    # outside the shop and no other settings.
+    RoleDefinition("shop_manager", "Shop Manager", "shop_manager", frozenset({
+        "manage_shop", "sell_shop", "view_shop",
+    }), True),
     RoleDefinition("member", "Member", None, frozenset()),
 )
 ROLE_BY_SLUG = {role.slug: role for role in ROLE_CATALOG}

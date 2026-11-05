@@ -67,7 +67,7 @@ def project_sections(kind, owner, revision, *, request=None, image_url=None, doc
             payload["items"] = [{"url": image_url(row["asset_id"]) if image_url else None, "alt": assets[row["asset_id"]].alt_text,
                                  "caption": row["caption"]} for row in payload["items"] if row["asset_id"] in assets]
         elif key in ("functional_content", "linked_makerspaces", "organization_events", "upcoming_events", "stats", "location",
-                     "membership_plans", "sponsors"):
+                     "membership_plans", "sponsors", "shop"):
             payload = derived_payload(kind, owner, key, payload, request=request)
             if payload is None:
                 continue

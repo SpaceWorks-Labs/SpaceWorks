@@ -96,6 +96,8 @@ REPORT_MODULE_COVERAGE.update({
     "payments": ModuleReportCoverage("substantive", (*REPORT_MODULE_COVERAGE["payments"].reports, "revenue-over-time", "payments-ageing", "cash-book")),
 })
 REPORT_MODULE_COVERAGE["devices"] = ModuleReportCoverage("substantive", ("device-health", "module-operational-health"))
+# Release 2 L22: shop sales by month and channel, and the shop's own ledger money.
+REPORT_MODULE_COVERAGE["shop"] = ModuleReportCoverage("substantive", ("shop-sales", "finance-shop"))
 
 
 @checks.register(checks.Tags.models)

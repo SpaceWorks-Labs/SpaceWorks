@@ -151,6 +151,8 @@ from .object_ownership_l3 import field_object_rules as _l3_rules  # noqa: E402
 FIELD_OBJECT_RULES += _l3_rules(FieldObjectRule, BucketRule, ReferencePolicy)
 # Release 2 L18: a sponsor's public logo (the sponsor wall).
 FIELD_OBJECT_RULES += (FieldObjectRule("payments.Sponsor", "logo_key", BucketRule.PUBLIC_IMAGE),)
+# Release 2 L22: a shop product's public image.
+FIELD_OBJECT_RULES += (FieldObjectRule("shop.ShopProduct", "image_key", BucketRule.PUBLIC_IMAGE),)
 
 AUDIT_META_OBJECT_VARIANTS = {
     "machine.document_added": "object_key",

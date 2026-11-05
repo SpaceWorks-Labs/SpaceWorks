@@ -18,6 +18,8 @@ MODULE_MANAGER_ACTIONS = {
     "bookings": Action.MANAGE_BOOKINGS,
     "machines": Action.MANAGE_MACHINES,
     "inventory": Action.EDIT_INVENTORY,
+    # L22 (#137): the shop's own settings belong to the Shop Manager.
+    "shop": Action.MANAGE_SHOP,
 }
 
 # Finance settings are the Space Manager's alone and never delegable (#101, C-15/C-16).
@@ -44,9 +46,23 @@ class FixedException:
     reason: str
 
 
+# L22 (#137): the shop's own switches and settings (tax classes, holds, the returns window,
+# ...). `charges.shop` and `payments.shop` are finance settings and stay Space-Manager-only.
+SHOP_SWITCH_KEYS = (
+    "shop.online", "shop.guest_checkout", "shop.holds", "shop.member_prices", "shop.tax", "shop.returns",
+    "shop.cash_up", "shop.event_pickup", "shop.order_limits", "shop.public_stock", "shop.receipts",
+    "shop.reorder", "shop.bundles", "shop.consumable_link",
+)
+SHOP_SETTING_KEYS = (
+    "shop_online_hold_minutes", "shop_desk_hold_hours", "shop_returns_window_days", "shop_first_reminder_days",
+    "shop_second_reminder_days", "shop_uncollected_cancel_days", "shop_policy_text", "shop_pickup_note",
+)
+
 FIXED_EXCEPTIONS = (
     FixedException("inventory", RENTAL_TIMING_KEYS, Action.EDIT_INVENTORY,
                    "The Inventory Manager always sets rental timing (#128 C-11d)."),
+    FixedException("shop", frozenset((*SHOP_SWITCH_KEYS, *SHOP_SETTING_KEYS)), Action.MANAGE_SHOP,
+                   "The Shop Manager edits the shop's own settings without a grant (#137)."),
 )
 
 # (module, key) rows appended by later lanes for settings outside `domain_settings`.
@@ -86,6 +102,8 @@ EXTRA_SETTING_KEYS = (
     ("membership", "member_cards.verify_show_plan"),
     ("membership", "card_designs.approval"),
     ("events", "card_designs.approval"),
+    # L22: the shop's own settings (the `shop.*` switches come from `domain_settings`).
+    *(("shop", key) for key in SHOP_SETTING_KEYS),
 )
 
 

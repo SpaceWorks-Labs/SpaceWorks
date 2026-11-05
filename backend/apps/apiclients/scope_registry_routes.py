@@ -199,6 +199,13 @@ _ROUTE_DEFINITIONS += (
     ("public-donation-checkout", _WRITE, frozenset(), TARGET_GLOBAL, False, False),
     ("public-donation-claim", _WRITE, frozenset(), TARGET_GLOBAL, False, False),
     ("public-pledge-manage", ("GET", "HEAD", "POST"), frozenset(), TARGET_GLOBAL, False, False),
+    # Lane L22: the public shop. Reads show only the public catalogue; a quote writes nothing;
+    # an order, the guest email code and a guest's status link are the buyer's own acts.
+    *tuple((name, _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False) for name in (
+        "public-shop", "public-shop-products", "public-shop-product", "public-shop-order-status")),
+    ("public-shop-quote", _WRITE, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False),
+    ("public-shop-email-code", _WRITE, PUBLIC_WRITE_SCOPES, TARGET_TENANT_SLUG, False, False),
+    ("public-shop-orders", _WRITE, PUBLIC_WRITE_SCOPES, TARGET_TENANT_SLUG, False, False),
 )
 
 

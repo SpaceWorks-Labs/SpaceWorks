@@ -105,6 +105,11 @@ class ToBuyItem(models.Model):
         "machines.MachineConsumable", null=True, blank=True,
         on_delete=models.SET_NULL, related_name="low_stock_to_buy_items",
     )
+    # Release 2 L22: a shop variant whose reorder point raised this item; marking it bought
+    # restocks that variant once, through the availability module (moved_to_inventory_at).
+    source_shop_variant = models.ForeignKey(
+        "shop.ShopVariant", null=True, blank=True, on_delete=models.SET_NULL, related_name="reorder_drafts",
+    )
     # The saved supplier (L12 vendor records); `vendor_name` stays the free-text label.
     vendor = models.ForeignKey(
         "procurement.Vendor", null=True, blank=True, on_delete=models.SET_NULL, related_name="to_buy_items",

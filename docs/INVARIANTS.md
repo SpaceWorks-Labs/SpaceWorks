@@ -7779,3 +7779,43 @@ reconciliation may release it. Full never consults free accounting caps or free 
 - **Switches.** `membership.import_sheets` (needs `membership.import`) and
   `membership.id_programmes_import_sheets` (needs `membership.id_programmes`), both off by default; off
   answers 404 to a sheet request and leaves file uploads unchanged.
+
+## Shop (release 2 L22; #128 C-7, #129, #135-#137)
+
+- **Per space, its own module.** `shop` is a top-level module (owner exception to #97), off by default,
+  with every feature behind its own `shop.*` switch. Off means 404 `shop_closed` on every shop route, no
+  sweep work, and no data lost.
+- **Stock only through the availability module.** Every shop count changes in
+  `inventory/availability_shop.py` (re-exported by `inventory/availability.py`): holds, sales (spending
+  the order's holds first), returns, write-offs, restocks and adjustments. Never below zero, never below
+  live holds; the variant rows are locked in primary-key order before any inventory row. Each change
+  writes an append-only `ShopStockMovement` (a DB trigger refuses updates). A variant may draw on ONE
+  inventory item consumable (`shop.consumable_link`) -- the inventory's own `adjust_quantities` then
+  moves that count, so workshop use and sales stay one number; lendable tools are never sold. A bundle
+  kit (`shop.bundles`) takes its parts' stock.
+- **Every sale is in the ledger.** One `Payment` per order (subject `shop_order`, domain `shop`), raised
+  through `create_payment` with the L15 quote frozen on it (`pricing.quote(..., "shop")`; preview =
+  charge, 409 `price_changed`). A desk sale records its `ManualSettlement` (cash, UPI or card on an
+  external terminal) in the SAME transaction through `apply_reconciliation`; it never waits for the
+  maker-checker, which applies to the cash-up instead (Q-S19). A free basket raises no charge and is
+  audited `charge.free_by_pricing`. With `charges.shop` off the shop refuses to sell (`charges_off`).
+- **Tax classes freeze one snapshot.** With `shop.tax` on, each line is split at its product's rate
+  (tax-inclusive, place of supply = the space's state) and the lines sum to the charge's frozen
+  `tax_snapshot` (`create_payment(frozen_tax=...)`, figures = exact sum), so L5 documents and credit notes
+  apportion it like any charge. With it off the space's own policy applies.
+- **Refunds only through a case.** Returns, uncollected orders (after the space's window, 30 days) and
+  orders the stock could not fill open (or grow) the charge's refund case (`add_due_share`, area `shop`);
+  the direct refund routes refuse `shop_order` (`refund_via_case_only`). The Shop Manager decides shop
+  cases and records shop cash refunds (`reconciliation_authority.CASH_RECORD_ACTIONS`) -- nothing else.
+- **Pickup only.** At the space or at one of its events (`shop.event_pickup`); no shipping. Collection is
+  by the order's pickup code, audited with who handed it over; no evidence photo.
+- **Shop money is the Shop Manager's.** Finance domain `shop` is seen by the Space Manager, the Shop
+  Manager (`manage_shop`) and `view_finance`; the `finance-shop` and `shop-sales` reports need only
+  `manage_shop`. The shop actions are never organization-grantable.
+- **Guests.** With `shop.guest_checkout` a buyer confirms their email with the #80 code; the charge belongs
+  to no account (`Payment.ACCOUNTLESS_SUBJECT_TYPES`) and the inert space principal records it. The
+  guest's name and email are scoped PII (encrypted); their status link is signed over a per-order secret
+  that never leaves the space (a move mints a fresh one).
+- **Public stock follows the public availability rule.** Labels by default, exact counts only for a
+  product that opts in (`show_exact_stock` with `shop.public_stock`); never storage, costs, linked items
+  or other buyers.

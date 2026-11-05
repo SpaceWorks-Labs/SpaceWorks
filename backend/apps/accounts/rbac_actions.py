@@ -61,6 +61,14 @@ class Action:
     VIEW_ID_PROGRAMMES = "view_id_programmes"
     MANAGE_ID_PROGRAMMES = "manage_id_programmes"
     APPROVE_CARD_DESIGNS = "approve_card_designs"
+    # Release 2 L22 (#128 C-7, #135 Q-S9, #137): the per-space shop. MANAGE_SHOP runs the
+    # catalogue, prices, stock, returns, cash-ups and the shop's own settings; SELL_SHOP
+    # sells at the front desk and hands over collected orders; VIEW_SHOP reads orders and
+    # stock. The built-in Shop Manager holds all three; the Space Manager through
+    # MANAGE_MAKERSPACE below, so no stored role changes. Never organization-grantable.
+    MANAGE_SHOP = "manage_shop"
+    SELL_SHOP = "sell_shop"
+    VIEW_SHOP = "view_shop"
 
 
 IMPLIED_ACTIONS = {
@@ -75,6 +83,10 @@ IMPLIED_ACTIONS = {
     Action.MANAGE_ID_PROGRAMMES: {Action.VIEW_ID_PROGRAMMES},
     Action.MANAGE_MAKERSPACE: {Action.MANAGE_ID_PROGRAMMES, Action.APPROVE_CARD_DESIGNS},
 }
+# Release 2 L22: the shop ladder, and the Space Manager reaches it through MANAGE_MAKERSPACE.
+IMPLIED_ACTIONS[Action.MANAGE_SHOP] = {Action.SELL_SHOP, Action.VIEW_SHOP}
+IMPLIED_ACTIONS[Action.SELL_SHOP] = {Action.VIEW_SHOP}
+IMPLIED_ACTIONS[Action.MANAGE_MAKERSPACE] = IMPLIED_ACTIONS[Action.MANAGE_MAKERSPACE] | {Action.MANAGE_SHOP}
 
 
 def expand_implied_actions(actions) -> set:
@@ -159,6 +171,8 @@ ORGANIZATION_GRANTABLE_ACTIONS = frozenset(
     ROLE_GRANTABLE_ACTIONS - {Action.MANAGE_MACHINES, Action.MANAGE_DEVICES}
     # L16: repair work is physical trust inside ONE space, like a device key.
     - {Action.WORK_REPAIRS, Action.RUN_MAINTENANCE, Action.SET_SERVICE_STATE}
+    # L22: a shop's till and stock are money and goods inside ONE space.
+    - {Action.MANAGE_SHOP, Action.SELL_SHOP, Action.VIEW_SHOP}
 )
 ROLE_SUPERADMIN_ASSIGNABLE_ACTIONS = frozenset({Action.MANAGE_MAKERSPACE})
 # What counts as handover-only work: taking an accepted request or a finished machine job

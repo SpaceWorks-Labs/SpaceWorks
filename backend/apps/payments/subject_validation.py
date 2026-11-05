@@ -63,6 +63,18 @@ def validate_programme_money(payment, identity_unchanged):
         raise ValidationError({"member": "The team leader pays this charge."})
 
 
+def validate_shop_order(payment, identity_unchanged):
+    """Lane L22: a shop order belongs to this space and to its buyer (none for a guest)."""
+    from apps.shop.models import ShopOrder
+
+    row = ShopOrder.objects.filter(pk=payment.subject_id, makerspace_id=payment.makerspace_id).values(
+        "buyer_id").first()
+    if row is None and not identity_unchanged:
+        raise ValidationError({"subject_id": "Payment subject must belong to the payment makerspace."})
+    if row is not None and payment.member_id != row["buyer_id"]:
+        raise ValidationError({"member": "Payment member must be the buyer."})
+
+
 def validate_subject(payment, identity_unchanged):
     """Every subject must belong to the payment's makerspace (and its member)."""
     from apps.payments.models_payment import Payment
@@ -126,6 +138,8 @@ def validate_subject(payment, identity_unchanged):
         validate_gift_subject(payment, identity_unchanged)
     if payment.subject_type in ("submission_fee", "team_registration") and payment.subject_id:
         validate_programme_money(payment, identity_unchanged)
+    if payment.subject_type == "shop_order" and payment.subject_id:
+        validate_shop_order(payment, identity_unchanged)
     if payment.subject_type == Payment.SubjectType.MEMBERSHIP_TERM and payment.subject_id:
         from apps.makerspaces.models import MembershipTerm
 

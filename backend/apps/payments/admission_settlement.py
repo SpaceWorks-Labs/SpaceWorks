@@ -18,7 +18,13 @@ def resume_admission_after_settlement(payment):
     if payment.subject_type == Payment.SubjectType.EVENT_ORDER:
         _resume_event_order(payment)
         return
-    if payment.subject_type in Payment.ACCOUNTLESS_SUBJECT_TYPES:
+    if payment.subject_type == Payment.SubjectType.SHOP_ORDER:
+        # Lane L22: a settled shop order sells its held stock after the payment lock is released.
+        # It comes BEFORE the gift branch: a shop order is account-less too, but not a gift.
+        from apps.shop.settlement import after_settlement as after_shop_settlement
+        after_shop_settlement(payment)
+        return
+    if payment.subject_type in (Payment.SubjectType.DONATION, Payment.SubjectType.SPONSORSHIP):
         from apps.payments.donations.settlement import after_settlement  # lane L18
 
         after_settlement(payment)

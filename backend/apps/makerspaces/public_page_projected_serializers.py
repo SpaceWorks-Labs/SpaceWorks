@@ -160,11 +160,27 @@ class PublicSponsors(Titled):
     results = PublicSponsorCard(many=True)
 
 
+class PublicShopCard(s.Serializer):
+    id = s.IntegerField()
+    slug = s.CharField()
+    name = s.CharField()
+    image_url = s.CharField(allow_blank=True)
+    price_from = s.DecimalField(max_digits=12, decimal_places=2, allow_null=True)
+    sold_out = s.BooleanField()
+
+
+class PublicShop(Titled):
+    """Release 2 L22: a few items from the space's public shop."""
+
+    results = PublicShopCard(many=True)
+    collection_url = s.CharField()
+
+
 PUBLIC_PAYLOADS = {"about": About, "gallery": PublicGallery, "team": PublicTeam,
     "testimonials": Testimonials, "links": Links, "upcoming_events": PublicUpcoming,
     "organization_events": PublicOrganizationEvents, "linked_makerspaces": PublicLinkedSpaces,
     "stats": PublicStats, "location": PublicLocation, "functional_content": PublicFunctional,
-    "membership_plans": PublicMembershipPlans, "sponsors": PublicSponsors}
+    "membership_plans": PublicMembershipPlans, "sponsors": PublicSponsors, "shop": PublicShop}
 
 
 class ProjectedSection(s.Serializer):

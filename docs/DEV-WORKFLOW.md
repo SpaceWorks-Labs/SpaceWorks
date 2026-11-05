@@ -4,15 +4,16 @@
 > crossed the harness's memory-file size warning; nothing was dropped in the move. It has no
 > `AGENTS.md`-style twin — both names of that document point at this one path, so edit it in place.
 >
-> Read it before starting a build on this program: it carries the current program state, the Codex
-> gates, the worktree/test-harness conventions and the dev stack and isolated test runner. The
+> Read it before starting a build on this program: it carries the current program state, who does the
+> work (Claude agents; Codex is off), the worktree/test-harness conventions and the dev stack and isolated test runner. The
 > non-negotiable one-liners are quoted in `CLAUDE.md`; everything else — the *why*, and every trap
 > that has already cost a session — is here.
 
 ## Current work — FabLab expansion (branch `dev`)
 
-Active multi-part FabLab program built on `dev`. This is a **Codex-driven workflow** (Codex writes specs and
-code in parallel where files don't collide; Claude orchestrates and verifies). **What has shipped is listed
+Active multi-part program built on `dev`. It began as a **Codex-driven workflow**; since owner decision
+#119 (2026-10-27) Claude agents write, review and fix everything, in parallel worktrees where files do
+not collide, and a staging agent merges and verifies. **What has shipped is listed
 in `docs/PROJECT-HISTORY.md`** — do not maintain a second copy of that list here.
 
 **Programs already shipped on `dev`**, each with its rules in `docs/INVARIANTS.md` and its dated entry in
@@ -36,14 +37,12 @@ Merkle batches, organizations conferring actions across their makerspaces, and a
 protected route behind a `legacy:v1` cutover) — its rules are the two newest sections of
 `docs/INVARIANTS.md`.
 
-**Codex is AVAILABLE — verified 2026-08-15: `codex doctor` reports `auth is configured` (ChatGPT tokens,
-standalone runtime 0.147.0, all checks green) — so the Stage-1/2/4 gates in `~/.claude/CLAUDE.md` are LIVE
-and must be run.** It runs as the `gpt-5.6-sol` model at **high** reasoning effort
-(`model = "gpt-5.6-sol"`, `model_reasoning_effort = "high"` in `~/.codex/config.toml`). There was
-a stretch when `codex doctor` reported no credentials, during which Claude implemented directly and the
-owner waived those gates; that no longer applies. **Re-check `codex doctor` rather than trusting this
-paragraph** — it is the one claim here that goes stale without anyone editing the file, and it stayed wrong
-for weeks.
+**Codex is OFF; Claude agents do all the work (owner decision #119, 2026-10-27).** The owner briefly
+switched implementation to Codex (#118) and reversed it the same day: every build, plan review, code
+review and fix is done by Claude agents, and no Codex run is started unless the owner asks for it
+again. Where the global config sends Stage 1, 2 or 4 to `/run-codex`, a Claude agent does that stage.
+If Codex is turned back on, check `codex doctor` first; the earlier note that the gates were "LIVE"
+went stale for weeks without anyone editing it.
 
 **The commit-trailer rule is attribution, not ceremony:** name Codex in a `Co-Authored-By` trailer only on
 work Codex actually wrote. A Codex trailer on work it did not write is false attribution, and that overrides
@@ -68,6 +67,7 @@ plus their prior verdict returned both approvals in minutes.
 
 ## Standing build conventions for this program
 
+- **The Codex notes below apply only if the owner turns Codex back on (#119).**
 - **Parallel Codex via git worktree.** A second track runs in a sibling worktree (e.g. `../IM-nbuild` on its
   own branch) with a dedicated test DB, so two Codex builds don't collide on shared files (`rbac.py`,
   `origin_scope.py`, `admin_api/urls.py`, `openapi-schema.json`, `api.ts`). Worktrees are fresh checkouts →

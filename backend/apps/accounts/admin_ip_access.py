@@ -13,7 +13,7 @@ from django.utils import timezone
 from unfold.admin import ModelAdmin
 
 from apps.accounts import ip_rules
-from apps.accounts.login_security_contract import IP_ALLOW, IP_DENY
+from apps.accounts.ip_rule_edits import LOCKOUT_MESSAGE, unblock, would_lock_out
 from apps.accounts.models import IPAccessRule, IPAutoBlock
 from apps.audit import services as audit
 from config.admin_access import SuperuserOnlyModelAdmin
@@ -39,16 +39,9 @@ class IPAccessRuleForm(forms.ModelForm):
 
     def clean(self):
         cleaned = super().clean()
-        cidr, action = cleaned.get("cidr"), cleaned.get("action")
-        if action != IP_DENY or not cidr or self.editor_address is None:
-            return cleaned
-        if not ip_rules.covering(self.editor_address, IP_DENY, [(cidr, IP_DENY, None)]):
-            return cleaned
-        others = [rule for rule in ip_rules.active_rules() if rule[0] != (self.instance.cidr if self.instance.pk else None)]
-        if not ip_rules.covering(self.editor_address, IP_ALLOW, others):
-            raise forms.ValidationError(
-                "This deny rule covers the address you are using now and would lock you out. "
-                "Add an allow rule for your own address first.")
+        replacing = self.instance.cidr if self.instance.pk else None
+        if would_lock_out(self.editor_address, cleaned.get("cidr"), cleaned.get("action"), replacing_cidr=replacing):
+            raise forms.ValidationError(LOCKOUT_MESSAGE)
         return cleaned
 
 
@@ -88,16 +81,6 @@ class IPAccessRuleAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
     def _record_delete(self, request, obj):
         audit.record(request.user, "platform.ip_rule_deleted", target=obj,
                      meta={"via": "control", "action": obj.action})
-
-
-def unblock(actor, rows):
-    """Lift automatic blocks now; one ``auth.ip_unblocked`` row each. Returns the count."""
-    count = 0
-    for row in list(rows):
-        audit.record(actor, "auth.ip_unblocked", target=row, meta={"ip_key": row.ip_key})
-        row.delete()
-        count += 1
-    return count
 
 
 @admin.register(IPAutoBlock)

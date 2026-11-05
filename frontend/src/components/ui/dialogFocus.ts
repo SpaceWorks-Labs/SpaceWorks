@@ -39,7 +39,7 @@ export type DialogEntry = {
   getLayer: () => HTMLElement | null;
 };
 
-let stack: DialogEntry[] = [];
+const stack: DialogEntry[] = [];
 const listeners = new Set<() => void>();
 let topToken: symbol | null = null;
 let pendingRestore: { previousFocus: HTMLElement | null } | null = null;

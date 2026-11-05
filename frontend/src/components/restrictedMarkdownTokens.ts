@@ -23,7 +23,7 @@ export function markdownInlineTokens(text: string): MarkdownToken[] {
     if (text[cursor] === "[" && text[cursor - 1] !== "!") {
       const labelEnd = text.indexOf("](", cursor + 1);
       const label = labelEnd >= 0 ? text.slice(cursor + 1, labelEnd) : "";
-      if (label && label.length <= 200 && !/[\n\[\]]/.test(label)) {
+      if (label && label.length <= 200 && !/[\n[\]]/.test(label)) {
         const start = labelEnd + 2;
         let end = start; let depth = 0;
         while (end < text.length && end - start <= 500 && !/\s/.test(text[end])) {

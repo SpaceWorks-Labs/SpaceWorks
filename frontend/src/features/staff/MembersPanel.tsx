@@ -146,7 +146,7 @@ export function MembersPanel({ makerspaceId, membershipEnabled, presenceEnabled 
         changingWitness={witnessWaiver.isPending}
         membershipEnabled={membershipEnabled}
         onCapability={(next) => capabilities.mutate({ id: row.id, next })}
-        onVerify={() => verify.mutate({ id: row.id, verified: !Boolean(row.verified_at) })}
+        onVerify={() => verify.mutate({ id: row.id, verified: !row.verified_at })}
         onWitness={() => witnessWaiver.mutate(row.id)}
         onRevoke={() => { revoke.reset(); setDecision({ id: row.id, kind: "member", title: `Revoke ${row.user.display_name || row.user.username}` }); }}
         onTerms={() => setTermsMember(row)}

@@ -97,7 +97,8 @@ function InvitationApplication({ invitation, schema, admissionMode, pending, onC
       event.preventDefault();
       const next = validateCustomAnswers(schema, answers);
       setErrors(next);
-      if (!Object.keys(next).length) schema?.length ? onClaim(invitation.id, answers) : onClaim(invitation.id);
+      if (Object.keys(next).length) return;
+      if (schema?.length) onClaim(invitation.id, answers); else onClaim(invitation.id);
     }}>
       <CustomFormFields schema={schema} answers={answers} onChange={setAnswers} errors={errors} disabled={pending} />
       <button type="submit" className="desk-button-brand w-full sm:w-fit" disabled={pending}>{pending ? "Claiming…" : "Claim invitation"}</button>

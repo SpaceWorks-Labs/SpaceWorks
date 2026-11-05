@@ -5,6 +5,7 @@ from .models_definitions import HackathonPrize, HackathonTrack, JudgingCriterion
 from .models_finalists import FinalistAdvance, FinalistAnnouncement, JudgingFinalist
 from .models_options import HackathonProgrammeOptions
 from .models_payouts import HackathonPrizePayout
+from .models_peoples_choice import PeoplesChoiceConfig, PeoplesChoiceResult, PeoplesChoiceStanding, PeoplesChoiceVote
 from .models_results import (
     EventAward, EventResultRevision, EventResultRound, JudgingNotice, ResultAnnouncement, ResultPublicationState, SponsorWinnerProposal,
 )
@@ -20,5 +21,5 @@ __all__ = [
     "ParticipantSponsorResumeConsent", "SponsorResumeConsentHistory", "JudgingNotice", "JudgingRoundProject",
     "JudgePairwiseComparison", "JudgePairwiseInvalidation", "JudgePairwiseCursor",
     "JudgingPanelSeat", "FinalistAdvance", "JudgingFinalist", "FinalistAnnouncement", "HackathonProgrammeOptions",
-    "HackathonPrizePayout",
+    "HackathonPrizePayout", "PeoplesChoiceConfig", "PeoplesChoiceVote", "PeoplesChoiceResult", "PeoplesChoiceStanding",
 ]

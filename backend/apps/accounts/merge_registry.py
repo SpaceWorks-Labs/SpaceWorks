@@ -32,12 +32,14 @@ from .merge_registry_rows_l18 import ROWS as _L18
 from .merge_registry_rows_l21a import ROWS as _L21A
 from .merge_registry_rows_l21b import ROWS as _L21B
 from .merge_registry_rows_l22 import ROWS as _L22
+from .merge_registry_rows_peoples_choice import ROWS as _PEOPLES_CHOICE
 from .merge_registry_rows_operations import ROWS as _OPERATIONS
 from .merge_registry_types import (  # noqa: F401 -- re-exported
     KEEP_ON_SHELL, REPOINT, UNIQUE_RESOLVE, compose,
 )
 
-USER_REFERENCES, USER_ID_COLUMNS = compose(_ACCOUNTS, _COMMUNITY, _EVENTS, _OPERATIONS, _MEMBERSHIP, _FINANCE, _PRICING, _L12, _L23, _L16, _L3, _L6, _L18, _L21A, _L21B, _L22)
+USER_REFERENCES, USER_ID_COLUMNS = compose(_ACCOUNTS, _COMMUNITY, _EVENTS, _OPERATIONS, _MEMBERSHIP, _FINANCE, _PRICING, _L12, _L23, _L16, _L3, _L6, _L18, _L21A, _L21B, _L22,
+                                          _PEOPLES_CHOICE)
 
 
 def disposition_for(label, field_name):

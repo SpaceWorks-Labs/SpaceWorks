@@ -538,12 +538,25 @@ admission and requires externally prepared state, never inventing recovery autho
 **Self-host vs managed SaaS (all managed features dormant by default).** `PLATFORM_DOMAIN_SUFFIX`
 blank/whitespace ⇒ `domain_verification.is_self_host()` is True ⇒ **every managed feature is inert**
 and single-domain behavior is byte-for-byte unchanged (self-hosters unaffected). Self-host trusts a
-superadmin-set custom `frontend_domain` immediately (no DNS TXT challenge — the challenge only ever
-defended the shared managed box). The self-host branch is strictly superadmin-only (the staff-origin/
-CORS allowlist is process-global; letting any tenant set a trusted origin is a cross-tenant token-theft
-vector). Managed mode adds `<slug>.space-works.tech` provisioning + tenant self-serve custom domains on one
+SUPERADMIN-set custom `frontend_domain` immediately (no DNS TXT challenge: the operator's word is
+proof). Since #192 a Space Manager may set the domain on self-host too, but theirs is PENDING and
+gets no trust until the same DNS TXT challenge managed mode uses passes (`domain_verification`:
+`apply_domain_change(operator_trusted=...)`, `verify_domain` runs the TXT check for a non-superadmin
+and never downgrades an already VERIFIED self-host domain). The staff-origin/CORS allowlist is
+process-global, so a tenant-set origin trusted without proof would be a cross-tenant token-theft
+vector: nothing may trust a self-host domain on save any more (the old `post_save` auto-verify is
+gone); only the superadmin's writers, `verify_domain` and the operator's explicit
+`reconcile_selfhost_domains` command set VERIFIED. Managed mode adds `<slug>.space-works.tech` provisioning + tenant self-serve custom domains on one
 shared instance (no per-tenant DB). **VERIFIED is the trust gate** — a `frontend_domain` grants CORS/
 staff-origin/bootstrap/Host/TLS trust only when `frontend_domain_status=VERIFIED` and non-archived.
+**Hide from the platform (#192)** is `hidden_from_central_directory`, independent of any domain (the
+old `ck_makerspace_hidden_requires_domain` constraint is gone). It is a Space-Manager setting written
+through `settings_authority.assert_setting_write(..., "public_site", "hidden_from_central_directory")`
+and audited as `settings.changed`. Every central listing reads it: `website_directory.directory_spaces`
+(Discover, cross-space search, sitemap, organization catalogue), `PublicMakerspaceListView` and
+`events.directories.partner_makerspaces`. It is a discovery hide, never authorization: slug and
+verified-domain routes keep serving the space, and the superadmin keeps seeing it (#110); the platform
+overview counts it only with the excluded toggle (#183A).
 
 **Managed hosting requests (platform-level, dormant on self-host).** `apps/hosting_requests/` lets anyone
 ask to host a makerspace (`/hosting`) and lets an existing makerspace or organization send an invitation
@@ -1100,8 +1113,9 @@ deployment telemetry with no tenant (IP blocks, unusual sign-in alerts, platform
 backups) is shown as platform-only figures, never attributed to a space; (4) only an active platform
 superadmin in a browser session reads it (`IsActiveSuperAdmin` + `_platform_context_for_view`, both
 routes `PLATFORM_ONLY_ROUTES`), and every CSV export is audited as `platform.overview_exported`.
-The space set is every space except archived and importing/aborted ones, which a toggle adds back;
-directory-hidden live spaces are always counted (#110: nothing is hidden from the superadmin). A
+The space set is every space except archived, importing/aborted and directory-hidden ones
+(`platform_overview.exclusion_reason`), which one toggle adds back; nothing is hidden from the
+superadmin (#110), since the toggle and `excluded_count` always disclose the left-out spaces. A
 block follows its switch per space: a space with it off shows "off" and adds nothing; a block off in
 every space is omitted and listed in `hidden_blocks`. The builder holds no actor (authority is the
 view's), so the Celery task computes it; results are cached per (period, toggle) for 10 minutes and
@@ -3616,6 +3630,12 @@ Release 2 lane L16 (#93, #94, #98, #100, #102, #103, #128 C-3/C-4/C-5/C-6b/C-9, 
   (`RoomOutage`, one open per room) BLOCKS new overlapping bookings by default through
   `bookings/admission.validate_admission` (or WARNS); bookings already inside it are listed to staff
   with booking authority and their bookers are emailed; a staff cancel owes the full amount (#72).
+  A machine under repair (`status == "maintenance"`) is treated the same way for its bookable time
+  (`BookableSpace.machine`): `machines/booking_gate.refuse_if_under_repair`, called from the same
+  admission seam, refuses a new booking overlapping the repair window (open downtime start to its
+  `expected_back_at`; no end known = every later booking) with a 409 `machine_under_repair`
+  (`MachineUnderRepair`, still a `BookingConflict`); taking it out lists the bookings already made
+  until it is expected back to booking authority and emails their bookers once.
 - **Records.** Every step writes an append-only `IssueEvent` and an audit row (`issue.*`,
   `repair.*`, `dispatch.sent`, `technician.*`, `service_state.changed`, `maintenance.subject_*`).
   Photos are private, presigned to the STAGING key and promoted once on attach, and charge managed

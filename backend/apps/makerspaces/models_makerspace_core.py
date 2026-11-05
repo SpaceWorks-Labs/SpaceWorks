@@ -234,11 +234,6 @@ class Makerspace(MakerspaceSecretsMixin, PublicSiteSettings):
                 name="uniq_makerspace_frontend_domain_ci",
             ),
             models.CheckConstraint(
-                condition=Q(hidden_from_central_directory=False)
-                | Q(frontend_domain__isnull=False),
-                name="ck_makerspace_hidden_requires_domain",
-            ),
-            models.CheckConstraint(
                 condition=Q(membership_dues_amount__gte=0),
                 name="makerspace_dues_nonnegative",
             ),

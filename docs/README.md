@@ -71,6 +71,7 @@ Every guide in this repository, grouped by what you are trying to do. Start with
 - [Helm deployment](helm.md) — the Kubernetes chart in `charts/spaceworks`.
 - [Supabase PostgreSQL](supabase-deployment.md) — using Supabase as the database.
 - [Single-tenant branded frontend](single-tenant-frontend.md) — running the frontend for one makerspace.
+- [Your own domain or frontend](own-domain-and-frontend.md) — a space's own domain (DNS proof first), hiding it from the platform, and embeds, API clients and webhooks.
 - [Database recovery after an update](update-recovery.md) — restoring dumps and inspecting failed deployments.
 - [Account portability](account-portability.md) — what travels when a space is backed up, restored or moved to another deployment: people, staff roles and credentials.
 - [Environment reference](environment-reference.md), [delivery settings](environment-reference-delivery.md) and [operations settings](environment-operations.md) — every environment variable.

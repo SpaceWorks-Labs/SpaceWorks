@@ -215,8 +215,9 @@ The **Checks** workflow runs on every PR into `main` or `dev`, on pushes to `dev
 **checks only** (owner decision #108): the pytest and vitest suites stay local and gitignored, so a green
 Checks run is not a test run. Its four jobs are the required status checks on `main`; keep their names:
 
-- **`frontend`** — `npm ci`, `npx tsc -b`, `npm run build` (which runs the PWA verify script). There is no
-  lint step because no ESLint config is committed.
+- **`frontend`** — `npm ci`, `npx tsc -b`, `npm run lint` (ESLint, `frontend/eslint.config.js`: the
+  recommended JS and typescript-eslint rules plus the rules of hooks; `exhaustive-deps` only warns, and
+  the gitignored test suites are not linted), `npm run build` (which runs the PWA verify script).
 - **`backend`** — Python 3.12, `manage.py check`, `manage.py makemigrations --check --dry-run`. Settings
   get dummy values plus keys from `scripts/ci/throwaway_keys.py` (`SECRET_KEY` and the
   Fernet keys, including the mandatory `PII_MASTER_KEY`); no database or service is started.

@@ -43,7 +43,7 @@ export function PlatformOverviewControls({ query, onChange, ready, excludedCount
       <label className="inline-flex min-h-11 items-center gap-3 text-sm text-ink">
         <input type="checkbox" className="h-5 w-5" checked={query.includeExcluded}
           onChange={event => onChange({ ...query, includeExcluded: event.target.checked })} />
-        Include archived and not-serving spaces{excludedCount ? ` (${excludedCount})` : ""}
+        Include archived, not-serving and directory-hidden spaces{excludedCount ? ` (${excludedCount})` : ""}
       </label>
       <div className="flex flex-wrap gap-2">
         <button type="button" className="desk-button min-h-11" onClick={onRefresh} disabled={refreshing || !overviewReady(query)}>

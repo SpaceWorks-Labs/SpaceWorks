@@ -60,7 +60,9 @@ jobs:
       - name: Type-check
         run: npx tsc -b
 
-      # No ESLint configuration is committed, so there is no lint step yet.
+      # frontend/eslint.config.js; warnings (react-hooks/exhaustive-deps) do not fail the job.
+      - name: Lint
+        run: npm run lint
 
       - name: Build (includes the PWA verify script)
         run: npm run build

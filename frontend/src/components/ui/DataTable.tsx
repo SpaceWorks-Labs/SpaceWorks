@@ -91,7 +91,7 @@ export function DataTable<T>({
   };
   const changeRow = (id: Key, checked: boolean) => {
     const next = new Set(selectedSet);
-    checked ? next.add(id) : next.delete(id);
+    if (checked) next.add(id); else next.delete(id);
     onSelectionChange?.([...next]);
   };
   const changeAll = (checked: boolean) => {

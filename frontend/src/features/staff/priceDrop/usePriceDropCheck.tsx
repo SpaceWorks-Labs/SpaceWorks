@@ -25,7 +25,7 @@ export function usePriceDropCheck(makerspaceId?: number): {
   const check = useCallback(async (path: string, method: string, body: unknown) => {
     if (!on) return true;
     setChecking(true);
-    let found: PriceDropReport | null = null;
+    let found: PriceDropReport | null;
     try {
       found = await previewPriceDrop(path, method, body);
     } finally {

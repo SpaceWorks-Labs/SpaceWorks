@@ -36,13 +36,5 @@ def clean_makerspace(self):
     self.enabled_modules, self.enabled_features = validate_capabilities(
         self.enabled_modules or [], kept
     )
-    if self.hidden_from_central_directory and not self.frontend_domain:
-        raise ValidationError(
-            {
-                "hidden_from_central_directory": (
-                    "A frontend domain is required to hide a makerspace from the central directory."
-                )
-            }
-        )
     if self.geofence_enabled and not self.geofence_effective:
         raise ValidationError({"geofence_enabled": "Set both latitude and longitude before enabling the geofence."})

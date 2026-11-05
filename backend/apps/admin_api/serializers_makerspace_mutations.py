@@ -10,6 +10,9 @@ from apps.makerspaces.models import (
 )
 
 
+HIDDEN_MODULE, HIDDEN_KEY = "public_site", "hidden_from_central_directory"
+
+
 class MakerspaceMutationMixin:
     def _validate_event_default(self, instance, values):
         if values.get("event_default_registration_audience") == "participating_organizations":
@@ -35,7 +38,8 @@ class MakerspaceMutationMixin:
         if provider_values:
             instance.save(update_fields=["email_provider", "email_provider_config"])
         self._validate_event_default(instance, validated_data)
-        if domain_verification.is_self_host() and instance.frontend_domain:
+        if (domain_verification.is_self_host() and instance.frontend_domain
+                and domain_verification.is_operator(self.context["request"].user)):
             instance.frontend_domain_status = Makerspace.DomainStatus.VERIFIED
             instance.domain_verified_at = timezone.now()
             instance.save(
@@ -83,6 +87,8 @@ class MakerspaceMutationMixin:
             is_superadmin = actor.is_superuser or actor.role == User.Role.SUPERADMIN
             from apps.integrations.email_provider_serializers import apply_provider_update
             apply_provider_update(locked, validated_data)
+            hidden_before = locked.hidden_from_central_directory
+            hidden_decision = self._hidden_decision(actor, locked, validated_data)
             for field, value in validated_data.items():
                 setattr(locked, field, value)
             self._validate_event_default(locked, validated_data)
@@ -108,23 +114,26 @@ class MakerspaceMutationMixin:
             if discord_webhook_url is not missing:
                 locked.set_discord_webhook_url(discord_webhook_url)
             locked.save()
+            if hidden_decision is not None:
+                from apps.makerspaces.settings_authority import record_change
+                record_change(actor, locked, HIDDEN_MODULE, HIDDEN_KEY, hidden_before,
+                              locked.hidden_from_central_directory, hidden_decision)
             from apps.makerspaces.membership_admission_settings import sync_legacy_settings
             sync_legacy_settings(actor, locked, validated_data)
             return locked
 
     @staticmethod
+    def _hidden_decision(actor, locked, validated_data):
+        """#192: "hide from the platform" is the Space Manager's own setting, written
+        through the settings authority and audited as `settings.changed`."""
+        current = locked.hidden_from_central_directory
+        if validated_data.get("hidden_from_central_directory", current) == current:
+            return None
+        from apps.makerspaces.settings_authority import assert_setting_write
+        return assert_setting_write(actor, locked, HIDDEN_MODULE, HIDDEN_KEY)
+
+    @staticmethod
     def _apply_frontend_domain_change(locked, frontend_domain, is_superadmin):
-        if (
-            domain_verification.is_self_host()
-            and frontend_domain
-            and not is_superadmin
-        ):
-            raise serializers.ValidationError(
-                {
-                    "frontend_domain": (
-                        "Only a superadmin can set the custom domain on a "
-                        "self-hosted instance."
-                    )
-                }
-            )
-        domain_verification.apply_domain_change(locked, frontend_domain)
+        # #192: a Space Manager may set the domain on self-host too; only the superadmin's
+        # is trusted at once, a Space Manager's waits for the DNS TXT proof (VERIFIED gate).
+        domain_verification.apply_domain_change(locked, frontend_domain, operator_trusted=is_superadmin)

@@ -82,7 +82,11 @@ GALLERY_PARAMS = [OpenApiParameter("page", int, OpenApiParameter.QUERY), OpenApi
                                    description="S7: filter by a public choice field of the final stage.")]
 GalleryEntryPage = inline_serializer(name="GalleryEntryReadPage", fields={
     "count": serializers.IntegerField(), "next": serializers.URLField(allow_null=True),
-    "previous": serializers.URLField(allow_null=True), "results": GalleryEntryRead(many=True)})
+    "previous": serializers.URLField(allow_null=True), "results": GalleryEntryRead(many=True),
+    "filters": inline_serializer(name="GalleryFieldFilter", many=True, fields={
+        "key": serializers.CharField(), "label": serializers.CharField(),
+        "choices": serializers.ListField(child=serializers.CharField())},
+        help_text="S7: the public choice fields to offer as field.<key> filters; empty while search is off.")})
 
 
 class PublicGalleryBase(PrivateView):
@@ -110,7 +114,8 @@ class GalleryList(PublicGalleryBase):
             except Http404:
                 continue
         # Counts are over currently publishable entries only, never private rows.
-        return paginated(request, result, GalleryEntryRead)
+        from .stage_gallery import gallery_filters
+        return paginated(request, result, GalleryEntryRead, filters=gallery_filters(event))
 
 
 class GalleryDetail(PublicGalleryBase):

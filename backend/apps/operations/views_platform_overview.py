@@ -31,7 +31,8 @@ PARAMETERS = [
     OpenApiParameter("start", OpenApiTypes.DATE, description="First UTC day; custom period only."),
     OpenApiParameter("end", OpenApiTypes.DATE, description="Last UTC day, inclusive; custom period only."),
     OpenApiParameter("include_excluded", OpenApiTypes.BOOL,
-                     description="Also count archived and not-serving (importing/aborted) spaces. Default false."),
+                     description="Also count archived, not-serving (importing/aborted) and directory-hidden "
+                                 "spaces. Default false."),
 ]
 ERRORS = {code: PlatformOverviewErrorSerializer for code in (400, 401, 403, 429)}
 COMPUTING = OpenApiResponse(PlatformOverviewComputingSerializer,

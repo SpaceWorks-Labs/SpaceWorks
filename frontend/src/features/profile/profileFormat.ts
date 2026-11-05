@@ -29,7 +29,7 @@ export function timelineRange(start: string, end: string | null) {
 
 /** Brand marks are not in the icon set, so links get a generic glyph and always carry a text label. */
 export function linkPresentation(link: { kind: string; url: string }): { label: string; Icon: LucideIcon } {
-  let host = "";
+  let host: string;
   try { host = new URL(link.url).hostname.replace(/^www\./, ""); } catch { host = ""; }
   const kind = link.kind.trim();
   const key = `${kind} ${host}`.toLowerCase();

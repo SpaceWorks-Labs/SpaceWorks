@@ -9,12 +9,25 @@ def public_filters(stage):
             for f in stage.custom_fields if f.get("type") == "choice" and f.get("visible_to") == "public"]
 
 
+def _final_stage_filters(event):
+    stage = SubmissionStage.objects.filter(event=event).order_by("-position").first()
+    return public_filters(stage) if stage else []
+
+
+def gallery_filters(event):
+    """The filter controls the public gallery offers: the final stage's public choice fields, only
+    while gallery search is on (with it off, any ``field.<key>`` is a 404, so none are offered)."""
+    from apps.events.judging.feature import GALLERY_SEARCH, enabled
+    if not enabled(event.makerspace, GALLERY_SEARCH):
+        return []
+    return _final_stage_filters(event)
+
+
 def filter_by_fields(event, rows, params):
     wanted = {key[len("field."):]: value for key, value in params.items() if key.startswith("field.") and value}
     if not wanted:
         return rows
-    stage = SubmissionStage.objects.filter(event=event).order_by("-position").first()
-    allowed = {f["key"]: f["choices"] for f in public_filters(stage)} if stage else {}
+    allowed = {f["key"]: f["choices"] for f in _final_stage_filters(event)}
     for key, value in wanted.items():
         if key not in allowed or value not in allowed[key]:
             raise ValidationError({f"field.{key}": "Use a public choice field and one of its choices."})

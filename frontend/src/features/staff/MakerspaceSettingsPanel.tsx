@@ -13,6 +13,7 @@ import { MakerspaceBookingRulesSettings } from "./MakerspaceBookingRulesSettings
 import { MakerspaceBookingSettings } from "./MakerspaceBookingSettings";
 import { MakerspaceReminderSettings } from "./MakerspaceReminderSettings";
 import { MakerspaceCustomDomainSettings } from "./MakerspaceCustomDomainSettings";
+import { MakerspaceDirectoryVisibility } from "./MakerspaceDirectoryVisibility";
 import { MakerspaceEmailSettings } from "./MakerspaceEmailSettings";
 import { MakerspaceFilamentSettings } from "./MakerspaceFilamentSettings";
 import { MakerspaceFeatureSettings } from "./MakerspaceFeatureSettings";
@@ -157,6 +158,7 @@ export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMak
       <MakerspaceBrandingSettings {...shared} />{printRecovery}
       {settings.data?.platform_hosting === true ? <MakerspaceSubdomainSettings makerspace={makerspace} settings={settings.data} /> : null}
       <MakerspaceCustomDomainSettings {...shared} />
+      {canManageMakerspace ? <MakerspaceDirectoryVisibility {...shared} /> : null}
     </> },
     // #170: Settings › Public stats; read-only for everyone but the Space Manager.
     { id: "public-stats", title: "Public stats", rows: <>

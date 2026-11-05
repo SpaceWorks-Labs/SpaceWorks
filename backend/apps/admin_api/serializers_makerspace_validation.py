@@ -189,30 +189,9 @@ class MakerspaceValidationMixin:
             )
 
         if "frontend_domain" in attrs:
+            # #192: directory visibility no longer depends on a domain; clearing the
+            # domain leaves "hide from the platform" exactly as the Space Manager set it.
             self._validate_frontend_domain(attrs)
-            if attrs["frontend_domain"] is None:
-                attrs["hidden_from_central_directory"] = False
-                return attrs
-
-        effective_domain = attrs.get(
-            "frontend_domain",
-            self.instance.frontend_domain if self.instance is not None else None,
-        )
-        effective_hidden = attrs.get(
-            "hidden_from_central_directory",
-            self.instance.hidden_from_central_directory
-            if self.instance is not None
-            else False,
-        )
-        if effective_hidden and not effective_domain:
-            raise serializers.ValidationError(
-                {
-                    "hidden_from_central_directory": (
-                        "A frontend domain is required to hide a makerspace from "
-                        "the central directory."
-                    )
-                }
-            )
         from apps.integrations.email_provider_serializers import validate_provider_update
         validate_provider_update(attrs, self.instance, tenant=True)
         return attrs

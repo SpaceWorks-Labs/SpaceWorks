@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Badge, DataTable, type DataTableColumn } from "../../components/ui";
-import { DRILL_TAB, EXCLUDED_LABEL, drillHref, formatValue, offText } from "./overviewFormat";
+import { DRILL_TAB, EXCLUDED_LABEL, drillHref, formatValue, isLiveSpace, offText } from "./overviewFormat";
 import type { OverviewBlock, OverviewMetric, OverviewSpace } from "./platformOverviewApi";
 
 type Row = { id: string; space?: OverviewSpace; total?: boolean; values: Record<string, number | null> | null };
@@ -19,7 +19,7 @@ export function SpaceCell({ space, tab }: { space?: OverviewSpace; tab: string }
   return <span className="inline-flex flex-wrap items-center gap-2">
     {href ? <a className="font-semibold text-ink underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
       href={href} aria-label={`Open ${space.name} in the console`}>{space.name}</a> : <span>{space.name}</span>}
-    {space.excluded_reason ? <Badge tone="warn">{EXCLUDED_LABEL[space.excluded_reason] ?? space.excluded_reason}</Badge> : null}
+    {!isLiveSpace(space) && space.excluded_reason ? <Badge tone="warn">{EXCLUDED_LABEL[space.excluded_reason] ?? space.excluded_reason}</Badge> : null}
     {space.directory_hidden ? <Badge tone="neutral">Not in directory</Badge> : null}
   </span>;
 }

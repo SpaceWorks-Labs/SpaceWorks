@@ -1,4 +1,4 @@
-import type { GalleryConsent, GalleryEntry, Page, PublicResults, SponsorConsent } from './types';
+import type { GalleryConsent, GalleryEntry, GalleryFieldFilter, Page, PublicResults, SponsorConsent } from './types';
 
 function object(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Invalid event response. Reload to try again.');
@@ -17,6 +17,16 @@ export function page<T>(value: unknown, parse: (row: unknown) => T): Page<T> {
   const row = object(value); integer(row.count); array(row.results);
   for (const key of ['next', 'previous']) if (row[key] !== null) text(row[key]);
   return { count: row.count, next: row.next as string | null, previous: row.previous as string | null, results: row.results.map(parse) };
+}
+/** S7: the public choice fields the gallery may filter by; absent (an older server) reads as none. */
+export function galleryFilters(value: unknown): GalleryFieldFilter[] {
+  const row = object(value);
+  if (row.filters === undefined) return [];
+  array(row.filters);
+  return row.filters.map(item => {
+    const filter = object(item); text(filter.key); text(filter.label); array(filter.choices); filter.choices.forEach(text);
+    return { key: filter.key, label: filter.label, choices: filter.choices as string[] };
+  });
 }
 export function galleryEntry(value: unknown): GalleryEntry {
   const row = object(value);

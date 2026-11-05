@@ -50,7 +50,9 @@ def create_recurring_bookings(space, *, actor, starts_at, ends_at, count, interv
             # Each create has a savepoint, so a conflict rolls back its charge/audit only.
             booking = create_booking(locked, actor=actor, starts_at=start, ends_at=end, **values)
         except (BookingConflict, BookingInvalidTransition, ValidationError) as exc:
-            result.append({**item, 'booking_id': None, 'status': 'conflict', 'detail': str(getattr(exc, 'detail', exc))})
+            # A conflict's own message (a machine under repair is also an APIException with a dict detail).
+            detail = str(exc) if isinstance(exc, BookingConflict) else str(getattr(exc, 'detail', exc))
+            result.append({**item, 'booking_id': None, 'status': 'conflict', 'detail': detail})
         else:
             result.append({**item, 'booking_id': booking.pk, 'status': booking.status, 'detail': ''})
     from apps.audit import services as audit

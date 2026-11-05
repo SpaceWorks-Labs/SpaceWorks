@@ -76,7 +76,8 @@ class OverviewSpaceSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField()
     slug = serializers.CharField()
-    excluded_reason = serializers.CharField(allow_null=True, help_text="archived, importing or aborted; null when live.")
+    excluded_reason = serializers.CharField(
+        allow_null=True, help_text="archived, importing, aborted or directory_hidden; null when counted by default.")
     directory_hidden = serializers.BooleanField()
 
 

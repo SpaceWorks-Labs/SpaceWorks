@@ -8,10 +8,8 @@ class MakerspacesConfig(AppConfig):
 
     def ready(self):
         from django.db import transaction
-        from django.utils import timezone
 
         from apps.makerspaces import checks_station  # noqa: F401
-        from apps.makerspaces import domain_verification
         from apps.makerspaces.cors import register_signal
         from apps.makerspaces.hosting import invalidate
         from apps.makerspaces.models import Makerspace
@@ -45,19 +43,9 @@ class MakerspacesConfig(AppConfig):
             # _commit_status, provision_subdomain, and /control/ edits are all covered.
             transaction.on_commit(invalidate)
 
-        def reconcile_selfhost_domain(sender, instance, **kwargs):
-            # Self-host: any saved makerspace with a non-empty but not-yet-VERIFIED
-            # frontend_domain is trusted automatically (operator owns DNS + server).
-            # Use .update() to avoid recursive save(); schedule an explicit invalidate
-            # because .update() bypasses the post_save signal above.
-            if not domain_verification.is_self_host():
-                return
-            if instance.frontend_domain and instance.frontend_domain_status != Makerspace.DomainStatus.VERIFIED:
-                Makerspace.objects.filter(pk=instance.pk).update(
-                    frontend_domain_status=Makerspace.DomainStatus.VERIFIED,
-                    domain_verified_at=timezone.now(),
-                )
-                transaction.on_commit(invalidate)
+        # #192: there is no save-time self-host auto-trust any more. A Space Manager may set
+        # a domain on self-host, and it must stay PENDING until its DNS TXT proof passes;
+        # the superadmin's writers (`apply_domain_change(operator_trusted=True)`) trust theirs.
 
         def ensure_default_roles_on_create(sender, instance, created, **kwargs):
             if not created:
@@ -89,12 +77,6 @@ class MakerspacesConfig(AppConfig):
                     "joining_fee": instance.membership_dues_amount,
                 })
 
-        post_save.connect(
-            reconcile_selfhost_domain,
-            sender=Makerspace,
-            dispatch_uid="makerspaces.reconcile_selfhost_domain_on_save",
-            weak=False,
-        )
         post_save.connect(
             invalidate_hosting_cache,
             sender=Makerspace,

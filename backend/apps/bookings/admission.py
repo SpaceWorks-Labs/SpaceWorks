@@ -27,6 +27,7 @@ def validate_admission(space, booking, *, now, actor, override_reason="", check_
     if not space.is_active:
         raise BookingInvalidTransition("Inactive spaces cannot accept bookings.")
     _refuse_room_outage(space, booking)
+    _refuse_machine_under_repair(space, booking)
     if booking.member_id:
         # Reload account standing rather than trusting a caller's cached relation.
         booking.member = type(booking.member).objects.get(pk=booking.member_id)
@@ -50,6 +51,16 @@ def _refuse_room_outage(space, booking):
     if runtime_active("maintenance") and booking.starts_at and booking.ends_at:
         from apps.maintenance.repairs.room_outages import refuse_if_blocked
         refuse_if_blocked(space, booking.starts_at, booking.ends_at)
+
+
+def _refuse_machine_under_repair(space, booking):
+    """Trace gap 19: a bookable machine out of service for repair refuses overlapping bookings."""
+    if space.machine_id and booking.starts_at and booking.ends_at:
+        from apps.machines.booking_gate import refuse_if_under_repair
+        from apps.machines.models import Machine
+        machine = Machine.objects.filter(pk=space.machine_id).only("id", "status").first()  # current status, not a cached one
+        if machine is not None:
+            refuse_if_under_repair(machine, booking.starts_at, booking.ends_at)
 
 
 def require_feature(space, key):

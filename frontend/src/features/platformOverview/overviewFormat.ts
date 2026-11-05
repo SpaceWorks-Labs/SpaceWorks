@@ -33,6 +33,11 @@ export const EXCLUDED_LABEL: Record<string, string> = {
   archived: "Archived", importing: "Importing", aborted: "Import aborted",
 };
 
+/** A directory-hidden space is left out by default too, but it is live: the console still opens it. */
+export function isLiveSpace(space: OverviewSpace) {
+  return !space.excluded_reason || space.excluded_reason === "directory_hidden";
+}
+
 /** The console tab each block drills into; the overview links there with `?space=<id>`. */
 export const DRILL_TAB: Record<string, string> = {
   people: "members", lending: "requests", machines: "machines", events: "events", bookings: "bookings",
@@ -41,7 +46,7 @@ export const DRILL_TAB: Record<string, string> = {
 
 /** A space's console page, or null for a space the console cannot open (archived, importing). */
 export function drillHref(space: OverviewSpace | undefined, tab: string) {
-  if (!space || space.excluded_reason) return null;
+  if (!space || !isLiveSpace(space)) return null;
   return consoleSessionHref(`/admin/${tab}?space=${space.id}`, "platform");
 }
 

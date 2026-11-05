@@ -134,7 +134,7 @@ export function OperationsReports({
               <span>End</span>
               <input className="desk-input" type="date" value={endDate} onChange={(event) => { setRangePreset("custom"); setEndDate(event.target.value); }} />
             </label>
-            {Boolean(selected?.grains.length) ? <label className="eyebrow grid gap-1">
+            {selected?.grains.length ? <label className="eyebrow grid gap-1">
               <span>Grain</span>
               <select className="desk-input max-w-full" value={effectiveGrain} onChange={(event) => setGrain(event.target.value)}>
                 {(selected?.grains ?? ["day"]).map((value) => <option key={value} value={value}>{value}</option>)}

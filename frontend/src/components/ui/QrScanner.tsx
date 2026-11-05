@@ -22,6 +22,10 @@ type QrScannerProps = {
   feedback?: ReactNode;
 };
 
+// The native BarcodeDetector is not in TypeScript's DOM library yet; this is the slice we use.
+type BarcodeDetectorLike = { detect(source: HTMLVideoElement): Promise<{ rawValue: string }[]> };
+type BarcodeDetectorConstructor = new (options: { formats: string[] }) => BarcodeDetectorLike;
+
 let zxingReaderPromise: Promise<typeof import("zxing-wasm/reader")> | null = null;
 const loadZxingReader = () => {
   zxingReaderPromise ??= import("zxing-wasm/reader").then((mod) => {
@@ -43,7 +47,7 @@ export default function QrScanner({ onScan, onClose, feedback }: QrScannerProps)
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const intervalRef = useRef<number | null>(null);
-  const detectorRef = useRef<any>(null);
+  const detectorRef = useRef<BarcodeDetectorLike | null>(null);
   const nativeFailedRef = useRef(false);
   const onScanRef = useRef(onScan);
   const lastScanRef = useRef({ value: "", at: 0 });
@@ -120,7 +124,7 @@ export default function QrScanner({ onScan, onClose, feedback }: QrScannerProps)
       try {
         if ("BarcodeDetector" in window && !nativeFailedRef.current) {
           try {
-            const Detector = (window as any).BarcodeDetector;
+            const Detector = (window as unknown as { BarcodeDetector: BarcodeDetectorConstructor }).BarcodeDetector;
             detectorRef.current ??= new Detector({ formats: ["qr_code"] });
             const results = await detectorRef.current.detect(video);
             emitScan(results[0]?.rawValue ?? "");

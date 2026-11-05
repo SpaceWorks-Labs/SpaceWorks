@@ -24,7 +24,7 @@ const MAX_PRINTS = 6;
  * The 404 page's pet. Patch trots along the bottom of the screen towards the pointer or a tap,
  * using the approved left-facing sheet when heading left (never a CSS flip), wanders when left
  * alone and then naps. Decorative only: hidden from assistive tech, no pointer events, and still
- * under reduced motion. Behaviour adapted from yuyu by twilighty-abhi (AGPL-3.0); see NOTICE.
+ * under reduced motion. The behaviour is adapted from AGPL-3.0 code; the attribution is in NOTICE.
  */
 export function NotFoundPatch() {
   const reduced = useReducedMotion();

@@ -1133,9 +1133,10 @@ builder's own "Public stats" section (Settings › Public page) is separate and 
 **Platform dashboard › Platform overview** in the web superadmin console (#183A) combines every
 live space's numbers: a total for each figure, always shown beside the per-space table it adds up.
 It is not a module and has no switch; it is platform-only (`GET /admin/platform/overview`, CSV at
-`/overview/export`). Periods are UTC: this month, this year, all time or a custom range. Archived
-and not-serving (importing/aborted) spaces are left out unless the superadmin ticks **Include
-archived and not-serving spaces**.
+`/overview/export`). Periods are UTC: this month, this year, all time or a custom range. Archived,
+not-serving (importing/aborted) and directory-hidden spaces are left out unless the superadmin ticks
+**Include archived, not-serving and directory-hidden spaces**; a directory-hidden space shown that
+way is still live, so its name still links into the console.
 
 Each block follows its own switch, space by space: a space with the switch off shows "Off" in the
 table and adds nothing to the total. A block whose switch is off in every space is hidden, and the

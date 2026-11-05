@@ -1,6 +1,6 @@
 # Analytics views (release 2, lane L25)
 
-**Catalogue version 1.** These are the curated, read-only views a space's analytics database login
+**Catalogue version 2.** These are the curated, read-only views a space's analytics database login
 (and the platform-wide Metabase login) can read. They are generated from `backend/apps/analytics/catalogue/`;
 the module and its switches are described under [analytics](MODULES.md#analytics), the rules under
 [Analytics](INVARIANTS.md#per-space-analytics-release-2-lane-l25-163b) in the invariants.
@@ -341,6 +341,139 @@ Applications to events that admit by application (hackathons and others).
 | `response_at` | Applicant responded. |
 | `rsvp_accepted_at` | Accepted the offer. |
 
+### `application_decisions` (since 2)
+
+Committed admission decisions, per stage.
+
+| Column | Meaning |
+| --- | --- |
+| `makerspace_id` | The space the row belongs to. |
+| `decision_id` | Decision id. |
+| `event_id` | Event (events). |
+| `application_id` | Application (event_applications). |
+| `stage_id` | Admission stage. |
+| `outcome` | Offer, waitlist, reject or advance. |
+| `reason_code` | Reason code. |
+| `batch_state` | Draft, committed or cancelled batch. |
+| `sent_at` | Sent to the applicant. |
+
+### `event_crew` (since 2)
+
+Event crew (volunteers, mentors and others); no answers or dietary notes.
+
+| Column | Meaning |
+| --- | --- |
+| `makerspace_id` | The space the row belongs to. |
+| `crew_id` | Crew entry id. |
+| `event_id` | Event (events). |
+| `member_id` | Crew member (members). |
+| `origin` | Signed up or invited. |
+| `crew_role` | Role on the crew. |
+| `state` | Crew state. |
+| `decided_at` | Decided. |
+| `created_at` | Joined. |
+
+### `judging_rounds` (since 2)
+
+Judging rounds per event.
+
+| Column | Meaning |
+| --- | --- |
+| `makerspace_id` | The space the row belongs to. |
+| `round_id` | Round id. |
+| `event_id` | Event (events). |
+| `key` | Round key. |
+| `mode` | Scoring mode. |
+| `state` | Round state. |
+| `visibility` | What judges see. |
+| `fresh_eyes` | Judges new to the projects. |
+| `advanced_from_id` | Round its finalists came from (judging_rounds). |
+| `min_reviews` | Reviews per project. |
+| `opens_at` | Opens. |
+| `closes_at` | Closes. |
+
+### `finalist_advances` (since 2)
+
+Finalist advances from one round to the next.
+
+| Column | Meaning |
+| --- | --- |
+| `makerspace_id` | The space the row belongs to. |
+| `advance_id` | Advance id. |
+| `event_id` | Event (events). |
+| `source_round_id` | From round (judging_rounds). |
+| `target_round_id` | To round (judging_rounds). |
+| `selection` | Top N or hand-picked. |
+| `top_n` | N, for a top-N advance. |
+| `created_at` | Advanced. |
+
+### `judging_finalists` (since 2)
+
+The projects each advance carried forward.
+
+| Column | Meaning |
+| --- | --- |
+| `makerspace_id` | The space the row belongs to. |
+| `finalist_id` | Finalist id. |
+| `advance_id` | Advance (finalist_advances). |
+| `snapshot_id` | Submitted project snapshot. |
+| `source_rank` | Rank in the source round. |
+
+### `finalist_announcements` (since 2)
+
+When finalists were announced.
+
+| Column | Meaning |
+| --- | --- |
+| `makerspace_id` | The space the row belongs to. |
+| `announcement_id` | Announcement id. |
+| `event_id` | Event (events). |
+| `advance_id` | Advance (finalist_advances). |
+| `published_at` | Published. |
+
+### `hackathon_prizes` (since 2)
+
+Prizes and their money per winner.
+
+| Column | Meaning |
+| --- | --- |
+| `makerspace_id` | The space the row belongs to. |
+| `prize_id` | Prize id. |
+| `event_id` | Event (events). |
+| `name` | Prize name. |
+| `award_count` | Winners. |
+| `amount_per_winner` | Money per winner. |
+
+### `prize_payouts` (since 2)
+
+Prize payouts and reversals; the recipient is masked like a name.
+
+| Column | Meaning |
+| --- | --- |
+| `makerspace_id` | The space the row belongs to. |
+| `payout_id` | Payout id. |
+| `event_id` | Event (events). |
+| `prize_id` | Prize (hackathon_prizes). |
+| `recipient_id` | Winner (members); masked unless member details are on. **Personal data, masked by default.** |
+| `kind` | Payout or reversal. |
+| `amount` | Amount. |
+| `currency` | Currency. |
+| `method` | How it was paid. |
+| `paid_on` | Paid on. |
+| `ledger_entry_id` | Ledger entry (finance_ledger). |
+
+### `judge_scores` (since 2)
+
+When judge scores were saved and submitted (no values, no notes).
+
+| Column | Meaning |
+| --- | --- |
+| `makerspace_id` | The space the row belongs to. |
+| `score_id` | Score id. |
+| `assignment_id` | Judge assignment. |
+| `saved_at` | Last saved. |
+| `submitted_at` | Submitted. |
+
 ## Tickets
 
 ### `event_ticket_types` (since 1)
@@ -546,10 +679,282 @@ To-Buy entries from request to stock, with costs.
 | `received_at` | Received. |
 | `moved_to_inventory_at` | Moved into stock. |
 
-## Pending at merge (not in version 1)
+## Donations
 
-Pre-written in `catalogue/pending_lanes.py`, registered when their lanes merge (catalogue version 2):
-donations and sponsors (L18), admission decisions and event crew (L21a), the shop (L22: products, variants,
-orders, lines, returns, stock movements, checkout holds and cash sessions); and, in `catalogue/pending_lanes_l21b.py`,
-judging rounds, finalists, announcements, prizes, prize payouts and judge-score timings (L21b). L24's price-drop refund
-cases need no new view: they appear in `refund_cases` with their own `reason_code`.
+### `donation_campaigns` (since 2)
+
+Donation campaigns and funds with their goals.
+
+| Column | Meaning |
+| --- | --- |
+| `makerspace_id` | The space the row belongs to. |
+| `campaign_id` | Campaign id. |
+| `kind` | Campaign or standing fund. |
+| `name` | Campaign name. |
+| `goal_amount` | Goal. |
+| `currency` | Currency. |
+| `starts_at` | Opens. |
+| `ends_at` | Closes. |
+| `is_active` | Open. |
+| `is_public` | Public. |
+| `created_at` | Created. |
+
+### `donations` (since 2)
+
+Donations: amount, campaign and state; no donor column at all.
+
+| Column | Meaning |
+| --- | --- |
+| `makerspace_id` | The space the row belongs to. |
+| `donation_id` | Donation id. |
+| `campaign_id` | Campaign (donation_campaigns). |
+| `pledge_id` | Recurring pledge it came from. |
+| `amount` | Amount. |
+| `currency` | Currency. |
+| `source` | Online, cash and so on. |
+| `status` | Donation state. |
+| `wants_tax_receipt` | Asked for a tax receipt. |
+| `period_start` | Pledge period it pays. |
+| `created_at` | Recorded. |
+| `paid_at` | Paid. |
+| `cancelled_at` | Cancelled. |
+
+### `donation_pledges` (since 2)
+
+Recurring donation pledges.
+
+| Column | Meaning |
+| --- | --- |
+| `makerspace_id` | The space the row belongs to. |
+| `pledge_id` | Pledge id. |
+| `campaign_id` | Campaign (donation_campaigns). |
+| `amount` | Amount per period. |
+| `currency` | Currency. |
+| `interval` | Monthly, yearly and so on. |
+| `status` | Pledge state. |
+| `starts_on` | Starts. |
+| `next_due_on` | Next due. |
+| `ends_on` | Ends. |
+| `created_at` | Created. |
+| `cancelled_at` | Cancelled. |
+
+### `donation_settings` (since 2)
+
+The space's donation page settings (amounts only).
+
+| Column | Meaning |
+| --- | --- |
+| `makerspace_id` | The space the row belongs to. |
+| `minimum_amount` | Minimum gift. |
+| `tax_exempt_valid_until` | Tax-exemption registration valid until. |
+| `updated_at` | Last changed. |
+
+### `sponsor_tiers` (since 2)
+
+Sponsor tiers and their prices.
+
+| Column | Meaning |
+| --- | --- |
+| `makerspace_id` | The space the row belongs to. |
+| `tier_id` | Tier id. |
+| `name` | Tier name. |
+| `rank` | Order. |
+| `amount` | Price. |
+| `currency` | Currency. |
+| `created_at` | Created. |
+
+### `sponsors` (since 2)
+
+Sponsors (organisations) with their tier and term; no contact details.
+
+| Column | Meaning |
+| --- | --- |
+| `makerspace_id` | The space the row belongs to. |
+| `sponsor_id` | Sponsor id. |
+| `name` | Sponsor (an organisation) name. |
+| `organization_id` | Linked organisation. |
+| `tier_id` | Tier (sponsor_tiers). |
+| `starts_on` | Sponsorship starts. |
+| `ends_on` | Sponsorship ends. |
+| `show_on_wall` | Shown on the sponsor wall. |
+| `created_at` | Added. |
+| `archived_at` | Archived. |
+
+### `sponsor_perks` (since 2)
+
+Perks owed to sponsors and whether they were delivered.
+
+| Column | Meaning |
+| --- | --- |
+| `makerspace_id` | The space the row belongs to. |
+| `perk_id` | Perk id. |
+| `tier_id` | Tier template (sponsor_tiers). |
+| `sponsor_id` | Sponsor (sponsors). |
+| `due_on` | Due. |
+| `fulfilled_at` | Delivered. |
+| `created_at` | Created. |
+
+### `sponsorship_charges` (since 2)
+
+Charges raised to sponsors.
+
+| Column | Meaning |
+| --- | --- |
+| `makerspace_id` | The space the row belongs to. |
+| `sponsorship_charge_id` | Charge id. |
+| `sponsor_id` | Sponsor (sponsors). |
+| `amount` | Amount. |
+| `currency` | Currency. |
+| `created_at` | Raised. |
+
+### `sponsor_event_links` (since 2)
+
+Which sponsors back which events.
+
+| Column | Meaning |
+| --- | --- |
+| `makerspace_id` | The space the row belongs to. |
+| `link_id` | Link id. |
+| `sponsor_id` | Sponsor (sponsors). |
+| `event_sponsor_id` | The event's sponsor entry. |
+| `created_at` | Linked. |
+
+## Shop
+
+### `shop_products` (since 2)
+
+Shop products.
+
+| Column | Meaning |
+| --- | --- |
+| `makerspace_id` | The space the row belongs to. |
+| `shop_product_id` | Product id. |
+| `kind` | Product kind. |
+| `name` | Product name. |
+| `category` | Category. |
+| `members_only` | Members only. |
+| `is_public` | Public. |
+| `is_active` | On sale. |
+| `created_at` | Added. |
+| `archived_at` | Archived. |
+
+### `shop_variants` (since 2)
+
+Shop variants with price and stock.
+
+| Column | Meaning |
+| --- | --- |
+| `makerspace_id` | The space the row belongs to. |
+| `shop_variant_id` | Variant id. |
+| `shop_product_id` | Product (shop_products). |
+| `name` | Variant name. |
+| `sku` | Stock-keeping code. |
+| `price` | Price. |
+| `on_hand` | Units on hand. |
+| `held` | Units held for open orders. |
+| `reorder_point` | Reorder point. |
+| `is_active` | On sale. |
+
+### `shop_orders` (since 2)
+
+Shop orders; the buyer is a member id only.
+
+| Column | Meaning |
+| --- | --- |
+| `makerspace_id` | The space the row belongs to. |
+| `shop_order_id` | Order id. |
+| `channel` | Online or desk (point of sale). |
+| `status` | Order state. |
+| `member_id` | Buyer with an account (members); masked unless member details are on. **Personal data, masked by default.** |
+| `pickup_at` | Pickup place. |
+| `currency` | Currency. |
+| `subtotal` | Before discounts. |
+| `discount_total` | Discounts. |
+| `tax_total` | Tax. |
+| `total` | Total. |
+| `created_at` | Created. |
+| `paid_at` | Paid. |
+| `collected_at` | Collected. |
+| `closed_at` | Closed. |
+| `close_reason` | Why it closed. |
+
+### `shop_order_lines` (since 2)
+
+The variants and quantities of each shop order.
+
+| Column | Meaning |
+| --- | --- |
+| `makerspace_id` | The space the row belongs to. |
+| `shop_order_line_id` | Line id. |
+| `shop_order_id` | Order (shop_orders). |
+| `shop_variant_id` | Variant (shop_variants). |
+| `quantity` | Quantity. |
+| `unit_amount` | Unit price. |
+| `discount_amount` | Discount. |
+| `tax_amount` | Tax. |
+| `line_total` | Line total. |
+
+### `shop_returns` (since 2)
+
+Returned shop items and the refund cases they opened.
+
+| Column | Meaning |
+| --- | --- |
+| `makerspace_id` | The space the row belongs to. |
+| `shop_return_id` | Return id. |
+| `shop_order_id` | Order (shop_orders). |
+| `quantity` | Units returned. |
+| `disposition` | Restocked, written off and so on. |
+| `amount` | Amount. |
+| `refund_case_id` | Refund case (refund_cases). |
+| `created_at` | Recorded. |
+
+### `shop_stock_movements` (since 2)
+
+Stock movements per variant (no reason text, no actor).
+
+| Column | Meaning |
+| --- | --- |
+| `makerspace_id` | The space the row belongs to. |
+| `movement_id` | Movement id. |
+| `shop_variant_id` | Variant (shop_variants). |
+| `kind` | Sale, restock, return, adjustment and so on. |
+| `quantity` | Units (negative leaves stock). |
+| `balance_after` | Stock after the movement. |
+| `shop_order_id` | Order, if any (shop_orders). |
+| `created_at` | Recorded. |
+
+### `shop_checkout_holds` (since 2)
+
+Stock held for open orders, and why each hold ended.
+
+| Column | Meaning |
+| --- | --- |
+| `makerspace_id` | The space the row belongs to. |
+| `hold_id` | Hold id. |
+| `shop_order_id` | Order (shop_orders). |
+| `shop_variant_id` | Variant (shop_variants). |
+| `quantity` | Units held. |
+| `expires_at` | Hold expires. |
+| `released_at` | Released. |
+| `release_reason` | Paid, expired or cancelled. |
+| `created_at` | Placed. |
+
+### `shop_cash_sessions` (since 2)
+
+Desk cash sessions: amounts and times only.
+
+| Column | Meaning |
+| --- | --- |
+| `makerspace_id` | The space the row belongs to. |
+| `cash_shift_id` | Cash session (shift) id. |
+| `status` | Open, closing or closed. |
+| `currency` | Currency. |
+| `opening_float` | Float at opening. |
+| `expected_cash` | Cash expected at close. |
+| `counted_cash` | Cash counted at close. |
+| `variance` | Counted minus expected. |
+| `opened_at` | Opened. |
+| `closed_at` | Closed. |
+
+L24's price-drop refund cases need no new view: they appear in `refund_cases` with their own `reason_code`.

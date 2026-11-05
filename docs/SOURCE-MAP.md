@@ -811,8 +811,8 @@ identity normalization and production minimum-version comparison. `mobile_associ
 ### Release 2 L25 (per-space Metabase analytics)
 
 - `apps/analytics/` -- `models.py` (AnalyticsConnection, PlatformAnalyticsConnection), `catalogue/`
-  (one module per domain + `registry.py` with `VIEWS_VERSION`, `render.py`, `types.py`;
-  `pending_lanes.py` is NOT registered), `db_names.py`, `db_functions.py`, `db_ddl.py`, `db_sync.py`
+  (one module per domain + `registry.py` with `VIEWS_VERSION` 2, `render.py`, `types.py`; L18 in
+  `donations.py`, L22 in `shop.py`, L21a/L21b in `events.py`), `db_names.py`, `db_functions.py`, `db_ddl.py`, `db_sync.py`
   (post/pre-migrate), `provisioning.py`, `embedding.py`, `access.py`, `services.py`, `api.py`,
   `urls.py`, `purge.py`, `signals.py`, `management/commands/analytics_sync.py`.
 - Registries: `makerspaces/module_registry_r2_l25.py`, `accounts/rbac_actions.py` (`VIEW_ANALYTICS`),

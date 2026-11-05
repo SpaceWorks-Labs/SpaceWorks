@@ -8,22 +8,29 @@ from . import stocks
 from .contrast import HEX
 from .data_fields import valid_tag, validate_text
 
-KINDS = ("text", "data_field", "image", "logo", "photo", "desk_qr", "verify_qr", "shape", "band", "perforation")
+KINDS = ("text", "data_field", "image", "logo", "photo", "desk_qr", "verify_qr", "barcode", "shape", "band",
+         "perforation")
 QR_KINDS = ("desk_qr", "verify_qr")
-COMMON = {"id", "kind", "name", "x_mm", "y_mm", "w_mm", "h_mm", "rotation", "opacity", "locked", "hidden"}
+COMMON = {"id", "kind", "name", "x_mm", "y_mm", "w_mm", "h_mm", "rotation", "opacity", "locked", "hidden", "group"}
 TEXT = {"text", "field", "font_family", "font_weight", "font_size_pt", "align", "valign", "colour",
         "uppercase", "tracking_pt", "line_height", "shrink_to_fit"}
 EXTRA = {
     "text": TEXT, "data_field": TEXT,
     "image": {"asset_id", "fit"},
     "logo": {"source", "tile"},
-    "photo": {"shape"},
+    "photo": {"shape", "filter", "duotone_dark", "duotone_light"},
     "desk_qr": set(), "verify_qr": set(),
+    "barcode": {"source", "show_text"},
     "shape": {"shape", "fill", "stroke", "stroke_mm", "radius_mm"},
     "band": {"fill", "radius_mm"},
     "perforation": {"colour", "orientation"},
 }
 LOGO_SOURCES = ("space", "organisation", "event", "symbol")
+PHOTO_FILTERS = ("none", "grey", "duotone")
+BARCODE_SOURCES = ("number", "desk")
+# Code128 at a 0.19 mm module: the 32-character desk code needs ~75 mm, a short number ~30 mm.
+BARCODE_MIN_WIDTH_MM = {"number": 30.0, "desk": 75.0}
+BARCODE_MIN_HEIGHT_MM = 6.0
 TEXT_DEFAULTS = {"font_family": "Gilroy", "font_weight": 400, "font_size_pt": 10, "align": "left",
                  "valign": "top", "colour": "#142C2A", "uppercase": False, "tracking_pt": 0,
                  "line_height": 1.2, "shrink_to_fit": True}
@@ -99,6 +106,27 @@ def _text(value, row):
     row["shrink_to_fit"] = _bool(row, "shrink_to_fit", True)
 
 
+def _photo_filter(value, row):
+    row["filter"] = value.get("filter", "none")
+    if row["filter"] not in PHOTO_FILTERS:
+        raise ValidationError({"layers": "Photo filters are none, greyscale or duotone."})
+    row["duotone_dark"] = _hex(value.get("duotone_dark", "#142C2A"), "duotone_dark")
+    row["duotone_light"] = _hex(value.get("duotone_light", "#DFFF8F"), "duotone_light")
+
+
+def _barcode(value, row):
+    """A Code128 barcode of the printed number, or of the desk code (the same staff-only
+    payload as the desk QR, for USB barcode scanners at the desk; never the check token)."""
+    row["source"] = value.get("source", "number")
+    row["show_text"] = _bool(value, "show_text", True)
+    if row["source"] not in BARCODE_SOURCES:
+        raise ValidationError({"layers": "A barcode carries the card number or the desk code."})
+    minimum = BARCODE_MIN_WIDTH_MM[row["source"]]
+    if row["w_mm"] < minimum - 0.01 or row["h_mm"] < BARCODE_MIN_HEIGHT_MM - 0.01 or row["opacity"] != 100             or row["rotation"] % 90:
+        raise ValidationError({"layers": f"This barcode needs {minimum:g} x {BARCODE_MIN_HEIGHT_MM:g} mm, full "
+                                         "opacity and a right-angle turn so scanners can read it."})
+
+
 def normalize_layer(value, width, height, stock):
     if not isinstance(value, dict) or value.get("kind") not in KINDS:
         raise ValidationError({"layers": "Unknown layer kind."})
@@ -113,6 +141,7 @@ def normalize_layer(value, width, height, stock):
     row = {"id": asset_id(value.get("id")), "kind": kind, "name": name}
     row["locked"] = _bool(value, "locked")
     row["hidden"] = _bool(value, "hidden")
+    row["group"] = asset_id(value["group"]) if value.get("group") else None
     _geometry(value, row, width, height)
     if kind in ("text", "data_field"):
         _text(value, row)
@@ -130,10 +159,13 @@ def normalize_layer(value, width, height, stock):
         row["shape"] = value.get("shape", "rounded")
         if row["shape"] not in ("circle", "rounded", "square"):
             raise ValidationError({"layers": "Photos are circle, rounded or square."})
+        _photo_filter(value, row)
     elif kind in QR_KINDS:
         minimum = stocks.qr_minimum_mm(stock)
         if min(row["w_mm"], row["h_mm"]) < minimum - 0.01 or row["opacity"] != 100 or row["rotation"] % 90:
             raise ValidationError({"layers": f"QR codes need {minimum:g} mm, full opacity and a right-angle turn."})
+    elif kind == "barcode":
+        _barcode(value, row)
     elif kind in ("shape", "band"):
         # A band carries only its own keys (fill, radius), so a normalised band normalises again.
         row["fill"] = _hex(value.get("fill", "#006E63" if kind == "band" else None), "fill", nullable=True)

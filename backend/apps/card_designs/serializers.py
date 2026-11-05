@@ -26,13 +26,15 @@ class CardDesignSerializer(serializers.ModelSerializer):
     can_approve = serializers.SerializerMethodField()
     can_edit = serializers.SerializerMethodField()
     target_label = serializers.SerializerMethodField()
+    answer_fields = serializers.SerializerMethodField(
+        help_text="Answers this design may place as {{field:<key>}}: a programme's printed questions.")
 
     class Meta:
         model = CardDesign
         fields = ("id", "domain", "name", "plan_id", "title_id", "programme_id", "organization_id", "event_id",
                   "ticket_type_id", "target_label", "status", "document", "revision", "published_revision",
                   "published_at", "has_unpublished_changes", "pending_approval", "last_review", "needs_approval",
-                  "can_approve", "can_edit",
+                  "can_approve", "can_edit", "answer_fields",
                   "updated_at")
         read_only_fields = fields
 
@@ -65,6 +67,14 @@ class CardDesignSerializer(serializers.ModelSerializer):
         actor = self._actor()
         return bool(actor and actor.is_authenticated and can_edit(actor, obj))
 
+    def get_answer_fields(self, obj) -> list[dict]:
+        """Only questions the programme prints (front or back); hidden answers never reach a card."""
+        if obj.domain != "id_programme" or not obj.programme_id:
+            return []
+        return [{"key": f"field:{row['key']}", "label": str(row.get("label") or row["key"])[:80]}
+                for row in obj.programme.form_schema or ()
+                if isinstance(row, dict) and row.get("key") and row.get("placement") in ("front", "back")]
+
     def get_target_label(self, obj) -> str:
         if obj.title_id:
             return f"Title: {obj.title.name}"
@@ -87,6 +97,7 @@ class CardDesignCreateSerializer(serializers.Serializer):
     title_id = serializers.IntegerField(required=False, allow_null=True)
     template = serializers.ChoiceField(choices=("classic", "bold", "minimal", "community", "student", "event_pass"),
                                        required=False)
+    theme = serializers.ChoiceField(choices=("light", "dark"), default="light")
 
 
 class CardDesignSaveSerializer(serializers.Serializer):
@@ -101,6 +112,7 @@ class CardDesignDecisionSerializer(serializers.Serializer):
 
 class CardDesignResetSerializer(serializers.Serializer):
     template = serializers.ChoiceField(choices=("classic", "bold", "minimal", "community", "student", "event_pass"))
+    theme = serializers.ChoiceField(choices=("light", "dark"), default="light")
 
 
 class CardDesignImportSerializer(serializers.Serializer):
@@ -117,11 +129,14 @@ class CardPreviewSerializer(serializers.Serializer):
     side = serializers.ChoiceField(choices=("front", "back"), default="front")
     format = serializers.ChoiceField(choices=("png", "pdf"), default="png")
     long_names = serializers.BooleanField(default=False)
+    holder_id = serializers.IntegerField(required=False, min_value=1,
+                                         help_text="Preview as this real holder (see the design's holders list).")
 
 
 class CardTemplateSerializer(serializers.Serializer):
     key = serializers.CharField()
     label = serializers.CharField()
+    theme = serializers.ChoiceField(choices=("light", "dark"))
     document = serializers.JSONField()
 
 

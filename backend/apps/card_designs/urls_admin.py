@@ -18,6 +18,9 @@ from .views_design_actions import (CardDesignApproveView, CardDesignExportView, 
                                    CardDesignPreviewView, CardDesignPublishView, CardDesignRejectView,
                                    CardDesignResetView, CardDesignSubmitView)
 from .views_designs import CardDesignDetailView, CardTemplateListView, SpaceCardDesignListView
+from .views_history import (CardDesignCalibrationView, CardDesignHolderListView, CardDesignRestoreView,
+                            CardDesignRevisionDetailView, CardDesignRevisionListView)
+from .views_sheet_preview import MemberCardSheetPreviewView
 from .views_staff_photo import MemberCardStaffPhotoView
 from .views_jobs import CardJobCancelView, CardJobDetailView, CardJobResultView, MemberCardJobListView
 
@@ -29,6 +32,8 @@ urlpatterns = [
     path(f"{_SPACE}/card-designs", SpaceCardDesignListView.as_view(), name="admin-card-designs"),
     path(f"{_SPACE}/card-approval-levels", CardApprovalLevelsView.as_view(), name="admin-card-approval-levels"),
     path(f"{_SPACE}/member-card-jobs", MemberCardJobListView.as_view(), name="admin-member-card-jobs"),
+    path(f"{_SPACE}/member-card-jobs/preview", MemberCardSheetPreviewView.as_view(),
+         name="admin-member-card-job-preview"),
     path(f"{_SPACE}/member-cards/presence-check-in", MemberCardPresenceView.as_view(),
          name="admin-member-card-presence"),
     path("member-cards/<int:pk>/download", MemberCardDownloadView.as_view(), name="admin-member-card-download"),
@@ -46,6 +51,13 @@ urlpatterns = [
     path(f"{_DESIGN}/export", CardDesignExportView.as_view(), name="admin-card-design-export"),
     path(f"{_DESIGN}/import", CardDesignImportView.as_view(), name="admin-card-design-import"),
     path(f"{_DESIGN}/preview", CardDesignPreviewView.as_view(), name="admin-card-design-preview"),
+    path(f"{_DESIGN}/revisions", CardDesignRevisionListView.as_view(), name="admin-card-design-revisions"),
+    path(f"{_DESIGN}/revisions/<int:revision>", CardDesignRevisionDetailView.as_view(),
+         name="admin-card-design-revision"),
+    path(f"{_DESIGN}/revisions/<int:revision>/restore", CardDesignRestoreView.as_view(),
+         name="admin-card-design-restore"),
+    path(f"{_DESIGN}/holders", CardDesignHolderListView.as_view(), name="admin-card-design-holders"),
+    path(f"{_DESIGN}/calibration", CardDesignCalibrationView.as_view(), name="admin-card-design-calibration"),
     path(f"{_DESIGN}/assets", CardAssetUploadView.as_view(), name="admin-card-design-assets"),
     path(f"{_DESIGN}/assets/finalize", CardAssetFinalizeView.as_view(), name="admin-card-design-asset-finalize"),
     path(f"{_DESIGN}/assets/<uuid:asset_id>", CardAssetContentView.as_view(), name="admin-card-design-asset"),

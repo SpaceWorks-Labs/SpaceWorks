@@ -1811,6 +1811,8 @@ REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"].update({
     "member_card_resolve": env("THROTTLE_MEMBER_CARD_RESOLVE", default="60/min"),
     "id_join": env("THROTTLE_ID_JOIN", default="10/min"),
     "id_join_upload": env("THROTTLE_ID_JOIN_UPLOAD", default="12/hour"),
+    # Staff sheet previews render up to one sheet in the request (r2-idcards-best); fixed, not tunable.
+    "card_render": "120/hour",
 })
 CARD_FONT_DOWNLOADS_ENABLED = env.bool("CARD_FONT_DOWNLOADS_ENABLED", default=True)
 CARD_FONT_SOURCE_URL = env("CARD_FONT_SOURCE_URL", default="https://fonts.googleapis.com/css2")

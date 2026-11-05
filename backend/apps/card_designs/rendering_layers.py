@@ -5,7 +5,8 @@ from .contrast import colour_under, to_hex
 from .data_fields import merge
 from .rendering_background import colour_for, draw_image, mono
 
-INK, CREAM = "#142C2A", "#FFF4E8"
+INK = "#142C2A"
+PLACEHOLDER = "#D7E9E5"  # teal at ~15 % on cream: ink initials on it pass 4.5:1
 
 
 def _box(layer, page_height_mm):
@@ -88,6 +89,11 @@ def _perforation(canvas, document, side, index, layer, context, box):
     canvas.setFillColor(notch)
     radius = min(w, h, 8) / 2 if not vertical else min(w, 8) / 2
     ends = ((x + w / 2, y), (x + w / 2, y + h)) if vertical else ((x, y + h / 2), (x + w, y + h / 2))
+    # A notch is a half-circle bitten out of the card's EDGE; one that ends inside the card (on a
+    # band, say) would print as a stray dot, so only the ends that touch an edge get one.
+    from reportlab.lib.units import mm
+    page_w, page_h = side["page_width_mm"] * mm, side["page_height_mm"] * mm
+    ends = [(px, py) for px, py in ends if min(px, py, page_w - px, page_h - py) <= 0.6 * mm]
     for px, py in ends:
         canvas.circle(px, py, radius, fill=1, stroke=0)
 
@@ -130,8 +136,11 @@ def _photo(canvas, document, side, index, layer, context, box):
     else:
         path.rect(x, y, w, h)
     canvas.clipPath(path, stroke=0, fill=0)
-    if not draw_image(canvas, context.photo, x, y, w, h, fit="cover", grey=document.get("mono", False)):
-        canvas.setFillColor(HexColor("#FFFFFF" if document.get("mono") else CREAM))
+    from .rendering_extras import filtered_photo
+    photo = filtered_photo(context.photo, layer)
+    if not draw_image(canvas, photo, x, y, w, h, fit="cover", grey=document.get("mono", False)):
+        # A tinted tile, so the photo frame still reads on a cream or white card.
+        canvas.setFillColor(HexColor("#E6E6E6" if document.get("mono") else PLACEHOLDER))
         canvas.rect(x, y, w, h, fill=1, stroke=0)
         name = str(context.values.get("name", ""))
         initials = "".join(word[:1] for word in name.split()[:2]).upper() or "·"
@@ -170,5 +179,10 @@ def _qr(canvas, document, side, index, layer, context, box):
     renderPDF.draw(drawing, canvas, x + (w - side_pt) / 2, y + (h - side_pt) / 2)
 
 
+def _barcode(canvas, document, side, index, layer, context, box):
+    from .rendering_extras import draw_barcode
+    draw_barcode(canvas, layer, context, box)
+
+
 DRAWERS = {"text": _text, "data_field": _text, "shape": _shape, "band": _shape, "perforation": _perforation,
-           "image": _image, "logo": _logo, "photo": _photo, "desk_qr": _qr, "verify_qr": _qr}
+           "barcode": _barcode, "image": _image, "logo": _logo, "photo": _photo, "desk_qr": _qr, "verify_qr": _qr}

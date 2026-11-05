@@ -53,6 +53,7 @@ def live_card(user, kind, card_id):
 
 def face(kind, card):
     from .cards import context_for, document_for
+    from .rendering_extras import barcode_payload, barcode_svg_uri
     document = document_for(kind, card)
     context = context_for(kind, card, document)
     values = {key: value for key, value in context.values.items()
@@ -61,7 +62,9 @@ def face(kind, card):
             "photo": data_uri(context.photo),
             "logos": {name: data_uri(data) for name, data in (context.logos or {}).items()},
             "assets": {key: data_uri(data) for key, data in (context.assets or {}).items()},
-            "desk_qr": qr_uri(context.desk_qr), "verify_qr": qr_uri(context.verify_qr)}
+            "desk_qr": qr_uri(context.desk_qr), "verify_qr": qr_uri(context.verify_qr),
+            "barcodes": {source: barcode_svg_uri(barcode_payload({"source": source}, context))
+                         for source in ("number", "desk")}}
 
 
 class MyCardFaceView(APIView):

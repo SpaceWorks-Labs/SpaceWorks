@@ -19,7 +19,9 @@ MODEL_LOOKUPS = {
         "admin-card-design-approve", "admin-card-design-reject", "admin-card-design-reset", "admin-card-design-export",
         "admin-card-design-import", "admin-card-design-preview", "admin-card-design-assets",
         "admin-card-design-asset-finalize", "admin-card-design-asset", "admin-card-design-fonts",
-        "admin-card-design-font-prepare", "admin-card-design-font-file",
+        "admin-card-design-font-prepare", "admin-card-design-font-file", "admin-card-design-revisions",
+        "admin-card-design-revision", "admin-card-design-restore", "admin-card-design-holders",
+        "admin-card-design-calibration",
     )},
     **{name: ("card_designs.CardJob", "makerspace_id") for name in (
         "admin-card-job", "admin-card-job-cancel", "admin-card-job-result",
@@ -27,7 +29,7 @@ MODEL_LOOKUPS = {
     **{name: ("id_programmes.IdProgramme", "makerspace_id") for name in (
         "admin-id-programme", "admin-id-programme-design", "admin-id-programme-approval", "admin-id-programme-cards",
         "admin-id-programme-decide", "admin-id-programme-import-preview", "admin-id-programme-import",
-        "admin-id-programme-card-jobs",
+        "admin-id-programme-card-jobs", "admin-id-programme-card-job-preview",
     )},
     **{name: ("id_programmes.IdProgrammeCard", "makerspace_id") for name in (
         "admin-id-programme-card", "admin-id-programme-card-download", "admin-id-programme-card-email",
@@ -35,7 +37,7 @@ MODEL_LOOKUPS = {
     )},
     **{name: ("events.Event", "makerspace_id") for name in (
         "admin-event-card-designs", "admin-event-card-settings", "admin-event-id-cards", "admin-event-id-card-extras",
-        "admin-event-card-jobs", "admin-event-card-scan",
+        "admin-event-card-jobs", "admin-event-card-scan", "admin-event-card-job-preview",
     )},
     **{name: ("events.EventIdCard", "makerspace_id") for name in (
         "admin-event-id-card", "admin-event-id-card-revoke", "admin-event-id-card-download", "admin-event-id-card-photo",

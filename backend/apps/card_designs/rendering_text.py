@@ -94,13 +94,34 @@ def wrap(text, layer, size, box_width):
     return lines
 
 
+ONE_LINE_FLOOR = 0.6
+
+
+def one_line_size(text, layer, box_width, box_height):
+    """The largest size, down to 60 % of the design size, that keeps `text` on one line; None if none does."""
+    size = layer["font_size_pt"]
+    floor = max(MIN_PT, size * ONE_LINE_FLOOR)
+    line = visual(text)
+    while size >= floor - 0.001:
+        if size * layer["line_height"] <= box_height + 0.01 and width(line, layer, size) <= box_width:
+            return size
+        size -= 0.25
+    return None
+
+
 def fit(text, layer, box_width, box_height):
+    """Shrink-to-fit that keeps a short value such as a name on one line, down to 60 % of the
+    design size, before wrapping it. A box tall enough to wrap at a larger size still wraps."""
     size = layer["font_size_pt"]
     while True:
         lines = wrap(text, layer, size, box_width)
         if len(lines) * size * layer["line_height"] <= box_height or not layer.get("shrink_to_fit", True) or size <= MIN_PT:
             break
         size = max(MIN_PT, size - 0.5)
+    if len(lines) > 1 and "\n" not in text and layer.get("shrink_to_fit", True):
+        single = one_line_size(text, layer, box_width, box_height)
+        if single is not None and single >= size:
+            return single, [text]
     capacity = max(1, int(box_height // (size * layer["line_height"])))
     if len(lines) > capacity:
         lines = lines[:capacity]

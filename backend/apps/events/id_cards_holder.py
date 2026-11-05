@@ -18,11 +18,26 @@ def standing(card):
 
 
 def _team(card):
+    """-> (team name, track names). The track comes from the team's submission (a hackathon
+    entry may enter several tracks); a person with no team or no submission prints neither."""
     try:
         from .hackathons.team_models import HackathonTeamMember
         row = HackathonTeamMember.objects.filter(event_id=card.event_id, member_id=card.person_id,
                                                  state="active").select_related("team").first()
-        return row.team.name if row else ""
+    except Exception:
+        return "", ""
+    if row is None:
+        return "", ""
+    return row.team.name, _tracks(row.team)
+
+
+def _tracks(team):
+    try:
+        from .judging.models_definitions import HackathonTrack
+        submission = getattr(team, "submission", None)
+        ids = [value for value in (submission.track_ids if submission else []) if isinstance(value, int)]
+        names = HackathonTrack.objects.filter(event_id=team.event_id, pk__in=ids).order_by("order", "pk")
+        return " · ".join(names.values_list("name", flat=True)[:3])
     except Exception:
         return ""
 
@@ -37,9 +52,10 @@ def snapshot(card):
     event, space = card.event, card.makerspace
     organisers = _organisers(event)
     live = tokens.live("event_card", card)
+    team, track = _team(card)
     return {"name": card.printed_name, "number": f"EV-{card.event_id}-{card.registration_id}",
             "event": event.title, "plan": card.get_role_display(), "role": card.get_role_display(),
-            "team": _team(card), "track": "", "space": (space.branding_config or {}).get("display_name") or space.name,
+            "team": team, "track": track, "space": (space.branding_config or {}).get("display_name") or space.name,
             "organisation": organisers[0].organization.name if organisers else "",
             "valid_until": fmt_date(card.valid_until), "issued_on": fmt_date(card.issued_at),
             "verify_url": tokens.short_url(live.token) if live else ""}

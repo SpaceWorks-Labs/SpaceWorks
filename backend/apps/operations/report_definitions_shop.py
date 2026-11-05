@@ -7,7 +7,9 @@ channel. Both are per space and never deployment-wide.
 """
 
 from apps.accounts import rbac
+from apps.operations.report_definitions_finance_l5 import LEDGER_CHART
 from apps.operations.report_types import ReportDefinition
+from apps.operations.reports_de_common import chart
 from apps.operations.reports_shop import FIELDS as SALES_FIELDS
 from apps.payments.reports_finance_ledger import FIELDS as LEDGER_FIELDS
 
@@ -15,8 +17,10 @@ SHOP_REPORT_DEFINITIONS = (
     ReportDefinition("finance-shop", "apps.payments.reports_finance_ledger.build_finance_shop", LEDGER_FIELDS,
                      ("shop",), required_action=rbac.Action.MANAGE_SHOP, title="Shop money",
                      deployment_aggregate=False, required_feature="finance.ledger", chart_hint="grouped_bar",
-                     schedulable=False),
+                     schedulable=False, chart_spec=LEDGER_CHART),
     ReportDefinition("shop-sales", "apps.operations.reports_shop.build_shop_sales", SALES_FIELDS, ("shop",),
                      required_action=rbac.Action.MANAGE_SHOP, title="Shop sales by month and channel",
-                     deployment_aggregate=False, chart_hint="grouped_bar"),
+                     deployment_aggregate=False, chart_hint="grouped_bar",
+                     chart_spec=chart("month", (("sales", "currency_major"), ("refunds", "currency_major")),
+                                      series=("channel",), currency=True)),
 )

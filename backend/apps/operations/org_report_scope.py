@@ -114,6 +114,13 @@ EXCLUDED_ORGANIZATION_REPORT_KEYS = EXCLUDED_ORGANIZATION_REPORT_KEYS | REPAIRS_
 # (each space's own causes, calendar and sponsors); never combined across an organization.
 from apps.operations.report_definitions_donations import DONATION_REPORT_KEYS  # noqa: E402
 EXCLUDED_ORGANIZATION_REPORT_KEYS = EXCLUDED_ORGANIZATION_REPORT_KEYS | DONATION_REPORT_KEYS | {"finance-donations"}
+# L5 finance books (area ledgers, FY bookkeeping, GST returns and the documents register) are
+# per-space accounts with their own numbering and tax registration; they never combine across
+# an organization. The L22 shop money and sales are per space too.
+from apps.operations.report_definitions_finance_l5 import L5_FINANCE_REPORT_DEFINITIONS  # noqa: E402
+from apps.operations.report_definitions_shop import SHOP_REPORT_DEFINITIONS  # noqa: E402
+EXCLUDED_ORGANIZATION_REPORT_KEYS = EXCLUDED_ORGANIZATION_REPORT_KEYS | {
+    definition.key for definition in (*L5_FINANCE_REPORT_DEFINITIONS, *SHOP_REPORT_DEFINITIONS)}
 
 
 # Phase 1f F/G adds explicit local-period strategies and exposed denominators.

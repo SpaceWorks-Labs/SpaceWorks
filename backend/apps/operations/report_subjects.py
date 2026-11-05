@@ -78,7 +78,7 @@ def report_action_allowed(actor, definition, makerspace_id, filters=None):
 
     Area reports are keyed to the domain manager's action. A subject-filtered run of a
     subject-capable report also admits the resource-grant path: tenant VIEW_AUDIT here,
-    then the per-resource grant in `authorize` (the conjunction yuyu introduced).
+    then the per-resource grant in `authorize` (the conjunction the parity programme introduced).
     """
     from .report_types import definition_actions
     if any(rbac.can(actor, action, makerspace_id) for action in definition_actions(definition)):

@@ -229658,13 +229658,16 @@
                 "type": "object",
                 "properties": {
                     "cost_method": {
-                        "allOf": [
+                        "default": "other",
+                        "description": "How the cost was paid (blank: other). With a cost above zero the run records a maintenance expense in the finance ledger (cash goes to the cash account, everything else to the bank account).\n\n* `cash` - Cash\n* `upi` - UPI\n* `bank_transfer` - Bank transfer\n* `card` - Card\n* `cheque` - Cheque\n* `online` - Online\n* `other` - Other",
+                        "oneOf": [
                             {
                                 "$ref": "#/components/schemas/CostMethodEnum"
+                            },
+                            {
+                                "$ref": "#/components/schemas/BlankEnum"
                             }
-                        ],
-                        "default": "other",
-                        "description": "How the cost was paid. With a cost above zero the run records a maintenance expense in the finance ledger (cash goes to the cash account, everything else to the bank account).\n\n* `cash` - Cash\n* `upi` - UPI\n* `bank_transfer` - Bank transfer\n* `card` - Card\n* `cheque` - Cheque\n* `online` - Online\n* `other` - Other"
+                        ]
                     },
                     "cost_currency": {
                         "description": "Three-letter currency code; blank uses the space's default payment currency.",
@@ -229716,13 +229719,16 @@
                 "type": "object",
                 "properties": {
                     "cost_method": {
-                        "allOf": [
+                        "default": "other",
+                        "description": "How the cost was paid (blank: other). With a cost above zero the run records a maintenance expense in the finance ledger (cash goes to the cash account, everything else to the bank account).\n\n* `cash` - Cash\n* `upi` - UPI\n* `bank_transfer` - Bank transfer\n* `card` - Card\n* `cheque` - Cheque\n* `online` - Online\n* `other` - Other",
+                        "oneOf": [
                             {
                                 "$ref": "#/components/schemas/CostMethodEnum"
+                            },
+                            {
+                                "$ref": "#/components/schemas/BlankEnum"
                             }
-                        ],
-                        "default": "other",
-                        "description": "How the cost was paid. With a cost above zero the run records a maintenance expense in the finance ledger (cash goes to the cash account, everything else to the bank account).\n\n* `cash` - Cash\n* `upi` - UPI\n* `bank_transfer` - Bank transfer\n* `card` - Card\n* `cheque` - Cheque\n* `online` - Online\n* `other` - Other"
+                        ]
                     },
                     "cost_currency": {
                         "description": "Three-letter currency code; blank uses the space's default payment currency.",
@@ -288684,13 +288690,16 @@
                 "type": "object",
                 "properties": {
                     "cost_method": {
-                        "allOf": [
+                        "default": "other",
+                        "description": "How the cost was paid (blank: other). With a cost above zero the run records a maintenance expense in the finance ledger (cash goes to the cash account, everything else to the bank account).\n\n* `cash` - Cash\n* `upi` - UPI\n* `bank_transfer` - Bank transfer\n* `card` - Card\n* `cheque` - Cheque\n* `online` - Online\n* `other` - Other",
+                        "oneOf": [
                             {
                                 "$ref": "#/components/schemas/CostMethodEnum"
+                            },
+                            {
+                                "$ref": "#/components/schemas/BlankEnum"
                             }
-                        ],
-                        "default": "other",
-                        "description": "How the cost was paid. With a cost above zero the run records a maintenance expense in the finance ledger (cash goes to the cash account, everything else to the bank account).\n\n* `cash` - Cash\n* `upi` - UPI\n* `bank_transfer` - Bank transfer\n* `card` - Card\n* `cheque` - Cheque\n* `online` - Online\n* `other` - Other"
+                        ]
                     },
                     "cost_currency": {
                         "description": "Three-letter currency code; blank uses the space's default payment currency.",

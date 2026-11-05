@@ -11530,7 +11530,7 @@ export type MaintenanceLogList = {
 };
 
 export type MaintenanceLogWrite = {
-  "cost_method"?: CostMethodEnum;
+  "cost_method"?: CostMethodEnum | BlankEnum;
   "cost_currency"?: string;
   "summary": string;
   "performed_at"?: string;
@@ -11541,7 +11541,7 @@ export type MaintenanceLogWrite = {
 };
 
 export type MaintenanceRun = {
-  "cost_method"?: CostMethodEnum;
+  "cost_method"?: CostMethodEnum | BlankEnum;
   "cost_currency"?: string;
   "summary": string;
   "parts_note"?: string;
@@ -25309,7 +25309,7 @@ export type WorkOrderCreate = {
 };
 
 export type WorkOrderMove = {
-  "cost_method"?: CostMethodEnum;
+  "cost_method"?: CostMethodEnum | BlankEnum;
   "cost_currency"?: string;
   "status": WorkOrderMoveStatusEnum;
   "resolution"?: string;

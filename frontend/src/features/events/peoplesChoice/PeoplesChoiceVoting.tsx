@@ -67,6 +67,6 @@ export function VoteButton({ voting, entryId, title }: { voting: PeoplesChoiceVo
   return <button type="button" className={chosen ? 'desk-button-primary min-h-11' : 'desk-button min-h-11'} aria-pressed={chosen}
     disabled={!ballot.can_vote || chosen || vote.isPending}
     onClick={() => vote.mutate({ entry: entryId, version: ballot.version })}>
-    <Heart size={18} aria-hidden="true" />{chosen ? 'Your vote' : ballot.entry_public_id ? 'Move my vote here' : 'Vote'}
-    <span className="sr-only"> for {title}</span></button>;
+    <Heart size={18} aria-hidden="true" />{chosen ? 'Your vote' : ballot.entry_public_id ? 'Move my vote here' : 'Vote'}{' '}
+    <span className="sr-only">for {title}</span></button>;
 }

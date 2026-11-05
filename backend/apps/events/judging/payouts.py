@@ -103,6 +103,10 @@ def _require_payable(award):
         raise ProgrammeError("sponsor_direct", "The sponsor pays this prize directly; record it as fulfilled.")
     if award.prize.kind != "cash":
         raise ProgrammeError("non_cash_prize", "Record a non-cash prize as handed over or shipped.")
+    from .models_prize_money import HackathonPrizeOutcome
+    if HackathonPrizeOutcome.objects.filter(award=award, share__isnull=True,
+                                            kind__in=("fulfilled", "sponsor_paid", "forfeited")).exists():
+        raise ProgrammeError("already_settled", "This prize is already settled.")
 
 
 def _description(award, tds, currency):

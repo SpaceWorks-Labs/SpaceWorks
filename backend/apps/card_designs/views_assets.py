@@ -12,6 +12,7 @@ from rest_framework.views import APIView
 from apps.evidence.responses import storage_unavailable_response
 from apps.evidence.storage import StorageUnavailable
 from apps.openapi_errors import errors
+from .serializers_openapi import CardAssetUploadSerializer, FontPrepareRequestSerializer, FontPrepareResultSerializer
 
 from . import assets, font_fetch, font_store, fonts
 from .authority import design_for, require_edit
@@ -31,7 +32,7 @@ class CardAssetUploadView(APIView):
 
     @extend_schema(tags=TAGS, summary="Start an artwork upload (staging presign only)",
                    request=CardAssetPresignSerializer,
-                   responses={201: OpenApiTypes.OBJECT, **errors(400, 401, 403, 404, 503)})
+                   responses={201: CardAssetUploadSerializer, **errors(400, 401, 403, 404, 503)})
     def post(self, request, pk):
         design = require_edit(request.user, design_for(request.user, pk))
         data = CardAssetPresignSerializer(data=request.data)
@@ -98,8 +99,8 @@ class CardFontPrepareView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(tags=TAGS, summary="Fetch a catalogue family onto this server (a background task)",
-                   request={"application/json": {"type": "object", "properties": {"family": {"type": "string"}}}},
-                   responses={202: OpenApiTypes.OBJECT, **errors(400, 401, 403, 404)})
+                   request=FontPrepareRequestSerializer,
+                   responses={202: FontPrepareResultSerializer, **errors(400, 401, 403, 404)})
     def post(self, request, pk):
         require_edit(request.user, design_for(request.user, pk))
         family = request.data.get("family")

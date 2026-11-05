@@ -12,14 +12,17 @@ from apps.admin_api import bulk_import
 from apps.admin_api.models import BulkImportJob
 from apps.admin_api.permissions import IsActiveStaff, require_action
 from apps.admin_api.serializers_bulk import (
+    BulkImportApplyResultSerializer,
     BulkImportJobCreateSerializer,
     BulkImportJobSerializer,
+    BulkImportPreviewResultSerializer,
     BulkImportPreviewSerializer,
 )
 from apps.admin_api.tasks import process_bulk_import_job
 from apps.makerspaces.guards import require_module
 from apps.makerspaces.models import Makerspace
 from apps.openapi import BULK_IMPORT_ROWS_EXAMPLE
+from apps.openapi_errors import errors
 
 
 def _rows_from_upload(uploaded_file):
@@ -48,7 +51,8 @@ class BulkImportPreviewView(APIView):
         tags=["Bulk import"],
         summary="Preview inventory bulk import",
         request=BulkImportPreviewSerializer,
-        responses={200: OpenApiResponse(description="Import preview with row errors.")},
+        responses={200: OpenApiResponse(BulkImportPreviewResultSerializer, description="Import preview with row errors."),
+                   **errors(400, 401, 403, 404, 409)},
         examples=[BULK_IMPORT_ROWS_EXAMPLE],
     )
     def post(self, request, makerspace_id, *args, **kwargs):
@@ -79,7 +83,8 @@ class BulkImportApplyView(APIView):
         tags=["Bulk import"],
         summary="Apply inventory bulk import",
         request=BulkImportPreviewSerializer,
-        responses={200: OpenApiResponse(description="Import application result.")},
+        responses={200: OpenApiResponse(BulkImportApplyResultSerializer, description="Import application result."),
+                   **errors(400, 401, 403, 404, 409)},
         examples=[BULK_IMPORT_ROWS_EXAMPLE],
     )
     def post(self, request, makerspace_id, *args, **kwargs):

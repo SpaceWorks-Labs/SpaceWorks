@@ -19,6 +19,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.openapi_errors import errors
+from .serializers_openapi import CardFaceSerializer
 
 from .holder_access import own_card
 
@@ -67,7 +68,7 @@ class MyCardFaceView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(tags=TAGS, summary="My card's published design and values, for the printed-card view",
-                   request=None, responses={200: OpenApiTypes.OBJECT, **errors(401, 403, 404)})
+                   request=None, responses={200: CardFaceSerializer, **errors(401, 403, 404)})
     def get(self, request, kind, card_id):
         _spec, card = live_card(request.user, kind, card_id)
         response = Response(face(kind, card))

@@ -76,7 +76,7 @@ class MemberBookingCancelView(APIView):
     throttle_scope = 'booking_submit'
 
     @extend_schema(tags=['Member bookings'],
-                   request={'type': 'object', 'properties': {}, 'additionalProperties': False},
+                   request=None,
                    responses={200: MemberBookingSerializer, **ERRORS,
                               423: OpenApiResponse(ErrorSerializer, description='Tenant frozen for migration.'),
                               503: OpenApiResponse(ErrorSerializer, description='Tenant write gate unavailable.'),

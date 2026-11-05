@@ -7,7 +7,6 @@ printed, and the attach is refused without that. Authority per kind, through eac
 own staff resolver: member cards need MANAGE_MEMBER_CARDS in the card's space, programme
 cards MANAGE_ID_PROGRAMMES on the host space, event cards an organiser of the event.
 """
-from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
@@ -18,6 +17,7 @@ from apps.audit import services as audit
 from apps.evidence.responses import storage_unavailable_response
 from apps.evidence.storage import StorageUnavailable
 from apps.openapi_errors import errors
+from .serializers_openapi import PhotoUploadSerializer
 
 TAGS = ["Card photos (staff)"]
 TYPES = ("image/png", "image/jpeg", "image/webp")
@@ -61,7 +61,7 @@ class _StaffCardPhotoView(APIView):
         return finalize(actor, self.kind, card, object_key=values["object_key"], consent=consent)
 
     @extend_schema(tags=TAGS, summary="Start a holder photo upload for this card (staging presign only)",
-                   request=StaffPhotoPresignSerializer, responses={201: OpenApiTypes.OBJECT, **errors(400, 401, 403, 404, 503)})
+                   request=StaffPhotoPresignSerializer, responses={201: PhotoUploadSerializer, **errors(400, 401, 403, 404, 503)})
     def post(self, request, pk):
         card = self.card(request, pk)
         data = StaffPhotoPresignSerializer(data=request.data)

@@ -19,6 +19,9 @@ from rest_framework.views import APIView
 from apps.accounts import rbac
 from apps.accounts.platform_authority import is_platform_superadmin
 from apps.admin_api.permissions import IsActiveStaff
+from apps.admin_api.serializers_modules import (
+    ModuleGroupListSerializer, ModuleInstallResultSerializer, ModuleUninstallResultSerializer,
+)
 from apps.makerspaces.module_switch_authority import limit_gated, may_install, may_uninstall
 from apps.makerspaces.module_groups import deployment_app_status, grouped_module_status
 from apps.makerspaces.module_install import (
@@ -86,7 +89,7 @@ class ModuleGroupListView(APIView):
         tags=["Platform"],
         summary="List module groups and their install state for a makerspace",
         responses={
-            200: OpenApiResponse(description="Grouped module status."),
+            200: OpenApiResponse(ModuleGroupListSerializer, description="Grouped module status."),
             **errors(401, 403, 404),
         },
     )
@@ -113,7 +116,7 @@ class ModuleInstallView(APIView):
         summary="Install a module and everything it requires",
         request=ModuleActionSerializer,
         responses={
-            200: OpenApiResponse(description="Keys newly installed."),
+            200: OpenApiResponse(ModuleInstallResultSerializer, description="Keys newly installed."),
             400: OpenApiResponse(description="Unknown module, or not shipped by this deployment."),
             **_ERRORS,
         },
@@ -148,7 +151,7 @@ class ModuleUninstallView(APIView):
         ),
         request=ModuleActionSerializer,
         responses={
-            200: OpenApiResponse(description="Keys uninstalled."),
+            200: OpenApiResponse(ModuleUninstallResultSerializer, description="Keys uninstalled."),
             400: OpenApiResponse(description="Core module, or required by an installed module."),
             **_ERRORS,
         },

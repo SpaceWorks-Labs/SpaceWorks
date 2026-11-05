@@ -3,7 +3,6 @@
 Lists and pages are anonymous reads (noindex is set by the SPA); joining needs a
 signed-in active account and is throttled (`id_join` 10/min, photo uploads 12/hour).
 """
-from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -15,6 +14,12 @@ from apps.evidence.responses import storage_unavailable_response
 from apps.evidence.storage import StorageUnavailable
 from apps.openapi import PUBLIC_API_AUTH_PARAMETERS
 from apps.openapi_errors import errors
+from apps.card_designs.serializers_openapi import PhotoUploadSerializer
+
+from .serializers_openapi import (
+    InviteAcceptResultSerializer, JoinPhotoRequestSerializer, JoinResultSerializer, PrefillSerializer,
+    IdProgrammeDetailSerializer,
+)
 
 from . import invites, join
 from .serializers import JoinSerializer, PublicProgrammeSerializer
@@ -47,7 +52,7 @@ class PublicProgrammeDetailView(APIView):
 
     @extend_schema(tags=TAGS, summary="One programme's join page, with my request state when signed in",
                    parameters=PUBLIC_API_AUTH_PARAMETERS, request=None,
-                   responses={200: OpenApiTypes.OBJECT, **errors(404)})
+                   responses={200: IdProgrammeDetailSerializer, **errors(404)})
     def get(self, request, slug, programme_slug):
         programme = join.programme_by_slug(slug, programme_slug)
         return Response({**PublicProgrammeSerializer(programme).data, "state": _state(request.user, programme)})
@@ -60,7 +65,7 @@ class PublicProgrammeJoinView(APIView):
 
     @extend_schema(tags=TAGS, summary="Ask to join (the email comes from your account)", request=JoinSerializer,
                    parameters=PUBLIC_API_AUTH_PARAMETERS,
-                   responses={201: OpenApiTypes.OBJECT, **errors(400, 401, 403, 404, 429)})
+                   responses={201: JoinResultSerializer, **errors(400, 401, 403, 404, 429)})
     def post(self, request, slug, programme_slug):
         programme = join.programme_by_slug(slug, programme_slug)
         data = JoinSerializer(data=request.data)
@@ -79,7 +84,7 @@ class PublicProgrammePrefillView(APIView):
 
     @extend_schema(tags=TAGS, summary="Fill the join form from my Saved details (only when I ask)",
                    parameters=PUBLIC_API_AUTH_PARAMETERS, request=None,
-                   responses={200: OpenApiTypes.OBJECT, **errors(401, 403, 404, 429)})
+                   responses={200: PrefillSerializer, **errors(401, 403, 404, 429)})
     def get(self, request, slug, programme_slug):
         from .prefill import values_for
         programme = join.programme_by_slug(slug, programme_slug)
@@ -96,8 +101,8 @@ class PublicProgrammeJoinPhotoView(APIView):
 
     @extend_schema(tags=TAGS, summary="Start a photo upload for a join request (staging presign only)",
                    parameters=PUBLIC_API_AUTH_PARAMETERS,
-                   request={"application/json": {"type": "object", "properties": {"content_type": {"type": "string"}}}},
-                   responses={201: OpenApiTypes.OBJECT, **errors(400, 401, 404, 429, 503)})
+                   request=JoinPhotoRequestSerializer,
+                   responses={201: PhotoUploadSerializer, **errors(400, 401, 404, 429, 503)})
     def post(self, request, slug, programme_slug):
         programme = join.programme_by_slug(slug, programme_slug)
         join.require_joiner(request.user)
@@ -119,7 +124,7 @@ class InviteAcceptView(APIView):
     throttle_scope = "id_join"
 
     @extend_schema(tags=["My cards"], summary="Accept an emailed programme invite (needs your verified email)",
-                   request=InviteAcceptSerializer, responses={200: OpenApiTypes.OBJECT, **errors(400, 401, 404, 429)})
+                   request=InviteAcceptSerializer, responses={200: InviteAcceptResultSerializer, **errors(400, 401, 404, 429)})
     def post(self, request):
         data = InviteAcceptSerializer(data=request.data)
         data.is_valid(raise_exception=True)

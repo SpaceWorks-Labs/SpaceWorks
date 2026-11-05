@@ -7,6 +7,7 @@ from rest_framework.response import Response
 
 from apps.accounts import rbac
 from apps.audit import services as audit
+from apps.card_designs.serializers_openapi import PhotoUploadSerializer
 from apps.evidence.responses import storage_unavailable_response
 from apps.evidence.storage import StorageUnavailable
 from apps.makerspaces import member_card_storage
@@ -66,7 +67,7 @@ class MemberCardPhotoView(OwnMemberCardMixin):
     throttle_classes = [MemberImagePresignThrottle]
 
     @extend_schema(tags=["Member profile"], summary="Create a card photo upload URL (staging only)",
-                   request=MemberCardPhotoPresignSerializer, responses={201: OpenApiTypes.OBJECT, **ERRORS,
+                   request=MemberCardPhotoPresignSerializer, responses={201: PhotoUploadSerializer, **ERRORS,
                    503: OpenApiResponse(description="Storage unavailable.")})
     def post(self, request, makerspace_id):
         card = self.card(request, makerspace_id)

@@ -15,6 +15,7 @@ from rest_framework.views import APIView
 from apps.accounts import rbac
 from apps.audit import services as audit
 from apps.openapi_errors import errors
+from apps.card_designs.serializers_openapi import CreatedNoteSerializer, PresenceCheckInResultSerializer, QueuedSerializer
 from apps.makerspaces.guards import require_module
 from apps.makerspaces.models import Makerspace, MemberCard, MemberCardSettings
 
@@ -131,7 +132,7 @@ class MemberCardEmailView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(tags=TAGS, summary="Email this card to its holder (PDF attached)", request=None,
-                   responses={202: OpenApiTypes.OBJECT, **errors(400, 401, 403, 404)})
+                   responses={202: QueuedSerializer, **errors(400, 401, 403, 404)})
     def post(self, request, pk):
         from apps.card_designs.email import blocked, send_card_email
         card = _card(request.user, pk)
@@ -147,7 +148,7 @@ class MemberCardPhotoRequestView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(tags=TAGS, summary="Ask the holder for a new photo (the card stays valid)",
-                   request=CardNoteSerializer, responses={201: OpenApiTypes.OBJECT, **errors(400, 401, 403, 404)})
+                   request=CardNoteSerializer, responses={201: CreatedNoteSerializer, **errors(400, 401, 403, 404)})
     def post(self, request, pk):
         from apps.card_designs.photos import request_update
         card = _card(request.user, pk)
@@ -171,7 +172,7 @@ class MemberCardPresenceView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(tags=TAGS, summary="Check a member in at the space by scanning their card",
-                   request=CardScanSerializer, responses={201: OpenApiTypes.OBJECT, **errors(400, 401, 403, 404)})
+                   request=CardScanSerializer, responses={201: PresenceCheckInResultSerializer, **errors(400, 401, 403, 404)})
     def post(self, request, makerspace_id):
         from django.contrib.auth import get_user_model
         from django.http import Http404

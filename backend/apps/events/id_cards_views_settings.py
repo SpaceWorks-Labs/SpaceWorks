@@ -12,6 +12,7 @@ from rest_framework.views import APIView
 from apps.audit import services as audit
 from apps.openapi_errors import errors
 
+from .id_cards_openapi import CardExtrasRowSerializer, EventCardSettingsRequestSerializer, EventCardSettingsSerializer
 from .id_cards_views import organiser_event
 from .models import EventCardSettings, EventRegistration
 
@@ -33,7 +34,7 @@ class EventCardSettingsView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(tags=TAGS, summary="This event's card settings", request=None,
-                   responses={200: OpenApiTypes.OBJECT, **errors(401, 403, 404)})
+                   responses={200: EventCardSettingsSerializer, **errors(401, 403, 404)})
     def get(self, request, pk):
         event = organiser_event(request.user, pk)
         row = EventCardSettings.objects.filter(event=event).first()
@@ -42,7 +43,7 @@ class EventCardSettingsView(APIView):
                          "design_approval_inherited": _approval_inherited(event)})
 
     @extend_schema(tags=TAGS, summary="Change this event's card settings (event settings authority)",
-                   request=OpenApiTypes.OBJECT, responses={200: OpenApiTypes.OBJECT, **errors(400, 401, 403, 404)})
+                   request=EventCardSettingsRequestSerializer, responses={200: EventCardSettingsSerializer, **errors(400, 401, 403, 404)})
     def put(self, request, pk):
         from apps.card_designs.approval import set_level
         from apps.makerspaces.settings_authority import assert_setting_write
@@ -72,7 +73,7 @@ class EventCardExtrasView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(tags=TAGS, summary="First-aid extras of this event's card holders (when switched on)", request=None,
-                   responses={200: OpenApiTypes.OBJECT, **errors(401, 403, 404)})
+                   responses={200: CardExtrasRowSerializer(many=True), **errors(401, 403, 404)})
     def get(self, request, pk):
         from apps.accounts.pii_presentation import require_pii_access
         from apps.card_designs.models import CardHolderExtras

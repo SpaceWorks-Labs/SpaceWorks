@@ -66,7 +66,7 @@ class BookingBroadcastActionView(APIView):
     action = "queue"
 
     @extend_schema(tags=["Admin bookings"], description=DESCRIPTION + " Queue limit: ten per hour per tenant; cancel stops unclaimed sends.",
-                   request={"application/json": {"type": "object", "additionalProperties": False}}, responses={200: BookingBroadcastSerializer, **ERRORS})
+                   request=None, responses={200: BookingBroadcastSerializer, **ERRORS})
     def post(self, request, pk, campaign_id):
         space = booking_authority.get_space(request.user, pk, MANAGE_RESERVATIONS)
         campaign = get_object_or_404(BookingBroadcast, space=space, makerspace=space.makerspace, pk=campaign_id)

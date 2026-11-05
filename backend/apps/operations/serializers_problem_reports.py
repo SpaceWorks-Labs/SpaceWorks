@@ -34,3 +34,23 @@ class ProblemReportTriageResponseSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     outcome = serializers.CharField()
     resolved = serializers.BooleanField()
+
+class ProblemReportResolvedSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    resolved = serializers.BooleanField()
+
+
+class AccountabilityTruncationSerializer(serializers.Serializer):
+    repeat_offenders = serializers.BooleanField()
+    overdue = serializers.BooleanField()
+    problem_reports = serializers.BooleanField()
+
+
+class AccountabilityReportSerializer(serializers.Serializer):
+    """The accountability dashboard (#193 OpenAPI contract); each list holds report rows."""
+    repeat_offenders = serializers.ListField(child=serializers.DictField())
+    anonymous_accountability = serializers.DictField()
+    overdue = serializers.ListField(child=serializers.DictField())
+    restrictions = serializers.ListField(child=serializers.DictField())
+    problem_reports = serializers.ListField(child=serializers.DictField())
+    truncated = AccountabilityTruncationSerializer()

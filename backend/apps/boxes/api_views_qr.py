@@ -1,7 +1,7 @@
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from django.http import Http404
-from rest_framework import status
+from rest_framework import serializers, status
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -212,11 +212,17 @@ class QrResolveView(QrPermissionMixin, APIView):
         )
 
 
+class QrLabelSerializer(serializers.Serializer):
+    payload = serializers.CharField()
+    svg = serializers.CharField(help_text="The printable label as an SVG document.")
+    target = serializers.DictField(help_text="What the QR points at: type, id and a label.")
+
+
 class QrPrintView(QrPermissionMixin, APIView):
     @extend_schema(
         tags=["QR assets"],
         summary="Render QR label SVG",
-        responses={200: OpenApiResponse(description="SVG QR label.")},
+        responses={200: OpenApiResponse(QrLabelSerializer, description="SVG QR label.")},
     )
     def get(self, request, pk, *args, **kwargs):
         qr = qr_for_action(request.user, rbac.Action.MANAGE_QR, pk=pk)

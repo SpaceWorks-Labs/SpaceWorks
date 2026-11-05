@@ -8,6 +8,7 @@ from rest_framework.views import APIView
 
 from apps.audit import services as audit
 from apps.openapi_errors import errors
+from .serializers_openapi import CardDesignFileSerializer
 
 from . import design_file, designs
 from .authority import acted_for, design_for, require_edit
@@ -84,7 +85,7 @@ class CardDesignExportView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(tags=TAGS, summary="Download the design file (JSON)", request=None,
-                   responses={(200, "application/json"): OpenApiTypes.OBJECT, **errors(401, 403, 404)})
+                   responses={(200, "application/json"): CardDesignFileSerializer, **errors(401, 403, 404)})
     def get(self, request, pk):
         design = require_edit(request.user, design_for(request.user, pk))
         audit.record(request.user, "card_design.exported", makerspace=design.makerspace, target=design,

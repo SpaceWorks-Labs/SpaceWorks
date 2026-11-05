@@ -13,6 +13,10 @@ from rest_framework.views import APIView
 
 from apps.admin_api.import_sources import SHEET_ERRORS, source_of
 from apps.openapi_errors import errors
+from apps.card_designs.serializers import CardJobCreateSerializer, CardJobSerializer
+from apps.card_designs.serializers_openapi import CreatedIdSerializer, QueuedSerializer, ReasonSerializer
+
+from .serializers_openapi import DecisionResultSerializer, ImportCommitResultSerializer, ImportPreviewResultSerializer
 
 from . import cards, imports
 from .access import MANAGE, card_for, programme_for
@@ -90,7 +94,7 @@ class ProgrammeDecisionView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(tags=TAGS, summary="Approve, reject, revoke, reinstate or renew up to 500 cards",
-                   request=DecisionSerializer, responses={200: OpenApiTypes.OBJECT, **errors(400, 401, 403, 404)})
+                   request=DecisionSerializer, responses={200: DecisionResultSerializer, **errors(400, 401, 403, 404)})
     def post(self, request, pk):
         programme = programme_for(request.user, pk, MANAGE)
         data = DecisionSerializer(data=request.data)
@@ -111,7 +115,7 @@ class ProgrammeImportPreviewView(APIView):
 
     @extend_schema(tags=TAGS, summary="Preview a CSV or public Google Sheet import: headers, 20 rows, mapping, counts",
                    request=ImportPreviewSerializer,
-                   responses={200: OpenApiTypes.OBJECT, **errors(400, 401, 403, 404), **SHEET_ERRORS})
+                   responses={200: ImportPreviewResultSerializer, **errors(400, 401, 403, 404), **SHEET_ERRORS})
     def post(self, request, pk):
         programme = programme_for(request.user, pk, MANAGE)
         data = ImportPreviewSerializer(data=request.data)
@@ -125,7 +129,7 @@ class ProgrammeImportView(APIView):
 
     @extend_schema(tags=TAGS, summary="Import with the confirmed mapping (dry run available)",
                    request=ImportCommitSerializer,
-                   responses={200: OpenApiTypes.OBJECT, **errors(400, 401, 403, 404), **SHEET_ERRORS})
+                   responses={200: ImportCommitResultSerializer, **errors(400, 401, 403, 404), **SHEET_ERRORS})
     def post(self, request, pk):
         programme = programme_for(request.user, pk, MANAGE)
         data = ImportCommitSerializer(data=request.data)
@@ -160,7 +164,7 @@ class ProgrammeCardEmailView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(tags=TAGS, summary="Email one programme card to its holder", request=None,
-                   responses={202: OpenApiTypes.OBJECT, **errors(400, 401, 403, 404)})
+                   responses={202: QueuedSerializer, **errors(400, 401, 403, 404)})
     def post(self, request, pk):
         from apps.card_designs.email import send_card_email
         if not send_card_email("programme_card", card_for(request.user, pk, MANAGE), actor=request.user, explicit=True):
@@ -171,8 +175,8 @@ class ProgrammeCardEmailView(APIView):
 class ProgrammeCardPhotoRequestView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(tags=TAGS, summary="Ask the holder for a new photo", request=OpenApiTypes.OBJECT,
-                   responses={201: OpenApiTypes.OBJECT, **errors(400, 401, 403, 404)})
+    @extend_schema(tags=TAGS, summary="Ask the holder for a new photo", request=ReasonSerializer,
+                   responses={201: CreatedIdSerializer, **errors(400, 401, 403, 404)})
     def post(self, request, pk):
         from apps.card_designs.photos import request_update
         card = card_for(request.user, pk, MANAGE)
@@ -184,13 +188,13 @@ class ProgrammeCardJobView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(tags=TAGS, summary="My card jobs for this programme", request=None,
-                   responses={200: OpenApiTypes.OBJECT, **errors(401, 404)})
+                   responses={200: CardJobSerializer(many=True), **errors(401, 404)})
     def get(self, request, pk):
         from apps.card_designs.jobs import my_jobs
         return Response(my_jobs(request.user, "id_programme", programme_for(request.user, pk).pk))
 
     @extend_schema(tags=TAGS, summary="Queue a bulk job for approved cards (sheets, per-person PDF, ZIP, email)",
-                   request=OpenApiTypes.OBJECT, responses={201: OpenApiTypes.OBJECT, **errors(400, 401, 403, 404)})
+                   request=CardJobCreateSerializer, responses={201: CardJobSerializer, 200: CardJobSerializer, **errors(400, 401, 403, 404)})
     def post(self, request, pk):
         from apps.card_designs.jobs import enqueue
         from apps.card_designs.serializers import CardJobCreateSerializer, CardJobSerializer

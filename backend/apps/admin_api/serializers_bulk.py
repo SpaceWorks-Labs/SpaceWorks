@@ -101,3 +101,41 @@ def _mapping_value(value):
         raise serializers.ValidationError({"mapping": "Mapping must be an object."})
     return value
 
+
+
+# Response shapes of the synchronous preview/apply routes (#193 OpenAPI contract).
+class BulkImportRowMessagesSerializer(serializers.Serializer):
+    row = serializers.IntegerField()
+    errors = serializers.DictField(child=serializers.CharField(), required=False, help_text="Field -> message.")
+    warnings = serializers.DictField(child=serializers.CharField(), required=False, help_text="Field -> message.")
+
+
+class BulkImportPlannedRowSerializer(serializers.Serializer):
+    row = serializers.IntegerField()
+    action = serializers.ChoiceField(choices=("create", "update", "error"))
+    data = serializers.JSONField(help_text="The normalised product fields for this row.")
+    warnings = serializers.DictField(child=serializers.CharField())
+
+
+class BulkImportSummarySerializer(serializers.Serializer):
+    create = serializers.IntegerField()
+    update = serializers.IntegerField()
+    errors = serializers.IntegerField()
+    warnings = serializers.IntegerField()
+    total = serializers.IntegerField()
+
+
+class BulkImportPreviewResultSerializer(serializers.Serializer):
+    mapping = serializers.DictField(child=serializers.CharField())
+    valid = serializers.BooleanField()
+    errors = BulkImportRowMessagesSerializer(many=True)
+    warnings = BulkImportRowMessagesSerializer(many=True)
+    rows = BulkImportPlannedRowSerializer(many=True)
+    summary = BulkImportSummarySerializer()
+
+
+class BulkImportApplyResultSerializer(BulkImportPreviewResultSerializer):
+    applied = serializers.BooleanField()
+    partial = serializers.BooleanField(required=False)
+    created = serializers.IntegerField(required=False)
+    updated = serializers.IntegerField(required=False)

@@ -23,6 +23,7 @@ from apps.operations.report_exports_provenance import (
 from apps.operations.schemas_reports import ANALYTICS_REPORT_RESPONSE
 from apps.operations.serializers import EmptySerializer, GenericObjectSerializer
 from apps.operations.serializers_reports import ReportErrorSerializer
+from apps.operations.serializers_problem_reports import AccountabilityReportSerializer
 from apps.operations.serializers_report_catalog import ReportCatalogSerializer
 from apps.operations.report_request_contract import (
     DATE_RANGE_PARAMETERS,
@@ -163,7 +164,7 @@ class AccountabilityReportView(APIView):
 
     @extend_schema(
         tags=["Analytics"], summary="Requester accountability dashboard",
-        request=None, responses={200: OpenApiTypes.OBJECT, **ERROR_RESPONSES},
+        request=None, responses={200: AccountabilityReportSerializer, **ERROR_RESPONSES},
     )
     def get(self, request, makerspace_id, *args, **kwargs):
         makerspace = _makerspace_for_inventory_view(request.user, makerspace_id)

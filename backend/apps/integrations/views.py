@@ -2,7 +2,8 @@ from .notification_cutover import guarded, sending_allowed, CutoverClosed
 import logging
 
 from django.shortcuts import get_object_or_404
-from drf_spectacular.utils import OpenApiResponse, extend_schema
+from drf_spectacular.utils import OpenApiResponse, extend_schema, inline_serializer
+from rest_framework import serializers
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
@@ -80,6 +81,10 @@ class TelegramTestAlertView(APIView):
         request=TelegramTestAlertSerializer,
         responses={
             200: OpenApiResponse(
+                inline_serializer("TelegramTestAlertResult", fields={
+                    "delivered": serializers.BooleanField(),
+                    "detail": serializers.CharField(required=False),
+                }),
                 description="Delivery attempt result; `delivered: false` with a reason when "
                 "Telegram is unconfigured or rejects the message."
             ),

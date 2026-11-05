@@ -79333,6 +79333,156 @@
                 }
             }
         },
+        "/api/v1/admin/makerspace/{makerspace_id}/hosting-invoices": {
+            "get": {
+                "operationId": "api_v1_admin_makerspace_hosting_invoices_list",
+                "summary": "List this space's hosting invoices",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Managed hosting"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/SpaceHostingInvoice"
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/makerspace/{makerspace_id}/hosting-invoices/{invoice_id}/checkout": {
+            "post": {
+                "operationId": "api_v1_admin_makerspace_hosting_invoices_checkout_create",
+                "description": "The payer acts: the Space Manager opens the checkout; nothing is charged otherwise.",
+                "summary": "Open an online checkout for a hosting invoice",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "invoice_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Managed hosting"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HostingCheckout"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    },
+                    "409": {
+                        "description": "Conflicts with the current state."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/makerspace/{makerspace_id}/hosting-plan": {
+            "get": {
+                "operationId": "api_v1_admin_makerspace_hosting_plan_retrieve",
+                "summary": "Read this space's hosting plan and usage against it",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Managed hosting"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HostingPlanUsage"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    }
+                }
+            }
+        },
         "/api/v1/admin/makerspace/{makerspace_id}/integration-health": {
             "get": {
                 "operationId": "api_v1_admin_makerspace_integration_health_retrieve",
@@ -124389,6 +124539,195 @@
                 }
             }
         },
+        "/api/v1/admin/platform/announcements": {
+            "get": {
+                "operationId": "api_v1_admin_platform_announcements_list",
+                "summary": "List platform announcements",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "required": false,
+                        "in": "query",
+                        "description": "A page number within the paginated result set.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "tags": [
+                    "Platform announcements"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedPlatformAnnouncementList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    }
+                }
+            },
+            "post": {
+                "operationId": "api_v1_admin_platform_announcements_create",
+                "summary": "Create a banner announcement (and optional email to Space Managers)",
+                "tags": [
+                    "Platform announcements"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PlatformAnnouncementCreate"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PlatformAnnouncementCreate"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PlatformAnnouncementCreate"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PlatformAnnouncement"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/announcements/{id}": {
+            "get": {
+                "operationId": "api_v1_admin_platform_announcements_retrieve",
+                "summary": "Read a platform announcement",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Platform announcements"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PlatformAnnouncement"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/announcements/{id}/cancel": {
+            "post": {
+                "operationId": "api_v1_admin_platform_announcements_cancel_create",
+                "summary": "Cancel a platform announcement",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Platform announcements"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PlatformAnnouncement"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    },
+                    "409": {
+                        "description": "Conflicts with the current state."
+                    }
+                }
+            }
+        },
         "/api/v1/admin/platform/backup-destinations": {
             "get": {
                 "operationId": "api_v1_admin_platform_backup_destinations_retrieve",
@@ -125155,6 +125494,877 @@
                     },
                     "403": {
                         "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/hosting-billing-settings": {
+            "get": {
+                "operationId": "api_v1_admin_platform_hosting_billing_settings_retrieve",
+                "summary": "Read hosting billing settings",
+                "tags": [
+                    "Managed hosting"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HostingBillingSettings"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "api_v1_admin_platform_hosting_billing_settings_partial_update",
+                "summary": "Change hosting billing settings (secrets are write-only)",
+                "tags": [
+                    "Managed hosting"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedHostingBillingSettings"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedHostingBillingSettings"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedHostingBillingSettings"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HostingBillingSettings"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/hosting-invoices": {
+            "get": {
+                "operationId": "api_v1_admin_platform_hosting_invoices_list",
+                "summary": "List hosting invoices",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "makerspace",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "required": false,
+                        "in": "query",
+                        "description": "A page number within the paginated result set.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "status",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "tags": [
+                    "Managed hosting"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedHostingInvoiceList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    }
+                }
+            },
+            "post": {
+                "operationId": "api_v1_admin_platform_hosting_invoices_create",
+                "summary": "Record a hosting invoice for a space",
+                "tags": [
+                    "Managed hosting"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/HostingInvoiceCreate"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/HostingInvoiceCreate"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/HostingInvoiceCreate"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HostingInvoice"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/hosting-invoices/{id}/record-payment": {
+            "post": {
+                "operationId": "api_v1_admin_platform_hosting_invoices_record_payment_create",
+                "summary": "Record an offline payment receipt",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Managed hosting"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/HostingInvoicePayment"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/HostingInvoicePayment"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/HostingInvoicePayment"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HostingInvoice"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    },
+                    "409": {
+                        "description": "Conflicts with the current state."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/hosting-invoices/{id}/void": {
+            "post": {
+                "operationId": "api_v1_admin_platform_hosting_invoices_void_create",
+                "summary": "Void an open hosting invoice",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Managed hosting"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/HostingInvoiceVoid"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/HostingInvoiceVoid"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/HostingInvoiceVoid"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HostingInvoice"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    },
+                    "409": {
+                        "description": "Conflicts with the current state."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/hosting-plans": {
+            "get": {
+                "operationId": "api_v1_admin_platform_hosting_plans_list",
+                "summary": "List hosting plans",
+                "tags": [
+                    "Managed hosting"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/HostingPlan"
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    }
+                }
+            },
+            "post": {
+                "operationId": "api_v1_admin_platform_hosting_plans_create",
+                "summary": "Create a hosting plan",
+                "tags": [
+                    "Managed hosting"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/HostingPlan"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/HostingPlan"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/HostingPlan"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HostingPlan"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/hosting-plans/{id}": {
+            "get": {
+                "operationId": "api_v1_admin_platform_hosting_plans_retrieve",
+                "summary": "Read a hosting plan",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Managed hosting"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HostingPlan"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "api_v1_admin_platform_hosting_plans_partial_update",
+                "summary": "Change a hosting plan",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Managed hosting"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedHostingPlan"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedHostingPlan"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedHostingPlan"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HostingPlan"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/hosting-requests": {
+            "get": {
+                "operationId": "api_v1_admin_platform_hosting_requests_list",
+                "summary": "List hosting (onboarding) requests",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "required": false,
+                        "in": "query",
+                        "description": "A page number within the paginated result set.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "status",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "accepted",
+                                "changes_requested",
+                                "invited",
+                                "pending_verification",
+                                "rejected",
+                                "submitted",
+                                "withdrawn"
+                            ]
+                        }
+                    }
+                ],
+                "tags": [
+                    "Platform onboarding"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedHostingRequestRowList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/hosting-requests/{id}": {
+            "get": {
+                "operationId": "api_v1_admin_platform_hosting_requests_retrieve",
+                "summary": "Read one hosting request with its review history",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Platform onboarding"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HostingRequestDetail"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/hosting-requests/{id}/approve": {
+            "post": {
+                "operationId": "api_v1_admin_platform_hosting_requests_approve_create",
+                "summary": "Approve a request: create the space and invite its Space Manager",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Platform onboarding"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/OnboardingApprove"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/OnboardingApprove"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/OnboardingApprove"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OnboardingApproveResult"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    },
+                    "409": {
+                        "description": "Conflicts with the current state."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/hosting-requests/{id}/reject": {
+            "post": {
+                "operationId": "api_v1_admin_platform_hosting_requests_reject_create",
+                "summary": "Reject a hosting request with a reason",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Platform onboarding"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/OnboardingReject"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/OnboardingReject"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/OnboardingReject"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HostingRequestRow"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    },
+                    "409": {
+                        "description": "Conflicts with the current state."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/hosting-requests/{id}/request-changes": {
+            "post": {
+                "operationId": "api_v1_admin_platform_hosting_requests_request_changes_create",
+                "summary": "Ask the applicant for changes",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Platform onboarding"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/OnboardingChangesNote"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/OnboardingChangesNote"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/OnboardingChangesNote"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HostingRequestRow"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    },
+                    "409": {
+                        "description": "Conflicts with the current state."
                     }
                 }
             }
@@ -126017,6 +127227,879 @@
                     },
                     "403": {
                         "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/space-health": {
+            "get": {
+                "operationId": "api_v1_admin_platform_space_health_list",
+                "summary": "List every space's health card (archived and paused included)",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "required": false,
+                        "in": "query",
+                        "description": "A page number within the paginated result set.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "search",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "state",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "aborted",
+                                "active",
+                                "archived",
+                                "importing",
+                                "read_only",
+                                "scheduled",
+                                "suspended"
+                            ]
+                        }
+                    }
+                ],
+                "tags": [
+                    "Platform space controls"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedHealthCardList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/space-health/{makerspace_id}": {
+            "get": {
+                "operationId": "api_v1_admin_platform_space_health_retrieve",
+                "summary": "Read one space's health card with its open problems",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Platform space controls"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HealthCardDetail"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/spaces/{makerspace_id}/archive": {
+            "post": {
+                "operationId": "api_v1_admin_platform_spaces_archive_create",
+                "description": "One POST that runs a control service and answers the space's fresh health card.\n\nSubclasses declare ``request_serializer`` and implement ``run``; each documents its\nown ``post`` so the OpenAPI summary is per route.",
+                "summary": "Archive a space now",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Platform space controls"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HealthCard"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    },
+                    "409": {
+                        "description": "Conflicts with the current state."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/spaces/{makerspace_id}/plan": {
+            "get": {
+                "operationId": "api_v1_admin_platform_spaces_plan_retrieve",
+                "description": "Answers `null` when the space has no plan (the fair-use defaults apply).",
+                "summary": "Read a space's hosting plan",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Managed hosting"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HostingPlanAssignment"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    }
+                }
+            },
+            "put": {
+                "operationId": "api_v1_admin_platform_spaces_plan_update",
+                "summary": "Assign a hosting plan (with an optional trial)",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Managed hosting"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/HostingPlanAssignRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/HostingPlanAssignRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/HostingPlanAssignRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HostingPlanAssignment"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "api_v1_admin_platform_spaces_plan_destroy",
+                "summary": "Remove a space's hosting plan (fair-use defaults apply again)",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Managed hosting"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Removed."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/spaces/{makerspace_id}/purge": {
+            "post": {
+                "operationId": "api_v1_admin_platform_spaces_purge_create",
+                "description": "One POST that runs a control service and answers the space's fresh health card.\n\nSubclasses declare ``request_serializer`` and implement ``run``; each documents its\nown ``post`` so the OpenAPI summary is per route.",
+                "summary": "Permanently delete (purge) an archived space",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Platform space controls"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SpacePurgeRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SpacePurgeRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SpacePurgeRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Purged."
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    },
+                    "409": {
+                        "description": "Conflicts with the current state."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/spaces/{makerspace_id}/read-only": {
+            "post": {
+                "operationId": "api_v1_admin_platform_spaces_read_only_create",
+                "description": "One POST that runs a control service and answers the space's fresh health card.\n\nSubclasses declare ``request_serializer`` and implement ``run``; each documents its\nown ``post`` so the OpenAPI summary is per route.",
+                "summary": "Put a space in read-only mode",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Platform space controls"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SpaceControlReason"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SpaceControlReason"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SpaceControlReason"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HealthCard"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    },
+                    "409": {
+                        "description": "Conflicts with the current state."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/spaces/{makerspace_id}/read-only/lift": {
+            "post": {
+                "operationId": "api_v1_admin_platform_spaces_read_only_lift_create",
+                "description": "One POST that runs a control service and answers the space's fresh health card.\n\nSubclasses declare ``request_serializer`` and implement ``run``; each documents its\nown ``post`` so the OpenAPI summary is per route.",
+                "summary": "End read-only mode for a space",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Platform space controls"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HealthCard"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    },
+                    "409": {
+                        "description": "Conflicts with the current state."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/spaces/{makerspace_id}/schedule": {
+            "post": {
+                "operationId": "api_v1_admin_platform_spaces_schedule_create",
+                "description": "One POST that runs a control service and answers the space's fresh health card.\n\nSubclasses declare ``request_serializer`` and implement ``run``; each documents its\nown ``post`` so the OpenAPI summary is per route.",
+                "summary": "Schedule a space's archive and its purge after a grace period",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Platform space controls"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SpaceScheduleRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SpaceScheduleRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SpaceScheduleRequest"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HealthCard"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    },
+                    "409": {
+                        "description": "Conflicts with the current state."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/spaces/{makerspace_id}/schedule/cancel": {
+            "post": {
+                "operationId": "api_v1_admin_platform_spaces_schedule_cancel_create",
+                "description": "One POST that runs a control service and answers the space's fresh health card.\n\nSubclasses declare ``request_serializer`` and implement ``run``; each documents its\nown ``post`` so the OpenAPI summary is per route.",
+                "summary": "Cancel a scheduled archive or purge",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Platform space controls"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HealthCard"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    },
+                    "409": {
+                        "description": "Conflicts with the current state."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/spaces/{makerspace_id}/suspend": {
+            "post": {
+                "operationId": "api_v1_admin_platform_spaces_suspend_create",
+                "description": "One POST that runs a control service and answers the space's fresh health card.\n\nSubclasses declare ``request_serializer`` and implement ``run``; each documents its\nown ``post`` so the OpenAPI summary is per route.",
+                "summary": "Pause (suspend) a space",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Platform space controls"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SpaceControlReason"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SpaceControlReason"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SpaceControlReason"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HealthCard"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    },
+                    "409": {
+                        "description": "Conflicts with the current state."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/spaces/{makerspace_id}/transfer-ownership": {
+            "post": {
+                "operationId": "api_v1_admin_platform_spaces_transfer_ownership_create",
+                "summary": "Assign a new Space Manager (transfer ownership)",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Platform space controls"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SpaceTransferRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SpaceTransferRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SpaceTransferRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SpaceTransferResult"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    },
+                    "409": {
+                        "description": "Conflicts with the current state."
+                    },
+                    "423": {
+                        "description": "Makerspace writes are frozen for tenant migration."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/spaces/{makerspace_id}/unarchive": {
+            "post": {
+                "operationId": "api_v1_admin_platform_spaces_unarchive_create",
+                "description": "One POST that runs a control service and answers the space's fresh health card.\n\nSubclasses declare ``request_serializer`` and implement ``run``; each documents its\nown ``post`` so the OpenAPI summary is per route.",
+                "summary": "Unarchive a space",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Platform space controls"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HealthCard"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    },
+                    "409": {
+                        "description": "Conflicts with the current state."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/spaces/{makerspace_id}/unsuspend": {
+            "post": {
+                "operationId": "api_v1_admin_platform_spaces_unsuspend_create",
+                "description": "One POST that runs a control service and answers the space's fresh health card.\n\nSubclasses declare ``request_serializer`` and implement ``run``; each documents its\nown ``post`` so the OpenAPI summary is per route.",
+                "summary": "Unblock a paused space",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Platform space controls"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HealthCard"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    },
+                    "409": {
+                        "description": "Conflicts with the current state."
                     }
                 }
             }
@@ -155637,6 +157720,52 @@
                     },
                     "503": {
                         "description": "No usable Redis (unset, misconfigured or unreachable); poll instead."
+                    }
+                }
+            }
+        },
+        "/api/v1/managed-hosting/webhooks/razorpay": {
+            "post": {
+                "operationId": "api_v1_managed_hosting_webhooks_razorpay_create",
+                "summary": "Razorpay callback for hosting invoices (signed)",
+                "tags": [
+                    "Managed hosting"
+                ],
+                "security": [
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Received."
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    }
+                }
+            }
+        },
+        "/api/v1/managed-hosting/webhooks/stripe": {
+            "post": {
+                "operationId": "api_v1_managed_hosting_webhooks_stripe_create",
+                "summary": "Stripe callback for hosting invoices (signed)",
+                "tags": [
+                    "Managed hosting"
+                ],
+                "security": [
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Received."
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
                     }
                 }
             }
@@ -192309,6 +194438,35 @@
                 }
             }
         },
+        "/api/v1/platform-notices": {
+            "get": {
+                "operationId": "api_v1_platform_notices_retrieve",
+                "summary": "Live announcements and paused or read-only spaces for this account",
+                "tags": [
+                    "Platform announcements"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PlatformNotices"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    }
+                }
+            }
+        },
         "/api/v1/procurement/makerspace/{makerspace_id}/to-buy": {
             "get": {
                 "operationId": "api_v1_procurement_makerspace_to_buy_list",
@@ -204469,6 +206627,44 @@
                 }
             }
         },
+        "/api/v1/public/makerspaces/{makerspace_slug}/availability": {
+            "get": {
+                "operationId": "api_v1_public_makerspaces_availability_retrieve",
+                "description": "Tells the SPA to show \"This space is paused\" instead of a not-found page.\n\nReveals only that a space exists and is paused (its public pages are offline anyway);\nan archived or unknown space stays a 404, exactly like every other public route.",
+                "summary": "Whether a public space is paused",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_slug",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Platform announcements"
+                ],
+                "security": [
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SpacePausedState"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    }
+                }
+            }
+        },
         "/api/v1/public/makerspaces/{makerspace_slug}/presence/now/": {
             "get": {
                 "operationId": "api_v1_public_makerspaces_presence_now_list",
@@ -213121,6 +215317,14 @@
                 "type": "string",
                 "description": "* `member` - member\n* `staff` - staff"
             },
+            "Audience876Enum": {
+                "enum": [
+                    "all_spaces",
+                    "selected_spaces"
+                ],
+                "type": "string",
+                "description": "* `all_spaces` - All spaces\n* `selected_spaces` - Selected spaces"
+            },
             "AudienceBe5Enum": {
                 "enum": [
                     "member",
@@ -214782,6 +216986,15 @@
                 ],
                 "type": "string",
                 "description": "* `queued` - queued\n* `running` - running\n* `completed` - completed\n* `failed` - failed"
+            },
+            "BillingPeriodEnum": {
+                "enum": [
+                    "monthly",
+                    "yearly",
+                    "none"
+                ],
+                "type": "string",
+                "description": "* `monthly` - Monthly\n* `yearly` - Yearly\n* `none` - No recurring fee"
             },
             "BillingPolicyError": {
                 "oneOf": [
@@ -242520,6 +244733,253 @@
                     "status"
                 ]
             },
+            "HealthCard": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "slug": {
+                        "type": "string"
+                    },
+                    "public_code": {
+                        "type": "string"
+                    },
+                    "state": {
+                        "$ref": "#/components/schemas/State981Enum"
+                    },
+                    "lifecycle_state": {
+                        "type": "string"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "archived_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "suspended": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/SpaceSuspension"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "read_only": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/SpaceReadOnlyState"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "schedule": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/SpaceScheduleState"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "usage": {
+                        "$ref": "#/components/schemas/SpaceHealthUsage"
+                    },
+                    "usage_peak_percent": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
+                    },
+                    "last_activity_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "backups": {
+                        "$ref": "#/components/schemas/SpaceHealthBackups"
+                    },
+                    "security": {
+                        "$ref": "#/components/schemas/SpaceHealthSecurity"
+                    },
+                    "open_issues": {
+                        "type": "integer"
+                    },
+                    "modules": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "managers": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/SpaceHealthManager"
+                        }
+                    },
+                    "plan": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/SpaceHealthPlan"
+                            }
+                        ],
+                        "nullable": true,
+                        "description": "Present only while MANAGED_PLANS_ENABLED is on (the managed-hosting limiter, #187A)."
+                    }
+                },
+                "required": [
+                    "archived_at",
+                    "backups",
+                    "created_at",
+                    "id",
+                    "last_activity_at",
+                    "lifecycle_state",
+                    "managers",
+                    "modules",
+                    "name",
+                    "open_issues",
+                    "public_code",
+                    "read_only",
+                    "schedule",
+                    "security",
+                    "slug",
+                    "state",
+                    "suspended",
+                    "usage",
+                    "usage_peak_percent"
+                ]
+            },
+            "HealthCardDetail": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "slug": {
+                        "type": "string"
+                    },
+                    "public_code": {
+                        "type": "string"
+                    },
+                    "state": {
+                        "$ref": "#/components/schemas/State981Enum"
+                    },
+                    "lifecycle_state": {
+                        "type": "string"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "archived_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "suspended": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/SpaceSuspension"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "read_only": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/SpaceReadOnlyState"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "schedule": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/SpaceScheduleState"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "usage": {
+                        "$ref": "#/components/schemas/SpaceHealthUsage"
+                    },
+                    "usage_peak_percent": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
+                    },
+                    "last_activity_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "backups": {
+                        "$ref": "#/components/schemas/SpaceHealthBackups"
+                    },
+                    "security": {
+                        "$ref": "#/components/schemas/SpaceHealthSecurity"
+                    },
+                    "open_issues": {
+                        "type": "integer"
+                    },
+                    "modules": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "managers": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/SpaceHealthManager"
+                        }
+                    },
+                    "plan": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/SpaceHealthPlan"
+                            }
+                        ],
+                        "nullable": true,
+                        "description": "Present only while MANAGED_PLANS_ENABLED is on (the managed-hosting limiter, #187A)."
+                    },
+                    "problems": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/SpaceHealthProblem"
+                        }
+                    }
+                },
+                "required": [
+                    "archived_at",
+                    "backups",
+                    "created_at",
+                    "id",
+                    "last_activity_at",
+                    "lifecycle_state",
+                    "managers",
+                    "modules",
+                    "name",
+                    "open_issues",
+                    "problems",
+                    "public_code",
+                    "read_only",
+                    "schedule",
+                    "security",
+                    "slug",
+                    "state",
+                    "suspended",
+                    "usage",
+                    "usage_peak_percent"
+                ]
+            },
             "Help": {
                 "type": "object",
                 "properties": {
@@ -243060,6 +245520,69 @@
                     "detail"
                 ]
             },
+            "HostingBillingSettings": {
+                "type": "object",
+                "properties": {
+                    "auto_enforce_enabled": {
+                        "type": "boolean"
+                    },
+                    "grace_days": {
+                        "type": "integer",
+                        "maximum": 365,
+                        "minimum": 0
+                    },
+                    "online_billing_switch": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "provider": {
+                        "type": "string",
+                        "description": "`stripe`, `razorpay`, or blank for none.",
+                        "maxLength": 16
+                    },
+                    "razorpay_key_id": {
+                        "type": "string",
+                        "maxLength": 100
+                    },
+                    "stripe_secret_key": {
+                        "type": "string",
+                        "writeOnly": true
+                    },
+                    "stripe_webhook_secret": {
+                        "type": "string",
+                        "writeOnly": true
+                    },
+                    "razorpay_key_secret": {
+                        "type": "string",
+                        "writeOnly": true
+                    },
+                    "razorpay_webhook_secret": {
+                        "type": "string",
+                        "writeOnly": true
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "online_billing_switch",
+                    "updated_at"
+                ]
+            },
+            "HostingCheckout": {
+                "type": "object",
+                "properties": {
+                    "url": {
+                        "type": "string",
+                        "format": "uri"
+                    }
+                },
+                "required": [
+                    "url"
+                ]
+            },
             "HostingError": {
                 "type": "object",
                 "properties": {
@@ -243333,6 +245856,13 @@
                             }
                         ]
                     },
+                    "expected_members": {
+                        "type": "integer",
+                        "maximum": 100000,
+                        "minimum": 1,
+                        "nullable": true,
+                        "description": "Roughly how many members the space expects (optional)."
+                    },
                     "new_organization_name": {
                         "type": "string",
                         "default": "",
@@ -243364,6 +245894,737 @@
                     "location",
                     "space_name",
                     "token"
+                ]
+            },
+            "HostingInvoice": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "number": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "makerspace": {
+                        "type": "object",
+                        "additionalProperties": {},
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "makerspace_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "description": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "amount_minor": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "currency": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "due_on": {
+                        "type": "string",
+                        "format": "date",
+                        "readOnly": true
+                    },
+                    "period_start": {
+                        "type": "string",
+                        "format": "date",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "period_end": {
+                        "type": "string",
+                        "format": "date",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "status": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/StatusCfcEnum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "overdue": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "paid_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "voided_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "void_reason": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "receipts": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/HostingInvoiceReceipt"
+                        },
+                        "readOnly": true
+                    },
+                    "online_payable": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "amount_minor",
+                    "created_at",
+                    "currency",
+                    "description",
+                    "due_on",
+                    "id",
+                    "makerspace",
+                    "makerspace_name",
+                    "number",
+                    "online_payable",
+                    "overdue",
+                    "paid_at",
+                    "period_end",
+                    "period_start",
+                    "receipts",
+                    "status",
+                    "void_reason",
+                    "voided_at"
+                ]
+            },
+            "HostingInvoiceCreate": {
+                "type": "object",
+                "properties": {
+                    "makerspace_id": {
+                        "type": "integer"
+                    },
+                    "amount_minor": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "currency": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z]{3}$"
+                    },
+                    "description": {
+                        "type": "string",
+                        "maxLength": 300
+                    },
+                    "due_on": {
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "period_start": {
+                        "type": "string",
+                        "format": "date",
+                        "nullable": true
+                    },
+                    "period_end": {
+                        "type": "string",
+                        "format": "date",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "amount_minor",
+                    "currency",
+                    "description",
+                    "due_on",
+                    "makerspace_id"
+                ]
+            },
+            "HostingInvoicePayment": {
+                "type": "object",
+                "properties": {
+                    "method": {
+                        "$ref": "#/components/schemas/HostingInvoicePaymentMethodEnum"
+                    },
+                    "reference": {
+                        "type": "string",
+                        "maxLength": 200
+                    },
+                    "received_on": {
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "note": {
+                        "type": "string",
+                        "default": "",
+                        "maxLength": 300
+                    }
+                },
+                "required": [
+                    "method",
+                    "received_on",
+                    "reference"
+                ]
+            },
+            "HostingInvoicePaymentMethodEnum": {
+                "enum": [
+                    "bank_transfer",
+                    "cash",
+                    "cheque",
+                    "card_offline",
+                    "other"
+                ],
+                "type": "string",
+                "description": "* `bank_transfer` - bank_transfer\n* `cash` - cash\n* `cheque` - cheque\n* `card_offline` - card_offline\n* `other` - other"
+            },
+            "HostingInvoiceReceipt": {
+                "type": "object",
+                "properties": {
+                    "method": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/HostingInvoiceReceiptMethodEnum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "reference": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "received_on": {
+                        "type": "string",
+                        "format": "date",
+                        "readOnly": true
+                    },
+                    "amount_minor": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "recorded_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "recorded_by": {
+                        "type": "string",
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "note": {
+                        "type": "string",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "amount_minor",
+                    "method",
+                    "note",
+                    "received_on",
+                    "recorded_at",
+                    "recorded_by",
+                    "reference"
+                ]
+            },
+            "HostingInvoiceReceiptMethodEnum": {
+                "enum": [
+                    "bank_transfer",
+                    "cash",
+                    "cheque",
+                    "card_offline",
+                    "other",
+                    "online_stripe",
+                    "online_razorpay"
+                ],
+                "type": "string",
+                "description": "* `bank_transfer` - Bank transfer\n* `cash` - Cash\n* `cheque` - Cheque\n* `card_offline` - Card (offline terminal)\n* `other` - Other\n* `online_stripe` - Online (Stripe)\n* `online_razorpay` - Online (Razorpay)"
+            },
+            "HostingInvoiceVoid": {
+                "type": "object",
+                "properties": {
+                    "reason": {
+                        "type": "string",
+                        "maxLength": 300,
+                        "minLength": 3
+                    }
+                },
+                "required": [
+                    "reason"
+                ]
+            },
+            "HostingPlan": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "key": {
+                        "type": "string",
+                        "maxLength": 40,
+                        "pattern": "^[-a-zA-Z0-9_]+$"
+                    },
+                    "name": {
+                        "type": "string",
+                        "maxLength": 80
+                    },
+                    "description": {
+                        "type": "string",
+                        "maxLength": 500
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    },
+                    "trial_days": {
+                        "type": "integer",
+                        "maximum": 32767,
+                        "minimum": 0
+                    },
+                    "price_minor": {
+                        "type": "integer",
+                        "maximum": 2147483647,
+                        "minimum": 0
+                    },
+                    "currency": {
+                        "type": "string",
+                        "pattern": "^[A-Z]{3}$",
+                        "maxLength": 3
+                    },
+                    "billing_period": {
+                        "$ref": "#/components/schemas/BillingPeriodEnum"
+                    },
+                    "limits": {},
+                    "allowed_modules": {},
+                    "space_count": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "created_at",
+                    "id",
+                    "key",
+                    "name",
+                    "space_count",
+                    "updated_at"
+                ]
+            },
+            "HostingPlanAssignRequest": {
+                "type": "object",
+                "properties": {
+                    "plan_id": {
+                        "type": "integer"
+                    },
+                    "trial_days": {
+                        "type": "integer",
+                        "maximum": 365,
+                        "minimum": 0,
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "plan_id"
+                ]
+            },
+            "HostingPlanAssignment": {
+                "type": "object",
+                "properties": {
+                    "makerspace_id": {
+                        "type": "integer"
+                    },
+                    "plan": {
+                        "$ref": "#/components/schemas/HostingPlan"
+                    },
+                    "assigned_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "trial_ends_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "trial_expired": {
+                        "type": "boolean",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "assigned_at",
+                    "makerspace_id",
+                    "plan",
+                    "trial_ends_at",
+                    "trial_expired"
+                ]
+            },
+            "HostingPlanUsage": {
+                "type": "object",
+                "properties": {
+                    "plan": {
+                        "type": "object",
+                        "additionalProperties": {},
+                        "nullable": true
+                    },
+                    "trial_ends_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "read_only_reason": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "resources": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/HostingPlanUsageRow"
+                        }
+                    },
+                    "warnings": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "required": [
+                    "plan",
+                    "read_only_reason",
+                    "resources",
+                    "trial_ends_at",
+                    "warnings"
+                ]
+            },
+            "HostingPlanUsageRow": {
+                "type": "object",
+                "properties": {
+                    "key": {
+                        "type": "string"
+                    },
+                    "label": {
+                        "type": "string"
+                    },
+                    "used": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "unit": {
+                        "type": "string",
+                        "description": "`bytes` or `count`."
+                    },
+                    "percent": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
+                    },
+                    "level": {
+                        "type": "string",
+                        "description": "`ok`, `warning` (from 80 %) or `limit` (100 %)."
+                    }
+                },
+                "required": [
+                    "key",
+                    "label",
+                    "level",
+                    "limit",
+                    "percent",
+                    "unit",
+                    "used"
+                ]
+            },
+            "HostingRequestDetail": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "status": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/StatusB35Enum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "source": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/SourceA69Enum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "space_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "proposed_slug": {
+                        "type": "string",
+                        "readOnly": true,
+                        "pattern": "^[-a-zA-Z0-9_]+$"
+                    },
+                    "location": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "expected_members": {
+                        "type": "integer",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "applicant_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "applicant_email": {
+                        "type": "string",
+                        "format": "email",
+                        "readOnly": true
+                    },
+                    "applicant_phone": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "space_website_url": {
+                        "type": "string",
+                        "format": "uri",
+                        "readOnly": true
+                    },
+                    "description": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "organization_choice": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/OrganizationChoiceEnum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "new_organization_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "inviter_summary": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "verified_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "decided_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "changes_note": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "created_makerspace": {
+                        "type": "object",
+                        "additionalProperties": {},
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "revisions": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/OnboardingRevision"
+                        },
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "applicant_email",
+                    "applicant_name",
+                    "applicant_phone",
+                    "changes_note",
+                    "created_at",
+                    "created_makerspace",
+                    "decided_at",
+                    "description",
+                    "expected_members",
+                    "id",
+                    "inviter_summary",
+                    "location",
+                    "new_organization_name",
+                    "organization_choice",
+                    "proposed_slug",
+                    "revisions",
+                    "source",
+                    "space_name",
+                    "space_website_url",
+                    "status",
+                    "verified_at"
+                ]
+            },
+            "HostingRequestRow": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "status": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/StatusB35Enum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "source": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/SourceA69Enum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "space_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "proposed_slug": {
+                        "type": "string",
+                        "readOnly": true,
+                        "pattern": "^[-a-zA-Z0-9_]+$"
+                    },
+                    "location": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "expected_members": {
+                        "type": "integer",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "applicant_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "applicant_email": {
+                        "type": "string",
+                        "format": "email",
+                        "readOnly": true
+                    },
+                    "applicant_phone": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "space_website_url": {
+                        "type": "string",
+                        "format": "uri",
+                        "readOnly": true
+                    },
+                    "description": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "organization_choice": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/OrganizationChoiceEnum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "new_organization_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "inviter_summary": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "verified_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "decided_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "changes_note": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "created_makerspace": {
+                        "type": "object",
+                        "additionalProperties": {},
+                        "nullable": true,
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "applicant_email",
+                    "applicant_name",
+                    "applicant_phone",
+                    "changes_note",
+                    "created_at",
+                    "created_makerspace",
+                    "decided_at",
+                    "description",
+                    "expected_members",
+                    "id",
+                    "inviter_summary",
+                    "location",
+                    "new_organization_name",
+                    "organization_choice",
+                    "proposed_slug",
+                    "source",
+                    "space_name",
+                    "space_website_url",
+                    "status",
+                    "verified_at"
                 ]
             },
             "HostingRequestStatus": {
@@ -243518,6 +246779,13 @@
                                 "maxLength": 0
                             }
                         ]
+                    },
+                    "expected_members": {
+                        "type": "integer",
+                        "maximum": 100000,
+                        "minimum": 1,
+                        "nullable": true,
+                        "description": "Roughly how many members the space expects (optional)."
                     },
                     "new_organization_name": {
                         "type": "string",
@@ -264159,6 +267427,135 @@
                     "state"
                 ]
             },
+            "OnboardingApprove": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "default": "",
+                        "maxLength": 200
+                    },
+                    "slug": {
+                        "oneOf": [
+                            {
+                                "type": "string",
+                                "default": "",
+                                "maxLength": 50,
+                                "pattern": "^[-a-zA-Z0-9_]+$"
+                            },
+                            {
+                                "type": "string",
+                                "maxLength": 0
+                            }
+                        ]
+                    },
+                    "organization_id": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "new_organization_name": {
+                        "type": "string",
+                        "default": "",
+                        "maxLength": 200
+                    },
+                    "invite_manager": {
+                        "type": "boolean",
+                        "default": true
+                    }
+                }
+            },
+            "OnboardingApproveResult": {
+                "type": "object",
+                "properties": {
+                    "request": {
+                        "$ref": "#/components/schemas/HostingRequestRow"
+                    },
+                    "makerspace": {
+                        "$ref": "#/components/schemas/OnboardingSpaceRef"
+                    },
+                    "invitation": {
+                        "type": "string",
+                        "description": "The Space Manager invitation mail: an email delivery status, `skipped` or `unavailable`."
+                    }
+                },
+                "required": [
+                    "invitation",
+                    "makerspace",
+                    "request"
+                ]
+            },
+            "OnboardingChangesNote": {
+                "type": "object",
+                "properties": {
+                    "note": {
+                        "type": "string",
+                        "maxLength": 2000,
+                        "minLength": 10
+                    }
+                },
+                "required": [
+                    "note"
+                ]
+            },
+            "OnboardingReject": {
+                "type": "object",
+                "properties": {
+                    "reason": {
+                        "type": "string",
+                        "maxLength": 2000,
+                        "minLength": 10
+                    }
+                },
+                "required": [
+                    "reason"
+                ]
+            },
+            "OnboardingRevision": {
+                "type": "object",
+                "properties": {
+                    "kind": {
+                        "type": "string"
+                    },
+                    "note": {
+                        "type": "string"
+                    },
+                    "changed_fields": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "changed_fields",
+                    "created_at",
+                    "kind",
+                    "note"
+                ]
+            },
+            "OnboardingSpaceRef": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "slug": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "name",
+                    "slug"
+                ]
+            },
             "OpeningBalance": {
                 "type": "object",
                 "properties": {
@@ -268041,6 +271438,99 @@
                     }
                 }
             },
+            "PaginatedHealthCardList": {
+                "type": "object",
+                "required": [
+                    "count",
+                    "results"
+                ],
+                "properties": {
+                    "count": {
+                        "type": "integer",
+                        "example": 123
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=4"
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=2"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/HealthCard"
+                        }
+                    }
+                }
+            },
+            "PaginatedHostingInvoiceList": {
+                "type": "object",
+                "required": [
+                    "count",
+                    "results"
+                ],
+                "properties": {
+                    "count": {
+                        "type": "integer",
+                        "example": 123
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=4"
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=2"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/HostingInvoice"
+                        }
+                    }
+                }
+            },
+            "PaginatedHostingRequestRowList": {
+                "type": "object",
+                "required": [
+                    "count",
+                    "results"
+                ],
+                "properties": {
+                    "count": {
+                        "type": "integer",
+                        "example": 123
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=4"
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=2"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/HostingRequestRow"
+                        }
+                    }
+                }
+            },
             "PaginatedInventoryAssetAdminList": {
                 "type": "object",
                 "required": [
@@ -268316,6 +271806,37 @@
                         "type": "array",
                         "items": {
                             "$ref": "#/components/schemas/PackProfile"
+                        }
+                    }
+                }
+            },
+            "PaginatedPlatformAnnouncementList": {
+                "type": "object",
+                "required": [
+                    "count",
+                    "results"
+                ],
+                "properties": {
+                    "count": {
+                        "type": "integer",
+                        "example": 123
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=4"
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=2"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PlatformAnnouncement"
                         }
                     }
                 }
@@ -275115,6 +278636,112 @@
                     "organizer_contact_action": {
                         "type": "string",
                         "maxLength": 300
+                    }
+                }
+            },
+            "PatchedHostingBillingSettings": {
+                "type": "object",
+                "properties": {
+                    "auto_enforce_enabled": {
+                        "type": "boolean"
+                    },
+                    "grace_days": {
+                        "type": "integer",
+                        "maximum": 365,
+                        "minimum": 0
+                    },
+                    "online_billing_switch": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "provider": {
+                        "type": "string",
+                        "description": "`stripe`, `razorpay`, or blank for none.",
+                        "maxLength": 16
+                    },
+                    "razorpay_key_id": {
+                        "type": "string",
+                        "maxLength": 100
+                    },
+                    "stripe_secret_key": {
+                        "type": "string",
+                        "writeOnly": true
+                    },
+                    "stripe_webhook_secret": {
+                        "type": "string",
+                        "writeOnly": true
+                    },
+                    "razorpay_key_secret": {
+                        "type": "string",
+                        "writeOnly": true
+                    },
+                    "razorpay_webhook_secret": {
+                        "type": "string",
+                        "writeOnly": true
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    }
+                }
+            },
+            "PatchedHostingPlan": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "key": {
+                        "type": "string",
+                        "maxLength": 40,
+                        "pattern": "^[-a-zA-Z0-9_]+$"
+                    },
+                    "name": {
+                        "type": "string",
+                        "maxLength": 80
+                    },
+                    "description": {
+                        "type": "string",
+                        "maxLength": 500
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    },
+                    "trial_days": {
+                        "type": "integer",
+                        "maximum": 32767,
+                        "minimum": 0
+                    },
+                    "price_minor": {
+                        "type": "integer",
+                        "maximum": 2147483647,
+                        "minimum": 0
+                    },
+                    "currency": {
+                        "type": "string",
+                        "pattern": "^[A-Z]{3}$",
+                        "maxLength": 3
+                    },
+                    "billing_period": {
+                        "$ref": "#/components/schemas/BillingPeriodEnum"
+                    },
+                    "limits": {},
+                    "allowed_modules": {},
+                    "space_count": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
                     }
                 }
             },
@@ -282949,6 +286576,172 @@
                     "rows"
                 ]
             },
+            "PlatformAnnouncement": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "title": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "body": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "severity": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/Severity6c1Enum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "audience": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/Audience876Enum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "makerspaces": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": {}
+                        },
+                        "readOnly": true
+                    },
+                    "starts_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "ends_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "send_email": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "show_to_members": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "email_sent_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "email_recipient_count": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "cancelled_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "created_by": {
+                        "type": "string",
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "status": {
+                        "type": "string",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "audience",
+                    "body",
+                    "cancelled_at",
+                    "created_at",
+                    "created_by",
+                    "email_recipient_count",
+                    "email_sent_at",
+                    "ends_at",
+                    "id",
+                    "makerspaces",
+                    "send_email",
+                    "severity",
+                    "show_to_members",
+                    "starts_at",
+                    "status",
+                    "title"
+                ]
+            },
+            "PlatformAnnouncementCreate": {
+                "type": "object",
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "maxLength": 120
+                    },
+                    "body": {
+                        "type": "string",
+                        "maxLength": 4000
+                    },
+                    "severity": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/Severity6c1Enum"
+                            }
+                        ],
+                        "default": "info"
+                    },
+                    "audience": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/Audience876Enum"
+                            }
+                        ],
+                        "default": "all_spaces"
+                    },
+                    "makerspace_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    "starts_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "ends_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "send_email": {
+                        "type": "boolean",
+                        "default": false
+                    },
+                    "show_to_members": {
+                        "type": "boolean",
+                        "default": false
+                    }
+                },
+                "required": [
+                    "body",
+                    "title"
+                ]
+            },
             "PlatformBackupHealth": {
                 "type": "object",
                 "properties": {
@@ -283214,6 +287007,109 @@
                     "outbox",
                     "staff_mfa",
                     "window"
+                ]
+            },
+            "PlatformNoticeAnnouncement": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "body": {
+                        "type": "string"
+                    },
+                    "severity": {
+                        "type": "string"
+                    },
+                    "starts_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "ends_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "makerspace_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "required": [
+                    "body",
+                    "ends_at",
+                    "id",
+                    "makerspace_ids",
+                    "severity",
+                    "starts_at",
+                    "title"
+                ]
+            },
+            "PlatformNoticeSpace": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "slug": {
+                        "type": "string"
+                    },
+                    "state": {
+                        "$ref": "#/components/schemas/PlatformNoticeSpaceStateEnum"
+                    },
+                    "reason": {
+                        "type": "string"
+                    },
+                    "since": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "id",
+                    "name",
+                    "reason",
+                    "since",
+                    "slug",
+                    "state"
+                ]
+            },
+            "PlatformNoticeSpaceStateEnum": {
+                "enum": [
+                    "read_only",
+                    "suspended"
+                ],
+                "type": "string",
+                "description": "* `read_only` - read_only\n* `suspended` - suspended"
+            },
+            "PlatformNotices": {
+                "type": "object",
+                "properties": {
+                    "announcements": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PlatformNoticeAnnouncement"
+                        }
+                    },
+                    "spaces": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PlatformNoticeSpace"
+                        }
+                    }
+                },
+                "required": [
+                    "announcements",
+                    "spaces"
                 ]
             },
             "PlatformOffsiteHealth": {
@@ -284858,6 +288754,15 @@
                     "reason",
                     "subject_id"
                 ]
+            },
+            "PreviousOutcomeEnum": {
+                "enum": [
+                    "keep_staff",
+                    "revoke",
+                    "keep_manager"
+                ],
+                "type": "string",
+                "description": "* `keep_staff` - keep_staff\n* `revoke` - revoke\n* `keep_manager` - keep_manager"
             },
             "PriceDiscount": {
                 "type": "object",
@@ -288918,6 +292823,11 @@
                     "hosting_requests": {
                         "type": "object",
                         "additionalProperties": {}
+                    },
+                    "managed_plans": {
+                        "type": "object",
+                        "additionalProperties": {},
+                        "description": "Present only while the managed-hosting limiter is on (#187A): {enabled: true, online_billing: bool}. Absent = render nothing of it."
                     },
                     "passkeys_enabled": {
                         "type": "boolean",
@@ -304448,6 +308358,16 @@
                     "staff_invited"
                 ]
             },
+            "Severity6c1Enum": {
+                "enum": [
+                    "info",
+                    "maintenance",
+                    "policy",
+                    "warning"
+                ],
+                "type": "string",
+                "description": "* `info` - Information\n* `maintenance` - Maintenance\n* `policy` - Policy\n* `warning` - Warning"
+            },
             "Shift": {
                 "type": "object",
                 "properties": {
@@ -307193,6 +311113,14 @@
                 "type": "string",
                 "description": "* `loan` - Loan\n* `booking` - Booking\n* `machine_job` - Machine job\n* `staff` - Staff"
             },
+            "SourceA69Enum": {
+                "enum": [
+                    "public",
+                    "invited"
+                ],
+                "type": "string",
+                "description": "* `public` - Public form\n* `invited` - Invitation"
+            },
             "SourceEd5Enum": {
                 "enum": [
                     "member_qr",
@@ -307224,6 +311152,321 @@
                     "logo_url",
                     "name",
                     "slug"
+                ]
+            },
+            "SpaceControlReason": {
+                "type": "object",
+                "properties": {
+                    "reason": {
+                        "type": "string",
+                        "maxLength": 500,
+                        "minLength": 10
+                    }
+                },
+                "required": [
+                    "reason"
+                ]
+            },
+            "SpaceHealthBackups": {
+                "type": "object",
+                "properties": {
+                    "last_backed_up_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "last_drill": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/SpaceHealthDrill"
+                            }
+                        ],
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "last_backed_up_at",
+                    "last_drill"
+                ]
+            },
+            "SpaceHealthDrill": {
+                "type": "object",
+                "properties": {
+                    "outcome": {
+                        "$ref": "#/components/schemas/SpaceHealthDrillOutcomeEnum"
+                    },
+                    "finished_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "finished_at",
+                    "outcome"
+                ]
+            },
+            "SpaceHealthDrillOutcomeEnum": {
+                "enum": [
+                    "passed",
+                    "failed"
+                ],
+                "type": "string",
+                "description": "* `passed` - passed\n* `failed` - failed"
+            },
+            "SpaceHealthManager": {
+                "type": "object",
+                "properties": {
+                    "membership_id": {
+                        "type": "integer"
+                    },
+                    "user_id": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "email": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "email",
+                    "membership_id",
+                    "name",
+                    "user_id"
+                ]
+            },
+            "SpaceHealthPlan": {
+                "type": "object",
+                "properties": {
+                    "key": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "trial_ends_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "key",
+                    "name",
+                    "trial_ends_at"
+                ]
+            },
+            "SpaceHealthProblem": {
+                "type": "object",
+                "properties": {
+                    "key": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "$ref": "#/components/schemas/Status00eEnum"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "fix_url": {
+                        "type": "string",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "fix_url",
+                    "key",
+                    "message",
+                    "status"
+                ]
+            },
+            "SpaceHealthSecurity": {
+                "type": "object",
+                "properties": {
+                    "blocked_accounts": {
+                        "type": "integer"
+                    },
+                    "locked_settings": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "blocked_accounts",
+                    "locked_settings"
+                ]
+            },
+            "SpaceHealthUsage": {
+                "type": "object",
+                "properties": {
+                    "managed": {
+                        "type": "boolean"
+                    },
+                    "resources": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/SpaceHealthUsageRow"
+                        }
+                    }
+                },
+                "required": [
+                    "managed",
+                    "resources"
+                ]
+            },
+            "SpaceHealthUsageRow": {
+                "type": "object",
+                "properties": {
+                    "key": {
+                        "type": "string"
+                    },
+                    "label": {
+                        "type": "string"
+                    },
+                    "used": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "unit": {
+                        "type": "string",
+                        "description": "`bytes` or `count`."
+                    },
+                    "percent": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "key",
+                    "label",
+                    "limit",
+                    "percent",
+                    "unit",
+                    "used"
+                ]
+            },
+            "SpaceHostingInvoice": {
+                "type": "object",
+                "description": "The Space Manager's view: who recorded a receipt stays the platform's business.",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "number": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "makerspace": {
+                        "type": "object",
+                        "additionalProperties": {},
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "makerspace_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "description": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "amount_minor": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "currency": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "due_on": {
+                        "type": "string",
+                        "format": "date",
+                        "readOnly": true
+                    },
+                    "period_start": {
+                        "type": "string",
+                        "format": "date",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "period_end": {
+                        "type": "string",
+                        "format": "date",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "status": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/StatusCfcEnum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "overdue": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "paid_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "voided_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "void_reason": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "receipts": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/HostingInvoiceReceipt"
+                        },
+                        "readOnly": true
+                    },
+                    "online_payable": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "amount_minor",
+                    "created_at",
+                    "currency",
+                    "description",
+                    "due_on",
+                    "id",
+                    "makerspace",
+                    "makerspace_name",
+                    "number",
+                    "online_payable",
+                    "overdue",
+                    "paid_at",
+                    "period_end",
+                    "period_start",
+                    "receipts",
+                    "status",
+                    "void_reason",
+                    "voided_at"
                 ]
             },
             "SpaceImageFinalizeRequest": {
@@ -307339,6 +311582,25 @@
                 "type": "string",
                 "description": "* `spaceworks-space-pack` - spaceworks-space-pack"
             },
+            "SpacePausedState": {
+                "type": "object",
+                "properties": {
+                    "state": {
+                        "$ref": "#/components/schemas/SpacePausedStateStateEnum"
+                    }
+                },
+                "required": [
+                    "state"
+                ]
+            },
+            "SpacePausedStateStateEnum": {
+                "enum": [
+                    "active",
+                    "paused"
+                ],
+                "type": "string",
+                "description": "* `active` - active\n* `paused` - paused"
+            },
             "SpacePhoto": {
                 "type": "object",
                 "properties": {
@@ -307431,6 +311693,52 @@
                 "required": [
                     "order"
                 ]
+            },
+            "SpacePurgeRequest": {
+                "type": "object",
+                "properties": {
+                    "confirm_slug": {
+                        "type": "string",
+                        "maxLength": 50
+                    }
+                },
+                "required": [
+                    "confirm_slug"
+                ]
+            },
+            "SpaceReadOnlyState": {
+                "type": "object",
+                "properties": {
+                    "at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "reason": {
+                        "type": "string"
+                    },
+                    "by": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "source": {
+                        "$ref": "#/components/schemas/SpaceReadOnlyStateSourceEnum"
+                    }
+                },
+                "required": [
+                    "at",
+                    "by",
+                    "reason",
+                    "source"
+                ]
+            },
+            "SpaceReadOnlyStateSourceEnum": {
+                "enum": [
+                    "manual",
+                    "trial_expired",
+                    "payment_overdue"
+                ],
+                "type": "string",
+                "description": "* `manual` - manual\n* `trial_expired` - trial_expired\n* `payment_overdue` - payment_overdue"
             },
             "SpaceRestore": {
                 "type": "object",
@@ -307602,6 +311910,152 @@
                 ],
                 "type": "string",
                 "description": "* `requested` - Requested\n* `staging` - Preparing preview\n* `preview_ready` - Preview ready\n* `applying` - Restoring\n* `completed` - Completed\n* `failed` - Failed\n* `aborted` - Cancelled"
+            },
+            "SpaceScheduleRequest": {
+                "type": "object",
+                "properties": {
+                    "archive_on": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "purge_grace_days": {
+                        "type": "integer",
+                        "maximum": 3650,
+                        "minimum": 1,
+                        "default": 90
+                    },
+                    "note": {
+                        "type": "string",
+                        "default": "",
+                        "maxLength": 500
+                    }
+                }
+            },
+            "SpaceScheduleState": {
+                "type": "object",
+                "properties": {
+                    "archive_on": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "purge_due_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "purge_grace_days": {
+                        "type": "integer"
+                    },
+                    "note": {
+                        "type": "string"
+                    },
+                    "scheduled_by": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "scheduled_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "reminders_sent": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "required": [
+                    "archive_on",
+                    "note",
+                    "purge_due_at",
+                    "purge_grace_days",
+                    "reminders_sent",
+                    "scheduled_at",
+                    "scheduled_by"
+                ]
+            },
+            "SpaceSuspension": {
+                "type": "object",
+                "properties": {
+                    "at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "reason": {
+                        "type": "string"
+                    },
+                    "by": {
+                        "type": "string",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "at",
+                    "by",
+                    "reason"
+                ]
+            },
+            "SpaceTransferRequest": {
+                "type": "object",
+                "properties": {
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "maxLength": 254
+                    },
+                    "previous_membership_id": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "previous_outcome": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/PreviousOutcomeEnum"
+                            }
+                        ],
+                        "default": "keep_staff"
+                    },
+                    "previous_roles": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "maxLength": 64
+                        }
+                    }
+                },
+                "required": [
+                    "email"
+                ]
+            },
+            "SpaceTransferResult": {
+                "type": "object",
+                "properties": {
+                    "status": {
+                        "$ref": "#/components/schemas/SpaceTransferResultStatusEnum"
+                    },
+                    "card": {
+                        "$ref": "#/components/schemas/HealthCard"
+                    },
+                    "invitation_email_status": {
+                        "type": "string",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "card",
+                    "status"
+                ]
+            },
+            "SpaceTransferResultStatusEnum": {
+                "enum": [
+                    "transferred",
+                    "invited"
+                ],
+                "type": "string",
+                "description": "* `transferred` - transferred\n* `invited` - invited"
             },
             "SpeakerAccount": {
                 "type": "object",
@@ -311435,6 +315889,19 @@
                 "type": "string",
                 "description": "* `draft` - draft\n* `open` - open\n* `closed` - closed"
             },
+            "State981Enum": {
+                "enum": [
+                    "active",
+                    "read_only",
+                    "suspended",
+                    "archived",
+                    "scheduled",
+                    "importing",
+                    "aborted"
+                ],
+                "type": "string",
+                "description": "* `active` - active\n* `read_only` - read_only\n* `suspended` - suspended\n* `archived` - archived\n* `scheduled` - scheduled\n* `importing` - importing\n* `aborted` - aborted"
+            },
             "State9e8Enum": {
                 "enum": [
                     "reported",
@@ -311761,6 +316228,15 @@
                 ],
                 "type": "string",
                 "description": "* `working` - working\n* `visiting` - visiting\n* `guest` - guest"
+            },
+            "StatusCfcEnum": {
+                "enum": [
+                    "open",
+                    "paid",
+                    "void"
+                ],
+                "type": "string",
+                "description": "* `open` - Open\n* `paid` - Paid\n* `void` - Void"
             },
             "StatusDf6Enum": {
                 "enum": [

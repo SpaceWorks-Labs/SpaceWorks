@@ -98,6 +98,7 @@ export const openApiTags = [
   "Loans",
   "MFA",
   "Makerspaces",
+  "Managed hosting",
   "Member account",
   "Member activity",
   "Member bookings",
@@ -127,7 +128,10 @@ export const openApiTags = [
   "Personal notification contract",
   "Personal notifications",
   "Platform",
+  "Platform announcements",
   "Platform insights",
+  "Platform onboarding",
+  "Platform space controls",
   "Platform tenant reports",
   "Presence",
   "Presence staff",
@@ -745,6 +749,9 @@ export const openApiPaths = [
   "/api/v1/admin/makerspace/{makerspace_id}/finance/opening-balances",
   "/api/v1/admin/makerspace/{makerspace_id}/finance/receipt-upload",
   "/api/v1/admin/makerspace/{makerspace_id}/finance/summary",
+  "/api/v1/admin/makerspace/{makerspace_id}/hosting-invoices",
+  "/api/v1/admin/makerspace/{makerspace_id}/hosting-invoices/{invoice_id}/checkout",
+  "/api/v1/admin/makerspace/{makerspace_id}/hosting-plan",
   "/api/v1/admin/makerspace/{makerspace_id}/integration-health",
   "/api/v1/admin/makerspace/{makerspace_id}/inventory",
   "/api/v1/admin/makerspace/{makerspace_id}/inventory/export",
@@ -1090,6 +1097,9 @@ export const openApiPaths = [
   "/api/v1/admin/platform/analytics/makerspaces/{makerspace_id}/reports/catalog",
   "/api/v1/admin/platform/analytics/makerspaces/{makerspace_id}/reports/{report_key}/export",
   "/api/v1/admin/platform/analytics/{report_key}",
+  "/api/v1/admin/platform/announcements",
+  "/api/v1/admin/platform/announcements/{id}",
+  "/api/v1/admin/platform/announcements/{id}/cancel",
   "/api/v1/admin/platform/backup-destinations",
   "/api/v1/admin/platform/backup-destinations/push",
   "/api/v1/admin/platform/backup-destinations/{destination_id}",
@@ -1102,6 +1112,17 @@ export const openApiPaths = [
   "/api/v1/admin/platform/backups/{archive_id}/rehydrate",
   "/api/v1/admin/platform/dashboard",
   "/api/v1/admin/platform/email-settings",
+  "/api/v1/admin/platform/hosting-billing-settings",
+  "/api/v1/admin/platform/hosting-invoices",
+  "/api/v1/admin/platform/hosting-invoices/{id}/record-payment",
+  "/api/v1/admin/platform/hosting-invoices/{id}/void",
+  "/api/v1/admin/platform/hosting-plans",
+  "/api/v1/admin/platform/hosting-plans/{id}",
+  "/api/v1/admin/platform/hosting-requests",
+  "/api/v1/admin/platform/hosting-requests/{id}",
+  "/api/v1/admin/platform/hosting-requests/{id}/approve",
+  "/api/v1/admin/platform/hosting-requests/{id}/reject",
+  "/api/v1/admin/platform/hosting-requests/{id}/request-changes",
   "/api/v1/admin/platform/insights/",
   "/api/v1/admin/platform/metabase",
   "/api/v1/admin/platform/metabase/connection",
@@ -1115,6 +1136,19 @@ export const openApiPaths = [
   "/api/v1/admin/platform/restores/{restore_id}",
   "/api/v1/admin/platform/restores/{restore_id}/decision",
   "/api/v1/admin/platform/social-auth-settings",
+  "/api/v1/admin/platform/space-health",
+  "/api/v1/admin/platform/space-health/{makerspace_id}",
+  "/api/v1/admin/platform/spaces/{makerspace_id}/archive",
+  "/api/v1/admin/platform/spaces/{makerspace_id}/plan",
+  "/api/v1/admin/platform/spaces/{makerspace_id}/purge",
+  "/api/v1/admin/platform/spaces/{makerspace_id}/read-only",
+  "/api/v1/admin/platform/spaces/{makerspace_id}/read-only/lift",
+  "/api/v1/admin/platform/spaces/{makerspace_id}/schedule",
+  "/api/v1/admin/platform/spaces/{makerspace_id}/schedule/cancel",
+  "/api/v1/admin/platform/spaces/{makerspace_id}/suspend",
+  "/api/v1/admin/platform/spaces/{makerspace_id}/transfer-ownership",
+  "/api/v1/admin/platform/spaces/{makerspace_id}/unarchive",
+  "/api/v1/admin/platform/spaces/{makerspace_id}/unsuspend",
   "/api/v1/admin/platform/tenant-migrations/deployment-identity",
   "/api/v1/admin/platform/tenant-migrations/imports",
   "/api/v1/admin/platform/tenant-migrations/imports/uploads",
@@ -1389,6 +1423,8 @@ export const openApiPaths = [
   "/api/v1/kiosk-stations/{public_token}/session/",
   "/api/v1/kiosk-stations/{public_token}/work-package/",
   "/api/v1/live/",
+  "/api/v1/managed-hosting/webhooks/razorpay",
+  "/api/v1/managed-hosting/webhooks/stripe",
   "/api/v1/me/messaging",
   "/api/v1/me/messaging/consent",
   "/api/v1/member/archived-payments",
@@ -1640,6 +1676,7 @@ export const openApiPaths = [
   "/api/v1/notifications/unsubscribe/{token}",
   "/api/v1/payment-documents/{document_id}/download",
   "/api/v1/payments/connect/callback",
+  "/api/v1/platform-notices",
   "/api/v1/procurement/makerspace/{makerspace_id}/to-buy",
   "/api/v1/procurement/makerspace/{makerspace_id}/to-buy/export",
   "/api/v1/procurement/makerspace/{makerspace_id}/to-buy/machine-types",
@@ -1685,6 +1722,7 @@ export const openApiPaths = [
   "/api/v1/public/machine-service/3d-printer/requests/{public_token}/status",
   "/api/v1/public/machine-service/requests/{public_token}/status",
   "/api/v1/public/makerspaces/",
+  "/api/v1/public/makerspaces/{makerspace_slug}/availability",
   "/api/v1/public/makerspaces/{makerspace_slug}/presence/now/",
   "/api/v1/public/organizations/{slug}/",
   "/api/v1/public/organizations/{slug}/events/",
@@ -3268,6 +3306,8 @@ export type AttentionReasonEnum = "away_twice";
 
 export type Audience817Enum = "member" | "staff";
 
+export type Audience876Enum = "all_spaces" | "selected_spaces";
+
 export type AudienceBe5Enum = "member" | "public";
 
 export type AuditLog = {
@@ -3657,6 +3697,8 @@ export type BatchStart = {
 };
 
 export type BatchStateEnum = "queued" | "running" | "completed" | "failed";
+
+export type BillingPeriodEnum = "monthly" | "yearly" | "none";
 
 export type BillingPolicyError = HardwareRequestError | BillingPolicyValidationError;
 
@@ -9656,6 +9698,53 @@ export type Health = {
   "status": string;
 };
 
+export type HealthCard = {
+  "id": number;
+  "name": string;
+  "slug": string;
+  "public_code": string;
+  "state": State981Enum;
+  "lifecycle_state": string;
+  "created_at": string;
+  "archived_at": string | null;
+  "suspended": SpaceSuspension | null;
+  "read_only": SpaceReadOnlyState | null;
+  "schedule": SpaceScheduleState | null;
+  "usage": SpaceHealthUsage;
+  "usage_peak_percent": number | null;
+  "last_activity_at": string | null;
+  "backups": SpaceHealthBackups;
+  "security": SpaceHealthSecurity;
+  "open_issues": number;
+  "modules": Array<string>;
+  "managers": Array<SpaceHealthManager>;
+  "plan"?: SpaceHealthPlan | null;
+};
+
+export type HealthCardDetail = {
+  "id": number;
+  "name": string;
+  "slug": string;
+  "public_code": string;
+  "state": State981Enum;
+  "lifecycle_state": string;
+  "created_at": string;
+  "archived_at": string | null;
+  "suspended": SpaceSuspension | null;
+  "read_only": SpaceReadOnlyState | null;
+  "schedule": SpaceScheduleState | null;
+  "usage": SpaceHealthUsage;
+  "usage_peak_percent": number | null;
+  "last_activity_at": string | null;
+  "backups": SpaceHealthBackups;
+  "security": SpaceHealthSecurity;
+  "open_issues": number;
+  "modules": Array<string>;
+  "managers": Array<SpaceHealthManager>;
+  "plan"?: SpaceHealthPlan | null;
+  "problems": Array<SpaceHealthProblem>;
+};
+
 export type Help = {
   "id": number;
   "event_id": number;
@@ -9778,6 +9867,23 @@ export type HostingAck = {
   "detail": string;
 };
 
+export type HostingBillingSettings = {
+  "auto_enforce_enabled"?: boolean;
+  "grace_days"?: number;
+  "online_billing_switch": boolean;
+  "provider"?: string;
+  "razorpay_key_id"?: string;
+  "stripe_secret_key"?: string;
+  "stripe_webhook_secret"?: string;
+  "razorpay_key_secret"?: string;
+  "razorpay_webhook_secret"?: string;
+  "updated_at": string;
+};
+
+export type HostingCheckout = {
+  "url": string;
+};
+
 export type HostingError = {
   "detail": string;
 };
@@ -9835,10 +9941,170 @@ export type HostingInvitationSubmit = {
   "space_website_url"?: string;
   "description": string;
   "proposed_slug"?: string;
+  "expected_members"?: number | null;
   "new_organization_name"?: string;
   "website"?: string;
   "token": string;
   "organization_choice"?: OrganizationChoiceEnum;
+};
+
+export type HostingInvoice = {
+  "id": number;
+  "number": string;
+  "makerspace": {
+  [key: string]: unknown;
+} | null;
+  "makerspace_name": string;
+  "description": string;
+  "amount_minor": number;
+  "currency": string;
+  "due_on": string;
+  "period_start": string | null;
+  "period_end": string | null;
+  "status": StatusCfcEnum;
+  "overdue": boolean;
+  "paid_at": string | null;
+  "voided_at": string | null;
+  "void_reason": string;
+  "receipts": Array<HostingInvoiceReceipt>;
+  "online_payable": boolean;
+  "created_at": string;
+};
+
+export type HostingInvoiceCreate = {
+  "makerspace_id": number;
+  "amount_minor": number;
+  "currency": string;
+  "description": string;
+  "due_on": string;
+  "period_start"?: string | null;
+  "period_end"?: string | null;
+};
+
+export type HostingInvoicePayment = {
+  "method": HostingInvoicePaymentMethodEnum;
+  "reference": string;
+  "received_on": string;
+  "note"?: string;
+};
+
+export type HostingInvoicePaymentMethodEnum = "bank_transfer" | "cash" | "cheque" | "card_offline" | "other";
+
+export type HostingInvoiceReceipt = {
+  "method": HostingInvoiceReceiptMethodEnum;
+  "reference": string;
+  "received_on": string;
+  "amount_minor": number;
+  "recorded_at": string;
+  "recorded_by": string | null;
+  "note": string;
+};
+
+export type HostingInvoiceReceiptMethodEnum = "bank_transfer" | "cash" | "cheque" | "card_offline" | "other" | "online_stripe" | "online_razorpay";
+
+export type HostingInvoiceVoid = {
+  "reason": string;
+};
+
+export type HostingPlan = {
+  "id": number;
+  "key": string;
+  "name": string;
+  "description"?: string;
+  "is_active"?: boolean;
+  "trial_days"?: number;
+  "price_minor"?: number;
+  "currency"?: string;
+  "billing_period"?: BillingPeriodEnum;
+  "limits"?: unknown;
+  "allowed_modules"?: unknown;
+  "space_count": number;
+  "created_at": string;
+  "updated_at": string;
+};
+
+export type HostingPlanAssignment = {
+  "makerspace_id": number;
+  "plan": HostingPlan;
+  "assigned_at": string;
+  "trial_ends_at": string | null;
+  "trial_expired": boolean;
+};
+
+export type HostingPlanAssignRequest = {
+  "plan_id": number;
+  "trial_days"?: number | null;
+};
+
+export type HostingPlanUsage = {
+  "plan": {
+  [key: string]: unknown;
+} | null;
+  "trial_ends_at": string | null;
+  "read_only_reason": string | null;
+  "resources": Array<HostingPlanUsageRow>;
+  "warnings": Array<string>;
+};
+
+export type HostingPlanUsageRow = {
+  "key": string;
+  "label": string;
+  "used": number | null;
+  "limit": number | null;
+  "unit": string;
+  "percent": number | null;
+  "level": string;
+};
+
+export type HostingRequestDetail = {
+  "id": number;
+  "status": StatusB35Enum;
+  "source": SourceA69Enum;
+  "space_name": string;
+  "proposed_slug": string;
+  "location": string;
+  "expected_members": number | null;
+  "applicant_name": string;
+  "applicant_email": string;
+  "applicant_phone": string;
+  "space_website_url": string;
+  "description": string;
+  "organization_choice": OrganizationChoiceEnum;
+  "new_organization_name": string;
+  "inviter_summary": string;
+  "created_at": string;
+  "verified_at": string | null;
+  "decided_at": string | null;
+  "changes_note": string;
+  "created_makerspace": {
+  [key: string]: unknown;
+} | null;
+  "revisions": Array<OnboardingRevision>;
+};
+
+export type HostingRequestRow = {
+  "id": number;
+  "status": StatusB35Enum;
+  "source": SourceA69Enum;
+  "space_name": string;
+  "proposed_slug": string;
+  "location": string;
+  "expected_members": number | null;
+  "applicant_name": string;
+  "applicant_email": string;
+  "applicant_phone": string;
+  "space_website_url": string;
+  "description": string;
+  "organization_choice": OrganizationChoiceEnum;
+  "new_organization_name": string;
+  "inviter_summary": string;
+  "created_at": string;
+  "verified_at": string | null;
+  "decided_at": string | null;
+  "changes_note": string;
+  "created_makerspace": {
+  [key: string]: unknown;
+} | null;
 };
 
 export type HostingRequestStatus = {
@@ -9867,6 +10133,7 @@ export type HostingRequestSubmit = {
   "space_website_url"?: string;
   "description": string;
   "proposed_slug"?: string;
+  "expected_members"?: number | null;
   "new_organization_name"?: string;
   "website"?: string;
 };
@@ -14720,6 +14987,41 @@ export type OidcBrowserStartResponse = {
   "expires_in": number;
 };
 
+export type OnboardingApprove = {
+  "name"?: string;
+  "slug"?: string;
+  "organization_id"?: number | null;
+  "new_organization_name"?: string;
+  "invite_manager"?: boolean;
+};
+
+export type OnboardingApproveResult = {
+  "request": HostingRequestRow;
+  "makerspace": OnboardingSpaceRef;
+  "invitation": string;
+};
+
+export type OnboardingChangesNote = {
+  "note": string;
+};
+
+export type OnboardingReject = {
+  "reason": string;
+};
+
+export type OnboardingRevision = {
+  "kind": string;
+  "note": string;
+  "changed_fields": Array<string>;
+  "created_at": string;
+};
+
+export type OnboardingSpaceRef = {
+  "id": number;
+  "name": string;
+  "slug": string;
+};
+
 export type OpeningBalance = {
   "fy_start": string;
   "currency": string;
@@ -15607,6 +15909,27 @@ export type PaginatedEmailLogList = {
   "results": Array<EmailLog>;
 };
 
+export type PaginatedHealthCardList = {
+  "count": number;
+  "next"?: string | null;
+  "previous"?: string | null;
+  "results": Array<HealthCard>;
+};
+
+export type PaginatedHostingInvoiceList = {
+  "count": number;
+  "next"?: string | null;
+  "previous"?: string | null;
+  "results": Array<HostingInvoice>;
+};
+
+export type PaginatedHostingRequestRowList = {
+  "count": number;
+  "next"?: string | null;
+  "previous"?: string | null;
+  "results": Array<HostingRequestRow>;
+};
+
 export type PaginatedInventoryAssetAdminList = {
   "count": number;
   "next"?: string | null;
@@ -15668,6 +15991,13 @@ export type PaginatedPackProfileList = {
   "next"?: string | null;
   "previous"?: string | null;
   "results": Array<PackProfile>;
+};
+
+export type PaginatedPlatformAnnouncementList = {
+  "count": number;
+  "next"?: string | null;
+  "previous"?: string | null;
+  "results": Array<PlatformAnnouncement>;
 };
 
 export type PaginatedPublicMachineDetailList = {
@@ -16900,6 +17230,36 @@ export type PatchedHelpTypeWrite = {
   "claim_minutes"?: number;
   "expiry_minutes"?: number;
   "organizer_contact_action"?: string;
+};
+
+export type PatchedHostingBillingSettings = {
+  "auto_enforce_enabled"?: boolean;
+  "grace_days"?: number;
+  "online_billing_switch"?: boolean;
+  "provider"?: string;
+  "razorpay_key_id"?: string;
+  "stripe_secret_key"?: string;
+  "stripe_webhook_secret"?: string;
+  "razorpay_key_secret"?: string;
+  "razorpay_webhook_secret"?: string;
+  "updated_at"?: string;
+};
+
+export type PatchedHostingPlan = {
+  "id"?: number;
+  "key"?: string;
+  "name"?: string;
+  "description"?: string;
+  "is_active"?: boolean;
+  "trial_days"?: number;
+  "price_minor"?: number;
+  "currency"?: string;
+  "billing_period"?: BillingPeriodEnum;
+  "limits"?: unknown;
+  "allowed_modules"?: unknown;
+  "space_count"?: number;
+  "created_at"?: string;
+  "updated_at"?: string;
 };
 
 export type PatchedIdProgramme = {
@@ -18756,6 +19116,39 @@ export type PlatformAnalyticsReport = {
   "chart_spec": ReportChartSpec;
 };
 
+export type PlatformAnnouncement = {
+  "id": number;
+  "title": string;
+  "body": string;
+  "severity": Severity6c1Enum;
+  "audience": Audience876Enum;
+  "makerspaces": Array<{
+  [key: string]: unknown;
+}>;
+  "starts_at": string;
+  "ends_at": string | null;
+  "send_email": boolean;
+  "show_to_members": boolean;
+  "email_sent_at": string | null;
+  "email_recipient_count": number;
+  "cancelled_at": string | null;
+  "created_by": string | null;
+  "created_at": string;
+  "status": string;
+};
+
+export type PlatformAnnouncementCreate = {
+  "title": string;
+  "body": string;
+  "severity"?: Severity6c1Enum;
+  "audience"?: Audience876Enum;
+  "makerspace_ids"?: Array<number>;
+  "starts_at"?: string | null;
+  "ends_at"?: string | null;
+  "send_email"?: boolean;
+  "show_to_members"?: boolean;
+};
+
 export type PlatformBackupHealth = {
   "automatic_enabled": boolean;
   "last_success_at": string | null;
@@ -18818,6 +19211,32 @@ export type PlatformInsights = {
   "staff_mfa": Mfa;
   "outbox": Array<OutboxHealth>;
 };
+
+export type PlatformNoticeAnnouncement = {
+  "id": number;
+  "title": string;
+  "body": string;
+  "severity": string;
+  "starts_at": string;
+  "ends_at": string | null;
+  "makerspace_ids": Array<number>;
+};
+
+export type PlatformNotices = {
+  "announcements": Array<PlatformNoticeAnnouncement>;
+  "spaces": Array<PlatformNoticeSpace>;
+};
+
+export type PlatformNoticeSpace = {
+  "id": number;
+  "name": string;
+  "slug": string;
+  "state": PlatformNoticeSpaceStateEnum;
+  "reason": string;
+  "since": string | null;
+};
+
+export type PlatformNoticeSpaceStateEnum = "read_only" | "suspended";
 
 export type PlatformOffsiteHealth = {
   "name": string;
@@ -19235,6 +19654,8 @@ export type PreviewSkipped = {
   "people": number;
   "reason": string;
 };
+
+export type PreviousOutcomeEnum = "keep_staff" | "revoke" | "keep_manager";
 
 export type PriceDiscount = {
   "id": number;
@@ -20259,6 +20680,9 @@ export type PublicConfig = {
   [key: string]: unknown;
 };
   "hosting_requests"?: {
+  [key: string]: unknown;
+};
+  "managed_plans"?: {
   [key: string]: unknown;
 };
   "passkeys_enabled": boolean;
@@ -24014,6 +24438,8 @@ export type SetupState = {
   "modules_chosen": boolean;
 };
 
+export type Severity6c1Enum = "info" | "maintenance" | "policy" | "warning";
+
 export type Shift = {
   "id": number;
   "event_id": number;
@@ -24675,6 +25101,8 @@ export type Source04fEnum = "makerspace_public" | "entered";
 
 export type Source4adEnum = "loan" | "booking" | "machine_job" | "staff";
 
+export type SourceA69Enum = "public" | "invited";
+
 export type SourceEd5Enum = "member_qr" | "staff" | "device";
 
 export type SpaceCard = {
@@ -24682,6 +25110,84 @@ export type SpaceCard = {
   "canonical_url": string;
   "slug": string;
   "logo_url": string | null;
+};
+
+export type SpaceControlReason = {
+  "reason": string;
+};
+
+export type SpaceHealthBackups = {
+  "last_backed_up_at": string | null;
+  "last_drill": SpaceHealthDrill | null;
+};
+
+export type SpaceHealthDrill = {
+  "outcome": SpaceHealthDrillOutcomeEnum;
+  "finished_at": string | null;
+};
+
+export type SpaceHealthDrillOutcomeEnum = "passed" | "failed";
+
+export type SpaceHealthManager = {
+  "membership_id": number;
+  "user_id": number;
+  "name": string | null;
+  "email": string;
+};
+
+export type SpaceHealthPlan = {
+  "key": string;
+  "name": string;
+  "trial_ends_at": string | null;
+};
+
+export type SpaceHealthProblem = {
+  "key": string;
+  "status": Status00eEnum;
+  "message": string;
+  "fix_url": string | null;
+};
+
+export type SpaceHealthSecurity = {
+  "blocked_accounts": number;
+  "locked_settings": number;
+};
+
+export type SpaceHealthUsage = {
+  "managed": boolean;
+  "resources": Array<SpaceHealthUsageRow>;
+};
+
+export type SpaceHealthUsageRow = {
+  "key": string;
+  "label": string;
+  "used": number | null;
+  "limit": number | null;
+  "unit": string;
+  "percent": number | null;
+};
+
+export type SpaceHostingInvoice = {
+  "id": number;
+  "number": string;
+  "makerspace": {
+  [key: string]: unknown;
+} | null;
+  "makerspace_name": string;
+  "description": string;
+  "amount_minor": number;
+  "currency": string;
+  "due_on": string;
+  "period_start": string | null;
+  "period_end": string | null;
+  "status": StatusCfcEnum;
+  "overdue": boolean;
+  "paid_at": string | null;
+  "voided_at": string | null;
+  "void_reason": string;
+  "receipts": Array<HostingInvoiceReceipt>;
+  "online_payable": boolean;
+  "created_at": string;
 };
 
 export type SpaceImageFinalizeRequest = {
@@ -24720,6 +25226,12 @@ export type SpacePack = {
 
 export type SpacePackFormatEnum = "spaceworks-space-pack";
 
+export type SpacePausedState = {
+  "state": SpacePausedStateStateEnum;
+};
+
+export type SpacePausedStateStateEnum = "active" | "paused";
+
 export type SpacePhoto = {
   "id": number;
   "url": string;
@@ -24743,6 +25255,19 @@ export type SpacePhotoList = {
 export type SpacePhotoOrder = {
   "order": Array<number>;
 };
+
+export type SpacePurgeRequest = {
+  "confirm_slug": string;
+};
+
+export type SpaceReadOnlyState = {
+  "at": string;
+  "reason": string;
+  "by": string | null;
+  "source": SpaceReadOnlyStateSourceEnum;
+};
+
+export type SpaceReadOnlyStateSourceEnum = "manual" | "trial_expired" | "payment_overdue";
 
 export type SpaceRestore = {
   "id": string;
@@ -24777,6 +25302,43 @@ export type SpaceRestoreCreate = {
 export type SpaceRestoreSourceEnum = "space_archive" | "deployment_archive";
 
 export type SpaceRestoreStageEnum = "requested" | "staging" | "preview_ready" | "applying" | "completed" | "failed" | "aborted";
+
+export type SpaceScheduleRequest = {
+  "archive_on"?: string | null;
+  "purge_grace_days"?: number;
+  "note"?: string;
+};
+
+export type SpaceScheduleState = {
+  "archive_on": string | null;
+  "purge_due_at": string | null;
+  "purge_grace_days": number;
+  "note": string;
+  "scheduled_by": string | null;
+  "scheduled_at": string | null;
+  "reminders_sent": Array<string>;
+};
+
+export type SpaceSuspension = {
+  "at": string;
+  "reason": string;
+  "by": string | null;
+};
+
+export type SpaceTransferRequest = {
+  "email": string;
+  "previous_membership_id"?: number | null;
+  "previous_outcome"?: PreviousOutcomeEnum;
+  "previous_roles"?: Array<string>;
+};
+
+export type SpaceTransferResult = {
+  "status": SpaceTransferResultStatusEnum;
+  "card": HealthCard;
+  "invitation_email_status"?: string | null;
+};
+
+export type SpaceTransferResultStatusEnum = "transferred" | "invited";
 
 export type SpeakerAccount = {
   "id": number;
@@ -25707,6 +26269,8 @@ export type State766Enum = "applied";
 
 export type State906Enum = "draft" | "open" | "closed";
 
+export type State981Enum = "active" | "read_only" | "suspended" | "archived" | "scheduled" | "importing" | "aborted";
+
 export type State9e8Enum = "reported" | "triaged" | "assigned" | "in_progress" | "fixed" | "closed" | "rejected";
 
 export type State9efEnum = "requested" | "invited" | "awaiting_vouches" | "awaiting_payment" | "expired" | "canceled" | "active" | "revoked";
@@ -25782,6 +26346,8 @@ export type StatusB35Enum = "invited" | "pending_verification" | "submitted" | "
 export type StatusB9dEnum = "invited" | "accepted" | "declined";
 
 export type StatusC05Enum = "working" | "visiting" | "guest";
+
+export type StatusCfcEnum = "open" | "paid" | "void";
 
 export type StatusDf6Enum = "pending_approval" | "registered" | "waitlisted" | "rejected" | "cancelled" | "attended";
 

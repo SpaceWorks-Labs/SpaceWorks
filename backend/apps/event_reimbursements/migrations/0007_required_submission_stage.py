@@ -17,7 +17,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('event_reimbursements', '0006_l21a_stage_and_crew_claims'),
-        ('events', '0070_submission_stages_backfill'),
+        ('events', '0073_submission_stages_backfill'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 

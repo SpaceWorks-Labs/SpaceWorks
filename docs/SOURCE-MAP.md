@@ -953,7 +953,7 @@ identity normalization and production minimum-version comparison. `mobile_associ
 ### Release 2 r2-submit-content (submission stages, #177-#180)
 
 - `events/submissions/models_stages.py` -- `SubmissionStage`, `SubmissionStageEntry`, `SnapshotStage`,
-  `StageShortlist`/`Entry`/`Announcement`, `StageExtension`; migrations `events/0069`-`0070` (backfill, guards).
+  `StageShortlist`/`Entry`/`Announcement`, `StageExtension`; migrations `events/0072`-`0073` (backfill, guards).
 - `events/submissions/stage_runtime.py` -- windows, gates, active stage, per-stage current snapshots (the one
   place stage windows are computed); `stage_submit.py` -- draft and submit enforcement, freezing, recording;
   `stage_rules.py` -- plan validation and answer limits; `stage_presets.py` -- the presets (data only).
@@ -966,7 +966,7 @@ identity normalization and production minimum-version comparison. `mobile_associ
   `stage_notices.py` -- reminders and shortlist notices; `stage_public.py` -- event page and calendar deadlines;
   `stage_gallery.py` -- public field filters, early public stages, `final_stage_entries`;
   phase 2: `stage_feedback.py` (S4), `stage_promotion.py` (S12), `stage_judge_reminders.py` (S15),
-  `stage_integrity.py` (S14), `stage_analytics.py` (S16); migration `events/0071`.
+  `stage_integrity.py` (S14), `stage_analytics.py` (S16); migration `events/0074`.
 - Frontend: `features/staff/submissionStages/` (editor, presets, shortlist, promote, extensions, triage, funnel),
   `features/events/stageTime.tsx`, the participant stage tracker under `features/events/hackathonSubmissions/`.
 - Registries: `tenant_migration/catalog_r2_submit_content.py`, `audit_references_r2_submit_content.py`,

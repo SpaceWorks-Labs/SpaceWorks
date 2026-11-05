@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('events', '0070_submission_stages_backfill'),
+        ('events', '0073_submission_stages_backfill'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 

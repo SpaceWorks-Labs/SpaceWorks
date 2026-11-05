@@ -91,7 +91,7 @@ def single_submission_stage(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-    dependencies = [("events", "0069_submission_stages")]
+    dependencies = [("events", "0072_submission_stages")]
     operations = [
         migrations.RunPython(single_submission_stage, migrations.RunPython.noop),
         migrations.RunSQL(FORWARD_SQL, REVERSE_SQL),

@@ -21,9 +21,11 @@ export type FlowLayoutProps = LayoutProps & Presentation & {
   error?: CalloutProps;
   compact?: boolean;
   pending?: boolean;
+  /** Set the title in the Unbounded accent: the layout's one accent. */
+  accentTitle?: boolean;
 };
 export function FlowLayout({ title, subject, steps, current, onStepSelect, work, footer, onCancel, leaveGuard,
-  result, error, compact, pending, presentation = "page", open, standalone = presentation === "page", width, ...query }: FlowLayoutProps) {
+  result, error, compact, pending, accentTitle = false, presentation = "page", open, standalone = presentation === "page", width, ...query }: FlowLayoutProps) {
   const [confirmLeave, setConfirmLeave] = useState(false);
   const workRef = useRef<HTMLDivElement>(null);
   const previous = useRef(current);
@@ -37,9 +39,9 @@ export function FlowLayout({ title, subject, steps, current, onStepSelect, work,
     disabledReason: blocked ? "Wait until this step is ready." : footer.next.disabledReason ?? (footer.next.disabled ? "Complete this step before continuing." : undefined) };
   const content = <LayoutFrame standalone={presentation === "page" && standalone} width={width}
     className={presentation === "kiosk" ? "sw-kiosk-flow sw-overlay-content" : presentation === "dialog" ? "sw-overlay-content" : ""}>
-    {presentation === "kiosk" ? <div className="mb-6"><h2 className="title-panel">{title}</h2>
+    {presentation === "kiosk" ? <div className="mb-6"><h2 className={`title-panel${accentTitle ? " font-accent" : ""}`}>{title}</h2>
       {subject ? <p className="mt-2 text-muted">{subject}</p> : null}</div>
-      : <PageHeader headingLevel={presentation === "dialog" ? 2 : 1} title={title} subtitle={subject} />}
+      : <PageHeader headingLevel={presentation === "dialog" ? 2 : 1} title={title} subtitle={subject} accentTitle={accentTitle} />}
     <div className={steps.length > 1 && !compact && !result ? "sw-flow-columns" : "grid min-w-0 gap-6"}>
       {!result ? <FlowSteps steps={steps} current={current} onStepSelect={onStepSelect} /> : null}
       <div ref={workRef} tabIndex={-1} aria-label={steps.find(step => step.key === current)?.label ?? "Work panel"}

@@ -728,7 +728,7 @@ with a current tenant tie may consent; revoked/restricted accounts remain exclud
 Provisioning, verified callbacks, quotas and recovery: [messaging operator guide](messaging-channels.md).
 With reports enabled, communications health includes scoped SMS delivery cohorts,
 segment estimates/bills and a labelled current consent snapshot. Platform metering
-separates notification usage from OTP counts; [measurement notes](report-builders-messaging.md).
+separates notification usage from OTP counts; [measurement notes](SOURCE-MAP-REPORTS.md#communications-and-messaging).
 
 ### whatsapp
 
@@ -741,7 +741,7 @@ until the operator enables them.
 Provisioning and the shared sender correlation barrier: [messaging operator guide](messaging-channels.md).
 With reports enabled, communications health includes scoped WhatsApp progress and
 delivery/read rates plus a labelled current consent snapshot. Platform usage exposes
-counts only; [measurement notes](report-builders-messaging.md).
+counts only; [measurement notes](SOURCE-MAP-REPORTS.md#communications-and-messaging).
 
 ### telegram
 

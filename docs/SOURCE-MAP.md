@@ -15,6 +15,10 @@ Addressed enqueue/worker compatibility shims are inert; legacy schema and histor
 helpers remain for replay pending the independent
 [retirement and activation checkpoints](notification-reconciliation-rollout.md).
 
+Reports have their own map: [SOURCE-MAP-REPORTS.md](SOURCE-MAP-REPORTS.md) holds the report registry,
+the output allowlist and the measurement notes of every report family (it replaces the old
+report-builder notes).
+
 The [Events programme map](SOURCE-MAP-EVENTS-PROGRAMME.md) covers application/team,
 upload/retention, contributor/Mentor Desk, judging/gallery, credential/certificate,
 form/Saved details and runtime/retention adapters at `f1ef7736`. It includes incomplete
@@ -87,7 +91,7 @@ projects allowlisted source facts, and the usage/heatmap/downtime/service/mainte
 builders own their measurements. `org_machine_reports.py` combines partitioned numeric inputs;
 `org_machine_report_schemas.py` declares organization schema parity. Typed API rows live in
 `serializers_reports_machine_analytics.py`. The field and measurement handoff is
-`docs/report-machines-1f2.md`; focused tests are `backend/tests/analytics/test_c_*_m1f2.py`.
+[`docs/SOURCE-MAP-REPORTS.md`](SOURCE-MAP-REPORTS.md#machines); focused tests are `backend/tests/analytics/test_c_*_m1f2.py`.
 
 Role dashboards (1f-4): `operations/dashboard_widgets.py` declares and gates report-backed
 widgets, while `dashboard_counts.py` preserves the legacy count contract and
@@ -254,7 +258,7 @@ the new builders and organization combiners; `report_fields_de.py` owns their al
 owns occupancy, lead-time and member rankings. `reports_event_analytics.py`,
 `reports_event_revenue.py` and `reports_event_quality.py` own signup/funnel, money,
 and check-in/feedback measures respectively. `org_report_de.py` combines count/sum/rate
-inputs. Measurement boundaries and per-key fields are in `docs/report-builders-de.md`.
+inputs. Measurement boundaries and per-key fields are in [`docs/SOURCE-MAP-REPORTS.md`](SOURCE-MAP-REPORTS.md#bookings-and-events-areas-d-and-e).
 
 Booking resource reports (BK-E): `bookings/report_subject.py` registers the typed
 `bookable_space` policy; `report_features.py` projects request-local UI capabilities.
@@ -662,7 +666,7 @@ H/I analytics register in `operations/report_definitions_hi.py`: communications 
 `integrations/reports_communications.py`; tenant mobile counts live in
 `operations/reports_mobile_devices.py` and `reports_mobile_auth.py`. Their shared allowlists
 are `report_fields_hi.py`; `reports_mobile_platform.py` exposes context-guarded global source
-projections for platform builders. Measurement and disclosure notes: [report-builders-hi.md](report-builders-hi.md).
+projections for platform builders. Measurement and disclosure notes: [SOURCE-MAP-REPORTS.md › areas-h-and-i](SOURCE-MAP-REPORTS.md#areas-h-and-i).
 Area J analytics: `operations/report_definitions_j.py` registers device, presence,
 audit, organization membership and delivery-health reports; `report_fields_j.py`
 declares their public schemas. `reports_j_*` builds tenant rows and `org_reports_j.py`
@@ -673,7 +677,7 @@ anonymous hidden-service bucket; `reports_platform_usage.py` owns visible-space 
 with finalized consumable sources in `reports_platform_consumables.py`.
 `views_platform_analytics.py` serves the two platform keys and the action-scoped tenant
 picker. `metrics_push.py` reads both per-device outcome ledgers for Prometheus.
-Field/measurement contracts and the complete lane handoff are in `report-builders-j.md`.
+Field/measurement contracts and the complete lane handoff are in [`SOURCE-MAP-REPORTS.md`](SOURCE-MAP-REPORTS.md#area-j).
 
 Membership admission is described in [membership-admission.md](membership-admission.md).
 `makerspaces/models_admission.py` owns the settings and immutable vouch models.
@@ -1204,7 +1208,7 @@ without counting another send; EmailLog and device children supply physical outc
 `report_fields_hi.py` owns public fields; `org_reports_messaging.py` combines weighted rates
 and excludes current consent snapshots from totals. Platform services/module health are v3;
 mobile devices/auth v2. Held ingress, original abandoned receipts, current proof-bound consent
-and billed-zero segments keep distinct measurements. See [measurement notes](report-builders-messaging.md).
+and billed-zero segments keep distinct measurements. See [measurement notes](SOURCE-MAP-REPORTS.md#communications-and-messaging).
 
 ## Public pages and shared handles
 

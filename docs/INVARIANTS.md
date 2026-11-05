@@ -1106,7 +1106,7 @@ enter delivery cohorts. Segment totals prefer billed values including zero, othe
 estimates. Platform services/module health are version 3, mobile devices/auth version 2.
 Platform metering separates OTP from notifications for visible tenants; hidden buckets retain
 only service/day/count. Sender keys, phones, bodies and credentials never enter report rows.
-Measurement notes: [report-builders-messaging.md](report-builders-messaging.md).
+Measurement notes: [SOURCE-MAP-REPORTS.md › communications-and-messaging](SOURCE-MAP-REPORTS.md#communications-and-messaging).
 
 
 **Report provenance and scheduled delivery (forward plan phase 6, 2026-09-04).** Every CSV/XLSX export
